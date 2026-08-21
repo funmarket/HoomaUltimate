@@ -4,13 +4,8 @@
   "private": true,
   "type": "module",
   "packageManager": "npm@10.9.2",
-  "engines": {
-    "node": ">=22 <25"
-  },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "engines": { "node": ">=22 <25" },
+  "workspaces": ["apps/*", "packages/*"],
   "scripts": {
     "dev": "concurrently -n api,web,telegram,worker -c auto \"npm -w @hooma/api run dev\" \"npm -w @hooma/web run dev\" \"npm -w @hooma/telegram run dev\" \"npm -w @hooma/worker run dev\"",
     "dev:api": "npm -w @hooma/api run dev",
@@ -33,7 +28,8 @@
     "db:generate": "npm -w @hooma/database run generate",
     "db:validate": "npm -w @hooma/database run validate",
     "db:migrate:deploy": "npm -w @hooma/database run migrate:deploy",
-    "db:migrate:status": "npm -w @hooma/database run migrate:status"
+    "db:migrate:status": "npm -w @hooma/database run migrate:status",
+    "admin:grant": "tsx scripts/grant-platform-admin.ts"
   },
   "devDependencies": {
     "concurrently": "10.0.5",
