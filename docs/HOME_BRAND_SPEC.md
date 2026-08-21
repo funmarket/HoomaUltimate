@@ -70,7 +70,7 @@ MATCH DAY / Create a Match hero
 ↓
 8 primary Home gateway cards
 ↓
-HOOMA NOW heading + actual feed
+HOOMA NOW heading + actual activity feed
 ↓
 Whistle + Replay secondary rectangular buttons
 ↓
@@ -172,37 +172,146 @@ Preserve the accepted matchday intent rather than replacing it with a generic ca
 
 ---
 
-## 6. HOOMA NOW — feed, not a container for Whistle/Replay
+## 6. HOOMA NOW — canonical cross-domain activity feed
 
-`HOOMA NOW` is a **feed section**.
+`HOOMA NOW` is the **live cross-domain activity feed for meaningful public activity happening around HOOMA**.
 
-Its job is to present the current aggregated Home/Now read model: timely, relevant product activity that HOOMA is allowed to surface.
+It is not:
+
+- a generic social-media feed;
+- a follower feed;
+- a chat stream;
+- Whistle history;
+- Replay storage;
+- a duplicate Teams/Gamers/ULTRAS database;
+- a place to manufacture engagement with fake activity.
 
 Canonical structure:
 
 ```text
 HOOMA NOW
-[ actual feed item ]
-[ actual feed item ]
-[ actual feed item ]
+[ real activity item ]
+[ real activity item ]
+[ real activity item ]
 ...
 ```
 
-Rules:
+### 6.1 What belongs in the feed
 
-- `HOOMA NOW` is not a wrapper label for Whistle and Replay;
-- Whistle and Replay must not be rendered inside the HOOMA NOW feed;
-- the feed must use real discovery/read-model data when implemented;
-- no fake production feed rows;
-- feed loading, empty and error states must be real;
-- feed rendering does not become a second durable source of domain truth;
-- its backend owner is the Discovery/Home read model, not Whistle or Replay individually.
+The feed may project privacy-safe activity from implemented source domains, including examples such as:
+
+- **Teams** — a Team challenge accepted by both sides;
+- **Teams** — an upcoming Team match/game;
+- **Gamers** — a Gamer Squad challenge accepted by both sides;
+- **Gamers** — an upcoming Gamer match/challenge;
+- **ULTRAS** — a public ULTRAS move, activity or event that its own domain explicitly allows to be public;
+- **ULTRAS** — an upcoming public supporter activity where appropriate;
+- **Events/Play** — relevant upcoming public football activity;
+- future implemented domains — only explicitly approved activity types whose source-domain privacy policy permits Home discovery.
+
+The list above defines the intended product meaning but does **not** authorize frozen domains to be implemented during foundation normalization. A feed activity type becomes active only when its source domain is implemented and verified.
+
+### 6.2 Source-of-truth rule
+
+Every HOOMA NOW item is a **projection/reference to canonical source-domain data**.
+
+Examples:
+
+```text
+accepted Team challenge
+→ source truth remains Teams
+→ HOOMA NOW projects it
+→ tap opens the real Team challenge/match destination
+
+accepted Gamer challenge
+→ source truth remains Gamers
+→ HOOMA NOW projects it
+→ tap opens the real Gamer challenge/match destination
+
+public ULTRAS activity
+→ source truth remains ULTRAS
+→ HOOMA NOW projects only the allowed public projection
+→ tap opens the real ULTRAS destination
+```
+
+HOOMA NOW must never create competing durable records that become a second authority for:
+
+- challenge state;
+- match state;
+- ULTRAS activity state;
+- RSVP state;
+- membership state;
+- roles/permissions.
+
+Its backend owner is the **Discovery/Home read model**. Source domains own business truth.
+
+### 6.3 Privacy and authorization rule
+
+Source-domain visibility always wins.
+
+Therefore:
+
+- private ULTRAS HQ activity must never appear publicly merely because HOOMA NOW exists;
+- private challenge coordination/messages must never become feed content;
+- member-private Team/Gamer data must remain private;
+- feed serialization must use explicit privacy-safe projections rather than exposing raw source records;
+- removing/restricting source content must make the corresponding feed projection disappear or become unavailable according to source policy.
+
+### 6.4 Feed item contract
+
+The exact DTO is defined later with Discovery implementation, but every feed item must be capable of carrying only the projection data needed for Home, such as:
+
+```text
+activityType
+sourceDomain
+sourceId / navigation target
+title
+short summary
+occurredAt / startsAt as applicable
+privacy-safe image/icon reference as applicable
+participants/entities needed for the card
+```
+
+Do not copy entire source records into a generic JSON blob as a substitute for a typed read model.
+
+### 6.5 Ordering and lifecycle
+
+HOOMA NOW should prioritize current/relevant activity rather than permanent historical accumulation.
+
+Expected semantics:
+
+- accepted challenges appear when the accepted state is real;
+- upcoming matches remain discoverable while relevant;
+- cancelled/invalidated source activity must not continue presenting as active;
+- stale items age out according to the Discovery policy;
+- ordering must be deterministic and testable;
+- pagination/cursor behavior must be explicit when the feed grows.
+
+### 6.6 Feed UI states
+
+The feed must have real:
+
+- loading state;
+- empty state;
+- error state;
+- ready state;
+- pagination/load-more state when needed.
+
+No production fake feed rows are allowed.
+
+### 6.7 Relationship to Whistle and Replay
+
+`HOOMA NOW` is not a wrapper label for Whistle and Replay.
+
+Whistle and Replay must not render as feed rows merely because their buttons sit below the feed.
+
+If a future Replay output or another domain event is ever allowed in HOOMA NOW, that requires an explicit approved activity projection; the Replay button itself remains outside the feed.
 
 ---
 
 ## 7. Whistle and Replay secondary actions — locked placement
 
-Immediately **below the HOOMA NOW feed**, render two separate secondary actions:
+Immediately **below the complete HOOMA NOW feed section**, render two separate secondary actions:
 
 ```text
 [ Whistle ]   [ Replay ]
@@ -295,7 +404,7 @@ Rules:
 - Web and Telegram do not independently recreate the logo, cards, or hero artwork;
 - platform-specific shell/navigation behavior stays in its app;
 - Match Day hero invokes Events/Play behavior; it does not own Event persistence;
-- HOOMA NOW consumes a read model; it does not own the source domains;
+- HOOMA NOW consumes the Discovery/Home read model; it does not own source-domain business truth;
 - Whistle and Replay remain separate domain entry actions.
 
 ---
@@ -367,7 +476,15 @@ Telegram render verified
 exact 8-card Home gateway set verified
 Whistle absent from primary grid
 Replay absent from primary grid
-HOOMA NOW verified as feed
+HOOMA NOW verified as cross-domain activity feed
+accepted Team challenge projection verified when Teams feed projection is enabled
+upcoming Team match projection verified when enabled
+accepted Gamer challenge projection verified when Gamers is implemented/enabled
+public ULTRAS activity projection verified when ULTRAS is implemented/enabled
+source-domain privacy leakage tests pass
+feed items navigate to canonical source destinations
+no duplicate business truth stored in Discovery
+loading/empty/error/ready feed states verified
 Whistle + Replay verified below feed
 Whistle + Replay verified as low rectangular buttons
 Match Day hero activates Create a Match
