@@ -50,11 +50,11 @@ Status: **Active ADR index**
 
 **Reason:** Authority must match product language and avoid the Source A Community Admin confusion.
 
-## ADR-009 — Preserve Source A migration history
+## ADR-009 — HOOMA ULTIMATE owns a fresh migration history
 
-**Decision:** Import Source A's committed migration chain unchanged and extend forward only.
+**Decision:** HOOMA ULTIMATE starts from its own clean target schema and its own initial committed migration. Source A and Source B migration histories are reference evidence only and are not imported as the target application migration chain.
 
-**Reason:** HOOMA ULTIMATE must be able to upgrade the current Railway database safely. Source B's fresh-init/zero-migration state is unacceptable.
+**Reason:** This repository is a third greenfield application, not an upgrade of either donor. We keep the discipline of committed forward migrations without inheriting historical donor schema compromises.
 
 ## ADR-010 — Canonical Place is the physical-location source of truth
 
@@ -158,8 +158,8 @@ Status: **Active ADR index**
 
 **Reason:** These are explicit product-owner acceptance rules and cannot drift during architecture work.
 
-## ADR-027 — Do not destructively migrate before backfill verification
+## ADR-027 — Donor data import is separate from application migrations
 
-**Decision:** Identity, scoped roles and Place normalization use additive migrations/backfills first; legacy structures are removed only after target reads/writes and upgrade tests prove correctness.
+**Decision:** The HOOMA ULTIMATE database starts clean. If historical data from a donor application is ever brought into HOOMA ULTIMATE, it must be handled by an explicit import/ETL and reconciliation process, not by redefining the target application as a migration of the donor schema.
 
-**Reason:** Protect current production data and provide a safe cutover path.
+**Reason:** Product architecture and migration history must remain greenfield even if a later business decision chooses to import historical records.
