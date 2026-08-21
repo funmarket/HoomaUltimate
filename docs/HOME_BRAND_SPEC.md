@@ -61,28 +61,32 @@ Forbidden:
 
 Home is a Match Day / football-neighborhood entry surface. It is not a generic dashboard.
 
-The mature live-HOOMA baseline proves the first Home element is `MatchDayHero`, not an ULTRAS banner.
-
-Canonical Home hierarchy begins:
+Canonical hierarchy:
 
 ```text
 HOOMA product header
 ↓
 MATCH DAY / Create a Match hero
 ↓
-Home discovery/content sections
+8 primary Home gateway cards
 ↓
-eight locked product gateways where the normalized Home design places them
+HOOMA NOW heading + actual feed
+↓
+Whistle + Replay secondary rectangular buttons
+↓
+other approved Home sections/read models, if any
 ↓
 locked bottom navigation
 ```
 
-The exact eight gateway destinations remain:
+The exact eight primary gateway cards are:
 
 ```text
 HOOMA | Teams | Ultras | Gamers
 Places | Requests | Ride | FundMe
 ```
+
+These eight are the primary Home navigation grid and must remain visually distinct from Whistle and Replay.
 
 The permanent bottom navigation remains exactly:
 
@@ -90,11 +94,37 @@ The permanent bottom navigation remains exactly:
 Home | Play | Watch | HOOMA | Pitch
 ```
 
-ULTRAS is a Home gateway/domain destination. It is **not** the top Home banner.
+---
+
+## 4. Main Home gateway grid — locked requirement
+
+The main feature grid contains exactly eight primary cards:
+
+```text
+Row 1: HOOMA | Teams | Ultras | Gamers
+Row 2: Places | Requests | Ride | FundMe
+```
+
+Visual rules:
+
+- equal card dimensions;
+- clean 4-column × 2-row composition in the approved design reference;
+- responsive adaptation on narrow mobile without overlap or clipping;
+- dark/black card body;
+- bronze/aged-gold shiny outline treatment;
+- silver/white icon treatment;
+- clear centered card title;
+- card title target visually around `18px`;
+- regular/supporting text target visually around `17px` where supporting text exists;
+- no fifth card forced into a row;
+- no Whistle or Replay card in this primary grid;
+- no duplicate product gateway with a second conflicting card elsewhere on Home.
+
+The grid is navigation only. It must not become a second source of business data.
 
 ---
 
-## 4. Top Home MATCH DAY / Create a Match hero — locked requirement
+## 5. Top Home MATCH DAY / Create a Match hero — locked requirement
 
 The top Home feature banner/hero is the mature **Create a Match** interaction from the older live HOOMA application.
 
@@ -138,37 +168,82 @@ Preserve the accepted matchday intent rather than replacing it with a generic ca
 - clear `+ Create a Match` CTA;
 - readable contrast;
 - responsive crop;
-- no ticket/perforation metaphor;
-- no unrelated ULTRAS/tifo labeling on this hero.
-
-### Completion gate
-
-The hero is not `DONE` until:
-
-1. its governed artwork exists in the target asset system;
-2. Web renders it correctly;
-3. Telegram renders it correctly;
-4. the whole hero is keyboard/touch accessible;
-5. activation reaches the real event-creation route;
-6. auth boundary is correct on Web;
-7. Telegram identity behavior is correct;
-8. event creation persists through the canonical Events domain;
-9. error/loading/submission states of the creation flow are real;
-10. mobile/safe-area checks pass.
+- no ticket/perforation metaphor.
 
 ---
 
-## 5. ULTRAS placement rule
+## 6. HOOMA NOW — feed, not a container for Whistle/Replay
 
-ULTRAS remains one of the locked eight Home product gateways and later receives its own `/ultras` public discovery/domain implementation.
+`HOOMA NOW` is a **feed section**.
 
-Do not create a second top-level ULTRAS Home banner unless the product owner explicitly requests one later.
+Its job is to present the current aggregated Home/Now read model: timely, relevant product activity that HOOMA is allowed to surface.
 
-Do not ship a dead `/ultras` gateway: the route may be visually reserved during foundation work, but production action must become active only with the real ULTRAS discovery slice.
+Canonical structure:
+
+```text
+HOOMA NOW
+[ actual feed item ]
+[ actual feed item ]
+[ actual feed item ]
+...
+```
+
+Rules:
+
+- `HOOMA NOW` is not a wrapper label for Whistle and Replay;
+- Whistle and Replay must not be rendered inside the HOOMA NOW feed;
+- the feed must use real discovery/read-model data when implemented;
+- no fake production feed rows;
+- feed loading, empty and error states must be real;
+- feed rendering does not become a second durable source of domain truth;
+- its backend owner is the Discovery/Home read model, not Whistle or Replay individually.
 
 ---
 
-## 6. Header requirements
+## 7. Whistle and Replay secondary actions — locked placement
+
+Immediately **below the HOOMA NOW feed**, render two separate secondary actions:
+
+```text
+[ Whistle ]   [ Replay ]
+```
+
+These are not part of the eight-card grid and are not inside the HOOMA NOW feed.
+
+Visual rules:
+
+- low, wide rectangular-button proportions;
+- materially shorter than the eight primary gateway cards;
+- side-by-side where the viewport safely permits;
+- if a very narrow viewport requires stacking, preserve the rectangular-button proportions rather than turning them into tall cards;
+- dark/black surface;
+- bronze/aged-gold shiny border treatment;
+- silver/white icon treatment;
+- readable label, visually around `18px`;
+- clear tap target and focus state;
+- optional directional chevron is acceptable;
+- no tall-card treatment matching the primary grid;
+- no surrounding `HOOMA NOW` container that falsely groups the buttons as feed content.
+
+Semantic role:
+
+- Whistle button opens the real Whistle product entry when that domain is implemented;
+- Replay button opens the real Replay product entry when that domain is implemented;
+- until those frozen domains are implemented, production navigation must not pretend those destinations are complete.
+
+---
+
+## 8. ULTRAS placement rule
+
+ULTRAS is one of the locked eight Home primary gateways and later receives its own `/ultras` public discovery/domain implementation.
+
+Do not create an additional top-level ULTRAS banner that competes with the Match Day hero unless the product owner explicitly changes this rule.
+
+Do not ship a dead `/ultras` gateway as if complete: production activation must coincide with the real ULTRAS discovery slice.
+
+---
+
+## 9. Header requirements
 
 Target football-first header direction where appropriate:
 
@@ -187,7 +262,7 @@ Rules:
 
 ---
 
-## 7. Shared ownership
+## 10. Shared ownership
 
 Brand presentation belongs to the shared UI/brand layer, with platform shells deciding platform-specific placement.
 
@@ -201,6 +276,9 @@ packages/ui/
       brand-assets.ts
     home/
       MatchDayHero.tsx
+      HomeGatewayGrid.tsx
+      HoomaNowFeed.tsx
+      HomeSecondaryActions.tsx
 
 apps/web/src/
   app/shell/
@@ -214,13 +292,15 @@ apps/telegram/src/
 Rules:
 
 - one canonical component/asset contract;
-- Web and Telegram do not independently recreate the logo or hero artwork;
+- Web and Telegram do not independently recreate the logo, cards, or hero artwork;
 - platform-specific shell/navigation behavior stays in its app;
-- Match Day hero invokes Events/Play behavior; it does not own Event persistence.
+- Match Day hero invokes Events/Play behavior; it does not own Event persistence;
+- HOOMA NOW consumes a read model; it does not own the source domains;
+- Whistle and Replay remain separate domain entry actions.
 
 ---
 
-## 8. Asset rules
+## 11. Asset rules
 
 All core HOOMA brand/Home assets must be recorded in `docs/ASSET_MANIFEST.md` before production use.
 
@@ -244,6 +324,7 @@ Git blob SHA: c0d491616c1fc787290e91ab767d7e11ac9f8af0
 
 Match Day donor artwork:
 apps/miniapp/src/assets/hero/matchday.png
+Git blob SHA: 70be826e16f62cebe9c061dc03ff07c22139bb02
 ```
 
 Donor assets are reference sources. Target ownership must be explicit before use.
@@ -252,9 +333,9 @@ If an earlier user-uploaded logo/artwork cannot be resolved to the exact approve
 
 ---
 
-## 9. Responsive/accessibility acceptance
+## 12. Responsive/accessibility acceptance
 
-Verify Home and Match Day hero for:
+Verify Home for:
 
 - narrow mobile;
 - typical phone widths;
@@ -262,34 +343,40 @@ Verify Home and Match Day hero for:
 - Telegram WebView;
 - safe-area top/bottom insets;
 - keyboard focus;
-- screen-reader action name;
+- screen-reader action names;
 - image crop/object-position;
 - no horizontal clipping;
 - no text/image collision;
 - no layout shift from missing intrinsic dimensions;
-- reduced-motion behavior if motion is introduced.
+- reduced-motion behavior if motion is introduced;
+- Whistle/Replay remain visually secondary to the eight primary gateways.
 
 ---
 
-## 10. Verification gate
+## 13. Verification gate
 
 The Home/brand slice is not `DONE` until all applicable checks pass:
 
 ```text
 asset provenance verified
-canonical asset path verified
+canonical asset paths verified
 no duplicate core logo source
 no duplicate Match Day artwork source
 Web render verified
 Telegram render verified
-Match Day hero is first major Home feature
-whole hero activates Create a Match
+exact 8-card Home gateway set verified
+Whistle absent from primary grid
+Replay absent from primary grid
+HOOMA NOW verified as feed
+Whistle + Replay verified below feed
+Whistle + Replay verified as low rectangular buttons
+Match Day hero activates Create a Match
 /events/new creation route verified
 Web action-boundary auth verified
 Telegram action-boundary identity verified
 real Events persistence verified
 mobile/safe-area verified
-accessibility name verified
+accessibility names verified
 architecture check
 format
 lint
