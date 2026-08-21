@@ -3,66 +3,58 @@
 Status: **ACTIVE GOVERNED ASSET REGISTER**  
 Purpose: one source of truth for approved brand and Home artwork used by Web and Telegram.
 
----
-
 ## Rules
 
 1. Core brand/Home assets are local governed assets, not hotlinked runtime dependencies.
 2. Web and Telegram share the same approved asset identity; they do not maintain unrelated duplicates.
-3. A donor asset is reference evidence until explicitly accepted into HOOMA ULTIMATE ownership.
-4. A user-approved uploaded image must be matched to the exact file before production use. Never guess.
-5. Replacements require an explicit manifest update and implementation-status note.
-6. No generated approximation may silently replace an approved uploaded logo.
-7. Record a stable source SHA/checksum where available.
-
----
+3. A user-approved uploaded image must be matched to the exact file before production use. Never guess.
+4. Derived delivery assets may crop/compress an approved source for responsive delivery, but must preserve the approved artwork and record provenance/checksums.
+5. Gateway labels remain live HTML text at **17px minimum**; readable text is not baked into the raster artwork.
+6. All eight gateway cards use the same shared React component and the same shiny bronze edge treatment.
 
 ## Manifest
 
-| Logical ID | Asset | Source / provenance | Source SHA | Approval | Canonical target | Surfaces | Accessibility intent | Implementation status |
-|---|---|---|---|---|---|---|---|---|
-| `brand.hooma.wordmark` | HOOMA primary wordmark | Mature HOOMA donor: `apps/miniapp/public/brand/hooma-wordmark.png` | `c0d491616c1fc787290e91ab767d7e11ac9f8af0` | REFERENCE_ACCEPTED_FOR_REVIEW | `packages/ui/assets/brand/hooma-wordmark.png` | Web, Telegram | Decorative when adjacent to visible HOOMA product name; otherwise alt `HOOMA` | PENDING_IMPORT_AND_VISUAL_VERIFICATION |
-| `home.matchday.hero` | Match Day / Create a Match hero artwork | Mature HOOMA donor: `apps/miniapp/src/assets/hero/matchday.png` | `70be826e16f62cebe9c061dc03ff07c22139bb02` | REFERENCE_ACCEPTED_FOR_REVIEW | `packages/ui/assets/home/matchday.png` | Web, Telegram | Action name belongs to the interactive hero: `Create a Match`; image itself normally decorative | PENDING_IMPORT_AND_VISUAL_VERIFICATION |
-| `home.gateway.hooma` | HOOMA gateway logo/icon uploaded/approved by product owner | Earlier user-uploaded visual reference | PENDING_EXACT_FILE | USER_APPROVED_DIRECTION | `packages/ui/assets/home/gateways/hooma.*` | Web, Telegram | `HOOMA` | PENDING_EXACT_FILE_RESOLUTION |
-| `home.gateway.teams` | Teams gateway logo/icon uploaded/approved by product owner | Earlier user-uploaded visual reference | PENDING_EXACT_FILE | USER_APPROVED_DIRECTION | `packages/ui/assets/home/gateways/teams.*` | Web, Telegram | `Teams` | PENDING_EXACT_FILE_RESOLUTION |
-| `home.gateway.ultras` | Ultras gateway logo/icon uploaded/approved by product owner | Earlier user-uploaded visual reference | PENDING_EXACT_FILE | USER_APPROVED_DIRECTION | `packages/ui/assets/home/gateways/ultras.*` | Web, Telegram | `Ultras` | PENDING_EXACT_FILE_RESOLUTION |
-| `home.gateway.gamers` | Gamers gateway logo/icon uploaded/approved by product owner | Earlier user-uploaded visual reference | PENDING_EXACT_FILE | USER_APPROVED_DIRECTION | `packages/ui/assets/home/gateways/gamers.*` | Web, Telegram | `Gamers` | PENDING_EXACT_FILE_RESOLUTION |
-| `home.gateway.places` | Places gateway logo/icon uploaded/approved by product owner | Earlier user-uploaded visual reference | PENDING_EXACT_FILE | USER_APPROVED_DIRECTION | `packages/ui/assets/home/gateways/places.*` | Web, Telegram | `Places` | PENDING_EXACT_FILE_RESOLUTION |
-| `home.gateway.requests` | Requests gateway logo/icon uploaded/approved by product owner | Earlier user-uploaded visual reference | PENDING_EXACT_FILE | USER_APPROVED_DIRECTION | `packages/ui/assets/home/gateways/requests.*` | Web, Telegram | `Requests` | PENDING_EXACT_FILE_RESOLUTION |
-| `home.gateway.ride` | Ride gateway logo/icon uploaded/approved by product owner | Earlier user-uploaded visual reference | PENDING_EXACT_FILE | USER_APPROVED_DIRECTION | `packages/ui/assets/home/gateways/ride.*` | Web, Telegram | `Ride` | PENDING_EXACT_FILE_RESOLUTION |
-| `home.gateway.fundme` | FundMe gateway logo/icon uploaded/approved by product owner | Earlier user-uploaded visual reference | PENDING_EXACT_FILE | USER_APPROVED_DIRECTION | `packages/ui/assets/home/gateways/fundme.*` | Web, Telegram | `FundMe` | PENDING_EXACT_FILE_RESOLUTION |
-| `home.action.whistle` | Whistle secondary rectangular-action icon | Earlier user-uploaded visual reference | PENDING_EXACT_FILE | USER_APPROVED_DIRECTION | `packages/ui/assets/home/actions/whistle.*` | Web, Telegram | `Whistle` | PENDING_EXACT_FILE_RESOLUTION |
-| `home.action.replay` | Replay secondary rectangular-action icon | Earlier user-uploaded visual reference | PENDING_EXACT_FILE | USER_APPROVED_DIRECTION | `packages/ui/assets/home/actions/replay.*` | Web, Telegram | `Replay` | PENDING_EXACT_FILE_RESOLUTION |
+| Logical ID | Asset | Approved source SHA-256 | Delivery SHA-256 | Canonical target | Surfaces | Status |
+|---|---|---|---|---|---|---|
+| `brand.hooma.wordmark` | HOOMA primary wordmark | donor Git blob `c0d491616c1fc787290e91ab767d7e11ac9f8af0` | PENDING | `packages/ui/assets/brand/hooma-wordmark.png` | Web, Telegram | PENDING_IMPORT_AND_VISUAL_VERIFICATION |
+| `home.matchday.hero` | Match Day / Create a Match hero | donor Git blob `70be826e16f62cebe9c061dc03ff07c22139bb02` | PENDING | `packages/ui/assets/home/matchday.png` | Web, Telegram | PENDING_IMPORT_AND_VISUAL_VERIFICATION |
+| `home.gateway.hooma` | HOOMA uploaded artwork | `33c09b0aea14121a2e90fe86a1015ac7560775e4e6d2e017f6508af8e8eb4a49` | `83fb0343731987ddb00c0ee718350e55e1ac3f6ffd7ef1c3138768f2d298b562` | `packages/ui/public/home-gateways/hooma.webp` | Web, Telegram | APPROVED_AND_IMPORTED; RUNTIME_BUILD_VERIFICATION_PENDING |
+| `home.gateway.teams` | Teams uploaded artwork | `fcfbb15f911eafdc7ab1efa2eddb04de80ce8e72f79ba666fe0d7800a4967403` | `fdbdac00eca7c704b4812efbfec1032c8695ea616963fd9dd53a275edea77aa3` | `packages/ui/public/home-gateways/teams.webp` | Web, Telegram | APPROVED_AND_IMPORTED; RUNTIME_BUILD_VERIFICATION_PENDING |
+| `home.gateway.ultras` | Ultras uploaded artwork | `4dc1befa00ce147be369e986e4b4c8d0880755ce6c668d63d18a2fb7cfe949c8` | `1ed87cb3b04c800d9ba44ff57a302125f3057560b38e6e75b9325be4fb99cede` | `packages/ui/public/home-gateways/ultras.webp` | Web, Telegram | APPROVED_AND_IMPORTED; RUNTIME_BUILD_VERIFICATION_PENDING |
+| `home.gateway.gamers` | Gamers uploaded artwork | `07344b6664690664f06436fafdf4dc60681135b790b2576118d1e7f2a6e8e603` | `290b5d240a16de352592b2db86736eba0d024a834142dc9db2f0f7792efd286e` | `packages/ui/public/home-gateways/gamers.webp` | Web, Telegram | APPROVED_AND_IMPORTED; RUNTIME_BUILD_VERIFICATION_PENDING |
+| `home.gateway.places` | Places uploaded artwork | `8ee7ba7b676c3eb9cc427ce943d8ed3a7c4741a896a098a8bfe3b62ffdcff9a0` | `d1678d9e4b1abdd1bcb2cf303288c6f55c362e49d8c110ffa9030242ccc5cd79` | `packages/ui/public/home-gateways/places.webp` | Web, Telegram | APPROVED_AND_IMPORTED; RUNTIME_BUILD_VERIFICATION_PENDING |
+| `home.gateway.requests` | Requests uploaded artwork | `d52477677a230ee9e9b8a2e07fcb48d4402f532aab064603e06869ba4c25ce6d` | `a4044cf0f95bd439b4cc9449e5a094b2d0b9c7069189dce272483617209298aa` | `packages/ui/public/home-gateways/requests.webp` | Web, Telegram | APPROVED_AND_IMPORTED; RUNTIME_BUILD_VERIFICATION_PENDING |
+| `home.gateway.ride` | Ride uploaded artwork | `9866f31e7aad673afe131e7674457de5544511df7f51b7c64cd75de03c58cb56` | `8fd3a9b947f92abaf90ffb03180b853d3f3eb9ac3e8d23abbcb703a5bad8c00c` | `packages/ui/public/home-gateways/ride.webp` | Web, Telegram | APPROVED_AND_IMPORTED; RUNTIME_BUILD_VERIFICATION_PENDING |
+| `home.gateway.fundme` | FundMe uploaded artwork | `a71049b6efdf86a0508f747255f6830ab96771e08bd826323b0eab3306357bc6` | `cfd5e86f8ce187135f02969bd31480581907ca69f30bf9a34b04b7225c6bfeb8` | `packages/ui/public/home-gateways/fundme.webp` | Web, Telegram | APPROVED_AND_IMPORTED; RUNTIME_BUILD_VERIFICATION_PENDING |
+| `home.action.whistle` | Whistle secondary rectangular action | PENDING_EXACT_FILE | PENDING | `packages/ui/assets/home/actions/whistle.*` | Web, Telegram | PENDING_EXACT_FILE_RESOLUTION |
+| `home.action.replay` | Replay secondary rectangular action | PENDING_EXACT_FILE | PENDING | `packages/ui/assets/home/actions/replay.*` | Web, Telegram | PENDING_EXACT_FILE_RESOLUTION |
 
----
+## Gateway delivery contract
 
-## Home placement contract tied to these assets
+The eight approved source images are used as artwork sources, not as one combined raster dashboard.
 
-The approved icons/artwork must be consumed according to `docs/HOME_BRAND_SPEC.md`:
+```text
+HomeGatewayGrid
+├── HomeGatewayCard → HOOMA → /hooma
+├── HomeGatewayCard → Teams → /teams
+├── HomeGatewayCard → Ultras → /ultras
+├── HomeGatewayCard → Gamers → /gamers
+├── HomeGatewayCard → Places → /places
+├── HomeGatewayCard → Requests → /requests
+├── HomeGatewayCard → Ride → /rides
+└── HomeGatewayCard → FundMe → /fundme
+```
+
+Each card is independently clickable. The shared component owns the consistent black surface, shiny bronze edge, silver inner line, gold divider and readable live label. Web and Telegram resolve the same assets through `packages/ui/public`.
+
+## Home placement contract
 
 ```text
 8 primary gateway cards
 ↓
-HOOMA NOW heading + actual feed
+HOOMA NOW heading + actual cross-domain activity feed
 ↓
 Whistle + Replay low rectangular secondary buttons
 ```
 
-Whistle and Replay assets must never be reused to turn those actions into ninth/tenth primary gateway cards.
-
----
-
-## Resolution procedure for uploaded assets
-
-Before importing any `PENDING_EXACT_FILE_RESOLUTION` asset:
-
-1. locate the exact user-uploaded source or exact previously approved repository asset;
-2. visually compare it to the approved reference;
-3. record its filename/path and checksum/SHA here;
-4. change approval to `APPROVED`;
-5. import once into the canonical target path;
-6. wire shared UI to that canonical asset;
-7. verify Web and Telegram renders;
-8. update `docs/IMPLEMENTATION_STATUS.md` with evidence.
-
-If the exact file cannot be proven, leave the entry pending. Do not substitute a lookalike.
+Whistle and Replay are not ninth/tenth gateway cards and are not inside the HOOMA NOW feed.
