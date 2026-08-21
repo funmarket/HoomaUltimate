@@ -11,21 +11,15 @@ Application type: **new third application / greenfield implementation**
 HOOMA ULTIMATE is **not**:
 
 - a migration of `funmarket/HOOMA`;
-- an upgrade of the uploaded V3 archive;
-- a branch of either donor application;
-- a compatibility exercise whose goal is to preserve either donor's schema, file layout, migrations, technical debt, or historical mistakes.
+- an upgrade of any uploaded reference archive;
+- a branch of any earlier application;
+- a compatibility exercise whose goal is to preserve donor schema, files, migrations, technical debt, or historical mistakes.
 
 HOOMA ULTIMATE is a **new application built from zero in a third clean repository**.
 
-The two older codebases are read-only reference sources used to answer only these questions:
+Older codebases and planning archives are read-only reference material used to understand proven product behavior, useful implementation patterns, and mistakes to avoid. They do not become runtime dependencies or migration history.
 
-1. Which product behavior has already been designed or proven useful?
-2. Which implementation patterns worked well?
-3. Which mistakes, regressions, incomplete features, and architectural conflicts must never be repeated?
-
-No donor repository is the base. No donor migration chain is the target migration chain. No donor schema is copied wholesale. No donor feature is considered complete in HOOMA ULTIMATE until it is newly implemented and verified here.
-
-If an older document says to "preserve", "migrate", "upgrade", or "port" a donor database/migration chain, that instruction is superseded by this file unless the product owner explicitly changes this decision later.
+No reference repository is the base. No reference migration chain is the target migration chain. No reference schema is copied wholesale. No historical feature is considered complete in HOOMA ULTIMATE until it is implemented and verified here.
 
 ---
 
@@ -34,51 +28,56 @@ If an older document says to "preserve", "migrate", "upgrade", or "port" a donor
 When implementation decisions conflict, use this order:
 
 1. Latest explicit product-owner instruction in the active conversation.
-2. This `structure.md`.
+2. This root `structure.md`.
 3. Root `requirements.md`.
-4. `docs/DECISIONS.md`, after conflicting legacy decisions are corrected.
-5. `docs/ARCHITECTURE.md`, `docs/AUTH.md`, `docs/AUTHORIZATION.md`, `docs/DATABASE.md`.
-6. `docs/MERGE_AUDIT.md` as donor-comparison evidence only.
-7. Source A (`funmarket/HOOMA`) as read-only behavioral reference.
-8. Source B/V3 archive as read-only architectural/feature reference.
-9. Older plans, comments, prompts, and stale notes.
+4. `docs/CANONICAL_MODEL.md` for current implemented-domain data/authority truth.
+5. `docs/DECISIONS.md`.
+6. `docs/NORMALIZATION_PLAN.md` while foundation normalization is active.
+7. `docs/ARCHITECTURE.md`, `docs/AUTH.md`, `docs/AUTHORIZATION.md`, `docs/DATABASE.md`.
+8. `docs/IMPLEMENTATION_STATUS.md` as the live evidence ledger.
+9. Historical/reference assessments and donor code as evidence only.
+10. Older plans, prompts, comments and stale notes.
 
 ### Mandatory anti-drift rule
 
-Before starting any feature, the implementing agent must read:
+Before starting any implementation slice, read:
 
 - `structure.md`;
 - `requirements.md`;
-- the relevant domain document(s);
-- the current `docs/IMPLEMENTATION_STATUS.md`;
-- the current `docs/DECISIONS.md`.
+- `docs/CANONICAL_MODEL.md` when the slice touches an already-modeled domain;
+- `docs/DECISIONS.md`;
+- `docs/IMPLEMENTATION_STATUS.md`;
+- `docs/NORMALIZATION_PLAN.md` while it remains active;
+- relevant domain specification(s).
 
-After completing a verified slice, update `docs/IMPLEMENTATION_STATUS.md` and any affected decisions/docs before moving to the next slice.
+After completing a verified slice, update `docs/IMPLEMENTATION_STATUS.md` and any affected canonical/decision documents before the next slice.
+
+While `docs/NORMALIZATION_PLAN.md` is active, no frozen new product domain may begin.
 
 ---
 
 ## 2. Engineering rules that apply to every task
 
-1. **Trace before editing.** Follow route, UI, state/query, API client, contract, controller, authorization, service, domain policy, repository, schema, async effects, tests, and deployment/runtime configuration.
+1. **Trace before editing.** Follow route, UI, state/query, API client, contract, controller, authorization, service, domain policy, repository, schema, async effects, tests and deployment/runtime configuration.
 2. **Fix at the source of truth.** Do not hide defects with downstream overrides or duplicated policy.
 3. **No patching.** No arbitrary z-index escalation, duplicate endpoints, duplicate tables, hardcoded offsets, fake success responses, shadow state, or temporary second implementations left as permanent architecture.
-4. **No guessing.** If source behavior is unclear, inspect the donor/reference or current target code before deciding.
+4. **No guessing.** If behavior is unclear, inspect the authoritative target docs and current source before deciding.
 5. **One owner per concept.** Every durable concept has one domain owner and one canonical persistence model.
 6. **Authorization is server-side.** UI visibility is not security.
 7. **Schema is not a feature.** A model/table alone never counts as implemented.
 8. **Frontend is not a feature.** A page with mocks or dead buttons never counts as implemented.
-9. **API is not a feature.** An endpoint without authorization, persistence, tests, and frontend use is incomplete.
-10. **No real secrets in source.** Bot tokens, URLs, credentials, storage keys, database URLs, and admin bootstrap secrets are environment variables only.
-11. **No destructive development shortcuts in production.** No `prisma db push` against production, no reset, no fake seed replacing business data.
-12. **No donor technical debt inheritance by default.** Reuse behavior and ideas, not defects.
+9. **API is not a feature.** An endpoint without authorization, persistence, tests and frontend use is incomplete.
+10. **No real secrets in source.** Bot tokens, credentials, storage keys, database URLs and admin bootstrap secrets are environment variables only.
+11. **No destructive production shortcuts.** No `prisma db push` against production, no reset, no fake seed replacing business data.
+12. **No inherited technical debt by default.** Reuse proven behavior and ideas, not defects.
 13. **No new permanent social-network mechanics.** HOOMA is activity/community utility, not an engagement-maximizing follower/feed product.
 14. **No feature marked DONE without evidence.** Use the Definition of Done in `requirements.md`.
+15. **One vocabulary per concept.** Schema, migration, repository, service, contracts, tests and UI projection use the same canonical names.
+16. **CI verifies; CI does not repair.** Lockfiles/source are committed by implementation work, never generated and pushed by CI.
 
 ---
 
 ## 3. Target repository topology
-
-The final repository must follow this topology:
 
 ```text
 HoomaUltimate/
@@ -120,7 +119,7 @@ Owns HTTP transport, request parsing, authentication middleware integration, aut
 
 #### `apps/web`
 
-Owns the normal browser application, classic login/register flows, browser routing, responsive web shell, and web-specific interaction behavior.
+Owns the normal browser application, classic login/register flows, browser routing, responsive Web shell, and Web-specific interaction behavior.
 
 #### `apps/telegram`
 
@@ -153,9 +152,10 @@ Owns asynchronous execution only: outbox consumption, media transforms, delivery
 ### `packages/contracts`
 
 - request/response DTOs;
-- Zod or equivalent validation schemas;
+- Zod validation schemas;
 - public/member contract types;
 - error-code contracts;
+- domain-split files;
 - no database models exposed directly.
 
 ### `packages/database`
@@ -165,11 +165,11 @@ Owns asynchronous execution only: outbox consumption, media transforms, delivery
 - migrations owned only by HOOMA ULTIMATE;
 - seed/dev fixtures where safe;
 - transaction helpers;
-- generated Prisma types must remain strongly typed; never alias Prisma to `any`.
+- generated Prisma types remain strongly typed; never alias Prisma transaction/client types to `any`.
 
 ### `packages/domain`
 
-- cross-domain value objects and policies that are genuinely shared;
+- cross-domain value objects/policies that are genuinely shared;
 - grapheme counting;
 - slugs;
 - timestamps/time windows;
@@ -195,10 +195,10 @@ Owns asynchronous execution only: outbox consumption, media transforms, delivery
 ### `packages/ui`
 
 - design tokens;
-- reusable components;
-- shared feature presentation where platform-neutral;
-- icons/assets shared between Web and Telegram where appropriate;
-- no API secrets, no direct database imports, no platform-specific shell ownership.
+- reusable platform-neutral components;
+- governed shared brand/heritage assets;
+- platform-neutral feature presentation where appropriate;
+- no API secrets, direct database imports, or platform-specific shell ownership.
 
 ---
 
@@ -230,7 +230,7 @@ apps/api/src/modules/<domain>/
     schemas.ts
 ```
 
-Small domains may omit empty folders, but they may not collapse database access, HTTP logic, authorization, and business policy into one large feature file.
+Small domains may omit empty folders, but they may not collapse database access, HTTP logic, authorization and business policy into one large feature file.
 
 ### Hard dependency direction
 
@@ -251,44 +251,42 @@ worker -> HTTP controller
 one domain -> another domain's Prisma repository directly
 ```
 
-Cross-domain collaboration must happen through explicit application interfaces or orchestrators.
+Cross-domain collaboration happens through explicit application interfaces/orchestrators.
 
 ---
 
 ## 6. Domain map and ownership
 
-The target API should be divided into these domains.
-
 ### Foundation domains
 
-- `auth`
-- `identity`
-- `platform-admin`
-- `audit`
-- `media`
-- `outbox`
-- `discovery`
+- auth
+- identity
+- platform-admin
+- audit
+- media
+- outbox
+- discovery
 
 ### Football/community domains
 
-- `communities`
-- `teams`
-- `events`
-- `play`
-- `watch`
-- `places`
-- `pitch`
-- `ultras`
+- communities
+- teams
+- events
+- play
+- watch
+- places
+- pitch
+- ultras
 
 ### Additional activity domains
 
-- `gamers`
-- `requests`
-- `rides`
-- `fundraising`
-- `payments`
-- `whistle`
-- `replay`
+- gamers
+- requests
+- rides
+- fundraising
+- payments
+- whistle
+- replay
 
 ### Canonical ownership rules
 
@@ -301,8 +299,9 @@ The target API should be divided into these domains.
 | HOOMA local community | Communities |
 | Football Team, roster, responsibilities | Teams |
 | Team lineup | Teams |
-| Team challenge + challenge conversation | Teams |
-| Pickup/watch/community Event lifecycle | Events |
+| Team challenge + accepted-match coordination | Teams |
+| TeamGame | Teams |
+| Event lifecycle | Events |
 | Play-specific discovery/use cases | Play over Events |
 | Physical venue | Places |
 | Pitch capability/profile/application | Pitch over Place |
@@ -323,57 +322,42 @@ The target API should be divided into these domains.
 
 ---
 
-## 7. Database strategy for the new app
+## 7. Database strategy
 
-This is a **fresh database design**.
+HOOMA ULTIMATE uses a fresh database design.
 
-### Rules
+### Pre-release normalization rule
 
-- HOOMA ULTIMATE starts with its own clean Prisma schema.
-- HOOMA ULTIMATE starts with its own initial migration.
-- Source A migrations are reference evidence only and are not copied as the target migration history.
-- Source B's zero-migration problem must not be repeated.
-- The first committed schema must already reflect the target domain boundaries rather than historical donor compromises.
-- Future migrations are forward-only once HOOMA ULTIMATE itself has shipped.
-- If historical donor data is ever imported later, that is a separate explicit data-import project/script, not the application's migration architecture.
+Before the first release, the current pre-release migration experiments may be replaced by one clean reviewed initial migration after `docs/CANONICAL_MODEL.md` and the source are reconciled.
+
+After the first production release, migration history is forward-only.
 
 ### Persistence ownership
 
 - PostgreSQL = durable business truth.
 - Redis/Valkey = disposable/transient state only.
 - S3-compatible storage = media bytes.
-- PostgreSQL MediaAsset = media metadata/status/ownership.
+- PostgreSQL MediaAsset = media metadata/status/ownership when Media is implemented.
 
-### First schema groups
+### Normalized initial migration scope
 
-The first schema should deliberately define, at minimum:
+While normalization is active, the initial migration contains only current implemented/foundation domains:
 
-1. User / identity / credentials / sessions / presentation.
-2. Platform roles and AuditLog.
+1. User / presentation / credentials / sessions / Telegram identity.
+2. Platform roles, AuditLog and Outbox foundation.
 3. Communities and memberships.
-4. Teams, roster, responsibilities, Assistant capability grants, lineups, challenges, challenge messages, games.
-5. Events, RSVP/waitlist, formations, check-in, temporary event chat metadata.
-6. Canonical Place, suggestions, owner claims, ownership, capability profiles/applications.
-7. ULTRAS, official football entities, memberships, join requests/invites, GameDays/attendance.
-8. Gamers catalog, profiles, handles, squads, memberships, challenges, results/disputes.
-9. Requests/claims.
-10. Ride offers/requests/matches and privacy-safe tracking metadata.
-11. Fundraisers/contributions.
-12. Payments, provider attempts/events, cash settlement and Telegram Stars state.
-13. Whistle metadata only.
-14. MediaAsset.
-15. OutboxEvent.
-16. Replay.
+4. Teams, roster, responsibilities, capability grants, lineups, challenges, challenge messages, games.
+5. Events/Play, RSVP/waitlist, formations, check-in, temporary Event chat.
 
-Do not create speculative tables with no planned vertical slice.
+Frozen future domains do not receive speculative tables.
 
 ---
 
 ## 8. Authentication architecture
 
-There are two independent ways to enter the same product and database.
+Two independent ways enter the same product/database.
 
-### Web identity
+### Web
 
 ```text
 username + password + display username + optional email
@@ -388,11 +372,11 @@ Session:
 
 - random opaque token;
 - only token hash stored;
-- secure HttpOnly cookie in production;
-- explicit expiry and revocation;
-- origin/CSRF protections on browser writes.
+- Secure HttpOnly cookie in production;
+- explicit expiry/revocation;
+- origin/CSRF protection on browser writes.
 
-### Telegram identity
+### Telegram
 
 ```text
 Telegram Mini App initData
@@ -401,40 +385,29 @@ Telegram Mini App initData
        -> canonical User
 ```
 
-Production Telegram runtime must fail startup if required bot configuration is absent.
+Production Telegram runtime fails startup if required bot configuration is absent.
 
 ### Conflict rule
 
-If a request contains:
+Valid Telegram -> User A plus valid Web session -> User B returns `AUTH_CONFLICT`.
 
-- valid Telegram identity -> User A; and
-- valid Web session -> User B;
-
-return `AUTH_CONFLICT`.
-
-Never auto-merge users by username, email, photo, display name, Telegram handle, or similarity.
-
-Account linking, if introduced later, must be an explicit authenticated workflow with its own decision record.
+No heuristic auto-linking.
 
 ---
 
-## 9. Public/member/admin API structure
+## 9. API namespaces
 
-### Public reads
+### Public
 
 ```text
 /api/public/v1/*
 ```
 
-Public browsing must cover privacy-safe discovery for Home, Teams, Play, Watch, HOOMA communities, Pitch/Places, ULTRAS, Gamers, Requests where safe, Ride summaries, FundMe, public profiles, and Replay where public.
-
-### Authenticated member actions
+### Authenticated member
 
 ```text
 /api/v1/*
 ```
-
-Member routes own mutations and private/member-specific reads.
 
 ### Platform Admin
 
@@ -442,23 +415,13 @@ Member routes own mutations and private/member-specific reads.
 /api/v1/admin/*
 ```
 
-Only `PLATFORM_ADMIN` may access global moderation/approval/catalog/audit actions.
-
-### Action-boundary login
-
-Public pages do not redirect to login merely for browsing. A guest trying to perform a protected action goes to:
-
-```text
-/login?returnTo=<original-target>
-```
-
-Telegram uses its Telegram auth path rather than classic Web login unless explicitly needed.
+Public pages do not force login merely for browsing. Protected Web actions use a validated internal `returnTo` target. Telegram follows Telegram authentication rather than classic Web login.
 
 ---
 
 ## 10. Frontend structure
 
-Web and Telegram must share the same product/domain API but are **not the same shell**.
+Web and Telegram share product/domain APIs but are not the same shell.
 
 ### `apps/web/src`
 
@@ -495,19 +458,15 @@ shared/
 styles/
 ```
 
-### Shared UI rule
+Pages are route-level lazy loaded where practical. `main.tsx` bootstraps the app; it does not become the router/business layer.
 
-Put a component in `packages/ui` only when it is truly platform-neutral. Telegram lifecycle behavior stays in `apps/telegram`. Web authentication forms stay in `apps/web` unless presentation-only pieces are shared.
-
-### Route loading
-
-Pages should be route-level lazy loaded where practical. Large feature assets should have one canonical source rather than byte-identical copies in both apps.
+`packages/ui` remains platform-neutral.
 
 ---
 
 ## 11. Locked top-level product routing
 
-The primary product routes must include:
+Core routes include:
 
 ```text
 /
@@ -528,8 +487,6 @@ The primary product routes must include:
 /admin
 ```
 
-Domain child routes are added as features are implemented.
-
 ### Permanent bottom navigation
 
 Exactly:
@@ -537,8 +494,6 @@ Exactly:
 ```text
 Home | Play | Watch | HOOMA | Pitch
 ```
-
-`Places` must never replace `Pitch` in the permanent bottom navigation.
 
 ### Home gateway
 
@@ -557,326 +512,63 @@ Exactly:
 LOUNGES/CAFES | PITCH | FANHUB
 ```
 
-`LOUNGES/CAFES` is the default Places tab.
+Default: `LOUNGES/CAFES`.
 
 ---
 
-## 12. Source donor policy
+## 12. Normalization phase
 
-### Source A should be consulted primarily for
+The active repair/build queue is `docs/NORMALIZATION_PLAN.md`.
 
-- mature Team flows;
-- Team lineups;
-- Team challenges/messages/games;
-- Event creation/detail;
-- formations;
-- check-in;
-- temporary Event chat;
-- Pitch product behavior;
-- Watch/FanHub behavior;
-- Profile visual presentation;
-- Telegram Mini App lifecycle behavior;
-- Cash payment lifecycle;
-- Telegram Stars runtime;
-- test ideas;
-- CI/release discipline;
-- domain layering examples.
+During this phase:
 
-### Source B/V3 should be consulted primarily for
+- Identity/Auth, Platform Admin/Audit, Communities, Teams and Events/Play are reconciled and verified;
+- Web/Telegram structure, contracts, migrations, lockfile and CI are normalized;
+- approved shared brand assets are given canonical ownership;
+- no new frozen product domain begins.
 
-- four-app topology;
-- classic Web authentication;
-- TelegramIdentity/WebCredential separation;
-- explicit public/member API boundary;
-- Platform Admin direction;
-- Coach/Assistant capability model;
-- Home eight-card gateway;
-- canonical Place direction;
-- ULTRAS domain foundation;
-- Gamers domain foundation;
-- Whistle transient engine;
-- Redis usage;
-- Outbox Worker direction;
-- media/object-storage architecture;
-- Replay/discovery foundations.
-
-### Donor code usage rule
-
-Before reusing any donor implementation:
-
-1. inspect the complete vertical slice;
-2. identify donor bugs/incomplete behavior;
-3. compare it with root `requirements.md`;
-4. redesign interfaces to fit HOOMA ULTIMATE ownership boundaries;
-5. implement in the new repository;
-6. write target tests against target behavior;
-7. never claim "ported" as equivalent to "verified".
+The next feature phase begins only after the normalization final gate passes and `docs/IMPLEMENTATION_STATUS.md` records the evidence.
 
 ---
 
-## 13. Build roadmap
+## 13. Normal verification pipeline
 
-This roadmap is sequential by dependency. Do not jump ahead merely because a donor feature looks easy to copy.
-
-### Phase 0 — Greenfield foundation
-
-Deliver:
-
-- root workspace `package.json` + lockfile;
-- TypeScript base config;
-- ESLint + Prettier;
-- app/package directories;
-- `.env.example`;
-- config package;
-- contracts package;
-- database package;
-- test runner;
-- architecture check;
-- CI skeleton;
-- API `/health`;
-- empty Web and Telegram shells;
-- Worker health/startup skeleton.
-
-Gate: clean `npm ci`, lint, typecheck, test, build all pass.
-
-### Phase 1 — Database + identity/auth
-
-Deliver:
-
-- fresh target Prisma schema foundation;
-- initial HOOMA ULTIMATE migration;
-- canonical User;
-- WebCredential/WebSession;
-- TelegramIdentity;
-- UserPresentation/Profile foundation;
-- Argon2id registration/login/logout/session revocation;
-- Telegram initData validation;
-- `AUTH_CONFLICT`;
-- public/member router split;
-- guest `returnTo` behavior.
-
-Gate: real PostgreSQL auth integration tests + Web/Telegram smoke tests.
-
-### Phase 2 — Authority + Platform Admin + audit
-
-Deliver:
-
-- `PLATFORM_ADMIN`;
-- bootstrap procedure using env secret/tooling rather than hardcoded user;
-- `/admin` shell;
-- `/api/v1/admin/*`;
-- AuditLog;
-- global moderation primitives;
-- scoped role vocabulary with no ambiguous Admin usage.
-
-Gate: authorization matrix tests prove App Admin and scoped managers cannot be confused.
-
-### Phase 3 — Profile + Home + HOOMA communities
-
-Deliver:
-
-- mature Profile presentation;
-- identities/responsibilities read model;
-- My Teams/My ULTRAS/My Gamer Squads/My Places sections;
-- Home exact 8-card gateway;
-- HOOMA community public/member pages;
-- shared creation entry on HOOMA page that lets user choose `TEAM` or `ULTRAS` and branches to the proper domain flow.
-
-### Phase 4 — Teams
-
-Deliver full Team vertical:
-
-- discovery/detail;
-- creation/edit;
-- roster;
-- add/remove/deactivate player;
-- Coach Control Room;
-- Assistant assignment/revocation;
-- capability grants;
-- lineups;
-- challenges;
-- challenge messages;
-- challenge responses/cancel;
-- no self-challenge;
-- Team games;
-- profile navigation from roster and Profile.
-
-Gate: Coach/Assistant/player authorization matrix and lifecycle integration tests.
-
-### Phase 5 — Events / Play
-
-Deliver:
-
-- event creation/detail;
-- RSVP/capacity/waitlist;
-- formations;
-- check-in;
-- temporary event chat;
-- completion;
-- Play discovery;
-- correct public/private boundaries.
-
-### Phase 6 — Canonical Places + Watch + Pitch
-
-Deliver canonical Place first, then capabilities:
-
-- Place directory;
-- Lounges/Cafes default tab;
-- suggestion flow;
-- owner claim/evidence/review;
-- ownership;
-- Watch application/profile/review;
-- Pitch application/profile/review;
-- standalone `/pitch` product;
-- Places Pitch tab using the exact same backend/data;
-- FanHub projection;
-- App Admin approval queues.
-
-Gate: no duplicate physical Place model across Watch/Pitch/FanHub.
-
-### Phase 7 — Requests + Ride + FundMe + payments
-
-Deliver:
-
-- request claims with concurrency safety;
-- Ride offer/request/match lifecycle;
-- privacy-safe Ride public projections;
-- optional live tracking OFF by default;
-- FundMe campaigns/contributions;
-- Cash payment flow;
-- Telegram Stars invoice/pre-checkout/success/refund/idempotency/entitlements;
-- payment audit/reconciliation.
-
-### Phase 8 — ULTRAS
-
-Deliver:
-
-- canonical official FootballEntity catalog;
-- ULTRAS creation linked to an official club/national team;
-- public ULTRAS discovery/detail;
-- private member HQ;
-- memberships;
-- join requests/invites;
-- Leader/Moderator/member permissions;
-- GameDays/attendance;
-- shared Ride/FundMe/Replay/Whistle integrations.
-
-Gate: random public visitor cannot access private HQ/Whistle content.
-
-### Phase 9 — Gamers
-
-Deliver:
-
-- App Admin-controlled game catalog;
-- Gamer profile and handles;
-- squads;
-- memberships;
-- squad management;
-- challenges;
-- results;
-- disputes/moderation;
-- Gamer identity/responsibilities in Profile.
-
-### Phase 10 — Whistle
-
-Deliver one shared engine only:
-
-- 33 grapheme clusters max;
-- 11 total/day/user across all contexts;
-- Redis body only;
-- PostgreSQL metadata only;
-- 24-hour unread TTL;
-- 60-second TTL after first authorized reveal;
-- context authorization;
-- Telegram notification delivery without body persistence;
-- cleanup/expiry behavior;
-- Team/Event/Ride/ULTRAS/Gamer Squad and other approved contexts.
-
-Gate: real Redis/PostgreSQL concurrency + TTL + privacy tests.
-
-### Phase 11 — Media + Worker + Replay + HOOMA NOW
-
-Deliver:
-
-- S3-compatible object storage;
-- MediaAsset metadata;
-- upload pipeline;
-- EXIF/GPS stripping;
-- thumb/card/master variants;
-- transactional OutboxEvent;
-- worker retries/backoff/dead-letter visibility;
-- Replay creation after eligible completed events;
-- deterministic HOOMA NOW/discovery read model.
-
-### Phase 12 — Preview, design completion, release gates
-
-Deliver:
-
-- `npm run dev:preview` with MSW and typed fixtures;
-- personas: Guest, Player, Coach, Assistant, ULTRAS Leader, Gamer Squad Leader, Place Owner, Platform Admin;
-- production build refuses Preview Mode;
-- final Web and Telegram responsive/Telegram QA;
-- accessibility and performance pass;
-- deployment configs;
-- security review;
-- clean DB migration test;
-- full CI/preflight verification.
-
----
-
-## 14. Status discipline
-
-`docs/IMPLEMENTATION_STATUS.md` is the execution ledger.
-
-Allowed statuses:
-
-- `NOT_STARTED`
-- `IN_PROGRESS`
-- `BLOCKED`
-- `DONE`
-
-A donor implementation does not change the target status.
-
-When a phase begins, mark only the actually active rows `IN_PROGRESS`. When a slice is verified, record concrete paths, tests, and command evidence before marking `DONE`.
-
----
-
-## 15. Required command gates
-
-As soon as the relevant scripts exist, the normal repository verification sequence is:
+The target verification sequence is:
 
 ```text
 npm ci
 npm run db:generate
 npm run db:validate
+npm run db:migrate:deploy
+npm run architecture:check
 npm run format:check
 npm run lint
 npm run typecheck
 npm test
+npm run test:integration
 npm run build
 npm run deploy:preflight
+npm run security:check
+npm run db:migrate:status
 ```
 
-Database/Redis-sensitive features must additionally run real disposable PostgreSQL and Redis integration tests.
-
-The final release must verify:
-
-- API production build/start;
-- Web production build;
-- Telegram production build;
-- Worker production build/start;
-- fresh database migration from zero;
-- production environment preflight;
-- prohibited-file/archive checks;
-- no Preview Mode in production;
-- no secrets committed.
+Commands may be split internally but no successful step may be inferred without execution.
 
 ---
 
-## 16. First implementation task after this planning baseline
+## 14. First work after this structure update
 
-Do **not** start by copying a donor application.
+Do not add another product feature.
 
-Start with **Phase 0 — Greenfield foundation** and build the empty target workspace professionally. The first code commit should establish the repository architecture and quality gates without importing business-feature code wholesale.
+Follow `docs/NORMALIZATION_PLAN.md` from Stage B onward:
 
-Only after Phase 0 passes should Phase 1 create the fresh HOOMA ULTIMATE schema and authentication foundation.
+1. reconcile canonical Prisma schema;
+2. reconcile repository/service/contracts against it;
+3. normalize frontend structure/router;
+4. normalize shared assets;
+5. generate one clean pre-release initial migration;
+6. generate/commit real lockfile;
+7. make CI read-only;
+8. prove the whole current system on disposable PostgreSQL;
+9. verify the same migration against the fresh Railway PostgreSQL;
+10. only then resume product-domain development.
