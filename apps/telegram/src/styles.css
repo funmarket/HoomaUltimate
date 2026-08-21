@@ -1,0 +1,60 @@
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  color: #f2ead7;
+  background: #11110f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+.foundation-shell {
+  min-height: 100vh;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 48px 24px;
+  display: grid;
+  align-content: space-between;
+  gap: 32px;
+}
+
+.eyebrow {
+  color: #b59b57;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 12px;
+}
+
+h1 {
+  margin: 8px 0;
+  font-family: Georgia, serif;
+  font-size: clamp(32px, 7vw, 64px);
+}
+
+.status {
+  padding: 16px;
+  border: 1px solid #6f613c;
+  border-radius: 14px;
+  background: #191915;
+}
+
+nav {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  padding-top: 24px;
+  border-top: 1px solid #3f3a2c;
+  font-size: 13px;
+  text-align: center;
+}
+
+.foundation-shell {
+  padding-top: max(24px, env(safe-area-inset-top));
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
+}

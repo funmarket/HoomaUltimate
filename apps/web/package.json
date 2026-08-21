@@ -1,0 +1,25 @@
+{
+  "name": "@hooma/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5173",
+    "build": "vite build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "preview": "vite preview --port 45173",
+    "start": "node ../../scripts/serve-static.mjs dist"
+  },
+  "dependencies": {
+    "@hooma/ui": "0.1.0",
+    "@vitejs/plugin-react": "4.7.0",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "vite": "7.3.6"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.12",
+    "@types/react-dom": "19.1.9",
+    "typescript": "5.9.2"
+  }
+}
