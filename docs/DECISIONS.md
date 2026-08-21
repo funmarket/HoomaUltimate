@@ -4,21 +4,21 @@ Status: **Active ADR index**
 
 ## ADR-001 — Build a third clean repository
 
-**Decision:** `funmarket/HoomaUltimate` is the only implementation destination. Source A and Source B remain read-only references.
+**Decision:** `funmarket/HoomaUltimate` is the only implementation destination. Older applications remain read-only reference material only.
 
-**Reason:** Neither source alone satisfies the final product. Source A is mature but carries role/architecture gaps; Source B improves architecture but regresses mature features and migrations.
+**Reason:** HOOMA ULTIMATE owns its own architecture, schema, migrations, runtime and release evidence.
 
-## ADR-002 — Source precedence is explicit
+## ADR-002 — Target rules outrank historical implementation
 
-**Decision:** Directive/latest product decision beats source code. Verified Source A maturity beats Source B simplification when no newer rule overrides it.
+**Decision:** The latest explicit product-owner instruction, root `structure.md`, root `requirements.md`, this ADR index and `docs/CANONICAL_MODEL.md` define the target. Historical code never overrides a newer target rule merely because it already exists.
 
-**Reason:** Prevent accidental regression caused by treating “newer” as automatically better.
+**Reason:** Prevent drift back into legacy compromises.
 
-## ADR-003 — Use B's multi-app topology and A's domain layering
+## ADR-003 — Four application runtimes with layered backend domains
 
-**Decision:** Target runtime apps are API, Web, Telegram and Worker. Substantial API domains use `domain/application/infrastructure/http` layering.
+**Decision:** Runtime apps are API, Web, Telegram and Worker. Substantial API domains use `domain/application/infrastructure/http` layering.
 
-**Reason:** This combines deployment/platform separation with mature backend boundaries.
+**Reason:** Deployment/platform separation and domain boundaries are both required.
 
 ## ADR-004 — One canonical User, two independent authentication transports
 
@@ -28,9 +28,9 @@ Status: **Active ADR index**
 
 ## ADR-005 — Use Argon2id for Web passwords
 
-**Decision:** Do not carry Source B scrypt into the final implementation.
+**Decision:** Web passwords use Argon2id.
 
-**Reason:** Argon2id is the locked product/security requirement.
+**Reason:** This is the locked security requirement.
 
 ## ADR-006 — Fail closed on credential conflict
 
@@ -40,126 +40,203 @@ Status: **Active ADR index**
 
 ## ADR-007 — Public browsing is a first-class API boundary
 
-**Decision:** Public reads live under `/api/public/v1/*`; member/private actions under `/api/v1/*`.
+**Decision:** Public reads live under `/api/public/v1/*`; member/private actions under `/api/v1/*`; global Admin actions under `/api/v1/admin/*`.
 
-**Reason:** Discovery is public, while authentication is action-based. This boundary is easier to audit/test.
+**Reason:** Discovery is public while protected actions remain auditable authorization boundaries.
 
 ## ADR-008 — ADMIN is global only
 
-**Decision:** Only `PLATFORM_ADMIN` uses Admin terminology. Scoped domains use Founder/Coach/Assistant/Leader/Moderator/Member/Owner language.
+**Decision:** Only `PLATFORM_ADMIN` uses Admin terminology. Scoped domains use Founder/Coach/Assistant/Leader/Moderator/Member/Player/Owner terminology.
 
-**Reason:** Authority must match product language and avoid the Source A Community Admin confusion.
+**Reason:** Authority must match product language and scope.
 
 ## ADR-009 — HOOMA ULTIMATE owns a fresh migration history
 
-**Decision:** HOOMA ULTIMATE starts from its own clean target schema and its own initial committed migration. Source A and Source B migration histories are reference evidence only and are not imported as the target application migration chain.
+**Decision:** Before first release, the normalized current schema is represented by one reviewed initial migration. Once HOOMA ULTIMATE ships, migrations become forward-only.
 
-**Reason:** This repository is a third greenfield application, not an upgrade of either donor. We keep the discipline of committed forward migrations without inheriting historical donor schema compromises.
+**Reason:** Pre-release inconsistencies should be removed rather than preserved as permanent corrective migration history.
 
 ## ADR-010 — Canonical Place is the physical-location source of truth
 
-**Decision:** Lounge/Cafe, Pitch, Watch, FanHub and Ride contexts reference one physical Place.
+**Decision:** Lounge/Cafe, Pitch, Watch and FanHub contexts reference one physical Place when those domains are implemented.
 
 **Reason:** Prevent duplicate venue records and contradictory ownership/location data.
 
-## ADR-011 — Pitch remains a dedicated product
+## ADR-011 — Pitch remains a dedicated product over canonical Place
 
-**Decision:** `/pitch` remains permanent and in bottom nav. Places Pitch tab is a second surface over the same `Place + PitchProfile` backend/data.
+**Decision:** `/pitch` remains permanent and in bottom navigation. The Places Pitch tab and standalone Pitch product will read the same `Place + Pitch capability/profile` source rather than separate venue databases.
 
-**Reason:** Preserve mature Source A product behavior while adopting canonical Places.
+**Reason:** Preserve a dedicated user journey without duplicating physical places.
 
-## ADR-012 — Preserve mature Teams and add scoped capabilities
+## ADR-012 — Teams own football-team lifecycle and scoped authority
 
-**Decision:** Port Source A lineups/challenges/messages/games and integrate Source B Coach/Assistant responsibility/capability model.
+**Decision:** Teams owns Team identity, roster, direct Coach/Assistant responsibilities, explicit Assistant capability grants, lineups, challenges, accepted-match Games and leader-only match coordination.
 
-**Reason:** Neither source is complete alone.
+**Reason:** These concepts share one Team authority model and must not be split across Community, Events or frontend state.
 
 ## ADR-013 — Coach Control Room replaces scoped Admin language
 
 **Decision:** Team management is called Coach Control Room. Assistant authority is explicit capabilities, not broad role inheritance.
 
-**Reason:** Matches product language and principle of least privilege.
+**Reason:** Matches product language and least privilege.
 
-## ADR-014 — Preserve mature Event/Play implementation
+## ADR-014 — Community-to-Team V1 rule
 
-**Decision:** Source A Event creation/detail/RSVP/capacity/waitlist/formations/check-in/chat/completion is the baseline. Replay/Worker are integrated around it.
+**Decision:** Every current Team belongs to one Community. V1 allows a maximum of one ACTIVE Team per Community, while persistence may retain inactive/historical Team rows so future squads do not require redesigning Team identity.
 
-**Reason:** Source B's smaller Event slice is a regression.
+**Reason:** Matches current product scope while remaining future-compatible.
 
-## ADR-015 — Preserve mature payment runtime
+## ADR-015 — TeamPlayer is roster identity first, optional User link second
 
-**Decision:** Source A Cash and Telegram Stars runtime is the baseline. Re-architect without removing provider/webhook/refund/idempotency/entitlement behavior.
+**Decision:** TeamPlayer requires a Team and display name but does not require a HOOMA User account. `userId` is optional and is never globally unique.
 
-**Reason:** Source B's payment model is not a substitute for working runtime.
+**Reason:** Real football rosters must support players who have not registered in HOOMA.
 
-## ADR-016 — ULTRAS is independent
+## ADR-016 — Team lineups reference TeamPlayer and normalized pitch coordinates
+
+**Decision:** TeamLineup owns formation/match format/current/published state. TeamLineupSlot references TeamPlayer and stores normalized `x/y` coordinates, starter state and ordering.
+
+**Reason:** Roster and tactical lineup are separate concepts, and the data must support real responsive pitch rendering.
+
+## ADR-017 — Assistant authorization is capability-specific
+
+**Decision:** Direct Team Coach and the explicit Community Founder/Coach fallback have Coach-equivalent Team authority. Assistant actions require the exact active capability for the operation.
+
+Required Assistant capabilities:
+
+```text
+EDIT_TEAM
+MANAGE_ROSTER
+MANAGE_LINEUP
+CREATE_CHALLENGE
+RESPOND_TO_CHALLENGE
+MANAGE_TEAM_EVENTS
+```
+
+**Reason:** An Assistant role must never become an implicit broad manager role.
+
+## ADR-018 — Team challenge lifecycle has database-level invariants
+
+**Decision:** A Team cannot challenge itself; only one pending challenge may exist for an unordered Team pair; transitions are atomic; accepting a challenge creates at most one TeamGame.
+
+**Reason:** Retry/concurrency correctness belongs at service and database boundaries, not only in UI state.
+
+## ADR-019 — Team leader coordination starts only after acceptance
+
+**Decision:** Challenge coordination messages are available only after the Challenge is ACCEPTED and only to Coach-equivalent participants or an Assistant with `RESPOND_TO_CHALLENGE` for a participating Team.
+
+**Reason:** The conversation exists for accepted-match coordination, not as general Team chat.
+
+## ADR-020 — Events is canonical lifecycle; Play is the current implemented event product
+
+**Decision:** Events owns Event lifecycle, RSVP/waitlist, formations, check-in and temporary Event chat. During foundation normalization the creation path supports PLAY only.
+
+**Reason:** WATCH must not exist as a half-domain before canonical Places and Watch-specific rules are implemented.
+
+## ADR-021 — Temporary Event chat requires cleanup ownership
+
+**Decision:** Event chat has an explicit time window and expired messages are excluded from reads. Worker owns eventual durable cleanup of expired rows. Events cannot be called fully complete until that cleanup path is implemented and verified.
+
+**Reason:** “Temporary” must describe storage lifecycle as well as query filtering.
+
+## ADR-022 — Cash and Telegram Stars are the initial payment rails
+
+**Decision:** When Payments is implemented, initial methods are CASH and TELEGRAM_STARS only. No credit-card rail is introduced by implication.
+
+**Reason:** This is the product contract.
+
+## ADR-023 — ULTRAS is independent
 
 **Decision:** ULTRAS has its own persistent domain and roles; it is not Team tables or generic Community renamed.
 
 **Reason:** Product semantics and privacy differ.
 
-## ADR-017 — Gamers is independent
+## ADR-024 — Gamers is independent
 
 **Decision:** Gamer profiles/squads/challenges/results use independent models, not Team tables.
 
-**Reason:** Avoid cross-domain coupling and incorrect football-Team semantics.
+**Reason:** Avoid incorrect football-Team coupling.
 
-## ADR-018 — One global Whistle engine
+## ADR-025 — One global Whistle engine
 
-**Decision:** One transient engine serves approved contexts. Body only in Redis, metadata only in PostgreSQL, exact 33/11/24h/60s rules.
+**Decision:** One transient engine serves approved contexts. Body lives only in Redis, metadata only in PostgreSQL, with the exact 33-grapheme / 11-per-day / 24-hour unread / 60-second reveal rules.
 
 **Reason:** Prevent duplicate messaging systems and permanent-body leaks.
 
-## ADR-019 — PostgreSQL durable, Redis transient, object storage bytes
+## ADR-026 — PostgreSQL durable, Redis transient, object storage bytes
 
 **Decision:** Persistent business truth stays in PostgreSQL. Redis is disposable transient infrastructure. Media bytes live in S3-compatible storage.
 
 **Reason:** Clear failure and retention semantics.
 
-## ADR-020 — Use transactional outbox for asynchronous work
+## ADR-027 — Use transactional outbox for asynchronous work
 
-**Decision:** Durable mutation and OutboxEvent commit together; Worker claims safely and retries without duplicating policy.
+**Decision:** Durable mutation and OutboxEvent commit together when an asynchronous side effect is required; Worker claims safely and retries without duplicating business policy.
 
 **Reason:** Avoid lost async work and inconsistent side effects.
 
-## ADR-021 — Separate frontend shells, share feature UI selectively
+## ADR-028 — Separate frontend shells, share presentation selectively
 
-**Decision:** Web and Telegram share contracts/design tokens/feature components where appropriate but maintain independent platform shells.
+**Decision:** Web and Telegram share contracts/design tokens/platform-neutral components where appropriate but maintain independent router/provider/shell ownership.
 
-**Reason:** Telegram needs BackButton, viewport, safe-area, theme, haptics and initData behavior that Web does not.
+**Reason:** Telegram has lifecycle/navigation responsibilities that Web does not.
 
-## ADR-022 — Rebuild CI rather than copy V3
+## ADR-029 — Use real routers and route-level lazy loading
 
-**Decision:** CI uses a valid dependency/prisma/migration/architecture/format/lint/typecheck/test/build/preflight order.
+**Decision:** Web and Telegram use explicit router configuration and lazy feature/page loading. Manual `window.location.pathname` routing is not a permanent architecture.
 
-**Reason:** V3's checked-in pipeline has known sequencing defects.
+**Reason:** The route count will expand substantially and needs testable ownership and loading boundaries.
 
-## ADR-023 — Integration tests use real disposable PostgreSQL and Redis
+## ADR-030 — Contracts are split by domain
 
-**Decision:** Critical persistence/concurrency/TTL/worker behavior is not proven by mocks alone.
+**Decision:** `packages/contracts` uses domain files with `index.ts` as a re-export surface rather than one growing cross-domain implementation file.
 
-**Reason:** Whistle quota/TTL, migrations, outbox locking and transactional behavior require real infrastructure semantics.
+**Reason:** Preserve ownership and prevent a new monolith.
 
-## ADR-024 — Preview Mode is frontend-isolated and development-only
+## ADR-031 — Shared approved brand assets have one governed source
 
-**Decision:** `npm run dev:preview` uses MSW or equivalent. Production backend auth never contains fake-user bypasses and production build rejects Preview Mode.
+**Decision:** Approved HOOMA wordmarks, heritage crests, Match Day assets, collector-ticket masters and neutral fallbacks live under the shared UI/design asset ownership and are reused by Web/Telegram without binary duplication.
 
-**Reason:** Enable UI review without creating a security backdoor or fake production persistence.
+**Reason:** Brand assets are product infrastructure, not page-local decoration.
 
-## ADR-025 — Feature completion is vertical-slice evidence
+## ADR-032 — CI is read-only
 
-**Decision:** Schema/page/endpoint existence is insufficient. DONE requires migration through runtime verification.
+**Decision:** CI never regenerates/commits/pushes dependency lockfiles or source changes. The repository must already contain a correct committed `package-lock.json`; CI runs `npm ci` and fails if it is inconsistent.
 
-**Reason:** Prevent Source B-style schema-only completion claims and dead shells.
+**Reason:** Verification must detect source drift, not repair it invisibly.
 
-## ADR-026 — Locked navigation contracts
+## ADR-033 — Integration tests use real disposable infrastructure
+
+**Decision:** Critical persistence/concurrency/TTL/worker behavior is proven with real disposable PostgreSQL and Redis where relevant.
+
+**Reason:** Database locking, migrations, outbox claiming and future Whistle TTL/quota semantics cannot be proven by mocks alone.
+
+## ADR-034 — Preview Mode is frontend-isolated and development-only
+
+**Decision:** Preview uses MSW or equivalent. Production backend auth contains no fake-user bypass and production build rejects Preview Mode.
+
+**Reason:** Enable UI review without creating security backdoors.
+
+## ADR-035 — Feature completion is vertical-slice evidence
+
+**Decision:** Schema/page/endpoint existence is insufficient. DONE requires the complete applicable UI -> API -> authorization -> service -> repository -> persistence -> read-back path plus verification gates.
+
+**Reason:** Prevent partial/schema-only completion claims.
+
+## ADR-036 — Locked navigation contracts
 
 **Decision:** Bottom nav = Home/Play/Watch/HOOMA/Pitch. Home gateway = HOOMA/Teams/ULTRAS/Gamers + Places/Requests/Ride/FundMe. Places tabs = Lounges/Cafes/Pitch/FanHub with Lounges/Cafes default.
 
-**Reason:** These are explicit product-owner acceptance rules and cannot drift during architecture work.
+**Reason:** These are explicit product acceptance rules.
 
-## ADR-027 — Donor data import is separate from application migrations
+## ADR-037 — Donor data import is separate from application migrations
 
-**Decision:** The HOOMA ULTIMATE database starts clean. If historical data from a donor application is ever brought into HOOMA ULTIMATE, it must be handled by an explicit import/ETL and reconciliation process, not by redefining the target application as a migration of the donor schema.
+**Decision:** HOOMA ULTIMATE starts clean. If historical data is ever imported, it uses an explicit ETL/reconciliation process rather than redefining application migrations.
 
-**Reason:** Product architecture and migration history must remain greenfield even if a later business decision chooses to import historical records.
+**Reason:** Product architecture and migration history remain greenfield.
+
+## ADR-038 — Normalization freeze precedes new domains
+
+**Decision:** While `docs/NORMALIZATION_PLAN.md` is active, new Places/Watch/Pitch/ULTRAS/Gamers/Whistle/Requests/Ride/FundMe/Payments/Media/Replay/HOOMA NOW implementation is frozen.
+
+**Reason:** Existing foundation inconsistencies must be corrected before dependency-heavy domains build on them.
