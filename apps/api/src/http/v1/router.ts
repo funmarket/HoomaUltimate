@@ -6,6 +6,7 @@ import { createIdentityMemberRouter } from "../../modules/identity/http/identity
 import { createPlatformAdminRouter } from "../../modules/platform-admin/http/platform-admin.routes.js";
 import { createCommunityMemberRouter } from "../../modules/communities/http/community.routes.js";
 import { createTeamMemberRouter } from "../../modules/teams/http/team.routes.js";
+import { createEventMemberRouter } from "../../modules/events/http/event.routes.js";
 
 export function createMemberV1Router(container: AppContainer, config: ApiConfig): Router {
   const router = Router();
@@ -14,5 +15,6 @@ export function createMemberV1Router(container: AppContainer, config: ApiConfig)
   router.use("/admin", createPlatformAdminRouter(container.platformAdminService));
   router.use("/communities", createCommunityMemberRouter(container.communityService));
   router.use("/teams", createTeamMemberRouter(container.teamService));
+  router.use("/events", createEventMemberRouter(container.eventService));
   return router;
 }

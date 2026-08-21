@@ -71,6 +71,46 @@ enum FootballFormat {
   ELEVEN_V_ELEVEN
 }
 
+enum EventType {
+  PLAY
+  WATCH
+}
+
+enum EventStatus {
+  PUBLISHED
+  CANCELLED
+  COMPLETED
+}
+
+enum EventRsvpStatus {
+  CONFIRMED
+  WAITLISTED
+  CANCELLED
+  ATTENDED
+  NO_SHOW
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  MIXED
+}
+
+enum PlayPitchType {
+  FIVE_A_SIDE
+  SEVEN_A_SIDE
+  ELEVEN_A_SIDE
+  FUTSAL
+  STREET
+  OTHER
+}
+
+enum EventTeamSide {
+  A
+  B
+}
+
 model User {
   id                         String                         @id @default(cuid())
   createdAt                  DateTime                       @default(now())
@@ -92,6 +132,12 @@ model User {
   teamLineupSlots            TeamLineupSlot[]
   teamChallengesCreated      TeamChallenge[]                @relation("ChallengeCreator")
   teamChallengeMessages      TeamChallengeMessage[]
+  eventsCreated              Event[]                  @relation("EventCreator")
+  eventRsvps                 EventRsvp[]
+  eventFormationsCreated     Formation[]              @relation("FormationCreator")
+  formationSlots             FormationSlot[]
+  eventCheckIns              EventCheckIn[]
+  eventChatMessages          EventChatMessage[]
 }
 
 model UserPresentation {
@@ -174,6 +220,7 @@ model Community {
   createdBy       User                  @relation("CommunityCreator", fields: [createdByUserId], references: [id])
   memberships     CommunityMembership[]
   teams           Team[]
+  events          Event[]
 
   @@index([status, createdAt])
   @@index([city, houma])
@@ -194,28 +241,28 @@ model CommunityMembership {
 }
 
 model Team {
-  id                 String                         @id @default(cuid())
-  communityId        String?
-  slug               String                         @unique
-  name               String
-  motto              String?
-  city               String?
-  houma              String?
-  badgeUrl           String?
-  status             TeamStatus                     @default(ACTIVE)
-  createdByUserId    String
-  createdAt          DateTime                       @default(now())
-  updatedAt          DateTime                       @updatedAt
-  community          Community?                     @relation(fields: [communityId], references: [id], onDelete: SetNull)
-  createdBy          User                           @relation("TeamCreator", fields: [createdByUserId], references: [id])
-  players            TeamPlayer[]
-  responsibilities   TeamResponsibilityAssignment[]
-  capabilityGrants   TeamCapabilityGrant[]
-  lineups            TeamLineup[]
-  challengesSent     TeamChallenge[]                @relation("ChallengeChallenger")
-  challengesReceived TeamChallenge[]                @relation("ChallengeChallenged")
-  homeGames          TeamGame[]                     @relation("GameHomeTeam")
-  awayGames          TeamGame[]                     @relation("GameAwayTeam")
+  id              String                         @id @default(cuid())
+  communityId     String?
+  slug            String                         @unique
+  name            String
+  motto           String?
+  city            String?
+  houma           String?
+  badgeUrl        String?
+  status          TeamStatus                     @default(ACTIVE)
+  createdByUserId String
+  createdAt       DateTime                       @default(now())
+  updatedAt       DateTime                       @updatedAt
+  community       Community?                     @relation(fields: [communityId], references: [id], onDelete: SetNull)
+  createdBy       User                           @relation("TeamCreator", fields: [createdByUserId], references: [id])
+  players         TeamPlayer[]
+  responsibilities TeamResponsibilityAssignment[]
+  capabilityGrants TeamCapabilityGrant[]
+  lineups         TeamLineup[]
+  challengesSent  TeamChallenge[]                @relation("ChallengeChallenger")
+  challengesReceived TeamChallenge[]             @relation("ChallengeChallenged")
+  homeGames       TeamGame[]                     @relation("GameHomeTeam")
+  awayGames       TeamGame[]                     @relation("GameAwayTeam")
 
   @@index([status, createdAt])
   @@index([communityId, status])
@@ -223,74 +270,77 @@ model Team {
 }
 
 model TeamPlayer {
-  id       String   @id @default(cuid())
-  teamId   String
-  userId   String
-  joinedAt DateTime @default(now())
-  leftAt   DateTime?
-  team     Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String    @id @default(cuid())
+  teamId    String
+  userId    String  @unique
+  number     Int?
+  positions  String[]
+  active     Boolean   @default(true)
+  joinedAt   DateTime @default(now())
+  leftAt     DateTime?
+  team       Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, userId])
-  @@index([userId, leftAt])
+  @@index([teamId, active])
 }
 
 model TeamResponsibilityAssignment {
-  id         String                 @id @default(cuid())
-  teamId     String
+  id           String                   @id @default(cuid())
+  teamId      String
   userId     String
-  role       TeamResponsibilityRole
-  assignedAt DateTime               @default(now())
-  revokedAt  DateTime?
-  team       Team                   @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        TeamResponsibilityRole
+  createdAt   DateTime                @default(now())
+  revokedAt   DateTime?
+  team        Team                    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user        User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([teamId, userId, role])
+  @@index([teamId, role, revokedAt])
   @@index([userId, role, revokedAt])
 }
 
 model TeamCapabilityGrant {
-  id              String         @id @default(cuid())
-  teamId          String
-  userId          String
-  capability      TeamCapability
-  grantedByUserId String
-  grantedAt       DateTime       @default(now())
-  revokedAt       DateTime?
-  team            Team           @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user            User           @relation("CapabilityRecipient", fields: [userId], references: [id], onDelete: Cascade)
-  grantedBy       User           @relation("CapabilityGrantor", fields: [grantedByUserId], references: [id], onDelete: Restrict)
+  id         String          @id @default(cuid())
+  teamId     String
+  userId    String
+  capability TeamCapability
+  grantedBy String
+  createdAt  DateTime         @default(now())
+  revokedAt  DateTime?
+  team       Team              @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user       User              @relation("CapabilityRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  grantor    User              @relation("CapabilityGrantor", fields: [grantedBy], references: [id], onDelete: Cascade)
 
   @@unique([teamId, userId, capability])
-  @@index([userId, revokedAt])
+  @@index([teamId, userId, revokedAt])
 }
 
 model TeamLineup {
-  id              String           @id @default(cuid())
-  teamId          String
-  name            String
-  formation       String?
+  id                String          @id @default(cuid())
+  teamId            String
   createdByUserId String
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  team            Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  createdBy       User             @relation("LineupCreator", fields: [createdByUserId], references: [id])
-  slots           TeamLineupSlot[]
+  name              String
+  format            FootballFormat
+  active            Boolean          @default(true)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  team               Team               @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  createdBy         User              @relation("LineupCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  slots              TeamLineupSlot[]
 
-  @@index([teamId, updatedAt])
+  @@index([teamId, createdAt])
 }
 
 model TeamLineupSlot {
-  id        String     @id @default(cuid())
-  lineupId  String
-  userId    String?
+  id         String      @id @default(cuid())
+  lineupId   String
+  userId     String?
   position  String
-  sortOrder Int        @default(0)
-  lineup    TeamLineup @relation(fields: [lineupId], references: [id], onDelete: Cascade)
-  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sortOrder Int         @default(0)
+  lineup     TeamLineup @relation(fields: [lineupId], references: [id], onDelete: Cascade)
+  user       User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  @@unique([lineupId, position, sortOrder])
-  @@index([userId])
+  @@index([lineupId, sortOrder])
 }
 
 model TeamChallenge {
@@ -320,8 +370,8 @@ model TeamChallengeMessage {
   authorUserId String
   body         String
   createdAt    DateTime      @default(now())
-  challenge    TeamChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
-  author       User          @relation(fields: [authorUserId], references: [id], onDelete: Cascade)
+  challenge   TeamChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  author      User          @relation(fields: [authorUserId], references: [id], onDelete: Cascade)
 
   @@index([challengeId, createdAt])
 }
@@ -341,6 +391,135 @@ model TeamGame {
 
   @@index([homeTeamId, scheduledAt])
   @@index([awayTeamId, scheduledAt])
+}
+
+model Event {
+  id              String          @id @default(cuid())
+  communityId     String
+  createdByUserId String
+  type            EventType
+  status          EventStatus     @default(PUBLISHED)
+  title           String
+  description     String?
+  startsAt        DateTime
+  endsAt          DateTime?
+  timezone        String          @default("Africa/Tunis")
+  venueName       String?
+  address         String?
+  capacity        Int?
+  waitlistEnabled Boolean         @default(true)
+  entryFeeMinor   BigInt          @default(0)
+  currency        String          @default("TND")
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  community       Community       @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  createdBy       User            @relation("EventCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  playDetails     PlayEventDetails?
+  rsvps           EventRsvp[]
+  formations      Formation[]
+  checkIns        EventCheckIn[]
+  chatRoom        EventChatRoom?
+
+  @@index([type, status, startsAt, id])
+  @@index([communityId, type, status, startsAt])
+  @@index([createdByUserId])
+}
+
+model PlayEventDetails {
+  eventId    String        @id
+  pitchType  PlayPitchType
+  skillLevel SkillLevel    @default(MIXED)
+  format     FootballFormat
+  event      Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model EventRsvp {
+  id               String          @id @default(cuid())
+  eventId          String
+  userId           String
+  status           EventRsvpStatus @default(CONFIRMED)
+  waitlistSequence BigInt?
+  checkedInAt      DateTime?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  event             Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId, status, waitlistSequence])
+  @@index([userId, status])
+}
+
+model Formation {
+  id              String           @id @default(cuid())
+  eventId         String
+  createdByUserId String
+  name            String
+  format          FootballFormat
+  published       Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  event            Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdBy        User             @relation("FormationCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  slots            FormationSlot[]
+
+  @@index([eventId, updatedAt])
+}
+
+model FormationSlot {
+  id          String        @id @default(cuid())
+  formationId String
+  userId      String?
+  team        EventTeamSide
+  position    String
+  label       String
+  x           Float
+  y           Float
+  formation   Formation     @relation(fields: [formationId], references: [id], onDelete: Cascade)
+  user        User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([formationId, team])
+  @@index([userId])
+}
+
+model EventCheckIn {
+  id        String   @id @default(cuid())
+  eventId   String
+  userId    String
+  latitude  Decimal? @db.Decimal(10, 7)
+  longitude Decimal? @db.Decimal(10, 7)
+  createdAt DateTime @default(now())
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([userId, createdAt])
+}
+
+model EventChatRoom {
+  id        String             @id @default(cuid())
+  eventId   String             @unique
+  opensAt   DateTime
+  closesAt  DateTime
+  createdAt DateTime           @default(now())
+  event     Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  messages  EventChatMessage[]
+
+  @@index([closesAt])
+}
+
+model EventChatMessage {
+  id        String        @id @default(cuid())
+  roomId    String
+  userId    String
+  body      String
+  createdAt DateTime      @default(now())
+  expiresAt DateTime
+  room      EventChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, createdAt, id])
+  @@index([expiresAt])
 }
 
 model AuditLog {
