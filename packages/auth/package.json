@@ -9,6 +9,18 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
-  "devDependencies": { "typescript": "5.9.2" },
-  "exports": { ".": { "types": "./src/index.ts", "default": "./dist/index.js" } }
+  "dependencies": {
+    "@tma.js/init-data-node": "2.0.8",
+    "argon2": "0.45.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.18.0",
+    "typescript": "5.9.2"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  }
 }

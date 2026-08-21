@@ -1,7 +1,16 @@
-/**
- * Persistence package boundary.
- * Phase 1 introduces the fresh HOOMA ULTIMATE Prisma schema and initial migration here.
- */
-export interface TransactionBoundary {
-  run<T>(operation: () => Promise<T>): Promise<T>;
+import { PrismaClient } from "@prisma/client";
+
+export { Prisma, PrismaClient, PlatformRole, OutboxStatus } from "@prisma/client";
+
+let singleton: PrismaClient | undefined;
+
+export function getDatabaseClient(): PrismaClient {
+  singleton ??= new PrismaClient();
+  return singleton;
+}
+
+export async function disconnectDatabase(): Promise<void> {
+  if (!singleton) return;
+  await singleton.$disconnect();
+  singleton = undefined;
 }

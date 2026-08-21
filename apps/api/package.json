@@ -10,11 +10,14 @@
     "start": "node dist/bootstrap/server.js"
   },
   "dependencies": {
+    "@hooma/auth": "0.1.0",
     "@hooma/config": "0.1.0",
     "@hooma/contracts": "0.1.0",
+    "@hooma/database": "0.1.0",
     "cors": "2.8.5",
     "express": "5.1.0",
-    "helmet": "8.3.0"
+    "helmet": "8.3.0",
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@types/cors": "2.8.19",

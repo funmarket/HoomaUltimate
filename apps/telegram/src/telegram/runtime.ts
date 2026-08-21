@@ -1,7 +1,8 @@
-interface TelegramWebApp {
+type TelegramWebApp = {
   ready(): void;
   expand(): void;
-}
+  initData: string;
+};
 
 declare global {
   interface Window {
@@ -9,9 +10,10 @@ declare global {
   }
 }
 
-export function initializeTelegramRuntime(): void {
+export function initializeTelegramRuntime(): { initData: string } {
   const webApp = window.Telegram?.WebApp;
-  if (!webApp) return;
+  if (!webApp) return { initData: "" };
   webApp.ready();
   webApp.expand();
+  return { initData: webApp.initData ?? "" };
 }

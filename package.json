@@ -24,11 +24,16 @@
     "lint": "eslint \"apps/**/*.{ts,tsx}\" \"packages/**/*.{ts,tsx}\" --max-warnings=0",
     "format": "prettier --write \"{apps,packages,scripts,tests,.github}/**/*.{ts,tsx,js,mjs,json,css,md,yml,yaml}\" \"*.{json,md,mjs,yml,yaml}\"",
     "format:check": "prettier --check \"{apps,packages,scripts,tests,.github}/**/*.{ts,tsx,js,mjs,json,css,md,yml,yaml}\" \"*.{json,md,mjs,yml,yaml}\"",
-    "test": "node --test tests/*.test.mjs",
+    "test": "tsx --test tests/*.test.ts tests/*.test.mjs",
+    "test:integration": "tsx --test tests/*.integration.test.ts",
     "architecture:check": "node scripts/architecture-check.mjs",
     "deploy:preflight": "node scripts/deploy-preflight.mjs",
     "security:check": "npm audit --omit=dev --audit-level=high",
-    "check": "npm run architecture:check && npm run format:check && npm run lint && npm run typecheck && npm test && npm run build && npm run deploy:preflight"
+    "check": "npm run db:generate && npm run db:validate && npm run architecture:check && npm run format:check && npm run lint && npm run typecheck && npm test && npm run build && npm run deploy:preflight",
+    "db:generate": "npm -w @hooma/database run generate",
+    "db:validate": "npm -w @hooma/database run validate",
+    "db:migrate:deploy": "npm -w @hooma/database run migrate:deploy",
+    "db:migrate:status": "npm -w @hooma/database run migrate:status"
   },
   "devDependencies": {
     "concurrently": "10.0.5",

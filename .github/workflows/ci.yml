@@ -2,28 +2,63 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, phase-0-foundation]
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hooma_ultimate_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hooma_ultimate_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hooma_ultimate_test
+      WEB_ORIGIN: http://localhost:5173
+      TELEGRAM_ORIGIN: http://localhost:5174
+      TELEGRAM_BOT_TOKEN: integration-test-token
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+      - name: Refresh dependency lock on foundation branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/phase-0-foundation'
+        run: |
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          if ! git diff --quiet -- package-lock.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package-lock.json
+            git commit -m "chore: refresh package lock"
+            git push
+          fi
       - run: npm ci
+      - run: npm run db:generate
+      - run: npm run db:validate
+      - run: npm run db:migrate:deploy
       - run: npm run architecture:check
       - run: npm run format:check
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+      - run: npm run test:integration
       - run: npm run build
       - run: npm run deploy:preflight
       - run: npm run security:check

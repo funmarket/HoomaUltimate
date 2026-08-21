@@ -15,6 +15,8 @@ const required = [
   "packages/config/package.json",
   "packages/contracts/package.json",
   "packages/database/package.json",
+  "packages/database/prisma/schema.prisma",
+  "packages/database/prisma/migrations/migration_lock.toml",
   "packages/domain/package.json",
   "packages/storage/package.json",
   "packages/testing/package.json",
@@ -24,16 +26,23 @@ const required = [
 
 const missing = [];
 for (const item of required) {
-  try {
-    await access(path.join(root, item));
-  } catch {
-    missing.push(item);
-  }
+  try { await access(path.join(root, item)); } catch { missing.push(item); }
 }
-
 if (missing.length > 0) {
   console.error(`Deploy preflight failed. Missing: ${missing.join(", ")}`);
   process.exit(1);
+}
+
+const migrationRoot = path.join(root, "packages/database/prisma/migrations");
+const migrationDirectories = (await readdir(migrationRoot, { withFileTypes: true }))
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name);
+if (migrationDirectories.length === 0) {
+  console.error("Deploy preflight failed. At least one committed Prisma migration is required.");
+  process.exit(1);
+}
+for (const directory of migrationDirectories) {
+  await access(path.join(migrationRoot, directory, "migration.sql"));
 }
 
 const envExample = await readFile(path.join(root, ".env.example"), "utf8");
@@ -50,4 +59,4 @@ if (rootEntries.includes(".env")) {
   process.exit(1);
 }
 
-console.log("Deploy preflight passed for the Phase 0 foundation.");
+console.log("Deploy preflight passed.");
