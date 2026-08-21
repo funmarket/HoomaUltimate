@@ -1,0 +1,2 @@
+import type { MeResponse } from "@hooma/contracts";
+export function ProfilePage({ me }: { me: MeResponse | null }) { if (!me) return <p className="status">Profile requires Telegram authentication.</p>; return <section><p className="eyebrow">PROFILE</p><h2>{me.presentation.displayName}</h2><p>@{me.presentation.username}</p><div className="status"><strong>My Teams</strong>{me.teams.map((team) => <p key={team.id}><a href={`/teams/${team.id}`}>{team.name}</a> — {[team.isPlayer ? "Player" : null, ...team.responsibilities].filter(Boolean).join(" · ")}</p>)}</div></section>; }

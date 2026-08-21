@@ -1,55 +1,39 @@
-:root {
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-  color: #f2ead7;
-  background: #11110f;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-.foundation-shell {
-  min-height: 100vh;
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 48px 24px;
-  display: grid;
-  align-content: space-between;
-  gap: 32px;
-}
-
-.eyebrow {
-  color: #b59b57;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  font-size: 12px;
-}
-
-h1 {
-  margin: 8px 0;
-  font-family: Georgia, serif;
-  font-size: clamp(32px, 7vw, 64px);
-}
-
-.status {
-  padding: 16px;
-  border: 1px solid #6f613c;
-  border-radius: 14px;
-  background: #191915;
-}
-
-nav {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
-  padding-top: 24px;
-  border-top: 1px solid #3f3a2c;
-  font-size: 13px;
-  text-align: center;
-}
+:root { font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: #f2ead7; background: #11110f; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; min-height: 100vh; }
+.foundation-shell { min-height: 100vh; max-width: 960px; margin: 0 auto; padding: 48px 24px; display: grid; align-content: space-between; gap: 32px; }
+.eyebrow { color: #c4dc43; text-transform: uppercase; letter-spacing: .14em; font-size: 11px; }
+h1 { margin: 8px 0; font-family: Georgia, serif; font-size: clamp(32px, 7vw, 64px); }
+.status { padding: 16px; border: 1px solid #6f613c; border-radius: 14px; background: #191915; }
+nav { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; padding-top: 24px; border-top: 1px solid #3f3a2c; font-size: 13px; text-align: center; }
+.auth-card { width: min(100%, 430px); margin: 28px auto 0; padding: 20px; border: 1px solid #6d624a; border-radius: 18px; background: #171612; }
+.auth-card form { display: grid; gap: 14px; margin-top: 18px; }
+.auth-card label { display: grid; gap: 6px; color: #e8dfc5; font-size: 14px; }
+.auth-card input { border: 1px solid #6d624a; border-radius: 10px; background: #0e0e0c; color: #f5edd7; padding: 11px 12px; }
+.auth-card button { border: 1px solid #8c7b4f; border-radius: 999px; background: #c4dc43; color: #12120f; font-weight: 800; padding: 10px 14px; cursor: pointer; }
+.auth-tabs { display: flex; gap: 8px; }
+.auth-tabs button[aria-pressed="false"] { background: transparent; color: #e8dfc5; }
+.error { color: #ffb4a8; }
+.auth-card dl { display: grid; gap: 10px; }
+.auth-card dl div { display: flex; justify-content: space-between; gap: 20px; border-bottom: 1px solid #3f3a2c; padding: 8px 0; }
+.auth-card dt { color: #cfc5aa; }
+.auth-card dd { margin: 0; font-weight: 800; }
+a { color: inherit; }
+nav a { text-decoration: none; color: #f2ead7; padding: 8px 4px; }
+.shell-content { min-height: 48vh; }
+.home-gateway { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 24px; }
+.gateway-card, .team-card, .profile-links a { border: 1px solid #6f613c; border-radius: 14px; background: #191915; text-decoration: none; padding: 18px; }
+.gateway-card { min-height: 112px; display: grid; align-items: end; font-family: Georgia, serif; font-size: 20px; }
+.panel { padding: 18px; border: 1px solid #403927; border-radius: 16px; background: #151510; }
+.profile-page { display: grid; gap: 18px; }
+.profile-card { display: flex; gap: 18px; align-items: center; }
+.profile-card img, .profile-avatar { width: 88px; height: 88px; border-radius: 50%; object-fit: cover; border: 1px solid #7d6d44; }
+.profile-avatar { display: grid; place-items: center; background: #202018; font: 700 34px Georgia, serif; }
+.profile-links { display: grid; gap: 10px; }
+.profile-links a { display: flex; justify-content: space-between; gap: 14px; }
+.profile-links span, .team-card span, .team-card small { color: #bfb59a; }
+.team-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.team-card { display: grid; gap: 8px; }
+.team-card img { width: 52px; height: 52px; object-fit: contain; }
+.admin-link { display: inline-flex; width: fit-content; padding: 10px 14px; border-radius: 999px; background: #c4dc43; color: #111; font-weight: 800; text-decoration: none; }
+@media (max-width: 700px) { .home-gateway { grid-template-columns: repeat(2, minmax(0, 1fr)); } .team-grid { grid-template-columns: 1fr; } }
