@@ -2,7 +2,7 @@ import type { TeamCapabilityInput, TeamChallengeCreateInput, TeamCreateInput, Te
 import { AppError } from "../../../http/errors/app-error.js";
 import type { CommunityService } from "../../communities/application/community.service.js";
 import { directResponsibilityHasCapability } from "../domain/team-access.js";
-import type { TeamListInput, TeamRepository } from "./team.repository.js";
+import type { TeamAccessRecord, TeamListInput, TeamRepository } from "./team.repository.js";
 
 export class TeamService {
   constructor(private readonly repository: TeamRepository, private readonly communities: CommunityService) {}
@@ -35,15 +35,36 @@ export class TeamService {
   async accept(userId: string, challengeId: string) { const challenge = await this.pendingChallenge(challengeId); await this.requireCapability(userId, challenge.challengedTeamId, "RESPOND_TO_CHALLENGE"); return this.repository.acceptChallenge(challengeId); }
   async decline(userId: string, challengeId: string) { const challenge = await this.pendingChallenge(challengeId); await this.requireCapability(userId, challenge.challengedTeamId, "RESPOND_TO_CHALLENGE"); return this.repository.declineChallenge(challengeId); }
   async cancel(userId: string, challengeId: string) { const challenge = await this.pendingChallenge(challengeId); await this.requireCapability(userId, challenge.challengerTeamId, "CREATE_CHALLENGE"); return this.repository.cancelChallenge(challengeId); }
-  async messages(userId: string, challengeId: string) { const messages = await this.repository.listMessages(challengeId, userId); if (!messages) throw new AppError(404, "TEAM_CHALLENGE_NOT_FOUND", "Challenge not found"); return messages; }
-  async createMessage(userId: string, challengeId: string, body: string) { const message = await this.repository.createMessage(challengeId, userId, body); if (!message) throw new AppError(404, "TEAM_CHALLENGE_NOT_FOUND", "Challenge not found"); return message; }
+  async messages(userId: string, challengeId: string) {
+    await this.requireChallengeCoordination(userId, challengeId);
+    return this.repository.listMessages(challengeId);
+  }
+  async createMessage(userId: string, challengeId: string, body: string) {
+    await this.requireChallengeCoordination(userId, challengeId);
+    return this.repository.createMessage(challengeId, userId, body);
+  }
   games(userId: string, limit = 30) { return this.repository.listGames(userId, Math.min(Math.max(limit, 1), 100)); }
   async game(userId: string, gameId: string) { const game = await this.repository.getGame(gameId, userId); if (!game) throw new AppError(404, "TEAM_GAME_NOT_FOUND", "Team game not found"); return game; }
   async requireCapability(userId: string, teamId: string, capability: TeamCapabilityInput): Promise<void> {
     const access = await this.repository.access(teamId, userId);
     if (!access) throw new AppError(404, "TEAM_NOT_FOUND", "Team not found");
+    if (!this.accessHasCapability(access, capability)) throw new AppError(403, "TEAM_CAPABILITY_REQUIRED", `Team capability ${capability} required`);
+  }
+  private accessHasCapability(access: TeamAccessRecord, capability: TeamCapabilityInput): boolean {
     const communityCoach = access.communityRole === "FOUNDER" || access.communityRole === "COACH";
-    if (!communityCoach && !directResponsibilityHasCapability(access.responsibility, access.grants, capability)) throw new AppError(403, "TEAM_CAPABILITY_REQUIRED", `Team capability ${capability} required`);
+    return communityCoach || directResponsibilityHasCapability(access.responsibility, access.grants, capability);
+  }
+  private async hasCapability(userId: string, teamId: string, capability: TeamCapabilityInput): Promise<boolean> {
+    const access = await this.repository.access(teamId, userId);
+    return Boolean(access && this.accessHasCapability(access, capability));
+  }
+  private async requireChallengeCoordination(userId: string, challengeId: string): Promise<void> {
+    const challenge = await this.repository.getChallenge(challengeId);
+    if (!challenge) throw new AppError(404, "TEAM_CHALLENGE_NOT_FOUND", "Challenge not found");
+    const authorized = (await this.hasCapability(userId, challenge.challengerTeamId, "RESPOND_TO_CHALLENGE")) ||
+      (await this.hasCapability(userId, challenge.challengedTeamId, "RESPOND_TO_CHALLENGE"));
+    if (!authorized) throw new AppError(404, "TEAM_CHALLENGE_NOT_FOUND", "Challenge not found");
+    if (challenge.status !== "ACCEPTED") throw new AppError(409, "TEAM_CHALLENGE_COORDINATION_NOT_OPEN", "Challenge coordination opens only after acceptance");
   }
   private async requireDirectCoach(userId: string, teamId: string): Promise<void> { const access = await this.repository.access(teamId, userId); if (!access || access.responsibility !== "COACH") throw new AppError(403, "TEAM_COACH_REQUIRED", "Direct Team Coach responsibility required"); }
   private async pendingChallenge(challengeId: string) { const challenge = await this.repository.getChallenge(challengeId); if (!challenge || challenge.status !== "PENDING") throw new AppError(404, "TEAM_CHALLENGE_NOT_FOUND", "Pending challenge not found"); return challenge; }

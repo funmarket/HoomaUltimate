@@ -71,9 +71,33 @@ export class PrismaTeamRepository implements TeamRepository {
   }
   createChallenge(userId: string, input: TeamChallengeCreateInput) { return this.db.teamChallenge.create({ data: { ...input, proposedAt: input.proposedAt ? new Date(input.proposedAt) : null, createdByUserId: userId } }); }
   getChallenge(challengeId: string) { return this.db.teamChallenge.findUnique({ where: { id: challengeId }, select: { id: true, challengerTeamId: true, challengedTeamId: true, status: true } }); }
-  getChallengeForUser(challengeId: string, userId: string) { return this.db.teamChallenge.findFirst({ where: { id: challengeId, OR: this.managedChallengeTeamFilters(userId) }, include: { challengerTeam: true, challengedTeam: true, game: true } }); }
-  listIncoming(userId: string, limit: number) { return this.db.teamChallenge.findMany({ where: { challengedTeam: { OR: this.managedTeamFilters(userId) } }, include: { challengerTeam: true, challengedTeam: true, game: true }, orderBy: { createdAt: "desc" }, take: limit }); }
-  listOutgoing(userId: string, limit: number) { return this.db.teamChallenge.findMany({ where: { challengerTeam: { OR: this.managedTeamFilters(userId) } }, include: { challengerTeam: true, challengedTeam: true, game: true }, orderBy: { createdAt: "desc" }, take: limit }); }
+  getChallengeForUser(challengeId: string, userId: string) {
+    return this.db.teamChallenge.findFirst({
+      where: { id: challengeId, OR: this.challengeViewFilters(userId) },
+      include: { challengerTeam: true, challengedTeam: true, game: true }
+    });
+  }
+  listIncoming(userId: string, limit: number) {
+    return this.db.teamChallenge.findMany({
+      where: { challengedTeam: { OR: this.capabilityTeamFilters(userId, "RESPOND_TO_CHALLENGE") } },
+      include: { challengerTeam: true, challengedTeam: true, game: true },
+      orderBy: { createdAt: "desc" },
+      take: limit
+    });
+  }
+  listOutgoing(userId: string, limit: number) {
+    return this.db.teamChallenge.findMany({
+      where: {
+        OR: [
+          { challengerTeam: { OR: this.capabilityTeamFilters(userId, "CREATE_CHALLENGE") } },
+          { status: "ACCEPTED", challengerTeam: { OR: this.capabilityTeamFilters(userId, "RESPOND_TO_CHALLENGE") } }
+        ]
+      },
+      include: { challengerTeam: true, challengedTeam: true, game: true },
+      orderBy: { createdAt: "desc" },
+      take: limit
+    });
+  }
   async acceptChallenge(challengeId: string) {
     return this.db.$transaction(async (tx) => {
       const challenge = await tx.teamChallenge.update({ where: { id: challengeId }, data: { status: "ACCEPTED" } });
@@ -83,11 +107,33 @@ export class PrismaTeamRepository implements TeamRepository {
   }
   declineChallenge(challengeId: string) { return this.db.teamChallenge.update({ where: { id: challengeId }, data: { status: "DECLINED" } }); }
   cancelChallenge(challengeId: string) { return this.db.teamChallenge.update({ where: { id: challengeId }, data: { status: "CANCELLED" } }); }
-  async listMessages(challengeId: string, userId: string) { if (!(await this.challengeVisibleToUser(challengeId, userId))) return null; return this.db.teamChallengeMessage.findMany({ where: { challengeId }, include: { author: { select: { presentation: true } } }, orderBy: { createdAt: "asc" } }); }
-  async createMessage(challengeId: string, userId: string, body: string) { if (!(await this.challengeVisibleToUser(challengeId, userId))) return null; return this.db.teamChallengeMessage.create({ data: { challengeId, authorUserId: userId, body } }); }
+  listMessages(challengeId: string) { return this.db.teamChallengeMessage.findMany({ where: { challengeId }, include: { author: { select: { presentation: true } } }, orderBy: { createdAt: "asc" } }); }
+  createMessage(challengeId: string, userId: string, body: string) { return this.db.teamChallengeMessage.create({ data: { challengeId, authorUserId: userId, body } }); }
   listGames(userId: string, limit: number) { return this.db.teamGame.findMany({ where: { OR: [{ homeTeam: { OR: this.managedTeamFilters(userId) } }, { awayTeam: { OR: this.managedTeamFilters(userId) } }] }, include: { homeTeam: true, awayTeam: true, challenge: true }, orderBy: [{ scheduledAt: "asc" }, { createdAt: "desc" }], take: limit }); }
   getGame(gameId: string, userId: string) { return this.db.teamGame.findFirst({ where: { id: gameId, OR: [{ homeTeam: { OR: this.managedTeamFilters(userId) } }, { awayTeam: { OR: this.managedTeamFilters(userId) } }] }, include: { homeTeam: true, awayTeam: true, challenge: true } }); }
-  private managedTeamFilters(userId: string): Prisma.TeamWhereInput[] { return [{ responsibilities: { some: { userId, revokedAt: null } } }, { community: { memberships: { some: { userId, leftAt: null, role: { in: ["FOUNDER", "COACH"] } } } } }]; }
-  private managedChallengeTeamFilters(userId: string): Prisma.TeamChallengeWhereInput[] { const managed = this.managedTeamFilters(userId); return [{ challengerTeam: { OR: managed } }, { challengedTeam: { OR: managed } }]; }
-  private async challengeVisibleToUser(challengeId: string, userId: string): Promise<boolean> { return Boolean(await this.db.teamChallenge.findFirst({ where: { id: challengeId, OR: this.managedChallengeTeamFilters(userId) }, select: { id: true } })); }
+  private managedTeamFilters(userId: string): Prisma.TeamWhereInput[] {
+    return [
+      { responsibilities: { some: { userId, revokedAt: null } } },
+      { community: { memberships: { some: { userId, leftAt: null, role: { in: ["FOUNDER", "COACH"] } } } } }
+    ];
+  }
+  private capabilityTeamFilters(userId: string, capability: TeamCapabilityInput): Prisma.TeamWhereInput[] {
+    return [
+      { responsibilities: { some: { userId, role: "COACH", revokedAt: null } } },
+      {
+        AND: [
+          { responsibilities: { some: { userId, role: "ASSISTANT", revokedAt: null } } },
+          { capabilityGrants: { some: { userId, capability, revokedAt: null } } }
+        ]
+      },
+      { community: { memberships: { some: { userId, leftAt: null, role: { in: ["FOUNDER", "COACH"] } } } } }
+    ];
+  }
+  private challengeViewFilters(userId: string): Prisma.TeamChallengeWhereInput[] {
+    return [
+      { challengerTeam: { OR: this.capabilityTeamFilters(userId, "CREATE_CHALLENGE") } },
+      { challengedTeam: { OR: this.capabilityTeamFilters(userId, "RESPOND_TO_CHALLENGE") } },
+      { status: "ACCEPTED", challengerTeam: { OR: this.capabilityTeamFilters(userId, "RESPOND_TO_CHALLENGE") } }
+    ];
+  }
 }
