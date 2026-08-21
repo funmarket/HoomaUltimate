@@ -8,30 +8,21 @@ PostgreSQL is the durable source of business truth. Redis/Valkey is transient. O
 
 The final schema is normalized from both sources; it is not a concatenation of their Prisma files.
 
-## 2. Migration baseline
+## 2. Greenfield migration baseline
 
-HOOMA ULTIMATE must preserve the Source A migration chain unchanged when targeting the existing Railway database:
-
-1. `20260816141614_init`
-2. `20260816190000_add_teams`
-3. `20260818153000_add_watch_fanhub_association`
-4. `20260818170000_add_places_and_owner_claims`
-5. `20260819090000_add_profile_audience`
-6. `20260819152000_add_pitch_listings`
-7. `20260819184500_add_platform_admin_authority`
-8. `20260820123500_make_telegram_user_id_optional`
-9. `20260820140500_add_email_password_auth`
-10. `20260820213000_add_profile_identities`
-11. `20260821094000_add_profile_presentation`
+HOOMA ULTIMATE owns a fresh database schema and migration history.
 
 Rules:
 
-- never edit an already-deployed migration;
-- never replace this chain with V3's fresh-init strategy;
-- never use `prisma db push` as production migration strategy;
-- every HOOMA ULTIMATE schema change gets a forward migration;
-- data backfills are idempotent/auditable where possible;
-- clean-database and Source-A-upgrade paths converge to the same final schema.
+- design the target schema from the final domain requirements, not from donor table compatibility;
+- create and commit a real initial Prisma migration for HOOMA ULTIMATE;
+- Source A migrations and Source B schema are read-only reference evidence only;
+- do not copy Source A migration directories into the target history;
+- do not repeat Source B's zero-migration/fresh-schema-without-SQL state;
+- never use `prisma db push` as the production migration strategy;
+- once HOOMA ULTIMATE ships, every schema change gets a committed forward migration;
+- clean-database migration from zero is a required CI/release check;
+- historical donor data, if ever imported, uses explicit ETL/import scripts and reconciliation rather than application migration compatibility.
 
 ## 3. Core model ownership
 
@@ -50,8 +41,6 @@ Target concepts:
 
 `User` is canonical identity. Authentication transports are separate records. Presentation is not authorization.
 
-Legacy Source A auth/user fields may remain temporarily during migration, but only with an explicit backfill/removal plan.
-
 ### Global authority
 
 - `PlatformRoleAssignment`
@@ -64,7 +53,7 @@ Only global role: `PLATFORM_ADMIN`.
 - `CommunityMembership`
 - `CommunityInvite`
 
-Target roles: FOUNDER, COACH, MEMBER. Legacy scoped ADMIN values require explicit data migration.
+Target roles: FOUNDER, COACH, MEMBER. No scoped ADMIN value exists in the new target schema.
 
 ### Teams
 
@@ -155,7 +144,7 @@ Payment execution belongs to Payments, not FundMe.
 
 ### Payments
 
-Preserve/normalize Source A mature models and runtime needs for:
+Design the payment models to support the verified mature runtime needs for:
 
 - PaymentIntent;
 - provider attempts/charges where present;
@@ -222,41 +211,21 @@ Required examples:
 - foreign keys for Event/Watch/Pitch -> Place associations;
 - useful query indexes on public discovery and active-status paths.
 
-## 6. Place migration/backfill
+## 6. Greenfield canonical Place design
 
-The Place normalization migration must inventory existing Source A Place, Pitch listing, Watch/FanHub venue relationships and map them to one canonical physical Place.
+The target schema must model one canonical physical `Place` from the first migration. Watch, Pitch, FanHub and Lounge/Cafe capabilities attach to that Place through explicit profile/application relationships. No legacy duplicate venue tables are required in the target.
 
-Required approach:
+If donor data is imported later, duplicate detection and deterministic reconciliation belong to a separate import tool with review output; they are not part of the target schema migration chain.
 
-1. add new nullable linkage/capability fields/tables;
-2. backfill deterministically using existing identifiers, not list positions;
-3. detect possible duplicates for manual review rather than silently collapsing uncertain rows;
-4. preserve historical Event snapshots where current Place edits would otherwise rewrite history;
-5. validate all new foreign keys before old relationships are removed;
-6. remove legacy duplicate structures only after application reads/writes and tests use the canonical path.
+## 7. Greenfield identity design
 
-## 7. Identity/auth migration
-
-Do not destructively rename Source A auth fields first.
-
-Safer sequence:
-
-1. create final identity/session tables;
-2. backfill Telegram identity from existing Telegram user IDs;
-3. backfill Web credential/session state where compatible;
-4. normalize usernames/emails before adding stricter constraints;
-5. dual-read only if necessary during a short transition;
-6. switch application ownership to final tables;
-7. verify representative production-like data;
-8. remove deprecated columns/tables in a later forward migration.
+Create the final identity model directly: canonical User, TelegramIdentity, WebCredential, WebSession and profile/presentation records. No legacy auth columns or dual-read transition is required in the new application.
 
 No automatic Web/Telegram account merge is permitted.
 
-## 8. Community role migration
+## 8. Scoped role vocabulary
 
-Legacy `OWNER/ADMIN/MEMBER` must not survive as final scoped Admin terminology.
-
-The migration must map legacy rows using verified Source A semantics. Likely mappings must be confirmed by source trace before SQL is written; do not guess globally that every `ADMIN` is a Coach without validating how that role is used in current production paths.
+The target schema must never introduce legacy scoped `ADMIN` terminology. Communities use `FOUNDER/COACH/MEMBER`; Teams use `COACH/ASSISTANT/PLAYER`; ULTRAS use `LEADER/MODERATOR/MEMBER`; global application authority uses `PLATFORM_ADMIN`.
 
 ## 9. Whistle transactional design
 
@@ -278,10 +247,11 @@ Mutations exposed to retries/provider callbacks use scoped idempotency records o
 
 Migration tests must prove:
 
-- entire chain builds a clean database from zero;
-- representative Source A schema/data upgrades through all new migrations;
-- clean and upgraded paths match the expected final schema;
-- no existing required records disappear unexpectedly;
-- role/identity/Place backfills are correct;
+- the entire HOOMA ULTIMATE chain builds a clean database from zero;
+- the generated schema matches the expected target architecture;
 - required unique/FK/check constraints hold;
+- seed/dev fixtures do not weaken production invariants;
+- no donor migration compatibility is assumed;
 - downgrade is not assumed; rollback strategy is forward-fix/restore according to deployment policy.
+
+If a future donor-data import is approved, that import receives its own fixture set, reconciliation assertions, row-count/invariant checks, and acceptance report separate from normal schema migration tests.
