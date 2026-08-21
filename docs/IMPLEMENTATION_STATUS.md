@@ -2,40 +2,48 @@
 
 Status: **Live implementation ledger**
 
-This file reports only work present and verified in `funmarket/HoomaUltimate`. Source A or Source B functionality does not count as implemented until it is ported into the target repository and verified there.
+This file reports only work present in `funmarket/HoomaUltimate` and the verification actually completed against it. Source A or Source B functionality does not count as implemented merely because donor code exists.
 
-Allowed overall states:
+Allowed states:
 
 - `NOT_STARTED`
 - `IN_PROGRESS`
 - `BLOCKED`
 - `DONE`
 
-No percentages.
-
-`DONE` requires evidence for the complete production vertical slice. Preview Mode never counts as production completion.
+No percentages. `DONE` requires verified production vertical-slice evidence. A schema, route, page, donor implementation, or mock by itself is not completion.
 
 ## Current repository phase
 
 | Area | Overall | Evidence / next requirement |
 |---|---|---|
-| Merge audit and core architecture documentation | `DONE` | Eight baseline docs authored and committed to `funmarket/HoomaUltimate/main`; implementation claims remain separate from source-reference capabilities. |
-| Target codebase | `NOT_STARTED` | No production source has been copied/implemented yet. |
-| Migration baseline import | `NOT_STARTED` | Source A migration chain identified but not yet committed into target. |
-| CI/tooling | `NOT_STARTED` | Must be built rather than copying V3's broken order. |
+| Planning / architecture baseline | `DONE` | Root `structure.md` + `requirements.md` and the supporting `docs/*` architecture set define the greenfield target. |
+| Greenfield monorepo foundation | `IN_PROGRESS` | V3-style four-app/eight-package topology is implemented on `phase-0-foundation`; architecture and dependency-free structure/preflight checks pass locally. Full clean-install/build CI is still required. |
+| Fresh database foundation | `IN_PROGRESS` | New HOOMA ULTIMATE Prisma schema and first migration exist. This is not Source A's migration chain. CI must prove generate/validate/migrate on disposable PostgreSQL. |
+| Identity / authentication | `IN_PROGRESS` | Layered Web + Telegram identity slice is wired, including Argon2id, hashed opaque sessions, fail-closed Telegram credential handling, `AUTH_CONFLICT`, protected logout and Web/Telegram clients. Dependency-backed tests remain to be proven in CI. |
+| Platform Admin / audit | `IN_PROGRESS` | Separate `PLATFORM_ADMIN` service/routes, audit foundation, operator grant command and `/admin` Web shell are implemented. PostgreSQL integration test is present; CI verification is pending. |
+| Product domains | `NOT_STARTED` | Communities, Teams, Events, Places/Watch/Pitch, Requests/Ride/FundMe, ULTRAS, Gamers, Whistle, Payments, Media/Replay are built as later vertical slices using the donor references. |
+
+## Greenfield database policy
+
+- HOOMA ULTIMATE owns its own schema and migration history.
+- Source A and V3 migrations are donor evidence only.
+- No Source A upgrade-path requirement exists for this repository.
+- If legacy data is ever imported, it will be a separate explicit ETL/import project.
+- Clean-database migration from zero is the release requirement for this app.
 
 ## Feature ledger
 
-Legend for layer cells: `NS` = not started, `IP` = in progress, `BL` = blocked, `DN` = done.
+Legend: `NS` = not started, `IP` = in progress, `BL` = blocked, `DN` = done, `N/A` = not applicable.
 
 | Feature | Overall | DB | Backend | Authz | Public API | Member API | Web | Telegram | Worker | Tests | Migration | Deployment | Verification |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Workspace/monorepo foundation | `NOT_STARTED` | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS |
-| Canonical User/identity model | `NOT_STARTED` | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS |
-| Web authentication | `NOT_STARTED` | NS | NS | NS | N/A | NS | NS | N/A | N/A | NS | NS | NS | NS |
-| Telegram authentication | `NOT_STARTED` | NS | NS | NS | N/A | NS | N/A | NS | N/A | NS | NS | NS | NS |
-| Public/member API boundary | `NOT_STARTED` | N/A | NS | NS | NS | NS | NS | NS | N/A | NS | N/A | NS | NS |
-| Platform Admin + AuditLog | `NOT_STARTED` | NS | NS | NS | N/A | NS | NS | NS | NS | NS | NS | NS | NS |
+| Workspace/monorepo foundation | `IN_PROGRESS` | N/A | IP | IP | N/A | N/A | IP | IP | IP | IP | N/A | IP | IP |
+| Canonical User/identity model | `IN_PROGRESS` | IP | IP | IP | N/A | IP | IP | IP | N/A | IP | IP | IP | IP |
+| Web authentication | `IN_PROGRESS` | IP | IP | IP | IP | IP | IP | N/A | N/A | IP | IP | IP | IP |
+| Telegram authentication | `IN_PROGRESS` | IP | IP | IP | N/A | IP | N/A | IP | N/A | IP | IP | IP | IP |
+| Public/member API boundary | `IN_PROGRESS` | N/A | IP | IP | IP | IP | IP | IP | N/A | IP | N/A | IP | IP |
+| Platform Admin + AuditLog | `IN_PROGRESS` | IP | IP | IP | N/A | IP | IP | N/A | N/A | IP | IP | IP | IP |
 | Profile presentation/identities | `NOT_STARTED` | NS | NS | NS | NS | NS | NS | NS | N/A | NS | NS | NS | NS |
 | Profile memberships/responsibilities | `NOT_STARTED` | NS | NS | NS | NS | NS | NS | NS | N/A | NS | NS | NS | NS |
 | HOOMA Communities | `NOT_STARTED` | NS | NS | NS | NS | NS | NS | NS | N/A | NS | NS | NS | NS |
@@ -46,13 +54,9 @@ Legend for layer cells: `NS` = not started, `IP` = in progress, `BL` = blocked, 
 | Team lineups | `NOT_STARTED` | NS | NS | NS | NS | NS | NS | NS | N/A | NS | NS | NS | NS |
 | Team challenges/messages/games | `NOT_STARTED` | NS | NS | NS | NS | NS | NS | NS | N/A | NS | NS | NS | NS |
 | Events/Play | `NOT_STARTED` | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS |
-| Watch | `NOT_STARTED` | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS |
 | Canonical Places | `NOT_STARTED` | NS | NS | NS | NS | NS | NS | NS | N/A | NS | NS | NS | NS |
-| Lounge/Cafe | `NOT_STARTED` | NS | NS | NS | NS | NS | NS | NS | N/A | NS | NS | NS | NS |
-| Place suggestions | `NOT_STARTED` | NS | NS | NS | NS | NS | NS | NS | N/A | NS | NS | NS | NS |
-| Place ownership/claims | `NOT_STARTED` | NS | NS | NS | NS | NS | NS | NS | N/A | NS | NS | NS | NS |
+| Watch / FanHub | `NOT_STARTED` | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS |
 | Pitch | `NOT_STARTED` | NS | NS | NS | NS | NS | NS | NS | N/A | NS | NS | NS | NS |
-| FanHub | `NOT_STARTED` | NS | NS | NS | NS | NS | NS | NS | N/A | NS | NS | NS | NS |
 | ULTRAS | `NOT_STARTED` | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS |
 | Gamers | `NOT_STARTED` | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS |
 | Whistle | `NOT_STARTED` | NS | NS | NS | N/A | NS | NS | NS | NS | NS | NS | NS | NS |
@@ -62,24 +66,47 @@ Legend for layer cells: `NS` = not started, `IP` = in progress, `BL` = blocked, 
 | Cash payments | `NOT_STARTED` | NS | NS | NS | N/A | NS | NS | NS | NS | NS | NS | NS | NS |
 | Telegram Stars | `NOT_STARTED` | NS | NS | NS | N/A | NS | NS | NS | NS | NS | NS | NS | NS |
 | Media | `NOT_STARTED` | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS |
-| Outbox Worker | `NOT_STARTED` | NS | NS | NS | N/A | N/A | N/A | N/A | NS | NS | NS | NS | NS |
+| Outbox Worker | `IN_PROGRESS` | IP | NS | N/A | N/A | N/A | N/A | N/A | IP | NS | IP | IP | IP |
 | Replay | `NOT_STARTED` | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS | NS |
 | HOOMA NOW/discovery | `NOT_STARTED` | N/A | NS | NS | NS | N/A | NS | NS | N/A | NS | N/A | NS | NS |
 | Preview Mode | `NOT_STARTED` | N/A | N/A | N/A | N/A | N/A | NS | NS | N/A | NS | N/A | NS | NS |
-| CI/release pipeline | `NOT_STARTED` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | NS | NS | NS | NS |
-| Clean DB migration chain verification | `NOT_STARTED` | NS | N/A | N/A | N/A | N/A | N/A | N/A | N/A | NS | NS | N/A | NS |
-| Source A upgrade-path verification | `NOT_STARTED` | NS | N/A | N/A | N/A | N/A | N/A | N/A | N/A | NS | NS | N/A | NS |
+| CI/release pipeline | `IN_PROGRESS` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | IP | IP | IP | IP |
+| Clean DB migration-chain verification | `IN_PROGRESS` | IP | N/A | N/A | N/A | N/A | N/A | N/A | N/A | IP | IP | N/A | IP |
+| Legacy donor-data import | `NOT_STARTED` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 
-## Evidence rule
+## Current concrete evidence
 
-For a feature to become `DONE`, add concrete evidence such as:
+### Foundation
 
-- migration file(s);
-- repository/service/policy/controller paths;
-- Web and Telegram route/component paths;
-- unit/integration test paths;
-- executed command results;
-- migration-chain and upgrade-path verification records;
-- deployment/runtime configuration and verification notes.
+- `apps/api`, `apps/web`, `apps/telegram`, `apps/worker`
+- `packages/auth`, `config`, `contracts`, `database`, `domain`, `storage`, `testing`, `ui`
+- `scripts/architecture-check.mjs`
+- `scripts/deploy-preflight.mjs`
+- `.github/workflows/ci.yml`
+- local architecture check: passed
+- local foundation/Phase-1 structure tests: passed
+- local deploy preflight: passed
 
-Never promote a row to DONE because Source A or B contains similar code.
+### Identity / auth
+
+- `packages/database/prisma/migrations/20260821160000_initial_identity_foundation/migration.sql`
+- `apps/api/src/modules/identity/domain/*`
+- `apps/api/src/modules/identity/application/*`
+- `apps/api/src/modules/identity/infrastructure/*`
+- `apps/api/src/modules/identity/http/*`
+- `apps/web/src/auth/AuthApp.tsx`
+- `apps/telegram/src/api/client.ts`
+- `tests/identity.service.test.ts`
+- `tests/identity.http.integration.test.ts`
+
+### Platform Admin / audit
+
+- `apps/api/src/modules/platform-admin/*`
+- `apps/api/src/modules/audit/*`
+- `scripts/grant-platform-admin.ts`
+- `apps/web/src/admin/AdminApp.tsx`
+- `tests/platform-admin.integration.test.ts`
+
+## Verification rule
+
+Never promote a row to `DONE` until all applicable layers are present and the relevant real commands/tests have passed. In particular, dependency installation, Prisma generation/validation/migration, TypeScript compilation, integration tests, production builds and deployment preflight must not be inferred from source existence.
