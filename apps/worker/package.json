@@ -9,6 +9,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "start": "node dist/main.js"
   },
+  "dependencies": {
+    "@hooma/database": "0.1.0"
+  },
   "devDependencies": {
     "@types/node": "22.18.0",
     "tsx": "4.20.5",

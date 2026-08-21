@@ -24,6 +24,9 @@ export class EventService {
   }
 
   async create(userId: string, input: EventCreateInput) {
+    if (input.type !== "PLAY") {
+      throw new AppError(409, "WATCH_NOT_ENABLED", "Watch events will be enabled by the Watch slice");
+    }
     await this.communities.requireCoach(input.communityId, userId);
     if (input.entryFeeMinor > 0) {
       throw new AppError(409, "EVENT_PAYMENTS_NOT_ENABLED", "Paid RSVP will be enabled by the Payments slice");
