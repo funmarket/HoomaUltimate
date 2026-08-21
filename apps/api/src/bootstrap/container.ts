@@ -4,6 +4,10 @@ import { IdentityService } from "../modules/identity/application/identity.servic
 import { PrismaIdentityRepository } from "../modules/identity/infrastructure/prisma-identity.repository.js";
 import { PrismaPlatformAdminRepository } from "../modules/platform-admin/infrastructure/prisma-platform-admin.repository.js";
 import { PlatformAdminService } from "../modules/platform-admin/application/platform-admin.service.js";
+import { CommunityService } from "../modules/communities/application/community.service.js";
+import { PrismaCommunityRepository } from "../modules/communities/infrastructure/prisma-community.repository.js";
+import { TeamService } from "../modules/teams/application/team.service.js";
+import { PrismaTeamRepository } from "../modules/teams/infrastructure/prisma-team.repository.js";
 
 export function createContainer(config: ApiConfig) {
   const database = getDatabaseClient();
@@ -11,8 +15,10 @@ export function createContainer(config: ApiConfig) {
   const identityService = new IdentityService(identityRepository, config);
   const platformAdminRepository = new PrismaPlatformAdminRepository(database);
   const platformAdminService = new PlatformAdminService(platformAdminRepository);
-
-  return { database, identityService, platformAdminService };
+  const communityRepository = new PrismaCommunityRepository(database);
+  const communityService = new CommunityService(communityRepository);
+  const teamRepository = new PrismaTeamRepository(database);
+  const teamService = new TeamService(teamRepository, communityService);
+  return { database, identityService, platformAdminService, communityService, teamService };
 }
-
 export type AppContainer = ReturnType<typeof createContainer>;

@@ -6,13 +6,7 @@ export const healthResponseSchema = z.object({
   version: z.string().min(1)
 });
 
-export const usernameSchema = z
-  .string()
-  .trim()
-  .min(3)
-  .max(64)
-  .regex(/^[a-zA-Z0-9_.-]+$/);
-
+export const usernameSchema = z.string().trim().min(3).max(64).regex(/^[a-zA-Z0-9_.-]+$/);
 export const displayNameSchema = z.string().trim().min(2).max(120);
 
 export const registerSchema = z.object({
@@ -22,22 +16,11 @@ export const registerSchema = z.object({
   email: z.string().trim().email().max(320).optional().nullable(),
   displayName: displayNameSchema.optional().nullable()
 });
-
-export const loginSchema = z.object({
-  loginUsername: usernameSchema,
-  password: z.string().min(1).max(128)
-});
-
+export const loginSchema = z.object({ loginUsername: usernameSchema, password: z.string().min(1).max(128) });
 export const sessionResponseSchema = z.object({ ok: z.literal(true) });
-
 export const meResponseSchema = z.object({
   id: z.string(),
-  presentation: z.object({
-    username: z.string(),
-    displayName: z.string(),
-    photoUrl: z.string().url().nullable(),
-    bio: z.string().nullable()
-  }),
+  presentation: z.object({ username: z.string(), displayName: z.string(), photoUrl: z.string().url().nullable(), bio: z.string().nullable() }),
   transports: z.array(z.enum(["web", "telegram"])),
   platformRoles: z.array(z.literal("PLATFORM_ADMIN"))
 });
@@ -46,3 +29,43 @@ export type HealthResponse = z.infer<typeof healthResponseSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type MeResponse = z.infer<typeof meResponseSchema>;
+
+export const teamCapabilitySchema = z.enum([
+  "EDIT_TEAM",
+  "MANAGE_ROSTER",
+  "MANAGE_LINEUP",
+  "CREATE_CHALLENGE",
+  "RESPOND_TO_CHALLENGE",
+  "MANAGE_TEAM_EVENTS"
+]);
+export const teamCreateSchema = z.object({
+  communityId: z.string().min(1),
+  name: z.string().trim().min(2).max(100),
+  motto: z.string().trim().max(160).optional().nullable(),
+  city: z.string().trim().max(100).optional().nullable(),
+  houma: z.string().trim().max(100).optional().nullable(),
+  badgeUrl: z.string().url().max(2000).optional().nullable()
+});
+export const teamUpdateSchema = teamCreateSchema.omit({ communityId: true }).partial();
+export const teamPlayerSchema = z.object({ userId: z.string().min(1) });
+export const teamAssistantSchema = z.object({ userId: z.string().min(1), capabilities: z.array(teamCapabilitySchema).min(1).max(6) });
+export const teamLineupSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  formation: z.string().trim().max(40).optional().nullable(),
+  slots: z.array(z.object({ userId: z.string().min(1).optional().nullable(), position: z.string().trim().min(1).max(20), sortOrder: z.number().int().min(0).max(50).default(0) })).min(1).max(30)
+});
+export const footballFormatSchema = z.enum(["FIVE_V_FIVE", "SIX_V_SIX", "SEVEN_V_SEVEN", "EIGHT_V_EIGHT", "NINE_V_NINE", "ELEVEN_V_ELEVEN"]);
+export const teamChallengeCreateSchema = z.object({
+  challengerTeamId: z.string().min(1),
+  challengedTeamId: z.string().min(1),
+  format: footballFormatSchema,
+  proposedAt: z.string().datetime().optional().nullable(),
+  message: z.string().trim().max(300).optional().nullable()
+});
+export const teamChallengeMessageSchema = z.object({ body: z.string().trim().min(1).max(1000) });
+
+export type TeamCapabilityInput = z.infer<typeof teamCapabilitySchema>;
+export type TeamCreateInput = z.infer<typeof teamCreateSchema>;
+export type TeamUpdateInput = z.infer<typeof teamUpdateSchema>;
+export type TeamLineupInput = z.infer<typeof teamLineupSchema>;
+export type TeamChallengeCreateInput = z.infer<typeof teamChallengeCreateSchema>;
