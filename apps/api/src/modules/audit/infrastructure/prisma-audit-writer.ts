@@ -12,7 +12,9 @@ export class PrismaAuditWriter implements AuditWriter {
         entityType: entry.entityType,
         entityId: entry.entityId ?? null,
         requestId: entry.requestId ?? null,
-        metadata: (entry.metadata ?? undefined) as Prisma.InputJsonValue | undefined
+        ...(entry.metadata !== undefined
+          ? { metadata: entry.metadata as Prisma.InputJsonValue }
+          : {})
       }
     });
   }
