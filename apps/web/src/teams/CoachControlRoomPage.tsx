@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { TEAM_STANDARD_FORMATIONS } from "@hooma/contracts";
 import type { ReactNode } from "react";
 import type { TeamCapabilityInput, TeamChallengeCreateInput } from "@hooma/contracts";
+import { protectedActionError } from "../auth/auth-redirect";
 import { teamApi, type ManagedTeam, type TeamControlDetail, type TeamChallengeSummary } from "../api/team-client";
 
 const CAPABILITIES: readonly TeamCapabilityInput[] = [
@@ -22,7 +23,7 @@ export function CoachControlRoomPage() {
   async function reloadManagedTeams() { try { const rows = await teamApi.managed(); setTeams(rows); setSelectedTeamId((current) => current || rows[0]?.id || ""); } catch (reason) { reportError(reason); } }
   async function reloadSelectedTeam() { if (selectedTeamId) setTeam(await teamApi.publicDetail(selectedTeamId)); }
   async function reloadChallenges() { try { const [incomingRows, outgoingRows] = await Promise.all([teamApi.incomingChallenges(), teamApi.outgoingChallenges()]); setIncoming(incomingRows); setOutgoing(outgoingRows); } catch (reason) { reportError(reason); } }
-  function reportError(reason: unknown) { setError(reason instanceof Error ? reason.message : "Unexpected Team error"); }
+  function reportError(reason: unknown) { setError(protectedActionError(reason, "Unexpected Team error")); }
   async function runAction(action: () => Promise<unknown>, success: string, refreshTeam = true) { setError(""); setNotice(""); try { await action(); setNotice(success); if (refreshTeam) await reloadSelectedTeam(); await reloadManagedTeams(); await reloadChallenges(); } catch (reason) { reportError(reason); } }
   if (!teams.length && !error) return <p className="status">Loading your managed Teams…</p>;
   return <section className="control-room"><header className="control-room__header"><div><p className="eyebrow">TEAM MANAGEMENT</p><h2>Coach Control Room</h2><p>Coach and delegated Assistant actions use the same protected Team API.</p></div><label>Managed Team<select value={selectedTeamId} onChange={(event) => setSelectedTeamId(event.target.value)}>{teams.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}</select></label></header>{error ? <p className="error">{error}</p> : null}{notice ? <p className="success">{notice}</p> : null}{!selected ? <p className="status">You do not currently manage a Team.</p> : null}{selected && team ? <><section className="panel control-room__summary"><div><span>Team</span><strong>{team.name}</strong></div><div><span>Houma</span><strong>{team.houma || team.city || "—"}</strong></div><a href={`/teams/${team.id}`}>Open public Team profile</a></section><div className="control-room__grid"><EditTeamCard team={team} onRun={runAction} /><RosterCard team={team} onRun={runAction} /><AssistantCard team={team} onRun={runAction} /><LineupCard team={team} onRun={runAction} /><CreateChallengeCard team={team} managedTeams={teams} onRun={runAction} /></div><ChallengeBoard incoming={incoming} outgoing={outgoing} onRun={runAction} /></> : null}</section>;
