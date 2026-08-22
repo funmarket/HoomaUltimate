@@ -6,8 +6,9 @@ import { createContainer } from "./container.js";
 const config = loadApiConfig();
 const container = createContainer(config);
 const app = createApp(config, container);
-const server = app.listen(config.API_PORT, "0.0.0.0", () => {
-  console.log(`HOOMA ULTIMATE API listening on ${config.API_PORT}`);
+const listenPort = config.PORT ?? config.API_PORT;
+const server = app.listen(listenPort, "0.0.0.0", () => {
+  console.log(`HOOMA API listening on ${listenPort}`);
 });
 
 function shutdown(signal: NodeJS.Signals) {
