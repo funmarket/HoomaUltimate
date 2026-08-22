@@ -86,15 +86,7 @@ export const teamAssistantSchema = z.object({
   userId: z.string().min(1),
   capabilities: z.array(teamCapabilitySchema).min(1).max(6)
 });
-export const teamLineupSchema = z.object({
-  name: z.string().trim().min(1).max(100),
-  formation: z.string().trim().max(40).optional().nullable(),
-  slots: z.array(z.object({
-    userId: z.string().min(1).optional().nullable(),
-    position: z.string().trim().min(1).max(20),
-    sortOrder: z.number().int().min(0).max(50).default(0)
-  })).min(1).max(30)
-});
+
 export const footballFormatSchema = z.enum([
   "FIVE_V_FIVE",
   "SIX_V_SIX",
@@ -103,6 +95,34 @@ export const footballFormatSchema = z.enum([
   "NINE_V_NINE",
   "ELEVEN_V_ELEVEN"
 ]);
+
+export const TEAM_STANDARD_FORMATIONS = [
+  "4-3-3",
+  "4-4-2",
+  "4-2-3-1",
+  "3-5-2",
+  "3-4-3"
+] as const;
+
+export const teamFormationSchema = z
+  .string()
+  .trim()
+  .min(3)
+  .max(20)
+  .regex(/^\d+(?:-\d+){1,4}$/, "Formation must use numbers separated by hyphens, for example 4-3-3 or 4-2-3-1");
+
+export const teamLineupSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  formation: teamFormationSchema,
+  matchFormat: footballFormatSchema,
+  published: z.boolean().default(false),
+  slots: z.array(z.object({
+    userId: z.string().min(1).optional().nullable(),
+    position: z.string().trim().min(1).max(20),
+    sortOrder: z.number().int().min(0).max(50).default(0)
+  })).min(1).max(30)
+});
+
 export const teamChallengeCreateSchema = z.object({
   challengerTeamId: z.string().min(1),
   challengedTeamId: z.string().min(1),
