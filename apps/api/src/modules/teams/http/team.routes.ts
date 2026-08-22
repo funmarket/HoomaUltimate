@@ -7,7 +7,19 @@ import type { TeamService } from "../application/team.service.js";
 function numberQuery(value: unknown, fallback: number): number { const parsed = Number(value ?? fallback); return Number.isFinite(parsed) ? parsed : fallback; }
 export function createTeamPublicRouter(service: TeamService): Router {
   const router = Router();
-  router.get("/", asyncHandler(async (req, res) => res.json(await service.listPublic({ limit: numberQuery(req.query.limit, 30), cursor: typeof req.query.cursor === "string" ? req.query.cursor : undefined, search: typeof req.query.search === "string" ? req.query.search : undefined, city: typeof req.query.city === "string" ? req.query.city : undefined, houma: typeof req.query.houma === "string" ? req.query.houma : undefined }))));
+  router.get("/", asyncHandler(async (req, res) => {
+    const cursor = typeof req.query.cursor === "string" ? req.query.cursor : undefined;
+    const search = typeof req.query.search === "string" ? req.query.search : undefined;
+    const city = typeof req.query.city === "string" ? req.query.city : undefined;
+    const houma = typeof req.query.houma === "string" ? req.query.houma : undefined;
+    res.json(await service.listPublic({
+      limit: numberQuery(req.query.limit, 30),
+      ...(cursor !== undefined ? { cursor } : {}),
+      ...(search !== undefined ? { search } : {}),
+      ...(city !== undefined ? { city } : {}),
+      ...(houma !== undefined ? { houma } : {})
+    }));
+  }));
   router.get("/:id", asyncHandler(async (req, res) => res.json(await service.getPublic(String(req.params.id)))));
   return router;
 }
