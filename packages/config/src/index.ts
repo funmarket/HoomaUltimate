@@ -1,11 +1,13 @@
 import { z } from "zod";
 
 const nodeEnvironmentSchema = z.enum(["development", "test", "production"]);
+const portSchema = z.coerce.number().int().positive().max(65535);
 
 const apiEnvironmentSchema = z
   .object({
     NODE_ENV: nodeEnvironmentSchema.default("development"),
-    API_PORT: z.coerce.number().int().positive().max(65535).default(3000),
+    PORT: portSchema.optional(),
+    API_PORT: portSchema.default(3000),
     DATABASE_URL: z.string().min(1),
     REDIS_URL: z.string().url().optional(),
     WEB_ORIGIN: z.string().url().default("http://localhost:5173"),
