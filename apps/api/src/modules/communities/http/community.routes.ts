@@ -29,6 +29,15 @@ export function createCommunityMemberRouter(service: CommunityService): Router {
     res.status(201).json(await service.appointCoach(getAuth(req).userId, String(req.params.id), input.userId));
   }));
   router.delete("/:id/coaches/:userId", asyncHandler(async (req, res) => res.json(await service.revokeCoach(getAuth(req).userId, String(req.params.id), String(req.params.userId)))));
-  router.post("/", asyncHandler(async (req, res) => res.status(201).json(await service.create(getAuth(req).userId, createSchema.parse(req.body)))));
+  router.post("/", asyncHandler(async (req, res) => {
+    const parsed = createSchema.parse(req.body);
+    const input = {
+      name: parsed.name,
+      ...(parsed.description !== undefined ? { description: parsed.description } : {}),
+      ...(parsed.city !== undefined ? { city: parsed.city } : {}),
+      ...(parsed.houma !== undefined ? { houma: parsed.houma } : {})
+    };
+    res.status(201).json(await service.create(getAuth(req).userId, input));
+  }));
   return router;
 }
