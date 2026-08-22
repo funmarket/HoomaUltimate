@@ -5,6 +5,9 @@ export { HomeGatewayCard } from "./home/HomeGatewayCard.js";
 export { HomeGatewayGrid } from "./home/HomeGatewayGrid.js";
 export { HOME_GATEWAYS } from "./home/home-gateways.js";
 export type { HomeGatewayId, HomeGatewayItem } from "./home/home-gateways.js";
+export { TeamsHero } from "./teams/TeamsHero.js";
+export { TeamDiscoveryCard } from "./teams/TeamDiscoveryCard.js";
+export type { TeamDiscoveryCardProps } from "./teams/TeamDiscoveryCard.js";
 
 export const PRIMARY_NAV_ITEMS = [
   { label: "Home", href: "/" },
