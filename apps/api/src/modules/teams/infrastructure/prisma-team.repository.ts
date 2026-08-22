@@ -22,7 +22,7 @@ export class PrismaTeamRepository implements TeamRepository {
       community: { select: { id: true, name: true, slug: true } },
       players: { where: { leftAt: null }, select: { userId: true, joinedAt: true, user: { select: { presentation: true } } }, orderBy: { joinedAt: "asc" } },
       responsibilities: { where: { revokedAt: null }, select: { userId: true, role: true, user: { select: { presentation: true } } } },
-      lineups: { orderBy: { updatedAt: "desc" }, take: 5, select: { id: true, name: true, formation: true, updatedAt: true, slots: { orderBy: { sortOrder: "asc" } } } }
+      lineups: { where: { published: true, active: true }, orderBy: { updatedAt: "desc" }, take: 1, select: { id: true, name: true, formation: true, matchFormat: true, published: true, updatedAt: true, slots: { orderBy: { sortOrder: "asc" } } } }
     } });
   }
   listManaged(userId: string) {
@@ -50,11 +50,11 @@ export class PrismaTeamRepository implements TeamRepository {
     });
   }
   update(teamId: string, input: TeamUpdateInput) { return this.db.team.update({ where: { id: teamId }, data: input }); }
-  addPlayer(teamId: string, targetUserId: string) { return this.db.teamPlayer.upsert({ where: { teamId_userId: { teamId, userId: targetUserId } }, create: { teamId, userId: targetUserId }, update: { leftAt: null, joinedAt: new Date() } }); }
-  async removePlayer(teamId: string, targetUserId: string): Promise<number> { return (await this.db.teamPlayer.updateMany({ where: { teamId, userId: targetUserId, leftAt: null }, data: { leftAt: new Date() } })).count; }
+  addPlayer(teamId: string, targetUserId: string) { return this.db.teamPlayer.upsert({ where: { teamId_userId: { teamId, userId: targetUserId } }, create: { teamId, userId: targetUserId }, update: { leftAt: null, joinedAt: new Date(), active: true } }); }
+  async removePlayer(teamId: string, targetUserId: string): Promise<number> { return (await this.db.teamPlayer.updateMany({ where: { teamId, userId: targetUserId, leftAt: null }, data: { leftAt: new Date(), active: false } })).count; }
   async assignAssistant(teamId: string, targetUserId: string, capabilities: readonly TeamCapabilityInput[], coachUserId: string): Promise<void> {
     await this.db.$transaction(async (tx) => {
-      await tx.teamPlayer.upsert({ where: { teamId_userId: { teamId, userId: targetUserId } }, create: { teamId, userId: targetUserId }, update: { leftAt: null } });
+      await tx.teamPlayer.upsert({ where: { teamId_userId: { teamId, userId: targetUserId } }, create: { teamId, userId: targetUserId }, update: { leftAt: null, active: true } });
       await tx.teamResponsibilityAssignment.upsert({ where: { teamId_userId_role: { teamId, userId: targetUserId, role: "ASSISTANT" } }, create: { teamId, userId: targetUserId, role: "ASSISTANT" }, update: { revokedAt: null, assignedAt: new Date() } });
       await tx.teamCapabilityGrant.updateMany({ where: { teamId, userId: targetUserId, revokedAt: null }, data: { revokedAt: new Date() } });
       for (const capability of capabilities) await tx.teamCapabilityGrant.upsert({ where: { teamId_userId_capability: { teamId, userId: targetUserId, capability } }, create: { teamId, userId: targetUserId, capability, grantedByUserId: coachUserId }, update: { revokedAt: null, grantedAt: new Date(), grantedByUserId: coachUserId } });
@@ -67,73 +67,21 @@ export class PrismaTeamRepository implements TeamRepository {
     });
   }
   createLineup(userId: string, teamId: string, input: TeamLineupInput) {
-    return this.db.teamLineup.create({ data: { teamId, name: input.name, formation: input.formation ?? null, createdByUserId: userId, slots: { create: input.slots.map((slot) => ({ userId: slot.userId ?? null, position: slot.position, sortOrder: slot.sortOrder })) } }, include: { slots: { orderBy: { sortOrder: "asc" } } } });
+    return this.db.teamLineup.create({ data: { teamId, name: input.name, formation: input.formation, matchFormat: input.matchFormat, published: input.published, createdByUserId: userId, slots: { create: input.slots.map((slot) => ({ userId: slot.userId ?? null, position: slot.position, sortOrder: slot.sortOrder })) } }, include: { slots: { orderBy: { sortOrder: "asc" } } } });
   }
   createChallenge(userId: string, input: TeamChallengeCreateInput) { return this.db.teamChallenge.create({ data: { ...input, proposedAt: input.proposedAt ? new Date(input.proposedAt) : null, createdByUserId: userId } }); }
   getChallenge(challengeId: string) { return this.db.teamChallenge.findUnique({ where: { id: challengeId }, select: { id: true, challengerTeamId: true, challengedTeamId: true, status: true } }); }
-  getChallengeForUser(challengeId: string, userId: string) {
-    return this.db.teamChallenge.findFirst({
-      where: { id: challengeId, OR: this.challengeViewFilters(userId) },
-      include: { challengerTeam: true, challengedTeam: true, game: true }
-    });
-  }
-  listIncoming(userId: string, limit: number) {
-    return this.db.teamChallenge.findMany({
-      where: { challengedTeam: { OR: this.capabilityTeamFilters(userId, "RESPOND_TO_CHALLENGE") } },
-      include: { challengerTeam: true, challengedTeam: true, game: true },
-      orderBy: { createdAt: "desc" },
-      take: limit
-    });
-  }
-  listOutgoing(userId: string, limit: number) {
-    return this.db.teamChallenge.findMany({
-      where: {
-        OR: [
-          { challengerTeam: { OR: this.capabilityTeamFilters(userId, "CREATE_CHALLENGE") } },
-          { status: "ACCEPTED", challengerTeam: { OR: this.capabilityTeamFilters(userId, "RESPOND_TO_CHALLENGE") } }
-        ]
-      },
-      include: { challengerTeam: true, challengedTeam: true, game: true },
-      orderBy: { createdAt: "desc" },
-      take: limit
-    });
-  }
-  async acceptChallenge(challengeId: string) {
-    return this.db.$transaction(async (tx) => {
-      const challenge = await tx.teamChallenge.update({ where: { id: challengeId }, data: { status: "ACCEPTED" } });
-      await tx.teamGame.create({ data: { challengeId: challenge.id, homeTeamId: challenge.challengerTeamId, awayTeamId: challenge.challengedTeamId, scheduledAt: challenge.proposedAt, status: challenge.proposedAt ? "CONFIRMED" : "SCHEDULING" } });
-      return challenge;
-    });
-  }
+  getChallengeForUser(challengeId: string, userId: string) { return this.db.teamChallenge.findFirst({ where: { id: challengeId, OR: this.challengeViewFilters(userId) }, include: { challengerTeam: true, challengedTeam: true, game: true } }); }
+  listIncoming(userId: string, limit: number) { return this.db.teamChallenge.findMany({ where: { challengedTeam: { OR: this.capabilityTeamFilters(userId, "RESPOND_TO_CHALLENGE") } }, include: { challengerTeam: true, challengedTeam: true, game: true }, orderBy: { createdAt: "desc" }, take: limit }); }
+  listOutgoing(userId: string, limit: number) { return this.db.teamChallenge.findMany({ where: { OR: [{ challengerTeam: { OR: this.capabilityTeamFilters(userId, "CREATE_CHALLENGE") } }, { status: "ACCEPTED", challengerTeam: { OR: this.capabilityTeamFilters(userId, "RESPOND_TO_CHALLENGE") } }] }, include: { challengerTeam: true, challengedTeam: true, game: true }, orderBy: { createdAt: "desc" }, take: limit }); }
+  async acceptChallenge(challengeId: string) { return this.db.$transaction(async (tx) => { const challenge = await tx.teamChallenge.update({ where: { id: challengeId }, data: { status: "ACCEPTED" } }); await tx.teamGame.create({ data: { challengeId: challenge.id, homeTeamId: challenge.challengerTeamId, awayTeamId: challenge.challengedTeamId, scheduledAt: challenge.proposedAt, status: challenge.proposedAt ? "CONFIRMED" : "SCHEDULING" } }); return challenge; }); }
   declineChallenge(challengeId: string) { return this.db.teamChallenge.update({ where: { id: challengeId }, data: { status: "DECLINED" } }); }
   cancelChallenge(challengeId: string) { return this.db.teamChallenge.update({ where: { id: challengeId }, data: { status: "CANCELLED" } }); }
   listMessages(challengeId: string) { return this.db.teamChallengeMessage.findMany({ where: { challengeId }, include: { author: { select: { presentation: true } } }, orderBy: { createdAt: "asc" } }); }
   createMessage(challengeId: string, userId: string, body: string) { return this.db.teamChallengeMessage.create({ data: { challengeId, authorUserId: userId, body } }); }
   listGames(userId: string, limit: number) { return this.db.teamGame.findMany({ where: { OR: [{ homeTeam: { OR: this.managedTeamFilters(userId) } }, { awayTeam: { OR: this.managedTeamFilters(userId) } }] }, include: { homeTeam: true, awayTeam: true, challenge: true }, orderBy: [{ scheduledAt: "asc" }, { createdAt: "desc" }], take: limit }); }
   getGame(gameId: string, userId: string) { return this.db.teamGame.findFirst({ where: { id: gameId, OR: [{ homeTeam: { OR: this.managedTeamFilters(userId) } }, { awayTeam: { OR: this.managedTeamFilters(userId) } }] }, include: { homeTeam: true, awayTeam: true, challenge: true } }); }
-  private managedTeamFilters(userId: string): Prisma.TeamWhereInput[] {
-    return [
-      { responsibilities: { some: { userId, revokedAt: null } } },
-      { community: { memberships: { some: { userId, leftAt: null, role: { in: ["FOUNDER", "COACH"] } } } } }
-    ];
-  }
-  private capabilityTeamFilters(userId: string, capability: TeamCapabilityInput): Prisma.TeamWhereInput[] {
-    return [
-      { responsibilities: { some: { userId, role: "COACH", revokedAt: null } } },
-      {
-        AND: [
-          { responsibilities: { some: { userId, role: "ASSISTANT", revokedAt: null } } },
-          { capabilityGrants: { some: { userId, capability, revokedAt: null } } }
-        ]
-      },
-      { community: { memberships: { some: { userId, leftAt: null, role: { in: ["FOUNDER", "COACH"] } } } } }
-    ];
-  }
-  private challengeViewFilters(userId: string): Prisma.TeamChallengeWhereInput[] {
-    return [
-      { challengerTeam: { OR: this.capabilityTeamFilters(userId, "CREATE_CHALLENGE") } },
-      { challengedTeam: { OR: this.capabilityTeamFilters(userId, "RESPOND_TO_CHALLENGE") } },
-      { status: "ACCEPTED", challengerTeam: { OR: this.capabilityTeamFilters(userId, "RESPOND_TO_CHALLENGE") } }
-    ];
-  }
+  private managedTeamFilters(userId: string): Prisma.TeamWhereInput[] { return [{ responsibilities: { some: { userId, revokedAt: null } } }, { community: { memberships: { some: { userId, leftAt: null, role: { in: ["FOUNDER", "COACH"] } } } } }]; }
+  private capabilityTeamFilters(userId: string, capability: TeamCapabilityInput): Prisma.TeamWhereInput[] { return [{ responsibilities: { some: { userId, role: "COACH", revokedAt: null } } }, { AND: [{ responsibilities: { some: { userId, role: "ASSISTANT", revokedAt: null } } }, { capabilityGrants: { some: { userId, capability, revokedAt: null } } }] }, { community: { memberships: { some: { userId, leftAt: null, role: { in: ["FOUNDER", "COACH"] } } } } }]; }
+  private challengeViewFilters(userId: string): Prisma.TeamChallengeWhereInput[] { return [{ challengerTeam: { OR: this.capabilityTeamFilters(userId, "CREATE_CHALLENGE") } }, { challengedTeam: { OR: this.capabilityTeamFilters(userId, "RESPOND_TO_CHALLENGE") } }, { status: "ACCEPTED", challengerTeam: { OR: this.capabilityTeamFilters(userId, "RESPOND_TO_CHALLENGE") } }]; }
 }
