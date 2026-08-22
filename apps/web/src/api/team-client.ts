@@ -14,8 +14,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     credentials: "include",
     headers: { "content-type": "application/json", ...init?.headers }
   });
-  const body = (await response.json().catch(() => ({}))) as T & { error?: { message?: string } };
-  if (!response.ok) throw new Error(body.error?.message ?? `Team request failed (${response.status})`);
+  const body = (await response.json().catch(() => ({}))) as T & {
+    error?: { code?: string; message?: string };
+  };
+  if (!response.ok) {
+    const error = new Error(body.error?.message ?? `Team request failed (${response.status})`) as Error & {
+      code?: string;
+    };
+    error.code = body.error?.code;
+    throw error;
+  }
   return body;
 }
 
