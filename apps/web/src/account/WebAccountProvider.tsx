@@ -35,6 +35,10 @@ export function WebAccountProvider({ children }: { readonly children: ReactNode 
         setManagedTeams([]);
         setError(reason instanceof Error ? reason.message : "Unable to load Team authority");
       }
+    } catch (reason) {
+      setMe(null);
+      setManagedTeams([]);
+      setError(reason instanceof Error ? reason.message : "Unable to load account state");
     } finally {
       setLoading(false);
     }
