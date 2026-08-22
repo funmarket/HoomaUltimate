@@ -1,11 +1,13 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes, useParams } from "react-router-dom";
+import { WebAccountProvider } from "../../account/WebAccountProvider";
 import { WebShell } from "../shell/WebShell";
 
 const HomePage = lazy(() => import("../../home/HomePage").then((module) => ({ default: module.HomePage })));
 const AuthApp = lazy(() => import("../../auth/AuthApp").then((module) => ({ default: module.AuthApp })));
 const AdminApp = lazy(() => import("../../admin/AdminApp").then((module) => ({ default: module.AdminApp })));
 const ProfilePage = lazy(() => import("../../profile/ProfilePage").then((module) => ({ default: module.ProfilePage })));
+const SettingsPage = lazy(() => import("../../settings/SettingsPage").then((module) => ({ default: module.SettingsPage })));
 const TeamsPage = lazy(() => import("../../teams/TeamsPage").then((module) => ({ default: module.TeamsPage })));
 const TeamDetailPage = lazy(() => import("../../teams/TeamDetailPage").then((module) => ({ default: module.TeamDetailPage })));
 const CoachControlRoomPage = lazy(() => import("../../teams/CoachControlRoomPage").then((module) => ({ default: module.CoachControlRoomPage })));
@@ -50,27 +52,30 @@ function EventCheckInRoute() {
 export function WebRouter() {
   return (
     <BrowserRouter>
-      <WebShell>
-        <Suspense fallback={<p className="status">Loading…</p>}>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<AuthApp />} />
-            <Route path="/register" element={<AuthApp />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/admin/*" element={<AdminApp />} />
-            <Route path="/play" element={<PlayPage />} />
-            <Route path="/events/new" element={<CreateEventPage />} />
-            <Route path="/events/:eventId" element={<EventDetailRoute />} />
-            <Route path="/events/:eventId/formation" element={<EventFormationRoute />} />
-            <Route path="/events/:eventId/chat" element={<EventChatRoute />} />
-            <Route path="/events/:eventId/check-in" element={<EventCheckInRoute />} />
-            <Route path="/teams" element={<TeamsPage />} />
-            <Route path="/teams/control" element={<CoachControlRoomPage />} />
-            <Route path="/teams/:teamId" element={<TeamDetailRoute />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </Suspense>
-      </WebShell>
+      <WebAccountProvider>
+        <WebShell>
+          <Suspense fallback={<p className="status">Loading…</p>}>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/login" element={<AuthApp />} />
+              <Route path="/register" element={<AuthApp />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/admin/*" element={<AdminApp />} />
+              <Route path="/play" element={<PlayPage />} />
+              <Route path="/events/new" element={<CreateEventPage />} />
+              <Route path="/events/:eventId" element={<EventDetailRoute />} />
+              <Route path="/events/:eventId/formation" element={<EventFormationRoute />} />
+              <Route path="/events/:eventId/chat" element={<EventChatRoute />} />
+              <Route path="/events/:eventId/check-in" element={<EventCheckInRoute />} />
+              <Route path="/teams" element={<TeamsPage />} />
+              <Route path="/teams/control" element={<CoachControlRoomPage />} />
+              <Route path="/teams/:teamId" element={<TeamDetailRoute />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </Suspense>
+        </WebShell>
+      </WebAccountProvider>
     </BrowserRouter>
   );
 }
