@@ -15,7 +15,7 @@ export const PRIMARY_NAV_ITEMS = [
   {
     label: "Play",
     href: "/play",
-    visual: { kind: "mask", src: "/navigation/play.png", className: "hooma-bottom-nav__mask--play" }
+    visual: { kind: "mask", src: "/navigation/play.svg", className: "hooma-bottom-nav__mask--play" }
   },
   { label: "Watch", href: "/watch", visual: { kind: "icon" } },
   {

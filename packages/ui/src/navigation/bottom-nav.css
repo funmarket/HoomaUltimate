@@ -99,10 +99,8 @@
 }
 
 .hooma-bottom-nav__mask--play {
-  width: 34px;
-  height: 25px;
-  transform: rotate(-12deg) translateY(-1px);
-  transform-origin: center;
+  width: 30px;
+  height: 30px;
 }
 
 .hooma-bottom-nav__artwork {
@@ -115,8 +113,8 @@
 }
 
 .hooma-bottom-nav__artwork--hooma {
-  width: 38px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
 }
 
 .hooma-bottom-nav__artwork--pitch {
@@ -127,7 +125,7 @@
 
 .hooma-bottom-nav__item--hooma .hooma-bottom-nav__icon-shell {
   width: 42px;
-  height: 38px;
+  height: 40px;
   color: #d0a54b;
   border-color: transparent;
   background: transparent;
@@ -191,7 +189,7 @@
 
   .hooma-bottom-nav__item--hooma .hooma-bottom-nav__icon-shell {
     width: 39px;
-    height: 35px;
+    height: 37px;
   }
 }
 
