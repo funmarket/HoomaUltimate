@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { HomeGatewayGrid } from "./home/HomeGatewayGrid.js";
 
+export { HoomaAccountHeader } from "./account/HoomaAccountHeader.js";
+export type { HoomaAccountHeaderProps, HoomaAccountUser } from "./account/HoomaAccountHeader.js";
 export { HomeGatewayCard } from "./home/HomeGatewayCard.js";
 export { HomeGatewayGrid } from "./home/HomeGatewayGrid.js";
 export { HOME_GATEWAYS } from "./home/home-gateways.js";
