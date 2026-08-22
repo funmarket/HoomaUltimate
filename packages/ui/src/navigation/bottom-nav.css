@@ -80,10 +80,57 @@
   color: currentColor;
 }
 
+.hooma-bottom-nav__mask {
+  display: block;
+  background: currentColor;
+  -webkit-mask-image: var(--hooma-nav-mask);
+  mask-image: var(--hooma-nav-mask);
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.hooma-bottom-nav__mask--home {
+  width: 27px;
+  height: 27px;
+}
+
+.hooma-bottom-nav__mask--play {
+  width: 34px;
+  height: 25px;
+  transform: rotate(-12deg) translateY(-1px);
+  transform-origin: center;
+}
+
+.hooma-bottom-nav__artwork {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+}
+
+.hooma-bottom-nav__artwork--hooma {
+  width: 38px;
+  height: 36px;
+}
+
+.hooma-bottom-nav__artwork--pitch {
+  width: 33px;
+  height: 29px;
+  filter: brightness(1.28) contrast(1.08);
+}
+
 .hooma-bottom-nav__item--hooma .hooma-bottom-nav__icon-shell {
+  width: 42px;
+  height: 38px;
   color: #d0a54b;
-  border-color: rgba(184, 137, 54, 0.36);
-  background: radial-gradient(circle at 50% 42%, rgba(184, 137, 54, 0.12), rgba(4, 5, 4, 0) 72%);
+  border-color: transparent;
+  background: transparent;
 }
 
 .hooma-bottom-nav__item--active {
@@ -96,8 +143,9 @@
 
 .hooma-bottom-nav__item--active.hooma-bottom-nav__item--hooma .hooma-bottom-nav__icon-shell {
   color: #d0a54b;
-  border-color: rgba(170, 255, 0, 0.58);
-  box-shadow: 0 0 0 1px rgba(170, 255, 0, 0.08);
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
 }
 
 .hooma-bottom-nav__item--active::after {
@@ -139,6 +187,11 @@
   .hooma-bottom-nav__icon-shell {
     width: 35px;
     height: 33px;
+  }
+
+  .hooma-bottom-nav__item--hooma .hooma-bottom-nav__icon-shell {
+    width: 39px;
+    height: 35px;
   }
 }
 
