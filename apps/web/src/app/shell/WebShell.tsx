@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { HoomaAccountHeader, PRIMARY_NAV_ITEMS } from "@hooma/ui";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { HoomaAccountHeader, HoomaBottomNav } from "@hooma/ui";
+import { useLocation, useNavigate } from "react-router-dom";
 import { webApi } from "../../api/client";
 import { useWebAccount } from "../../account/WebAccountProvider";
 
@@ -38,13 +38,7 @@ export function WebShell({ children }: { readonly children: ReactNode }) {
         onSignOut={() => void signOut()}
       />
       <section className="shell-content">{children}</section>
-      <nav aria-label="Primary">
-        {PRIMARY_NAV_ITEMS.map((item) => (
-          <NavLink key={item.label} to={item.href} end={item.href === "/"}>
-            {item.label}
-          </NavLink>
-        ))}
-      </nav>
+      <HoomaBottomNav pathname={location.pathname} onNavigate={(href) => navigate(href)} />
     </main>
   );
 }

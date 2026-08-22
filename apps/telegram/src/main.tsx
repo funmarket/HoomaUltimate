@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { TelegramApp } from "./app/TelegramApp";
+import "@hooma/ui/bottom-nav.css";
 import "./styles.css";
 import "./account/account.css";
 

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { MeResponse } from "@hooma/contracts";
-import { HoomaAccountHeader, PRIMARY_NAV_ITEMS } from "@hooma/ui";
-import { NavLink, useNavigate } from "react-router-dom";
+import { HoomaAccountHeader, HoomaBottomNav } from "@hooma/ui";
+import { useLocation, useNavigate } from "react-router-dom";
 import type { TelegramManagedTeam } from "../../api/client";
 import type { TelegramRuntime } from "../../telegram/runtime";
 import { useTelegramBackButton } from "../../telegram/useTelegramBackButton";
@@ -18,6 +18,7 @@ export function TelegramShell({
   readonly managedTeams: readonly TelegramManagedTeam[];
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
   useTelegramBackButton(runtime);
 
   const user = me
@@ -42,13 +43,7 @@ export function TelegramShell({
         {...(isPlatformAdmin ? { onAdmin: () => navigate("/admin") } : {})}
       />
       <section className="shell-content">{children}</section>
-      <nav aria-label="Primary">
-        {PRIMARY_NAV_ITEMS.map((item) => (
-          <NavLink key={item.label} to={item.href} end={item.href === "/"}>
-            {item.label}
-          </NavLink>
-        ))}
-      </nav>
+      <HoomaBottomNav pathname={location.pathname} onNavigate={(href) => navigate(href)} />
     </main>
   );
 }
