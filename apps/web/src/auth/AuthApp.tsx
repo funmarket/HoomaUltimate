@@ -1,15 +1,32 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import type { MeResponse } from "@hooma/contracts";
 import { webApi } from "../api/client";
+
+function safeReturnTo(): string {
+  const value = new URLSearchParams(window.location.search).get("returnTo");
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/";
+  return value;
+}
 
 export function AuthApp() {
   const [me, setMe] = useState<MeResponse | null>(null);
   const [error, setError] = useState("");
   const [mode, setMode] = useState<"login" | "register">("login");
+  const returnTo = useMemo(safeReturnTo, []);
 
   useEffect(() => {
-    void webApi.me().then(setMe).catch(() => undefined);
-  }, []);
+    void webApi.me().then((response) => {
+      setMe(response);
+      if (returnTo !== "/") window.location.replace(returnTo);
+    }).catch(() => undefined);
+  }, [returnTo]);
+
+  function completeAuthentication() {
+    void webApi.me().then((response) => {
+      setMe(response);
+      window.location.replace(returnTo);
+    }).catch((reason: Error) => setError(reason.message));
+  }
 
   if (me) {
     return (
@@ -39,9 +56,9 @@ export function AuthApp() {
         </button>
       </div>
       {mode === "login" ? (
-        <LoginForm onSuccess={() => void webApi.me().then(setMe)} onError={setError} />
+        <LoginForm onSuccess={completeAuthentication} onError={setError} />
       ) : (
-        <RegisterForm onSuccess={() => void webApi.me().then(setMe)} onError={setError} />
+        <RegisterForm onSuccess={completeAuthentication} onError={setError} />
       )}
       {error ? <p className="error">{error}</p> : null}
     </section>
