@@ -23,5 +23,20 @@ export function TelegramApp() {
       .catch((reason: Error) => setError(reason.message));
   }, []);
 
+  if (!runtime.initData) {
+    return (
+      <main className="foundation-shell">
+        <section className="status">
+          <p className="eyebrow">TELEGRAM MINI APP</p>
+          <h1>Open HOOMA from Telegram</h1>
+          <p>
+            This entry requires a verified Telegram Mini App launch so Telegram can securely provide
+            your account identity.
+          </p>
+        </section>
+      </main>
+    );
+  }
+
   return <TelegramRouter runtime={runtime} me={me} managedTeams={managedTeams} error={error} />;
 }
