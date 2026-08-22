@@ -1,5 +1,5 @@
 import type { EventCreateInput, EventFormationInput, EventUpdateInput } from "@hooma/contracts";
-import type { Prisma, PrismaClient } from "@hooma/database";
+import { Prisma, type PrismaClient } from "@hooma/database";
 import { eventChatWindow } from "../domain/event-policy.js";
 import type { EventAccessRecord, EventPublicListInput, EventRepository } from "../application/event.repository.js";
 
@@ -18,22 +18,9 @@ export class PrismaEventRepository implements EventRepository {
       take: input.limit + 1,
       ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
       select: {
-        id: true,
-        communityId: true,
-        type: true,
-        title: true,
-        description: true,
-        startsAt: true,
-        endsAt: true,
-        timezone: true,
-        venueName: true,
-        address: true,
-        capacity: true,
-        waitlistEnabled: true,
-        entryFeeMinor: true,
-        currency: true,
-        community: { select: { id: true, name: true, slug: true } },
-        playDetails: true,
+        id: true, communityId: true, type: true, title: true, description: true, startsAt: true, endsAt: true,
+        timezone: true, venueName: true, address: true, capacity: true, waitlistEnabled: true, entryFeeMinor: true,
+        currency: true, community: { select: { id: true, name: true, slug: true } }, playDetails: true,
         _count: { select: { rsvps: { where: { status: { in: ["CONFIRMED", "ATTENDED"] } } } } }
       }
     });
@@ -47,30 +34,10 @@ export class PrismaEventRepository implements EventRepository {
     const row = await this.db.event.findFirst({
       where: { id: eventId, status: { in: ["PUBLISHED", "COMPLETED"] } },
       select: {
-        id: true,
-        communityId: true,
-        createdByUserId: true,
-        type: true,
-        status: true,
-        title: true,
-        description: true,
-        startsAt: true,
-        endsAt: true,
-        timezone: true,
-        venueName: true,
-        address: true,
-        capacity: true,
-        waitlistEnabled: true,
-        entryFeeMinor: true,
-        currency: true,
-        community: { select: { id: true, name: true, slug: true } },
-        playDetails: true,
-        _count: {
-          select: {
-            rsvps: { where: { status: { in: ["CONFIRMED", "ATTENDED"] } } },
-            checkIns: true
-          }
-        }
+        id: true, communityId: true, createdByUserId: true, type: true, status: true, title: true, description: true,
+        startsAt: true, endsAt: true, timezone: true, venueName: true, address: true, capacity: true, waitlistEnabled: true,
+        entryFeeMinor: true, currency: true, community: { select: { id: true, name: true, slug: true } }, playDetails: true,
+        _count: { select: { rsvps: { where: { status: { in: ["CONFIRMED", "ATTENDED"] } } }, checkIns: true } }
       }
     });
     return row ? serializeEvent(row) : null;
@@ -90,30 +57,15 @@ export class PrismaEventRepository implements EventRepository {
     return this.db.$transaction(async (tx) => {
       const event = await tx.event.create({
         data: {
-          communityId: input.communityId,
-          createdByUserId: userId,
-          type: input.type,
-          title: input.title,
-          description: input.description ?? null,
-          startsAt,
-          endsAt,
-          timezone: input.timezone,
-          venueName: input.venueName ?? null,
-          address: input.address ?? null,
-          capacity: input.capacity ?? null,
-          waitlistEnabled: input.waitlistEnabled,
-          entryFeeMinor: BigInt(input.entryFeeMinor),
-          currency: input.currency.toUpperCase()
+          communityId: input.communityId, createdByUserId: userId, type: input.type, title: input.title,
+          description: input.description ?? null, startsAt, endsAt, timezone: input.timezone,
+          venueName: input.venueName ?? null, address: input.address ?? null, capacity: input.capacity ?? null,
+          waitlistEnabled: input.waitlistEnabled, entryFeeMinor: BigInt(input.entryFeeMinor), currency: input.currency.toUpperCase()
         }
       });
       if (input.type === "PLAY" && input.play) {
         await tx.playEventDetails.create({
-          data: {
-            eventId: event.id,
-            pitchType: input.play.pitchType,
-            skillLevel: input.play.skillLevel,
-            format: input.play.format
-          }
+          data: { eventId: event.id, pitchType: input.play.pitchType, skillLevel: input.play.skillLevel, format: input.play.format }
         });
       }
       await tx.eventChatRoom.create({ data: { eventId: event.id, ...chatWindow } });
@@ -160,11 +112,9 @@ export class PrismaEventRepository implements EventRepository {
       const existing = await tx.eventRsvp.findUnique({ where: { eventId_userId: { eventId, userId } }, select: { status: true } });
       if (existing?.status === "CONFIRMED" || existing?.status === "ATTENDED") return { status: "CONFIRMED" as const };
       if (existing?.status === "WAITLISTED") return { status: "WAITLISTED" as const };
-
       const confirmed = await tx.eventRsvp.count({ where: { eventId, status: { in: ["CONFIRMED", "ATTENDED"] } } });
       const hasSeat = event.capacity === null || confirmed < event.capacity;
       if (!hasSeat && !event.waitlistEnabled) throw new Error("EVENT_FULL");
-
       if (hasSeat) {
         await tx.eventRsvp.upsert({
           where: { eventId_userId: { eventId, userId } },
@@ -173,7 +123,6 @@ export class PrismaEventRepository implements EventRepository {
         });
         return { status: "CONFIRMED" as const };
       }
-
       const aggregate = await tx.eventRsvp.aggregate({ where: { eventId, status: "WAITLISTED" }, _max: { waitlistSequence: true } });
       const waitlistSequence = (aggregate._max.waitlistSequence ?? 0n) + 1n;
       await tx.eventRsvp.upsert({
@@ -207,11 +156,7 @@ export class PrismaEventRepository implements EventRepository {
   createFormation(userId: string, eventId: string, input: EventFormationInput) {
     return this.db.formation.create({
       data: {
-        eventId,
-        createdByUserId: userId,
-        name: input.name,
-        format: input.format,
-        published: input.published,
+        eventId, createdByUserId: userId, name: input.name, format: input.format, published: input.published,
         slots: { create: input.slots.map((slot) => ({ ...slot, userId: slot.userId ?? null })) }
       },
       include: { slots: { orderBy: [{ team: "asc" }, { position: "asc" }] } }
@@ -238,35 +183,41 @@ export class PrismaEventRepository implements EventRepository {
 
   async checkIn(eventId: string, userId: string, latitude?: number | null, longitude?: number | null) {
     const rsvp = await this.db.eventRsvp.findUnique({ where: { eventId_userId: { eventId, userId } }, select: { status: true } });
-    if (!rsvp || !["CONFIRMED", "ATTENDED"].includes(rsvp.status)) throw new Error("CHECK_IN_REQUIRES_CONFIRMED_RSVP");
+    if (!rsvp || !["CONFIRMED", "ATTENDED"].includes(rsvp.status)) throw new Error("EVENT_CHECK_IN_REQUIRES_CONFIRMED_RSVP");
+    const checkedInAt = new Date();
     await this.db.$transaction([
       this.db.eventCheckIn.upsert({
         where: { eventId_userId: { eventId, userId } },
         create: { eventId, userId, latitude: latitude ?? null, longitude: longitude ?? null },
-        update: { latitude: latitude ?? null, longitude: longitude ?? null, checkedInAt: new Date() }
+        update: { latitude: latitude ?? null, longitude: longitude ?? null }
       }),
-      this.db.eventRsvp.update({ where: { eventId_userId: { eventId, userId } }, data: { status: "ATTENDED", checkedInAt: new Date() } })
+      this.db.eventRsvp.update({ where: { eventId_userId: { eventId, userId } }, data: { status: "ATTENDED", checkedInAt } })
     ]);
-    return { checkedIn: true };
+    return { checkedIn: true, checkedInAt };
   }
 
-  async chat(eventId: string) {
+  async listChat(eventId: string, userId: string) {
+    if (!(await this.canViewMemberContent(eventId, userId))) return null;
     const room = await this.db.eventChatRoom.findUnique({ where: { eventId } });
-    if (!room) throw new Error("EVENT_CHAT_NOT_FOUND");
+    if (!room) return null;
     const now = new Date();
-    return {
-      room,
-      active: room.opensAt <= now && room.expiresAt > now,
-      messages: room.expiresAt > now ? await this.db.eventChatMessage.findMany({ where: { eventId, expiresAt: { gt: now } }, orderBy: { createdAt: "asc" }, take: 200 }) : []
-    };
+    if (now < room.opensAt || now >= room.closesAt) return null;
+    return this.db.eventChatMessage.findMany({
+      where: { roomId: room.id, expiresAt: { gt: now } },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      take: 200
+    });
   }
 
   async postChat(eventId: string, userId: string, body: string) {
+    if (!(await this.canViewMemberContent(eventId, userId))) return null;
     const room = await this.db.eventChatRoom.findUnique({ where: { eventId } });
-    if (!room) throw new Error("EVENT_CHAT_NOT_FOUND");
+    if (!room) return null;
     const now = new Date();
-    if (now < room.opensAt || now >= room.expiresAt) throw new Error("EVENT_CHAT_INACTIVE");
-    return this.db.eventChatMessage.create({ data: { eventId, authorUserId: userId, body, expiresAt: room.expiresAt } });
+    if (now < room.opensAt || now >= room.closesAt) return null;
+    return this.db.eventChatMessage.create({
+      data: { roomId: room.id, userId, body, expiresAt: room.closesAt }
+    });
   }
 }
 
