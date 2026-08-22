@@ -1,0 +1,181 @@
+:root {
+  --hooma-bg: #11110f;
+  --hooma-surface: #171612;
+  --hooma-surface-strong: #0b0b09;
+  --hooma-text: #f2ead7;
+  --hooma-muted: #bfb59a;
+  --hooma-border: #5c4b25;
+  --hooma-gold: #b59b57;
+  --hooma-accent: #c4dc43;
+}
+
+:root[data-theme="light"] {
+  --hooma-bg: #f5f1e7;
+  --hooma-surface: #fffdf7;
+  --hooma-surface-strong: #ffffff;
+  --hooma-text: #17140f;
+  --hooma-muted: #655f54;
+  --hooma-border: #b99a50;
+  --hooma-gold: #8b641c;
+  --hooma-accent: #d56b1f;
+}
+
+html, body { background: var(--hooma-bg); color: var(--hooma-text); }
+:root[data-theme="light"] .panel,
+:root[data-theme="light"] .auth-card,
+:root[data-theme="light"] .status,
+:root[data-theme="light"] .gateway-card,
+:root[data-theme="light"] .team-card,
+:root[data-theme="light"] .profile-links a,
+:root[data-theme="light"] .event-card {
+  background: var(--hooma-surface);
+  color: var(--hooma-text);
+}
+:root[data-theme="light"] .muted,
+:root[data-theme="light"] .profile-links span,
+:root[data-theme="light"] .team-card span,
+:root[data-theme="light"] .team-card small,
+:root[data-theme="light"] .event-card span,
+:root[data-theme="light"] .event-card small { color: var(--hooma-muted); }
+:root[data-theme="light"] input,
+:root[data-theme="light"] textarea,
+:root[data-theme="light"] select { background: #fff; color: var(--hooma-text); }
+
+.hooma-topbar {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 58px;
+  padding: 10px 0 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--hooma-border) 65%, transparent);
+}
+
+.hooma-wordmark {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--hooma-text);
+  font: 900 clamp(25px, 4vw, 34px)/1 Georgia, serif;
+  letter-spacing: .04em;
+  cursor: pointer;
+}
+
+.hooma-topbar__actions { display: flex; align-items: center; gap: 10px; }
+.hooma-account-anchor { position: relative; }
+.hooma-profile-trigger {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--hooma-gold);
+  border-radius: 50%;
+  background: var(--hooma-surface-strong);
+  color: var(--hooma-text);
+  cursor: pointer;
+}
+.hooma-profile-trigger img { width: 100%; height: 100%; object-fit: cover; }
+.hooma-profile-trigger svg,
+.hooma-account-menu svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.hooma-account-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: min(360px, calc(100vw - 32px));
+  overflow: hidden;
+  border: 1px solid var(--hooma-border);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--hooma-surface-strong) 96%, transparent);
+  color: var(--hooma-text);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .4);
+}
+
+.hooma-account-menu__identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid color-mix(in srgb, var(--hooma-border) 60%, transparent);
+}
+.hooma-account-menu__identity img,
+.hooma-account-menu__avatar-fallback {
+  width: 46px;
+  height: 46px;
+  border: 1px solid var(--hooma-gold);
+  border-radius: 50%;
+  object-fit: cover;
+}
+.hooma-account-menu__avatar-fallback { display: grid; place-items: center; font: 800 20px Georgia, serif; }
+.hooma-account-menu__identity > span:last-child { display: grid; gap: 3px; min-width: 0; }
+.hooma-account-menu__identity small { color: var(--hooma-muted); overflow: hidden; text-overflow: ellipsis; }
+.hooma-account-menu__rows { padding: 8px; }
+.hooma-account-menu__row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 11px;
+  border: 0;
+  border-radius: 14px;
+  padding: 11px 10px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.hooma-account-menu__row:hover,
+.hooma-account-menu__row:focus-visible { background: color-mix(in srgb, var(--hooma-gold) 12%, transparent); }
+.hooma-account-menu__row-icon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--hooma-gold) 70%, transparent);
+  border-radius: 50%;
+}
+.hooma-account-menu__row-copy { display: grid; gap: 3px; min-width: 0; }
+.hooma-account-menu__row-copy small,
+.hooma-account-menu__row-copy span { color: var(--hooma-muted); font-size: 12px; }
+.hooma-account-menu__chevron { display: grid; place-items: center; color: var(--hooma-muted); }
+.hooma-account-menu__chevron svg { width: 17px; height: 17px; }
+.hooma-account-menu__platform { border-top: 1px solid color-mix(in srgb, var(--hooma-border) 60%, transparent); padding: 8px; }
+.hooma-account-menu__signout {
+  width: 100%;
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--hooma-border) 60%, transparent);
+  padding: 13px 16px;
+  background: transparent;
+  color: var(--hooma-muted);
+  text-align: left;
+  cursor: pointer;
+}
+
+.hooma-settings-panel { max-width: 680px; }
+.hooma-settings-panel h2 { margin-top: 6px; font: 800 clamp(30px, 6vw, 48px)/1.05 Georgia, serif; }
+.hooma-settings-options { display: grid; gap: 10px; margin-top: 20px; }
+.hooma-settings-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid var(--hooma-border);
+  border-radius: 16px;
+  padding: 16px;
+  background: var(--hooma-surface);
+  color: var(--hooma-text);
+  text-align: left;
+  cursor: pointer;
+}
+.hooma-settings-option > span:first-child { display: grid; gap: 5px; }
+.hooma-settings-option small { color: var(--hooma-muted); }
+.hooma-settings-option[aria-checked="true"] { outline: 1px solid var(--hooma-gold); }
+.hooma-settings-option__check { color: var(--hooma-accent); font-weight: 900; }
+
+@media (max-width: 700px) {
+  .hooma-topbar { padding-top: 2px; }
+  .hooma-account-menu { position: fixed; top: auto; right: 16px; bottom: 18px; left: 16px; width: auto; max-height: calc(100vh - 36px); overflow-y: auto; }
+}
