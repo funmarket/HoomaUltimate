@@ -27,18 +27,19 @@ export function TelegramShell({
         photoUrl: me.presentation.photoUrl
       }
     : null;
+  const isPlatformAdmin = Boolean(me?.platformRoles.includes("PLATFORM_ADMIN"));
 
   return (
     <main className="foundation-shell">
       <HoomaAccountHeader
         user={user}
         canManageTeams={managedTeams.length > 0}
-        isPlatformAdmin={Boolean(me?.platformRoles.includes("PLATFORM_ADMIN"))}
+        isPlatformAdmin={isPlatformAdmin}
         onHome={() => navigate("/")}
         onGuestProfile={() => navigate("/profile")}
         onProfile={() => navigate("/profile")}
         onSettings={() => navigate("/settings")}
-        onAdmin={me?.platformRoles.includes("PLATFORM_ADMIN") ? () => navigate("/admin") : undefined}
+        {...(isPlatformAdmin ? { onAdmin: () => navigate("/admin") } : {})}
       />
       <section className="shell-content">{children}</section>
       <nav aria-label="Primary">
