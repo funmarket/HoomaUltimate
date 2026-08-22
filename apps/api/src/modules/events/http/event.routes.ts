@@ -13,12 +13,15 @@ export function createEventPublicRouter(service: EventService): Router {
   const router = Router();
   router.get("/", asyncHandler(async (request, response) => {
     const type = request.query.type === "PLAY" || request.query.type === "WATCH" ? request.query.type : undefined;
+    const communityId = typeof request.query.communityId === "string" ? request.query.communityId : undefined;
+    const cursor = typeof request.query.cursor === "string" ? request.query.cursor : undefined;
+    const from = typeof request.query.from === "string" ? new Date(request.query.from) : undefined;
     response.json(await service.listPublic({
-      type,
-      communityId: typeof request.query.communityId === "string" ? request.query.communityId : undefined,
-      cursor: typeof request.query.cursor === "string" ? request.query.cursor : undefined,
       limit: numberQuery(request.query.limit, 30),
-      from: typeof request.query.from === "string" ? new Date(request.query.from) : undefined
+      ...(type !== undefined ? { type } : {}),
+      ...(communityId !== undefined ? { communityId } : {}),
+      ...(cursor !== undefined ? { cursor } : {}),
+      ...(from !== undefined ? { from } : {})
     }));
   }));
   router.get("/:eventId", asyncHandler(async (request, response) => response.json(await service.getPublic(String(request.params.eventId)))));
