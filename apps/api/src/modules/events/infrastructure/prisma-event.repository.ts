@@ -127,14 +127,18 @@ export class PrismaEventRepository implements EventRepository {
       const startsAt = input.startsAt ? new Date(input.startsAt) : current.startsAt;
       const endsAt = input.endsAt === undefined ? current.endsAt : input.endsAt ? new Date(input.endsAt) : null;
       if (endsAt && endsAt <= startsAt) throw new Error("EVENT_TIME_INVALID");
-      const event = await tx.event.update({
-        where: { id: eventId },
-        data: {
-          ...input,
-          ...(input.startsAt !== undefined ? { startsAt } : {}),
-          ...(input.endsAt !== undefined ? { endsAt } : {})
-        }
-      });
+      const data: Prisma.EventUpdateInput = {
+        ...(input.title !== undefined ? { title: input.title } : {}),
+        ...(input.description !== undefined ? { description: input.description } : {}),
+        ...(input.startsAt !== undefined ? { startsAt } : {}),
+        ...(input.endsAt !== undefined ? { endsAt } : {}),
+        ...(input.timezone !== undefined ? { timezone: input.timezone } : {}),
+        ...(input.venueName !== undefined ? { venueName: input.venueName } : {}),
+        ...(input.address !== undefined ? { address: input.address } : {}),
+        ...(input.capacity !== undefined ? { capacity: input.capacity } : {}),
+        ...(input.waitlistEnabled !== undefined ? { waitlistEnabled: input.waitlistEnabled } : {})
+      };
+      const event = await tx.event.update({ where: { id: eventId }, data });
       await tx.eventChatRoom.update({ where: { eventId }, data: eventChatWindow(startsAt, endsAt) });
       return serializeEvent(event);
     });
@@ -229,56 +233,48 @@ export class PrismaEventRepository implements EventRepository {
   }
 
   listFormations(eventId: string) {
-    return this.db.formation.findMany({ where: { eventId }, include: { slots: true }, orderBy: { updatedAt: "desc" } });
+    return this.db.formation.findMany({ where: { eventId }, include: { slots: { orderBy: [{ team: "asc" }, { position: "asc" }] } }, orderBy: { createdAt: "desc" } });
   }
 
   async checkIn(eventId: string, userId: string, latitude?: number | null, longitude?: number | null) {
-    return this.db.$transaction(async (tx) => {
-      const rsvp = await tx.eventRsvp.findUnique({ where: { eventId_userId: { eventId, userId } } });
-      if (!rsvp || !["CONFIRMED", "ATTENDED"].includes(rsvp.status)) throw new Error("RSVP_REQUIRED");
-      const checkIn = await tx.eventCheckIn.upsert({
+    const rsvp = await this.db.eventRsvp.findUnique({ where: { eventId_userId: { eventId, userId } }, select: { status: true } });
+    if (!rsvp || !["CONFIRMED", "ATTENDED"].includes(rsvp.status)) throw new Error("CHECK_IN_REQUIRES_CONFIRMED_RSVP");
+    await this.db.$transaction([
+      this.db.eventCheckIn.upsert({
         where: { eventId_userId: { eventId, userId } },
         create: { eventId, userId, latitude: latitude ?? null, longitude: longitude ?? null },
-        update: { latitude: latitude ?? null, longitude: longitude ?? null }
-      });
-      await tx.eventRsvp.update({ where: { id: rsvp.id }, data: { status: "ATTENDED", checkedInAt: checkIn.createdAt } });
-      return checkIn;
-    });
+        update: { latitude: latitude ?? null, longitude: longitude ?? null, checkedInAt: new Date() }
+      }),
+      this.db.eventRsvp.update({ where: { eventId_userId: { eventId, userId } }, data: { status: "ATTENDED", checkedInAt: new Date() } })
+    ]);
+    return { checkedIn: true };
   }
 
-  async listChat(eventId: string, userId: string) {
-    const room = await this.authorizedOpenRoom(eventId, userId);
-    if (!room) return null;
+  async chat(eventId: string) {
+    const room = await this.db.eventChatRoom.findUnique({ where: { eventId } });
+    if (!room) throw new Error("EVENT_CHAT_NOT_FOUND");
     const now = new Date();
-    return this.db.eventChatMessage.findMany({
-      where: { roomId: room.id, expiresAt: { gt: now } },
-      select: { id: true, body: true, createdAt: true, userId: true, user: { select: { presentation: true } } },
-      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-      take: 300
-    });
+    return {
+      room,
+      active: room.opensAt <= now && room.expiresAt > now,
+      messages: room.expiresAt > now ? await this.db.eventChatMessage.findMany({ where: { eventId, expiresAt: { gt: now } }, orderBy: { createdAt: "asc" }, take: 200 }) : []
+    };
   }
 
   async postChat(eventId: string, userId: string, body: string) {
-    const room = await this.authorizedOpenRoom(eventId, userId);
-    if (!room) return null;
-    return this.db.eventChatMessage.create({
-      data: { roomId: room.id, userId, body, expiresAt: room.closesAt },
-      select: { id: true, body: true, createdAt: true, userId: true }
-    });
-  }
-
-  private async authorizedOpenRoom(eventId: string, userId: string) {
+    const room = await this.db.eventChatRoom.findUnique({ where: { eventId } });
+    if (!room) throw new Error("EVENT_CHAT_NOT_FOUND");
     const now = new Date();
-    const rsvp = await this.db.eventRsvp.findUnique({ where: { eventId_userId: { eventId, userId } }, select: { status: true } });
-    if (!rsvp || !["CONFIRMED", "WAITLISTED", "ATTENDED"].includes(rsvp.status)) return null;
-    return this.db.eventChatRoom.findFirst({ where: { eventId, opensAt: { lte: now }, closesAt: { gt: now } }, select: { id: true, closesAt: true } });
+    if (now < room.opensAt || now >= room.expiresAt) throw new Error("EVENT_CHAT_INACTIVE");
+    return this.db.eventChatMessage.create({ data: { eventId, authorUserId: userId, body, expiresAt: room.expiresAt } });
   }
 }
 
 async function lockEvent(tx: Prisma.TransactionClient, eventId: string): Promise<void> {
-  await tx.$queryRaw`SELECT "id" FROM "Event" WHERE "id" = ${eventId} FOR UPDATE`;
+  const rows = await tx.$queryRaw<Array<{ id: string }>>(Prisma.sql`SELECT id FROM "Event" WHERE id = ${eventId} FOR UPDATE`);
+  if (rows.length === 0) throw new Error("EVENT_NOT_FOUND");
 }
 
-function serializeEvent<T extends { entryFeeMinor: bigint }>(event: T): Omit<T, "entryFeeMinor"> & { entryFeeMinor: number } {
-  return { ...event, entryFeeMinor: Number(event.entryFeeMinor) };
+function serializeEvent<T>(event: T): T {
+  return JSON.parse(JSON.stringify(event, (_key, value) => typeof value === "bigint" ? value.toString() : value)) as T;
 }
