@@ -48,7 +48,9 @@ export function PlayPage() {
     setPlayersLoading(true);
     setPlayersError("");
     void loadListings()
-      .catch((reason) => setPlayersError(errorMessage(reason, "Player listings could not be loaded")))
+      .catch((reason) =>
+        setPlayersError(errorMessage(reason, "Player listings could not be loaded")),
+      )
       .finally(() => setPlayersLoading(false));
   }, [loadListings]);
 
@@ -153,9 +155,7 @@ export function PlayPage() {
           <form className="play-player-editor panel" onSubmit={saveListing}>
             <div>
               <strong>{myListing ? "Your availability" : "Want to play?"}</strong>
-              <span>
-                Publish only when you want other HOOMA users to see that you are looking.
-              </span>
+              <span>Publish only when you want other HOOMA users to see that you are looking.</span>
             </div>
             <div className="play-looking-options" role="group" aria-label="Looking for">
               <button
@@ -221,7 +221,9 @@ export function PlayPage() {
         {!playersLoading && !playersError && !listings.length ? (
           <div className="play-player-empty panel">
             <strong>No players are looking right now.</strong>
-            <span>Published availability will appear here without requiring visitors to sign in.</span>
+            <span>
+              Published availability will appear here without requiring visitors to sign in.
+            </span>
           </div>
         ) : null}
       </section>
