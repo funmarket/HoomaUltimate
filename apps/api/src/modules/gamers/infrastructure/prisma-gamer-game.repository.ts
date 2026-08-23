@@ -34,6 +34,13 @@ export class PrismaGamerGameRepository implements GamerGameRepository {
     });
   }
 
+  getActiveById(id: string): Promise<GamerGameSummary | null> {
+    return this.db.gamerGame.findFirst({
+      where: { id, status: "ACTIVE" },
+      select: gameSelect,
+    });
+  }
+
   getByNormalizedName(normalizedName: string): Promise<GamerGameSummary | null> {
     return this.db.gamerGame.findUnique({
       where: { normalizedName },
