@@ -1,9 +1,6 @@
 import net from "node:net";
 import { AppError } from "../../../http/errors/app-error.js";
-import type { WhistleRevealResult, WhistleTransientStore } from "../application/whistle.store.js";
-
-const UNREAD_TTL_SECONDS = 24 * 60 * 60;
-const REVEAL_TTL_MILLISECONDS = 60_000;
+import type { WhistleTransientStore } from "../application/whistle.store.js";
 
 type RedisScalar = string | number | null;
 type RedisValue = RedisScalar | RedisValue[];
@@ -83,23 +80,6 @@ class RedisConnection {
   }
 }
 
-const REVEAL_SCRIPT = `
-local body = redis.call('GET', KEYS[1])
-if not body then return {'missing'} end
-if redis.call('EXISTS', KEYS[2]) == 1 then
-  local windowTtlMs = redis.call('PTTL', KEYS[2])
-  if windowTtlMs <= 0 then return {'expired'} end
-  return {'visible', body, windowTtlMs}
-end
-if redis.call('EXISTS', KEYS[3]) == 1 then return {'expired'} end
-local bodyTtlMs = redis.call('PTTL', KEYS[1])
-if bodyTtlMs <= 0 then return {'missing'} end
-local revealTtlMs = math.min(tonumber(ARGV[1]), bodyTtlMs)
-redis.call('SET', KEYS[3], '1', 'PX', bodyTtlMs, 'NX')
-redis.call('SET', KEYS[2], '1', 'PX', revealTtlMs, 'NX')
-return {'visible', body, revealTtlMs}
-`;
-
 export class RedisWhistleStore implements WhistleTransientStore {
   private readonly redis: RedisConnection;
 
@@ -108,32 +88,20 @@ export class RedisWhistleStore implements WhistleTransientStore {
   }
 
   private bodyKey(whistleId: string) { return `whistle:body:${whistleId}`; }
-  private windowKey(whistleId: string, viewerUserId: string) { return `whistle:reveal:${whistleId}:${viewerUserId}`; }
-  private seenKey(whistleId: string, viewerUserId: string) { return `whistle:seen:${whistleId}:${viewerUserId}`; }
 
-  async putBody(whistleId: string, body: string): Promise<void> {
-    const result = await this.redis.command(["SET", this.bodyKey(whistleId), body, "EX", String(UNREAD_TTL_SECONDS), "NX"]);
+  async putBody(whistleId: string, body: string, expiresInMilliseconds: number): Promise<void> {
+    const ttl = Math.max(1, Math.floor(expiresInMilliseconds));
+    const result = await this.redis.command(["SET", this.bodyKey(whistleId), body, "PX", String(ttl), "NX"]);
     if (result !== "OK") throw new AppError(503, "WHISTLE_BODY_STORE_FAILED", "Could not store Whistle body");
+  }
+
+  async getBody(whistleId: string): Promise<string | null> {
+    const result = await this.redis.command(["GET", this.bodyKey(whistleId)]);
+    if (result === null || typeof result === "string") return result;
+    throw new AppError(503, "WHISTLE_REDIS_PROTOCOL", "Invalid Whistle body response");
   }
 
   async deleteBody(whistleId: string): Promise<void> {
     await this.redis.command(["DEL", this.bodyKey(whistleId)]);
   }
-
-  async reveal(whistleId: string, viewerUserId: string): Promise<WhistleRevealResult> {
-    const result = await this.redis.command([
-      "EVAL", REVEAL_SCRIPT, "3",
-      this.bodyKey(whistleId), this.windowKey(whistleId, viewerUserId), this.seenKey(whistleId, viewerUserId),
-      String(REVEAL_TTL_MILLISECONDS)
-    ]);
-    if (!Array.isArray(result) || typeof result[0] !== "string") throw new AppError(503, "WHISTLE_REDIS_PROTOCOL", "Invalid Whistle reveal response");
-    if (result[0] === "visible" && typeof result[1] === "string" && typeof result[2] === "number" && result[2] > 0) {
-      return { state: "visible", body: result[1], remainingMilliseconds: result[2] };
-    }
-    if (result[0] === "expired") return { state: "expired" };
-    return { state: "missing" };
-  }
 }
-
-export const WHISTLE_UNREAD_TTL_SECONDS = UNREAD_TTL_SECONDS;
-export const WHISTLE_REVEAL_TTL_MILLISECONDS = REVEAL_TTL_MILLISECONDS;

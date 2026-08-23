@@ -22,9 +22,5 @@ export function createWhistleRouter(service: WhistleService): Router {
     res.status(201).json(await service.create(getAuth(req).userId, contextType, String(req.params.contextId), input.body));
   }));
 
-  router.post("/:whistleId/reveal", asyncHandler(async (req, res) => {
-    res.json(await service.reveal(getAuth(req).userId, String(req.params.whistleId)));
-  }));
-
   return router;
 }

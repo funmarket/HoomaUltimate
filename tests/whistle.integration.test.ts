@@ -131,7 +131,12 @@ async function sendWhistle(base: string, cookie: string, communityId: string, bo
   });
 }
 
-test("Whistle enforces private context, global quota, Redis TTL/reveal and metadata-only persistence", async () => {
+function utcMidnightAfter(value: string): string {
+  const date = new Date(value);
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1)).toISOString();
+}
+
+test("Whistle enforces visible daily UTC sessions, quota and metadata-only persistence", async () => {
   await resetDatabase();
   const app = createApp(config, createContainer(config));
   const server = app.listen(0, "127.0.0.1");
@@ -163,43 +168,26 @@ test("Whistle enforces private context, global quota, Redis TTL/reveal and metad
     const durableSecret = "secret-body-never-persisted";
     const first = await sendWhistle(base, founder.cookie, community.id, durableSecret);
     assert.equal(first.status, 201);
-    const firstPayload = await first.json() as { whistle: { id: string }; remainingToday: number };
+    const firstPayload = await first.json() as { whistle: { id: string; body: string; createdAt: string; expiresAt: string }; remainingToday: number; resetsAt: string };
     assert.equal(firstPayload.remainingToday, 10);
+    assert.equal(firstPayload.whistle.body, durableSecret);
+    assert.equal(firstPayload.whistle.expiresAt, utcMidnightAfter(firstPayload.whistle.createdAt));
+    assert.equal(firstPayload.resetsAt, firstPayload.whistle.expiresAt);
     const whistleId = firstPayload.whistle.id;
 
-    const bodyTtl = await redisCommand(["TTL", `whistle:body:${whistleId}`]);
+    const bodyTtl = await redisCommand(["PTTL", `whistle:body:${whistleId}`]);
     assert.equal(typeof bodyTtl, "number");
-    assert.ok((bodyTtl as number) > 86_300 && (bodyTtl as number) <= 86_400);
+    assert.ok((bodyTtl as number) > 0);
+    assert.ok((bodyTtl as number) <= new Date(firstPayload.resetsAt).getTime() - Date.now() + 2_000);
 
     const list = await fetch(`${base}/api/v1/whistles/contexts/COMMUNITY/${community.id}`, { headers: headers(member.cookie) });
     assert.equal(list.status, 200);
-    const listText = await list.text();
-    assert.equal(listText.includes(durableSecret), false);
+    const listPayload = await list.json() as { items: { id: string; body: string }[]; remainingToday: number; resetsAt: string };
+    assert.equal(listPayload.items.find((item) => item.id === whistleId)?.body, durableSecret);
+    assert.equal(listPayload.resetsAt, firstPayload.resetsAt);
 
-    const reveal = await fetch(`${base}/api/v1/whistles/${whistleId}/reveal`, { method: "POST", headers: headers(member.cookie) });
-    assert.equal(reveal.status, 200);
-    const revealPayload = await reveal.json() as { body: string; visibleForSeconds: number };
-    assert.equal(revealPayload.body, durableSecret);
-    assert.ok(revealPayload.visibleForSeconds > 59 && revealPayload.visibleForSeconds <= 60);
-
-    const firstWindowTtl = await redisCommand(["TTL", `whistle:reveal:${whistleId}:${member.userId}`]);
-    assert.equal(typeof firstWindowTtl, "number");
-    assert.ok((firstWindowTtl as number) > 0 && (firstWindowTtl as number) <= 60);
-    await new Promise((resolve) => setTimeout(resolve, 1100));
-    const revealAgain = await fetch(`${base}/api/v1/whistles/${whistleId}/reveal`, { method: "POST", headers: headers(member.cookie) });
-    assert.equal(revealAgain.status, 200);
-    const revealAgainPayload = await revealAgain.json() as { body: string; visibleForSeconds: number };
-    assert.equal(revealAgainPayload.body, durableSecret);
-    assert.ok(revealAgainPayload.visibleForSeconds < revealPayload.visibleForSeconds);
-    const secondWindowTtl = await redisCommand(["TTL", `whistle:reveal:${whistleId}:${member.userId}`]);
-    assert.equal(typeof secondWindowTtl, "number");
-    assert.ok((secondWindowTtl as number) < (firstWindowTtl as number));
-
-    await redisCommand(["EXPIRE", `whistle:reveal:${whistleId}:${member.userId}`, "1"]);
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-    const expiredReveal = await fetch(`${base}/api/v1/whistles/${whistleId}/reveal`, { method: "POST", headers: headers(member.cookie) });
-    assert.equal(expiredReveal.status, 410);
-    assert.equal(await redisCommand(["EXISTS", `whistle:seen:${whistleId}:${member.userId}`]), 1);
+    const obsoleteReveal = await fetch(`${base}/api/v1/whistles/${whistleId}/reveal`, { method: "POST", headers: headers(member.cookie) });
+    assert.equal(obsoleteReveal.status, 404);
 
     const metadataJson = await db.$queryRaw<{ json: string }[]>(Prisma.sql`
       SELECT to_jsonb(w)::text AS json FROM "WhistleMetadata" w WHERE w."id" = ${whistleId}
@@ -225,6 +213,16 @@ test("Whistle enforces private context, global quota, Redis TTL/reveal and metad
 
     const tooLong = await sendWhistle(base, member.cookie, community.id, "⚽".repeat(34));
     assert.equal(tooLong.status, 400);
+
+    const expiredId = "expired-whistle-metadata";
+    await db.$executeRaw(Prisma.sql`
+      INSERT INTO "WhistleMetadata" ("id", "authorUserId", "contextType", "contextId", "createdAt", "expiresAt")
+      VALUES (${expiredId}, ${member.userId}, CAST('COMMUNITY' AS "WhistleContextType"), ${community.id}, ${new Date(Date.now() - 86_400_000)}, ${new Date(Date.now() - 1_000)})
+    `);
+    const cleanupTrigger = await fetch(`${base}/api/v1/whistles/contexts/COMMUNITY/${community.id}`, { headers: headers(member.cookie) });
+    assert.equal(cleanupTrigger.status, 200);
+    const expiredCount = await db.whistleMetadata.count({ where: { id: expiredId } });
+    assert.equal(expiredCount, 0);
   } finally {
     await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
   }

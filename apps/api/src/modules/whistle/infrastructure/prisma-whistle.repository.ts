@@ -83,18 +83,6 @@ export class PrismaWhistleRepository implements WhistleRepository {
     return Number(rows[0]?.count ?? 0n);
   }
 
-  async getById(id: string): Promise<WhistleMetadataRecord | null> {
-    const rows = await this.db.$queryRaw<MetadataRow[]>(Prisma.sql`
-      SELECT w."id", w."authorUserId", w."contextType", w."contextId", w."createdAt", w."expiresAt",
-        p."displayName", p."username", p."photoUrl"
-      FROM "WhistleMetadata" w
-      LEFT JOIN "UserPresentation" p ON p."userId" = w."authorUserId"
-      WHERE w."id" = ${id}
-      LIMIT 1
-    `);
-    return rows[0] ? rowToRecord(rows[0]) : null;
-  }
-
   async listActive(contextType: WhistleContextType, contextId: string, now: Date, limit: number): Promise<WhistleMetadataRecord[]> {
     const rows = await this.db.$queryRaw<MetadataRow[]>(Prisma.sql`
       SELECT w."id", w."authorUserId", w."contextType", w."contextId", w."createdAt", w."expiresAt",
@@ -108,5 +96,10 @@ export class PrismaWhistleRepository implements WhistleRepository {
       LIMIT ${limit}
     `);
     return rows.map(rowToRecord);
+  }
+
+  async deleteExpired(now: Date): Promise<number> {
+    const result = await this.db.whistleMetadata.deleteMany({ where: { expiresAt: { lte: now } } });
+    return result.count;
   }
 }

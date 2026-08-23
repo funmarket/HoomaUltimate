@@ -1,11 +1,9 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useHoomaFrontend } from "../context";
-import { HoomaApiError, type WhistleList, type WhistleListItem } from "../api";
+import type { WhistleList, WhistleListItem } from "../api";
 
 const MAX_GRAPHEMES = 33;
 const REFRESH_INTERVAL_MS = 10_000;
-
-type VisibleBody = { body: string; expiresAt: number };
 
 function graphemeCount(value: string): number {
   const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
@@ -29,17 +27,23 @@ function relativeTime(value: string): string {
   return `${hours}h ago`;
 }
 
+function resetLabel(value: string): string {
+  const date = new Date(value);
+  return Number.isNaN(date.valueOf()) ? "00:00 UTC" : new Intl.DateTimeFormat(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "UTC",
+    timeZoneName: "short"
+  }).format(date);
+}
+
 export function HoomaWhistleBoard({ communityId }: { readonly communityId: string }) {
   const { api, protectedError } = useHoomaFrontend();
-  const [feed, setFeed] = useState<WhistleList>({ items: [], remainingToday: 11 });
+  const [feed, setFeed] = useState<WhistleList>({ items: [], remainingToday: 11, resetsAt: "" });
   const [body, setBody] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [revealing, setRevealing] = useState("");
   const [error, setError] = useState("");
-  const [visibleBodies, setVisibleBodies] = useState<Record<string, VisibleBody>>({});
-  const [expiredForViewer, setExpiredForViewer] = useState<Record<string, true>>({});
-  const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const count = graphemeCount(body);
 
   const load = useCallback(async (quiet = false) => {
@@ -61,11 +65,6 @@ export function HoomaWhistleBoard({ communityId }: { readonly communityId: strin
     return () => clearInterval(interval);
   }, [load]);
 
-  useEffect(() => () => {
-    for (const timer of timers.current.values()) clearTimeout(timer);
-    timers.current.clear();
-  }, []);
-
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!body.trim() || count > MAX_GRAPHEMES || sending || feed.remainingToday <= 0) return;
@@ -82,53 +81,14 @@ export function HoomaWhistleBoard({ communityId }: { readonly communityId: strin
     }
   }
 
-  async function reveal(whistleId: string) {
-    setRevealing(whistleId);
-    setError("");
-    try {
-      const revealed = await api.whistles.reveal(whistleId);
-      const expiresAt = Date.now() + revealed.visibleForSeconds * 1000;
-      setVisibleBodies((current) => ({ ...current, [whistleId]: { body: revealed.body, expiresAt } }));
-      setExpiredForViewer((current) => {
-        const next = { ...current };
-        delete next[whistleId];
-        return next;
-      });
-      const existingTimer = timers.current.get(whistleId);
-      if (existingTimer) clearTimeout(existingTimer);
-      const timer = setTimeout(() => {
-        setVisibleBodies((current) => {
-          const next = { ...current };
-          delete next[whistleId];
-          return next;
-        });
-        setExpiredForViewer((current) => ({ ...current, [whistleId]: true }));
-        timers.current.delete(whistleId);
-      }, revealed.visibleForSeconds * 1000);
-      timers.current.set(whistleId, timer);
-    } catch (reason) {
-      if (reason instanceof HoomaApiError && reason.status === 410) {
-        setVisibleBodies((current) => {
-          const next = { ...current };
-          delete next[whistleId];
-          return next;
-        });
-        setExpiredForViewer((current) => ({ ...current, [whistleId]: true }));
-      } else {
-        setError(protectedError(reason, "Could not reveal Whistle"));
-      }
-    } finally {
-      setRevealing("");
-    }
-  }
-
   return (
     <article className="panel hooma-hq-module whistle-module hooma-whistle-board">
       <div className="whistle-heading">
         <div><span className="eyebrow">PRIVATE · MEMBERS ONLY</span><h2>Whistle Board</h2></div>
         <span className="whistle-quota"><strong>{feed.remainingToday}</strong>/11 left today</span>
       </div>
-      <p className="whistle-rule">33 graphemes. No permanent body history. Reveal a signal and you have 60 seconds to read it.</p>
+      <p className="whistle-rule">33 graphemes per Whistle. Every member starts fresh with 11 at 00:00 UTC. Today's Whistles disappear at the same reset.</p>
+      {feed.resetsAt ? <small className="muted">Next reset: {resetLabel(feed.resetsAt)}</small> : null}
 
       <form className="whistle-composer" onSubmit={submit}>
         <label>
@@ -143,23 +103,19 @@ export function HoomaWhistleBoard({ communityId }: { readonly communityId: strin
 
       {error ? <div className="error-box">{error}</div> : null}
       {loading ? <div className="whistle-empty">Listening for Whistles…</div> : null}
-      {!loading && !feed.items.length ? <div className="whistle-empty"><strong>Quiet in the HOOMA.</strong><span>Be the first to send a short signal.</span></div> : null}
+      {!loading && !feed.items.length ? <div className="whistle-empty"><strong>Quiet in the HOOMA.</strong><span>Be the first to send a short signal today.</span></div> : null}
 
       {feed.items.length ? (
         <div className="whistle-list">
           {feed.items.map((whistle) => {
-            const visible = visibleBodies[whistle.id];
-            const expired = expiredForViewer[whistle.id];
             const presentation = whistle.author?.presentation;
             return (
-              <div className={`whistle-card ${visible ? "is-revealed" : ""}`} key={whistle.id}>
+              <div className="whistle-card is-revealed" key={whistle.id}>
                 <div className="whistle-author">
                   {presentation?.photoUrl ? <img src={presentation.photoUrl} alt="" /> : <span>{authorInitials(whistle)}</span>}
                   <div><strong>{authorName(whistle)}</strong><small>{relativeTime(whistle.createdAt)}</small></div>
                 </div>
-                <div className="whistle-body-zone">
-                  {visible ? <p className="whistle-body">{visible.body}</p> : expired ? <span className="whistle-expired">Gone for you · reveal window ended</span> : <button className="whistle-reveal" type="button" disabled={revealing === whistle.id} onClick={() => void reveal(whistle.id)}>{revealing === whistle.id ? "Revealing…" : "Reveal Whistle · 60s"}</button>}
-                </div>
+                <div className="whistle-body-zone"><p className="whistle-body">{whistle.body}</p></div>
               </div>
             );
           })}
