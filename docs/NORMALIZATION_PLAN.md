@@ -8,7 +8,7 @@ Purpose: make the already-built foundation internally consistent, fully verified
 
 ## 0. Execution rule
 
-No new product domain may begin while this plan is active.
+No new product domain may begin while this plan is active unless a newer explicit product-owner decision records a scoped exception.
 
 Frozen until the final gate passes:
 
@@ -17,13 +17,14 @@ Frozen until the final gate passes:
 - Pitch
 - ULTRAS
 - Gamers
-- Whistle
 - Requests
 - Ride
 - FundMe
 - Payments
 - Media/Replay
 - HOOMA NOW
+
+**Whistle is the sole current exception.** ADR-039 records the product owner's explicit 2026-08-23 instruction to set up the shared Whistle vertical slice now. That exception does not unfreeze any other future domain. Only the shared Whistle engine and explicitly authorized contexts may advance; Event, Team, Ride, ULTRAS and Gamer Squad Whistle contexts stay disabled until their own authorization slices are deliberately opened.
 
 Work during normalization is limited to:
 
@@ -34,12 +35,13 @@ Work during normalization is limited to:
 - Communities consistency;
 - Teams correctness and completion of already-started behavior;
 - Events/Play correctness and boundary cleanup;
+- the explicitly authorized shared Whistle vertical slice defined by ADR-039;
 - Web/Telegram structure and routing;
 - contracts/package organization;
 - Worker ownership required to finish already-started temporary Event behavior;
 - verification, CI, Railway configuration, and documentation.
 
-Do not use this phase to sneak in a new domain under the label "cleanup".
+Do not use this phase to sneak in a new domain under the label "cleanup". The Whistle exception is narrow and must not be generalized.
 
 ---
 
@@ -86,11 +88,12 @@ Lock ownership before source edits:
 - Teams owns Team, roster, Team responsibility/capability authority, lineup, challenge, challenge conversation, and TeamGame.
 - Events owns canonical Event lifecycle, RSVP/waitlist, formation, check-in, and temporary Event chat.
 - Play is a product/use-case layer over PLAY Events.
+- Whistle owns one shared transient-signal engine: body/reveal state in Redis, metadata/quota authority in PostgreSQL, and context authorization through the owning domain. ADR-039 currently enables only private HOOMA Community Whistle Board access.
 - Worker owns durable cleanup/async execution; API services own business policy.
 
 ## A3. Freeze future domain representations
 
-Do not add placeholder tables for frozen domains to the normalized initial migration.
+Do not add placeholder tables for frozen domains to the normalized initial migration. Whistle is not a frozen placeholder: its metadata-only persistence and transient Redis behavior are an explicitly authorized current slice under ADR-039.
 
 ### Stage A gate
 
@@ -323,6 +326,17 @@ Preserve:
 - cancellation/completion;
 - temporary chat visibility.
 
+## B11. Whistle
+
+Normalize only the explicitly authorized shared Whistle slice:
+
+- one metadata-only PostgreSQL model;
+- no Whistle body column or durable body history;
+- Redis owns transient body and per-viewer reveal state;
+- one global per-user/per-UTC-day quota across contexts;
+- current context authorization enables HOOMA Community members only;
+- future Whistle context tables are not created by implication.
+
 ### Stage B gate
 
 - `prisma validate` succeeds after dependencies are installed;
@@ -345,6 +359,8 @@ For Communities, Teams and Events:
 3. implement Prisma repositories against those ports;
 4. keep transactions and DB-specific locking inside infrastructure;
 5. keep lifecycle/authorization policy in domain/application layers.
+
+Whistle follows the same layering rule: application owns policy/ports, PostgreSQL/Redis implementations stay in infrastructure, and HTTP only adapts transport input/output.
 
 ## C2. Team authorization policy
 
@@ -534,7 +550,7 @@ Procedure:
 5. add intentional PostgreSQL constraints/indexes that Prisma cannot express directly;
 6. apply to a brand-new disposable PostgreSQL database;
 7. verify schema and generated client behavior;
-8. run all current-domain integration tests;
+8. run all current-domain integration tests, including the authorized Whistle slice against Redis;
 9. only then apply the exact migration to the fresh Railway PostgreSQL database.
 
 Required SQL review:
@@ -551,6 +567,7 @@ Required SQL review:
 - one TeamGame per challenge;
 - Event timestamp/capacity/fee constraints;
 - formation coordinate ranges;
+- Whistle metadata-only constraints/indexes with no body persistence;
 - relevant indexes for public discovery and authorization lookups.
 
 No `prisma db push` is accepted as the release path.
@@ -674,9 +691,20 @@ Required real-infrastructure scenarios:
 - temporary chat authorization/window;
 - completion/cancellation.
 
+## Whistle
+
+- Community member can list/create/reveal; outsider is denied;
+- 33 grapheme clusters are accepted and 34 are rejected, including complex Unicode graphemes;
+- one global 11-send UTC-day quota is concurrency-safe;
+- body exists only in Redis with a 24-hour unread TTL;
+- PostgreSQL and outbox payloads never contain the Whistle body;
+- first reveal opens one per-viewer 60-second window;
+- later reveals return only the remaining window and never extend it;
+- expired reveal is denied while the seen marker prevents reopening.
+
 ### Stage I gate
 
-All applicable tests pass against disposable real PostgreSQL; Redis-backed tests are added when Redis behavior exists.
+All applicable tests pass against disposable real PostgreSQL; Redis-backed tests are mandatory for Whistle behavior.
 
 ---
 
@@ -705,7 +733,7 @@ Normalization is complete only when all are true:
 - Web uses structured lazy routing;
 - Telegram has its own structured shell/router;
 - contracts are domain-split;
-- current Identity/Admin/Community/Teams/Events behavior is end-to-end verified;
+- current Identity/Admin/Community/Teams/Events and explicitly authorized Whistle behavior is end-to-end verified;
 - Railway migration and smoke verification pass;
 - implementation ledger is current;
 - no new frozen domain was partially introduced.
