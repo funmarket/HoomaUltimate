@@ -744,16 +744,18 @@ Rules:
 
 # 19. Gamers current vertical-slice boundary
 
-Gamers is explicitly unfrozen by ADR-041. G1 is the first complete persisted Gamers slice and establishes the canonical game catalog plus the shared `/gamers` entry surface.
+Gamers is explicitly unfrozen by ADR-041. G1 established the persisted game catalog and shared `/gamers` entry. G2 adds game-specific GamerProfile identity plus privacy-safe public Challengers discovery without introducing challenge, result, ranking, Squad, Arena persistence, Gamer chat, or Gamer Squad Whistle authorization.
 
 Current canonical ownership is:
 
 ```text
 Gamers domain
   -> GamerGameRepository port
+  -> GamerProfileRepository port
   -> GamerService
   -> Gamer public/member routers
   -> PrismaGamerGameRepository
+  -> PrismaGamerProfileRepository
   -> PostgreSQL
   -> shared Web/Telegram Gamers frontend projection
 ```
@@ -772,7 +774,7 @@ GamerGame
   updatedAt
 ```
 
-G1 rules:
+G1 rules remain canonical:
 
 - PostgreSQL is the only game-catalog source of truth; there is no hardcoded bootstrap catalog or frontend game array;
 - the launch catalog is persisted by migration and currently seeds `EA SPORTS FC Mobile` and the generic canonical `Ludo` entry;
@@ -783,9 +785,38 @@ G1 rules:
 - ambiguous or merely similar names are never silently fuzzy-merged;
 - `createdByUserId` records the contributing User when applicable without making that User the owner of catalog truth;
 - Platform Admin may later curate, rename, merge or deactivate catalog spam through its own authorized slice; G1 does not create an Admin catalog UI;
-- the shared `/gamers` page is used by both Web and Telegram delivery and reads/writes only through the canonical Gamers API;
-- G1 does not create GamerProfile, challenge/result/ranking, GamerSquad, Arena persistence, Gamer chat, or Gamer Squad Whistle authorization;
-- later GamerProfile/challenge/result/ranking/Squad models are added only in their own authorized slices rather than speculatively extending G1.
+- the shared `/gamers` page is used by both Web and Telegram delivery and reads/writes only through the canonical Gamers API.
+
+## GamerProfile
+
+```text
+GamerProfile
+  id
+  userId
+  gameId
+  handle
+  openToChallenge
+  createdAt
+  updatedAt
+
+Unique: (userId, gameId)
+```
+
+G2 rules:
+
+- one canonical HOOMA `User` may have at most one GamerProfile for a given GamerGame;
+- GamerProfile is game-specific identity and participation state, never a second User identity;
+- the game handle belongs to GamerProfile, while canonical username, display name, photo, and bio remain owned by User/UserPresentation;
+- the same User may have separate GamerProfiles and handles for different games;
+- only profiles with `openToChallenge == true` appear in public Challengers discovery;
+- public Challengers is a deliberate privacy-safe projection containing only GamerProfile `id`, game `handle`, and canonical public presentation fields required by the Challenger card;
+- public Challengers must not expose canonical `userId`, internal `gameId`, `openToChallenge`, or GamerProfile timestamps merely because those fields exist on the private record;
+- authenticated member routes may read/update only the current User's GamerProfile for the requested game;
+- profile/discovery operations require an ACTIVE GamerGame; missing or inactive games are rejected rather than creating orphan/hidden profile state;
+- handle input is normalized for Unicode compatibility, trimmed, and internal whitespace collapsed before persistence;
+- public discovery never invents `ONLINE` presence or other telemetry HOOMA does not own;
+- G2 does not create challenge/Match Card, result, ranking, GamerSquad, Arena persistence, Gamer chat, or Gamer Squad Whistle authorization;
+- those later concepts are added only in their own authorized slices rather than speculatively extending G2.
 
 ---
 
