@@ -30,15 +30,16 @@ export class IdentityService {
   async resolveTelegram(rawInitData: string | undefined): Promise<TelegramResolution> {
     if (!rawInitData) return { kind: "absent" };
     if (!this.config.TELEGRAM_BOT_TOKEN) return { kind: "invalid" };
+    let identity: TelegramIdentityInput;
     try {
-      const identity = validateTelegramInitData(rawInitData, this.config.TELEGRAM_BOT_TOKEN, this.config.TELEGRAM_INIT_DATA_MAX_AGE_SECONDS);
-      const userId = await this.repository.findTelegramUserId(identity.telegramUserId);
-      return userId ? { kind: "valid", userId } : { kind: "unregistered" };
+      identity = validateTelegramInitData(rawInitData, this.config.TELEGRAM_BOT_TOKEN, this.config.TELEGRAM_INIT_DATA_MAX_AGE_SECONDS);
     } catch {
       return { kind: "invalid" };
     }
+    const userId = await this.repository.findTelegramUserId(identity.telegramUserId);
+    return userId ? { kind: "valid", userId } : { kind: "unregistered" };
   }
-  async provisionTelegramAccount(rawInitData: string | undefined): Promise<{ userId: string }> {
+  async provisionTelegramAccount(rawInitData: string | undefined, webUserId: string | null = null): Promise<{ userId: string }> {
     if (!rawInitData || !this.config.TELEGRAM_BOT_TOKEN) {
       throw new AppError(401, "TELEGRAM_AUTH_REQUIRED", "Valid Telegram authentication is required to create a HOOMA account");
     }
@@ -47,6 +48,13 @@ export class IdentityService {
       identity = validateTelegramInitData(rawInitData, this.config.TELEGRAM_BOT_TOKEN, this.config.TELEGRAM_INIT_DATA_MAX_AGE_SECONDS);
     } catch {
       throw new AppError(401, "TELEGRAM_AUTH_INVALID", "Invalid or expired Telegram authentication");
+    }
+    const existingTelegramUserId = await this.repository.findTelegramUserId(identity.telegramUserId);
+    if (webUserId && !existingTelegramUserId) {
+      throw new AppError(409, "ACCOUNT_LINK_REQUIRED", "This Telegram identity is not linked to the signed-in HOOMA account");
+    }
+    if (webUserId && existingTelegramUserId && webUserId !== existingTelegramUserId) {
+      throw new AppError(401, "AUTH_CONFLICT", "Telegram and Web credentials resolve to different users");
     }
     return { userId: await this.repository.upsertTelegramIdentity(identity) };
   }
