@@ -5,7 +5,7 @@ import { useAccount } from "../account/AccountProvider";
 
 export function ProfilePage() {
   const { api, authenticationHref } = useHoomaFrontend();
-  const { me, loading, refresh } = useAccount();
+  const { me, loading, error: accountError, refresh } = useAccount();
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [photoUrl, setPhotoUrl] = useState("");
@@ -44,6 +44,15 @@ export function ProfilePage() {
   }
 
   if (loading && !me) return <p className="status">Loading profile…</p>;
+  if (!me && accountError) {
+    return (
+      <section className="panel">
+        <p className="error">Unable to load your HOOMA profile.</p>
+        <p className="muted">{accountError}</p>
+        <button type="button" onClick={() => void refresh()}>Try again</button>
+      </section>
+    );
+  }
   if (!me) {
     const signInHref = authenticationHref("/profile");
     return (
