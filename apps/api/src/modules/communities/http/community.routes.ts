@@ -5,11 +5,14 @@ import { getAuth } from "../../identity/http/auth-request.js";
 import type { CommunityService } from "../application/community.service.js";
 
 const coachSchema = z.object({ userId: z.string().min(1) });
+const optionalUrl = z.string().trim().url().max(2000).optional().nullable();
 const createSchema = z.object({
   name: z.string().trim().min(2).max(100),
   description: z.string().trim().max(600).optional().nullable(),
   city: z.string().trim().max(100).optional().nullable(),
-  houma: z.string().trim().max(100).optional().nullable()
+  houma: z.string().trim().max(100).optional().nullable(),
+  logoUrl: optionalUrl,
+  bannerUrl: optionalUrl
 });
 
 export function createCommunityPublicRouter(service: CommunityService): Router {
@@ -35,7 +38,9 @@ export function createCommunityMemberRouter(service: CommunityService): Router {
       name: parsed.name,
       ...(parsed.description !== undefined ? { description: parsed.description } : {}),
       ...(parsed.city !== undefined ? { city: parsed.city } : {}),
-      ...(parsed.houma !== undefined ? { houma: parsed.houma } : {})
+      ...(parsed.houma !== undefined ? { houma: parsed.houma } : {}),
+      ...(parsed.logoUrl !== undefined ? { logoUrl: parsed.logoUrl } : {}),
+      ...(parsed.bannerUrl !== undefined ? { bannerUrl: parsed.bannerUrl } : {})
     };
     res.status(201).json(await service.create(getAuth(req).userId, input));
   }));
