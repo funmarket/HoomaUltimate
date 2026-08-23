@@ -29,10 +29,14 @@ export class EventService {
     return { rsvp: await this.repository.getRsvp(eventId, userId) };
   }
 
-  async formationRoster(userId: string, eventId: string) {
+  async requireMemberContent(userId: string, eventId: string): Promise<void> {
     if (!(await this.repository.canViewMemberContent(eventId, userId))) {
       throw new EventError("EVENT_MEMBER_CONTENT_FORBIDDEN", "Event participation or management access required");
     }
+  }
+
+  async formationRoster(userId: string, eventId: string) {
+    await this.requireMemberContent(userId, eventId);
     return { players: await this.repository.formationRoster(eventId) };
   }
 
@@ -111,7 +115,7 @@ export class EventService {
   }
 
   async listFormations(userId: string, eventId: string) {
-    if (!(await this.repository.canViewMemberContent(eventId, userId))) throw new EventError("EVENT_MEMBER_CONTENT_FORBIDDEN", "Event participation or management access required");
+    await this.requireMemberContent(userId, eventId);
     return this.repository.listFormations(eventId);
   }
 
