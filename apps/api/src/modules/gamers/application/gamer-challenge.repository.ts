@@ -19,6 +19,12 @@ export type GamerChallengeRecord = {
   challenged: GamerChallengeParticipant;
 };
 
+export type GamerChallengeAccessRecord = {
+  record: GamerChallengeRecord;
+  challengerUserId: string;
+  challengedUserId: string;
+};
+
 export interface GamerChallengeRepository {
   createPending(input: {
     gameId: string;
@@ -26,6 +32,7 @@ export interface GamerChallengeRepository {
     challengedProfileId: string;
     pairKey: string;
   }): Promise<GamerChallengeRecord | null>;
+  getAccessRecord(challengeId: string): Promise<GamerChallengeAccessRecord | null>;
   listForUserAndGame(userId: string, gameId: string): Promise<GamerChallengeRecord[]>;
   acceptForChallengedUser(challengeId: string, userId: string): Promise<GamerChallengeRecord | null>;
   declineForChallengedUser(challengeId: string, userId: string): Promise<GamerChallengeRecord | null>;
