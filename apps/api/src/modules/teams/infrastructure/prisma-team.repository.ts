@@ -258,33 +258,39 @@ export class PrismaTeamRepository implements TeamRepository {
     });
   }
 
-  async activePlayerIds(teamId: string, teamPlayerIds: readonly string[]): Promise<readonly string[]> {
-    if (!teamPlayerIds.length) return [];
-    const rows = await this.db.teamPlayer.findMany({
-      where: { id: { in: [...teamPlayerIds] }, teamId, leftAt: null },
-      select: { id: true }
-    });
-    return rows.map((row) => row.id);
-  }
-
   createLineup(userId: string, teamId: string, input: TeamLineupInput) {
-    return this.db.teamLineup.create({
-      data: {
-        teamId,
-        name: input.name,
-        formation: input.formation,
-        matchFormat: input.matchFormat,
-        published: input.published,
-        createdByUserId: userId,
-        slots: {
-          create: input.slots.map((slot) => ({
-            teamPlayerId: slot.teamPlayerId ?? null,
-            position: slot.position,
-            sortOrder: slot.sortOrder
-          }))
-        }
-      },
-      include: { slots: { orderBy: { sortOrder: "asc" } } }
+    return this.db.$transaction(async (tx) => {
+      const requestedPlayerIds = [...new Set(input.slots.flatMap((slot) => slot.teamPlayerId ? [slot.teamPlayerId] : []))];
+      if (requestedPlayerIds.length) {
+        const rows = await tx.$queryRaw<Array<{ id: string }>>(Prisma.sql`
+          SELECT "id"
+          FROM "TeamPlayer"
+          WHERE "teamId" = ${teamId}
+            AND "leftAt" IS NULL
+            AND "id" IN (${Prisma.join(requestedPlayerIds)})
+          FOR UPDATE
+        `);
+        if (rows.length !== requestedPlayerIds.length) return null;
+      }
+
+      return tx.teamLineup.create({
+        data: {
+          teamId,
+          name: input.name,
+          formation: input.formation,
+          matchFormat: input.matchFormat,
+          published: input.published,
+          createdByUserId: userId,
+          slots: {
+            create: input.slots.map((slot) => ({
+              teamPlayerId: slot.teamPlayerId ?? null,
+              position: slot.position,
+              sortOrder: slot.sortOrder
+            }))
+          }
+        },
+        include: { slots: { orderBy: { sortOrder: "asc" } } }
+      });
     });
   }
 
