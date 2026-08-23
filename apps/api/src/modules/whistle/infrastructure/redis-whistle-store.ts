@@ -3,7 +3,7 @@ import { AppError } from "../../../http/errors/app-error.js";
 import type { WhistleRevealResult, WhistleTransientStore } from "../application/whistle.store.js";
 
 const UNREAD_TTL_SECONDS = 24 * 60 * 60;
-const REVEAL_TTL_SECONDS = 60;
+const REVEAL_TTL_MILLISECONDS = 60_000;
 
 type RedisScalar = string | number | null;
 type RedisValue = RedisScalar | RedisValue[];
@@ -87,17 +87,17 @@ const REVEAL_SCRIPT = `
 local body = redis.call('GET', KEYS[1])
 if not body then return {'missing'} end
 if redis.call('EXISTS', KEYS[2]) == 1 then
-  local windowTtl = redis.call('TTL', KEYS[2])
-  if windowTtl <= 0 then return {'expired'} end
-  return {'visible', body, windowTtl}
+  local windowTtlMs = redis.call('PTTL', KEYS[2])
+  if windowTtlMs <= 0 then return {'expired'} end
+  return {'visible', body, windowTtlMs}
 end
 if redis.call('EXISTS', KEYS[3]) == 1 then return {'expired'} end
-local ttl = redis.call('TTL', KEYS[1])
-if ttl <= 0 then return {'missing'} end
-local revealTtl = math.min(tonumber(ARGV[1]), ttl)
-redis.call('SET', KEYS[3], '1', 'EX', ttl, 'NX')
-redis.call('SET', KEYS[2], '1', 'EX', revealTtl, 'NX')
-return {'visible', body, revealTtl}
+local bodyTtlMs = redis.call('PTTL', KEYS[1])
+if bodyTtlMs <= 0 then return {'missing'} end
+local revealTtlMs = math.min(tonumber(ARGV[1]), bodyTtlMs)
+redis.call('SET', KEYS[3], '1', 'PX', bodyTtlMs, 'NX')
+redis.call('SET', KEYS[2], '1', 'PX', revealTtlMs, 'NX')
+return {'visible', body, revealTtlMs}
 `;
 
 export class RedisWhistleStore implements WhistleTransientStore {
@@ -124,11 +124,11 @@ export class RedisWhistleStore implements WhistleTransientStore {
     const result = await this.redis.command([
       "EVAL", REVEAL_SCRIPT, "3",
       this.bodyKey(whistleId), this.windowKey(whistleId, viewerUserId), this.seenKey(whistleId, viewerUserId),
-      String(REVEAL_TTL_SECONDS)
+      String(REVEAL_TTL_MILLISECONDS)
     ]);
     if (!Array.isArray(result) || typeof result[0] !== "string") throw new AppError(503, "WHISTLE_REDIS_PROTOCOL", "Invalid Whistle reveal response");
     if (result[0] === "visible" && typeof result[1] === "string" && typeof result[2] === "number" && result[2] > 0) {
-      return { state: "visible", body: result[1], remainingSeconds: result[2] };
+      return { state: "visible", body: result[1], remainingMilliseconds: result[2] };
     }
     if (result[0] === "expired") return { state: "expired" };
     return { state: "missing" };
@@ -136,4 +136,4 @@ export class RedisWhistleStore implements WhistleTransientStore {
 }
 
 export const WHISTLE_UNREAD_TTL_SECONDS = UNREAD_TTL_SECONDS;
-export const WHISTLE_REVEAL_TTL_SECONDS = REVEAL_TTL_SECONDS;
+export const WHISTLE_REVEAL_TTL_MILLISECONDS = REVEAL_TTL_MILLISECONDS;
