@@ -50,7 +50,11 @@ const playInput: EventCreateInput = {
   waitlistEnabled: true,
   entryFeeMinor: 0,
   currency: "TND",
-  play: { pitchType: "FIVE_A_SIDE", skillLevel: "MIXED", format: "FIVE_V_FIVE" },
+  play: {
+    pitchType: "FIVE_A_SIDE",
+    skillLevel: "MIXED",
+    format: "FIVE_V_FIVE",
+  },
 };
 
 test("EventService rejects WATCH creation until the Watch vertical slice owns creation", async () => {
@@ -69,7 +73,8 @@ test("EventService rejects WATCH creation until the Watch vertical slice owns cr
   );
   await assert.rejects(
     () => service.create("user-1", watchInput),
-    (error: unknown) => error instanceof EventError && error.code === "WATCH_NOT_ENABLED",
+    (error: unknown) =>
+      error instanceof EventError && error.code === "WATCH_NOT_ENABLED",
   );
   assert.equal(createCalled, false);
   assert.equal(coachCheckCalled, false);
@@ -134,7 +139,14 @@ test("EventService rejects formation players outside the confirmed event roster"
         format: "FIVE_V_FIVE",
         published: true,
         slots: [
-          { userId: "outsider", team: "A", position: "GK", label: "GK", x: 50, y: 90 },
+          {
+            userId: "outsider",
+            team: "A",
+            position: "GK",
+            label: "GK",
+            x: 50,
+            y: 90,
+          },
         ],
       }),
     (error: unknown) =>
