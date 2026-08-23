@@ -3,6 +3,8 @@ export interface CommunityCreateInput {
   description?: string | null;
   city?: string | null;
   houma?: string | null;
+  logoUrl?: string | null;
+  bannerUrl?: string | null;
 }
 
 export interface CommunityRepository {
