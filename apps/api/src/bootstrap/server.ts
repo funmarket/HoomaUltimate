@@ -6,11 +6,10 @@ import { createContainer } from "./container.js";
 const config = loadApiConfig();
 const container = createContainer(config);
 const app = createApp(config, container);
-// HOOMA owns an explicit API_PORT contract. Railway's generic PORT is only
-// relevant when an application does not define its own service port. This
-// service and its public domain are configured for API_PORT, so keep the
-// process bound to that canonical value instead of silently overriding it.
-const listenPort = config.API_PORT;
+// Railway owns PORT in production; API_PORT remains the explicit local/default
+// HOOMA fallback. The Railway service config pins PORT to the same port used by
+// its public domain, so health checks, proxy routing and the process agree.
+const listenPort = config.PORT ?? config.API_PORT;
 const server = app.listen(listenPort, "0.0.0.0", () => {
   console.log(`HOOMA API listening on ${listenPort}`);
 });
