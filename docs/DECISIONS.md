@@ -264,3 +264,30 @@ first reveal never extends on later reads
 Temporary Event Chat remains a separate legacy Events mechanism for now and must not be renamed or reused as Whistle storage. The later Play communication direction is Event Whistle Board through the shared Whistle engine; Event Chat removal requires its own traced cleanup/migration slice.
 
 **Reason:** The product owner chose Whistle as a differentiating core mechanic and explicitly requested that it be set up now. Recording the override prevents normalization automation or later contributors from reverting valid Whistle work as frozen scope.
+
+## ADR-040 — Whistle uses UTC-day sessions and direct visibility
+
+**Decision:** The product owner changed Whistle retention and visibility after ADR-025/ADR-039. This ADR supersedes only the old rolling 24-hour unread TTL and 60-second Reveal portions of those decisions. The single shared engine, 33-grapheme limit, global 11-per-UTC-day quota, Redis-only body rule and PostgreSQL-metadata-only rule remain unchanged.
+
+Current Whistle session invariants are:
+
+```text
+33 grapheme clusters maximum
+11 total sends per user per UTC calendar day across every enabled context
+UTC day = 00:00 UTC to next 00:00 UTC
+unused sends never carry into the next UTC day
+every Whistle expires at the next UTC midnight
+body in Redis only
+PostgreSQL metadata only
+authorized feeds show the body directly
+no Reveal endpoint
+no 60-second viewer window
+no reveal/seen keys
+expired metadata is cleanup data, not permanent Whistle history
+```
+
+At the UTC reset, prior-day bodies are no longer readable and the new day starts with all 11 sends available. Redis expires bodies at the session boundary. PostgreSQL metadata may be physically removed by the next Whistle cleanup execution, but expired rows cannot remain visible or count against the new day's quota.
+
+The current enabled context remains private `COMMUNITY` for active HOOMA Community members. Other Whistle contexts remain disabled until their owning domains provide explicit authorization.
+
+**Reason:** Whistle is intended to be a visible, ephemeral daily signal board. A single UTC boundary makes quota and retention deterministic, prevents unused quota from accumulating, and removes the obsolete reveal mechanic without weakening the no-durable-body invariant.
