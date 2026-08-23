@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useHoomaFrontend } from "../context";
 import { HoomaApiError } from "../http";
+import { EventWhistleBoard } from "../whistle/HoomaWhistleBoard";
 import type { EventRsvpState, PublicEvent } from "./api";
 import { useEventApi } from "./useEventApi";
 
@@ -146,6 +147,8 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
         {error ? <p className="error">{error}</p> : null}
       </section>
 
+      <EventWhistleBoard eventId={eventId} />
+
       <section className="play-matchday-hub" aria-labelledby="play-matchday-title">
         <div>
           <p className="eyebrow">Matchday hub</p>
@@ -153,7 +156,7 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
         </div>
         <div className="play-matchday-actions">
           <a href={`/events/${eventId}/formation`}><strong>Formation builder</strong><span>{pretty(play?.format)} · build teams and positions</span></a>
-          <a href={`/events/${eventId}/chat`}><strong>Temporary event chat</strong><span>Available only to participants while the event chat window is open</span></a>
+          <a href={`/events/${eventId}/chat`}><strong>Temporary event chat</strong><span>Legacy temporary chat remains separate while Event Whistle is the current Play communication direction</span></a>
           <a href={`/events/${eventId}/check-in`}><strong>Check in</strong><span>Confirmed participants can mark attendance on matchday</span></a>
         </div>
       </section>
