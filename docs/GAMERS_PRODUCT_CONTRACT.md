@@ -41,6 +41,8 @@ HOOMA launches with first-class support focused on mobile/tablet gaming, beginni
 
 Additional games may be present as the catalog grows.
 
+The catalog and other privacy-safe Gamers discovery stay browsable without a HOOMA account. A visitor is not required to create a profile merely to open `/gamers` or inspect a public game surface.
+
 Authenticated users may add a missing game from Gamers. Community-created game entries are not a separate frontend-only list: they are real Gamers-domain records.
 
 Platform Admin remains the later curation authority and may:
@@ -59,6 +61,8 @@ Duplicate detection should normalize obvious naming variants before creating ano
 ## 4. Gamer profile / game identity
 
 A user creates at most one active GamerProfile for a given game.
+
+A GamerProfile can be created only for an existing canonical HOOMA `User`/profile. If a public visitor attempts a Gamer action that requires GamerProfile or Gamer Squad membership, HOOMA prompts for the canonical HOOMA account at that action boundary first. There is never a second Gamer account/signup.
 
 Conceptually:
 
@@ -231,6 +235,7 @@ Rules:
 - creator becomes active `LEADER` transactionally with Squad creation;
 - membership GamerProfile game must equal Squad game;
 - public visitors never gain private HQ access merely by discovering the Squad;
+- a visitor without a HOOMA account may browse the public Squad page but must create/sign in to the canonical HOOMA account before joining/requesting membership;
 - Leader controls the implemented membership-management actions;
 - no generic Gamer `ADMIN` role.
 
@@ -300,9 +305,9 @@ Do not create a separate `GamerMatch` merely because the UI says Match Card unle
 
 ## 13. Public/member boundary
 
-Privacy-safe Gamers discovery remains public where appropriate.
+Privacy-safe Gamers discovery remains public where appropriate. Opening `/gamers` or a public game/Squad surface must not itself create a HOOMA profile.
 
-Protected actions require authentication at the action boundary, including:
+Protected actions require the existing canonical HOOMA account at the action boundary, including:
 
 - add a game;
 - create/update GamerProfile;
@@ -312,6 +317,8 @@ Protected actions require authentication at the action boundary, including:
 - create/join/manage Squad;
 - access Squad private HQ;
 - list/read/send Squad Whistles.
+
+If the visitor has no HOOMA account/profile, the protected action leads to canonical HOOMA account creation/sign-in first and returns to the requested Gamers surface. Once the canonical account exists, Gamers reuses it. No Gamer-specific signup/account is allowed.
 
 Server-side authorization is mandatory; hiding a button is not authorization.
 
@@ -335,7 +342,7 @@ Implement as bounded vertical slices:
 
 0. **G0 — consolidate first**: reconcile the current foundation, retire duplicate ADR numbering, absorb only the useful old Gamers layering into one canonical module tree, remove the hardcoded bootstrap-catalog direction, and align governing documents before persisted Gamers behavior begins.
 1. **G1 — Gamers entry + catalog**: real `/gamers` route, persisted GamerGame catalog, FC Mobile/Ludo launch entries, authenticated missing-game contribution and duplicate handling.
-2. **G2 — Gamer identity + Challengers**: GamerProfile, game username, open-to-challenge, discovery/profile UI.
+2. **G2 — Gamer identity + Challengers**: GamerProfile, game username, open-to-challenge, discovery/profile UI. GamerProfile creation reuses an existing canonical HOOMA User/profile and must never introduce a second Gamer signup.
 3. **G3 — Challenge + Match Card**: send/accept/decline/cancel, concurrency-safe lifecycle, Arena projection.
 4. **G4 — Results**: submit, optional evidence reference, confirm, contest, independent agreement, completed/disputed, rematch.
 5. **G5 — Ranking**: per-game rating/record, idempotent atomic rating updates/history, Rankings UI.
