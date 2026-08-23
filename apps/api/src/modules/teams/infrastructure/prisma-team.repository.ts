@@ -1,4 +1,4 @@
-import type { Prisma, PrismaClient } from "@hooma/database";
+import { Prisma, type PrismaClient } from "@hooma/database";
 import type {
   TeamCapabilityInput,
   TeamChallengeCreateInput,
