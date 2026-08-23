@@ -56,7 +56,7 @@ export function PlayPage() {
                 communityName={event.community.name}
                 goingCount={event._count.rsvps}
                 capacity={event.capacity}
-                format={event.playDetails?.format}
+                format={event.playDetails?.format ?? null}
                 href={`/events/${event.id}`}
               />
             ))}
