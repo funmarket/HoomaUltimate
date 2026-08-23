@@ -5,6 +5,7 @@ import { createIdentityPublicRouter } from "../../modules/identity/http/identity
 import { createCommunityPublicRouter } from "../../modules/communities/http/community.routes.js";
 import { createTeamPublicRouter } from "../../modules/teams/http/team.routes.js";
 import { createEventPublicRouter } from "../../modules/events/http/event.routes.js";
+import { createGamerPublicRouter } from "../../modules/gamers/http/gamer.routes.js";
 
 export function createPublicV1Router(container: AppContainer, config: ApiConfig): Router {
   const router = Router();
@@ -12,5 +13,6 @@ export function createPublicV1Router(container: AppContainer, config: ApiConfig)
   router.use("/communities", createCommunityPublicRouter(container.communityService));
   router.use("/teams", createTeamPublicRouter(container.teamService));
   router.use("/events", createEventPublicRouter(container.eventService));
+  router.use("/gamers", createGamerPublicRouter(container.gamerService));
   return router;
 }

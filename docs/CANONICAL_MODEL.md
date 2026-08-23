@@ -744,7 +744,7 @@ Rules:
 
 # 19. Gamers current vertical-slice boundary
 
-Gamers is explicitly unfrozen by ADR-041. G0 establishes one canonical Gamers ownership path without pretending persistence or user-facing functionality already exists.
+Gamers is explicitly unfrozen by ADR-041. G1 is the first complete persisted Gamers slice and establishes the canonical game catalog plus the shared `/gamers` entry surface.
 
 Current canonical ownership is:
 
@@ -752,19 +752,40 @@ Current canonical ownership is:
 Gamers domain
   -> GamerGameRepository port
   -> GamerService
-  -> Gamer public/member routers as the slice requires
-  -> PostgreSQL through a Prisma repository beginning in G1
+  -> Gamer public/member routers
+  -> PrismaGamerGameRepository
+  -> PostgreSQL
+  -> shared Web/Telegram Gamers frontend projection
 ```
 
-G0 rules:
+## GamerGame
 
-- there is no hardcoded bootstrap game catalog in the canonical Gamers branch;
-- the retired `feat/gamers-catalog-entry` layering may be preserved only through this one canonical module tree;
-- the current repository/service/router files are architecture ownership, not proof that `/gamers` or the catalog is implemented;
-- no Gamers route is mounted until G1 provides the real persisted catalog path;
-- no durable Gamers model is added to this canonical model until the bounded slice that owns it begins;
-- G1 is the first persistence slice and may introduce `GamerGame` only with its Prisma schema, committed migration, repository implementation, contracts/API and read/write verification kept in agreement;
-- later GamerProfile/challenge/result/ranking/Squad models are added only in their own authorized slices, not speculatively during G0.
+```text
+GamerGame
+  id
+  slug              unique
+  name
+  normalizedName    unique
+  status            ACTIVE | INACTIVE
+  createdByUserId?
+  createdAt
+  updatedAt
+```
+
+G1 rules:
+
+- PostgreSQL is the only game-catalog source of truth; there is no hardcoded bootstrap catalog or frontend game array;
+- the launch catalog is persisted by migration and currently seeds `EA SPORTS FC Mobile` and the generic canonical `Ludo` entry;
+- public clients may list active games and read an active game by slug under `/api/public/v1/gamers/*`;
+- authenticated Users may contribute a missing game through `/api/v1/gamers/games`;
+- user-created games remain the same canonical `GamerGame` entity as seeded games; there is no parallel community-game table;
+- obvious duplicate names are normalized before creation and rejected, with a database unique constraint providing concurrency-safe protection;
+- ambiguous or merely similar names are never silently fuzzy-merged;
+- `createdByUserId` records the contributing User when applicable without making that User the owner of catalog truth;
+- Platform Admin may later curate, rename, merge or deactivate catalog spam through its own authorized slice; G1 does not create an Admin catalog UI;
+- the shared `/gamers` page is used by both Web and Telegram delivery and reads/writes only through the canonical Gamers API;
+- G1 does not create GamerProfile, challenge/result/ranking, GamerSquad, Arena persistence, Gamer chat, or Gamer Squad Whistle authorization;
+- later GamerProfile/challenge/result/ranking/Squad models are added only in their own authorized slices rather than speculatively extending G1.
 
 ---
 

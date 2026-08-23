@@ -7,6 +7,7 @@ import { createPlatformAdminRouter } from "../../modules/platform-admin/http/pla
 import { createCommunityMemberRouter } from "../../modules/communities/http/community.routes.js";
 import { createTeamMemberRouter } from "../../modules/teams/http/team.routes.js";
 import { createEventMemberRouter } from "../../modules/events/http/event.routes.js";
+import { createGamerMemberRouter } from "../../modules/gamers/http/gamer.routes.js";
 import { createWhistleRouter } from "../../modules/whistle/http/whistle.routes.js";
 
 export function createMemberV1Router(container: AppContainer, config: ApiConfig): Router {
@@ -17,6 +18,7 @@ export function createMemberV1Router(container: AppContainer, config: ApiConfig)
   router.use("/communities", createCommunityMemberRouter(container.communityService));
   router.use("/teams", createTeamMemberRouter(container.teamService));
   router.use("/events", createEventMemberRouter(container.eventService));
+  router.use("/gamers", createGamerMemberRouter(container.gamerService));
   router.use("/whistles", createWhistleRouter(container.whistleService));
   return router;
 }

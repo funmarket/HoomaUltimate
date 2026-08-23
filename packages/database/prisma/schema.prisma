@@ -120,6 +120,11 @@ enum WhistleContextType {
   GAMER_SQUAD
 }
 
+enum GamerGameStatus {
+  ACTIVE
+  INACTIVE
+}
+
 model User {
   id                         String                         @id @default(cuid())
   createdAt                  DateTime                       @default(now())
@@ -148,6 +153,7 @@ model User {
   eventCheckIns              EventCheckIn[]
   eventChatMessages          EventChatMessage[]
   whistlesAuthored           WhistleMetadata[]
+  gamerGamesCreated          GamerGame[]                    @relation("GamerGameCreator")
 }
 
 model UserPresentation {
@@ -549,6 +555,21 @@ model WhistleMetadata {
   @@index([contextType, contextId, createdAt])
   @@index([authorUserId, createdAt])
   @@index([expiresAt])
+}
+
+model GamerGame {
+  id              String          @id @default(cuid())
+  slug            String          @unique
+  name            String
+  normalizedName  String          @unique
+  status          GamerGameStatus @default(ACTIVE)
+  createdByUserId String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  createdBy       User?           @relation("GamerGameCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([status, name])
+  @@index([createdByUserId, createdAt])
 }
 
 model AuditLog {
