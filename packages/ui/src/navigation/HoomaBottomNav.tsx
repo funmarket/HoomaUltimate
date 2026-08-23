@@ -21,7 +21,7 @@ export const PRIMARY_NAV_ITEMS = [
   {
     label: "HOOMA",
     href: "/hooma",
-    visual: { kind: "image", src: "/navigation/hooma.png", className: "hooma-bottom-nav__artwork--hooma" }
+    visual: { kind: "image", src: "/navigation/hoomab.svg", className: "hooma-bottom-nav__artwork--hooma" }
   },
   {
     label: "Pitch",
