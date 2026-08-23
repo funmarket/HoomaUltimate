@@ -16,13 +16,18 @@ export function TelegramAccountActivationPage() {
 
   useEffect(() => {
     let active = true;
-    void api.identity.meOptional()
+    void api.identity
+      .meOptional()
       .then((me) => {
         if (!active) return;
         if (me) window.location.replace(returnTo);
       })
       .catch((reason) => {
-        if (active) setError(reason instanceof Error ? reason.message : "Unable to check your HOOMA account");
+        if (active) {
+          setError(
+            reason instanceof Error ? reason.message : "Unable to check your HOOMA account",
+          );
+        }
       })
       .finally(() => {
         if (active) setChecking(false);
@@ -40,7 +45,9 @@ export function TelegramAccountActivationPage() {
       await api.identity.me();
       window.location.replace(returnTo);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Unable to create your HOOMA account");
+      setError(
+        reason instanceof Error ? reason.message : "Unable to create your HOOMA account",
+      );
       setCreating(false);
     }
   }
