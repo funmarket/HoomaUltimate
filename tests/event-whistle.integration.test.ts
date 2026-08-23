@@ -18,7 +18,7 @@ const config = loadApiConfig({
   REDIS_URL: redisUrl,
   WEB_ORIGIN: "http://localhost:5173",
   TELEGRAM_ORIGIN: "http://localhost:5174",
-  TELEGRAM_BOT_TOKEN: "integration-test-token"
+  TELEGRAM_BOT_TOKEN: "integration-test-token",
 });
 const db = getDatabaseClient();
 
@@ -113,13 +113,15 @@ async function register(base: string, username: string) {
       loginUsername: username,
       password: "correct horse battery staple",
       displayUsername: username,
-      displayName: username
-    })
+      displayName: username,
+    }),
   });
   assert.equal(response.status, 201);
   const cookie = response.headers.get("set-cookie");
   assert.ok(cookie);
-  const credential = await db.webCredential.findUniqueOrThrow({ where: { loginUsername: username } });
+  const credential = await db.webCredential.findUniqueOrThrow({
+    where: { loginUsername: username },
+  });
   return { cookie, userId: credential.userId };
 }
 
@@ -131,16 +133,16 @@ async function createCommunity(base: string, cookie: string) {
   const response = await fetch(`${base}/api/v1/communities`, {
     method: "POST",
     headers: headers(cookie),
-    body: JSON.stringify({ name: "Event Whistle HOOMA", city: "Tunis", houma: "Test" })
+    body: JSON.stringify({ name: "Event Whistle HOOMA", city: "Tunis", houma: "Test" }),
   });
   assert.equal(response.status, 201);
-  return await response.json() as { id: string };
+  return (await response.json()) as { id: string };
 }
 
 async function joinCommunity(base: string, cookie: string, communityId: string) {
   const response = await fetch(`${base}/api/v1/communities/${communityId}/join`, {
     method: "POST",
-    headers: headers(cookie)
+    headers: headers(cookie),
   });
   assert.equal(response.status, 201);
 }
@@ -165,23 +167,29 @@ async function createEvent(base: string, cookie: string, communityId: string) {
       play: {
         pitchType: "FIVE_A_SIDE",
         skillLevel: "MIXED",
-        format: "FIVE_V_FIVE"
-      }
-    })
+        format: "FIVE_V_FIVE",
+      },
+    }),
   });
   assert.equal(response.status, 201);
-  return await response.json() as { id: string };
+  return (await response.json()) as { id: string };
 }
 
 function whistlePath(contextType: "COMMUNITY" | "EVENT" | "TEAM", contextId: string) {
   return `/api/v1/whistles/contexts/${contextType}/${contextId}`;
 }
 
-async function sendWhistle(base: string, cookie: string, contextType: "COMMUNITY" | "EVENT", contextId: string, body: string) {
+async function sendWhistle(
+  base: string,
+  cookie: string,
+  contextType: "COMMUNITY" | "EVENT",
+  contextId: string,
+  body: string,
+) {
   return fetch(`${base}${whistlePath(contextType, contextId)}`, {
     method: "POST",
     headers: headers(cookie),
-    body: JSON.stringify({ body })
+    body: JSON.stringify({ body }),
   });
 }
 
@@ -206,7 +214,7 @@ test("Event Whistle reuses canonical Event access and the global Whistle quota",
     const appointCoach = await fetch(`${base}/api/v1/communities/${community.id}/coaches`, {
       method: "POST",
       headers: headers(founder.cookie),
-      body: JSON.stringify({ userId: coach.userId })
+      body: JSON.stringify({ userId: coach.userId }),
     });
     assert.equal(appointCoach.status, 201);
 
@@ -228,31 +236,44 @@ test("Event Whistle reuses canonical Event access and the global Whistle quota",
 
     const confirmedJoin = await fetch(`${base}/api/v1/events/${event.id}/join`, {
       method: "POST",
-      headers: headers(confirmed.cookie)
+      headers: headers(confirmed.cookie),
     });
     assert.equal(confirmedJoin.status, 200);
-    assert.equal((await confirmedJoin.json() as { status: string }).status, "CONFIRMED");
+    assert.equal(((await confirmedJoin.json()) as { status: string }).status, "CONFIRMED");
 
     const waitlistedJoin = await fetch(`${base}/api/v1/events/${event.id}/join`, {
       method: "POST",
-      headers: headers(waitlisted.cookie)
+      headers: headers(waitlisted.cookie),
     });
     assert.equal(waitlistedJoin.status, 200);
-    assert.equal((await waitlistedJoin.json() as { status: string }).status, "WAITLISTED");
+    assert.equal(((await waitlistedJoin.json()) as { status: string }).status, "WAITLISTED");
 
-    const confirmedSend = await sendWhistle(base, confirmed.cookie, "EVENT", event.id, "boots ready");
+    const confirmedSend = await sendWhistle(
+      base,
+      confirmed.cookie,
+      "EVENT",
+      event.id,
+      "boots ready",
+    );
     assert.equal(confirmedSend.status, 201);
-    const confirmedPayload = await confirmedSend.json() as {
+    const confirmedPayload = (await confirmedSend.json()) as {
       whistle: { id: string; body: string };
       remainingToday: number;
     };
     assert.equal(confirmedPayload.whistle.body, "boots ready");
     assert.equal(confirmedPayload.remainingToday, 10);
 
-    const waitlistedList = await fetch(`${base}${eventPath}`, { headers: headers(waitlisted.cookie) });
+    const waitlistedList = await fetch(`${base}${eventPath}`, {
+      headers: headers(waitlisted.cookie),
+    });
     assert.equal(waitlistedList.status, 200);
-    const waitlistedPayload = await waitlistedList.json() as { items: Array<{ id: string; body: string }> };
-    assert.equal(waitlistedPayload.items.find((item) => item.id === confirmedPayload.whistle.id)?.body, "boots ready");
+    const waitlistedPayload = (await waitlistedList.json()) as {
+      items: Array<{ id: string; body: string }>;
+    };
+    assert.equal(
+      waitlistedPayload.items.find((item) => item.id === confirmedPayload.whistle.id)?.body,
+      "boots ready",
+    );
 
     const metadata = await db.$queryRaw<Array<{ contextType: string; json: string }>>(Prisma.sql`
       SELECT "contextType"::text AS "contextType", to_jsonb(w)::text AS json
@@ -265,40 +286,56 @@ test("Event Whistle reuses canonical Event access and the global Whistle quota",
     const ttl = await redisCommand(["PTTL", `whistle:body:${confirmedPayload.whistle.id}`]);
     assert.equal(typeof ttl, "number");
     assert.ok((ttl as number) > 0);
-    const untilMidnight = new Date(Date.UTC(
-      new Date().getUTCFullYear(),
-      new Date().getUTCMonth(),
-      new Date().getUTCDate() + 1
-    )).getTime() - Date.now();
+    const untilMidnight =
+      new Date(
+        Date.UTC(
+          new Date().getUTCFullYear(),
+          new Date().getUTCMonth(),
+          new Date().getUTCDate() + 1,
+        ),
+      ).getTime() - Date.now();
     assert.ok((ttl as number) <= untilMidnight + 2_000);
 
-    const communitySend = await sendWhistle(base, founder.cookie, "COMMUNITY", community.id, "community signal");
+    const communitySend = await sendWhistle(
+      base,
+      founder.cookie,
+      "COMMUNITY",
+      community.id,
+      "community signal",
+    );
     assert.equal(communitySend.status, 201);
-    assert.equal((await communitySend.json() as { remainingToday: number }).remainingToday, 10);
+    assert.equal(((await communitySend.json()) as { remainingToday: number }).remainingToday, 10);
     const eventSend = await sendWhistle(base, founder.cookie, "EVENT", event.id, "event signal");
     assert.equal(eventSend.status, 201);
-    assert.equal((await eventSend.json() as { remainingToday: number }).remainingToday, 9);
+    assert.equal(((await eventSend.json()) as { remainingToday: number }).remainingToday, 9);
 
     const cancelConfirmed = await fetch(`${base}/api/v1/events/${event.id}/rsvp`, {
       method: "DELETE",
-      headers: headers(confirmed.cookie)
+      headers: headers(confirmed.cookie),
     });
     assert.equal(cancelConfirmed.status, 200);
-    const formerParticipant = await fetch(`${base}${eventPath}`, { headers: headers(confirmed.cookie) });
+    const formerParticipant = await fetch(`${base}${eventPath}`, {
+      headers: headers(confirmed.cookie),
+    });
     assert.equal(formerParticipant.status, 403);
 
     const promoted = await fetch(`${base}/api/v1/events/${event.id}/rsvp`, {
-      headers: headers(waitlisted.cookie)
+      headers: headers(waitlisted.cookie),
     });
     assert.equal(promoted.status, 200);
-    assert.equal((await promoted.json() as { rsvp: { status: string } | null }).rsvp?.status, "CONFIRMED");
+    assert.equal(
+      ((await promoted.json()) as { rsvp: { status: string } | null }).rsvp?.status,
+      "CONFIRMED",
+    );
 
     const disabledTeamContext = await fetch(`${base}${whistlePath("TEAM", "not-enabled")}`, {
-      headers: headers(founder.cookie)
+      headers: headers(founder.cookie),
     });
     assert.equal(disabledTeamContext.status, 409);
   } finally {
-    await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve())),
+    );
     await resetTestData();
   }
 });

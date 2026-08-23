@@ -38,7 +38,12 @@ export function createContainer(config: ApiConfig) {
   const playService = new PlayService(playRepository);
   const whistleRepository = new PrismaWhistleRepository(database);
   const whistleStore = new RedisWhistleStore(config.REDIS_URL ?? "redis://localhost:6379");
-  const whistleService = new WhistleService(whistleRepository, whistleStore, communityService, eventService);
+  const whistleService = new WhistleService(
+    whistleRepository,
+    whistleStore,
+    communityService,
+    eventService,
+  );
 
   return {
     database,

@@ -6,14 +6,14 @@ import type { EventPublicListInput, EventRepository } from "./event.repository.j
 export class EventService {
   constructor(
     private readonly repository: EventRepository,
-    private readonly communities: CommunityService
+    private readonly communities: CommunityService,
   ) {}
 
   listPublic(input: Omit<EventPublicListInput, "from"> & { from?: Date }) {
     return this.repository.listPublic({
       ...input,
       from: input.from ?? new Date(Date.now() - 6 * 60 * 60_000),
-      limit: Math.min(Math.max(input.limit, 1), 100)
+      limit: Math.min(Math.max(input.limit, 1), 100),
     });
   }
 
@@ -31,7 +31,10 @@ export class EventService {
 
   async requireMemberContent(userId: string, eventId: string): Promise<void> {
     if (!(await this.repository.canViewMemberContent(eventId, userId))) {
-      throw new EventError("EVENT_MEMBER_CONTENT_FORBIDDEN", "Event participation or management access required");
+      throw new EventError(
+        "EVENT_MEMBER_CONTENT_FORBIDDEN",
+        "Event participation or management access required",
+      );
     }
   }
 
@@ -46,43 +49,57 @@ export class EventService {
     }
     await this.communities.requireCoach(input.communityId, userId);
     if (input.entryFeeMinor > 0) {
-      throw new EventError("EVENT_PAYMENTS_NOT_ENABLED", "Paid RSVP will be enabled by the Payments slice");
+      throw new EventError(
+        "EVENT_PAYMENTS_NOT_ENABLED",
+        "Paid RSVP will be enabled by the Payments slice",
+      );
     }
     return this.repository.create(userId, input);
   }
 
   async update(userId: string, eventId: string, input: EventUpdateInput) {
     const access = await this.requireManage(userId, eventId);
-    if (access.status !== "PUBLISHED") throw new EventError("EVENT_NOT_EDITABLE", "Only published events can be edited");
+    if (access.status !== "PUBLISHED")
+      throw new EventError("EVENT_NOT_EDITABLE", "Only published events can be edited");
     try {
       return await this.repository.update(eventId, input);
     } catch (error) {
-      if (error instanceof Error && error.message === "EVENT_TIME_INVALID") throw new EventError("EVENT_TIME_INVALID", "Event end time must be after start time");
+      if (error instanceof Error && error.message === "EVENT_TIME_INVALID")
+        throw new EventError("EVENT_TIME_INVALID", "Event end time must be after start time");
       throw error;
     }
   }
 
   async cancel(userId: string, eventId: string) {
     const access = await this.requireManage(userId, eventId);
-    if (access.status !== "PUBLISHED") throw new EventError("EVENT_NOT_CANCELLABLE", "Event is not active");
+    if (access.status !== "PUBLISHED")
+      throw new EventError("EVENT_NOT_CANCELLABLE", "Event is not active");
     return this.repository.cancel(eventId);
   }
 
   async complete(userId: string, eventId: string) {
     const access = await this.requireManage(userId, eventId);
-    if (access.status !== "PUBLISHED") throw new EventError("EVENT_NOT_COMPLETABLE", "Event is not active");
+    if (access.status !== "PUBLISHED")
+      throw new EventError("EVENT_NOT_COMPLETABLE", "Event is not active");
     return this.repository.complete(eventId);
   }
 
   async join(userId: string, eventId: string) {
     const access = await this.repository.access(eventId);
-    if (!access || access.status !== "PUBLISHED") throw new EventError("EVENT_NOT_FOUND", "Active event not found");
-    if (access.entryFeeMinor > 0n) throw new EventError("EVENT_PAYMENTS_NOT_ENABLED", "Paid RSVP will be enabled by the Payments slice");
+    if (!access || access.status !== "PUBLISHED")
+      throw new EventError("EVENT_NOT_FOUND", "Active event not found");
+    if (access.entryFeeMinor > 0n)
+      throw new EventError(
+        "EVENT_PAYMENTS_NOT_ENABLED",
+        "Paid RSVP will be enabled by the Payments slice",
+      );
     try {
       return await this.repository.join(eventId, userId);
     } catch (error) {
-      if (error instanceof Error && error.message === "EVENT_FULL") throw new EventError("EVENT_FULL", "Event is full and waitlist is disabled");
-      if (error instanceof Error && error.message === "EVENT_NOT_ACTIVE") throw new EventError("EVENT_NOT_ACTIVE", "Event is no longer open for RSVP");
+      if (error instanceof Error && error.message === "EVENT_FULL")
+        throw new EventError("EVENT_FULL", "Event is full and waitlist is disabled");
+      if (error instanceof Error && error.message === "EVENT_NOT_ACTIVE")
+        throw new EventError("EVENT_NOT_ACTIVE", "Event is no longer open for RSVP");
       throw error;
     }
   }
@@ -91,7 +108,8 @@ export class EventService {
     try {
       return await this.repository.cancelRsvp(eventId, userId);
     } catch (error) {
-      if (error instanceof Error && error.message === "RSVP_ALREADY_ATTENDED") throw new EventError("RSVP_ALREADY_ATTENDED", "An attended RSVP cannot be cancelled");
+      if (error instanceof Error && error.message === "RSVP_ALREADY_ATTENDED")
+        throw new EventError("RSVP_ALREADY_ATTENDED", "An attended RSVP cannot be cancelled");
       throw error;
     }
   }
@@ -104,10 +122,16 @@ export class EventService {
     for (const slot of input.slots) {
       if (!slot.userId) continue;
       if (!allowed.has(slot.userId)) {
-        throw new EventError("EVENT_FORMATION_INVALID_PLAYER", "Formation players must have a confirmed or attended RSVP for this event");
+        throw new EventError(
+          "EVENT_FORMATION_INVALID_PLAYER",
+          "Formation players must have a confirmed or attended RSVP for this event",
+        );
       }
       if (used.has(slot.userId)) {
-        throw new EventError("EVENT_FORMATION_DUPLICATE_PLAYER", "A player can appear only once in an event formation");
+        throw new EventError(
+          "EVENT_FORMATION_DUPLICATE_PLAYER",
+          "A player can appear only once in an event formation",
+        );
       }
       used.add(slot.userId);
     }
@@ -119,12 +143,20 @@ export class EventService {
     return this.repository.listFormations(eventId);
   }
 
-  async checkIn(userId: string, eventId: string, latitude?: number | null, longitude?: number | null) {
+  async checkIn(
+    userId: string,
+    eventId: string,
+    latitude?: number | null,
+    longitude?: number | null,
+  ) {
     try {
       return await this.repository.checkIn(eventId, userId, latitude, longitude);
     } catch (error) {
       if (error instanceof Error && error.message === "EVENT_CHECK_IN_REQUIRES_CONFIRMED_RSVP") {
-        throw new EventError("EVENT_CHECK_IN_REQUIRES_CONFIRMED_RSVP", "Confirmed RSVP required for check-in");
+        throw new EventError(
+          "EVENT_CHECK_IN_REQUIRES_CONFIRMED_RSVP",
+          "Confirmed RSVP required for check-in",
+        );
       }
       throw error;
     }
@@ -132,20 +164,23 @@ export class EventService {
 
   async chat(userId: string, eventId: string) {
     const messages = await this.repository.listChat(eventId, userId);
-    if (!messages) throw new EventError("EVENT_CHAT_FORBIDDEN", "Active RSVP and open chat window required");
+    if (!messages)
+      throw new EventError("EVENT_CHAT_FORBIDDEN", "Active RSVP and open chat window required");
     return messages;
   }
 
   async postChat(userId: string, eventId: string, body: string) {
     const message = await this.repository.postChat(eventId, userId, body);
-    if (!message) throw new EventError("EVENT_CHAT_FORBIDDEN", "Active RSVP and open chat window required");
+    if (!message)
+      throw new EventError("EVENT_CHAT_FORBIDDEN", "Active RSVP and open chat window required");
     return message;
   }
 
   private async requireManage(userId: string, eventId: string) {
     const access = await this.repository.access(eventId);
     if (!access) throw new EventError("EVENT_NOT_FOUND", "Event not found");
-    if (access.createdByUserId !== userId) await this.communities.requireCoach(access.communityId, userId);
+    if (access.createdByUserId !== userId)
+      await this.communities.requireCoach(access.communityId, userId);
     return access;
   }
 }
