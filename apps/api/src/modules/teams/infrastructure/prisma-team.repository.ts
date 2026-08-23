@@ -97,7 +97,7 @@ export class PrismaTeamRepository implements TeamRepository {
         community: { select: { id: true, name: true, slug: true } },
         players: {
           where: { leftAt: null },
-          select: { userId: true, joinedAt: true, user: { select: { presentation: true } } },
+          select: { id: true, userId: true, joinedAt: true, user: { select: { presentation: true } } },
           orderBy: { joinedAt: "asc" }
         },
         responsibilities: {
@@ -258,6 +258,15 @@ export class PrismaTeamRepository implements TeamRepository {
     });
   }
 
+  async activePlayerIds(teamId: string, teamPlayerIds: readonly string[]): Promise<readonly string[]> {
+    if (!teamPlayerIds.length) return [];
+    const rows = await this.db.teamPlayer.findMany({
+      where: { id: { in: [...teamPlayerIds] }, teamId, leftAt: null },
+      select: { id: true }
+    });
+    return rows.map((row) => row.id);
+  }
+
   createLineup(userId: string, teamId: string, input: TeamLineupInput) {
     return this.db.teamLineup.create({
       data: {
@@ -269,7 +278,7 @@ export class PrismaTeamRepository implements TeamRepository {
         createdByUserId: userId,
         slots: {
           create: input.slots.map((slot) => ({
-            userId: slot.userId ?? null,
+            teamPlayerId: slot.teamPlayerId ?? null,
             position: slot.position,
             sortOrder: slot.sortOrder
           }))
