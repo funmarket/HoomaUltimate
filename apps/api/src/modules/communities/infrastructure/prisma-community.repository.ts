@@ -14,7 +14,7 @@ export class PrismaCommunityRepository implements CommunityRepository {
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-      select: { id: true, slug: true, name: true, description: true, city: true, houma: true, createdAt: true }
+      select: { id: true, slug: true, name: true, description: true, city: true, houma: true, logoUrl: true, bannerUrl: true, createdAt: true }
     });
     return { items: rows.slice(0, limit), nextCursor: rows.length > limit ? rows[limit - 1]?.id ?? null : null };
   }
@@ -22,7 +22,17 @@ export class PrismaCommunityRepository implements CommunityRepository {
   getPublic(id: string) {
     return this.db.community.findFirst({
       where: { id, status: "ACTIVE" },
-      select: { id: true, slug: true, name: true, description: true, city: true, houma: true, _count: { select: { teams: { where: { status: "ACTIVE" } }, memberships: { where: { leftAt: null } } } } }
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        description: true,
+        city: true,
+        houma: true,
+        logoUrl: true,
+        bannerUrl: true,
+        _count: { select: { teams: { where: { status: "ACTIVE" } }, memberships: { where: { leftAt: null } } } }
+      }
     });
   }
 
