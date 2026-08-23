@@ -33,6 +33,7 @@ export function createEventMemberRouter(service: EventService): Router {
   router.post("/", asyncHandler(async (request, response) => response.status(201).json(await service.create(getAuth(request).userId, eventCreateSchema.parse(request.body)))));
   router.patch("/:eventId", asyncHandler(async (request, response) => response.json(await service.update(getAuth(request).userId, String(request.params.eventId), eventUpdateSchema.parse(request.body)))));
   router.get("/:eventId/rsvp", asyncHandler(async (request, response) => response.json(await service.getMyRsvp(getAuth(request).userId, String(request.params.eventId)))));
+  router.get("/:eventId/formation-roster", asyncHandler(async (request, response) => response.json(await service.formationRoster(getAuth(request).userId, String(request.params.eventId)))));
   router.post("/:eventId/join", asyncHandler(async (request, response) => response.json(await service.join(getAuth(request).userId, String(request.params.eventId)))));
   router.delete("/:eventId/rsvp", asyncHandler(async (request, response) => response.json(await service.cancelRsvp(getAuth(request).userId, String(request.params.eventId)))));
   router.post("/:eventId/cancel", asyncHandler(async (request, response) => response.json(await service.cancel(getAuth(request).userId, String(request.params.eventId)))));

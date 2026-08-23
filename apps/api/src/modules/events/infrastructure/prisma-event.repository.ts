@@ -57,6 +57,23 @@ export class PrismaEventRepository implements EventRepository {
     });
   }
 
+  async formationRoster(eventId: string) {
+    const rows = await this.db.eventRsvp.findMany({
+      where: { eventId, status: { in: ["CONFIRMED", "ATTENDED"] } },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      select: {
+        userId: true,
+        status: true,
+        user: {
+          select: {
+            presentation: { select: { displayName: true, username: true, photoUrl: true } }
+          }
+        }
+      }
+    });
+    return rows.map((row) => ({ userId: row.userId, status: row.status as "CONFIRMED" | "ATTENDED", presentation: row.user.presentation }));
+  }
+
   async create(userId: string, input: EventCreateInput) {
     const startsAt = new Date(input.startsAt);
     const endsAt = input.endsAt ? new Date(input.endsAt) : null;

@@ -29,6 +29,13 @@ export class EventService {
     return { rsvp: await this.repository.getRsvp(eventId, userId) };
   }
 
+  async formationRoster(userId: string, eventId: string) {
+    if (!(await this.repository.canViewMemberContent(eventId, userId))) {
+      throw new EventError("EVENT_MEMBER_CONTENT_FORBIDDEN", "Event participation or management access required");
+    }
+    return { players: await this.repository.formationRoster(eventId) };
+  }
+
   async create(userId: string, input: EventCreateInput) {
     if (input.type !== "PLAY") {
       throw new EventError("WATCH_NOT_ENABLED", "Watch events will be enabled by the Watch slice");
@@ -87,6 +94,19 @@ export class EventService {
 
   async createFormation(userId: string, eventId: string, input: EventFormationInput) {
     await this.requireManage(userId, eventId);
+    const roster = await this.repository.formationRoster(eventId);
+    const allowed = new Set(roster.map((player) => player.userId));
+    const used = new Set<string>();
+    for (const slot of input.slots) {
+      if (!slot.userId) continue;
+      if (!allowed.has(slot.userId)) {
+        throw new EventError("EVENT_FORMATION_INVALID_PLAYER", "Formation players must have a confirmed or attended RSVP for this event");
+      }
+      if (used.has(slot.userId)) {
+        throw new EventError("EVENT_FORMATION_DUPLICATE_PLAYER", "A player can appear only once in an event formation");
+      }
+      used.add(slot.userId);
+    }
     return this.repository.createFormation(userId, eventId, input);
   }
 

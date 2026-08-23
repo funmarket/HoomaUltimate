@@ -17,11 +17,22 @@ export interface EventAccessRecord {
 
 export type EventRsvpState = "CONFIRMED" | "WAITLISTED" | "CANCELLED" | "ATTENDED" | "NO_SHOW";
 
+export interface FormationRosterPlayer {
+  readonly userId: string;
+  readonly status: "CONFIRMED" | "ATTENDED";
+  readonly presentation: {
+    readonly displayName: string;
+    readonly username: string;
+    readonly photoUrl: string | null;
+  } | null;
+}
+
 export interface EventRepository {
   listPublic(input: EventPublicListInput): Promise<unknown>;
   getPublic(eventId: string): Promise<unknown | null>;
   access(eventId: string): Promise<EventAccessRecord | null>;
   getRsvp(eventId: string, userId: string): Promise<{ status: EventRsvpState } | null>;
+  formationRoster(eventId: string): Promise<FormationRosterPlayer[]>;
   create(userId: string, input: EventCreateInput): Promise<unknown>;
   update(eventId: string, input: EventUpdateInput): Promise<unknown>;
   cancel(eventId: string): Promise<unknown>;

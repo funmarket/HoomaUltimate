@@ -1,5 +1,178 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useHoomaFrontend } from "../context";
-import type { FormationRecord } from "./api";
+import type { FormationRecord, FormationRosterPlayer, PublicEvent } from "./api";
 import { useEventApi } from "./useEventApi";
-export function FormationBuilderPage({ eventId }: { readonly eventId: string }) { const eventApi = useEventApi(); const { protectedError } = useHoomaFrontend(); const [formations, setFormations] = useState<FormationRecord[]>([]); const [error, setError] = useState(""); const reload = () => eventApi.formations(eventId).then(setFormations).catch((reason) => setError(protectedError(reason, "Unable to load formations"))); useEffect(() => { void reload(); }, [eventApi, eventId]); function submit(event: FormEvent<HTMLFormElement>) { event.preventDefault(); const form = event.currentTarget; const data = new FormData(form); const slots = String(data.get("slots")).split("\n").map((line, index) => { const [team, position, label, userId] = line.split("|").map((part) => part.trim()); return team && position && label ? { team: team === "B" ? ("B" as const) : ("A" as const), position, label, userId: userId || null, x: 20 + (index % 4) * 20, y: team === "B" ? 70 : 30 } : null; }).filter((slot): slot is NonNullable<typeof slot> => Boolean(slot)); setError(""); void eventApi.createFormation(eventId, { name: String(data.get("name")), format: String(data.get("format")) as "FIVE_V_FIVE", published: true, slots }).then(() => { form.reset(); return reload(); }).catch((reason) => setError(protectedError(reason, "Unable to save formation"))); } return <section><p className="eyebrow">FORMATION</p><h2>Formation Builder</h2><form className="panel event-form" onSubmit={submit}><label>Name<input name="name" required /></label><label>Format<select name="format"><option value="FIVE_V_FIVE">5 v 5</option><option value="SEVEN_V_SEVEN">7 v 7</option><option value="ELEVEN_V_ELEVEN">11 v 11</option></select></label><label>Slots<textarea name="slots" rows={8} placeholder={"A | GK | Keeper | user-id\nA | ST | Striker | user-id\nB | GK | Keeper | user-id"} required /></label><button type="submit">Publish formation</button></form>{error ? <p className="error">{error}</p> : null}<div className="event-list">{formations.map((formation) => <article className="panel" key={formation.id}><strong>{formation.name}</strong><p>{formation.format.replaceAll("_", " ")} · {formation.slots.length} slots</p></article>)}</div></section>; }
+
+type Format = "FIVE_V_FIVE" | "SEVEN_V_SEVEN" | "ELEVEN_V_ELEVEN";
+type Team = "A" | "B";
+type Slot = { id: string; team: Team; position: string; label: string; x: number; y: number; userId: string | null };
+
+const FORMATIONS: Record<Format, Array<{ position: string; x: number; y: number }>> = {
+  FIVE_V_FIVE: [
+    { position: "GK", x: 50, y: 88 }, { position: "CB", x: 50, y: 66 }, { position: "W", x: 24, y: 40 },
+    { position: "W", x: 76, y: 40 }, { position: "ST", x: 50, y: 15 }
+  ],
+  SEVEN_V_SEVEN: [
+    { position: "GK", x: 50, y: 90 }, { position: "CB", x: 50, y: 70 }, { position: "FB", x: 20, y: 60 },
+    { position: "FB", x: 80, y: 60 }, { position: "CM", x: 50, y: 42 }, { position: "W", x: 25, y: 20 },
+    { position: "W", x: 75, y: 20 }
+  ],
+  ELEVEN_V_ELEVEN: [
+    { position: "GK", x: 50, y: 92 }, { position: "FB", x: 14, y: 72 }, { position: "CB", x: 38, y: 78 },
+    { position: "CB", x: 62, y: 78 }, { position: "FB", x: 86, y: 72 }, { position: "DM", x: 50, y: 58 },
+    { position: "CM", x: 30, y: 43 }, { position: "CM", x: 70, y: 43 }, { position: "W", x: 18, y: 20 },
+    { position: "ST", x: 50, y: 12 }, { position: "W", x: 82, y: 20 }
+  ]
+};
+
+function makeSlots(format: Format): Slot[] {
+  return (["A", "B"] as const).flatMap((team) => FORMATIONS[format].map((slot, index) => ({
+    id: `${team}-${index}`,
+    team,
+    position: slot.position,
+    label: slot.position,
+    x: slot.x,
+    y: slot.y,
+    userId: null
+  })));
+}
+
+function playerName(player: FormationRosterPlayer): string {
+  return player.presentation?.displayName || player.presentation?.username || "HOOMA player";
+}
+
+export function FormationBuilderPage({ eventId }: { readonly eventId: string }) {
+  const eventApi = useEventApi();
+  const { protectedError } = useHoomaFrontend();
+  const [event, setEvent] = useState<PublicEvent | null>(null);
+  const [players, setPlayers] = useState<FormationRosterPlayer[]>([]);
+  const [formations, setFormations] = useState<FormationRecord[]>([]);
+  const [format, setFormat] = useState<Format>("SEVEN_V_SEVEN");
+  const [slots, setSlots] = useState<Slot[]>(() => makeSlots("SEVEN_V_SEVEN"));
+  const [name, setName] = useState("Matchday formation");
+  const [published, setPublished] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    async function load() {
+      setError("");
+      try {
+        const [eventResult, rosterResult, formationResult] = await Promise.all([
+          eventApi.publicDetail(eventId),
+          eventApi.formationRoster(eventId),
+          eventApi.formations(eventId)
+        ]);
+        if (!active) return;
+        setEvent(eventResult);
+        setPlayers(rosterResult.players);
+        setFormations(formationResult);
+        const eventFormat = eventResult.playDetails?.format;
+        if (eventFormat === "FIVE_V_FIVE" || eventFormat === "SEVEN_V_SEVEN" || eventFormat === "ELEVEN_V_ELEVEN") {
+          setFormat(eventFormat);
+          setSlots(makeSlots(eventFormat));
+        }
+      } catch (reason) {
+        if (active) setError(protectedError(reason, "Unable to load formation builder"));
+      }
+    }
+    void load();
+    return () => { active = false; };
+  }, [eventApi, eventId, protectedError]);
+
+  const assigned = useMemo(() => new Set(slots.map((slot) => slot.userId).filter((id): id is string => Boolean(id))), [slots]);
+  const byId = useMemo(() => new Map(players.map((player) => [player.userId, player])), [players]);
+
+  function changeFormat(next: Format) {
+    setFormat(next);
+    setSlots(makeSlots(next));
+    setSuccess("");
+  }
+
+  function assign(slotId: string, userId: string) {
+    setSlots((previous) => previous.map((slot) => {
+      if (slot.id === slotId) return { ...slot, userId: userId || null };
+      if (userId && slot.userId === userId) return { ...slot, userId: null };
+      return slot;
+    }));
+  }
+
+  async function save() {
+    setSaving(true);
+    setError("");
+    setSuccess("");
+    try {
+      await eventApi.createFormation(eventId, {
+        name: name.trim(),
+        format,
+        published,
+        slots: slots.map(({ team, position, label, x, y, userId }) => ({ team, position, label, x, y, userId }))
+      });
+      setFormations(await eventApi.formations(eventId));
+      setSuccess("Formation saved.");
+    } catch (reason) {
+      setError(protectedError(reason, "Unable to save formation"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="formation-builder">
+      <header className="formation-builder__header">
+        <div><p className="eyebrow">Tactical board</p><h1>Formation builder</h1><p>{event?.title || "Pickup match"}</p></div>
+        <a href={`/events/${eventId}`}>Back to match</a>
+      </header>
+
+      <div className="formation-toolbar panel">
+        <label>Formation name<input value={name} onChange={(e) => setName(e.target.value)} maxLength={80} /></label>
+        <div className="formation-format-picker" aria-label="Match format">
+          {(["FIVE_V_FIVE", "SEVEN_V_SEVEN", "ELEVEN_V_ELEVEN"] as const).map((candidate) => (
+            <button type="button" key={candidate} aria-pressed={format === candidate} onClick={() => changeFormat(candidate)}>{candidate === "FIVE_V_FIVE" ? "5v5" : candidate === "SEVEN_V_SEVEN" ? "7v7" : "11v11"}</button>
+          ))}
+        </div>
+        <label className="formation-publish"><input type="checkbox" checked={published} onChange={(e) => setPublished(e.target.checked)} /> Publish to participants</label>
+      </div>
+
+      <div className="formation-pitches">
+        {(["A", "B"] as const).map((team) => (
+          <section key={team} className="formation-team">
+            <h2>Team {team}</h2>
+            <div className="formation-pitch">
+              <span className="formation-pitch__half" aria-hidden="true" />
+              <span className="formation-pitch__circle" aria-hidden="true" />
+              {slots.filter((slot) => slot.team === team).map((slot) => {
+                const player = slot.userId ? byId.get(slot.userId) : undefined;
+                return (
+                  <label className="formation-slot" key={slot.id} style={{ left: `${slot.x}%`, top: `${slot.y}%` }}>
+                    <span className="formation-slot__marker">{player ? playerName(player).split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase() : slot.label}</span>
+                    <select aria-label={`Team ${team} ${slot.position}`} value={slot.userId || ""} onChange={(e) => assign(slot.id, e.target.value)}>
+                      <option value="">{slot.position}</option>
+                      {players.map((candidate) => <option value={candidate.userId} key={candidate.userId} disabled={assigned.has(candidate.userId) && candidate.userId !== slot.userId}>{playerName(candidate)}</option>)}
+                    </select>
+                  </label>
+                );
+              })}
+            </div>
+          </section>
+        ))}
+      </div>
+
+      <section className="formation-roster panel">
+        <div><p className="eyebrow">Confirmed roster</p><h2>Available players</h2></div>
+        <div className="formation-roster__list">
+          {players.map((player) => <span key={player.userId} data-assigned={assigned.has(player.userId)}>{playerName(player)}{player.status === "ATTENDED" ? " · checked in" : ""}</span>)}
+          {!players.length ? <p className="muted">No confirmed players yet.</p> : null}
+        </div>
+      </section>
+
+      <button className="formation-save" type="button" disabled={saving || !name.trim()} onClick={() => void save()}>{saving ? "Saving…" : "Save formation"}</button>
+      {success ? <p className="success">{success}</p> : null}
+      {error ? <p className="error">{error}</p> : null}
+
+      {formations.length ? <section className="formation-history"><p className="eyebrow">Saved formations</p>{formations.map((formation) => <article className="panel" key={formation.id}><strong>{formation.name}</strong><span>{formation.format.replaceAll("_", " ")} · {formation.slots.filter((slot) => slot.userId).length} assigned · {formation.published ? "Published" : "Draft"}</span></article>)}</section> : null}
+    </section>
+  );
+}
