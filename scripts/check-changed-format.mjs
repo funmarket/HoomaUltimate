@@ -52,11 +52,9 @@ if (files.length === 0) {
 }
 
 console.log(`Checking formatting for ${files.length} changed file(s).`);
-const prettier = spawnSync(
-  "npm",
-  ["exec", "--", "prettier", "--list-different", ...files],
-  { encoding: "utf8" },
-);
+const prettier = spawnSync("npm", ["exec", "--", "prettier", "--list-different", ...files], {
+  encoding: "utf8",
+});
 
 if (prettier.status === 0) {
   console.log("All changed files are formatted with Prettier.");
