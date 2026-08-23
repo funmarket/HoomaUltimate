@@ -3,6 +3,8 @@ name: Action Boundary Verify
 on:
   push:
     branches: [fix/action-boundary-account-provisioning]
+  pull_request:
+    branches: [phase-0-foundation]
 
 permissions:
   contents: read
