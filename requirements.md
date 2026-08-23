@@ -1,43 +1,38 @@
-# HOOMA ULTIMATE — REQUIREMENTS
+# HOOMA — REQUIREMENTS
 
 Status: **Primary product acceptance contract**  
-Repository: `funmarket/HoomaUltimate`  
-Application type: **new third application / greenfield implementation**
+Repository/workspace: `funmarket/HoomaUltimate`  
+Product name: **HOOMA**
+
+`HoomaUltimate` is only the repository/workspace name used to distinguish this rebuild from older HOOMA codebases. The application, UI, API branding and product language are **HOOMA**.
+
+This file defines product behavior and acceptance rules. It is not a progress ledger, freeze plan, implementation-order document, or proof that a future feature is already built.
+
+For working rules, read `AGENTS.md` and `docs/LIVING_BUILD_PLAN.md`. Architecture belongs in `structure.md`; canonical data/authority belongs in `docs/CANONICAL_MODEL.md`; architectural decisions belong in `docs/DECISIONS.md`.
 
 ---
 
 ## 0. Product definition
 
-HOOMA ULTIMATE is a new football/community activity platform delivered as:
+HOOMA is a football/community activity platform delivered through:
 
 - a normal Web application;
-- a Telegram Mini App;
+- a Telegram Mini App delivery surface;
 - one shared API;
 - one shared PostgreSQL database;
-- Redis/Valkey for transient state;
-- an asynchronous Worker;
-- S3-compatible object storage for media.
+- Redis/Valkey for explicitly transient state;
+- an asynchronous Worker where durable background work is required;
+- S3-compatible object storage for managed media when Media is implemented.
 
-It combines the strongest verified product behavior and architectural lessons from two prior HOOMA implementations, but it is **not an upgrade, migration, fork, or continuation of either one**.
-
-The older repositories are reference donors only.
-
-### Greenfield requirements
-
-1. The target repository owns its own architecture.
-2. The target repository owns its own schema.
-3. The target repository owns its own initial migration history.
-4. No old database compatibility requirement exists unless separately introduced later as an explicit data-import project.
-5. No old feature is considered complete merely because equivalent code exists in a donor repository.
-6. Donor behavior may be reimplemented only when it satisfies the requirements below.
+The older HOOMA repositories and uploaded historical implementations are read-only donors/reference material. They may inform behavior and visuals, but they do not define the new runtime, schema, migrations, auth architecture, or completion state.
 
 ---
 
-## 1. Product principles
+# 1. Global product principles
 
-### 1.1 Public first, authentication at the action boundary
+## 1.1 Public first, authentication at the action boundary
 
-Users must be able to browse meaningful public content without signing in.
+Users must be able to browse meaningful privacy-safe public content without signing in.
 
 Authentication is required when a user attempts a protected action such as:
 
@@ -49,28 +44,35 @@ Authentication is required when a user attempts a protected action such as:
 - claim;
 - contribute/pay;
 - challenge;
-- send a Whistle;
+- send/reveal member-private Whistles;
 - access member-private content.
 
-Web guests attempting a protected action must be redirected to a validated internal `returnTo` path.
+Web guests attempting a protected action must be sent through a validated internal `returnTo` path. Telegram users authenticate through validated Mini App initData rather than the classic Web login flow.
 
-### 1.2 One product, two independent access surfaces
+## 1.2 One product, two authentication transports
 
-Web and Telegram use the same business data and API but keep independent platform shells and authentication paths.
+HOOMA has one canonical User and one business-data source.
 
-The Telegram experience must feel like a real Telegram Mini App, not a web page embedded in Telegram.
+Web and Telegram are separate authentication transports into that same product:
 
-### 1.3 Admin means App Admin only
+```text
+WebCredential/WebSession -> User
+TelegramIdentity         -> User
+```
 
-The word **Admin** is reserved exclusively for the global application administrator authority.
+No heuristic merge is allowed.
 
-Global role:
+## 1.3 Admin means App Admin only
+
+The word **Admin** is reserved for global application authority only.
+
+Canonical global role:
 
 ```text
 PLATFORM_ADMIN
 ```
 
-Scoped roles must use product terminology:
+Scoped domains use their own product terminology, such as:
 
 - Founder;
 - Coach;
@@ -81,29 +83,36 @@ Scoped roles must use product terminology:
 - Player;
 - Owner.
 
-A Coach must never see a screen called “Admin Dashboard” for Team management. That surface is the **Coach Control Room**.
+A Team manager uses the **Coach Control Room**, never a generic Admin Dashboard.
 
-### 1.4 No duplicate domain truth
+## 1.4 One canonical source of truth per concept
 
-There must be one canonical source of truth for:
+There must be one authoritative owner for each durable concept, including:
 
-- User identity;
+- User identity/presentation;
+- HOOMA Community;
 - Team;
-- Place;
 - Event;
+- Place;
 - payment state;
 - ULTRAS group;
 - Gamer squad;
 - Whistle metadata;
 - media metadata.
 
-Different product surfaces may project the same canonical record but must not create competing physical entities.
+Different screens may project the same record but must not create competing physical entities or parallel role systems.
+
+## 1.5 Product utility over social-feed mechanics
+
+HOOMA is built around football activity, local community coordination and real-world participation.
+
+Do not introduce permanent follower/feed/engagement mechanics merely to imitate a social network. Shared transient features such as Whistle must keep their explicit product rules and retention boundaries.
 
 ---
 
-## 2. Locked navigation and information architecture
+# 2. Locked navigation and information architecture
 
-### 2.1 Permanent bottom navigation
+## 2.1 Permanent bottom navigation
 
 Exactly:
 
@@ -111,30 +120,49 @@ Exactly:
 Home | Play | Watch | HOOMA | Pitch
 ```
 
-No implementation may replace `Pitch` with `Places` in permanent bottom navigation.
+`Pitch` must not be replaced by `Places` in the permanent bottom navigation.
 
-### 2.2 Home gateway
+## 2.2 Home gateway
 
-Home must contain exactly these eight primary gateway cards:
+Home contains these eight primary product gateways:
 
 ```text
-HOOMA | Teams | Ultras | Gamers
+HOOMA | Teams | ULTRAS | Gamers
 Places | Requests | Ride | FundMe
 ```
 
-### 2.3 Places tabs
+A gateway may truthfully show unavailable/coming-soon state until its real vertical slice exists. It must not fake backend completion.
 
-The Places directory must expose:
+## 2.3 HOOMA creation gateway
+
+Creation begins from the HOOMA product and offers:
+
+```text
+HOOMA | TEAM | ULTRAS | GAMERS
+```
+
+This is a **shared entry/gateway only**.
+
+It must not be implemented as one generic database `CommunityType`. Each selection enters its own domain-specific creation flow:
+
+- HOOMA -> neighborhood/local Community domain;
+- TEAM -> football Team domain;
+- ULTRAS -> supporter-community domain;
+- GAMERS -> gaming community/squad domain.
+
+## 2.4 Places tabs
+
+The Places directory exposes:
 
 ```text
 LOUNGES/CAFES | PITCH | FANHUB
 ```
 
-`LOUNGES/CAFES` is the default tab.
+Default: `LOUNGES/CAFES`.
 
-### 2.4 Core routes
+## 2.5 Core routes
 
-At minimum, product routing must support:
+At minimum, the product routing contract supports:
 
 ```text
 /
@@ -156,71 +184,71 @@ At minimum, product routing must support:
 /admin
 ```
 
-Feature-specific child routes are added as the related vertical slices are implemented.
+Feature-specific child routes are added only when their actual vertical slice requires them.
 
 ---
 
-## 3. Visual and interaction requirements
+# 3. Visual and interaction requirements
 
-### 3.1 Brand language
+## 3.1 Brand language
 
 HOOMA uses a classy vintage-football identity:
 
-- almost-black primary background;
-- subtle paper/print texture;
-- warm cream display typography;
+- almost-black/deep-black primary backgrounds;
+- warm cream typography;
 - muted aged-gold borders/separators;
-- lime-green accents where action/status emphasis is needed;
-- strong white football icons;
-- real football, venue, supporter, and player photography where appropriate;
-- restrained glow/distress effects;
-- modern mobile usability despite vintage styling.
+- lime-green accents for action/status emphasis;
+- strong white football iconography;
+- real football, venue, supporter and player photography where appropriate;
+- subtle paper/print/heritage texture;
+- restrained glow/distress treatment;
+- modern mobile usability despite the vintage styling.
 
-The product must not regress into a generic SaaS/dashboard aesthetic.
+The product must not drift into a generic SaaS/dashboard aesthetic.
 
-### 3.2 Mobile-first
+## 3.2 Mobile first
 
-Both Web and Telegram must work cleanly on phone-sized layouts first.
+Web and Telegram must work cleanly on phone-sized layouts first.
 
-Requirements:
+Requirements include:
 
 - no overlapping text;
-- no clipped dialogs/panels;
-- no horizontal scrolling unless intentionally designed;
+- no unintentionally clipped panels/dialogs;
+- no accidental horizontal scrolling;
 - safe-area support;
 - keyboard-safe forms;
-- large enough tap targets;
-- readable typography;
-- responsive image treatment;
-- loading, empty, error, disabled, pending, success states for interactive flows.
+- usable touch targets;
+- readable type scales;
+- responsive images/media;
+- loading, empty, error, disabled, pending and success states for interactive flows.
 
-### 3.3 Telegram-specific UX
+## 3.3 Telegram experience
 
-Telegram app must support, where relevant:
+Even though Web and Telegram currently share the HOOMA frontend tree, Telegram must still behave as a genuine Mini App where relevant:
 
-- validated `initData`;
-- `Telegram.WebApp.ready()`;
-- expansion/viewport handling;
-- BackButton behavior;
-- safe-area and viewport variables;
+- validated initData;
+- `Telegram.WebApp.ready()` lifecycle;
+- viewport/expand behavior;
+- safe-area handling;
+- BackButton integration;
 - Telegram theme awareness where useful;
-- haptics for suitable actions;
-- MainButton only where it improves the flow;
-- Telegram navigation lifecycle without browser-history hacks.
+- haptics where appropriate;
+- MainButton only when it improves the flow;
+- Telegram-aware navigation without browser-history hacks.
 
 ---
 
-## 4. Authentication and identity requirements
+# 4. Authentication and identity
 
-### 4.1 Canonical User
+## 4.1 Canonical User
 
 There is one canonical `User` domain identity.
 
-Authentication identities attach to that User but do not replace it.
+Authentication identities attach to that User; they do not replace it.
 
-### 4.2 Web registration
+## 4.2 Web registration
 
-Web registration must support:
+Classic Web registration supports:
 
 Required:
 
@@ -228,63 +256,62 @@ Required:
 - password;
 - display username.
 
-Optional/progressive:
+Optional/progressive presentation data may include:
 
 - email;
 - display name;
 - photo;
 - bio;
-- location;
+- location/Houma;
 - favorite club;
-- identity/audience presentation choices.
+- approved identity/presentation choices.
 
-Login username and display username are conceptually distinct.
+Login username and public/display username are conceptually distinct.
 
-### 4.3 Password security
+## 4.3 Password security
 
-Passwords must use **Argon2id**.
+Passwords use **Argon2id**.
 
 Requirements:
 
-- secure tuned parameters;
-- unique salts generated by the library;
+- appropriately tuned parameters;
+- library-generated unique salts;
 - no plaintext password logging;
-- no reversible encryption;
-- rate limiting and lockout/abuse controls on login attempts.
+- no reversible password storage;
+- rate limiting/lockout/abuse controls on login attempts.
 
-### 4.4 Web sessions
+## 4.4 Web sessions
 
-Web sessions must use opaque random tokens.
+Web sessions use opaque random tokens.
 
-Only the token hash is stored in PostgreSQL.
+Only token hashes persist in PostgreSQL.
 
-Production cookie requirements:
+Production cookies are:
 
 - HttpOnly;
 - Secure;
-- appropriate SameSite policy;
-- explicit expiry;
-- revocable;
-- logout invalidates the session server-side.
+- configured with an appropriate SameSite policy for the actual deployment topology;
+- explicitly expiring;
+- revocable.
 
-Browser state-changing requests require origin/CSRF protections.
+Logout revokes the session server-side. Browser state-changing requests require origin/CSRF protections.
 
-### 4.5 Telegram authentication
+## 4.5 Telegram authentication
 
 Telegram authentication must:
 
-1. receive Telegram Mini App initData;
+1. receive Mini App initData;
 2. validate it cryptographically server-side;
-3. reject explicitly supplied invalid initData;
-4. resolve/create a `TelegramIdentity`;
+3. reject explicitly invalid initData;
+4. resolve/create `TelegramIdentity`;
 5. resolve to the canonical User;
-6. never trust Telegram profile data without validated initData.
+6. never trust Telegram profile fields without validated initData.
 
-Production Telegram service startup must fail when required bot configuration is absent.
+Telegram bot identity/configuration must stay in environment variables so the bot can be replaced without source-code rewrites.
 
-### 4.6 Identity conflict
+## 4.6 Identity conflict
 
-If valid Web credentials resolve to User A and valid Telegram credentials in the same request resolve to User B:
+If valid Web and Telegram credentials in one request resolve to different Users:
 
 ```text
 AUTH_CONFLICT
@@ -294,172 +321,197 @@ must be returned.
 
 The system must never silently choose one identity.
 
-### 4.7 No heuristic account merge
+## 4.7 No heuristic account merge
 
-Never auto-merge accounts using:
-
-- same username;
-- same display name;
-- same email similarity;
-- same photo;
-- Telegram handle;
-- location;
-- favorite club.
+Never auto-merge accounts using name, username, email similarity, photo, Telegram handle, location, favorite club or other presentation data.
 
 Future account linking requires an explicit authenticated workflow.
 
 ---
 
-## 5. Public/member API requirements
+# 5. Public/member/Admin API boundary
 
-### 5.1 Public namespace
-
-Privacy-safe public reads live under:
+Privacy-safe public reads:
 
 ```text
 /api/public/v1/*
 ```
 
-### 5.2 Member namespace
-
-Authenticated member/private actions live under:
+Authenticated member/private actions:
 
 ```text
 /api/v1/*
 ```
 
-### 5.3 Platform Admin namespace
-
-Global Admin actions live under:
+Global Platform Admin actions:
 
 ```text
 /api/v1/admin/*
 ```
 
-### 5.4 Server-side authorization
+Every protected action must be authorized server-side. Hiding a button is never authorization.
 
-Every protected action must be authorized server-side.
-
-Hiding a button is never considered authorization.
-
-Tests must prove that forbidden callers receive the correct denial even when they manually call the API.
+Tests should prove forbidden callers are denied even if they manually call the API.
 
 ---
 
-## 6. Profile requirements
+# 6. Profile requirements
 
-The Profile must function as the user's identity and responsibility hub.
+Profile is the user's identity and responsibility hub.
 
-### 6.1 Presentation
+## 6.1 Presentation
 
-Profile supports:
+Profile supports the canonical presentation data actually owned by Identity, including as applicable:
 
 - photo;
 - display name;
 - display username;
 - bio;
-- location/Houma where applicable;
-- favorite club;
-- Player/Fan/Gamer identity presentation;
-- public/private presentation rules.
+- approved location/Houma presentation.
 
-Generic valid image URLs may be supported during early phases, but final media architecture must move uploaded media into managed object storage.
+Future product-specific presentation such as favorite club, ULTRAS identity or Gamer identity may appear when those owning domains are implemented, but must not be prematurely persisted inside an unrelated profile table.
 
-### 6.2 Responsibilities and memberships
+## 6.2 Responsibilities and memberships
 
-Profile must visibly render and link to:
+Profile projects real canonical relationships, such as:
 
-- My Teams;
-- role on each Team: Player / Coach / Assistant;
-- My ULTRAS groups;
-- ULTRAS role;
-- My Gamer Squads;
-- Gamer Squad role;
-- owned/managed Places where applicable;
-- global Platform Admin badge/entry only for real Platform Admins.
+- My HOOMAs and Community role;
+- My Teams and Team role/responsibility;
+- future ULTRAS memberships/role when ULTRAS exists;
+- future Gamer Squad memberships/role when Gamers exists;
+- future owned/managed Places when Places ownership exists;
+- Platform Admin entry only for an actual Platform Admin.
 
-Clicking a Team must open that Team. A Coach/Assistant must be able to reach the appropriate Team management surface from Profile.
+Clicking a listed entity opens the real entity page. Management entry points appear only when the user has the required server-recognized authority.
 
-### 6.3 Edit profile
+## 6.3 Edit profile
 
-The user must have a clear Edit Profile action.
+The user has a clear Edit Profile action.
 
-Profile editing must update the canonical profile source rather than duplicate local presentation state.
+Profile editing updates the canonical Identity/UserPresentation source rather than duplicating page-local state.
 
 ---
 
-## 7. HOOMA communities requirements
+# 7. HOOMA Communities
 
-HOOMA is the neighborhood/community domain in the primary navigation.
+HOOMA is the neighborhood/local-community domain represented in permanent navigation.
 
-Requirements:
+## 7.1 Public experience
 
-- public discovery/detail where privacy-safe;
-- member-only community areas where applicable;
-- roles:
-  - `FOUNDER`
-  - `COACH`
-  - `MEMBER`
+Privacy-safe public behavior includes:
+
+- discovery;
+- community detail;
+- community logo;
+- banner;
+- name/description;
+- city/Houma/local-area presentation;
+- appropriate member/team counts;
+- visible Join action at the protected-action boundary.
+
+## 7.2 Membership lifecycle
+
+Community roles:
+
+```text
+FOUNDER | COACH | MEMBER
+```
+
+Rules:
+
 - no scoped role named Admin;
-- creation from a single HOOMA creation entry;
-- creation chooser must allow:
-  - `TEAM`
-  - `ULTRAS`
-- choosing either branch opens that domain's proper creation flow.
+- authenticated outsider may Join and becomes MEMBER;
+- a previous member may rejoin using the canonical membership identity;
+- Member/Coach may Leave according to policy;
+- Founder cannot silently abandon the Community through the ordinary Leave action;
+- Founder may promote an existing active MEMBER to COACH;
+- Founder may demote COACH to MEMBER;
+- Founder may remove eligible members/coaches according to policy;
+- Coach may manage ordinary members only within explicitly granted Community authority;
+- Coach may not remove Founder or another Coach unless a newer explicit policy changes that rule;
+- private member directory/content is not public discovery data.
 
-Community permissions must remain distinct from Team, ULTRAS, and global Admin permissions.
+## 7.3 Community HQ
+
+Members receive a private Community HQ containing member-only modules as they are implemented.
+
+Current Community identity should support logo/banner presentation. Managed uploads may later replace direct URL-based early-phase media without changing Community identity semantics.
+
+## 7.4 Private HOOMA Whistle Board
+
+Current authorized Community members can access the private HOOMA Whistle Board through the single shared Whistle engine.
+
+Random public visitors and non-members cannot list, send or reveal Community Whistles.
 
 ---
 
-## 8. Teams requirements
+# 8. Teams
 
-Teams must preserve the deep football-management experience expected from mature HOOMA behavior.
+Teams preserve a deep football-management experience while keeping Team identity separate from Community identity.
 
-### 8.1 Public Team experience
+## 8.1 Public Team experience
 
-Public users can access privacy-safe:
+Public users may access privacy-safe:
 
 - Team discovery;
 - Team profile;
 - crest/photo;
 - location;
-- public roster summary where permitted;
-- upcoming/public games/challenges where appropriate.
+- permitted roster presentation;
+- public games/challenges where appropriate.
 
-### 8.2 Team roles
+Public browsing does not require a HOOMA account.
 
-Canonical Team responsibilities:
+## 8.2 TeamPlayer identity
+
+A `TeamPlayer` is roster membership for an **existing canonical HOOMA User**.
+
+Requirements:
+
+- `userId` is required for TeamPlayer;
+- no placeholder/offline TeamPlayer identity is created for a person without a HOOMA account;
+- authentication/account creation happens before a protected join/membership action creates TeamPlayer;
+- Team-specific roster data belongs on TeamPlayer;
+- display name, username, photo, bio and other canonical presentation remain owned by User/UserPresentation and must not be duplicated into TeamPlayer;
+- the same User must not be duplicated within the same Team roster;
+- roster history uses the canonical join/leave lifecycle defined by the current model.
+
+A Team may exist with zero players.
+
+## 8.3 Team responsibilities
+
+Canonical direct management responsibilities:
 
 ```text
-COACH | ASSISTANT | PLAYER
+COACH | ASSISTANT
 ```
 
-The Coach has ultimate Team management authority.
+Player participation is represented through TeamPlayer membership rather than turning `PLAYER` into a broad management role.
 
-### 8.3 Coach Control Room
+Coach has ultimate Team management authority within the Team domain.
 
-Coach must be able to:
+## 8.4 Coach Control Room
+
+Coach must be able to perform the real authorized Team-management lifecycle, including as applicable:
 
 - edit Team details;
-- manage crest/photo where applicable;
-- add players;
-- remove/fire/deactivate players;
-- appoint an Assistant;
-- revoke Assistant;
+- manage crest/media;
+- manage roster membership;
+- open player profiles;
+- appoint/revoke Assistant;
 - grant/revoke Assistant capabilities;
 - manage lineups;
 - create challenges;
-- accept/decline/cancel challenges according to lifecycle;
-- manage Team events/games;
-- open player profiles.
+- respond to/cancel challenges according to lifecycle;
+- manage Team events/games.
 
-The management page is called **Coach Control Room**, not Admin.
+The management surface is **Coach Control Room**, never Admin Dashboard.
 
-### 8.4 Assistant capabilities
+## 8.5 Assistant capabilities
 
 Assistant authority is explicit and granular.
 
-Required capabilities:
+Canonical capability set:
 
 ```text
 EDIT_TEAM
@@ -470,167 +522,174 @@ RESPOND_TO_CHALLENGE
 MANAGE_TEAM_EVENTS
 ```
 
-Possessing `ASSISTANT` alone must not automatically grant every Coach action.
+Possessing `ASSISTANT` alone must not grant every Coach action.
 
-### 8.5 Team lineups
+## 8.6 Team lineups
 
-Teams require:
+Teams support:
 
 - lineup creation;
 - lineup slots;
-- player assignment;
-- formation/position representation where applicable;
-- server-side Team authority checks.
+- TeamPlayer assignment;
+- formations/match formats including smaller-sided football;
+- normalized pitch positioning where represented;
+- server-side authority;
+- public/published vs private/draft distinction where applicable.
 
-### 8.6 Team challenges
+## 8.7 Team challenges and games
 
-Requirements:
+Requirements include:
 
 - challenge another eligible Team;
-- cannot challenge own Team;
-- incoming/outgoing challenge lists;
+- never challenge the same Team as itself;
+- incoming/outgoing challenge state;
 - detail;
 - accept;
 - decline;
 - cancel under correct conditions;
-- accepted challenge can produce/associate Team game;
-- challenge-scoped messages/conversation;
-- server-side lifecycle enforcement.
-
-### 8.7 Team games
-
-Team games must be navigable from Team and challenge flows and support the necessary public/member states.
+- concurrency-safe lifecycle;
+- accepted challenge produces/associates one canonical TeamGame;
+- leader coordination appears only under its accepted-match authorization rules;
+- public Game data never leaks private leader conversation.
 
 ---
 
-## 9. Events and Play requirements
+# 9. Events and Play
 
-Play is the activity/event product for organizing football activity.
+Play is HOOMA's football-activity/event product.
 
-Requirements:
+Core Play/Event requirements include:
 
 - public discovery;
 - event creation;
 - event detail;
-- location/Place support;
-- date/time;
+- date/time/timezone;
+- location/venue information;
 - capacity;
 - RSVP;
-- waitlist if capacity is reached;
+- waitlist when configured/capacity is reached;
+- concurrency-safe capacity decisions;
 - organizer authority;
 - formation builder;
 - check-in;
-- temporary event chat;
-- completion state;
-- eventual Replay generation;
-- no permanent generic chat history beyond the intended temporary/event rules.
+- completion/cancellation lifecycle;
+- eventual Replay integration when Replay is implemented.
 
-Preferred-position data, when collected for balancing/formation logic, must actually affect the balancing algorithm rather than being accepted and ignored.
+Preferred-position data, when collected for balancing/formation logic, must actually influence that logic rather than being accepted and ignored.
+
+## 9.1 Play communication direction
+
+The intended Play communication mechanic is **Event Whistle Board through the shared Whistle domain**, not a conventional permanent event chat.
+
+Legacy Temporary Event Chat may remain in source while it is deliberately removed/migrated, but:
+
+- it is not Whistle;
+- it must not be renamed to Whistle;
+- it must not be used as Whistle storage;
+- new Play communication work should extend the shared Whistle engine through an explicit Event authorization slice rather than deepen conventional chat architecture.
+
+Event Whistle context remains disabled until its Event-specific authorization/lifecycle slice is deliberately implemented and verified.
 
 ---
 
-## 10. Watch requirements
+# 10. Watch
 
-Watch remains a dedicated primary product.
+Watch remains a dedicated permanent product.
 
-Requirements:
+Approved future/current product requirements include:
 
 - `/watch` route;
-- football-viewing event discovery;
-- venue/Place association;
+- football-viewing discovery;
+- canonical Place association;
 - Watch-specific event information;
 - going/RSVP behavior where applicable;
-- Watch venue business application;
-- Platform Admin approval workflow;
-- approved Watch capabilities tied to canonical Place;
-- vintage collector-ticket presentation where used;
-- business/application states must be real persisted states, not UI-only labels.
+- Watch venue/business application;
+- Platform Admin approval;
+- approved Watch capability tied to canonical Place;
+- collector-ticket presentation where used;
+- real persisted business/application states rather than UI-only labels.
+
+Presence in this requirements file does not imply the Watch backend is already implemented.
 
 ---
 
-## 11. Canonical Places requirements
+# 11. Canonical Places
 
-A `Place` represents one physical location.
+A `Place` represents one physical location and must not be duplicated because the same venue participates in several HOOMA products.
 
-It must not be duplicated because the same venue participates in different product contexts.
-
-### 11.1 Place data
-
-At minimum:
+Approved Place data includes as needed:
 
 - name;
 - address/location;
-- city/Houma/geography fields as product requires;
-- coordinates when available;
+- city/Houma/geography;
+- coordinates;
 - media;
-- opening/contact/business fields where applicable;
+- opening/contact/business information;
 - moderation status;
 - ownership records.
 
-### 11.2 Place suggestion
+## 11.1 Place suggestion
 
-Authenticated users may suggest a Place.
+Authenticated users may suggest a Place. Suggestion alone does not make the suggester an owner.
 
-Suggestion does not automatically make the user an owner.
+## 11.2 Ownership claims
 
-### 11.3 Ownership claims
-
-Ownership claim is a separate workflow:
+Ownership claim is a separate lifecycle:
 
 - submit claim/evidence;
 - pending review;
 - approve/reject;
 - create verified ownership only after approval;
-- audit all sensitive decisions.
+- audit sensitive decisions.
 
-### 11.4 Place capabilities
+## 11.3 Place capabilities
 
-A canonical Place may have independent capability/profile records such as:
+One canonical Place may gain independent product capabilities/profiles such as:
 
 - Lounge/Cafe;
 - Pitch;
 - Watch venue;
-- FanHub-relevant discovery characteristics.
+- FanHub-relevant discovery classification.
 
-A Place may support more than one capability without duplicating the physical location.
+Do not duplicate the physical Place for each capability.
 
 ---
 
-## 12. Pitch requirements
+# 12. Pitch
 
-Pitch is a permanent standalone product and route.
+Pitch is a permanent standalone route/product.
 
-Requirements:
+Requirements include:
 
-- permanent `/pitch` route;
+- `/pitch` permanent route;
 - permanent bottom-nav item;
-- Pitch discovery/listing;
+- Pitch discovery;
 - canonical Place relationship;
 - Pitch capability/profile;
 - owner/business application;
 - Platform Admin approval;
-- approved/rejected/pending states;
-- Places `PITCH` tab shows the same underlying approved Pitch data;
-- no separate duplicate Pitch venue database.
+- approved/rejected/pending state;
+- Places `PITCH` tab reads the same underlying approved Pitch data;
+- no duplicate Pitch venue database.
 
 ---
 
-## 13. FanHub requirements
+# 13. FanHub
 
-FanHub is a discovery/context concept, not a user permission role.
+FanHub is a discovery/context classification, not a user permission role.
 
 Requirements:
 
 - tied to canonical Place;
-- surfaced from Places `FANHUB` tab and Watch where appropriate;
-- must not create duplicate physical venue entities;
-- no authorization logic should depend on “FanHub” as if it were a user role.
+- surfaced from Places `FANHUB` and Watch where appropriate;
+- never duplicates a physical venue;
+- authorization must not depend on “FanHub” as a role.
 
 ---
 
-## 14. Platform Admin requirements
+# 14. Platform Admin
 
-The creator/global administrator requires a separate App Admin dashboard.
+HOOMA requires a separate global App Admin surface.
 
 Route:
 
@@ -638,218 +697,143 @@ Route:
 /admin
 ```
 
-API:
+API namespace:
 
 ```text
 /api/v1/admin/*
 ```
 
-### Admin responsibilities
-
-At minimum:
+Approved Admin responsibilities include as the owning domains are implemented:
 
 - Place suggestion moderation;
-- Place owner-claim review;
+- ownership-claim review;
 - Watch business/application review;
 - Pitch business/application review;
-- content/report moderation primitives;
-- official football entity catalog management;
-- Gamer game catalog management;
-- relevant operational/audit visibility.
+- relevant content/report moderation;
+- official football-entity catalog management;
+- Gamer game-catalog management;
+- operational/audit visibility.
 
-### Audit
+Sensitive Admin writes create durable audit evidence without secrets or Whistle bodies.
 
-Sensitive Admin writes must create durable AuditLog records containing at minimum:
-
-- actor;
-- action;
-- target type/id;
-- timestamp;
-- relevant structured metadata without secrets or transient-message body content.
-
-### Bootstrap
-
-Platform Admin must be granted by an explicit operational bootstrap procedure, not a hardcoded production user ID in source.
+Platform Admin bootstrap is explicit operational configuration, never a hardcoded production user ID.
 
 ---
 
-## 15. ULTRAS requirements
+# 15. ULTRAS
 
-ULTRAS is an independent supporter-community domain. It is not Team tables renamed and not a generic HOOMA community with a different label.
+ULTRAS is an independent supporter-community domain. It is not Team tables renamed and not generic HOOMA Community rows with a type flag.
 
-### 15.1 Official club association
+Approved product direction includes:
 
-Every ULTRAS group must be linked to an official football entity from a controlled catalog.
+- association to an approved official football entity/catalog;
+- privacy-safe public group identity;
+- private member HQ;
+- roles such as `LEADER | MODERATOR | MEMBER`;
+- member/join lifecycle;
+- GameDays/attendance where implemented;
+- integration with shared Whistle, Ride, FundMe and Replay only through explicit domain relationships.
 
-The catalog may represent clubs and other approved official football entities according to final product decisions.
-
-Random fake/local hobby teams must not masquerade as official ULTRAS club identities.
-
-### 15.2 Public ULTRAS experience
-
-Public users may see privacy-safe information such as:
-
-- group name;
-- official team/club link;
-- crest;
-- motto;
-- public banner/photo;
-- country/city;
-- public membership/join state where appropriate.
-
-### 15.3 Private ULTRAS HQ
-
-Current members get a private HQ.
-
-Random public visitors must never see private member content.
-
-### 15.4 Roles
-
-```text
-LEADER | MODERATOR | MEMBER
-```
-
-Leader/Moderator permissions govern management actions.
-
-### 15.5 Membership lifecycle
-
-Requirements:
-
-- join request;
-- approve/reject;
-- membership status;
-- remove/leave rules;
-- invitations if implemented;
-- private HQ authorization;
-- GameDays;
-- attendance;
-- integration with shared Whistle, Ride, FundMe, Replay where relevant.
-
-### 15.6 Private ULTRAS Whistle Board
-
-Only current authorized members may access the private ULTRAS Whistle Board.
-
-It uses the one shared Whistle domain and all Whistle retention/privacy rules.
+Only current authorized members may access the future private ULTRAS Whistle Board. It must use the single shared Whistle engine rather than creating another messaging system.
 
 ---
 
-## 16. Gamers requirements
+# 16. Gamers
 
-Gamers is an independent domain, not football Teams reused for gaming.
+Gamers is independent from football Teams.
 
-Requirements:
+Approved product direction includes:
 
-- App Admin-controlled game catalog;
-- gamer profile;
-- per-game handle/account data where appropriate;
-- gamer squads;
-- squad membership;
-- Squad Leader;
+- Platform Admin-controlled game catalog;
+- Gamer profile/presentation owned by the appropriate Gamer domain;
+- per-game handle/account data where needed;
+- Gamer squads;
+- squad membership/leadership;
 - join lifecycle;
 - squad challenge lifecycle;
 - results;
-- disputes/moderation path;
-- Gamer/squad identity visible in Profile;
-- shared Whistle only through approved relationship/context authorization.
+- dispute/moderation path;
+- Profile projections;
+- shared Whistle only through explicit approved Gamer relationship/context authorization.
 
 ---
 
-## 17. Requests requirements
+# 17. Requests
 
-Requests allow users to ask for help/resources/actions according to the final product UI.
+Requests support community help/resources/actions.
 
-Requirements:
+Approved requirements include:
 
-- public/privacy-safe discovery where appropriate;
+- privacy-safe public discovery where appropriate;
 - create request;
 - claim request;
-- concurrency-safe claim operation so the same exclusive claim cannot be granted twice;
-- claim/release/complete states as product requires;
+- concurrency-safe exclusive claims;
+- release/complete lifecycle as defined by the final product slice;
 - server-side authorization;
-- clear owner/claimer identity boundaries.
+- clear requester/claimer identity boundaries.
 
 ---
 
-## 18. Ride requirements
+# 18. Ride
 
 Ride supports community transport coordination.
 
-Requirements:
+Approved requirements include:
 
 - ride offer;
 - ride request;
 - matching;
-- public privacy-safe projections;
+- privacy-safe public projection;
 - member/private detail;
 - exact location protected from random public browsing;
 - live tracking OFF by default;
-- tracking, if enabled, is explicit and privacy-scoped;
-- ratings/feedback only if implemented as a complete lifecycle;
-- payment integration through shared payment domain where applicable;
-- Whistle only through valid Ride relationship/context.
+- tracking, if introduced, explicit and privacy-scoped;
+- ratings only when implemented as a complete lifecycle;
+- shared Payments where applicable;
+- shared Whistle only through a valid Ride relationship/context.
 
 ---
 
-## 19. FundMe requirements
+# 19. FundMe
 
 FundMe provides community fundraising.
 
-Requirements:
+Approved requirements include:
 
 - campaign creation;
 - public campaign detail;
-- contribution;
-- Cash and/or Telegram Stars only according to supported context;
-- correct accounting of paid contributions;
-- no double-counting on confirmation;
-- cancellation/completion rules;
-- reconciliation/audit visibility where payments are involved.
+- contributions;
+- Cash and/or Telegram Stars according to supported context;
+- correct accounting/idempotency;
+- cancellation/completion;
+- reconciliation/audit where payments are involved.
 
 ---
 
-## 20. Payment requirements
+# 20. Payments
 
-Initial supported payment methods:
+Initial payment rails are:
 
 ```text
 CASH
 TELEGRAM_STARS
 ```
 
-No credit-card payment rail is part of the initial requirement.
+No credit-card rail is part of the initial requirement.
 
-Optional future crypto/Flouci work is separate and must not be invented into the first implementation.
+Crypto/Flouci or other payment methods are separate future decisions and must not be silently added.
 
-### 20.1 Cash
+## 20.1 Cash
 
-Requirements:
+Cash support requires real obligation/payment state, authorized confirmation, idempotency, cancellation/void rules and reconciliation evidence appropriate to the owning context.
 
-- payment intent/obligation representation;
-- pending state;
-- confirmation by authorized participant/manager according to context;
-- void/cancel where valid;
-- idempotent confirmation;
-- audit/reconciliation evidence.
+## 20.2 Telegram Stars
 
-### 20.2 Telegram Stars
+Telegram Stars requires provider-valid invoice/pre-checkout/successful-payment handling, idempotent durable state, retry-safe update processing and refund/fulfillment behavior where supported.
 
-Requirements:
+## 20.3 Replaceable bot configuration
 
-- product/amount policy;
-- invoice creation;
-- Telegram pre-checkout validation;
-- successful-payment processing;
-- provider payload validation;
-- idempotency;
-- payment lookup;
-- entitlement/digital fulfillment where the product uses it;
-- refund path where supported;
-- durable payment state;
-- webhook/update processing that safely handles retries.
-
-### 20.3 Credentials
-
-These values are environment-only and must remain replaceable:
+These are environment-only:
 
 ```text
 TELEGRAM_BOT_TOKEN
@@ -858,53 +842,54 @@ TELEGRAM_BOT_ID
 MINI_APP_URL
 ```
 
-Changing the Telegram bot later must not require source-code rewrites.
+Changing the bot later must not require source rewrites.
 
 ---
 
-## 21. Whistle requirements
+# 21. Whistle
 
 There is exactly **one shared Whistle engine**.
 
-It is a transient short-message mechanic, not a permanent social feed or generic chat system.
+Whistle is a transient football/community signal mechanic, not a permanent social feed or generic chat system.
 
-### 21.1 Content limit
-
-Maximum:
-
-```text
-33 grapheme clusters
-```
-
-Validation must use grapheme clusters rather than bytes or naive UTF-16 length.
-
-### 21.2 Daily quota
+## 21.1 Content limit
 
 Maximum:
 
 ```text
-11 total Whistles per user per day
+33 Unicode grapheme clusters
 ```
 
-The quota is global across all Whistle contexts, not 11 per Team/ULTRAS/Event.
+The server-authoritative validation must use grapheme clusters rather than byte count or naive UTF-16 `.length`.
+
+## 21.2 Global daily quota
+
+Maximum:
+
+```text
+11 total Whistles per user per UTC calendar day
+```
+
+The quota is global across every enabled Whistle context, not 11 per Team/Event/Community.
 
 Quota enforcement must be concurrency-safe.
 
-### 21.3 Storage invariant
+## 21.3 Storage invariant
 
 Whistle body:
 
 - Redis only;
-- never stored in PostgreSQL;
-- never stored in AuditLog;
-- never stored in analytics payloads;
-- never placed in URL/query strings;
-- never copied into durable notification records;
-- never copied into application logs.
+- never PostgreSQL;
+- never AuditLog;
+- never analytics payloads;
+- never URLs/query strings;
+- never durable notification records;
+- never Outbox payloads;
+- never application logs.
 
-PostgreSQL stores metadata only.
+PostgreSQL stores metadata/quota/context/expiry information only.
 
-### 21.4 TTL
+## 21.4 TTL and reveal
 
 Unread body TTL:
 
@@ -912,287 +897,223 @@ Unread body TTL:
 24 hours
 ```
 
-After the first authorized reveal:
+First authorized reveal creates a viewer-specific reveal window:
 
 ```text
 60 seconds
 ```
 
-The first-reveal transition must not repeatedly extend the body lifetime on subsequent reads.
+Requirements:
 
-### 21.5 Authorization
+- later reads never restart/extend that first reveal deadline;
+- server response reports the actual remaining reveal lifetime;
+- after the viewer's reveal window expires, that viewer cannot restart it;
+- another authorized viewer receives an independent reveal window.
 
-Whistle requires an approved relationship/context.
+## 21.5 Context authorization
 
-Supported contexts include, as implemented:
+A Whistle is accessible only through an approved owning-domain relationship.
 
-- Event;
-- Team;
-- Ride;
-- HOOMA Community;
-- ULTRAS;
-- Gamer Squad;
-- other explicitly approved domain relationships.
-
-A random public profile visitor must not gain permission to Whistle merely because they can discover a user.
-
-### 21.6 Notifications
-
-A durable notification may say, for example:
+Context identifiers may include:
 
 ```text
-Youssef sent you a Whistle
+COMMUNITY | EVENT | TEAM | RIDE | ULTRAS | GAMER_SQUAD
 ```
 
-It must never contain the Whistle body.
+The existence of an enum/context name does **not** mean the context is enabled.
 
-Worker must perform actual configured Telegram notification delivery when applicable, with retry/idempotency behavior. Merely setting `deliveredAt` without a delivery attempt is not sufficient.
+Each context becomes usable only when its owning domain provides explicit authorization/lifecycle rules.
 
-### 21.7 Mandatory Whistle tests
+Current enabled context:
 
-Must include real Redis/PostgreSQL integration tests for:
+```text
+COMMUNITY
+```
 
-- 11th allowed / 12th denied;
+for active HOOMA Community members.
+
+Event, Team, Ride, ULTRAS and Gamer Squad Whistle contexts remain closed until their own authorization slices are deliberately implemented.
+
+## 21.6 Notifications
+
+A durable notification may indicate that a Whistle exists, for example “Youssef sent you a Whistle,” but must never contain the Whistle body.
+
+Actual Telegram notification delivery, when enabled, requires real configured delivery with retry/idempotency; setting a delivered timestamp without an attempt is not sufficient.
+
+## 21.7 Mandatory Whistle verification
+
+Real PostgreSQL + Redis integration coverage must prove, as applicable:
+
+- 11th send allowed / 12th denied;
 - concurrent quota attempts;
-- 24-hour unread TTL;
-- first reveal -> 60-second transition;
-- no TTL re-extension;
+- 24-hour body TTL;
+- first reveal -> 60-second viewer window;
+- no reveal-window extension;
 - context authorization;
-- ULTRAS private-board privacy;
-- no body persisted to PostgreSQL;
-- no body in durable notification/outbox payload;
+- outsider denial;
+- complex Unicode grapheme limits;
+- body absent from PostgreSQL;
+- body absent from durable notification/outbox data;
 - expiry behavior.
 
 ---
 
-## 22. Media requirements
+# 22. Media
 
-### 22.1 Storage model
+When managed Media is implemented:
 
-- PostgreSQL stores metadata only;
-- S3-compatible object storage stores bytes;
-- Worker performs transforms;
-- legacy external photo URL may exist only as a controlled transitional/fallback presentation field if explicitly needed.
+- PostgreSQL stores metadata/status/ownership;
+- object storage stores bytes;
+- Worker performs transforms where required;
+- external image URLs may remain only as explicitly supported transitional/fallback fields, not as a substitute for a designed upload system.
 
-### 22.2 Processing
+Image processing may include validation, orientation, EXIF/GPS stripping, thumbnails/card/master variants, failure state and retry.
 
-Uploaded images must support:
-
-- validation;
-- auto orientation;
-- EXIF/GPS stripping;
-- thumbnail variant;
-- card/display variant;
-- master variant;
-- failure status and retry path;
-- ownership/authorization linkage.
-
-If an external binary such as ImageMagick is used, deployment must explicitly provision it and CI/preflight must verify its availability.
+Any required external binary/runtime dependency must be explicitly provisioned and verified in deployment/preflight.
 
 ---
 
-## 23. Outbox and Worker requirements
+# 23. Outbox and Worker
 
-Durable business write and async-event enqueue must commit atomically through a transactional outbox pattern where appropriate.
+Where an asynchronous side effect matters, durable business mutation and OutboxEvent creation should commit atomically.
 
 Worker requirements:
 
-- safe concurrent claiming;
-- retry with backoff;
+- concurrency-safe claiming;
+- retry/backoff;
 - idempotent handlers;
 - failure/dead-letter visibility;
-- no duplicated business authorization policy;
-- observability/logging without secrets or Whistle bodies;
+- no duplicate business authorization policy;
+- logging without secrets/Whistle bodies;
 - health/startup verification.
 
-Worker use cases include:
-
-- media processing;
-- Telegram notification delivery;
-- Replay generation;
-- cleanup/expiry processing;
-- other durable async tasks approved by architecture.
+Approved future/current use cases may include media processing, Telegram notification delivery, Replay generation and cleanup jobs.
 
 ---
 
-## 24. Replay requirements
+# 24. Replay
 
-Replay is post-activity memory/content generated from eligible completed events/activities.
+Replay is post-activity memory/content tied to an eligible completed canonical activity/event.
 
-Requirements:
+Requirements when implemented:
 
-- tied to canonical completed activity/event;
-- generated only when eligibility rules are satisfied;
-- media through shared Media domain;
-- privacy derived from the originating context;
-- no parallel permanent Whistle history;
+- generated from the real source activity;
+- media through shared Media architecture;
+- privacy inherited from the originating context;
+- no permanent Whistle-body history;
 - public/private presentation based on source context.
 
 ---
 
-## 25. Discovery / HOOMA NOW requirements
+# 25. Discovery / HOOMA NOW
 
-Home/discovery may aggregate current useful activity across domains, but it must remain a read model/projection.
+Home/discovery may aggregate useful current activity across domains but remains a **read model/projection**, never a second source of business truth.
 
-It must not become a second source of truth.
+Requirements when implemented:
 
-Requirements:
-
-- deterministic inputs;
+- deterministic canonical inputs;
 - privacy-safe projections;
 - no hidden permanent social graph;
 - no fake engagement counters;
-- no duplicated Event/Team/Place records.
+- no duplicated Event/Team/Place/Community records.
 
 ---
 
-## 26. Preview Mode requirements
+# 26. Preview Mode
 
-Command:
+If maintained/implemented, Preview Mode is frontend-only mock interception used for UI review.
 
-```text
-npm run dev:preview
-```
+It must never create:
 
-Preview Mode is frontend-only mock interception using MSW or equivalent.
+- a production backend fake-auth bypass;
+- fake production persistence;
+- production builds that accidentally enable preview data.
 
-Required personas:
+Preview fixtures must use shared contracts/types.
 
-- Guest/Spectator;
-- Member;
-- Player;
-- Coach;
-- Assistant;
-- ULTRAS Leader;
-- ULTRAS Moderator where useful;
-- Gamer Squad Leader;
-- Place Owner;
-- Platform Admin.
+---
+
+# 27. Database requirements
+
+HOOMA owns its target schema and migration history.
 
 Rules:
 
-- no backend fake-auth bypass;
-- no fake persistence in production API;
-- production build must reject Preview Mode configuration;
-- fixtures must use shared contracts/types.
+- every durable schema change uses a committed migration;
+- no production `prisma db push` replacement for migrations;
+- important uniqueness/concurrency invariants belong in the service/database boundary where appropriate;
+- speculative future-domain tables are not implementation;
+- before first public release, any migration-history consolidation is an explicit reviewed database task proven from a clean database, not a permanent blocker on product development;
+- after release, shipped migration history is forward-only;
+- historical donor data, if ever imported, uses explicit ETL/reconciliation rather than redefining the app as a migration of the donor repository.
 
 ---
 
-## 27. Database requirements
-
-### 27.1 Fresh target schema
-
-HOOMA ULTIMATE must create a fresh target schema designed around these requirements.
-
-It must not inherit either donor migration chain as the application history.
-
-### 27.2 Initial migration
-
-A real committed initial Prisma migration is required before database-dependent feature work is considered deployable.
-
-No zero-migration release state is acceptable.
-
-### 27.3 Future migration rules
-
-After HOOMA ULTIMATE itself ships:
-
-- migrations are forward-only;
-- never edit/delete already-shipped migration SQL;
-- never reset production data;
-- use additive/change/backfill/remove-later patterns for destructive evolution;
-- verify clean database migration in CI/release checks.
-
-### 27.4 Historical donor data
-
-If old HOOMA production data is imported in the future, that must use explicit import/ETL scripts and reconciliation reports. It must not redefine the target app as a migration of the old repository.
-
----
-
-## 28. Security requirements
+# 28. Security requirements
 
 At minimum:
 
 - Argon2id passwords;
 - opaque hashed Web sessions;
 - secure production cookies;
-- CSRF/write-origin protection;
+- origin/CSRF protection for browser writes;
 - Telegram initData validation;
 - fail-closed invalid credentials;
 - `AUTH_CONFLICT` handling;
-- authorization on every sensitive server action;
-- rate limiting/abuse control;
+- server-side authorization on sensitive actions;
+- rate limiting/abuse control where required;
 - environment-only secrets;
-- no credential/body logging;
-- safe upload validation;
-- audit trail for App Admin decisions;
+- no credential/Whistle-body logging;
+- safe upload validation when uploads exist;
+- audit trail for sensitive App Admin decisions;
 - object ownership checks;
 - predictable error codes without secret/internal-data leakage;
 - validated internal `returnTo` to prevent open redirects.
 
 ---
 
-## 29. Testing requirements
+# 29. Testing requirements
 
-Testing must be behavior-oriented, not file-count theater.
+Testing is behavior-oriented, not file-count theater.
 
-### Required test levels
+## Unit
 
-#### Unit
+Use for deterministic policies/validation.
 
-For deterministic domain policies and validation.
+## Repository/integration
 
-#### Repository/integration
+Use real disposable PostgreSQL where behavior depends on transactions, locking, constraints, idempotency, role assignment, migrations or outbox claiming.
 
-Use real disposable PostgreSQL for:
+Use real disposable Redis where behavior depends on Whistle TTL/reveal/transient semantics.
 
-- transactions;
-- unique constraints;
-- concurrency-sensitive claims;
-- role assignments;
-- payment idempotency;
-- outbox locking;
-- schema/migrations.
+## HTTP/API
 
-Use real disposable Redis for:
+Test public/member boundaries, authentication, authorization, role/capability matrices, App Admin isolation and error contracts.
 
-- Whistle quotas;
-- TTL semantics;
-- concurrency;
-- transient state.
+## Frontend
 
-#### HTTP/API
+Test critical route/action states and Telegram-specific behavior where the platform semantics differ, even when both surfaces share the same feature tree.
 
-Test:
+## Worker
 
-- public/member boundary;
-- authentication;
-- authorization;
-- role/capability matrix;
-- App Admin isolation;
-- error contracts.
+Test claim/retry/idempotency and actual configured handler side effects where implemented.
 
-#### Frontend
+Prohibited shortcuts:
 
-Test critical route states and actions for Web and Telegram independently where platform behavior differs.
-
-#### Worker
-
-Test claiming, retries, idempotency, and actual handler side effects.
-
-### Prohibited testing shortcuts
-
-- random `test.ts` files created only to satisfy a check;
-- tests that merely grep source strings and call that runtime verification;
-- mocks used to claim PostgreSQL/Redis concurrency correctness;
-- marking features DONE because TypeScript compiles.
+- throwaway `test.ts` files used only to satisfy a check;
+- source-grep tests claimed as runtime proof;
+- mocks used to claim real PostgreSQL/Redis concurrency correctness;
+- “TypeScript compiles” used as proof that a feature works.
 
 ---
 
-## 30. CI and release requirements
+# 30. CI and release requirements
 
-CI order must be internally valid.
+CI verifies the repository; CI does not repair it.
 
-Expected final gates:
+It must not regenerate/commit/push source or lockfiles.
+
+The repository exposes verification commands including:
 
 ```text
 npm ci
@@ -1203,36 +1124,24 @@ npm run format:check
 npm run lint
 npm run typecheck
 npm test
+npm run test:integration
 npm run build
 npm run deploy:preflight
+npm run security:check
+npm run db:migrate:status
 ```
 
-A check must never reject normal artifacts created by an earlier required CI step, as the donor V3 architecture check did with `node_modules`.
+Migration-specific changes additionally prove `db:migrate:deploy` against the intended disposable/deployment database.
 
-Tests must not import absent `dist` outputs before those outputs are built.
-
-### Release verification
-
-Before production release:
-
-- fresh DB migrates from zero;
-- migration status is clean;
-- API starts successfully;
-- Web production build works;
-- Telegram production build works;
-- Worker starts successfully;
-- Redis-dependent functionality is verified;
-- object storage configuration is verified;
-- Telegram config preflight is verified;
-- Preview Mode is disabled/rejected;
-- no prohibited secret files are present;
-- no deployment success is claimed without command/runtime evidence.
+Release/runtime claims require exact evidence appropriate to the scope: build, migration state, startup/health, real infrastructure, and safe live behavior where applicable.
 
 ---
 
-## 31. Environment requirements
+# 31. Environment requirements
 
-At minimum configuration should anticipate:
+Configuration/credentials remain external to source.
+
+At minimum the architecture may use variables such as:
 
 ```text
 DATABASE_URL
@@ -1252,70 +1161,58 @@ OBJECT_STORAGE_ACCESS_KEY_ID
 OBJECT_STORAGE_SECRET_ACCESS_KEY
 ```
 
-Exact names may be refined in `packages/config`, but credentials and deployment URLs must remain external to source.
+Exact names may evolve through `packages/config`, but secrets and replaceable deployment/service identities remain environment-controlled.
 
 ---
 
-## 32. Definition of Done
+# 32. Definition of complete for an assigned task
 
-A feature may be marked `DONE` only when all applicable layers are complete and verified:
+A task/feature may be called complete only for the **exact assigned scope**, and only when all applicable layers are implemented and proven.
 
-1. requirement is documented;
-2. domain ownership is clear;
-3. schema/migration exists if persistence changed;
-4. contracts/validation exist;
-5. authorization policy exists;
-6. application service/use case exists;
-7. infrastructure repository/integration exists;
-8. HTTP/API route exists where needed;
-9. frontend route/component is connected to the real API where needed;
-10. loading/empty/error/success states are handled;
-11. Worker/Redis/media side effects are complete where required;
-12. automated tests prove critical behavior;
-13. relevant build/type/lint/test gates pass;
-14. runtime/deployment configuration is documented;
-15. `docs/IMPLEMENTATION_STATUS.md` contains concrete evidence.
+Applicable evidence may include:
 
-A feature is **not DONE** because:
+1. product behavior is clear in this requirements contract or a newer owner instruction;
+2. canonical owning domain is clear;
+3. schema/migration is correct if persistence changed;
+4. contracts/validation agree;
+5. server-side authorization exists;
+6. application/domain service behavior exists;
+7. repository/infrastructure integration exists;
+8. API route exists where required;
+9. real frontend action/state is connected where required;
+10. loading/empty/error/pending/success states are handled where relevant;
+11. Redis/Worker/media side effects are complete where required;
+12. permanent regression/integration tests prove critical behavior;
+13. applicable build/static checks pass;
+14. exact deployment/runtime evidence is checked when deployment is part of the claim;
+15. read-back/live behavior is proven when required for a 10/10 claim.
+
+A task is **not complete** merely because:
 
 - a Prisma model exists;
 - a page exists;
 - a button exists;
 - an endpoint exists;
 - donor code exists;
-- mocks show the happy path;
-- a plan says it is done.
+- mocks show a happy path;
+- a plan says it is done;
+- a container deployed successfully without proving the user flow.
+
+Every completion report follows `AGENTS.md` and `docs/LIVING_BUILD_PLAN.md`: root cause, source trace, exact changed files, commit/head, proof, remaining risk and evidence-based score out of 10.
 
 ---
 
-## 33. Initial implementation order
+# 33. Living product-contract rule
 
-The required dependency order is:
+This file should evolve when **product behavior** changes.
 
-1. Greenfield monorepo/tooling/CI foundation.
-2. Fresh schema + identity/authentication.
-3. Platform Admin + scoped authorization + audit.
-4. Profile + Home + HOOMA communities.
-5. Teams.
-6. Events / Play.
-7. Places + Watch + Pitch.
-8. Requests + Ride + FundMe + Payments.
-9. ULTRAS.
-10. Gamers.
-11. Whistle.
-12. Media + Worker + Replay + Discovery.
-13. Preview Mode + final design/production verification.
+Do not turn it into:
 
-This order is authoritative unless a later explicit product decision changes it.
+- a feature progress table;
+- a global freeze plan;
+- a historical implementation sequence;
+- a list of speculative schema details for every future idea.
 
----
+For future-approved domains, this document may state product direction before implementation exists, but the text must make that distinction clear.
 
-## 34. Current starting point
-
-At the time this requirements contract is created:
-
-- HOOMA ULTIMATE is a new target repository;
-- planning/reference documents exist;
-- business application code is not yet considered implemented;
-- Phase 0 is the next implementation phase;
-- implementation must begin from a clean target workspace rather than by copying either donor repository wholesale.
+When the product owner makes a newer explicit decision that conflicts with this file, implementation follows the newer decision and this contract should be updated promptly so later agents do not drift back to stale behavior.
