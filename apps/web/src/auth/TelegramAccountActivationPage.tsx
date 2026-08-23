@@ -24,9 +24,7 @@ export function TelegramAccountActivationPage() {
       })
       .catch((reason) => {
         if (active) {
-          setError(
-            reason instanceof Error ? reason.message : "Unable to check your HOOMA account",
-          );
+          setError(reason instanceof Error ? reason.message : "Unable to check your HOOMA account");
         }
       })
       .finally(() => {
@@ -45,9 +43,7 @@ export function TelegramAccountActivationPage() {
       await api.identity.me();
       window.location.replace(returnTo);
     } catch (reason) {
-      setError(
-        reason instanceof Error ? reason.message : "Unable to create your HOOMA account",
-      );
+      setError(reason instanceof Error ? reason.message : "Unable to create your HOOMA account");
       setCreating(false);
     }
   }
