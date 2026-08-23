@@ -444,15 +444,16 @@ test("G3 challenges enforce ownership, same-game/open rules, duplicate safety an
     );
     assert.equal(cancelAccepted.status, 409);
 
-    const aliceArena = await fetch(
-      `${base}/api/v1/gamers/games/${fc.id}/challenges`,
-      { headers: { cookie: aliceCookie, origin: config.WEB_ORIGIN } },
-    );
+    const aliceArena = await fetch(`${base}/api/v1/gamers/games/${fc.id}/challenges`, {
+      headers: { cookie: aliceCookie, origin: config.WEB_ORIGIN },
+    });
     assert.equal(aliceArena.status, 200);
     const arenaBody = (await aliceArena.json()) as {
       items: Array<{ id: string; status: string }>;
     };
-    assert.ok(arenaBody.items.some((item) => item.id === challenge.id && item.status === "ACCEPTED"));
+    assert.ok(
+      arenaBody.items.some((item) => item.id === challenge.id && item.status === "ACCEPTED"),
+    );
 
     const second = await fetch(
       `${base}/api/v1/gamers/games/${fc.id}/challenges`,

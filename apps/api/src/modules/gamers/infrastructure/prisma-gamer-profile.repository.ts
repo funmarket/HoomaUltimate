@@ -30,7 +30,10 @@ export class PrismaGamerProfileRepository implements GamerProfileRepository {
     return this.db.gamerProfile.findUnique({ where: { id: profileId }, select: profileSelect });
   }
 
-  async getPublicByGameAndId(gameId: string, profileId: string): Promise<GamerPublicProfile | null> {
+  async getPublicByGameAndId(
+    gameId: string,
+    profileId: string,
+  ): Promise<GamerPublicProfile | null> {
     const row = await this.db.gamerProfile.findFirst({
       where: { id: profileId, gameId },
       select: {

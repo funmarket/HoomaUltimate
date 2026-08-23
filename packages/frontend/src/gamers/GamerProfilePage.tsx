@@ -108,7 +108,9 @@ export function GamerProfilePage({
   if (loading) {
     return (
       <div className="page gamers-page gamer-profile-page">
-        <div className="state-card"><strong>Loading gamer profile…</strong></div>
+        <div className="state-card">
+          <strong>Loading gamer profile…</strong>
+        </div>
       </div>
     );
   }
@@ -125,7 +127,9 @@ export function GamerProfilePage({
 
   return (
     <div className="page gamers-page gamer-profile-page">
-      <a className="gamer-back-link" href={`/gamers/games/${encodeURIComponent(game.slug)}`}>← {game.name}</a>
+      <a className="gamer-back-link" href={`/gamers/games/${encodeURIComponent(game.slug)}`}>
+        ← {game.name}
+      </a>
       {notice ? <div className="success-box">{notice}</div> : null}
       {error ? <div className="error-box">{error}</div> : null}
 
@@ -146,19 +150,30 @@ export function GamerProfilePage({
             <small>GAME HANDLE</small>
             <strong>{publicProfile.handle}</strong>
           </div>
-          {publicProfile.presentation.bio ? <p className="gamer-profile-bio">{publicProfile.presentation.bio}</p> : null}
+          {publicProfile.presentation.bio ? (
+            <p className="gamer-profile-bio">{publicProfile.presentation.bio}</p>
+          ) : null}
           <div className="gamer-profile-status-row">
-            <span className={publicProfile.openToChallenge ? "gamer-open-badge" : "gamer-closed-badge"}>
+            <span
+              className={publicProfile.openToChallenge ? "gamer-open-badge" : "gamer-closed-badge"}
+            >
               {publicProfile.openToChallenge ? "OPEN TO CHALLENGE" : "NOT OPEN TO CHALLENGE"}
             </span>
             {isOwnProfile ? <span className="gamer-self-badge">YOUR PROFILE</span> : null}
           </div>
           {!isOwnProfile && publicProfile.openToChallenge ? (
-            <button className="button gamer-profile-challenge" type="button" disabled={actionLoading} onClick={() => void sendChallenge()}>
+            <button
+              className="button gamer-profile-challenge"
+              type="button"
+              disabled={actionLoading}
+              onClick={() => void sendChallenge()}
+            >
               {actionLoading ? "Sending…" : "Challenge"}
             </button>
           ) : null}
-          {!isOwnProfile && !publicProfile.openToChallenge ? <p className="muted">This gamer is not accepting new challenges right now.</p> : null}
+          {!isOwnProfile && !publicProfile.openToChallenge ? (
+            <p className="muted">This gamer is not accepting new challenges right now.</p>
+          ) : null}
         </div>
       </article>
     </div>

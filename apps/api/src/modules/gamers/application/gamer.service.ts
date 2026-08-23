@@ -86,7 +86,11 @@ export class GamerService {
     await this.requireActiveGame(gameId);
     const challenger = await this.profiles.getByUserAndGame(userId, gameId);
     if (!challenger) {
-      throw new AppError(409, "GAMER_PROFILE_REQUIRED", "Create your gamer profile before challenging");
+      throw new AppError(
+        409,
+        "GAMER_PROFILE_REQUIRED",
+        "Create your gamer profile before challenging",
+      );
     }
 
     const challenged = await this.profiles.getById(challengedProfileId);
@@ -97,7 +101,11 @@ export class GamerService {
       throw new AppError(400, "GAMER_CHALLENGE_SELF_FORBIDDEN", "You cannot challenge yourself");
     }
     if (!challenged.openToChallenge) {
-      throw new AppError(409, "GAMER_CHALLENGE_TARGET_CLOSED", "This gamer is not open to challenges");
+      throw new AppError(
+        409,
+        "GAMER_CHALLENGE_TARGET_CLOSED",
+        "This gamer is not open to challenges",
+      );
     }
 
     const pairKey = [challenger.id, challenged.id].sort().join(":");
@@ -136,15 +144,27 @@ export class GamerService {
     await this.requireActiveGame(gameId);
     const access = await this.requireChallenge(gameId, challengeId);
     if (access.challengerUserId !== userId) {
-      throw new AppError(403, "GAMER_CHALLENGE_FORBIDDEN", "Only the challenger can cancel this challenge");
+      throw new AppError(
+        403,
+        "GAMER_CHALLENGE_FORBIDDEN",
+        "Only the challenger can cancel this challenge",
+      );
     }
     if (access.record.status === "CANCELLED") return access.record;
     if (access.record.status !== "PENDING") {
-      throw new AppError(409, "GAMER_CHALLENGE_NOT_PENDING", "Only a pending challenge can be cancelled");
+      throw new AppError(
+        409,
+        "GAMER_CHALLENGE_NOT_PENDING",
+        "Only a pending challenge can be cancelled",
+      );
     }
     const updated = await this.challenges.cancelForChallengerUser(challengeId, userId);
     if (!updated) {
-      throw new AppError(409, "GAMER_CHALLENGE_STATE_CHANGED", "Challenge state changed; refresh and try again");
+      throw new AppError(
+        409,
+        "GAMER_CHALLENGE_STATE_CHANGED",
+        "Challenge state changed; refresh and try again",
+      );
     }
     return updated;
   }
@@ -162,14 +182,22 @@ export class GamerService {
     }
     if (access.record.status === nextStatus) return access.record;
     if (access.record.status !== "PENDING") {
-      throw new AppError(409, "GAMER_CHALLENGE_NOT_PENDING", "Only a pending challenge can be answered");
+      throw new AppError(
+        409,
+        "GAMER_CHALLENGE_NOT_PENDING",
+        "Only a pending challenge can be answered",
+      );
     }
     const updated =
       nextStatus === "ACCEPTED"
         ? await this.challenges.acceptForChallengedUser(challengeId, userId)
         : await this.challenges.declineForChallengedUser(challengeId, userId);
     if (!updated) {
-      throw new AppError(409, "GAMER_CHALLENGE_STATE_CHANGED", "Challenge state changed; refresh and try again");
+      throw new AppError(
+        409,
+        "GAMER_CHALLENGE_STATE_CHANGED",
+        "Challenge state changed; refresh and try again",
+      );
     }
     return updated;
   }

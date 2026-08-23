@@ -34,7 +34,16 @@ export interface GamerChallengeRepository {
   }): Promise<GamerChallengeRecord | null>;
   getAccessRecord(challengeId: string): Promise<GamerChallengeAccessRecord | null>;
   listForUserAndGame(userId: string, gameId: string): Promise<GamerChallengeRecord[]>;
-  acceptForChallengedUser(challengeId: string, userId: string): Promise<GamerChallengeRecord | null>;
-  declineForChallengedUser(challengeId: string, userId: string): Promise<GamerChallengeRecord | null>;
-  cancelForChallengerUser(challengeId: string, userId: string): Promise<GamerChallengeRecord | null>;
+  acceptForChallengedUser(
+    challengeId: string,
+    userId: string,
+  ): Promise<GamerChallengeRecord | null>;
+  declineForChallengedUser(
+    challengeId: string,
+    userId: string,
+  ): Promise<GamerChallengeRecord | null>;
+  cancelForChallengerUser(
+    challengeId: string,
+    userId: string,
+  ): Promise<GamerChallengeRecord | null>;
 }

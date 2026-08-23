@@ -63,13 +63,15 @@ export function createGamerMemberRouter(service: GamerService): Router {
     "/games/:gameId/challenges",
     asyncHandler(async (req, res) => {
       const input = gamerChallengeCreateSchema.parse(req.body);
-      res.status(201).json(
-        await service.createChallenge(
-          getAuth(req).userId,
-          String(req.params.gameId),
-          input.challengedProfileId,
-        ),
-      );
+      res
+        .status(201)
+        .json(
+          await service.createChallenge(
+            getAuth(req).userId,
+            String(req.params.gameId),
+            input.challengedProfileId,
+          ),
+        );
     }),
   );
   router.get(

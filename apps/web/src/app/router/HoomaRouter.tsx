@@ -152,7 +152,10 @@ function HoomaRoutes() {
               <Route path="/teams/:teamId" element={<TeamDetailRoute />} />
               <Route path="/gamers" element={<GamersPage />} />
               <Route path="/gamers/games/:gameSlug" element={<GamerGameRoute />} />
-              <Route path="/gamers/games/:gameSlug/profiles/:profileId" element={<GamerProfileRoute />} />
+              <Route
+                path="/gamers/games/:gameSlug/profiles/:profileId"
+                element={<GamerProfileRoute />}
+              />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Suspense>

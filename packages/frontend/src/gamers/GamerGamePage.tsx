@@ -164,7 +164,10 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
     }
   }
 
-  async function updateChallenge(challenge: GamerChallenge, action: "accept" | "decline" | "cancel") {
+  async function updateChallenge(
+    challenge: GamerChallenge,
+    action: "accept" | "decline" | "cancel",
+  ) {
     if (!game) return;
     setActionId(challenge.id);
     setMemberError("");
@@ -203,7 +206,9 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
   if (loading && !game) {
     return (
       <div className="page gamers-page gamer-game-page">
-        <div className="state-card"><strong>Loading game…</strong></div>
+        <div className="state-card">
+          <strong>Loading game…</strong>
+        </div>
       </div>
     );
   }
@@ -219,17 +224,37 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
   return (
     <div className="page gamers-page gamer-game-page">
       <header className="gamer-game-hero panel">
-        <a className="gamer-back-link" href="/gamers">← Gamers</a>
+        <a className="gamer-back-link" href="/gamers">
+          ← Gamers
+        </a>
         <span className="eyebrow">GAME HUB</span>
         <h1>{game.name}</h1>
-        <p>Build your game identity, find a real opponent, and take accepted challenges into Arena.</p>
+        <p>
+          Build your game identity, find a real opponent, and take accepted challenges into Arena.
+        </p>
       </header>
 
       <nav className="gamer-hub-tabs" aria-label={`${game.name} sections`}>
-        <button className={`gamer-hub-tab${activeTab === "CHALLENGERS" ? " active" : ""}`} type="button" onClick={() => setActiveTab("CHALLENGERS")}>CHALLENGERS</button>
-        <span className="gamer-hub-tab disabled" aria-disabled="true">SQUADS</span>
-        <button className={`gamer-hub-tab${activeTab === "ARENA" ? " active" : ""}`} type="button" onClick={() => setActiveTab("ARENA")}>ARENA</button>
-        <span className="gamer-hub-tab disabled" aria-disabled="true">RANKINGS</span>
+        <button
+          className={`gamer-hub-tab${activeTab === "CHALLENGERS" ? " active" : ""}`}
+          type="button"
+          onClick={() => setActiveTab("CHALLENGERS")}
+        >
+          CHALLENGERS
+        </button>
+        <span className="gamer-hub-tab disabled" aria-disabled="true">
+          SQUADS
+        </span>
+        <button
+          className={`gamer-hub-tab${activeTab === "ARENA" ? " active" : ""}`}
+          type="button"
+          onClick={() => setActiveTab("ARENA")}
+        >
+          ARENA
+        </button>
+        <span className="gamer-hub-tab disabled" aria-disabled="true">
+          RANKINGS
+        </span>
       </nav>
 
       {notice ? <div className="success-box">{notice}</div> : null}
@@ -242,37 +267,69 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
             <div>
               <span className="eyebrow">YOUR GAME IDENTITY</span>
               <h2 id="gamer-profile-heading">Your {game.name} profile</h2>
-              <p className="muted">Your game handle belongs here. Your HOOMA name, photo and bio stay owned by your main profile.</p>
+              <p className="muted">
+                Your game handle belongs here. Your HOOMA name, photo and bio stay owned by your
+                main profile.
+              </p>
             </div>
             {accountLoading ? <p className="muted">Checking your HOOMA account…</p> : null}
             {!accountLoading && me ? (
               <form className="gamer-profile-form" onSubmit={saveProfile}>
                 <label className="field">
                   <span>Game username / handle</span>
-                  <input value={handle} onChange={(event) => setHandle(event.target.value)} placeholder={`Your ${game.name} handle`} maxLength={100} required />
+                  <input
+                    value={handle}
+                    onChange={(event) => setHandle(event.target.value)}
+                    placeholder={`Your ${game.name} handle`}
+                    maxLength={100}
+                    required
+                  />
                 </label>
                 <label className="gamer-open-toggle">
-                  <input type="checkbox" checked={openToChallenge} onChange={(event) => setOpenToChallenge(event.target.checked)} />
-                  <span><strong>OPEN TO CHALLENGE</strong><small>Show this game profile in public Challengers.</small></span>
+                  <input
+                    type="checkbox"
+                    checked={openToChallenge}
+                    onChange={(event) => setOpenToChallenge(event.target.checked)}
+                  />
+                  <span>
+                    <strong>OPEN TO CHALLENGE</strong>
+                    <small>Show this game profile in public Challengers.</small>
+                  </span>
                 </label>
-                <button className="button" type="submit" disabled={saving || !handle.trim()}>{saving ? "Saving…" : profile ? "Update Game Profile" : "Create Game Profile"}</button>
+                <button className="button" type="submit" disabled={saving || !handle.trim()}>
+                  {saving ? "Saving…" : profile ? "Update Game Profile" : "Create Game Profile"}
+                </button>
               </form>
             ) : null}
             {!accountLoading && !me ? (
               <div className="member-gate">
                 <strong>Challengers are public. Challenge actions use your HOOMA account.</strong>
-                {signInHref ? <a className="button secondary" href={signInHref}>Sign in</a> : <span className="muted">Open HOOMA through Telegram to authenticate.</span>}
+                {signInHref ? (
+                  <a className="button secondary" href={signInHref}>
+                    Sign in
+                  </a>
+                ) : (
+                  <span className="muted">Open HOOMA through Telegram to authenticate.</span>
+                )}
               </div>
             ) : null}
           </section>
 
           <section className="gamers-section" aria-labelledby="challengers-heading">
             <div className="gamers-section-heading">
-              <div><span className="eyebrow">CHALLENGERS</span><h2 id="challengers-heading">Players open to play</h2></div>
+              <div>
+                <span className="eyebrow">CHALLENGERS</span>
+                <h2 id="challengers-heading">Players open to play</h2>
+              </div>
               <span className="gamers-count">{challengers.length} open</span>
             </div>
             {!challengers.length ? (
-              <div className="state-card"><strong>No challengers are open yet.</strong><p className="muted">Players appear here only after explicitly switching on OPEN TO CHALLENGE.</p></div>
+              <div className="state-card">
+                <strong>No challengers are open yet.</strong>
+                <p className="muted">
+                  Players appear here only after explicitly switching on OPEN TO CHALLENGE.
+                </p>
+              </div>
             ) : (
               <div className="gamer-challenger-grid">
                 {challengers.map((challenger) => {
@@ -280,17 +337,42 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
                   const alreadyPending = pendingProfileIds.has(challenger.id) && !isOwn;
                   return (
                     <article className="gamer-challenger-card" key={challenger.id}>
-                      <a className="gamer-card-profile-link" href={`/gamers/games/${encodeURIComponent(game.slug)}/profiles/${encodeURIComponent(challenger.id)}`} aria-label={`Open ${challenger.presentation.displayName} gamer profile`}>
-                        <div className="gamer-avatar" aria-hidden="true">{challenger.presentation.photoUrl ? <img src={challenger.presentation.photoUrl} alt="" /> : challenger.presentation.displayName.slice(0, 1).toUpperCase()}</div>
+                      <a
+                        className="gamer-card-profile-link"
+                        href={`/gamers/games/${encodeURIComponent(game.slug)}/profiles/${encodeURIComponent(challenger.id)}`}
+                        aria-label={`Open ${challenger.presentation.displayName} gamer profile`}
+                      >
+                        <div className="gamer-avatar" aria-hidden="true">
+                          {challenger.presentation.photoUrl ? (
+                            <img src={challenger.presentation.photoUrl} alt="" />
+                          ) : (
+                            challenger.presentation.displayName.slice(0, 1).toUpperCase()
+                          )}
+                        </div>
                         <div className="gamer-challenger-copy">
-                          <div className="gamer-challenger-heading"><div><span className="gamer-open-badge">OPEN TO CHALLENGE</span><h3>{challenger.presentation.displayName}</h3></div>{isOwn ? <small>YOUR PROFILE</small> : null}</div>
+                          <div className="gamer-challenger-heading">
+                            <div>
+                              <span className="gamer-open-badge">OPEN TO CHALLENGE</span>
+                              <h3>{challenger.presentation.displayName}</h3>
+                            </div>
+                            {isOwn ? <small>YOUR PROFILE</small> : null}
+                          </div>
                           <p className="gamer-handle">{challenger.handle}</p>
                           <p className="muted">@{challenger.presentation.username}</p>
                         </div>
                       </a>
                       {!isOwn ? (
-                        <button className="button gamer-challenge-button" type="button" onClick={() => void challengePlayer(challenger.id)} disabled={actionId === challenger.id || alreadyPending}>
-                          {actionId === challenger.id ? "Sending…" : alreadyPending ? "Pending" : "Challenge"}
+                        <button
+                          className="button gamer-challenge-button"
+                          type="button"
+                          onClick={() => void challengePlayer(challenger.id)}
+                          disabled={actionId === challenger.id || alreadyPending}
+                        >
+                          {actionId === challenger.id
+                            ? "Sending…"
+                            : alreadyPending
+                              ? "Pending"
+                              : "Challenge"}
                         </button>
                       ) : null}
                     </article>
@@ -302,29 +384,101 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
         </>
       ) : (
         <section className="gamers-section gamer-arena" aria-labelledby="arena-heading">
-          <div className="gamers-section-heading"><div><span className="eyebrow">ARENA</span><h2 id="arena-heading">Challenges & Match Cards</h2></div><span className="gamers-count">{challenges.length} total</span></div>
+          <div className="gamers-section-heading">
+            <div>
+              <span className="eyebrow">ARENA</span>
+              <h2 id="arena-heading">Challenges & Match Cards</h2>
+            </div>
+            <span className="gamers-count">{challenges.length} total</span>
+          </div>
           {!me ? (
-            <div className="state-card"><strong>Sign in to enter your Arena.</strong><p className="muted">Public challenger browsing stays open; challenge activity belongs to your account.</p></div>
+            <div className="state-card">
+              <strong>Sign in to enter your Arena.</strong>
+              <p className="muted">
+                Public challenger browsing stays open; challenge activity belongs to your account.
+              </p>
+            </div>
           ) : !challenges.length ? (
-            <div className="state-card"><strong>No challenge activity yet.</strong><p className="muted">Send a challenge from a player card. Pending requests and accepted Match Cards appear here.</p></div>
+            <div className="state-card">
+              <strong>No challenge activity yet.</strong>
+              <p className="muted">
+                Send a challenge from a player card. Pending requests and accepted Match Cards
+                appear here.
+              </p>
+            </div>
           ) : (
             <div className="gamer-arena-grid">
               {challenges.map((challenge) => {
                 const incoming = profile?.id === challenge.challenged.id;
                 const outgoing = profile?.id === challenge.challenger.id;
                 return (
-                  <article className={`gamer-match-card status-${challenge.status.toLowerCase()}`} key={challenge.id}>
-                    <div className="gamer-match-card-top"><span>{challenge.status === "ACCEPTED" ? "MATCH CARD" : incoming ? "INCOMING CHALLENGE" : "OUTGOING CHALLENGE"}</span><strong>{challenge.status}</strong></div>
+                  <article
+                    className={`gamer-match-card status-${challenge.status.toLowerCase()}`}
+                    key={challenge.id}
+                  >
+                    <div className="gamer-match-card-top">
+                      <span>
+                        {challenge.status === "ACCEPTED"
+                          ? "MATCH CARD"
+                          : incoming
+                            ? "INCOMING CHALLENGE"
+                            : "OUTGOING CHALLENGE"}
+                      </span>
+                      <strong>{challenge.status}</strong>
+                    </div>
                     <div className="gamer-match-versus">
-                      <a href={`/gamers/games/${encodeURIComponent(game.slug)}/profiles/${encodeURIComponent(challenge.challenger.id)}`}><small>CHALLENGER</small><strong>{challenge.challenger.presentation.displayName}</strong><span>{challenge.challenger.handle}</span></a>
+                      <a
+                        href={`/gamers/games/${encodeURIComponent(game.slug)}/profiles/${encodeURIComponent(challenge.challenger.id)}`}
+                      >
+                        <small>CHALLENGER</small>
+                        <strong>{challenge.challenger.presentation.displayName}</strong>
+                        <span>{challenge.challenger.handle}</span>
+                      </a>
                       <b>VS</b>
-                      <a href={`/gamers/games/${encodeURIComponent(game.slug)}/profiles/${encodeURIComponent(challenge.challenged.id)}`}><small>CHALLENGED</small><strong>{challenge.challenged.presentation.displayName}</strong><span>{challenge.challenged.handle}</span></a>
+                      <a
+                        href={`/gamers/games/${encodeURIComponent(game.slug)}/profiles/${encodeURIComponent(challenge.challenged.id)}`}
+                      >
+                        <small>CHALLENGED</small>
+                        <strong>{challenge.challenged.presentation.displayName}</strong>
+                        <span>{challenge.challenged.handle}</span>
+                      </a>
                     </div>
                     {challenge.status === "PENDING" && incoming ? (
-                      <div className="gamer-match-actions"><button className="button" type="button" disabled={actionId === challenge.id} onClick={() => void updateChallenge(challenge, "accept")}>Accept</button><button className="button secondary" type="button" disabled={actionId === challenge.id} onClick={() => void updateChallenge(challenge, "decline")}>Reject</button></div>
+                      <div className="gamer-match-actions">
+                        <button
+                          className="button"
+                          type="button"
+                          disabled={actionId === challenge.id}
+                          onClick={() => void updateChallenge(challenge, "accept")}
+                        >
+                          Accept
+                        </button>
+                        <button
+                          className="button secondary"
+                          type="button"
+                          disabled={actionId === challenge.id}
+                          onClick={() => void updateChallenge(challenge, "decline")}
+                        >
+                          Reject
+                        </button>
+                      </div>
                     ) : null}
-                    {challenge.status === "PENDING" && outgoing ? <button className="button secondary" type="button" disabled={actionId === challenge.id} onClick={() => void updateChallenge(challenge, "cancel")}>Cancel challenge</button> : null}
-                    {challenge.status === "ACCEPTED" ? <p className="gamer-match-note">Accepted challenge = canonical HOOMA Match Card. Gameplay happens in the external game.</p> : null}
+                    {challenge.status === "PENDING" && outgoing ? (
+                      <button
+                        className="button secondary"
+                        type="button"
+                        disabled={actionId === challenge.id}
+                        onClick={() => void updateChallenge(challenge, "cancel")}
+                      >
+                        Cancel challenge
+                      </button>
+                    ) : null}
+                    {challenge.status === "ACCEPTED" ? (
+                      <p className="gamer-match-note">
+                        Accepted challenge = canonical HOOMA Match Card. Gameplay happens in the
+                        external game.
+                      </p>
+                    ) : null}
                   </article>
                 );
               })}
