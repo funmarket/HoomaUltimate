@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { createHmac } from "node:crypto";
 import test from "node:test";
 import type { ApiConfig } from "@hooma/config";
 import type {
@@ -10,6 +9,10 @@ import type {
 } from "../apps/api/src/modules/identity/application/identity.repository.js";
 import { IdentityService } from "../apps/api/src/modules/identity/application/identity.service.js";
 
+const telegramBotToken = "5768337691:AAH5YkoiEuPk8-FZa32hStHTqXiLPtAEhx8";
+const telegramInitData =
+  "query_id=AAHdF6IQAAAAAN0XohDhrOrc&user=%7B%22id%22%3A279058397%2C%22first_name%22%3A%22Vladislav%22%2C%22last_name%22%3A%22Kibenko%22%2C%22username%22%3A%22vdkfrost%22%2C%22language_code%22%3A%22ru%22%2C%22is_premium%22%3Atrue%7D&auth_date=1662771648&hash=c501b71e775f74ce10e377dea85a7ea24ecd640b223ea86dfe453e0eaed2e2b2";
+
 const config: ApiConfig = {
   NODE_ENV: "test",
   API_PORT: 3000,
@@ -19,8 +22,8 @@ const config: ApiConfig = {
   TELEGRAM_ORIGIN: "http://localhost:5174",
   SESSION_COOKIE_NAME: "hooma_session",
   SESSION_TTL_HOURS: 720,
-  TELEGRAM_BOT_TOKEN: "test-token",
-  TELEGRAM_INIT_DATA_MAX_AGE_SECONDS: 86400,
+  TELEGRAM_BOT_TOKEN: telegramBotToken,
+  TELEGRAM_INIT_DATA_MAX_AGE_SECONDS: 0,
 };
 
 class FakeIdentityRepository implements IdentityRepository {
@@ -101,25 +104,6 @@ class FakeIdentityRepository implements IdentityRepository {
   }
 }
 
-function telegramInitData(telegramUserId: number): string {
-  const fields = {
-    auth_date: String(Math.floor(Date.now() / 1000)),
-    query_id: "AAE-test-query",
-    user: JSON.stringify({
-      id: telegramUserId,
-      first_name: "Guest",
-      username: `guest_${telegramUserId}`,
-    }),
-  };
-  const checkString = Object.entries(fields)
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(([key, value]) => `${key}=${value}`)
-    .join("\n");
-  const secret = createHmac("sha256", "WebAppData").update(config.TELEGRAM_BOT_TOKEN!).digest();
-  const hash = createHmac("sha256", secret).update(checkString).digest("hex");
-  return new URLSearchParams({ ...fields, hash }).toString();
-}
-
 test("web registration issues an opaque session and login verifies Argon2id hash", async () => {
   const repository = new FakeIdentityRepository();
   const service = new IdentityService(repository, config);
@@ -164,14 +148,13 @@ test("supplied invalid Telegram initData is classified invalid, never absent", a
 test("valid first-time Telegram visitor remains unregistered until explicit account provisioning", async () => {
   const repository = new FakeIdentityRepository();
   const service = new IdentityService(repository, config);
-  const initData = telegramInitData(55112233);
-  assert.deepEqual(await service.resolveTelegram(initData), { kind: "unregistered" });
+  assert.deepEqual(await service.resolveTelegram(telegramInitData), { kind: "unregistered" });
   assert.equal(repository.telegramProvisionCount, 0);
-  assert.deepEqual(await service.provisionTelegramAccount(initData), {
+  assert.deepEqual(await service.provisionTelegramAccount(telegramInitData), {
     userId: "telegram-user",
   });
   assert.equal(repository.telegramProvisionCount, 1);
-  assert.deepEqual(await service.resolveTelegram(initData), {
+  assert.deepEqual(await service.resolveTelegram(telegramInitData), {
     kind: "valid",
     userId: "telegram-user",
   });
