@@ -1,5 +1,5 @@
 export type WhistleRevealResult =
-  | { state: "visible"; body: string }
+  | { state: "visible"; body: string; remainingSeconds: number }
   | { state: "expired" | "missing" };
 
 export interface WhistleTransientStore {
