@@ -14,7 +14,9 @@ const supportedExtension = /\.(?:ts|tsx|js|mjs|json|css|md|yml|yaml)$/i;
 const supportedRoot = /^(?:apps|packages|scripts|tests|\.github)\//;
 
 function ensureCommitExists(sha) {
-  const result = spawnSync("git", ["cat-file", "-e", `${sha}^{commit}`], { stdio: "ignore" });
+  const result = spawnSync("git", ["cat-file", "-e", `${sha}^{commit}`], {
+    stdio: "ignore",
+  });
   if (result.status !== 0) {
     console.error(`Unable to resolve formatting comparison commit ${sha}.`);
     process.exit(1);
@@ -31,7 +33,9 @@ const diff = spawnSync(
 );
 
 if (diff.status !== 0) {
-  process.stderr.write(diff.stderr || "Unable to determine changed files for formatting verification.\n");
+  process.stderr.write(
+    diff.stderr || "Unable to determine changed files for formatting verification.\n",
+  );
   process.exit(diff.status ?? 1);
 }
 
