@@ -56,7 +56,6 @@ jobs:
       - run: npm run db:migrate:deploy
       - run: npm run architecture:check
       - name: Check Event Whistle formatting
-        continue-on-error: true
         run: >-
           npx prettier --check
           apps/api/src/bootstrap/container.ts
@@ -66,6 +65,9 @@ jobs:
           packages/frontend/src/events/EventDetailPage.tsx
           packages/frontend/src/whistle/HoomaWhistleBoard.tsx
           tests/event-whistle.integration.test.ts
+          docs/CANONICAL_MODEL.md
+          docs/DECISIONS.md
+          docs/adr/ADR-042-event-whistle-context.md
           .github/workflows/event-whistle-verify.yml
       - name: Lint Event Whistle TypeScript
         run: >-
