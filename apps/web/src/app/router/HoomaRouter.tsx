@@ -49,11 +49,16 @@ function EventCheckInRoute() {
   return <CheckInPage eventId={requiredParam("eventId", eventId)} />;
 }
 
+function apiBaseUrl(): string {
+  if (import.meta.env.DEV) return import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
+  return "";
+}
+
 function HoomaRoutes() {
   const runtime = useMemo(() => initializeTelegramRuntime(), []);
   const transport = useMemo(
     () => ({
-      baseUrl: import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000",
+      baseUrl: apiBaseUrl(),
       credentials: "include" as const,
       getHeaders: () => (runtime.initData ? { authorization: `tma ${runtime.initData}` } : {}),
       authenticationHref: (returnTo: string) =>
