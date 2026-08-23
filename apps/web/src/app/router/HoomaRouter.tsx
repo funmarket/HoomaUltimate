@@ -22,6 +22,9 @@ import { HoomaShell } from "../shell/HoomaShell";
 
 const HomePage = lazy(() => import("../../home/HomePage").then((module) => ({ default: module.HomePage })));
 const AuthApp = lazy(() => import("../../auth/AuthApp").then((module) => ({ default: module.AuthApp })));
+const TelegramAccountActivationPage = lazy(() =>
+  import("../../auth/TelegramAccountActivationPage").then((module) => ({ default: module.TelegramAccountActivationPage }))
+);
 const AdminApp = lazy(() => import("../../admin/AdminApp").then((module) => ({ default: module.AdminApp })));
 const ProfilePage = lazy(() => import("../../profile/ProfilePage").then((module) => ({ default: module.ProfilePage })));
 const SettingsPage = lazy(() => import("../../settings/SettingsPage").then((module) => ({ default: module.SettingsPage })));
@@ -64,21 +67,20 @@ function apiBaseUrl(): string {
 
 function HoomaRoutes() {
   const runtime = useMemo(() => initializeTelegramRuntime(), []);
+  const actionAccountHref = (returnTo: string) =>
+    runtime.initData
+      ? `/account/create?returnTo=${encodeURIComponent(returnTo)}`
+      : `/register?returnTo=${encodeURIComponent(returnTo)}`;
   const transport = useMemo(
     () => ({
       baseUrl: apiBaseUrl(),
       credentials: "include" as const,
       getHeaders: () => (runtime.initData ? { authorization: `tma ${runtime.initData}` } : {}),
-      authenticationHref: (returnTo: string) =>
-        runtime.initData ? null : `/login?returnTo=${encodeURIComponent(returnTo)}`,
-      accountCreationHref: (returnTo: string) =>
-        runtime.initData ? null : `/register?returnTo=${encodeURIComponent(returnTo)}`,
+      authenticationHref: actionAccountHref,
       onAuthenticationRequired: () => {
-        if (!runtime.initData) {
-          window.location.href = `/login?returnTo=${encodeURIComponent(
-            window.location.pathname + window.location.search + window.location.hash
-          )}`;
-        }
+        window.location.href = actionAccountHref(
+          window.location.pathname + window.location.search + window.location.hash
+        );
       }
     }),
     [runtime.initData]
@@ -94,6 +96,7 @@ function HoomaRoutes() {
               <Route path="/telegram" element={<HomePage />} />
               <Route path="/login" element={<AuthApp />} />
               <Route path="/register" element={<AuthApp />} />
+              <Route path="/account/create" element={<TelegramAccountActivationPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/admin/*" element={<AdminApp />} />
