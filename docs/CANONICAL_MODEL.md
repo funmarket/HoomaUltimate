@@ -692,19 +692,20 @@ There is deliberately **no body column**.
 Current rules:
 
 - body lives only in Redis transient storage;
-- body TTL is 24 hours from creation while unread;
 - maximum body length is 33 Unicode grapheme clusters, enforced server-side;
-- each User may create at most 11 Whistles per UTC calendar day **globally across every context**;
+- each User may create at most 11 Whistles per UTC calendar day **globally across every enabled context**;
 - quota enforcement is concurrency-safe at the durable metadata boundary;
-- first authorized reveal creates one 60-second reveal window for that viewer;
-- reads during the active reveal window do not extend it;
-- after that viewer's reveal window expires, that viewer cannot restart it;
-- another authorized viewer has an independent reveal window;
+- the Whistle session is the UTC calendar day from `00:00 UTC` to the next `00:00 UTC`;
+- every Whistle expires at the next UTC midnight, not 24 hours after its individual creation time;
+- unused daily quota never carries over; every new UTC day begins with all 11 sends available;
+- authorized context members receive Whistle bodies directly in the feed; there is no Reveal operation or per-viewer reveal/seen state;
+- Redis body TTL is the remaining lifetime until the next UTC midnight;
+- expired PostgreSQL metadata is deleted by the Whistle cleanup path and is not permanent Whistle history;
+- product visibility and quota reset take effect at UTC midnight even when physical PostgreSQL cleanup is triggered by a later list/send operation;
 - active Community membership is required for the current `COMMUNITY` context;
 - current enabled context is `COMMUNITY` only;
 - `EVENT`, `TEAM`, `RIDE`, `ULTRAS`, and `GAMER_SQUAD` remain disabled until their context-specific authorization slices are deliberately implemented;
 - Whistle body content must never be copied into PostgreSQL, AuditLog metadata, OutboxEvent payloads, durable notifications, analytics, URLs, query strings, or server logs;
-- list endpoints expose metadata/presentation only; body retrieval happens only through the authorized reveal operation;
 - Redis is disposable transient infrastructure; PostgreSQL metadata remains the durable source for quota/context indexes and expiry projections.
 
 Redis keys are infrastructure details, not canonical product identity. Losing Redis may make remaining transient bodies unavailable; it must never cause a fallback to durable body storage.
@@ -736,7 +737,7 @@ Rules:
 - public Team DTO never includes unpublished lineup;
 - public Game DTO never includes leader coordination messages;
 - member management DTO may expose only data the authenticated principal is authorized to manage;
-- Whistle Community reads, sends, and reveals are authenticated member-private operations;
+- Whistle Community reads and sends are authenticated member-private operations;
 - UI hiding is not authorization.
 
 ---
