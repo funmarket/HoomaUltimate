@@ -209,7 +209,7 @@ MANAGE_TEAM_EVENTS
 
 **Decision:** Critical persistence/concurrency/TTL/worker behavior is proven with real disposable PostgreSQL and Redis where relevant.
 
-**Reason:** Database locking, migrations, outbox claiming and future Whistle TTL/quota semantics cannot be proven by mocks alone.
+**Reason:** Database locking, migrations, outbox claiming and Whistle TTL/quota semantics cannot be proven by mocks alone.
 
 ## ADR-034 — Preview Mode is frontend-isolated and development-only
 
@@ -237,6 +237,26 @@ MANAGE_TEAM_EVENTS
 
 ## ADR-038 — Normalization freeze precedes new domains
 
-**Decision:** While `docs/NORMALIZATION_PLAN.md` is active, new Places/Watch/Pitch/ULTRAS/Gamers/Whistle/Requests/Ride/FundMe/Payments/Media/Replay/HOOMA NOW implementation is frozen.
+**Decision:** While `docs/NORMALIZATION_PLAN.md` is active, new Places/Watch/Pitch/ULTRAS/Gamers/Requests/Ride/FundMe/Payments/Media/Replay/HOOMA NOW implementation remains frozen unless explicitly unfrozen by a newer product-owner decision.
 
 **Reason:** Existing foundation inconsistencies must be corrected before dependency-heavy domains build on them.
+
+## ADR-039 — Whistle vertical slice is explicitly unfrozen
+
+**Decision:** The product owner explicitly authorized Whistle setup on 2026-08-23. Whistle is therefore removed from ADR-038's freeze and becomes a current vertical slice. The shared Whistle engine is implemented once and reused by approved contexts. The first enabled context is private HOOMA Community Whistle Board access for active Community members. Event, Team, Ride, ULTRAS and Gamer Squad Whistle contexts remain disabled until their own context-specific authorization slices are implemented.
+
+Whistle invariants remain locked:
+
+```text
+33 grapheme clusters maximum
+11 total sends per user per UTC calendar day across every context
+body in Redis only
+PostgreSQL metadata only
+24-hour unread body TTL
+60-second per-viewer reveal window after first reveal
+first reveal never extends on later reads
+```
+
+Temporary Event Chat remains a separate legacy Events mechanism for now and must not be renamed or reused as Whistle storage. The later Play communication direction is Event Whistle Board through the shared Whistle engine; Event Chat removal requires its own traced cleanup/migration slice.
+
+**Reason:** The product owner chose Whistle as a differentiating core mechanic and explicitly requested that it be set up now. Recording the override prevents normalization automation or later contributors from reverting valid Whistle work as frozen scope.
