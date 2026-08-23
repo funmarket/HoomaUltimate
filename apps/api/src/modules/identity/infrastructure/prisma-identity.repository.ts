@@ -13,6 +13,10 @@ export class PrismaIdentityRepository implements IdentityRepository {
   async createSession(userId: string, tokenHash: string, expiresAt: Date): Promise<void> { await this.db.webSession.create({ data: { userId, tokenHash, expiresAt } }); }
   findActiveSession(tokenHash: string): Promise<SessionRecord | null> { return this.db.webSession.findFirst({ where: { tokenHash, revokedAt: null, expiresAt: { gt: new Date() } }, select: { userId: true } }); }
   async revokeSession(tokenHash: string): Promise<void> { await this.db.webSession.updateMany({ where: { tokenHash, revokedAt: null }, data: { revokedAt: new Date() } }); }
+  async findTelegramUserId(telegramUserId: bigint): Promise<string | null> {
+    const identity = await this.db.telegramIdentity.findUnique({ where: { telegramUserId }, select: { userId: true } });
+    return identity?.userId ?? null;
+  }
   async upsertTelegramIdentity(input: TelegramIdentityInput): Promise<string> {
     const existing = await this.db.telegramIdentity.findUnique({ where: { telegramUserId: input.telegramUserId }, select: { userId: true } });
     if (existing) { await this.db.telegramIdentity.update({ where: { userId: existing.userId }, data: { telegramUsername: input.username ?? null, firstName: input.firstName ?? null, lastName: input.lastName ?? null, photoUrl: input.photoUrl ?? null, languageCode: input.languageCode ?? null, isPremium: input.isPremium ?? false, lastAuthenticatedAt: new Date() } }); return existing.userId; }
