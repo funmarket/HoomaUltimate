@@ -213,6 +213,8 @@ model Community {
   description     String?
   city            String?
   houma           String?
+  logoUrl         String?
+  bannerUrl       String?
   status          CommunityStatus       @default(ACTIVE)
   createdByUserId String
   createdAt       DateTime              @default(now())
