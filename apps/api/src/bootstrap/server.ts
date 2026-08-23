@@ -1,5 +1,6 @@
 import { loadApiConfig } from "@hooma/config";
 import { disconnectDatabase } from "@hooma/database";
+import { setTelegramChatMenuButton } from "../infrastructure/telegram/bot-api.js";
 import { createApp } from "./app.js";
 import { createContainer } from "./container.js";
 
@@ -12,6 +13,15 @@ const app = createApp(config, container);
 const listenPort = config.PORT ?? config.API_PORT;
 const server = app.listen(listenPort, "0.0.0.0", () => {
   console.log(`HOOMA API listening on ${listenPort}`);
+
+  if (config.TELEGRAM_BOT_TOKEN) {
+    const telegramWebAppUrl = `${config.WEB_ORIGIN.replace(/\/$/, "")}/telegram`;
+    void setTelegramChatMenuButton(config.TELEGRAM_BOT_TOKEN, telegramWebAppUrl)
+      .then(() => console.log(`Telegram Web App menu configured for ${telegramWebAppUrl}`))
+      .catch((error: unknown) => {
+        console.error("Telegram Web App menu configuration failed", error);
+      });
+  }
 });
 
 function shutdown(signal: NodeJS.Signals) {
