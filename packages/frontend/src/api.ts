@@ -14,10 +14,11 @@ import { HoomaApiError, request, type HoomaTransport } from "./http";
 export { HoomaApiError, request } from "./http";
 export type { HoomaTransport } from "./http";
 
-export type CommunityCreateInput = { name: string; description?: string | null; city?: string | null; houma?: string | null };
-export type PublicCommunitySummary = { id: string; slug: string; name: string; description: string | null; city: string | null; houma: string | null; createdAt: string };
+export type CommunityCreateInput = { name: string; description?: string | null; city?: string | null; houma?: string | null; logoUrl?: string | null; bannerUrl?: string | null };
+export type PublicCommunitySummary = { id: string; slug: string; name: string; description: string | null; city: string | null; houma: string | null; logoUrl: string | null; bannerUrl: string | null; createdAt: string };
+export type PublicCommunityDetail = { id: string; slug: string; name: string; description: string | null; city: string | null; houma: string | null; logoUrl: string | null; bannerUrl: string | null; _count: { teams: number; memberships: number } };
 export type PublicCommunityList = { items: PublicCommunitySummary[]; nextCursor: string | null };
-export type CreatedCommunity = { id: string; slug: string; name: string; description: string | null; city: string | null; houma: string | null; status: "ACTIVE" | "ARCHIVED"; createdByUserId: string; createdAt: string; updatedAt: string };
+export type CreatedCommunity = { id: string; slug: string; name: string; description: string | null; city: string | null; houma: string | null; logoUrl: string | null; bannerUrl: string | null; status: "ACTIVE" | "ARCHIVED"; createdByUserId: string; createdAt: string; updatedAt: string };
 export type PublicTeamSummary = { id: string; slug: string; name: string; motto: string | null; city: string | null; houma: string | null; badgeUrl: string | null; communityId: string | null; _count: { players: number } };
 export type PublicTeamList = { items: PublicTeamSummary[]; nextCursor: string | null };
 export type ManagedTeam = { id: string; name: string; slug: string; badgeUrl: string | null; communityId: string | null; city: string | null; houma: string | null };
@@ -57,6 +58,7 @@ export function createHoomaApi(transport: HoomaTransport) {
   };
   const communities = {
     publicList: () => request<PublicCommunityList>(transport, "/api/public/v1/communities?limit=30"),
+    publicDetail: (id: string) => request<PublicCommunityDetail>(transport, `/api/public/v1/communities/${encodeURIComponent(id)}`),
     create: (input: CommunityCreateInput) => request<CreatedCommunity>(transport, "/api/v1/communities", { method: "POST", body: JSON.stringify(input) })
   };
   const teams = {
