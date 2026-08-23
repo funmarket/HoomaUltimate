@@ -3,6 +3,8 @@ name: Play Player Listing Verify
 on:
   push:
     branches: [feat/play-player-looking]
+  pull_request:
+    branches: [phase-0-foundation]
 
 permissions:
   contents: read
