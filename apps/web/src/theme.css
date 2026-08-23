@@ -1,0 +1,40 @@
+:root,
+:root[data-theme="dark"] {
+  --app-bg: #070808;
+  --app-bg-raised: #11120f;
+  --app-text: #f2ead7;
+  --app-gold: #b59b57;
+  --app-lime: #c4dc43;
+  --app-line: rgba(181, 155, 87, .22);
+}
+
+:root[data-theme="light"] {
+  --app-bg: #f6f4ee;
+  --app-bg-raised: #ffffff;
+  --app-text: #171816;
+  --app-gold: #8d7436;
+  --app-lime: #91a81d;
+  --app-line: rgba(63, 57, 39, .16);
+}
+
+html {
+  min-height: 100%;
+  background: var(--app-bg);
+}
+
+body {
+  min-height: 100vh;
+  color: var(--app-text);
+  background:
+    radial-gradient(circle at 92% 4%, color-mix(in srgb, var(--app-lime) 8%, transparent), transparent 26rem),
+    radial-gradient(circle at 4% 34%, color-mix(in srgb, var(--app-gold) 9%, transparent), transparent 30rem),
+    linear-gradient(180deg, color-mix(in srgb, var(--app-bg-raised) 54%, var(--app-bg)), var(--app-bg) 42%);
+  background-attachment: fixed;
+}
+
+:root[data-theme="light"] body {
+  background:
+    radial-gradient(circle at 92% 4%, rgba(145, 168, 29, .08), transparent 26rem),
+    radial-gradient(circle at 4% 34%, rgba(181, 155, 87, .09), transparent 30rem),
+    linear-gradient(180deg, #ffffff, var(--app-bg) 45%);
+}
