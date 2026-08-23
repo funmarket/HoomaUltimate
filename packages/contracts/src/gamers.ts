@@ -32,7 +32,9 @@ export const gamerProfileSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 
-export const gamerChallengerSchema = gamerProfileSchema.extend({
+export const gamerChallengerSchema = z.object({
+  id: z.string().min(1),
+  handle: z.string().min(1),
   presentation: z.object({
     username: z.string().min(1),
     displayName: z.string().min(1),
