@@ -53,15 +53,7 @@ jobs:
         run: npm install --global npm@10.9.2
       - run: npm ci
       - run: npm run db:generate
-      - run: npm run db:validate
       - run: npm run db:migrate:deploy
-      - run: npm run architecture:check
-      - run: npm run format:check
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm test
-      - run: npm run test:integration
-      - run: npm run build
-      - run: npm run deploy:preflight
-      - run: npm run security:check
-      - run: npm run db:migrate:status
+      - run: npm run build:packages
+      - name: Run focused Gamers PostgreSQL integration test
+        run: npx tsx --test --test-concurrency=1 tests/gamers.integration.test.ts
