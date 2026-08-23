@@ -6,7 +6,6 @@ import type { WhistleTransientStore } from "./whistle.store.js";
 
 const DAILY_LIMIT = 11;
 const BODY_TTL_MS = 24 * 60 * 60 * 1000;
-const REVEAL_SECONDS = 60;
 
 function graphemeCount(value: string): number {
   const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
@@ -107,7 +106,7 @@ export class WhistleService {
     const result = await this.transientStore.reveal(whistleId, userId);
     if (result.state === "expired") throw new AppError(410, "WHISTLE_REVEAL_EXPIRED", "Your reveal window has expired");
     if (result.state === "missing") throw new AppError(404, "WHISTLE_NOT_FOUND", "Whistle is no longer available");
-    return { body: result.body, visibleForSeconds: REVEAL_SECONDS };
+    return { body: result.body, visibleForSeconds: result.remainingSeconds };
   }
 }
 
