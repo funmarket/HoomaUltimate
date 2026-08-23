@@ -1,10 +1,5 @@
-export type WhistleRevealResult =
-  | { state: "visible"; body: string; remainingMilliseconds: number }
-  | { state: "expired" }
-  | { state: "missing" };
-
 export interface WhistleTransientStore {
-  putBody(whistleId: string, body: string): Promise<void>;
+  putBody(whistleId: string, body: string, expiresInMilliseconds: number): Promise<void>;
+  getBody(whistleId: string): Promise<string | null>;
   deleteBody(whistleId: string): Promise<void>;
-  reveal(whistleId: string, viewerUserId: string): Promise<WhistleRevealResult>;
 }
