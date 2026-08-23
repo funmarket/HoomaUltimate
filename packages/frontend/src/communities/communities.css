@@ -1,0 +1,108 @@
+.hooma-page,
+.hooma-create-page {
+  --hooma-cream: #f2ead7;
+  --hooma-muted: #bfb59a;
+  --hooma-line: #403927;
+  --hooma-panel: #151510;
+  --hooma-gold: #b59b57;
+  --hooma-lime: #c4dc43;
+  display: grid;
+  gap: 20px;
+}
+
+.hooma-page .panel,
+.hooma-create-page .panel,
+.hooma-page .state-card,
+.hooma-page .member-gate,
+.hooma-discovery-card,
+.hooma-create-card {
+  border: 1px solid var(--hooma-line);
+  background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.012)), var(--hooma-panel);
+  border-radius: 22px;
+  box-shadow: 0 18px 70px rgba(0,0,0,.24);
+}
+
+.hooma-page .panel,
+.hooma-create-page .panel { padding: clamp(18px, 3vw, 30px); }
+.hooma-page .state-card,
+.hooma-page .member-gate { padding: 22px; }
+.hooma-page .member-gate { display: grid; gap: 10px; justify-items: start; }
+.hooma-page .muted,
+.hooma-create-page .muted { color: var(--hooma-muted); }
+
+.hooma-hero { position: relative; overflow: hidden; }
+.hooma-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto -8% -55% 35%;
+  height: 180px;
+  border: 1px solid rgba(181,155,87,.25);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.hooma-hero h1 { margin: 4px 0 8px; color: var(--hooma-cream); font-size: clamp(42px, 10vw, 74px); line-height: .95; letter-spacing: .04em; }
+.hooma-hero.compact h1 { font-size: clamp(34px, 8vw, 54px); }
+.hooma-hero p { max-width: 720px; margin: 0; color: var(--hooma-muted); line-height: 1.65; }
+
+.hooma-section-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.hooma-section-heading h2,
+.hooma-memberships h2 { margin: 4px 0 0; color: var(--hooma-cream); }
+.hooma-section-heading p { margin: 0; }
+
+.hooma-create-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.hooma-create-card {
+  min-height: 152px;
+  padding: 20px;
+  display: grid;
+  align-content: end;
+  gap: 7px;
+  color: var(--hooma-cream);
+  text-align: left;
+  font: inherit;
+}
+button.hooma-create-card { cursor: pointer; }
+button.hooma-create-card:hover,
+button.hooma-create-card:focus-visible { border-color: var(--hooma-gold); transform: translateY(-1px); }
+.hooma-create-card strong { font-size: clamp(22px, 5vw, 32px); letter-spacing: .06em; }
+.hooma-create-card span { color: #e2dac8; font-weight: 700; }
+.hooma-create-card small { color: var(--hooma-muted); line-height: 1.4; }
+.hooma-create-card.is-future { opacity: .62; border-style: dashed; box-shadow: none; }
+
+.hooma-community-list { display: grid; gap: 10px; margin-top: 16px; }
+.hooma-community-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 0; border-top: 1px solid rgba(255,255,255,.09); }
+.hooma-community-row div { display: grid; gap: 3px; min-width: 0; }
+.hooma-community-row strong { color: var(--hooma-cream); }
+.hooma-community-row div span { color: var(--hooma-muted); font-size: 13px; }
+.hooma-role-chip { border: 1px solid rgba(196,220,67,.4); color: var(--hooma-lime); border-radius: 999px; padding: 6px 9px; font-size: 11px; font-weight: 900; }
+
+.hooma-discovery-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.hooma-discovery-card { padding: 20px; }
+.hooma-discovery-card h3 { color: var(--hooma-cream); margin: 6px 0; }
+.hooma-discovery-card p { color: #ddd3bf; line-height: 1.5; margin: 0 0 14px; }
+.hooma-discovery-card small { color: var(--hooma-muted); }
+
+.hooma-page .button,
+.hooma-create-page .button { display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: 999px; padding: 12px 18px; background: var(--hooma-cream); color: #080808; font-weight: 850; text-decoration: none; cursor: pointer; }
+.hooma-page .button.secondary,
+.hooma-create-page .button.secondary { background: transparent; color: var(--hooma-cream); border-color: rgba(244,239,226,.28); }
+.hooma-page .button:disabled,
+.hooma-create-page .button:disabled { opacity: .45; cursor: not-allowed; }
+
+.hooma-create-form { display: grid; gap: 16px; }
+.hooma-create-form .field { display: grid; gap: 7px; }
+.hooma-create-form .field span { color: #d8d0c1; font-size: 13px; font-weight: 800; }
+.hooma-create-form input,
+.hooma-create-form textarea { width: 100%; border: 1px solid rgba(255,255,255,.14); background: #080808; color: var(--hooma-cream); border-radius: 12px; padding: 12px 13px; outline: none; font: inherit; }
+.hooma-create-form input:focus,
+.hooma-create-form textarea:focus { border-color: var(--hooma-gold); }
+.hooma-create-form textarea { resize: vertical; }
+.hooma-form-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+
+@media (max-width: 620px) {
+  .hooma-create-grid,
+  .hooma-discovery-grid { grid-template-columns: 1fr; }
+  .hooma-create-card { min-height: 132px; }
+  .hooma-section-heading { align-items: start; flex-direction: column; }
+  .hooma-form-actions { justify-content: stretch; }
+  .hooma-form-actions .button { flex: 1; }
+}

@@ -14,6 +14,10 @@ import { HoomaApiError, request, type HoomaTransport } from "./http";
 export { HoomaApiError, request } from "./http";
 export type { HoomaTransport } from "./http";
 
+export type CommunityCreateInput = { name: string; description?: string | null; city?: string | null; houma?: string | null };
+export type PublicCommunitySummary = { id: string; slug: string; name: string; description: string | null; city: string | null; houma: string | null; createdAt: string };
+export type PublicCommunityList = { items: PublicCommunitySummary[]; nextCursor: string | null };
+export type CreatedCommunity = { id: string; slug: string; name: string; description: string | null; city: string | null; houma: string | null; status: "ACTIVE" | "ARCHIVED"; createdByUserId: string; createdAt: string; updatedAt: string };
 export type PublicTeamSummary = { id: string; slug: string; name: string; motto: string | null; city: string | null; houma: string | null; badgeUrl: string | null; communityId: string | null; _count: { players: number } };
 export type PublicTeamList = { items: PublicTeamSummary[]; nextCursor: string | null };
 export type ManagedTeam = { id: string; name: string; slug: string; badgeUrl: string | null; communityId: string | null; city: string | null; houma: string | null };
@@ -51,6 +55,10 @@ export function createHoomaApi(transport: HoomaTransport) {
   const platformAdmin = {
     overview: () => request<PlatformAdminOverview>(transport, "/api/v1/admin/overview")
   };
+  const communities = {
+    publicList: () => request<PublicCommunityList>(transport, "/api/public/v1/communities?limit=30"),
+    create: (input: CommunityCreateInput) => request<CreatedCommunity>(transport, "/api/v1/communities", { method: "POST", body: JSON.stringify(input) })
+  };
   const teams = {
     publicList: (filters?: TeamListFilters) => request<PublicTeamList>(transport, publicListPath(filters)),
     managed: () => request<ManagedTeam[]>(transport, "/api/v1/teams/managed"),
@@ -70,6 +78,6 @@ export function createHoomaApi(transport: HoomaTransport) {
     declineChallenge: (id: string) => request(transport, `/api/v1/teams/challenges/${encodeURIComponent(id)}/decline`, { method: "POST" }),
     cancelChallenge: (id: string) => request(transport, `/api/v1/teams/challenges/${encodeURIComponent(id)}/cancel`, { method: "POST" })
   };
-  return { identity, platformAdmin, teams };
+  return { identity, platformAdmin, communities, teams };
 }
 export type HoomaApi = ReturnType<typeof createHoomaApi>;
