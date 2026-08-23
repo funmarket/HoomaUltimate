@@ -15,10 +15,13 @@ export interface EventAccessRecord {
   readonly entryFeeMinor: bigint;
 }
 
+export type EventRsvpState = "CONFIRMED" | "WAITLISTED" | "CANCELLED" | "ATTENDED" | "NO_SHOW";
+
 export interface EventRepository {
   listPublic(input: EventPublicListInput): Promise<unknown>;
   getPublic(eventId: string): Promise<unknown | null>;
   access(eventId: string): Promise<EventAccessRecord | null>;
+  getRsvp(eventId: string, userId: string): Promise<{ status: EventRsvpState } | null>;
   create(userId: string, input: EventCreateInput): Promise<unknown>;
   update(eventId: string, input: EventUpdateInput): Promise<unknown>;
   cancel(eventId: string): Promise<unknown>;

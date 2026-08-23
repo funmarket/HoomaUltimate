@@ -50,6 +50,13 @@ export class PrismaEventRepository implements EventRepository {
     });
   }
 
+  getRsvp(eventId: string, userId: string) {
+    return this.db.eventRsvp.findUnique({
+      where: { eventId_userId: { eventId, userId } },
+      select: { status: true }
+    });
+  }
+
   async create(userId: string, input: EventCreateInput) {
     const startsAt = new Date(input.startsAt);
     const endsAt = input.endsAt ? new Date(input.endsAt) : null;

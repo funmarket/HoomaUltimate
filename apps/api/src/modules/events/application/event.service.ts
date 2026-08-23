@@ -23,6 +23,12 @@ export class EventService {
     return event;
   }
 
+  async getMyRsvp(userId: string, eventId: string) {
+    const access = await this.repository.access(eventId);
+    if (!access) throw new EventError("EVENT_NOT_FOUND", "Event not found");
+    return { rsvp: await this.repository.getRsvp(eventId, userId) };
+  }
+
   async create(userId: string, input: EventCreateInput) {
     if (input.type !== "PLAY") {
       throw new EventError("WATCH_NOT_ENABLED", "Watch events will be enabled by the Watch slice");

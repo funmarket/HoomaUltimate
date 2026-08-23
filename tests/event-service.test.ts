@@ -11,6 +11,7 @@ function repositoryStub(onCreate: () => void): EventRepository {
     listPublic: async () => [],
     getPublic: async () => null,
     access: async () => null,
+    getRsvp: async () => null,
     create: async () => { onCreate(); return { id: "event-1" }; },
     update: async () => ({}),
     cancel: async () => ({}),
@@ -84,4 +85,16 @@ test("EventService still creates free PLAY events through the canonical reposito
   await service.create("user-1", playInput);
   assert.equal(coachCheckCalled, true);
   assert.equal(createCalled, true);
+});
+
+test("EventService returns only the authenticated user's RSVP state", async () => {
+  const repository = repositoryStub(() => {});
+  repository.access = async () => ({ communityId: "community-1", createdByUserId: "founder", status: "PUBLISHED", entryFeeMinor: 0n });
+  repository.getRsvp = async (eventId, userId) => {
+    assert.equal(eventId, "event-1");
+    assert.equal(userId, "user-1");
+    return { status: "WAITLISTED" };
+  };
+  const service = new EventService(repository, {} as CommunityService);
+  assert.deepEqual(await service.getMyRsvp("user-1", "event-1"), { rsvp: { status: "WAITLISTED" } });
 });
