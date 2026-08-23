@@ -172,7 +172,7 @@ test("Whistle enforces private context, global quota, Redis TTL/reveal and metad
     assert.equal(reveal.status, 200);
     const revealPayload = await reveal.json() as { body: string; visibleForSeconds: number };
     assert.equal(revealPayload.body, durableSecret);
-    assert.equal(revealPayload.visibleForSeconds, 60);
+    assert.ok(revealPayload.visibleForSeconds > 59 && revealPayload.visibleForSeconds <= 60);
 
     const firstWindowTtl = await redisCommand(["TTL", `whistle:reveal:${whistleId}:${member.userId}`]);
     assert.equal(typeof firstWindowTtl, "number");
@@ -180,6 +180,9 @@ test("Whistle enforces private context, global quota, Redis TTL/reveal and metad
     await new Promise((resolve) => setTimeout(resolve, 1100));
     const revealAgain = await fetch(`${base}/api/v1/whistles/${whistleId}/reveal`, { method: "POST", headers: headers(member.cookie) });
     assert.equal(revealAgain.status, 200);
+    const revealAgainPayload = await revealAgain.json() as { body: string; visibleForSeconds: number };
+    assert.equal(revealAgainPayload.body, durableSecret);
+    assert.ok(revealAgainPayload.visibleForSeconds < revealPayload.visibleForSeconds);
     const secondWindowTtl = await redisCommand(["TTL", `whistle:reveal:${whistleId}:${member.userId}`]);
     assert.equal(typeof secondWindowTtl, "number");
     assert.ok((secondWindowTtl as number) < (firstWindowTtl as number));
