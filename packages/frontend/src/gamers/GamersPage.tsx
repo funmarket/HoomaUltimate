@@ -113,7 +113,7 @@ export function GamersPage() {
         {games.length ? (
           <div className="gamers-grid">
             {games.map((game) => (
-              <article className="gamer-game-card" key={game.id}>
+              <a className="gamer-game-card" href={`/gamers/games/${encodeURIComponent(game.slug)}`} key={game.id}>
                 <span className="gamer-game-mark" aria-hidden="true">
                   {game.name.slice(0, 2).toUpperCase()}
                 </span>
@@ -121,10 +121,10 @@ export function GamersPage() {
                   <span className="eyebrow">ACTIVE GAME</span>
                   <h3>{game.name}</h3>
                   <p className="muted">
-                    Challengers, Squads, Arena and Rankings open in the next Gamers slices.
+                    Open Challengers. Squads, Arena and Rankings follow in their own complete slices.
                   </p>
                 </div>
-              </article>
+              </a>
             ))}
           </div>
         ) : null}
