@@ -154,6 +154,7 @@ model User {
   eventChatMessages          EventChatMessage[]
   whistlesAuthored           WhistleMetadata[]
   gamerGamesCreated          GamerGame[]                    @relation("GamerGameCreator")
+  gamerProfiles              GamerProfile[]
 }
 
 model UserPresentation {
@@ -353,13 +354,13 @@ model TeamLineup {
 }
 
 model TeamLineupSlot {
-  id         String      @id @default(cuid())
+  id         String     @id @default(cuid())
   lineupId   String
   userId     String?
   position   String
-  sortOrder  Int         @default(0)
-  lineup     TeamLineup  @relation(fields: [lineupId], references: [id], onDelete: Cascade)
-  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sortOrder  Int        @default(0)
+  lineup     TeamLineup @relation(fields: [lineupId], references: [id], onDelete: Cascade)
+  user       User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([lineupId, sortOrder])
 }
@@ -415,26 +416,26 @@ model TeamGame {
 }
 
 model Event {
-  id              String          @id @default(cuid())
+  id              String      @id @default(cuid())
   communityId     String
   createdByUserId String
   type            EventType
-  status          EventStatus     @default(PUBLISHED)
+  status          EventStatus @default(PUBLISHED)
   title           String
   description     String?
   startsAt        DateTime
   endsAt          DateTime?
-  timezone        String          @default("Africa/Tunis")
+  timezone        String      @default("Africa/Tunis")
   venueName       String?
   address         String?
   capacity        Int?
-  waitlistEnabled Boolean         @default(true)
-  entryFeeMinor   BigInt          @default(0)
-  currency        String          @default("TND")
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  community       Community       @relation(fields: [communityId], references: [id], onDelete: Cascade)
-  createdBy       User            @relation("EventCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  waitlistEnabled Boolean     @default(true)
+  entryFeeMinor   BigInt      @default(0)
+  currency        String      @default("TND")
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  community       Community   @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  createdBy       User        @relation("EventCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
   playDetails     PlayEventDetails?
   rsvps           EventRsvp[]
   formations      Formation[]
@@ -472,23 +473,23 @@ model EventRsvp {
 }
 
 model Formation {
-  id              String           @id @default(cuid())
+  id              String          @id @default(cuid())
   eventId         String
   createdByUserId String
   name            String
   format          FootballFormat
-  published       Boolean          @default(false)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  event           Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  createdBy       User             @relation("FormationCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  published       Boolean         @default(false)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  event           Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdBy       User            @relation("FormationCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
   slots           FormationSlot[]
 
   @@index([eventId, updatedAt])
 }
 
 model FormationSlot {
-  id          String        @id @default(cuid())
+  id          String    @id @default(cuid())
   formationId String
   userId      String?
   team        EventTeamSide
@@ -496,8 +497,8 @@ model FormationSlot {
   label       String
   x           Float
   y           Float
-  formation   Formation     @relation(fields: [formationId], references: [id], onDelete: Cascade)
-  user        User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  formation   Formation @relation(fields: [formationId], references: [id], onDelete: Cascade)
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([formationId, team])
   @@index([userId])
@@ -567,9 +568,25 @@ model GamerGame {
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   createdBy       User?           @relation("GamerGameCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  profiles        GamerProfile[]
 
   @@index([status, name])
   @@index([createdByUserId, createdAt])
+}
+
+model GamerProfile {
+  id              String    @id @default(cuid())
+  userId          String
+  gameId          String
+  handle          String
+  openToChallenge Boolean
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game            GamerGame @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId])
+  @@index([gameId, openToChallenge, updatedAt])
 }
 
 model AuditLog {
