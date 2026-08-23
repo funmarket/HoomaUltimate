@@ -23,6 +23,7 @@
     ".": { "types": "./src/index.ts", "default": "./dist/index.js" },
     "./communities.css": "./src/communities/communities.css",
     "./teams.css": "./src/teams/teams.css",
-    "./play.css": "./src/events/play.css"
+    "./play.css": "./src/events/play.css",
+    "./whistle.css": "./src/whistle/whistle.css"
   }
 }
