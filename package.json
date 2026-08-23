@@ -4,44 +4,14 @@
   "private": true,
   "type": "module",
   "packageManager": "npm@10.9.2",
-  "engines": {
-    "node": ">=22 <25"
-  },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "engines": { "node": ">=22 <25" },
+  "workspaces": ["apps/*", "packages/*"],
   "scripts": {
     "dev": "concurrently -n api,web,telegram,worker -c auto \"npm -w @hooma/api run dev\" \"npm -w @hooma/web run dev\" \"npm -w @hooma/telegram run dev\" \"npm -w @hooma/worker run dev\"",
-    "dev:api": "npm -w @hooma/api run dev",
-    "dev:web": "npm -w @hooma/web run dev",
-    "dev:telegram": "npm -w @hooma/telegram run dev",
-    "dev:worker": "npm -w @hooma/worker run dev",
-    "build:packages": "npm -w @hooma/auth run build && npm -w @hooma/config run build && npm -w @hooma/contracts run build && npm -w @hooma/database run build && npm -w @hooma/domain run build && npm -w @hooma/storage run build && npm -w @hooma/testing run build && npm -w @hooma/ui run build",
+    "dev:api": "npm -w @hooma/api run dev", "dev:web": "npm -w @hooma/web run dev", "dev:telegram": "npm -w @hooma/telegram run dev", "dev:worker": "npm -w @hooma/worker run dev",
+    "build:packages": "npm -w @hooma/auth run build && npm -w @hooma/config run build && npm -w @hooma/contracts run build && npm -w @hooma/database run build && npm -w @hooma/domain run build && npm -w @hooma/storage run build && npm -w @hooma/testing run build && npm -w @hooma/ui run build && npm -w @hooma/frontend run build",
     "build:apps": "npm -w @hooma/api run build && npm -w @hooma/worker run build && npm -w @hooma/web run build && npm -w @hooma/telegram run build",
-    "build": "npm run build:packages && npm run build:apps",
-    "typecheck": "npm -ws --if-present run typecheck",
-    "lint": "eslint \"apps/**/*.{ts,tsx}\" \"packages/**/*.{ts,tsx}\" --max-warnings=0",
-    "format": "prettier --write \"{apps,packages,scripts,tests,.github}/**/*.{ts,tsx,js,mjs,json,css,md,yml,yaml}\" \"*.{json,md,mjs,yml,yaml}\"",
-    "format:check": "prettier --check \"{apps,packages,scripts,tests,.github}/**/*.{ts,tsx,js,mjs,json,css,md,yml,yaml}\" \"*.{json,md,mjs,yml,yaml}\"",
-    "test": "node scripts/run-tests.mjs unit",
-    "architecture:check": "node scripts/architecture-check.mjs",
-    "deploy:preflight": "node scripts/deploy-preflight.mjs",
-    "security:check": "npm audit --omit=dev --audit-level=high",
-    "check": "npm run db:generate && npm run db:validate && npm run architecture:check && npm run format:check && npm run lint && npm run typecheck && npm test && npm run build && npm run deploy:preflight",
-    "db:generate": "npm -w @hooma/database run generate",
-    "db:validate": "npm -w @hooma/database run validate",
-    "db:migrate:deploy": "npm -w @hooma/database run migrate:deploy",
-    "db:migrate:status": "npm -w @hooma/database run migrate:status",
-    "test:integration": "node scripts/run-tests.mjs integration",
-    "admin:grant": "tsx scripts/grant-platform-admin.ts"
+    "build": "npm run build:packages && npm run build:apps", "typecheck": "npm -ws --if-present run typecheck", "lint": "eslint \"apps/**/*.{ts,tsx}\" \"packages/**/*.{ts,tsx}\" --max-warnings=0", "format": "prettier --write \"{apps,packages,scripts,tests,.github}/**/*.{ts,tsx,js,mjs,json,css,md,yml,yaml}\" \"*.{json,md,mjs,yml,yaml}\"", "format:check": "prettier --check \"{apps,packages,scripts,tests,.github}/**/*.{ts,tsx,js,mjs,json,css,md,yml,yaml}\" \"*.{json,md,mjs,yml,yaml}\"", "test": "node scripts/run-tests.mjs unit", "architecture:check": "node scripts/architecture-check.mjs", "deploy:preflight": "node scripts/deploy-preflight.mjs", "security:check": "npm audit --omit=dev --audit-level=high", "check": "npm run db:generate && npm run db:validate && npm run architecture:check && npm run format:check && npm run lint && npm run typecheck && npm test && npm run build && npm run deploy:preflight", "db:generate": "npm -w @hooma/database run generate", "db:validate": "npm -w @hooma/database run validate", "db:migrate:deploy": "npm -w @hooma/database run migrate:deploy", "db:migrate:status": "npm -w @hooma/database run migrate:status", "test:integration": "node scripts/run-tests.mjs integration", "admin:grant": "tsx scripts/grant-platform-admin.ts"
   },
-  "devDependencies": {
-    "concurrently": "10.0.5",
-    "eslint": "10.7.0",
-    "prettier": "3.9.6",
-    "tsx": "4.20.5",
-    "typescript": "5.9.2",
-    "typescript-eslint": "8.65.0"
-  }
+  "devDependencies": { "concurrently": "10.0.5", "eslint": "10.7.0", "prettier": "3.9.6", "tsx": "4.20.5", "typescript": "5.9.2", "typescript-eslint": "8.65.0" }
 }

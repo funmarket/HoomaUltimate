@@ -1,7 +1,7 @@
-import { lazy, Suspense } from "react";
-import type { MeResponse } from "@hooma/contracts";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-import type { TelegramManagedTeam } from "../../api/client";
+import { lazy, Suspense, useMemo } from "react";
+import { BrowserRouter, Route, Routes, useParams } from "react-router-dom";
+import { CoachControlRoomPage, HoomaFrontendProvider, TeamDetailPage, TeamsPage } from "@hooma/frontend";
+import { TelegramAccountProvider, useTelegramAccount } from "../../account/TelegramAccountProvider";
 import type { TelegramRuntime } from "../../telegram/runtime";
 import { TelegramShell } from "../shell/TelegramShell";
 
@@ -11,31 +11,52 @@ const SettingsPage = lazy(() => import("../../settings/SettingsPage").then((modu
 const AdminPage = lazy(() => import("../../admin/AdminPage").then((module) => ({ default: module.AdminPage })));
 const NotFoundPage = lazy(() => import("../../pages/NotFoundPage").then((module) => ({ default: module.NotFoundPage })));
 
-export function TelegramRouter({
-  runtime,
-  me,
-  managedTeams,
-  error
-}: {
-  readonly runtime: TelegramRuntime;
-  readonly me: MeResponse | null;
-  readonly managedTeams: readonly TelegramManagedTeam[];
-  readonly error: string;
-}) {
-  return (
-    <BrowserRouter>
-      <TelegramShell runtime={runtime} me={me} managedTeams={managedTeams}>
-        {error ? <p className="status">{error}</p> : null}
-        <Suspense fallback={<p className="status">Loading…</p>}>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/profile" element={<ProfilePage me={me} />} />
-            <Route path="/settings" element={<SettingsPage runtime={runtime} />} />
-            <Route path="/admin" element={<AdminPage initData={runtime.initData} />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </Suspense>
-      </TelegramShell>
-    </BrowserRouter>
+function requiredParam(name: string, value: string | undefined): string {
+  if (!value) throw new Error(`Missing route parameter ${name}`);
+  return value;
+}
+
+function TeamDetailRoute() {
+  const { teamId } = useParams();
+  return <TeamDetailPage teamId={requiredParam("teamId", teamId)} />;
+}
+
+function TelegramProfileRoute() {
+  const { me } = useTelegramAccount();
+  return <ProfilePage me={me} />;
+}
+
+function TelegramRoutes({ runtime }: { readonly runtime: TelegramRuntime }) {
+  const transport = useMemo(
+    () => ({
+      baseUrl: import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000",
+      getHeaders: () => ({ authorization: `tma ${runtime.initData}` })
+    }),
+    [runtime.initData]
   );
+
+  return (
+    <HoomaFrontendProvider transport={transport}>
+      <TelegramAccountProvider>
+        <TelegramShell runtime={runtime}>
+          <Suspense fallback={<p className="status">Loading…</p>}>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/profile" element={<TelegramProfileRoute />} />
+              <Route path="/settings" element={<SettingsPage runtime={runtime} />} />
+              <Route path="/admin" element={<AdminPage initData={runtime.initData} />} />
+              <Route path="/teams" element={<TeamsPage />} />
+              <Route path="/teams/control" element={<CoachControlRoomPage />} />
+              <Route path="/teams/:teamId" element={<TeamDetailRoute />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </Suspense>
+        </TelegramShell>
+      </TelegramAccountProvider>
+    </HoomaFrontendProvider>
+  );
+}
+
+export function TelegramRouter({ runtime }: { readonly runtime: TelegramRuntime }) {
+  return <BrowserRouter><TelegramRoutes runtime={runtime} /></BrowserRouter>;
 }
