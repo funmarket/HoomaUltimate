@@ -61,11 +61,7 @@ export class IdentityService {
     );
     if (!credential) throw new AppError(401, "LOGIN_INVALID", "Invalid username or password");
     if (credential.lockedUntil && credential.lockedUntil > new Date()) {
-      throw new AppError(
-        429,
-        "LOGIN_LOCKED",
-        "Too many failed login attempts. Try again later.",
-      );
+      throw new AppError(429, "LOGIN_LOCKED", "Too many failed login attempts. Try again later.");
     }
     if (!(await verifyPassword(credential.passwordHash, input.password))) {
       const nextCount = credential.failedLoginCount + 1;
