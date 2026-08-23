@@ -144,13 +144,21 @@ test("Whistle enforces private context, global quota, Redis TTL/reveal and metad
     const founder = await register(base, "whistle_founder");
     const member = await register(base, "whistle_member");
     const concurrent = await register(base, "whistle_concurrent");
+    const unicodeMember = await register(base, "whistle_unicode");
     const outsider = await register(base, "whistle_outsider");
     const community = await createCommunity(base, founder.cookie);
     await joinCommunity(base, member.cookie, community.id);
     await joinCommunity(base, concurrent.cookie, community.id);
+    await joinCommunity(base, unicodeMember.cookie, community.id);
 
     const outsiderList = await fetch(`${base}/api/v1/whistles/contexts/COMMUNITY/${community.id}`, { headers: headers(outsider.cookie) });
     assert.equal(outsiderList.status, 403);
+
+    const complexGrapheme = "👨‍👩‍👧‍👦";
+    const exactLimit = await sendWhistle(base, unicodeMember.cookie, community.id, complexGrapheme.repeat(33));
+    assert.equal(exactLimit.status, 201);
+    const overLimit = await sendWhistle(base, unicodeMember.cookie, community.id, complexGrapheme.repeat(34));
+    assert.equal(overLimit.status, 400);
 
     const durableSecret = "secret-body-never-persisted";
     const first = await sendWhistle(base, founder.cookie, community.id, durableSecret);

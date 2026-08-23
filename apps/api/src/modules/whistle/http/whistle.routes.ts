@@ -6,7 +6,7 @@ import type { WhistleService } from "../application/whistle.service.js";
 import type { WhistleContextType } from "../application/whistle.repository.js";
 
 const contextSchema = z.enum(["COMMUNITY", "EVENT", "TEAM", "RIDE", "ULTRAS", "GAMER_SQUAD"]);
-const createSchema = z.object({ body: z.string().min(1).max(256) });
+const createSchema = z.object({ body: z.string().min(1) });
 
 export function createWhistleRouter(service: WhistleService): Router {
   const router = Router();
