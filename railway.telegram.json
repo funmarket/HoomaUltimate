@@ -2,10 +2,10 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "RAILPACK",
-    "buildCommand": "npm run db:generate && npm run build:packages && npm -w @hooma/web run build"
+    "buildCommand": "echo legacy-telegram-redirect"
   },
   "deploy": {
-    "startCommand": "node scripts/serve-static.mjs apps/web/dist",
+    "startCommand": "node scripts/redirect-legacy-telegram.mjs",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3
   }
