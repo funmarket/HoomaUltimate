@@ -26,14 +26,9 @@ export class TeamService {
   async revokeAssistant(userId: string, teamId: string, targetUserId: string) { await this.requireDirectCoach(userId, teamId); await this.repository.revokeAssistant(teamId, targetUserId); return { ok: true }; }
   async createLineup(userId: string, teamId: string, input: TeamLineupInput) {
     await this.requireCapability(userId, teamId, "MANAGE_LINEUP");
-    const requestedPlayerIds = [...new Set(input.slots.flatMap((slot) => slot.teamPlayerId ? [slot.teamPlayerId] : []))];
-    if (requestedPlayerIds.length) {
-      const activePlayerIds = new Set(await this.repository.activePlayerIds(teamId, requestedPlayerIds));
-      if (requestedPlayerIds.some((teamPlayerId) => !activePlayerIds.has(teamPlayerId))) {
-        throw new AppError(400, "TEAM_LINEUP_INVALID_PLAYER", "Lineup players must be active members of this Team roster");
-      }
-    }
-    return this.repository.createLineup(userId, teamId, input);
+    const lineup = await this.repository.createLineup(userId, teamId, input);
+    if (!lineup) throw new AppError(400, "TEAM_LINEUP_INVALID_PLAYER", "Lineup players must be active members of this Team roster");
+    return lineup;
   }
   async createChallenge(userId: string, input: TeamChallengeCreateInput) {
     if (input.challengerTeamId === input.challengedTeamId) throw new AppError(400, "TEAM_CHALLENGE_SELF", "A Team cannot challenge itself");
