@@ -1,5 +1,6 @@
 import net from "node:net";
 import { AppError } from "../../../http/errors/app-error.js";
+import type { WhistleRevealResult, WhistleTransientStore } from "../application/whistle.store.js";
 
 const UNREAD_TTL_SECONDS = 24 * 60 * 60;
 const REVEAL_TTL_SECONDS = 60;
@@ -85,18 +86,21 @@ class RedisConnection {
 const REVEAL_SCRIPT = `
 local body = redis.call('GET', KEYS[1])
 if not body then return {'missing'} end
-if redis.call('EXISTS', KEYS[2]) == 1 then return {'visible', body} end
+if redis.call('EXISTS', KEYS[2]) == 1 then
+  local windowTtl = redis.call('TTL', KEYS[2])
+  if windowTtl <= 0 then return {'expired'} end
+  return {'visible', body, windowTtl}
+end
 if redis.call('EXISTS', KEYS[3]) == 1 then return {'expired'} end
 local ttl = redis.call('TTL', KEYS[1])
 if ttl <= 0 then return {'missing'} end
+local revealTtl = math.min(tonumber(ARGV[1]), ttl)
 redis.call('SET', KEYS[3], '1', 'EX', ttl, 'NX')
-redis.call('SET', KEYS[2], '1', 'EX', math.min(ARGV[1], ttl), 'NX')
-return {'visible', body}
+redis.call('SET', KEYS[2], '1', 'EX', revealTtl, 'NX')
+return {'visible', body, revealTtl}
 `;
 
-export type RevealResult = { state: "visible"; body: string } | { state: "expired" | "missing" };
-
-export class RedisWhistleStore {
+export class RedisWhistleStore implements WhistleTransientStore {
   private readonly redis: RedisConnection;
 
   constructor(redisUrl: string) {
@@ -116,14 +120,16 @@ export class RedisWhistleStore {
     await this.redis.command(["DEL", this.bodyKey(whistleId)]);
   }
 
-  async reveal(whistleId: string, viewerUserId: string): Promise<RevealResult> {
+  async reveal(whistleId: string, viewerUserId: string): Promise<WhistleRevealResult> {
     const result = await this.redis.command([
       "EVAL", REVEAL_SCRIPT, "3",
       this.bodyKey(whistleId), this.windowKey(whistleId, viewerUserId), this.seenKey(whistleId, viewerUserId),
       String(REVEAL_TTL_SECONDS)
     ]);
     if (!Array.isArray(result) || typeof result[0] !== "string") throw new AppError(503, "WHISTLE_REDIS_PROTOCOL", "Invalid Whistle reveal response");
-    if (result[0] === "visible" && typeof result[1] === "string") return { state: "visible", body: result[1] };
+    if (result[0] === "visible" && typeof result[1] === "string" && typeof result[2] === "number" && result[2] > 0) {
+      return { state: "visible", body: result[1], remainingSeconds: result[2] };
+    }
     if (result[0] === "expired") return { state: "expired" };
     return { state: "missing" };
   }
