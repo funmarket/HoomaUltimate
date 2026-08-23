@@ -12,10 +12,11 @@ const HOME_GATEWAY_STYLES = `
   position: relative;
   display: block;
   min-width: 0;
+  aspect-ratio: 10 / 13;
   padding: 0;
   border: 0;
   border-radius: clamp(10px, 1.6vw, 18px);
-  background: transparent;
+  background: #0b0b09;
   color: inherit;
   text-decoration: none;
   overflow: hidden;
@@ -34,7 +35,7 @@ const HOME_GATEWAY_STYLES = `
 .home-gateway-card__image {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
   object-fit: contain;
 }
 .home-gateway-card__sr-label {
