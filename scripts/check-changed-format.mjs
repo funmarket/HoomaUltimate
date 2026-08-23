@@ -52,7 +52,37 @@ if (files.length === 0) {
 }
 
 console.log(`Checking formatting for ${files.length} changed file(s).`);
-const prettier = spawnSync("npm", ["exec", "--", "prettier", "--check", ...files], {
-  stdio: "inherit",
-});
-process.exit(prettier.status ?? 1);
+const prettier = spawnSync(
+  "npm",
+  ["exec", "--", "prettier", "--list-different", ...files],
+  { encoding: "utf8" },
+);
+
+if (prettier.status === 0) {
+  console.log("All changed files are formatted with Prettier.");
+  process.exit(0);
+}
+
+if (prettier.status == null) {
+  console.error(prettier.error?.message ?? "Unable to execute Prettier.");
+  process.exit(1);
+}
+
+const differentFiles = prettier.stdout.split(/\r?\n/).filter(Boolean);
+if (prettier.stderr) process.stderr.write(prettier.stderr);
+console.error(`Prettier formatting differs in ${differentFiles.length} changed file(s).`);
+
+for (const file of differentFiles) {
+  console.error(`\n--- expected Prettier output: ${file} ---`);
+  const formatted = spawnSync("npm", ["exec", "--", "prettier", file], {
+    encoding: "utf8",
+  });
+  if (formatted.status !== 0) {
+    process.stderr.write(formatted.stderr || `Unable to format ${file} for diagnostics.\n`);
+    continue;
+  }
+  process.stdout.write(formatted.stdout);
+  console.error(`--- end expected output: ${file} ---`);
+}
+
+process.exit(prettier.status);
