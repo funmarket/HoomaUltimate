@@ -6,5 +6,6 @@ import "@hooma/ui/bottom-nav.css";
 import "@hooma/frontend/teams.css";
 import "./styles.css";
 import "./account/account.css";
+import "./profile/profile.css";
 initializeWebAppearance();
 createRoot(document.getElementById("root")!).render(<StrictMode><WebRouter /></StrictMode>);

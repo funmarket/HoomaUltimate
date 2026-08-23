@@ -1,5 +1,6 @@
 import type {
   MeResponse,
+  ProfilePresentationUpdateInput,
   TeamCapabilityInput,
   TeamChallengeCreateInput,
   TeamCreateInput,
@@ -38,7 +39,8 @@ export function createHoomaApi(transport: HoomaTransport) {
     async meOptional(): Promise<MeResponse | null> {
       try { return await request<MeResponse>(transport, "/api/v1/me"); }
       catch (reason) { if (reason instanceof HoomaApiError && reason.status === 401) return null; throw reason; }
-    }
+    },
+    updatePresentation: (input: ProfilePresentationUpdateInput) => request<MeResponse>(transport, "/api/v1/me/presentation", { method: "PATCH", body: JSON.stringify(input) })
   };
   const teams = {
     publicList: (filters?: TeamListFilters) => request<PublicTeamList>(transport, publicListPath(filters)),

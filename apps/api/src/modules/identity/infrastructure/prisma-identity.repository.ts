@@ -18,6 +18,17 @@ export class PrismaIdentityRepository implements IdentityRepository {
     if (existing) { await this.db.telegramIdentity.update({ where: { userId: existing.userId }, data: { telegramUsername: input.username ?? null, firstName: input.firstName ?? null, lastName: input.lastName ?? null, photoUrl: input.photoUrl ?? null, languageCode: input.languageCode ?? null, isPremium: input.isPremium ?? false, lastAuthenticatedAt: new Date() } }); return existing.userId; }
     return this.db.$transaction(async (tx) => { const user = await tx.user.create({ data: {} }); await tx.telegramIdentity.create({ data: { userId: user.id, telegramUserId: input.telegramUserId, telegramUsername: input.username ?? null, firstName: input.firstName ?? null, lastName: input.lastName ?? null, photoUrl: input.photoUrl ?? null, languageCode: input.languageCode ?? null, isPremium: input.isPremium ?? false } }); const username = await this.uniqueTelegramUsername(tx, input); await tx.userPresentation.create({ data: { userId: user.id, username, displayName: [input.firstName, input.lastName].filter(Boolean).join(" ").trim() || input.username || "HOOMA member", photoUrl: input.photoUrl ?? null } }); return user.id; });
   }
+  async updatePresentation(userId: string, input: { username: string; displayName: string; photoUrl: string | null; bio: string | null; }): Promise<void> {
+    await this.db.userPresentation.update({
+      where: { userId },
+      data: {
+        username: input.username,
+        displayName: input.displayName,
+        photoUrl: input.photoUrl,
+        bio: input.bio
+      }
+    });
+  }
   async findMe(userId: string): Promise<MeRecord | null> {
     const user = await this.db.user.findUnique({ where: { id: userId }, select: {
       id: true, presentation: { select: { username: true, displayName: true, photoUrl: true, bio: true } },

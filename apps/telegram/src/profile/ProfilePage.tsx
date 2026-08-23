@@ -1,6 +1,46 @@
+import { useEffect, useState, type FormEvent } from "react";
 import type { MeResponse } from "@hooma/contracts";
+import { useHoomaFrontend } from "@hooma/frontend";
 
-export function ProfilePage({ me }: { readonly me: MeResponse | null }) {
+export function ProfilePage({ me, onRefresh }: { readonly me: MeResponse | null; readonly onRefresh: () => Promise<void> }) {
+  const { api } = useHoomaFrontend();
+  const [displayName, setDisplayName] = useState("");
+  const [username, setUsername] = useState("");
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [bio, setBio] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
+
+  useEffect(() => {
+    if (!me) return;
+    setDisplayName(me.presentation.displayName);
+    setUsername(me.presentation.username);
+    setPhotoUrl(me.presentation.photoUrl ?? "");
+    setBio(me.presentation.bio ?? "");
+  }, [me]);
+
+  async function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+    setStatus("");
+    try {
+      await api.identity.updatePresentation({
+        displayName: displayName.trim(),
+        username: username.trim(),
+        photoUrl: photoUrl.trim() || null,
+        bio: bio.trim() || null
+      });
+      await onRefresh();
+      setStatus("Profile updated.");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unable to update profile");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (!me) return <p className="status">Profile requires Telegram authentication.</p>;
 
   return (
@@ -20,6 +60,33 @@ export function ProfilePage({ me }: { readonly me: MeResponse | null }) {
           {me.presentation.bio ? <p>{me.presentation.bio}</p> : null}
         </div>
       </header>
+
+      <form className="status profile-edit-form" onSubmit={save}>
+        <div>
+          <p className="eyebrow">EDIT PROFILE</p>
+          <strong>Your HOOMA identity</strong>
+          <p className="muted">These HOOMA presentation details are separate from your Telegram account identity.</p>
+        </div>
+        <label>
+          Display name
+          <input value={displayName} onChange={(event) => setDisplayName(event.target.value)} minLength={2} maxLength={120} required />
+        </label>
+        <label>
+          HOOMA username
+          <input value={username} onChange={(event) => setUsername(event.target.value)} minLength={3} maxLength={64} pattern="[A-Za-z0-9_.-]+" required autoCapitalize="none" />
+        </label>
+        <label>
+          Profile photo URL
+          <input type="url" value={photoUrl} onChange={(event) => setPhotoUrl(event.target.value)} placeholder="https://…" />
+        </label>
+        <label>
+          Bio
+          <textarea value={bio} onChange={(event) => setBio(event.target.value)} rows={4} maxLength={500} />
+        </label>
+        <button type="submit" disabled={saving}>{saving ? "Saving…" : "Save profile"}</button>
+        {status ? <p className="success">{status}</p> : null}
+        {error ? <p className="error">{error}</p> : null}
+      </form>
 
       <section className="status">
         <strong>My Teams</strong>

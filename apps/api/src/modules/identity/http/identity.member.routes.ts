@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { profilePresentationUpdateSchema } from "@hooma/contracts";
 import type { ApiConfig } from "@hooma/config";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import type { IdentityService } from "../application/identity.service.js";
@@ -13,6 +14,14 @@ export function createIdentityMemberRouter(service: IdentityService, config: Api
     asyncHandler(async (request, response) => {
       const auth = getAuth(request);
       response.json(await service.me(auth.userId, auth.transports));
+    })
+  );
+
+  router.patch(
+    "/me/presentation",
+    asyncHandler(async (request, response) => {
+      const auth = getAuth(request);
+      response.json(await service.updatePresentation(auth.userId, auth.transports, profilePresentationUpdateSchema.parse(request.body)));
     })
   );
 

@@ -30,6 +30,13 @@ export const loginSchema = z.object({
 
 export const sessionResponseSchema = z.object({ ok: z.literal(true) });
 
+export const profilePresentationUpdateSchema = z.object({
+  username: usernameSchema,
+  displayName: displayNameSchema,
+  photoUrl: z.string().trim().url().max(2000).nullable(),
+  bio: z.string().trim().max(500).nullable()
+});
+
 export const meResponseSchema = z.object({
   id: z.string(),
   presentation: z.object({
@@ -60,6 +67,7 @@ export const meResponseSchema = z.object({
 export type HealthResponse = z.infer<typeof healthResponseSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type ProfilePresentationUpdateInput = z.infer<typeof profilePresentationUpdateSchema>;
 export type MeResponse = z.infer<typeof meResponseSchema>;
 
 export const teamCapabilitySchema = z.enum([
