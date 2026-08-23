@@ -97,8 +97,7 @@ function HoomaRoutes() {
     return {
       baseUrl: apiBaseUrl(),
       credentials: "include" as const,
-      getHeaders: () =>
-        runtime.initData ? { authorization: `tma ${runtime.initData}` } : {},
+      getHeaders: () => (runtime.initData ? { authorization: `tma ${runtime.initData}` } : {}),
       authenticationHref: actionAccountHref,
       onAuthenticationRequired: () => {
         window.location.href = actionAccountHref(
