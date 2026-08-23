@@ -15,7 +15,7 @@ const config = loadApiConfig({
   DATABASE_URL: databaseUrl,
   WEB_ORIGIN: "http://localhost:5173",
   TELEGRAM_ORIGIN: "http://localhost:5174",
-  TELEGRAM_BOT_TOKEN: "integration-test-token"
+  TELEGRAM_BOT_TOKEN: "integration-test-token",
 });
 
 const db = getDatabaseClient();
@@ -34,13 +34,20 @@ function telegramInitData(telegramUserId: number): string {
   const fields = {
     auth_date: String(Math.floor(Date.now() / 1000)),
     query_id: "AAE-integration-query",
-    user: JSON.stringify({ id: telegramUserId, first_name: "Telegram", last_name: "Guest", username: `tg_guest_${telegramUserId}` })
+    user: JSON.stringify({
+      id: telegramUserId,
+      first_name: "Telegram",
+      last_name: "Guest",
+      username: `tg_guest_${telegramUserId}`,
+    }),
   };
   const checkString = Object.entries(fields)
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([key, value]) => `${key}=${value}`)
     .join("\n");
-  const secret = createHmac("sha256", "WebAppData").update(config.TELEGRAM_BOT_TOKEN!).digest();
+  const secret = createHmac("sha256", "WebAppData")
+    .update(config.TELEGRAM_BOT_TOKEN!)
+    .digest();
   const hash = createHmac("sha256", secret).update(checkString).digest("hex");
   return new URLSearchParams({ ...fields, hash }).toString();
 }
@@ -53,8 +60,8 @@ async function registerWeb(base: string, loginUsername: string): Promise<string>
       loginUsername,
       password: "correct horse battery staple",
       displayUsername: loginUsername,
-      displayName: loginUsername
-    })
+      displayName: loginUsername,
+    }),
   });
   assert.equal(response.status, 201);
   const cookie = response.headers.get("set-cookie");
@@ -76,26 +83,31 @@ test("register -> cookie session -> me -> protected logout works against Postgre
 
     const me = await fetch(`${base}/api/v1/me`, { headers: { cookie } });
     assert.equal(me.status, 200);
-    const body = await me.json() as { presentation: { username: string }; transports: string[] };
+    const body = (await me.json()) as {
+      presentation: { username: string };
+      transports: string[];
+    };
     assert.equal(body.presentation.username, "founder");
     assert.deepEqual(body.transports, ["web"]);
 
     const logoutWithoutOrigin = await fetch(`${base}/api/v1/auth/logout`, {
       method: "POST",
-      headers: { cookie }
+      headers: { cookie },
     });
     assert.equal(logoutWithoutOrigin.status, 403);
 
     const logout = await fetch(`${base}/api/v1/auth/logout`, {
       method: "POST",
-      headers: { cookie, origin: config.WEB_ORIGIN }
+      headers: { cookie, origin: config.WEB_ORIGIN },
     });
     assert.equal(logout.status, 200);
 
     const afterLogout = await fetch(`${base}/api/v1/me`, { headers: { cookie } });
     assert.equal(afterLogout.status, 401);
   } finally {
-    await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve())),
+    );
     await resetDatabase();
   }
 });
@@ -111,7 +123,9 @@ test("Telegram public browsing does not create a HOOMA account before explicit a
   const authorization = `tma ${telegramInitData(77112233)}`;
 
   try {
-    const browseAccountCheck = await fetch(`${base}/api/v1/me`, { headers: { authorization } });
+    const browseAccountCheck = await fetch(`${base}/api/v1/me`, {
+      headers: { authorization },
+    });
     assert.equal(browseAccountCheck.status, 401);
     assert.equal(await db.user.count(), 0);
     assert.equal(await db.userPresentation.count(), 0);
@@ -120,25 +134,33 @@ test("Telegram public browsing does not create a HOOMA account before explicit a
     const activations = await Promise.all([
       fetch(`${base}/api/public/v1/auth/telegram/account`, {
         method: "POST",
-        headers: { authorization, origin: config.TELEGRAM_ORIGIN }
+        headers: { authorization, origin: config.TELEGRAM_ORIGIN },
       }),
       fetch(`${base}/api/public/v1/auth/telegram/account`, {
         method: "POST",
-        headers: { authorization, origin: config.TELEGRAM_ORIGIN }
-      })
+        headers: { authorization, origin: config.TELEGRAM_ORIGIN },
+      }),
     ]);
-    assert.deepEqual(activations.map((response) => response.status), [201, 201]);
+    assert.deepEqual(
+      activations.map((response) => response.status),
+      [201, 201],
+    );
     assert.equal(await db.user.count(), 1);
     assert.equal(await db.userPresentation.count(), 1);
     assert.equal(await db.telegramIdentity.count(), 1);
 
     const me = await fetch(`${base}/api/v1/me`, { headers: { authorization } });
     assert.equal(me.status, 200);
-    const body = await me.json() as { presentation: { username: string }; transports: string[] };
+    const body = (await me.json()) as {
+      presentation: { username: string };
+      transports: string[];
+    };
     assert.match(body.presentation.username, /^tg_guest_77112233/);
     assert.deepEqual(body.transports, ["telegram"]);
   } finally {
-    await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve())),
+    );
     await resetDatabase();
   }
 });
@@ -157,16 +179,18 @@ test("Telegram activation never silently splits an existing Web account", async 
     const authorization = `tma ${telegramInitData(88223344)}`;
     const activation = await fetch(`${base}/api/public/v1/auth/telegram/account`, {
       method: "POST",
-      headers: { authorization, cookie, origin: config.TELEGRAM_ORIGIN }
+      headers: { authorization, cookie, origin: config.TELEGRAM_ORIGIN },
     });
     assert.equal(activation.status, 409);
-    const body = await activation.json() as { error: { code: string } };
+    const body = (await activation.json()) as { error: { code: string } };
     assert.equal(body.error.code, "ACCOUNT_LINK_REQUIRED");
     assert.equal(await db.user.count(), 1);
     assert.equal(await db.userPresentation.count(), 1);
     assert.equal(await db.telegramIdentity.count(), 0);
   } finally {
-    await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve())),
+    );
     await resetDatabase();
   }
 });
