@@ -37,6 +37,19 @@ for (const file of await walk(root)) {
     forbid(file, source, /@hooma\/database|@prisma\/client/, "frontend must not import database code");
   }
 
+  if (/^apps\/(web|telegram)\/src\/teams\//.test(rel)) {
+    violations.push(`${rel}: canonical Teams frontend belongs in @hooma/frontend, not a platform app`);
+  }
+
+  if (/^apps\/(web|telegram)\/src\//.test(rel)) {
+    forbid(
+      file,
+      source,
+      /["'`]\/api\/(?:public\/v1|v1)\/teams(?:[/?"'`]|$)/,
+      "platform apps must consume the shared Teams API client from @hooma/frontend"
+    );
+  }
+
   if (/^apps\/api\/src\/modules\/[^/]+\/domain\//.test(rel)) {
     forbid(file, source, /express|@hooma\/database|@prisma\/client/, "domain layer must be transport and persistence independent");
   }
