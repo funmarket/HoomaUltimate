@@ -48,7 +48,7 @@ function publicListPath(filters: TeamListFilters = {}): string {
 export function createHoomaApi(transport: HoomaTransport) {
   const identity = {
     register: (input: RegisterInput) => request<{ ok: true }>(transport, "/api/public/v1/auth/register", { method: "POST", body: JSON.stringify(input) }),
-    login: (input: LoginInput) => request<{ ok: true }>(transport, "/api/public/v1/auth/login", { method: "POST", body: JSON.stringify(input) }),
+    login: (input: LoginInput) => request<{ ok: true }>(transport, "/api/public/v1/auth/login", { method: "POST" }),
     logout: () => request<{ ok: true }>(transport, "/api/v1/auth/logout", { method: "POST" }),
     me: () => request<MeResponse>(transport, "/api/v1/me"),
     async meOptional(): Promise<MeResponse | null> {
@@ -73,7 +73,9 @@ export function createHoomaApi(transport: HoomaTransport) {
   };
   const whistles = {
     community: (communityId: string) => request<WhistleList>(transport, `/api/v1/whistles/contexts/COMMUNITY/${encodeURIComponent(communityId)}`),
-    sendToCommunity: (communityId: string, body: string) => request<{ whistle: WhistleListItem; remainingToday: number; resetsAt: string }>(transport, `/api/v1/whistles/contexts/COMMUNITY/${encodeURIComponent(communityId)}`, { method: "POST", body: JSON.stringify({ body }) })
+    sendToCommunity: (communityId: string, body: string) => request<{ whistle: WhistleListItem; remainingToday: number; resetsAt: string }>(transport, `/api/v1/whistles/contexts/COMMUNITY/${encodeURIComponent(communityId)}`, { method: "POST", body: JSON.stringify({ body }) }),
+    event: (eventId: string) => request<WhistleList>(transport, `/api/v1/whistles/contexts/EVENT/${encodeURIComponent(eventId)}`),
+    sendToEvent: (eventId: string, body: string) => request<{ whistle: WhistleListItem; remainingToday: number; resetsAt: string }>(transport, `/api/v1/whistles/contexts/EVENT/${encodeURIComponent(eventId)}`, { method: "POST", body: JSON.stringify({ body }) })
   };
   const teams = {
     publicList: (filters?: TeamListFilters) => request<PublicTeamList>(transport, publicListPath(filters)),
