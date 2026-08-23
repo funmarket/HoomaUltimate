@@ -13,6 +13,7 @@
   "devDependencies": { "typescript": "5.9.2" },
   "exports": {
     ".": { "types": "./src/index.ts", "default": "./dist/index.js" },
-    "./gamers": { "types": "./src/gamers.ts", "default": "./dist/gamers.js" }
+    "./gamers": { "types": "./src/gamers.ts", "default": "./dist/gamers.js" },
+    "./play": { "types": "./src/play.ts", "default": "./dist/play.js" }
   }
 }
