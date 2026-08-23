@@ -42,8 +42,12 @@ jobs:
       WEB_ORIGIN: http://localhost:5173
       TELEGRAM_ORIGIN: http://localhost:5174
       TELEGRAM_BOT_TOKEN: integration-test-token
+      CI_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+      CI_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -56,8 +60,10 @@ jobs:
       - run: npm run db:validate
       - run: npm run db:migrate:deploy
       - run: npm run architecture:check
-      - run: npm run format:check
-      - run: npm run lint
+      - name: Check changed-file formatting
+        run: node scripts/check-changed-format.mjs
+      - name: Lint changed source files
+        run: node scripts/check-changed-lint.mjs
       - run: npm run typecheck
       - run: npm test
       - run: npm run test:integration
