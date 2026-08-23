@@ -6,6 +6,7 @@ import "@hooma/ui/bottom-nav.css";
 import "@hooma/frontend/communities.css";
 import "@hooma/frontend/teams.css";
 import "@hooma/frontend/play.css";
+import "@hooma/frontend/play-player-listing.css";
 import "@hooma/frontend/whistle.css";
 import "@hooma/frontend/gamers.css";
 import "@hooma/frontend/gamer-game.css";
@@ -20,5 +21,5 @@ initializeWebAppearance();
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <HoomaRouter />
-  </StrictMode>
+  </StrictMode>,
 );

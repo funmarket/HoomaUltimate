@@ -20,10 +20,14 @@
     "typescript": "5.9.2"
   },
   "exports": {
-    ".": { "types": "./src/index.ts", "default": "./dist/index.js" },
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
     "./communities.css": "./src/communities/communities.css",
     "./teams.css": "./src/teams/teams.css",
     "./play.css": "./src/events/play.css",
+    "./play-player-listing.css": "./src/events/play-player-listing.css",
     "./whistle.css": "./src/whistle/whistle.css",
     "./gamers.css": "./src/gamers/gamers.css",
     "./gamer-game.css": "./src/gamers/gamer-game.css"

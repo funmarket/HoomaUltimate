@@ -1,22 +1,135 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import type { MeResponse } from "@hooma/contracts";
+import type { PlayLookingFor } from "@hooma/contracts/play";
 import { PickupMatchCard, PlayHero } from "@hooma/ui";
+import { useHoomaFrontend } from "../context";
 import type { PublicEvent } from "./api";
+import { createPlayApi, type MyPlayPlayerListing, type PublicPlayPlayerListing } from "./play-api";
 import { useEventApi } from "./useEventApi";
+
+function errorMessage(reason: unknown, fallback: string) {
+  return reason instanceof Error ? reason.message : fallback;
+}
 
 export function PlayPage() {
   const eventApi = useEventApi();
+  const { api, transport, authenticationHref, protectedError } = useHoomaFrontend();
+  const playApi = useMemo(() => createPlayApi(transport), [transport]);
   const [events, setEvents] = useState<PublicEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [listings, setListings] = useState<PublicPlayPlayerListing[]>([]);
+  const [me, setMe] = useState<MeResponse | null>(null);
+  const [myListing, setMyListing] = useState<MyPlayPlayerListing | null>(null);
+  const [lookingFor, setLookingFor] = useState<PlayLookingFor>("GAME");
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [playersLoading, setPlayersLoading] = useState(true);
+  const [accountLoading, setAccountLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [eventsError, setEventsError] = useState("");
+  const [playersError, setPlayersError] = useState("");
+  const [memberError, setMemberError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  const loadListings = useCallback(async () => {
+    const page = await playApi.publicPlayerListings();
+    setListings(page.items);
+  }, [playApi]);
 
   useEffect(() => {
-    setLoading(true);
-    setError("");
-    void eventApi.publicPlay()
+    setEventsLoading(true);
+    setEventsError("");
+    void eventApi
+      .publicPlay()
       .then((page) => setEvents(page.items))
-      .catch((reason: Error) => setError(reason.message))
-      .finally(() => setLoading(false));
+      .catch((reason) => setEventsError(errorMessage(reason, "Matches could not be loaded")))
+      .finally(() => setEventsLoading(false));
   }, [eventApi]);
+
+  useEffect(() => {
+    setPlayersLoading(true);
+    setPlayersError("");
+    void loadListings()
+      .catch((reason) =>
+        setPlayersError(errorMessage(reason, "Player listings could not be loaded")),
+      )
+      .finally(() => setPlayersLoading(false));
+  }, [loadListings]);
+
+  useEffect(() => {
+    let active = true;
+    setAccountLoading(true);
+    void api.identity
+      .meOptional()
+      .then((response) => {
+        if (active) setMe(response);
+      })
+      .catch((reason) => {
+        if (active) setMemberError(errorMessage(reason, "Unable to check your HOOMA account"));
+      })
+      .finally(() => {
+        if (active) setAccountLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [api]);
+
+  useEffect(() => {
+    if (!me) {
+      setMyListing(null);
+      return;
+    }
+    let active = true;
+    setMemberError("");
+    void playApi
+      .myPlayerListing()
+      .then((listing) => {
+        if (!active) return;
+        setMyListing(listing);
+        if (listing) setLookingFor(listing.lookingFor);
+      })
+      .catch((reason) => {
+        if (active) setMemberError(protectedError(reason, "Unable to load your player listing"));
+      });
+    return () => {
+      active = false;
+    };
+  }, [me, playApi, protectedError]);
+
+  async function saveListing(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    setMemberError("");
+    setNotice("");
+    try {
+      const saved = await playApi.savePlayerListing({ lookingFor });
+      setMyListing(saved);
+      setLookingFor(saved.lookingFor);
+      setNotice(myListing ? "Your availability is updated." : "You are now visible in Players.");
+      await loadListings();
+    } catch (reason) {
+      setMemberError(protectedError(reason, "Unable to publish your availability"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function removeListing() {
+    setSaving(true);
+    setMemberError("");
+    setNotice("");
+    try {
+      await playApi.removePlayerListing();
+      setMyListing(null);
+      setNotice("Your player listing has been removed.");
+      await loadListings();
+    } catch (reason) {
+      setMemberError(protectedError(reason, "Unable to remove your player listing"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const signInHref = authenticationHref("/play");
 
   return (
     <section className="play-page">
@@ -28,11 +141,91 @@ export function PlayPage() {
             <p className="eyebrow">Players</p>
             <h2 id="players-looking-title">Looking to play</h2>
           </div>
+          {!accountLoading && !me && signInHref ? (
+            <a className="play-player-publish" href={signInHref}>
+              Publish availability
+            </a>
+          ) : null}
         </div>
-        <div className="play-player-empty panel">
-          <strong>Player listings will appear here.</strong>
-          <span>Only real player listings and explicitly published contact details will render in this feed.</span>
-        </div>
+
+        {memberError ? <div className="play-state panel error">{memberError}</div> : null}
+        {notice ? <div className="play-state panel success">{notice}</div> : null}
+
+        {!accountLoading && me ? (
+          <form className="play-player-editor panel" onSubmit={saveListing}>
+            <div>
+              <strong>{myListing ? "Your availability" : "Want to play?"}</strong>
+              <span>Publish only when you want other HOOMA users to see that you are looking.</span>
+            </div>
+            <div className="play-looking-options" role="group" aria-label="Looking for">
+              <button
+                type="button"
+                aria-pressed={lookingFor === "GAME"}
+                onClick={() => setLookingFor("GAME")}
+              >
+                A game
+              </button>
+              <button
+                type="button"
+                aria-pressed={lookingFor === "TEAM"}
+                onClick={() => setLookingFor("TEAM")}
+              >
+                A team
+              </button>
+            </div>
+            <div className="play-player-editor-actions">
+              <button className="button" type="submit" disabled={saving}>
+                {saving ? "Saving…" : myListing ? "Update" : "Publish"}
+              </button>
+              {myListing ? (
+                <button
+                  className="button secondary"
+                  type="button"
+                  disabled={saving}
+                  onClick={() => void removeListing()}
+                >
+                  Remove
+                </button>
+              ) : null}
+            </div>
+          </form>
+        ) : null}
+
+        {playersLoading ? <div className="play-state panel">Loading players…</div> : null}
+        {!playersLoading && playersError ? (
+          <div className="play-state panel error">{playersError}</div>
+        ) : null}
+        {!playersLoading && !playersError && listings.length ? (
+          <div className="play-player-list">
+            {listings.map((listing) => (
+              <article className="play-player-card panel" key={listing.id}>
+                <div className="play-player-avatar" aria-hidden="true">
+                  {listing.presentation?.photoUrl ? (
+                    <img src={listing.presentation.photoUrl} alt="" />
+                  ) : (
+                    (listing.presentation?.displayName ?? "H").slice(0, 1).toUpperCase()
+                  )}
+                </div>
+                <div className="play-player-card-copy">
+                  <span className="play-looking-badge">
+                    LOOKING FOR {listing.lookingFor === "GAME" ? "A GAME" : "A TEAM"}
+                  </span>
+                  <strong>{listing.presentation?.displayName ?? "HOOMA player"}</strong>
+                  {listing.presentation ? <small>@{listing.presentation.username}</small> : null}
+                  {listing.presentation?.bio ? <p>{listing.presentation.bio}</p> : null}
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : null}
+        {!playersLoading && !playersError && !listings.length ? (
+          <div className="play-player-empty panel">
+            <strong>No players are looking right now.</strong>
+            <span>
+              Published availability will appear here without requiring visitors to sign in.
+            </span>
+          </div>
+        ) : null}
       </section>
 
       <section className="play-section" aria-labelledby="open-matches-title">
@@ -43,9 +236,11 @@ export function PlayPage() {
           </div>
         </div>
 
-        {loading ? <div className="play-state panel">Loading matches…</div> : null}
-        {!loading && error ? <div className="play-state panel error">Matches could not be loaded: {error}</div> : null}
-        {!loading && !error && events.length ? (
+        {eventsLoading ? <div className="play-state panel">Loading matches…</div> : null}
+        {!eventsLoading && eventsError ? (
+          <div className="play-state panel error">Matches could not be loaded: {eventsError}</div>
+        ) : null}
+        {!eventsLoading && !eventsError && events.length ? (
           <div className="play-match-list">
             {events.map((event) => (
               <PickupMatchCard
@@ -62,7 +257,7 @@ export function PlayPage() {
             ))}
           </div>
         ) : null}
-        {!loading && !error && !events.length ? (
+        {!eventsLoading && !eventsError && !events.length ? (
           <div className="play-state panel">
             <strong>No open matches yet.</strong>
             <span>Create the first pickup match for your HOOMA community.</span>
@@ -79,6 +274,6 @@ function formatDate(value: string) {
     month: "short",
     day: "numeric",
     hour: "2-digit",
-    minute: "2-digit"
+    minute: "2-digit",
   }).format(new Date(value));
 }

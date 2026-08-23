@@ -13,6 +13,8 @@ import { PrismaEventRepository } from "../modules/events/infrastructure/prisma-e
 import { GamerService } from "../modules/gamers/application/gamer.service.js";
 import { PrismaGamerGameRepository } from "../modules/gamers/infrastructure/prisma-gamer-game.repository.js";
 import { PrismaGamerProfileRepository } from "../modules/gamers/infrastructure/prisma-gamer-profile.repository.js";
+import { PlayService } from "../modules/play/application/play.service.js";
+import { PrismaPlayPlayerListingRepository } from "../modules/play/infrastructure/prisma-play.repository.js";
 import { WhistleService } from "../modules/whistle/application/whistle.service.js";
 import { PrismaWhistleRepository } from "../modules/whistle/infrastructure/prisma-whistle.repository.js";
 import { RedisWhistleStore } from "../modules/whistle/infrastructure/redis-whistle-store.js";
@@ -32,6 +34,8 @@ export function createContainer(config: ApiConfig) {
   const gamerGameRepository = new PrismaGamerGameRepository(database);
   const gamerProfileRepository = new PrismaGamerProfileRepository(database);
   const gamerService = new GamerService(gamerGameRepository, gamerProfileRepository);
+  const playRepository = new PrismaPlayPlayerListingRepository(database);
+  const playService = new PlayService(playRepository);
   const whistleRepository = new PrismaWhistleRepository(database);
   const whistleStore = new RedisWhistleStore(config.REDIS_URL ?? "redis://localhost:6379");
   const whistleService = new WhistleService(whistleRepository, whistleStore, communityService);
@@ -44,6 +48,7 @@ export function createContainer(config: ApiConfig) {
     teamService,
     eventService,
     gamerService,
+    playService,
     whistleService,
   };
 }
