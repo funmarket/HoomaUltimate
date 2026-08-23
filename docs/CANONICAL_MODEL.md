@@ -239,25 +239,24 @@ Rules:
 TeamPlayer
   id
   teamId
-  userId?            optional canonical HOOMA User link
-  displayName        required
+  userId            required canonical HOOMA User link
   shirtNumber?
-  position?
-  photoUrl?
-  isActive
-  createdAt
-  updatedAt
+  positions[]
+  joinedAt
+  leftAt?
 ```
 
 Rules:
 
 - Team may exist without players;
-- TeamPlayer may exist without a HOOMA account;
+- TeamPlayer always belongs to an existing canonical HOOMA User; no placeholder/offline roster identity exists;
+- public visitors may browse Team pages without an account, but authentication/account creation is required before a protected join or membership action can create a TeamPlayer;
 - `userId` is never globally unique;
-- if `userId` is present, the same User may not be linked twice to the same active Team roster;
-- removal/deactivation should preserve history unless an explicit delete operation is required;
-- public roster returns only data intentionally exposed by the Team public projection;
-- no fake player portrait is generated; use a neutral fallback when photo is absent.
+- the same User may not be linked twice to the same Team roster;
+- Team-specific roster data belongs on TeamPlayer; display name, username, photo, bio and other canonical presentation remain owned by User/UserPresentation and are not duplicated here;
+- removal/deactivation should preserve history through `leftAt` unless an explicit delete operation is required;
+- active roster membership means `leftAt == null`;
+- public roster returns only data intentionally exposed by the Team public projection.
 
 Canonical football positions should be represented by one Team player-position enum/contract, not arbitrary duplicate strings in different layers.
 
