@@ -14,21 +14,35 @@ import {
   HoomaPage,
   PlayPage,
   TeamDetailPage,
-  TeamsPage
+  TeamsPage,
 } from "@hooma/frontend";
 import { AccountProvider } from "../../account/AccountProvider";
 import { initializeTelegramRuntime } from "../../telegram/runtime";
 import { HoomaShell } from "../shell/HoomaShell";
 
-const HomePage = lazy(() => import("../../home/HomePage").then((module) => ({ default: module.HomePage })));
-const AuthApp = lazy(() => import("../../auth/AuthApp").then((module) => ({ default: module.AuthApp })));
-const TelegramAccountActivationPage = lazy(() =>
-  import("../../auth/TelegramAccountActivationPage").then((module) => ({ default: module.TelegramAccountActivationPage }))
+const HomePage = lazy(() =>
+  import("../../home/HomePage").then((module) => ({ default: module.HomePage })),
 );
-const AdminApp = lazy(() => import("../../admin/AdminApp").then((module) => ({ default: module.AdminApp })));
-const ProfilePage = lazy(() => import("../../profile/ProfilePage").then((module) => ({ default: module.ProfilePage })));
-const SettingsPage = lazy(() => import("../../settings/SettingsPage").then((module) => ({ default: module.SettingsPage })));
-const NotFoundPage = lazy(() => import("../../pages/NotFoundPage").then((module) => ({ default: module.NotFoundPage })));
+const AuthApp = lazy(() =>
+  import("../../auth/AuthApp").then((module) => ({ default: module.AuthApp })),
+);
+const TelegramAccountActivationPage = lazy(() =>
+  import("../../auth/TelegramAccountActivationPage").then((module) => ({
+    default: module.TelegramAccountActivationPage,
+  })),
+);
+const AdminApp = lazy(() =>
+  import("../../admin/AdminApp").then((module) => ({ default: module.AdminApp })),
+);
+const ProfilePage = lazy(() =>
+  import("../../profile/ProfilePage").then((module) => ({ default: module.ProfilePage })),
+);
+const SettingsPage = lazy(() =>
+  import("../../settings/SettingsPage").then((module) => ({ default: module.SettingsPage })),
+);
+const NotFoundPage = lazy(() =>
+  import("../../pages/NotFoundPage").then((module) => ({ default: module.NotFoundPage })),
+);
 
 function requiredParam(name: string, value: string | undefined): string {
   if (!value) throw new Error(`Missing route parameter ${name}`);
@@ -39,29 +53,36 @@ function TeamDetailRoute() {
   const { teamId } = useParams();
   return <TeamDetailPage teamId={requiredParam("teamId", teamId)} />;
 }
+
 function HoomaDetailRoute() {
   const { communityId } = useParams();
   return <HoomaDetailPage communityId={requiredParam("communityId", communityId)} />;
 }
+
 function EventDetailRoute() {
   const { eventId } = useParams();
   return <EventDetailPage eventId={requiredParam("eventId", eventId)} />;
 }
+
 function EventFormationRoute() {
   const { eventId } = useParams();
   return <FormationBuilderPage eventId={requiredParam("eventId", eventId)} />;
 }
+
 function EventChatRoute() {
   const { eventId } = useParams();
   return <EventChatPage eventId={requiredParam("eventId", eventId)} />;
 }
+
 function EventCheckInRoute() {
   const { eventId } = useParams();
   return <CheckInPage eventId={requiredParam("eventId", eventId)} />;
 }
 
 function apiBaseUrl(): string {
-  if (import.meta.env.DEV) return import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
+  if (import.meta.env.DEV) {
+    return import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
+  }
   return "";
 }
 
@@ -72,16 +93,18 @@ function HoomaRoutes() {
       runtime.initData
         ? `/account/create?returnTo=${encodeURIComponent(returnTo)}`
         : `/register?returnTo=${encodeURIComponent(returnTo)}`;
+
     return {
       baseUrl: apiBaseUrl(),
       credentials: "include" as const,
-      getHeaders: () => (runtime.initData ? { authorization: `tma ${runtime.initData}` } : {}),
+      getHeaders: () =>
+        runtime.initData ? { authorization: `tma ${runtime.initData}` } : {},
       authenticationHref: actionAccountHref,
       onAuthenticationRequired: () => {
         window.location.href = actionAccountHref(
-          window.location.pathname + window.location.search + window.location.hash
+          window.location.pathname + window.location.search + window.location.hash,
         );
-      }
+      },
     };
   }, [runtime.initData]);
 
