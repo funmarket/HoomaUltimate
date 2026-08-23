@@ -1,9 +1,13 @@
 import { AppError } from "../../../http/errors/app-error.js";
 import { gamerGameSlug, normalizeGamerGameName } from "../domain/gamer-game-normalization.js";
 import type { GamerGameRepository } from "./gamer-game.repository.js";
+import type { GamerProfileRepository } from "./gamer-profile.repository.js";
 
 export class GamerService {
-  constructor(private readonly games: GamerGameRepository) {}
+  constructor(
+    private readonly games: GamerGameRepository,
+    private readonly profiles: GamerProfileRepository,
+  ) {}
 
   listGames() {
     return this.games.listActive();
@@ -41,5 +45,37 @@ export class GamerService {
       throw new AppError(409, "GAMER_GAME_ALREADY_EXISTS", "That game already exists");
     }
     return created;
+  }
+
+  async listChallengers(gameId: string) {
+    await this.requireActiveGame(gameId);
+    return this.profiles.listOpenByGame(gameId);
+  }
+
+  async getMyProfile(userId: string, gameId: string) {
+    await this.requireActiveGame(gameId);
+    return this.profiles.getByUserAndGame(userId, gameId);
+  }
+
+  async upsertMyProfile(
+    userId: string,
+    gameId: string,
+    input: { handle: string; openToChallenge: boolean },
+  ) {
+    await this.requireActiveGame(gameId);
+    const handle = input.handle.normalize("NFKC").trim().replace(/\s+/g, " ");
+    if (!handle) throw new AppError(400, "GAMER_HANDLE_INVALID", "Game handle is required");
+    return this.profiles.upsert({
+      userId,
+      gameId,
+      handle,
+      openToChallenge: input.openToChallenge,
+    });
+  }
+
+  private async requireActiveGame(gameId: string) {
+    const game = await this.games.getActiveById(gameId);
+    if (!game) throw new AppError(404, "GAMER_GAME_NOT_FOUND", "Game not found");
+    return game;
   }
 }
