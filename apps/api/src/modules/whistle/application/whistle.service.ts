@@ -106,7 +106,7 @@ export class WhistleService {
     const result = await this.transientStore.reveal(whistleId, userId);
     if (result.state === "expired") throw new AppError(410, "WHISTLE_REVEAL_EXPIRED", "Your reveal window has expired");
     if (result.state === "missing") throw new AppError(404, "WHISTLE_NOT_FOUND", "Whistle is no longer available");
-    return { body: result.body, visibleForSeconds: result.remainingSeconds };
+    return { body: result.body, visibleForSeconds: result.remainingMilliseconds / 1000 };
   }
 }
 
