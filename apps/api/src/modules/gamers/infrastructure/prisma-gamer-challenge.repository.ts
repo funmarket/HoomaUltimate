@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@hooma/database";
 import type {
+  GamerChallengeAccessRecord,
   GamerChallengeRecord,
   GamerChallengeRepository,
   GamerChallengeStatus,
@@ -18,6 +19,7 @@ const challengeSelect = {
       handle: true,
       user: {
         select: {
+          id: true,
           presentation: {
             select: { username: true, displayName: true, photoUrl: true },
           },
@@ -31,6 +33,7 @@ const challengeSelect = {
       handle: true,
       user: {
         select: {
+          id: true,
           presentation: {
             select: { username: true, displayName: true, photoUrl: true },
           },
@@ -50,12 +53,18 @@ type SelectedChallenge = {
   challengerProfile: {
     id: string;
     handle: string;
-    user: { presentation: { username: string; displayName: string; photoUrl: string | null } | null };
+    user: {
+      id: string;
+      presentation: { username: string; displayName: string; photoUrl: string | null } | null;
+    };
   };
   challengedProfile: {
     id: string;
     handle: string;
-    user: { presentation: { username: string; displayName: string; photoUrl: string | null } | null };
+    user: {
+      id: string;
+      presentation: { username: string; displayName: string; photoUrl: string | null } | null;
+    };
   };
 };
 
@@ -80,6 +89,16 @@ function mapChallenge(row: SelectedChallenge): GamerChallengeRecord | null {
       handle: row.challengedProfile.handle,
       presentation: challengedPresentation,
     },
+  };
+}
+
+function mapAccessRecord(row: SelectedChallenge): GamerChallengeAccessRecord | null {
+  const record = mapChallenge(row);
+  if (!record) return null;
+  return {
+    record,
+    challengerUserId: row.challengerProfile.user.id,
+    challengedUserId: row.challengedProfile.user.id,
   };
 }
 
@@ -108,14 +127,19 @@ export class PrismaGamerChallengeRepository implements GamerChallengeRepository 
     }
   }
 
+  async getAccessRecord(challengeId: string): Promise<GamerChallengeAccessRecord | null> {
+    const row = (await this.db.gamerChallenge.findUnique({
+      where: { id: challengeId },
+      select: challengeSelect,
+    })) as SelectedChallenge | null;
+    return row ? mapAccessRecord(row) : null;
+  }
+
   async listForUserAndGame(userId: string, gameId: string): Promise<GamerChallengeRecord[]> {
     const rows = (await this.db.gamerChallenge.findMany({
       where: {
         gameId,
-        OR: [
-          { challengerProfile: { userId } },
-          { challengedProfile: { userId } },
-        ],
+        OR: [{ challengerProfile: { userId } }, { challengedProfile: { userId } }],
       },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       select: challengeSelect,
