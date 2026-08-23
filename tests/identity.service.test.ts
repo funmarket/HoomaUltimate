@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import test from "node:test";
-import type { TelegramIdentityInput } from "@hooma/auth";
 import type { ApiConfig } from "@hooma/config";
 import type {
   IdentityRepository,
@@ -89,7 +88,7 @@ class FakeIdentityRepository implements IdentityRepository {
     return this.telegramUserId;
   }
 
-  async upsertTelegramIdentity(_input: TelegramIdentityInput): Promise<string> {
+  async upsertTelegramIdentity(): Promise<string> {
     this.telegramProvisionCount += 1;
     this.telegramUserId = "telegram-user";
     return "telegram-user";
