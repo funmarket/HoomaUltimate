@@ -120,7 +120,9 @@ export function GamersPage() {
                 <div>
                   <span className="eyebrow">ACTIVE GAME</span>
                   <h3>{game.name}</h3>
-                  <p className="muted">Challengers, Squads, Arena and Rankings open in the next Gamers slices.</p>
+                  <p className="muted">
+                    Challengers, Squads, Arena and Rankings open in the next Gamers slices.
+                  </p>
                 </div>
               </article>
             ))}
