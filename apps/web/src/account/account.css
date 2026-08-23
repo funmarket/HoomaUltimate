@@ -86,7 +86,9 @@ html, body { background: var(--hooma-bg); color: var(--hooma-text); }
   top: calc(100% + 10px);
   right: 0;
   width: min(360px, calc(100vw - 32px));
-  overflow: hidden;
+  max-height: min(70dvh, 520px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   border: 1px solid var(--hooma-border);
   border-radius: 20px;
   background: color-mix(in srgb, var(--hooma-surface-strong) 96%, transparent);
@@ -177,5 +179,9 @@ html, body { background: var(--hooma-bg); color: var(--hooma-text); }
 
 @media (max-width: 700px) {
   .hooma-topbar { padding-top: 2px; }
-  .hooma-account-menu { position: fixed; top: auto; right: 16px; bottom: 18px; left: 16px; width: auto; max-height: calc(100vh - 36px); overflow-y: auto; }
+  .hooma-account-menu {
+    top: calc(100% + 8px);
+    right: 0;
+    width: min(360px, calc(100vw - 48px));
+  }
 }
