@@ -24,8 +24,7 @@ export interface TeamRepository {
   removePlayer(teamId: string, targetUserId: string): Promise<number>;
   assignAssistant(teamId: string, targetUserId: string, capabilities: readonly TeamCapabilityInput[], coachUserId: string): Promise<void>;
   revokeAssistant(teamId: string, targetUserId: string): Promise<void>;
-  activePlayerIds(teamId: string, teamPlayerIds: readonly string[]): Promise<readonly string[]>;
-  createLineup(userId: string, teamId: string, input: TeamLineupInput): Promise<unknown>;
+  createLineup(userId: string, teamId: string, input: TeamLineupInput): Promise<unknown | null>;
   createChallenge(userId: string, input: TeamChallengeCreateInput): Promise<unknown>;
   getChallenge(challengeId: string): Promise<TeamChallengeRecord | null>;
   getChallengeForUser(challengeId: string, userId: string): Promise<unknown | null>;
