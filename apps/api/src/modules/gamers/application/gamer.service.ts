@@ -19,7 +19,11 @@ export class GamerService {
     const name = input.name.normalize("NFKC").trim().replace(/\s+/g, " ");
     const normalizedName = normalizeGamerGameName(name);
     if (normalizedName.length < 2) {
-      throw new AppError(400, "GAMER_GAME_NAME_INVALID", "Game name must contain at least two meaningful characters");
+      throw new AppError(
+        400,
+        "GAMER_GAME_NAME_INVALID",
+        "Game name must contain at least two meaningful characters",
+      );
     }
 
     const existing = await this.games.getByNormalizedName(normalizedName);
