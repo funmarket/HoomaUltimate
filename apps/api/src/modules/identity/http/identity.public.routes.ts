@@ -3,7 +3,7 @@ import type { ApiConfig } from "@hooma/config";
 import { loginSchema, registerSchema } from "@hooma/contracts";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import type { IdentityService } from "../application/identity.service.js";
-import { setSessionCookie } from "./cookies.js";
+import { readCookie, setSessionCookie } from "./cookies.js";
 
 export function createIdentityPublicRouter(service: IdentityService, config: ApiConfig): Router {
   const router = Router();
@@ -31,8 +31,10 @@ export function createIdentityPublicRouter(service: IdentityService, config: Api
     asyncHandler(async (request, response) => {
       const authorization = request.header("authorization") ?? "";
       const [scheme, rawInitData] = authorization.split(" ", 2);
+      const webUserId = await service.resolveWebSession(readCookie(request, config.SESSION_COOKIE_NAME));
       const { userId } = await service.provisionTelegramAccount(
-        scheme?.toLowerCase() === "tma" ? rawInitData : undefined
+        scheme?.toLowerCase() === "tma" ? rawInitData : undefined,
+        webUserId
       );
       response.status(201).json({ ok: true, userId });
     })
