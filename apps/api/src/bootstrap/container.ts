@@ -10,6 +10,8 @@ import { TeamService } from "../modules/teams/application/team.service.js";
 import { PrismaTeamRepository } from "../modules/teams/infrastructure/prisma-team.repository.js";
 import { EventService } from "../modules/events/application/event.service.js";
 import { PrismaEventRepository } from "../modules/events/infrastructure/prisma-event.repository.js";
+import { GamerService } from "../modules/gamers/application/gamer.service.js";
+import { PrismaGamerGameRepository } from "../modules/gamers/infrastructure/prisma-gamer-game.repository.js";
 import { WhistleService } from "../modules/whistle/application/whistle.service.js";
 import { PrismaWhistleRepository } from "../modules/whistle/infrastructure/prisma-whistle.repository.js";
 import { RedisWhistleStore } from "../modules/whistle/infrastructure/redis-whistle-store.js";
@@ -26,11 +28,22 @@ export function createContainer(config: ApiConfig) {
   const teamService = new TeamService(teamRepository, communityService);
   const eventRepository = new PrismaEventRepository(database);
   const eventService = new EventService(eventRepository, communityService);
+  const gamerGameRepository = new PrismaGamerGameRepository(database);
+  const gamerService = new GamerService(gamerGameRepository);
   const whistleRepository = new PrismaWhistleRepository(database);
   const whistleStore = new RedisWhistleStore(config.REDIS_URL ?? "redis://localhost:6379");
   const whistleService = new WhistleService(whistleRepository, whistleStore, communityService);
 
-  return { database, identityService, platformAdminService, communityService, teamService, eventService, whistleService };
+  return {
+    database,
+    identityService,
+    platformAdminService,
+    communityService,
+    teamService,
+    eventService,
+    gamerService,
+    whistleService,
+  };
 }
 
 export type AppContainer = ReturnType<typeof createContainer>;
