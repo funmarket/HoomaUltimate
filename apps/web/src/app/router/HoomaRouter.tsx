@@ -71,6 +71,8 @@ function HoomaRoutes() {
       getHeaders: () => (runtime.initData ? { authorization: `tma ${runtime.initData}` } : {}),
       authenticationHref: (returnTo: string) =>
         runtime.initData ? null : `/login?returnTo=${encodeURIComponent(returnTo)}`,
+      accountCreationHref: (returnTo: string) =>
+        runtime.initData ? null : `/register?returnTo=${encodeURIComponent(returnTo)}`,
       onAuthenticationRequired: () => {
         if (!runtime.initData) {
           window.location.href = `/login?returnTo=${encodeURIComponent(
