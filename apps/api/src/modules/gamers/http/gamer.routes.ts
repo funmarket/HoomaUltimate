@@ -1,14 +1,9 @@
 import { Router } from "express";
+import { gamerGameCreateSchema } from "@hooma/contracts/gamers";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
+import { getAuth } from "../../identity/http/auth-request.js";
 import type { GamerService } from "../application/gamer.service.js";
 
-/**
- * Public privacy-safe Gamers discovery router.
- *
- * It is not mounted during G0 because the persisted catalog does not exist yet.
- * G1 mounts this under the canonical /api/public/v1 Gamers namespace after the
- * Prisma repository is real; protected mutations stay under /api/v1.
- */
 export function createGamerPublicRouter(service: GamerService): Router {
   const router = Router();
   router.get(
@@ -18,6 +13,18 @@ export function createGamerPublicRouter(service: GamerService): Router {
   router.get(
     "/games/:slug",
     asyncHandler(async (req, res) => res.json(await service.getGame(String(req.params.slug)))),
+  );
+  return router;
+}
+
+export function createGamerMemberRouter(service: GamerService): Router {
+  const router = Router();
+  router.post(
+    "/games",
+    asyncHandler(async (req, res) => {
+      const input = gamerGameCreateSchema.parse(req.body);
+      res.status(201).json(await service.addGame(getAuth(req).userId, input));
+    }),
   );
   return router;
 }
