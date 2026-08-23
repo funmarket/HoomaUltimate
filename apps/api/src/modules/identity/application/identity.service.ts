@@ -1,4 +1,4 @@
-import { hashPassword, hashSessionToken, newSessionToken, validateTelegramInitData, verifyPassword, type AuthTransport } from "@hooma/auth";
+import { hashPassword, hashSessionToken, newSessionToken, validateTelegramInitData, verifyPassword, type AuthTransport, type TelegramIdentityInput } from "@hooma/auth";
 import type { ApiConfig } from "@hooma/config";
 import type { LoginInput, MeResponse, ProfilePresentationUpdateInput, RegisterInput } from "@hooma/contracts";
 import { AppError } from "../../../http/errors/app-error.js";
@@ -42,7 +42,7 @@ export class IdentityService {
     if (!rawInitData || !this.config.TELEGRAM_BOT_TOKEN) {
       throw new AppError(401, "TELEGRAM_AUTH_REQUIRED", "Valid Telegram authentication is required to create a HOOMA account");
     }
-    let identity;
+    let identity: TelegramIdentityInput;
     try {
       identity = validateTelegramInitData(rawInitData, this.config.TELEGRAM_BOT_TOKEN, this.config.TELEGRAM_INIT_DATA_MAX_AGE_SECONDS);
     } catch {
