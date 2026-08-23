@@ -250,24 +250,26 @@ Whistle appears only inside the authorized Gamer Squad member page/HQ, not as a 
 
 Authorization:
 
-- list Squad Whistles -> active Squad membership required;
+- list/read Squad Whistles -> active Squad membership required;
 - send Squad Whistle -> active Squad membership required;
-- reveal Squad Whistle -> active Squad membership required;
 - random public Squad visitor -> denied.
 
-All existing global Whistle invariants remain unchanged:
+Gamers does not duplicate or pin its own Whistle retention behavior. It inherits the current authoritative shared Whistle contract from `requirements.md`, `docs/CANONICAL_MODEL.md` and the latest Whistle ADR. At the current decision state that means:
 
 ```text
 33 grapheme clusters maximum
-11 total sends per User per UTC day across ALL enabled contexts
+11 total sends per User per UTC calendar day across ALL enabled contexts
+UTC day = 00:00 UTC to next 00:00 UTC
+unused sends never carry over
+every Whistle expires at the next UTC midnight
 body in Redis only
 PostgreSQL metadata only
-24-hour unread body TTL
-60-second viewer-specific first-reveal window
-later reads never extend that window
+authorized feeds show the body directly
+no Reveal endpoint
+no per-viewer reveal/seen state
 ```
 
-Community Whistles and Gamer Squad Whistles therefore consume the same global 11/day quota.
+Community Whistles and future Gamer Squad Whistles therefore consume the same global 11/day quota.
 
 The existing shared Whistle UI/client should be generalized when necessary rather than copied into a parallel Gamers Whistle implementation.
 
@@ -309,7 +311,7 @@ Protected actions require authentication at the action boundary, including:
 - submit/confirm/contest result;
 - create/join/manage Squad;
 - access Squad private HQ;
-- list/send/reveal Squad Whistles.
+- list/read/send Squad Whistles.
 
 Server-side authorization is mandatory; hiding a button is not authorization.
 
@@ -331,12 +333,13 @@ The shared HOOMA frontend remains the implementation surface for Web and Telegra
 
 Implement as bounded vertical slices:
 
+0. **G0 — consolidate first**: reconcile the current foundation, retire duplicate ADR numbering, absorb only the useful old Gamers layering into one canonical module tree, remove the hardcoded bootstrap-catalog direction, and align governing documents before persisted Gamers behavior begins.
 1. **G1 — Gamers entry + catalog**: real `/gamers` route, persisted GamerGame catalog, FC Mobile/Ludo launch entries, authenticated missing-game contribution and duplicate handling.
 2. **G2 — Gamer identity + Challengers**: GamerProfile, game username, open-to-challenge, discovery/profile UI.
 3. **G3 — Challenge + Match Card**: send/accept/decline/cancel, concurrency-safe lifecycle, Arena projection.
 4. **G4 — Results**: submit, optional evidence reference, confirm, contest, independent agreement, completed/disputed, rematch.
 5. **G5 — Ranking**: per-game rating/record, idempotent atomic rating updates/history, Rankings UI.
 6. **G6 — Gamer Squads**: creation, optional logo/banner URL, public Squad community page, membership, Leader/member HQ.
-7. **G7 — Squad Whistle + hardening**: enable `GAMER_SQUAD` through explicit membership authorization using the existing Whistle engine; prove privacy/quota/TTL/no-body-persistence invariants.
+7. **G7 — Squad Whistle + hardening**: enable `GAMER_SQUAD` through explicit membership authorization using the existing Whistle engine and prove the then-current shared Whistle privacy/quota/retention/no-durable-body invariants.
 
 Each slice must follow `AGENTS.md` / `docs/LIVING_BUILD_PLAN.md` and must not be called complete beyond actual verification evidence.
