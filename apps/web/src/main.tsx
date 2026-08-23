@@ -6,6 +6,7 @@ import "@hooma/ui/bottom-nav.css";
 import "@hooma/frontend/communities.css";
 import "@hooma/frontend/teams.css";
 import "@hooma/frontend/play.css";
+import "@hooma/frontend/whistle.css";
 import "./styles.css";
 import "./theme.css";
 import "./hooma-membership.css";
