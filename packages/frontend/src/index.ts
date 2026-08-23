@@ -11,3 +11,4 @@ export * from "./events/EventDetailPage";
 export * from "./events/FormationBuilderPage";
 export * from "./events/EventChatPage";
 export * from "./events/CheckInPage";
+export * from "./gamers/GamersPage";
