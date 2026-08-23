@@ -250,7 +250,7 @@ Rules:
 
 - Team may exist without players;
 - TeamPlayer always belongs to an existing canonical HOOMA User; no placeholder/offline roster identity exists;
-- public visitors may browse Team pages without an account, but authentication/account creation is required before a protected join or membership action can create a TeamPlayer;
+- public visitors may browse Team pages without an account, but authentication/account creation is required before a protected join or membership action can create TeamPlayer;
 - `userId` is never globally unique;
 - the same User may not be linked twice to the same Team roster;
 - Team-specific roster data belongs on TeamPlayer; display name, username, photo, bio and other canonical presentation remain owned by User/UserPresentation and are not duplicated here;
@@ -742,14 +742,39 @@ Rules:
 
 ---
 
-# 19. Frozen future concepts
+# 19. Gamers current vertical-slice boundary
+
+Gamers is explicitly unfrozen by ADR-041. G0 establishes one canonical Gamers ownership path without pretending persistence or user-facing functionality already exists.
+
+Current canonical ownership is:
+
+```text
+Gamers domain
+  -> GamerGameRepository port
+  -> GamerService
+  -> Gamer public/member routers as the slice requires
+  -> PostgreSQL through a Prisma repository beginning in G1
+```
+
+G0 rules:
+
+- there is no hardcoded bootstrap game catalog in the canonical Gamers branch;
+- the retired `feat/gamers-catalog-entry` layering may be preserved only through this one canonical module tree;
+- the current repository/service/router files are architecture ownership, not proof that `/gamers` or the catalog is implemented;
+- no Gamers route is mounted until G1 provides the real persisted catalog path;
+- no durable Gamers model is added to this canonical model until the bounded slice that owns it begins;
+- G1 is the first persistence slice and may introduce `GamerGame` only with its Prisma schema, committed migration, repository implementation, contracts/API and read/write verification kept in agreement;
+- later GamerProfile/challenge/result/ranking/Squad models are added only in their own authorized slices, not speculatively during G0.
+
+---
+
+# 20. Frozen future concepts
 
 The normalized initial schema must not add durable product tables for these until their vertical slice begins:
 
 ```text
 Place/Watch/Pitch capability system
 ULTRAS
-Gamers
 Requests
 Ride
 FundMe
@@ -759,13 +784,13 @@ Replay
 HOOMA NOW read models
 ```
 
-Whistle is explicitly unfrozen by ADR-039 and is therefore no longer in this list.
+Whistle is explicitly unfrozen by ADR-039/ADR-040. Gamers is explicitly unfrozen by ADR-041 and is therefore no longer in this list.
 
 Foundation interfaces/packages may exist, but a speculative schema is not implementation.
 
 ---
 
-# 20. Migration requirement
+# 21. Migration requirement
 
 Before first HOOMA ULTIMATE release, all pre-release current migrations are replaced with one reviewed initial migration generated from the reconciled schema and augmented with intentional PostgreSQL constraints where required.
 
@@ -773,7 +798,7 @@ After first release, migration history becomes forward-only.
 
 ---
 
-# 21. Completion rule
+# 22. Completion rule
 
 A model is not considered correct because this file exists.
 
