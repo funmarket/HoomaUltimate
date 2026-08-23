@@ -8,6 +8,7 @@ import {
   EventChatPage,
   EventDetailPage,
   FormationBuilderPage,
+  HoomaDetailPage,
   HoomaFrontendProvider,
   HoomaPage,
   PlayPage,
@@ -33,6 +34,10 @@ function requiredParam(name: string, value: string | undefined): string {
 function TeamDetailRoute() {
   const { teamId } = useParams();
   return <TeamDetailPage teamId={requiredParam("teamId", teamId)} />;
+}
+function HoomaDetailRoute() {
+  const { communityId } = useParams();
+  return <HoomaDetailPage communityId={requiredParam("communityId", communityId)} />;
 }
 function EventDetailRoute() {
   const { eventId } = useParams();
@@ -97,6 +102,7 @@ function HoomaRoutes() {
               <Route path="/events/:eventId/check-in" element={<EventCheckInRoute />} />
               <Route path="/hooma" element={<HoomaPage />} />
               <Route path="/hooma/new" element={<CreateHoomaPage />} />
+              <Route path="/hooma/:communityId" element={<HoomaDetailRoute />} />
               <Route path="/teams" element={<TeamsPage />} />
               <Route path="/teams/control" element={<CoachControlRoomPage />} />
               <Route path="/teams/:teamId" element={<TeamDetailRoute />} />
