@@ -74,7 +74,7 @@ export function GamersPage() {
     }
   }
 
-  const signInHref = authenticationHref("/gamers");
+  const accountHref = authenticationHref("/gamers");
 
   return (
     <div className="page gamers-page">
@@ -107,7 +107,7 @@ export function GamersPage() {
         {!loading && !games.length && !error ? (
           <div className="state-card">
             <strong>No active games yet.</strong>
-            <p className="muted">Authenticated players can add the first game below.</p>
+            <p className="muted">HOOMA account holders can add the first game below.</p>
           </div>
         ) : null}
         {games.length ? (
@@ -163,14 +163,14 @@ export function GamersPage() {
         {!accountLoading && !me ? (
           <div className="member-gate">
             <strong>Public browsing stays open.</strong>
-            <span className="muted">Sign in only when you want to contribute a missing game.</span>
-            {signInHref ? (
-              <a className="button secondary" href={signInHref}>
-                Sign in to add a game
+            <span className="muted">
+              Create your HOOMA account only when you want to contribute or use member actions.
+            </span>
+            {accountHref ? (
+              <a className="button secondary" href={accountHref}>
+                Create HOOMA account to add a game
               </a>
-            ) : (
-              <span className="muted">Open HOOMA through Telegram to authenticate.</span>
-            )}
+            ) : null}
           </div>
         ) : null}
       </section>
