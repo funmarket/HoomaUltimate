@@ -9,11 +9,24 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
-  "dependencies": { "zod": "4.4.3" },
-  "devDependencies": { "typescript": "5.9.2" },
+  "dependencies": {
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "5.9.2"
+  },
   "exports": {
-    ".": { "types": "./src/index.ts", "default": "./dist/index.js" },
-    "./gamers": { "types": "./src/gamers.ts", "default": "./dist/gamers.js" },
-    "./play": { "types": "./src/play.ts", "default": "./dist/play.js" }
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./gamers": {
+      "types": "./src/gamers.ts",
+      "default": "./dist/gamers.js"
+    },
+    "./play": {
+      "types": "./src/play.ts",
+      "default": "./dist/play.js"
+    }
   }
 }
