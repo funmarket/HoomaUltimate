@@ -1,0 +1,119 @@
+.hooma-hq-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.hooma-member-directory {
+  display: grid;
+  gap: 12px;
+}
+
+.hooma-member-list {
+  display: grid;
+  gap: 8px;
+}
+
+.hooma-member-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 0;
+  border-top: 1px solid rgba(255, 255, 255, .09);
+}
+
+.hooma-member-identity {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.hooma-member-identity img,
+.hooma-member-avatar {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border-radius: 50%;
+  border: 1px solid rgba(181, 155, 87, .52);
+  object-fit: cover;
+}
+
+.hooma-member-avatar {
+  display: grid;
+  place-items: center;
+  background: #0a0b0b;
+  color: #f2ead7;
+  font: 800 13px Georgia, serif;
+}
+
+.hooma-member-identity > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.hooma-member-identity strong {
+  color: #f2ead7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hooma-member-identity small {
+  color: #bfb59a;
+}
+
+.hooma-member-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.hooma-member-controls button {
+  min-height: 34px;
+  border: 1px solid rgba(242, 234, 215, .22);
+  border-radius: 999px;
+  background: transparent;
+  color: #f2ead7;
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.hooma-member-controls button:hover,
+.hooma-member-controls button:focus-visible {
+  border-color: #b59b57;
+}
+
+.hooma-member-controls button.danger {
+  border-color: rgba(255, 150, 128, .35);
+  color: #ffc0b1;
+}
+
+.hooma-member-controls button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 620px) {
+  .hooma-member-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .hooma-member-controls {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .hooma-hq-actions .button {
+    flex: 1;
+  }
+}
