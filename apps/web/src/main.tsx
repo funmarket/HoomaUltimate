@@ -8,6 +8,7 @@ import "@hooma/frontend/teams.css";
 import "@hooma/frontend/play.css";
 import "./styles.css";
 import "./theme.css";
+import "./hooma-membership.css";
 import "./account/account.css";
 import "./profile/profile.css";
 
