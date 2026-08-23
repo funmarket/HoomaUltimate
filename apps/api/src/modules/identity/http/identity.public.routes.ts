@@ -26,5 +26,17 @@ export function createIdentityPublicRouter(service: IdentityService, config: Api
     })
   );
 
+  router.post(
+    "/telegram/account",
+    asyncHandler(async (request, response) => {
+      const authorization = request.header("authorization") ?? "";
+      const [scheme, rawInitData] = authorization.split(" ", 2);
+      const { userId } = await service.provisionTelegramAccount(
+        scheme?.toLowerCase() === "tma" ? rawInitData : undefined
+      );
+      response.status(201).json({ ok: true, userId });
+    })
+  );
+
   return router;
 }
