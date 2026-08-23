@@ -132,6 +132,11 @@ enum GamerChallengeStatus {
   CANCELLED
 }
 
+enum PlayLookingFor {
+  GAME
+  TEAM
+}
+
 model User {
   id                         String                         @id @default(cuid())
   createdAt                  DateTime                       @default(now())
@@ -162,6 +167,7 @@ model User {
   whistlesAuthored           WhistleMetadata[]
   gamerGamesCreated          GamerGame[]                    @relation("GamerGameCreator")
   gamerProfiles              GamerProfile[]
+  playPlayerListings         PlayPlayerListing[]
 }
 
 model UserPresentation {
@@ -333,7 +339,7 @@ model TeamCapabilityGrant {
   capability TeamCapability
   grantedBy  String
   createdAt  DateTime       @default(now())
-  revokedAt  DateTime?
+  revokedAt DateTime?
   team       Team           @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user       User           @relation("CapabilityRecipient", fields: [userId], references: [id], onDelete: Cascade)
   grantor    User           @relation("CapabilityGrantor", fields: [grantedBy], references: [id], onDelete: Cascade)
@@ -361,13 +367,13 @@ model TeamLineup {
 }
 
 model TeamLineupSlot {
-  id         String     @id @default(cuid())
+  id         String      @id @default(cuid())
   lineupId   String
   userId     String?
   position   String
-  sortOrder  Int        @default(0)
-  lineup     TeamLineup @relation(fields: [lineupId], references: [id], onDelete: Cascade)
-  user       User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sortOrder  Int         @default(0)
+  lineup     TeamLineup  @relation(fields: [lineupId], references: [id], onDelete: Cascade)
+  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([lineupId, sortOrder])
 }
@@ -423,26 +429,26 @@ model TeamGame {
 }
 
 model Event {
-  id              String      @id @default(cuid())
+  id              String          @id @default(cuid())
   communityId     String
   createdByUserId String
   type            EventType
-  status          EventStatus @default(PUBLISHED)
+  status          EventStatus     @default(PUBLISHED)
   title           String
   description     String?
   startsAt        DateTime
   endsAt          DateTime?
-  timezone        String      @default("Africa/Tunis")
+  timezone        String          @default("Africa/Tunis")
   venueName       String?
   address         String?
   capacity        Int?
-  waitlistEnabled Boolean     @default(true)
-  entryFeeMinor   BigInt      @default(0)
-  currency        String      @default("TND")
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  community       Community   @relation(fields: [communityId], references: [id], onDelete: Cascade)
-  createdBy       User        @relation("EventCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  waitlistEnabled Boolean         @default(true)
+  entryFeeMinor   BigInt          @default(0)
+  currency        String          @default("TND")
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  community       Community       @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  createdBy       User            @relation("EventCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
   playDetails     PlayEventDetails?
   rsvps           EventRsvp[]
   formations      Formation[]
@@ -620,6 +626,17 @@ model GamerChallenge {
   @@index([gameId, pairKey, status])
 }
 
+model PlayPlayerListing {
+  id         String         @id @default(cuid())
+  userId     String         @unique
+  lookingFor PlayLookingFor
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([lookingFor, updatedAt])
+}
+
 model AuditLog {
   id          String   @id @default(cuid())
   actorUserId String?
@@ -643,7 +660,7 @@ model OutboxEvent {
   payload       Json
   status        OutboxStatus @default(PENDING)
   attempts      Int          @default(0)
-  availableAt   DateTime     @default(now())
+  availableAt  DateTime     @default(now())
   claimedAt     DateTime?
   deliveredAt  DateTime?
   lastError     String?
