@@ -86,11 +86,15 @@ Status: **Active ADR index**
 
 **Reason:** Matches current product scope while remaining future-compatible.
 
-## ADR-015 — TeamPlayer is roster identity first, optional User link second
+## ADR-015 — TeamPlayer requires a canonical HOOMA User
 
-**Decision:** TeamPlayer requires a Team and display name but does not require a HOOMA User account. `userId` is optional and is never globally unique.
+**Decision:** Every `TeamPlayer` is a roster membership for an existing canonical HOOMA `User`. `userId` is required and is never globally unique. HOOMA does not create placeholder/offline TeamPlayer records for people who do not have a HOOMA account.
 
-**Reason:** Real football rosters must support players who have not registered in HOOMA.
+Public visitors may browse privacy-safe Team and other public product surfaces without an account. Authentication is required only when they attempt a protected action such as joining, creating, managing, challenging, RSVP, or other member/private behavior. A guest who initiates such an action must authenticate or create a HOOMA account before a TeamPlayer or other membership record can be created.
+
+A Team roster therefore stores Team-specific membership data only; canonical user presentation remains owned by `User` / `UserPresentation` and must not be duplicated into TeamPlayer.
+
+**Reason:** Preserve one canonical identity model, prevent shadow/offline player identities, and keep HOOMA's locked public-first/authentication-at-action-boundary behavior consistent across Teams, Gamers, ULTRAS, and other membership domains.
 
 ## ADR-016 — Team lineups reference TeamPlayer and normalized pitch coordinates
 
