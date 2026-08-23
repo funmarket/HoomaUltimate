@@ -48,7 +48,7 @@ function publicListPath(filters: TeamListFilters = {}): string {
 export function createHoomaApi(transport: HoomaTransport) {
   const identity = {
     register: (input: RegisterInput) => request<{ ok: true }>(transport, "/api/public/v1/auth/register", { method: "POST", body: JSON.stringify(input) }),
-    login: (input: LoginInput) => request<{ ok: true }>(transport, "/api/public/v1/auth/login", { method: "POST" }),
+    login: (input: LoginInput) => request<{ ok: true }>(transport, "/api/public/v1/auth/login", { method: "POST", body: JSON.stringify(input) }),
     logout: () => request<{ ok: true }>(transport, "/api/v1/auth/logout", { method: "POST" }),
     me: () => request<MeResponse>(transport, "/api/v1/me"),
     async meOptional(): Promise<MeResponse | null> {
