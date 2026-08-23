@@ -151,14 +151,22 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
         </a>
         <span className="eyebrow">GAME HUB</span>
         <h1>{game.name}</h1>
-        <p>Find real players, identify yourself by your game handle, and choose when you are open.</p>
+        <p>
+          Find real players, identify yourself by your game handle, and choose when you are open.
+        </p>
       </header>
 
       <nav className="gamer-hub-tabs" aria-label={`${game.name} sections`}>
         <span className="gamer-hub-tab active">CHALLENGERS</span>
-        <span className="gamer-hub-tab disabled" aria-disabled="true">SQUADS</span>
-        <span className="gamer-hub-tab disabled" aria-disabled="true">ARENA</span>
-        <span className="gamer-hub-tab disabled" aria-disabled="true">RANKINGS</span>
+        <span className="gamer-hub-tab disabled" aria-disabled="true">
+          SQUADS
+        </span>
+        <span className="gamer-hub-tab disabled" aria-disabled="true">
+          ARENA
+        </span>
+        <span className="gamer-hub-tab disabled" aria-disabled="true">
+          RANKINGS
+        </span>
       </nav>
 
       {notice ? <div className="success-box">{notice}</div> : null}
@@ -169,7 +177,8 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
           <span className="eyebrow">YOUR GAME IDENTITY</span>
           <h2 id="gamer-profile-heading">Your {game.name} profile</h2>
           <p className="muted">
-            This handle belongs only to this game. Your HOOMA name and photo still come from your main profile.
+            This handle belongs only to this game. Your HOOMA name and photo still come from your
+            main profile.
           </p>
         </div>
         {memberError ? <div className="error-box">{memberError}</div> : null}
@@ -205,9 +214,13 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
         {!accountLoading && !me ? (
           <div className="member-gate">
             <strong>Challengers are public. Your game identity is private to your account.</strong>
-            <span className="muted">Sign in only when you want to create your own game profile.</span>
+            <span className="muted">
+              Sign in only when you want to create your own game profile.
+            </span>
             {signInHref ? (
-              <a className="button secondary" href={signInHref}>Sign in</a>
+              <a className="button secondary" href={signInHref}>
+                Sign in
+              </a>
             ) : (
               <span className="muted">Open HOOMA through Telegram to authenticate.</span>
             )}
@@ -226,7 +239,9 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
         {!challengers.length ? (
           <div className="state-card">
             <strong>No challengers are open yet.</strong>
-            <p className="muted">Players appear here only after explicitly switching on OPEN TO CHALLENGE.</p>
+            <p className="muted">
+              Players appear here only after explicitly switching on OPEN TO CHALLENGE.
+            </p>
           </div>
         ) : (
           <div className="gamer-challenger-grid">
