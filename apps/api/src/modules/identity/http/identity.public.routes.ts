@@ -5,7 +5,10 @@ import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import type { IdentityService } from "../application/identity.service.js";
 import { readCookie, setSessionCookie } from "./cookies.js";
 
-export function createIdentityPublicRouter(service: IdentityService, config: ApiConfig): Router {
+export function createIdentityPublicRouter(
+  service: IdentityService,
+  config: ApiConfig,
+): Router {
   const router = Router();
 
   router.post(
@@ -14,7 +17,7 @@ export function createIdentityPublicRouter(service: IdentityService, config: Api
       const { sessionToken } = await service.register(registerSchema.parse(request.body));
       setSessionCookie(response, config, sessionToken);
       response.status(201).json({ ok: true });
-    })
+    }),
   );
 
   router.post(
@@ -23,7 +26,7 @@ export function createIdentityPublicRouter(service: IdentityService, config: Api
       const { sessionToken } = await service.login(loginSchema.parse(request.body));
       setSessionCookie(response, config, sessionToken);
       response.json({ ok: true });
-    })
+    }),
   );
 
   router.post(
@@ -31,13 +34,15 @@ export function createIdentityPublicRouter(service: IdentityService, config: Api
     asyncHandler(async (request, response) => {
       const authorization = request.header("authorization") ?? "";
       const [scheme, rawInitData] = authorization.split(" ", 2);
-      const webUserId = await service.resolveWebSession(readCookie(request, config.SESSION_COOKIE_NAME));
-      const { userId } = await service.provisionTelegramAccount(
-        scheme?.toLowerCase() === "tma" ? rawInitData : undefined,
-        webUserId
+      const webUserId = await service.resolveWebSession(
+        readCookie(request, config.SESSION_COOKIE_NAME),
       );
-      response.status(201).json({ ok: true, userId });
-    })
+      await service.provisionTelegramAccount(
+        scheme?.toLowerCase() === "tma" ? rawInitData : undefined,
+        webUserId,
+      );
+      response.status(201).json({ ok: true });
+    }),
   );
 
   return router;
