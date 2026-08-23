@@ -14,14 +14,16 @@ type CreationOption = {
   readonly roles: string;
   readonly available: boolean;
   readonly href: string | null;
+  readonly feedHref: string;
+  readonly feedLabel: string;
 };
 
 const CREATION_ORDER: readonly CreationType[] = ["HOOMA", "TEAM", "ULTRAS", "GAMERS"];
 const CREATION_OPTIONS: Record<CreationType, CreationOption> = {
-  HOOMA: { value: "HOOMA", title: "HOOMA", description: "Start a neighborhood community", roles: "Founder · Coach · Member", available: true, href: "/hooma/new" },
-  TEAM: { value: "TEAM", title: "TEAM", description: "Build a football side", roles: "Coach · Assistant · Player", available: true, href: "/teams" },
-  ULTRAS: { value: "ULTRAS", title: "ULTRAS", description: "Build an official-club supporter group", roles: "Coming with the canonical ULTRAS domain", available: false, href: null },
-  GAMERS: { value: "GAMERS", title: "GAMERS", description: "Build a gaming squad", roles: "Coming with the canonical Gamers domain", available: false, href: null }
+  HOOMA: { value: "HOOMA", title: "HOOMA", description: "Start a neighborhood community", roles: "Founder · Coach · Member", available: true, href: "/hooma/new", feedHref: "/hooma", feedLabel: "HOOMA" },
+  TEAM: { value: "TEAM", title: "TEAM", description: "Build a football side", roles: "Coach · Assistant · Player", available: true, href: "/teams", feedHref: "/teams", feedLabel: "Teams" },
+  ULTRAS: { value: "ULTRAS", title: "ULTRAS", description: "Build an official-club supporter group", roles: "Coming with the canonical ULTRAS domain", available: false, href: null, feedHref: "/ultras", feedLabel: "ULTRAS" },
+  GAMERS: { value: "GAMERS", title: "GAMERS", description: "Build a gaming squad", roles: "Coming with the canonical Gamers domain", available: false, href: null, feedHref: "/gamers", feedLabel: "Gamers" }
 };
 
 function report(reason: unknown): string {
@@ -86,7 +88,7 @@ export function HoomaPage() {
             </select>
           </label>
           <div className={`hooma-create-selection ${selectedCreation.available ? "" : "is-future"}`} aria-live="polite">
-            <strong>{selectedCreation.title}</strong><span>{selectedCreation.description}</span><small>{selectedCreation.roles}</small>
+            <strong>{selectedCreation.title}</strong><span>{selectedCreation.description}</span><small>{selectedCreation.roles}</small><small>Discovery home: {selectedCreation.feedLabel} feed</small>
           </div>
           <button className="button hooma-create-continue" type="button" disabled={!selectedCreation.available} onClick={continueCreation}>
             {selectedCreation.available ? `Continue with ${selectedCreation.title}` : `${selectedCreation.title} coming soon`}
@@ -152,7 +154,7 @@ export function CreateHoomaPage() {
     setCreating(true);
     setError("");
     try {
-      const created = await api.communities.create({
+      await api.communities.create({
         name,
         description: description.trim() || null,
         city: city.trim() || null,
@@ -160,7 +162,7 @@ export function CreateHoomaPage() {
         logoUrl: logoUrl.trim() || null,
         bannerUrl: bannerUrl.trim() || null
       });
-      navigate(`/hooma/${created.id}`);
+      navigate(CREATION_OPTIONS.HOOMA.feedHref);
     } catch (reason) {
       setError(protectedError(reason, "Could not create HOOMA"));
     } finally {
