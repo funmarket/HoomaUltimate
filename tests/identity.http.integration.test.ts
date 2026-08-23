@@ -45,9 +45,7 @@ function telegramInitData(telegramUserId: number): string {
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([key, value]) => `${key}=${value}`)
     .join("\n");
-  const secret = createHmac("sha256", "WebAppData")
-    .update(config.TELEGRAM_BOT_TOKEN!)
-    .digest();
+  const secret = createHmac("sha256", "WebAppData").update(config.TELEGRAM_BOT_TOKEN!).digest();
   const hash = createHmac("sha256", secret).update(checkString).digest("hex");
   return new URLSearchParams({ ...fields, hash }).toString();
 }
