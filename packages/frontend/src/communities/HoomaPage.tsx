@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import type { MeResponse } from "@hooma/contracts";
 import { useHoomaFrontend } from "../context";
 import type { CommunityMember, PublicCommunityDetail, PublicCommunitySummary } from "../api";
+import { HoomaWhistleBoard } from "../whistle/HoomaWhistleBoard";
 
 type CreationType = "HOOMA" | "TEAM" | "ULTRAS" | "GAMERS";
 
@@ -270,7 +271,7 @@ export function HoomaDetailPage({ communityId }: { readonly communityId: string 
 
       <section className="hooma-hq-grid">
         <article className="panel hooma-hq-module"><span className="eyebrow">COMMUNITY</span><h2>Neighborhood HQ</h2><p>Teams, local match activity and community tools gather here instead of being scattered around the app.</p><div className="hooma-module-links"><a href="/teams">Teams</a><a href="/play">Play nearby</a></div></article>
-        <article className={`panel hooma-hq-module whistle-module ${membership ? "" : "is-locked"}`}><span className="eyebrow">PRIVATE</span><h2>Whistle Board</h2><p>{membership ? "Your private HOOMA Whistle surface lives here. It will use the shared transient Whistle rules—never permanent chat history." : "Join this HOOMA to access its private neighborhood Whistle Board."}</p><span className="whistle-status">WHISTLE DOMAIN CONNECTION NEXT</span></article>
+        {membership ? <HoomaWhistleBoard communityId={community.id} /> : <article className="panel hooma-hq-module whistle-module is-locked"><span className="eyebrow">PRIVATE</span><h2>Whistle Board</h2><p>Join this HOOMA to access its private neighborhood Whistle Board.</p><span className="whistle-status">MEMBERS ONLY</span></article>}
       </section>
 
       {membership ? (
