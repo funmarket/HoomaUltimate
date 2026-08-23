@@ -6,7 +6,8 @@ import { createApp } from "../apps/api/src/bootstrap/app.js";
 import { createContainer } from "../apps/api/src/bootstrap/container.js";
 
 const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) throw new Error("DATABASE_URL is required for Play player-listing integration tests");
+if (!databaseUrl)
+  throw new Error("DATABASE_URL is required for Play player-listing integration tests");
 
 const config = loadApiConfig({
   ...process.env,
@@ -109,18 +110,30 @@ test("Play player listings are public while lifecycle is account-owned and membe
     const publicAfterCreate = await fetch(`${base}/api/public/v1/play/player-listings`);
     assert.equal(publicAfterCreate.status, 200);
     const publicBody = (await publicAfterCreate.json()) as {
-      items: Array<Record<string, unknown> & {
-        id: string;
-        lookingFor: string;
-        presentation: { username: string; displayName: string; photoUrl: string | null; bio: string | null } | null;
-      }>;
+      items: Array<
+        Record<string, unknown> & {
+          id: string;
+          lookingFor: string;
+          presentation: {
+            username: string;
+            displayName: string;
+            photoUrl: string | null;
+            bio: string | null;
+          } | null;
+        }
+      >;
     };
     const publicA = publicBody.items.find((item) => item.id === listingA.id);
     assert.ok(publicA);
     assert.equal(publicA.lookingFor, "GAME");
     assert.equal(publicA.presentation?.username, playerA.username);
     assert.equal(publicA.presentation?.displayName, "Play a");
-    assert.deepEqual(Object.keys(publicA).sort(), ["id", "lookingFor", "presentation", "updatedAt"]);
+    assert.deepEqual(Object.keys(publicA).sort(), [
+      "id",
+      "lookingFor",
+      "presentation",
+      "updatedAt",
+    ]);
     assert.equal("userId" in publicA, false);
 
     const updateA = await fetch(
@@ -153,8 +166,14 @@ test("Play player listings are public while lifecycle is account-owned and membe
     const finalPublic = await fetch(`${base}/api/public/v1/play/player-listings`);
     assert.equal(finalPublic.status, 200);
     const finalBody = (await finalPublic.json()) as { items: Array<{ id: string }> };
-    assert.equal(finalBody.items.some((item) => item.id === listingA.id), false);
-    assert.equal(finalBody.items.some((item) => item.id === listingB.id), true);
+    assert.equal(
+      finalBody.items.some((item) => item.id === listingA.id),
+      false,
+    );
+    assert.equal(
+      finalBody.items.some((item) => item.id === listingB.id),
+      true,
+    );
   } finally {
     await new Promise<void>((resolve, reject) =>
       server.close((error) => (error ? reject(error) : resolve())),
