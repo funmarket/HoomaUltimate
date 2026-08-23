@@ -21,6 +21,9 @@ export type PublicCommunityDetail = { id: string; slug: string; name: string; de
 export type PublicCommunityList = { items: PublicCommunitySummary[]; nextCursor: string | null };
 export type CreatedCommunity = { id: string; slug: string; name: string; description: string | null; city: string | null; houma: string | null; logoUrl: string | null; bannerUrl: string | null; status: "ACTIVE" | "ARCHIVED"; createdByUserId: string; createdAt: string; updatedAt: string };
 export type CommunityMember = { userId: string; role: CommunityRole; joinedAt: string; presentation: { displayName: string; username: string; photoUrl: string | null } | null };
+export type WhistleListItem = { id: string; authorUserId: string; createdAt: string; expiresAt: string; author?: { presentation: { displayName: string; username: string; photoUrl: string | null } | null } };
+export type WhistleList = { items: WhistleListItem[]; remainingToday: number };
+export type WhistleReveal = { body: string; visibleForSeconds: number };
 export type PublicTeamSummary = { id: string; slug: string; name: string; motto: string | null; city: string | null; houma: string | null; badgeUrl: string | null; communityId: string | null; _count: { players: number } };
 export type PublicTeamList = { items: PublicTeamSummary[]; nextCursor: string | null };
 export type ManagedTeam = { id: string; name: string; slug: string; badgeUrl: string | null; communityId: string | null; city: string | null; houma: string | null };
@@ -69,6 +72,11 @@ export function createHoomaApi(transport: HoomaTransport) {
     appointCoach: (id: string, userId: string) => request<{ ok: true }>(transport, `/api/v1/communities/${encodeURIComponent(id)}/coaches`, { method: "POST", body: JSON.stringify({ userId }) }),
     revokeCoach: (id: string, userId: string) => request<{ ok: true }>(transport, `/api/v1/communities/${encodeURIComponent(id)}/coaches/${encodeURIComponent(userId)}`, { method: "DELETE" })
   };
+  const whistles = {
+    community: (communityId: string) => request<WhistleList>(transport, `/api/v1/whistles/contexts/COMMUNITY/${encodeURIComponent(communityId)}`),
+    sendToCommunity: (communityId: string, body: string) => request<{ whistle: WhistleListItem; remainingToday: number }>(transport, `/api/v1/whistles/contexts/COMMUNITY/${encodeURIComponent(communityId)}`, { method: "POST", body: JSON.stringify({ body }) }),
+    reveal: (whistleId: string) => request<WhistleReveal>(transport, `/api/v1/whistles/${encodeURIComponent(whistleId)}/reveal`, { method: "POST" })
+  };
   const teams = {
     publicList: (filters?: TeamListFilters) => request<PublicTeamList>(transport, publicListPath(filters)),
     managed: () => request<ManagedTeam[]>(transport, "/api/v1/teams/managed"),
@@ -88,6 +96,6 @@ export function createHoomaApi(transport: HoomaTransport) {
     declineChallenge: (id: string) => request(transport, `/api/v1/teams/challenges/${encodeURIComponent(id)}/decline`, { method: "POST" }),
     cancelChallenge: (id: string) => request(transport, `/api/v1/teams/challenges/${encodeURIComponent(id)}/cancel`, { method: "POST" })
   };
-  return { identity, platformAdmin, communities, teams };
+  return { identity, platformAdmin, communities, whistles, teams };
 }
 export type HoomaApi = ReturnType<typeof createHoomaApi>;
