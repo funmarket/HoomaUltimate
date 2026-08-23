@@ -250,7 +250,7 @@ Rules:
 
 - Team may exist without players;
 - TeamPlayer always belongs to an existing canonical HOOMA User; no placeholder/offline roster identity exists;
-- public visitors may browse Team pages without an account, but authentication/account creation is required before a protected join or membership action can create TeamPlayer;
+- public visitors may browse Team pages without an account, but authentication/account creation is required before a protected join or membership action can create a TeamPlayer;
 - `userId` is never globally unique;
 - the same User may not be linked twice to the same Team roster;
 - Team-specific roster data belongs on TeamPlayer; display name, username, photo, bio and other canonical presentation remain owned by User/UserPresentation and are not duplicated here;
