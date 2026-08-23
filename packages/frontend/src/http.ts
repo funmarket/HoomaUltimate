@@ -16,6 +16,7 @@ export type HoomaTransport = {
   readonly getHeaders?: () => HeadersInit;
   readonly onAuthenticationRequired?: () => void;
   readonly authenticationHref?: (returnTo: string) => string | null;
+  readonly accountCreationHref?: (returnTo: string) => string | null;
 };
 
 export async function request<T>(transport: HoomaTransport, path: string, init?: RequestInit): Promise<T> {
