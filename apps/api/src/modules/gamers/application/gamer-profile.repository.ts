@@ -8,7 +8,9 @@ export type GamerProfileRecord = {
   updatedAt: Date;
 };
 
-export type GamerChallengerSummary = GamerProfileRecord & {
+export type GamerChallengerSummary = {
+  id: string;
+  handle: string;
   presentation: {
     username: string;
     displayName: string;
