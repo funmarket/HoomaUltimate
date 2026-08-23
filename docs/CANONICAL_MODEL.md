@@ -146,7 +146,7 @@ metadata?
 createdAt
 ```
 
-Never store secrets, password material, session tokens, Telegram bot token, or future Whistle body content in audit metadata.
+Never store secrets, password material, session tokens, Telegram bot token, or Whistle body content in audit metadata.
 
 ## OutboxEvent
 
@@ -667,11 +667,52 @@ Rules:
 - expired messages are excluded from reads;
 - Worker owns durable cleanup of expired rows once cleanup execution is enabled;
 - Events cannot be marked fully complete until cleanup ownership is implemented and tested;
-- this chat is separate from future Whistle and from Team challenge coordination.
+- this chat is separate from Whistle and from Team challenge coordination;
+- the later Play communication direction is Event Whistle Board through the shared Whistle engine; Event Chat removal is a separate cleanup/migration slice.
 
 ---
 
-# 17. Public/member boundary
+# 17. Whistle
+
+## WhistleMetadata
+
+Whistle is one shared transient signal engine. PostgreSQL owns metadata only:
+
+```text
+WhistleMetadata
+  id
+  authorUserId
+  contextType        COMMUNITY | EVENT | TEAM | RIDE | ULTRAS | GAMER_SQUAD
+  contextId
+  createdAt
+  expiresAt
+```
+
+There is deliberately **no body column**.
+
+Current rules:
+
+- body lives only in Redis transient storage;
+- body TTL is 24 hours from creation while unread;
+- maximum body length is 33 Unicode grapheme clusters, enforced server-side;
+- each User may create at most 11 Whistles per UTC calendar day **globally across every context**;
+- quota enforcement is concurrency-safe at the durable metadata boundary;
+- first authorized reveal creates one 60-second reveal window for that viewer;
+- reads during the active reveal window do not extend it;
+- after that viewer's reveal window expires, that viewer cannot restart it;
+- another authorized viewer has an independent reveal window;
+- active Community membership is required for the current `COMMUNITY` context;
+- current enabled context is `COMMUNITY` only;
+- `EVENT`, `TEAM`, `RIDE`, `ULTRAS`, and `GAMER_SQUAD` remain disabled until their context-specific authorization slices are deliberately implemented;
+- Whistle body content must never be copied into PostgreSQL, AuditLog metadata, OutboxEvent payloads, durable notifications, analytics, URLs, query strings, or server logs;
+- list endpoints expose metadata/presentation only; body retrieval happens only through the authorized reveal operation;
+- Redis is disposable transient infrastructure; PostgreSQL metadata remains the durable source for quota/context indexes and expiry projections.
+
+Redis keys are infrastructure details, not canonical product identity. Losing Redis may make remaining transient bodies unavailable; it must never cause a fallback to durable body storage.
+
+---
+
+# 18. Public/member boundary
 
 Public reads:
 
@@ -696,11 +737,12 @@ Rules:
 - public Team DTO never includes unpublished lineup;
 - public Game DTO never includes leader coordination messages;
 - member management DTO may expose only data the authenticated principal is authorized to manage;
+- Whistle Community reads, sends, and reveals are authenticated member-private operations;
 - UI hiding is not authorization.
 
 ---
 
-# 18. Frozen future concepts
+# 19. Frozen future concepts
 
 The normalized initial schema must not add durable product tables for these until their vertical slice begins:
 
@@ -708,7 +750,6 @@ The normalized initial schema must not add durable product tables for these unti
 Place/Watch/Pitch capability system
 ULTRAS
 Gamers
-Whistle
 Requests
 Ride
 FundMe
@@ -718,11 +759,13 @@ Replay
 HOOMA NOW read models
 ```
 
+Whistle is explicitly unfrozen by ADR-039 and is therefore no longer in this list.
+
 Foundation interfaces/packages may exist, but a speculative schema is not implementation.
 
 ---
 
-# 19. Migration requirement
+# 20. Migration requirement
 
 Before first HOOMA ULTIMATE release, all pre-release current migrations are replaced with one reviewed initial migration generated from the reconciled schema and augmented with intentional PostgreSQL constraints where required.
 
@@ -730,7 +773,7 @@ After first release, migration history becomes forward-only.
 
 ---
 
-# 20. Completion rule
+# 21. Completion rule
 
 A model is not considered correct because this file exists.
 
