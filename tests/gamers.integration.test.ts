@@ -59,76 +59,64 @@ function authenticatedJson(cookie: string, name: string) {
   } as const;
 }
 
-test(
-  "Gamers catalog is public, persisted, authenticated for writes and duplicate-safe",
-  async () => {
+test("Gamers catalog is public, persisted, authenticated for writes and duplicate-safe", async () => {
+  await resetTestData();
+  const app = createApp(config, createContainer(config));
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise<void>((resolve) => server.once("listening", resolve));
+  const address = server.address();
+  assert.ok(address && typeof address === "object");
+  const base = `http://127.0.0.1:${address.port}`;
+
+  try {
+    const publicList = await fetch(`${base}/api/public/v1/gamers/games`);
+    assert.equal(publicList.status, 200);
+    const publicBody = (await publicList.json()) as {
+      items: Array<{ slug: string; name: string; status: string }>;
+    };
+    assert.ok(
+      publicBody.items.some(
+        (game) => game.slug === "ea-sports-fc-mobile" && game.name === "EA SPORTS FC Mobile",
+      ),
+    );
+    assert.ok(publicBody.items.some((game) => game.slug === "ludo" && game.name === "Ludo"));
+
+    const publicDetail = await fetch(`${base}/api/public/v1/gamers/games/ea-sports-fc-mobile`);
+    assert.equal(publicDetail.status, 200);
+
+    const unauthenticatedWrite = await fetch(`${base}/api/v1/gamers/games`, {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
+      body: JSON.stringify({ name: "Rocket League" }),
+    });
+    assert.equal(unauthenticatedWrite.status, 401);
+
+    const cookie = await register(base);
+    const create = await fetch(
+      `${base}/api/v1/gamers/games`,
+      authenticatedJson(cookie, "Rocket League"),
+    );
+    assert.equal(create.status, 201);
+    const created = (await create.json()) as { slug: string; name: string };
+    assert.equal(created.name, "Rocket League");
+    assert.equal(created.slug, "rocket-league");
+
+    const duplicateSeed = await fetch(
+      `${base}/api/v1/gamers/games`,
+      authenticatedJson(cookie, " EA SPORTS: FC MOBILE "),
+    );
+    assert.equal(duplicateSeed.status, 409);
+
+    const concurrent = await Promise.all([
+      fetch(`${base}/api/v1/gamers/games`, authenticatedJson(cookie, "Street Fighter 6")),
+      fetch(`${base}/api/v1/gamers/games`, authenticatedJson(cookie, "Street-Fighter 6")),
+    ]);
+    assert.deepEqual(concurrent.map((response) => response.status).sort(), [201, 409]);
+    assert.equal(await db.gamerGame.count({ where: { normalizedName: "street fighter 6" } }), 1);
+  } finally {
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve())),
+    );
     await resetTestData();
-    const app = createApp(config, createContainer(config));
-    const server = app.listen(0, "127.0.0.1");
-    await new Promise<void>((resolve) => server.once("listening", resolve));
-    const address = server.address();
-    assert.ok(address && typeof address === "object");
-    const base = `http://127.0.0.1:${address.port}`;
-
-    try {
-      const publicList = await fetch(`${base}/api/public/v1/gamers/games`);
-      assert.equal(publicList.status, 200);
-      const publicBody = (await publicList.json()) as {
-        items: Array<{ slug: string; name: string; status: string }>;
-      };
-      assert.ok(
-        publicBody.items.some(
-          (game) =>
-            game.slug === "ea-sports-fc-mobile" && game.name === "EA SPORTS FC Mobile",
-        ),
-      );
-      assert.ok(publicBody.items.some((game) => game.slug === "ludo" && game.name === "Ludo"));
-
-      const publicDetail = await fetch(
-        `${base}/api/public/v1/gamers/games/ea-sports-fc-mobile`,
-      );
-      assert.equal(publicDetail.status, 200);
-
-      const unauthenticatedWrite = await fetch(`${base}/api/v1/gamers/games`, {
-        method: "POST",
-        headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
-        body: JSON.stringify({ name: "Rocket League" }),
-      });
-      assert.equal(unauthenticatedWrite.status, 401);
-
-      const cookie = await register(base);
-      const create = await fetch(
-        `${base}/api/v1/gamers/games`,
-        authenticatedJson(cookie, "Rocket League"),
-      );
-      assert.equal(create.status, 201);
-      const created = (await create.json()) as { slug: string; name: string };
-      assert.equal(created.name, "Rocket League");
-      assert.equal(created.slug, "rocket-league");
-
-      const duplicateSeed = await fetch(
-        `${base}/api/v1/gamers/games`,
-        authenticatedJson(cookie, " EA SPORTS: FC MOBILE "),
-      );
-      assert.equal(duplicateSeed.status, 409);
-
-      const concurrent = await Promise.all([
-        fetch(`${base}/api/v1/gamers/games`, authenticatedJson(cookie, "Street Fighter 6")),
-        fetch(`${base}/api/v1/gamers/games`, authenticatedJson(cookie, "Street-Fighter 6")),
-      ]);
-      assert.deepEqual(
-        concurrent.map((response) => response.status).sort(),
-        [201, 409],
-      );
-      assert.equal(
-        await db.gamerGame.count({ where: { normalizedName: "street fighter 6" } }),
-        1,
-      );
-    } finally {
-      await new Promise<void>((resolve, reject) =>
-        server.close((error) => (error ? reject(error) : resolve())),
-      );
-      await resetTestData();
-    }
-  },
-);
+  }
+});
