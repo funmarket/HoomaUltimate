@@ -4,7 +4,9 @@ const baseSha = process.env.FORMAT_BASE_SHA?.trim();
 const headSha = process.env.FORMAT_HEAD_SHA?.trim();
 
 if (!baseSha || !headSha) {
-  console.error("FORMAT_BASE_SHA and FORMAT_HEAD_SHA are required for changed-file formatting verification.");
+  console.error(
+    "FORMAT_BASE_SHA and FORMAT_HEAD_SHA are required for changed-file formatting verification.",
+  );
   process.exit(1);
 }
 
@@ -36,7 +38,9 @@ if (diff.status !== 0) {
 const files = diff.stdout
   .split("\0")
   .filter(Boolean)
-  .filter((file) => supportedExtension.test(file) && (supportedRoot.test(file) || !file.includes("/")));
+  .filter(
+    (file) => supportedExtension.test(file) && (supportedRoot.test(file) || !file.includes("/")),
+  );
 
 if (files.length === 0) {
   console.log("No Prettier-managed files changed.");
@@ -44,5 +48,7 @@ if (files.length === 0) {
 }
 
 console.log(`Checking formatting for ${files.length} changed file(s).`);
-const prettier = spawnSync("prettier", ["--check", ...files], { stdio: "inherit" });
+const prettier = spawnSync("npm", ["exec", "--", "prettier", "--check", ...files], {
+  stdio: "inherit",
+});
 process.exit(prettier.status ?? 1);
