@@ -111,6 +111,15 @@ enum EventTeamSide {
   B
 }
 
+enum WhistleContextType {
+  COMMUNITY
+  EVENT
+  TEAM
+  RIDE
+  ULTRAS
+  GAMER_SQUAD
+}
+
 model User {
   id                         String                         @id @default(cuid())
   createdAt                  DateTime                       @default(now())
@@ -138,6 +147,7 @@ model User {
   formationSlots             FormationSlot[]
   eventCheckIns              EventCheckIn[]
   eventChatMessages          EventChatMessage[]
+  whistlesAuthored           WhistleMetadata[]
 }
 
 model UserPresentation {
@@ -524,6 +534,20 @@ model EventChatMessage {
   user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([roomId, createdAt, id])
+  @@index([expiresAt])
+}
+
+model WhistleMetadata {
+  id           String             @id
+  authorUserId String
+  contextType  WhistleContextType
+  contextId    String
+  createdAt    DateTime           @default(now())
+  expiresAt    DateTime
+  author       User               @relation(fields: [authorUserId], references: [id], onDelete: Cascade)
+
+  @@index([contextType, contextId, createdAt])
+  @@index([authorUserId, createdAt])
   @@index([expiresAt])
 }
 
