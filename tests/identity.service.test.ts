@@ -116,9 +116,7 @@ function telegramInitData(telegramUserId: number): string {
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([key, value]) => `${key}=${value}`)
     .join("\n");
-  const secret = createHmac("sha256", "WebAppData")
-    .update(config.TELEGRAM_BOT_TOKEN!)
-    .digest();
+  const secret = createHmac("sha256", "WebAppData").update(config.TELEGRAM_BOT_TOKEN!).digest();
   const hash = createHmac("sha256", secret).update(checkString).digest("hex");
   return new URLSearchParams({ ...fields, hash }).toString();
 }
@@ -153,9 +151,7 @@ test("five failed web logins lock the credential", async () => {
     email: null,
   });
   for (let attempt = 1; attempt <= 5; attempt += 1) {
-    await assert.rejects(() =>
-      service.login({ loginUsername: "coach", password: "wrong" }),
-    );
+    await assert.rejects(() => service.login({ loginUsername: "coach", password: "wrong" }));
   }
   assert.ok(repository.credential?.lockedUntil instanceof Date);
 });
