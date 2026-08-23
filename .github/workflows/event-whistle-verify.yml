@@ -55,6 +55,28 @@ jobs:
       - run: npm run db:validate
       - run: npm run db:migrate:deploy
       - run: npm run architecture:check
+      - name: Format Event Whistle touched TypeScript for exact artifact
+        run: >-
+          npx prettier --write
+          apps/api/src/bootstrap/container.ts
+          apps/api/src/modules/events/application/event.service.ts
+          apps/api/src/modules/whistle/application/whistle.service.ts
+          packages/frontend/src/api.ts
+          packages/frontend/src/events/EventDetailPage.tsx
+          packages/frontend/src/whistle/HoomaWhistleBoard.tsx
+          tests/event-whistle.integration.test.ts
+      - name: Upload exact formatted sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: event-whistle-prettier-output
+          path: |
+            apps/api/src/bootstrap/container.ts
+            apps/api/src/modules/events/application/event.service.ts
+            apps/api/src/modules/whistle/application/whistle.service.ts
+            packages/frontend/src/api.ts
+            packages/frontend/src/events/EventDetailPage.tsx
+            packages/frontend/src/whistle/HoomaWhistleBoard.tsx
+            tests/event-whistle.integration.test.ts
       - name: Check Event Whistle formatting
         run: >-
           npx prettier --check
