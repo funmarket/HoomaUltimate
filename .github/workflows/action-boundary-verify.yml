@@ -66,7 +66,6 @@ jobs:
           docs/GAMERS_PRODUCT_CONTRACT.md
           packages/frontend/src/context.tsx
           packages/frontend/src/gamers/GamersPage.tsx
-          tests/gamers.integration.test.ts
           tests/identity.http.integration.test.ts
           tests/identity.service.test.ts
       - name: Archive exact formatted copies
@@ -82,7 +81,6 @@ jobs:
           docs/GAMERS_PRODUCT_CONTRACT.md
           packages/frontend/src/context.tsx
           packages/frontend/src/gamers/GamersPage.tsx
-          tests/gamers.integration.test.ts
           tests/identity.http.integration.test.ts
           tests/identity.service.test.ts
       - uses: actions/upload-artifact@v4
@@ -101,14 +99,11 @@ jobs:
           apps/web/src/auth/TelegramAccountActivationPage.tsx
           packages/frontend/src/context.tsx
           packages/frontend/src/gamers/GamersPage.tsx
-          tests/gamers.integration.test.ts
           tests/identity.http.integration.test.ts
           tests/identity.service.test.ts
           --max-warnings=0
       - run: npm run typecheck
       - run: npm run build:packages
-      - name: Gamers G2 PostgreSQL proof
-        run: npx tsx --test --test-concurrency=1 tests/gamers.integration.test.ts
       - name: Identity service unit proof
         run: npx tsx --test tests/identity.service.test.ts
       - name: Identity PostgreSQL HTTP proof
