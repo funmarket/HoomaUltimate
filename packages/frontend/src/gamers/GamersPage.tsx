@@ -82,8 +82,8 @@ export function GamersPage() {
         <span className="eyebrow">HOOMA GAMERS</span>
         <h1>Find the game. Find the challenger.</h1>
         <p>
-          HOOMA connects players and records what people agree happened. The actual game stays in the
-          game you already play.
+          HOOMA connects players and records what people agree happened. The actual game stays in
+          the game you already play.
         </p>
       </header>
 
@@ -135,8 +135,8 @@ export function GamersPage() {
           <span className="eyebrow">MISSING A GAME?</span>
           <h2 id="gamers-add-heading">Add it to HOOMA</h2>
           <p className="muted">
-            Legitimate community-added games join the same persisted catalog. Obvious duplicate names
-            are rejected rather than creating a second game.
+            Legitimate community-added games join the same persisted catalog. Obvious duplicate
+            names are rejected rather than creating a second game.
           </p>
         </div>
 
