@@ -1,9 +1,19 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useHoomaFrontend } from "../context";
-import type { WhistleList, WhistleListItem } from "../api";
+import { HoomaApiError, request, type WhistleList, type WhistleListItem } from "../api";
 
 const MAX_GRAPHEMES = 33;
 const REFRESH_INTERVAL_MS = 10_000;
+
+type BoardContext = "COMMUNITY" | "EVENT";
+
+type WhistleBoardProps = {
+  readonly contextType: BoardContext;
+  readonly contextId: string;
+  readonly eyebrow: string;
+  readonly emptyTitle: string;
+  readonly emptyText: string;
+};
 
 function graphemeCount(value: string): number {
   const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
@@ -37,27 +47,40 @@ function resetLabel(value: string): string {
   }).format(date);
 }
 
-export function HoomaWhistleBoard({ communityId }: { readonly communityId: string }) {
-  const { api, protectedError } = useHoomaFrontend();
+function contextPath(contextType: BoardContext, contextId: string): string {
+  return `/api/v1/whistles/contexts/${contextType}/${encodeURIComponent(contextId)}`;
+}
+
+function WhistleBoard({ contextType, contextId, eyebrow, emptyTitle, emptyText }: WhistleBoardProps) {
+  const { api, transport, protectedError } = useHoomaFrontend();
   const [feed, setFeed] = useState<WhistleList>({ items: [], remainingToday: 11, resetsAt: "" });
   const [body, setBody] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [authorized, setAuthorized] = useState(contextType === "COMMUNITY");
   const [error, setError] = useState("");
   const count = graphemeCount(body);
 
   const load = useCallback(async (quiet = false) => {
     if (!quiet) setLoading(true);
     try {
-      const next = await api.whistles.community(communityId);
+      const next = contextType === "COMMUNITY"
+        ? await api.whistles.community(contextId)
+        : await request<WhistleList>(transport, contextPath(contextType, contextId));
       setFeed(next);
+      setAuthorized(true);
       setError("");
     } catch (reason) {
-      setError(protectedError(reason, "Could not load Whistles"));
+      if (contextType === "EVENT" && reason instanceof HoomaApiError && (reason.status === 401 || reason.status === 403)) {
+        setAuthorized(false);
+        setError("");
+      } else {
+        setError(protectedError(reason, "Could not load Whistles"));
+      }
     } finally {
       if (!quiet) setLoading(false);
     }
-  }, [api, communityId, protectedError]);
+  }, [api, contextId, contextType, protectedError, transport]);
 
   useEffect(() => {
     void load();
@@ -71,7 +94,14 @@ export function HoomaWhistleBoard({ communityId }: { readonly communityId: strin
     setSending(true);
     setError("");
     try {
-      await api.whistles.sendToCommunity(communityId, body);
+      if (contextType === "COMMUNITY") {
+        await api.whistles.sendToCommunity(contextId, body);
+      } else {
+        await request(transport, contextPath(contextType, contextId), {
+          method: "POST",
+          body: JSON.stringify({ body })
+        });
+      }
       setBody("");
       await load(true);
     } catch (reason) {
@@ -81,29 +111,31 @@ export function HoomaWhistleBoard({ communityId }: { readonly communityId: strin
     }
   }
 
+  if (contextType === "EVENT" && !loading && !authorized) return null;
+
   return (
     <article className="panel hooma-hq-module whistle-module hooma-whistle-board">
       <div className="whistle-heading">
-        <div><span className="eyebrow">PRIVATE · MEMBERS ONLY</span><h2>Whistle Board</h2></div>
+        <div><span className="eyebrow">{eyebrow}</span><h2>Whistle Board</h2></div>
         <span className="whistle-quota"><strong>{feed.remainingToday}</strong>/11 left today</span>
       </div>
-      <p className="whistle-rule">33 graphemes per Whistle. Every member starts fresh with 11 at 00:00 UTC. Today's Whistles disappear at the same reset.</p>
+      <p className="whistle-rule">33 graphemes per Whistle. Every member starts fresh with 11 at 00:00 UTC. Today&apos;s Whistles disappear at the same reset.</p>
       {feed.resetsAt ? <small className="muted">Next reset: {resetLabel(feed.resetsAt)}</small> : null}
 
       <form className="whistle-composer" onSubmit={submit}>
         <label>
           <span>Send a signal</span>
           <div className="whistle-input-row">
-            <input value={body} onChange={(event) => setBody(event.target.value)} placeholder="Pitch at 7? ⚽" aria-describedby="whistle-count" />
+            <input value={body} onChange={(event) => setBody(event.target.value)} placeholder="Pitch at 7? ⚽" aria-describedby={`whistle-count-${contextType}-${contextId}`} />
             <button className="button" type="submit" disabled={!body.trim() || count > MAX_GRAPHEMES || sending || feed.remainingToday <= 0}>{sending ? "Sending…" : "Whistle"}</button>
           </div>
         </label>
-        <small id="whistle-count" className={count > MAX_GRAPHEMES ? "is-over" : ""}>{count}/{MAX_GRAPHEMES} graphemes</small>
+        <small id={`whistle-count-${contextType}-${contextId}`} className={count > MAX_GRAPHEMES ? "is-over" : ""}>{count}/{MAX_GRAPHEMES} graphemes</small>
       </form>
 
       {error ? <div className="error-box">{error}</div> : null}
       {loading ? <div className="whistle-empty">Listening for Whistles…</div> : null}
-      {!loading && !feed.items.length ? <div className="whistle-empty"><strong>Quiet in the HOOMA.</strong><span>Be the first to send a short signal today.</span></div> : null}
+      {!loading && !feed.items.length ? <div className="whistle-empty"><strong>{emptyTitle}</strong><span>{emptyText}</span></div> : null}
 
       {feed.items.length ? (
         <div className="whistle-list">
@@ -123,4 +155,12 @@ export function HoomaWhistleBoard({ communityId }: { readonly communityId: strin
       ) : null}
     </article>
   );
+}
+
+export function HoomaWhistleBoard({ communityId }: { readonly communityId: string }) {
+  return <WhistleBoard contextType="COMMUNITY" contextId={communityId} eyebrow="PRIVATE · MEMBERS ONLY" emptyTitle="Quiet in the HOOMA." emptyText="Be the first to send a short signal today." />;
+}
+
+export function EventWhistleBoard({ eventId }: { readonly eventId: string }) {
+  return <WhistleBoard contextType="EVENT" contextId={eventId} eyebrow="EVENT · PARTICIPANTS" emptyTitle="Quiet before kickoff." emptyText="Be the first participant to send a short matchday signal." />;
 }
