@@ -25,6 +25,13 @@ const apiEnvironmentSchema = z
         message: "TELEGRAM_BOT_TOKEN is required in production"
       });
     }
+    if (value.NODE_ENV === "production" && !value.REDIS_URL) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["REDIS_URL"],
+        message: "REDIS_URL is required in production for Whistle transient state"
+      });
+    }
   });
 
 export type ApiConfig = z.infer<typeof apiEnvironmentSchema>;
