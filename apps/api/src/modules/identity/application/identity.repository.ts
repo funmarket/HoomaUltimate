@@ -17,6 +17,7 @@ export interface IdentityRepository {
   createSession(userId: string, tokenHash: string, expiresAt: Date): Promise<void>;
   findActiveSession(tokenHash: string): Promise<SessionRecord | null>;
   revokeSession(tokenHash: string): Promise<void>;
+  findTelegramUserId(telegramUserId: bigint): Promise<string | null>;
   upsertTelegramIdentity(input: TelegramIdentityInput): Promise<string>;
   updatePresentation(userId: string, input: { username: string; displayName: string; photoUrl: string | null; bio: string | null; }): Promise<void>;
   findMe(userId: string): Promise<MeRecord | null>;
