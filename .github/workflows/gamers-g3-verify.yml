@@ -1,6 +1,9 @@
 name: Gamers G3 Verify
 
 on:
+  push:
+    branches:
+      - feat/gamers-human-match-system
   pull_request:
     paths:
       - "apps/api/src/bootstrap/container.ts"
@@ -21,7 +24,7 @@ permissions:
 
 jobs:
   verify:
-    if: github.head_ref == 'feat/gamers-human-match-system'
+    if: github.event_name == 'push' || github.head_ref == 'feat/gamers-human-match-system'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     services:
@@ -57,7 +60,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: feat/gamers-human-match-system
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -246,7 +249,7 @@ G3 challenge rules:
             packages/frontend/src/index.ts \
             tests/gamers.integration.test.ts
           git commit -m "docs(gamers): finalize G3 canonical slice"
-          git push origin HEAD:${{ github.head_ref }}
+          git push origin HEAD:feat/gamers-human-match-system
       - run: npm run db:generate
       - run: npm run db:validate
       - run: npm run db:migrate:deploy
