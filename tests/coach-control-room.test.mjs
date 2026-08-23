@@ -5,7 +5,7 @@ import test from "node:test";
 const coachPagePath = "packages/frontend/src/teams/CoachControlRoomPage.tsx";
 const sharedApiPath = "packages/frontend/src/api.ts";
 
-test("Coach Control Room is Team management, not global Admin", async () => {
+test("Coach Control Room is Team management, not global Platform Admin", async () => {
   const page = await readFile(coachPagePath, "utf8");
   assert.match(page, /Coach Control Room/);
   assert.doesNotMatch(page, /Admin Dashboard|Platform Admin/);
