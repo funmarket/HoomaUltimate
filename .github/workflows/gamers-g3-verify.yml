@@ -1,0 +1,138 @@
+name: Gamers G3 Verify
+
+on:
+  pull_request:
+    paths:
+      - "apps/api/src/bootstrap/container.ts"
+      - "apps/api/src/modules/gamers/**"
+      - "apps/web/src/app/router/HoomaRouter.tsx"
+      - "apps/web/src/main.tsx"
+      - "packages/contracts/src/gamers.ts"
+      - "packages/database/prisma/**"
+      - "packages/frontend/package.json"
+      - "packages/frontend/src/gamers/**"
+      - "packages/frontend/src/index.ts"
+      - "tests/gamers.integration.test.ts"
+      - ".github/workflows/gamers-g3-verify.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    if: github.head_ref == 'feat/gamers-human-match-system'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hooma_ultimate_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hooma_ultimate_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hooma_ultimate_test
+      REDIS_URL: redis://localhost:6379
+      WEB_ORIGIN: http://localhost:5173
+      TELEGRAM_ORIGIN: http://localhost:5174
+      TELEGRAM_BOT_TOKEN: integration-test-token
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - name: Format only G3-owned files
+        run: >-
+          npx prettier --write
+          apps/api/src/bootstrap/container.ts
+          apps/api/src/modules/gamers/application/gamer-challenge.repository.ts
+          apps/api/src/modules/gamers/application/gamer-profile.repository.ts
+          apps/api/src/modules/gamers/application/gamer.service.ts
+          apps/api/src/modules/gamers/http/gamer.routes.ts
+          apps/api/src/modules/gamers/infrastructure/prisma-gamer-challenge.repository.ts
+          apps/api/src/modules/gamers/infrastructure/prisma-gamer-profile.repository.ts
+          apps/web/src/app/router/HoomaRouter.tsx
+          apps/web/src/main.tsx
+          packages/contracts/src/gamers.ts
+          packages/frontend/package.json
+          packages/frontend/src/gamers/api.ts
+          packages/frontend/src/gamers/GamerGamePage.tsx
+          packages/frontend/src/gamers/GamerProfilePage.tsx
+          packages/frontend/src/gamers/GamersPage.tsx
+          packages/frontend/src/gamers/gamers.css
+          packages/frontend/src/index.ts
+          tests/gamers.integration.test.ts
+      - name: Commit scoped formatting if needed
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            apps/api/src/bootstrap/container.ts \
+            apps/api/src/modules/gamers \
+            apps/web/src/app/router/HoomaRouter.tsx \
+            apps/web/src/main.tsx \
+            packages/contracts/src/gamers.ts \
+            packages/frontend/package.json \
+            packages/frontend/src/gamers \
+            packages/frontend/src/index.ts \
+            tests/gamers.integration.test.ts
+          git commit -m "style(gamers): format G3 slice"
+          git push origin HEAD:${{ github.head_ref }}
+      - run: npm run db:generate
+      - run: npm run db:validate
+      - run: npm run db:migrate:deploy
+      - run: npm run architecture:check
+      - name: Check G3 formatting
+        run: >-
+          npx prettier --check
+          apps/api/src/bootstrap/container.ts
+          apps/api/src/modules/gamers/application/gamer-challenge.repository.ts
+          apps/api/src/modules/gamers/application/gamer-profile.repository.ts
+          apps/api/src/modules/gamers/application/gamer.service.ts
+          apps/api/src/modules/gamers/http/gamer.routes.ts
+          apps/api/src/modules/gamers/infrastructure/prisma-gamer-challenge.repository.ts
+          apps/api/src/modules/gamers/infrastructure/prisma-gamer-profile.repository.ts
+          apps/web/src/app/router/HoomaRouter.tsx
+          apps/web/src/main.tsx
+          packages/contracts/src/gamers.ts
+          packages/frontend/package.json
+          packages/frontend/src/gamers/api.ts
+          packages/frontend/src/gamers/GamerGamePage.tsx
+          packages/frontend/src/gamers/GamerProfilePage.tsx
+          packages/frontend/src/gamers/GamersPage.tsx
+          packages/frontend/src/gamers/gamers.css
+          packages/frontend/src/index.ts
+          tests/gamers.integration.test.ts
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - name: Gamers integration
+        run: npx tsx --test --test-concurrency=1 tests/gamers.integration.test.ts
+      - run: npm run build
+      - run: npm run deploy:preflight
+      - run: npm run db:migrate:status
