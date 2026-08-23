@@ -125,6 +125,11 @@ enum GamerGameStatus {
   INACTIVE
 }
 
+enum PlayLookingFor {
+  GAME
+  TEAM
+}
+
 model User {
   id                         String                         @id @default(cuid())
   createdAt                  DateTime                       @default(now())
@@ -155,6 +160,7 @@ model User {
   whistlesAuthored           WhistleMetadata[]
   gamerGamesCreated          GamerGame[]                    @relation("GamerGameCreator")
   gamerProfiles              GamerProfile[]
+  playPlayerListings         PlayPlayerListing[]
 }
 
 model UserPresentation {
@@ -587,6 +593,17 @@ model GamerProfile {
 
   @@unique([userId, gameId])
   @@index([gameId, openToChallenge, updatedAt])
+}
+
+model PlayPlayerListing {
+  id         String         @id @default(cuid())
+  userId     String         @unique
+  lookingFor PlayLookingFor
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([lookingFor, updatedAt])
 }
 
 model AuditLog {
