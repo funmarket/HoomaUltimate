@@ -56,25 +56,12 @@ jobs:
       - run: npm run db:validate
       - run: npm run db:migrate:deploy
       - run: npm run architecture:check
-      - name: Measure downstream gates hidden by baseline formatting debt
-        run: |
-          set +e
-          status=0
-          for command in \
-            "npm run lint" \
-            "npm run typecheck" \
-            "npm test" \
-            "npm run test:integration" \
-            "npm run build" \
-            "npm run deploy:preflight" \
-            "npm run security:check" \
-            "npm run db:migrate:status"
-          do
-            echo "::group::$command"
-            bash -lc "$command"
-            code=$?
-            echo "GATE_EXIT:$command:$code"
-            echo "::endgroup::"
-            if [ "$code" -ne 0 ]; then status=1; fi
-          done
-          exit "$status"
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run test:integration
+      - run: npm run build
+      - run: npm run deploy:preflight
+      - run: npm run security:check
+      - run: npm run db:migrate:status
