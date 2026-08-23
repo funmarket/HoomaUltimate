@@ -19,8 +19,25 @@ export class PrismaIdentityRepository implements IdentityRepository {
   }
   async upsertTelegramIdentity(input: TelegramIdentityInput): Promise<string> {
     const existing = await this.db.telegramIdentity.findUnique({ where: { telegramUserId: input.telegramUserId }, select: { userId: true } });
-    if (existing) { await this.db.telegramIdentity.update({ where: { userId: existing.userId }, data: { telegramUsername: input.username ?? null, firstName: input.firstName ?? null, lastName: input.lastName ?? null, photoUrl: input.photoUrl ?? null, languageCode: input.languageCode ?? null, isPremium: input.isPremium ?? false, lastAuthenticatedAt: new Date() } }); return existing.userId; }
-    return this.db.$transaction(async (tx) => { const user = await tx.user.create({ data: {} }); await tx.telegramIdentity.create({ data: { userId: user.id, telegramUserId: input.telegramUserId, telegramUsername: input.username ?? null, firstName: input.firstName ?? null, lastName: input.lastName ?? null, photoUrl: input.photoUrl ?? null, languageCode: input.languageCode ?? null, isPremium: input.isPremium ?? false } }); const username = await this.uniqueTelegramUsername(tx, input); await tx.userPresentation.create({ data: { userId: user.id, username, displayName: [input.firstName, input.lastName].filter(Boolean).join(" ").trim() || input.username || "HOOMA member", photoUrl: input.photoUrl ?? null } }); return user.id; });
+    if (existing) {
+      await this.refreshTelegramIdentity(existing.userId, input);
+      return existing.userId;
+    }
+    try {
+      return await this.db.$transaction(async (tx) => {
+        const user = await tx.user.create({ data: {} });
+        await tx.telegramIdentity.create({ data: { userId: user.id, telegramUserId: input.telegramUserId, telegramUsername: input.username ?? null, firstName: input.firstName ?? null, lastName: input.lastName ?? null, photoUrl: input.photoUrl ?? null, languageCode: input.languageCode ?? null, isPremium: input.isPremium ?? false } });
+        const username = await this.uniqueTelegramUsername(tx, input);
+        await tx.userPresentation.create({ data: { userId: user.id, username, displayName: [input.firstName, input.lastName].filter(Boolean).join(" ").trim() || input.username || "HOOMA member", photoUrl: input.photoUrl ?? null } });
+        return user.id;
+      });
+    } catch (error) {
+      if (!isUniqueConstraintError(error)) throw error;
+      const concurrent = await this.db.telegramIdentity.findUnique({ where: { telegramUserId: input.telegramUserId }, select: { userId: true } });
+      if (!concurrent) throw error;
+      await this.refreshTelegramIdentity(concurrent.userId, input);
+      return concurrent.userId;
+    }
   }
   async updatePresentation(userId: string, input: { username: string; displayName: string; photoUrl: string | null; bio: string | null; }): Promise<void> {
     await this.db.userPresentation.update({
@@ -45,9 +62,12 @@ export class PrismaIdentityRepository implements IdentityRepository {
     if (!user?.presentation) return null;
     const teamMap = new Map<string, { id: string; name: string; slug: string; badgeUrl: string | null; isPlayer: boolean; responsibilities: ("COACH" | "ASSISTANT")[]; capabilities: ("EDIT_TEAM" | "MANAGE_ROSTER" | "MANAGE_LINEUP" | "CREATE_CHALLENGE" | "RESPOND_TO_CHALLENGE" | "MANAGE_TEAM_EVENTS")[]; }>();
     for (const row of user.teamPlayers) teamMap.set(row.team.id, { ...row.team, isPlayer: true, responsibilities: [], capabilities: [] });
-    for (const row of user.teamResponsibilities) { const existing = teamMap.get(row.team.id) ?? { ...row.team, isPlayer: false, responsibilities: [], capabilities: [] }; if (!existing.responsibilities.includes(row.role)) existing.responsibilities.push(row.role); teamMap.set(row.team.id, existing); }
-    for (const grant of user.teamCapabilityGrants) { const existing = teamMap.get(grant.teamId); if (existing && !existing.capabilities.includes(grant.capability)) existing.capabilities.push(grant.capability); }
+    for (const row of user.teamResponsibilities) { const existingTeam = teamMap.get(row.team.id) ?? { ...row.team, isPlayer: false, responsibilities: [], capabilities: [] }; if (!existingTeam.responsibilities.includes(row.role)) existingTeam.responsibilities.push(row.role); teamMap.set(row.team.id, existingTeam); }
+    for (const grant of user.teamCapabilityGrants) { const existingTeam = teamMap.get(grant.teamId); if (existingTeam && !existingTeam.capabilities.includes(grant.capability)) existingTeam.capabilities.push(grant.capability); }
     return { id: user.id, presentation: user.presentation, platformRoles: user.platformRoles.map(() => "PLATFORM_ADMIN" as const), communities: user.communityMemberships.map((membership) => ({ ...membership.community, role: membership.role })), teams: [...teamMap.values()] };
+  }
+  private async refreshTelegramIdentity(userId: string, input: TelegramIdentityInput): Promise<void> {
+    await this.db.telegramIdentity.update({ where: { userId }, data: { telegramUsername: input.username ?? null, firstName: input.firstName ?? null, lastName: input.lastName ?? null, photoUrl: input.photoUrl ?? null, languageCode: input.languageCode ?? null, isPremium: input.isPremium ?? false, lastAuthenticatedAt: new Date() } });
   }
   private async uniqueTelegramUsername(tx: Prisma.TransactionClient, input: TelegramIdentityInput): Promise<string> {
     const base = (input.username || `tg_${input.telegramUserId.toString()}`).replace(/[^a-zA-Z0-9_.-]/g, "_").slice(0, 48).toLowerCase(); let candidate = base; let suffix = 0;
@@ -55,3 +75,4 @@ export class PrismaIdentityRepository implements IdentityRepository {
     return candidate;
   }
 }
+function isUniqueConstraintError(error: unknown): boolean { return typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "P2002"; }
