@@ -5,7 +5,6 @@ import type { WhistleContextType, WhistleMetadataRecord, WhistleRepository } fro
 import type { WhistleTransientStore } from "./whistle.store.js";
 
 const DAILY_LIMIT = 11;
-const BODY_TTL_MS = 24 * 60 * 60 * 1000;
 
 function graphemeCount(value: string): number {
   const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
@@ -16,9 +15,14 @@ function dayKey(now: Date): string {
   return now.toISOString().slice(0, 10);
 }
 
+export function nextUtcMidnight(now: Date): Date {
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+}
+
 export type WhistleListItem = {
   id: string;
   authorUserId: string;
+  body: string;
   createdAt: string;
   expiresAt: string;
   author: WhistleMetadataRecord["author"];
@@ -39,20 +43,27 @@ export class WhistleService {
     throw new AppError(409, "WHISTLE_CONTEXT_NOT_ENABLED", `${contextType} Whistle context is not enabled yet`);
   }
 
-  async list(userId: string, contextType: WhistleContextType, contextId: string): Promise<{ items: WhistleListItem[]; remainingToday: number }> {
+  async list(userId: string, contextType: WhistleContextType, contextId: string): Promise<{ items: WhistleListItem[]; remainingToday: number; resetsAt: string }> {
     await this.authorizeContext(userId, contextType, contextId);
     const now = new Date();
+    const resetsAt = nextUtcMidnight(now);
+    await this.repository.deleteExpired(now);
     const rows = await this.repository.listActive(contextType, contextId, now, 100);
+    const hydrated = await Promise.all(rows.map(async (row) => ({ row, body: await this.transientStore.getBody(row.id) })));
     const used = await this.repository.quotaUsed(userId, dayKey(now));
     return {
-      items: rows.map((row) => ({
-        id: row.id,
-        authorUserId: row.authorUserId,
-        createdAt: row.createdAt.toISOString(),
-        expiresAt: row.expiresAt.toISOString(),
-        author: row.author
-      })),
-      remainingToday: Math.max(0, DAILY_LIMIT - used)
+      items: hydrated
+        .filter((entry): entry is { row: WhistleMetadataRecord; body: string } => entry.body !== null)
+        .map(({ row, body }) => ({
+          id: row.id,
+          authorUserId: row.authorUserId,
+          body,
+          createdAt: row.createdAt.toISOString(),
+          expiresAt: row.expiresAt.toISOString(),
+          author: row.author
+        })),
+      remainingToday: Math.max(0, DAILY_LIMIT - used),
+      resetsAt: resetsAt.toISOString()
     };
   }
 
@@ -64,10 +75,12 @@ export class WhistleService {
     if (graphemes > 33) throw new AppError(400, "WHISTLE_TOO_LONG", "Whistle is limited to 33 graphemes");
 
     const now = new Date();
+    const expiresAt = nextUtcMidnight(now);
+    const expiresInMilliseconds = expiresAt.getTime() - now.getTime();
     const id = randomUUID();
-    const expiresAt = new Date(now.getTime() + BODY_TTL_MS);
 
-    await this.transientStore.putBody(id, body);
+    await this.repository.deleteExpired(now);
+    await this.transientStore.putBody(id, body, expiresInMilliseconds);
     try {
       const metadata = await this.repository.createWithDailyQuota({
         id,
@@ -88,25 +101,18 @@ export class WhistleService {
         whistle: {
           id: metadata.id,
           authorUserId: metadata.authorUserId,
+          body,
           createdAt: metadata.createdAt.toISOString(),
-          expiresAt: metadata.expiresAt.toISOString()
+          expiresAt: metadata.expiresAt.toISOString(),
+          author: metadata.author
         },
-        remainingToday: Math.max(0, DAILY_LIMIT - used)
+        remainingToday: Math.max(0, DAILY_LIMIT - used),
+        resetsAt: expiresAt.toISOString()
       };
     } catch (error) {
       await this.transientStore.deleteBody(id).catch(() => undefined);
       throw error;
     }
-  }
-
-  async reveal(userId: string, whistleId: string) {
-    const metadata = await this.repository.getById(whistleId);
-    if (!metadata || metadata.expiresAt <= new Date()) throw new AppError(404, "WHISTLE_NOT_FOUND", "Whistle is no longer available");
-    await this.authorizeContext(userId, metadata.contextType, metadata.contextId);
-    const result = await this.transientStore.reveal(whistleId, userId);
-    if (result.state === "expired") throw new AppError(410, "WHISTLE_REVEAL_EXPIRED", "Your reveal window has expired");
-    if (result.state === "missing") throw new AppError(404, "WHISTLE_NOT_FOUND", "Whistle is no longer available");
-    return { body: result.body, visibleForSeconds: result.remainingMilliseconds / 1000 };
   }
 }
 
