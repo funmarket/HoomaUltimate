@@ -799,21 +799,34 @@ Only current authorized members may access the future private ULTRAS Whistle Boa
 
 # 16. Gamers
 
-Gamers is independent from football Teams.
+Gamers is an explicitly authorized independent domain. It must not reuse football Team identity, membership, challenge or authority tables.
 
 Approved product direction includes:
 
-- Platform Admin-controlled game catalog;
-- Gamer profile/presentation owned by the appropriate Gamer domain;
-- per-game handle/account data where needed;
-- Gamer squads;
-- squad membership/leadership;
-- join lifecycle;
-- squad challenge lifecycle;
-- results;
-- dispute/moderation path;
-- Profile projections;
-- shared Whistle only through explicit approved Gamer relationship/context authorization.
+- one persisted Gamers game catalog owned by PostgreSQL through the Gamers repository/service/API path;
+- authenticated users may contribute a legitimate missing game; user-contributed games are real `GamerGame` records, not a second frontend-only list;
+- obvious duplicate names are normalized/detected before create, while ambiguous matches are never silently merged;
+- Platform Admin is later catalog curation authority and may promote, rename, merge or deactivate invalid/spam entries; Admin is not the sole catalog creator and must not block legitimate user contribution;
+- one canonical HOOMA User may own at most one active GamerProfile per game;
+- GamerProfile stores only game-specific identity/participation data such as game handle and open-to-challenge state; canonical HOOMA display name/photo/bio remain owned by Identity;
+- first-class launch focus begins with EA SPORTS FC Mobile and Ludo/Ludo King, subject to exact product naming used by the implemented catalog;
+- game hub areas are `CHALLENGERS | SQUADS | ARENA | RANKINGS`;
+- challenger state must use truthful wording such as `OPEN TO CHALLENGE`; do not invent `ONLINE` presence without a real presence source;
+- V1 challenges are 1v1 GamerProfile-to-GamerProfile within the same game;
+- self-challenge and cross-game challenge are forbidden, and duplicate unresolved pair/game challenges must be prevented safely;
+- accepted challenge is the canonical HOOMA Match Card unless a later proven persistence need requires a separate match identity;
+- gameplay happens outside HOOMA; the product must not pretend it observed external gameplay or require EA/Ludo APIs for V1 authenticity;
+- one participant reports a result and the opponent confirms or contests; screenshot evidence may assist but never lets one participant establish truth unilaterally;
+- only completed human-confirmed matches affect per-game ranking; disputed/unconfirmed matches have zero ranking effect;
+- ranking application must be idempotent and update both participants atomically with rating-history evidence;
+- `GamerSquad` is the one gaming team/community concept; do not create parallel `GamerTeam` and `GamerCommunity` membership systems;
+- a GamerSquad belongs to one game, supports optional logo/banner URLs, has a privacy-safe public page and a member-private HQ;
+- Squad membership references GamerProfile and uses scoped roles such as `LEADER | MEMBER`, never Gamer-scoped `ADMIN`;
+- the shared Whistle engine may enable `GAMER_SQUAD` only after explicit active Squad-membership authorization exists;
+- there is no global Gamers Whistle feed and no parallel Gamer chat/message system;
+- Profile may later project real Gamer identities/Squad memberships from the Gamers domain rather than storing shadow copies in Identity.
+
+Detailed active behavior is recorded in `docs/GAMERS_PRODUCT_CONTRACT.md` and ADR-041.
 
 ---
 

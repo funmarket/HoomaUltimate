@@ -291,3 +291,15 @@ At the UTC reset, prior-day bodies are no longer readable and the new day starts
 The current enabled context remains private `COMMUNITY` for active HOOMA Community members. Other Whistle contexts remain disabled until their owning domains provide explicit authorization.
 
 **Reason:** Whistle is intended to be a visible, ephemeral daily signal board. A single UTC boundary makes quota and retention deterministic, prevents unused quota from accumulating, and removes the obsolete reveal mechanic without weakening the no-durable-body invariant.
+
+## ADR-041 — Gamers human-first match system is explicitly authorized
+
+**Decision:** The product owner explicitly authorized the Gamers vertical slice on 2026-08-23. Gamers is therefore removed from ADR-038's freeze for the bounded Gamers work recorded in `docs/GAMERS_PRODUCT_CONTRACT.md`.
+
+Gamers remains an independent domain. One canonical HOOMA User owns game-specific GamerProfiles. The V1 competitive loop is human-confirmed: challenge -> accept -> HOOMA Match Card -> external gameplay -> result submission -> opponent confirm or contest -> completed human-confirmed result -> per-game ranking. HOOMA does not require external EA/Ludo gameplay APIs or pretend it observed gameplay it did not observe.
+
+Authenticated users may contribute missing games to the persisted Gamers catalog. Platform Admin is later curation/merge/deactivation authority, not the sole creator and not a blocker on legitimate game contribution. `GamerSquad` is the one gaming team/community concept. Squad Whistle uses the shared Whistle engine through `GAMER_SQUAD` only after explicit active Squad-membership authorization exists; there is no global Gamers Whistle feed or parallel Gamer chat system.
+
+The dedicated decision record is `docs/adr/ADR-041-gamers-human-match-system.md`.
+
+**Reason:** HOOMA should coordinate human gaming interaction, preserve what participants agree happened, and build game-specific reputation without duplicating identity/community/messaging systems or relying on opaque external automation.
