@@ -125,6 +125,13 @@ enum GamerGameStatus {
   INACTIVE
 }
 
+enum GamerChallengeStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+}
+
 model User {
   id                         String                         @id @default(cuid())
   createdAt                  DateTime                       @default(now())
@@ -326,7 +333,7 @@ model TeamCapabilityGrant {
   capability TeamCapability
   grantedBy  String
   createdAt  DateTime       @default(now())
-  revokedAt DateTime?
+  revokedAt  DateTime?
   team       Team           @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user       User           @relation("CapabilityRecipient", fields: [userId], references: [id], onDelete: Cascade)
   grantor    User           @relation("CapabilityGrantor", fields: [grantedBy], references: [id], onDelete: Cascade)
@@ -354,13 +361,13 @@ model TeamLineup {
 }
 
 model TeamLineupSlot {
-  id         String      @id @default(cuid())
+  id         String     @id @default(cuid())
   lineupId   String
   userId     String?
   position   String
-  sortOrder  Int         @default(0)
-  lineup     TeamLineup  @relation(fields: [lineupId], references: [id], onDelete: Cascade)
-  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sortOrder  Int        @default(0)
+  lineup     TeamLineup @relation(fields: [lineupId], references: [id], onDelete: Cascade)
+  user       User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([lineupId, sortOrder])
 }
@@ -416,26 +423,26 @@ model TeamGame {
 }
 
 model Event {
-  id              String          @id @default(cuid())
+  id              String      @id @default(cuid())
   communityId     String
   createdByUserId String
   type            EventType
-  status          EventStatus     @default(PUBLISHED)
+  status          EventStatus @default(PUBLISHED)
   title           String
   description     String?
   startsAt        DateTime
   endsAt          DateTime?
-  timezone        String          @default("Africa/Tunis")
+  timezone        String      @default("Africa/Tunis")
   venueName       String?
   address         String?
   capacity        Int?
-  waitlistEnabled Boolean         @default(true)
-  entryFeeMinor   BigInt          @default(0)
-  currency        String          @default("TND")
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  community       Community       @relation(fields: [communityId], references: [id], onDelete: Cascade)
-  createdBy       User            @relation("EventCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  waitlistEnabled Boolean     @default(true)
+  entryFeeMinor   BigInt      @default(0)
+  currency        String      @default("TND")
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  community       Community   @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  createdBy       User        @relation("EventCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
   playDetails     PlayEventDetails?
   rsvps           EventRsvp[]
   formations      Formation[]
@@ -569,24 +576,48 @@ model GamerGame {
   updatedAt       DateTime        @updatedAt
   createdBy       User?           @relation("GamerGameCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
   profiles        GamerProfile[]
+  challenges      GamerChallenge[]
 
   @@index([status, name])
   @@index([createdByUserId, createdAt])
 }
 
 model GamerProfile {
-  id              String    @id @default(cuid())
-  userId          String
-  gameId          String
-  handle          String
-  openToChallenge Boolean
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  game            GamerGame @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  id                 String           @id @default(cuid())
+  userId             String
+  gameId             String
+  handle             String
+  openToChallenge    Boolean
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game               GamerGame        @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  challengesSent     GamerChallenge[] @relation("GamerChallengeChallenger")
+  challengesReceived GamerChallenge[] @relation("GamerChallengeChallenged")
 
   @@unique([userId, gameId])
   @@index([gameId, openToChallenge, updatedAt])
+}
+
+model GamerChallenge {
+  id                  String               @id @default(cuid())
+  gameId              String
+  challengerProfileId String
+  challengedProfileId String
+  pairKey             String
+  status              GamerChallengeStatus @default(PENDING)
+  createdAt           DateTime              @default(now())
+  respondedAt         DateTime?
+  cancelledAt         DateTime?
+  updatedAt           DateTime              @updatedAt
+  game                GamerGame             @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  challengerProfile   GamerProfile          @relation("GamerChallengeChallenger", fields: [challengerProfileId], references: [id], onDelete: Cascade)
+  challengedProfile   GamerProfile          @relation("GamerChallengeChallenged", fields: [challengedProfileId], references: [id], onDelete: Cascade)
+
+  @@index([gameId, status, createdAt])
+  @@index([challengerProfileId, status, createdAt])
+  @@index([challengedProfileId, status, createdAt])
+  @@index([gameId, pairKey, status])
 }
 
 model AuditLog {
