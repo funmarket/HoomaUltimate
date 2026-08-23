@@ -5,7 +5,12 @@ import { AppError } from "../../../http/errors/app-error.js";
 import type { IdentityRepository } from "./identity.repository.js";
 import { defaultDisplayName, normalizeEmail, normalizeUsername } from "../domain/normalization.js";
 
-export type TelegramResolution = { kind: "absent" } | { kind: "invalid" } | { kind: "valid"; userId: string };
+export type TelegramResolution =
+  | { kind: "absent" }
+  | { kind: "invalid" }
+  | { kind: "unregistered" }
+  | { kind: "valid"; userId: string };
+
 export class IdentityService {
   constructor(private readonly repository: IdentityRepository, private readonly config: ApiConfig) {}
   async register(input: RegisterInput): Promise<{ sessionToken: string }> {
@@ -23,8 +28,27 @@ export class IdentityService {
   async resolveWebSession(rawToken: string | undefined): Promise<string | null> { if (!rawToken) return null; return (await this.repository.findActiveSession(hashSessionToken(rawToken)))?.userId ?? null; }
   async logout(rawToken: string | undefined): Promise<void> { if (rawToken) await this.repository.revokeSession(hashSessionToken(rawToken)); }
   async resolveTelegram(rawInitData: string | undefined): Promise<TelegramResolution> {
-    if (!rawInitData) return { kind: "absent" }; if (!this.config.TELEGRAM_BOT_TOKEN) return { kind: "invalid" };
-    try { const identity = validateTelegramInitData(rawInitData, this.config.TELEGRAM_BOT_TOKEN, this.config.TELEGRAM_INIT_DATA_MAX_AGE_SECONDS); return { kind: "valid", userId: await this.repository.upsertTelegramIdentity(identity) }; } catch { return { kind: "invalid" }; }
+    if (!rawInitData) return { kind: "absent" };
+    if (!this.config.TELEGRAM_BOT_TOKEN) return { kind: "invalid" };
+    try {
+      const identity = validateTelegramInitData(rawInitData, this.config.TELEGRAM_BOT_TOKEN, this.config.TELEGRAM_INIT_DATA_MAX_AGE_SECONDS);
+      const userId = await this.repository.findTelegramUserId(identity.telegramUserId);
+      return userId ? { kind: "valid", userId } : { kind: "unregistered" };
+    } catch {
+      return { kind: "invalid" };
+    }
+  }
+  async provisionTelegramAccount(rawInitData: string | undefined): Promise<{ userId: string }> {
+    if (!rawInitData || !this.config.TELEGRAM_BOT_TOKEN) {
+      throw new AppError(401, "TELEGRAM_AUTH_REQUIRED", "Valid Telegram authentication is required to create a HOOMA account");
+    }
+    let identity;
+    try {
+      identity = validateTelegramInitData(rawInitData, this.config.TELEGRAM_BOT_TOKEN, this.config.TELEGRAM_INIT_DATA_MAX_AGE_SECONDS);
+    } catch {
+      throw new AppError(401, "TELEGRAM_AUTH_INVALID", "Invalid or expired Telegram authentication");
+    }
+    return { userId: await this.repository.upsertTelegramIdentity(identity) };
   }
   async me(userId: string, transports: readonly AuthTransport[]): Promise<MeResponse> {
     const user = await this.repository.findMe(userId); if (!user) throw new AppError(404, "USER_NOT_FOUND", "User not found");
