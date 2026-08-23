@@ -303,3 +303,11 @@ Authenticated users may contribute missing games to the persisted Gamers catalog
 The dedicated decision record is `docs/adr/ADR-041-gamers-human-match-system.md`.
 
 **Reason:** HOOMA should coordinate human gaming interaction, preserve what participants agree happened, and build game-specific reputation without duplicating identity/community/messaging systems or relying on opaque external automation.
+
+## ADR-042 — Event Whistle uses canonical Event member access
+
+**Decision:** `EVENT` is enabled as the second active Whistle context. Event Whistle authorization reuses the Events domain's canonical member-content predicate: Event creator, active owning-Community `FOUNDER`/`COACH`, or Event RSVP in `CONFIRMED`, `WAITLISTED`, or `ATTENDED` state. A cancelled RSVP alone does not authorize access. The shared Whistle quota, Redis-only body, PostgreSQL metadata, UTC-day expiry, and 33-grapheme invariants remain unchanged. Temporary Event Chat remains separate and is not reused as Whistle storage.
+
+The dedicated decision record is `docs/adr/ADR-042-event-whistle-context.md`.
+
+**Reason:** Play's communication direction is Event Whistle through the existing shared engine. Reusing Event authorization and Whistle infrastructure prevents duplicate membership policy, a parallel messaging system, or shadow Event state.
