@@ -125,7 +125,7 @@ export const teamLineupSchema = z.object({
   matchFormat: footballFormatSchema,
   published: z.boolean().default(false),
   slots: z.array(z.object({
-    userId: z.string().min(1).optional().nullable(),
+    teamPlayerId: z.string().min(1).optional().nullable(),
     position: z.string().trim().min(1).max(20),
     sortOrder: z.number().int().min(0).max(50).default(0)
   })).min(1).max(30)
