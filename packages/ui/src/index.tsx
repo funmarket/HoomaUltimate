@@ -17,17 +17,28 @@ export { TeamsHero } from "./teams/TeamsHero.js";
 export { TeamDiscoveryCard } from "./teams/TeamDiscoveryCard.js";
 export type { TeamDiscoveryCardProps } from "./teams/TeamDiscoveryCard.js";
 
+const HOME_GATEWAY_TYPOGRAPHY = `
+.home-gateway-title {
+  font-family: Georgia, 'Times New Roman', serif;
+  line-height: .94;
+  letter-spacing: -.045em;
+}
+`;
+
 export interface FoundationShellProps { readonly surface: "Web" | "Telegram"; readonly children?: ReactNode; }
 export function FoundationShell({ surface, children }: FoundationShellProps) {
   return <main className="foundation-shell"><header><p className="eyebrow">{surface}</p><h1>HOOMA</h1></header><section className="shell-content">{children}</section></main>;
 }
 export function HomeGateway() {
   return (
-    <section>
-      <HomeHero />
-      <p className="eyebrow">YOUR FOOTBALL NEIGHBORHOOD</p>
-      <h2>Find your people. Find the game.</h2>
-      <HomeGatewayGrid />
-    </section>
+    <>
+      <style>{HOME_GATEWAY_TYPOGRAPHY}</style>
+      <section>
+        <HomeHero />
+        <p className="eyebrow">YOUR FOOTBALL NEIGHBORHOOD</p>
+        <h2 className="home-gateway-title">Find your people. Find the game.</h2>
+        <HomeGatewayGrid />
+      </section>
+    </>
   );
 }
