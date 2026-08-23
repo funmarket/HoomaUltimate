@@ -1,5 +1,11 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
-import { createHoomaApi, HoomaApiError, request, type HoomaApi, type HoomaTransport } from "./api";
+import {
+  createHoomaApi,
+  HoomaApiError,
+  request,
+  type HoomaApi,
+  type HoomaTransport,
+} from "./api";
 
 type FrontendContextValue = {
   readonly api: HoomaApi;
@@ -11,24 +17,35 @@ type FrontendContextValue = {
 
 const FrontendContext = createContext<FrontendContextValue | null>(null);
 
-export function HoomaFrontendProvider({ transport, children }: { readonly transport: HoomaTransport; readonly children: ReactNode }) {
+export function HoomaFrontendProvider({
+  transport,
+  children,
+}: {
+  readonly transport: HoomaTransport;
+  readonly children: ReactNode;
+}) {
   const api = useMemo(() => createHoomaApi(transport), [transport]);
-  const value = useMemo<FrontendContextValue>(() => ({
-    api,
-    transport,
-    protectedError(reason, fallback) {
-      if (reason instanceof HoomaApiError && reason.code === "AUTH_REQUIRED") {
-        transport.onAuthenticationRequired?.();
-      }
-      return reason instanceof Error ? reason.message : fallback;
-    },
-    authenticationHref(returnTo) {
-      return transport.authenticationHref?.(returnTo) ?? null;
-    },
-    async createAccountFromDeliveryIdentity() {
-      await request<{ ok: true }>(transport, "/api/public/v1/auth/telegram/account", { method: "POST" });
-    }
-  }), [api, transport]);
+  const value = useMemo<FrontendContextValue>(
+    () => ({
+      api,
+      transport,
+      protectedError(reason, fallback) {
+        if (reason instanceof HoomaApiError && reason.code === "AUTH_REQUIRED") {
+          transport.onAuthenticationRequired?.();
+        }
+        return reason instanceof Error ? reason.message : fallback;
+      },
+      authenticationHref(returnTo) {
+        return transport.authenticationHref?.(returnTo) ?? null;
+      },
+      async createAccountFromDeliveryIdentity() {
+        await request<{ ok: true }>(transport, "/api/public/v1/auth/telegram/account", {
+          method: "POST",
+        });
+      },
+    }),
+    [api, transport],
+  );
   return <FrontendContext.Provider value={value}>{children}</FrontendContext.Provider>;
 }
 
