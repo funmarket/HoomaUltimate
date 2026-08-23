@@ -8,11 +8,15 @@ function safeReturnTo(): string {
   return value;
 }
 
+function initialMode(): "login" | "register" {
+  return window.location.pathname === "/register" ? "register" : "login";
+}
+
 export function AuthApp() {
   const { api } = useHoomaFrontend();
   const [me, setMe] = useState<MeResponse | null>(null);
   const [error, setError] = useState("");
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register">(initialMode);
   const returnTo = useMemo(safeReturnTo, []);
 
   useEffect(() => {
