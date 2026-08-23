@@ -48,13 +48,63 @@ export class PrismaCommunityRepository implements CommunityRepository {
     });
   }
 
+  async join(communityId: string, userId: string) {
+    const community = await this.db.community.findFirst({ where: { id: communityId, status: "ACTIVE" }, select: { id: true } });
+    if (!community) return null;
+    const existing = await this.db.communityMembership.findUnique({
+      where: { communityId_userId: { communityId, userId } },
+      select: { role: true, leftAt: true }
+    });
+    if (existing && !existing.leftAt) return { role: existing.role };
+    const membership = await this.db.communityMembership.upsert({
+      where: { communityId_userId: { communityId, userId } },
+      create: { communityId, userId, role: "MEMBER" },
+      update: { role: "MEMBER", leftAt: null, joinedAt: new Date() },
+      select: { role: true }
+    });
+    return membership;
+  }
+
+  async leave(communityId: string, userId: string): Promise<void> {
+    await this.db.communityMembership.updateMany({
+      where: { communityId, userId, leftAt: null },
+      data: { leftAt: new Date() }
+    });
+  }
+
+  listMembers(communityId: string) {
+    return this.db.communityMembership.findMany({
+      where: { communityId, leftAt: null },
+      orderBy: [{ role: "asc" }, { joinedAt: "asc" }],
+      select: {
+        userId: true,
+        role: true,
+        joinedAt: true,
+        user: {
+          select: {
+            presentation: { select: { displayName: true, username: true, photoUrl: true } }
+          }
+        }
+      }
+    }).then((rows) => rows.map((row) => ({
+      userId: row.userId,
+      role: row.role,
+      joinedAt: row.joinedAt,
+      presentation: row.user.presentation
+    })));
+  }
+
+  async removeMember(communityId: string, targetUserId: string): Promise<void> {
+    await this.db.communityMembership.updateMany({
+      where: { communityId, userId: targetUserId, leftAt: null },
+      data: { leftAt: new Date() }
+    });
+  }
+
   async appointCoach(communityId: string, targetUserId: string): Promise<void> {
-    const existing = await this.db.communityMembership.findUnique({ where: { communityId_userId: { communityId, userId: targetUserId } }, select: { role: true } });
-    if (existing?.role === "FOUNDER") return;
-    await this.db.communityMembership.upsert({
-      where: { communityId_userId: { communityId, userId: targetUserId } },
-      create: { communityId, userId: targetUserId, role: "COACH" },
-      update: { role: "COACH", leftAt: null, joinedAt: new Date() }
+    await this.db.communityMembership.updateMany({
+      where: { communityId, userId: targetUserId, role: "MEMBER", leftAt: null },
+      data: { role: "COACH" }
     });
   }
 

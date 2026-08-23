@@ -14,11 +14,13 @@ import { HoomaApiError, request, type HoomaTransport } from "./http";
 export { HoomaApiError, request } from "./http";
 export type { HoomaTransport } from "./http";
 
+export type CommunityRole = "FOUNDER" | "COACH" | "MEMBER";
 export type CommunityCreateInput = { name: string; description?: string | null; city?: string | null; houma?: string | null; logoUrl?: string | null; bannerUrl?: string | null };
 export type PublicCommunitySummary = { id: string; slug: string; name: string; description: string | null; city: string | null; houma: string | null; logoUrl: string | null; bannerUrl: string | null; createdAt: string };
 export type PublicCommunityDetail = { id: string; slug: string; name: string; description: string | null; city: string | null; houma: string | null; logoUrl: string | null; bannerUrl: string | null; _count: { teams: number; memberships: number } };
 export type PublicCommunityList = { items: PublicCommunitySummary[]; nextCursor: string | null };
 export type CreatedCommunity = { id: string; slug: string; name: string; description: string | null; city: string | null; houma: string | null; logoUrl: string | null; bannerUrl: string | null; status: "ACTIVE" | "ARCHIVED"; createdByUserId: string; createdAt: string; updatedAt: string };
+export type CommunityMember = { userId: string; role: CommunityRole; joinedAt: string; presentation: { displayName: string; username: string; photoUrl: string | null } | null };
 export type PublicTeamSummary = { id: string; slug: string; name: string; motto: string | null; city: string | null; houma: string | null; badgeUrl: string | null; communityId: string | null; _count: { players: number } };
 export type PublicTeamList = { items: PublicTeamSummary[]; nextCursor: string | null };
 export type ManagedTeam = { id: string; name: string; slug: string; badgeUrl: string | null; communityId: string | null; city: string | null; houma: string | null };
@@ -59,7 +61,13 @@ export function createHoomaApi(transport: HoomaTransport) {
   const communities = {
     publicList: () => request<PublicCommunityList>(transport, "/api/public/v1/communities?limit=30"),
     publicDetail: (id: string) => request<PublicCommunityDetail>(transport, `/api/public/v1/communities/${encodeURIComponent(id)}`),
-    create: (input: CommunityCreateInput) => request<CreatedCommunity>(transport, "/api/v1/communities", { method: "POST", body: JSON.stringify(input) })
+    create: (input: CommunityCreateInput) => request<CreatedCommunity>(transport, "/api/v1/communities", { method: "POST", body: JSON.stringify(input) }),
+    join: (id: string) => request<{ membership: { role: CommunityRole } }>(transport, `/api/v1/communities/${encodeURIComponent(id)}/join`, { method: "POST" }),
+    leave: (id: string) => request<{ ok: true }>(transport, `/api/v1/communities/${encodeURIComponent(id)}/membership`, { method: "DELETE" }),
+    members: (id: string) => request<CommunityMember[]>(transport, `/api/v1/communities/${encodeURIComponent(id)}/members`),
+    removeMember: (id: string, userId: string) => request<{ ok: true }>(transport, `/api/v1/communities/${encodeURIComponent(id)}/members/${encodeURIComponent(userId)}`, { method: "DELETE" }),
+    appointCoach: (id: string, userId: string) => request<{ ok: true }>(transport, `/api/v1/communities/${encodeURIComponent(id)}/coaches`, { method: "POST", body: JSON.stringify({ userId }) }),
+    revokeCoach: (id: string, userId: string) => request<{ ok: true }>(transport, `/api/v1/communities/${encodeURIComponent(id)}/coaches/${encodeURIComponent(userId)}`, { method: "DELETE" })
   };
   const teams = {
     publicList: (filters?: TeamListFilters) => request<PublicTeamList>(transport, publicListPath(filters)),

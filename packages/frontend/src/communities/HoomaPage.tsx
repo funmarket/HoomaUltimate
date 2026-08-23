@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import type { MeResponse } from "@hooma/contracts";
 import { useHoomaFrontend } from "../context";
-import type { PublicCommunityDetail, PublicCommunitySummary } from "../api";
+import type { CommunityMember, PublicCommunityDetail, PublicCommunitySummary } from "../api";
 
 type CreationType = "HOOMA" | "TEAM" | "ULTRAS" | "GAMERS";
 
@@ -191,40 +191,115 @@ export function CreateHoomaPage() {
 }
 
 export function HoomaDetailPage({ communityId }: { readonly communityId: string }) {
-  const { api, authenticationHref } = useHoomaFrontend();
+  const { api, authenticationHref, protectedError } = useHoomaFrontend();
   const [community, setCommunity] = useState<PublicCommunityDetail | null>(null);
   const [me, setMe] = useState<MeResponse | null>(null);
+  const [members, setMembers] = useState<CommunityMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+
+  async function loadDetail() {
+    const [detail, identity] = await Promise.all([api.communities.publicDetail(communityId), api.identity.meOptional()]);
+    setCommunity(detail);
+    setMe(identity);
+    const currentMembership = identity?.communities.find((item) => item.id === communityId) ?? null;
+    if (currentMembership) setMembers(await api.communities.members(communityId));
+    else setMembers([]);
+  }
 
   useEffect(() => {
     let active = true;
+    setLoading(true);
+    setError("");
     void Promise.all([api.communities.publicDetail(communityId), api.identity.meOptional()])
-      .then(([detail, identity]) => { if (active) { setCommunity(detail); setMe(identity); } })
+      .then(async ([detail, identity]) => {
+        if (!active) return;
+        setCommunity(detail);
+        setMe(identity);
+        const currentMembership = identity?.communities.find((item) => item.id === communityId) ?? null;
+        if (currentMembership) {
+          const rows = await api.communities.members(communityId);
+          if (active) setMembers(rows);
+        } else if (active) setMembers([]);
+      })
       .catch((reason) => { if (active) setError(report(reason)); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [api, communityId]);
 
+  async function perform(label: string, action: () => Promise<unknown>) {
+    setBusy(label);
+    setError("");
+    try {
+      await action();
+      await loadDetail();
+    } catch (reason) {
+      setError(protectedError(reason, "Could not update HOOMA membership"));
+    } finally {
+      setBusy("");
+    }
+  }
+
   if (loading) return <div className="page hooma-detail-page"><div className="state-card">Loading HOOMA…</div></div>;
-  if (error || !community) return <div className="page hooma-detail-page"><div className="error-box">{error || "HOOMA not found"}</div></div>;
+  if (error && !community) return <div className="page hooma-detail-page"><div className="error-box">{error}</div></div>;
+  if (!community) return <div className="page hooma-detail-page"><div className="error-box">HOOMA not found</div></div>;
 
   const membership = me?.communities.find((item) => item.id === community.id) ?? null;
   const signInHref = authenticationHref(`/hooma/${community.id}`);
+  const canManage = membership?.role === "FOUNDER" || membership?.role === "COACH";
 
   return (
     <div className="page hooma-detail-page">
       <section className="hooma-hq-hero" style={community.bannerUrl ? { backgroundImage: `linear-gradient(180deg, rgba(4,5,5,.08), rgba(4,5,5,.92)), url(${community.bannerUrl})` } : undefined}>
         <div className="hooma-hq-logo">{community.logoUrl ? <img src={community.logoUrl} alt={`${community.name} logo`} /> : <span>{initials(community.name)}</span>}</div>
-        <div className="hooma-hq-copy"><span className="eyebrow">{community.houma || community.city || "NEIGHBORHOOD HOOMA"}</span><h1>{community.name}</h1><p>{community.description || "A neighborhood built around football, people and local identity."}</p><div className="hooma-hq-meta"><span>{community._count.memberships} members</span><span>{community._count.teams} teams</span>{membership ? <span className="hooma-role-chip">{membership.role}</span> : null}</div></div>
+        <div className="hooma-hq-copy">
+          <span className="eyebrow">{community.houma || community.city || "NEIGHBORHOOD HOOMA"}</span>
+          <h1>{community.name}</h1>
+          <p>{community.description || "A neighborhood built around football, people and local identity."}</p>
+          <div className="hooma-hq-meta"><span>{community._count.memberships} members</span><span>{community._count.teams} teams</span>{membership ? <span className="hooma-role-chip">{membership.role}</span> : null}</div>
+          <div className="hooma-hq-actions">
+            {!me && signInHref ? <a className="button" href={signInHref}>Sign in to join</a> : null}
+            {me && !membership ? <button className="button" type="button" disabled={Boolean(busy)} onClick={() => void perform("join", () => api.communities.join(community.id))}>{busy === "join" ? "Joining…" : "Join HOOMA"}</button> : null}
+            {membership && membership.role !== "FOUNDER" ? <button className="button secondary" type="button" disabled={Boolean(busy)} onClick={() => void perform("leave", () => api.communities.leave(community.id))}>{busy === "leave" ? "Leaving…" : "Leave HOOMA"}</button> : null}
+          </div>
+        </div>
       </section>
+
+      {error ? <div className="error-box">{error}</div> : null}
 
       <section className="hooma-hq-grid">
-        <article className="panel hooma-hq-module"><span className="eyebrow">COMMUNITY</span><h2>Neighborhood HQ</h2><p>Teams, local match activity and community tools will gather here instead of being scattered around the app.</p><div className="hooma-module-links"><a href="/teams">Teams</a><a href="/play">Play nearby</a></div></article>
-        <article className={`panel hooma-hq-module whistle-module ${membership ? "" : "is-locked"}`}><span className="eyebrow">PRIVATE</span><h2>Whistle Board</h2><p>{membership ? "Your private HOOMA Whistle surface lives here. It will use the shared transient Whistle rules—never permanent chat history." : "The neighborhood Whistle Board is visible only to current HOOMA members."}</p>{!membership && signInHref ? <a className="button secondary" href={signInHref}>Sign in</a> : null}<span className="whistle-status">WHISTLE DOMAIN CONNECTION NEXT</span></article>
+        <article className="panel hooma-hq-module"><span className="eyebrow">COMMUNITY</span><h2>Neighborhood HQ</h2><p>Teams, local match activity and community tools gather here instead of being scattered around the app.</p><div className="hooma-module-links"><a href="/teams">Teams</a><a href="/play">Play nearby</a></div></article>
+        <article className={`panel hooma-hq-module whistle-module ${membership ? "" : "is-locked"}`}><span className="eyebrow">PRIVATE</span><h2>Whistle Board</h2><p>{membership ? "Your private HOOMA Whistle surface lives here. It will use the shared transient Whistle rules—never permanent chat history." : "Join this HOOMA to access its private neighborhood Whistle Board."}</p><span className="whistle-status">WHISTLE DOMAIN CONNECTION NEXT</span></article>
       </section>
 
-      {membership?.role === "FOUNDER" || membership?.role === "COACH" ? <section className="panel hooma-hq-manage"><span className="eyebrow">COMMUNITY OFFICE</span><h2>{membership.role === "FOUNDER" ? "Founder controls" : "Coach controls"}</h2><p className="muted">Scoped community management belongs here. Global App Admin remains separate.</p></section> : null}
+      {membership ? (
+        <section className="panel hooma-member-directory">
+          <div className="hooma-section-heading"><div><span className="eyebrow">MEMBERS</span><h2>People in this HOOMA</h2></div><span className="muted">Private to current members</span></div>
+          <div className="hooma-member-list">
+            {members.map((member) => {
+              const name = member.presentation?.displayName || member.presentation?.username || "HOOMA member";
+              const canRemove = canManage && member.role !== "FOUNDER" && member.userId !== me?.id && (membership.role === "FOUNDER" || member.role === "MEMBER");
+              return (
+                <article className="hooma-member-row" key={member.userId}>
+                  <div className="hooma-member-identity">
+                    {member.presentation?.photoUrl ? <img src={member.presentation.photoUrl} alt="" /> : <span className="hooma-member-avatar">{initials(name)}</span>}
+                    <div><strong>{name}</strong>{member.presentation?.username ? <small>@{member.presentation.username}</small> : null}</div>
+                  </div>
+                  <div className="hooma-member-controls">
+                    <span className="hooma-role-chip">{member.role}</span>
+                    {membership.role === "FOUNDER" && member.role === "MEMBER" ? <button type="button" disabled={Boolean(busy)} onClick={() => void perform(`coach-${member.userId}`, () => api.communities.appointCoach(community.id, member.userId))}>Make Coach</button> : null}
+                    {membership.role === "FOUNDER" && member.role === "COACH" ? <button type="button" disabled={Boolean(busy)} onClick={() => void perform(`member-${member.userId}`, () => api.communities.revokeCoach(community.id, member.userId))}>Make Member</button> : null}
+                    {canRemove ? <button className="danger" type="button" disabled={Boolean(busy)} onClick={() => void perform(`remove-${member.userId}`, () => api.communities.removeMember(community.id, member.userId))}>Remove</button> : null}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+
+      {canManage ? <section className="panel hooma-hq-manage"><span className="eyebrow">COMMUNITY OFFICE</span><h2>{membership?.role === "FOUNDER" ? "Founder controls" : "Coach controls"}</h2><p className="muted">Membership actions above use scoped HOOMA authority. Global App Admin remains completely separate.</p></section> : null}
     </div>
   );
 }

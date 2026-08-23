@@ -27,11 +27,26 @@ export function createCommunityPublicRouter(service: CommunityService): Router {
 
 export function createCommunityMemberRouter(service: CommunityService): Router {
   const router = Router();
+
+  router.post("/:id/join", asyncHandler(async (req, res) => {
+    res.status(201).json(await service.join(getAuth(req).userId, String(req.params.id)));
+  }));
+  router.delete("/:id/membership", asyncHandler(async (req, res) => {
+    res.json(await service.leave(getAuth(req).userId, String(req.params.id)));
+  }));
+  router.get("/:id/members", asyncHandler(async (req, res) => {
+    res.json(await service.members(getAuth(req).userId, String(req.params.id)));
+  }));
+  router.delete("/:id/members/:userId", asyncHandler(async (req, res) => {
+    res.json(await service.removeMember(getAuth(req).userId, String(req.params.id), String(req.params.userId)));
+  }));
   router.post("/:id/coaches", asyncHandler(async (req, res) => {
     const input = coachSchema.parse(req.body);
     res.status(201).json(await service.appointCoach(getAuth(req).userId, String(req.params.id), input.userId));
   }));
-  router.delete("/:id/coaches/:userId", asyncHandler(async (req, res) => res.json(await service.revokeCoach(getAuth(req).userId, String(req.params.id), String(req.params.userId)))));
+  router.delete("/:id/coaches/:userId", asyncHandler(async (req, res) => {
+    res.json(await service.revokeCoach(getAuth(req).userId, String(req.params.id), String(req.params.userId)));
+  }));
   router.post("/", asyncHandler(async (req, res) => {
     const parsed = createSchema.parse(req.body);
     const input = {
