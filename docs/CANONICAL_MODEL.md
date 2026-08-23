@@ -530,6 +530,29 @@ updatedAt
 
 Current paid Event execution is not enabled until Payments exists. A request requiring unsupported payment behavior must fail explicitly rather than creating fake paid state.
 
+## PlayPlayerListing
+
+Player-looking discovery is a Play-owned durable concept separate from Event, Team, Community, and Gamers membership.
+
+```text
+PlayPlayerListing
+  id
+  userId             unique canonical HOOMA User owner
+  lookingFor         GAME | TEAM
+  createdAt
+  updatedAt
+```
+
+Rules:
+
+- one canonical listing per User;
+- an authenticated canonical User may create/update/remove the listing even with no Team, Community, ULTRAS, or Gamer membership;
+- public discovery is privacy-safe and projects only deliberately public listing state plus canonical UserPresentation fields;
+- `userId` is ownership data and is not exposed by the public listing projection;
+- display name, username, photo and bio remain owned by User/UserPresentation and are never duplicated into PlayPlayerListing;
+- updating reuses the same canonical listing rather than creating parallel posts;
+- PlayPlayerListing does not create Event, Team, Community, GamerProfile, or shadow membership records.
+
 ---
 
 # 12. PlayEventDetails
