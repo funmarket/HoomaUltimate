@@ -21,5 +21,5 @@ initializeWebAppearance();
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <HoomaRouter />
-  </StrictMode>
+  </StrictMode>,
 );
