@@ -44,7 +44,7 @@ Authentication is required when a user attempts a protected action such as:
 - claim;
 - contribute/pay;
 - challenge;
-- send/reveal member-private Whistles;
+- send/read member-private Whistles;
 - access member-private content.
 
 Web guests attempting a protected action must be sent through a validated internal `returnTo` path. Telegram users authenticate through validated Mini App initData rather than the classic Web login flow.
@@ -149,6 +149,15 @@ It must not be implemented as one generic database `CommunityType`. Each selecti
 - TEAM -> football Team domain;
 - ULTRAS -> supporter-community domain;
 - GAMERS -> gaming community/squad domain.
+
+After successful creation, the canonical entity is discoverable in its own product feed:
+
+- HOOMA -> `/hooma` HOOMA feed;
+- TEAM -> `/teams` Teams feed;
+- ULTRAS -> `/ultras` ULTRAS feed;
+- GAMERS -> `/gamers` Gamers feed.
+
+The shared gateway never duplicates one created entity into another domain merely to make it appear in a feed.
 
 ## 2.4 Places tabs
 
@@ -441,7 +450,7 @@ Current Community identity should support logo/banner presentation. Managed uplo
 
 Current authorized Community members can access the private HOOMA Whistle Board through the single shared Whistle engine.
 
-Random public visitors and non-members cannot list, send or reveal Community Whistles.
+Random public visitors and non-members cannot list, send or read Community Whistles.
 
 ---
 
@@ -556,7 +565,7 @@ Requirements include:
 
 # 9. Events and Play
 
-Play is HOOMA's football-activity/event product.
+Play is HOOMA's football-activity, discovery and participation product. Scheduled games remain canonical Events; player-looking posts and recruitment discovery are separate Play concepts and must not be forced into Event records.
 
 Core Play/Event requirements include:
 
@@ -577,7 +586,57 @@ Core Play/Event requirements include:
 
 Preferred-position data, when collected for balancing/formation logic, must actually influence that logic rather than being accepted and ignored.
 
-## 9.1 Play communication direction
+## 9.1 Players looking to play
+
+`/play` includes a public **Players** feed for people looking for football opportunities.
+
+Requirements:
+
+- an authenticated canonical HOOMA User may publish a player-looking post even if they belong to no Team, HOOMA Community, ULTRAS group or Gamer squad;
+- a player-looking post can state that the user is looking for a `GAME` or a `TEAM`;
+- the post belongs to the canonical User and Play discovery domain, not to a fabricated Team, Community or Event;
+- public presentation uses only privacy-safe canonical User presentation data plus the deliberately published listing content;
+- creating, editing or removing the listing is authenticated and owner-authorized;
+- absence of Team/Community membership must never block this Play discovery action.
+
+## 9.2 Community and group recruitment cards
+
+Play also supports recruitment discovery for canonical entities that are looking for members.
+
+When the owning domain exists, authorized leadership may publish a recruitment card for:
+
+- Team;
+- HOOMA Community;
+- ULTRAS group;
+- Gamer community/squad.
+
+A recruitment card communicates at minimum:
+
+- the canonical entity name and type;
+- its mission, goal or interest;
+- what or who it is looking for;
+- a **Request to join** action.
+
+The join-request lifecycle is:
+
+```text
+REQUEST TO JOIN -> PENDING -> APPROVED | DENIED
+```
+
+Rules:
+
+- requests are tied to the canonical applicant User and canonical target entity;
+- only authority recognized by the owning domain may approve or deny;
+- approval must hand off to the owning domain's canonical membership/roster lifecycle rather than create a shadow Play membership;
+- Team approval resolves through Team membership/TeamPlayer rules;
+- HOOMA approval resolves through Community membership rules;
+- ULTRAS and Gamers resolve through their own membership domains once those domains actually exist;
+- Play is the discovery/recruitment surface, not a generic membership database;
+- ULTRAS/Gamers recruitment must not create placeholder records before their canonical domains exist.
+
+This recruitment workflow does not by itself redefine every other direct join entry point. Any change to an owning domain's general join policy must be made explicitly in that domain rather than inferred from the existence of a Play recruitment card.
+
+## 9.3 Play communication direction
 
 The intended Play communication mechanic is **Event Whistle Board through the shared Whistle domain**, not a conventional permanent event chat.
 
@@ -889,26 +948,25 @@ Whistle body:
 
 PostgreSQL stores metadata/quota/context/expiry information only.
 
-## 21.4 TTL and reveal
+## 21.4 UTC daily reset and direct visibility
 
-Unread body TTL:
-
-```text
-24 hours
-```
-
-First authorized reveal creates a viewer-specific reveal window:
+Whistle operates in one UTC-day session:
 
 ```text
-60 seconds
+00:00:00 UTC -> next 00:00:00 UTC
 ```
 
 Requirements:
 
-- later reads never restart/extend that first reveal deadline;
-- server response reports the actual remaining reveal lifetime;
-- after the viewer's reveal window expires, that viewer cannot restart it;
-- another authorized viewer receives an independent reveal window.
+- every Whistle expires at the next UTC midnight regardless of when during the day it was created;
+- a Whistle created shortly before midnight does not receive an additional rolling 24-hour lifetime;
+- the user's daily usage resets to zero at `00:00 UTC` and the next UTC day begins with all 11 sends available;
+- unused sends never carry over into the next UTC day;
+- previous-day Whistle bodies expire from Redis at the UTC reset and cannot be read afterward;
+- expired PostgreSQL metadata is deleted by the Whistle cleanup path and must never become permanent Whistle history;
+- product visibility and quota reset are effective at midnight even if physical PostgreSQL cleanup is triggered by the next Whistle list/send operation;
+- after context authorization, Whistle bodies are shown directly in the authorized feed;
+- there is no Reveal action, per-viewer reveal window, seen key or ability to restart a viewing timer.
 
 ## 21.5 Context authorization
 
@@ -946,15 +1004,17 @@ Real PostgreSQL + Redis integration coverage must prove, as applicable:
 
 - 11th send allowed / 12th denied;
 - concurrent quota attempts;
-- 24-hour body TTL;
-- first reveal -> 60-second viewer window;
-- no reveal-window extension;
+- expiration is the next UTC midnight rather than a rolling 24 hours;
+- a new UTC day starts with all 11 sends available and unused quota does not carry over;
+- authorized readers receive the body directly without Reveal;
+- the obsolete Reveal endpoint is absent;
+- previous-day Whistles are unavailable after reset;
+- expired metadata cleanup;
 - context authorization;
 - outsider denial;
-- complex Unicode grapheme limits;
+- complex Unicode 33/34-grapheme boundaries;
 - body absent from PostgreSQL;
-- body absent from durable notification/outbox data;
-- expiry behavior.
+- body absent from durable notification/outbox data.
 
 ---
 
@@ -1084,7 +1144,7 @@ Use for deterministic policies/validation.
 
 Use real disposable PostgreSQL where behavior depends on transactions, locking, constraints, idempotency, role assignment, migrations or outbox claiming.
 
-Use real disposable Redis where behavior depends on Whistle TTL/reveal/transient semantics.
+Use real disposable Redis where behavior depends on Whistle UTC-reset/TTL/transient semantics.
 
 ## HTTP/API
 
