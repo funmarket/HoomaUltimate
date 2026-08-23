@@ -8,16 +8,16 @@ export type TelegramBackButton = {
 type TelegramWebApp = {
   ready(): void;
   expand(): void;
-  initData: string;
+  initData?: string;
   colorScheme?: "light" | "dark";
   BackButton?: TelegramBackButton;
 };
 
-export interface TelegramRuntime {
+export type TelegramRuntime = {
   readonly initData: string;
-  readonly colorScheme: "light" | "dark";
+  readonly colorScheme: "light" | "dark" | null;
   readonly backButton: TelegramBackButton | null;
-}
+};
 
 declare global {
   interface Window {
@@ -27,12 +27,14 @@ declare global {
 
 export function initializeTelegramRuntime(): TelegramRuntime {
   const webApp = window.Telegram?.WebApp;
-  if (!webApp) return { initData: "", colorScheme: "dark", backButton: null };
+  if (!webApp) return { initData: "", colorScheme: null, backButton: null };
+
   webApp.ready();
   webApp.expand();
+
   return {
     initData: webApp.initData ?? "",
-    colorScheme: webApp.colorScheme === "light" ? "light" : "dark",
+    colorScheme: webApp.colorScheme === "light" || webApp.colorScheme === "dark" ? webApp.colorScheme : null,
     backButton: webApp.BackButton ?? null
   };
 }

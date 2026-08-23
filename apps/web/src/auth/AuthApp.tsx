@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import type { MeResponse } from "@hooma/contracts";
-import { webApi } from "../api/client";
+import { useHoomaFrontend } from "@hooma/frontend";
 
 function safeReturnTo(): string {
   const value = new URLSearchParams(window.location.search).get("returnTo");
@@ -9,20 +9,21 @@ function safeReturnTo(): string {
 }
 
 export function AuthApp() {
+  const { api } = useHoomaFrontend();
   const [me, setMe] = useState<MeResponse | null>(null);
   const [error, setError] = useState("");
   const [mode, setMode] = useState<"login" | "register">("login");
   const returnTo = useMemo(safeReturnTo, []);
 
   useEffect(() => {
-    void webApi.me().then((response) => {
+    void api.identity.me().then((response) => {
       setMe(response);
       if (returnTo !== "/") window.location.replace(returnTo);
     }).catch(() => undefined);
-  }, [returnTo]);
+  }, [api, returnTo]);
 
   function completeAuthentication() {
-    void webApi.me().then((response) => {
+    void api.identity.me().then((response) => {
       setMe(response);
       window.location.replace(returnTo);
     }).catch((reason: Error) => setError(reason.message));
@@ -36,7 +37,7 @@ export function AuthApp() {
         <p>@{me.presentation.username}</p>
         <button
           type="button"
-          onClick={() => void webApi.logout().then(() => setMe(null)).catch((e: Error) => setError(e.message))}
+          onClick={() => void api.identity.logout().then(() => setMe(null)).catch((e: Error) => setError(e.message))}
         >
           Sign out
         </button>
@@ -66,12 +67,13 @@ export function AuthApp() {
 }
 
 function LoginForm({ onSuccess, onError }: FormCallbacks) {
+  const { api } = useHoomaFrontend();
   return (
     <form
       onSubmit={(event) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
-        void webApi
+        void api.identity
           .login({ loginUsername: String(data.get("loginUsername")), password: String(data.get("password")) })
           .then(onSuccess)
           .catch((error: Error) => onError(error.message));
@@ -85,10 +87,11 @@ function LoginForm({ onSuccess, onError }: FormCallbacks) {
 }
 
 function RegisterForm({ onSuccess, onError }: FormCallbacks) {
+  const { api } = useHoomaFrontend();
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    void webApi
+    void api.identity
       .register({
         loginUsername: String(data.get("loginUsername")),
         password: String(data.get("password")),

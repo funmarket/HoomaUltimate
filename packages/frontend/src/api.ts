@@ -1,6 +1,8 @@
 import type {
+  LoginInput,
   MeResponse,
   ProfilePresentationUpdateInput,
+  RegisterInput,
   TeamCapabilityInput,
   TeamChallengeCreateInput,
   TeamCreateInput,
@@ -24,6 +26,7 @@ export type TeamControlDetail = {
 export type TeamChallengeSummary = { id: string; challengerTeamId: string; challengedTeamId: string; status: "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED"; format: string; proposedAt: string | null; message: string | null; challengerTeam: { id: string; name: string }; challengedTeam: { id: string; name: string }; game?: { id: string; status?: string } | null };
 export type TeamGameSummary = { id: string; challengeId: string; status: "SCHEDULING" | "CONFIRMED" | "COMPLETED" | "CANCELLED"; scheduledAt: string | null; homeTeam: { id: string; name: string }; awayTeam: { id: string; name: string } };
 export type TeamListFilters = { search?: string; city?: string; houma?: string; cursor?: string; limit?: number };
+export type PlatformAdminOverview = { users: number; activePlatformAdmins: number; auditEntries: number };
 
 function publicListPath(filters: TeamListFilters = {}): string {
   const params = new URLSearchParams();
@@ -35,12 +38,18 @@ function publicListPath(filters: TeamListFilters = {}): string {
 
 export function createHoomaApi(transport: HoomaTransport) {
   const identity = {
+    register: (input: RegisterInput) => request<{ ok: true }>(transport, "/api/public/v1/auth/register", { method: "POST", body: JSON.stringify(input) }),
+    login: (input: LoginInput) => request<{ ok: true }>(transport, "/api/public/v1/auth/login", { method: "POST", body: JSON.stringify(input) }),
+    logout: () => request<{ ok: true }>(transport, "/api/v1/auth/logout", { method: "POST" }),
     me: () => request<MeResponse>(transport, "/api/v1/me"),
     async meOptional(): Promise<MeResponse | null> {
       try { return await request<MeResponse>(transport, "/api/v1/me"); }
       catch (reason) { if (reason instanceof HoomaApiError && reason.status === 401) return null; throw reason; }
     },
     updatePresentation: (input: ProfilePresentationUpdateInput) => request<MeResponse>(transport, "/api/v1/me/presentation", { method: "PATCH", body: JSON.stringify(input) })
+  };
+  const platformAdmin = {
+    overview: () => request<PlatformAdminOverview>(transport, "/api/v1/admin/overview")
   };
   const teams = {
     publicList: (filters?: TeamListFilters) => request<PublicTeamList>(transport, publicListPath(filters)),
@@ -61,6 +70,6 @@ export function createHoomaApi(transport: HoomaTransport) {
     declineChallenge: (id: string) => request(transport, `/api/v1/teams/challenges/${encodeURIComponent(id)}/decline`, { method: "POST" }),
     cancelChallenge: (id: string) => request(transport, `/api/v1/teams/challenges/${encodeURIComponent(id)}/cancel`, { method: "POST" })
   };
-  return { identity, teams };
+  return { identity, platformAdmin, teams };
 }
 export type HoomaApi = ReturnType<typeof createHoomaApi>;

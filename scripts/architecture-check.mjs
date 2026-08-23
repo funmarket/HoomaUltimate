@@ -30,13 +30,16 @@ for (const file of await walk(root)) {
     forbid(file, source, /@hooma\/database|@prisma\/client/, "frontend must not import database code");
   }
 
-  if (/^apps\/(web|telegram)\/src\/(teams|events)\//.test(rel)) {
-    violations.push(`${rel}: canonical Teams and Events/Play frontends belong in @hooma/frontend, not a platform app`);
+  if (rel.startsWith("apps/telegram/src/")) {
+    violations.push(`${rel}: Telegram is the /telegram entry of the universal HOOMA frontend; do not create a second Telegram product source tree`);
   }
 
-  if (/^apps\/(web|telegram)\/src\//.test(rel)) {
-    forbid(file, source, /["'`]\/api\/(?:public\/v1|v1)\/teams(?:[/?"'`]|$)/, "platform apps must consume the shared Teams API client from @hooma/frontend");
-    forbid(file, source, /["'`]\/api\/(?:public\/v1|v1)\/events(?:[/?"'`]|$)/, "platform apps must consume the shared Events API client from @hooma/frontend");
+  if (/^apps\/web\/src\/(teams|events)\//.test(rel)) {
+    violations.push(`${rel}: canonical Teams and Events/Play frontends belong in @hooma/frontend, not the app shell`);
+  }
+
+  if (rel.startsWith("apps/web/src/")) {
+    forbid(file, source, /["'`]\/api\/(?:public\/v1|v1)\//, "product API calls must use the single @hooma/frontend API client");
   }
 
   if (/^apps\/api\/src\/modules\/[^/]+\/domain\//.test(rel)) {
@@ -51,6 +54,16 @@ for (const file of await walk(root)) {
   if (rel.startsWith("apps/worker/") && /apps\/api\/src\/.*\/http\//.test(source)) {
     violations.push(`${rel}: worker must not import API HTTP controllers/routes`);
   }
+}
+
+const canonicalRouterPath = path.join(root, "apps/web/src/app/router/HoomaRouter.tsx");
+try {
+  const canonicalRouter = await readFile(canonicalRouterPath, "utf8");
+  if (!canonicalRouter.includes('path="/telegram"')) {
+    violations.push("apps/web/src/app/router/HoomaRouter.tsx: canonical route tree must expose the /telegram entry");
+  }
+} catch {
+  violations.push("apps/web/src/app/router/HoomaRouter.tsx: canonical universal HOOMA router is missing");
 }
 
 if (violations.length > 0) {

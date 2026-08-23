@@ -1,11 +1,11 @@
 import { useEffect, useState, type FormEvent } from "react";
 import type { MeResponse } from "@hooma/contracts";
 import { useHoomaFrontend } from "@hooma/frontend";
-import { useWebAccount } from "../account/WebAccountProvider";
+import { useAccount } from "../account/AccountProvider";
 
 export function ProfilePage() {
-  const { api } = useHoomaFrontend();
-  const { me, loading, refresh } = useWebAccount();
+  const { api, authenticationHref } = useHoomaFrontend();
+  const { me, loading, refresh } = useAccount();
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [photoUrl, setPhotoUrl] = useState("");
@@ -44,7 +44,15 @@ export function ProfilePage() {
   }
 
   if (loading && !me) return <p className="status">Loading profile…</p>;
-  if (!me) return <section className="panel"><p className="error">Sign in to edit your HOOMA profile.</p><a href="/login?returnTo=%2Fprofile">Sign in</a></section>;
+  if (!me) {
+    const signInHref = authenticationHref("/profile");
+    return (
+      <section className="panel">
+        <p className="error">Authentication is required to edit your HOOMA profile.</p>
+        {signInHref ? <a href={signInHref}>Sign in</a> : null}
+      </section>
+    );
+  }
 
   return (
     <section className="profile-page">

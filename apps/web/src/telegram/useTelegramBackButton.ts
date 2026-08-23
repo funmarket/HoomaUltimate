@@ -11,7 +11,7 @@ export function useTelegramBackButton(runtime: TelegramRuntime): void {
     if (!button) return;
 
     const goBack = () => navigate(-1);
-    if (location.pathname === "/") {
+    if (location.pathname === "/" || location.pathname === "/telegram") {
       button.hide();
       return;
     }
