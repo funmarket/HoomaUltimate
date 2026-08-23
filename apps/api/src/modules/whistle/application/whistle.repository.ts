@@ -28,6 +28,6 @@ export interface WhistleRepository {
     dailyLimit: number;
   }): Promise<WhistleMetadataRecord | null>;
   quotaUsed(userId: string, dayKey: string): Promise<number>;
-  getById(id: string): Promise<WhistleMetadataRecord | null>;
   listActive(contextType: WhistleContextType, contextId: string, now: Date, limit: number): Promise<WhistleMetadataRecord[]>;
+  deleteExpired(now: Date): Promise<number>;
 }
