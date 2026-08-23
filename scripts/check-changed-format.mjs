@@ -1,12 +1,10 @@
 import { spawnSync } from "node:child_process";
 
-const baseSha = process.env.FORMAT_BASE_SHA?.trim();
-const headSha = process.env.FORMAT_HEAD_SHA?.trim();
+const baseSha = process.env.CI_BASE_SHA?.trim();
+const headSha = process.env.CI_HEAD_SHA?.trim();
 
 if (!baseSha || !headSha) {
-  console.error(
-    "FORMAT_BASE_SHA and FORMAT_HEAD_SHA are required for changed-file formatting verification.",
-  );
+  console.error("CI_BASE_SHA and CI_HEAD_SHA are required for changed-file formatting verification.");
   process.exit(1);
 }
 
