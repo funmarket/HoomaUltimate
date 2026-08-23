@@ -60,10 +60,7 @@ function authenticatedJson(cookie: string, name: string) {
   } as const;
 }
 
-function authenticatedProfile(
-  cookie: string,
-  input: { handle: string; openToChallenge: boolean },
-) {
+function authenticatedProfile(cookie: string, input: { handle: string; openToChallenge: boolean }) {
   return {
     method: "PUT",
     headers: {
@@ -235,10 +232,7 @@ test("GamerProfile is private per account while Challengers is public and privac
       authenticatedProfile(openCookie, { handle: "FunKing", openToChallenge: true }),
     );
     assert.equal(ludoProfile.status, 200);
-    assert.equal(
-      await db.gamerProfile.count({ where: { userId: openProfile.userId } }),
-      2,
-    );
+    assert.equal(await db.gamerProfile.count({ where: { userId: openProfile.userId } }), 2);
 
     const inactiveGameCreate = await fetch(
       `${base}/api/v1/gamers/games`,
