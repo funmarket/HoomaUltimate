@@ -4,6 +4,7 @@ import { HoomaRouter } from "./app/router/HoomaRouter";
 import { initializeWebAppearance } from "./settings/theme";
 import "@hooma/ui/bottom-nav.css";
 import "@hooma/frontend/teams.css";
+import "@hooma/frontend/play.css";
 import "./styles.css";
 import "./account/account.css";
 import "./profile/profile.css";

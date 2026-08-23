@@ -1,0 +1,23 @@
+.play-page { display: grid; gap: 28px; }
+.play-hero-pro { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; padding: .7rem 0 1.2rem; border-bottom: 1px solid rgba(199,154,43,.18); }
+.play-hero-pro > div > span { color: #c4dc43; font-size: .68rem; font-weight: 950; letter-spacing: .18em; text-transform: uppercase; }
+.play-hero-pro h1 { margin: .25rem 0 0; color: #f2ead7; font-family: Georgia, serif; font-size: clamp(3.7rem,15vw,6rem); line-height: .84; }
+.play-hero-pro p { margin: .75rem 0 0; color: #bfb59a; font-size: .9rem; }
+.play-hero-pro__action { min-height: 3rem; padding: 0 1rem; display: inline-flex; align-items: center; gap: .5rem; border: 1px solid #c4dc43; border-radius: 999px; background: #070806; color: #fff; font-weight: 900; text-decoration: none; white-space: nowrap; }
+.play-hero-pro__action svg { color: #c4dc43; }
+.play-section { display: grid; gap: 14px; }
+.play-section-heading { display: flex; justify-content: space-between; align-items: end; gap: 16px; }
+.play-section-heading .eyebrow { margin: 0 0 5px; }
+.play-section-heading h2 { margin: 0; font-family: Georgia, serif; color: #f2ead7; font-size: clamp(1.6rem,5vw,2.2rem); }
+.play-player-empty, .play-state { display: grid; gap: 6px; }
+.play-player-empty span, .play-state span { color: #bfb59a; font-size: 13px; }
+.play-match-list { display: grid; gap: 12px; }
+.pickup-match-card-pro { width: 100%; padding: 1rem; border: 1px solid #6f613c; border-radius: 11px; background: linear-gradient(145deg,#0d0e0b,#080907); color: #fff; text-align: left; text-decoration: none; }
+.pickup-match-card-top > span { color: #c4dc43; font-size: .63rem; font-weight: 950; letter-spacing: .1em; text-transform: uppercase; }
+.pickup-match-card-top strong { display: block; margin-top: .35rem; color: #f2ead7; font-size: 1.1rem; }
+.pickup-match-card-top small { display: block; margin-top: .25rem; color: #bfb59a; }
+.pickup-match-card-meta { display: grid; gap: .45rem; margin-top: .8rem; padding-top: .75rem; border-top: 1px solid rgba(232,221,196,.12); color: #bfb59a; font-size: .74rem; }
+.pickup-match-card-meta span { display: flex; align-items: center; gap: .4rem; }
+.pickup-match-card-meta svg { color: #fff; flex: 0 0 auto; }
+.pickup-match-card-cta { margin-top: .8rem; color: #c4dc43; font-size: .72rem; font-weight: 900; }
+@media (max-width: 620px) { .play-hero-pro { display: grid; align-items: start; } .play-hero-pro__action { width: fit-content; } }

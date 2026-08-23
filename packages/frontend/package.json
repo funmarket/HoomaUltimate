@@ -21,6 +21,7 @@
   },
   "exports": {
     ".": { "types": "./src/index.ts", "default": "./dist/index.js" },
-    "./teams.css": "./src/teams/teams.css"
+    "./teams.css": "./src/teams/teams.css",
+    "./play.css": "./src/events/play.css"
   }
 }

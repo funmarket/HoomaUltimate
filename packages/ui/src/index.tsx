@@ -16,6 +16,8 @@ export type { HomeGatewayId, HomeGatewayItem } from "./home/home-gateways.js";
 export { TeamsHero } from "./teams/TeamsHero.js";
 export { TeamDiscoveryCard } from "./teams/TeamDiscoveryCard.js";
 export type { TeamDiscoveryCardProps } from "./teams/TeamDiscoveryCard.js";
+export { PlayHero } from "./play/PlayHero.js";
+export { PickupMatchCard } from "./play/PickupMatchCard.js";
 
 const HOME_GATEWAY_TYPOGRAPHY = `
 .home-gateway-title {
