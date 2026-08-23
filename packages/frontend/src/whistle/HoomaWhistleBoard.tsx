@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useHoomaFrontend } from "../context";
-import { HoomaApiError, request, type WhistleList, type WhistleListItem } from "../api";
+import { HoomaApiError, type WhistleList, type WhistleListItem } from "../api";
 
 const MAX_GRAPHEMES = 33;
 const REFRESH_INTERVAL_MS = 10_000;
@@ -47,12 +47,8 @@ function resetLabel(value: string): string {
   }).format(date);
 }
 
-function contextPath(contextType: BoardContext, contextId: string): string {
-  return `/api/v1/whistles/contexts/${contextType}/${encodeURIComponent(contextId)}`;
-}
-
 function WhistleBoard({ contextType, contextId, eyebrow, emptyTitle, emptyText }: WhistleBoardProps) {
-  const { api, transport, protectedError } = useHoomaFrontend();
+  const { api, protectedError } = useHoomaFrontend();
   const [feed, setFeed] = useState<WhistleList>({ items: [], remainingToday: 11, resetsAt: "" });
   const [body, setBody] = useState("");
   const [loading, setLoading] = useState(true);
@@ -66,7 +62,7 @@ function WhistleBoard({ contextType, contextId, eyebrow, emptyTitle, emptyText }
     try {
       const next = contextType === "COMMUNITY"
         ? await api.whistles.community(contextId)
-        : await request<WhistleList>(transport, contextPath(contextType, contextId));
+        : await api.whistles.event(contextId);
       setFeed(next);
       setAuthorized(true);
       setError("");
@@ -80,7 +76,7 @@ function WhistleBoard({ contextType, contextId, eyebrow, emptyTitle, emptyText }
     } finally {
       if (!quiet) setLoading(false);
     }
-  }, [api, contextId, contextType, protectedError, transport]);
+  }, [api, contextId, contextType, protectedError]);
 
   useEffect(() => {
     void load();
@@ -97,10 +93,7 @@ function WhistleBoard({ contextType, contextId, eyebrow, emptyTitle, emptyText }
       if (contextType === "COMMUNITY") {
         await api.whistles.sendToCommunity(contextId, body);
       } else {
-        await request(transport, contextPath(contextType, contextId), {
-          method: "POST",
-          body: JSON.stringify({ body })
-        });
+        await api.whistles.sendToEvent(contextId, body);
       }
       setBody("");
       await load(true);
