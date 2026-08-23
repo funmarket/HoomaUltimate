@@ -29,10 +29,14 @@ export function createGamersApi(transport: HoomaTransport) {
         `/api/v1/gamers/games/${encodeURIComponent(gameId)}/profile`,
       ),
     saveMyProfile: (gameId: string, input: GamerProfileInput) =>
-      request<GamerProfile>(transport, `/api/v1/gamers/games/${encodeURIComponent(gameId)}/profile`, {
-        method: "PUT",
-        body: JSON.stringify(input),
-      }),
+      request<GamerProfile>(
+        transport,
+        `/api/v1/gamers/games/${encodeURIComponent(gameId)}/profile`,
+        {
+          method: "PUT",
+          body: JSON.stringify(input),
+        },
+      ),
   };
 }
 
