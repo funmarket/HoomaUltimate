@@ -14,8 +14,7 @@
 .hooma-create-page .panel,
 .hooma-page .state-card,
 .hooma-page .member-gate,
-.hooma-discovery-card,
-.hooma-create-card {
+.hooma-discovery-card {
   border: 1px solid var(--hooma-line);
   background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.012)), var(--hooma-panel);
   border-radius: 22px;
@@ -49,24 +48,38 @@
 .hooma-memberships h2 { margin: 4px 0 0; color: var(--hooma-cream); }
 .hooma-section-heading p { margin: 0; }
 
-.hooma-create-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.hooma-create-card {
-  min-height: 152px;
-  padding: 20px;
+.hooma-create-picker {
   display: grid;
-  align-content: end;
-  gap: 7px;
-  color: var(--hooma-cream);
-  text-align: left;
-  font: inherit;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr) auto;
+  gap: 14px;
+  align-items: end;
 }
-button.hooma-create-card { cursor: pointer; }
-button.hooma-create-card:hover,
-button.hooma-create-card:focus-visible { border-color: var(--hooma-gold); transform: translateY(-1px); }
-.hooma-create-card strong { font-size: clamp(22px, 5vw, 32px); letter-spacing: .06em; }
-.hooma-create-card span { color: #e2dac8; font-weight: 700; }
-.hooma-create-card small { color: var(--hooma-muted); line-height: 1.4; }
-.hooma-create-card.is-future { opacity: .62; border-style: dashed; box-shadow: none; }
+.hooma-create-select { display: grid; gap: 7px; }
+.hooma-create-select > span { color: #d8d0c1; font-size: 13px; font-weight: 800; }
+.hooma-create-select select {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: #080808;
+  color: var(--hooma-cream);
+  border-radius: 12px;
+  padding: 11px 40px 11px 13px;
+  outline: none;
+  font: inherit;
+  font-weight: 850;
+}
+.hooma-create-select select:focus { border-color: var(--hooma-gold); }
+.hooma-create-selection {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  padding: 2px 0;
+}
+.hooma-create-selection strong { color: var(--hooma-cream); font-size: 20px; letter-spacing: .05em; }
+.hooma-create-selection span { color: #e2dac8; font-weight: 700; }
+.hooma-create-selection small { color: var(--hooma-muted); line-height: 1.35; }
+.hooma-create-selection.is-future { opacity: .65; }
+.hooma-create-continue { white-space: nowrap; min-height: 46px; }
 
 .hooma-community-list { display: grid; gap: 10px; margin-top: 16px; }
 .hooma-community-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 0; border-top: 1px solid rgba(255,255,255,.09); }
@@ -98,11 +111,18 @@ button.hooma-create-card:focus-visible { border-color: var(--hooma-gold); transf
 .hooma-create-form textarea { resize: vertical; }
 .hooma-form-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
 
+@media (max-width: 760px) {
+  .hooma-create-picker { grid-template-columns: 1fr; align-items: stretch; gap: 10px; }
+  .hooma-create-selection { padding: 3px 1px 1px; }
+  .hooma-create-selection strong { font-size: 18px; }
+  .hooma-create-continue { width: 100%; }
+}
+
 @media (max-width: 620px) {
-  .hooma-create-grid,
   .hooma-discovery-grid { grid-template-columns: 1fr; }
-  .hooma-create-card { min-height: 132px; }
   .hooma-section-heading { align-items: start; flex-direction: column; }
+  .hooma-page .panel { padding: 16px; }
+  .hooma-create-picker { border-radius: 16px; }
   .hooma-form-actions { justify-content: stretch; }
   .hooma-form-actions .button { flex: 1; }
 }

@@ -1,8 +1,54 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import type { MeResponse } from "@hooma/contracts";
 import { useHoomaFrontend } from "../context";
 import type { PublicCommunitySummary } from "../api";
+
+type CreationType = "HOOMA" | "TEAM" | "ULTRAS" | "GAMERS";
+
+type CreationOption = {
+  readonly value: CreationType;
+  readonly title: string;
+  readonly description: string;
+  readonly roles: string;
+  readonly available: boolean;
+  readonly href: string | null;
+};
+
+const CREATION_OPTIONS: readonly CreationOption[] = [
+  {
+    value: "HOOMA",
+    title: "HOOMA",
+    description: "Start a neighborhood community",
+    roles: "Founder · Coach · Member",
+    available: true,
+    href: "/hooma/new"
+  },
+  {
+    value: "TEAM",
+    title: "TEAM",
+    description: "Build a football side",
+    roles: "Coach · Assistant · Player",
+    available: true,
+    href: "/teams"
+  },
+  {
+    value: "ULTRAS",
+    title: "ULTRAS",
+    description: "Build an official-club supporter group",
+    roles: "Coming with the canonical ULTRAS domain",
+    available: false,
+    href: null
+  },
+  {
+    value: "GAMERS",
+    title: "GAMERS",
+    description: "Build a gaming squad",
+    roles: "Coming with the canonical Gamers domain",
+    available: false,
+    href: null
+  }
+] as const;
 
 function report(reason: unknown): string {
   return reason instanceof Error ? reason.message : "Unexpected HOOMA error";
@@ -15,6 +61,11 @@ export function HoomaPage() {
   const [me, setMe] = useState<MeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [creationType, setCreationType] = useState<CreationType>("HOOMA");
+  const selectedCreation = useMemo(
+    () => CREATION_OPTIONS.find((option) => option.value === creationType) ?? CREATION_OPTIONS[0],
+    [creationType]
+  );
 
   useEffect(() => {
     let active = true;
@@ -39,6 +90,11 @@ export function HoomaPage() {
 
   const signInHref = authenticationHref("/hooma");
 
+  function continueCreation() {
+    if (!selectedCreation.available || !selectedCreation.href) return;
+    navigate(selectedCreation.href);
+  }
+
   return (
     <div className="page hooma-page">
       <section className="hooma-hero panel">
@@ -56,27 +112,23 @@ export function HoomaPage() {
           <p className="muted">One gateway. Four distinct community domains.</p>
         </div>
 
-        <div className="hooma-create-grid">
-          <button type="button" className="hooma-create-card" onClick={() => navigate("/hooma/new")}>
-            <strong>HOOMA</strong>
-            <span>Start a neighborhood community</span>
-            <small>Founder · Coach · Member</small>
-          </button>
-          <button type="button" className="hooma-create-card" onClick={() => navigate("/teams")}>
-            <strong>TEAM</strong>
-            <span>Build a football side</span>
-            <small>Coach · Assistant · Player</small>
-          </button>
-          <div className="hooma-create-card is-future" aria-disabled="true">
-            <strong>ULTRAS</strong>
-            <span>Build an official-club supporter group</span>
-            <small>Coming with the canonical ULTRAS domain</small>
+        <div className="panel hooma-create-picker">
+          <label className="hooma-create-select">
+            <span>Community type</span>
+            <select value={creationType} onChange={(event) => setCreationType(event.target.value as CreationType)}>
+              {CREATION_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.title}</option>
+              ))}
+            </select>
+          </label>
+          <div className={`hooma-create-selection ${selectedCreation.available ? "" : "is-future"}`} aria-live="polite">
+            <strong>{selectedCreation.title}</strong>
+            <span>{selectedCreation.description}</span>
+            <small>{selectedCreation.roles}</small>
           </div>
-          <div className="hooma-create-card is-future" aria-disabled="true">
-            <strong>GAMERS</strong>
-            <span>Build a gaming squad</span>
-            <small>Coming with the canonical Gamers domain</small>
-          </div>
+          <button className="button hooma-create-continue" type="button" disabled={!selectedCreation.available} onClick={continueCreation}>
+            {selectedCreation.available ? `Continue with ${selectedCreation.title}` : `${selectedCreation.title} coming soon`}
+          </button>
         </div>
       </section>
 
