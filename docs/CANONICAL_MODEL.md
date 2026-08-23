@@ -725,9 +725,10 @@ Current rules:
 - Redis body TTL is the remaining lifetime until the next UTC midnight;
 - expired PostgreSQL metadata is deleted by the Whistle cleanup path and is not permanent Whistle history;
 - product visibility and quota reset take effect at UTC midnight even when physical PostgreSQL cleanup is triggered by a later list/send operation;
-- active Community membership is required for the current `COMMUNITY` context;
-- current enabled context is `COMMUNITY` only;
-- `EVENT`, `TEAM`, `RIDE`, `ULTRAS`, and `GAMER_SQUAD` remain disabled until their context-specific authorization slices are deliberately implemented;
+- `COMMUNITY` access requires active Community membership;
+- `EVENT` access reuses the canonical Event member-content policy: Event creator, active owning-Community `FOUNDER`/`COACH`, or Event RSVP in `CONFIRMED`, `WAITLISTED`, or `ATTENDED` state;
+- current enabled contexts are `COMMUNITY` and `EVENT`;
+- `TEAM`, `RIDE`, `ULTRAS`, and `GAMER_SQUAD` remain disabled until their context-specific authorization slices are deliberately implemented;
 - Whistle body content must never be copied into PostgreSQL, AuditLog metadata, OutboxEvent payloads, durable notifications, analytics, URLs, query strings, or server logs;
 - Redis is disposable transient infrastructure; PostgreSQL metadata remains the durable source for quota/context indexes and expiry projections.
 
@@ -760,7 +761,7 @@ Rules:
 - public Team DTO never includes unpublished lineup;
 - public Game DTO never includes leader coordination messages;
 - member management DTO may expose only data the authenticated principal is authorized to manage;
-- Whistle Community reads and sends are authenticated member-private operations;
+- Whistle Community and Event reads/sends are authenticated context-authorized operations;
 - UI hiding is not authorization.
 
 ---
