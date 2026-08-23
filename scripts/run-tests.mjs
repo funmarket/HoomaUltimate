@@ -1,11 +1,15 @@
 import { readdir } from "node:fs/promises";
-import { spawnSync, spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 
 const mode = process.argv[2] ?? "unit";
-const build = spawnSync(process.platform === "win32" ? "npm.cmd" : "npm", ["run", "build:packages"], {
-  stdio: "inherit",
-  shell: false,
-});
+const build = spawnSync(
+  process.platform === "win32" ? "npm.cmd" : "npm",
+  ["run", "build:packages"],
+  {
+    stdio: "inherit",
+    shell: false,
+  },
+);
 if (build.status !== 0) process.exit(build.status ?? 1);
 
 const entries = await readdir(new URL("../tests/", import.meta.url));
