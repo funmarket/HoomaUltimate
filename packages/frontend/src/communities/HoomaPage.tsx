@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import type { MeResponse } from "@hooma/contracts";
 import { useHoomaFrontend } from "../context";
@@ -15,12 +15,13 @@ type CreationOption = {
   readonly href: string | null;
 };
 
-const CREATION_OPTIONS: readonly CreationOption[] = [
-  { value: "HOOMA", title: "HOOMA", description: "Start a neighborhood community", roles: "Founder · Coach · Member", available: true, href: "/hooma/new" },
-  { value: "TEAM", title: "TEAM", description: "Build a football side", roles: "Coach · Assistant · Player", available: true, href: "/teams" },
-  { value: "ULTRAS", title: "ULTRAS", description: "Build an official-club supporter group", roles: "Coming with the canonical ULTRAS domain", available: false, href: null },
-  { value: "GAMERS", title: "GAMERS", description: "Build a gaming squad", roles: "Coming with the canonical Gamers domain", available: false, href: null }
-] as const;
+const CREATION_ORDER: readonly CreationType[] = ["HOOMA", "TEAM", "ULTRAS", "GAMERS"];
+const CREATION_OPTIONS: Record<CreationType, CreationOption> = {
+  HOOMA: { value: "HOOMA", title: "HOOMA", description: "Start a neighborhood community", roles: "Founder · Coach · Member", available: true, href: "/hooma/new" },
+  TEAM: { value: "TEAM", title: "TEAM", description: "Build a football side", roles: "Coach · Assistant · Player", available: true, href: "/teams" },
+  ULTRAS: { value: "ULTRAS", title: "ULTRAS", description: "Build an official-club supporter group", roles: "Coming with the canonical ULTRAS domain", available: false, href: null },
+  GAMERS: { value: "GAMERS", title: "GAMERS", description: "Build a gaming squad", roles: "Coming with the canonical Gamers domain", available: false, href: null }
+};
 
 function report(reason: unknown): string {
   return reason instanceof Error ? reason.message : "Unexpected HOOMA error";
@@ -38,7 +39,7 @@ export function HoomaPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [creationType, setCreationType] = useState<CreationType>("HOOMA");
-  const selectedCreation = useMemo(() => CREATION_OPTIONS.find((option) => option.value === creationType) ?? CREATION_OPTIONS[0], [creationType]);
+  const selectedCreation = CREATION_OPTIONS[creationType];
 
   useEffect(() => {
     let active = true;
@@ -77,7 +78,10 @@ export function HoomaPage() {
           <label className="hooma-create-select">
             <span>Community type</span>
             <select value={creationType} onChange={(event) => setCreationType(event.target.value as CreationType)}>
-              {CREATION_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.title}</option>)}
+              {CREATION_ORDER.map((value) => {
+                const option = CREATION_OPTIONS[value];
+                return <option key={option.value} value={option.value}>{option.title}</option>;
+              })}
             </select>
           </label>
           <div className={`hooma-create-selection ${selectedCreation.available ? "" : "is-future"}`} aria-live="polite">
