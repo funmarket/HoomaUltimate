@@ -8,6 +8,7 @@ import {
   EventChatPage,
   EventDetailPage,
   FormationBuilderPage,
+  GamerGamePage,
   GamersPage,
   HoomaDetailPage,
   HoomaFrontendProvider,
@@ -55,6 +56,10 @@ function EventChatRoute() {
 function EventCheckInRoute() {
   const { eventId } = useParams();
   return <CheckInPage eventId={requiredParam("eventId", eventId)} />;
+}
+function GamerGameRoute() {
+  const { gameSlug } = useParams();
+  return <GamerGamePage gameSlug={requiredParam("gameSlug", gameSlug)} />;
 }
 
 function apiBaseUrl(): string {
@@ -108,6 +113,7 @@ function HoomaRoutes() {
               <Route path="/teams/control" element={<CoachControlRoomPage />} />
               <Route path="/teams/:teamId" element={<TeamDetailRoute />} />
               <Route path="/gamers" element={<GamersPage />} />
+              <Route path="/gamers/games/:gameSlug" element={<GamerGameRoute />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Suspense>
