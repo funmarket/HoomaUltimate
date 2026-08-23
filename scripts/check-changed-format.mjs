@@ -4,7 +4,9 @@ const baseSha = process.env.CI_BASE_SHA?.trim();
 const headSha = process.env.CI_HEAD_SHA?.trim();
 
 if (!baseSha || !headSha) {
-  console.error("CI_BASE_SHA and CI_HEAD_SHA are required for changed-file formatting verification.");
+  console.error(
+    "CI_BASE_SHA and CI_HEAD_SHA are required for changed-file formatting verification.",
+  );
   process.exit(1);
 }
 
