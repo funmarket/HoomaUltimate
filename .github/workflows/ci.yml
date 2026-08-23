@@ -26,9 +26,19 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     env:
       NODE_ENV: test
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hooma_ultimate_test
+      REDIS_URL: redis://localhost:6379
       WEB_ORIGIN: http://localhost:5173
       TELEGRAM_ORIGIN: http://localhost:5174
       TELEGRAM_BOT_TOKEN: integration-test-token
