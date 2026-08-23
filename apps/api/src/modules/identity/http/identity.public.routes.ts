@@ -5,10 +5,7 @@ import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import type { IdentityService } from "../application/identity.service.js";
 import { readCookie, setSessionCookie } from "./cookies.js";
 
-export function createIdentityPublicRouter(
-  service: IdentityService,
-  config: ApiConfig,
-): Router {
+export function createIdentityPublicRouter(service: IdentityService, config: ApiConfig): Router {
   const router = Router();
 
   router.post(
