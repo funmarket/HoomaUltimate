@@ -67,12 +67,12 @@ function apiBaseUrl(): string {
 
 function HoomaRoutes() {
   const runtime = useMemo(() => initializeTelegramRuntime(), []);
-  const actionAccountHref = (returnTo: string) =>
-    runtime.initData
-      ? `/account/create?returnTo=${encodeURIComponent(returnTo)}`
-      : `/register?returnTo=${encodeURIComponent(returnTo)}`;
-  const transport = useMemo(
-    () => ({
+  const transport = useMemo(() => {
+    const actionAccountHref = (returnTo: string) =>
+      runtime.initData
+        ? `/account/create?returnTo=${encodeURIComponent(returnTo)}`
+        : `/register?returnTo=${encodeURIComponent(returnTo)}`;
+    return {
       baseUrl: apiBaseUrl(),
       credentials: "include" as const,
       getHeaders: () => (runtime.initData ? { authorization: `tma ${runtime.initData}` } : {}),
@@ -82,9 +82,8 @@ function HoomaRoutes() {
           window.location.pathname + window.location.search + window.location.hash
         );
       }
-    }),
-    [runtime.initData]
-  );
+    };
+  }, [runtime.initData]);
 
   return (
     <HoomaFrontendProvider transport={transport}>
