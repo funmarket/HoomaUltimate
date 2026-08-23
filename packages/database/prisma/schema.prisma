@@ -154,6 +154,7 @@ model User {
   eventChatMessages          EventChatMessage[]
   whistlesAuthored           WhistleMetadata[]
   gamerGamesCreated          GamerGame[]                    @relation("GamerGameCreator")
+  gamerProfiles              GamerProfile[]
 }
 
 model UserPresentation {
@@ -325,7 +326,7 @@ model TeamCapabilityGrant {
   capability TeamCapability
   grantedBy  String
   createdAt  DateTime       @default(now())
-  revokedAt  DateTime?
+  revokedAt DateTime?
   team       Team           @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user       User           @relation("CapabilityRecipient", fields: [userId], references: [id], onDelete: Cascade)
   grantor    User           @relation("CapabilityGrantor", fields: [grantedBy], references: [id], onDelete: Cascade)
@@ -567,9 +568,25 @@ model GamerGame {
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   createdBy       User?           @relation("GamerGameCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  profiles        GamerProfile[]
 
   @@index([status, name])
   @@index([createdByUserId, createdAt])
+}
+
+model GamerProfile {
+  id              String    @id @default(cuid())
+  userId          String
+  gameId          String
+  handle          String
+  openToChallenge Boolean
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game            GamerGame @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId])
+  @@index([gameId, openToChallenge, updatedAt])
 }
 
 model AuditLog {

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { gamerGameCreateSchema } from "@hooma/contracts/gamers";
+import { gamerGameCreateSchema, gamerProfileInputSchema } from "@hooma/contracts/gamers";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import { getAuth } from "../../identity/http/auth-request.js";
 import type { GamerService } from "../application/gamer.service.js";
@@ -14,6 +14,12 @@ export function createGamerPublicRouter(service: GamerService): Router {
     "/games/:slug",
     asyncHandler(async (req, res) => res.json(await service.getGame(String(req.params.slug)))),
   );
+  router.get(
+    "/games/:gameId/challengers",
+    asyncHandler(async (req, res) =>
+      res.json({ items: await service.listChallengers(String(req.params.gameId)) }),
+    ),
+  );
   return router;
 }
 
@@ -24,6 +30,21 @@ export function createGamerMemberRouter(service: GamerService): Router {
     asyncHandler(async (req, res) => {
       const input = gamerGameCreateSchema.parse(req.body);
       res.status(201).json(await service.addGame(getAuth(req).userId, input));
+    }),
+  );
+  router.get(
+    "/games/:gameId/profile",
+    asyncHandler(async (req, res) =>
+      res.json(await service.getMyProfile(getAuth(req).userId, String(req.params.gameId))),
+    ),
+  );
+  router.put(
+    "/games/:gameId/profile",
+    asyncHandler(async (req, res) => {
+      const input = gamerProfileInputSchema.parse(req.body);
+      res.json(
+        await service.upsertMyProfile(getAuth(req).userId, String(req.params.gameId), input),
+      );
     }),
   );
   return router;

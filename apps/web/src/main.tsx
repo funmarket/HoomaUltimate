@@ -8,6 +8,7 @@ import "@hooma/frontend/teams.css";
 import "@hooma/frontend/play.css";
 import "@hooma/frontend/whistle.css";
 import "@hooma/frontend/gamers.css";
+import "@hooma/frontend/gamer-game.css";
 import "./styles.css";
 import "./theme.css";
 import "./hooma-membership.css";
