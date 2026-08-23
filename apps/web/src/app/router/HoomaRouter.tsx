@@ -8,6 +8,7 @@ import {
   EventChatPage,
   EventDetailPage,
   FormationBuilderPage,
+  GamersPage,
   HoomaDetailPage,
   HoomaFrontendProvider,
   HoomaPage,
@@ -106,6 +107,7 @@ function HoomaRoutes() {
               <Route path="/teams" element={<TeamsPage />} />
               <Route path="/teams/control" element={<CoachControlRoomPage />} />
               <Route path="/teams/:teamId" element={<TeamDetailRoute />} />
+              <Route path="/gamers" element={<GamersPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Suspense>
