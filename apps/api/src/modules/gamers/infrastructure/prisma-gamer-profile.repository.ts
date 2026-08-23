@@ -30,7 +30,8 @@ export class PrismaGamerProfileRepository implements GamerProfileRepository {
       where: { gameId, openToChallenge: true },
       orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
       select: {
-        ...profileSelect,
+        id: true,
+        handle: true,
         user: {
           select: {
             presentation: {
@@ -42,7 +43,9 @@ export class PrismaGamerProfileRepository implements GamerProfileRepository {
     });
 
     return rows.flatMap((row) =>
-      row.user.presentation ? [{ ...row, presentation: row.user.presentation }] : [],
+      row.user.presentation
+        ? [{ id: row.id, handle: row.handle, presentation: row.user.presentation }]
+        : [],
     );
   }
 
