@@ -28,15 +28,14 @@ test("changed-file detection excludes concurrent base-only changes", async () =>
   const initial = await commitFile(cwd, "shared.txt", "initial\n", "initial");
 
   git(cwd, "checkout", "-b", "feature");
-  const featureHead = await commitFile(cwd, "feature.txt", "feature\n", "feature change");
+  const featureHead = await commitFile(cwd, "feature.txt", "feature\n", "feature");
 
   git(cwd, "checkout", "main");
-  const currentBase = await commitFile(cwd, "base-only.txt", "base only\n", "concurrent base change");
+  const currentBase = await commitFile(cwd, "base.txt", "base\n", "base");
 
   assert.notEqual(initial, currentBase);
-  assert.deepEqual(getChangedFiles({ baseSha: currentBase, headSha: featureHead, cwd }), [
-    "feature.txt",
-  ]);
+  const changed = getChangedFiles({ baseSha: currentBase, headSha: featureHead, cwd });
+  assert.deepEqual(changed, ["feature.txt"]);
 });
 
 test("changed-file detection fails closed for an unknown comparison commit", async () => {
@@ -45,9 +44,8 @@ test("changed-file detection fails closed for an unknown comparison commit", asy
   git(cwd, "config", "user.email", "ci-test@hooma.local");
   git(cwd, "config", "user.name", "HOOMA CI Test");
   const head = await commitFile(cwd, "shared.txt", "initial\n", "initial");
+  const missingSha = "0000000000000000000000000000000000000001";
+  const input = { baseSha: missingSha, headSha: head, cwd };
 
-  assert.throws(
-    () => getChangedFiles({ baseSha: "0000000000000000000000000000000000000001", headSha: head, cwd }),
-    /Unable to resolve comparison commit/,
-  );
+  assert.throws(() => getChangedFiles(input), /Unable to resolve comparison commit/);
 });
