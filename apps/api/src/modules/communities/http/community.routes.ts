@@ -14,6 +14,7 @@ const createSchema = z.object({
   logoUrl: optionalUrl,
   bannerUrl: optionalUrl
 });
+const updateSchema = createSchema.partial();
 
 export function createCommunityPublicRouter(service: CommunityService): Router {
   const router = Router();
@@ -46,6 +47,12 @@ export function createCommunityMemberRouter(service: CommunityService): Router {
   }));
   router.delete("/:id/coaches/:userId", asyncHandler(async (req, res) => {
     res.json(await service.revokeCoach(getAuth(req).userId, String(req.params.id), String(req.params.userId)));
+  }));
+  router.patch("/:id", asyncHandler(async (req, res) => {
+    res.json(await service.update(getAuth(req).userId, String(req.params.id), updateSchema.parse(req.body)));
+  }));
+  router.delete("/:id", asyncHandler(async (req, res) => {
+    res.json(await service.archive(getAuth(req).userId, String(req.params.id)));
   }));
   router.post("/", asyncHandler(async (req, res) => {
     const parsed = createSchema.parse(req.body);
