@@ -6,7 +6,7 @@ type WebAppearanceMode = Exclude<AppearanceMode, "telegram">;
 type ResolvedWebAppearanceMode = Exclude<WebAppearanceMode, "system">;
 
 function isWebAppearanceMode(value: string | null): value is WebAppearanceMode {
-  return value === "dark" || value === "light" || value === "system" || value === "future-pitch";
+  return value === "dark" || value === "light" || value === "system";
 }
 
 function resolveWebAppearanceMode(mode: WebAppearanceMode): ResolvedWebAppearanceMode {
@@ -18,13 +18,13 @@ function resolveWebAppearanceMode(mode: WebAppearanceMode): ResolvedWebAppearanc
 
 export function getWebAppearanceMode(): WebAppearanceMode {
   const saved = window.localStorage.getItem(STORAGE_KEY);
-  return isWebAppearanceMode(saved) ? saved : "future-pitch";
+  return isWebAppearanceMode(saved) ? saved : "system";
 }
 
 export function applyWebAppearanceMode(mode: WebAppearanceMode): void {
   const resolved = resolveWebAppearanceMode(mode);
   document.documentElement.dataset.theme = resolved;
-  document.documentElement.style.colorScheme = resolved === "light" ? "light" : "dark";
+  document.documentElement.style.colorScheme = resolved;
 }
 
 export function saveWebAppearanceMode(mode: AppearanceMode): void {
