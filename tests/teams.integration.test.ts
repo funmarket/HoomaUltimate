@@ -119,6 +119,15 @@ test("Team lifecycle includes resumable lineup drafts, publish privacy, and scop
     assert.equal(communityOneResponse.status, 201);
     const communityOne = (await communityOneResponse.json()) as { id: string };
 
+    const joinCommunityOne = await fetch(
+      `${base}/api/v1/communities/${communityOne.id}/join`,
+      {
+        method: "POST",
+        headers: memberHeaders(communityCoach.cookie),
+      },
+    );
+    assert.equal(joinCommunityOne.status, 201);
+
     const appointCommunityCoach = await fetch(
       `${base}/api/v1/communities/${communityOne.id}/coaches`,
       {
