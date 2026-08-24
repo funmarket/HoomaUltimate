@@ -9,7 +9,7 @@ import type {
   TeamLineupInput,
   TeamUpdateInput,
 } from "@hooma/contracts";
-import { HoomaApiError, request, type HoomaTransport } from "./http";
+import { request, type HoomaTransport } from "./http";
 
 export { HoomaApiError, request } from "./http";
 export type { HoomaTransport } from "./http";
@@ -223,14 +223,7 @@ export function createHoomaApi(transport: HoomaTransport) {
     publicProfile: (username: string) =>
       request<PublicProfile>(transport, `/api/public/v1/profiles/${encodeURIComponent(username)}`),
     me: () => request<MeResponse>(transport, "/api/v1/me"),
-    async meOptional(): Promise<MeResponse | null> {
-      try {
-        return await request<MeResponse>(transport, "/api/v1/me");
-      } catch (reason) {
-        if (reason instanceof HoomaApiError && reason.status === 401) return null;
-        throw reason;
-      }
-    },
+    meOptional: () => request<MeResponse | null>(transport, "/api/public/v1/auth/session"),
     updatePresentation: (input: ProfilePresentationUpdateInput) =>
       request<MeResponse>(transport, "/api/v1/me/presentation", {
         method: "PATCH",
