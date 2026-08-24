@@ -14,6 +14,20 @@ import { HoomaApiError, request, type HoomaTransport } from "./http";
 export { HoomaApiError, request } from "./http";
 export type { HoomaTransport } from "./http";
 
+export type PublicProfile = {
+  presentation: {
+    username: string;
+    displayName: string;
+    photoUrl: string | null;
+    bio: string | null;
+  };
+  teams: {
+    id: string;
+    name: string;
+    slug: string;
+    badgeUrl: string | null;
+  }[];
+};
 export type CommunityRole = "FOUNDER" | "COACH" | "MEMBER";
 export type CommunityCreateInput = {
   name: string;
@@ -191,6 +205,8 @@ export function createHoomaApi(transport: HoomaTransport) {
         body: JSON.stringify(input)
       }),
     logout: () => request<{ ok: true }>(transport, "/api/v1/auth/logout", { method: "POST" }),
+    publicProfile: (username: string) =>
+      request<PublicProfile>(transport, `/api/public/v1/profiles/${encodeURIComponent(username)}`),
     me: () => request<MeResponse>(transport, "/api/v1/me"),
     async meOptional(): Promise<MeResponse | null> {
       try {
