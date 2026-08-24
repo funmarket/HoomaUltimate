@@ -164,7 +164,9 @@ function EditTeamCard({ api, team, onRun }: CardProps) {
                 name: String(data.get("name")),
                 motto: String(data.get("motto")) || null,
                 city: String(data.get("city")) || null,
-                houma: String(data.get("houma")) || null
+                houma: String(data.get("houma")) || null,
+                badgeUrl: String(data.get("badgeUrl")).trim() || null,
+                bannerUrl: String(data.get("bannerUrl")).trim() || null
               }),
             "Team updated."
           );
@@ -185,6 +187,14 @@ function EditTeamCard({ api, team, onRun }: CardProps) {
         <label>
           Houma
           <input name="houma" defaultValue={team.houma ?? ""} />
+        </label>
+        <label>
+          Team logo / crest URL
+          <input name="badgeUrl" type="url" maxLength={2000} defaultValue={team.badgeUrl ?? ""} placeholder="https://…/team-logo.png" />
+        </label>
+        <label>
+          Banner image URL
+          <input name="bannerUrl" type="url" maxLength={2000} defaultValue={team.bannerUrl ?? ""} placeholder="https://…/team-banner.jpg" />
         </label>
         <button type="submit">Save Team</button>
       </form>
