@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { TEAM_POSITION_ROLES, displayNameSchema, skillLevelSchema, usernameSchema } from "./index";
+import {
+  TEAM_POSITION_ROLES,
+  displayNameSchema,
+  skillLevelSchema,
+  usernameSchema,
+} from "./index.js";
 
 export const PROFILE_IDENTITIES = ["PLAYER", "FAN", "GAMER"] as const;
 export const profileIdentitySchema = z.enum(PROFILE_IDENTITIES);
