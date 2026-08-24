@@ -54,13 +54,14 @@ test("Team lineup separates Formation from match format and offers standard plus
 });
 
 test("Team lineup management uses TeamPlayer identity, resumable current state, and Team-scoped reset", async () => {
-  const page = await readFile(controlRoomPath, "utf8");
   const manager = await readFile(lineupManagerPath, "utf8");
   const schema = await readFile("packages/database/prisma/schema.prisma", "utf8");
 
-  assert.match(page, /<TeamLineupManager key=\{team\.id\}/);
   assert.match(manager, /api\.currentLineup\(team\.id\)/);
   assert.match(manager, /api\.saveCurrentLineup\(team\.id, input\)/);
+  assert.match(manager, /\[api, team\.id, team\.name\]/);
+  assert.match(manager, /let active = true/);
+  assert.match(manager, /if \(!active\) return/);
   assert.match(manager, /teamPlayerId/);
   assert.match(schema, /model TeamLineup[\s\S]*isCurrent\s+Boolean/);
   assert.match(schema, /model TeamLineupSlot[\s\S]*teamPlayerId\s+String\?/);
