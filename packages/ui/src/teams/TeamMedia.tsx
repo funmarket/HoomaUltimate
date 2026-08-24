@@ -2,13 +2,13 @@ import { useEffect, useState, type ReactNode } from "react";
 
 export interface TeamBadgeProps {
   readonly name: string;
-  readonly src?: string | null;
+  readonly src?: string | null | undefined;
   readonly className?: string;
 }
 
 export interface TeamBannerProps {
   readonly name: string;
-  readonly src?: string | null;
+  readonly src?: string | null | undefined;
   readonly className?: string;
   readonly children?: ReactNode;
 }
