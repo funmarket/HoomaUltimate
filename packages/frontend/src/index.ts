@@ -1,4 +1,5 @@
 import "./teams/team-media.css";
+import "./teams/coach-control-room.css";
 
 export * from "./api";
 export * from "./context";
