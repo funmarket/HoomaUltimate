@@ -5,7 +5,7 @@
   --app-text: #f2ead7;
   --app-gold: #b59b57;
   --app-lime: #c4dc43;
-  --app-line: rgba(181, 155, 87, .22);
+  --app-line: rgba(181, 155, 87, 0.22);
 }
 
 :root[data-theme="light"] {
@@ -14,7 +14,7 @@
   --app-text: #171816;
   --app-gold: #8d7436;
   --app-lime: #91a81d;
-  --app-line: rgba(63, 57, 39, .16);
+  --app-line: rgba(63, 57, 39, 0.16);
 }
 
 :root[data-theme="future-pitch"] {
@@ -31,10 +31,10 @@
   --border-strong: #3a4337;
   --lime: #b9ff31;
   --lime-bright: #d2ff73;
-  --lime-soft: rgba(185, 255, 49, .10);
+  --lime-soft: rgba(185, 255, 49, 0.1);
   --electric-blue: #67b8ff;
   --electric-blue-bright: #9cd3ff;
-  --electric-blue-soft: rgba(103, 184, 255, .10);
+  --electric-blue-soft: rgba(103, 184, 255, 0.1);
   --gold: #d0a14a;
   --gold-bright: #f0c86a;
   --success: #53da88;
@@ -67,23 +67,35 @@ body {
   min-height: 100vh;
   color: var(--app-text);
   background:
-    radial-gradient(circle at 92% 4%, color-mix(in srgb, var(--app-lime) 8%, transparent), transparent 26rem),
-    radial-gradient(circle at 4% 34%, color-mix(in srgb, var(--app-gold) 9%, transparent), transparent 30rem),
-    linear-gradient(180deg, color-mix(in srgb, var(--app-bg-raised) 54%, var(--app-bg)), var(--app-bg) 42%);
+    radial-gradient(
+      circle at 92% 4%,
+      color-mix(in srgb, var(--app-lime) 8%, transparent),
+      transparent 26rem
+    ),
+    radial-gradient(
+      circle at 4% 34%,
+      color-mix(in srgb, var(--app-gold) 9%, transparent),
+      transparent 30rem
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--app-bg-raised) 54%, var(--app-bg)),
+      var(--app-bg) 42%
+    );
   background-attachment: fixed;
 }
 
 :root[data-theme="light"] body {
   background:
-    radial-gradient(circle at 92% 4%, rgba(145, 168, 29, .08), transparent 26rem),
-    radial-gradient(circle at 4% 34%, rgba(181, 155, 87, .09), transparent 30rem),
+    radial-gradient(circle at 92% 4%, rgba(145, 168, 29, 0.08), transparent 26rem),
+    radial-gradient(circle at 4% 34%, rgba(181, 155, 87, 0.09), transparent 30rem),
     linear-gradient(180deg, #ffffff, var(--app-bg) 45%);
 }
 
 :root[data-theme="future-pitch"] body {
   background:
-    radial-gradient(circle at 88% 2%, rgba(185, 255, 49, .055), transparent 24rem),
-    radial-gradient(circle at 9% 31%, rgba(103, 184, 255, .04), transparent 28rem),
+    radial-gradient(circle at 88% 2%, rgba(185, 255, 49, 0.055), transparent 24rem),
+    radial-gradient(circle at 9% 31%, rgba(103, 184, 255, 0.04), transparent 28rem),
     linear-gradient(180deg, var(--surface-1), var(--bg) 36%, var(--bg-deep));
 }
 
@@ -134,7 +146,7 @@ body {
   border-color: var(--border);
   background: var(--surface-1);
   color: var(--text-primary);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, .22);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.22);
 }
 
 :root[data-theme="future-pitch"] input,
@@ -209,10 +221,10 @@ body {
 
 :root[data-theme="future-pitch"] .hooma-bottom-nav {
   border-color: var(--border);
-  background: rgba(2, 3, 2, .975);
+  background: rgba(2, 3, 2, 0.975);
   box-shadow:
-    0 -5px 18px rgba(0, 0, 0, .24),
-    inset 0 1px 0 rgba(244, 241, 232, .025);
+    0 -5px 18px rgba(0, 0, 0, 0.24),
+    inset 0 1px 0 rgba(244, 241, 232, 0.025);
 }
 
 :root[data-theme="future-pitch"] .hooma-bottom-nav__item {
@@ -236,7 +248,9 @@ body {
 }
 
 :root[data-theme="future-pitch"] .hooma-bottom-nav__item--hooma .hooma-bottom-nav__icon-shell,
-:root[data-theme="future-pitch"] .hooma-bottom-nav__item--active.hooma-bottom-nav__item--hooma .hooma-bottom-nav__icon-shell {
+:root[data-theme="future-pitch"]
+  .hooma-bottom-nav__item--active.hooma-bottom-nav__item--hooma
+  .hooma-bottom-nav__icon-shell {
   color: var(--gold);
   background: transparent;
 }

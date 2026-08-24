@@ -14,17 +14,17 @@ Object.defineProperty(globalThis, "window", {
       },
       setItem(key, value) {
         storage.set(key, value);
-      }
+      },
     },
     matchMedia() {
       return {
         get matches() {
           return prefersLight;
         },
-        addEventListener() {}
+        addEventListener() {},
       };
-    }
-  }
+    },
+  },
 });
 
 Object.defineProperty(globalThis, "document", {
@@ -32,9 +32,9 @@ Object.defineProperty(globalThis, "document", {
   value: {
     documentElement: {
       dataset: {},
-      style: {}
-    }
-  }
+      style: {},
+    },
+  },
 });
 
 const theme = await import("../apps/web/src/settings/theme.ts");
@@ -63,7 +63,10 @@ test("System theme still resolves from browser preference", () => {
 });
 
 test("Settings exposes exactly four independent web theme choices", async () => {
-  const source = await readFile(new URL("../apps/web/src/settings/SettingsPage.tsx", import.meta.url), "utf8");
+  const source = await readFile(
+    new URL("../apps/web/src/settings/SettingsPage.tsx", import.meta.url),
+    "utf8",
+  );
   const values = [...source.matchAll(/value: "([^"]+)"/g)].map((match) => match[1]);
 
   assert.deepEqual(values, ["system", "dark", "light", "future-pitch"]);
