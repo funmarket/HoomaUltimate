@@ -101,7 +101,8 @@ export const teamCreateSchema = z.object({
   motto: z.string().trim().max(160).optional().nullable(),
   city: z.string().trim().max(100).optional().nullable(),
   houma: z.string().trim().max(100).optional().nullable(),
-  badgeUrl: z.string().url().max(2000).optional().nullable()
+  badgeUrl: z.string().url().max(2000).optional().nullable(),
+  bannerUrl: z.string().url().max(2000).optional().nullable()
 });
 
 export const teamUpdateSchema = teamCreateSchema.omit({ communityId: true }).partial();
