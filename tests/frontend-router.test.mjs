@@ -2,36 +2,48 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-test("Web routing is owned by a real router instead of main.tsx pathname switches", async () => {
+test("Web routing is owned by the shared HoomaRouter instead of pathname switches", async () => {
   const [main, router] = await Promise.all([
     readFile("apps/web/src/main.tsx", "utf8"),
-    readFile("apps/web/src/app/router/WebRouter.tsx", "utf8")
+    readFile("apps/web/src/app/router/HoomaRouter.tsx", "utf8")
   ]);
+
   assert.doesNotMatch(main, /window\.location\.pathname/);
   assert.doesNotMatch(main, /path\.match/);
-  assert.match(main, /<WebRouter \/>/);
+  assert.match(main, /<HoomaRouter \/>/);
   assert.match(router, /BrowserRouter/);
   assert.match(router, /lazy\(/);
   assert.match(router, /path="\/events\/:eventId\/chat"/);
+  assert.match(router, /path="\/teams\/:teamId\/lineup"/);
   assert.match(router, /path="\/teams\/:teamId"/);
 });
 
-test("Telegram routing owns BackButton lifecycle and does not hand-switch pathname", async () => {
-  const [main, router, backButton, shell] = await Promise.all([
-    readFile("apps/telegram/src/main.tsx", "utf8"),
-    readFile("apps/telegram/src/app/router/TelegramRouter.tsx", "utf8"),
-    readFile("apps/telegram/src/telegram/useTelegramBackButton.ts", "utf8"),
-    readFile("apps/telegram/src/app/shell/TelegramShell.tsx", "utf8")
+test("Telegram facade serves the shared HOOMA frontend while the shared runtime owns Telegram lifecycle", async () => {
+  const [telegramPackage, router, runtime, backButton, shell] = await Promise.all([
+    readFile("apps/telegram/package.json", "utf8").then(JSON.parse),
+    readFile("apps/web/src/app/router/HoomaRouter.tsx", "utf8"),
+    readFile("apps/web/src/telegram/runtime.ts", "utf8"),
+    readFile("apps/web/src/telegram/useTelegramBackButton.ts", "utf8"),
+    readFile("apps/web/src/app/shell/HoomaShell.tsx", "utf8")
   ]);
-  assert.doesNotMatch(main, /window\.location\.pathname/);
-  assert.match(main, /<TelegramApp \/>/);
-  assert.match(router, /BrowserRouter/);
-  assert.match(router, /lazy\(/);
+
+  assert.equal(telegramPackage.scripts.dev, "npm -w @hooma/web run dev");
+  assert.equal(
+    telegramPackage.scripts.build,
+    "npm -w @hooma/frontend run build && npm -w @hooma/web run build"
+  );
+  assert.equal(telegramPackage.scripts.typecheck, "npm -w @hooma/web run typecheck");
+  assert.match(telegramPackage.scripts.start, /serve-static\.mjs \.\.\/web\/dist/);
+
+  assert.match(router, /initializeTelegramRuntime\(\)/);
+  assert.match(runtime, /webApp\.ready\(\)/);
+  assert.match(runtime, /webApp\.expand\(\)/);
+  assert.match(runtime, /backButton: webApp\.BackButton \?\? null/);
   assert.match(backButton, /button\.show\(\)/);
   assert.match(backButton, /button\.hide\(\)/);
   assert.match(backButton, /button\.onClick\(goBack\)/);
   assert.match(backButton, /button\.offClick\(goBack\)/);
-  assert.match(shell, /NavLink/);
+  assert.match(shell, /useTelegramBackButton\(runtime\)/);
 });
 
 test("Web and Telegram pin the same React Router version", async () => {

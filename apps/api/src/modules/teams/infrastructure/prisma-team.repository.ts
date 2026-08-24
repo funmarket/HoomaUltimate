@@ -9,13 +9,15 @@ import type {
 import type { TeamAccessRecord, TeamListInput, TeamRepository } from "../application/team.repository.js";
 
 function slugify(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 70) || "team";
+  return (
+    value
+      .trim()
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 70) || "team"
+  );
 }
 
 function teamCreateData(userId: string, input: TeamCreateInput, slug: string): Prisma.TeamUncheckedCreateInput {
@@ -40,6 +42,39 @@ function teamUpdateData(input: TeamUpdateInput): Prisma.TeamUncheckedUpdateInput
     ...(input.badgeUrl !== undefined ? { badgeUrl: input.badgeUrl } : {})
   };
 }
+
+function lineupSlots(input: TeamLineupInput) {
+  return input.slots.map((slot) => ({
+    teamPlayerId: slot.teamPlayerId ?? null,
+    position: slot.position,
+    x: slot.x,
+    y: slot.y,
+    isStarter: slot.isStarter,
+    sortOrder: slot.sortOrder
+  }));
+}
+
+const lineupSelect = {
+  id: true,
+  name: true,
+  formation: true,
+  matchFormat: true,
+  published: true,
+  isCurrent: true,
+  updatedAt: true,
+  slots: {
+    orderBy: { sortOrder: "asc" as const },
+    select: {
+      id: true,
+      teamPlayerId: true,
+      position: true,
+      x: true,
+      y: true,
+      isStarter: true,
+      sortOrder: true
+    }
+  }
+} satisfies Prisma.TeamLineupSelect;
 
 export class PrismaTeamRepository implements TeamRepository {
   constructor(private readonly db: PrismaClient) {}
@@ -96,8 +131,8 @@ export class PrismaTeamRepository implements TeamRepository {
         badgeUrl: true,
         community: { select: { id: true, name: true, slug: true } },
         players: {
-          where: { leftAt: null },
-          select: { userId: true, joinedAt: true, user: { select: { presentation: true } } },
+          where: { leftAt: null, active: true },
+          select: { id: true, userId: true, joinedAt: true, user: { select: { presentation: true } } },
           orderBy: { joinedAt: "asc" }
         },
         responsibilities: {
@@ -108,15 +143,7 @@ export class PrismaTeamRepository implements TeamRepository {
           where: { published: true, active: true },
           orderBy: { updatedAt: "desc" },
           take: 1,
-          select: {
-            id: true,
-            name: true,
-            formation: true,
-            matchFormat: true,
-            published: true,
-            updatedAt: true,
-            slots: { orderBy: { sortOrder: "asc" } }
-          }
+          select: lineupSelect
         }
       }
     });
@@ -153,9 +180,7 @@ export class PrismaTeamRepository implements TeamRepository {
     });
     if (!team || team.status !== "ACTIVE") return null;
     const responsibility =
-      team.responsibilities.find((row) => row.role === "COACH")?.role ??
-      team.responsibilities[0]?.role ??
-      null;
+      team.responsibilities.find((row) => row.role === "COACH")?.role ?? team.responsibilities[0]?.role ?? null;
     return {
       communityId: team.communityId,
       responsibility,
@@ -258,24 +283,61 @@ export class PrismaTeamRepository implements TeamRepository {
     });
   }
 
-  createLineup(userId: string, teamId: string, input: TeamLineupInput) {
-    return this.db.teamLineup.create({
-      data: {
-        teamId,
-        name: input.name,
-        formation: input.formation,
-        matchFormat: input.matchFormat,
-        published: input.published,
-        createdByUserId: userId,
-        slots: {
-          create: input.slots.map((slot) => ({
-            userId: slot.userId ?? null,
-            position: slot.position,
-            sortOrder: slot.sortOrder
-          }))
-        }
-      },
-      include: { slots: { orderBy: { sortOrder: "asc" } } }
+  async listActivePlayerIds(teamId: string): Promise<string[]> {
+    const rows = await this.db.teamPlayer.findMany({
+      where: { teamId, leftAt: null, active: true },
+      select: { id: true }
+    });
+    return rows.map((row) => row.id);
+  }
+
+  getCurrentLineup(teamId: string) {
+    return this.db.teamLineup.findFirst({
+      where: { teamId, isCurrent: true, active: true },
+      select: lineupSelect
+    });
+  }
+
+  async saveCurrentLineup(userId: string, teamId: string, input: TeamLineupInput) {
+    return this.db.$transaction(async (tx) => {
+      const current = await tx.teamLineup.findFirst({
+        where: { teamId, isCurrent: true, active: true },
+        select: { id: true, published: true }
+      });
+
+      const updateExisting = current && (!current.published || input.published);
+      if (updateExisting) {
+        await tx.teamLineupSlot.deleteMany({ where: { lineupId: current.id } });
+        return tx.teamLineup.update({
+          where: { id: current.id },
+          data: {
+            name: input.name,
+            formation: input.formation,
+            matchFormat: input.matchFormat,
+            published: input.published,
+            slots: { create: lineupSlots(input) }
+          },
+          select: lineupSelect
+        });
+      }
+
+      if (current) {
+        await tx.teamLineup.update({ where: { id: current.id }, data: { isCurrent: false } });
+      }
+
+      return tx.teamLineup.create({
+        data: {
+          teamId,
+          name: input.name,
+          formation: input.formation,
+          matchFormat: input.matchFormat,
+          published: input.published,
+          isCurrent: true,
+          createdByUserId: userId,
+          slots: { create: lineupSlots(input) }
+        },
+        select: lineupSelect
+      });
     });
   }
 
@@ -419,10 +481,7 @@ export class PrismaTeamRepository implements TeamRepository {
     ];
   }
 
-  private capabilityTeamFilters(
-    userId: string,
-    capability: TeamCapabilityInput
-  ): Prisma.TeamWhereInput[] {
+  private capabilityTeamFilters(userId: string, capability: TeamCapabilityInput): Prisma.TeamWhereInput[] {
     return [
       { responsibilities: { some: { userId, role: "COACH", revokedAt: null } } },
       {
