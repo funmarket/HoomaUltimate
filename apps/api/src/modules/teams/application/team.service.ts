@@ -24,7 +24,22 @@ export class TeamService {
     await this.repository.assignAssistant(teamId, targetUserId, capabilities, userId); return { ok: true };
   }
   async revokeAssistant(userId: string, teamId: string, targetUserId: string) { await this.requireDirectCoach(userId, teamId); await this.repository.revokeAssistant(teamId, targetUserId); return { ok: true }; }
-  async createLineup(userId: string, teamId: string, input: TeamLineupInput) { await this.requireCapability(userId, teamId, "MANAGE_LINEUP"); return this.repository.createLineup(userId, teamId, input); }
+  async createLineup(userId: string, teamId: string, input: TeamLineupInput) {
+    await this.requireCapability(userId, teamId, "MANAGE_LINEUP");
+    const rosterIds = new Set(await this.repository.listActivePlayerUserIds(teamId));
+    const assigned = new Set<string>();
+    for (const slot of input.slots) {
+      if (!slot.userId) continue;
+      if (!rosterIds.has(slot.userId)) {
+        throw new AppError(400, "LINEUP_PLAYER_NOT_ON_ROSTER", "Lineup slots may only use active Team players");
+      }
+      if (assigned.has(slot.userId)) {
+        throw new AppError(400, "LINEUP_PLAYER_DUPLICATE", "A player cannot occupy more than one lineup slot");
+      }
+      assigned.add(slot.userId);
+    }
+    return this.repository.createLineup(userId, teamId, input);
+  }
   async createChallenge(userId: string, input: TeamChallengeCreateInput) {
     if (input.challengerTeamId === input.challengedTeamId) throw new AppError(400, "TEAM_CHALLENGE_SELF", "A Team cannot challenge itself");
     await this.requireCapability(userId, input.challengerTeamId, "CREATE_CHALLENGE"); return this.repository.createChallenge(userId, input);
