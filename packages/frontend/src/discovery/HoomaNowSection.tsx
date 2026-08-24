@@ -16,19 +16,22 @@ export function HoomaNowSection() {
   const [error, setError] = useState("");
   const refreshSeconds = useRef(30);
 
-  const load = useCallback(async (showLoading = false) => {
-    if (showLoading) setLoading(true);
-    try {
-      const response = await discoveryApi.now(30);
-      setItems(response.items);
-      refreshSeconds.current = response.refreshAfterSeconds;
-      setError("");
-    } catch (reason) {
-      setError(messageFrom(reason));
-    } finally {
-      if (showLoading) setLoading(false);
-    }
-  }, [discoveryApi]);
+  const load = useCallback(
+    async (showLoading = false) => {
+      if (showLoading) setLoading(true);
+      try {
+        const response = await discoveryApi.now(30);
+        setItems(response.items);
+        refreshSeconds.current = response.refreshAfterSeconds;
+        setError("");
+      } catch (reason) {
+        setError(messageFrom(reason));
+      } finally {
+        if (showLoading) setLoading(false);
+      }
+    },
+    [discoveryApi],
+  );
 
   useEffect(() => {
     let active = true;
@@ -62,7 +65,9 @@ export function HoomaNowSection() {
       <header className="hooma-now__header">
         <div>
           <p className="hooma-now__eyebrow">LIVE AROUND YOU</p>
-          <h2 id="hooma-now-title" className="hooma-now__title">HOOMA NOW</h2>
+          <h2 id="hooma-now-title" className="hooma-now__title">
+            HOOMA NOW
+          </h2>
           <p className="hooma-now__intro">What’s happening across HOOMA right now.</p>
         </div>
         <span className="hooma-now__live" aria-label="Live activity feed">
@@ -74,7 +79,9 @@ export function HoomaNowSection() {
       {!loading && error && items.length === 0 ? (
         <div className="hooma-now__state hooma-now__state--error" role="status">
           <p>{error}</p>
-          <button type="button" onClick={() => void load(true)}>Try again</button>
+          <button type="button" onClick={() => void load(true)}>
+            Try again
+          </button>
         </div>
       ) : null}
       {!loading && !error && items.length === 0 ? (
@@ -82,7 +89,9 @@ export function HoomaNowSection() {
       ) : null}
       {items.length > 0 ? <HoomaNowFeed items={items} /> : null}
       {error && items.length > 0 ? (
-        <p className="hooma-now__refresh-warning" role="status">Live refresh paused. Showing the latest activity we have.</p>
+        <p className="hooma-now__refresh-warning" role="status">
+          Live refresh paused. Showing the latest activity we have.
+        </p>
       ) : null}
     </section>
   );
