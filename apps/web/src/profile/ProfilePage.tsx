@@ -97,5 +97,30 @@ export function ProfilePage() {
 }
 
 export function ProfileContent({ me }: { me: MeResponse }) {
-  return <><header className="profile-card">{me.presentation.photoUrl ? <img src={me.presentation.photoUrl} alt="" /> : <div className="profile-avatar" aria-hidden="true">{me.presentation.displayName.slice(0, 1).toUpperCase()}</div>}<div><p className="eyebrow">PROFILE</p><h2>{me.presentation.displayName}</h2><p>@{me.presentation.username}</p>{me.presentation.bio ? <p>{me.presentation.bio}</p> : null}</div></header><section className="panel"><h3>My Teams</h3>{me.teams.length ? <div className="profile-links">{me.teams.map((team) => <a href={`/teams/${team.id}`} key={team.id}><strong>{team.name}</strong><span>{[team.isPlayer ? "Player" : null, ...team.responsibilities.map((role) => role === "COACH" ? "Coach" : "Assistant")].filter(Boolean).join(" · ")}</span></a>)}</div> : <p>No Team memberships yet.</p>}</section><section className="panel"><h3>My HOOMA</h3>{me.communities.length ? <div className="profile-links">{me.communities.map((community) => <a href={`/hooma/${community.id}`} key={community.id}><strong>{community.name}</strong><span>{community.role === "FOUNDER" ? "Founder" : community.role === "COACH" ? "Coach" : "Member"}</span></a>)}</div> : <p>No community memberships yet.</p>}</section>{me.platformRoles.includes("PLATFORM_ADMIN") ? <a className="admin-link" href="/admin">Open App Admin</a> : null}</>;
+  return (
+    <>
+      <header className="profile-card">
+        {me.presentation.photoUrl ? <img src={me.presentation.photoUrl} alt="" /> : <div className="profile-avatar" aria-hidden="true">{me.presentation.displayName.slice(0, 1).toUpperCase()}</div>}
+        <div><p className="eyebrow">PROFILE</p><h2>{me.presentation.displayName}</h2><p>@{me.presentation.username}</p>{me.presentation.bio ? <p>{me.presentation.bio}</p> : null}</div>
+      </header>
+      <section className="panel">
+        <h3>My Teams</h3>
+        {me.teams.length ? <div className="profile-links">{me.teams.map((team) => <a href={`/teams/${team.id}`} key={team.id}><strong>{team.name}</strong><span>{[team.isPlayer ? "Player" : null, ...team.responsibilities.map((role) => role === "COACH" ? "Coach" : "Assistant")].filter(Boolean).join(" · ")}</span></a>)}</div> : <p>No Team memberships yet.</p>}
+      </section>
+      <section className="panel">
+        <h3>My HOOMA</h3>
+        {me.communities.length ? (
+          <div className="profile-links">
+            {me.communities.map((community) => (
+              <div className="profile-responsibility-row" key={community.id}>
+                <a href={`/hooma/${community.id}`}><strong>{community.name}</strong><span>{community.role === "FOUNDER" ? "Founder" : community.role === "COACH" ? "Coach" : "Member"}</span></a>
+                {community.role === "FOUNDER" ? <a className="profile-manage-link" href={`/hooma/${community.id}/edit`}>Edit / Delete</a> : null}
+              </div>
+            ))}
+          </div>
+        ) : <p>No community memberships yet.</p>}
+      </section>
+      {me.platformRoles.includes("PLATFORM_ADMIN") ? <a className="admin-link" href="/admin">Open App Admin</a> : null}
+    </>
+  );
 }
