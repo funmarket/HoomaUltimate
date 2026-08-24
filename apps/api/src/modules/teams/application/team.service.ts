@@ -48,11 +48,7 @@ export class TeamService {
     return this.lifecycle.listIncomingPlayerOffers(userId);
   }
 
-  async sendPlayerOffer(
-    userId: string,
-    teamId: string,
-    input: TeamPlayerOfferCreateInput,
-  ) {
+  async sendPlayerOffer(userId: string, teamId: string, input: TeamPlayerOfferCreateInput) {
     await this.requireCapability(userId, teamId, "MANAGE_ROSTER");
     const targetUserId = await this.lifecycle.resolvePlayerOfferTarget(input.listingId);
     if (!targetUserId) {
@@ -66,18 +62,9 @@ export class TeamService {
       throw new AppError(409, "TEAM_OFFER_SELF", "You cannot offer yourself a Team spot");
     }
     if (await this.lifecycle.isActivePlayer(teamId, targetUserId)) {
-      throw new AppError(
-        409,
-        "TEAM_PLAYER_ALREADY_ACTIVE",
-        "This player is already on the Team",
-      );
+      throw new AppError(409, "TEAM_PLAYER_ALREADY_ACTIVE", "This player is already on the Team");
     }
-    return this.lifecycle.upsertPlayerOffer(
-      teamId,
-      targetUserId,
-      userId,
-      input.message ?? null,
-    );
+    return this.lifecycle.upsertPlayerOffer(teamId, targetUserId, userId, input.message ?? null);
   }
 
   async acceptPlayerOffer(userId: string, offerId: string) {
@@ -126,10 +113,7 @@ export class TeamService {
   async archive(userId: string, teamId: string) {
     const record = await this.lifecycle.get(teamId);
     if (!record) throw new AppError(404, "TEAM_NOT_FOUND", "Team not found");
-    if (
-      record.createdByUserId !== userId &&
-      !(await this.platformAdmin.isPlatformAdmin(userId))
-    ) {
+    if (record.createdByUserId !== userId && !(await this.platformAdmin.isPlatformAdmin(userId))) {
       throw new AppError(
         403,
         "TEAM_OWNER_OR_ADMIN_REQUIRED",
