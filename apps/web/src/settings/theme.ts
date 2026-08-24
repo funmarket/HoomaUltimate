@@ -23,6 +23,7 @@ export function getWebAppearanceMode(): WebAppearanceMode {
 
 export function applyWebAppearanceMode(mode: WebAppearanceMode): void {
   const resolved = resolveWebAppearanceMode(mode);
+  document.documentElement.dataset.appearance = mode;
   document.documentElement.dataset.theme = resolved;
   document.documentElement.style.colorScheme = resolved;
 }
