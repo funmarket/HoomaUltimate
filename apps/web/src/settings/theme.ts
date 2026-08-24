@@ -18,7 +18,7 @@ function resolveWebAppearanceMode(mode: WebAppearanceMode): ResolvedWebAppearanc
 
 export function getWebAppearanceMode(): WebAppearanceMode {
   const saved = window.localStorage.getItem(STORAGE_KEY);
-  return isWebAppearanceMode(saved) ? saved : "system";
+  return isWebAppearanceMode(saved) ? saved : "future-pitch";
 }
 
 export function applyWebAppearanceMode(mode: WebAppearanceMode): void {

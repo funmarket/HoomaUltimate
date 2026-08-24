@@ -11,7 +11,7 @@
         const saved = window.localStorage.getItem(storageKey);
         const mode = saved === "dark" || saved === "light" || saved === "future-pitch" || saved === "system"
           ? saved
-          : "system";
+          : "future-pitch";
         const resolved = mode === "system"
           ? (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
           : mode;
