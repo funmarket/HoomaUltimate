@@ -52,9 +52,17 @@ export function TeamDetailPage({ teamId }: { readonly teamId: string }) {
   if (error) return <div className="error-box">{error}</div>;
   if (loading || !team) return <div className="state-card"><strong>Loading Team…</strong></div>;
 
+  const heroStyle = team.bannerUrl
+    ? {
+        backgroundImage: `linear-gradient(90deg, rgba(8,8,8,.92), rgba(8,8,8,.62)), url(${JSON.stringify(team.bannerUrl).slice(1, -1)})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center"
+      }
+    : undefined;
+
   return (
     <div className="page team-profile-page">
-      <section className="team-profile-hero">
+      <section className="team-profile-hero" style={heroStyle}>
         <div className="team-profile-badge">
           {team.badgeUrl ? <img src={team.badgeUrl} alt={`${team.name} badge`} /> : team.name.slice(0, 2).toUpperCase()}
         </div>
