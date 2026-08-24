@@ -25,16 +25,14 @@ body {
 }
 
 .eyebrow {
-  color: #b59b57;
+  color: #c4dc43;
   text-transform: uppercase;
-  letter-spacing: 0.16em;
-  font-size: 12px;
+  letter-spacing: 0.14em;
 }
 
 h1 {
   margin: 8px 0;
   font-family: Georgia, serif;
-  font-size: clamp(32px, 7vw, 64px);
 }
 
 .status {
@@ -98,11 +96,6 @@ nav {
 }
 .error {
   color: #ffb4a8;
-}
-.eyebrow {
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  color: #c4dc43;
 }
 .auth-card dl {
   display: grid;
