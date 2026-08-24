@@ -4,6 +4,7 @@ export * from "./communities/HoomaPage";
 export * from "./teams/TeamsPage";
 export * from "./teams/TeamDetailPage";
 export * from "./teams/CoachControlRoomPage";
+export * from "./teams/TeamLineupPage";
 export * from "./events/api";
 export * from "./events/PlayPage";
 export * from "./events/CreateEventPage";
