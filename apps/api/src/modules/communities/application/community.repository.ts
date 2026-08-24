@@ -9,6 +9,15 @@ export interface CommunityCreateInput {
   bannerUrl?: string | null;
 }
 
+export type CommunityUpdateInput = Partial<CommunityCreateInput>;
+
+export interface CommunityLifecycleRecord {
+  readonly createdByUserId: string;
+  readonly status: "ACTIVE" | "ARCHIVED";
+  readonly hasActiveTeam: boolean;
+  readonly hasPublishedEvent: boolean;
+}
+
 export interface CommunityMember {
   userId: string;
   role: CommunityRole;
@@ -24,6 +33,9 @@ export interface CommunityRepository {
   listPublic(limit: number, cursor?: string): Promise<unknown>;
   getPublic(id: string): Promise<unknown | null>;
   create(userId: string, input: CommunityCreateInput): Promise<unknown>;
+  lifecycle(communityId: string): Promise<CommunityLifecycleRecord | null>;
+  update(communityId: string, input: CommunityUpdateInput): Promise<unknown>;
+  archive(communityId: string): Promise<void>;
   managerRole(communityId: string, userId: string): Promise<CommunityRole | null>;
   join(communityId: string, userId: string): Promise<{ role: CommunityRole } | null>;
   leave(communityId: string, userId: string): Promise<void>;
