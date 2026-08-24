@@ -1,8 +1,7 @@
 name: Format diagnostic
 
 on:
-  push:
-    branches: [chore/prettier-baseline]
+  pull_request:
 
 permissions:
   contents: read
