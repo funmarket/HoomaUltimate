@@ -1,11 +1,16 @@
 import { AppError } from "../../../http/errors/app-error.js";
+import type { PlatformAdminAuthorizer } from "./platform-admin.authorizer.js";
 import type { PlatformAdminRepository } from "./platform-admin.repository.js";
 
-export class PlatformAdminService {
+export class PlatformAdminService implements PlatformAdminAuthorizer {
   constructor(private readonly repository: PlatformAdminRepository) {}
 
+  isPlatformAdmin(userId: string): Promise<boolean> {
+    return this.repository.hasPlatformAdminRole(userId);
+  }
+
   async requirePlatformAdmin(userId: string): Promise<void> {
-    if (!(await this.repository.hasPlatformAdminRole(userId))) {
+    if (!(await this.isPlatformAdmin(userId))) {
       throw new AppError(403, "PLATFORM_ADMIN_REQUIRED", "App Admin access required");
     }
   }
