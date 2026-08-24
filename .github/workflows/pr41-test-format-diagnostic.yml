@@ -1,0 +1,22 @@
+name: PR41 Test Format Diagnostic
+
+on:
+  pull_request:
+    branches:
+      - phase-0-foundation
+
+jobs:
+  prettier-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - name: Print exact Prettier diff
+        run: |
+          npx prettier --write tests/play-player-card-presentation.test.mjs
+          git diff -- tests/play-player-card-presentation.test.mjs
