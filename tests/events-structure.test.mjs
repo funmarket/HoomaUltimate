@@ -26,7 +26,8 @@ test("Events/Play uses the locked layered module structure", async () => {
   assert.equal(
     migrations.some(
       (source) =>
-        source.includes('CREATE TABLE "Event"') && source.includes('CREATE TABLE "PlayEventDetails"'),
+        source.includes('CREATE TABLE "Event"') &&
+        source.includes('CREATE TABLE "PlayEventDetails"'),
     ),
     true,
     "a committed migration must own the canonical Event and PlayEventDetails tables",
