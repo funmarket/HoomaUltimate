@@ -1,23 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { request, useHoomaFrontend } from "@hooma/frontend";
-
-type PublicProfile = {
-  presentation: {
-    username: string;
-    displayName: string;
-    photoUrl: string | null;
-    bio: string | null;
-  };
-  teams: {
-    id: string;
-    name: string;
-    slug: string;
-    badgeUrl: string | null;
-  }[];
-};
+import { useHoomaFrontend, type PublicProfile } from "@hooma/frontend";
 
 export function PublicProfilePage({ username }: { username: string }) {
-  const { transport } = useHoomaFrontend();
+  const { api } = useHoomaFrontend();
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -27,10 +12,8 @@ export function PublicProfilePage({ username }: { username: string }) {
     let active = true;
     setLoading(true);
     setError("");
-    void request<PublicProfile>(
-      transport,
-      `/api/public/v1/profiles/${encodeURIComponent(normalizedUsername)}`,
-    )
+    void api.identity
+      .publicProfile(normalizedUsername)
       .then((value) => {
         if (active) setProfile(value);
       })
@@ -46,7 +29,7 @@ export function PublicProfilePage({ username }: { username: string }) {
     return () => {
       active = false;
     };
-  }, [normalizedUsername, transport]);
+  }, [api, normalizedUsername]);
 
   if (loading) return <p className="status">Loading player profile…</p>;
   if (!profile) {
