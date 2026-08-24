@@ -128,7 +128,12 @@ export function HoomaNowFeed({ items }: HoomaNowFeedProps) {
           const place = contextLabel(item);
           const time = timeLabel(item);
           return (
-            <a className="hooma-now-card" data-tone={presentation.tone} href={item.href} key={item.id}>
+            <a
+              className="hooma-now-card"
+              data-tone={presentation.tone}
+              href={item.href}
+              key={item.id}
+            >
               <span className="hooma-now-card__rail" aria-hidden="true" />
               <span className="hooma-now-card__body">
                 <span className="hooma-now-card__top">
@@ -141,7 +146,9 @@ export function HoomaNowFeed({ items }: HoomaNowFeedProps) {
                   </span>
                 </span>
                 <h3 className="hooma-now-card__title">{item.title}</h3>
-                {item.summary ? <p className="hooma-now-card__summary">{item.summary}</p> : null}
+                {item.summary ? (
+                  <p className="hooma-now-card__summary">{item.summary}</p>
+                ) : null}
                 {time ? (
                   <span className="hooma-now-card__meta">
                     <span>{time}</span>
