@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { EventCreateInput } from "@hooma/contracts";
-import { AppError } from "../apps/api/src/http/errors/app-error.js";
 import type { CommunityService } from "../apps/api/src/modules/communities/application/community.service.js";
 import type { EventRepository } from "../apps/api/src/modules/events/application/event.repository.js";
 import { EventService } from "../apps/api/src/modules/events/application/event.service.js";
+import { EventError } from "../apps/api/src/modules/events/domain/event-error.js";
 
 function repositoryStub(onCreate: () => void): EventRepository {
   return {
@@ -69,8 +69,7 @@ test("EventService rejects WATCH creation while Watch is frozen", async () => {
   );
   await assert.rejects(
     () => service.create("user-1", watchInput),
-    (error: unknown) =>
-      error instanceof AppError && error.statusCode === 409 && error.code === "WATCH_NOT_ENABLED",
+    (error: unknown) => error instanceof EventError && error.code === "WATCH_NOT_ENABLED",
   );
   assert.equal(createCalled, false);
   assert.equal(coachCheckCalled, false);
