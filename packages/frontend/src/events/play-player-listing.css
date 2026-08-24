@@ -59,68 +59,340 @@
 
 .play-player-list {
   display: grid;
-  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: stretch;
 }
 
 .play-player-card {
-  display: grid;
-  grid-template-columns: 52px minmax(0, 1fr);
-  gap: 12px;
-  align-items: start;
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(65, 190, 224, .48);
+  border-radius: 16px;
+  background:
+    linear-gradient(160deg, rgba(26, 199, 231, .08), transparent 33%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 1px, transparent 1px 4px),
+    linear-gradient(145deg, #071017, #030608 72%);
+  color: #f4f1e8;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.025), 0 18px 40px rgba(0,0,0,.22);
 }
 
-.play-player-avatar {
-  width: 52px;
-  height: 52px;
+.play-player-card--team {
+  border-color: rgba(203, 159, 57, .62);
+}
+
+.play-player-card::before {
+  content: "";
+  position: absolute;
+  top: -8%;
+  right: 7%;
+  width: 34%;
+  height: 38%;
+  border-left: 18px solid rgba(29, 196, 231, .26);
+  border-right: 12px solid rgba(104, 79, 238, .22);
+  transform: skewX(-23deg);
+  pointer-events: none;
+}
+
+.play-player-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(circle at 50% 27%, rgba(45, 184, 220, .12), transparent 33%);
+  pointer-events: none;
+}
+
+.play-player-card__profile-link {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+}
+
+.play-player-card__profile-link:focus-visible {
+  outline: 2px solid #35d9f7;
+  outline-offset: -4px;
+}
+
+.play-player-card__topline,
+.play-player-card__portrait,
+.play-player-card__identity,
+.play-player-card__facts,
+.play-player-card__footer {
+  position: relative;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.play-player-card__topline {
+  min-height: 58px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 14px 8px;
+}
+
+.play-looking-badge {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 9px;
+  border: 1px solid rgba(94, 242, 119, .52);
+  border-radius: 8px;
+  background: rgba(20, 59, 29, .38);
+  color: #66f685;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .08em;
+  white-space: nowrap;
+}
+
+.play-player-card--team .play-looking-badge {
+  border-color: rgba(218, 177, 65, .55);
+  background: rgba(73, 55, 13, .28);
+  color: #e4c55c;
+}
+
+.play-looking-badge i {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.play-player-card__open-profile {
+  color: #35c8e9;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  white-space: nowrap;
+}
+
+.play-player-card__portrait {
+  margin: 2px 14px 0;
+  aspect-ratio: 1.28;
   display: grid;
   place-items: center;
   overflow: hidden;
-  border: 1px solid #6f613c;
-  border-radius: 50%;
-  background: #10110e;
-  color: #f2ead7;
-  font-family: Georgia, serif;
-  font-size: 20px;
-  font-weight: 900;
+  border: 1px solid rgba(53, 200, 233, .18);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(53, 200, 233, .16), transparent 44%),
+    linear-gradient(180deg, #0c1720, #070b0e);
+  color: #dceaf2;
+  font-size: clamp(64px, 8vw, 118px);
+  font-weight: 950;
+  text-shadow: 0 0 24px rgba(53, 200, 233, .22);
 }
 
-.play-player-avatar img {
+.play-player-card__portrait img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.play-player-card-copy {
+.play-player-card__identity {
+  display: grid;
+  gap: 3px;
+  padding: 14px 14px 10px;
+}
+
+.play-player-card__identity strong {
+  overflow: hidden;
+  color: #f6f3ec;
+  font-size: clamp(20px, 2.15vw, 30px);
+  line-height: 1;
+  letter-spacing: -.03em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.play-player-card__identity small {
+  color: #99a9b7;
+  font-size: 13px;
+}
+
+.play-player-card__identity p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 7px 0 0;
+  color: #c2c6c4;
+  font-size: 12px;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.play-player-card__facts {
+  margin: 0 14px;
+  border-top: 1px solid rgba(203, 159, 57, .55);
+  border-bottom: 1px solid rgba(53, 200, 233, .16);
+}
+
+.play-player-card__facts div {
+  min-height: 34px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 9px;
+  border-bottom: 1px solid rgba(53, 200, 233, .11);
+  background: rgba(4, 10, 14, .58);
+}
+
+.play-player-card__facts div:last-child {
+  border-bottom: 0;
+}
+
+.play-player-card__facts span {
+  color: #788b9d;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.play-player-card__facts strong {
+  color: #f0eee7;
+  font-size: 10px;
+  letter-spacing: .05em;
+}
+
+.play-player-card__facts div:first-child strong {
+  color: #bce945;
+}
+
+.play-player-card__action-zone {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  gap: 7px;
+  margin-top: auto;
+  padding: 14px;
+}
+
+.play-player-card__action-zone > span {
+  color: #8898a7;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.play-player-card__action {
+  min-height: 68px;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px;
+  border: 1px solid rgba(129, 226, 41, .5);
+  border-radius: 12px;
+  background: linear-gradient(90deg, rgba(40, 99, 13, .43), rgba(5, 18, 10, .8));
+  opacity: .78;
+}
+
+.play-player-card--team .play-player-card__action {
+  border-color: rgba(218, 177, 65, .48);
+  background: linear-gradient(90deg, rgba(98, 72, 8, .4), rgba(18, 14, 5, .82));
+}
+
+.play-player-card__action-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #a9df2e;
+  color: #0a1304;
+  font-size: 24px;
+  font-weight: 950;
+}
+
+.play-player-card--team .play-player-card__action-icon {
+  background: #d4ad33;
+  color: #1c1503;
+}
+
+.play-player-card__action > span:nth-child(2) {
   min-width: 0;
   display: grid;
-  gap: 4px;
+  gap: 2px;
 }
 
-.play-looking-badge {
-  width: fit-content;
-  padding: 4px 7px;
-  border: 1px solid rgba(196, 220, 67, 0.38);
-  border-radius: 999px;
-  background: rgba(196, 220, 67, 0.08);
-  color: #c4dc43;
+.play-player-card__action strong {
+  color: #bce945;
+  font-size: 14px;
+  letter-spacing: .03em;
+}
+
+.play-player-card--team .play-player-card__action strong {
+  color: #e4c55c;
+}
+
+.play-player-card__action small {
+  overflow: hidden;
+  color: #98a3a2;
   font-size: 9px;
-  font-weight: 950;
-  letter-spacing: 0.08em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.play-player-card-copy strong {
-  color: #f2ead7;
+.play-player-card__action b {
+  color: #a9b4b5;
+  font-size: 22px;
 }
 
-.play-player-card-copy small,
-.play-player-card-copy p {
-  color: #bfb59a;
+.play-player-card__footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 14px 12px;
+  border-top: 1px solid rgba(53, 200, 233, .13);
+  color: #35c8e9;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .07em;
 }
 
-.play-player-card-copy p {
-  margin: 3px 0 0;
-  font-size: 13px;
-  line-height: 1.45;
+.play-player-card__footer span:last-child {
+  color: #8e99a3;
+}
+
+@media (hover: hover) {
+  .play-player-card:hover {
+    border-color: rgba(53, 216, 247, .76);
+    transform: translateY(-2px);
+    box-shadow: inset 0 0 0 1px rgba(53, 216, 247, .09), 0 18px 45px rgba(0,0,0,.34);
+    transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease;
+  }
+
+  .play-player-card--team:hover {
+    border-color: rgba(222, 180, 64, .8);
+  }
+}
+
+@media (max-width: 1100px) {
+  .play-player-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .play-player-list {
+    grid-template-columns: 1fr;
+  }
+
+  .play-player-card__portrait {
+    aspect-ratio: 1.55;
+  }
 }
 
 @media (max-width: 520px) {
@@ -131,5 +403,16 @@
   .play-player-publish {
     min-height: 38px;
     padding-inline: 11px;
+  }
+
+  .play-player-card__topline,
+  .play-player-card__identity,
+  .play-player-card__action-zone {
+    padding-inline: 12px;
+  }
+
+  .play-player-card__portrait,
+  .play-player-card__facts {
+    margin-inline: 12px;
   }
 }
