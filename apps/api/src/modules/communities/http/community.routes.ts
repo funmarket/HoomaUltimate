@@ -16,6 +16,17 @@ const createSchema = z.object({
 });
 const updateSchema = createSchema.partial();
 
+function definedCommunityFields(parsed: z.infer<typeof updateSchema>) {
+  return {
+    ...(parsed.name !== undefined ? { name: parsed.name } : {}),
+    ...(parsed.description !== undefined ? { description: parsed.description } : {}),
+    ...(parsed.city !== undefined ? { city: parsed.city } : {}),
+    ...(parsed.houma !== undefined ? { houma: parsed.houma } : {}),
+    ...(parsed.logoUrl !== undefined ? { logoUrl: parsed.logoUrl } : {}),
+    ...(parsed.bannerUrl !== undefined ? { bannerUrl: parsed.bannerUrl } : {})
+  };
+}
+
 export function createCommunityPublicRouter(service: CommunityService): Router {
   const router = Router();
   router.get("/", asyncHandler(async (req, res) => {
@@ -49,21 +60,15 @@ export function createCommunityMemberRouter(service: CommunityService): Router {
     res.json(await service.revokeCoach(getAuth(req).userId, String(req.params.id), String(req.params.userId)));
   }));
   router.patch("/:id", asyncHandler(async (req, res) => {
-    res.json(await service.update(getAuth(req).userId, String(req.params.id), updateSchema.parse(req.body)));
+    const input = definedCommunityFields(updateSchema.parse(req.body));
+    res.json(await service.update(getAuth(req).userId, String(req.params.id), input));
   }));
   router.delete("/:id", asyncHandler(async (req, res) => {
     res.json(await service.archive(getAuth(req).userId, String(req.params.id)));
   }));
   router.post("/", asyncHandler(async (req, res) => {
     const parsed = createSchema.parse(req.body);
-    const input = {
-      name: parsed.name,
-      ...(parsed.description !== undefined ? { description: parsed.description } : {}),
-      ...(parsed.city !== undefined ? { city: parsed.city } : {}),
-      ...(parsed.houma !== undefined ? { houma: parsed.houma } : {}),
-      ...(parsed.logoUrl !== undefined ? { logoUrl: parsed.logoUrl } : {}),
-      ...(parsed.bannerUrl !== undefined ? { bannerUrl: parsed.bannerUrl } : {})
-    };
+    const input = { name: parsed.name, ...definedCommunityFields(parsed) };
     res.status(201).json(await service.create(getAuth(req).userId, input));
   }));
   return router;
