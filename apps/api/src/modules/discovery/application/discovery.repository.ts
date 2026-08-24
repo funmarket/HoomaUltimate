@@ -38,7 +38,8 @@ export interface DiscoveryGamerMatchRecord {
   readonly challengedHandle: string;
 }
 
-export type DiscoveryRecord = DiscoveryEventRecord | DiscoveryTeamGameRecord | DiscoveryGamerMatchRecord;
+export type DiscoveryRecord =
+  DiscoveryEventRecord | DiscoveryTeamGameRecord | DiscoveryGamerMatchRecord;
 
 export interface DiscoveryRepository {
   listCurrent(input: {
