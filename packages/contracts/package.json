@@ -20,6 +20,10 @@
       "types": "./src/index.ts",
       "default": "./dist/index.js"
     },
+    "./discovery": {
+      "types": "./src/discovery.ts",
+      "default": "./dist/discovery.js"
+    },
     "./gamers": {
       "types": "./src/gamers.ts",
       "default": "./dist/gamers.js"
