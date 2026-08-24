@@ -4,7 +4,7 @@ import test from "node:test";
 
 const required = [
   "packages/database/prisma/schema.prisma",
-  "packages/database/prisma/migrations/20260821160000_initial_identity_foundation/migration.sql",
+  "packages/database/prisma/migrations/20260823003000_initial_foundation/migration.sql",
   "apps/api/src/modules/identity/domain/auth-context.ts",
   "apps/api/src/modules/identity/application/identity.service.ts",
   "apps/api/src/modules/identity/application/identity.repository.ts",
