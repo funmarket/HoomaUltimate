@@ -1,4 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
+import type { MeResponse } from "@hooma/contracts";
 import type { TeamControlDetail } from "../api";
 import { useHoomaFrontend } from "../context";
 
@@ -8,9 +10,12 @@ type TeamEditPageProps = {
 
 export function TeamEditPage({ teamId }: TeamEditPageProps) {
   const { api, protectedError } = useHoomaFrontend();
+  const navigate = useNavigate();
   const [team, setTeam] = useState<TeamControlDetail | null>(null);
+  const [me, setMe] = useState<MeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -21,13 +26,15 @@ export function TeamEditPage({ teamId }: TeamEditPageProps) {
     setNotice("");
     setTeam(null);
 
-    void Promise.all([api.teams.managed(), api.teams.publicDetail(teamId)])
-      .then(([managedTeams, detail]) => {
+    void Promise.all([api.teams.managed(), api.teams.publicDetail(teamId), api.identity.me()])
+      .then(([managedTeams, detail, identity]) => {
         if (!active) return;
-        if (!managedTeams.some((candidate) => candidate.id === teamId)) {
+        const isPlatformAdmin = identity.platformRoles.includes("PLATFORM_ADMIN");
+        if (!isPlatformAdmin && !managedTeams.some((candidate) => candidate.id === teamId)) {
           setError("You do not currently manage this Team.");
           return;
         }
+        setMe(identity);
         setTeam(detail);
       })
       .catch((reason: unknown) => {
@@ -70,12 +77,26 @@ export function TeamEditPage({ teamId }: TeamEditPageProps) {
     }
   }
 
+  async function deleteTeam() {
+    if (!team || deleting) return;
+    if (!window.confirm(`Delete ${team.name}? It will disappear from active HOOMA surfaces while historical records are preserved.`)) return;
+    setDeleting(true);
+    setError("");
+    try {
+      await api.teams.archive(team.id);
+      navigate(me?.platformRoles.includes("PLATFORM_ADMIN") ? "/admin" : "/teams", { replace: true });
+    } catch (reason) {
+      setError(protectedError(reason, "Unable to delete Team"));
+      setDeleting(false);
+    }
+  }
+
   if (loading) return <p className="status">Loading Team settings…</p>;
 
   return (
     <section className="control-room team-edit-page">
-      <a className="team-management-back" href="/teams/control">
-        ← Coach Control Room
+      <a className="team-management-back" href={me?.platformRoles.includes("PLATFORM_ADMIN") ? "/admin" : "/teams/control"}>
+        ← {me?.platformRoles.includes("PLATFORM_ADMIN") ? "App Admin" : "Coach Control Room"}
       </a>
 
       <header className="control-room__header team-edit-page__header">
@@ -90,60 +111,57 @@ export function TeamEditPage({ teamId }: TeamEditPageProps) {
       {notice ? <p className="success">{notice}</p> : null}
 
       {team ? (
-        <form className="panel team-edit-form" onSubmit={submit}>
-          <div className="team-edit-form__intro">
-            <span>Team</span>
-            <strong>{team.name}</strong>
-          </div>
+        <>
+          <form className="panel team-edit-form" onSubmit={submit}>
+            <div className="team-edit-form__intro">
+              <span>Team</span>
+              <strong>{team.name}</strong>
+            </div>
 
-          <label>
-            Name
-            <input name="name" defaultValue={team.name} required />
-          </label>
-          <label>
-            Motto
-            <input name="motto" defaultValue={team.motto ?? ""} />
-          </label>
-          <div className="team-edit-form__split">
             <label>
-              City
-              <input name="city" defaultValue={team.city ?? ""} />
+              Name
+              <input name="name" defaultValue={team.name} required />
             </label>
             <label>
-              Houma
-              <input name="houma" defaultValue={team.houma ?? ""} />
+              Motto
+              <input name="motto" defaultValue={team.motto ?? ""} />
             </label>
-          </div>
-          <label>
-            Team logo / crest URL
-            <input
-              name="badgeUrl"
-              type="url"
-              maxLength={2000}
-              defaultValue={team.badgeUrl ?? ""}
-              placeholder="https://…/team-logo.png"
-            />
-          </label>
-          <label>
-            Banner image URL
-            <input
-              name="bannerUrl"
-              type="url"
-              maxLength={2000}
-              defaultValue={team.bannerUrl ?? ""}
-              placeholder="https://…/team-banner.jpg"
-            />
-          </label>
+            <div className="team-edit-form__split">
+              <label>
+                City
+                <input name="city" defaultValue={team.city ?? ""} />
+              </label>
+              <label>
+                Houma
+                <input name="houma" defaultValue={team.houma ?? ""} />
+              </label>
+            </div>
+            <label>
+              Team logo / crest URL
+              <input name="badgeUrl" type="url" maxLength={2000} defaultValue={team.badgeUrl ?? ""} placeholder="https://…/team-logo.png" />
+            </label>
+            <label>
+              Banner image URL
+              <input name="bannerUrl" type="url" maxLength={2000} defaultValue={team.bannerUrl ?? ""} placeholder="https://…/team-banner.jpg" />
+            </label>
 
-          <div className="team-edit-form__actions">
-            <a className="coach-secondary-action" href="/teams/control">
-              Cancel
-            </a>
-            <button className="coach-primary-action" type="submit" disabled={saving}>
-              {saving ? "Saving…" : "Save Team"}
+            <div className="team-edit-form__actions">
+              <a className="coach-secondary-action" href={me?.platformRoles.includes("PLATFORM_ADMIN") ? "/admin" : "/teams/control"}>Cancel</a>
+              <button className="coach-primary-action" type="submit" disabled={saving || deleting}>
+                {saving ? "Saving…" : "Save Team"}
+              </button>
+            </div>
+          </form>
+
+          <section className="panel entity-danger-zone">
+            <p className="eyebrow">DANGER ZONE</p>
+            <h3>Delete Team</h3>
+            <p>Removes this Team from active discovery and management. Historical match and audit records are preserved.</p>
+            <button className="entity-delete-action" type="button" disabled={deleting || saving} onClick={() => void deleteTeam()}>
+              {deleting ? "Deleting…" : "Delete Team"}
             </button>
-          </div>
-        </form>
+          </section>
+        </>
       ) : null}
     </section>
   );
