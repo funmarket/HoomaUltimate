@@ -3,10 +3,19 @@ import type { ApiConfig } from "@hooma/config";
 import { loginSchema, registerSchema } from "@hooma/contracts";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import type { IdentityService } from "../application/identity.service.js";
+import { resolveAuthentication } from "./auth.middleware.js";
 import { readCookie, setSessionCookie } from "./cookies.js";
 
 export function createIdentityPublicRouter(service: IdentityService, config: ApiConfig): Router {
   const router = Router();
+
+  router.get(
+    "/session",
+    asyncHandler(async (request, response) => {
+      const auth = await resolveAuthentication(request, service, config);
+      response.json(auth ? await service.me(auth.userId, auth.transports) : null);
+    }),
+  );
 
   router.post(
     "/register",
