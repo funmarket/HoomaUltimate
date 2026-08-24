@@ -17,10 +17,12 @@ const db = getDatabaseClient();
 try {
   const user = userIdArg
     ? await db.user.findUnique({ where: { id: userIdArg }, select: { id: true } })
-    : await db.webCredential.findUnique({
-        where: { loginUsername: loginUsernameArg! },
-        select: { user: { select: { id: true } } }
-      }).then((credential) => credential?.user ?? null);
+    : await db.webCredential
+        .findUnique({
+          where: { loginUsername: loginUsernameArg! },
+          select: { user: { select: { id: true } } },
+        })
+        .then((credential) => credential?.user ?? null);
 
   if (!user) {
     console.error("Target user was not found.");
@@ -30,7 +32,7 @@ try {
       await tx.platformRoleAssignment.upsert({
         where: { userId_role: { userId: user.id, role: "PLATFORM_ADMIN" } },
         create: { userId: user.id, role: "PLATFORM_ADMIN", grantedBy: "operator-cli" },
-        update: { revokedAt: null, grantedAt: new Date(), grantedBy: "operator-cli" }
+        update: { revokedAt: null, grantedAt: new Date(), grantedBy: "operator-cli" },
       });
       await tx.auditLog.create({
         data: {
@@ -38,8 +40,8 @@ try {
           action: "PLATFORM_ADMIN_GRANT",
           entityType: "User",
           entityId: user.id,
-          metadata: { source: "operator-cli" }
-        }
+          metadata: { source: "operator-cli" },
+        },
       });
     });
     console.log(`Granted PLATFORM_ADMIN to ${user.id}.`);

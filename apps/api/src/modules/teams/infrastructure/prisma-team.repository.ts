@@ -4,9 +4,13 @@ import type {
   TeamChallengeCreateInput,
   TeamCreateInput,
   TeamLineupInput,
-  TeamUpdateInput
+  TeamUpdateInput,
 } from "@hooma/contracts";
-import type { TeamAccessRecord, TeamListInput, TeamRepository } from "../application/team.repository.js";
+import type {
+  TeamAccessRecord,
+  TeamListInput,
+  TeamRepository,
+} from "../application/team.repository.js";
 
 function slugify(value: string): string {
   return (
@@ -20,7 +24,11 @@ function slugify(value: string): string {
   );
 }
 
-function teamCreateData(userId: string, input: TeamCreateInput, slug: string): Prisma.TeamUncheckedCreateInput {
+function teamCreateData(
+  userId: string,
+  input: TeamCreateInput,
+  slug: string,
+): Prisma.TeamUncheckedCreateInput {
   return {
     communityId: input.communityId,
     name: input.name,
@@ -30,7 +38,7 @@ function teamCreateData(userId: string, input: TeamCreateInput, slug: string): P
     ...(input.city !== undefined ? { city: input.city } : {}),
     ...(input.houma !== undefined ? { houma: input.houma } : {}),
     ...(input.badgeUrl !== undefined ? { badgeUrl: input.badgeUrl } : {}),
-    ...(input.bannerUrl !== undefined ? { bannerUrl: input.bannerUrl } : {})
+    ...(input.bannerUrl !== undefined ? { bannerUrl: input.bannerUrl } : {}),
   };
 }
 
@@ -41,7 +49,7 @@ function teamUpdateData(input: TeamUpdateInput): Prisma.TeamUncheckedUpdateInput
     ...(input.city !== undefined ? { city: input.city } : {}),
     ...(input.houma !== undefined ? { houma: input.houma } : {}),
     ...(input.badgeUrl !== undefined ? { badgeUrl: input.badgeUrl } : {}),
-    ...(input.bannerUrl !== undefined ? { bannerUrl: input.bannerUrl } : {})
+    ...(input.bannerUrl !== undefined ? { bannerUrl: input.bannerUrl } : {}),
   };
 }
 
@@ -52,7 +60,7 @@ function lineupSlots(input: TeamLineupInput) {
     x: slot.x,
     y: slot.y,
     isStarter: slot.isStarter,
-    sortOrder: slot.sortOrder
+    sortOrder: slot.sortOrder,
   }));
 }
 
@@ -73,9 +81,9 @@ const lineupSelect = {
       x: true,
       y: true,
       isStarter: true,
-      sortOrder: true
-    }
-  }
+      sortOrder: true,
+    },
+  },
 } satisfies Prisma.TeamLineupSelect;
 
 const teamSummarySelect = {
@@ -88,7 +96,7 @@ const teamSummarySelect = {
   badgeUrl: true,
   bannerUrl: true,
   communityId: true,
-  _count: { select: { players: { where: { leftAt: null, active: true } } } }
+  _count: { select: { players: { where: { leftAt: null, active: true } } } },
 } satisfies Prisma.TeamSelect;
 
 export class PrismaTeamRepository implements TeamRepository {
@@ -104,21 +112,21 @@ export class PrismaTeamRepository implements TeamRepository {
               OR: [
                 { name: { contains: search, mode: "insensitive" } },
                 { city: { contains: search, mode: "insensitive" } },
-                { houma: { contains: search, mode: "insensitive" } }
-              ]
+                { houma: { contains: search, mode: "insensitive" } },
+              ],
             }
           : {}),
         ...(input.city ? { city: { contains: input.city.trim(), mode: "insensitive" } } : {}),
-        ...(input.houma ? { houma: { contains: input.houma.trim(), mode: "insensitive" } } : {})
+        ...(input.houma ? { houma: { contains: input.houma.trim(), mode: "insensitive" } } : {}),
       },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: input.limit + 1,
       ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
-      select: teamSummarySelect
+      select: teamSummarySelect,
     });
     return {
       items: rows.slice(0, input.limit),
-      nextCursor: rows.length > input.limit ? rows[input.limit - 1]?.id ?? null : null
+      nextCursor: rows.length > input.limit ? (rows[input.limit - 1]?.id ?? null) : null,
     };
   }
 
@@ -138,20 +146,25 @@ export class PrismaTeamRepository implements TeamRepository {
         community: { select: { id: true, name: true, slug: true } },
         players: {
           where: { leftAt: null, active: true },
-          select: { id: true, userId: true, joinedAt: true, user: { select: { presentation: true } } },
-          orderBy: { joinedAt: "asc" }
+          select: {
+            id: true,
+            userId: true,
+            joinedAt: true,
+            user: { select: { presentation: true } },
+          },
+          orderBy: { joinedAt: "asc" },
         },
         responsibilities: {
           where: { revokedAt: null },
-          select: { userId: true, role: true, user: { select: { presentation: true } } }
+          select: { userId: true, role: true, user: { select: { presentation: true } } },
         },
         lineups: {
           where: { published: true, active: true },
           orderBy: { updatedAt: "desc" },
           take: 1,
-          select: lineupSelect
-        }
-      }
+          select: lineupSelect,
+        },
+      },
     });
   }
 
@@ -159,10 +172,10 @@ export class PrismaTeamRepository implements TeamRepository {
     return this.db.team.findMany({
       where: {
         status: "ACTIVE",
-        players: { some: { userId, leftAt: null, active: true } }
+        players: { some: { userId, leftAt: null, active: true } },
       },
       select: teamSummarySelect,
-      orderBy: [{ updatedAt: "desc" }, { id: "desc" }]
+      orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
     });
   }
 
@@ -177,9 +190,9 @@ export class PrismaTeamRepository implements TeamRepository {
         bannerUrl: true,
         communityId: true,
         city: true,
-        houma: true
+        houma: true,
       },
-      orderBy: { name: "asc" }
+      orderBy: { name: "asc" },
     });
   }
 
@@ -192,18 +205,20 @@ export class PrismaTeamRepository implements TeamRepository {
         responsibilities: { where: { userId, revokedAt: null }, select: { role: true } },
         capabilityGrants: { where: { userId, revokedAt: null }, select: { capability: true } },
         community: {
-          select: { memberships: { where: { userId, leftAt: null }, select: { role: true } } }
-        }
-      }
+          select: { memberships: { where: { userId, leftAt: null }, select: { role: true } } },
+        },
+      },
     });
     if (!team || team.status !== "ACTIVE") return null;
     const responsibility =
-      team.responsibilities.find((row) => row.role === "COACH")?.role ?? team.responsibilities[0]?.role ?? null;
+      team.responsibilities.find((row) => row.role === "COACH")?.role ??
+      team.responsibilities[0]?.role ??
+      null;
     return {
       communityId: team.communityId,
       responsibility,
       grants: team.capabilityGrants.map((row) => row.capability),
-      communityRole: team.community?.memberships[0]?.role ?? null
+      communityRole: team.community?.memberships[0]?.role ?? null,
     };
   }
 
@@ -217,7 +232,9 @@ export class PrismaTeamRepository implements TeamRepository {
     return this.db.$transaction(async (tx) => {
       const team = await tx.team.create({ data: teamCreateData(userId, input, slug) });
       await tx.teamPlayer.create({ data: { teamId: team.id, userId } });
-      await tx.teamResponsibilityAssignment.create({ data: { teamId: team.id, userId, role: "COACH" } });
+      await tx.teamResponsibilityAssignment.create({
+        data: { teamId: team.id, userId, role: "COACH" },
+      });
       return team;
     });
   }
@@ -230,7 +247,7 @@ export class PrismaTeamRepository implements TeamRepository {
     return this.db.teamPlayer.upsert({
       where: { teamId_userId: { teamId, userId: targetUserId } },
       create: { teamId, userId: targetUserId },
-      update: { leftAt: null, joinedAt: new Date(), active: true }
+      update: { leftAt: null, joinedAt: new Date(), active: true },
     });
   }
 
@@ -238,7 +255,7 @@ export class PrismaTeamRepository implements TeamRepository {
     return (
       await this.db.teamPlayer.updateMany({
         where: { teamId, userId: targetUserId, leftAt: null },
-        data: { leftAt: new Date(), active: false }
+        data: { leftAt: new Date(), active: false },
       })
     ).count;
   }
@@ -247,28 +264,28 @@ export class PrismaTeamRepository implements TeamRepository {
     teamId: string,
     targetUserId: string,
     capabilities: readonly TeamCapabilityInput[],
-    coachUserId: string
+    coachUserId: string,
   ): Promise<void> {
     await this.db.$transaction(async (tx) => {
       await tx.teamPlayer.upsert({
         where: { teamId_userId: { teamId, userId: targetUserId } },
         create: { teamId, userId: targetUserId },
-        update: { leftAt: null, active: true }
+        update: { leftAt: null, active: true },
       });
 
       const activeAssistant = await tx.teamResponsibilityAssignment.findFirst({
         where: { teamId, userId: targetUserId, role: "ASSISTANT", revokedAt: null },
-        select: { id: true }
+        select: { id: true },
       });
       if (!activeAssistant) {
         await tx.teamResponsibilityAssignment.create({
-          data: { teamId, userId: targetUserId, role: "ASSISTANT" }
+          data: { teamId, userId: targetUserId, role: "ASSISTANT" },
         });
       }
 
       await tx.teamCapabilityGrant.updateMany({
         where: { teamId, userId: targetUserId, revokedAt: null },
-        data: { revokedAt: new Date() }
+        data: { revokedAt: new Date() },
       });
       for (const capability of capabilities) {
         await tx.teamCapabilityGrant.upsert({
@@ -277,12 +294,12 @@ export class PrismaTeamRepository implements TeamRepository {
             teamId,
             userId: targetUserId,
             capability,
-            grantedBy: coachUserId
+            grantedBy: coachUserId,
           },
           update: {
             revokedAt: null,
-            grantedBy: coachUserId
-          }
+            grantedBy: coachUserId,
+          },
         });
       }
     });
@@ -292,11 +309,11 @@ export class PrismaTeamRepository implements TeamRepository {
     await this.db.$transaction(async (tx) => {
       await tx.teamResponsibilityAssignment.updateMany({
         where: { teamId, userId: targetUserId, role: "ASSISTANT", revokedAt: null },
-        data: { revokedAt: new Date() }
+        data: { revokedAt: new Date() },
       });
       await tx.teamCapabilityGrant.updateMany({
         where: { teamId, userId: targetUserId, revokedAt: null },
-        data: { revokedAt: new Date() }
+        data: { revokedAt: new Date() },
       });
     });
   }
@@ -304,7 +321,7 @@ export class PrismaTeamRepository implements TeamRepository {
   async listActivePlayerIds(teamId: string): Promise<string[]> {
     const rows = await this.db.teamPlayer.findMany({
       where: { teamId, leftAt: null, active: true },
-      select: { id: true }
+      select: { id: true },
     });
     return rows.map((row) => row.id);
   }
@@ -312,7 +329,7 @@ export class PrismaTeamRepository implements TeamRepository {
   getCurrentLineup(teamId: string) {
     return this.db.teamLineup.findFirst({
       where: { teamId, isCurrent: true, active: true },
-      select: lineupSelect
+      select: lineupSelect,
     });
   }
 
@@ -320,7 +337,7 @@ export class PrismaTeamRepository implements TeamRepository {
     return this.db.$transaction(async (tx) => {
       const current = await tx.teamLineup.findFirst({
         where: { teamId, isCurrent: true, active: true },
-        select: { id: true, published: true }
+        select: { id: true, published: true },
       });
 
       const updateExisting = current && (!current.published || input.published);
@@ -333,9 +350,9 @@ export class PrismaTeamRepository implements TeamRepository {
             formation: input.formation,
             matchFormat: input.matchFormat,
             published: input.published,
-            slots: { create: lineupSlots(input) }
+            slots: { create: lineupSlots(input) },
           },
-          select: lineupSelect
+          select: lineupSelect,
         });
       }
 
@@ -352,9 +369,9 @@ export class PrismaTeamRepository implements TeamRepository {
           published: input.published,
           isCurrent: true,
           createdByUserId: userId,
-          slots: { create: lineupSlots(input) }
+          slots: { create: lineupSlots(input) },
         },
-        select: lineupSelect
+        select: lineupSelect,
       });
     });
   }
@@ -367,33 +384,33 @@ export class PrismaTeamRepository implements TeamRepository {
         format: input.format,
         proposedAt: input.proposedAt ? new Date(input.proposedAt) : null,
         createdByUserId: userId,
-        ...(input.message !== undefined ? { message: input.message } : {})
-      }
+        ...(input.message !== undefined ? { message: input.message } : {}),
+      },
     });
   }
 
   getChallenge(challengeId: string) {
     return this.db.teamChallenge.findUnique({
       where: { id: challengeId },
-      select: { id: true, challengerTeamId: true, challengedTeamId: true, status: true }
+      select: { id: true, challengerTeamId: true, challengedTeamId: true, status: true },
     });
   }
 
   getChallengeForUser(challengeId: string, userId: string) {
     return this.db.teamChallenge.findFirst({
       where: { id: challengeId, OR: this.challengeViewFilters(userId) },
-      include: { challengerTeam: true, challengedTeam: true, game: true }
+      include: { challengerTeam: true, challengedTeam: true, game: true },
     });
   }
 
   listIncoming(userId: string, limit: number) {
     return this.db.teamChallenge.findMany({
       where: {
-        challengedTeam: { OR: this.capabilityTeamFilters(userId, "RESPOND_TO_CHALLENGE") }
+        challengedTeam: { OR: this.capabilityTeamFilters(userId, "RESPOND_TO_CHALLENGE") },
       },
       include: { challengerTeam: true, challengedTeam: true, game: true },
       orderBy: { createdAt: "desc" },
-      take: limit
+      take: limit,
     });
   }
 
@@ -404,13 +421,13 @@ export class PrismaTeamRepository implements TeamRepository {
           { challengerTeam: { OR: this.capabilityTeamFilters(userId, "CREATE_CHALLENGE") } },
           {
             status: "ACCEPTED",
-            challengerTeam: { OR: this.capabilityTeamFilters(userId, "RESPOND_TO_CHALLENGE") }
-          }
-        ]
+            challengerTeam: { OR: this.capabilityTeamFilters(userId, "RESPOND_TO_CHALLENGE") },
+          },
+        ],
       },
       include: { challengerTeam: true, challengedTeam: true, game: true },
       orderBy: { createdAt: "desc" },
-      take: limit
+      take: limit,
     });
   }
 
@@ -418,7 +435,7 @@ export class PrismaTeamRepository implements TeamRepository {
     return this.db.$transaction(async (tx) => {
       const challenge = await tx.teamChallenge.update({
         where: { id: challengeId },
-        data: { status: "ACCEPTED" }
+        data: { status: "ACCEPTED" },
       });
       await tx.teamGame.create({
         data: {
@@ -426,8 +443,8 @@ export class PrismaTeamRepository implements TeamRepository {
           homeTeamId: challenge.challengerTeamId,
           awayTeamId: challenge.challengedTeamId,
           scheduledAt: challenge.proposedAt,
-          status: challenge.proposedAt ? "CONFIRMED" : "SCHEDULING"
-        }
+          status: challenge.proposedAt ? "CONFIRMED" : "SCHEDULING",
+        },
       });
       return challenge;
     });
@@ -436,14 +453,14 @@ export class PrismaTeamRepository implements TeamRepository {
   declineChallenge(challengeId: string) {
     return this.db.teamChallenge.update({
       where: { id: challengeId },
-      data: { status: "DECLINED" }
+      data: { status: "DECLINED" },
     });
   }
 
   cancelChallenge(challengeId: string) {
     return this.db.teamChallenge.update({
       where: { id: challengeId },
-      data: { status: "CANCELLED" }
+      data: { status: "CANCELLED" },
     });
   }
 
@@ -451,13 +468,13 @@ export class PrismaTeamRepository implements TeamRepository {
     return this.db.teamChallengeMessage.findMany({
       where: { challengeId },
       include: { author: { select: { presentation: true } } },
-      orderBy: { createdAt: "asc" }
+      orderBy: { createdAt: "asc" },
     });
   }
 
   createMessage(challengeId: string, userId: string, body: string) {
     return this.db.teamChallengeMessage.create({
-      data: { challengeId, authorUserId: userId, body }
+      data: { challengeId, authorUserId: userId, body },
     });
   }
 
@@ -466,12 +483,12 @@ export class PrismaTeamRepository implements TeamRepository {
       where: {
         OR: [
           { homeTeam: { OR: this.managedTeamFilters(userId) } },
-          { awayTeam: { OR: this.managedTeamFilters(userId) } }
-        ]
+          { awayTeam: { OR: this.managedTeamFilters(userId) } },
+        ],
       },
       include: { homeTeam: true, awayTeam: true, challenge: true },
       orderBy: [{ scheduledAt: "asc" }, { createdAt: "desc" }],
-      take: limit
+      take: limit,
     });
   }
 
@@ -481,10 +498,10 @@ export class PrismaTeamRepository implements TeamRepository {
         id: gameId,
         OR: [
           { homeTeam: { OR: this.managedTeamFilters(userId) } },
-          { awayTeam: { OR: this.managedTeamFilters(userId) } }
-        ]
+          { awayTeam: { OR: this.managedTeamFilters(userId) } },
+        ],
       },
-      include: { homeTeam: true, awayTeam: true, challenge: true }
+      include: { homeTeam: true, awayTeam: true, challenge: true },
     });
   }
 
@@ -493,26 +510,29 @@ export class PrismaTeamRepository implements TeamRepository {
       { responsibilities: { some: { userId, revokedAt: null } } },
       {
         community: {
-          memberships: { some: { userId, leftAt: null, role: { in: ["FOUNDER", "COACH"] } } }
-        }
-      }
+          memberships: { some: { userId, leftAt: null, role: { in: ["FOUNDER", "COACH"] } } },
+        },
+      },
     ];
   }
 
-  private capabilityTeamFilters(userId: string, capability: TeamCapabilityInput): Prisma.TeamWhereInput[] {
+  private capabilityTeamFilters(
+    userId: string,
+    capability: TeamCapabilityInput,
+  ): Prisma.TeamWhereInput[] {
     return [
       { responsibilities: { some: { userId, role: "COACH", revokedAt: null } } },
       {
         AND: [
           { responsibilities: { some: { userId, role: "ASSISTANT", revokedAt: null } } },
-          { capabilityGrants: { some: { userId, capability, revokedAt: null } } }
-        ]
+          { capabilityGrants: { some: { userId, capability, revokedAt: null } } },
+        ],
       },
       {
         community: {
-          memberships: { some: { userId, leftAt: null, role: { in: ["FOUNDER", "COACH"] } } }
-        }
-      }
+          memberships: { some: { userId, leftAt: null, role: { in: ["FOUNDER", "COACH"] } } },
+        },
+      },
     ];
   }
 
@@ -522,8 +542,8 @@ export class PrismaTeamRepository implements TeamRepository {
       { challengedTeam: { OR: this.capabilityTeamFilters(userId, "RESPOND_TO_CHALLENGE") } },
       {
         status: "ACCEPTED",
-        challengerTeam: { OR: this.capabilityTeamFilters(userId, "RESPOND_TO_CHALLENGE") }
-      }
+        challengerTeam: { OR: this.capabilityTeamFilters(userId, "RESPOND_TO_CHALLENGE") },
+      },
     ];
   }
 }

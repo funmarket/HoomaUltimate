@@ -50,7 +50,7 @@ export function AccountProvider({ children }: { readonly children: ReactNode }) 
 
   const value = useMemo<AccountState>(
     () => ({ me, managedTeams, loading, error, refresh }),
-    [me, managedTeams, loading, error]
+    [me, managedTeams, loading, error],
   );
 
   return <AccountContext.Provider value={value}>{children}</AccountContext.Provider>;

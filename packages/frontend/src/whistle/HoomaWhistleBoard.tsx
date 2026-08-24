@@ -11,11 +11,22 @@ function graphemeCount(value: string): number {
 }
 
 function authorName(whistle: WhistleListItem): string {
-  return whistle.author?.presentation?.displayName || whistle.author?.presentation?.username || "HOOMA member";
+  return (
+    whistle.author?.presentation?.displayName ||
+    whistle.author?.presentation?.username ||
+    "HOOMA member"
+  );
 }
 
 function authorInitials(whistle: WhistleListItem): string {
-  return authorName(whistle).split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "H";
+  return (
+    authorName(whistle)
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("") || "H"
+  );
 }
 
 function relativeTime(value: string): string {
@@ -29,12 +40,14 @@ function relativeTime(value: string): string {
 
 function resetLabel(value: string): string {
   const date = new Date(value);
-  return Number.isNaN(date.valueOf()) ? "00:00 UTC" : new Intl.DateTimeFormat(undefined, {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "UTC",
-    timeZoneName: "short"
-  }).format(date);
+  return Number.isNaN(date.valueOf())
+    ? "00:00 UTC"
+    : new Intl.DateTimeFormat(undefined, {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "UTC",
+        timeZoneName: "short",
+      }).format(date);
 }
 
 export function HoomaWhistleBoard({ communityId }: { readonly communityId: string }) {
@@ -46,18 +59,21 @@ export function HoomaWhistleBoard({ communityId }: { readonly communityId: strin
   const [error, setError] = useState("");
   const count = graphemeCount(body);
 
-  const load = useCallback(async (quiet = false) => {
-    if (!quiet) setLoading(true);
-    try {
-      const next = await api.whistles.community(communityId);
-      setFeed(next);
-      setError("");
-    } catch (reason) {
-      setError(protectedError(reason, "Could not load Whistles"));
-    } finally {
-      if (!quiet) setLoading(false);
-    }
-  }, [api, communityId, protectedError]);
+  const load = useCallback(
+    async (quiet = false) => {
+      if (!quiet) setLoading(true);
+      try {
+        const next = await api.whistles.community(communityId);
+        setFeed(next);
+        setError("");
+      } catch (reason) {
+        setError(protectedError(reason, "Could not load Whistles"));
+      } finally {
+        if (!quiet) setLoading(false);
+      }
+    },
+    [api, communityId, protectedError],
+  );
 
   useEffect(() => {
     void load();
@@ -84,26 +100,56 @@ export function HoomaWhistleBoard({ communityId }: { readonly communityId: strin
   return (
     <article className="panel hooma-hq-module whistle-module hooma-whistle-board">
       <div className="whistle-heading">
-        <div><span className="eyebrow">PRIVATE · MEMBERS ONLY</span><h2>Whistle Board</h2></div>
-        <span className="whistle-quota"><strong>{feed.remainingToday}</strong>/11 left today</span>
+        <div>
+          <span className="eyebrow">PRIVATE · MEMBERS ONLY</span>
+          <h2>Whistle Board</h2>
+        </div>
+        <span className="whistle-quota">
+          <strong>{feed.remainingToday}</strong>/11 left today
+        </span>
       </div>
-      <p className="whistle-rule">33 graphemes per Whistle. Every member starts fresh with 11 at 00:00 UTC. Today's Whistles disappear at the same reset.</p>
-      {feed.resetsAt ? <small className="muted">Next reset: {resetLabel(feed.resetsAt)}</small> : null}
+      <p className="whistle-rule">
+        33 graphemes per Whistle. Every member starts fresh with 11 at 00:00 UTC. Today's Whistles
+        disappear at the same reset.
+      </p>
+      {feed.resetsAt ? (
+        <small className="muted">Next reset: {resetLabel(feed.resetsAt)}</small>
+      ) : null}
 
       <form className="whistle-composer" onSubmit={submit}>
         <label>
           <span>Send a signal</span>
           <div className="whistle-input-row">
-            <input value={body} onChange={(event) => setBody(event.target.value)} placeholder="Pitch at 7? ⚽" aria-describedby="whistle-count" />
-            <button className="button" type="submit" disabled={!body.trim() || count > MAX_GRAPHEMES || sending || feed.remainingToday <= 0}>{sending ? "Sending…" : "Whistle"}</button>
+            <input
+              value={body}
+              onChange={(event) => setBody(event.target.value)}
+              placeholder="Pitch at 7? ⚽"
+              aria-describedby="whistle-count"
+            />
+            <button
+              className="button"
+              type="submit"
+              disabled={
+                !body.trim() || count > MAX_GRAPHEMES || sending || feed.remainingToday <= 0
+              }
+            >
+              {sending ? "Sending…" : "Whistle"}
+            </button>
           </div>
         </label>
-        <small id="whistle-count" className={count > MAX_GRAPHEMES ? "is-over" : ""}>{count}/{MAX_GRAPHEMES} graphemes</small>
+        <small id="whistle-count" className={count > MAX_GRAPHEMES ? "is-over" : ""}>
+          {count}/{MAX_GRAPHEMES} graphemes
+        </small>
       </form>
 
       {error ? <div className="error-box">{error}</div> : null}
       {loading ? <div className="whistle-empty">Listening for Whistles…</div> : null}
-      {!loading && !feed.items.length ? <div className="whistle-empty"><strong>Quiet in the HOOMA.</strong><span>Be the first to send a short signal today.</span></div> : null}
+      {!loading && !feed.items.length ? (
+        <div className="whistle-empty">
+          <strong>Quiet in the HOOMA.</strong>
+          <span>Be the first to send a short signal today.</span>
+        </div>
+      ) : null}
 
       {feed.items.length ? (
         <div className="whistle-list">
@@ -112,10 +158,19 @@ export function HoomaWhistleBoard({ communityId }: { readonly communityId: strin
             return (
               <div className="whistle-card is-revealed" key={whistle.id}>
                 <div className="whistle-author">
-                  {presentation?.photoUrl ? <img src={presentation.photoUrl} alt="" /> : <span>{authorInitials(whistle)}</span>}
-                  <div><strong>{authorName(whistle)}</strong><small>{relativeTime(whistle.createdAt)}</small></div>
+                  {presentation?.photoUrl ? (
+                    <img src={presentation.photoUrl} alt="" />
+                  ) : (
+                    <span>{authorInitials(whistle)}</span>
+                  )}
+                  <div>
+                    <strong>{authorName(whistle)}</strong>
+                    <small>{relativeTime(whistle.createdAt)}</small>
+                  </div>
                 </div>
-                <div className="whistle-body-zone"><p className="whistle-body">{whistle.body}</p></div>
+                <div className="whistle-body-zone">
+                  <p className="whistle-body">{whistle.body}</p>
+                </div>
               </div>
             );
           })}

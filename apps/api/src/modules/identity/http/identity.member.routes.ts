@@ -14,15 +14,21 @@ export function createIdentityMemberRouter(service: IdentityService, config: Api
     asyncHandler(async (request, response) => {
       const auth = getAuth(request);
       response.json(await service.me(auth.userId, auth.transports));
-    })
+    }),
   );
 
   router.patch(
     "/me/presentation",
     asyncHandler(async (request, response) => {
       const auth = getAuth(request);
-      response.json(await service.updatePresentation(auth.userId, auth.transports, profilePresentationUpdateSchema.parse(request.body)));
-    })
+      response.json(
+        await service.updatePresentation(
+          auth.userId,
+          auth.transports,
+          profilePresentationUpdateSchema.parse(request.body),
+        ),
+      );
+    }),
   );
 
   router.post(
@@ -31,7 +37,7 @@ export function createIdentityMemberRouter(service: IdentityService, config: Api
       await service.logout(readCookie(request, config.SESSION_COOKIE_NAME));
       clearSessionCookie(response, config);
       response.json({ ok: true });
-    })
+    }),
   );
 
   return router;

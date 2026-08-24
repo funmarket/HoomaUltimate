@@ -1,7 +1,9 @@
 import http from "node:http";
 
 const port = Number(process.env.PORT || 8080);
-const targetOrigin = (process.env.HOOMA_CANONICAL_WEB_ORIGIN || "https://hooma-web-production.up.railway.app").replace(/\/$/, "");
+const targetOrigin = (
+  process.env.HOOMA_CANONICAL_WEB_ORIGIN || "https://hooma-web-production.up.railway.app"
+).replace(/\/$/, "");
 const targetPath = "/telegram";
 
 const server = http.createServer((request, response) => {

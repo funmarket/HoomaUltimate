@@ -7,7 +7,10 @@ export function AdminApp() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    void api.platformAdmin.overview().then(setOverview).catch((reason: Error) => setError(reason.message));
+    void api.platformAdmin
+      .overview()
+      .then(setOverview)
+      .catch((reason: Error) => setError(reason.message));
   }, [api]);
 
   return (
@@ -16,9 +19,18 @@ export function AdminApp() {
       <h2>HOOMA Control Room</h2>
       {overview ? (
         <dl>
-          <div><dt>Users</dt><dd>{overview.users}</dd></div>
-          <div><dt>Platform Admins</dt><dd>{overview.activePlatformAdmins}</dd></div>
-          <div><dt>Audit entries</dt><dd>{overview.auditEntries}</dd></div>
+          <div>
+            <dt>Users</dt>
+            <dd>{overview.users}</dd>
+          </div>
+          <div>
+            <dt>Platform Admins</dt>
+            <dd>{overview.activePlatformAdmins}</dd>
+          </div>
+          <div>
+            <dt>Audit entries</dt>
+            <dd>{overview.auditEntries}</dd>
+          </div>
         </dl>
       ) : null}
       {error ? <p className="error">{error}</p> : null}

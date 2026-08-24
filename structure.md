@@ -254,34 +254,34 @@ Cross-domain collaboration must use explicit application interfaces, policies or
 
 ## 6. Canonical domain ownership
 
-| Concept | Canonical owner |
-|---|---|
-| Login identity/session | Identity/Auth |
-| User presentation/profile | Identity |
-| Global App Admin authority | Platform Admin |
-| Sensitive-operation history | Audit |
-| HOOMA neighborhood community + membership | Communities |
-| Football Team, roster, responsibilities/capabilities | Teams |
-| Team lineup | Teams |
-| Team challenge, accepted-match coordination, TeamGame | Teams |
-| Event lifecycle, RSVP/waitlist, formation, check-in | Events |
-| Play discovery/use case | Play over Events |
-| Shared transient Whistle engine | Whistle |
-| Physical venue | Places |
-| Pitch capability/application | Pitch over Place |
-| Watch venue capability/application | Watch over Place |
-| FanHub discovery classification | Places/Watch projection, never a role |
-| ULTRAS supporter community | ULTRAS |
-| Gamer profile/squad/challenge | Gamers |
-| Help/request + claims | Requests |
-| Ride coordination/location privacy | Rides |
-| Fundraiser/contribution | Fundraising |
-| Payment rails/intents/settlement | Payments |
-| Media metadata | Media |
-| Media bytes | Object storage |
-| Async work | Outbox + Worker |
-| Post-activity Replay | Replay |
-| Aggregated Home/Now views | Discovery/read models only |
+| Concept                                               | Canonical owner                       |
+| ----------------------------------------------------- | ------------------------------------- |
+| Login identity/session                                | Identity/Auth                         |
+| User presentation/profile                             | Identity                              |
+| Global App Admin authority                            | Platform Admin                        |
+| Sensitive-operation history                           | Audit                                 |
+| HOOMA neighborhood community + membership             | Communities                           |
+| Football Team, roster, responsibilities/capabilities  | Teams                                 |
+| Team lineup                                           | Teams                                 |
+| Team challenge, accepted-match coordination, TeamGame | Teams                                 |
+| Event lifecycle, RSVP/waitlist, formation, check-in   | Events                                |
+| Play discovery/use case                               | Play over Events                      |
+| Shared transient Whistle engine                       | Whistle                               |
+| Physical venue                                        | Places                                |
+| Pitch capability/application                          | Pitch over Place                      |
+| Watch venue capability/application                    | Watch over Place                      |
+| FanHub discovery classification                       | Places/Watch projection, never a role |
+| ULTRAS supporter community                            | ULTRAS                                |
+| Gamer profile/squad/challenge                         | Gamers                                |
+| Help/request + claims                                 | Requests                              |
+| Ride coordination/location privacy                    | Rides                                 |
+| Fundraiser/contribution                               | Fundraising                           |
+| Payment rails/intents/settlement                      | Payments                              |
+| Media metadata                                        | Media                                 |
+| Media bytes                                           | Object storage                        |
+| Async work                                            | Outbox + Worker                       |
+| Post-activity Replay                                  | Replay                                |
+| Aggregated Home/Now views                             | Discovery/read models only            |
 
 A new feature may project another domain's canonical data; it must not clone that data into a new physical entity merely for convenience.
 

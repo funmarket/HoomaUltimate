@@ -10,24 +10,40 @@ export const PRIMARY_NAV_ITEMS = [
   {
     label: "Home",
     href: "/",
-    visual: { kind: "mask", src: "/navigation/home.svg", className: "hooma-bottom-nav__mask--home" }
+    visual: {
+      kind: "mask",
+      src: "/navigation/home.svg",
+      className: "hooma-bottom-nav__mask--home",
+    },
   },
   {
     label: "Play",
     href: "/play",
-    visual: { kind: "mask", src: "/navigation/play.svg", className: "hooma-bottom-nav__mask--play" }
+    visual: {
+      kind: "mask",
+      src: "/navigation/play.svg",
+      className: "hooma-bottom-nav__mask--play",
+    },
   },
   { label: "Watch", href: "/watch", visual: { kind: "icon" } },
   {
     label: "HOOMA",
     href: "/hooma",
-    visual: { kind: "image", src: "/navigation/hoomab.svg", className: "hooma-bottom-nav__artwork--hooma" }
+    visual: {
+      kind: "image",
+      src: "/navigation/hoomab.svg",
+      className: "hooma-bottom-nav__artwork--hooma",
+    },
   },
   {
     label: "Pitch",
     href: "/pitch",
-    visual: { kind: "image", src: "/navigation/pitch.svg", className: "hooma-bottom-nav__artwork--pitch" }
-  }
+    visual: {
+      kind: "image",
+      src: "/navigation/pitch.svg",
+      className: "hooma-bottom-nav__artwork--pitch",
+    },
+  },
 ] as const;
 
 export interface HoomaBottomNavProps {
@@ -76,7 +92,11 @@ function NavVisualView({ visual }: { readonly visual: NavVisual }) {
   );
 }
 
-export function HoomaBottomNav({ pathname, onNavigate, ariaLabel = "Primary" }: HoomaBottomNavProps) {
+export function HoomaBottomNav({
+  pathname,
+  onNavigate,
+  ariaLabel = "Primary",
+}: HoomaBottomNavProps) {
   const [hidden, setHidden] = useState(false);
   const previousY = useRef(0);
 
@@ -99,7 +119,10 @@ export function HoomaBottomNav({ pathname, onNavigate, ariaLabel = "Primary" }: 
   }, []);
 
   return (
-    <nav className={`hooma-bottom-nav${hidden ? " hooma-bottom-nav--hidden" : ""}`} aria-label={ariaLabel}>
+    <nav
+      className={`hooma-bottom-nav${hidden ? " hooma-bottom-nav--hidden" : ""}`}
+      aria-label={ariaLabel}
+    >
       {PRIMARY_NAV_ITEMS.map(({ label, href, visual }) => {
         const active = isCurrent(pathname, href);
         const itemClass = label.toLowerCase();

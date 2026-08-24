@@ -34,7 +34,8 @@ export function initializeTelegramRuntime(): TelegramRuntime {
 
   return {
     initData: webApp.initData ?? "",
-    colorScheme: webApp.colorScheme === "light" || webApp.colorScheme === "dark" ? webApp.colorScheme : null,
-    backButton: webApp.BackButton ?? null
+    colorScheme:
+      webApp.colorScheme === "light" || webApp.colorScheme === "dark" ? webApp.colorScheme : null,
+    backButton: webApp.BackButton ?? null,
   };
 }

@@ -18,15 +18,19 @@ export type HoomaTransport = {
   readonly authenticationHref?: (returnTo: string) => string | null;
 };
 
-export async function request<T>(transport: HoomaTransport, path: string, init?: RequestInit): Promise<T> {
+export async function request<T>(
+  transport: HoomaTransport,
+  path: string,
+  init?: RequestInit,
+): Promise<T> {
   const response = await fetch(`${transport.baseUrl}${path}`, {
     ...init,
     ...(transport.credentials ? { credentials: transport.credentials } : {}),
     headers: {
       "content-type": "application/json",
       ...(transport.getHeaders?.() ?? {}),
-      ...init?.headers
-    }
+      ...init?.headers,
+    },
   });
   const body = (await response.json().catch(() => ({}))) as T & {
     error?: { code?: string; message?: string };
@@ -35,7 +39,7 @@ export async function request<T>(transport: HoomaTransport, path: string, init?:
     throw new HoomaApiError(
       body.error?.message ?? `Request failed (${response.status})`,
       response.status,
-      body.error?.code
+      body.error?.code,
     );
   }
   return body;

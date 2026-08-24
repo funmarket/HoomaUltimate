@@ -27,8 +27,14 @@ export class CommunityService {
 
   async leave(userId: string, communityId: string) {
     const role = await this.repository.managerRole(communityId, userId);
-    if (!role) throw new AppError(404, "COMMUNITY_MEMBERSHIP_NOT_FOUND", "Active HOOMA membership not found");
-    if (role === "FOUNDER") throw new AppError(409, "COMMUNITY_FOUNDER_CANNOT_LEAVE", "Founder cannot leave their HOOMA");
+    if (!role)
+      throw new AppError(
+        404,
+        "COMMUNITY_MEMBERSHIP_NOT_FOUND",
+        "Active HOOMA membership not found",
+      );
+    if (role === "FOUNDER")
+      throw new AppError(409, "COMMUNITY_FOUNDER_CANNOT_LEAVE", "Founder cannot leave their HOOMA");
     await this.repository.leave(communityId, userId);
     return { ok: true };
   }
@@ -39,23 +45,35 @@ export class CommunityService {
   }
 
   async removeMember(actorUserId: string, communityId: string, targetUserId: string) {
-    if (actorUserId === targetUserId) throw new AppError(409, "COMMUNITY_REMOVE_SELF", "Use Leave HOOMA to remove yourself");
+    if (actorUserId === targetUserId)
+      throw new AppError(409, "COMMUNITY_REMOVE_SELF", "Use Leave HOOMA to remove yourself");
     const actorRole = await this.repository.managerRole(communityId, actorUserId);
-    if (!canManageCommunity(actorRole)) throw new AppError(403, "COMMUNITY_COACH_REQUIRED", "Founder or Coach access required");
+    if (!canManageCommunity(actorRole))
+      throw new AppError(403, "COMMUNITY_COACH_REQUIRED", "Founder or Coach access required");
     const targetRole = await this.repository.managerRole(communityId, targetUserId);
-    if (!targetRole) throw new AppError(404, "COMMUNITY_MEMBER_NOT_FOUND", "Active HOOMA member not found");
-    if (targetRole === "FOUNDER") throw new AppError(403, "COMMUNITY_FOUNDER_PROTECTED", "Founder cannot be removed");
-    if (actorRole === "COACH" && targetRole !== "MEMBER") throw new AppError(403, "COMMUNITY_COACH_SCOPE", "Coach can remove Members only");
+    if (!targetRole)
+      throw new AppError(404, "COMMUNITY_MEMBER_NOT_FOUND", "Active HOOMA member not found");
+    if (targetRole === "FOUNDER")
+      throw new AppError(403, "COMMUNITY_FOUNDER_PROTECTED", "Founder cannot be removed");
+    if (actorRole === "COACH" && targetRole !== "MEMBER")
+      throw new AppError(403, "COMMUNITY_COACH_SCOPE", "Coach can remove Members only");
     await this.repository.removeMember(communityId, targetUserId);
     return { ok: true };
   }
 
   async appointCoach(founderUserId: string, communityId: string, targetUserId: string) {
     await this.requireFounder(communityId, founderUserId);
-    if (founderUserId === targetUserId) throw new AppError(409, "COMMUNITY_COACH_SELF", "Founder already has Coach authority");
+    if (founderUserId === targetUserId)
+      throw new AppError(409, "COMMUNITY_COACH_SELF", "Founder already has Coach authority");
     const targetRole = await this.repository.managerRole(communityId, targetUserId);
-    if (!targetRole) throw new AppError(404, "COMMUNITY_MEMBER_NOT_FOUND", "Coach must already be an active HOOMA member");
-    if (targetRole === "FOUNDER") throw new AppError(409, "COMMUNITY_COACH_FOUNDER", "Founder already has community authority");
+    if (!targetRole)
+      throw new AppError(
+        404,
+        "COMMUNITY_MEMBER_NOT_FOUND",
+        "Coach must already be an active HOOMA member",
+      );
+    if (targetRole === "FOUNDER")
+      throw new AppError(409, "COMMUNITY_COACH_FOUNDER", "Founder already has community authority");
     if (targetRole === "COACH") return { ok: true };
     await this.repository.appointCoach(communityId, targetUserId);
     return { ok: true };
@@ -64,7 +82,8 @@ export class CommunityService {
   async revokeCoach(founderUserId: string, communityId: string, targetUserId: string) {
     await this.requireFounder(communityId, founderUserId);
     const targetRole = await this.repository.managerRole(communityId, targetUserId);
-    if (targetRole !== "COACH") throw new AppError(404, "COMMUNITY_COACH_NOT_FOUND", "Active Coach not found");
+    if (targetRole !== "COACH")
+      throw new AppError(404, "COMMUNITY_COACH_NOT_FOUND", "Active Coach not found");
     await this.repository.revokeCoach(communityId, targetUserId);
     return { ok: true };
   }
@@ -76,11 +95,13 @@ export class CommunityService {
 
   async requireFounder(communityId: string, userId: string): Promise<void> {
     const role = await this.repository.managerRole(communityId, userId);
-    if (role !== "FOUNDER") throw new AppError(403, "COMMUNITY_FOUNDER_REQUIRED", "Founder access required");
+    if (role !== "FOUNDER")
+      throw new AppError(403, "COMMUNITY_FOUNDER_REQUIRED", "Founder access required");
   }
 
   async requireCoach(communityId: string, userId: string): Promise<void> {
     const role = await this.repository.managerRole(communityId, userId);
-    if (!canManageCommunity(role)) throw new AppError(403, "COMMUNITY_COACH_REQUIRED", "Founder or Coach access required");
+    if (!canManageCommunity(role))
+      throw new AppError(403, "COMMUNITY_COACH_REQUIRED", "Founder or Coach access required");
   }
 }

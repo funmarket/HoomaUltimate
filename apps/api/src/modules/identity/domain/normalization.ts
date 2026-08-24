@@ -7,7 +7,10 @@ export function normalizeEmail(value: string | null | undefined): string | null 
   return normalized ? normalized : null;
 }
 
-export function defaultDisplayName(displayName: string | null | undefined, displayUsername: string): string {
+export function defaultDisplayName(
+  displayName: string | null | undefined,
+  displayUsername: string,
+): string {
   const normalized = displayName?.trim();
   return normalized || displayUsername.trim();
 }

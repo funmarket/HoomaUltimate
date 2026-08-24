@@ -17,7 +17,7 @@ const requiredDirectories = [
   "packages/domain",
   "packages/storage",
   "packages/testing",
-  "packages/ui"
+  "packages/ui",
 ];
 
 test("greenfield workspace owns the locked app/package topology", async () => {
@@ -28,6 +28,7 @@ test("greenfield workspace owns the locked app/package topology", async () => {
 
 test("foundation documentation rejects donor-repository inheritance", async () => {
   const structure = await readFile(path.join(root, "structure.md"), "utf8");
-  assert.match(structure, /new application built from zero/i);
-  assert.match(structure, /No donor migration chain is the target migration chain/i);
+  assert.match(structure, /read-only donors/i);
+  assert.match(structure, /never become runtime dependencies/i);
+  assert.match(structure, /schema authority/i);
 });

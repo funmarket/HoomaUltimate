@@ -2,7 +2,7 @@ import type { PrismaClient } from "@hooma/database";
 import type {
   PlatformAdminAuditEntry,
   PlatformAdminOverview,
-  PlatformAdminRepository
+  PlatformAdminRepository,
 } from "../application/platform-admin.repository.js";
 
 export class PrismaPlatformAdminRepository implements PlatformAdminRepository {
@@ -12,8 +12,8 @@ export class PrismaPlatformAdminRepository implements PlatformAdminRepository {
     return Boolean(
       await this.db.platformRoleAssignment.findFirst({
         where: { userId, role: "PLATFORM_ADMIN", revokedAt: null },
-        select: { id: true }
-      })
+        select: { id: true },
+      }),
     );
   }
 
@@ -21,7 +21,7 @@ export class PrismaPlatformAdminRepository implements PlatformAdminRepository {
     const [users, activePlatformAdmins, auditEntries] = await this.db.$transaction([
       this.db.user.count(),
       this.db.platformRoleAssignment.count({ where: { role: "PLATFORM_ADMIN", revokedAt: null } }),
-      this.db.auditLog.count()
+      this.db.auditLog.count(),
     ]);
     return { users, activePlatformAdmins, auditEntries };
   }
@@ -34,10 +34,10 @@ export class PrismaPlatformAdminRepository implements PlatformAdminRepository {
         action: true,
         entityType: true,
         entityId: true,
-        createdAt: true
+        createdAt: true,
       },
       orderBy: { createdAt: "desc" },
-      take: limit
+      take: limit,
     });
   }
 }

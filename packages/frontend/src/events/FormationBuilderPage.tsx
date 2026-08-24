@@ -5,36 +5,60 @@ import { useEventApi } from "./useEventApi";
 
 type Format = "FIVE_V_FIVE" | "SEVEN_V_SEVEN" | "ELEVEN_V_ELEVEN";
 type Team = "A" | "B";
-type Slot = { id: string; team: Team; position: string; label: string; x: number; y: number; userId: string | null };
+type Slot = {
+  id: string;
+  team: Team;
+  position: string;
+  label: string;
+  x: number;
+  y: number;
+  userId: string | null;
+};
 
 const FORMATIONS: Record<Format, Array<{ position: string; x: number; y: number }>> = {
   FIVE_V_FIVE: [
-    { position: "GK", x: 50, y: 88 }, { position: "CB", x: 50, y: 66 }, { position: "W", x: 24, y: 40 },
-    { position: "W", x: 76, y: 40 }, { position: "ST", x: 50, y: 15 }
+    { position: "GK", x: 50, y: 88 },
+    { position: "CB", x: 50, y: 66 },
+    { position: "W", x: 24, y: 40 },
+    { position: "W", x: 76, y: 40 },
+    { position: "ST", x: 50, y: 15 },
   ],
   SEVEN_V_SEVEN: [
-    { position: "GK", x: 50, y: 90 }, { position: "CB", x: 50, y: 70 }, { position: "FB", x: 20, y: 60 },
-    { position: "FB", x: 80, y: 60 }, { position: "CM", x: 50, y: 42 }, { position: "W", x: 25, y: 20 },
-    { position: "W", x: 75, y: 20 }
+    { position: "GK", x: 50, y: 90 },
+    { position: "CB", x: 50, y: 70 },
+    { position: "FB", x: 20, y: 60 },
+    { position: "FB", x: 80, y: 60 },
+    { position: "CM", x: 50, y: 42 },
+    { position: "W", x: 25, y: 20 },
+    { position: "W", x: 75, y: 20 },
   ],
   ELEVEN_V_ELEVEN: [
-    { position: "GK", x: 50, y: 92 }, { position: "FB", x: 14, y: 72 }, { position: "CB", x: 38, y: 78 },
-    { position: "CB", x: 62, y: 78 }, { position: "FB", x: 86, y: 72 }, { position: "DM", x: 50, y: 58 },
-    { position: "CM", x: 30, y: 43 }, { position: "CM", x: 70, y: 43 }, { position: "W", x: 18, y: 20 },
-    { position: "ST", x: 50, y: 12 }, { position: "W", x: 82, y: 20 }
-  ]
+    { position: "GK", x: 50, y: 92 },
+    { position: "FB", x: 14, y: 72 },
+    { position: "CB", x: 38, y: 78 },
+    { position: "CB", x: 62, y: 78 },
+    { position: "FB", x: 86, y: 72 },
+    { position: "DM", x: 50, y: 58 },
+    { position: "CM", x: 30, y: 43 },
+    { position: "CM", x: 70, y: 43 },
+    { position: "W", x: 18, y: 20 },
+    { position: "ST", x: 50, y: 12 },
+    { position: "W", x: 82, y: 20 },
+  ],
 };
 
 function makeSlots(format: Format): Slot[] {
-  return (["A", "B"] as const).flatMap((team) => FORMATIONS[format].map((slot, index) => ({
-    id: `${team}-${index}`,
-    team,
-    position: slot.position,
-    label: slot.position,
-    x: slot.x,
-    y: slot.y,
-    userId: null
-  })));
+  return (["A", "B"] as const).flatMap((team) =>
+    FORMATIONS[format].map((slot, index) => ({
+      id: `${team}-${index}`,
+      team,
+      position: slot.position,
+      label: slot.position,
+      x: slot.x,
+      y: slot.y,
+      userId: null,
+    })),
+  );
 }
 
 function playerName(player: FormationRosterPlayer): string {
@@ -63,14 +87,18 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
         const [eventResult, rosterResult, formationResult] = await Promise.all([
           eventApi.publicDetail(eventId),
           eventApi.formationRoster(eventId),
-          eventApi.formations(eventId)
+          eventApi.formations(eventId),
         ]);
         if (!active) return;
         setEvent(eventResult);
         setPlayers(rosterResult.players);
         setFormations(formationResult);
         const eventFormat = eventResult.playDetails?.format;
-        if (eventFormat === "FIVE_V_FIVE" || eventFormat === "SEVEN_V_SEVEN" || eventFormat === "ELEVEN_V_ELEVEN") {
+        if (
+          eventFormat === "FIVE_V_FIVE" ||
+          eventFormat === "SEVEN_V_SEVEN" ||
+          eventFormat === "ELEVEN_V_ELEVEN"
+        ) {
           setFormat(eventFormat);
           setSlots(makeSlots(eventFormat));
         }
@@ -79,10 +107,15 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
       }
     }
     void load();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [eventApi, eventId, protectedError]);
 
-  const assigned = useMemo(() => new Set(slots.map((slot) => slot.userId).filter((id): id is string => Boolean(id))), [slots]);
+  const assigned = useMemo(
+    () => new Set(slots.map((slot) => slot.userId).filter((id): id is string => Boolean(id))),
+    [slots],
+  );
   const byId = useMemo(() => new Map(players.map((player) => [player.userId, player])), [players]);
 
   function changeFormat(next: Format) {
@@ -92,11 +125,13 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
   }
 
   function assign(slotId: string, userId: string) {
-    setSlots((previous) => previous.map((slot) => {
-      if (slot.id === slotId) return { ...slot, userId: userId || null };
-      if (userId && slot.userId === userId) return { ...slot, userId: null };
-      return slot;
-    }));
+    setSlots((previous) =>
+      previous.map((slot) => {
+        if (slot.id === slotId) return { ...slot, userId: userId || null };
+        if (userId && slot.userId === userId) return { ...slot, userId: null };
+        return slot;
+      }),
+    );
   }
 
   async function save() {
@@ -108,7 +143,14 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
         name: name.trim(),
         format,
         published,
-        slots: slots.map(({ team, position, label, x, y, userId }) => ({ team, position, label, x, y, userId }))
+        slots: slots.map(({ team, position, label, x, y, userId }) => ({
+          team,
+          position,
+          label,
+          x,
+          y,
+          userId,
+        })),
       });
       setFormations(await eventApi.formations(eventId));
       setSuccess("Formation saved.");
@@ -122,18 +164,43 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
   return (
     <section className="formation-builder">
       <header className="formation-builder__header">
-        <div><p className="eyebrow">Tactical board</p><h1>Formation builder</h1><p>{event?.title || "Pickup match"}</p></div>
+        <div>
+          <p className="eyebrow">Tactical board</p>
+          <h1>Formation builder</h1>
+          <p>{event?.title || "Pickup match"}</p>
+        </div>
         <a href={`/events/${eventId}`}>Back to match</a>
       </header>
 
       <div className="formation-toolbar panel">
-        <label>Formation name<input value={name} onChange={(e) => setName(e.target.value)} maxLength={80} /></label>
+        <label>
+          Formation name
+          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={80} />
+        </label>
         <div className="formation-format-picker" aria-label="Match format">
           {(["FIVE_V_FIVE", "SEVEN_V_SEVEN", "ELEVEN_V_ELEVEN"] as const).map((candidate) => (
-            <button type="button" key={candidate} aria-pressed={format === candidate} onClick={() => changeFormat(candidate)}>{candidate === "FIVE_V_FIVE" ? "5v5" : candidate === "SEVEN_V_SEVEN" ? "7v7" : "11v11"}</button>
+            <button
+              type="button"
+              key={candidate}
+              aria-pressed={format === candidate}
+              onClick={() => changeFormat(candidate)}
+            >
+              {candidate === "FIVE_V_FIVE"
+                ? "5v5"
+                : candidate === "SEVEN_V_SEVEN"
+                  ? "7v7"
+                  : "11v11"}
+            </button>
           ))}
         </div>
-        <label className="formation-publish"><input type="checkbox" checked={published} onChange={(e) => setPublished(e.target.checked)} /> Publish to participants</label>
+        <label className="formation-publish">
+          <input
+            type="checkbox"
+            checked={published}
+            onChange={(e) => setPublished(e.target.checked)}
+          />{" "}
+          Publish to participants
+        </label>
       </div>
 
       <div className="formation-pitches">
@@ -143,36 +210,94 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
             <div className="formation-pitch">
               <span className="formation-pitch__half" aria-hidden="true" />
               <span className="formation-pitch__circle" aria-hidden="true" />
-              {slots.filter((slot) => slot.team === team).map((slot) => {
-                const player = slot.userId ? byId.get(slot.userId) : undefined;
-                return (
-                  <label className="formation-slot" key={slot.id} style={{ left: `${slot.x}%`, top: `${slot.y}%` }}>
-                    <span className="formation-slot__marker">{player ? playerName(player).split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase() : slot.label}</span>
-                    <select aria-label={`Team ${team} ${slot.position}`} value={slot.userId || ""} onChange={(e) => assign(slot.id, e.target.value)}>
-                      <option value="">{slot.position}</option>
-                      {players.map((candidate) => <option value={candidate.userId} key={candidate.userId} disabled={assigned.has(candidate.userId) && candidate.userId !== slot.userId}>{playerName(candidate)}</option>)}
-                    </select>
-                  </label>
-                );
-              })}
+              {slots
+                .filter((slot) => slot.team === team)
+                .map((slot) => {
+                  const player = slot.userId ? byId.get(slot.userId) : undefined;
+                  return (
+                    <label
+                      className="formation-slot"
+                      key={slot.id}
+                      style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
+                    >
+                      <span className="formation-slot__marker">
+                        {player
+                          ? playerName(player)
+                              .split(/\s+/)
+                              .map((part) => part[0])
+                              .join("")
+                              .slice(0, 2)
+                              .toUpperCase()
+                          : slot.label}
+                      </span>
+                      <select
+                        aria-label={`Team ${team} ${slot.position}`}
+                        value={slot.userId || ""}
+                        onChange={(e) => assign(slot.id, e.target.value)}
+                      >
+                        <option value="">{slot.position}</option>
+                        {players.map((candidate) => (
+                          <option
+                            value={candidate.userId}
+                            key={candidate.userId}
+                            disabled={
+                              assigned.has(candidate.userId) && candidate.userId !== slot.userId
+                            }
+                          >
+                            {playerName(candidate)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  );
+                })}
             </div>
           </section>
         ))}
       </div>
 
       <section className="formation-roster panel">
-        <div><p className="eyebrow">Confirmed roster</p><h2>Available players</h2></div>
+        <div>
+          <p className="eyebrow">Confirmed roster</p>
+          <h2>Available players</h2>
+        </div>
         <div className="formation-roster__list">
-          {players.map((player) => <span key={player.userId} data-assigned={assigned.has(player.userId)}>{playerName(player)}{player.status === "ATTENDED" ? " · checked in" : ""}</span>)}
+          {players.map((player) => (
+            <span key={player.userId} data-assigned={assigned.has(player.userId)}>
+              {playerName(player)}
+              {player.status === "ATTENDED" ? " · checked in" : ""}
+            </span>
+          ))}
           {!players.length ? <p className="muted">No confirmed players yet.</p> : null}
         </div>
       </section>
 
-      <button className="formation-save" type="button" disabled={saving || !name.trim()} onClick={() => void save()}>{saving ? "Saving…" : "Save formation"}</button>
+      <button
+        className="formation-save"
+        type="button"
+        disabled={saving || !name.trim()}
+        onClick={() => void save()}
+      >
+        {saving ? "Saving…" : "Save formation"}
+      </button>
       {success ? <p className="success">{success}</p> : null}
       {error ? <p className="error">{error}</p> : null}
 
-      {formations.length ? <section className="formation-history"><p className="eyebrow">Saved formations</p>{formations.map((formation) => <article className="panel" key={formation.id}><strong>{formation.name}</strong><span>{formation.format.replaceAll("_", " ")} · {formation.slots.filter((slot) => slot.userId).length} assigned · {formation.published ? "Published" : "Draft"}</span></article>)}</section> : null}
+      {formations.length ? (
+        <section className="formation-history">
+          <p className="eyebrow">Saved formations</p>
+          {formations.map((formation) => (
+            <article className="panel" key={formation.id}>
+              <strong>{formation.name}</strong>
+              <span>
+                {formation.format.replaceAll("_", " ")} ·{" "}
+                {formation.slots.filter((slot) => slot.userId).length} assigned ·{" "}
+                {formation.published ? "Published" : "Draft"}
+              </span>
+            </article>
+          ))}
+        </section>
+      ) : null}
     </section>
   );
 }

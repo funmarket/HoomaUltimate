@@ -1,5 +1,9 @@
 import { Prisma, type PrismaClient } from "@hooma/database";
-import type { WhistleContextType, WhistleMetadataRecord, WhistleRepository } from "../application/whistle.repository.js";
+import type {
+  WhistleContextType,
+  WhistleMetadataRecord,
+  WhistleRepository,
+} from "../application/whistle.repository.js";
 
 type MetadataRow = {
   id: string;
@@ -22,10 +26,11 @@ function rowToRecord(row: MetadataRow): WhistleMetadataRecord {
     createdAt: row.createdAt,
     expiresAt: row.expiresAt,
     author: {
-      presentation: row.displayName && row.username
-        ? { displayName: row.displayName, username: row.username, photoUrl: row.photoUrl }
-        : null
-    }
+      presentation:
+        row.displayName && row.username
+          ? { displayName: row.displayName, username: row.username, photoUrl: row.photoUrl }
+          : null,
+    },
   };
 }
 
@@ -51,7 +56,9 @@ export class PrismaWhistleRepository implements WhistleRepository {
     const { start, end } = utcDayBounds(input.dayKey);
     return this.db.$transaction(async (tx) => {
       const lockKey = `whistle-quota:${input.authorUserId}:${input.dayKey}`;
-      await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
+      await tx.$executeRaw(
+        Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`,
+      );
       const countRows = await tx.$queryRaw<{ count: bigint }[]>(Prisma.sql`
         SELECT COUNT(*)::bigint AS count
         FROM "WhistleMetadata"
@@ -83,7 +90,12 @@ export class PrismaWhistleRepository implements WhistleRepository {
     return Number(rows[0]?.count ?? 0n);
   }
 
-  async listActive(contextType: WhistleContextType, contextId: string, now: Date, limit: number): Promise<WhistleMetadataRecord[]> {
+  async listActive(
+    contextType: WhistleContextType,
+    contextId: string,
+    now: Date,
+    limit: number,
+  ): Promise<WhistleMetadataRecord[]> {
     const rows = await this.db.$queryRaw<MetadataRow[]>(Prisma.sql`
       SELECT w."id", w."authorUserId", w."contextType", w."contextId", w."createdAt", w."expiresAt",
         p."displayName", p."username", p."photoUrl"

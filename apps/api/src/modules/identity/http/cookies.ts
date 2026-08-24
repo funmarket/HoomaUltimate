@@ -16,7 +16,7 @@ export function setSessionCookie(response: Response, config: ApiConfig, token: s
     secure: config.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: config.SESSION_TTL_HOURS * 60 * 60 * 1000
+    maxAge: config.SESSION_TTL_HOURS * 60 * 60 * 1000,
   });
 }
 
@@ -25,6 +25,6 @@ export function clearSessionCookie(response: Response, config: ApiConfig): void 
     httpOnly: true,
     secure: config.NODE_ENV === "production",
     sameSite: "lax",
-    path: "/"
+    path: "/",
   });
 }

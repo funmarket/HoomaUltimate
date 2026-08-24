@@ -21,12 +21,16 @@ const required = [
   "packages/storage/package.json",
   "packages/testing/package.json",
   "packages/ui/package.json",
-  ".github/workflows/ci.yml"
+  ".github/workflows/ci.yml",
 ];
 
 const missing = [];
 for (const item of required) {
-  try { await access(path.join(root, item)); } catch { missing.push(item); }
+  try {
+    await access(path.join(root, item));
+  } catch {
+    missing.push(item);
+  }
 }
 if (missing.length > 0) {
   console.error(`Deploy preflight failed. Missing: ${missing.join(", ")}`);
@@ -55,7 +59,9 @@ for (const key of ["TELEGRAM_BOT_TOKEN", "MINI_APP_URL", "DATABASE_URL", "REDIS_
 
 const rootEntries = await readdir(root);
 if (rootEntries.includes(".env")) {
-  console.error("Deploy preflight failed. A real .env file must not be committed at repository root.");
+  console.error(
+    "Deploy preflight failed. A real .env file must not be committed at repository root.",
+  );
   process.exit(1);
 }
 

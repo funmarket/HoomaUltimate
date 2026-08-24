@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { TeamCapabilityInput, TeamChallengeCreateInput } from "@hooma/contracts";
 import { useHoomaFrontend } from "../context";
-import type { ManagedTeam, TeamChallengeSummary, TeamControlDetail } from "../api";
+import type { ManagedTeam, TeamChallengeSummary, TeamControlDetail, createHoomaApi } from "../api";
 
 const CAPABILITIES: readonly TeamCapabilityInput[] = [
   "EDIT_TEAM",
@@ -96,7 +96,10 @@ export function CoachControlRoomPage() {
         </div>
         <label>
           Managed Team
-          <select value={selectedTeamId} onChange={(event) => setSelectedTeamId(event.target.value)}>
+          <select
+            value={selectedTeamId}
+            onChange={(event) => setSelectedTeamId(event.target.value)}
+          >
             {teams.map((candidate) => (
               <option key={candidate.id} value={candidate.id}>
                 {candidate.name}
@@ -149,7 +152,7 @@ export function CoachControlRoomPage() {
   );
 }
 
-type TeamApi = ReturnType<typeof import("../api").createHoomaApi>["teams"];
+type TeamApi = ReturnType<typeof createHoomaApi>["teams"];
 type RunAction = (
   action: () => Promise<unknown>,
   success: string,
@@ -163,9 +166,7 @@ function TeamSettingsCard({ team }: { team: TeamControlDetail }) {
       <div>
         <p className="eyebrow">TEAM IDENTITY</p>
         <h3>Edit Team</h3>
-        <p>
-          Update the Team name, location, motto, crest and banner on a dedicated settings page.
-        </p>
+        <p>Update the Team name, location, motto, crest and banner on a dedicated settings page.</p>
       </div>
       <a className="coach-primary-action" href={`/teams/${team.id}/edit`}>
         Edit Team
@@ -426,7 +427,13 @@ function ChallengeBoard({
   );
 }
 
-function ChallengeRow({ challenge, actions }: { challenge: TeamChallengeSummary; actions: ReactNode }) {
+function ChallengeRow({
+  challenge,
+  actions,
+}: {
+  challenge: TeamChallengeSummary;
+  actions: ReactNode;
+}) {
   return (
     <article className="challenge-row">
       <div>
@@ -444,5 +451,8 @@ function ChallengeRow({ challenge, actions }: { challenge: TeamChallengeSummary;
 }
 
 function humanize(value: string) {
-  return value.toLowerCase().replaceAll("_", " ").replace(/^./, (letter) => letter.toUpperCase());
+  return value
+    .toLowerCase()
+    .replaceAll("_", " ")
+    .replace(/^./, (letter) => letter.toUpperCase());
 }

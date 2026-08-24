@@ -105,7 +105,14 @@ export function HoomaStampIcon({ className, size = 48, title, ...props }: HoomaN
     >
       {title ? <title>{title}</title> : null}
       <circle cx="24" cy="24" r="21" stroke="currentColor" strokeWidth="2" />
-      <circle cx="24" cy="24" r="16.5" stroke="currentColor" strokeWidth="1" strokeDasharray="2 2" />
+      <circle
+        cx="24"
+        cy="24"
+        r="16.5"
+        stroke="currentColor"
+        strokeWidth="1"
+        strokeDasharray="2 2"
+      />
       <path d="m24 16 5 3.6-1.9 5.9h-6.2L19 19.6 24 16Z" fill="currentColor" />
       <path
         d="M16 12.5h-3M35 12.5h-3M15 35.5h-3M36 35.5h-3"
@@ -113,7 +120,12 @@ export function HoomaStampIcon({ className, size = 48, title, ...props }: HoomaN
         strokeWidth="1.6"
         strokeLinecap="round"
       />
-      <path d="M11.5 24h3M33.5 24h3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path
+        d="M11.5 24h3M33.5 24h3"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
@@ -143,7 +155,12 @@ export function PitchIcon({ className, size = 24, title, ...props }: HoomaNavIco
         strokeWidth="1.45"
         strokeLinejoin="round"
       />
-      <path d="M5.5 7.8V5.9M18.5 7.8V5.9" stroke="currentColor" strokeWidth="1.45" strokeLinecap="round" />
+      <path
+        d="M5.5 7.8V5.9M18.5 7.8V5.9"
+        stroke="currentColor"
+        strokeWidth="1.45"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }

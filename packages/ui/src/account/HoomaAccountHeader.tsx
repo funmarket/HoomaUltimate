@@ -41,7 +41,10 @@ function SettingsIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <circle cx="12" cy="12" r="3" />
-      <path d="M19 13.5v-3l-2.1-.7a7.8 7.8 0 0 0-.8-1.9l1-2-2.1-2.1-2 1a7.8 7.8 0 0 0-1.9-.8L10.5 2h-3l-.7 2.1a7.8 7.8 0 0 0-1.9.8l-2-1L.8 6l1 2a7.8 7.8 0 0 0-.8 1.9L-1 10.5v3l2.1.7a7.8 7.8 0 0 0 .8 1.9l-1 2L3 20.2l2-1a7.8 7.8 0 0 0 1.9.8l.7 2.1h3l.7-2.1a7.8 7.8 0 0 0 1.9-.8l2 1 2.1-2.1-1-2a7.8 7.8 0 0 0 .8-1.9l1.9-.7Z" transform="translate(2) scale(.83)" />
+      <path
+        d="M19 13.5v-3l-2.1-.7a7.8 7.8 0 0 0-.8-1.9l1-2-2.1-2.1-2 1a7.8 7.8 0 0 0-1.9-.8L10.5 2h-3l-.7 2.1a7.8 7.8 0 0 0-1.9.8l-2-1L.8 6l1 2a7.8 7.8 0 0 0-.8 1.9L-1 10.5v3l2.1.7a7.8 7.8 0 0 0 .8 1.9l-1 2L3 20.2l2-1a7.8 7.8 0 0 0 1.9.8l.7 2.1h3l.7-2.1a7.8 7.8 0 0 0 1.9-.8l2 1 2.1-2.1-1-2a7.8 7.8 0 0 0 .8-1.9l1.9-.7Z"
+        transform="translate(2) scale(.83)"
+      />
     </svg>
   );
 }
@@ -67,7 +70,7 @@ function MenuRow({
   icon,
   title,
   subtitle,
-  onClick
+  onClick,
 }: {
   readonly icon: ReactNode;
   readonly title: string;
@@ -81,7 +84,9 @@ function MenuRow({
         <strong>{title}</strong>
         {subtitle ? <span>{subtitle}</span> : null}
       </span>
-      <span className="hooma-account-menu__chevron"><ChevronIcon /></span>
+      <span className="hooma-account-menu__chevron">
+        <ChevronIcon />
+      </span>
     </button>
   );
 }
@@ -97,7 +102,7 @@ export function HoomaAccountHeader({
   onSettings,
   onAdmin,
   onSignOut,
-  notificationControl
+  notificationControl,
 }: HoomaAccountHeaderProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -137,7 +142,7 @@ export function HoomaAccountHeader({
             aria-label={user ? "Profile and account" : "Sign in or create account"}
             aria-haspopup={user ? "menu" : undefined}
             aria-expanded={user ? open : undefined}
-            onClick={() => user ? setOpen((value) => !value) : onGuestProfile()}
+            onClick={() => (user ? setOpen((value) => !value) : onGuestProfile())}
           >
             {user?.photoUrl ? <img src={user.photoUrl} alt="" /> : <UserIcon />}
           </button>
@@ -148,7 +153,9 @@ export function HoomaAccountHeader({
                 {user.photoUrl ? (
                   <img src={user.photoUrl} alt="" />
                 ) : (
-                  <span className="hooma-account-menu__avatar-fallback">{user.displayName.slice(0, 1).toUpperCase()}</span>
+                  <span className="hooma-account-menu__avatar-fallback">
+                    {user.displayName.slice(0, 1).toUpperCase()}
+                  </span>
                 )}
                 <span>
                   <strong>{user.displayName}</strong>
@@ -193,7 +200,11 @@ export function HoomaAccountHeader({
               ) : null}
 
               {onSignOut ? (
-                <button type="button" className="hooma-account-menu__signout" onClick={() => navigate(onSignOut)}>
+                <button
+                  type="button"
+                  className="hooma-account-menu__signout"
+                  onClick={() => navigate(onSignOut)}
+                >
                   Sign out
                 </button>
               ) : null}

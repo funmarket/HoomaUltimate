@@ -19,7 +19,7 @@ export type EventErrorCode =
 export class EventError extends Error {
   constructor(
     public readonly code: EventErrorCode,
-    message: string
+    message: string,
   ) {
     super(message);
     this.name = "EventError";

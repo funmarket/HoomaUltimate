@@ -45,13 +45,18 @@ export function TeamDetailPage({ teamId }: { readonly teamId: string }) {
 
   const roleByUser = useMemo(
     () => new Map(team?.responsibilities.map((row) => [row.userId, row.role] as const) ?? []),
-    [team]
+    [team],
   );
   const canManage = managedTeams.some((candidate) => candidate.id === teamId);
   const publishedLineup = team?.lineups?.[0] ?? null;
 
   if (error) return <div className="error-box">{error}</div>;
-  if (loading || !team) return <div className="state-card"><strong>Loading Team…</strong></div>;
+  if (loading || !team)
+    return (
+      <div className="state-card">
+        <strong>Loading Team…</strong>
+      </div>
+    );
 
   return (
     <div className="page team-profile-page">
@@ -65,8 +70,14 @@ export function TeamDetailPage({ teamId }: { readonly teamId: string }) {
           <small>{[team.houma, team.city].filter(Boolean).join(" · ") || "Location TBA"}</small>
         </div>
         <div className="team-profile-actions">
-          {canManage ? <a className="button" href="/teams/control">Coach Control Room</a> : null}
-          <a className="button secondary" href="/teams">Back to Teams</a>
+          {canManage ? (
+            <a className="button" href="/teams/control">
+              Coach Control Room
+            </a>
+          ) : null}
+          <a className="button secondary" href="/teams">
+            Back to Teams
+          </a>
         </div>
       </section>
 
@@ -81,42 +92,62 @@ export function TeamDetailPage({ teamId }: { readonly teamId: string }) {
           <span className="eyebrow">SQUAD</span>
           <h2>Active players</h2>
           <div className="list">
-            {team.players.length
-              ? team.players.map((player) => {
-                  const presentation = player.user.presentation;
-                  const role = roleByUser.get(player.userId) ?? "PLAYER";
-                  return (
-                    <div className="list-row" key={player.userId}>
-                      <div className="team-player-identity">
-                        <strong>{presentation?.displayName ?? "Player"}</strong>
-                        <small>{presentation?.username ? `@${presentation.username}` : "HOOMA player"}</small>
-                      </div>
-                      <span className={role === "COACH" ? "chip gold" : role === "ASSISTANT" ? "chip selected" : "chip"}>{role}</span>
+            {team.players.length ? (
+              team.players.map((player) => {
+                const presentation = player.user.presentation;
+                const role = roleByUser.get(player.userId) ?? "PLAYER";
+                return (
+                  <div className="list-row" key={player.userId}>
+                    <div className="team-player-identity">
+                      <strong>{presentation?.displayName ?? "Player"}</strong>
+                      <small>
+                        {presentation?.username ? `@${presentation.username}` : "HOOMA player"}
+                      </small>
                     </div>
-                  );
-                })
-              : <p className="muted">No active players yet.</p>}
+                    <span
+                      className={
+                        role === "COACH"
+                          ? "chip gold"
+                          : role === "ASSISTANT"
+                            ? "chip selected"
+                            : "chip"
+                      }
+                    >
+                      {role}
+                    </span>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="muted">No active players yet.</p>
+            )}
           </div>
         </section>
         <section className="panel">
           <span className="eyebrow">LEADERSHIP</span>
           <h2>Responsibilities</h2>
           <div className="list">
-            {team.responsibilities.length
-              ? team.responsibilities.map((responsibility) => (
-                  <div className="list-row" key={`${responsibility.userId}-${responsibility.role}`}>
-                    <div className="team-player-identity">
-                      <strong>{responsibility.user.presentation?.displayName ?? "Team leader"}</strong>
-                      <small>
-                        {responsibility.user.presentation?.username
-                          ? `@${responsibility.user.presentation.username}`
-                          : "HOOMA member"}
-                      </small>
-                    </div>
-                    <span className={responsibility.role === "COACH" ? "chip gold" : "chip selected"}>{responsibility.role}</span>
+            {team.responsibilities.length ? (
+              team.responsibilities.map((responsibility) => (
+                <div className="list-row" key={`${responsibility.userId}-${responsibility.role}`}>
+                  <div className="team-player-identity">
+                    <strong>
+                      {responsibility.user.presentation?.displayName ?? "Team leader"}
+                    </strong>
+                    <small>
+                      {responsibility.user.presentation?.username
+                        ? `@${responsibility.user.presentation.username}`
+                        : "HOOMA member"}
+                    </small>
                   </div>
-                ))
-              : <p className="muted">No active Team responsibilities are published.</p>}
+                  <span className={responsibility.role === "COACH" ? "chip gold" : "chip selected"}>
+                    {responsibility.role}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p className="muted">No active Team responsibilities are published.</p>
+            )}
           </div>
           {team.community ? (
             <div className="team-community-note">
@@ -131,7 +162,8 @@ export function TeamDetailPage({ teamId }: { readonly teamId: string }) {
         <span className="eyebrow">PUBLIC TEAM</span>
         <h2>Challenge this side</h2>
         <p className="muted">
-          Challenge creation and Team management remain protected member actions. Server-side Team capability rules decide who can act.
+          Challenge creation and Team management remain protected member actions. Server-side Team
+          capability rules decide who can act.
         </p>
         <a className="button secondary" href={canManage ? "/teams/control" : "/teams"}>
           {canManage ? "Open Team controls" : "Browse opponents"}

@@ -13,10 +13,16 @@ export function requireAuthentication(service: IdentityService, config: ApiConfi
       const authorization = request.header("authorization") ?? "";
       const [scheme, rawInitData] = authorization.split(" ", 2);
       const hasTelegramCredential = scheme?.toLowerCase() === "tma";
-      const telegram = await service.resolveTelegram(hasTelegramCredential ? rawInitData : undefined);
+      const telegram = await service.resolveTelegram(
+        hasTelegramCredential ? rawInitData : undefined,
+      );
 
       if (hasTelegramCredential && telegram.kind === "invalid") {
-        throw new AppError(401, "TELEGRAM_AUTH_INVALID", "Invalid or expired Telegram authentication");
+        throw new AppError(
+          401,
+          "TELEGRAM_AUTH_INVALID",
+          "Invalid or expired Telegram authentication",
+        );
       }
 
       const rawSession = readCookie(request, config.SESSION_COOKIE_NAME);
@@ -27,7 +33,7 @@ export function requireAuthentication(service: IdentityService, config: ApiConfi
         throw new AppError(
           401,
           "AUTH_CONFLICT",
-          "Telegram and Web credentials resolve to different users"
+          "Telegram and Web credentials resolve to different users",
         );
       }
 
@@ -43,7 +49,7 @@ export function requireAuthentication(service: IdentityService, config: ApiConfi
 
       const transports = [
         ...(webUserId ? (["web"] as const) : []),
-        ...(telegramUserId ? (["telegram"] as const) : [])
+        ...(telegramUserId ? (["telegram"] as const) : []),
       ];
       (request as AuthenticatedRequest).auth = { userId, transports };
       next();

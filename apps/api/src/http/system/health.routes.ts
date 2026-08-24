@@ -8,7 +8,7 @@ export function createHealthRouter(): Router {
     const body: HealthResponse = {
       status: "ok",
       service: "api",
-      version: process.env.npm_package_version ?? "0.1.0"
+      version: process.env.npm_package_version ?? "0.1.0",
     };
     response.status(200).json(body);
   });

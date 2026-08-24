@@ -7,7 +7,7 @@ export const TEST_PERSONAS = [
   "ultras-leader",
   "gamer-squad-leader",
   "place-owner",
-  "platform-admin"
+  "platform-admin",
 ] as const;
 
 export type TestPersona = (typeof TEST_PERSONAS)[number];

@@ -24,7 +24,7 @@ export async function hashPassword(password: string): Promise<string> {
     type: argon2.argon2id,
     memoryCost: 19456,
     timeCost: 2,
-    parallelism: 1
+    parallelism: 1,
   });
 }
 
@@ -47,7 +47,7 @@ export function hashSessionToken(token: string): string {
 export function validateTelegramInitData(
   rawInitData: string,
   botToken: string,
-  expiresInSeconds: number
+  expiresInSeconds: number,
 ): TelegramIdentityInput {
   validate(rawInitData, botToken, { expiresIn: expiresInSeconds });
   const data = deepSnakeToCamelObjKeys(parse(rawInitData));
@@ -61,6 +61,6 @@ export function validateTelegramInitData(
     ...(user.lastName ? { lastName: user.lastName } : {}),
     ...(user.photoUrl ? { photoUrl: user.photoUrl } : {}),
     ...(user.languageCode ? { languageCode: user.languageCode } : {}),
-    ...(user.isPremium !== undefined ? { isPremium: user.isPremium } : {})
+    ...(user.isPremium !== undefined ? { isPremium: user.isPremium } : {}),
   };
 }

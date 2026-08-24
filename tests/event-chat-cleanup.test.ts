@@ -11,14 +11,14 @@ test("worker deletes expired Event chat messages and closed rooms using one clea
       deleteMany: async ({ where }: { where: { expiresAt: { lte: Date } } }) => {
         seen.push(where.expiresAt.lte);
         return { count: 7 };
-      }
+      },
     },
     eventChatRoom: {
       deleteMany: async ({ where }: { where: { closesAt: { lte: Date } } }) => {
         seen.push(where.closesAt.lte);
         return { count: 2 };
-      }
-    }
+      },
+    },
   } as unknown as EventChatCleanupDatabase;
 
   const result = await cleanupExpiredEventChat(database, now);

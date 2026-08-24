@@ -18,8 +18,9 @@ test("Coach Control Room is Team management, not global Admin", async () => {
     "MANAGE_LINEUP",
     "CREATE_CHALLENGE",
     "RESPOND_TO_CHALLENGE",
-    "MANAGE_TEAM_EVENTS"
-  ]) assert.match(page, new RegExp(capability));
+    "MANAGE_TEAM_EVENTS",
+  ])
+    assert.match(page, new RegExp(capability));
 });
 
 test("Team lineup builder is a dedicated Team-scoped page, not embedded in Coach Control Room", async () => {
@@ -44,8 +45,9 @@ test("Coach Control Room and lineup page consume protected shared Team APIs rath
     "/api/v1/teams/challenges/incoming",
     "/api/v1/teams/challenges/outgoing",
     "/assistants",
-    "/lineups/current"
-  ]) assert.match(client, new RegExp(path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    "/lineups/current",
+  ])
+    assert.match(client, new RegExp(path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.doesNotMatch(client, /@hooma\/database|@prisma\/client/);
 });
 
@@ -53,7 +55,10 @@ test("Team lineup separates Formation from match format and offers standard plus
   const manager = await readFile(lineupManagerPath, "utf8");
   const contracts = await readFile("packages/contracts/src/index.ts", "utf8");
   const schema = await readFile("packages/database/prisma/schema.prisma", "utf8");
-  const repository = await readFile("apps/api/src/modules/teams/infrastructure/prisma-team.repository.ts", "utf8");
+  const repository = await readFile(
+    "apps/api/src/modules/teams/infrastructure/prisma-team.repository.ts",
+    "utf8",
+  );
 
   for (const formation of ["4-3-3", "4-4-2", "4-2-3-1", "3-5-2", "3-4-3"]) {
     assert.match(contracts, new RegExp(formation.replaceAll("-", "\\-")));
@@ -63,9 +68,10 @@ test("Team lineup separates Formation from match format and offers standard plus
   assert.match(contracts, /formation: teamFormationSchema/);
   assert.match(contracts, /matchFormat: footballFormatSchema/);
   assert.match(contracts, /FOOTBALL_FORMAT_PLAYER_COUNTS/);
-  assert.match(schema, /formation\s+String/);
-  assert.match(schema, /matchFormat\s+FootballFormat/);
-  assert.doesNotMatch(schema, /model TeamLineup \{[\s\S]*?\n\s+format\s+FootballFormat/);
+  const teamLineupModel = schema.match(/model TeamLineup \{[\s\S]*?\n\}/)?.[0] ?? "";
+  assert.match(teamLineupModel, /formation\s+String/);
+  assert.match(teamLineupModel, /matchFormat\s+FootballFormat/);
+  assert.doesNotMatch(teamLineupModel, /\n\s+format\s+FootballFormat/);
   assert.match(repository, /formation: input\.formation/);
   assert.match(repository, /matchFormat: input\.matchFormat/);
 });
@@ -75,8 +81,8 @@ test("Team lineup management uses TeamPlayer identity and resumable current stat
   const lineupPage = await readFile(lineupPagePath, "utf8");
   const schema = await readFile("packages/database/prisma/schema.prisma", "utf8");
 
-  assert.match(manager, /api\.currentLineup\(team\.id\)/);
-  assert.match(manager, /api\.saveCurrentLineup\(team\.id, input\)/);
+  assert.match(manager, /api\s*\.\s*currentLineup\(team\.id\)/);
+  assert.match(manager, /api\s*\.\s*saveCurrentLineup\(team\.id, input\)/);
   assert.match(manager, /\[api, team\.id, team\.name\]/);
   assert.match(manager, /let active = true/);
   assert.match(manager, /if \(!active\) return/);

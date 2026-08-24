@@ -14,7 +14,7 @@ const config = loadApiConfig({
   DATABASE_URL: databaseUrl,
   WEB_ORIGIN: "http://localhost:5173",
   TELEGRAM_ORIGIN: "http://localhost:5174",
-  TELEGRAM_BOT_TOKEN: "integration-test-token"
+  TELEGRAM_BOT_TOKEN: "integration-test-token",
 });
 const db = getDatabaseClient();
 
@@ -47,8 +47,8 @@ async function register(base: string) {
       loginUsername: "team_media_owner",
       password: "correct horse battery staple",
       displayUsername: "team_media_owner",
-      displayName: "Team Media Owner"
-    })
+      displayName: "Team Media Owner",
+    }),
   });
   assert.equal(response.status, 201);
   const cookie = response.headers.get("set-cookie");
@@ -74,7 +74,7 @@ test("Team logo and banner URLs persist through creation, editing, and public re
     const communityResponse = await fetch(`${base}/api/v1/communities`, {
       method: "POST",
       headers: memberHeaders(cookie),
-      body: JSON.stringify({ name: "Team Media Houma" })
+      body: JSON.stringify({ name: "Team Media Houma" }),
     });
     assert.equal(communityResponse.status, 201);
     const community = (await communityResponse.json()) as { id: string };
@@ -86,17 +86,24 @@ test("Team logo and banner URLs persist through creation, editing, and public re
         communityId: community.id,
         name: "Media FC",
         badgeUrl: "https://images.example.com/media-fc-logo.png",
-        bannerUrl: "https://images.example.com/media-fc-banner.jpg"
-      })
+        bannerUrl: "https://images.example.com/media-fc-banner.jpg",
+      }),
     });
     assert.equal(createResponse.status, 201);
-    const created = (await createResponse.json()) as { id: string; badgeUrl: string | null; bannerUrl: string | null };
+    const created = (await createResponse.json()) as {
+      id: string;
+      badgeUrl: string | null;
+      bannerUrl: string | null;
+    };
     assert.equal(created.badgeUrl, "https://images.example.com/media-fc-logo.png");
     assert.equal(created.bannerUrl, "https://images.example.com/media-fc-banner.jpg");
 
     const publicCreatedResponse = await fetch(`${base}/api/public/v1/teams/${created.id}`);
     assert.equal(publicCreatedResponse.status, 200);
-    const publicCreated = (await publicCreatedResponse.json()) as { badgeUrl: string | null; bannerUrl: string | null };
+    const publicCreated = (await publicCreatedResponse.json()) as {
+      badgeUrl: string | null;
+      bannerUrl: string | null;
+    };
     assert.equal(publicCreated.badgeUrl, "https://images.example.com/media-fc-logo.png");
     assert.equal(publicCreated.bannerUrl, "https://images.example.com/media-fc-banner.jpg");
 
@@ -105,14 +112,17 @@ test("Team logo and banner URLs persist through creation, editing, and public re
       headers: memberHeaders(cookie),
       body: JSON.stringify({
         badgeUrl: "https://images.example.com/media-fc-logo-v2.png",
-        bannerUrl: "https://images.example.com/media-fc-banner-v2.jpg"
-      })
+        bannerUrl: "https://images.example.com/media-fc-banner-v2.jpg",
+      }),
     });
     assert.equal(updateResponse.status, 200);
 
     const publicUpdatedResponse = await fetch(`${base}/api/public/v1/teams/${created.id}`);
     assert.equal(publicUpdatedResponse.status, 200);
-    const publicUpdated = (await publicUpdatedResponse.json()) as { badgeUrl: string | null; bannerUrl: string | null };
+    const publicUpdated = (await publicUpdatedResponse.json()) as {
+      badgeUrl: string | null;
+      bannerUrl: string | null;
+    };
     assert.equal(publicUpdated.badgeUrl, "https://images.example.com/media-fc-logo-v2.png");
     assert.equal(publicUpdated.bannerUrl, "https://images.example.com/media-fc-banner-v2.jpg");
   } finally {

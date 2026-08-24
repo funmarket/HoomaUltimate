@@ -10,7 +10,7 @@ if (!requestedRoot) throw new Error("Usage: node scripts/serve-static.mjs <direc
 const root = path.resolve(process.cwd(), requestedRoot);
 const port = Number(process.env.PORT ?? 8080);
 const apiOrigin = normalizeOrigin(
-  process.env.HOOMA_API_ORIGIN ?? process.env.RAILWAY_SERVICE_HOOMAULTIMATE_STAGING_URL
+  process.env.HOOMA_API_ORIGIN ?? process.env.RAILWAY_SERVICE_HOOMAULTIMATE_STAGING_URL,
 );
 const mime = new Map([
   [".css", "text/css; charset=utf-8"],
@@ -26,7 +26,7 @@ const mime = new Map([
   [".svg", "image/svg+xml; charset=utf-8"],
   [".webp", "image/webp"],
   [".woff", "font/woff"],
-  [".woff2", "font/woff2"]
+  [".woff2", "font/woff2"],
 ]);
 
 function normalizeOrigin(value) {
@@ -84,7 +84,7 @@ function proxyApi(request, response) {
         if (value !== undefined) response.setHeader(name, value);
       }
       upstreamResponse.pipe(response);
-    }
+    },
   );
 
   upstream.on("error", (error) => {

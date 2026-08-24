@@ -62,7 +62,9 @@ export function HomeGatewayGrid() {
     <>
       <style>{HOME_GATEWAY_STYLES}</style>
       <div className="home-gateway-grid" aria-label="HOOMA features">
-        {HOME_GATEWAYS.map((item) => <HomeGatewayCard item={item} key={item.id} />)}
+        {HOME_GATEWAYS.map((item) => (
+          <HomeGatewayCard item={item} key={item.id} />
+        ))}
       </div>
     </>
   );

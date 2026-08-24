@@ -3,7 +3,7 @@ import { z } from "zod";
 export const healthResponseSchema = z.object({
   status: z.literal("ok"),
   service: z.literal("api"),
-  version: z.string().min(1)
+  version: z.string().min(1),
 });
 
 export const usernameSchema = z
@@ -20,12 +20,12 @@ export const registerSchema = z.object({
   password: z.string().min(10).max(128),
   displayUsername: usernameSchema,
   email: z.string().trim().email().max(320).optional().nullable(),
-  displayName: displayNameSchema.optional().nullable()
+  displayName: displayNameSchema.optional().nullable(),
 });
 
 export const loginSchema = z.object({
   loginUsername: usernameSchema,
-  password: z.string().min(1).max(128)
+  password: z.string().min(1).max(128),
 });
 
 export const sessionResponseSchema = z.object({ ok: z.literal(true) });
@@ -34,7 +34,7 @@ export const profilePresentationUpdateSchema = z.object({
   username: usernameSchema,
   displayName: displayNameSchema,
   photoUrl: z.string().trim().url().max(2000).nullable(),
-  bio: z.string().trim().max(500).nullable()
+  bio: z.string().trim().max(500).nullable(),
 });
 
 export const meResponseSchema = z.object({
@@ -43,7 +43,7 @@ export const meResponseSchema = z.object({
     username: z.string(),
     displayName: z.string(),
     photoUrl: z.string().url().nullable(),
-    bio: z.string().nullable()
+    bio: z.string().nullable(),
   }),
   transports: z.array(z.enum(["web", "telegram"])),
   platformRoles: z.array(z.literal("PLATFORM_ADMIN")),
@@ -52,8 +52,8 @@ export const meResponseSchema = z.object({
       id: z.string(),
       name: z.string(),
       slug: z.string(),
-      role: z.enum(["FOUNDER", "COACH", "MEMBER"])
-    })
+      role: z.enum(["FOUNDER", "COACH", "MEMBER"]),
+    }),
   ),
   teams: z.array(
     z.object({
@@ -71,13 +71,13 @@ export const meResponseSchema = z.object({
             "MANAGE_LINEUP",
             "CREATE_CHALLENGE",
             "RESPOND_TO_CHALLENGE",
-            "MANAGE_TEAM_EVENTS"
-          ])
+            "MANAGE_TEAM_EVENTS",
+          ]),
         )
         .optional()
-        .default([])
-    })
-  )
+        .default([]),
+    }),
+  ),
 });
 
 export type HealthResponse = z.infer<typeof healthResponseSchema>;
@@ -92,7 +92,7 @@ export const teamCapabilitySchema = z.enum([
   "MANAGE_LINEUP",
   "CREATE_CHALLENGE",
   "RESPOND_TO_CHALLENGE",
-  "MANAGE_TEAM_EVENTS"
+  "MANAGE_TEAM_EVENTS",
 ]);
 
 export const teamCreateSchema = z.object({
@@ -102,14 +102,14 @@ export const teamCreateSchema = z.object({
   city: z.string().trim().max(100).optional().nullable(),
   houma: z.string().trim().max(100).optional().nullable(),
   badgeUrl: z.string().url().max(2000).optional().nullable(),
-  bannerUrl: z.string().url().max(2000).optional().nullable()
+  bannerUrl: z.string().url().max(2000).optional().nullable(),
 });
 
 export const teamUpdateSchema = teamCreateSchema.omit({ communityId: true }).partial();
 export const teamPlayerSchema = z.object({ userId: z.string().min(1) });
 export const teamAssistantSchema = z.object({
   userId: z.string().min(1),
-  capabilities: z.array(teamCapabilitySchema).min(1).max(6)
+  capabilities: z.array(teamCapabilitySchema).min(1).max(6),
 });
 
 export const footballFormatSchema = z.enum([
@@ -118,7 +118,7 @@ export const footballFormatSchema = z.enum([
   "SEVEN_V_SEVEN",
   "EIGHT_V_EIGHT",
   "NINE_V_NINE",
-  "ELEVEN_V_ELEVEN"
+  "ELEVEN_V_ELEVEN",
 ]);
 
 export type FootballFormatInput = z.infer<typeof footballFormatSchema>;
@@ -129,19 +129,33 @@ export const FOOTBALL_FORMAT_PLAYER_COUNTS: Readonly<Record<FootballFormatInput,
   SEVEN_V_SEVEN: 7,
   EIGHT_V_EIGHT: 8,
   NINE_V_NINE: 9,
-  ELEVEN_V_ELEVEN: 11
+  ELEVEN_V_ELEVEN: 11,
 };
 
 export const TEAM_STANDARD_FORMATIONS = ["4-3-3", "4-4-2", "4-2-3-1", "3-5-2", "3-4-3"] as const;
 
-export const TEAM_POSITION_ROLES = ["GK", "CB", "FB", "WB", "DM", "CM", "AM", "W", "ST", "ANY"] as const;
+export const TEAM_POSITION_ROLES = [
+  "GK",
+  "CB",
+  "FB",
+  "WB",
+  "DM",
+  "CM",
+  "AM",
+  "W",
+  "ST",
+  "ANY",
+] as const;
 
 export const teamFormationSchema = z
   .string()
   .trim()
   .min(3)
   .max(20)
-  .regex(/^\d+(?:-\d+){1,4}$/, "Formation must use numbers separated by hyphens, for example 4-3-3 or 4-2-3-1");
+  .regex(
+    /^\d+(?:-\d+){1,4}$/,
+    "Formation must use numbers separated by hyphens, for example 4-3-3 or 4-2-3-1",
+  );
 
 export const teamLineupSlotSchema = z.object({
   teamPlayerId: z.string().min(1).optional().nullable(),
@@ -149,7 +163,7 @@ export const teamLineupSlotSchema = z.object({
   x: z.number().min(0).max(100),
   y: z.number().min(0).max(100),
   isStarter: z.boolean().default(true),
-  sortOrder: z.number().int().min(0).max(50).default(0)
+  sortOrder: z.number().int().min(0).max(50).default(0),
 });
 
 export const teamLineupSchema = z
@@ -158,7 +172,7 @@ export const teamLineupSchema = z
     formation: teamFormationSchema,
     matchFormat: footballFormatSchema,
     published: z.boolean().default(false),
-    slots: z.array(teamLineupSlotSchema).min(1).max(30)
+    slots: z.array(teamLineupSlotSchema).min(1).max(30),
   })
   .superRefine((input, context) => {
     const expectedPlayers = FOOTBALL_FORMAT_PLAYER_COUNTS[input.matchFormat];
@@ -171,7 +185,7 @@ export const teamLineupSchema = z
       context.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["formation"],
-        message: `Formation must contain ${expectedPlayers - 1} outfield players for ${expectedPlayers}v${expectedPlayers}`
+        message: `Formation must contain ${expectedPlayers - 1} outfield players for ${expectedPlayers}v${expectedPlayers}`,
       });
     }
 
@@ -179,7 +193,7 @@ export const teamLineupSchema = z
       context.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["slots"],
-        message: `Lineup must contain exactly ${expectedPlayers} slots for this match format`
+        message: `Lineup must contain exactly ${expectedPlayers} slots for this match format`,
       });
     }
   });
@@ -189,10 +203,10 @@ export const teamChallengeCreateSchema = z.object({
   challengedTeamId: z.string().min(1),
   format: footballFormatSchema,
   proposedAt: z.string().datetime().optional().nullable(),
-  message: z.string().trim().max(300).optional().nullable()
+  message: z.string().trim().max(300).optional().nullable(),
 });
 export const teamChallengeMessageSchema = z.object({
-  body: z.string().trim().min(1).max(1000)
+  body: z.string().trim().min(1).max(1000),
 });
 
 export type TeamCapabilityInput = z.infer<typeof teamCapabilitySchema>;
@@ -205,7 +219,14 @@ export type TeamChallengeCreateInput = z.infer<typeof teamChallengeCreateSchema>
 export const eventTypeSchema = z.enum(["PLAY", "WATCH"]);
 export const eventStatusSchema = z.enum(["PUBLISHED", "CANCELLED", "COMPLETED"]);
 export const skillLevelSchema = z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED", "MIXED"]);
-export const playPitchTypeSchema = z.enum(["FIVE_A_SIDE", "SEVEN_A_SIDE", "ELEVEN_A_SIDE", "FUTSAL", "STREET", "OTHER"]);
+export const playPitchTypeSchema = z.enum([
+  "FIVE_A_SIDE",
+  "SEVEN_A_SIDE",
+  "ELEVEN_A_SIDE",
+  "FUTSAL",
+  "STREET",
+  "OTHER",
+]);
 export const eventCreateSchema = z
   .object({
     communityId: z.string().min(1),
@@ -225,20 +246,32 @@ export const eventCreateSchema = z
       .object({
         pitchType: playPitchTypeSchema,
         skillLevel: skillLevelSchema.default("MIXED"),
-        format: footballFormatSchema
+        format: footballFormatSchema,
       })
       .optional()
-      .nullable()
+      .nullable(),
   })
   .superRefine((input, context) => {
     if (input.type === "PLAY" && !input.play) {
-      context.addIssue({ code: z.ZodIssueCode.custom, path: ["play"], message: "Play details are required for PLAY events" });
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["play"],
+        message: "Play details are required for PLAY events",
+      });
     }
     if (input.type !== "PLAY" && input.play) {
-      context.addIssue({ code: z.ZodIssueCode.custom, path: ["play"], message: "Play details are only valid for PLAY events" });
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["play"],
+        message: "Play details are only valid for PLAY events",
+      });
     }
     if (input.endsAt && new Date(input.endsAt) <= new Date(input.startsAt)) {
-      context.addIssue({ code: z.ZodIssueCode.custom, path: ["endsAt"], message: "endsAt must be after startsAt" });
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["endsAt"],
+        message: "endsAt must be after startsAt",
+      });
     }
   });
 export const eventUpdateSchema = z.object({
@@ -250,7 +283,7 @@ export const eventUpdateSchema = z.object({
   venueName: z.string().trim().max(120).optional().nullable(),
   address: z.string().trim().max(240).optional().nullable(),
   capacity: z.number().int().positive().max(1000).optional().nullable(),
-  waitlistEnabled: z.boolean().optional()
+  waitlistEnabled: z.boolean().optional(),
 });
 export const eventFormationSchema = z.object({
   name: z.string().trim().min(1).max(80),
@@ -264,14 +297,14 @@ export const eventFormationSchema = z.object({
         position: z.string().trim().min(1).max(20),
         label: z.string().trim().min(1).max(32),
         x: z.number().min(0).max(100),
-        y: z.number().min(0).max(100)
-      })
+        y: z.number().min(0).max(100),
+      }),
     )
-    .max(30)
+    .max(30),
 });
 export const eventCheckInSchema = z.object({
   latitude: z.number().min(-90).max(90).optional().nullable(),
-  longitude: z.number().min(-180).max(180).optional().nullable()
+  longitude: z.number().min(-180).max(180).optional().nullable(),
 });
 export const eventChatMessageSchema = z.object({ body: z.string().trim().min(1).max(1200) });
 export type EventCreateInput = z.infer<typeof eventCreateSchema>;
