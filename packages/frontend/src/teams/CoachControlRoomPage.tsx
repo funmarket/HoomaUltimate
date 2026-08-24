@@ -1,12 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { TeamCapabilityInput, TeamChallengeCreateInput } from "@hooma/contracts";
 import { useHoomaFrontend } from "../context";
-import type {
-  ManagedTeam,
-  TeamChallengeSummary,
-  TeamControlDetail,
-  createHoomaApi,
-} from "../api";
+import type { ManagedTeam, TeamChallengeSummary, TeamControlDetail, createHoomaApi } from "../api";
 
 const CAPABILITIES: readonly TeamCapabilityInput[] = [
   "EDIT_TEAM",
