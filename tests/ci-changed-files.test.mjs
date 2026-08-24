@@ -47,12 +47,7 @@ test("changed-file detection fails closed for an unknown comparison commit", asy
   const head = await commitFile(cwd, "shared.txt", "initial\n", "initial");
 
   assert.throws(
-    () =>
-      getChangedFiles({
-        baseSha: "0000000000000000000000000000000000000001",
-        headSha: head,
-        cwd,
-      }),
+    () => getChangedFiles({ baseSha: "0000000000000000000000000000000000000001", headSha: head, cwd }),
     /Unable to resolve comparison commit/,
   );
 });
