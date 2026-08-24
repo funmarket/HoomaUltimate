@@ -13,15 +13,6 @@
   --app-line: rgba(181, 155, 87, 0.22);
 }
 
-:root[data-appearance="dark"] {
-  --app-bg: #070808;
-  --app-bg-raised: #11120f;
-  --app-text: #f2ead7;
-  --app-gold: #b59b57;
-  --app-lime: #c4dc43;
-  --app-line: rgba(181, 155, 87, 0.22);
-}
-
 :root[data-theme="light"] {
   --app-bg: #f6f4ee;
   --app-bg-raised: #ffffff;
