@@ -8,6 +8,7 @@ import { CommunityService } from "../modules/communities/application/community.s
 import { PrismaCommunityRepository } from "../modules/communities/infrastructure/prisma-community.repository.js";
 import { TeamService } from "../modules/teams/application/team.service.js";
 import { PrismaTeamRepository } from "../modules/teams/infrastructure/prisma-team.repository.js";
+import { PrismaTeamLifecycleRepository } from "../modules/teams/infrastructure/prisma-team-lifecycle.repository.js";
 import { EventService } from "../modules/events/application/event.service.js";
 import { PrismaEventRepository } from "../modules/events/infrastructure/prisma-event.repository.js";
 import { GamerService } from "../modules/gamers/application/gamer.service.js";
@@ -27,9 +28,15 @@ export function createContainer(config: ApiConfig) {
   const platformAdminRepository = new PrismaPlatformAdminRepository(database);
   const platformAdminService = new PlatformAdminService(platformAdminRepository);
   const communityRepository = new PrismaCommunityRepository(database);
-  const communityService = new CommunityService(communityRepository);
+  const communityService = new CommunityService(communityRepository, platformAdminService);
   const teamRepository = new PrismaTeamRepository(database);
-  const teamService = new TeamService(teamRepository, communityService);
+  const teamLifecycleRepository = new PrismaTeamLifecycleRepository(database);
+  const teamService = new TeamService(
+    teamRepository,
+    communityService,
+    teamLifecycleRepository,
+    platformAdminService,
+  );
   const eventRepository = new PrismaEventRepository(database);
   const eventService = new EventService(eventRepository, communityService);
   const gamerGameRepository = new PrismaGamerGameRepository(database);
