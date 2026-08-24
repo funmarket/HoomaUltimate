@@ -1,0 +1,119 @@
+.play-player-card--team .play-player-card__action-zone {
+  z-index: 2;
+  pointer-events: auto;
+}
+
+.play-player-card__action--button {
+  width: 100%;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.play-player-card__action--button:not(:disabled):hover,
+.play-player-card__action--button:not(:disabled):focus-visible {
+  border-color: #e4c55c;
+  background: linear-gradient(90deg, rgba(118, 88, 12, 0.58), rgba(18, 14, 5, 0.9));
+}
+
+.play-player-card__action--button:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.play-team-offer {
+  display: grid;
+  gap: 14px;
+  border-color: rgba(218, 177, 65, 0.42);
+}
+
+.play-team-offer > div:first-child {
+  display: grid;
+  gap: 5px;
+}
+
+.play-team-offer h3,
+.play-team-offer p {
+  margin: 0;
+}
+
+.play-team-offer label {
+  display: grid;
+  gap: 7px;
+  color: #f2ead7;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.play-team-offer select,
+.play-team-offer textarea {
+  width: 100%;
+  border: 1px solid #6f613c;
+  border-radius: 10px;
+  background: #10110e;
+  color: #f2ead7;
+  padding: 11px 12px;
+  font: inherit;
+}
+
+.team-offers-panel,
+.team-offers-list {
+  display: grid;
+  gap: 14px;
+}
+
+.team-offers-panel h3,
+.team-offers-panel p {
+  margin: 0;
+}
+
+.team-offer-request {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(218, 177, 65, 0.4);
+  border-radius: 12px;
+  background: rgba(33, 27, 10, 0.42);
+}
+
+.team-offer-request__team {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.team-offer-request__team img {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.team-offer-request__team > div {
+  display: grid;
+  gap: 3px;
+}
+
+.team-offer-request__team span {
+  color: #bfb59a;
+  font-size: 13px;
+}
+
+.team-offer-request__message {
+  color: #e8dfc9;
+  line-height: 1.5;
+}
+
+.team-offer-request__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 520px) {
+  .team-offer-request__actions .button {
+    flex: 1 1 0;
+  }
+}

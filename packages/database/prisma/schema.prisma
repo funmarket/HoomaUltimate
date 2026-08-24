@@ -48,6 +48,12 @@ enum TeamCapability {
   MANAGE_TEAM_EVENTS
 }
 
+enum TeamPlayerOfferStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
 enum TeamChallengeStatus {
   PENDING
   ACCEPTED
@@ -151,6 +157,8 @@ model User {
   communityMemberships       CommunityMembership[]
   teamsCreated               Team[]                         @relation("TeamCreator")
   teamPlayers                TeamPlayer[]
+  teamOffersReceived         TeamPlayerOffer[]               @relation("TeamOfferTarget")
+  teamOffersSent             TeamPlayerOffer[]               @relation("TeamOfferSender")
   teamResponsibilities       TeamResponsibilityAssignment[]
   teamCapabilityGrants       TeamCapabilityGrant[]          @relation("CapabilityRecipient")
   teamCapabilityGrantsGiven  TeamCapabilityGrant[]          @relation("CapabilityGrantor")
@@ -288,6 +296,7 @@ model Team {
   community            Community?                     @relation(fields: [communityId], references: [id], onDelete: SetNull)
   createdBy            User                           @relation("TeamCreator", fields: [createdByUserId], references: [id])
   players              TeamPlayer[]
+  playerOffers         TeamPlayerOffer[]
   responsibilities     TeamResponsibilityAssignment[]
   capabilityGrants     TeamCapabilityGrant[]
   lineups              TeamLineup[]
@@ -317,6 +326,25 @@ model TeamPlayer {
   @@unique([teamId, userId])
   @@index([teamId, active])
   @@index([userId, active])
+}
+
+model TeamPlayerOffer {
+  id              String                @id @default(cuid())
+  teamId          String
+  targetUserId    String
+  offeredByUserId String
+  message         String?
+  status          TeamPlayerOfferStatus @default(PENDING)
+  createdAt       DateTime              @default(now())
+  respondedAt     DateTime?
+  updatedAt       DateTime              @updatedAt
+  team            Team                  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  targetUser      User                  @relation("TeamOfferTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+  offeredBy       User                  @relation("TeamOfferSender", fields: [offeredByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([teamId, targetUserId])
+  @@index([targetUserId, status, createdAt])
+  @@index([teamId, status, createdAt])
 }
 
 model TeamResponsibilityAssignment {
@@ -667,7 +695,7 @@ model OutboxEvent {
   payload       Json
   status        OutboxStatus @default(PENDING)
   attempts      Int          @default(0)
-  availableAt  DateTime     @default(now())
+  availableAt   DateTime     @default(now())
   claimedAt     DateTime?
   deliveredAt   DateTime?
   lastError     String?

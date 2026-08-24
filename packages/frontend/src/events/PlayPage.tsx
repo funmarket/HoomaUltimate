@@ -3,6 +3,7 @@ import type { MeResponse } from "@hooma/contracts";
 import type { PlayLookingFor } from "@hooma/contracts/play";
 import { PickupMatchCard, PlayHero } from "@hooma/ui";
 import { useHoomaFrontend } from "../context";
+import { createTeamOfferApi, type RecruitingTeam } from "../teams/team-offer-api";
 import type { PublicEvent } from "./api";
 import { createPlayApi, type MyPlayPlayerListing, type PublicPlayPlayerListing } from "./play-api";
 import { PlayPlayerCard } from "./PlayPlayerCard";
@@ -16,6 +17,7 @@ export function PlayPage() {
   const eventApi = useEventApi();
   const { api, transport, authenticationHref, protectedError } = useHoomaFrontend();
   const playApi = useMemo(() => createPlayApi(transport), [transport]);
+  const teamOfferApi = useMemo(() => createTeamOfferApi(transport), [transport]);
   const [events, setEvents] = useState<PublicEvent[]>([]);
   const [listings, setListings] = useState<PublicPlayPlayerListing[]>([]);
   const [me, setMe] = useState<MeResponse | null>(null);
@@ -29,6 +31,12 @@ export function PlayPage() {
   const [playersError, setPlayersError] = useState("");
   const [memberError, setMemberError] = useState("");
   const [notice, setNotice] = useState("");
+  const [offerListing, setOfferListing] = useState<PublicPlayPlayerListing | null>(null);
+  const [recruitingTeams, setRecruitingTeams] = useState<RecruitingTeam[]>([]);
+  const [offerTeamId, setOfferTeamId] = useState("");
+  const [offerMessage, setOfferMessage] = useState("");
+  const [offerLoading, setOfferLoading] = useState(false);
+  const [sentOfferListingIds, setSentOfferListingIds] = useState<string[]>([]);
 
   const loadListings = useCallback(async () => {
     const page = await playApi.publicPlayerListings();
@@ -130,6 +138,58 @@ export function PlayPage() {
     }
   }
 
+  async function startHire(listing: PublicPlayPlayerListing) {
+    if (!me) {
+      const href = authenticationHref("/play");
+      if (href) window.location.href = href;
+      return;
+    }
+    setMemberError("");
+    setNotice("");
+    setOfferLoading(true);
+    try {
+      const teams = await teamOfferApi.recruitingTeams();
+      if (!teams.length) {
+        setMemberError("You need a Team where you can manage the roster before sending an offer.");
+        return;
+      }
+      setRecruitingTeams(teams);
+      setOfferTeamId(teams[0]?.id ?? "");
+      setOfferMessage("");
+      setOfferListing(listing);
+    } catch (reason) {
+      setMemberError(protectedError(reason, "Unable to prepare Team offer"));
+    } finally {
+      setOfferLoading(false);
+    }
+  }
+
+  async function sendOffer(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!offerListing || !offerTeamId || offerLoading) return;
+    setOfferLoading(true);
+    setMemberError("");
+    setNotice("");
+    try {
+      await teamOfferApi.send(offerTeamId, {
+        listingId: offerListing.id,
+        message: offerMessage.trim() || null,
+      });
+      setSentOfferListingIds((current) =>
+        current.includes(offerListing.id) ? current : [...current, offerListing.id],
+      );
+      setNotice(`Team offer sent to ${offerListing.presentation?.displayName ?? "player"}.`);
+      setOfferListing(null);
+      setRecruitingTeams([]);
+      setOfferTeamId("");
+      setOfferMessage("");
+    } catch (reason) {
+      setMemberError(protectedError(reason, "Unable to send Team offer"));
+    } finally {
+      setOfferLoading(false);
+    }
+  }
+
   const signInHref = authenticationHref("/play");
 
   return (
@@ -192,6 +252,54 @@ export function PlayPage() {
           </form>
         ) : null}
 
+        {offerListing ? (
+          <form className="play-team-offer panel" onSubmit={sendOffer}>
+            <div>
+              <p className="eyebrow">TEAM OFFER</p>
+              <h3>Offer {offerListing.presentation?.displayName ?? "this player"} a spot</h3>
+              <p>Pick your Team and add a short message if you want.</p>
+            </div>
+            <label>
+              Team
+              <select
+                value={offerTeamId}
+                onChange={(event) => setOfferTeamId(event.target.value)}
+                disabled={offerLoading}
+              >
+                {recruitingTeams.map((team) => (
+                  <option value={team.id} key={team.id}>
+                    {team.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Message (optional)
+              <textarea
+                value={offerMessage}
+                onChange={(event) => setOfferMessage(event.target.value)}
+                maxLength={240}
+                rows={3}
+                placeholder="Come train with us this week."
+                disabled={offerLoading}
+              />
+            </label>
+            <div className="play-player-editor-actions">
+              <button className="button" type="submit" disabled={offerLoading || !offerTeamId}>
+                {offerLoading ? "Sending…" : "Send Offer"}
+              </button>
+              <button
+                className="button secondary"
+                type="button"
+                disabled={offerLoading}
+                onClick={() => setOfferListing(null)}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        ) : null}
+
         {playersLoading ? <div className="play-state panel">Loading players…</div> : null}
         {!playersLoading && playersError ? (
           <div className="play-state panel error">{playersError}</div>
@@ -199,7 +307,12 @@ export function PlayPage() {
         {!playersLoading && !playersError && listings.length ? (
           <div className="play-player-list">
             {listings.map((listing) => (
-              <PlayPlayerCard listing={listing} key={listing.id} />
+              <PlayPlayerCard
+                listing={listing}
+                key={listing.id}
+                onHire={(candidate) => void startHire(candidate)}
+                offerSent={sentOfferListingIds.includes(listing.id)}
+              />
             ))}
           </div>
         ) : null}

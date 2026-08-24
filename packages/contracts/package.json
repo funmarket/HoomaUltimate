@@ -27,6 +27,10 @@
     "./play": {
       "types": "./src/play.ts",
       "default": "./dist/play.js"
+    },
+    "./team-offers": {
+      "types": "./src/team-offers.ts",
+      "default": "./dist/team-offers.js"
     }
   }
 }

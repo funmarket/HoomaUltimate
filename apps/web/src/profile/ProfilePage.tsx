@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import type { MeResponse } from "@hooma/contracts";
-import { useHoomaFrontend } from "@hooma/frontend";
+import { TeamOffersPanel, useHoomaFrontend } from "@hooma/frontend";
 import { useAccount } from "../account/AccountProvider";
 
 export function ProfilePage() {
@@ -68,6 +68,7 @@ export function ProfilePage() {
   return (
     <section className="profile-page">
       <ProfileContent me={me} />
+      <TeamOffersPanel onAccepted={refresh} />
       <form className="panel profile-edit-form" onSubmit={save}>
         <div>
           <p className="eyebrow">EDIT PROFILE</p>
