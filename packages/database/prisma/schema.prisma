@@ -295,16 +295,16 @@ model Team {
 }
 
 model TeamPlayer {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   teamId    String
   userId    String
   number    Int?
   positions String[]
-  active    Boolean  @default(true)
-  joinedAt  DateTime @default(now())
+  active    Boolean   @default(true)
+  joinedAt  DateTime  @default(now())
   leftAt    DateTime?
-  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team      Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, userId])
   @@index([teamId, active])
@@ -312,14 +312,14 @@ model TeamPlayer {
 }
 
 model TeamResponsibilityAssignment {
-  id        String                     @id @default(cuid())
+  id        String                   @id @default(cuid())
   teamId    String
   userId    String
   role      TeamResponsibilityRole
-  createdAt DateTime                   @default(now())
+  createdAt DateTime                 @default(now())
   revokedAt DateTime?
-  team      Team                       @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user      User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team      Team                     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([teamId, role, revokedAt])
   @@index([userId, role, revokedAt])
@@ -332,7 +332,7 @@ model TeamCapabilityGrant {
   capability TeamCapability
   grantedBy  String
   createdAt  DateTime       @default(now())
-  revokedAt DateTime?
+  revokedAt  DateTime?
   team       Team           @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user       User           @relation("CapabilityRecipient", fields: [userId], references: [id], onDelete: Cascade)
   grantor    User           @relation("CapabilityGrantor", fields: [grantedBy], references: [id], onDelete: Cascade)
@@ -342,49 +342,51 @@ model TeamCapabilityGrant {
 }
 
 model TeamLineup {
-  id              String         @id @default(cuid())
+  id              String           @id @default(cuid())
   teamId          String
   createdByUserId String
   name            String
   formation       String
   matchFormat     FootballFormat
-  published       Boolean        @default(false)
-  active          Boolean        @default(true)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  team            Team           @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  createdBy       User           @relation("LineupCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  published       Boolean          @default(false)
+  active          Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  team            Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  createdBy       User             @relation("LineupCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
   slots           TeamLineupSlot[]
 
   @@index([teamId, published, active, updatedAt])
 }
 
 model TeamLineupSlot {
-  id         String      @id @default(cuid())
-  lineupId   String
-  userId     String?
-  position   String
-  sortOrder  Int         @default(0)
-  lineup     TeamLineup  @relation(fields: [lineupId], references: [id], onDelete: Cascade)
-  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id        String     @id @default(cuid())
+  lineupId  String
+  userId    String?
+  position  String
+  x         Float      @default(50)
+  y         Float      @default(50)
+  sortOrder Int        @default(0)
+  lineup    TeamLineup @relation(fields: [lineupId], references: [id], onDelete: Cascade)
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([lineupId, sortOrder])
 }
 
 model TeamChallenge {
-  id               String              @id @default(cuid())
+  id               String                @id @default(cuid())
   challengerTeamId String
   challengedTeamId String
   createdByUserId  String
   format           FootballFormat
   proposedAt       DateTime?
   message          String?
-  status           TeamChallengeStatus @default(PENDING)
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
-  challengerTeam   Team                @relation("ChallengeChallenger", fields: [challengerTeamId], references: [id], onDelete: Cascade)
-  challengedTeam   Team                @relation("ChallengeChallenged", fields: [challengedTeamId], references: [id], onDelete: Cascade)
-  createdBy        User                @relation("ChallengeCreator", fields: [createdByUserId], references: [id])
+  status           TeamChallengeStatus   @default(PENDING)
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  challengerTeam   Team                  @relation("ChallengeChallenger", fields: [challengerTeamId], references: [id], onDelete: Cascade)
+  challengedTeam   Team                  @relation("ChallengeChallenged", fields: [challengedTeamId], references: [id], onDelete: Cascade)
+  createdBy        User                  @relation("ChallengeCreator", fields: [createdByUserId], references: [id])
   messages         TeamChallengeMessage[]
   game             TeamGame?
 
@@ -422,26 +424,26 @@ model TeamGame {
 }
 
 model Event {
-  id              String          @id @default(cuid())
+  id              String           @id @default(cuid())
   communityId     String
   createdByUserId String
   type            EventType
-  status          EventStatus     @default(PUBLISHED)
+  status          EventStatus      @default(PUBLISHED)
   title           String
   description     String?
   startsAt        DateTime
   endsAt          DateTime?
-  timezone        String          @default("Africa/Tunis")
+  timezone        String           @default("Africa/Tunis")
   venueName       String?
   address         String?
   capacity        Int?
-  waitlistEnabled Boolean         @default(true)
-  entryFeeMinor   BigInt          @default(0)
-  currency        String          @default("TND")
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  community       Community       @relation(fields: [communityId], references: [id], onDelete: Cascade)
-  createdBy       User            @relation("EventCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  waitlistEnabled Boolean          @default(true)
+  entryFeeMinor   BigInt           @default(0)
+  currency        String           @default("TND")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  community       Community        @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  createdBy       User             @relation("EventCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
   playDetails     PlayEventDetails?
   rsvps           EventRsvp[]
   formations      Formation[]
@@ -454,11 +456,11 @@ model Event {
 }
 
 model PlayEventDetails {
-  eventId    String        @id
+  eventId    String         @id
   pitchType  PlayPitchType
-  skillLevel SkillLevel    @default(MIXED)
+  skillLevel SkillLevel     @default(MIXED)
   format     FootballFormat
-  event      Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event      Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
 }
 
 model EventRsvp {
@@ -479,16 +481,16 @@ model EventRsvp {
 }
 
 model Formation {
-  id              String           @id @default(cuid())
+  id              String          @id @default(cuid())
   eventId         String
   createdByUserId String
   name            String
   format          FootballFormat
-  published       Boolean          @default(false)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  event           Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  createdBy       User             @relation("FormationCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  published       Boolean         @default(false)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  event           Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdBy       User            @relation("FormationCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
   slots           FormationSlot[]
 
   @@index([eventId, updatedAt])
@@ -631,7 +633,7 @@ model OutboxEvent {
   attempts      Int          @default(0)
   availableAt   DateTime     @default(now())
   claimedAt     DateTime?
-  deliveredAt  DateTime?
+  deliveredAt   DateTime?
   lastError     String?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
