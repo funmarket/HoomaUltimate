@@ -17,6 +17,8 @@ WHERE lineup."id" = latest."id";
 CREATE UNIQUE INDEX "TeamLineup_one_current_per_team_key"
   ON "TeamLineup"("teamId")
   WHERE "isCurrent" = true AND "active" = true;
+CREATE INDEX "TeamLineup_teamId_isCurrent_active_idx"
+  ON "TeamLineup"("teamId", "isCurrent", "active");
 
 ALTER TABLE "TeamLineupSlot"
   ADD COLUMN "x" DOUBLE PRECISION NOT NULL DEFAULT 50,
