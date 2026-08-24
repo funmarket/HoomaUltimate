@@ -57,9 +57,7 @@ export function createTeamMemberRouter(service: TeamService): Router {
   );
   router.get(
     "/offers/recruiting-teams",
-    asyncHandler(async (req, res) =>
-      res.json(await service.recruitingTeams(getAuth(req).userId)),
-    ),
+    asyncHandler(async (req, res) => res.json(await service.recruitingTeams(getAuth(req).userId))),
   );
   router.get(
     "/offers/incoming",
