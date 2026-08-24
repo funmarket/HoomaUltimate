@@ -1,0 +1,60 @@
+.team-media-banner {
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(circle at 20% 20%, rgba(181, 155, 87, 0.16), transparent 52%), #10100c;
+}
+
+.team-media-banner__image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.team-media-banner__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(8, 8, 8, 0.88), rgba(8, 8, 8, 0.42));
+  pointer-events: none;
+}
+
+.team-media-banner__content {
+  position: relative;
+}
+
+.team-media-badge img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.team-discovery-banner {
+  grid-column: 1 / -1;
+  min-height: 112px;
+  border: 1px solid rgba(232, 221, 196, 0.12);
+  border-radius: 14px;
+}
+
+.team-profile-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.team-profile-hero-media {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.team-profile-hero > :not(.team-profile-hero-media) {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 560px) {
+  .team-discovery-banner {
+    min-height: 90px;
+  }
+}
