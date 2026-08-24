@@ -23,6 +23,7 @@ export type CommunityCreateInput = {
   logoUrl?: string | null;
   bannerUrl?: string | null;
 };
+export type CommunityUpdateInput = Partial<CommunityCreateInput>;
 export type PublicCommunitySummary = {
   id: string;
   slug: string;
@@ -218,6 +219,13 @@ export function createHoomaApi(transport: HoomaTransport) {
         method: "POST",
         body: JSON.stringify(input)
       }),
+    update: (id: string, input: CommunityUpdateInput) =>
+      request(transport, `/api/v1/communities/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        body: JSON.stringify(input)
+      }),
+    archive: (id: string) =>
+      request<{ ok: true }>(transport, `/api/v1/communities/${encodeURIComponent(id)}`, { method: "DELETE" }),
     join: (id: string) =>
       request<{ membership: { role: CommunityRole } }>(transport, `/api/v1/communities/${encodeURIComponent(id)}/join`, {
         method: "POST"
@@ -269,6 +277,8 @@ export function createHoomaApi(transport: HoomaTransport) {
         method: "PATCH",
         body: JSON.stringify(input)
       }),
+    archive: (teamId: string) =>
+      request<{ ok: true }>(transport, `/api/v1/teams/${encodeURIComponent(teamId)}`, { method: "DELETE" }),
     addPlayer: (teamId: string, userId: string) =>
       request(transport, `/api/v1/teams/${encodeURIComponent(teamId)}/players`, {
         method: "POST",
