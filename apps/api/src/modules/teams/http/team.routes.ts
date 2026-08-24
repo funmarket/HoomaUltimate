@@ -8,6 +8,7 @@ import {
   teamPlayerSchema,
   teamUpdateSchema,
 } from "@hooma/contracts";
+import { teamPlayerOfferCreateSchema } from "@hooma/contracts/team-offers";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import { getAuth } from "../../identity/http/auth-request.js";
 import type { TeamService } from "../application/team.service.js";
@@ -53,6 +54,26 @@ export function createTeamMemberRouter(service: TeamService): Router {
   router.get(
     "/managed",
     asyncHandler(async (req, res) => res.json(await service.managedTeams(getAuth(req).userId))),
+  );
+  router.get(
+    "/offers/recruiting-teams",
+    asyncHandler(async (req, res) => res.json(await service.recruitingTeams(getAuth(req).userId))),
+  );
+  router.get(
+    "/offers/incoming",
+    asyncHandler(async (req, res) => res.json(await service.incomingPlayerOffers(getAuth(req).userId))),
+  );
+  router.post(
+    "/offers/:offerId/accept",
+    asyncHandler(async (req, res) =>
+      res.json(await service.acceptPlayerOffer(getAuth(req).userId, String(req.params.offerId))),
+    ),
+  );
+  router.post(
+    "/offers/:offerId/decline",
+    asyncHandler(async (req, res) =>
+      res.json(await service.declinePlayerOffer(getAuth(req).userId, String(req.params.offerId))),
+    ),
   );
   router.get(
     "/challenges/incoming",
@@ -134,6 +155,20 @@ export function createTeamMemberRouter(service: TeamService): Router {
     "/games",
     asyncHandler(async (req, res) =>
       res.json(await service.games(getAuth(req).userId, numberQuery(req.query.limit, 30))),
+    ),
+  );
+  router.post(
+    "/:teamId/offers",
+    asyncHandler(async (req, res) =>
+      res
+        .status(201)
+        .json(
+          await service.sendPlayerOffer(
+            getAuth(req).userId,
+            String(req.params.teamId),
+            teamPlayerOfferCreateSchema.parse(req.body),
+          ),
+        ),
     ),
   );
   router.post(
