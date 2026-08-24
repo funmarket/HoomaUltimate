@@ -4,6 +4,7 @@ import "./teams/coach-control-room.css";
 export * from "./api";
 export * from "./context";
 export * from "./communities/HoomaPage";
+export * from "./communities/HoomaEditPage";
 export * from "./teams/TeamsPage";
 export * from "./teams/CreateTeamPage";
 export * from "./teams/TeamDetailPage";
