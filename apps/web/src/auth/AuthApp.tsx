@@ -22,8 +22,9 @@ export function AuthApp() {
 
   useEffect(() => {
     void api.identity
-      .me()
+      .meOptional()
       .then((response) => {
+        if (!response) return;
         setMe(response);
         if (returnTo !== "/") window.location.replace(returnTo);
       })
