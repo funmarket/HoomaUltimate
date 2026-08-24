@@ -20,17 +20,23 @@ export function AuthApp() {
   const returnTo = useMemo(safeReturnTo, []);
 
   useEffect(() => {
-    void api.identity.me().then((response) => {
-      setMe(response);
-      if (returnTo !== "/") window.location.replace(returnTo);
-    }).catch(() => undefined);
+    void api.identity
+      .me()
+      .then((response) => {
+        setMe(response);
+        if (returnTo !== "/") window.location.replace(returnTo);
+      })
+      .catch(() => undefined);
   }, [api, returnTo]);
 
   function completeAuthentication() {
-    void api.identity.me().then((response) => {
-      setMe(response);
-      window.location.replace(returnTo);
-    }).catch((reason: Error) => setError(reason.message));
+    void api.identity
+      .me()
+      .then((response) => {
+        setMe(response);
+        window.location.replace(returnTo);
+      })
+      .catch((reason: Error) => setError(reason.message));
   }
 
   if (me) {
@@ -41,7 +47,12 @@ export function AuthApp() {
         <p>@{me.presentation.username}</p>
         <button
           type="button"
-          onClick={() => void api.identity.logout().then(() => setMe(null)).catch((e: Error) => setError(e.message))}
+          onClick={() =>
+            void api.identity
+              .logout()
+              .then(() => setMe(null))
+              .catch((e: Error) => setError(e.message))
+          }
         >
           Sign out
         </button>
@@ -56,7 +67,11 @@ export function AuthApp() {
         <button type="button" aria-pressed={mode === "login"} onClick={() => setMode("login")}>
           Sign in
         </button>
-        <button type="button" aria-pressed={mode === "register"} onClick={() => setMode("register")}>
+        <button
+          type="button"
+          aria-pressed={mode === "register"}
+          onClick={() => setMode("register")}
+        >
           Create account
         </button>
       </div>
@@ -78,13 +93,22 @@ function LoginForm({ onSuccess, onError }: FormCallbacks) {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
         void api.identity
-          .login({ loginUsername: String(data.get("loginUsername")), password: String(data.get("password")) })
+          .login({
+            loginUsername: String(data.get("loginUsername")),
+            password: String(data.get("password")),
+          })
           .then(onSuccess)
           .catch((error: Error) => onError(error.message));
       }}
     >
-      <label>Login username<input name="loginUsername" autoComplete="username" required /></label>
-      <label>Password<input name="password" type="password" autoComplete="current-password" required /></label>
+      <label>
+        Login username
+        <input name="loginUsername" autoComplete="username" required />
+      </label>
+      <label>
+        Password
+        <input name="password" type="password" autoComplete="current-password" required />
+      </label>
       <button type="submit">Sign in</button>
     </form>
   );
@@ -101,18 +125,39 @@ function RegisterForm({ onSuccess, onError }: FormCallbacks) {
         password: String(data.get("password")),
         displayUsername: String(data.get("displayUsername")),
         displayName: String(data.get("displayName")) || null,
-        email: String(data.get("email")) || null
+        email: String(data.get("email")) || null,
       })
       .then(onSuccess)
       .catch((error: Error) => onError(error.message));
   }
   return (
     <form onSubmit={submit}>
-      <label>Login username<input name="loginUsername" autoComplete="username" required /></label>
-      <label>Password<input name="password" type="password" minLength={10} autoComplete="new-password" required /></label>
-      <label>Display username<input name="displayUsername" required /></label>
-      <label>Display name<input name="displayName" /></label>
-      <label>Email (optional)<input name="email" type="email" autoComplete="email" /></label>
+      <label>
+        Login username
+        <input name="loginUsername" autoComplete="username" required />
+      </label>
+      <label>
+        Password
+        <input
+          name="password"
+          type="password"
+          minLength={10}
+          autoComplete="new-password"
+          required
+        />
+      </label>
+      <label>
+        Display username
+        <input name="displayUsername" required />
+      </label>
+      <label>
+        Display name
+        <input name="displayName" />
+      </label>
+      <label>
+        Email (optional)
+        <input name="email" type="email" autoComplete="email" />
+      </label>
       <button type="submit">Create account</button>
     </form>
   );

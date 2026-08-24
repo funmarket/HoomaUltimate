@@ -18,8 +18,12 @@ async function walk(directory) {
   return files;
 }
 
-function relative(file) { return path.relative(root, file).split(path.sep).join("/"); }
-function forbid(file, source, pattern, reason) { if (pattern.test(source)) violations.push(`${relative(file)}: ${reason}`); }
+function relative(file) {
+  return path.relative(root, file).split(path.sep).join("/");
+}
+function forbid(file, source, pattern, reason) {
+  if (pattern.test(source)) violations.push(`${relative(file)}: ${reason}`);
+}
 
 for (const file of await walk(root)) {
   const rel = relative(file);
@@ -27,29 +31,53 @@ for (const file of await walk(root)) {
   const source = await readFile(file, "utf8");
 
   if (rel.startsWith("apps/web/") || rel.startsWith("apps/telegram/")) {
-    forbid(file, source, /@hooma\/database|@prisma\/client/, "frontend must not import database code");
+    forbid(
+      file,
+      source,
+      /@hooma\/database|@prisma\/client/,
+      "frontend must not import database code",
+    );
   }
 
   if (rel.startsWith("apps/telegram/src/")) {
-    violations.push(`${rel}: Telegram is the /telegram entry of the universal HOOMA frontend; do not create a second Telegram product source tree`);
+    violations.push(
+      `${rel}: Telegram is the /telegram entry of the universal HOOMA frontend; do not create a second Telegram product source tree`,
+    );
   }
 
   if (/^apps\/web\/src\/(teams|events)\//.test(rel)) {
-    violations.push(`${rel}: canonical Teams and Events/Play frontends belong in @hooma/frontend, not the app shell`);
+    violations.push(
+      `${rel}: canonical Teams and Events/Play frontends belong in @hooma/frontend, not the app shell`,
+    );
   }
 
   if (rel.startsWith("apps/web/src/")) {
-    forbid(file, source, /["'`]\/api\/(?:public\/v1|v1)\//, "product API calls must use the single @hooma/frontend API client");
+    forbid(
+      file,
+      source,
+      /["'`]\/api\/(?:public\/v1|v1)\//,
+      "product API calls must use the single @hooma/frontend API client",
+    );
   }
 
   if (/^apps\/api\/src\/modules\/[^/]+\/domain\//.test(rel)) {
-    forbid(file, source, /express|@hooma\/database|@prisma\/client/, "domain layer must be transport and persistence independent");
+    forbid(
+      file,
+      source,
+      /express|@hooma\/database|@prisma\/client/,
+      "domain layer must be transport and persistence independent",
+    );
   }
   if (/^apps\/api\/src\/modules\/[^/]+\/application\//.test(rel)) {
     forbid(file, source, /from ["']express["']/, "application layer must not depend on Express");
   }
   if (/^apps\/api\/src\/modules\/[^/]+\/http\//.test(rel)) {
-    forbid(file, source, /@hooma\/database|@prisma\/client/, "HTTP layer must not access persistence directly");
+    forbid(
+      file,
+      source,
+      /@hooma\/database|@prisma\/client/,
+      "HTTP layer must not access persistence directly",
+    );
   }
   if (rel.startsWith("apps/worker/") && /apps\/api\/src\/.*\/http\//.test(source)) {
     violations.push(`${rel}: worker must not import API HTTP controllers/routes`);
@@ -60,10 +88,14 @@ const canonicalRouterPath = path.join(root, "apps/web/src/app/router/HoomaRouter
 try {
   const canonicalRouter = await readFile(canonicalRouterPath, "utf8");
   if (!canonicalRouter.includes('path="/telegram"')) {
-    violations.push("apps/web/src/app/router/HoomaRouter.tsx: canonical route tree must expose the /telegram entry");
+    violations.push(
+      "apps/web/src/app/router/HoomaRouter.tsx: canonical route tree must expose the /telegram entry",
+    );
   }
 } catch {
-  violations.push("apps/web/src/app/router/HoomaRouter.tsx: canonical universal HOOMA router is missing");
+  violations.push(
+    "apps/web/src/app/router/HoomaRouter.tsx: canonical universal HOOMA router is missing",
+  );
 }
 
 if (violations.length > 0) {

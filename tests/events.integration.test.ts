@@ -13,7 +13,7 @@ const config = loadApiConfig({
   DATABASE_URL: databaseUrl,
   WEB_ORIGIN: "http://localhost:5173",
   TELEGRAM_ORIGIN: "http://localhost:5174",
-  TELEGRAM_BOT_TOKEN: "integration-test-token"
+  TELEGRAM_BOT_TOKEN: "integration-test-token",
 });
 const db = getDatabaseClient();
 
@@ -54,13 +54,15 @@ async function register(base: string, username: string) {
       loginUsername: username,
       password: "correct horse battery staple",
       displayUsername: username,
-      displayName: username
-    })
+      displayName: username,
+    }),
   });
   assert.equal(response.status, 201);
   const cookie = response.headers.get("set-cookie");
   assert.ok(cookie);
-  const credential = await db.webCredential.findUniqueOrThrow({ where: { loginUsername: username } });
+  const credential = await db.webCredential.findUniqueOrThrow({
+    where: { loginUsername: username },
+  });
   return { cookie: cookie!, userId: credential.userId };
 }
 
@@ -85,10 +87,10 @@ test("Play event preserves capacity/waitlist, formation, check-in, temporary cha
     const communityResponse = await fetch(`${base}/api/v1/communities`, {
       method: "POST",
       headers: headers(founder.cookie),
-      body: JSON.stringify({ name: "Medina Matchday" })
+      body: JSON.stringify({ name: "Medina Matchday" }),
     });
     assert.equal(communityResponse.status, 201);
-    const community = await communityResponse.json() as { id: string };
+    const community = (await communityResponse.json()) as { id: string };
 
     const startsAt = new Date(Date.now() + 60 * 60_000);
     const endsAt = new Date(startsAt.getTime() + 2 * 60 * 60_000);
@@ -104,33 +106,41 @@ test("Play event preserves capacity/waitlist, formation, check-in, temporary cha
         capacity: 1,
         waitlistEnabled: true,
         entryFeeMinor: 0,
-        play: { pitchType: "FIVE_A_SIDE", skillLevel: "MIXED", format: "FIVE_V_FIVE" }
-      })
+        play: { pitchType: "FIVE_A_SIDE", skillLevel: "MIXED", format: "FIVE_V_FIVE" },
+      }),
     });
     assert.equal(eventResponse.status, 201);
-    const event = await eventResponse.json() as { id: string };
+    const event = (await eventResponse.json()) as { id: string };
 
     const [joinA, joinB] = await Promise.all([
-      fetch(`${base}/api/v1/events/${event.id}/join`, { method: "POST", headers: headers(playerA.cookie) }),
-      fetch(`${base}/api/v1/events/${event.id}/join`, { method: "POST", headers: headers(playerB.cookie) })
+      fetch(`${base}/api/v1/events/${event.id}/join`, {
+        method: "POST",
+        headers: headers(playerA.cookie),
+      }),
+      fetch(`${base}/api/v1/events/${event.id}/join`, {
+        method: "POST",
+        headers: headers(playerB.cookie),
+      }),
     ]);
     assert.equal(joinA.status, 200);
     assert.equal(joinB.status, 200);
-    const resultA = await joinA.json() as { status: string };
-    const resultB = await joinB.json() as { status: string };
+    const resultA = (await joinA.json()) as { status: string };
+    const resultB = (await joinB.json()) as { status: string };
     assert.deepEqual([resultA.status, resultB.status].sort(), ["CONFIRMED", "WAITLISTED"]);
 
     const confirmed = resultA.status === "CONFIRMED" ? playerA : playerB;
     const waitlisted = resultA.status === "WAITLISTED" ? playerA : playerB;
     const cancel = await fetch(`${base}/api/v1/events/${event.id}/rsvp`, {
       method: "DELETE",
-      headers: headers(confirmed.cookie)
+      headers: headers(confirmed.cookie),
     });
     assert.equal(cancel.status, 200);
-    const cancelled = await cancel.json() as { promotedUserId: string | null };
+    const cancelled = (await cancel.json()) as { promotedUserId: string | null };
     assert.equal(cancelled.promotedUserId, waitlisted.userId);
 
-    const promoted = await db.eventRsvp.findUniqueOrThrow({ where: { eventId_userId: { eventId: event.id, userId: waitlisted.userId } } });
+    const promoted = await db.eventRsvp.findUniqueOrThrow({
+      where: { eventId_userId: { eventId: event.id, userId: waitlisted.userId } },
+    });
     assert.equal(promoted.status, "CONFIRMED");
 
     const formation = await fetch(`${base}/api/v1/events/${event.id}/formations`, {
@@ -140,29 +150,35 @@ test("Play event preserves capacity/waitlist, formation, check-in, temporary cha
         name: "Balanced five",
         format: "FIVE_V_FIVE",
         published: true,
-        slots: [{ userId: waitlisted.userId, team: "A", position: "GK", label: "Keeper", x: 10, y: 50 }]
-      })
+        slots: [
+          { userId: waitlisted.userId, team: "A", position: "GK", label: "Keeper", x: 10, y: 50 },
+        ],
+      }),
     });
     assert.equal(formation.status, 201);
 
     const checkIn = await fetch(`${base}/api/v1/events/${event.id}/check-in`, {
       method: "POST",
       headers: headers(waitlisted.cookie),
-      body: JSON.stringify({})
+      body: JSON.stringify({}),
     });
     assert.equal(checkIn.status, 200);
-    const attended = await db.eventRsvp.findUniqueOrThrow({ where: { eventId_userId: { eventId: event.id, userId: waitlisted.userId } } });
+    const attended = await db.eventRsvp.findUniqueOrThrow({
+      where: { eventId_userId: { eventId: event.id, userId: waitlisted.userId } },
+    });
     assert.equal(attended.status, "ATTENDED");
 
     const chatPost = await fetch(`${base}/api/v1/events/${event.id}/chat/messages`, {
       method: "POST",
       headers: headers(waitlisted.cookie),
-      body: JSON.stringify({ body: "See you on the pitch." })
+      body: JSON.stringify({ body: "See you on the pitch." }),
     });
     assert.equal(chatPost.status, 201);
-    const chat = await fetch(`${base}/api/v1/events/${event.id}/chat`, { headers: { cookie: waitlisted.cookie } });
+    const chat = await fetch(`${base}/api/v1/events/${event.id}/chat`, {
+      headers: { cookie: waitlisted.cookie },
+    });
     assert.equal(chat.status, 200);
-    const chatRows = await chat.json() as { body: string }[];
+    const chatRows = (await chat.json()) as { body: string }[];
     assert.equal(chatRows.at(-1)?.body, "See you on the pitch.");
 
     const paidEvent = await fetch(`${base}/api/v1/events`, {
@@ -174,20 +190,22 @@ test("Play event preserves capacity/waitlist, formation, check-in, temporary cha
         title: "Paid event not wired yet",
         startsAt: startsAt.toISOString(),
         entryFeeMinor: 1000,
-        play: { pitchType: "FIVE_A_SIDE", skillLevel: "MIXED", format: "FIVE_V_FIVE" }
-      })
+        play: { pitchType: "FIVE_A_SIDE", skillLevel: "MIXED", format: "FIVE_V_FIVE" },
+      }),
     });
     assert.equal(paidEvent.status, 409);
 
     const complete = await fetch(`${base}/api/v1/events/${event.id}/complete`, {
       method: "POST",
-      headers: headers(founder.cookie)
+      headers: headers(founder.cookie),
     });
     assert.equal(complete.status, 200);
     const completed = await db.event.findUniqueOrThrow({ where: { id: event.id } });
     assert.equal(completed.status, "COMPLETED");
   } finally {
-    await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve())),
+    );
     await resetDatabase();
   }
 });

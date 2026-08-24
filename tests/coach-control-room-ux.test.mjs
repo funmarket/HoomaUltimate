@@ -11,7 +11,10 @@ test("Coach Control Room keeps Team settings and lineup as dedicated priority ac
   const source = await readFile(coachPage, "utf8");
 
   assert.match(source, /control-room__priority-stack/);
-  assert.match(source, /<TeamSettingsCard team=\{team\} \/>[\s\S]*<LineupControlCard team=\{team\} \/>/);
+  assert.match(
+    source,
+    /<TeamSettingsCard team=\{team\} \/>[\s\S]*<LineupControlCard team=\{team\} \/>/,
+  );
   assert.match(source, /href=\{`\/teams\/\$\{team\.id\}\/edit`\}/);
   assert.match(source, /href=\{`\/teams\/\$\{team\.id\}\/lineup`\}/);
   assert.match(source, /className="coach-primary-action"[\s\S]*Open builder/);

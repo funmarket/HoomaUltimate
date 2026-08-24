@@ -4,7 +4,7 @@ import {
   type TeamChallengeCreateInput,
   type TeamCreateInput,
   type TeamLineupInput,
-  type TeamUpdateInput
+  type TeamUpdateInput,
 } from "@hooma/contracts";
 import { AppError } from "../../../http/errors/app-error.js";
 import type { CommunityService } from "../../communities/application/community.service.js";
@@ -14,7 +14,7 @@ import type { TeamAccessRecord, TeamListInput, TeamRepository } from "./team.rep
 export class TeamService {
   constructor(
     private readonly repository: TeamRepository,
-    private readonly communities: CommunityService
+    private readonly communities: CommunityService,
   ) {}
 
   listPublic(input: TeamListInput) {
@@ -54,7 +54,11 @@ export class TeamService {
     await this.requireCapability(userId, teamId, "MANAGE_ROSTER");
     const targetAccess = await this.repository.access(teamId, targetUserId);
     if (targetAccess?.responsibility === "COACH") {
-      throw new AppError(409, "COACH_REMOVE_FORBIDDEN", "Transfer Coach responsibility before removing this player");
+      throw new AppError(
+        409,
+        "COACH_REMOVE_FORBIDDEN",
+        "Transfer Coach responsibility before removing this player",
+      );
     }
     await this.repository.removePlayer(teamId, targetUserId);
     return { ok: true };
@@ -64,11 +68,15 @@ export class TeamService {
     userId: string,
     teamId: string,
     targetUserId: string,
-    capabilities: readonly TeamCapabilityInput[]
+    capabilities: readonly TeamCapabilityInput[],
   ) {
     await this.requireDirectCoach(userId, teamId);
     if (userId === targetUserId) {
-      throw new AppError(409, "ASSISTANT_SELF_FORBIDDEN", "Coach cannot assign themselves as Assistant");
+      throw new AppError(
+        409,
+        "ASSISTANT_SELF_FORBIDDEN",
+        "Coach cannot assign themselves as Assistant",
+      );
     }
     await this.repository.assignAssistant(teamId, targetUserId, capabilities, userId);
     return { ok: true };
@@ -98,22 +106,28 @@ export class TeamService {
         throw new AppError(
           400,
           "LINEUP_PLAYER_NOT_ON_ROSTER",
-          "Lineup slots may only use active Team players"
+          "Lineup slots may only use active Team players",
         );
       }
       if (assigned.has(slot.teamPlayerId)) {
-        throw new AppError(400, "LINEUP_PLAYER_DUPLICATE", "A player cannot occupy more than one lineup slot");
+        throw new AppError(
+          400,
+          "LINEUP_PLAYER_DUPLICATE",
+          "A player cannot occupy more than one lineup slot",
+        );
       }
       assigned.add(slot.teamPlayerId);
     }
 
     if (input.published) {
-      const completeStarters = input.slots.every((slot) => slot.isStarter && Boolean(slot.teamPlayerId));
+      const completeStarters = input.slots.every(
+        (slot) => slot.isStarter && Boolean(slot.teamPlayerId),
+      );
       if (!completeStarters) {
         throw new AppError(
           400,
           "LINEUP_PUBLISH_INCOMPLETE",
-          "Assign every starter before publishing the lineup"
+          "Assign every starter before publishing the lineup",
         );
       }
     }
@@ -181,7 +195,11 @@ export class TeamService {
     return game;
   }
 
-  async requireCapability(userId: string, teamId: string, capability: TeamCapabilityInput): Promise<void> {
+  async requireCapability(
+    userId: string,
+    teamId: string,
+    capability: TeamCapabilityInput,
+  ): Promise<void> {
     const access = await this.repository.access(teamId, userId);
     if (!access) throw new AppError(404, "TEAM_NOT_FOUND", "Team not found");
     if (!this.accessHasCapability(access, capability)) {
@@ -200,17 +218,24 @@ export class TeamService {
       throw new AppError(
         400,
         "LINEUP_FORMAT_MISMATCH",
-        `Formation and slots must match the selected ${expectedPlayers}v${expectedPlayers} format`
+        `Formation and slots must match the selected ${expectedPlayers}v${expectedPlayers} format`,
       );
     }
   }
 
   private accessHasCapability(access: TeamAccessRecord, capability: TeamCapabilityInput): boolean {
     const communityCoach = access.communityRole === "FOUNDER" || access.communityRole === "COACH";
-    return communityCoach || directResponsibilityHasCapability(access.responsibility, access.grants, capability);
+    return (
+      communityCoach ||
+      directResponsibilityHasCapability(access.responsibility, access.grants, capability)
+    );
   }
 
-  private async hasCapability(userId: string, teamId: string, capability: TeamCapabilityInput): Promise<boolean> {
+  private async hasCapability(
+    userId: string,
+    teamId: string,
+    capability: TeamCapabilityInput,
+  ): Promise<boolean> {
     const access = await this.repository.access(teamId, userId);
     return Boolean(access && this.accessHasCapability(access, capability));
   }
@@ -226,7 +251,7 @@ export class TeamService {
       throw new AppError(
         409,
         "TEAM_CHALLENGE_COORDINATION_NOT_OPEN",
-        "Challenge coordination opens only after acceptance"
+        "Challenge coordination opens only after acceptance",
       );
     }
   }

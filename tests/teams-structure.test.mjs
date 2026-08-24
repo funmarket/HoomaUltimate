@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 
-const foundationMigration = "packages/database/prisma/migrations/20260823003000_initial_foundation/migration.sql";
-const lineupMigration = "packages/database/prisma/migrations/20260824120000_team_lineup_slot_coordinates/migration.sql";
+const foundationMigration =
+  "packages/database/prisma/migrations/20260823003000_initial_foundation/migration.sql";
+const lineupMigration =
+  "packages/database/prisma/migrations/20260824120000_team_lineup_slot_coordinates/migration.sql";
 const required = [
   "apps/api/src/modules/communities/domain/community-access.ts",
   "apps/api/src/modules/communities/application/community.service.ts",
@@ -15,7 +17,7 @@ const required = [
   "apps/api/src/modules/teams/http/team.routes.ts",
   "packages/frontend/src/teams/CreateTeamPage.tsx",
   foundationMigration,
-  lineupMigration
+  lineupMigration,
 ];
 
 test("Communities and Teams are layered target modules", async () => {
@@ -52,7 +54,7 @@ test("Team creation uses a dedicated page instead of an inline discovery form", 
     readFile("packages/frontend/src/teams/TeamsPage.tsx", "utf8"),
     readFile("packages/frontend/src/teams/CreateTeamPage.tsx", "utf8"),
     readFile("apps/web/src/app/router/HoomaRouter.tsx", "utf8"),
-    readFile("packages/frontend/src/index.ts", "utf8")
+    readFile("packages/frontend/src/index.ts", "utf8"),
   ]);
 
   assert.ok(teamsPage.includes('href="/teams/new"'));
@@ -64,5 +66,5 @@ test("Team creation uses a dedicated page instead of an inline discovery form", 
   assert.ok(createTeamPage.includes("Team logo / crest URL"));
   assert.ok(createTeamPage.includes("Banner image URL"));
   assert.ok(router.includes('path="/teams/new" element={<CreateTeamPage />}'));
-  assert.ok(frontendIndex.includes('./teams/CreateTeamPage'));
+  assert.ok(frontendIndex.includes("./teams/CreateTeamPage"));
 });

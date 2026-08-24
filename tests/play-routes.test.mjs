@@ -4,7 +4,8 @@ import test from "node:test";
 
 test("Web preserves mature Play/Event route surfaces", async () => {
   const main = await readFile("apps/web/src/main.tsx", "utf8");
-  for (const route of ["/play", "/events/new", "/formation", "/chat", "/check-in"]) assert.match(main, new RegExp(route.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  for (const route of ["/play", "/events/new", "/formation", "/chat", "/check-in"])
+    assert.match(main, new RegExp(route.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 });
 
 test("Play frontend uses public discovery and member action endpoints", async () => {

@@ -48,7 +48,9 @@ export function TeamBanner({ name, src, className = "", children }: TeamBannerPr
   const visible = Boolean(src) && !failed;
 
   return (
-    <div className={`team-media-banner ${visible ? "has-image" : "is-fallback"} ${className}`.trim()}>
+    <div
+      className={`team-media-banner ${visible ? "has-image" : "is-fallback"} ${className}`.trim()}
+    >
       {visible ? (
         <img
           className="team-media-banner__image"

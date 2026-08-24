@@ -39,5 +39,5 @@
 
 .profile-edit-form button:disabled {
   cursor: wait;
-  opacity: .65;
+  opacity: 0.65;
 }

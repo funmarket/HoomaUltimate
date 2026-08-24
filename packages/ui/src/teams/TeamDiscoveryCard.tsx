@@ -21,12 +21,14 @@ export function TeamDiscoveryCard({
   houma,
   motto,
   playerCount,
-  challengeHref
+  challengeHref,
 }: TeamDiscoveryCardProps) {
   const location = [houma, city].filter(Boolean).join(" · ") || "Location TBA";
   return (
     <article className="team-discovery-card-pro">
-      {bannerUrl ? <TeamBanner name={name} src={bannerUrl} className="team-discovery-banner" /> : null}
+      {bannerUrl ? (
+        <TeamBanner name={name} src={bannerUrl} className="team-discovery-banner" />
+      ) : null}
       <TeamBadge name={name} src={badgeUrl} className="team-discovery-badge" />
       <div className="team-discovery-main">
         <div className="team-discovery-heading">
@@ -37,10 +39,16 @@ export function TeamDiscoveryCard({
           <span>Public team</span>
         </div>
         <p className="team-discovery-motto">{motto || "Ready for the next challenge."}</p>
-        <div className="team-discovery-meta"><b>{playerCount}</b> active players</div>
+        <div className="team-discovery-meta">
+          <b>{playerCount}</b> active players
+        </div>
         <div className="team-discovery-actions">
           <a href={`/teams/${encodeURIComponent(id)}`}>View team</a>
-          {challengeHref ? <a className="primary" href={challengeHref}>Challenge</a> : null}
+          {challengeHref ? (
+            <a className="primary" href={challengeHref}>
+              Challenge
+            </a>
+          ) : null}
         </div>
       </div>
     </article>

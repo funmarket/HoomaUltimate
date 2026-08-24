@@ -38,7 +38,9 @@ export function TeamLineupPitch({ teamName, lineup, roster = [] }: TeamLineupPit
         <div className="team-lineup-center-spot" aria-hidden="true" />
 
         {slots.map((slot) => {
-          const rosterPlayer = slot.teamPlayerId ? rosterByTeamPlayerId.get(slot.teamPlayerId) : undefined;
+          const rosterPlayer = slot.teamPlayerId
+            ? rosterByTeamPlayerId.get(slot.teamPlayerId)
+            : undefined;
           const displayName =
             rosterPlayer?.user.presentation?.displayName ??
             rosterPlayer?.user.presentation?.username ??

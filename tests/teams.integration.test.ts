@@ -15,7 +15,7 @@ const config = loadApiConfig({
   DATABASE_URL: databaseUrl,
   WEB_ORIGIN: "http://localhost:5173",
   TELEGRAM_ORIGIN: "http://localhost:5174",
-  TELEGRAM_BOT_TOKEN: "integration-test-token"
+  TELEGRAM_BOT_TOKEN: "integration-test-token",
 });
 const db = getDatabaseClient();
 
@@ -48,13 +48,15 @@ async function register(base: string, username: string) {
       loginUsername: username,
       password: "correct horse battery staple",
       displayUsername: username,
-      displayName: username
-    })
+      displayName: username,
+    }),
   });
   assert.equal(response.status, 201);
   const cookie = response.headers.get("set-cookie");
   assert.ok(cookie);
-  const credential = await db.webCredential.findUniqueOrThrow({ where: { loginUsername: username } });
+  const credential = await db.webCredential.findUniqueOrThrow({
+    where: { loginUsername: username },
+  });
   return { cookie, userId: credential.userId };
 }
 
@@ -65,7 +67,7 @@ function memberHeaders(cookie: string) {
 function fiveAsideLineup(
   playerIds: readonly (string | null)[],
   published: boolean,
-  name = "Matchday Five"
+  name = "Matchday Five",
 ): TeamLineupInput {
   const positions: TeamLineupInput["slots"][number]["position"][] = ["GK", "CB", "CB", "CM", "ST"];
   const coordinates = [
@@ -73,7 +75,7 @@ function fiveAsideLineup(
     [30, 65],
     [70, 65],
     [50, 42],
-    [50, 18]
+    [50, 18],
   ] as const;
 
   return {
@@ -87,8 +89,8 @@ function fiveAsideLineup(
       x: coordinates[index]?.[0] ?? 50,
       y: coordinates[index]?.[1] ?? 50,
       isStarter: true,
-      sortOrder: index
-    }))
+      sortOrder: index,
+    })),
   };
 }
 
@@ -112,22 +114,25 @@ test("Team lifecycle includes resumable lineup drafts, publish privacy, and scop
     const communityOneResponse = await fetch(`${base}/api/v1/communities`, {
       method: "POST",
       headers: memberHeaders(founder.cookie),
-      body: JSON.stringify({ name: "Bab Souika" })
+      body: JSON.stringify({ name: "Bab Souika" }),
     });
     assert.equal(communityOneResponse.status, 201);
     const communityOne = (await communityOneResponse.json()) as { id: string };
 
-    const appointCommunityCoach = await fetch(`${base}/api/v1/communities/${communityOne.id}/coaches`, {
-      method: "POST",
-      headers: memberHeaders(founder.cookie),
-      body: JSON.stringify({ userId: communityCoach.userId })
-    });
+    const appointCommunityCoach = await fetch(
+      `${base}/api/v1/communities/${communityOne.id}/coaches`,
+      {
+        method: "POST",
+        headers: memberHeaders(founder.cookie),
+        body: JSON.stringify({ userId: communityCoach.userId }),
+      },
+    );
     assert.equal(appointCommunityCoach.status, 201);
 
     const teamOneResponse = await fetch(`${base}/api/v1/teams`, {
       method: "POST",
       headers: memberHeaders(founder.cookie),
-      body: JSON.stringify({ communityId: communityOne.id, name: "Bab Souika FC" })
+      body: JSON.stringify({ communityId: communityOne.id, name: "Bab Souika FC" }),
     });
     assert.equal(teamOneResponse.status, 201);
     const teamOne = (await teamOneResponse.json()) as { id: string };
@@ -135,14 +140,14 @@ test("Team lifecycle includes resumable lineup drafts, publish privacy, and scop
     const fallbackEdit = await fetch(`${base}/api/v1/teams/${teamOne.id}`, {
       method: "PATCH",
       headers: memberHeaders(communityCoach.cookie),
-      body: JSON.stringify({ motto: "Houma first" })
+      body: JSON.stringify({ motto: "Houma first" }),
     });
     assert.equal(fallbackEdit.status, 200);
 
     const communityTwoResponse = await fetch(`${base}/api/v1/communities`, {
       method: "POST",
       headers: memberHeaders(communityCoach.cookie),
-      body: JSON.stringify({ name: "Medina" })
+      body: JSON.stringify({ name: "Medina" }),
     });
     assert.equal(communityTwoResponse.status, 201);
     const communityTwo = (await communityTwoResponse.json()) as { id: string };
@@ -150,7 +155,7 @@ test("Team lifecycle includes resumable lineup drafts, publish privacy, and scop
     const teamTwoResponse = await fetch(`${base}/api/v1/teams`, {
       method: "POST",
       headers: memberHeaders(communityCoach.cookie),
-      body: JSON.stringify({ communityId: communityTwo.id, name: "Medina FC" })
+      body: JSON.stringify({ communityId: communityTwo.id, name: "Medina FC" }),
     });
     assert.equal(teamTwoResponse.status, 201);
     const teamTwo = (await teamTwoResponse.json()) as { id: string };
@@ -166,15 +171,15 @@ test("Team lifecycle includes resumable lineup drafts, publish privacy, and scop
       headers: memberHeaders(communityCoach.cookie),
       body: JSON.stringify({
         userId: assistant.userId,
-        capabilities: ["RESPOND_TO_CHALLENGE", "MANAGE_LINEUP"]
-      })
+        capabilities: ["RESPOND_TO_CHALLENGE", "MANAGE_LINEUP"],
+      }),
     });
     assert.equal(assignAssistant.status, 201);
 
     const deniedAssistantEdit = await fetch(`${base}/api/v1/teams/${teamTwo.id}`, {
       method: "PATCH",
       headers: memberHeaders(assistant.cookie),
-      body: JSON.stringify({ motto: "should fail" })
+      body: JSON.stringify({ motto: "should fail" }),
     });
     assert.equal(deniedAssistantEdit.status, 403);
 
@@ -182,14 +187,14 @@ test("Team lifecycle includes resumable lineup drafts, publish privacy, and scop
       const addPlayer = await fetch(`${base}/api/v1/teams/${teamTwo.id}/players`, {
         method: "POST",
         headers: memberHeaders(communityCoach.cookie),
-        body: JSON.stringify({ userId: player.userId })
+        body: JSON.stringify({ userId: player.userId }),
       });
       assert.equal(addPlayer.status, 201);
     }
 
     const teamTwoRoster = await db.teamPlayer.findMany({
       where: { teamId: teamTwo.id, leftAt: null, active: true },
-      select: { id: true, userId: true }
+      select: { id: true, userId: true },
     });
     assert.equal(teamTwoRoster.length, 5);
     const playerIdByUser = new Map(teamTwoRoster.map((player) => [player.userId, player.id]));
@@ -198,7 +203,7 @@ test("Team lifecycle includes resumable lineup drafts, publish privacy, and scop
       playerIdByUser.get(assistant.userId),
       playerIdByUser.get(playerThree.userId),
       playerIdByUser.get(playerFour.userId),
-      playerIdByUser.get(playerFive.userId)
+      playerIdByUser.get(playerFive.userId),
     ];
     assert.ok(starterIds.every((id): id is string => Boolean(id)));
 
@@ -206,41 +211,46 @@ test("Team lifecycle includes resumable lineup drafts, publish privacy, and scop
     const saveDraft = await fetch(`${base}/api/v1/teams/${teamTwo.id}/lineups/current`, {
       method: "PUT",
       headers: memberHeaders(assistant.cookie),
-      body: JSON.stringify(incompleteDraft)
+      body: JSON.stringify(incompleteDraft),
     });
     assert.equal(saveDraft.status, 200);
     const firstDraft = (await saveDraft.json()) as { id: string; published: boolean };
     assert.equal(firstDraft.published, false);
 
     const currentDraftResponse = await fetch(`${base}/api/v1/teams/${teamTwo.id}/lineups/current`, {
-      headers: memberHeaders(assistant.cookie)
+      headers: memberHeaders(assistant.cookie),
     });
     assert.equal(currentDraftResponse.status, 200);
     const currentDraft = (await currentDraftResponse.json()) as { id: string; published: boolean };
     assert.equal(currentDraft.id, firstDraft.id);
     assert.equal(currentDraft.published, false);
 
-    const ordinaryPlayerPrivateRead = await fetch(`${base}/api/v1/teams/${teamTwo.id}/lineups/current`, {
-      headers: memberHeaders(playerThree.cookie)
-    });
+    const ordinaryPlayerPrivateRead = await fetch(
+      `${base}/api/v1/teams/${teamTwo.id}/lineups/current`,
+      {
+        headers: memberHeaders(playerThree.cookie),
+      },
+    );
     assert.equal(ordinaryPlayerPrivateRead.status, 403);
 
     const publicBeforePublish = await fetch(`${base}/api/public/v1/teams/${teamTwo.id}`);
     assert.equal(publicBeforePublish.status, 200);
-    const publicDraftView = (await publicBeforePublish.json()) as { lineups: Array<{ id: string }> };
+    const publicDraftView = (await publicBeforePublish.json()) as {
+      lineups: Array<{ id: string }>;
+    };
     assert.equal(publicDraftView.lineups.length, 0);
 
     const incompletePublish = await fetch(`${base}/api/v1/teams/${teamTwo.id}/lineups/current`, {
       method: "PUT",
       headers: memberHeaders(assistant.cookie),
-      body: JSON.stringify({ ...incompleteDraft, published: true })
+      body: JSON.stringify({ ...incompleteDraft, published: true }),
     });
     assert.equal(incompletePublish.status, 400);
 
     const publishResponse = await fetch(`${base}/api/v1/teams/${teamTwo.id}/lineups/current`, {
       method: "PUT",
       headers: memberHeaders(assistant.cookie),
-      body: JSON.stringify(fiveAsideLineup(starterIds, true))
+      body: JSON.stringify(fiveAsideLineup(starterIds, true)),
     });
     assert.equal(publishResponse.status, 200);
     const firstPublished = (await publishResponse.json()) as { id: string; published: boolean };
@@ -249,13 +259,15 @@ test("Team lifecycle includes resumable lineup drafts, publish privacy, and scop
 
     const publicAfterPublish = await fetch(`${base}/api/public/v1/teams/${teamTwo.id}`);
     assert.equal(publicAfterPublish.status, 200);
-    const publicPublishedView = (await publicAfterPublish.json()) as { lineups: Array<{ id: string }> };
+    const publicPublishedView = (await publicAfterPublish.json()) as {
+      lineups: Array<{ id: string }>;
+    };
     assert.equal(publicPublishedView.lineups[0]?.id, firstDraft.id);
 
     const secondDraftResponse = await fetch(`${base}/api/v1/teams/${teamTwo.id}/lineups/current`, {
       method: "PUT",
       headers: memberHeaders(assistant.cookie),
-      body: JSON.stringify(fiveAsideLineup([...starterIds.slice(0, 4), null], false, "Next Match"))
+      body: JSON.stringify(fiveAsideLineup([...starterIds.slice(0, 4), null], false, "Next Match")),
     });
     assert.equal(secondDraftResponse.status, 200);
     const secondDraft = (await secondDraftResponse.json()) as { id: string; published: boolean };
@@ -264,33 +276,44 @@ test("Team lifecycle includes resumable lineup drafts, publish privacy, and scop
 
     const publicWhileEditing = await fetch(`${base}/api/public/v1/teams/${teamTwo.id}`);
     assert.equal(publicWhileEditing.status, 200);
-    const publicWhileEditingView = (await publicWhileEditing.json()) as { lineups: Array<{ id: string }> };
+    const publicWhileEditingView = (await publicWhileEditing.json()) as {
+      lineups: Array<{ id: string }>;
+    };
     assert.equal(publicWhileEditingView.lineups[0]?.id, firstPublished.id);
 
     const resaveDraftResponse = await fetch(`${base}/api/v1/teams/${teamTwo.id}/lineups/current`, {
       method: "PUT",
       headers: memberHeaders(assistant.cookie),
-      body: JSON.stringify(fiveAsideLineup([...starterIds.slice(0, 4), null], false, "Next Match Revised"))
+      body: JSON.stringify(
+        fiveAsideLineup([...starterIds.slice(0, 4), null], false, "Next Match Revised"),
+      ),
     });
     assert.equal(resaveDraftResponse.status, 200);
     const resavedDraft = (await resaveDraftResponse.json()) as { id: string; name: string };
     assert.equal(resavedDraft.id, secondDraft.id);
     assert.equal(resavedDraft.name, "Next Match Revised");
 
-    const publishSecondResponse = await fetch(`${base}/api/v1/teams/${teamTwo.id}/lineups/current`, {
-      method: "PUT",
-      headers: memberHeaders(assistant.cookie),
-      body: JSON.stringify(fiveAsideLineup(starterIds, true, "Next Match Revised"))
-    });
+    const publishSecondResponse = await fetch(
+      `${base}/api/v1/teams/${teamTwo.id}/lineups/current`,
+      {
+        method: "PUT",
+        headers: memberHeaders(assistant.cookie),
+        body: JSON.stringify(fiveAsideLineup(starterIds, true, "Next Match Revised")),
+      },
+    );
     assert.equal(publishSecondResponse.status, 200);
     const secondPublished = (await publishSecondResponse.json()) as { id: string };
     assert.equal(secondPublished.id, secondDraft.id);
 
-    const currentRows = await db.teamLineup.count({ where: { teamId: teamTwo.id, active: true, isCurrent: true } });
+    const currentRows = await db.teamLineup.count({
+      where: { teamId: teamTwo.id, active: true, isCurrent: true },
+    });
     assert.equal(currentRows, 1);
 
     const publicAfterSecondPublish = await fetch(`${base}/api/public/v1/teams/${teamTwo.id}`);
-    const latestPublic = (await publicAfterSecondPublish.json()) as { lineups: Array<{ id: string }> };
+    const latestPublic = (await publicAfterSecondPublish.json()) as {
+      lineups: Array<{ id: string }>;
+    };
     assert.equal(latestPublic.lineups[0]?.id, secondPublished.id);
 
     const duplicateIds = [...starterIds];
@@ -298,27 +321,27 @@ test("Team lifecycle includes resumable lineup drafts, publish privacy, and scop
     const duplicateAssignment = await fetch(`${base}/api/v1/teams/${teamTwo.id}/lineups/current`, {
       method: "PUT",
       headers: memberHeaders(assistant.cookie),
-      body: JSON.stringify(fiveAsideLineup(duplicateIds, true))
+      body: JSON.stringify(fiveAsideLineup(duplicateIds, true)),
     });
     assert.equal(duplicateAssignment.status, 400);
 
     const teamOnePlayer = await db.teamPlayer.findUniqueOrThrow({
       where: { teamId_userId: { teamId: teamOne.id, userId: founder.userId } },
-      select: { id: true }
+      select: { id: true },
     });
     const foreignIds = [...starterIds];
     foreignIds[0] = teamOnePlayer.id;
     const foreignAssignment = await fetch(`${base}/api/v1/teams/${teamTwo.id}/lineups/current`, {
       method: "PUT",
       headers: memberHeaders(assistant.cookie),
-      body: JSON.stringify(fiveAsideLineup(foreignIds, true))
+      body: JSON.stringify(fiveAsideLineup(foreignIds, true)),
     });
     assert.equal(foreignAssignment.status, 400);
 
     const formatMismatch = await fetch(`${base}/api/v1/teams/${teamTwo.id}/lineups/current`, {
       method: "PUT",
       headers: memberHeaders(assistant.cookie),
-      body: JSON.stringify({ ...fiveAsideLineup(starterIds, false), formation: "4-3-3" })
+      body: JSON.stringify({ ...fiveAsideLineup(starterIds, false), formation: "4-3-3" }),
     });
     assert.equal(formatMismatch.status, 400);
 
@@ -328,8 +351,8 @@ test("Team lifecycle includes resumable lineup drafts, publish privacy, and scop
       body: JSON.stringify({
         challengerTeamId: teamOne.id,
         challengedTeamId: teamOne.id,
-        format: "FIVE_V_FIVE"
-      })
+        format: "FIVE_V_FIVE",
+      }),
     });
     assert.equal(selfChallenge.status, 400);
 
@@ -340,39 +363,47 @@ test("Team lifecycle includes resumable lineup drafts, publish privacy, and scop
         challengerTeamId: teamOne.id,
         challengedTeamId: teamTwo.id,
         format: "FIVE_V_FIVE",
-        message: "Friday?"
-      })
+        message: "Friday?",
+      }),
     });
     assert.equal(challengeResponse.status, 201);
     const challenge = (await challengeResponse.json()) as { id: string };
 
-    const prematureMessage = await fetch(`${base}/api/v1/teams/challenges/${challenge.id}/messages`, {
-      method: "POST",
-      headers: memberHeaders(assistant.cookie),
-      body: JSON.stringify({ body: "Too early." })
-    });
+    const prematureMessage = await fetch(
+      `${base}/api/v1/teams/challenges/${challenge.id}/messages`,
+      {
+        method: "POST",
+        headers: memberHeaders(assistant.cookie),
+        body: JSON.stringify({ body: "Too early." }),
+      },
+    );
     assert.equal(prematureMessage.status, 409);
 
     const acceptResponse = await fetch(`${base}/api/v1/teams/challenges/${challenge.id}/accept`, {
       method: "POST",
-      headers: memberHeaders(assistant.cookie)
+      headers: memberHeaders(assistant.cookie),
     });
     assert.equal(acceptResponse.status, 200);
 
-    const messageResponse = await fetch(`${base}/api/v1/teams/challenges/${challenge.id}/messages`, {
-      method: "POST",
-      headers: memberHeaders(assistant.cookie),
-      body: JSON.stringify({ body: "We are in." })
-    });
+    const messageResponse = await fetch(
+      `${base}/api/v1/teams/challenges/${challenge.id}/messages`,
+      {
+        method: "POST",
+        headers: memberHeaders(assistant.cookie),
+        body: JSON.stringify({ body: "We are in." }),
+      },
+    );
     assert.equal(messageResponse.status, 201);
 
-    const games = await fetch(`${base}/api/v1/teams/games`, { headers: { cookie: assistant.cookie } });
+    const games = await fetch(`${base}/api/v1/teams/games`, {
+      headers: { cookie: assistant.cookie },
+    });
     assert.equal(games.status, 200);
     const gameRows = (await games.json()) as unknown[];
     assert.equal(gameRows.length, 1);
   } finally {
     await new Promise<void>((resolve, reject) =>
-      server.close((error) => (error ? reject(error) : resolve()))
+      server.close((error) => (error ? reject(error) : resolve())),
     );
     await resetDatabase();
   }

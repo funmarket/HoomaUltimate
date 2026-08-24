@@ -10,7 +10,7 @@ test("Team media is rendered from the canonical badge and banner URLs", async ()
     read("packages/frontend/src/teams/TeamDetailPage.tsx"),
     read("packages/ui/src/teams/TeamDiscoveryCard.tsx"),
     read("packages/ui/src/teams/TeamMedia.tsx"),
-    read("packages/frontend/src/index.ts")
+    read("packages/frontend/src/index.ts"),
   ]);
 
   assert.match(teamsPage, /bannerUrl=\{team\.bannerUrl\}/);

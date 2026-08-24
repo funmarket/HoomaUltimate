@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   FOOTBALL_FORMAT_PLAYER_COUNTS,
   TEAM_POSITION_ROLES,
-  type TeamLineupInput
+  type TeamLineupInput,
 } from "@hooma/contracts";
 import type { TeamControlDetail, TeamLineupView, TeamRosterPlayer } from "../api";
 import { TeamLineupPitch } from "./TeamLineupPitch";
@@ -26,7 +26,7 @@ const MATCH_FORMATS: Array<{ value: FootballFormat; label: string }> = [
   { value: "SEVEN_V_SEVEN", label: "7v7" },
   { value: "EIGHT_V_EIGHT", label: "8v8" },
   { value: "NINE_V_NINE", label: "9v9" },
-  { value: "ELEVEN_V_ELEVEN", label: "11v11" }
+  { value: "ELEVEN_V_ELEVEN", label: "11v11" },
 ];
 
 const FORMATIONS: Record<FootballFormat, string[]> = {
@@ -35,7 +35,7 @@ const FORMATIONS: Record<FootballFormat, string[]> = {
   SEVEN_V_SEVEN: ["2-3-1", "3-2-1", "2-2-2", "CUSTOM"],
   EIGHT_V_EIGHT: ["3-3-1", "2-3-2", "3-2-2", "CUSTOM"],
   NINE_V_NINE: ["3-3-2", "4-3-1", "3-4-1", "CUSTOM"],
-  ELEVEN_V_ELEVEN: ["4-3-3", "4-4-2", "4-2-3-1", "3-5-2", "3-4-3", "CUSTOM"]
+  ELEVEN_V_ELEVEN: ["4-3-3", "4-4-2", "4-2-3-1", "3-5-2", "3-4-3", "CUSTOM"],
 };
 
 function matchSize(format: FootballFormat): number {
@@ -72,7 +72,7 @@ function presetSlots(formation: string, format: FootballFormat): DraftSlot[] {
       x: index === 0 ? 50 : 15 + ((index - 1) % 4) * 23,
       y: index === 0 ? 90 : 68 - Math.floor((index - 1) / 4) * 22,
       isStarter: true,
-      sortOrder: index
+      sortOrder: index,
     }));
   }
 
@@ -81,7 +81,7 @@ function presetSlots(formation: string, format: FootballFormat): DraftSlot[] {
     .map(Number)
     .filter((count) => Number.isFinite(count) && count > 0);
   const slots: DraftSlot[] = [
-    { teamPlayerId: null, position: "GK", x: 50, y: 90, isStarter: true, sortOrder: 0 }
+    { teamPlayerId: null, position: "GK", x: 50, y: 90, isStarter: true, sortOrder: 0 },
   ];
   const top = 68;
   const bottom = 18;
@@ -96,7 +96,7 @@ function presetSlots(formation: string, format: FootballFormat): DraftSlot[] {
         x: ((playerIndex + 1) * 100) / (count + 1),
         y,
         isStarter: true,
-        sortOrder: slots.length
+        sortOrder: slots.length,
       });
     }
   });
@@ -111,7 +111,11 @@ type TeamApi = {
 type TeamLineupManagerProps = {
   readonly api: TeamApi;
   readonly team: TeamControlDetail;
-  readonly onRun: (action: () => Promise<unknown>, success: string, refreshTeam?: boolean) => Promise<void>;
+  readonly onRun: (
+    action: () => Promise<unknown>,
+    success: string,
+    refreshTeam?: boolean,
+  ) => Promise<void>;
 };
 
 export function TeamLineupManager({ api, team, onRun }: TeamLineupManagerProps) {
@@ -121,14 +125,16 @@ export function TeamLineupManager({ api, team, onRun }: TeamLineupManagerProps) 
   const [format, setFormat] = useState<FootballFormat>(initialFormat);
   const [formation, setFormation] = useState(initialFormation);
   const [customFormation, setCustomFormation] = useState("4-1-4-1");
-  const [slots, setSlots] = useState<DraftSlot[]>(() => presetSlots(initialFormation, initialFormat));
+  const [slots, setSlots] = useState<DraftSlot[]>(() =>
+    presetSlots(initialFormation, initialFormat),
+  );
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
   const roster: TeamRosterPlayer[] = team.players;
   const selectedIds = useMemo(
     () => new Set(slots.flatMap((slot) => (slot.teamPlayerId ? [slot.teamPlayerId] : []))),
-    [slots]
+    [slots],
   );
 
   useEffect(() => {
@@ -164,8 +170,8 @@ export function TeamLineupManager({ api, team, onRun }: TeamLineupManagerProps) 
             x: slot.x,
             y: slot.y,
             isStarter: slot.isStarter,
-            sortOrder: index
-          }))
+            sortOrder: index,
+          })),
         );
       })
       .catch((reason: unknown) => {
@@ -186,7 +192,8 @@ export function TeamLineupManager({ api, team, onRun }: TeamLineupManagerProps) 
   const requiredCount = matchSize(format);
   const validFormation = formationFitsFormat(effectiveFormation, format);
   const canSave = name.trim().length > 0 && validFormation && slots.length === requiredCount;
-  const canPublish = canSave && assignedCount === requiredCount && slots.every((slot) => slot.isStarter);
+  const canPublish =
+    canSave && assignedCount === requiredCount && slots.every((slot) => slot.isStarter);
 
   const previewLineup: TeamLineupView = {
     id: "draft",
@@ -202,8 +209,8 @@ export function TeamLineupManager({ api, team, onRun }: TeamLineupManagerProps) 
       x: slot.x,
       y: slot.y,
       isStarter: slot.isStarter,
-      sortOrder: index
-    }))
+      sortOrder: index,
+    })),
   };
 
   function chooseFormat(next: FootballFormat) {
@@ -237,12 +244,12 @@ export function TeamLineupManager({ api, team, onRun }: TeamLineupManagerProps) 
         x: slot.x,
         y: slot.y,
         isStarter: slot.isStarter,
-        sortOrder: index
-      }))
+        sortOrder: index,
+      })),
     };
     await onRun(
       () => api.saveCurrentLineup(team.id, input),
-      publish ? "Lineup published." : "Lineup draft saved."
+      publish ? "Lineup published." : "Lineup draft saved.",
     );
   }
 
@@ -256,7 +263,9 @@ export function TeamLineupManager({ api, team, onRun }: TeamLineupManagerProps) 
 
   return (
     <section className="panel team-lineup-manager">
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
+      <div
+        style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}
+      >
         <div>
           <p className="eyebrow">MATCHDAY SHAPE</p>
           <h3 style={{ margin: "4px 0 0" }}>Formation &amp; Lineup</h3>
@@ -311,7 +320,10 @@ export function TeamLineupManager({ api, team, onRun }: TeamLineupManagerProps) 
             maxLength={20}
           />
           {!validFormation ? (
-            <small className="muted">Formation must total {requiredCount - 1} outfield players for {requiredCount}v{requiredCount}.</small>
+            <small className="muted">
+              Formation must total {requiredCount - 1} outfield players for {requiredCount}v
+              {requiredCount}.
+            </small>
           ) : null}
         </label>
       ) : null}
@@ -330,8 +342,8 @@ export function TeamLineupManager({ api, team, onRun }: TeamLineupManagerProps) 
                     const teamPlayerId = event.target.value || null;
                     setSlots((current) =>
                       current.map((item, itemIndex) =>
-                        itemIndex === index ? { ...item, teamPlayerId } : item
-                      )
+                        itemIndex === index ? { ...item, teamPlayerId } : item,
+                      ),
                     );
                   }}
                 >
@@ -358,8 +370,8 @@ export function TeamLineupManager({ api, team, onRun }: TeamLineupManagerProps) 
                     const position = event.target.value as PositionRole;
                     setSlots((current) =>
                       current.map((item, itemIndex) =>
-                        itemIndex === index ? { ...item, position } : item
-                      )
+                        itemIndex === index ? { ...item, position } : item,
+                      ),
                     );
                   }}
                 >
@@ -383,7 +395,9 @@ export function TeamLineupManager({ api, team, onRun }: TeamLineupManagerProps) 
                     onChange={(event) => {
                       const x = Number(event.target.value);
                       setSlots((current) =>
-                        current.map((item, itemIndex) => (itemIndex === index ? { ...item, x } : item))
+                        current.map((item, itemIndex) =>
+                          itemIndex === index ? { ...item, x } : item,
+                        ),
                       );
                     }}
                   />
@@ -398,7 +412,9 @@ export function TeamLineupManager({ api, team, onRun }: TeamLineupManagerProps) 
                     onChange={(event) => {
                       const y = Number(event.target.value);
                       setSlots((current) =>
-                        current.map((item, itemIndex) => (itemIndex === index ? { ...item, y } : item))
+                        current.map((item, itemIndex) =>
+                          itemIndex === index ? { ...item, y } : item,
+                        ),
                       );
                     }}
                   />
@@ -409,7 +425,9 @@ export function TeamLineupManager({ api, team, onRun }: TeamLineupManagerProps) 
         ))}
       </div>
 
-      {!roster.length ? <p className="muted">Add players to the Team roster before assigning lineup slots.</p> : null}
+      {!roster.length ? (
+        <p className="muted">Add players to the Team roster before assigning lineup slots.</p>
+      ) : null}
 
       <div className="slot-actions">
         <button type="button" disabled={!canSave} onClick={() => void save(false)}>
@@ -422,7 +440,8 @@ export function TeamLineupManager({ api, team, onRun }: TeamLineupManagerProps) 
 
       {!canPublish ? (
         <p className="muted" style={{ margin: 0, fontSize: 13 }}>
-          Assign all {requiredCount} starters and use a valid {requiredCount}v{requiredCount} formation before publishing. Drafts may keep slots unassigned.
+          Assign all {requiredCount} starters and use a valid {requiredCount}v{requiredCount}{" "}
+          formation before publishing. Drafts may keep slots unassigned.
         </p>
       ) : null}
     </section>

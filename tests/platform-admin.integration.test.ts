@@ -14,7 +14,7 @@ const config = loadApiConfig({
   DATABASE_URL: databaseUrl,
   WEB_ORIGIN: "http://localhost:5173",
   TELEGRAM_ORIGIN: "http://localhost:5174",
-  TELEGRAM_BOT_TOKEN: "integration-test-token"
+  TELEGRAM_BOT_TOKEN: "integration-test-token",
 });
 const db = getDatabaseClient();
 
@@ -36,8 +36,8 @@ async function register(base: string, loginUsername: string) {
       loginUsername,
       password: "correct horse battery staple",
       displayUsername: loginUsername,
-      displayName: loginUsername
-    })
+      displayName: loginUsername,
+    }),
   });
   assert.equal(response.status, 201);
   const cookie = response.headers.get("set-cookie");
@@ -56,18 +56,28 @@ test("global admin route rejects normal members and accepts PLATFORM_ADMIN only"
 
   try {
     const memberCookie = await register(base, "member");
-    const denied = await fetch(`${base}/api/v1/admin/overview`, { headers: { cookie: memberCookie } });
+    const denied = await fetch(`${base}/api/v1/admin/overview`, {
+      headers: { cookie: memberCookie },
+    });
     assert.equal(denied.status, 403);
 
     const adminCookie = await register(base, "creator");
-    const creator = await db.webCredential.findUniqueOrThrow({ where: { loginUsername: "creator" } });
-    await db.platformRoleAssignment.create({ data: { userId: creator.userId, role: "PLATFORM_ADMIN" } });
-    const allowed = await fetch(`${base}/api/v1/admin/overview`, { headers: { cookie: adminCookie } });
+    const creator = await db.webCredential.findUniqueOrThrow({
+      where: { loginUsername: "creator" },
+    });
+    await db.platformRoleAssignment.create({
+      data: { userId: creator.userId, role: "PLATFORM_ADMIN" },
+    });
+    const allowed = await fetch(`${base}/api/v1/admin/overview`, {
+      headers: { cookie: adminCookie },
+    });
     assert.equal(allowed.status, 200);
-    const overview = await allowed.json() as { activePlatformAdmins: number };
+    const overview = (await allowed.json()) as { activePlatformAdmins: number };
     assert.equal(overview.activePlatformAdmins, 1);
   } finally {
-    await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve())),
+    );
     await resetDatabase();
   }
 });

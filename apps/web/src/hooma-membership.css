@@ -21,7 +21,7 @@
   justify-content: space-between;
   gap: 14px;
   padding: 13px 0;
-  border-top: 1px solid rgba(255, 255, 255, .09);
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
 }
 
 .hooma-member-identity {
@@ -37,7 +37,7 @@
   height: 42px;
   flex: 0 0 42px;
   border-radius: 50%;
-  border: 1px solid rgba(181, 155, 87, .52);
+  border: 1px solid rgba(181, 155, 87, 0.52);
   object-fit: cover;
 }
 
@@ -46,7 +46,9 @@
   place-items: center;
   background: #0a0b0b;
   color: #f2ead7;
-  font: 800 13px Georgia, serif;
+  font:
+    800 13px Georgia,
+    serif;
 }
 
 .hooma-member-identity > div {
@@ -76,7 +78,7 @@
 
 .hooma-member-controls button {
   min-height: 34px;
-  border: 1px solid rgba(242, 234, 215, .22);
+  border: 1px solid rgba(242, 234, 215, 0.22);
   border-radius: 999px;
   background: transparent;
   color: #f2ead7;
@@ -93,12 +95,12 @@
 }
 
 .hooma-member-controls button.danger {
-  border-color: rgba(255, 150, 128, .35);
+  border-color: rgba(255, 150, 128, 0.35);
   color: #ffc0b1;
 }
 
 .hooma-member-controls button:disabled {
-  opacity: .45;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 

@@ -19,12 +19,14 @@ const EVENT_STATUS: Record<EventErrorCode, number> = {
   EVENT_FORMATION_DUPLICATE_PLAYER: 400,
   EVENT_CHECK_IN_REQUIRES_CONFIRMED_RSVP: 403,
   EVENT_CHAT_FORBIDDEN: 403,
-  EVENT_CHAT_INACTIVE: 409
+  EVENT_CHAT_INACTIVE: 409,
 };
 
 export const errorHandler: ErrorRequestHandler = (error, _request, response, _next) => {
   if (error instanceof EventError) {
-    response.status(EVENT_STATUS[error.code]).json({ error: { code: error.code, message: error.message } });
+    response
+      .status(EVENT_STATUS[error.code])
+      .json({ error: { code: error.code, message: error.message } });
     return;
   }
   if (error instanceof AppError) {
@@ -33,10 +35,16 @@ export const errorHandler: ErrorRequestHandler = (error, _request, response, _ne
   }
   if (error instanceof ZodError) {
     response.status(400).json({
-      error: { code: "VALIDATION_ERROR", message: "Request validation failed", issues: error.issues }
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Request validation failed",
+        issues: error.issues,
+      },
     });
     return;
   }
   console.error(error);
-  response.status(500).json({ error: { code: "INTERNAL_ERROR", message: "Unexpected server error" } });
+  response
+    .status(500)
+    .json({ error: { code: "INTERNAL_ERROR", message: "Unexpected server error" } });
 };

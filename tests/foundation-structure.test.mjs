@@ -17,7 +17,7 @@ const requiredDirectories = [
   "packages/domain",
   "packages/storage",
   "packages/testing",
-  "packages/ui"
+  "packages/ui",
 ];
 
 test("greenfield workspace owns the locked app/package topology", async () => {

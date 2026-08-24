@@ -3,7 +3,7 @@ import type {
   TeamChallengeCreateInput,
   TeamCreateInput,
   TeamLineupInput,
-  TeamUpdateInput
+  TeamUpdateInput,
 } from "@hooma/contracts";
 
 export interface TeamListInput {
@@ -42,7 +42,7 @@ export interface TeamRepository {
     teamId: string,
     targetUserId: string,
     capabilities: readonly TeamCapabilityInput[],
-    coachUserId: string
+    coachUserId: string,
   ): Promise<void>;
   revokeAssistant(teamId: string, targetUserId: string): Promise<void>;
   listActivePlayerIds(teamId: string): Promise<string[]>;

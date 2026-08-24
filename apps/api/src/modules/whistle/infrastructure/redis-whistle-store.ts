@@ -19,7 +19,8 @@ function parseResp(buffer: Buffer, offset = 0): { value: RedisValue; offset: num
 
   if (prefix === "+") return { value: line, offset: next };
   if (prefix === ":") return { value: Number(line), offset: next };
-  if (prefix === "-") throw new AppError(503, "WHISTLE_REDIS_ERROR", "Whistle transient store rejected the request");
+  if (prefix === "-")
+    throw new AppError(503, "WHISTLE_REDIS_ERROR", "Whistle transient store rejected the request");
   if (prefix === "$") {
     const length = Number(line);
     if (length === -1) return { value: null, offset: next };
@@ -40,7 +41,11 @@ function parseResp(buffer: Buffer, offset = 0): { value: RedisValue; offset: num
     }
     return { value: values, offset: cursor };
   }
-  throw new AppError(503, "WHISTLE_REDIS_PROTOCOL", "Whistle transient store returned an unsupported response");
+  throw new AppError(
+    503,
+    "WHISTLE_REDIS_PROTOCOL",
+    "Whistle transient store returned an unsupported response",
+  );
 }
 
 class RedisConnection {
@@ -48,7 +53,12 @@ class RedisConnection {
 
   command(parts: readonly string[]): Promise<RedisValue> {
     const url = new URL(this.redisUrl);
-    if (url.protocol !== "redis:") throw new AppError(503, "WHISTLE_REDIS_CONFIG", "Whistle requires a redis:// transient store");
+    if (url.protocol !== "redis:")
+      throw new AppError(
+        503,
+        "WHISTLE_REDIS_CONFIG",
+        "Whistle requires a redis:// transient store",
+      );
     const port = Number(url.port || 6379);
     return new Promise((resolve, reject) => {
       const socket = net.createConnection({ host: url.hostname, port });
@@ -58,9 +68,19 @@ class RedisConnection {
         if (settled) return;
         settled = true;
         socket.destroy();
-        reject(error instanceof AppError ? error : new AppError(503, "WHISTLE_REDIS_UNAVAILABLE", "Whistle transient store is unavailable"));
+        reject(
+          error instanceof AppError
+            ? error
+            : new AppError(
+                503,
+                "WHISTLE_REDIS_UNAVAILABLE",
+                "Whistle transient store is unavailable",
+              ),
+        );
       };
-      socket.setTimeout(3000, () => fail(new AppError(503, "WHISTLE_REDIS_TIMEOUT", "Whistle transient store timed out")));
+      socket.setTimeout(3000, () =>
+        fail(new AppError(503, "WHISTLE_REDIS_TIMEOUT", "Whistle transient store timed out")),
+      );
       socket.once("error", fail);
       socket.once("connect", () => socket.write(encodeCommand(parts)));
       socket.on("data", (chunk: Buffer) => {
@@ -87,12 +107,22 @@ export class RedisWhistleStore implements WhistleTransientStore {
     this.redis = new RedisConnection(redisUrl);
   }
 
-  private bodyKey(whistleId: string) { return `whistle:body:${whistleId}`; }
+  private bodyKey(whistleId: string) {
+    return `whistle:body:${whistleId}`;
+  }
 
   async putBody(whistleId: string, body: string, expiresInMilliseconds: number): Promise<void> {
     const ttl = Math.max(1, Math.floor(expiresInMilliseconds));
-    const result = await this.redis.command(["SET", this.bodyKey(whistleId), body, "PX", String(ttl), "NX"]);
-    if (result !== "OK") throw new AppError(503, "WHISTLE_BODY_STORE_FAILED", "Could not store Whistle body");
+    const result = await this.redis.command([
+      "SET",
+      this.bodyKey(whistleId),
+      body,
+      "PX",
+      String(ttl),
+      "NX",
+    ]);
+    if (result !== "OK")
+      throw new AppError(503, "WHISTLE_BODY_STORE_FAILED", "Could not store Whistle body");
   }
 
   async getBody(whistleId: string): Promise<string | null> {

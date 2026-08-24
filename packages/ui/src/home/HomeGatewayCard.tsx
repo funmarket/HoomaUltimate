@@ -6,7 +6,12 @@ export interface HomeGatewayCardProps {
 
 export function HomeGatewayCard({ item }: HomeGatewayCardProps) {
   return (
-    <a className="home-gateway-card" href={item.href} aria-label={item.label} data-gateway={item.id}>
+    <a
+      className="home-gateway-card"
+      href={item.href}
+      aria-label={item.label}
+      data-gateway={item.id}
+    >
       <img
         className="home-gateway-card__image"
         src={item.artwork}

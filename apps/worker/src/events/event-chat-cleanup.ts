@@ -9,18 +9,18 @@ export interface EventChatCleanupResult {
 
 export async function cleanupExpiredEventChat(
   database: EventChatCleanupDatabase,
-  now: Date = new Date()
+  now: Date = new Date(),
 ): Promise<EventChatCleanupResult> {
   const messages = await database.eventChatMessage.deleteMany({
-    where: { expiresAt: { lte: now } }
+    where: { expiresAt: { lte: now } },
   });
 
   const rooms = await database.eventChatRoom.deleteMany({
-    where: { closesAt: { lte: now } }
+    where: { closesAt: { lte: now } },
   });
 
   return {
     deletedMessages: messages.count,
-    deletedRooms: rooms.count
+    deletedRooms: rooms.count,
   };
 }

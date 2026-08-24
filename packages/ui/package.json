@@ -9,10 +9,18 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
-  "dependencies": { "react": "19.1.1" },
-  "devDependencies": { "@types/react": "19.1.12", "typescript": "5.9.2" },
+  "dependencies": {
+    "react": "19.1.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.12",
+    "typescript": "5.9.2"
+  },
   "exports": {
-    ".": { "types": "./src/index.tsx", "default": "./dist/index.js" },
+    ".": {
+      "types": "./src/index.tsx",
+      "default": "./dist/index.js"
+    },
     "./bottom-nav.css": "./src/navigation/bottom-nav.css"
   }
 }

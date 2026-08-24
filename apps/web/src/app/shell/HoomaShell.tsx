@@ -6,7 +6,13 @@ import { useAccount } from "../../account/AccountProvider";
 import type { TelegramRuntime } from "../../telegram/runtime";
 import { useTelegramBackButton } from "../../telegram/useTelegramBackButton";
 
-export function HoomaShell({ children, runtime }: { readonly children: ReactNode; readonly runtime: TelegramRuntime }) {
+export function HoomaShell({
+  children,
+  runtime,
+}: {
+  readonly children: ReactNode;
+  readonly runtime: TelegramRuntime;
+}) {
   const navigate = useNavigate();
   const location = useLocation();
   const { api } = useHoomaFrontend();
@@ -23,7 +29,7 @@ export function HoomaShell({ children, runtime }: { readonly children: ReactNode
     ? {
         displayName: me.presentation.displayName,
         username: me.presentation.username,
-        photoUrl: me.presentation.photoUrl
+        photoUrl: me.presentation.photoUrl,
       }
     : null;
   const isPlatformAdmin = Boolean(me?.platformRoles.includes("PLATFORM_ADMIN"));
@@ -38,7 +44,11 @@ export function HoomaShell({ children, runtime }: { readonly children: ReactNode
         isPlatformAdmin={isPlatformAdmin}
         onHome={() => navigate("/")}
         onGuestProfile={() =>
-          navigate(hasTelegramIdentity ? "/profile" : `/login?returnTo=${encodeURIComponent(location.pathname + location.search)}`)
+          navigate(
+            hasTelegramIdentity
+              ? "/profile"
+              : `/login?returnTo=${encodeURIComponent(location.pathname + location.search)}`,
+          )
         }
         onProfile={() => navigate("/profile")}
         {...(managedTeams.length ? { onCoach: () => navigate("/teams/control") } : {})}

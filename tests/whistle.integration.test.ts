@@ -18,7 +18,7 @@ const config = loadApiConfig({
   REDIS_URL: redisUrl,
   WEB_ORIGIN: "http://localhost:5173",
   TELEGRAM_ORIGIN: "http://localhost:5174",
-  TELEGRAM_BOT_TOKEN: "integration-test-token"
+  TELEGRAM_BOT_TOKEN: "integration-test-token",
 });
 const db = getDatabaseClient();
 
@@ -39,12 +39,28 @@ async function redisCommand(parts: readonly string[]): Promise<string | number |
       const lineEnd = buffer.indexOf("\r\n");
       if (lineEnd < 0) return;
       const line = buffer.subarray(1, lineEnd).toString("utf8");
-      if (prefix === "+") { socket.end(); resolve(line); return; }
-      if (prefix === ":") { socket.end(); resolve(Number(line)); return; }
-      if (prefix === "-") { socket.destroy(); reject(new Error(line)); return; }
+      if (prefix === "+") {
+        socket.end();
+        resolve(line);
+        return;
+      }
+      if (prefix === ":") {
+        socket.end();
+        resolve(Number(line));
+        return;
+      }
+      if (prefix === "-") {
+        socket.destroy();
+        reject(new Error(line));
+        return;
+      }
       if (prefix === "$") {
         const length = Number(line);
-        if (length === -1) { socket.end(); resolve(null); return; }
+        if (length === -1) {
+          socket.end();
+          resolve(null);
+          return;
+        }
         const start = lineEnd + 2;
         if (buffer.length < start + length + 2) return;
         socket.end();
@@ -94,13 +110,15 @@ async function register(base: string, username: string) {
       loginUsername: username,
       password: "correct horse battery staple",
       displayUsername: username,
-      displayName: username
-    })
+      displayName: username,
+    }),
   });
   assert.equal(response.status, 201);
   const cookie = response.headers.get("set-cookie");
   assert.ok(cookie);
-  const credential = await db.webCredential.findUniqueOrThrow({ where: { loginUsername: username } });
+  const credential = await db.webCredential.findUniqueOrThrow({
+    where: { loginUsername: username },
+  });
   return { cookie, userId: credential.userId };
 }
 
@@ -112,14 +130,17 @@ async function createCommunity(base: string, cookie: string) {
   const response = await fetch(`${base}/api/v1/communities`, {
     method: "POST",
     headers: headers(cookie),
-    body: JSON.stringify({ name: "Whistle HOOMA", city: "Tunis", houma: "Test" })
+    body: JSON.stringify({ name: "Whistle HOOMA", city: "Tunis", houma: "Test" }),
   });
   assert.equal(response.status, 201);
-  return await response.json() as { id: string };
+  return (await response.json()) as { id: string };
 }
 
 async function joinCommunity(base: string, cookie: string, communityId: string) {
-  const response = await fetch(`${base}/api/v1/communities/${communityId}/join`, { method: "POST", headers: headers(cookie) });
+  const response = await fetch(`${base}/api/v1/communities/${communityId}/join`, {
+    method: "POST",
+    headers: headers(cookie),
+  });
   assert.equal(response.status, 201);
 }
 
@@ -127,13 +148,15 @@ async function sendWhistle(base: string, cookie: string, communityId: string, bo
   return fetch(`${base}/api/v1/whistles/contexts/COMMUNITY/${communityId}`, {
     method: "POST",
     headers: headers(cookie),
-    body: JSON.stringify({ body })
+    body: JSON.stringify({ body }),
   });
 }
 
 function utcMidnightAfter(value: string): string {
   const date = new Date(value);
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1)).toISOString();
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1),
+  ).toISOString();
 }
 
 test("Whistle enforces visible daily UTC sessions, quota and metadata-only persistence", async () => {
@@ -156,19 +179,35 @@ test("Whistle enforces visible daily UTC sessions, quota and metadata-only persi
     await joinCommunity(base, concurrent.cookie, community.id);
     await joinCommunity(base, unicodeMember.cookie, community.id);
 
-    const outsiderList = await fetch(`${base}/api/v1/whistles/contexts/COMMUNITY/${community.id}`, { headers: headers(outsider.cookie) });
+    const outsiderList = await fetch(`${base}/api/v1/whistles/contexts/COMMUNITY/${community.id}`, {
+      headers: headers(outsider.cookie),
+    });
     assert.equal(outsiderList.status, 403);
 
     const complexGrapheme = "👨‍👩‍👧‍👦";
-    const exactLimit = await sendWhistle(base, unicodeMember.cookie, community.id, complexGrapheme.repeat(33));
+    const exactLimit = await sendWhistle(
+      base,
+      unicodeMember.cookie,
+      community.id,
+      complexGrapheme.repeat(33),
+    );
     assert.equal(exactLimit.status, 201);
-    const overLimit = await sendWhistle(base, unicodeMember.cookie, community.id, complexGrapheme.repeat(34));
+    const overLimit = await sendWhistle(
+      base,
+      unicodeMember.cookie,
+      community.id,
+      complexGrapheme.repeat(34),
+    );
     assert.equal(overLimit.status, 400);
 
     const durableSecret = "secret-body-never-persisted";
     const first = await sendWhistle(base, founder.cookie, community.id, durableSecret);
     assert.equal(first.status, 201);
-    const firstPayload = await first.json() as { whistle: { id: string; body: string; createdAt: string; expiresAt: string }; remainingToday: number; resetsAt: string };
+    const firstPayload = (await first.json()) as {
+      whistle: { id: string; body: string; createdAt: string; expiresAt: string };
+      remainingToday: number;
+      resetsAt: string;
+    };
     assert.equal(firstPayload.remainingToday, 10);
     assert.equal(firstPayload.whistle.body, durableSecret);
     assert.equal(firstPayload.whistle.expiresAt, utcMidnightAfter(firstPayload.whistle.createdAt));
@@ -178,15 +217,26 @@ test("Whistle enforces visible daily UTC sessions, quota and metadata-only persi
     const bodyTtl = await redisCommand(["PTTL", `whistle:body:${whistleId}`]);
     assert.equal(typeof bodyTtl, "number");
     assert.ok((bodyTtl as number) > 0);
-    assert.ok((bodyTtl as number) <= new Date(firstPayload.resetsAt).getTime() - Date.now() + 2_000);
+    assert.ok(
+      (bodyTtl as number) <= new Date(firstPayload.resetsAt).getTime() - Date.now() + 2_000,
+    );
 
-    const list = await fetch(`${base}/api/v1/whistles/contexts/COMMUNITY/${community.id}`, { headers: headers(member.cookie) });
+    const list = await fetch(`${base}/api/v1/whistles/contexts/COMMUNITY/${community.id}`, {
+      headers: headers(member.cookie),
+    });
     assert.equal(list.status, 200);
-    const listPayload = await list.json() as { items: { id: string; body: string }[]; remainingToday: number; resetsAt: string };
+    const listPayload = (await list.json()) as {
+      items: { id: string; body: string }[];
+      remainingToday: number;
+      resetsAt: string;
+    };
     assert.equal(listPayload.items.find((item) => item.id === whistleId)?.body, durableSecret);
     assert.equal(listPayload.resetsAt, firstPayload.resetsAt);
 
-    const obsoleteReveal = await fetch(`${base}/api/v1/whistles/${whistleId}/reveal`, { method: "POST", headers: headers(member.cookie) });
+    const obsoleteReveal = await fetch(`${base}/api/v1/whistles/${whistleId}/reveal`, {
+      method: "POST",
+      headers: headers(member.cookie),
+    });
     assert.equal(obsoleteReveal.status, 404);
 
     const metadataJson = await db.$queryRaw<{ json: string }[]>(Prisma.sql`
@@ -206,7 +256,9 @@ test("Whistle enforces visible daily UTC sessions, quota and metadata-only persi
     assert.equal(twelfth.status, 429);
 
     const concurrentAttempts = await Promise.all(
-      Array.from({ length: 12 }, (_, index) => sendWhistle(base, concurrent.cookie, community.id, `race-${index}`))
+      Array.from({ length: 12 }, (_, index) =>
+        sendWhistle(base, concurrent.cookie, community.id, `race-${index}`),
+      ),
     );
     assert.equal(concurrentAttempts.filter((response) => response.status === 201).length, 11);
     assert.equal(concurrentAttempts.filter((response) => response.status === 429).length, 1);
@@ -219,11 +271,16 @@ test("Whistle enforces visible daily UTC sessions, quota and metadata-only persi
       INSERT INTO "WhistleMetadata" ("id", "authorUserId", "contextType", "contextId", "createdAt", "expiresAt")
       VALUES (${expiredId}, ${member.userId}, CAST('COMMUNITY' AS "WhistleContextType"), ${community.id}, ${new Date(Date.now() - 86_400_000)}, ${new Date(Date.now() - 1_000)})
     `);
-    const cleanupTrigger = await fetch(`${base}/api/v1/whistles/contexts/COMMUNITY/${community.id}`, { headers: headers(member.cookie) });
+    const cleanupTrigger = await fetch(
+      `${base}/api/v1/whistles/contexts/COMMUNITY/${community.id}`,
+      { headers: headers(member.cookie) },
+    );
     assert.equal(cleanupTrigger.status, 200);
     const expiredCount = await db.whistleMetadata.count({ where: { id: expiredId } });
     assert.equal(expiredCount, 0);
   } finally {
-    await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve())),
+    );
   }
 });

@@ -15,8 +15,8 @@ export function createApp(config: ApiConfig, container: AppContainer) {
   app.use(
     cors({
       origin: [config.WEB_ORIGIN, config.TELEGRAM_ORIGIN],
-      credentials: true
-    })
+      credentials: true,
+    }),
   );
   app.use(express.json({ limit: "1mb" }));
   app.use(createHealthRouter());

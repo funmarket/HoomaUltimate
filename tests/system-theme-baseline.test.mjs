@@ -21,8 +21,14 @@ test("System dark remains distinct from explicit Pitch black / gold", async () =
 
 test("System dark uses a true black application background", async () => {
   const css = await readFile(themeCss, "utf8");
-  assert.match(css, /:root\[data-appearance="system"\]\[data-theme="dark"\][\s\S]*--app-bg:\s*#000000/);
-  assert.match(css, /:root\[data-appearance="system"\]\[data-theme="dark"\] body[\s\S]*background:\s*#000000/);
+  assert.match(
+    css,
+    /:root\[data-appearance="system"\]\[data-theme="dark"\][\s\S]*--app-bg:\s*#000000/,
+  );
+  assert.match(
+    css,
+    /:root\[data-appearance="system"\]\[data-theme="dark"\] body[\s\S]*background:\s*#000000/,
+  );
 });
 
 test("canonical typography scale matches the approved readable sizes", async () => {

@@ -29,9 +29,20 @@ const HOME_GATEWAY_TYPOGRAPHY = `
 }
 `;
 
-export interface FoundationShellProps { readonly surface: "Web" | "Telegram"; readonly children?: ReactNode; }
+export interface FoundationShellProps {
+  readonly surface: "Web" | "Telegram";
+  readonly children?: ReactNode;
+}
 export function FoundationShell({ surface, children }: FoundationShellProps) {
-  return <main className="foundation-shell"><header><p className="eyebrow">{surface}</p><h1>HOOMA</h1></header><section className="shell-content">{children}</section></main>;
+  return (
+    <main className="foundation-shell">
+      <header>
+        <p className="eyebrow">{surface}</p>
+        <h1>HOOMA</h1>
+      </header>
+      <section className="shell-content">{children}</section>
+    </main>
+  );
 }
 export function HomeGateway() {
   return (
