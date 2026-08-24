@@ -1,16 +1,16 @@
-import type { PublishedTeamLineup, TeamRosterPlayer } from "../api";
+import type { TeamLineupView, TeamRosterPlayer } from "../api";
 import "./TeamLineupPitch.css";
 
 type TeamLineupPitchProps = {
   readonly teamName: string;
-  readonly lineup: PublishedTeamLineup | null;
+  readonly lineup: TeamLineupView | null;
   readonly roster?: readonly TeamRosterPlayer[];
 };
 
 export function TeamLineupPitch({ teamName, lineup, roster = [] }: TeamLineupPitchProps) {
-  const rosterByUserId = new Map(roster.map((player) => [player.userId, player]));
+  const rosterByTeamPlayerId = new Map(roster.map((player) => [player.id, player]));
   const slots = lineup?.slots ?? [];
-  const hasStarters = slots.some((slot) => Boolean(slot.userId));
+  const hasStarters = slots.some((slot) => Boolean(slot.teamPlayerId));
 
   return (
     <section className="team-lineup-pitch" aria-label={`${teamName} lineup`}>
@@ -21,7 +21,9 @@ export function TeamLineupPitch({ teamName, lineup, roster = [] }: TeamLineupPit
         </div>
         <div className="team-lineup-status">
           <span className={hasStarters ? "is-live" : "is-pending"}>
-            {hasStarters ? `${slots.filter((slot) => slot.userId).length} starters` : "Awaiting lineup"}
+            {hasStarters
+              ? `${slots.filter((slot) => slot.teamPlayerId && slot.isStarter).length} starters`
+              : "Awaiting lineup"}
           </span>
           <b>{lineup?.formation ?? "Unpublished"}</b>
         </div>
@@ -36,17 +38,13 @@ export function TeamLineupPitch({ teamName, lineup, roster = [] }: TeamLineupPit
         <div className="team-lineup-center-spot" aria-hidden="true" />
 
         {slots.map((slot) => {
-          const rosterPlayer = slot.userId ? rosterByUserId.get(slot.userId) : undefined;
+          const rosterPlayer = slot.teamPlayerId ? rosterByTeamPlayerId.get(slot.teamPlayerId) : undefined;
           const displayName =
             rosterPlayer?.user.presentation?.displayName ??
             rosterPlayer?.user.presentation?.username ??
             slot.position;
           const photoUrl = rosterPlayer?.user.presentation?.photoUrl ?? null;
-          const avatar = photoUrl ? (
-            <img src={photoUrl} alt="" />
-          ) : (
-            <b>{slot.sortOrder + 1}</b>
-          );
+          const avatar = photoUrl ? <img src={photoUrl} alt="" /> : <b>{slot.sortOrder + 1}</b>;
 
           return (
             <span
