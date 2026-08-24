@@ -3,9 +3,22 @@ import { AppearanceSettings, type AppearanceMode } from "@hooma/ui";
 import { getWebAppearanceMode, saveWebAppearanceMode } from "./theme";
 
 const WEB_CHOICES = [
-  { value: "system", label: "System theme", description: "Follow your browser and operating-system appearance." },
-  { value: "dark", label: "Pitch black / gold", description: "Use HOOMA's primary dark football presentation." },
-  { value: "light", label: "Light", description: "Use a bright high-contrast HOOMA presentation." }
+  {
+    value: "system",
+    label: "System theme",
+    description: "Follow your browser and operating-system appearance.",
+  },
+  {
+    value: "dark",
+    label: "Pitch black / gold",
+    description: "Use HOOMA's primary dark football presentation.",
+  },
+  { value: "light", label: "Light", description: "Use a bright high-contrast HOOMA presentation." },
+  {
+    value: "future-pitch",
+    label: "FUTURE PITCH",
+    description: "Dark futuristic football presentation with electric live-match accents.",
+  },
 ] as const satisfies readonly { value: AppearanceMode; label: string; description: string }[];
 
 export function SettingsPage() {

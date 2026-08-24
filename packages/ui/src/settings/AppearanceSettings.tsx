@@ -1,9 +1,9 @@
-export type AppearanceMode = "system" | "telegram" | "dark" | "light";
+export type AppearanceMode = "system" | "telegram" | "dark" | "light" | "future-pitch";
 
 export function AppearanceSettings({
   mode,
   choices,
-  onChange
+  onChange,
 }: {
   readonly mode: AppearanceMode;
   readonly choices: readonly { value: AppearanceMode; label: string; description: string }[];

@@ -2,22 +2,33 @@ import type { AppearanceMode } from "@hooma/ui";
 
 const STORAGE_KEY = "hooma-web-appearance";
 
-export function getWebAppearanceMode(): AppearanceMode {
-  const saved = window.localStorage.getItem(STORAGE_KEY);
-  if (saved === "dark" || saved === "light" || saved === "system") return saved;
-  return "system";
+type WebAppearanceMode = Exclude<AppearanceMode, "telegram">;
+type ResolvedWebAppearanceMode = Exclude<WebAppearanceMode, "system">;
+
+function isWebAppearanceMode(value: string | null): value is WebAppearanceMode {
+  return value === "dark" || value === "light" || value === "system" || value === "future-pitch";
 }
 
-export function applyWebAppearanceMode(mode: AppearanceMode): void {
-  const resolved = mode === "system"
-    ? (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
-    : mode;
+function resolveWebAppearanceMode(mode: WebAppearanceMode): ResolvedWebAppearanceMode {
+  if (mode === "system") {
+    return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+  }
+  return mode;
+}
+
+export function getWebAppearanceMode(): WebAppearanceMode {
+  const saved = window.localStorage.getItem(STORAGE_KEY);
+  return isWebAppearanceMode(saved) ? saved : "system";
+}
+
+export function applyWebAppearanceMode(mode: WebAppearanceMode): void {
+  const resolved = resolveWebAppearanceMode(mode);
   document.documentElement.dataset.theme = resolved;
-  document.documentElement.style.colorScheme = resolved;
+  document.documentElement.style.colorScheme = resolved === "light" ? "light" : "dark";
 }
 
 export function saveWebAppearanceMode(mode: AppearanceMode): void {
-  if (mode !== "system" && mode !== "dark" && mode !== "light") return;
+  if (mode === "telegram") return;
   window.localStorage.setItem(STORAGE_KEY, mode);
   applyWebAppearanceMode(mode);
 }
