@@ -1,0 +1,96 @@
+name: G3 Final Verification
+
+on:
+  push:
+    branches: [feat/gamers-human-match-system]
+    paths: [.github/workflows/g3-final-verify.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hooma_ultimate_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hooma_ultimate_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hooma_ultimate_test
+      REDIS_URL: redis://localhost:6379
+      WEB_ORIGIN: http://localhost:5173
+      TELEGRAM_ORIGIN: http://localhost:5174
+      TELEGRAM_BOT_TOKEN: integration-test-token
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/gamers-human-match-system
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npm run db:validate
+      - run: npm run db:migrate:deploy
+      - run: npm run architecture:check
+      - name: Check G3 formatting
+        run: >-
+          npx prettier --check
+          apps/api/src/modules/gamers/application/gamer-challenge.repository.ts
+          apps/api/src/modules/gamers/application/gamer-profile.repository.ts
+          apps/api/src/modules/gamers/application/gamer.service.ts
+          apps/api/src/modules/gamers/http/gamer.routes.ts
+          apps/api/src/modules/gamers/infrastructure/prisma-gamer-challenge.repository.ts
+          apps/api/src/modules/gamers/infrastructure/prisma-gamer-profile.repository.ts
+          packages/contracts/src/gamers.ts
+          packages/frontend/src/gamers/api.ts
+          packages/frontend/src/gamers/GamerGamePage.tsx
+          packages/frontend/src/gamers/GamerProfilePage.tsx
+          packages/frontend/src/gamers/GamersPage.tsx
+          packages/frontend/src/gamers/gamers.css
+          tests/gamers.integration.test.ts
+          docs/CANONICAL_MODEL.md
+      - name: Check G3 lint
+        run: >-
+          npx eslint
+          apps/api/src/modules/gamers/application/gamer-challenge.repository.ts
+          apps/api/src/modules/gamers/application/gamer-profile.repository.ts
+          apps/api/src/modules/gamers/application/gamer.service.ts
+          apps/api/src/modules/gamers/http/gamer.routes.ts
+          apps/api/src/modules/gamers/infrastructure/prisma-gamer-challenge.repository.ts
+          apps/api/src/modules/gamers/infrastructure/prisma-gamer-profile.repository.ts
+          packages/frontend/src/gamers/api.ts
+          packages/frontend/src/gamers/GamerGamePage.tsx
+          packages/frontend/src/gamers/GamerProfilePage.tsx
+          packages/frontend/src/gamers/GamersPage.tsx
+          --max-warnings=0
+      - run: npm run typecheck
+      - run: npm run build
+      - name: Run focused Gamers integration
+        run: npx tsx --test --test-concurrency=1 tests/gamers.integration.test.ts
+      - run: npm run deploy:preflight
+      - run: npm run security:check
+      - run: npm run db:migrate:status
