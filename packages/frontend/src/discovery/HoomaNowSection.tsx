@@ -9,18 +9,38 @@ function messageFrom(reason: unknown): string {
 }
 
 export function HoomaNowSection() {
-  const { transport } = useHoomaFrontend();
+  const { api, transport } = useHoomaFrontend();
   const discoveryApi = useMemo(() => createDiscoveryApi(transport), [transport]);
   const [items, setItems] = useState<DiscoveryNowItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [focusCommunityId, setFocusCommunityId] = useState<string | undefined>();
+  const [focusReady, setFocusReady] = useState(false);
   const refreshSeconds = useRef(30);
+
+  useEffect(() => {
+    let active = true;
+    void api.identity
+      .meOptional()
+      .then((me) => {
+        if (active) setFocusCommunityId(me?.communities[0]?.id);
+      })
+      .catch(() => {
+        if (active) setFocusCommunityId(undefined);
+      })
+      .finally(() => {
+        if (active) setFocusReady(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [api]);
 
   const load = useCallback(
     async (showLoading = false) => {
       if (showLoading) setLoading(true);
       try {
-        const response = await discoveryApi.now(30);
+        const response = await discoveryApi.now(30, focusCommunityId);
         setItems(response.items);
         refreshSeconds.current = response.refreshAfterSeconds;
         setError("");
@@ -30,10 +50,11 @@ export function HoomaNowSection() {
         if (showLoading) setLoading(false);
       }
     },
-    [discoveryApi],
+    [discoveryApi, focusCommunityId],
   );
 
   useEffect(() => {
+    if (!focusReady) return;
     let active = true;
     let timer = 0;
 
@@ -58,7 +79,7 @@ export function HoomaNowSection() {
       window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [load]);
+  }, [focusReady, load]);
 
   return (
     <section className="hooma-now" aria-labelledby="hooma-now-title">
@@ -68,7 +89,11 @@ export function HoomaNowSection() {
           <h2 id="hooma-now-title" className="hooma-now__title">
             HOOMA NOW
           </h2>
-          <p className="hooma-now__intro">What’s happening across HOOMA right now.</p>
+          <p className="hooma-now__intro">
+            {focusCommunityId
+              ? "Your HOOMA first, then what’s happening across HOOMA right now."
+              : "What’s happening across HOOMA right now."}
+          </p>
         </div>
         <span className="hooma-now__live" aria-label="Live activity feed">
           <span aria-hidden="true" /> LIVE
