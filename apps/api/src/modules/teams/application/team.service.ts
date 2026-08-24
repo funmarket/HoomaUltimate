@@ -27,6 +27,10 @@ export class TeamService {
     return team;
   }
 
+  myTeams(userId: string) {
+    return this.repository.listMine(userId);
+  }
+
   managedTeams(userId: string) {
     return this.repository.listManaged(userId);
   }

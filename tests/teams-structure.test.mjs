@@ -13,6 +13,7 @@ const required = [
   "apps/api/src/modules/teams/application/team.repository.ts",
   "apps/api/src/modules/teams/infrastructure/prisma-team.repository.ts",
   "apps/api/src/modules/teams/http/team.routes.ts",
+  "packages/frontend/src/teams/CreateTeamPage.tsx",
   foundationMigration,
   lineupMigration
 ];
@@ -44,4 +45,24 @@ test("Team lineup persistence follows canonical TeamPlayer and current-lineup ow
   assert.match(migration, /TeamLineupSlot_teamPlayerId_fkey/);
   assert.match(migration, /TeamLineupSlot_x_range/);
   assert.match(migration, /TeamLineupSlot_y_range/);
+});
+
+test("Team creation uses a dedicated page instead of an inline discovery form", async () => {
+  const [teamsPage, createTeamPage, router, frontendIndex] = await Promise.all([
+    readFile("packages/frontend/src/teams/TeamsPage.tsx", "utf8"),
+    readFile("packages/frontend/src/teams/CreateTeamPage.tsx", "utf8"),
+    readFile("apps/web/src/app/router/HoomaRouter.tsx", "utf8"),
+    readFile("packages/frontend/src/index.ts", "utf8")
+  ]);
+
+  assert.ok(teamsPage.includes('href="/teams/new"'));
+  assert.ok(teamsPage.includes("Create A Team"));
+  assert.ok(!teamsPage.includes("team-create-panel"));
+  assert.ok(!teamsPage.includes("async function createTeam"));
+  assert.ok(createTeamPage.includes("api.teams.create"));
+  assert.ok(createTeamPage.includes("Community"));
+  assert.ok(createTeamPage.includes("Team logo / crest URL"));
+  assert.ok(createTeamPage.includes("Banner image URL"));
+  assert.ok(router.includes('path="/teams/new" element={<CreateTeamPage />}'));
+  assert.ok(frontendIndex.includes('./teams/CreateTeamPage'));
 });
