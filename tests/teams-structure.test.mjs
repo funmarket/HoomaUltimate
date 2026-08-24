@@ -42,7 +42,8 @@ test("Team lineup persistence follows canonical TeamPlayer and current-lineup ow
   assert.match(schema, /model TeamLineup[\s\S]*isCurrent\s+Boolean/);
   assert.match(schema, /model TeamLineupSlot[\s\S]*teamPlayerId\s+String\?/);
   assert.match(schema, /model TeamLineupSlot[\s\S]*isStarter\s+Boolean/);
-  assert.doesNotMatch(schema, /model TeamLineupSlot[\s\S]*\n\s+userId\s+String\?/);
+  // Scope to the TeamLineupSlot model body so later models (e.g. FormationSlot) cannot match.
+  assert.doesNotMatch(schema, /model TeamLineupSlot\s*\{[^}]*\buserId\s+String\?/);
   assert.match(migration, /TeamLineup_one_current_per_team_key/);
   assert.match(migration, /TeamLineupSlot_teamPlayerId_fkey/);
   assert.match(migration, /TeamLineupSlot_x_range/);
