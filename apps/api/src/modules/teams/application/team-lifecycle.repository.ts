@@ -34,6 +34,6 @@ export interface TeamLifecycleRepository {
     offerId: string,
     targetUserId: string,
   ): Promise<TeamPlayerOfferRecord | null>;
-  acceptPlayerOffer(offerId: string, targetUserId: string): Promise<unknown>;
-  declinePlayerOffer(offerId: string, targetUserId: string): Promise<unknown>;
+  acceptPlayerOffer(offerId: string, targetUserId: string): Promise<unknown | null>;
+  declinePlayerOffer(offerId: string, targetUserId: string): Promise<unknown | null>;
 }
