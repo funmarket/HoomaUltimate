@@ -44,3 +44,14 @@ export function createIdentityPublicRouter(service: IdentityService, config: Api
 
   return router;
 }
+
+export function createIdentityProfilePublicRouter(service: IdentityService): Router {
+  const router = Router();
+  router.get(
+    "/:username",
+    asyncHandler(async (request, response) => {
+      response.json(await service.publicProfile(String(request.params.username)));
+    }),
+  );
+  return router;
+}
