@@ -272,11 +272,12 @@
 
 .play-player-card__action-zone {
   position: relative;
-  z-index: 3;
+  z-index: 0;
   display: grid;
   gap: 7px;
   margin-top: auto;
   padding: 14px;
+  pointer-events: none;
 }
 
 .play-player-card__action-zone > span {
