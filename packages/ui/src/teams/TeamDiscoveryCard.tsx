@@ -26,7 +26,7 @@ export function TeamDiscoveryCard({
   const location = [houma, city].filter(Boolean).join(" · ") || "Location TBA";
   return (
     <article className="team-discovery-card-pro">
-      <TeamBanner name={name} src={bannerUrl} className="team-discovery-banner" />
+      {bannerUrl ? <TeamBanner name={name} src={bannerUrl} className="team-discovery-banner" /> : null}
       <TeamBadge name={name} src={badgeUrl} className="team-discovery-badge" />
       <div className="team-discovery-main">
         <div className="team-discovery-heading">
