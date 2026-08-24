@@ -1,0 +1,41 @@
+name: Future Pitch format once
+
+on:
+  push:
+    branches: [feat/future-pitch-theme]
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/future-pitch-theme
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - name: Format branch-owned theme files
+        run: >-
+          npx prettier --write
+          apps/web/src/settings/SettingsPage.tsx
+          apps/web/src/settings/theme.ts
+          apps/web/src/theme.css
+          packages/ui/src/settings/AppearanceSettings.tsx
+          tests/future-pitch-theme.test.mjs
+      - name: Remove one-shot workflow and commit formatting
+        run: |
+          rm .github/workflows/future-pitch-format-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "style(theme): format Future Pitch files"
+          git push origin HEAD:feat/future-pitch-theme
