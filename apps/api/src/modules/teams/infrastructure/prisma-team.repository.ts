@@ -115,7 +115,17 @@ export class PrismaTeamRepository implements TeamRepository {
             matchFormat: true,
             published: true,
             updatedAt: true,
-            slots: { orderBy: { sortOrder: "asc" } }
+            slots: {
+              orderBy: { sortOrder: "asc" },
+              select: {
+                id: true,
+                userId: true,
+                position: true,
+                x: true,
+                y: true,
+                sortOrder: true
+              }
+            }
           }
         }
       }
@@ -258,6 +268,14 @@ export class PrismaTeamRepository implements TeamRepository {
     });
   }
 
+  async listActivePlayerUserIds(teamId: string): Promise<string[]> {
+    const rows = await this.db.teamPlayer.findMany({
+      where: { teamId, leftAt: null, active: true },
+      select: { userId: true }
+    });
+    return rows.map((row) => row.userId);
+  }
+
   createLineup(userId: string, teamId: string, input: TeamLineupInput) {
     return this.db.teamLineup.create({
       data: {
@@ -271,6 +289,8 @@ export class PrismaTeamRepository implements TeamRepository {
           create: input.slots.map((slot) => ({
             userId: slot.userId ?? null,
             position: slot.position,
+            x: slot.x,
+            y: slot.y,
             sortOrder: slot.sortOrder
           }))
         }

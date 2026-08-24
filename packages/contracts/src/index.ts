@@ -112,6 +112,19 @@ export const TEAM_STANDARD_FORMATIONS = [
   "3-4-3"
 ] as const;
 
+export const TEAM_POSITION_ROLES = [
+  "GK",
+  "CB",
+  "FB",
+  "WB",
+  "DM",
+  "CM",
+  "AM",
+  "W",
+  "ST",
+  "ANY"
+] as const;
+
 export const teamFormationSchema = z
   .string()
   .trim()
@@ -119,16 +132,20 @@ export const teamFormationSchema = z
   .max(20)
   .regex(/^\d+(?:-\d+){1,4}$/, "Formation must use numbers separated by hyphens, for example 4-3-3 or 4-2-3-1");
 
+export const teamLineupSlotSchema = z.object({
+  userId: z.string().min(1).optional().nullable(),
+  position: z.string().trim().min(1).max(20),
+  x: z.number().min(0).max(100),
+  y: z.number().min(0).max(100),
+  sortOrder: z.number().int().min(0).max(50).default(0)
+});
+
 export const teamLineupSchema = z.object({
   name: z.string().trim().min(1).max(100),
   formation: teamFormationSchema,
   matchFormat: footballFormatSchema,
   published: z.boolean().default(false),
-  slots: z.array(z.object({
-    userId: z.string().min(1).optional().nullable(),
-    position: z.string().trim().min(1).max(20),
-    sortOrder: z.number().int().min(0).max(50).default(0)
-  })).min(1).max(30)
+  slots: z.array(teamLineupSlotSchema).min(1).max(30)
 });
 
 export const teamChallengeCreateSchema = z.object({
@@ -146,6 +163,7 @@ export type TeamCapabilityInput = z.infer<typeof teamCapabilitySchema>;
 export type TeamCreateInput = z.infer<typeof teamCreateSchema>;
 export type TeamUpdateInput = z.infer<typeof teamUpdateSchema>;
 export type TeamLineupInput = z.infer<typeof teamLineupSchema>;
+export type TeamLineupSlotInput = z.infer<typeof teamLineupSlotSchema>;
 export type TeamChallengeCreateInput = z.infer<typeof teamChallengeCreateSchema>;
 
 export const eventTypeSchema = z.enum(["PLAY", "WATCH"]);
