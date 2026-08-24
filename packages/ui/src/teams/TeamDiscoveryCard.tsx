@@ -1,7 +1,10 @@
+import { TeamBadge, TeamBanner } from "./TeamMedia.js";
+
 export interface TeamDiscoveryCardProps {
   readonly id: string;
   readonly name: string;
   readonly badgeUrl?: string | null;
+  readonly bannerUrl?: string | null;
   readonly city?: string | null;
   readonly houma?: string | null;
   readonly motto?: string | null;
@@ -13,6 +16,7 @@ export function TeamDiscoveryCard({
   id,
   name,
   badgeUrl,
+  bannerUrl,
   city,
   houma,
   motto,
@@ -22,9 +26,8 @@ export function TeamDiscoveryCard({
   const location = [houma, city].filter(Boolean).join(" · ") || "Location TBA";
   return (
     <article className="team-discovery-card-pro">
-      <div className="team-discovery-badge">
-        {badgeUrl ? <img src={badgeUrl} alt={`${name} badge`} /> : <span>{name.slice(0, 2).toUpperCase()}</span>}
-      </div>
+      <TeamBanner name={name} src={bannerUrl} className="team-discovery-banner" />
+      <TeamBadge name={name} src={badgeUrl} className="team-discovery-badge" />
       <div className="team-discovery-main">
         <div className="team-discovery-heading">
           <div>
