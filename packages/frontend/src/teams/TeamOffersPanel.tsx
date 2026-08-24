@@ -2,11 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useHoomaFrontend } from "../context";
 import { createTeamOfferApi, type TeamPlayerOffer } from "./team-offer-api";
 
-export function TeamOffersPanel({
-  onAccepted,
-}: {
-  onAccepted?: () => void | Promise<void>;
-}) {
+export function TeamOffersPanel({ onAccepted }: { onAccepted?: () => void | Promise<void> }) {
   const { transport, protectedError } = useHoomaFrontend();
   const api = useMemo(() => createTeamOfferApi(transport), [transport]);
   const [offers, setOffers] = useState<TeamPlayerOffer[]>([]);
