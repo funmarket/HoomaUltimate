@@ -24,3 +24,5 @@ export * from "./events/CheckInPage";
 export * from "./gamers/GamersPage";
 export * from "./gamers/GamerGamePage";
 export * from "./gamers/GamerProfilePage";
+export * from "./discovery/api";
+export * from "./discovery/HoomaNowSection";

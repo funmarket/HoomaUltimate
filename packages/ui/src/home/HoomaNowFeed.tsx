@@ -1,0 +1,98 @@
+export type HoomaNowUrgency =
+  | "LIVE_NOW"
+  | "JUST_STARTED"
+  | "ACTIVE"
+  | "STARTING_SOON"
+  | "ENDING_SOON"
+  | "FINAL_MINUTES"
+  | "UPCOMING";
+
+export interface HoomaNowFeedItem {
+  readonly id: string;
+  readonly href: string;
+  readonly title: string;
+  readonly summary: string | null;
+  readonly sourceLabel: string;
+  readonly urgency: HoomaNowUrgency;
+  readonly startsAt: string | null;
+  readonly endsAt: string | null;
+  readonly occurredAt: string | null;
+  readonly context: {
+    readonly communityName: string | null;
+    readonly city: string | null;
+    readonly houma: string | null;
+  };
+}
+
+export interface HoomaNowFeedProps {
+  readonly items: readonly HoomaNowFeedItem[];
+}
+
+const urgencyPresentation: Readonly<
+  Record<HoomaNowUrgency, { label: string; tone: "green" | "orange" | "gold" }>
+> = {
+  LIVE_NOW: { label: "LIVE NOW", tone: "green" },
+  JUST_STARTED: { label: "JUST STARTED", tone: "green" },
+  ACTIVE: { label: "ACTIVE", tone: "green" },
+  STARTING_SOON: { label: "STARTING SOON", tone: "gold" },
+  ENDING_SOON: { label: "ENDING SOON", tone: "orange" },
+  FINAL_MINUTES: { label: "FINAL MINUTES", tone: "orange" },
+  UPCOMING: { label: "UPCOMING", tone: "gold" },
+};
+
+function contextLabel(item: HoomaNowFeedItem): string | null {
+  return item.context.communityName ?? item.context.houma ?? item.context.city;
+}
+
+function timeLabel(item: HoomaNowFeedItem): string | null {
+  const value = item.startsAt ?? item.occurredAt;
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
+
+export function HoomaNowFeed({ items }: HoomaNowFeedProps) {
+  return (
+    <div className="hooma-now-list">
+      {items.map((item) => {
+        const presentation = urgencyPresentation[item.urgency];
+        const place = contextLabel(item);
+        const time = timeLabel(item);
+        return (
+          <a
+            className="hooma-now-card"
+            data-tone={presentation.tone}
+            href={item.href}
+            key={item.id}
+          >
+            <span className="hooma-now-card__rail" aria-hidden="true" />
+            <span className="hooma-now-card__body">
+              <span className="hooma-now-card__top">
+                <span className="hooma-now-card__source">
+                  {place ? `${place} · ${item.sourceLabel}` : item.sourceLabel}
+                </span>
+                <span className="hooma-now-card__status">
+                  <span className="hooma-now-card__dot" aria-hidden="true" />
+                  {presentation.label}
+                </span>
+              </span>
+              <h3 className="hooma-now-card__title">{item.title}</h3>
+              {item.summary ? <p className="hooma-now-card__summary">{item.summary}</p> : null}
+              {time ? (
+                <span className="hooma-now-card__meta">
+                  <span>{time}</span>
+                </span>
+              ) : null}
+              <span className="hooma-now-card__cta">Open activity ↗</span>
+            </span>
+          </a>
+        );
+      })}
+    </div>
+  );
+}

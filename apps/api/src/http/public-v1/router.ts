@@ -10,6 +10,7 @@ import { createTeamPublicRouter } from "../../modules/teams/http/team.routes.js"
 import { createEventPublicRouter } from "../../modules/events/http/event.routes.js";
 import { createGamerPublicRouter } from "../../modules/gamers/http/gamer.routes.js";
 import { createPlayPublicRouter } from "../../modules/play/http/play.routes.js";
+import { createDiscoveryPublicRouter } from "../../modules/discovery/http/discovery.routes.js";
 
 export function createPublicV1Router(container: AppContainer, config: ApiConfig): Router {
   const router = Router();
@@ -20,5 +21,6 @@ export function createPublicV1Router(container: AppContainer, config: ApiConfig)
   router.use("/events", createEventPublicRouter(container.eventService));
   router.use("/gamers", createGamerPublicRouter(container.gamerService));
   router.use("/play", createPlayPublicRouter(container.playService));
+  router.use("/discovery", createDiscoveryPublicRouter(container.discoveryService));
   return router;
 }

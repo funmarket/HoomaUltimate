@@ -11,6 +11,8 @@ export type { AppearanceMode } from "./settings/AppearanceSettings.js";
 export { HomeHero } from "./home/HomeHero.js";
 export { HomeGatewayCard } from "./home/HomeGatewayCard.js";
 export { HomeGatewayGrid } from "./home/HomeGatewayGrid.js";
+export { HoomaNowFeed } from "./home/HoomaNowFeed.js";
+export type { HoomaNowFeedItem, HoomaNowFeedProps, HoomaNowUrgency } from "./home/HoomaNowFeed.js";
 export { HOME_GATEWAYS } from "./home/home-gateways.js";
 export type { HomeGatewayId, HomeGatewayItem } from "./home/home-gateways.js";
 export { TeamsHero } from "./teams/TeamsHero.js";
