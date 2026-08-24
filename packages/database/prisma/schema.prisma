@@ -273,6 +273,7 @@ model Team {
   city                 String?
   houma                String?
   badgeUrl             String?
+  bannerUrl            String?
   status               TeamStatus                     @default(ACTIVE)
   createdByUserId      String
   createdAt            DateTime                       @default(now())

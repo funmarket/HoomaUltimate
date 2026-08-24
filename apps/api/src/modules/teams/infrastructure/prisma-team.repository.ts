@@ -29,7 +29,8 @@ function teamCreateData(userId: string, input: TeamCreateInput, slug: string): P
     ...(input.motto !== undefined ? { motto: input.motto } : {}),
     ...(input.city !== undefined ? { city: input.city } : {}),
     ...(input.houma !== undefined ? { houma: input.houma } : {}),
-    ...(input.badgeUrl !== undefined ? { badgeUrl: input.badgeUrl } : {})
+    ...(input.badgeUrl !== undefined ? { badgeUrl: input.badgeUrl } : {}),
+    ...(input.bannerUrl !== undefined ? { bannerUrl: input.bannerUrl } : {})
   };
 }
 
@@ -39,7 +40,8 @@ function teamUpdateData(input: TeamUpdateInput): Prisma.TeamUncheckedUpdateInput
     ...(input.motto !== undefined ? { motto: input.motto } : {}),
     ...(input.city !== undefined ? { city: input.city } : {}),
     ...(input.houma !== undefined ? { houma: input.houma } : {}),
-    ...(input.badgeUrl !== undefined ? { badgeUrl: input.badgeUrl } : {})
+    ...(input.badgeUrl !== undefined ? { badgeUrl: input.badgeUrl } : {}),
+    ...(input.bannerUrl !== undefined ? { bannerUrl: input.bannerUrl } : {})
   };
 }
 
@@ -107,6 +109,7 @@ export class PrismaTeamRepository implements TeamRepository {
         city: true,
         houma: true,
         badgeUrl: true,
+        bannerUrl: true,
         communityId: true,
         _count: { select: { players: { where: { leftAt: null } } } }
       }
@@ -129,6 +132,7 @@ export class PrismaTeamRepository implements TeamRepository {
         city: true,
         houma: true,
         badgeUrl: true,
+        bannerUrl: true,
         community: { select: { id: true, name: true, slug: true } },
         players: {
           where: { leftAt: null, active: true },
@@ -157,6 +161,7 @@ export class PrismaTeamRepository implements TeamRepository {
         slug: true,
         name: true,
         badgeUrl: true,
+        bannerUrl: true,
         communityId: true,
         city: true,
         houma: true

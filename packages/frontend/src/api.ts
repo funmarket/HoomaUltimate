@@ -83,6 +83,7 @@ export type PublicTeamSummary = {
   city: string | null;
   houma: string | null;
   badgeUrl: string | null;
+  bannerUrl: string | null;
   communityId: string | null;
   _count: { players: number };
 };
@@ -92,6 +93,7 @@ export type ManagedTeam = {
   name: string;
   slug: string;
   badgeUrl: string | null;
+  bannerUrl: string | null;
   communityId: string | null;
   city: string | null;
   houma: string | null;
@@ -130,6 +132,7 @@ export type TeamControlDetail = {
   city: string | null;
   houma: string | null;
   badgeUrl: string | null;
+  bannerUrl: string | null;
   community: { id: string; name: string; slug: string } | null;
   players: TeamRosterPlayer[];
   responsibilities: {
