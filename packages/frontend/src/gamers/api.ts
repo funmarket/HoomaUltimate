@@ -1,10 +1,14 @@
 import type {
+  GamerChallenge,
+  GamerChallengeCreateInput,
+  GamerChallengeList,
   GamerChallengerList,
   GamerGame,
   GamerGameCreateInput,
   GamerGameList,
   GamerProfile,
   GamerProfileInput,
+  GamerPublicProfile,
 } from "@hooma/contracts/gamers";
 import { request, type HoomaTransport } from "../http";
 
@@ -23,6 +27,11 @@ export function createGamersApi(transport: HoomaTransport) {
         transport,
         `/api/public/v1/gamers/games/${encodeURIComponent(gameId)}/challengers`,
       ),
+    publicProfile: (gameId: string, profileId: string) =>
+      request<GamerPublicProfile>(
+        transport,
+        `/api/public/v1/gamers/games/${encodeURIComponent(gameId)}/profiles/${encodeURIComponent(profileId)}`,
+      ),
     myProfile: (gameId: string) =>
       request<GamerProfile | null>(
         transport,
@@ -36,6 +45,35 @@ export function createGamersApi(transport: HoomaTransport) {
           method: "PUT",
           body: JSON.stringify(input),
         },
+      ),
+    challenges: (gameId: string) =>
+      request<GamerChallengeList>(
+        transport,
+        `/api/v1/gamers/games/${encodeURIComponent(gameId)}/challenges`,
+      ),
+    createChallenge: (gameId: string, input: GamerChallengeCreateInput) =>
+      request<GamerChallenge>(
+        transport,
+        `/api/v1/gamers/games/${encodeURIComponent(gameId)}/challenges`,
+        { method: "POST", body: JSON.stringify(input) },
+      ),
+    acceptChallenge: (gameId: string, challengeId: string) =>
+      request<GamerChallenge>(
+        transport,
+        `/api/v1/gamers/games/${encodeURIComponent(gameId)}/challenges/${encodeURIComponent(challengeId)}/accept`,
+        { method: "POST" },
+      ),
+    declineChallenge: (gameId: string, challengeId: string) =>
+      request<GamerChallenge>(
+        transport,
+        `/api/v1/gamers/games/${encodeURIComponent(gameId)}/challenges/${encodeURIComponent(challengeId)}/decline`,
+        { method: "POST" },
+      ),
+    cancelChallenge: (gameId: string, challengeId: string) =>
+      request<GamerChallenge>(
+        transport,
+        `/api/v1/gamers/games/${encodeURIComponent(gameId)}/challenges/${encodeURIComponent(challengeId)}/cancel`,
+        { method: "POST" },
       ),
   };
 }

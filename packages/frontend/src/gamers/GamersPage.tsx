@@ -125,8 +125,7 @@ export function GamersPage() {
                   <span className="eyebrow">ACTIVE GAME</span>
                   <h3>{game.name}</h3>
                   <p className="muted">
-                    Open Challengers. Squads, Arena and Rankings follow in their own complete
-                    slices.
+                    Browse Challengers, send a challenge, and follow accepted Match Cards in Arena.
                   </p>
                 </div>
               </a>

@@ -767,7 +767,7 @@ Rules:
 
 # 19. Gamers current vertical-slice boundary
 
-Gamers is explicitly unfrozen by ADR-041. G1 established the persisted game catalog and shared `/gamers` entry. G2 adds game-specific GamerProfile identity plus privacy-safe public Challengers discovery without introducing challenge, result, ranking, Squad, Arena persistence, Gamer chat, or Gamer Squad Whistle authorization.
+Gamers is explicitly unfrozen by ADR-041. G1 established the persisted game catalog, G2 added game-specific GamerProfile identity plus privacy-safe Challengers discovery, and G3 adds the human challenge lifecycle, public full Gamer profiles, canonical Match Cards, and the Arena projection without coupling Gamers to football Team/Play challenge models.
 
 Current canonical ownership is:
 
@@ -775,10 +775,12 @@ Current canonical ownership is:
 Gamers domain
   -> GamerGameRepository port
   -> GamerProfileRepository port
+  -> GamerChallengeRepository port
   -> GamerService
   -> Gamer public/member routers
   -> PrismaGamerGameRepository
   -> PrismaGamerProfileRepository
+  -> PrismaGamerChallengeRepository
   -> PostgreSQL
   -> shared Web/Telegram Gamers frontend projection
 ```
@@ -825,21 +827,59 @@ GamerProfile
 Unique: (userId, gameId)
 ```
 
-G2 rules:
+G2/G3 profile rules:
 
 - one canonical HOOMA `User` may have at most one GamerProfile for a given GamerGame;
 - GamerProfile is game-specific identity and participation state, never a second User identity;
 - the game handle belongs to GamerProfile, while canonical username, display name, photo, and bio remain owned by User/UserPresentation;
 - the same User may have separate GamerProfiles and handles for different games;
 - only profiles with `openToChallenge == true` appear in public Challengers discovery;
-- public Challengers is a deliberate privacy-safe projection containing only GamerProfile `id`, game `handle`, and canonical public presentation fields required by the Challenger card;
-- public Challengers must not expose canonical `userId`, internal `gameId`, `openToChallenge`, or GamerProfile timestamps merely because those fields exist on the private record;
-- authenticated member routes may read/update only the current User's GamerProfile for the requested game;
+- public Challenger cards expose only GamerProfile `id`, game `handle`, and the canonical public presentation required by the card;
+- the public full Gamer profile deliberately exposes GamerProfile `id`, `handle`, `openToChallenge`, and canonical public presentation `username`, `displayName`, `photoUrl`, and `bio`;
+- neither public projection exposes canonical `userId`, internal `gameId`, GamerProfile timestamps, login credentials, email, sessions, or other private account data;
+- authenticated member routes may read/update only the current User’s GamerProfile for the requested game;
 - profile/discovery operations require an ACTIVE GamerGame; missing or inactive games are rejected rather than creating orphan/hidden profile state;
 - handle input is normalized for Unicode compatibility, trimmed, and internal whitespace collapsed before persistence;
-- public discovery never invents `ONLINE` presence or other telemetry HOOMA does not own;
-- G2 does not create challenge/Match Card, result, ranking, GamerSquad, Arena persistence, Gamer chat, or Gamer Squad Whistle authorization;
-- those later concepts are added only in their own authorized slices rather than speculatively extending G2.
+- public discovery never invents `ONLINE` presence or other telemetry HOOMA does not own.
+
+## GamerChallenge
+
+```text
+GamerChallenge
+  id
+  gameId
+  challengerProfileId
+  challengedProfileId
+  pairKey
+  status             PENDING | ACCEPTED | DECLINED | CANCELLED
+  createdAt
+  respondedAt?
+  cancelledAt?
+  updatedAt
+```
+
+G3 challenge rules:
+
+- GamerChallenge belongs only to Gamers; it never reuses TeamChallenge, TeamGame, Play Event, Team membership, Team authority, or football challenge tables;
+- challenger and challenged identities are GamerProfile records in the same ACTIVE GamerGame;
+- self-challenge is forbidden in service policy and by a PostgreSQL check constraint;
+- the challenged GamerProfile must be open to challenge at creation time;
+- `pairKey` is derived from the two GamerProfile ids in deterministic sorted order and therefore represents an unordered pair;
+- PostgreSQL owns concurrency safety through a partial unique index on `(gameId, pairKey)` while `status == PENDING`, so same-direction and reverse-direction simultaneous requests cannot create two unresolved challenges;
+- only the challenged GamerProfile’s canonical User may accept or decline a PENDING challenge;
+- only the challenger GamerProfile’s canonical User may cancel a PENDING challenge;
+- repeating the same already-completed action is idempotent; incompatible terminal rewrites are rejected;
+- G3 status transitions are `PENDING -> ACCEPTED | DECLINED | CANCELLED`; result submission/dispute/completion belongs to the later result slice.
+
+## Match Card and Arena
+
+- an ACCEPTED GamerChallenge is the canonical G3 Match Card; there is deliberately no `GamerMatch` table or duplicate accepted-match identity;
+- Arena is a member projection of the current User’s GamerChallenges for the selected game, not a persistence table;
+- incoming PENDING challenges expose Accept/Reject actions to the challenged User; outgoing PENDING challenges expose Cancel to the challenger;
+- accepted challenges render as Match Cards linking both public Gamer profiles;
+- actual gameplay remains external to HOOMA; G3 does not claim game-server integration, score telemetry, or presence;
+- SQUADS and RANKINGS remain unavailable until their dedicated slices are implemented truthfully;
+- result confirmation/dispute, ranking calculation, GamerSquad, Gamer Squad Whistle authorization, global Gamer chat/feed, and gameplay APIs remain future work and are not implied by G3.
 
 ---
 

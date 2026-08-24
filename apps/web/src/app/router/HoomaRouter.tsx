@@ -9,6 +9,7 @@ import {
   EventDetailPage,
   FormationBuilderPage,
   GamerGamePage,
+  GamerProfilePage,
   GamersPage,
   HoomaDetailPage,
   HoomaFrontendProvider,
@@ -85,9 +86,20 @@ function EventCheckInRoute() {
   const { eventId } = useParams();
   return <CheckInPage eventId={requiredParam("eventId", eventId)} />;
 }
+
 function GamerGameRoute() {
   const { gameSlug } = useParams();
   return <GamerGamePage gameSlug={requiredParam("gameSlug", gameSlug)} />;
+}
+
+function GamerProfileRoute() {
+  const { gameSlug, profileId } = useParams();
+  return (
+    <GamerProfilePage
+      gameSlug={requiredParam("gameSlug", gameSlug)}
+      profileId={requiredParam("profileId", profileId)}
+    />
+  );
 }
 
 function apiBaseUrl(): string {
@@ -147,6 +159,10 @@ function HoomaRoutes() {
               <Route path="/teams/:teamId" element={<TeamDetailRoute />} />
               <Route path="/gamers" element={<GamersPage />} />
               <Route path="/gamers/games/:gameSlug" element={<GamerGameRoute />} />
+              <Route
+                path="/gamers/games/:gameSlug/profiles/:profileId"
+                element={<GamerProfileRoute />}
+              />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Suspense>

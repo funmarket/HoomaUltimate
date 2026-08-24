@@ -32,18 +32,56 @@ export const gamerProfileSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 
+export const gamerPublicPresentationSchema = z.object({
+  username: z.string().min(1),
+  displayName: z.string().min(1),
+  photoUrl: z.string().url().nullable(),
+});
+
 export const gamerChallengerSchema = z.object({
   id: z.string().min(1),
   handle: z.string().min(1),
-  presentation: z.object({
-    username: z.string().min(1),
-    displayName: z.string().min(1),
-    photoUrl: z.string().url().nullable(),
-  }),
+  presentation: gamerPublicPresentationSchema,
 });
 
 export const gamerChallengerListSchema = z.object({
   items: z.array(gamerChallengerSchema),
+});
+
+export const gamerPublicProfileSchema = z.object({
+  id: z.string().min(1),
+  handle: z.string().min(1),
+  openToChallenge: z.boolean(),
+  presentation: gamerPublicPresentationSchema.extend({
+    bio: z.string().nullable(),
+  }),
+});
+
+export const gamerChallengeStatusSchema = z.enum(["PENDING", "ACCEPTED", "DECLINED", "CANCELLED"]);
+
+export const gamerChallengeCreateSchema = z.object({
+  challengedProfileId: z.string().min(1),
+});
+
+export const gamerChallengeParticipantSchema = z.object({
+  id: z.string().min(1),
+  handle: z.string().min(1),
+  presentation: gamerPublicPresentationSchema,
+});
+
+export const gamerChallengeSchema = z.object({
+  id: z.string().min(1),
+  gameId: z.string().min(1),
+  status: gamerChallengeStatusSchema,
+  createdAt: z.string().datetime(),
+  respondedAt: z.string().datetime().nullable(),
+  cancelledAt: z.string().datetime().nullable(),
+  challenger: gamerChallengeParticipantSchema,
+  challenged: gamerChallengeParticipantSchema,
+});
+
+export const gamerChallengeListSchema = z.object({
+  items: z.array(gamerChallengeSchema),
 });
 
 export type GamerGame = z.infer<typeof gamerGameSchema>;
@@ -53,3 +91,9 @@ export type GamerProfileInput = z.infer<typeof gamerProfileInputSchema>;
 export type GamerProfile = z.infer<typeof gamerProfileSchema>;
 export type GamerChallenger = z.infer<typeof gamerChallengerSchema>;
 export type GamerChallengerList = z.infer<typeof gamerChallengerListSchema>;
+export type GamerPublicProfile = z.infer<typeof gamerPublicProfileSchema>;
+export type GamerChallengeStatus = z.infer<typeof gamerChallengeStatusSchema>;
+export type GamerChallengeCreateInput = z.infer<typeof gamerChallengeCreateSchema>;
+export type GamerChallengeParticipant = z.infer<typeof gamerChallengeParticipantSchema>;
+export type GamerChallenge = z.infer<typeof gamerChallengeSchema>;
+export type GamerChallengeList = z.infer<typeof gamerChallengeListSchema>;

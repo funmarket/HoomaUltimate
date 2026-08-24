@@ -3,6 +3,7 @@ import type {
   GamerChallengerSummary,
   GamerProfileRecord,
   GamerProfileRepository,
+  GamerPublicProfile,
 } from "../application/gamer-profile.repository.js";
 
 const profileSelect = {
@@ -23,6 +24,38 @@ export class PrismaGamerProfileRepository implements GamerProfileRepository {
       where: { userId_gameId: { userId, gameId } },
       select: profileSelect,
     });
+  }
+
+  getById(profileId: string): Promise<GamerProfileRecord | null> {
+    return this.db.gamerProfile.findUnique({ where: { id: profileId }, select: profileSelect });
+  }
+
+  async getPublicByGameAndId(
+    gameId: string,
+    profileId: string,
+  ): Promise<GamerPublicProfile | null> {
+    const row = await this.db.gamerProfile.findFirst({
+      where: { id: profileId, gameId },
+      select: {
+        id: true,
+        handle: true,
+        openToChallenge: true,
+        user: {
+          select: {
+            presentation: {
+              select: { username: true, displayName: true, photoUrl: true, bio: true },
+            },
+          },
+        },
+      },
+    });
+    if (!row?.user.presentation) return null;
+    return {
+      id: row.id,
+      handle: row.handle,
+      openToChallenge: row.openToChallenge,
+      presentation: row.user.presentation,
+    };
   }
 
   async listOpenByGame(gameId: string): Promise<GamerChallengerSummary[]> {

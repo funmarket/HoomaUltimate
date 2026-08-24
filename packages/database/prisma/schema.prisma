@@ -125,6 +125,13 @@ enum GamerGameStatus {
   INACTIVE
 }
 
+enum GamerChallengeStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+}
+
 enum PlayLookingFor {
   GAME
   TEAM
@@ -582,24 +589,48 @@ model GamerGame {
   updatedAt       DateTime        @updatedAt
   createdBy       User?           @relation("GamerGameCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
   profiles        GamerProfile[]
+  challenges      GamerChallenge[]
 
   @@index([status, name])
   @@index([createdByUserId, createdAt])
 }
 
 model GamerProfile {
-  id              String    @id @default(cuid())
-  userId          String
-  gameId          String
-  handle          String
-  openToChallenge Boolean
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  game            GamerGame @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  id                 String           @id @default(cuid())
+  userId             String
+  gameId             String
+  handle             String
+  openToChallenge    Boolean
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game               GamerGame        @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  challengesSent     GamerChallenge[] @relation("GamerChallengeChallenger")
+  challengesReceived GamerChallenge[] @relation("GamerChallengeChallenged")
 
   @@unique([userId, gameId])
   @@index([gameId, openToChallenge, updatedAt])
+}
+
+model GamerChallenge {
+  id                  String               @id @default(cuid())
+  gameId              String
+  challengerProfileId String
+  challengedProfileId String
+  pairKey             String
+  status              GamerChallengeStatus @default(PENDING)
+  createdAt           DateTime              @default(now())
+  respondedAt         DateTime?
+  cancelledAt         DateTime?
+  updatedAt           DateTime              @updatedAt
+  game                GamerGame             @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  challengerProfile   GamerProfile          @relation("GamerChallengeChallenger", fields: [challengerProfileId], references: [id], onDelete: Cascade)
+  challengedProfile   GamerProfile          @relation("GamerChallengeChallenged", fields: [challengedProfileId], references: [id], onDelete: Cascade)
+
+  @@index([gameId, status, createdAt])
+  @@index([challengerProfileId, status, createdAt])
+  @@index([challengedProfileId, status, createdAt])
+  @@index([gameId, pairKey, status])
 }
 
 model PlayPlayerListing {
@@ -636,7 +667,7 @@ model OutboxEvent {
   payload       Json
   status        OutboxStatus @default(PENDING)
   attempts      Int          @default(0)
-  availableAt   DateTime     @default(now())
+  availableAt  DateTime     @default(now())
   claimedAt     DateTime?
   deliveredAt   DateTime?
   lastError     String?
