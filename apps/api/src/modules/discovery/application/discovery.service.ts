@@ -15,7 +15,11 @@ const HOUR = 60 * MINUTE;
 export class DiscoveryService {
   constructor(private readonly repository: DiscoveryRepository) {}
 
-  async now(now = new Date(), limit = 30): Promise<DiscoveryNowResponse> {
+  async now(
+    now = new Date(),
+    limit = 30,
+    focusCommunityId?: string,
+  ): Promise<DiscoveryNowResponse> {
     const safeLimit = Math.max(1, Math.min(limit, 50));
     const records = await this.repository.listCurrent({
       now,
@@ -28,7 +32,7 @@ export class DiscoveryService {
     const items = records
       .map((record) => projectRecord(record, now))
       .filter((item): item is DiscoveryNowItem => item !== null)
-      .sort(compareItems)
+      .sort((a, b) => compareItems(a, b, focusCommunityId))
       .slice(0, safeLimit);
 
     return {
@@ -102,7 +106,17 @@ function projectRecord(record: DiscoveryRecord, now: Date): DiscoveryNowItem | n
   };
 }
 
-function compareItems(a: DiscoveryNowItem, b: DiscoveryNowItem): number {
+function compareItems(
+  a: DiscoveryNowItem,
+  b: DiscoveryNowItem,
+  focusCommunityId?: string,
+): number {
+  if (focusCommunityId) {
+    const aFocused = a.context.communityId === focusCommunityId;
+    const bFocused = b.context.communityId === focusCommunityId;
+    if (aFocused !== bFocused) return aFocused ? -1 : 1;
+  }
+
   const urgency = compareUrgency(a.urgency, b.urgency);
   if (urgency !== 0) return urgency;
   const aTime = Date.parse(a.startsAt ?? a.occurredAt ?? "9999-12-31T00:00:00.000Z");
