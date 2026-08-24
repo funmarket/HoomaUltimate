@@ -2,7 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useHoomaFrontend } from "../context";
 import { createTeamOfferApi, type TeamPlayerOffer } from "./team-offer-api";
 
-export function TeamOffersPanel({ onAccepted }: { onAccepted?: () => void | Promise<void> }) {
+export function TeamOffersPanel({
+  onAccepted,
+}: {
+  onAccepted?: () => void | Promise<void>;
+}) {
   const { transport, protectedError } = useHoomaFrontend();
   const api = useMemo(() => createTeamOfferApi(transport), [transport]);
   const [offers, setOffers] = useState<TeamPlayerOffer[]>([]);
@@ -82,7 +86,9 @@ export function TeamOffersPanel({ onAccepted }: { onAccepted?: () => void | Prom
                 <span>They offered you a spot on their Team.</span>
               </div>
             </div>
-            {offer.message ? <p className="team-offer-request__message">“{offer.message}”</p> : null}
+            {offer.message ? (
+              <p className="team-offer-request__message">“{offer.message}”</p>
+            ) : null}
             <div className="team-offer-request__actions">
               <button
                 type="button"
