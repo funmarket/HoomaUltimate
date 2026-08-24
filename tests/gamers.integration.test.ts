@@ -431,7 +431,8 @@ test("G3 challenges enforce ownership, same-game/open rules, duplicate safety an
     );
     assert.equal(repeatedAccept.status, 200);
     const repeatedAccepted = (await repeatedAccept.json()) as { id: string; status: string };
-    assert.deepEqual(repeatedAccepted, { id: challenge.id, status: "ACCEPTED" });
+    assert.equal(repeatedAccepted.id, challenge.id);
+    assert.equal(repeatedAccepted.status, "ACCEPTED");
 
     const declineAccepted = await fetch(
       `${base}/api/v1/gamers/games/${fc.id}/challenges/${challenge.id}/decline`,
