@@ -16,7 +16,9 @@ export async function resolveAuthentication(
   const authorization = request.header("authorization") ?? "";
   const [scheme, rawInitData] = authorization.split(" ", 2);
   const hasTelegramCredential = scheme?.toLowerCase() === "tma";
-  const telegram = await service.resolveTelegram(hasTelegramCredential ? rawInitData : undefined);
+  const telegram = await service.resolveTelegram(
+    hasTelegramCredential ? rawInitData : undefined,
+  );
 
   if (hasTelegramCredential && telegram.kind === "invalid") {
     throw new AppError(
