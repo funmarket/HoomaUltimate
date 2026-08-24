@@ -16,7 +16,7 @@ Purpose: one source of truth for approved brand and Home artwork used by Web and
 
 | Logical ID | Asset | Approved source SHA-256 | Delivery SHA-256 | Canonical target | Surfaces | Status |
 |---|---|---|---|---|---|---|
-| `brand.hooma.wordmark` | HOOMA primary wordmark | donor Git blob `c0d491616c1fc787290e91ab767d7e11ac9f8af0` | PENDING | `packages/ui/assets/brand/hooma-wordmark.png` | Web, Telegram | PENDING_IMPORT_AND_VISUAL_VERIFICATION |
+| `brand.hooma.wordmark` | HOOMA primary wordmark | user-approved upload `Hoomalogo.png` (2026-08-24), `16e197ff9a18917c9af56a2276c5bdf764a998b63fc083248ad8408e63072e8a` | `f60ae7b2348d65e0f62e47d699a6bf775ec9adac3c9764c7658fa40b61698e71` | `apps/web/public/brand/hooma-wordmark.webp` via `packages/ui/src/brand/BrandMark.tsx` | Web, Telegram | APPROVED_AND_IMPORTED |
 | `home.matchday.hero` | Match Day / Create a Match hero | donor Git blob `70be826e16f62cebe9c061dc03ff07c22139bb02` | PENDING | `packages/ui/assets/home/matchday.png` | Web, Telegram | PENDING_IMPORT_AND_VISUAL_VERIFICATION |
 | `home.gateway.hooma` | HOOMA uploaded artwork | `33c09b0aea14121a2e90fe86a1015ac7560775e4e6d2e017f6508af8e8eb4a49` | `83fb0343731987ddb00c0ee718350e55e1ac3f6ffd7ef1c3138768f2d298b562` | `packages/ui/public/home-gateways/hooma.webp` | Web, Telegram | APPROVED_AND_IMPORTED; RUNTIME_BUILD_VERIFICATION_PENDING |
 | `home.gateway.teams` | Teams uploaded artwork | `fcfbb15f911eafdc7ab1efa2eddb04de80ce8e72f79ba666fe0d7800a4967403` | `fdbdac00eca7c704b4812efbfec1032c8695ea616963fd9dd53a275edea77aa3` | `packages/ui/public/home-gateways/teams.webp` | Web, Telegram | APPROVED_AND_IMPORTED; RUNTIME_BUILD_VERIFICATION_PENDING |
@@ -28,6 +28,8 @@ Purpose: one source of truth for approved brand and Home artwork used by Web and
 | `home.gateway.fundme` | FundMe uploaded artwork | `a71049b6efdf86a0508f747255f6830ab96771e08bd826323b0eab3306357bc6` | `cfd5e86f8ce187135f02969bd31480581907ca69f30bf9a34b04b7225c6bfeb8` | `packages/ui/public/home-gateways/fundme.webp` | Web, Telegram | APPROVED_AND_IMPORTED; RUNTIME_BUILD_VERIFICATION_PENDING |
 | `home.action.whistle` | Whistle secondary rectangular action | PENDING_EXACT_FILE | PENDING | `packages/ui/assets/home/actions/whistle.*` | Web, Telegram | PENDING_EXACT_FILE_RESOLUTION |
 | `home.action.replay` | Replay secondary rectangular action | PENDING_EXACT_FILE | PENDING | `packages/ui/assets/home/actions/replay.*` | Web, Telegram | PENDING_EXACT_FILE_RESOLUTION |
+
+The `brand.hooma.wordmark` delivery asset is a 360×98 transparent WebP derivative of the approved 1254×340 PNG. The artwork is unchanged apart from responsive resizing/compression. Web and Telegram resolve the same file through the shared Web frontend runtime.
 
 ## Gateway delivery contract
 

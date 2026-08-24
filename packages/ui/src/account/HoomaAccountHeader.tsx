@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { BrandMark } from "../brand/BrandMark.js";
 
 export interface HoomaAccountUser {
   readonly displayName: string;
@@ -131,7 +132,7 @@ export function HoomaAccountHeader({
   return (
     <header className="hooma-topbar">
       <button type="button" className="hooma-wordmark" onClick={onHome} aria-label="HOOMA home">
-        HOOMA
+        <BrandMark className="hooma-wordmark__image" />
       </button>
       <div className="hooma-topbar__actions">
         {notificationControl}
