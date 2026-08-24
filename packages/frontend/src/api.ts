@@ -26,11 +26,34 @@ export type WhistleList = { items: WhistleListItem[]; remainingToday: number; re
 export type PublicTeamSummary = { id: string; slug: string; name: string; motto: string | null; city: string | null; houma: string | null; badgeUrl: string | null; communityId: string | null; _count: { players: number } };
 export type PublicTeamList = { items: PublicTeamSummary[]; nextCursor: string | null };
 export type ManagedTeam = { id: string; name: string; slug: string; badgeUrl: string | null; communityId: string | null; city: string | null; houma: string | null };
+export type TeamRosterPlayer = {
+  userId: string;
+  joinedAt: string;
+  user: { presentation: { displayName: string; username: string; photoUrl?: string | null } | null };
+};
+export type TeamLineupSlotView = {
+  id?: string;
+  userId: string | null;
+  position: string;
+  x: number;
+  y: number;
+  sortOrder: number;
+};
+export type PublishedTeamLineup = {
+  id: string;
+  name: string;
+  formation: string;
+  matchFormat: string;
+  published: boolean;
+  updatedAt?: string;
+  slots: TeamLineupSlotView[];
+};
 export type TeamControlDetail = {
   id: string; communityId: string | null; slug: string; name: string; motto: string | null; city: string | null; houma: string | null; badgeUrl: string | null;
   community: { id: string; name: string; slug: string } | null;
-  players: { userId: string; joinedAt: string; user: { presentation: { displayName: string; username: string; photoUrl?: string | null } | null } }[];
+  players: TeamRosterPlayer[];
   responsibilities: { userId: string; role: "COACH" | "ASSISTANT"; user: { presentation: { displayName: string; username?: string } | null } }[];
+  lineups?: PublishedTeamLineup[];
 };
 export type TeamChallengeSummary = { id: string; challengerTeamId: string; challengedTeamId: string; status: "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED"; format: string; proposedAt: string | null; message: string | null; challengerTeam: { id: string; name: string }; challengedTeam: { id: string; name: string }; game?: { id: string; status?: string } | null };
 export type TeamGameSummary = { id: string; challengeId: string; status: "SCHEDULING" | "CONFIRMED" | "COMPLETED" | "CANCELLED"; scheduledAt: string | null; homeTeam: { id: string; name: string }; awayTeam: { id: string; name: string } };
