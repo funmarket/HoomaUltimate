@@ -74,7 +74,22 @@ test("register -> cookie session -> me -> protected logout works against Postgre
   const base = `http://127.0.0.1:${address.port}`;
 
   try {
+    const anonymousSession = await fetch(`${base}/api/public/v1/auth/session`);
+    assert.equal(anonymousSession.status, 200);
+    assert.equal(await anonymousSession.json(), null);
+
     const cookie = await registerWeb(base, "founder");
+
+    const optionalSession = await fetch(`${base}/api/public/v1/auth/session`, {
+      headers: { cookie },
+    });
+    assert.equal(optionalSession.status, 200);
+    const optionalSessionBody = (await optionalSession.json()) as {
+      presentation: { username: string };
+      transports: string[];
+    };
+    assert.equal(optionalSessionBody.presentation.username, "founder");
+    assert.deepEqual(optionalSessionBody.transports, ["web"]);
 
     const me = await fetch(`${base}/api/v1/me`, { headers: { cookie } });
     assert.equal(me.status, 200);
@@ -99,6 +114,12 @@ test("register -> cookie session -> me -> protected logout works against Postgre
 
     const afterLogout = await fetch(`${base}/api/v1/me`, { headers: { cookie } });
     assert.equal(afterLogout.status, 401);
+
+    const optionalAfterLogout = await fetch(`${base}/api/public/v1/auth/session`, {
+      headers: { cookie },
+    });
+    assert.equal(optionalAfterLogout.status, 200);
+    assert.equal(await optionalAfterLogout.json(), null);
   } finally {
     await new Promise<void>((resolve, reject) =>
       server.close((error) => (error ? reject(error) : resolve())),
@@ -118,6 +139,12 @@ test("Telegram public browsing does not create a HOOMA account before explicit a
   const authorization = `tma ${telegramInitData}`;
 
   try {
+    const optionalBrowseAccountCheck = await fetch(`${base}/api/public/v1/auth/session`, {
+      headers: { authorization },
+    });
+    assert.equal(optionalBrowseAccountCheck.status, 200);
+    assert.equal(await optionalBrowseAccountCheck.json(), null);
+
     const browseAccountCheck = await fetch(`${base}/api/v1/me`, {
       headers: { authorization },
     });
