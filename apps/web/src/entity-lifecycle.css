@@ -1,0 +1,89 @@
+.entity-danger-zone {
+  display: grid;
+  gap: 10px;
+  border-color: rgba(226, 79, 69, 0.42);
+  background: #15110f;
+}
+
+.entity-danger-zone h2,
+.entity-danger-zone h3,
+.entity-danger-zone p {
+  margin: 0;
+}
+
+.entity-delete-action {
+  width: fit-content;
+  min-height: 42px;
+  border: 1px solid #d94b42;
+  border-radius: 999px;
+  background: transparent;
+  color: #ffb4aa;
+  padding: 10px 16px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.entity-delete-action:hover:not(:disabled),
+.entity-delete-action:focus-visible:not(:disabled) {
+  background: rgba(217, 75, 66, 0.12);
+}
+
+.entity-delete-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-control-room {
+  display: grid;
+  gap: 18px;
+}
+
+.admin-control-room .auth-card {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+.admin-entity-section,
+.admin-entity-list {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-entity-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid #403927;
+}
+
+.admin-entity-row:last-child {
+  border-bottom: 0;
+}
+
+.admin-entity-row > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.admin-entity-row span {
+  color: #bfb59a;
+  font-size: 13px;
+}
+
+@media (max-width: 620px) {
+  .entity-delete-action,
+  .admin-entity-row .admin-link {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .admin-entity-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
