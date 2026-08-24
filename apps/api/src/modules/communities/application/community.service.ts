@@ -1,9 +1,17 @@
 import { AppError } from "../../../http/errors/app-error.js";
+import type { PlatformAdminAuthorizer } from "../../platform-admin/application/platform-admin.authorizer.js";
 import { canManageCommunity } from "../domain/community-access.js";
-import type { CommunityCreateInput, CommunityRepository } from "./community.repository.js";
+import type {
+  CommunityCreateInput,
+  CommunityRepository,
+  CommunityUpdateInput,
+} from "./community.repository.js";
 
 export class CommunityService {
-  constructor(private readonly repository: CommunityRepository) {}
+  constructor(
+    private readonly repository: CommunityRepository,
+    private readonly platformAdmin: PlatformAdminAuthorizer,
+  ) {}
 
   listPublic(limit = 30, cursor?: string) {
     return this.repository.listPublic(Math.min(Math.max(limit, 1), 100), cursor);
@@ -17,6 +25,25 @@ export class CommunityService {
 
   create(userId: string, input: CommunityCreateInput) {
     return this.repository.create(userId, input);
+  }
+
+  async update(userId: string, communityId: string, input: CommunityUpdateInput) {
+    await this.requireOwnerOrAdmin(communityId, userId);
+    return this.repository.update(communityId, input);
+  }
+
+  async archive(userId: string, communityId: string) {
+    const lifecycle = await this.requireOwnerOrAdmin(communityId, userId);
+    if (lifecycle.status === "ARCHIVED") return { ok: true };
+    if (lifecycle.hasActiveTeam || lifecycle.hasPublishedEvent) {
+      throw new AppError(
+        409,
+        "COMMUNITY_ARCHIVE_HAS_ACTIVE_DEPENDENCIES",
+        "Delete active Teams and finish or cancel published Events before deleting this HOOMA",
+      );
+    }
+    await this.repository.archive(communityId);
+    return { ok: true };
   }
 
   async join(userId: string, communityId: string) {
@@ -103,5 +130,21 @@ export class CommunityService {
     const role = await this.repository.managerRole(communityId, userId);
     if (!canManageCommunity(role))
       throw new AppError(403, "COMMUNITY_COACH_REQUIRED", "Founder or Coach access required");
+  }
+
+  private async requireOwnerOrAdmin(communityId: string, userId: string) {
+    const lifecycle = await this.repository.lifecycle(communityId);
+    if (!lifecycle) throw new AppError(404, "COMMUNITY_NOT_FOUND", "HOOMA community not found");
+    if (
+      lifecycle.createdByUserId !== userId &&
+      !(await this.platformAdmin.isPlatformAdmin(userId))
+    ) {
+      throw new AppError(
+        403,
+        "COMMUNITY_OWNER_OR_ADMIN_REQUIRED",
+        "HOOMA creator or App Admin access required",
+      );
+    }
+    return lifecycle;
   }
 }

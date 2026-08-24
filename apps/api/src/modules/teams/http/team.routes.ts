@@ -217,6 +217,12 @@ export function createTeamMemberRouter(service: TeamService): Router {
       ),
     ),
   );
+  router.delete(
+    "/:teamId",
+    asyncHandler(async (req, res) =>
+      res.json(await service.archive(getAuth(req).userId, String(req.params.teamId))),
+    ),
+  );
   router.post(
     "/",
     asyncHandler(async (req, res) =>

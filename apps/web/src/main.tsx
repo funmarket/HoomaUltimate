@@ -12,6 +12,7 @@ import "@hooma/frontend/gamers.css";
 import "./styles.css";
 import "./theme.css";
 import "./hooma-membership.css";
+import "./entity-lifecycle.css";
 import "./account/account.css";
 import "./profile/profile.css";
 

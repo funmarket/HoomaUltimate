@@ -174,16 +174,23 @@ export function ProfileContent({ me }: { me: MeResponse }) {
         {me.communities.length ? (
           <div className="profile-links">
             {me.communities.map((community) => (
-              <a href={`/hooma/${community.id}`} key={community.id}>
-                <strong>{community.name}</strong>
-                <span>
-                  {community.role === "FOUNDER"
-                    ? "Founder"
-                    : community.role === "COACH"
-                      ? "Coach"
-                      : "Member"}
-                </span>
-              </a>
+              <div className="profile-responsibility-row" key={community.id}>
+                <a href={`/hooma/${community.id}`}>
+                  <strong>{community.name}</strong>
+                  <span>
+                    {community.role === "FOUNDER"
+                      ? "Founder"
+                      : community.role === "COACH"
+                        ? "Coach"
+                        : "Member"}
+                  </span>
+                </a>
+                {community.role === "FOUNDER" ? (
+                  <a className="profile-manage-link" href={`/hooma/${community.id}/edit`}>
+                    Edit / Delete
+                  </a>
+                ) : null}
+              </div>
             ))}
           </div>
         ) : (

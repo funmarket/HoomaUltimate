@@ -13,6 +13,7 @@ import {
   GamerProfilePage,
   GamersPage,
   HoomaDetailPage,
+  HoomaEditPage,
   HoomaFrontendProvider,
   HoomaPage,
   PlayPage,
@@ -80,6 +81,11 @@ function TeamLineupRoute() {
 function HoomaDetailRoute() {
   const { communityId } = useParams();
   return <HoomaDetailPage communityId={requiredParam("communityId", communityId)} />;
+}
+
+function HoomaEditRoute() {
+  const { communityId } = useParams();
+  return <HoomaEditPage communityId={requiredParam("communityId", communityId)} />;
 }
 
 function EventDetailRoute() {
@@ -168,6 +174,7 @@ function HoomaRoutes() {
               <Route path="/events/:eventId/check-in" element={<EventCheckInRoute />} />
               <Route path="/hooma" element={<HoomaPage />} />
               <Route path="/hooma/new" element={<CreateHoomaPage />} />
+              <Route path="/hooma/:communityId/edit" element={<HoomaEditRoute />} />
               <Route path="/hooma/:communityId" element={<HoomaDetailRoute />} />
               <Route path="/teams" element={<TeamsPage />} />
               <Route path="/teams/new" element={<CreateTeamPage />} />
