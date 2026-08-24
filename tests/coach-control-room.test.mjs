@@ -68,9 +68,10 @@ test("Team lineup separates Formation from match format and offers standard plus
   assert.match(contracts, /formation: teamFormationSchema/);
   assert.match(contracts, /matchFormat: footballFormatSchema/);
   assert.match(contracts, /FOOTBALL_FORMAT_PLAYER_COUNTS/);
-  assert.match(schema, /formation\s+String/);
-  assert.match(schema, /matchFormat\s+FootballFormat/);
-  assert.doesNotMatch(schema, /model TeamLineup \{[\s\S]*?\n\s+format\s+FootballFormat/);
+  const teamLineupModel = schema.match(/model TeamLineup \{[\s\S]*?\n\}/)?.[0] ?? "";
+  assert.match(teamLineupModel, /formation\s+String/);
+  assert.match(teamLineupModel, /matchFormat\s+FootballFormat/);
+  assert.doesNotMatch(teamLineupModel, /\n\s+format\s+FootballFormat/);
   assert.match(repository, /formation: input\.formation/);
   assert.match(repository, /matchFormat: input\.matchFormat/);
 });
@@ -80,8 +81,8 @@ test("Team lineup management uses TeamPlayer identity and resumable current stat
   const lineupPage = await readFile(lineupPagePath, "utf8");
   const schema = await readFile("packages/database/prisma/schema.prisma", "utf8");
 
-  assert.match(manager, /api\.currentLineup\(team\.id\)/);
-  assert.match(manager, /api\.saveCurrentLineup\(team\.id, input\)/);
+  assert.match(manager, /api\s*\.\s*currentLineup\(team\.id\)/);
+  assert.match(manager, /api\s*\.\s*saveCurrentLineup\(team\.id, input\)/);
   assert.match(manager, /\[api, team\.id, team\.name\]/);
   assert.match(manager, /let active = true/);
   assert.match(manager, /if \(!active\) return/);
