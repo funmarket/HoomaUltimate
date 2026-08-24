@@ -3,6 +3,7 @@ import type { Prisma, PrismaClient } from "@hooma/database";
 import type {
   IdentityRepository,
   MeRecord,
+  PublicProfileRecord,
   SessionRecord,
   WebCredentialRecord,
 } from "../application/identity.repository.js";
@@ -143,6 +144,41 @@ export class PrismaIdentityRepository implements IdentityRepository {
       await this.refreshTelegramIdentity(concurrent.userId, input);
       return concurrent.userId;
     }
+  }
+
+  async findPublicProfile(username: string): Promise<PublicProfileRecord | null> {
+    const presentation = await this.db.userPresentation.findUnique({
+      where: { username },
+      select: {
+        username: true,
+        displayName: true,
+        photoUrl: true,
+        bio: true,
+        user: {
+          select: {
+            teamPlayers: {
+              where: { leftAt: null, active: true },
+              orderBy: { joinedAt: "asc" },
+              select: {
+                team: {
+                  select: { id: true, name: true, slug: true, badgeUrl: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!presentation) return null;
+    return {
+      presentation: {
+        username: presentation.username,
+        displayName: presentation.displayName,
+        photoUrl: presentation.photoUrl,
+        bio: presentation.bio,
+      },
+      teams: presentation.user.teamPlayers.map((row) => row.team),
+    };
   }
 
   async updatePresentation(

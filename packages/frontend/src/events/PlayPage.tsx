@@ -5,6 +5,7 @@ import { PickupMatchCard, PlayHero } from "@hooma/ui";
 import { useHoomaFrontend } from "../context";
 import type { PublicEvent } from "./api";
 import { createPlayApi, type MyPlayPlayerListing, type PublicPlayPlayerListing } from "./play-api";
+import { PlayPlayerCard } from "./PlayPlayerCard";
 import { useEventApi } from "./useEventApi";
 
 function errorMessage(reason: unknown, fallback: string) {
@@ -198,23 +199,7 @@ export function PlayPage() {
         {!playersLoading && !playersError && listings.length ? (
           <div className="play-player-list">
             {listings.map((listing) => (
-              <article className="play-player-card panel" key={listing.id}>
-                <div className="play-player-avatar" aria-hidden="true">
-                  {listing.presentation?.photoUrl ? (
-                    <img src={listing.presentation.photoUrl} alt="" />
-                  ) : (
-                    (listing.presentation?.displayName ?? "H").slice(0, 1).toUpperCase()
-                  )}
-                </div>
-                <div className="play-player-card-copy">
-                  <span className="play-looking-badge">
-                    LOOKING FOR {listing.lookingFor === "GAME" ? "A GAME" : "A TEAM"}
-                  </span>
-                  <strong>{listing.presentation?.displayName ?? "HOOMA player"}</strong>
-                  {listing.presentation ? <small>@{listing.presentation.username}</small> : null}
-                  {listing.presentation?.bio ? <p>{listing.presentation.bio}</p> : null}
-                </div>
-              </article>
+              <PlayPlayerCard listing={listing} key={listing.id} />
             ))}
           </div>
         ) : null}

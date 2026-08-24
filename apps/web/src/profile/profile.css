@@ -41,3 +41,172 @@
   cursor: wait;
   opacity: 0.65;
 }
+
+.public-profile-page {
+  display: grid;
+  gap: 18px;
+}
+
+.public-profile-hero {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(180px, 32%) 1fr;
+  min-height: 360px;
+  border: 1px solid rgba(203, 159, 57, .55);
+  border-radius: 18px;
+  background:
+    linear-gradient(115deg, rgba(31, 189, 230, .09), transparent 35%),
+    linear-gradient(145deg, #0a1117, #040709 68%);
+  box-shadow: inset 0 0 0 1px rgba(54, 183, 221, .08);
+}
+
+.public-profile-hero::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 8%;
+  width: 34%;
+  height: 6px;
+  background: linear-gradient(90deg, #1ec8e8, #8a73ff, #c79a2b);
+  opacity: .75;
+  transform: skewX(-28deg);
+}
+
+.public-profile-photo {
+  min-height: 360px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-right: 1px solid rgba(54, 183, 221, .18);
+  background: radial-gradient(circle at 50% 42%, rgba(54, 183, 221, .19), transparent 52%);
+  color: #dff8ff;
+  font-size: clamp(80px, 14vw, 160px);
+  font-weight: 950;
+}
+
+.public-profile-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.public-profile-copy {
+  align-self: end;
+  padding: clamp(28px, 5vw, 58px);
+}
+
+.public-profile-copy h1 {
+  margin: 7px 0 4px;
+  color: #f5f2ea;
+  font-size: clamp(38px, 7vw, 72px);
+  line-height: .9;
+  letter-spacing: -.045em;
+}
+
+.public-profile-username {
+  margin: 0;
+  color: #9fb3c3;
+  font-size: 18px;
+}
+
+.public-profile-bio {
+  max-width: 62ch;
+  margin: 20px 0 0;
+  color: #d6d0c3;
+  line-height: 1.65;
+}
+
+.public-profile-teams,
+.public-profile-contact,
+.public-profile-state {
+  display: grid;
+  gap: 14px;
+}
+
+.public-profile-teams h2,
+.public-profile-contact h2 {
+  margin: 4px 0 0;
+  color: #f2ead7;
+}
+
+.public-profile-team-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.public-profile-team-list a {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  column-gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #403927;
+  border-radius: 12px;
+  background: #0b0e0e;
+  color: #f2ead7;
+  text-decoration: none;
+}
+
+.public-profile-team-list a > span:last-child {
+  grid-column: 2;
+  color: #35c8e9;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.public-profile-team-badge {
+  grid-row: 1 / span 2;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(196, 220, 67, .35);
+  border-radius: 50%;
+  background: #101310;
+  font-weight: 900;
+}
+
+.public-profile-team-badge img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.public-profile-contact {
+  border-color: rgba(53, 200, 233, .24);
+}
+
+.public-profile-state span {
+  color: #bfb59a;
+}
+
+.public-profile-state a {
+  width: fit-content;
+  color: #35c8e9;
+}
+
+@media (max-width: 760px) {
+  .public-profile-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .public-profile-photo {
+    min-height: 280px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(54, 183, 221, .18);
+  }
+
+  .public-profile-copy {
+    padding: 24px;
+  }
+
+  .public-profile-team-list {
+    grid-template-columns: 1fr;
+  }
+}
