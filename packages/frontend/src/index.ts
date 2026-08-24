@@ -1,3 +1,5 @@
+import "./teams/team-media.css";
+
 export * from "./api";
 export * from "./context";
 export * from "./communities/HoomaPage";
