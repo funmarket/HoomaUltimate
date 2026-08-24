@@ -42,6 +42,9 @@ const AdminApp = lazy(() =>
 const ProfilePage = lazy(() =>
   import("../../profile/ProfilePage").then((module) => ({ default: module.ProfilePage })),
 );
+const PublicProfilePage = lazy(() =>
+  import("../../profile/PublicProfilePage").then((module) => ({ default: module.PublicProfilePage })),
+);
 const SettingsPage = lazy(() =>
   import("../../settings/SettingsPage").then((module) => ({ default: module.SettingsPage })),
 );
@@ -52,6 +55,11 @@ const NotFoundPage = lazy(() =>
 function requiredParam(name: string, value: string | undefined): string {
   if (!value) throw new Error(`Missing route parameter ${name}`);
   return value;
+}
+
+function PublicProfileRoute() {
+  const { username } = useParams();
+  return <PublicProfilePage username={requiredParam("username", username)} />;
 }
 
 function TeamDetailRoute() {
@@ -149,6 +157,7 @@ function HoomaRoutes() {
               <Route path="/register" element={<AuthApp />} />
               <Route path="/account/create" element={<TelegramAccountActivationPage />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/profile/:username" element={<PublicProfileRoute />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/admin/*" element={<AdminApp />} />
               <Route path="/play" element={<PlayPage />} />
