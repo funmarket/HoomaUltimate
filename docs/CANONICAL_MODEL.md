@@ -882,6 +882,7 @@ G3 challenge rules:
 - result confirmation/dispute, ranking calculation, GamerSquad, Gamer Squad Whistle authorization, global Gamer chat/feed, and gameplay APIs remain future work and are not implied by G3.
 
 ---
+
 # 20. Frozen future concepts
 
 The normalized initial schema must not add durable product tables for these until their vertical slice begins:
