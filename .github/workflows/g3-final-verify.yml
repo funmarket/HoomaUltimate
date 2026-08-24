@@ -6,7 +6,7 @@ on:
     paths: [.github/workflows/g3-final-verify.yml]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify:
@@ -94,3 +94,11 @@ jobs:
       - run: npm run deploy:preflight
       - run: npm run security:check
       - run: npm run db:migrate:status
+      - name: Publish proof marker
+        run: |
+          printf '%s\n' "G3 verification passed for ${GITHUB_SHA}" > .g3-final-proof
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .g3-final-proof
+          git commit -m "ci(gamers): record final G3 proof"
+          git push origin HEAD:feat/gamers-human-match-system
