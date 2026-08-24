@@ -1,4 +1,23 @@
--- Team lineup pitch coordinates and canonical TeamPlayer ownership.
+-- Team lineup current state, pitch coordinates, and canonical TeamPlayer ownership.
+ALTER TABLE "TeamLineup"
+  ADD COLUMN "isCurrent" BOOLEAN NOT NULL DEFAULT false;
+
+-- Preserve existing behavior by making only the latest active lineup current for each Team.
+WITH latest AS (
+  SELECT DISTINCT ON ("teamId") "id"
+  FROM "TeamLineup"
+  WHERE "active" = true
+  ORDER BY "teamId", "updatedAt" DESC, "id" DESC
+)
+UPDATE "TeamLineup" AS lineup
+SET "isCurrent" = true
+FROM latest
+WHERE lineup."id" = latest."id";
+
+CREATE UNIQUE INDEX "TeamLineup_one_current_per_team_key"
+  ON "TeamLineup"("teamId")
+  WHERE "isCurrent" = true AND "active" = true;
+
 ALTER TABLE "TeamLineupSlot"
   ADD COLUMN "x" DOUBLE PRECISION NOT NULL DEFAULT 50,
   ADD COLUMN "y" DOUBLE PRECISION NOT NULL DEFAULT 50,
