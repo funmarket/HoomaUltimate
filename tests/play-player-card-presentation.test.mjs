@@ -13,7 +13,10 @@ test("Play player cards route to the canonical public profile and keep intent-sp
     read("apps/api/src/http/public-v1/router.ts"),
   ]);
 
-  assert.match(card, /profileHref = `\/profile\/\$\{encodeURIComponent\(presentation\.username\)\}`/);
+  assert.match(
+    card,
+    /profileHref = `\/profile\/\$\{encodeURIComponent\(presentation\.username\)\}`/,
+  );
   assert.match(card, /<strong>INVITE<\/strong>/);
   assert.match(card, /\{offerSent \? "OFFER SENT" : "HIRE PLAYER"\}/);
   assert.match(card, /onClick=\{\(\) => onHire\?\.\(listing\)\}/);
