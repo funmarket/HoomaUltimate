@@ -39,6 +39,11 @@ Object.defineProperty(globalThis, "document", {
 
 const theme = await import("../apps/web/src/settings/theme.ts");
 
+test("Future Pitch is the default when no web appearance is saved", () => {
+  storage.clear();
+  assert.equal(theme.getWebAppearanceMode(), "future-pitch");
+});
+
 test("Future Pitch persists through the existing web appearance storage key", () => {
   storage.clear();
   theme.saveWebAppearanceMode("future-pitch");
@@ -75,7 +80,7 @@ test("Settings exposes exactly four independent web theme choices", async () => 
   assert.match(source, /Dark futuristic football presentation with electric live-match accents\./);
 });
 
-test("Future Pitch applies before the app bundle to avoid a saved-theme flash", async () => {
+test("Future Pitch applies before the app bundle and is the unsaved first-paint default", async () => {
   const source = await readFile(new URL("../apps/web/index.html", import.meta.url), "utf8");
   const initializer = source.indexOf("hooma-web-appearance");
   const moduleEntry = source.indexOf('src="/src/main.tsx"');
@@ -83,6 +88,7 @@ test("Future Pitch applies before the app bundle to avoid a saved-theme flash", 
   assert.ok(initializer >= 0);
   assert.ok(moduleEntry > initializer);
   assert.match(source, /saved === "future-pitch"/);
+  assert.match(source, /: "future-pitch";/);
 });
 
 test("Future Pitch canonical tokens remain centralized in the root theme stylesheet", async () => {
