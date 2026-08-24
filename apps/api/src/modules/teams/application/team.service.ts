@@ -6,6 +6,7 @@ import {
   type TeamLineupInput,
   type TeamUpdateInput,
 } from "@hooma/contracts";
+import type { TeamPlayerOfferCreateInput } from "@hooma/contracts/team-offers";
 import { AppError } from "../../../http/errors/app-error.js";
 import type { CommunityService } from "../../communities/application/community.service.js";
 import type { PlatformAdminAuthorizer } from "../../platform-admin/application/platform-admin.authorizer.js";
@@ -37,6 +38,73 @@ export class TeamService {
 
   managedTeams(userId: string) {
     return this.repository.listManaged(userId);
+  }
+
+  recruitingTeams(userId: string) {
+    return this.lifecycle.listRecruitingTeams(userId);
+  }
+
+  incomingPlayerOffers(userId: string) {
+    return this.lifecycle.listIncomingPlayerOffers(userId);
+  }
+
+  async sendPlayerOffer(
+    userId: string,
+    teamId: string,
+    input: TeamPlayerOfferCreateInput,
+  ) {
+    await this.requireCapability(userId, teamId, "MANAGE_ROSTER");
+    const targetUserId = await this.lifecycle.resolvePlayerOfferTarget(input.listingId);
+    if (!targetUserId) {
+      throw new AppError(
+        404,
+        "TEAM_OFFER_TARGET_NOT_AVAILABLE",
+        "This player is no longer looking for a Team",
+      );
+    }
+    if (targetUserId === userId) {
+      throw new AppError(409, "TEAM_OFFER_SELF", "You cannot offer yourself a Team spot");
+    }
+    if (await this.lifecycle.isActivePlayer(teamId, targetUserId)) {
+      throw new AppError(
+        409,
+        "TEAM_PLAYER_ALREADY_ACTIVE",
+        "This player is already on the Team",
+      );
+    }
+    return this.lifecycle.upsertPlayerOffer(
+      teamId,
+      targetUserId,
+      userId,
+      input.message ?? null,
+    );
+  }
+
+  async acceptPlayerOffer(userId: string, offerId: string) {
+    const offer = await this.lifecycle.getPlayerOfferForTarget(offerId, userId);
+    if (!offer) throw new AppError(404, "TEAM_OFFER_NOT_FOUND", "Team offer not found");
+    if (offer.status === "ACCEPTED") return { offer, alreadyAccepted: true };
+    if (offer.status !== "PENDING") {
+      throw new AppError(409, "TEAM_OFFER_CLOSED", "This Team offer is already closed");
+    }
+    const accepted = await this.lifecycle.acceptPlayerOffer(offerId, userId);
+    if (!accepted) {
+      throw new AppError(409, "TEAM_OFFER_CLOSED", "This Team offer is already closed");
+    }
+    return { offer: accepted, alreadyAccepted: false };
+  }
+
+  async declinePlayerOffer(userId: string, offerId: string) {
+    const offer = await this.lifecycle.getPlayerOfferForTarget(offerId, userId);
+    if (!offer) throw new AppError(404, "TEAM_OFFER_NOT_FOUND", "Team offer not found");
+    if (offer.status !== "PENDING") {
+      throw new AppError(409, "TEAM_OFFER_CLOSED", "This Team offer is already closed");
+    }
+    const declined = await this.lifecycle.declinePlayerOffer(offerId, userId);
+    if (!declined) {
+      throw new AppError(409, "TEAM_OFFER_CLOSED", "This Team offer is already closed");
+    }
+    return { offer: declined };
   }
 
   async create(userId: string, input: TeamCreateInput) {
