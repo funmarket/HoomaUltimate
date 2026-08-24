@@ -258,6 +258,7 @@ export function createHoomaApi(transport: HoomaTransport) {
   };
   const teams = {
     publicList: (filters?: TeamListFilters) => request<PublicTeamList>(transport, publicListPath(filters)),
+    mine: () => request<PublicTeamSummary[]>(transport, "/api/v1/teams/mine"),
     managed: () => request<ManagedTeam[]>(transport, "/api/v1/teams/managed"),
     publicDetail: (teamId: string) =>
       request<TeamControlDetail>(transport, `/api/public/v1/teams/${encodeURIComponent(teamId)}`),

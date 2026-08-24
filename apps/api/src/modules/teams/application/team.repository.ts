@@ -31,6 +31,7 @@ export interface TeamChallengeRecord {
 export interface TeamRepository {
   listPublic(input: TeamListInput): Promise<unknown>;
   getPublic(teamId: string): Promise<unknown | null>;
+  listMine(userId: string): Promise<unknown>;
   listManaged(userId: string): Promise<unknown>;
   access(teamId: string, userId: string): Promise<TeamAccessRecord | null>;
   create(userId: string, input: TeamCreateInput): Promise<unknown>;

@@ -47,6 +47,10 @@ export function createTeamPublicRouter(service: TeamService): Router {
 export function createTeamMemberRouter(service: TeamService): Router {
   const router = Router();
   router.get(
+    "/mine",
+    asyncHandler(async (req, res) => res.json(await service.myTeams(getAuth(req).userId)))
+  );
+  router.get(
     "/managed",
     asyncHandler(async (req, res) => res.json(await service.managedTeams(getAuth(req).userId)))
   );

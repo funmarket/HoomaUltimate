@@ -78,6 +78,19 @@ const lineupSelect = {
   }
 } satisfies Prisma.TeamLineupSelect;
 
+const teamSummarySelect = {
+  id: true,
+  slug: true,
+  name: true,
+  motto: true,
+  city: true,
+  houma: true,
+  badgeUrl: true,
+  bannerUrl: true,
+  communityId: true,
+  _count: { select: { players: { where: { leftAt: null, active: true } } } }
+} satisfies Prisma.TeamSelect;
+
 export class PrismaTeamRepository implements TeamRepository {
   constructor(private readonly db: PrismaClient) {}
 
@@ -101,18 +114,7 @@ export class PrismaTeamRepository implements TeamRepository {
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: input.limit + 1,
       ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        motto: true,
-        city: true,
-        houma: true,
-        badgeUrl: true,
-        bannerUrl: true,
-        communityId: true,
-        _count: { select: { players: { where: { leftAt: null } } } }
-      }
+      select: teamSummarySelect
     });
     return {
       items: rows.slice(0, input.limit),
@@ -150,6 +152,17 @@ export class PrismaTeamRepository implements TeamRepository {
           select: lineupSelect
         }
       }
+    });
+  }
+
+  listMine(userId: string) {
+    return this.db.team.findMany({
+      where: {
+        status: "ACTIVE",
+        players: { some: { userId, leftAt: null, active: true } }
+      },
+      select: teamSummarySelect,
+      orderBy: [{ updatedAt: "desc" }, { id: "desc" }]
     });
   }
 

@@ -5,6 +5,7 @@ import {
   CoachControlRoomPage,
   CreateEventPage,
   CreateHoomaPage,
+  CreateTeamPage,
   EventChatPage,
   EventDetailPage,
   FormationBuilderPage,
@@ -154,6 +155,7 @@ function HoomaRoutes() {
               <Route path="/hooma/new" element={<CreateHoomaPage />} />
               <Route path="/hooma/:communityId" element={<HoomaDetailRoute />} />
               <Route path="/teams" element={<TeamsPage />} />
+              <Route path="/teams/new" element={<CreateTeamPage />} />
               <Route path="/teams/control" element={<CoachControlRoomPage />} />
               <Route path="/teams/:teamId/lineup" element={<TeamLineupRoute />} />
               <Route path="/teams/:teamId" element={<TeamDetailRoute />} />
