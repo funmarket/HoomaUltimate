@@ -232,10 +232,9 @@
   gap: 12px;
 }
 .team-create-panel {
-  grid-template-columns: minmax(170px, 1.2fr) minmax(155px, 1fr) minmax(160px, 1fr) minmax(
-      130px,
-      0.8fr
-    ) auto;
+  grid-template-columns:
+    minmax(170px, 1.2fr) minmax(155px, 1fr) minmax(160px, 1fr) minmax(130px, 0.8fr)
+    auto;
 }
 .team-create-panel h2 {
   font-family: Georgia, serif;
