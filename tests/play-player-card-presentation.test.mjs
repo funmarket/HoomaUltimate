@@ -10,11 +10,13 @@ test("Play player cards route to the canonical public profile and keep intent-sp
     read("packages/frontend/src/events/PlayPage.tsx"),
     read("packages/frontend/src/events/play-player-listing.css"),
     read("apps/web/src/app/router/HoomaRouter.tsx"),
-    read("apps/api/src/http/public-v1/router.ts")
+    read("apps/api/src/http/public-v1/router.ts"),
   ]);
 
   assert.match(card, /profileHref = `\/profile\/\$\{encodeURIComponent\(presentation\.username\)\}`/);
-  assert.match(card, /lookingForGame \? "INVITE" : "HIRE PLAYER"/);
+  assert.match(card, /<strong>INVITE<\/strong>/);
+  assert.match(card, /\{offerSent \? "OFFER SENT" : "HIRE PLAYER"\}/);
+  assert.match(card, /onClick=\{\(\) => onHire\?\.\(listing\)\}/);
   assert.match(card, /aria-disabled="true"/);
   assert.match(page, /<PlayPlayerCard listing=\{listing\}/);
   assert.match(css, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
