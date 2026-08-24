@@ -1,4 +1,5 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
 import type { MeResponse } from "@hooma/contracts";
 import { useHoomaFrontend } from "@hooma/frontend";
 
