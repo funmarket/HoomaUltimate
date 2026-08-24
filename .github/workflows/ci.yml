@@ -6,7 +6,7 @@ on:
   pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   verify:
@@ -57,59 +57,11 @@ jobs:
       - run: npm run db:migrate:deploy
       - run: npm run architecture:check
       - run: npm run format:check
-        continue-on-error: true
       - run: npm run lint
-        continue-on-error: true
-      - name: Format G3 canonical documentation in proof workspace
-        run: npx prettier --write docs/CANONICAL_MODEL.md
-      - name: Check G3 formatting
-        run: >-
-          npx prettier --check
-          apps/api/src/modules/gamers/application/gamer-challenge.repository.ts
-          apps/api/src/modules/gamers/application/gamer-profile.repository.ts
-          apps/api/src/modules/gamers/application/gamer.service.ts
-          apps/api/src/modules/gamers/http/gamer.routes.ts
-          apps/api/src/modules/gamers/infrastructure/prisma-gamer-challenge.repository.ts
-          apps/api/src/modules/gamers/infrastructure/prisma-gamer-profile.repository.ts
-          packages/contracts/src/gamers.ts
-          packages/frontend/src/gamers/api.ts
-          packages/frontend/src/gamers/GamerGamePage.tsx
-          packages/frontend/src/gamers/GamerProfilePage.tsx
-          packages/frontend/src/gamers/GamersPage.tsx
-          packages/frontend/src/gamers/gamers.css
-          tests/gamers.integration.test.ts
-          docs/CANONICAL_MODEL.md
-      - name: Check G3 lint
-        run: >-
-          npx eslint
-          apps/api/src/modules/gamers/application/gamer-challenge.repository.ts
-          apps/api/src/modules/gamers/application/gamer-profile.repository.ts
-          apps/api/src/modules/gamers/application/gamer.service.ts
-          apps/api/src/modules/gamers/http/gamer.routes.ts
-          apps/api/src/modules/gamers/infrastructure/prisma-gamer-challenge.repository.ts
-          apps/api/src/modules/gamers/infrastructure/prisma-gamer-profile.repository.ts
-          packages/frontend/src/gamers/api.ts
-          packages/frontend/src/gamers/GamerGamePage.tsx
-          packages/frontend/src/gamers/GamerProfilePage.tsx
-          packages/frontend/src/gamers/GamersPage.tsx
-          --max-warnings=0
       - run: npm run typecheck
+      - run: npm test
+      - run: npm run test:integration
       - run: npm run build
-      - name: Run focused Gamers integration
-        run: npx tsx --test --test-concurrency=1 tests/gamers.integration.test.ts
       - run: npm run deploy:preflight
       - run: npm run security:check
       - run: npm run db:migrate:status
-      - name: Persist canonical doc formatting to feature branch
-        run: |
-          git fetch origin feat/gamers-human-match-system
-          git checkout -B g3-doc origin/feat/gamers-human-match-system
-          npx prettier --write docs/CANONICAL_MODEL.md
-          if git diff --quiet -- docs/CANONICAL_MODEL.md; then
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/CANONICAL_MODEL.md
-          git commit -m "docs(gamers): format G3 canonical model"
-          git push origin HEAD:feat/gamers-human-match-system
