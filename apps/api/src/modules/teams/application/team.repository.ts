@@ -5,7 +5,6 @@ import type {
   TeamLineupInput,
   TeamUpdateInput,
 } from "@hooma/contracts";
-import type { TeamPlayerOfferStatus } from "@hooma/contracts/team-offers";
 
 export interface TeamListInput {
   limit: number;
@@ -29,40 +28,16 @@ export interface TeamChallengeRecord {
   readonly status: "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED";
 }
 
-export interface TeamPlayerOfferRecord {
-  readonly id: string;
-  readonly teamId: string;
-  readonly targetUserId: string;
-  readonly offeredByUserId: string;
-  readonly message: string | null;
-  readonly status: TeamPlayerOfferStatus;
-  readonly createdAt: Date;
-  readonly respondedAt: Date | null;
-}
-
 export interface TeamRepository {
   listPublic(input: TeamListInput): Promise<unknown>;
   getPublic(teamId: string): Promise<unknown | null>;
   listMine(userId: string): Promise<unknown>;
   listManaged(userId: string): Promise<unknown>;
-  listRecruitingTeams(userId: string): Promise<unknown>;
   access(teamId: string, userId: string): Promise<TeamAccessRecord | null>;
   create(userId: string, input: TeamCreateInput): Promise<unknown>;
   update(teamId: string, input: TeamUpdateInput): Promise<unknown>;
   addPlayer(teamId: string, targetUserId: string): Promise<unknown>;
   removePlayer(teamId: string, targetUserId: string): Promise<number>;
-  resolvePlayerOfferTarget(listingId: string): Promise<string | null>;
-  isActivePlayer(teamId: string, targetUserId: string): Promise<boolean>;
-  upsertPlayerOffer(
-    teamId: string,
-    targetUserId: string,
-    offeredByUserId: string,
-    message: string | null,
-  ): Promise<unknown>;
-  listIncomingPlayerOffers(targetUserId: string): Promise<unknown>;
-  getPlayerOfferForTarget(offerId: string, targetUserId: string): Promise<TeamPlayerOfferRecord | null>;
-  acceptPlayerOffer(offerId: string, targetUserId: string): Promise<unknown>;
-  declinePlayerOffer(offerId: string, targetUserId: string): Promise<unknown>;
   assignAssistant(
     teamId: string,
     targetUserId: string,
