@@ -15,6 +15,7 @@ import {
   HoomaPage,
   PlayPage,
   TeamDetailPage,
+  TeamLineupPage,
   TeamsPage,
 } from "@hooma/frontend";
 import { AccountProvider } from "../../account/AccountProvider";
@@ -53,6 +54,11 @@ function requiredParam(name: string, value: string | undefined): string {
 function TeamDetailRoute() {
   const { teamId } = useParams();
   return <TeamDetailPage teamId={requiredParam("teamId", teamId)} />;
+}
+
+function TeamLineupRoute() {
+  const { teamId } = useParams();
+  return <TeamLineupPage teamId={requiredParam("teamId", teamId)} />;
 }
 
 function HoomaDetailRoute() {
@@ -137,6 +143,7 @@ function HoomaRoutes() {
               <Route path="/hooma/:communityId" element={<HoomaDetailRoute />} />
               <Route path="/teams" element={<TeamsPage />} />
               <Route path="/teams/control" element={<CoachControlRoomPage />} />
+              <Route path="/teams/:teamId/lineup" element={<TeamLineupRoute />} />
               <Route path="/teams/:teamId" element={<TeamDetailRoute />} />
               <Route path="/gamers" element={<GamersPage />} />
               <Route path="/gamers/games/:gameSlug" element={<GamerGameRoute />} />
