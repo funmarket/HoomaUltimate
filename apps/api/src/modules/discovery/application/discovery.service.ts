@@ -1,7 +1,4 @@
-import type {
-  DiscoveryNowItem,
-  DiscoveryNowResponse,
-} from "@hooma/contracts/discovery";
+import type { DiscoveryNowItem, DiscoveryNowResponse } from "@hooma/contracts/discovery";
 import {
   DISCOVERY_GAMER_ACTIVE_HOURS,
   DISCOVERY_JUST_STARTED_MINUTES,
@@ -10,10 +7,7 @@ import {
   classifyTimedActivity,
   compareUrgency,
 } from "../domain/discovery-policy.js";
-import type {
-  DiscoveryRecord,
-  DiscoveryRepository,
-} from "./discovery.repository.js";
+import type { DiscoveryRecord, DiscoveryRepository } from "./discovery.repository.js";
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -29,15 +23,9 @@ export class DiscoveryService {
     const safeLimit = Math.max(1, Math.min(limit, 50));
     const records = await this.repository.listCurrent({
       now,
-      lookaheadUntil: new Date(
-        now.getTime() + DISCOVERY_LOOKAHEAD_HOURS * HOUR,
-      ),
-      justStartedSince: new Date(
-        now.getTime() - DISCOVERY_JUST_STARTED_MINUTES * MINUTE,
-      ),
-      gamerActiveSince: new Date(
-        now.getTime() - DISCOVERY_GAMER_ACTIVE_HOURS * HOUR,
-      ),
+      lookaheadUntil: new Date(now.getTime() + DISCOVERY_LOOKAHEAD_HOURS * HOUR),
+      justStartedSince: new Date(now.getTime() - DISCOVERY_JUST_STARTED_MINUTES * MINUTE),
+      gamerActiveSince: new Date(now.getTime() - DISCOVERY_GAMER_ACTIVE_HOURS * HOUR),
       limit: safeLimit * 3,
     });
 
@@ -55,10 +43,7 @@ export class DiscoveryService {
   }
 }
 
-function projectRecord(
-  record: DiscoveryRecord,
-  now: Date,
-): DiscoveryNowItem | null {
+function projectRecord(record: DiscoveryRecord, now: Date): DiscoveryNowItem | null {
   if (record.kind === "EVENT") {
     const urgency = classifyTimedActivity(now, record.startsAt, record.endsAt);
     if (!urgency) return null;
@@ -121,11 +106,7 @@ function projectRecord(
   };
 }
 
-function compareItems(
-  a: DiscoveryNowItem,
-  b: DiscoveryNowItem,
-  focusCommunityId?: string,
-): number {
+function compareItems(a: DiscoveryNowItem, b: DiscoveryNowItem, focusCommunityId?: string): number {
   if (focusCommunityId) {
     const aFocused = a.context.communityId === focusCommunityId;
     const bFocused = b.context.communityId === focusCommunityId;
@@ -134,12 +115,8 @@ function compareItems(
 
   const urgency = compareUrgency(a.urgency, b.urgency);
   if (urgency !== 0) return urgency;
-  const aTime = Date.parse(
-    a.startsAt ?? a.occurredAt ?? "9999-12-31T00:00:00.000Z",
-  );
-  const bTime = Date.parse(
-    b.startsAt ?? b.occurredAt ?? "9999-12-31T00:00:00.000Z",
-  );
+  const aTime = Date.parse(a.startsAt ?? a.occurredAt ?? "9999-12-31T00:00:00.000Z");
+  const bTime = Date.parse(b.startsAt ?? b.occurredAt ?? "9999-12-31T00:00:00.000Z");
   if (aTime !== bTime) return aTime - bTime;
   return a.id.localeCompare(b.id);
 }
