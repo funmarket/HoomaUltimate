@@ -23,6 +23,8 @@ const EVENT_STATUS: Record<EventErrorCode, number> = {
 };
 
 export const errorHandler: ErrorRequestHandler = (error, _request, response, _next) => {
+  void _next;
+
   if (error instanceof EventError) {
     response
       .status(EVENT_STATUS[error.code])
