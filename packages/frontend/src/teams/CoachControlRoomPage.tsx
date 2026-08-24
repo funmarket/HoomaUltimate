@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { TeamCapabilityInput, TeamChallengeCreateInput } from "@hooma/contracts";
 import { useHoomaFrontend } from "../context";
-import type { ManagedTeam, TeamChallengeSummary, TeamControlDetail } from "../api";
+import type {
+  ManagedTeam,
+  TeamChallengeSummary,
+  TeamControlDetail,
+  createHoomaApi,
+} from "../api";
 
 const CAPABILITIES: readonly TeamCapabilityInput[] = [
   "EDIT_TEAM",
@@ -152,7 +157,7 @@ export function CoachControlRoomPage() {
   );
 }
 
-type TeamApi = ReturnType<typeof import("../api").createHoomaApi>["teams"];
+type TeamApi = ReturnType<typeof createHoomaApi>["teams"];
 type RunAction = (
   action: () => Promise<unknown>,
   success: string,
