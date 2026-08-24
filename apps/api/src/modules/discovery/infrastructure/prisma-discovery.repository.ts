@@ -1,8 +1,5 @@
 import type { PrismaClient } from "@hooma/database";
-import type {
-  DiscoveryRecord,
-  DiscoveryRepository,
-} from "../application/discovery.repository.js";
+import type { DiscoveryRecord, DiscoveryRepository } from "../application/discovery.repository.js";
 
 export class PrismaDiscoveryRepository implements DiscoveryRepository {
   constructor(private readonly db: PrismaClient) {}
@@ -134,9 +131,11 @@ export class PrismaDiscoveryRepository implements DiscoveryRepository {
             gameSlug: match.game.slug,
             gameName: match.game.name,
             challengerName:
-              match.challengerProfile.user.presentation?.displayName ?? match.challengerProfile.handle,
+              match.challengerProfile.user.presentation?.displayName ??
+              match.challengerProfile.handle,
             challengedName:
-              match.challengedProfile.user.presentation?.displayName ?? match.challengedProfile.handle,
+              match.challengedProfile.user.presentation?.displayName ??
+              match.challengedProfile.handle,
             challengerHandle: match.challengerProfile.handle,
             challengedHandle: match.challengedProfile.handle,
           },
