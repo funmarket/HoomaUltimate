@@ -20,6 +20,8 @@ import { PrismaPlayPlayerListingRepository } from "../modules/play/infrastructur
 import { WhistleService } from "../modules/whistle/application/whistle.service.js";
 import { PrismaWhistleRepository } from "../modules/whistle/infrastructure/prisma-whistle.repository.js";
 import { RedisWhistleStore } from "../modules/whistle/infrastructure/redis-whistle-store.js";
+import { DiscoveryService } from "../modules/discovery/application/discovery.service.js";
+import { PrismaDiscoveryRepository } from "../modules/discovery/infrastructure/prisma-discovery.repository.js";
 
 export function createContainer(config: ApiConfig) {
   const database = getDatabaseClient();
@@ -52,6 +54,8 @@ export function createContainer(config: ApiConfig) {
   const whistleRepository = new PrismaWhistleRepository(database);
   const whistleStore = new RedisWhistleStore(config.REDIS_URL ?? "redis://localhost:6379");
   const whistleService = new WhistleService(whistleRepository, whistleStore, communityService);
+  const discoveryRepository = new PrismaDiscoveryRepository(database);
+  const discoveryService = new DiscoveryService(discoveryRepository);
 
   return {
     database,
@@ -63,6 +67,7 @@ export function createContainer(config: ApiConfig) {
     gamerService,
     playService,
     whistleService,
+    discoveryService,
   };
 }
 
