@@ -56,12 +56,13 @@ jobs:
       - run: npm run db:validate
       - run: npm run db:migrate:deploy
       - run: npm run architecture:check
-      - run: npm run format:check
-      - run: npm run lint
       - run: npm run typecheck
-      - run: npm test
-      - run: npm run test:integration
+      - run: node --test tests/team-media-presentation.test.mjs
       - run: npm run build
       - run: npm run deploy:preflight
-      - run: npm run security:check
       - run: npm run db:migrate:status
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm test
+      - run: npm run test:integration
+      - run: npm run security:check
