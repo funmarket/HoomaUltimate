@@ -8,13 +8,17 @@ import {
 } from "@hooma/contracts";
 import { AppError } from "../../../http/errors/app-error.js";
 import type { CommunityService } from "../../communities/application/community.service.js";
+import type { PlatformAdminAuthorizer } from "../../platform-admin/application/platform-admin.authorizer.js";
 import { directResponsibilityHasCapability } from "../domain/team-access.js";
+import type { TeamLifecycleRepository } from "./team-lifecycle.repository.js";
 import type { TeamAccessRecord, TeamListInput, TeamRepository } from "./team.repository.js";
 
 export class TeamService {
   constructor(
     private readonly repository: TeamRepository,
-    private readonly communities: CommunityService
+    private readonly communities: CommunityService,
+    private readonly lifecycle: TeamLifecycleRepository,
+    private readonly platformAdmin: PlatformAdminAuthorizer
   ) {}
 
   listPublic(input: TeamListInput) {
@@ -41,8 +45,22 @@ export class TeamService {
   }
 
   async update(userId: string, teamId: string, input: TeamUpdateInput) {
-    await this.requireCapability(userId, teamId, "EDIT_TEAM");
+    const record = await this.lifecycle.get(teamId);
+    if (!record || record.status !== "ACTIVE") throw new AppError(404, "TEAM_NOT_FOUND", "Team not found");
+    const ownerOrAdmin = record.createdByUserId === userId || (await this.platformAdmin.isPlatformAdmin(userId));
+    if (!ownerOrAdmin) await this.requireCapability(userId, teamId, "EDIT_TEAM");
     return this.repository.update(teamId, input);
+  }
+
+  async archive(userId: string, teamId: string) {
+    const record = await this.lifecycle.get(teamId);
+    if (!record) throw new AppError(404, "TEAM_NOT_FOUND", "Team not found");
+    if (record.createdByUserId !== userId && !(await this.platformAdmin.isPlatformAdmin(userId))) {
+      throw new AppError(403, "TEAM_OWNER_OR_ADMIN_REQUIRED", "Team creator or App Admin access required");
+    }
+    if (record.status === "ARCHIVED") return { ok: true };
+    await this.lifecycle.archive(teamId);
+    return { ok: true };
   }
 
   async addPlayer(userId: string, teamId: string, targetUserId: string) {
@@ -126,6 +144,9 @@ export class TeamService {
       throw new AppError(400, "TEAM_CHALLENGE_SELF", "A Team cannot challenge itself");
     }
     await this.requireCapability(userId, input.challengerTeamId, "CREATE_CHALLENGE");
+    if (!(await this.lifecycle.isActive(input.challengedTeamId))) {
+      throw new AppError(404, "TEAM_NOT_FOUND", "Challenged Team not found");
+    }
     return this.repository.createChallenge(userId, input);
   }
 
