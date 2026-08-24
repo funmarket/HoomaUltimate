@@ -29,6 +29,7 @@
     "./play.css": "./src/events/play.css",
     "./play-player-listing.css": "./src/events/play-player-listing.css",
     "./whistle.css": "./src/whistle/whistle.css",
-    "./gamers.css": "./src/gamers/gamers.css"
+    "./gamers.css": "./src/gamers/gamers.css",
+    "./hooma-now.css": "./src/discovery/hooma-now.css"
   }
 }
