@@ -11,6 +11,21 @@ export interface SessionRecord {
   readonly userId: string;
 }
 
+export interface PublicProfileRecord {
+  readonly presentation: {
+    readonly username: string;
+    readonly displayName: string;
+    readonly photoUrl: string | null;
+    readonly bio: string | null;
+  };
+  readonly teams: readonly {
+    readonly id: string;
+    readonly name: string;
+    readonly slug: string;
+    readonly badgeUrl: string | null;
+  }[];
+}
+
 export interface MeRecord {
   readonly id: string;
   readonly presentation: {
@@ -64,6 +79,7 @@ export interface IdentityRepository {
   revokeSession(tokenHash: string): Promise<void>;
   findTelegramUserId(telegramUserId: bigint): Promise<string | null>;
   upsertTelegramIdentity(input: TelegramIdentityInput): Promise<string>;
+  findPublicProfile(username: string): Promise<PublicProfileRecord | null>;
   updatePresentation(
     userId: string,
     input: {
