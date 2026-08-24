@@ -68,7 +68,7 @@ function projectRecord(record: DiscoveryRecord, now: Date): DiscoveryNowItem | n
       sourceDomain: "TEAMS",
       activityType: "TEAM_GAME",
       sourceId: record.id,
-      href: "/teams",
+      href: `/teams/${encodeURIComponent(record.homeTeamId)}`,
       title: `${record.homeTeamName} vs ${record.awayTeamName}`,
       summary: "Team match",
       sourceLabel: "TEAMS",
