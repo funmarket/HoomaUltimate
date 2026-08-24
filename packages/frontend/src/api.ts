@@ -118,64 +118,65 @@ export type ManagedTeam = {
 export type TeamRosterPlayer = {
   id: string;
   userId: string;
-  shirtNumber: number | null;
-  position: string | null;
-  active: boolean;
   joinedAt: string;
-  presentation: { displayName: string; username: string; photoUrl: string | null } | null;
-};
-export type TeamDetail = PublicTeamSummary & {
-  bannerUrl: string | null;
-  players: TeamRosterPlayer[];
-};
-export type TeamCapability =
-  | "EDIT_TEAM"
-  | "MANAGE_ROSTER"
-  | "MANAGE_ASSISTANTS"
-  | "MANAGE_LINEUP"
-  | "CHALLENGE_TEAMS";
-export type TeamAuthority = {
-  teamId: string;
-  responsibilities: string[];
-  capabilities: TeamCapability[];
-};
-export type TeamLineupSlot = {
-  id: string;
-  teamPlayerId: string;
-  x: number;
-  y: number;
-  role: string | null;
-  player: TeamRosterPlayer;
-};
-export type TeamLineup = {
-  teamId: string;
-  formation: string | null;
-  slots: TeamLineupSlot[];
-};
-export type TeamChallenge = {
-  id: string;
-  status: "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED";
-  message: string | null;
-  proposedAt: string | null;
-  createdAt: string;
-  challengerTeam: { id: string; name: string; slug: string };
-  challengedTeam: { id: string; name: string; slug: string };
-};
-export type TeamPlayerOffer = {
-  id: string;
-  teamId: string;
-  playerUserId: string;
-  status: "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED";
-  createdAt: string;
-  team: { id: string; name: string; slug: string; badgeUrl: string | null };
-  player: {
-    id: string;
-    presentation: { displayName: string; username: string; photoUrl: string | null } | null;
+  user: {
+    presentation: { displayName: string; username: string; photoUrl?: string | null } | null;
   };
 };
-export type TeamGame = {
+export type TeamLineupSlotView = {
+  id?: string;
+  teamPlayerId: string | null;
+  position: string;
+  x: number;
+  y: number;
+  isStarter: boolean;
+  sortOrder: number;
+};
+export type TeamLineupView = {
   id: string;
-  status: "SCHEDULED" | "COMPLETED" | "CANCELLED";
+  name: string;
+  formation: string;
+  matchFormat: string;
+  published: boolean;
+  isCurrent: boolean;
+  updatedAt?: string;
+  slots: TeamLineupSlotView[];
+};
+export type TeamControlDetail = {
+  id: string;
+  communityId: string | null;
+  slug: string;
+  name: string;
+  motto: string | null;
+  city: string | null;
+  houma: string | null;
+  badgeUrl: string | null;
+  bannerUrl: string | null;
+  community: { id: string; name: string; slug: string } | null;
+  players: TeamRosterPlayer[];
+  responsibilities: {
+    userId: string;
+    role: "COACH" | "ASSISTANT";
+    user: { presentation: { displayName: string; username?: string } | null };
+  }[];
+  lineups?: TeamLineupView[];
+};
+export type TeamChallengeSummary = {
+  id: string;
+  challengerTeamId: string;
+  challengedTeamId: string;
+  status: "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED";
+  format: string;
+  proposedAt: string | null;
+  message: string | null;
+  challengerTeam: { id: string; name: string };
+  challengedTeam: { id: string; name: string };
+  game?: { id: string; status?: string } | null;
+};
+export type TeamGameSummary = {
+  id: string;
+  challengeId: string;
+  status: "SCHEDULING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
   scheduledAt: string | null;
   homeTeam: { id: string; name: string };
   awayTeam: { id: string; name: string };
@@ -222,8 +223,7 @@ export function createHoomaApi(transport: HoomaTransport) {
     publicProfile: (username: string) =>
       request<PublicProfile>(transport, `/api/public/v1/profiles/${encodeURIComponent(username)}`),
     me: () => request<MeResponse>(transport, "/api/v1/me"),
-    meOptional: () =>
-      request<MeResponse | null>(transport, "/api/public/v1/auth/session"),
+    meOptional: () => request<MeResponse | null>(transport, "/api/public/v1/auth/session"),
     updatePresentation: (input: ProfilePresentationUpdateInput) =>
       request<MeResponse>(transport, "/api/v1/me/presentation", {
         method: "PATCH",
@@ -291,101 +291,103 @@ export function createHoomaApi(transport: HoomaTransport) {
       ),
   };
   const whistles = {
-    list: (communityId: string) =>
-      request<WhistleList>(transport, `/api/v1/whistles/communities/${communityId}`),
-    create: (communityId: string, body: string) =>
-      request<{ id: string }>(transport, `/api/v1/whistles/communities/${communityId}`, {
-        method: "POST",
-        body: JSON.stringify({ body }),
-      }),
-    remove: (communityId: string, whistleId: string) =>
-      request<{ ok: true }>(
+    community: (communityId: string) =>
+      request<WhistleList>(
         transport,
-        `/api/v1/whistles/communities/${communityId}/${whistleId}`,
-        { method: "DELETE" },
+        `/api/v1/whistles/contexts/COMMUNITY/${encodeURIComponent(communityId)}`,
+      ),
+    sendToCommunity: (communityId: string, body: string) =>
+      request<{ whistle: WhistleListItem; remainingToday: number; resetsAt: string }>(
+        transport,
+        `/api/v1/whistles/contexts/COMMUNITY/${encodeURIComponent(communityId)}`,
+        { method: "POST", body: JSON.stringify({ body }) },
       ),
   };
   const teams = {
     publicList: (filters?: TeamListFilters) =>
       request<PublicTeamList>(transport, publicListPath(filters)),
-    publicDetail: (id: string) =>
-      request<TeamDetail>(transport, `/api/public/v1/teams/${encodeURIComponent(id)}`),
+    mine: () => request<PublicTeamSummary[]>(transport, "/api/v1/teams/mine"),
+    managed: () => request<ManagedTeam[]>(transport, "/api/v1/teams/managed"),
+    publicDetail: (teamId: string) =>
+      request<TeamControlDetail>(transport, `/api/public/v1/teams/${encodeURIComponent(teamId)}`),
     create: (input: TeamCreateInput) =>
-      request<PublicTeamSummary>(transport, "/api/v1/teams", {
-        method: "POST",
-        body: JSON.stringify(input),
-      }),
-    update: (id: string, input: TeamUpdateInput) =>
-      request<PublicTeamSummary>(transport, `/api/v1/teams/${encodeURIComponent(id)}`, {
+      request(transport, "/api/v1/teams", { method: "POST", body: JSON.stringify(input) }),
+    update: (teamId: string, input: TeamUpdateInput) =>
+      request(transport, `/api/v1/teams/${encodeURIComponent(teamId)}`, {
         method: "PATCH",
         body: JSON.stringify(input),
       }),
-    managed: () => request<ManagedTeam[]>(transport, "/api/v1/teams/managed"),
-    mine: () => request<PublicTeamSummary[]>(transport, "/api/v1/teams/mine"),
-    roster: (id: string) =>
-      request<TeamRosterPlayer[]>(transport, `/api/v1/teams/${encodeURIComponent(id)}/players`),
-    addPlayer: (id: string, userId: string) =>
-      request<TeamRosterPlayer>(transport, `/api/v1/teams/${encodeURIComponent(id)}/players`, {
+    archive: (teamId: string) =>
+      request<{ ok: true }>(transport, `/api/v1/teams/${encodeURIComponent(teamId)}`, {
+        method: "DELETE",
+      }),
+    addPlayer: (teamId: string, userId: string) =>
+      request(transport, `/api/v1/teams/${encodeURIComponent(teamId)}/players`, {
         method: "POST",
         body: JSON.stringify({ userId }),
       }),
-    removePlayer: (id: string, playerId: string) =>
-      request<{ ok: true }>(
+    removePlayer: (teamId: string, userId: string) =>
+      request(
         transport,
-        `/api/v1/teams/${encodeURIComponent(id)}/players/${encodeURIComponent(playerId)}`,
-        { method: "DELETE" },
+        `/api/v1/teams/${encodeURIComponent(teamId)}/players/${encodeURIComponent(userId)}`,
+        {
+          method: "DELETE",
+        },
       ),
-    authority: (id: string) =>
-      request<TeamAuthority>(transport, `/api/v1/teams/${encodeURIComponent(id)}/authority`),
-    setCapabilities: (id: string, userId: string, input: TeamCapabilityInput) =>
-      request<TeamAuthority>(
+    assignAssistant: (
+      teamId: string,
+      userId: string,
+      capabilities: readonly TeamCapabilityInput[],
+    ) =>
+      request(transport, `/api/v1/teams/${encodeURIComponent(teamId)}/assistants`, {
+        method: "POST",
+        body: JSON.stringify({ userId, capabilities }),
+      }),
+    revokeAssistant: (teamId: string, userId: string) =>
+      request(
         transport,
-        `/api/v1/teams/${encodeURIComponent(id)}/assistants/${encodeURIComponent(userId)}`,
+        `/api/v1/teams/${encodeURIComponent(teamId)}/assistants/${encodeURIComponent(userId)}`,
+        {
+          method: "DELETE",
+        },
+      ),
+    currentLineup: (teamId: string) =>
+      request<TeamLineupView | null>(
+        transport,
+        `/api/v1/teams/${encodeURIComponent(teamId)}/lineups/current`,
+      ),
+    saveCurrentLineup: (teamId: string, input: TeamLineupInput) =>
+      request<TeamLineupView>(
+        transport,
+        `/api/v1/teams/${encodeURIComponent(teamId)}/lineups/current`,
         {
           method: "PUT",
           body: JSON.stringify(input),
         },
       ),
-    removeAssistant: (id: string, userId: string) =>
-      request<{ ok: true }>(
-        transport,
-        `/api/v1/teams/${encodeURIComponent(id)}/assistants/${encodeURIComponent(userId)}`,
-        { method: "DELETE" },
-      ),
-    lineup: (id: string) =>
-      request<TeamLineup>(transport, `/api/v1/teams/${encodeURIComponent(id)}/lineup`),
-    saveLineup: (id: string, input: TeamLineupInput) =>
-      request<TeamLineup>(transport, `/api/v1/teams/${encodeURIComponent(id)}/lineup`, {
-        method: "PUT",
-        body: JSON.stringify(input),
-      }),
-    challenge: (id: string, input: TeamChallengeCreateInput) =>
-      request<TeamChallenge>(transport, `/api/v1/teams/${encodeURIComponent(id)}/challenges`, {
+    createChallenge: (input: TeamChallengeCreateInput) =>
+      request(transport, "/api/v1/teams/challenges", {
         method: "POST",
         body: JSON.stringify(input),
       }),
-    challengesIncoming: () =>
-      request<TeamChallenge[]>(transport, "/api/v1/teams/challenges/incoming"),
-    challengesOutgoing: () =>
-      request<TeamChallenge[]>(transport, "/api/v1/teams/challenges/outgoing"),
-    respondChallenge: (challengeId: string, action: "accept" | "decline") =>
-      request<TeamChallenge>(transport, `/api/v1/teams/challenges/${challengeId}/${action}`, {
+    incomingChallenges: () =>
+      request<TeamChallengeSummary[]>(transport, "/api/v1/teams/challenges/incoming"),
+    outgoingChallenges: () =>
+      request<TeamChallengeSummary[]>(transport, "/api/v1/teams/challenges/outgoing"),
+    games: () => request<TeamGameSummary[]>(transport, "/api/v1/teams/games"),
+    acceptChallenge: (id: string) =>
+      request(transport, `/api/v1/teams/challenges/${encodeURIComponent(id)}/accept`, {
         method: "POST",
       }),
-    games: () => request<TeamGame[]>(transport, "/api/v1/teams/games"),
-    offersIncoming: () =>
-      request<TeamPlayerOffer[]>(transport, "/api/v1/teams/offers/incoming"),
-    offerPlayer: (teamId: string, playerUserId: string) =>
-      request<TeamPlayerOffer>(transport, `/api/v1/teams/${encodeURIComponent(teamId)}/offers`, {
+    declineChallenge: (id: string) =>
+      request(transport, `/api/v1/teams/challenges/${encodeURIComponent(id)}/decline`, {
         method: "POST",
-        body: JSON.stringify({ playerUserId }),
       }),
-    respondOffer: (offerId: string, action: "accept" | "decline") =>
-      request<TeamPlayerOffer>(transport, `/api/v1/teams/offers/${offerId}/${action}`, {
+    cancelChallenge: (id: string) =>
+      request(transport, `/api/v1/teams/challenges/${encodeURIComponent(id)}/cancel`, {
         method: "POST",
       }),
   };
-
   return { identity, platformAdmin, communities, whistles, teams };
 }
 
