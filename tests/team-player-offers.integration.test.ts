@@ -6,7 +6,9 @@ import { createApp } from "../apps/api/src/bootstrap/app.js";
 import { createContainer } from "../apps/api/src/bootstrap/container.js";
 
 const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) throw new Error("DATABASE_URL is required for Team player offer integration tests");
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL is required for Team player offer integration tests");
+}
 
 const config = loadApiConfig({
   ...process.env,
@@ -32,7 +34,9 @@ async function register(base: string, username: string) {
   assert.equal(response.status, 201);
   const cookie = response.headers.get("set-cookie");
   assert.ok(cookie);
-  const credential = await db.webCredential.findUniqueOrThrow({ where: { loginUsername: username } });
+  const credential = await db.webCredential.findUniqueOrThrow({
+    where: { loginUsername: username },
+  });
   return { cookie, userId: credential.userId };
 }
 
@@ -122,7 +126,9 @@ test("Team spot offer stays simple: authorized offer, target accept/decline, one
     const secondOffer = (await secondOfferResponse.json()) as { id: string };
     assert.equal(secondOffer.id, firstOffer.id);
     assert.equal(
-      await db.teamPlayerOffer.count({ where: { teamId: team.id, targetUserId: target.userId } }),
+      await db.teamPlayerOffer.count({
+        where: { teamId: team.id, targetUserId: target.userId },
+      }),
       1,
     );
 
@@ -130,7 +136,10 @@ test("Team spot offer stays simple: authorized offer, target accept/decline, one
       headers: headers(target.cookie),
     });
     assert.equal(incomingResponse.status, 200);
-    const incoming = (await incomingResponse.json()) as { id: string; team: { name: string } }[];
+    const incoming = (await incomingResponse.json()) as {
+      id: string;
+      team: { name: string };
+    }[];
     assert.equal(incoming.length, 1);
     assert.equal(incoming[0]?.id, firstOffer.id);
 
