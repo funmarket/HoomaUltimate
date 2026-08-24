@@ -9,7 +9,7 @@ const CAPABILITIES: readonly TeamCapabilityInput[] = [
   "MANAGE_LINEUP",
   "CREATE_CHALLENGE",
   "RESPOND_TO_CHALLENGE",
-  "MANAGE_TEAM_EVENTS"
+  "MANAGE_TEAM_EVENTS",
 ];
 
 export function CoachControlRoomPage() {
@@ -23,7 +23,7 @@ export function CoachControlRoomPage() {
   const [notice, setNotice] = useState("");
   const selected = useMemo(
     () => teams.find((candidate) => candidate.id === selectedTeamId) ?? null,
-    [teams, selectedTeamId]
+    [teams, selectedTeamId],
   );
 
   useEffect(() => {
@@ -57,7 +57,7 @@ export function CoachControlRoomPage() {
     try {
       const [incomingRows, outgoingRows] = await Promise.all([
         api.teams.incomingChallenges(),
-        api.teams.outgoingChallenges()
+        api.teams.outgoingChallenges(),
       ]);
       setIncoming(incomingRows);
       setOutgoing(outgoingRows);
@@ -90,7 +90,7 @@ export function CoachControlRoomPage() {
     <section className="control-room">
       <header className="control-room__header">
         <div>
-          <p className="eyebrow">TEAM MANAGEMENT</p>
+          <p className="eyebrow control-room__section-title">TEAM MANAGEMENT</p>
           <h2>Coach Control Room</h2>
           <p>Coach and delegated Assistant actions use the same protected Team API.</p>
         </div>
@@ -121,14 +121,28 @@ export function CoachControlRoomPage() {
             </div>
             <a href={`/teams/${team.id}`}>Open public Team profile</a>
           </section>
+
+          <div className="control-room__priority-stack">
+            <TeamSettingsCard team={team} />
+            <LineupControlCard team={team} />
+          </div>
+
           <div className="control-room__grid">
-            <EditTeamCard api={api.teams} team={team} onRun={runAction} />
             <RosterCard api={api.teams} team={team} onRun={runAction} />
             <AssistantCard api={api.teams} team={team} onRun={runAction} />
-            <CreateChallengeCard api={api.teams} team={team} managedTeams={teams} onRun={runAction} />
+            <CreateChallengeCard
+              api={api.teams}
+              team={team}
+              managedTeams={teams}
+              onRun={runAction}
+            />
           </div>
-          <LineupControlCard team={team} />
-          <ChallengeBoard api={api.teams} incoming={incoming} outgoing={outgoing} onRun={runAction} />
+          <ChallengeBoard
+            api={api.teams}
+            incoming={incoming}
+            outgoing={outgoing}
+            onRun={runAction}
+          />
         </>
       ) : null}
     </section>
@@ -136,68 +150,44 @@ export function CoachControlRoomPage() {
 }
 
 type TeamApi = ReturnType<typeof import("../api").createHoomaApi>["teams"];
-type RunAction = (action: () => Promise<unknown>, success: string, refreshTeam?: boolean) => Promise<void>;
+type RunAction = (
+  action: () => Promise<unknown>,
+  success: string,
+  refreshTeam?: boolean,
+) => Promise<void>;
 type CardProps = { api: TeamApi; team: TeamControlDetail; onRun: RunAction };
 
-function LineupControlCard({ team }: { team: TeamControlDetail }) {
+function TeamSettingsCard({ team }: { team: TeamControlDetail }) {
   return (
-    <section className="panel">
-      <p className="eyebrow">MATCHDAY SHAPE</p>
-      <h3>Lineup control</h3>
-      <p>The lineup builder is the dedicated Team lineup editor. Draft, publish and update the matchday shape there.</p>
-      <a href={`/teams/${team.id}/lineup`}>Open builder</a>
+    <section className="panel control-room__priority-card">
+      <div>
+        <p className="eyebrow">TEAM IDENTITY</p>
+        <h3>Edit Team</h3>
+        <p>
+          Update the Team name, location, motto, crest and banner on a dedicated settings page.
+        </p>
+      </div>
+      <a className="coach-primary-action" href={`/teams/${team.id}/edit`}>
+        Edit Team
+      </a>
     </section>
   );
 }
 
-function EditTeamCard({ api, team, onRun }: CardProps) {
+function LineupControlCard({ team }: { team: TeamControlDetail }) {
   return (
-    <section className="panel">
-      <h3>Edit Team</h3>
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          const data = new FormData(event.currentTarget);
-          void onRun(
-            () =>
-              api.update(team.id, {
-                name: String(data.get("name")),
-                motto: String(data.get("motto")) || null,
-                city: String(data.get("city")) || null,
-                houma: String(data.get("houma")) || null,
-                badgeUrl: String(data.get("badgeUrl")).trim() || null,
-                bannerUrl: String(data.get("bannerUrl")).trim() || null
-              }),
-            "Team updated."
-          );
-        }}
-      >
-        <label>
-          Name
-          <input name="name" defaultValue={team.name} required />
-        </label>
-        <label>
-          Motto
-          <input name="motto" defaultValue={team.motto ?? ""} />
-        </label>
-        <label>
-          City
-          <input name="city" defaultValue={team.city ?? ""} />
-        </label>
-        <label>
-          Houma
-          <input name="houma" defaultValue={team.houma ?? ""} />
-        </label>
-        <label>
-          Team logo / crest URL
-          <input name="badgeUrl" type="url" maxLength={2000} defaultValue={team.badgeUrl ?? ""} placeholder="https://…/team-logo.png" />
-        </label>
-        <label>
-          Banner image URL
-          <input name="bannerUrl" type="url" maxLength={2000} defaultValue={team.bannerUrl ?? ""} placeholder="https://…/team-banner.jpg" />
-        </label>
-        <button type="submit">Save Team</button>
-      </form>
+    <section className="panel control-room__priority-card">
+      <div>
+        <p className="eyebrow">MATCHDAY SHAPE</p>
+        <h3>Lineup control</h3>
+        <p>
+          The lineup builder is the dedicated Team lineup editor. Draft, publish and update the
+          matchday shape there.
+        </p>
+      </div>
+      <a className="coach-primary-action" href={`/teams/${team.id}/lineup`}>
+        Open builder
+      </a>
     </section>
   );
 }
@@ -210,7 +200,12 @@ function RosterCard({ api, team, onRun }: CardProps) {
         {team.players.map((player) => (
           <div key={player.userId}>
             <span>{player.user.presentation?.displayName ?? player.userId}</span>
-            <button type="button" onClick={() => void onRun(() => api.removePlayer(team.id, player.userId), "Player removed.")}>
+            <button
+              type="button"
+              onClick={() =>
+                void onRun(() => api.removePlayer(team.id, player.userId), "Player removed.")
+              }
+            >
               Remove
             </button>
           </div>
@@ -221,7 +216,10 @@ function RosterCard({ api, team, onRun }: CardProps) {
           event.preventDefault();
           const form = event.currentTarget;
           const data = new FormData(form);
-          void onRun(() => api.addPlayer(team.id, String(data.get("userId"))), "Player added.").then(() => form.reset());
+          void onRun(
+            () => api.addPlayer(team.id, String(data.get("userId"))),
+            "Player added.",
+          ).then(() => form.reset());
         }}
       >
         <label>
@@ -244,7 +242,15 @@ function AssistantCard({ api, team, onRun }: CardProps) {
           .map((assistant) => (
             <div key={assistant.userId}>
               <span>{assistant.user.presentation?.displayName ?? assistant.userId}</span>
-              <button type="button" onClick={() => void onRun(() => api.revokeAssistant(team.id, assistant.userId), "Assistant authority revoked.")}>
+              <button
+                type="button"
+                onClick={() =>
+                  void onRun(
+                    () => api.revokeAssistant(team.id, assistant.userId),
+                    "Assistant authority revoked.",
+                  )
+                }
+              >
                 Revoke
               </button>
             </div>
@@ -255,8 +261,13 @@ function AssistantCard({ api, team, onRun }: CardProps) {
           event.preventDefault();
           const form = event.currentTarget;
           const data = new FormData(form);
-          const capabilities = CAPABILITIES.filter((capability) => data.getAll("capability").includes(capability));
-          void onRun(() => api.assignAssistant(team.id, String(data.get("userId")), capabilities), "Assistant capabilities saved.").then(() => form.reset());
+          const capabilities = CAPABILITIES.filter((capability) =>
+            data.getAll("capability").includes(capability),
+          );
+          void onRun(
+            () => api.assignAssistant(team.id, String(data.get("userId")), capabilities),
+            "Assistant capabilities saved.",
+          ).then(() => form.reset());
         }}
       >
         <label>
@@ -278,7 +289,12 @@ function AssistantCard({ api, team, onRun }: CardProps) {
   );
 }
 
-function CreateChallengeCard({ api, team, managedTeams, onRun }: CardProps & { managedTeams: ManagedTeam[] }) {
+function CreateChallengeCard({
+  api,
+  team,
+  managedTeams,
+  onRun,
+}: CardProps & { managedTeams: ManagedTeam[] }) {
   return (
     <section className="panel">
       <h3>Create Challenge</h3>
@@ -294,10 +310,10 @@ function CreateChallengeCard({ api, team, managedTeams, onRun }: CardProps & { m
                 challengedTeamId: String(data.get("challengedTeamId")),
                 format: String(data.get("format")) as TeamChallengeCreateInput["format"],
                 message: String(data.get("message")) || null,
-                proposedAt: null
+                proposedAt: null,
               }),
             "Challenge sent.",
-            false
+            false,
           ).then(() => form.reset());
         }}
       >
@@ -319,7 +335,9 @@ function CreateChallengeCard({ api, team, managedTeams, onRun }: CardProps & { m
         </label>
         <button type="submit">Send challenge</button>
       </form>
-      {managedTeams.length > 1 ? <small>Managed Teams cannot challenge themselves; the server enforces that rule.</small> : null}
+      {managedTeams.length > 1 ? (
+        <small>Managed Teams cannot challenge themselves; the server enforces that rule.</small>
+      ) : null}
     </section>
   );
 }
@@ -328,7 +346,7 @@ function ChallengeBoard({
   api,
   incoming,
   outgoing,
-  onRun
+  onRun,
 }: {
   api: TeamApi;
   incoming: TeamChallengeSummary[];
@@ -348,10 +366,28 @@ function ChallengeBoard({
               actions={
                 challenge.status === "PENDING" ? (
                   <>
-                    <button type="button" onClick={() => void onRun(() => api.acceptChallenge(challenge.id), "Challenge accepted.", false)}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void onRun(
+                          () => api.acceptChallenge(challenge.id),
+                          "Challenge accepted.",
+                          false,
+                        )
+                      }
+                    >
                       Accept
                     </button>
-                    <button type="button" onClick={() => void onRun(() => api.declineChallenge(challenge.id), "Challenge declined.", false)}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void onRun(
+                          () => api.declineChallenge(challenge.id),
+                          "Challenge declined.",
+                          false,
+                        )
+                      }
+                    >
                       Decline
                     </button>
                   </>
@@ -368,7 +404,16 @@ function ChallengeBoard({
               challenge={challenge}
               actions={
                 challenge.status === "PENDING" ? (
-                  <button type="button" onClick={() => void onRun(() => api.cancelChallenge(challenge.id), "Challenge cancelled.", false)}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void onRun(
+                        () => api.cancelChallenge(challenge.id),
+                        "Challenge cancelled.",
+                        false,
+                      )
+                    }
+                  >
                     Cancel
                   </button>
                 ) : null
