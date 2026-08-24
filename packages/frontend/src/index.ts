@@ -1,5 +1,6 @@
 import "./teams/team-media.css";
 import "./teams/coach-control-room.css";
+import "./teams/team-offers.css";
 
 export * from "./api";
 export * from "./context";
@@ -11,6 +12,8 @@ export * from "./teams/TeamDetailPage";
 export * from "./teams/CoachControlRoomPage";
 export * from "./teams/TeamEditPage";
 export * from "./teams/TeamLineupPage";
+export * from "./teams/team-offer-api";
+export * from "./teams/TeamOffersPanel";
 export * from "./events/api";
 export * from "./events/PlayPage";
 export * from "./events/CreateEventPage";
