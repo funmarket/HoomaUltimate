@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { getChangedFiles } from "./changed-files.mjs";
 
@@ -24,12 +23,8 @@ if (files.length === 0) {
   process.exit(0);
 }
 
-const target = "apps/api/src/modules/identity/http/auth.middleware.ts";
-const prettier = spawnSync("npm", ["exec", "--", "prettier", "--write", target], {
+console.log(`Checking formatting for ${files.length} changed file(s).`);
+const prettier = spawnSync("npm", ["exec", "--", "prettier", "--check", ...files], {
   stdio: "inherit",
 });
-if (prettier.status !== 0) process.exit(prettier.status ?? 1);
-console.log("--- PRETTIER OUTPUT START ---");
-console.log(readFileSync(target, "utf8"));
-console.log("--- PRETTIER OUTPUT END ---");
-process.exit(1);
+process.exit(prettier.status ?? 1);
