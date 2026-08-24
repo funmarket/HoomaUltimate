@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#11110f" />
+    <meta name="theme-color" content="#000000" />
     <title>HOOMA</title>
     <script>
       (() => {
@@ -13,11 +13,13 @@
         const resolved = mode === "system"
           ? (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
           : mode;
+        document.documentElement.dataset.appearance = mode;
         document.documentElement.dataset.theme = resolved;
         document.documentElement.style.colorScheme = resolved;
         const themeColor = document.querySelector('meta[name="theme-color"]');
         if (themeColor) {
-          themeColor.setAttribute("content", resolved === "light" ? "#f6f4ee" : "#11110f");
+          const darkThemeColor = mode === "system" ? "#000000" : "#11110f";
+          themeColor.setAttribute("content", resolved === "light" ? "#f6f4ee" : darkThemeColor);
         }
       })();
     </script>
