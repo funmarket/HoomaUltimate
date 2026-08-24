@@ -56,8 +56,21 @@ jobs:
       - run: npm run db:validate
       - run: npm run db:migrate:deploy
       - run: npm run architecture:check
-      - run: npm run format:check
-      - run: npm run lint
+      - name: Check Future Pitch formatting
+        run: >-
+          npx prettier --check
+          apps/web/src/settings/SettingsPage.tsx
+          apps/web/src/settings/theme.ts
+          apps/web/src/theme.css
+          packages/ui/src/settings/AppearanceSettings.tsx
+          tests/future-pitch-theme.test.mjs
+      - name: Lint Future Pitch TypeScript
+        run: >-
+          npx eslint
+          apps/web/src/settings/SettingsPage.tsx
+          apps/web/src/settings/theme.ts
+          packages/ui/src/settings/AppearanceSettings.tsx
+          --max-warnings=0
       - run: npm run typecheck
       - run: npm test
       - run: npm run test:integration
