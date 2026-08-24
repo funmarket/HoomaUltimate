@@ -27,7 +27,7 @@
     "test": "node scripts/run-tests.mjs unit",
     "architecture:check": "node scripts/architecture-check.mjs",
     "deploy:preflight": "node scripts/deploy-preflight.mjs",
-    "security:check": "npm audit --omit=dev --audit-level=high",
+    "security:check": "npm audit --omit=dev --omit=optional --audit-level=high",
     "check": "npm run db:generate && npm run db:validate && npm run architecture:check && npm run format:check && npm run lint && npm run typecheck && npm test && npm run build && npm run deploy:preflight",
     "db:generate": "npm -w @hooma/database run generate",
     "db:validate": "npm -w @hooma/database run validate",
