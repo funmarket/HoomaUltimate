@@ -32,3 +32,28 @@ test("legacy eyebrow presentation is consolidated without changing its final non
   assert.match(blocks[0][1], /text-transform:\s*uppercase/);
   assert.match(blocks[0][1], /letter-spacing:\s*0\.14em/);
 });
+
+test("explicit dark inherits the identical root app palette instead of redeclaring it", async () => {
+  const theme = await readFile(themeStyles, "utf8");
+
+  assert.match(theme, /:root\s*\{[\s\S]*--app-bg:\s*#070808/);
+  assert.match(theme, /:root\s*\{[\s\S]*--app-bg-raised:\s*#11120f/);
+  assert.match(theme, /:root\s*\{[\s\S]*--app-text:\s*#f2ead7/);
+  assert.match(theme, /:root\s*\{[\s\S]*--app-gold:\s*#b59b57/);
+  assert.match(theme, /:root\s*\{[\s\S]*--app-lime:\s*#c4dc43/);
+  assert.doesNotMatch(theme, /:root\[data-appearance="dark"\]\s*\{/);
+});
+
+test("zero-drift cleanup keeps light and System-dark overrides intact", async () => {
+  const theme = await readFile(themeStyles, "utf8");
+
+  assert.match(theme, /:root\[data-theme="light"\]\s*\{[\s\S]*--app-bg:\s*#f6f4ee/);
+  assert.match(
+    theme,
+    /:root\[data-appearance="system"\]\[data-theme="dark"\]\s*\{[\s\S]*--app-bg:\s*#000000/,
+  );
+  assert.match(
+    theme,
+    /:root\[data-appearance="system"\]\[data-theme="dark"\] body\s*\{\s*background:\s*#000000/,
+  );
+});
