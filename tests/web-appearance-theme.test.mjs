@@ -39,22 +39,21 @@ Object.defineProperty(globalThis, "document", {
 
 const theme = await import("../apps/web/src/settings/theme.ts");
 
-test("Future Pitch is the default when no web appearance is saved", () => {
+test("System is the default when no web appearance is saved", () => {
   storage.clear();
-  assert.equal(theme.getWebAppearanceMode(), "future-pitch");
+  assert.equal(theme.getWebAppearanceMode(), "system");
 });
 
-test("Future Pitch persists through the existing web appearance storage key", () => {
+test("removed or unknown saved appearances fall back to System", () => {
   storage.clear();
-  theme.saveWebAppearanceMode("future-pitch");
+  storage.set("hooma-web-appearance", "future-pitch");
+  assert.equal(theme.getWebAppearanceMode(), "system");
 
-  assert.equal(storage.get("hooma-web-appearance"), "future-pitch");
-  assert.equal(theme.getWebAppearanceMode(), "future-pitch");
-  assert.equal(document.documentElement.dataset.theme, "future-pitch");
-  assert.equal(document.documentElement.style.colorScheme, "dark");
+  storage.set("hooma-web-appearance", "unknown-theme");
+  assert.equal(theme.getWebAppearanceMode(), "system");
 });
 
-test("System theme still resolves from browser preference", () => {
+test("System resolves from browser preference", () => {
   storage.clear();
   prefersLight = true;
   theme.saveWebAppearanceMode("system");
@@ -67,38 +66,34 @@ test("System theme still resolves from browser preference", () => {
   assert.equal(document.documentElement.style.colorScheme, "dark");
 });
 
-test("Settings exposes exactly four independent web theme choices", async () => {
+test("Settings exposes only System, dark, and light web appearances", async () => {
   const source = await readFile(
     new URL("../apps/web/src/settings/SettingsPage.tsx", import.meta.url),
     "utf8",
   );
   const values = [...source.matchAll(/value: "([^"]+)"/g)].map((match) => match[1]);
 
-  assert.deepEqual(values, ["system", "dark", "light", "future-pitch"]);
+  assert.deepEqual(values, ["system", "dark", "light"]);
   assert.match(source, /label: "Pitch black \/ gold"/);
-  assert.match(source, /label: "FUTURE PITCH"/);
-  assert.match(source, /Dark futuristic football presentation with electric live-match accents\./);
+  assert.doesNotMatch(source, /future-pitch|FUTURE PITCH/i);
 });
 
-test("Future Pitch applies before the app bundle and is the unsaved first-paint default", async () => {
+test("System resolves before the app bundle without a theme flash", async () => {
   const source = await readFile(new URL("../apps/web/index.html", import.meta.url), "utf8");
   const initializer = source.indexOf("hooma-web-appearance");
   const moduleEntry = source.indexOf('src="/src/main.tsx"');
 
   assert.ok(initializer >= 0);
   assert.ok(moduleEntry > initializer);
-  assert.match(source, /saved === "future-pitch"/);
-  assert.match(source, /: "future-pitch";/);
+  assert.match(source, /: "system";/);
+  assert.doesNotMatch(source, /future-pitch/i);
 });
 
-test("Future Pitch canonical tokens remain centralized in the root theme stylesheet", async () => {
+test("root theme stylesheet contains no removed Future Pitch selectors or tokens", async () => {
   const source = await readFile(new URL("../apps/web/src/theme.css", import.meta.url), "utf8");
 
-  assert.match(source, /:root\[data-theme="future-pitch"\]/);
-  assert.match(source, /--bg-deep: #020302;/);
-  assert.match(source, /--lime: #b9ff31;/);
-  assert.match(source, /--electric-blue: #67b8ff;/);
-  assert.match(source, /--gold: #d0a14a;/);
-  assert.match(source, /--success: #53da88;/);
-  assert.match(source, /--danger: #ff626e;/);
+  assert.doesNotMatch(source, /future-pitch/i);
+  assert.doesNotMatch(source, /--electric-blue|--bg-deep|--lime-bright/);
+  assert.match(source, /:root\[data-theme="dark"\]/);
+  assert.match(source, /:root\[data-theme="light"\]/);
 });

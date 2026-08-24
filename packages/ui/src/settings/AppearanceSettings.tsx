@@ -1,4 +1,4 @@
-export type AppearanceMode = "system" | "telegram" | "dark" | "light" | "future-pitch";
+export type AppearanceMode = "system" | "telegram" | "dark" | "light";
 
 export function AppearanceSettings({
   mode,
