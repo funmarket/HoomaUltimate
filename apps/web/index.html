@@ -5,6 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#11110f" />
     <title>HOOMA</title>
+    <script>
+      (() => {
+        const storageKey = "hooma-web-appearance";
+        const saved = window.localStorage.getItem(storageKey);
+        const mode = saved === "dark" || saved === "light" || saved === "future-pitch" || saved === "system"
+          ? saved
+          : "future-pitch";
+        const resolved = mode === "system"
+          ? (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
+          : mode;
+        document.documentElement.dataset.theme = resolved;
+        document.documentElement.style.colorScheme = resolved === "light" ? "light" : "dark";
+        const themeColor = document.querySelector('meta[name="theme-color"]');
+        if (themeColor) {
+          themeColor.setAttribute(
+            "content",
+            resolved === "light" ? "#f6f4ee" : resolved === "future-pitch" ? "#020302" : "#11110f"
+          );
+        }
+      })();
+    </script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
   </head>
   <body>
