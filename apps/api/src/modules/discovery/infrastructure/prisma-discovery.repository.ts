@@ -51,6 +51,7 @@ export class PrismaDiscoveryRepository implements DiscoveryRepository {
           scheduledAt: true,
           homeTeam: {
             select: {
+              id: true,
               name: true,
               city: true,
               houma: true,
@@ -111,6 +112,7 @@ export class PrismaDiscoveryRepository implements DiscoveryRepository {
             kind: "TEAM_GAME",
             id: game.id,
             scheduledAt: game.scheduledAt,
+            homeTeamId: game.homeTeam.id,
             homeTeamName: game.homeTeam.name,
             awayTeamName: game.awayTeam.name,
             context: {
