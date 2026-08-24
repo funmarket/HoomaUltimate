@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { TeamCapabilityInput, TeamChallengeCreateInput } from "@hooma/contracts";
 import { useHoomaFrontend } from "../context";
 import type { ManagedTeam, TeamChallengeSummary, TeamControlDetail } from "../api";
-import { TeamLineupManager } from "./TeamLineupManager";
 
 const CAPABILITIES: readonly TeamCapabilityInput[] = [
   "EDIT_TEAM",
@@ -128,7 +127,7 @@ export function CoachControlRoomPage() {
             <AssistantCard api={api.teams} team={team} onRun={runAction} />
             <CreateChallengeCard api={api.teams} team={team} managedTeams={teams} onRun={runAction} />
           </div>
-          <TeamLineupManager api={api.teams} team={team} onRun={runAction} />
+          <LineupControlCard team={team} />
           <ChallengeBoard api={api.teams} incoming={incoming} outgoing={outgoing} onRun={runAction} />
         </>
       ) : null}
@@ -139,6 +138,17 @@ export function CoachControlRoomPage() {
 type TeamApi = ReturnType<typeof import("../api").createHoomaApi>["teams"];
 type RunAction = (action: () => Promise<unknown>, success: string, refreshTeam?: boolean) => Promise<void>;
 type CardProps = { api: TeamApi; team: TeamControlDetail; onRun: RunAction };
+
+function LineupControlCard({ team }: { team: TeamControlDetail }) {
+  return (
+    <section className="panel">
+      <p className="eyebrow">MATCHDAY SHAPE</p>
+      <h3>Lineup control</h3>
+      <p>The lineup builder is the dedicated Team lineup editor. Draft, publish and update the matchday shape there.</p>
+      <a href={`/teams/${team.id}/lineup`}>Open builder</a>
+    </section>
+  );
+}
 
 function EditTeamCard({ api, team, onRun }: CardProps) {
   return (
