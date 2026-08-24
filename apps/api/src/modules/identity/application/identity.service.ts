@@ -147,6 +147,12 @@ export class IdentityService {
     return { userId: await this.repository.upsertTelegramIdentity(identity) };
   }
 
+  async publicProfile(username: string) {
+    const profile = await this.repository.findPublicProfile(normalizeUsername(username));
+    if (!profile) throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    return profile;
+  }
+
   async me(userId: string, transports: readonly AuthTransport[]): Promise<MeResponse> {
     const user = await this.repository.findMe(userId);
     if (!user) throw new AppError(404, "USER_NOT_FOUND", "User not found");
