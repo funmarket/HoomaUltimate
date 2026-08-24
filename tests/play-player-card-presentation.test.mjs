@@ -21,7 +21,7 @@ test("Play player cards route to the canonical public profile and keep intent-sp
   assert.match(card, /\{offerSent \? "OFFER SENT" : "HIRE PLAYER"\}/);
   assert.match(card, /onClick=\{\(\) => onHire\?\.\(listing\)\}/);
   assert.match(card, /aria-disabled="true"/);
-  assert.match(page, /<PlayPlayerCard listing=\{listing\}/);
+  assert.match(page, /<PlayPlayerCard\s+listing=\{listing\}/);
   assert.match(css, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
   assert.match(css, /@media \(max-width: 720px\)/);
   assert.match(router, /path="\/profile\/:username"/);
