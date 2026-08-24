@@ -3,8 +3,10 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const controlRoomPath = "packages/frontend/src/teams/CoachControlRoomPage.tsx";
+const lineupPagePath = "packages/frontend/src/teams/TeamLineupPage.tsx";
 const lineupManagerPath = "packages/frontend/src/teams/TeamLineupManager.tsx";
 const frontendApiPath = "packages/frontend/src/api.ts";
+const routerPath = "apps/web/src/app/router/HoomaRouter.tsx";
 
 test("Coach Control Room is Team management, not global Admin", async () => {
   const page = await readFile(controlRoomPath, "utf8");
@@ -20,7 +22,22 @@ test("Coach Control Room is Team management, not global Admin", async () => {
   ]) assert.match(page, new RegExp(capability));
 });
 
-test("Coach Control Room consumes protected shared Team APIs rather than duplicating state", async () => {
+test("Team lineup builder is a dedicated Team-scoped page, not embedded in Coach Control Room", async () => {
+  const controlRoom = await readFile(controlRoomPath, "utf8");
+  const lineupPage = await readFile(lineupPagePath, "utf8");
+  const router = await readFile(routerPath, "utf8");
+
+  assert.doesNotMatch(controlRoom, /import \{ TeamLineupManager \}/);
+  assert.doesNotMatch(controlRoom, /<TeamLineupManager/);
+  assert.match(controlRoom, /href=\{`\/teams\/\$\{team\.id\}\/lineup`\}/);
+  assert.match(controlRoom, /Open builder/);
+  assert.match(lineupPage, /<TeamLineupManager key=\{team\.id\}/);
+  assert.match(lineupPage, /TEAM HQ · LINEUP CONTROL/);
+  assert.match(router, /path="\/teams\/:teamId\/lineup"/);
+  assert.match(router, /<TeamLineupPage teamId=\{requiredParam\("teamId", teamId\)\}/);
+});
+
+test("Coach Control Room and lineup page consume protected shared Team APIs rather than duplicating state", async () => {
   const client = await readFile(frontendApiPath, "utf8");
   for (const path of [
     "/api/v1/teams/managed",
@@ -53,8 +70,9 @@ test("Team lineup separates Formation from match format and offers standard plus
   assert.match(repository, /matchFormat: input\.matchFormat/);
 });
 
-test("Team lineup management uses TeamPlayer identity, resumable current state, and Team-scoped reset", async () => {
+test("Team lineup management uses TeamPlayer identity and resumable current state", async () => {
   const manager = await readFile(lineupManagerPath, "utf8");
+  const lineupPage = await readFile(lineupPagePath, "utf8");
   const schema = await readFile("packages/database/prisma/schema.prisma", "utf8");
 
   assert.match(manager, /api\.currentLineup\(team\.id\)/);
@@ -63,6 +81,8 @@ test("Team lineup management uses TeamPlayer identity, resumable current state, 
   assert.match(manager, /let active = true/);
   assert.match(manager, /if \(!active\) return/);
   assert.match(manager, /teamPlayerId/);
+  assert.match(lineupPage, /teamId/);
+  assert.match(lineupPage, /key=\{team\.id\}/);
   assert.match(schema, /model TeamLineup[\s\S]*isCurrent\s+Boolean/);
   assert.match(schema, /model TeamLineupSlot[\s\S]*teamPlayerId\s+String\?/);
 });
