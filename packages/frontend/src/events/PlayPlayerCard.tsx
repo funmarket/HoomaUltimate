@@ -6,7 +6,11 @@ type PlayPlayerCardProps = {
   offerSent?: boolean;
 };
 
-export function PlayPlayerCard({ listing, onHire, offerSent = false }: PlayPlayerCardProps) {
+export function PlayPlayerCard({
+  listing,
+  onHire,
+  offerSent = false,
+}: PlayPlayerCardProps) {
   const presentation = listing.presentation;
   if (!presentation) return null;
 
@@ -94,7 +98,11 @@ export function PlayPlayerCard({ listing, onHire, offerSent = false }: PlayPlaye
             </span>
             <span>
               <strong>{offerSent ? "OFFER SENT" : "HIRE PLAYER"}</strong>
-              <small>{offerSent ? "Waiting for the player" : "Offer this player a spot on your Team"}</small>
+              <small>
+                {offerSent
+                  ? "Waiting for the player"
+                  : "Offer this player a spot on your Team"}
+              </small>
             </span>
             <b aria-hidden="true">›</b>
           </button>
