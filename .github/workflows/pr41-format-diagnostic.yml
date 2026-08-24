@@ -1,0 +1,32 @@
+name: PR41 Format Diagnostic
+
+on:
+  pull_request:
+    branches:
+      - phase-0-foundation
+
+jobs:
+  prettier-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - name: Print exact Prettier diff
+        run: |
+          npx prettier --write \
+            apps/api/src/modules/teams/application/team.service.ts \
+            apps/api/src/modules/teams/http/team.routes.ts \
+            packages/frontend/src/events/PlayPlayerCard.tsx \
+            packages/frontend/src/teams/TeamOffersPanel.tsx \
+            packages/frontend/src/teams/team-offer-api.ts
+          git diff -- \
+            apps/api/src/modules/teams/application/team.service.ts \
+            apps/api/src/modules/teams/http/team.routes.ts \
+            packages/frontend/src/events/PlayPlayerCard.tsx \
+            packages/frontend/src/teams/TeamOffersPanel.tsx \
+            packages/frontend/src/teams/team-offer-api.ts
