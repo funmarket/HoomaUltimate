@@ -20,6 +20,7 @@ export interface DiscoveryTeamGameRecord {
   readonly kind: "TEAM_GAME";
   readonly id: string;
   readonly scheduledAt: Date;
+  readonly homeTeamId: string;
   readonly homeTeamName: string;
   readonly awayTeamName: string;
   readonly context: DiscoveryContextRecord;
