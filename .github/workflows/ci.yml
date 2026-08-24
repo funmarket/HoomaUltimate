@@ -94,9 +94,9 @@ jobs:
           packages/frontend/src/gamers/GamersPage.tsx
           --max-warnings=0
       - run: npm run typecheck
+      - run: npm run build
       - name: Run focused Gamers integration
         run: npx tsx --test --test-concurrency=1 tests/gamers.integration.test.ts
-      - run: npm run build
       - run: npm run deploy:preflight
       - run: npm run security:check
       - run: npm run db:migrate:status
