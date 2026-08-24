@@ -9,7 +9,8 @@ export function createDiscoveryPublicRouter(service: DiscoveryService): Router {
     asyncHandler(async (req, res) => {
       const requestedLimit = Number(req.query.limit ?? 30);
       const limit = Number.isFinite(requestedLimit) ? requestedLimit : 30;
-      res.json(await service.now(new Date(), limit));
+      const focusCommunityId = String(req.query.communityId ?? "").trim() || undefined;
+      res.json(await service.now(new Date(), limit, focusCommunityId));
     }),
   );
   return router;
