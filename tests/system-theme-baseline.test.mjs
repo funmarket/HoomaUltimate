@@ -6,7 +6,7 @@ const themeCss = new URL("../apps/web/src/theme.css", import.meta.url);
 const themeRuntime = new URL("../apps/web/src/settings/theme.ts", import.meta.url);
 const indexHtml = new URL("../apps/web/index.html", import.meta.url);
 
-test("System dark remains distinct from explicit Pitch black / gold", async () => {
+test("System dark remains distinct from the inherited explicit dark palette", async () => {
   const [css, runtime, html] = await Promise.all([
     readFile(themeCss, "utf8"),
     readFile(themeRuntime, "utf8"),
@@ -15,8 +15,9 @@ test("System dark remains distinct from explicit Pitch black / gold", async () =
 
   assert.match(runtime, /dataset\.appearance = mode/);
   assert.match(html, /document\.documentElement\.dataset\.appearance = mode/);
+  assert.match(css, /:root\s*\{[\s\S]*--app-bg:\s*#070808/);
   assert.match(css, /:root\[data-appearance="system"\]\[data-theme="dark"\]/);
-  assert.match(css, /:root\[data-appearance="dark"\]/);
+  assert.doesNotMatch(css, /:root\[data-appearance="dark"\]/);
 });
 
 test("System dark uses a true black application background", async () => {

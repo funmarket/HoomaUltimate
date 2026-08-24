@@ -94,7 +94,7 @@ test("root theme stylesheet contains no removed Future Pitch selectors or tokens
 
   assert.doesNotMatch(source, /future-pitch/i);
   assert.doesNotMatch(source, /--electric-blue|--bg-deep|--lime-bright/);
-  assert.match(source, /:root\[data-appearance="dark"\]/);
+  assert.doesNotMatch(source, /:root\[data-appearance="dark"\]/);
   assert.match(source, /:root\[data-appearance="system"\]\[data-theme="dark"\]/);
   assert.match(source, /:root\[data-theme="light"\]/);
 });
