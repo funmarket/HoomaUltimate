@@ -7,7 +7,7 @@ type AccountState = {
   readonly managedTeams: readonly ManagedTeam[];
   readonly loading: boolean;
   readonly error: string;
-  readonly refresh: () => Promise<void>;
+  readonly refresh: () => Promise<boolean>;
 };
 
 const AccountContext = createContext<AccountState | null>(null);
@@ -19,7 +19,7 @@ export function AccountProvider({ children }: { readonly children: ReactNode }) 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  async function refresh() {
+  async function refresh(): Promise<boolean> {
     setLoading(true);
     setError("");
     try {
@@ -27,7 +27,7 @@ export function AccountProvider({ children }: { readonly children: ReactNode }) 
       setMe(currentUser);
       if (!currentUser) {
         setManagedTeams([]);
-        return;
+        return true;
       }
       try {
         setManagedTeams(await api.teams.managed());
@@ -35,10 +35,12 @@ export function AccountProvider({ children }: { readonly children: ReactNode }) 
         setManagedTeams([]);
         setError(reason instanceof Error ? reason.message : "Unable to load Team authority");
       }
+      return true;
     } catch (reason) {
       setMe(null);
       setManagedTeams([]);
       setError(reason instanceof Error ? reason.message : "Unable to load account state");
+      return false;
     } finally {
       setLoading(false);
     }
