@@ -1,4 +1,8 @@
-import type { ProfileIdentity, ProfileResponse, ProfileUpdateInput } from "@hooma/contracts/profile";
+import type {
+  ProfileIdentity,
+  ProfileResponse,
+  ProfileUpdateInput,
+} from "@hooma/contracts/profile";
 import { request, type HoomaTransport } from "./http";
 
 export type CanonicalPublicProfile = {
