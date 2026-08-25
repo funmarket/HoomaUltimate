@@ -13,10 +13,7 @@ type TelegramInsets = {
 };
 
 type TelegramEventType =
-  | "themeChanged"
-  | "viewportChanged"
-  | "safeAreaChanged"
-  | "contentSafeAreaChanged";
+  "themeChanged" | "viewportChanged" | "safeAreaChanged" | "contentSafeAreaChanged";
 
 type TelegramEventHandler = (payload?: unknown) => void;
 
@@ -114,21 +111,13 @@ export function createTelegramRuntime(): TelegramRuntime {
         setLength(root, "--hooma-viewport-height", viewportHeight);
         setLength(root, "--hooma-viewport-stable-height", stableHeight);
       };
-      const syncSafeArea = () =>
-        syncInsets(root, "--hooma-safe-area-inset", webApp.safeAreaInset);
+      const syncSafeArea = () => syncInsets(root, "--hooma-safe-area-inset", webApp.safeAreaInset);
       const syncContentSafeArea = () =>
         syncInsets(root, "--hooma-content-safe-area-inset", webApp.contentSafeAreaInset);
       const syncTheme = () => {
         const scheme = colorScheme(webApp);
-        if (!scheme) {
-          delete root.dataset.telegramColorScheme;
-          return;
-        }
-        root.dataset.telegramColorScheme = scheme;
-        if (root.dataset.appearance === "system") {
-          root.dataset.theme = scheme;
-          root.style.colorScheme = scheme;
-        }
+        if (scheme) root.dataset.telegramColorScheme = scheme;
+        else delete root.dataset.telegramColorScheme;
       };
 
       webApp.ready();

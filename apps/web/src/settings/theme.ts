@@ -9,19 +9,8 @@ function isWebAppearanceMode(value: string | null): value is WebAppearanceMode {
   return value === "dark" || value === "light" || value === "system";
 }
 
-function telegramColorScheme(): ResolvedWebAppearanceMode | null {
-  const value = document.documentElement.dataset.telegramColorScheme;
-  return value === "light" || value === "dark" ? value : null;
-}
-
 function resolveWebAppearanceMode(mode: WebAppearanceMode): ResolvedWebAppearanceMode {
-  if (mode === "system") {
-    return (
-      telegramColorScheme() ??
-      (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
-    );
-  }
-  return mode;
+  return mode === "system" ? "dark" : mode;
 }
 
 export function getWebAppearanceMode(): WebAppearanceMode {
@@ -43,10 +32,5 @@ export function saveWebAppearanceMode(mode: AppearanceMode): void {
 }
 
 export function initializeWebAppearance(): void {
-  const mode = getWebAppearanceMode();
-  applyWebAppearanceMode(mode);
-  const media = window.matchMedia("(prefers-color-scheme: light)");
-  media.addEventListener("change", () => {
-    if (getWebAppearanceMode() === "system") applyWebAppearanceMode("system");
-  });
+  applyWebAppearanceMode(getWebAppearanceMode());
 }
