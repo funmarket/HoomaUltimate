@@ -10,10 +10,7 @@ const EXPECTED_SHA256 = "9444b5fb36290ed45d04937e919ec993fa289b1127429d5e644c68d
 async function readGeneratedPart(index) {
   const suffix = String(index).padStart(2, "0");
   const source = await readFile(
-    new URL(
-      `../packages/ui/src/brand/generated/watch-ticket-part-${suffix}.ts`,
-      import.meta.url,
-    ),
+    new URL(`../packages/ui/src/brand/generated/watch-ticket-part-${suffix}.ts`, import.meta.url),
     "utf8",
   );
   const match = source.match(/= "([A-Za-z0-9+/=]+)";/);
@@ -22,9 +19,9 @@ async function readGeneratedPart(index) {
 }
 
 test("Watch collector ticket master is complete and uncorrupted", async () => {
-  const encoded = (await Promise.all(Array.from({ length: 7 }, (_, index) => readGeneratedPart(index)))).join(
-    "",
-  );
+  const encoded = (
+    await Promise.all(Array.from({ length: 7 }, (_, index) => readGeneratedPart(index)))
+  ).join("");
   assert.equal(encoded.length, EXPECTED_BASE64_LENGTH);
 
   const bytes = Buffer.from(encoded, "base64");
