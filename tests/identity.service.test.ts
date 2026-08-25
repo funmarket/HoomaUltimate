@@ -5,6 +5,8 @@ import type { ApiConfig } from "@hooma/config";
 import type {
   IdentityRepository,
   MeRecord,
+  ProfileRecord,
+  ProfileWriteInput,
   SessionRecord,
   WebCredentialRecord,
 } from "../apps/api/src/modules/identity/application/identity.repository.js";
@@ -53,6 +55,17 @@ class FakeIdentityRepository implements IdentityRepository {
     platformRoles: [],
     communities: [],
     teams: [],
+  };
+  profileRecord: ProfileRecord | null = {
+    id: "user-1",
+    presentation: {
+      username: "fan",
+      displayName: "Fan",
+      photoUrl: null,
+      bio: null,
+    },
+    identities: [],
+    player: null,
   };
   telegramUserId: string | null = null;
   telegramProvisionCount = 0;
@@ -110,6 +123,28 @@ class FakeIdentityRepository implements IdentityRepository {
     return "telegram-user";
   }
 
+  async findProfile(): Promise<ProfileRecord | null> {
+    return this.profileRecord;
+  }
+
+  async updateProfile(_userId: string, input: ProfileWriteInput): Promise<void> {
+    const existingRating = this.profileRecord?.player?.overallRating ?? 50;
+    this.profileRecord = {
+      id: "user-1",
+      presentation: {
+        username: input.username,
+        displayName: input.displayName,
+        photoUrl: input.photoUrl,
+        bio: input.bio,
+      },
+      identities: input.identities,
+      player:
+        input.identities.includes("PLAYER") && input.player
+          ? { ...input.player, overallRating: existingRating }
+          : null,
+    };
+  }
+
   async updatePresentation(): Promise<void> {}
 
   async findMe(): Promise<MeRecord | null> {
@@ -134,6 +169,31 @@ test("web registration issues an opaque session and login verifies Argon2id hash
   });
   assert.ok(login.sessionToken.length >= 32);
   assert.match(repository.credential?.passwordHash ?? "", /^\$argon2id\$/);
+});
+
+test("canonical profile update normalizes presentation and preserves read-only player rating", async () => {
+  const repository = new FakeIdentityRepository();
+  const service = new IdentityService(repository, config);
+  const profile = await service.updateProfile("user-1", {
+    username: "Player.One",
+    displayName: " Player One ",
+    photoUrl: null,
+    bio: " Ready to play ",
+    identities: ["PLAYER", "GAMER"],
+    player: {
+      skillLevel: "INTERMEDIATE",
+      preferredPositions: ["CM", "AM"],
+    },
+  });
+  assert.equal(profile.presentation.username, "player.one");
+  assert.equal(profile.presentation.displayName, "Player One");
+  assert.equal(profile.presentation.bio, "Ready to play");
+  assert.deepEqual(profile.identities, ["PLAYER", "GAMER"]);
+  assert.deepEqual(profile.player, {
+    skillLevel: "INTERMEDIATE",
+    preferredPositions: ["CM", "AM"],
+    overallRating: 50,
+  });
 });
 
 test("five failed web logins lock the credential", async () => {

@@ -54,6 +54,7 @@ export const profileResponseSchema = z.object({
     .object({
       skillLevel: skillLevelSchema,
       preferredPositions: z.array(z.enum(TEAM_POSITION_ROLES)).max(5),
+      overallRating: z.number().int().min(0).max(100),
     })
     .nullable(),
 });

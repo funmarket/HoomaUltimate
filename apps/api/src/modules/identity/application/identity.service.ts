@@ -14,6 +14,11 @@ import type {
   ProfilePresentationUpdateInput,
   RegisterInput,
 } from "@hooma/contracts";
+import {
+  profileResponseSchema,
+  type ProfileResponse,
+  type ProfileUpdateInput,
+} from "@hooma/contracts/profile";
 import { AppError } from "../../../http/errors/app-error.js";
 import type { IdentityRepository } from "./identity.repository.js";
 import { defaultDisplayName, normalizeEmail, normalizeUsername } from "../domain/normalization.js";
@@ -151,6 +156,51 @@ export class IdentityService {
     const profile = await this.repository.findPublicProfile(normalizeUsername(username));
     if (!profile) throw new AppError(404, "USER_NOT_FOUND", "User not found");
     return profile;
+  }
+
+  async profile(userId: string): Promise<ProfileResponse> {
+    const profile = await this.repository.findProfile(userId);
+    if (!profile) throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    return profileResponseSchema.parse({
+      id: profile.id,
+      presentation: profile.presentation,
+      identities: [...profile.identities],
+      player: profile.player
+        ? {
+            skillLevel: profile.player.skillLevel,
+            preferredPositions: [...profile.player.preferredPositions],
+            overallRating: profile.player.overallRating,
+          }
+        : null,
+    });
+  }
+
+  async updateProfile(userId: string, input: ProfileUpdateInput): Promise<ProfileResponse> {
+    try {
+      await this.repository.updateProfile(userId, {
+        username: normalizeUsername(input.username),
+        displayName: input.displayName.trim(),
+        photoUrl: input.photoUrl?.trim() || null,
+        bio: input.bio?.trim() || null,
+        identities: [...input.identities],
+        player: input.player
+          ? {
+              skillLevel: input.player.skillLevel,
+              preferredPositions: [...input.player.preferredPositions],
+            }
+          : null,
+      });
+    } catch (error) {
+      if (isUniqueConstraintError(error)) {
+        throw new AppError(
+          409,
+          "PRESENTATION_USERNAME_CONFLICT",
+          "That HOOMA username is already in use",
+        );
+      }
+      throw error;
+    }
+    return this.profile(userId);
   }
 
   async me(userId: string, transports: readonly AuthTransport[]): Promise<MeResponse> {

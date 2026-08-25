@@ -43,6 +43,7 @@ async function resetDatabase() {
   await db.telegramIdentity.deleteMany();
   await db.platformRoleAssignment.deleteMany();
   await db.auditLog.deleteMany();
+  await db.playerProfile.deleteMany();
   await db.userPresentation.deleteMany();
   await db.user.deleteMany();
 }
@@ -120,6 +121,93 @@ test("register -> cookie session -> me -> protected logout works against Postgre
     });
     assert.equal(optionalAfterLogout.status, 200);
     assert.equal(await optionalAfterLogout.json(), null);
+  } finally {
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve())),
+    );
+    await resetDatabase();
+  }
+});
+
+test("canonical profile API persists identities without creating GamerProfile", async () => {
+  await resetDatabase();
+  const app = createApp(config, createContainer(config));
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise<void>((resolve) => server.once("listening", resolve));
+  const address = server.address();
+  assert.ok(address && typeof address === "object");
+  const base = `http://127.0.0.1:${address.port}`;
+
+  try {
+    const cookie = await registerWeb(base, "profile_owner");
+    const initial = await fetch(`${base}/api/v1/me/profile`, { headers: { cookie } });
+    assert.equal(initial.status, 200);
+    const initialBody = (await initial.json()) as { identities: string[]; player: unknown };
+    assert.deepEqual(initialBody.identities, []);
+    assert.equal(initialBody.player, null);
+
+    const update = await fetch(`${base}/api/v1/me/profile`, {
+      method: "PATCH",
+      headers: {
+        cookie,
+        origin: config.WEB_ORIGIN,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        username: "Profile.Owner",
+        displayName: "Profile Owner",
+        photoUrl: null,
+        bio: "Player and gamer",
+        identities: ["PLAYER", "GAMER"],
+        player: {
+          skillLevel: "ADVANCED",
+          preferredPositions: ["CM", "AM"],
+        },
+      }),
+    });
+    assert.equal(update.status, 200);
+    const updateBody = (await update.json()) as {
+      presentation: { username: string };
+      identities: string[];
+      player: { overallRating: number; preferredPositions: string[] };
+    };
+    assert.equal(updateBody.presentation.username, "profile.owner");
+    assert.deepEqual(updateBody.identities, ["PLAYER", "GAMER"]);
+    assert.equal(updateBody.player.overallRating, 50);
+    assert.deepEqual(updateBody.player.preferredPositions, ["CM", "AM"]);
+
+    const user = await db.user.findFirst({
+      where: { presentation: { username: "profile.owner" } },
+      select: { id: true, identities: true },
+    });
+    assert.ok(user);
+    assert.deepEqual(user.identities, ["PLAYER", "GAMER"]);
+    assert.equal(await db.gamerProfile.count({ where: { userId: user.id } }), 0);
+    const storedPlayer = await db.playerProfile.findUnique({ where: { userId: user.id } });
+    assert.equal(storedPlayer?.overallRating, 50);
+
+    const unselectPlayer = await fetch(`${base}/api/v1/me/profile`, {
+      method: "PATCH",
+      headers: {
+        cookie,
+        origin: config.WEB_ORIGIN,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        username: "profile.owner",
+        displayName: "Profile Owner",
+        photoUrl: null,
+        bio: "Gamer only",
+        identities: ["GAMER"],
+        player: null,
+      }),
+    });
+    assert.equal(unselectPlayer.status, 200);
+    const unselectBody = (await unselectPlayer.json()) as { identities: string[]; player: unknown };
+    assert.deepEqual(unselectBody.identities, ["GAMER"]);
+    assert.equal(unselectBody.player, null);
+    assert.equal(await db.playerProfile.count({ where: { userId: user.id } }), 1);
+    assert.equal(await db.gamerProfile.count({ where: { userId: user.id } }), 0);
   } finally {
     await new Promise<void>((resolve, reject) =>
       server.close((error) => (error ? reject(error) : resolve())),
