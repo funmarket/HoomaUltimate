@@ -7,11 +7,14 @@ export type RedisInfrastructureErrorCode =
   | "CONFIG"
   | "UNAVAILABLE"
   | "TIMEOUT"
-  | "PROTOCOL"
-  | "COMMAND";
+  | "COMMAND"
+  | "PROTOCOL";
 
 export class RedisInfrastructureError extends Error {
-  constructor(readonly code: RedisInfrastructureErrorCode, message: string) {
+  constructor(
+    readonly code: RedisInfrastructureErrorCode,
+    message: string,
+  ) {
     super(message);
     this.name = "RedisInfrastructureError";
   }
@@ -26,7 +29,9 @@ type PendingCommand = {
 const COMMAND_TIMEOUT_MS = 3_000;
 
 function encodeCommand(parts: readonly string[]): string {
-  return `*${parts.length}\r\n${parts.map((part) => `$${Buffer.byteLength(part)}\r\n${part}\r\n`).join("")}`;
+  return `*${parts.length}\r\n${parts
+    .map((part) => `$${Buffer.byteLength(part)}\r\n${part}\r\n`)
+    .join("")}`;
 }
 
 function parseResp(
@@ -48,13 +53,22 @@ function parseResp(
   if (prefix === "$") {
     const length = Number(line);
     if (length === -1) return { value: null, offset: next };
+    if (!Number.isInteger(length) || length < 0) {
+      throw new RedisInfrastructureError("PROTOCOL", "Invalid Redis bulk response");
+    }
     const end = next + length;
     if (buffer.length < end + 2) return null;
-    return { value: buffer.subarray(next, end).toString("utf8"), offset: end + 2 };
+    return {
+      value: buffer.subarray(next, end).toString("utf8"),
+      offset: end + 2,
+    };
   }
   if (prefix === "*") {
     const count = Number(line);
     if (count === -1) return { value: null, offset: next };
+    if (!Number.isInteger(count) || count < 0) {
+      throw new RedisInfrastructureError("PROTOCOL", "Invalid Redis array response");
+    }
     const values: RedisValue[] = [];
     let cursor = next;
     for (let index = 0; index < count; index += 1) {
@@ -66,7 +80,7 @@ function parseResp(
     return { value: values, offset: cursor };
   }
 
-  throw new RedisInfrastructureError("PROTOCOL", "Redis returned an unsupported response");
+  throw new RedisInfrastructureError("PROTOCOL", "Unsupported Redis response");
 }
 
 function unavailableError(): RedisInfrastructureError {
@@ -84,21 +98,45 @@ export class RedisClient {
   constructor(redisUrl: string) {
     this.url = new URL(redisUrl);
     if (this.url.protocol !== "redis:") {
-      throw new RedisInfrastructureError("CONFIG", "Redis URL must use redis://");
+      throw new RedisInfrastructureError(
+        "CONFIG",
+        "Redis client requires a redis:// URL",
+      );
     }
   }
 
   async command(parts: readonly string[]): Promise<RedisValue> {
+    if (parts.length === 0) {
+      throw new RedisInfrastructureError("PROTOCOL", "Redis command cannot be empty");
+    }
     await this.ensureReady();
     return this.sendConnected(parts);
   }
 
+  async ping(): Promise<void> {
+    const result = await this.command(["PING"]);
+    if (result !== "PONG") {
+      throw new RedisInfrastructureError(
+        "PROTOCOL",
+        "Redis PING returned an invalid response",
+      );
+    }
+  }
+
   close(): void {
-    this.failConnection(unavailableError());
+    const socket = this.socket;
+    this.socket = null;
+    this.ready = false;
+    this.readyPromise = null;
+    this.responseBuffer = Buffer.alloc(0);
+    if (socket && !socket.destroyed) socket.destroy();
+    this.rejectPending(unavailableError());
   }
 
   private ensureReady(): Promise<void> {
-    if (this.ready && this.socket && !this.socket.destroyed) return Promise.resolve();
+    if (this.ready && this.socket && !this.socket.destroyed) {
+      return Promise.resolve();
+    }
     if (this.readyPromise) return this.readyPromise;
 
     this.readyPromise = this.openAndInitialize().finally(() => {
@@ -129,6 +167,12 @@ export class RedisClient {
 
   private openSocket(): Promise<void> {
     const port = Number(this.url.port || 6379);
+    if (!Number.isInteger(port) || port <= 0 || port > 65_535) {
+      return Promise.reject(
+        new RedisInfrastructureError("CONFIG", "Redis URL contains an invalid port"),
+      );
+    }
+
     const socket = net.createConnection({ host: this.url.hostname, port });
     this.socket = socket;
     this.responseBuffer = Buffer.alloc(0);
@@ -205,7 +249,7 @@ export class RedisClient {
       this.failConnection(
         error instanceof RedisInfrastructureError
           ? error
-          : new RedisInfrastructureError("PROTOCOL", "Redis returned an invalid response"),
+          : new RedisInfrastructureError("PROTOCOL", "Invalid Redis response"),
       );
     }
   }
@@ -216,7 +260,10 @@ export class RedisClient {
     this.ready = false;
     this.responseBuffer = Buffer.alloc(0);
     if (socket && !socket.destroyed) socket.destroy();
+    this.rejectPending(error);
+  }
 
+  private rejectPending(error: RedisInfrastructureError): void {
     for (const pending of this.pending.splice(0)) {
       clearTimeout(pending.timeout);
       pending.reject(error);
