@@ -232,10 +232,7 @@ test("PRIVATE HOOMA uses approved membership and keeps child activity private", 
       headers: headers(requester.cookie),
     });
     assert.equal(memberEventJoin.status, 200);
-    assert.equal(
-      ((await memberEventJoin.json()) as { status: string }).status,
-      "CONFIRMED",
-    );
+    assert.equal(((await memberEventJoin.json()) as { status: string }).status, "CONFIRMED");
     assert.equal((await fetch(`${base}/api/public/v1/events/${privateEvent.id}`)).status, 404);
 
     const requesterMe = await fetch(`${base}/api/v1/me`, { headers: headers(requester.cookie) });
@@ -315,7 +312,7 @@ test("PRIVATE HOOMA uses approved membership and keeps child activity private", 
     await db.community.deleteMany({ where: { id: { in: createdCommunityIds } } });
     await db.user.deleteMany({ where: { id: { in: createdUserIds } } });
     await new Promise<void>((resolve, reject) =>
-      server.close((error) => (error ? reject(error) : resolve()),
+      server.close((error) => (error ? reject(error) : resolve())),
     );
   }
 });
