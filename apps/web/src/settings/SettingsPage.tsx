@@ -6,7 +6,7 @@ const WEB_CHOICES = [
   {
     value: "system",
     label: "System theme",
-    description: "Follow your browser and operating-system appearance.",
+    description: "Use HOOMA's default black system appearance.",
   },
   {
     value: "dark",
