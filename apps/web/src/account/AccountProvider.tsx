@@ -8,7 +8,7 @@ type AccountState = {
   readonly hasPlatformControlAccess: boolean;
   readonly loading: boolean;
   readonly error: string;
-  readonly refresh: () => Promise<void>;
+  readonly refresh: () => Promise<boolean>;
 };
 
 const AccountContext = createContext<AccountState | null>(null);
@@ -22,7 +22,7 @@ export function AccountProvider({ children }: { readonly children: ReactNode }) 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  async function refresh() {
+  async function refresh(): Promise<boolean> {
     setLoading(true);
     setError("");
     try {
@@ -31,7 +31,7 @@ export function AccountProvider({ children }: { readonly children: ReactNode }) 
       if (!currentUser) {
         setManagedTeams([]);
         setHasPlatformControlAccess(false);
-        return;
+        return true;
       }
       try {
         const [teams, platformAccess] = await Promise.all([
@@ -47,11 +47,13 @@ export function AccountProvider({ children }: { readonly children: ReactNode }) 
         setHasPlatformControlAccess(currentUser.platformRoles.includes("PLATFORM_ADMIN"));
         setError(reason instanceof Error ? reason.message : "Unable to load account authority");
       }
+      return true;
     } catch (reason) {
       setMe(null);
       setManagedTeams([]);
       setHasPlatformControlAccess(false);
       setError(reason instanceof Error ? reason.message : "Unable to load account state");
+      return false;
     } finally {
       setLoading(false);
     }
