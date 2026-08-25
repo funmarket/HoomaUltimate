@@ -155,11 +155,7 @@ function HoomaRoutes() {
       },
     };
   }, [runtime.initData]);
-  const accountEntry = runtime.initData ? (
-    <TelegramAccountActivationPage />
-  ) : (
-    <AuthApp />
-  );
+  const accountEntry = runtime.initData ? <TelegramAccountActivationPage /> : <AuthApp />;
 
   return (
     <HoomaFrontendProvider transport={transport}>
