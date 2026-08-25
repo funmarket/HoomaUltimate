@@ -20,14 +20,13 @@ test("account loading is a distinct shell/header state rather than guest present
   assert.match(shell, /<HoomaAccountHeader[\s\S]*loading=\{loading\}/);
 
   assert.match(header, /readonly loading: boolean;/);
-  assert.match(header, /const accountLabel = loading \? "Loading account…"/u);
-  assert.match(header, /hooma-account-header__label/);
-  assert.match(header, /\{accountLabel\}/);
-  assert.match(header, /aria-busy=\{loading \|\| undefined\}/);
-  assert.match(header, /disabled=\{loading\}/);
-  assert.match(header, /hooma-profile-trigger__loading/);
-  assert.match(header, /\{!loading && user && open \? \(/);
+  assert.match(header, /if \(loading\) \{/);
+  assert.match(header, /<header className="hooma-account-header" aria-busy="true">/);
+  assert.match(header, /hooma-account-header__avatar--loading/);
+  assert.match(header, /if \(loading\) setOpen\(false\);/);
+  assert.match(header, /\{user\?\.displayName \?\? "Profile"\}/);
+  assert.match(header, /Sign in or create account/);
 
-  assert.match(accountCss, /\.hooma-profile-trigger__loading \{/);
+  assert.match(accountCss, /\.hooma-account-header__avatar--loading \{/);
   assert.match(accountCss, /@media \(prefers-reduced-motion: reduce\)/);
 });
