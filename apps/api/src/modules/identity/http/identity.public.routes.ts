@@ -61,20 +61,17 @@ export function createIdentityPublicRouter(service: IdentityService, config: Api
     }),
   );
 
-  router.post(
-    "/telegram/web/start",
-    (request, response) => {
-      const input = telegramOidcStartSchema.parse(request.body);
-      const authorizationUrl = beginTelegramWebFlow(response, config, {
-        mode: "login",
-        returnTo: input.returnTo,
-      });
-      response.json({
-        enabled: telegramWebLoginConfigured(config),
-        authorizationUrl,
-      });
-    },
-  );
+  router.post("/telegram/web/start", (request, response) => {
+    const input = telegramOidcStartSchema.parse(request.body);
+    const authorizationUrl = beginTelegramWebFlow(response, config, {
+      mode: "login",
+      returnTo: input.returnTo,
+    });
+    response.json({
+      enabled: telegramWebLoginConfigured(config),
+      authorizationUrl,
+    });
+  });
 
   router.get(
     "/telegram/web/callback",
@@ -83,6 +80,7 @@ export function createIdentityPublicRouter(service: IdentityService, config: Api
       try {
         const flow = readTelegramWebFlow(request, config);
         returnTo = flow.returnTo;
+        clearTelegramWebFlow(response, config);
         const identity = await completeTelegramWebFlow(request, config, flow);
         if (flow.mode === "login") {
           const { sessionToken } = await service.loginWithTelegramIdentity(identity);
@@ -104,10 +102,9 @@ export function createIdentityPublicRouter(service: IdentityService, config: Api
         await service.linkTelegramIdentity(flow.userId, identity);
         response.redirect(webRedirect(config, returnTo, { telegramLinked: "success" }));
       } catch (error) {
+        clearTelegramWebFlow(response, config);
         const code = error instanceof AppError ? error.code : "TELEGRAM_WEB_LOGIN_FAILED";
         response.redirect(webRedirect(config, returnTo, { telegramError: code }));
-      } finally {
-        clearTelegramWebFlow(response, config);
       }
     }),
   );
