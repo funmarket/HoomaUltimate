@@ -9,13 +9,6 @@
   --hooma-accent: var(--app-lime);
 }
 
-:root[data-theme="light"] input,
-:root[data-theme="light"] textarea,
-:root[data-theme="light"] select {
-  background: var(--app-bg-raised);
-  color: var(--app-text);
-}
-
 .hooma-topbar {
   --hooma-chrome-bg: #070808;
   --hooma-chrome-surface: #11120f;
