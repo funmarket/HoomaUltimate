@@ -8,7 +8,6 @@ import type {
   GamerGameList,
   GamerProfile,
   GamerProfileInput,
-  GamerPublicProfile,
 } from "@hooma/contracts/gamers";
 import { request, type HoomaTransport } from "../http";
 
@@ -26,11 +25,6 @@ export function createGamersApi(transport: HoomaTransport) {
       request<GamerChallengerList>(
         transport,
         `/api/public/v1/gamers/games/${encodeURIComponent(gameId)}/challengers`,
-      ),
-    publicProfile: (gameId: string, profileId: string) =>
-      request<GamerPublicProfile>(
-        transport,
-        `/api/public/v1/gamers/games/${encodeURIComponent(gameId)}/profiles/${encodeURIComponent(profileId)}`,
       ),
     myProfile: (gameId: string) =>
       request<GamerProfile | null>(
