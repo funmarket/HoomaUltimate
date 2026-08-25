@@ -60,7 +60,8 @@ export class OutboxRunner {
 
     this.running = true;
     try {
-      const leaseMilliseconds = this.options.leaseMilliseconds ?? DEFAULT_LEASE_MS;
+      const leaseMilliseconds =
+        this.options.leaseMilliseconds ?? DEFAULT_LEASE_MS;
       const events = await this.repository.claimAvailable({
         topics: [...this.handlers.keys()],
         now,
@@ -68,7 +69,9 @@ export class OutboxRunner {
         limit: this.options.batchSize ?? DEFAULT_BATCH_SIZE,
       });
 
-      const results = await Promise.all(events.map((event) => this.process(event)));
+      const results = await Promise.all(
+        events.map((event) => this.process(event)),
+      );
       return results.reduce<OutboxRunResult>(
         (summary, result) => ({
           claimed: summary.claimed + 1,
@@ -83,10 +86,14 @@ export class OutboxRunner {
     }
   }
 
-  private async process(event: ClaimedOutboxEvent): Promise<"DELIVERED" | "RETRY" | "FAILED"> {
+  private async process(
+    event: ClaimedOutboxEvent,
+  ): Promise<"DELIVERED" | "RETRY" | "FAILED"> {
     const handler = this.handlers.get(event.topic);
     if (!handler) {
-      throw new Error(`Outbox handler disappeared for registered topic ${event.topic}`);
+      throw new Error(
+        `Outbox handler disappeared for registered topic ${event.topic}`,
+      );
     }
 
     try {
@@ -95,12 +102,16 @@ export class OutboxRunner {
       return "DELIVERED";
     } catch (error) {
       const attempts = event.attempts + 1;
-      const terminal = attempts >= (this.options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS);
+      const terminal =
+        attempts >= (this.options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS);
       const retryAt = terminal
         ? new Date()
         : new Date(
             Date.now() +
-              retryDelayMilliseconds(attempts, this.options.random ?? Math.random),
+              retryDelayMilliseconds(
+                attempts,
+                this.options.random ?? Math.random,
+              ),
           );
       await this.repository.markFailed({
         event,
