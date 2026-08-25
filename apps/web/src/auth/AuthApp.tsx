@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import type { MeResponse } from "@hooma/contracts";
 import { useHoomaFrontend } from "@hooma/frontend";
+import { useAccount } from "../account/AccountProvider";
 
 function safeReturnTo(): string {
   const value = new URLSearchParams(window.location.search).get("returnTo");
@@ -15,30 +15,39 @@ function initialMode(): "login" | "register" {
 
 export function AuthApp() {
   const { api } = useHoomaFrontend();
-  const [me, setMe] = useState<MeResponse | null>(null);
+  const { me, loading, refresh } = useAccount();
   const [error, setError] = useState("");
   const [mode, setMode] = useState<"login" | "register">(initialMode);
   const returnTo = useMemo(safeReturnTo, []);
 
   useEffect(() => {
-    void api.identity
-      .meOptional()
-      .then((response) => {
-        if (!response) return;
-        setMe(response);
-        if (returnTo !== "/") window.location.replace(returnTo);
-      })
-      .catch(() => undefined);
-  }, [api, returnTo]);
+    if (!loading && me && returnTo !== "/") window.location.replace(returnTo);
+  }, [loading, me, returnTo]);
 
-  function completeAuthentication() {
-    void api.identity
-      .me()
-      .then((response) => {
-        setMe(response);
-        window.location.replace(returnTo);
-      })
-      .catch((reason: Error) => setError(reason.message));
+  async function completeAuthentication() {
+    try {
+      await refresh();
+      window.location.replace(returnTo);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unable to refresh account state");
+    }
+  }
+
+  async function signOut() {
+    try {
+      await api.identity.logout();
+      await refresh();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unable to sign out");
+    }
+  }
+
+  if (loading) {
+    return (
+      <section className="auth-card" aria-busy="true">
+        <p className="status">Loading account…</p>
+      </section>
+    );
   }
 
   if (me) {
@@ -47,15 +56,7 @@ export function AuthApp() {
         <p className="eyebrow">SIGNED IN</p>
         <h2>{me.presentation.displayName}</h2>
         <p>@{me.presentation.username}</p>
-        <button
-          type="button"
-          onClick={() =>
-            void api.identity
-              .logout()
-              .then(() => setMe(null))
-              .catch((e: Error) => setError(e.message))
-          }
-        >
+        <button type="button" onClick={() => void signOut()}>
           Sign out
         </button>
         {error ? <p className="error">{error}</p> : null}
@@ -165,4 +166,7 @@ function RegisterForm({ onSuccess, onError }: FormCallbacks) {
   );
 }
 
-type FormCallbacks = { onSuccess: () => void; onError: (message: string) => void };
+type FormCallbacks = {
+  onSuccess: () => void | Promise<void>;
+  onError: (message: string) => void;
+};
