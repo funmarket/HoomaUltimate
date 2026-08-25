@@ -3,12 +3,7 @@ import net from "node:net";
 export type RedisScalar = string | number | null;
 export type RedisValue = RedisScalar | RedisValue[];
 
-export type RedisClientErrorKind =
-  | "CONFIG"
-  | "UNAVAILABLE"
-  | "TIMEOUT"
-  | "COMMAND"
-  | "PROTOCOL";
+export type RedisClientErrorKind = "CONFIG" | "UNAVAILABLE" | "TIMEOUT" | "COMMAND" | "PROTOCOL";
 
 export class RedisClientError extends Error {
   constructor(
@@ -29,15 +24,10 @@ type PendingCommand = {
 const COMMAND_TIMEOUT_MS = 3_000;
 
 function encodeCommand(parts: readonly string[]): string {
-  return `*${parts.length}\r\n${parts
-    .map((part) => `$${Buffer.byteLength(part)}\r\n${part}\r\n`)
-    .join("")}`;
+  return `*${parts.length}\r\n${parts.map((part) => `$${Buffer.byteLength(part)}\r\n${part}\r\n`).join("")}`;
 }
 
-function parseResp(
-  buffer: Buffer,
-  offset = 0,
-): { value: RedisValue; offset: number } | null {
+function parseResp(buffer: Buffer, offset = 0): { value: RedisValue; offset: number } | null {
   if (offset >= buffer.length) return null;
   const prefix = String.fromCharCode(buffer[offset]!);
   const lineEnd = buffer.indexOf("\r\n", offset + 1);
@@ -98,10 +88,7 @@ export class RedisClient {
   constructor(redisUrl: string) {
     this.url = new URL(redisUrl);
     if (this.url.protocol !== "redis:") {
-      throw new RedisClientError(
-        "CONFIG",
-        "Redis client requires a redis:// URL",
-      );
+      throw new RedisClientError("CONFIG", "Redis client requires a redis:// URL");
     }
   }
 
@@ -165,9 +152,7 @@ export class RedisClient {
   private openSocket(): Promise<void> {
     const port = Number(this.url.port || 6379);
     if (!Number.isInteger(port) || port <= 0 || port > 65_535) {
-      return Promise.reject(
-        new RedisClientError("CONFIG", "Redis URL contains an invalid port"),
-      );
+      return Promise.reject(new RedisClientError("CONFIG", "Redis URL contains an invalid port"));
     }
 
     const socket = net.createConnection({ host: this.url.hostname, port });
@@ -217,9 +202,7 @@ export class RedisClient {
         resolve,
         reject,
         timeout: setTimeout(() => {
-          this.failConnection(
-            new RedisClientError("TIMEOUT", "Redis command timed out"),
-          );
+          this.failConnection(new RedisClientError("TIMEOUT", "Redis command timed out"));
         }, COMMAND_TIMEOUT_MS),
       };
       this.pending.push(pending);
