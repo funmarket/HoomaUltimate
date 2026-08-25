@@ -438,6 +438,7 @@ model TeamChallenge {
   createdByUserId  String
   format           FootballFormat
   proposedAt       DateTime?
+  proposedEndsAt   DateTime?
   message          String?
   status           TeamChallengeStatus   @default(PENDING)
   createdAt        DateTime              @default(now())
@@ -470,6 +471,7 @@ model TeamGame {
   homeTeamId  String
   awayTeamId  String
   scheduledAt DateTime?
+  endsAt      DateTime?
   status      TeamGameStatus @default(SCHEDULING)
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt

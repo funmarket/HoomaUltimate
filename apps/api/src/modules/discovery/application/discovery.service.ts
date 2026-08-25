@@ -65,7 +65,7 @@ function projectRecord(record: DiscoveryRecord, now: Date): DiscoveryNowItem | n
   }
 
   if (record.kind === "TEAM_GAME") {
-    const urgency = classifyTimedActivity(now, record.scheduledAt, null);
+    const urgency = classifyTimedActivity(now, record.scheduledAt, record.endsAt);
     if (!urgency) return null;
     return {
       id: `teams:${record.id}`,
@@ -78,7 +78,7 @@ function projectRecord(record: DiscoveryRecord, now: Date): DiscoveryNowItem | n
       sourceLabel: "TEAMS",
       urgency,
       startsAt: record.scheduledAt.toISOString(),
-      endsAt: null,
+      endsAt: record.endsAt?.toISOString() ?? null,
       occurredAt: null,
       context: record.context,
     };

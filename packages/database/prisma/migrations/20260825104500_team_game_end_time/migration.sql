@@ -1,0 +1,5 @@
+ALTER TABLE "TeamChallenge"
+ADD COLUMN "proposedEndsAt" TIMESTAMP(3);
+
+ALTER TABLE "TeamGame"
+ADD COLUMN "endsAt" TIMESTAMP(3);
