@@ -30,7 +30,9 @@ export function createIdentityMemberRouter(service: IdentityService, config: Api
     "/me/profile",
     asyncHandler(async (request, response) => {
       const auth = getAuth(request);
-      response.json(await service.updateProfile(auth.userId, profileUpdateSchema.parse(request.body)));
+      response.json(
+        await service.updateProfile(auth.userId, profileUpdateSchema.parse(request.body)),
+      );
     }),
   );
 
