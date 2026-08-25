@@ -58,7 +58,7 @@ async function createCommunity(
   };
 }
 
-test("PRIVATE HOOMA uses pending requests while PUBLIC HOOMA remains open", async () => {
+test("PRIVATE HOOMA uses approved membership and keeps child activity private", async () => {
   const app = createApp(config, createContainer(config));
   const server = app.listen(0, "127.0.0.1");
   await new Promise<void>((resolve) => server.once("listening", resolve));
@@ -111,6 +111,46 @@ test("PRIVATE HOOMA uses pending requests while PUBLIC HOOMA remains open", asyn
       "PRIVATE",
     );
 
+    const startsAt = new Date(Date.now() + 2 * 60 * 60_000);
+    const endsAt = new Date(startsAt.getTime() + 60 * 60_000);
+    const privateEventResponse = await fetch(`${base}/api/v1/events`, {
+      method: "POST",
+      headers: headers(founder.cookie),
+      body: JSON.stringify({
+        communityId: privateCommunity.id,
+        type: "PLAY",
+        title: `Private match ${suffix}`,
+        startsAt: startsAt.toISOString(),
+        endsAt: endsAt.toISOString(),
+        play: {
+          pitchType: "FIVE_A_SIDE",
+          skillLevel: "MIXED",
+          format: "FIVE_V_FIVE",
+        },
+      }),
+    });
+    assert.equal(privateEventResponse.status, 201);
+    const privateEvent = (await privateEventResponse.json()) as { id: string };
+
+    const publicEvents = await fetch(`${base}/api/public/v1/events?type=PLAY&limit=50`);
+    assert.equal(publicEvents.status, 200);
+    assert.equal(
+      ((await publicEvents.json()) as { items: { id: string }[] }).items.some(
+        (item) => item.id === privateEvent.id,
+      ),
+      false,
+    );
+    assert.equal((await fetch(`${base}/api/public/v1/events/${privateEvent.id}`)).status, 404);
+
+    const nowFeed = await fetch(`${base}/api/public/v1/discovery/now?limit=50`);
+    assert.equal(nowFeed.status, 200);
+    assert.equal(
+      ((await nowFeed.json()) as { items: { sourceId: string }[] }).items.some(
+        (item) => item.sourceId === privateEvent.id,
+      ),
+      false,
+    );
+
     const requestJoin = await fetch(`${base}/api/v1/communities/${privateCommunity.id}/join`, {
       method: "POST",
       headers: headers(requester.cookie),
@@ -129,6 +169,16 @@ test("PRIVATE HOOMA uses pending requests while PUBLIC HOOMA remains open", asyn
       }),
       1,
     );
+
+    const pendingEventDetail = await fetch(`${base}/api/public/v1/events/${privateEvent.id}`, {
+      headers: { cookie: requester.cookie },
+    });
+    assert.equal(pendingEventDetail.status, 404);
+    const pendingEventJoin = await fetch(`${base}/api/v1/events/${privateEvent.id}/join`, {
+      method: "POST",
+      headers: headers(requester.cookie),
+    });
+    assert.equal(pendingEventJoin.status, 404);
 
     const pendingMembers = await fetch(
       `${base}/api/v1/communities/${privateCommunity.id}/members`,
@@ -172,6 +222,21 @@ test("PRIVATE HOOMA uses pending requests while PUBLIC HOOMA remains open", asyn
       }),
       1,
     );
+
+    const memberEventDetail = await fetch(`${base}/api/public/v1/events/${privateEvent.id}`, {
+      headers: { cookie: requester.cookie },
+    });
+    assert.equal(memberEventDetail.status, 200);
+    const memberEventJoin = await fetch(`${base}/api/v1/events/${privateEvent.id}/join`, {
+      method: "POST",
+      headers: headers(requester.cookie),
+    });
+    assert.equal(memberEventJoin.status, 200);
+    assert.equal(
+      ((await memberEventJoin.json()) as { status: string }).status,
+      "CONFIRMED",
+    );
+    assert.equal((await fetch(`${base}/api/public/v1/events/${privateEvent.id}`)).status, 404);
 
     const requesterMe = await fetch(`${base}/api/v1/me`, { headers: headers(requester.cookie) });
     assert.equal(requesterMe.status, 200);
@@ -250,7 +315,7 @@ test("PRIVATE HOOMA uses pending requests while PUBLIC HOOMA remains open", asyn
     await db.community.deleteMany({ where: { id: { in: createdCommunityIds } } });
     await db.user.deleteMany({ where: { id: { in: createdUserIds } } });
     await new Promise<void>((resolve, reject) =>
-      server.close((error) => (error ? reject(error) : resolve())),
+      server.close((error) => (error ? reject(error) : resolve()),
     );
   }
 });
