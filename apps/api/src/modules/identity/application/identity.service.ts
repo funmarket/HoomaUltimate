@@ -24,8 +24,12 @@ import {
   type ProfileUpdateInput,
 } from "@hooma/contracts/profile";
 import { AppError } from "../../../http/errors/app-error.js";
+import {
+  defaultDisplayName,
+  normalizeEmail,
+  normalizeUsername,
+} from "../domain/normalization.js";
 import type { IdentityRepository } from "./identity.repository.js";
-import { defaultDisplayName, normalizeEmail, normalizeUsername } from "../domain/normalization.js";
 
 export type TelegramResolution =
   | { kind: "absent" }
@@ -49,7 +53,10 @@ export class IdentityService {
         passwordHash,
         email: normalizeEmail(input.email),
         displayUsername,
-        displayName: defaultDisplayName(input.displayName, input.displayUsername),
+        displayName: defaultDisplayName(
+          input.displayName,
+          input.displayUsername,
+        ),
       });
       return this.issueSession(userId);
     } catch (error) {
@@ -68,9 +75,19 @@ export class IdentityService {
     const credential = await this.repository.findWebCredential(
       normalizeUsername(input.loginUsername),
     );
-    if (!credential) throw new AppError(401, "LOGIN_INVALID", "Invalid username or password");
+    if (!credential) {
+      throw new AppError(
+        401,
+        "LOGIN_INVALID",
+        "Invalid username or password",
+      );
+    }
     if (credential.lockedUntil && credential.lockedUntil > new Date()) {
-      throw new AppError(429, "LOGIN_LOCKED", "Too many failed login attempts. Try again later.");
+      throw new AppError(
+        429,
+        "LOGIN_LOCKED",
+        "Too many failed login attempts. Try again later.",
+      );
     }
     if (!(await verifyPassword(credential.passwordHash, input.password))) {
       const nextCount = credential.failedLoginCount + 1;
@@ -79,7 +96,11 @@ export class IdentityService {
         nextCount,
         nextCount >= 5 ? new Date(Date.now() + 15 * 60_000) : null,
       );
-      throw new AppError(401, "LOGIN_INVALID", "Invalid username or password");
+      throw new AppError(
+        401,
+        "LOGIN_INVALID",
+        "Invalid username or password",
+      );
     }
     await this.repository.recordLoginSuccess(credential.userId);
     return this.issueSession(credential.userId);
@@ -88,7 +109,9 @@ export class IdentityService {
   async loginWithTelegramIdentity(
     identity: TelegramIdentityInput,
   ): Promise<{ sessionToken: string }> {
-    const userId = await this.repository.findTelegramUserId(identity.telegramUserId);
+    const userId = await this.repository.findTelegramUserId(
+      identity.telegramUserId,
+    );
     if (!userId) {
       throw new AppError(
         409,
@@ -99,16 +122,25 @@ export class IdentityService {
     return this.issueSession(userId);
   }
 
-  async resolveWebSession(rawToken: string | undefined): Promise<string | null> {
+  async resolveWebSession(
+    rawToken: string | undefined,
+  ): Promise<string | null> {
     if (!rawToken) return null;
-    return (await this.repository.findActiveSession(hashSessionToken(rawToken)))?.userId ?? null;
+    return (
+      (await this.repository.findActiveSession(hashSessionToken(rawToken)))
+        ?.userId ?? null
+    );
   }
 
   async logout(rawToken: string | undefined): Promise<void> {
-    if (rawToken) await this.repository.revokeSession(hashSessionToken(rawToken));
+    if (rawToken) {
+      await this.repository.revokeSession(hashSessionToken(rawToken));
+    }
   }
 
-  async resolveTelegram(rawInitData: string | undefined): Promise<TelegramResolution> {
+  async resolveTelegram(
+    rawInitData: string | undefined,
+  ): Promise<TelegramResolution> {
     if (!rawInitData) return { kind: "absent" };
     if (!this.config.TELEGRAM_BOT_TOKEN) return { kind: "invalid" };
     let identity: TelegramIdentityInput;
@@ -121,7 +153,9 @@ export class IdentityService {
     } catch {
       return { kind: "invalid" };
     }
-    const userId = await this.repository.findTelegramUserId(identity.telegramUserId);
+    const userId = await this.repository.findTelegramUserId(
+      identity.telegramUserId,
+    );
     return userId ? { kind: "valid", userId } : { kind: "unregistered" };
   }
 
@@ -160,7 +194,11 @@ export class IdentityService {
         "This Telegram identity is not linked to the signed-in HOOMA account",
       );
     }
-    if (webUserId && existingTelegramUserId && webUserId !== existingTelegramUserId) {
+    if (
+      webUserId &&
+      existingTelegramUserId &&
+      webUserId !== existingTelegramUserId
+    ) {
       throw new AppError(
         401,
         "AUTH_CONFLICT",
@@ -172,7 +210,9 @@ export class IdentityService {
 
   async loginMethods(userId: string): Promise<LoginMethodsResponse> {
     const methods = await this.repository.findLoginMethods(userId);
-    if (!methods) throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    if (!methods) {
+      throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    }
     return {
       web: methods.web,
       telegram: methods.telegram
@@ -181,11 +221,20 @@ export class IdentityService {
     };
   }
 
-  async addWebCredential(userId: string, input: WebCredentialAttachInput): Promise<LoginMethodsResponse> {
+  async addWebCredential(
+    userId: string,
+    input: WebCredentialAttachInput,
+  ): Promise<LoginMethodsResponse> {
     const existing = await this.repository.findLoginMethods(userId);
-    if (!existing) throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    if (!existing) {
+      throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    }
     if (existing.web) {
-      throw new AppError(409, "WEB_CREDENTIAL_EXISTS", "This HOOMA account already has a Web login");
+      throw new AppError(
+        409,
+        "WEB_CREDENTIAL_EXISTS",
+        "This HOOMA account already has a Web login",
+      );
     }
     try {
       await this.repository.createWebCredentialForUser({
@@ -211,7 +260,9 @@ export class IdentityService {
     userId: string,
     identity: TelegramIdentityInput,
   ): Promise<LoginMethodsResponse> {
-    const telegramOwner = await this.repository.findTelegramUserId(identity.telegramUserId);
+    const telegramOwner = await this.repository.findTelegramUserId(
+      identity.telegramUserId,
+    );
     if (telegramOwner === userId) return this.loginMethods(userId);
     if (telegramOwner) {
       throw new AppError(
@@ -222,7 +273,9 @@ export class IdentityService {
     }
 
     const methods = await this.repository.findLoginMethods(userId);
-    if (!methods) throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    if (!methods) {
+      throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    }
     if (methods.telegram) {
       throw new AppError(
         409,
@@ -247,14 +300,20 @@ export class IdentityService {
   }
 
   async publicProfile(username: string) {
-    const profile = await this.repository.findPublicProfile(normalizeUsername(username));
-    if (!profile) throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    const profile = await this.repository.findPublicProfile(
+      normalizeUsername(username),
+    );
+    if (!profile) {
+      throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    }
     return profile;
   }
 
   async profile(userId: string): Promise<ProfileResponse> {
     const profile = await this.repository.findProfile(userId);
-    if (!profile) throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    if (!profile) {
+      throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    }
     return profileResponseSchema.parse({
       id: profile.id,
       presentation: profile.presentation,
@@ -269,7 +328,10 @@ export class IdentityService {
     });
   }
 
-  async updateProfile(userId: string, input: ProfileUpdateInput): Promise<ProfileResponse> {
+  async updateProfile(
+    userId: string,
+    input: ProfileUpdateInput,
+  ): Promise<ProfileResponse> {
     try {
       await this.repository.updateProfile(userId, {
         username: normalizeUsername(input.username),
@@ -297,9 +359,14 @@ export class IdentityService {
     return this.profile(userId);
   }
 
-  async me(userId: string, transports: readonly AuthTransport[]): Promise<MeResponse> {
+  async me(
+    userId: string,
+    transports: readonly AuthTransport[],
+  ): Promise<MeResponse> {
     const user = await this.repository.findMe(userId);
-    if (!user) throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    if (!user) {
+      throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    }
     return {
       id: user.id,
       presentation: user.presentation,
@@ -339,7 +406,9 @@ export class IdentityService {
     return this.me(userId, transports);
   }
 
-  private async issueSession(userId: string): Promise<{ sessionToken: string }> {
+  private async issueSession(
+    userId: string,
+  ): Promise<{ sessionToken: string }> {
     const sessionToken = newSessionToken();
     await this.repository.createSession(
       userId,
