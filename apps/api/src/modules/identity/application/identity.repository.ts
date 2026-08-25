@@ -26,9 +26,8 @@ export interface LoginMethodsRecord {
   } | null;
 }
 
-export type TelegramLinkClaimResult =
+export type TelegramLinkResult =
   | { readonly kind: "linked"; readonly userId: string }
-  | { readonly kind: "invalid" }
   | { readonly kind: "telegram_conflict" }
   | { readonly kind: "account_conflict" };
 
@@ -132,12 +131,10 @@ export interface IdentityRepository {
   findTelegramUserId(telegramUserId: bigint): Promise<string | null>;
   upsertTelegramIdentity(input: TelegramIdentityInput): Promise<string>;
   findLoginMethods(userId: string): Promise<LoginMethodsRecord | null>;
-  createTelegramLinkIntent(userId: string, tokenHash: string, expiresAt: Date): Promise<void>;
-  claimTelegramLinkIntent(
-    tokenHash: string,
+  attachTelegramIdentityToUser(
+    userId: string,
     identity: TelegramIdentityInput,
-    now: Date,
-  ): Promise<TelegramLinkClaimResult>;
+  ): Promise<TelegramLinkResult>;
   findPublicProfile(username: string): Promise<PublicProfileRecord | null>;
   findProfile(userId: string): Promise<ProfileRecord | null>;
   updateProfile(userId: string, input: ProfileWriteInput): Promise<void>;
