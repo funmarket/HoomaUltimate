@@ -304,6 +304,8 @@ function CreateChallengeCard({
           event.preventDefault();
           const form = event.currentTarget;
           const data = new FormData(form);
+          const proposedAt = localDateTimeToIso(data.get("proposedAt"));
+          const proposedEndsAt = localDateTimeToIso(data.get("proposedEndsAt"));
           void onRun(
             () =>
               api.createChallenge({
@@ -311,7 +313,8 @@ function CreateChallengeCard({
                 challengedTeamId: String(data.get("challengedTeamId")),
                 format: String(data.get("format")) as TeamChallengeCreateInput["format"],
                 message: String(data.get("message")) || null,
-                proposedAt: null,
+                proposedAt,
+                proposedEndsAt,
               }),
             "Challenge sent.",
             false,
@@ -330,6 +333,15 @@ function CreateChallengeCard({
             <option value="ELEVEN_V_ELEVEN">11 v 11</option>
           </select>
         </label>
+        <label>
+          Kickoff (optional)
+          <input name="proposedAt" type="datetime-local" />
+        </label>
+        <label>
+          End time (required with kickoff)
+          <input name="proposedEndsAt" type="datetime-local" />
+        </label>
+        <small>Leave both times empty to coordinate the schedule after acceptance.</small>
         <label>
           Message
           <textarea name="message" rows={3} />
@@ -448,6 +460,11 @@ function ChallengeRow({
       </div>
     </article>
   );
+}
+
+function localDateTimeToIso(value: FormDataEntryValue | null): string | null {
+  const text = String(value ?? "").trim();
+  return text ? new Date(text).toISOString() : null;
 }
 
 function humanize(value: string) {
