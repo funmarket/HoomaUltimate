@@ -1,4 +1,5 @@
 import { Router } from "express";
+import type { ApiConfig } from "@hooma/config";
 import {
   eventChatMessageSchema,
   eventCheckInSchema,
@@ -7,15 +8,36 @@ import {
   eventUpdateSchema,
 } from "@hooma/contracts";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
+import type { CommunityService } from "../../communities/application/community.service.js";
+import type { IdentityService } from "../../identity/application/identity.service.js";
 import { getAuth } from "../../identity/http/auth-request.js";
+import { resolveAuthentication } from "../../identity/http/auth.middleware.js";
 import type { EventService } from "../application/event.service.js";
+import { EventError } from "../domain/event-error.js";
 
 function numberQuery(value: unknown, fallback: number) {
   const parsed = Number(value ?? fallback);
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-export function createEventPublicRouter(service: EventService): Router {
+function communityIdOf(event: unknown): string {
+  if (
+    typeof event === "object" &&
+    event !== null &&
+    "communityId" in event &&
+    typeof event.communityId === "string"
+  ) {
+    return event.communityId;
+  }
+  throw new EventError("EVENT_NOT_FOUND", "Event not found");
+}
+
+export function createEventPublicRouter(
+  service: EventService,
+  communities: CommunityService,
+  identity: IdentityService,
+  config: ApiConfig,
+): Router {
   const router = Router();
   router.get(
     "/",
@@ -29,6 +51,7 @@ export function createEventPublicRouter(service: EventService): Router {
       const cursor = typeof request.query.cursor === "string" ? request.query.cursor : undefined;
       const from =
         typeof request.query.from === "string" ? new Date(request.query.from) : undefined;
+      const auth = await resolveAuthentication(request, identity, config);
       response.json(
         await service.listPublic({
           limit: numberQuery(request.query.limit, 30),
@@ -36,15 +59,21 @@ export function createEventPublicRouter(service: EventService): Router {
           ...(communityId !== undefined ? { communityId } : {}),
           ...(cursor !== undefined ? { cursor } : {}),
           ...(from !== undefined ? { from } : {}),
+          ...(auth ? { viewerUserId: auth.userId } : {}),
         }),
       );
     }),
   );
   router.get(
     "/:eventId",
-    asyncHandler(async (request, response) =>
-      response.json(await service.getPublic(String(request.params.eventId))),
-    ),
+    asyncHandler(async (request, response) => {
+      const event = await service.getPublic(String(request.params.eventId));
+      const auth = await resolveAuthentication(request, identity, config);
+      if (!(await communities.canViewPrivateContent(communityIdOf(event), auth?.userId ?? null))) {
+        throw new EventError("EVENT_NOT_FOUND", "Event not found");
+      }
+      response.json(event);
+    }),
   );
   return router;
 }

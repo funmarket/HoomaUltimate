@@ -42,6 +42,23 @@ enum CommunityStatus {
   ARCHIVED
 }
 
+enum CommunityVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum CommunityJoinPolicy {
+  OPEN
+  APPROVAL_REQUIRED
+}
+
+enum CommunityJoinRequestStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  CANCELLED
+}
+
 enum CommunityRole {
   FOUNDER
   COACH
@@ -169,45 +186,47 @@ enum ProfileIdentity {
 }
 
 model User {
-  id                          String                         @id @default(cuid())
-  createdAt                   DateTime                       @default(now())
-  updatedAt                   DateTime                       @updatedAt
-  identities                  ProfileIdentity[]              @default([])
-  presentation                UserPresentation?
-  playerProfile               PlayerProfile?
-  telegramIdentity            TelegramIdentity?
-  webCredential               WebCredential?
-  webSessions                 WebSession[]
-  platformRoles               PlatformRoleAssignment[]
-  appManagerGrants            AppManagerGrant[]              @relation("AppManagerRecipient")
-  appManagerGrantsGiven       AppManagerGrant[]              @relation("AppManagerGrantor")
-  auditEntries                AuditLog[]                     @relation("AuditActor")
-  communitiesCreated          Community[]                    @relation("CommunityCreator")
-  communityMemberships        CommunityMembership[]
-  teamsCreated                Team[]                         @relation("TeamCreator")
-  teamPlayers                 TeamPlayer[]
-  teamOffersReceived          TeamPlayerOffer[]              @relation("TeamOfferTarget")
-  teamOffersSent              TeamPlayerOffer[]              @relation("TeamOfferSender")
-  teamResponsibilities        TeamResponsibilityAssignment[]
-  teamCapabilityGrants        TeamCapabilityGrant[]          @relation("CapabilityRecipient")
-  teamCapabilityGrantsGiven   TeamCapabilityGrant[]          @relation("CapabilityGrantor")
-  teamLineupsCreated          TeamLineup[]                   @relation("LineupCreator")
-  teamChallengesCreated       TeamChallenge[]                @relation("ChallengeCreator")
-  teamChallengeMessages       TeamChallengeMessage[]
-  eventsCreated               Event[]                        @relation("EventCreator")
-  eventRsvps                  EventRsvp[]
-  eventFormationsCreated      Formation[]                    @relation("FormationCreator")
-  formationSlots              FormationSlot[]
-  eventCheckIns               EventCheckIn[]
-  eventChatMessages           EventChatMessage[]
-  whistlesAuthored            WhistleMetadata[]
-  gamerGamesCreated           GamerGame[]                    @relation("GamerGameCreator")
-  gamerProfiles               GamerProfile[]
-  playPlayerListings          PlayPlayerListing[]
-  placesSuggested             Place[]                        @relation("PlaceSuggester")
-  placeOwnershipClaims        PlaceOwnershipClaim[]          @relation("PlaceClaimant")
-  placeOwnerships             PlaceOwnership[]               @relation("PlaceOwner")
-  placeCapabilityApplications PlaceCapabilityApplication[]   @relation("PlaceCapabilityApplicant")
+  id                            String                         @id @default(cuid())
+  createdAt                     DateTime                       @default(now())
+  updatedAt                     DateTime                       @updatedAt
+  identities                    ProfileIdentity[]              @default([])
+  presentation                  UserPresentation?
+  playerProfile                 PlayerProfile?
+  telegramIdentity              TelegramIdentity?
+  webCredential                 WebCredential?
+  webSessions                   WebSession[]
+  platformRoles                 PlatformRoleAssignment[]
+  appManagerGrants              AppManagerGrant[]              @relation("AppManagerRecipient")
+  appManagerGrantsGiven         AppManagerGrant[]              @relation("AppManagerGrantor")
+  auditEntries                  AuditLog[]                     @relation("AuditActor")
+  communitiesCreated            Community[]                    @relation("CommunityCreator")
+  communityMemberships          CommunityMembership[]
+  communityJoinRequests         CommunityJoinRequest[]         @relation("CommunityJoinRequester")
+  communityJoinRequestsResolved CommunityJoinRequest[]         @relation("CommunityJoinResolver")
+  teamsCreated                  Team[]                         @relation("TeamCreator")
+  teamPlayers                   TeamPlayer[]
+  teamOffersReceived            TeamPlayerOffer[]              @relation("TeamOfferTarget")
+  teamOffersSent                TeamPlayerOffer[]              @relation("TeamOfferSender")
+  teamResponsibilities          TeamResponsibilityAssignment[]
+  teamCapabilityGrants          TeamCapabilityGrant[]          @relation("CapabilityRecipient")
+  teamCapabilityGrantsGiven     TeamCapabilityGrant[]          @relation("CapabilityGrantor")
+  teamLineupsCreated            TeamLineup[]                   @relation("LineupCreator")
+  teamChallengesCreated         TeamChallenge[]                @relation("ChallengeCreator")
+  teamChallengeMessages         TeamChallengeMessage[]
+  eventsCreated                 Event[]                        @relation("EventCreator")
+  eventRsvps                    EventRsvp[]
+  eventFormationsCreated        Formation[]                    @relation("FormationCreator")
+  formationSlots                FormationSlot[]
+  eventCheckIns                 EventCheckIn[]
+  eventChatMessages             EventChatMessage[]
+  whistlesAuthored              WhistleMetadata[]
+  gamerGamesCreated             GamerGame[]                    @relation("GamerGameCreator")
+  gamerProfiles                 GamerProfile[]
+  playPlayerListings            PlayPlayerListing[]
+  placesSuggested               Place[]                        @relation("PlaceSuggester")
+  placeOwnershipClaims          PlaceOwnershipClaim[]          @relation("PlaceClaimant")
+  placeOwnerships               PlaceOwnership[]               @relation("PlaceOwner")
+  placeCapabilityApplications   PlaceCapabilityApplication[]   @relation("PlaceCapabilityApplicant")
 }
 
 model UserPresentation {
@@ -395,15 +414,18 @@ model Community {
   logoUrl         String?
   bannerUrl       String?
   status          CommunityStatus       @default(ACTIVE)
+  visibility      CommunityVisibility   @default(PUBLIC)
+  joinPolicy      CommunityJoinPolicy   @default(OPEN)
   createdByUserId String
   createdAt       DateTime              @default(now())
   updatedAt       DateTime              @updatedAt
   createdBy       User                  @relation("CommunityCreator", fields: [createdByUserId], references: [id])
   memberships     CommunityMembership[]
+  joinRequests    CommunityJoinRequest[]
   teams           Team[]
   events          Event[]
 
-  @@index([status, createdAt])
+  @@index([status, visibility, createdAt])
   @@index([city, houma])
 }
 
@@ -419,6 +441,24 @@ model CommunityMembership {
 
   @@unique([communityId, userId])
   @@index([userId, role, leftAt])
+}
+
+model CommunityJoinRequest {
+  id               String                     @id @default(cuid())
+  communityId      String
+  userId           String
+  status           CommunityJoinRequestStatus @default(PENDING)
+  requestedAt      DateTime                   @default(now())
+  resolvedAt       DateTime?
+  resolvedByUserId String?
+  updatedAt        DateTime                   @updatedAt
+  community        Community                  @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  requester        User                       @relation("CommunityJoinRequester", fields: [userId], references: [id], onDelete: Cascade)
+  resolvedBy       User?                      @relation("CommunityJoinResolver", fields: [resolvedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([communityId, userId])
+  @@index([communityId, status, requestedAt])
+  @@index([userId, status, requestedAt])
 }
 
 model Team {
@@ -556,7 +596,7 @@ model TeamLineupSlot {
 }
 
 model TeamChallenge {
-  id               String                @id @default(cuid())
+  id               String                 @id @default(cuid())
   challengerTeamId String
   challengedTeamId String
   createdByUserId  String
@@ -564,12 +604,12 @@ model TeamChallenge {
   proposedAt       DateTime?
   proposedEndsAt   DateTime?
   message          String?
-  status           TeamChallengeStatus   @default(PENDING)
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
-  challengerTeam   Team                  @relation("ChallengeChallenger", fields: [challengerTeamId], references: [id], onDelete: Cascade)
-  challengedTeam   Team                  @relation("ChallengeChallenged", fields: [challengedTeamId], references: [id], onDelete: Cascade)
-  createdBy        User                  @relation("ChallengeCreator", fields: [createdByUserId], references: [id])
+  status           TeamChallengeStatus    @default(PENDING)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  challengerTeam   Team                   @relation("ChallengeChallenger", fields: [challengerTeamId], references: [id], onDelete: Cascade)
+  challengedTeam   Team                   @relation("ChallengeChallenged", fields: [challengedTeamId], references: [id], onDelete: Cascade)
+  createdBy        User                   @relation("ChallengeCreator", fields: [createdByUserId], references: [id])
   messages         TeamChallengeMessage[]
   game             TeamGame?
 

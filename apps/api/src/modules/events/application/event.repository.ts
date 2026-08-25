@@ -6,6 +6,7 @@ export interface EventPublicListInput {
   readonly from: Date;
   readonly limit: number;
   readonly cursor?: string;
+  readonly viewerUserId?: string;
 }
 
 export interface EventAccessRecord {

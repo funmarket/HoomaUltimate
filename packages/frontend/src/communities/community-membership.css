@@ -1,0 +1,170 @@
+.hooma-visibility-chip {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border: 1px solid rgba(196, 220, 67, 0.42);
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: rgba(7, 8, 8, 0.76);
+  color: var(--hooma-lime, #c4dc43);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.hooma-card-media {
+  position: relative;
+}
+
+.hooma-card-media > .hooma-visibility-chip {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+.hooma-privacy-choice {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.hooma-privacy-choice legend {
+  grid-column: 1 / -1;
+  margin-bottom: 7px;
+  color: var(--hooma-cream, #f2ead7);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.hooma-privacy-choice label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  padding: 13px;
+  background: rgba(3, 4, 4, 0.7);
+  cursor: pointer;
+}
+
+.hooma-privacy-choice label:has(input:checked),
+.hooma-privacy-choice label.is-selected:has(input:checked) {
+  border-color: rgba(196, 220, 67, 0.65);
+  background: rgba(196, 220, 67, 0.08);
+}
+
+.hooma-privacy-choice input {
+  width: auto;
+  margin-top: 3px;
+  accent-color: var(--hooma-lime, #c4dc43);
+}
+
+.hooma-privacy-choice label > span {
+  display: grid;
+  gap: 3px;
+}
+
+.hooma-privacy-choice strong {
+  color: var(--hooma-cream, #f2ead7);
+}
+
+.hooma-privacy-choice small {
+  color: var(--hooma-muted, #bfb59a);
+  line-height: 1.4;
+}
+
+.hooma-pending-membership {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.hooma-pending-membership > span {
+  color: var(--hooma-lime, #c4dc43);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.hooma-membership-office {
+  display: grid;
+  gap: 16px;
+}
+
+.hooma-member-add {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.hooma-member-add .field {
+  display: grid;
+  gap: 7px;
+}
+
+.hooma-member-add .field > span {
+  color: var(--hooma-cream, #f2ead7);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.hooma-member-add input {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 12px 13px;
+  background: rgba(3, 4, 4, 0.92);
+  color: var(--hooma-cream, #f2ead7);
+  font: inherit;
+  outline: none;
+}
+
+.hooma-member-add input:focus {
+  border-color: var(--hooma-gold, #b59b57);
+  box-shadow: 0 0 0 3px rgba(181, 155, 87, 0.08);
+}
+
+.hooma-request-list {
+  display: grid;
+  gap: 8px;
+}
+
+.hooma-request-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.hooma-request-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hooma-request-actions .button {
+  padding: 9px 13px;
+}
+
+@media (max-width: 620px) {
+  .hooma-privacy-choice,
+  .hooma-member-add {
+    grid-template-columns: 1fr;
+  }
+
+  .hooma-request-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .hooma-request-actions .button {
+    flex: 1 1 0;
+  }
+}

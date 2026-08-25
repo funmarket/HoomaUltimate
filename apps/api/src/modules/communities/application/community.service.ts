@@ -1,16 +1,43 @@
+import type {
+  CommunityCreateInput,
+  CommunityJoinRequest,
+  CommunityJoinRequestForFounder,
+  CommunityUpdateInput,
+} from "@hooma/contracts/communities";
 import { AppError } from "../../../http/errors/app-error.js";
 import type { PlatformAdminAuthorizer } from "../../platform-admin/application/platform-admin.authorizer.js";
 import { canManageCommunity } from "../domain/community-access.js";
 import type {
-  CommunityCreateInput,
+  CommunityJoinRequestForFounderRecord,
+  CommunityJoinRequestRecord,
   CommunityRepository,
-  CommunityUpdateInput,
 } from "./community.repository.js";
+
+function joinPolicyForVisibility(visibility: "PUBLIC" | "PRIVATE") {
+  return visibility === "PRIVATE" ? ("APPROVAL_REQUIRED" as const) : ("OPEN" as const);
+}
+
+function serializeJoinRequest(record: CommunityJoinRequestRecord): CommunityJoinRequest {
+  return {
+    ...record,
+    requestedAt: record.requestedAt.toISOString(),
+    resolvedAt: record.resolvedAt?.toISOString() ?? null,
+  };
+}
+
+function serializeJoinRequestForFounder(
+  record: CommunityJoinRequestForFounderRecord,
+): CommunityJoinRequestForFounder {
+  return {
+    ...serializeJoinRequest(record),
+    presentation: record.presentation,
+  };
+}
 
 export class CommunityService {
   constructor(
     private readonly repository: CommunityRepository,
-    private readonly platformAdmin: PlatformAdminAuthorizer,
+    private readonly platformAdmin?: PlatformAdminAuthorizer,
   ) {}
 
   listPublic(limit = 30, cursor?: string) {
@@ -24,12 +51,20 @@ export class CommunityService {
   }
 
   create(userId: string, input: CommunityCreateInput) {
-    return this.repository.create(userId, input);
+    return this.repository.create(userId, {
+      ...input,
+      joinPolicy: joinPolicyForVisibility(input.visibility),
+    });
   }
 
   async update(userId: string, communityId: string, input: CommunityUpdateInput) {
     await this.requireOwnerOrAdmin(communityId, userId);
-    return this.repository.update(communityId, input);
+    return this.repository.update(communityId, {
+      ...input,
+      ...(input.visibility !== undefined
+        ? { joinPolicy: joinPolicyForVisibility(input.visibility) }
+        : {}),
+    });
   }
 
   async archive(userId: string, communityId: string) {
@@ -47,9 +82,77 @@ export class CommunityService {
   }
 
   async join(userId: string, communityId: string) {
-    const membership = await this.repository.join(communityId, userId);
-    if (!membership) throw new AppError(404, "COMMUNITY_NOT_FOUND", "HOOMA community not found");
-    return { membership };
+    const activeRole = await this.repository.managerRole(communityId, userId);
+    if (activeRole) return { status: "JOINED" as const, membership: { role: activeRole } };
+
+    const policy = await this.repository.membershipPolicy(communityId);
+    if (!policy || policy.status !== "ACTIVE")
+      throw new AppError(404, "COMMUNITY_NOT_FOUND", "HOOMA community not found");
+
+    if (policy.joinPolicy === "OPEN") {
+      const membership = await this.repository.joinOpen(communityId, userId);
+      if (!membership) throw new AppError(404, "COMMUNITY_NOT_FOUND", "HOOMA community not found");
+      return { status: "JOINED" as const, membership };
+    }
+
+    const outcome = await this.repository.requestJoin(communityId, userId);
+    if (!outcome) throw new AppError(404, "COMMUNITY_NOT_FOUND", "HOOMA community not found");
+    if (outcome.kind === "MEMBERSHIP") {
+      return { status: "JOINED" as const, membership: { role: outcome.role } };
+    }
+    return { status: "PENDING" as const, request: serializeJoinRequest(outcome.request) };
+  }
+
+  async myJoinRequest(userId: string, communityId: string) {
+    const request = await this.repository.getJoinRequest(communityId, userId);
+    return { request: request ? serializeJoinRequest(request) : null };
+  }
+
+  async joinRequests(founderUserId: string, communityId: string) {
+    await this.requireFounder(communityId, founderUserId);
+    const requests = await this.repository.listJoinRequests(communityId);
+    return { requests: requests.map(serializeJoinRequestForFounder) };
+  }
+
+  async approveJoinRequest(founderUserId: string, communityId: string, targetUserId: string) {
+    await this.requireFounder(communityId, founderUserId);
+    const changed = await this.repository.resolveJoinRequest(
+      communityId,
+      targetUserId,
+      founderUserId,
+      "APPROVE",
+    );
+    if (!changed)
+      throw new AppError(409, "COMMUNITY_JOIN_REQUEST_NOT_PENDING", "Join request is not pending");
+    return { ok: true };
+  }
+
+  async declineJoinRequest(founderUserId: string, communityId: string, targetUserId: string) {
+    await this.requireFounder(communityId, founderUserId);
+    const changed = await this.repository.resolveJoinRequest(
+      communityId,
+      targetUserId,
+      founderUserId,
+      "DECLINE",
+    );
+    if (!changed)
+      throw new AppError(409, "COMMUNITY_JOIN_REQUEST_NOT_PENDING", "Join request is not pending");
+    return { ok: true };
+  }
+
+  async cancelJoinRequest(userId: string, communityId: string) {
+    const changed = await this.repository.cancelJoinRequest(communityId, userId);
+    if (!changed)
+      throw new AppError(409, "COMMUNITY_JOIN_REQUEST_NOT_PENDING", "Join request is not pending");
+    return { ok: true };
+  }
+
+  async addMember(founderUserId: string, communityId: string, username: string) {
+    await this.requireFounder(communityId, founderUserId);
+    const member = await this.repository.addMemberByUsername(communityId, username, founderUserId);
+    if (!member)
+      throw new AppError(404, "COMMUNITY_MEMBER_TARGET_NOT_FOUND", "HOOMA user not found");
+    return { member };
   }
 
   async leave(userId: string, communityId: string) {
@@ -115,6 +218,14 @@ export class CommunityService {
     return { ok: true };
   }
 
+  async canViewPrivateContent(communityId: string, userId: string | null): Promise<boolean> {
+    const policy = await this.repository.membershipPolicy(communityId);
+    if (!policy || policy.status !== "ACTIVE") return false;
+    if (policy.visibility === "PUBLIC") return true;
+    if (!userId) return false;
+    return Boolean(await this.repository.managerRole(communityId, userId));
+  }
+
   async requireMember(communityId: string, userId: string): Promise<void> {
     const role = await this.repository.managerRole(communityId, userId);
     if (!role) throw new AppError(403, "COMMUNITY_MEMBER_REQUIRED", "HOOMA membership required");
@@ -137,7 +248,7 @@ export class CommunityService {
     if (!lifecycle) throw new AppError(404, "COMMUNITY_NOT_FOUND", "HOOMA community not found");
     if (
       lifecycle.createdByUserId !== userId &&
-      !(await this.platformAdmin.isPlatformAdmin(userId))
+      !(await this.platformAdmin?.isPlatformAdmin(userId))
     ) {
       throw new AppError(
         403,
