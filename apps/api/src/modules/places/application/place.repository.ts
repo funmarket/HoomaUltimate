@@ -22,10 +22,10 @@ export interface PlaceRepository {
     actorUserId: string,
     placeId: string,
     input: ModerationDecisionInput,
-  ): Promise<void>;
+  ): Promise<boolean>;
   reviewOwnershipClaim(
     actorUserId: string,
     claimId: string,
     input: ModerationDecisionInput,
-  ): Promise<void>;
+  ): Promise<boolean>;
 }
