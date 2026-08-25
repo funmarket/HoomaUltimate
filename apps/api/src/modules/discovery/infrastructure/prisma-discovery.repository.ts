@@ -15,6 +15,7 @@ export class PrismaDiscoveryRepository implements DiscoveryRepository {
       this.db.event.findMany({
         where: {
           status: "PUBLISHED",
+          community: { visibility: "PUBLIC" },
           startsAt: { lte: input.lookaheadUntil },
           OR: [
             { startsAt: { gte: input.now } },
@@ -40,10 +41,20 @@ export class PrismaDiscoveryRepository implements DiscoveryRepository {
         where: {
           status: "CONFIRMED",
           scheduledAt: { lte: input.lookaheadUntil },
-          OR: [
-            { scheduledAt: { gte: input.now } },
-            { scheduledAt: { gte: input.justStartedSince } },
-            { endsAt: { gt: input.now } },
+          AND: [
+            {
+              OR: [
+                { scheduledAt: { gte: input.now } },
+                { scheduledAt: { gte: input.justStartedSince } },
+                { endsAt: { gt: input.now } },
+              ],
+            },
+            {
+              OR: [
+                { homeTeam: { communityId: null } },
+                { homeTeam: { community: { visibility: "PUBLIC" } } },
+              ],
+            },
           ],
         },
         orderBy: [{ scheduledAt: "asc" }, { id: "asc" }],
