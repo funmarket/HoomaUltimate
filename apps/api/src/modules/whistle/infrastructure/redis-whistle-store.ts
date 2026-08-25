@@ -9,7 +9,11 @@ import type { WhistleTransientStore } from "../application/whistle.store.js";
 function whistleRedisError(error: unknown): AppError {
   if (error instanceof RedisClientError) {
     if (error.kind === "TIMEOUT") {
-      return new AppError(503, "WHISTLE_REDIS_TIMEOUT", "Whistle transient store timed out");
+      return new AppError(
+        503,
+        "WHISTLE_REDIS_TIMEOUT",
+        "Whistle transient store timed out",
+      );
     }
     if (error.kind === "PROTOCOL" || error.kind === "COMMAND") {
       return new AppError(
@@ -63,11 +67,17 @@ export class RedisWhistleStore implements WhistleTransientStore {
       "NX",
     ]);
     if (result !== "OK") {
-      throw new AppError(503, "WHISTLE_BODY_STORE_FAILED", "Could not store Whistle body");
+      throw new AppError(
+        503,
+        "WHISTLE_BODY_STORE_FAILED",
+        "Could not store Whistle body",
+      );
     }
   }
 
-  async getBodies(whistleIds: readonly string[]): Promise<ReadonlyMap<string, string>> {
+  async getBodies(
+    whistleIds: readonly string[],
+  ): Promise<ReadonlyMap<string, string>> {
     if (whistleIds.length === 0) return new Map();
 
     const result = await this.command([
@@ -75,7 +85,11 @@ export class RedisWhistleStore implements WhistleTransientStore {
       ...whistleIds.map((whistleId) => this.bodyKey(whistleId)),
     ]);
     if (!Array.isArray(result) || result.length !== whistleIds.length) {
-      throw new AppError(503, "WHISTLE_REDIS_PROTOCOL", "Invalid Whistle body response");
+      throw new AppError(
+        503,
+        "WHISTLE_REDIS_PROTOCOL",
+        "Invalid Whistle body response",
+      );
     }
 
     const bodies = new Map<string, string>();
@@ -83,7 +97,11 @@ export class RedisWhistleStore implements WhistleTransientStore {
       const body = result[index];
       if (body === null) continue;
       if (typeof body !== "string") {
-        throw new AppError(503, "WHISTLE_REDIS_PROTOCOL", "Invalid Whistle body response");
+        throw new AppError(
+          503,
+          "WHISTLE_REDIS_PROTOCOL",
+          "Invalid Whistle body response",
+        );
       }
       bodies.set(whistleIds[index]!, body);
     }
