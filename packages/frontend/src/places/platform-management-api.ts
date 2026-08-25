@@ -78,15 +78,12 @@ export function createPlatformManagementApi(transport: HoomaTransport) {
         name: "places" | "place-ownership" | "watch" | "pitch",
         id: string,
         input: ModerationDecisionInput,
-      ) => {
-        const idSegment = name === "places" ? "placeId" : name === "place-ownership" ? "claimId" : "applicationId";
-        void idSegment;
-        return request<{ ok: true }>(
+      ) =>
+        request<{ ok: true }>(
           transport,
           `/api/v1/admin/queues/${name}/${encodeURIComponent(id)}/decision`,
           { method: "POST", body: JSON.stringify(input) },
-        );
-      },
+        ),
     },
   };
 }
