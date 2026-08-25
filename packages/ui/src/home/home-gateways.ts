@@ -1,12 +1,5 @@
 export type HomeGatewayId =
-  | "hooma"
-  | "teams"
-  | "ultras"
-  | "gamers"
-  | "places"
-  | "requests"
-  | "ride"
-  | "fundme";
+  "hooma" | "teams" | "ultras" | "gamers" | "places" | "requests" | "ride" | "fundme";
 
 export type HomeGatewayAvailability = "available" | "coming-soon";
 
