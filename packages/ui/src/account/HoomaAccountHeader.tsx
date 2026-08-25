@@ -164,7 +164,7 @@ export function HoomaAccountHeader({
     const menu = menuRef.current;
     const anchor = anchorRef.current;
     if (!menu || !anchor) return;
-    const positionedAnchor = anchor;
+    const stableAnchor = anchor;
 
     if (!open) {
       if (menu.matches(":popover-open")) menu.hidePopover();
@@ -172,7 +172,7 @@ export function HoomaAccountHeader({
     }
 
     function updateGeometry() {
-      const anchor = positionedAnchor;
+      const anchor = stableAnchor;
       setMenuStyle(accountMenuGeometry(anchor));
     }
 
