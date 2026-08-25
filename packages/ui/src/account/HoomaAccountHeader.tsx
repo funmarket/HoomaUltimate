@@ -213,8 +213,8 @@ export function HoomaAccountHeader({
                 <div className="hooma-account-menu__platform">
                   <MenuRow
                     icon={<ShieldIcon />}
-                    title="App Admin"
-                    subtitle="HOOMA platform control"
+                    title="Control Room"
+                    subtitle="HOOMA platform management"
                     onClick={() => navigate(onAdmin)}
                   />
                 </div>
