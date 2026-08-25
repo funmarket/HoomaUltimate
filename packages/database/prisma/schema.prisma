@@ -160,6 +160,7 @@ enum WhistleContextType {
   RIDE
   ULTRAS
   GAMER_SQUAD
+  GAMER_DIRECT
 }
 
 enum GamerGameStatus {
@@ -224,7 +225,7 @@ model User {
   gamerProfiles                 GamerProfile[]
   playPlayerListings            PlayPlayerListing[]
   placesSuggested               Place[]                        @relation("PlaceSuggester")
-  placeOwnershipClaims          PlaceOwnershipClaim[]          @relation("PlaceClaimant")
+  placeOwnershipClaims          PlaceOwnershipClaim[]         @relation("PlaceClaimant")
   placeOwnerships               PlaceOwnership[]               @relation("PlaceOwner")
   placeCapabilityApplications   PlaceCapabilityApplication[]   @relation("PlaceCapabilityApplicant")
 }
@@ -322,26 +323,26 @@ model AppManagerGrant {
 
 model Place {
   id                String              @id @default(cuid())
-  slug              String              @unique
-  name              String
-  address           String
-  city              String?
-  houma             String?
-  latitude          Decimal?            @db.Decimal(10, 7)
-  longitude         Decimal?            @db.Decimal(10, 7)
-  phone             String?
-  websiteUrl        String?
-  moderationStatus  ModerationStatus    @default(PENDING)
-  suggestedByUserId String
-  reviewedByUserId  String?
-  reviewedAt        DateTime?
-  reviewNote        String?
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  suggestedBy       User                @relation("PlaceSuggester", fields: [suggestedByUserId], references: [id], onDelete: Restrict)
-  ownershipClaims   PlaceOwnershipClaim[]
-  ownerships        PlaceOwnership[]
-  applications      PlaceCapabilityApplication[]
+  slug               String              @unique
+  name               String
+  address            String
+  city               String?
+  houma              String?
+  latitude           Decimal?            @db.Decimal(10, 7)
+  longitude          Decimal?            @db.Decimal(10, 7)
+  phone              String?
+  websiteUrl         String?
+  moderationStatus   ModerationStatus    @default(PENDING)
+  suggestedByUserId  String
+  reviewedByUserId   String?
+  reviewedAt         DateTime?
+  reviewNote         String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  suggestedBy        User                @relation("PlaceSuggester", fields: [suggestedByUserId], references: [id], onDelete: Restrict)
+  ownershipClaims    PlaceOwnershipClaim[]
+  ownerships         PlaceOwnership[]
+  applications       PlaceCapabilityApplication[]
 
   @@index([moderationStatus, createdAt])
   @@index([city, houma])
@@ -530,14 +531,14 @@ model TeamPlayerOffer {
 }
 
 model TeamResponsibilityAssignment {
-  id        String                   @id @default(cuid())
+  id        String                 @id @default(cuid())
   teamId    String
   userId    String
   role      TeamResponsibilityRole
-  createdAt DateTime                 @default(now())
+  createdAt DateTime               @default(now())
   revokedAt DateTime?
-  team      Team                     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user      User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team      Team                   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([teamId, role, revokedAt])
   @@index([userId, role, revokedAt])
@@ -596,7 +597,7 @@ model TeamLineupSlot {
 }
 
 model TeamChallenge {
-  id               String                 @id @default(cuid())
+  id               String              @id @default(cuid())
   challengerTeamId String
   challengedTeamId String
   createdByUserId  String
@@ -604,12 +605,12 @@ model TeamChallenge {
   proposedAt       DateTime?
   proposedEndsAt   DateTime?
   message          String?
-  status           TeamChallengeStatus    @default(PENDING)
-  createdAt        DateTime               @default(now())
-  updatedAt        DateTime               @updatedAt
-  challengerTeam   Team                   @relation("ChallengeChallenger", fields: [challengerTeamId], references: [id], onDelete: Cascade)
-  challengedTeam   Team                   @relation("ChallengeChallenged", fields: [challengedTeamId], references: [id], onDelete: Cascade)
-  createdBy        User                   @relation("ChallengeCreator", fields: [createdByUserId], references: [id])
+  status           TeamChallengeStatus @default(PENDING)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  challengerTeam   Team                @relation("ChallengeChallenger", fields: [challengerTeamId], references: [id], onDelete: Cascade)
+  challengedTeam   Team                @relation("ChallengeChallenged", fields: [challengedTeamId], references: [id], onDelete: Cascade)
+  createdBy        User                @relation("ChallengeCreator", fields: [createdByUserId], references: [id])
   messages         TeamChallengeMessage[]
   game             TeamGame?
 
@@ -648,26 +649,26 @@ model TeamGame {
 }
 
 model Event {
-  id              String           @id @default(cuid())
+  id              String          @id @default(cuid())
   communityId     String
   createdByUserId String
   type            EventType
-  status          EventStatus      @default(PUBLISHED)
+  status          EventStatus     @default(PUBLISHED)
   title           String
   description     String?
   startsAt        DateTime
   endsAt          DateTime?
-  timezone        String           @default("Africa/Tunis")
+  timezone        String          @default("Africa/Tunis")
   venueName       String?
   address         String?
   capacity        Int?
-  waitlistEnabled Boolean          @default(true)
-  entryFeeMinor   BigInt           @default(0)
-  currency        String           @default("TND")
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  community       Community        @relation(fields: [communityId], references: [id], onDelete: Cascade)
-  createdBy       User             @relation("EventCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  waitlistEnabled Boolean         @default(true)
+  entryFeeMinor   BigInt          @default(0)
+  currency        String          @default("TND")
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  community       Community       @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  createdBy       User            @relation("EventCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
   playDetails     PlayEventDetails?
   rsvps           EventRsvp[]
   formations      Formation[]
