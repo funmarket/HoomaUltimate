@@ -58,6 +58,32 @@ async function createCommunity(
   };
 }
 
+async function createPlayEvent(base: string, cookie: string, communityId: string, suffix: string) {
+  const startsAt = new Date(Date.now() + 60 * 60_000);
+  const response = await fetch(`${base}/api/v1/events`, {
+    method: "POST",
+    headers: headers(cookie),
+    body: JSON.stringify({
+      communityId,
+      type: "PLAY",
+      title: `Private Match ${suffix}`,
+      startsAt: startsAt.toISOString(),
+      endsAt: new Date(startsAt.getTime() + 90 * 60_000).toISOString(),
+      timezone: "Africa/Tunis",
+      waitlistEnabled: true,
+      entryFeeMinor: 0,
+      currency: "TND",
+      play: {
+        pitchType: "FIVE_A_SIDE",
+        skillLevel: "MIXED",
+        format: "FIVE_V_FIVE",
+      },
+    }),
+  });
+  assert.equal(response.status, 201);
+  return (await response.json()) as { id: string };
+}
+
 test("PRIVATE HOOMA uses pending requests while PUBLIC HOOMA remains open", async () => {
   const app = createApp(config, createContainer(config));
   const server = app.listen(0, "127.0.0.1");
@@ -104,6 +130,20 @@ test("PRIVATE HOOMA uses pending requests while PUBLIC HOOMA remains open", asyn
     assert.equal(privateCommunity.visibility, "PRIVATE");
     assert.equal(privateCommunity.joinPolicy, "APPROVAL_REQUIRED");
 
+    const privateEvent = await createPlayEvent(base, founder.cookie, privateCommunity.id, suffix);
+    const anonymousEvents = await fetch(`${base}/api/public/v1/events?type=PLAY&limit=50`);
+    assert.equal(anonymousEvents.status, 200);
+    assert.equal(
+      ((await anonymousEvents.json()) as { items: { id: string }[] }).items.some(
+        (event) => event.id === privateEvent.id,
+      ),
+      false,
+    );
+    assert.equal(
+      (await fetch(`${base}/api/public/v1/events/${privateEvent.id}`)).status,
+      404,
+    );
+
     const publicShell = await fetch(`${base}/api/public/v1/communities/${privateCommunity.id}`);
     assert.equal(publicShell.status, 200);
     assert.equal(
@@ -128,6 +168,14 @@ test("PRIVATE HOOMA uses pending requests while PUBLIC HOOMA remains open", asyn
         where: { communityId: privateCommunity.id, userId: requester.userId, status: "PENDING" },
       }),
       1,
+    );
+    assert.equal(
+      (
+        await fetch(`${base}/api/public/v1/events/${privateEvent.id}`, {
+          headers: headers(requester.cookie),
+        })
+      ).status,
+      404,
     );
 
     const pendingMembers = await fetch(
@@ -171,6 +219,25 @@ test("PRIVATE HOOMA uses pending requests while PUBLIC HOOMA remains open", asyn
         where: { communityId: privateCommunity.id, userId: requester.userId, status: "APPROVED" },
       }),
       1,
+    );
+
+    const memberEvents = await fetch(`${base}/api/public/v1/events?type=PLAY&limit=50`, {
+      headers: headers(requester.cookie),
+    });
+    assert.equal(memberEvents.status, 200);
+    assert.equal(
+      ((await memberEvents.json()) as { items: { id: string }[] }).items.some(
+        (event) => event.id === privateEvent.id,
+      ),
+      true,
+    );
+    assert.equal(
+      (
+        await fetch(`${base}/api/public/v1/events/${privateEvent.id}`, {
+          headers: headers(requester.cookie),
+        })
+      ).status,
+      200,
     );
 
     const requesterMe = await fetch(`${base}/api/v1/me`, { headers: headers(requester.cookie) });
