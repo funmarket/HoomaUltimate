@@ -16,7 +16,10 @@ const accountCss = await readFile(
 );
 
 test("account loading is a distinct shell/header state rather than guest presentation", () => {
-  assert.match(shell, /const \{ me, managedTeams, loading, error, refresh \} = useAccount\(\);/);
+  assert.match(
+    shell,
+    /const \{ me, managedTeams, hasPlatformControlAccess, loading, error, refresh \} = useAccount\(\);/,
+  );
   assert.match(shell, /<HoomaAccountHeader[\s\S]*loading=\{loading\}/);
 
   assert.match(header, /readonly loading: boolean;/);
@@ -24,7 +27,10 @@ test("account loading is a distinct shell/header state rather than guest present
   assert.match(header, /aria-busy=\{loading \|\| undefined\}/);
   assert.match(header, /disabled=\{loading\}/);
   assert.match(header, /hooma-profile-trigger__loading/);
-  assert.match(header, /\{!loading && user && open \? \(/);
+  assert.match(header, /if \(loading\) setOpen\(false\);/);
+  assert.match(header, /\{user \? \(/);
+  assert.match(header, /if \(!open\) \{/);
+  assert.match(header, /menu\.showPopover\(\)/);
 
   assert.match(accountCss, /\.hooma-profile-trigger__loading \{/);
   assert.match(accountCss, /@media \(prefers-reduced-motion: reduce\)/);
