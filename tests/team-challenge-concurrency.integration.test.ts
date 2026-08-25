@@ -13,16 +13,23 @@ const repository = new PrismaTeamRepository(db);
 
 async function createFixture(label: string) {
   const user = await db.user.create({ data: {} });
-  const community = await db.community.create({
+  const challengerCommunity = await db.community.create({
     data: {
-      slug: `challenge-race-${label}-${user.id}`,
-      name: `Challenge Race ${label}`,
+      slug: `challenge-race-home-${label}-${user.id}`,
+      name: `Challenge Race Home ${label}`,
+      createdByUserId: user.id,
+    },
+  });
+  const challengedCommunity = await db.community.create({
+    data: {
+      slug: `challenge-race-away-${label}-${user.id}`,
+      name: `Challenge Race Away ${label}`,
       createdByUserId: user.id,
     },
   });
   const challenger = await db.team.create({
     data: {
-      communityId: community.id,
+      communityId: challengerCommunity.id,
       slug: `challenger-${label}-${user.id}`,
       name: `Challenger ${label}`,
       createdByUserId: user.id,
@@ -30,7 +37,7 @@ async function createFixture(label: string) {
   });
   const challenged = await db.team.create({
     data: {
-      communityId: community.id,
+      communityId: challengedCommunity.id,
       slug: `challenged-${label}-${user.id}`,
       name: `Challenged ${label}`,
       createdByUserId: user.id,
@@ -44,7 +51,7 @@ async function createFixture(label: string) {
       format: "FIVE_V_FIVE",
     },
   });
-  return { user, community, challenger, challenged, challenge };
+  return { user, challengerCommunity, challengedCommunity, challenger, challenged, challenge };
 }
 
 async function cleanupFixture(fixture: Awaited<ReturnType<typeof createFixture>>) {
@@ -53,7 +60,9 @@ async function cleanupFixture(fixture: Awaited<ReturnType<typeof createFixture>>
   await db.team.deleteMany({
     where: { id: { in: [fixture.challenger.id, fixture.challenged.id] } },
   });
-  await db.community.deleteMany({ where: { id: fixture.community.id } });
+  await db.community.deleteMany({
+    where: { id: { in: [fixture.challengerCommunity.id, fixture.challengedCommunity.id] } },
+  });
   await db.user.deleteMany({ where: { id: fixture.user.id } });
 }
 
