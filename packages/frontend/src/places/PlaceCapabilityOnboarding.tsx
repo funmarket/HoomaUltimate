@@ -1,5 +1,8 @@
 import { useMemo, useState, type FormEvent } from "react";
-import type { PlaceCapabilityKind, PublicPlaceSummary } from "@hooma/contracts/platform-management";
+import type {
+  PlaceCapabilityKind,
+  PublicPlaceSummary,
+} from "@hooma/contracts/platform-management";
 import { useHoomaFrontend } from "../context";
 import { createPlatformManagementApi } from "./platform-management-api";
 
@@ -97,7 +100,9 @@ export function PlaceCapabilityOnboarding({
         <div className="place-business-form__heading">
           <p className="eyebrow">STEP 2</p>
           <h2>Apply for {title}</h2>
-          <p className="muted">The selected Place must already be approved and verified as yours.</p>
+          <p className="muted">
+            The selected Place must already be approved and verified as yours.
+          </p>
         </div>
 
         <label className="place-business-field">
