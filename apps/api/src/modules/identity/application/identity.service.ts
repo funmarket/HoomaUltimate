@@ -29,10 +29,15 @@ export type TelegramResolution =
   | { kind: "unregistered" }
   | { kind: "valid"; userId: string };
 
+export interface PlatformOwnerBootstrap {
+  reconcilePlatformOwner(userId: string): Promise<void>;
+}
+
 export class IdentityService {
   constructor(
     private readonly repository: IdentityRepository,
     private readonly config: ApiConfig,
+    private readonly platformOwnerBootstrap?: PlatformOwnerBootstrap,
   ) {}
 
   async register(input: RegisterInput): Promise<{ sessionToken: string }> {
@@ -149,7 +154,14 @@ export class IdentityService {
         "Telegram and Web credentials resolve to different users",
       );
     }
-    return { userId: await this.repository.upsertTelegramIdentity(identity) };
+    const userId = await this.repository.upsertTelegramIdentity(identity);
+    if (
+      this.platformOwnerBootstrap &&
+      this.config.PLATFORM_ADMIN_BOOTSTRAP_TELEGRAM_USER_ID === identity.telegramUserId.toString()
+    ) {
+      await this.platformOwnerBootstrap.reconcilePlatformOwner(userId);
+    }
+    return { userId };
   }
 
   async publicProfile(username: string) {
