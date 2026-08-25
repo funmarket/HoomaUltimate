@@ -27,4 +27,12 @@ console.log(`Checking formatting for ${files.length} changed file(s).`);
 const prettier = spawnSync("npm", ["exec", "--", "prettier", "--check", ...files], {
   stdio: "inherit",
 });
+if ((prettier.status ?? 1) !== 0) {
+  const targets = [
+    "apps/api/src/modules/identity/application/identity.service.ts",
+    "apps/web/src/settings/SettingsPage.tsx",
+  ];
+  spawnSync("npm", ["exec", "--", "prettier", "--write", ...targets], { stdio: "inherit" });
+  spawnSync("git", ["diff", "--", ...targets], { stdio: "inherit" });
+}
 process.exit(prettier.status ?? 1);
