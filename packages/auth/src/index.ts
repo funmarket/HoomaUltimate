@@ -1,4 +1,5 @@
 import { createHash, createPublicKey, randomBytes, verify as verifySignature } from "node:crypto";
+import type { webcrypto } from "node:crypto";
 import * as argon2 from "argon2";
 import { deepSnakeToCamelObjKeys, parse, validate } from "@tma.js/init-data-node";
 
@@ -37,7 +38,7 @@ type TelegramOidcPayload = {
   readonly picture?: string;
 };
 
-type TelegramJwk = JsonWebKey & {
+type TelegramJwk = webcrypto.JsonWebKey & {
   readonly kid?: string;
   readonly alg?: string;
   readonly use?: string;
