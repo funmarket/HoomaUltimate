@@ -1,4 +1,5 @@
 import { Router } from "express";
+import type { ApiConfig } from "@hooma/config";
 import {
   eventChatMessageSchema,
   eventCheckInSchema,
@@ -7,7 +8,11 @@ import {
   eventUpdateSchema,
 } from "@hooma/contracts";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
+import type { CommunityService } from "../../communities/application/community.service.js";
+import type { IdentityService } from "../../identity/application/identity.service.js";
+import { resolveAuthentication } from "../../identity/http/auth.middleware.js";
 import { getAuth } from "../../identity/http/auth-request.js";
+import { EventError } from "../domain/event-error.js";
 import type { EventService } from "../application/event.service.js";
 
 function numberQuery(value: unknown, fallback: number) {
@@ -15,7 +20,12 @@ function numberQuery(value: unknown, fallback: number) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-export function createEventPublicRouter(service: EventService): Router {
+export function createEventPublicRouter(
+  service: EventService,
+  communities: CommunityService,
+  identity: IdentityService,
+  config: ApiConfig,
+): Router {
   const router = Router();
   router.get(
     "/",
@@ -42,9 +52,14 @@ export function createEventPublicRouter(service: EventService): Router {
   );
   router.get(
     "/:eventId",
-    asyncHandler(async (request, response) =>
-      response.json(await service.getPublic(String(request.params.eventId))),
-    ),
+    asyncHandler(async (request, response) => {
+      const event = await service.getPublic(String(request.params.eventId));
+      const auth = await resolveAuthentication(request, identity, config);
+      if (!(await communities.canViewActivity(event.communityId, auth?.userId))) {
+        throw new EventError("EVENT_NOT_FOUND", "Event not found");
+      }
+      response.json(event);
+    }),
   );
   return router;
 }
