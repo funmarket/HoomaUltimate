@@ -1,6 +1,6 @@
 import { AppError } from "../../../http/errors/app-error.js";
 import {
-  RedisClient,
+  type RedisClient,
   RedisClientError,
   type RedisValue,
 } from "../../../infrastructure/redis/redis-client.js";
