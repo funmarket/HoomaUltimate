@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import { useHoomaFrontend } from "@hooma/frontend";
+import { startTelegramWebLogin, useHoomaFrontend } from "@hooma/frontend";
 import { useAccount } from "../account/AccountProvider";
 
 function safeReturnTo(): string {
@@ -13,11 +13,17 @@ function initialMode(): "login" | "register" {
   return window.location.pathname === "/register" ? "register" : "login";
 }
 
+function telegramError(): string {
+  const code = new URLSearchParams(window.location.search).get("telegramError");
+  return code ? `Telegram sign-in failed (${code}).` : "";
+}
+
 export function AuthApp() {
-  const { api } = useHoomaFrontend();
+  const { api, transport } = useHoomaFrontend();
   const { me, loading, error: accountError, refresh } = useAccount();
-  const [error, setError] = useState("");
+  const [error, setError] = useState(telegramError);
   const [mode, setMode] = useState<"login" | "register">(initialMode);
+  const [telegramStarting, setTelegramStarting] = useState(false);
   const returnTo = useMemo(safeReturnTo, []);
 
   useEffect(() => {
@@ -38,6 +44,23 @@ export function AuthApp() {
       await refresh();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Unable to sign out");
+    }
+  }
+
+  async function continueWithTelegram() {
+    setError("");
+    setTelegramStarting(true);
+    try {
+      const result = await startTelegramWebLogin(transport, returnTo);
+      if (!result.enabled || !result.authorizationUrl) {
+        setError("Telegram Web login is not configured for this environment yet.");
+        return;
+      }
+      window.location.assign(result.authorizationUrl);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unable to start Telegram sign-in");
+    } finally {
+      setTelegramStarting(false);
     }
   }
 
@@ -84,6 +107,20 @@ export function AuthApp() {
       ) : (
         <RegisterForm onSuccess={completeAuthentication} onError={setError} />
       )}
+      <p className="status">or</p>
+      <button
+        type="button"
+        disabled={telegramStarting}
+        onClick={() => void continueWithTelegram()}
+      >
+        {telegramStarting ? "Opening Telegram…" : "Continue with Telegram"}
+      </button>
+      {mode === "register" ? (
+        <p className="status">
+          Telegram is optional. You can create a Web-only account and connect Telegram later in
+          Settings.
+        </p>
+      ) : null}
       {visibleError ? <p className="error">{visibleError}</p> : null}
     </section>
   );
