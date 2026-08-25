@@ -172,7 +172,8 @@ export function HoomaAccountHeader({
     }
 
     function updateGeometry() {
-      setMenuStyle(accountMenuGeometry(positionedAnchor));
+      const anchor = positionedAnchor;
+      setMenuStyle(accountMenuGeometry(anchor));
     }
 
     updateGeometry();
