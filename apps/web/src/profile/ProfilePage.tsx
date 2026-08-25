@@ -68,7 +68,11 @@ export function ProfilePage() {
   return (
     <section className="profile-page">
       <ProfileContent me={me} />
-      <TeamOffersPanel onAccepted={refresh} />
+      <TeamOffersPanel
+        onAccepted={async () => {
+          await refresh();
+        }}
+      />
       <form className="panel profile-edit-form" onSubmit={save}>
         <div>
           <p className="eyebrow">EDIT PROFILE</p>
