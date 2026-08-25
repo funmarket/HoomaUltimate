@@ -120,15 +120,8 @@ export function createTelegramRuntime(): TelegramRuntime {
         syncInsets(root, "--hooma-content-safe-area-inset", webApp.contentSafeAreaInset);
       const syncTheme = () => {
         const scheme = colorScheme(webApp);
-        if (!scheme) {
-          delete root.dataset.telegramColorScheme;
-          return;
-        }
-        root.dataset.telegramColorScheme = scheme;
-        if (root.dataset.appearance === "system") {
-          root.dataset.theme = scheme;
-          root.style.colorScheme = scheme;
-        }
+        if (scheme) root.dataset.telegramColorScheme = scheme;
+        else delete root.dataset.telegramColorScheme;
       };
 
       webApp.ready();
