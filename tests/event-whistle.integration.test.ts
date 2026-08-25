@@ -8,7 +8,8 @@ import { createContainer } from "../apps/api/src/bootstrap/container.js";
 
 const databaseUrl = process.env.DATABASE_URL;
 const redisUrl = process.env.REDIS_URL;
-if (!databaseUrl) throw new Error("DATABASE_URL is required for Event Whistle integration tests");
+if (!databaseUrl)
+  throw new Error("DATABASE_URL is required for Event Whistle integration tests");
 if (!redisUrl) throw new Error("REDIS_URL is required for Event Whistle integration tests");
 
 const config = loadApiConfig({
@@ -29,7 +30,10 @@ function encodeRedis(parts: readonly string[]): string {
 async function redisCommand(parts: readonly string[]): Promise<string | number | null> {
   const url = new URL(redisUrl!);
   return new Promise((resolve, reject) => {
-    const socket = net.createConnection({ host: url.hostname, port: Number(url.port || 6379) });
+    const socket = net.createConnection({
+      host: url.hostname,
+      port: Number(url.port || 6379),
+    });
     let buffer = Buffer.alloc(0);
     socket.once("error", reject);
     socket.once("connect", () => socket.write(encodeRedis(parts)));
@@ -120,7 +124,9 @@ async function register(base: string, username: string) {
   assert.equal(response.status, 201);
   const cookie = response.headers.get("set-cookie");
   assert.ok(cookie);
-  const credential = await db.webCredential.findUniqueOrThrow({ where: { loginUsername: username } });
+  const credential = await db.webCredential.findUniqueOrThrow({
+    where: { loginUsername: username },
+  });
   return { cookie, userId: credential.userId };
 }
 
@@ -161,7 +167,11 @@ async function createEvent(base: string, cookie: string, communityId: string) {
       waitlistEnabled: true,
       entryFeeMinor: 0,
       currency: "TND",
-      play: { pitchType: "FIVE_A_SIDE", skillLevel: "MIXED", format: "FIVE_V_FIVE" },
+      play: {
+        pitchType: "FIVE_A_SIDE",
+        skillLevel: "MIXED",
+        format: "FIVE_V_FIVE",
+      },
     }),
   });
   assert.equal(response.status, 201);
@@ -224,7 +234,10 @@ test("Event Whistle reuses canonical Event access and the global Whistle quota",
       (await sendWhistle(base, outsider.cookie, "EVENT", event.id, "not allowed")).status,
       403,
     );
-    assert.equal((await fetch(`${base}${eventPath}`, { headers: headers(coach.cookie) })).status, 200);
+    assert.equal(
+      (await fetch(`${base}${eventPath}`, { headers: headers(coach.cookie) })).status,
+      200,
+    );
     assert.equal(
       (await fetch(`${base}${eventPath}`, { headers: headers(founder.cookie) })).status,
       200,
