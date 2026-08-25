@@ -6,16 +6,14 @@ import type {
   GamerProfileInput,
 } from "@hooma/contracts/gamers";
 import { request, type HoomaTransport } from "../http";
+import { createProfileApi } from "../profile-api";
 
 export function createGamerOnboardingApi(transport: HoomaTransport) {
+  const profileApi = createProfileApi(transport);
   return {
     games: () => request<GamerGameList>(transport, "/api/public/v1/gamers/games"),
-    profile: () => request<ProfileResponse>(transport, "/api/v1/me/profile"),
-    updateProfile: (input: ProfileUpdateInput) =>
-      request<ProfileResponse>(transport, "/api/v1/me/profile", {
-        method: "PATCH",
-        body: JSON.stringify(input),
-      }),
+    profile: () => profileApi.mine(),
+    updateProfile: (input: ProfileUpdateInput) => profileApi.updateMine(input),
     saveGameProfile: (game: GamerGame, input: GamerProfileInput) =>
       request<GamerProfile>(
         transport,
