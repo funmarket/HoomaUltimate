@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
+const read = (path) =>
+  readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
 test("global shell adapts below 320px from one inline spacing source", async () => {
   const [styles, account] = await Promise.all([
@@ -38,10 +39,19 @@ test("account menu uses the browser top layer and collision-aware viewport geome
   assert.match(header, /\.showPopover\(\)/);
   assert.match(header, /\.hidePopover\(\)/);
   assert.match(header, /window\.visualViewport/);
-  assert.match(header, /\.hooma-bottom-nav:not\(\.hooma-bottom-nav--hidden\)/);
+  assert.match(
+    header,
+    /\.hooma-bottom-nav:not\(\.hooma-bottom-nav--hidden\)/,
+  );
   assert.match(header, /maxHeight:\s*Math\.max\(0, bottomLimit - top\)/);
   assert.match(header, /addEventListener\("resize", updateGeometry\)/);
   assert.match(header, /addEventListener\("scroll", updateGeometry\)/);
-  assert.match(account, /\.hooma-account-menu\s*\{[\s\S]*position:\s*fixed/);
-  assert.doesNotMatch(account, /\.hooma-account-menu\s*\{[\s\S]*top:\s*calc\(100%/);
+  assert.match(
+    account,
+    /\.hooma-account-menu\s*\{[\s\S]*position:\s*fixed/,
+  );
+  assert.doesNotMatch(
+    account,
+    /\.hooma-account-menu\s*\{[\s\S]*top:\s*calc\(100%/,
+  );
 });
