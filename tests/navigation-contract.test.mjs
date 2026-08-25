@@ -48,7 +48,7 @@ test("Home gateway cards expose visible labels and disable unavailable destinati
   assert.match(grid, />Quick actions<\/p>/);
   assert.match(grid, /home-gateway-card__title/);
   assert.match(grid, /home-gateway-card__subtitle/);
-  assert.match(grid, /object-fit: cover/);
+  assert.match(grid, /object-fit: contain/);
   assert.match(uiIndex, /home-gateway-title/);
   assert.match(card, /home-gateway-card__title/);
   assert.match(card, /home-gateway-card__subtitle/);
