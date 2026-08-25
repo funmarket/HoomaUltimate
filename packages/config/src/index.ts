@@ -2,6 +2,10 @@ import { z } from "zod";
 
 const nodeEnvironmentSchema = z.enum(["development", "test", "production"]);
 const portSchema = z.coerce.number().int().positive().max(65535);
+const optionalUrlSchema = z.preprocess(
+  (value) => (value === "" ? undefined : value),
+  z.string().url().optional(),
+);
 
 const apiEnvironmentSchema = z
   .object({
@@ -23,7 +27,7 @@ const apiEnvironmentSchema = z
     TELEGRAM_INIT_DATA_MAX_AGE_SECONDS: z.coerce.number().int().positive().default(86400),
     TELEGRAM_LOGIN_CLIENT_ID: z.string().default(""),
     TELEGRAM_LOGIN_CLIENT_SECRET: z.string().default(""),
-    TELEGRAM_LOGIN_REDIRECT_URI: z.string().url().optional(),
+    TELEGRAM_LOGIN_REDIRECT_URI: optionalUrlSchema,
   })
   .superRefine((value, context) => {
     if (value.NODE_ENV === "production" && !value.TELEGRAM_BOT_TOKEN) {
