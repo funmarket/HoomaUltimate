@@ -6,8 +6,7 @@ import { createApp } from "../apps/api/src/bootstrap/app.js";
 import { createContainer } from "../apps/api/src/bootstrap/container.js";
 
 const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl)
-  throw new Error("DATABASE_URL is required for Gamer identity integration tests");
+if (!databaseUrl) throw new Error("DATABASE_URL is required for Gamer identity integration tests");
 
 const config = loadApiConfig({
   ...process.env,
@@ -112,12 +111,7 @@ async function activeGames(base: string) {
   };
 }
 
-async function saveGamerProfile(
-  base: string,
-  cookie: string,
-  gameId: string,
-  handle: string,
-) {
+async function saveGamerProfile(base: string, cookie: string, gameId: string, handle: string) {
   return fetch(`${base}/api/v1/gamers/games/${gameId}/profile`, {
     method: "PUT",
     headers: {
@@ -129,95 +123,78 @@ async function saveGamerProfile(
   });
 }
 
-test(
-  "canonical GAMER identity gates participation while signup-style onboarding can precreate game profiles",
-  async () => {
+test("canonical GAMER identity gates participation while signup-style onboarding can precreate game profiles", async () => {
+  await resetTestData();
+  const { server, base } = await startApp();
+
+  try {
+    const games = await activeGames(base);
+    const fc = games.items.find((game) => game.slug === "ea-sports-fc-mobile");
+    const ludo = games.items.find((game) => game.slug === "ludo");
+    assert.ok(fc);
+    assert.ok(ludo);
+
+    const targetCookie = await register(base, "target");
+
+    const withoutGamerIdentity = await saveGamerProfile(base, targetCookie, fc.id, "Target FC");
+    assert.equal(withoutGamerIdentity.status, 409);
+    const identityError = (await withoutGamerIdentity.json()) as {
+      error?: { code?: string };
+    };
+    assert.equal(identityError.error?.code, "GAMER_IDENTITY_REQUIRED");
+
+    await setIdentities(base, targetCookie, ["GAMER"]);
+
+    const fcProfileResponse = await saveGamerProfile(base, targetCookie, fc.id, "Target FC");
+    assert.equal(fcProfileResponse.status, 200);
+    const fcProfile = (await fcProfileResponse.json()) as { id: string; userId: string };
+
+    const ludoProfileResponse = await saveGamerProfile(base, targetCookie, ludo.id, "Target Ludo");
+    assert.equal(ludoProfileResponse.status, 200);
+    assert.equal(await db.gamerProfile.count({ where: { userId: fcProfile.userId } }), 2);
+
+    const visibleResponse = await fetch(`${base}/api/public/v1/gamers/games/${fc.id}/challengers`);
+    assert.equal(visibleResponse.status, 200);
+    const visible = (await visibleResponse.json()) as { items: Array<{ id: string }> };
+    assert.ok(visible.items.some((item) => item.id === fcProfile.id));
+
+    await setIdentities(base, targetCookie, []);
+
+    const hiddenResponse = await fetch(`${base}/api/public/v1/gamers/games/${fc.id}/challengers`);
+    assert.equal(hiddenResponse.status, 200);
+    const hidden = (await hiddenResponse.json()) as { items: Array<{ id: string }> };
+    assert.equal(
+      hidden.items.some((item) => item.id === fcProfile.id),
+      false,
+    );
+    assert.equal(await db.gamerProfile.count({ where: { userId: fcProfile.userId } }), 2);
+
+    const challengerCookie = await register(base, "challenger");
+    await setIdentities(base, challengerCookie, ["GAMER"]);
+    const challengerProfileResponse = await saveGamerProfile(
+      base,
+      challengerCookie,
+      fc.id,
+      "Challenger FC",
+    );
+    assert.equal(challengerProfileResponse.status, 200);
+
+    const challengeResponse = await fetch(`${base}/api/v1/gamers/games/${fc.id}/challenges`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        cookie: challengerCookie,
+        origin: config.WEB_ORIGIN,
+      },
+      body: JSON.stringify({ challengedProfileId: fcProfile.id }),
+    });
+    assert.equal(challengeResponse.status, 409);
+    const targetError = (await challengeResponse.json()) as { error?: { code?: string } };
+    assert.equal(targetError.error?.code, "GAMER_CHALLENGE_TARGET_INELIGIBLE");
+  } finally {
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve())),
+    );
     await resetTestData();
-    const { server, base } = await startApp();
-
-    try {
-      const games = await activeGames(base);
-      const fc = games.items.find((game) => game.slug === "ea-sports-fc-mobile");
-      const ludo = games.items.find((game) => game.slug === "ludo");
-      assert.ok(fc);
-      assert.ok(ludo);
-
-      const targetCookie = await register(base, "target");
-
-      const withoutGamerIdentity = await saveGamerProfile(
-        base,
-        targetCookie,
-        fc.id,
-        "Target FC",
-      );
-      assert.equal(withoutGamerIdentity.status, 409);
-      const identityError = (await withoutGamerIdentity.json()) as {
-        error?: { code?: string };
-      };
-      assert.equal(identityError.error?.code, "GAMER_IDENTITY_REQUIRED");
-
-      await setIdentities(base, targetCookie, ["GAMER"]);
-
-      const fcProfileResponse = await saveGamerProfile(base, targetCookie, fc.id, "Target FC");
-      assert.equal(fcProfileResponse.status, 200);
-      const fcProfile = (await fcProfileResponse.json()) as { id: string; userId: string };
-
-      const ludoProfileResponse = await saveGamerProfile(
-        base,
-        targetCookie,
-        ludo.id,
-        "Target Ludo",
-      );
-      assert.equal(ludoProfileResponse.status, 200);
-      assert.equal(await db.gamerProfile.count({ where: { userId: fcProfile.userId } }), 2);
-
-      const visibleResponse = await fetch(
-        `${base}/api/public/v1/gamers/games/${fc.id}/challengers`,
-      );
-      assert.equal(visibleResponse.status, 200);
-      const visible = (await visibleResponse.json()) as { items: Array<{ id: string }> };
-      assert.ok(visible.items.some((item) => item.id === fcProfile.id));
-
-      await setIdentities(base, targetCookie, []);
-
-      const hiddenResponse = await fetch(
-        `${base}/api/public/v1/gamers/games/${fc.id}/challengers`,
-      );
-      assert.equal(hiddenResponse.status, 200);
-      const hidden = (await hiddenResponse.json()) as { items: Array<{ id: string }> };
-      assert.equal(hidden.items.some((item) => item.id === fcProfile.id), false);
-      assert.equal(await db.gamerProfile.count({ where: { userId: fcProfile.userId } }), 2);
-
-      const challengerCookie = await register(base, "challenger");
-      await setIdentities(base, challengerCookie, ["GAMER"]);
-      const challengerProfileResponse = await saveGamerProfile(
-        base,
-        challengerCookie,
-        fc.id,
-        "Challenger FC",
-      );
-      assert.equal(challengerProfileResponse.status, 200);
-
-      const challengeResponse = await fetch(
-        `${base}/api/v1/gamers/games/${fc.id}/challenges`,
-        {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            cookie: challengerCookie,
-            origin: config.WEB_ORIGIN,
-          },
-          body: JSON.stringify({ challengedProfileId: fcProfile.id }),
-        },
-      );
-      assert.equal(challengeResponse.status, 409);
-      const targetError = (await challengeResponse.json()) as { error?: { code?: string } };
-      assert.equal(targetError.error?.code, "GAMER_CHALLENGE_TARGET_INELIGIBLE");
-    } finally {
-      await new Promise<void>((resolve, reject) =>
-        server.close((error) => (error ? reject(error) : resolve())),
-      );
-      await resetTestData();
-    }
-  },
-);
+  }
+});

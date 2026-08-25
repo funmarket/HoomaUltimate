@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { GamerGame } from "@hooma/contracts/gamers";
 import { useHoomaFrontend, type HoomaTransport } from "@hooma/frontend";
-import {
-  createGamerOnboardingApi,
-  gamerOptInProfileInput,
-} from "@hooma/frontend/gamer-onboarding";
+import { createGamerOnboardingApi, gamerOptInProfileInput } from "@hooma/frontend/gamer-onboarding";
 
 export type GamerSignupSelection = {
   readonly enabled: boolean;
@@ -77,8 +74,7 @@ export function useGamerSignupSelection() {
 
 export function validateGamerSignupSelection(selection: GamerSignupSelection): string | null {
   if (!selection.enabled) return null;
-  if (selection.gamesError)
-    return "Gamer games could not be loaded. Try again before continuing.";
+  if (selection.gamesError) return "Gamer games could not be loaded. Try again before continuing.";
   const selectedGames = selection.games.filter((game) =>
     selection.selectedGameIds.includes(game.id),
   );
