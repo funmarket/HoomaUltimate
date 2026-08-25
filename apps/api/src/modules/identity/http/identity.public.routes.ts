@@ -1,10 +1,20 @@
 import { Router } from "express";
 import type { ApiConfig } from "@hooma/config";
 import { loginSchema, registerSchema } from "@hooma/contracts";
+import { telegramOidcStartSchema } from "@hooma/contracts/auth-linking";
+import { AppError } from "../../../http/errors/app-error.js";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import type { IdentityService } from "../application/identity.service.js";
 import { resolveAuthentication } from "./auth.middleware.js";
 import { readCookie, setSessionCookie } from "./cookies.js";
+import {
+  beginTelegramWebFlow,
+  clearTelegramWebFlow,
+  completeTelegramWebFlow,
+  readTelegramWebFlow,
+  telegramWebLoginConfigured,
+  webRedirect,
+} from "./telegram-web-auth.js";
 
 export function createIdentityPublicRouter(service: IdentityService, config: ApiConfig): Router {
   const router = Router();
@@ -48,6 +58,57 @@ export function createIdentityPublicRouter(service: IdentityService, config: Api
         webUserId,
       );
       response.status(201).json({ ok: true });
+    }),
+  );
+
+  router.post(
+    "/telegram/web/start",
+    (request, response) => {
+      const input = telegramOidcStartSchema.parse(request.body);
+      const authorizationUrl = beginTelegramWebFlow(response, config, {
+        mode: "login",
+        returnTo: input.returnTo,
+      });
+      response.json({
+        enabled: telegramWebLoginConfigured(config),
+        authorizationUrl,
+      });
+    },
+  );
+
+  router.get(
+    "/telegram/web/callback",
+    asyncHandler(async (request, response) => {
+      let returnTo = "/login";
+      try {
+        const flow = readTelegramWebFlow(request, config);
+        returnTo = flow.returnTo;
+        const identity = await completeTelegramWebFlow(request, config, flow);
+        if (flow.mode === "login") {
+          const { sessionToken } = await service.loginWithTelegramIdentity(identity);
+          setSessionCookie(response, config, sessionToken);
+          response.redirect(webRedirect(config, returnTo, { telegramLogin: "success" }));
+          return;
+        }
+
+        const webUserId = await service.resolveWebSession(
+          readCookie(request, config.SESSION_COOKIE_NAME),
+        );
+        if (!flow.userId || !webUserId || webUserId !== flow.userId) {
+          throw new AppError(
+            401,
+            "ACCOUNT_LINK_AUTH_REQUIRED",
+            "The Web account session used to start linking is no longer valid",
+          );
+        }
+        await service.linkTelegramIdentity(flow.userId, identity);
+        response.redirect(webRedirect(config, returnTo, { telegramLinked: "success" }));
+      } catch (error) {
+        const code = error instanceof AppError ? error.code : "TELEGRAM_WEB_LOGIN_FAILED";
+        response.redirect(webRedirect(config, returnTo, { telegramError: code }));
+      } finally {
+        clearTelegramWebFlow(response, config);
+      }
     }),
   );
 
