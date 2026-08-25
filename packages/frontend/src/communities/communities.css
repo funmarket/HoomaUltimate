@@ -83,7 +83,10 @@
   gap: 16px;
   margin-bottom: 14px;
 }
-.hooma-section-heading h2,
+.hooma-section-heading h2 {
+  margin: 4px 0 0;
+  color: var(--app-text-strong);
+}
 .hooma-memberships h2,
 .hooma-hq-module h2,
 .hooma-hq-manage h2,
@@ -94,6 +97,9 @@
 .hooma-section-heading p,
 .hooma-form-intro p {
   margin: 0;
+}
+.hooma-section-heading .muted {
+  color: var(--app-text-secondary);
 }
 
 .hooma-create-picker {
