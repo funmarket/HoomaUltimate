@@ -11,10 +11,7 @@ export type RedisInfrastructureErrorCode =
   | "COMMAND";
 
 export class RedisInfrastructureError extends Error {
-  constructor(
-    readonly code: RedisInfrastructureErrorCode,
-    message: string,
-  ) {
+  constructor(readonly code: RedisInfrastructureErrorCode, message: string) {
     super(message);
     this.name = "RedisInfrastructureError";
   }
@@ -32,7 +29,10 @@ function encodeCommand(parts: readonly string[]): string {
   return `*${parts.length}\r\n${parts.map((part) => `$${Buffer.byteLength(part)}\r\n${part}\r\n`).join("")}`;
 }
 
-function parseResp(buffer: Buffer, offset = 0): { value: RedisValue; offset: number } | null {
+function parseResp(
+  buffer: Buffer,
+  offset = 0,
+): { value: RedisValue; offset: number } | null {
   if (offset >= buffer.length) return null;
   const prefix = String.fromCharCode(buffer[offset]!);
   const lineEnd = buffer.indexOf("\r\n", offset + 1);
@@ -176,7 +176,9 @@ export class RedisClient {
         resolve,
         reject,
         timeout: setTimeout(() => {
-          this.failConnection(new RedisInfrastructureError("TIMEOUT", "Redis command timed out"));
+          this.failConnection(
+            new RedisInfrastructureError("TIMEOUT", "Redis command timed out"),
+          );
         }, COMMAND_TIMEOUT_MS),
       };
       this.pending.push(pending);
