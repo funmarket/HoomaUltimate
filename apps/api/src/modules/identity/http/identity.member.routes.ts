@@ -1,7 +1,8 @@
 import { Router } from "express";
-import { profilePresentationUpdateSchema } from "@hooma/contracts";
-import { profileUpdateSchema } from "@hooma/contracts/profile";
 import type { ApiConfig } from "@hooma/config";
+import { profilePresentationUpdateSchema } from "@hooma/contracts";
+import { webCredentialAttachSchema } from "@hooma/contracts/auth-linking";
+import { profileUpdateSchema } from "@hooma/contracts/profile";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import type { IdentityService } from "../application/identity.service.js";
 import { getAuth } from "./auth-request.js";
@@ -15,6 +16,37 @@ export function createIdentityMemberRouter(service: IdentityService, config: Api
     asyncHandler(async (request, response) => {
       const auth = getAuth(request);
       response.json(await service.me(auth.userId, auth.transports));
+    }),
+  );
+
+  router.get(
+    "/me/login-methods",
+    asyncHandler(async (request, response) => {
+      const auth = getAuth(request);
+      response.json(await service.loginMethods(auth.userId));
+    }),
+  );
+
+  router.post(
+    "/auth/web-credential",
+    asyncHandler(async (request, response) => {
+      const auth = getAuth(request);
+      response
+        .status(201)
+        .json(
+          await service.addWebCredential(
+            auth.userId,
+            webCredentialAttachSchema.parse(request.body),
+          ),
+        );
+    }),
+  );
+
+  router.post(
+    "/auth/telegram-link/code",
+    asyncHandler(async (request, response) => {
+      const auth = getAuth(request);
+      response.json(await service.createTelegramLinkCode(auth.userId, auth.transports));
     }),
   );
 

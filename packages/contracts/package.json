@@ -20,6 +20,10 @@
       "types": "./src/index.ts",
       "default": "./dist/index.js"
     },
+    "./auth-linking": {
+      "types": "./src/auth-linking.ts",
+      "default": "./dist/auth-linking.js"
+    },
     "./communities": {
       "types": "./src/communities.ts",
       "default": "./dist/communities.js"
