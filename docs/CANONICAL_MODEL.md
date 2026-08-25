@@ -393,7 +393,8 @@ TeamChallenge
   challengedTeamId
   createdByUserId
   status             PENDING | ACCEPTED | DECLINED | CANCELLED | EXPIRED
-  proposedStartsAt?
+  proposedAt?
+  proposedEndsAt?
   proposedVenue?
   proposedFormat?
   message?
@@ -416,6 +417,8 @@ Rules:
 - challenged Team must be active/eligible/accepting challenges;
 - accept/decline requires `RESPOND_TO_CHALLENGE` authority on challenged Team;
 - cancel requires challenge authority on challenger Team;
+- if `proposedEndsAt` is supplied, `proposedAt` is required and `proposedEndsAt` must be later than `proposedAt`;
+- challenge timing is explicit input; Team format is never used to guess match duration;
 - state transitions are atomic;
 - terminal challenge states are not rewritten back to PENDING.
 
@@ -463,6 +466,7 @@ TeamGame
   homeTeamId
   awayTeamId
   scheduledAt?
+  endsAt?
   venueName?
   matchFormat?
   status             SCHEDULING | CONFIRMED | COMPLETED | CANCELLED
@@ -474,8 +478,10 @@ Rules:
 
 - accepting a Challenge creates/gets exactly one TeamGame;
 - creation is idempotent;
-- missing schedule remains `SCHEDULING`; never invent date/time/venue;
-- once enough scheduling data is confirmed, Game may transition to `CONFIRMED`;
+- accepted challenge timing is copied into the canonical TeamGame as `scheduledAt` and `endsAt`;
+- missing or incomplete timing remains `SCHEDULING`; never invent date/time/duration/venue;
+- the current challenge-acceptance path transitions a Game to `CONFIRMED` only when both explicit `scheduledAt` and `endsAt` exist;
+- `endsAt` is canonical timing truth for live read models such as HOOMA NOW; consumers must not infer duration from football format;
 - public Game DTO excludes private leader messages;
 - public upcoming Game sorting uses scheduled date/time where present; unscheduled accepted Games are grouped as scheduling rather than assigned fake times.
 
@@ -695,8 +701,6 @@ Rules:
 ---
 
 # 17. Whistle
-
-## WhistleMetadata
 
 Whistle is one shared transient signal engine. PostgreSQL owns metadata only:
 
