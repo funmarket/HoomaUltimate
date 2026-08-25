@@ -15,7 +15,7 @@ const accountCss = await readFile(
   "utf8",
 );
 
-test("account loading is a distinct shell/header state rather than guest presentation", () => {
+test("account loading stays a distinct shell/header state rather than guest presentation", () => {
   assert.match(shell, /const \{ me, managedTeams, loading, error, refresh \} = useAccount\(\);/);
   assert.match(shell, /<HoomaAccountHeader[\s\S]*loading=\{loading\}/);
 
