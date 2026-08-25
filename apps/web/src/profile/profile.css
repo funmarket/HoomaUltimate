@@ -53,12 +53,12 @@
   display: grid;
   grid-template-columns: minmax(180px, 32%) 1fr;
   min-height: 360px;
-  border: 1px solid rgba(203, 159, 57, .55);
+  border: 1px solid rgba(203, 159, 57, 0.55);
   border-radius: 18px;
   background:
-    linear-gradient(115deg, rgba(31, 189, 230, .09), transparent 35%),
+    linear-gradient(115deg, rgba(31, 189, 230, 0.09), transparent 35%),
     linear-gradient(145deg, #0a1117, #040709 68%);
-  box-shadow: inset 0 0 0 1px rgba(54, 183, 221, .08);
+  box-shadow: inset 0 0 0 1px rgba(54, 183, 221, 0.08);
 }
 
 .public-profile-hero::after {
@@ -69,7 +69,7 @@
   width: 34%;
   height: 6px;
   background: linear-gradient(90deg, #1ec8e8, #8a73ff, #c79a2b);
-  opacity: .75;
+  opacity: 0.75;
   transform: skewX(-28deg);
 }
 
@@ -78,8 +78,12 @@
   display: grid;
   place-items: center;
   overflow: hidden;
-  border-right: 1px solid rgba(54, 183, 221, .18);
-  background: radial-gradient(circle at 50% 42%, rgba(54, 183, 221, .19), transparent 52%);
+  border-right: 1px solid rgba(54, 183, 221, 0.18);
+  background: radial-gradient(
+    circle at 50% 42%,
+    rgba(54, 183, 221, 0.19),
+    transparent 52%
+  );
   color: #dff8ff;
   font-size: clamp(80px, 14vw, 160px);
   font-weight: 950;
@@ -100,8 +104,8 @@
   margin: 7px 0 4px;
   color: #f5f2ea;
   font-size: clamp(38px, 7vw, 72px);
-  line-height: .9;
-  letter-spacing: -.045em;
+  line-height: 0.9;
+  letter-spacing: -0.045em;
 }
 
 .public-profile-username {
@@ -156,7 +160,7 @@
   font-size: 11px;
   font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: .08em;
+  letter-spacing: 0.08em;
 }
 
 .public-profile-team-badge {
@@ -166,7 +170,7 @@
   display: grid;
   place-items: center;
   overflow: hidden;
-  border: 1px solid rgba(196, 220, 67, .35);
+  border: 1px solid rgba(196, 220, 67, 0.35);
   border-radius: 50%;
   background: #101310;
   font-weight: 900;
@@ -179,7 +183,7 @@
 }
 
 .public-profile-contact {
-  border-color: rgba(53, 200, 233, .24);
+  border-color: rgba(53, 200, 233, 0.24);
 }
 
 .public-profile-state span {
@@ -208,7 +212,7 @@
   .public-profile-photo {
     min-height: 280px;
     border-right: 0;
-    border-bottom: 1px solid rgba(54, 183, 221, .18);
+    border-bottom: 1px solid rgba(54, 183, 221, 0.18);
   }
 
   .public-profile-copy {
