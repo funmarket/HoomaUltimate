@@ -33,6 +33,7 @@ Authorization is derived server-side from the authenticated canonical HOOMA User
 
 - the sender must have active Gamer identity;
 - the sender must own a GamerProfile for the target GamerProfile's game;
+- both GamerProfiles must currently be `OPEN TO CHALLENGE`, matching the Challenger-card surface where direct Whistle is offered;
 - the target GamerProfile must exist in the same active game;
 - the target User must still have active Gamer identity;
 - self-Whistle is forbidden;
