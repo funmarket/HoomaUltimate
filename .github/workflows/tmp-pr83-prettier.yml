@@ -1,0 +1,49 @@
+name: Temporary PR83 Prettier
+
+on:
+  push:
+    branches:
+      - tmp/pr83-prettier
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp/pr83-prettier
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - name: Format exact CI offenders
+        run: >-
+          npx prettier --write
+          apps/api/src/modules/communities/application/community.repository.ts
+          apps/api/src/modules/communities/application/community.service.ts
+          apps/api/src/modules/communities/infrastructure/prisma-community.repository.ts
+          packages/frontend/src/api.ts
+          packages/frontend/src/communities/HoomaEditPage.tsx
+          packages/frontend/src/communities/HoomaMembershipRequests.tsx
+          packages/frontend/src/communities/HoomaPage.tsx
+          tests/community-privacy.integration.test.ts
+      - name: Commit exact formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- \
+            apps/api/src/modules/communities/application/community.repository.ts \
+            apps/api/src/modules/communities/application/community.service.ts \
+            apps/api/src/modules/communities/infrastructure/prisma-community.repository.ts \
+            packages/frontend/src/api.ts \
+            packages/frontend/src/communities/HoomaEditPage.tsx \
+            packages/frontend/src/communities/HoomaMembershipRequests.tsx \
+            packages/frontend/src/communities/HoomaPage.tsx \
+            tests/community-privacy.integration.test.ts
+          git diff --cached --quiet || git commit -m "style: format community privacy slice"
+          git push origin HEAD:tmp/pr83-prettier
