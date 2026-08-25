@@ -24,9 +24,9 @@
       "types": "./src/index.ts",
       "default": "./dist/index.js"
     },
-    "./gamers-signup-onboarding": {
-      "types": "./src/gamers/signup-onboarding.ts",
-      "default": "./dist/gamers/signup-onboarding.js"
+    "./gamer-onboarding": {
+      "types": "./src/gamers/onboarding.ts",
+      "default": "./dist/gamers/onboarding.js"
     },
     "./communities.css": "./src/communities/communities.css",
     "./teams.css": "./src/teams/teams.css",
