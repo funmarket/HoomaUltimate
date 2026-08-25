@@ -413,7 +413,9 @@ export function AdminApp() {
                 <article className="admin-entity-detail">
                   <div className="admin-entity-detail-copy">
                     <strong>{selectedTeam.name}</strong>
-                    <span>{selectedTeam.houma || selectedTeam.city || `@${selectedTeam.slug}`}</span>
+                    <span>
+                      {selectedTeam.houma || selectedTeam.city || `@${selectedTeam.slug}`}
+                    </span>
                     <small>
                       @{selectedTeam.slug} · {selectedTeam._count.players} active player
                       {selectedTeam._count.players === 1 ? "" : "s"}
