@@ -39,13 +39,19 @@ export class PrismaDiscoveryRepository implements DiscoveryRepository {
       this.db.teamGame.findMany({
         where: {
           status: "CONFIRMED",
-          scheduledAt: { gte: input.justStartedSince, lte: input.lookaheadUntil },
+          scheduledAt: { lte: input.lookaheadUntil },
+          OR: [
+            { scheduledAt: { gte: input.now } },
+            { scheduledAt: { gte: input.justStartedSince } },
+            { endsAt: { gt: input.now } },
+          ],
         },
         orderBy: [{ scheduledAt: "asc" }, { id: "asc" }],
         take: input.limit,
         select: {
           id: true,
           scheduledAt: true,
+          endsAt: true,
           homeTeam: {
             select: {
               id: true,
@@ -109,6 +115,7 @@ export class PrismaDiscoveryRepository implements DiscoveryRepository {
             kind: "TEAM_GAME",
             id: game.id,
             scheduledAt: game.scheduledAt,
+            endsAt: game.endsAt,
             homeTeamId: game.homeTeam.id,
             homeTeamName: game.homeTeam.name,
             awayTeamName: game.awayTeam.name,
