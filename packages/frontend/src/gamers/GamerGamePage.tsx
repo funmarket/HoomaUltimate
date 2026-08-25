@@ -454,27 +454,47 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
                   const alreadyPending = pendingProfileIds.has(challenger.id) && !isOwn;
                   return (
                     <article className="gamer-challenger-card" key={challenger.id}>
+                      <div className="gamer-card-hud-rail" aria-hidden="true">
+                        <span>PLAYER PROFILE</span>
+                        <b>///</b>
+                        <i />
+                      </div>
                       <a
                         className="gamer-card-profile-link"
                         href={`/gamers/games/${encodeURIComponent(game.slug)}/profiles/${encodeURIComponent(challenger.id)}`}
                         aria-label={`Open ${challenger.presentation.displayName} gamer profile`}
                       >
-                        <div className="gamer-avatar" aria-hidden="true">
-                          {challenger.presentation.photoUrl ? (
-                            <img src={challenger.presentation.photoUrl} alt="" />
-                          ) : (
-                            challenger.presentation.displayName.slice(0, 1).toUpperCase()
-                          )}
+                        <div className="gamer-card-portrait-panel">
+                          <div className="gamer-avatar" aria-hidden="true">
+                            {challenger.presentation.photoUrl ? (
+                              <img src={challenger.presentation.photoUrl} alt="" />
+                            ) : (
+                              challenger.presentation.displayName.slice(0, 1).toUpperCase()
+                            )}
+                          </div>
+                          <span className="gamer-open-badge">OPEN TO CHALLENGE</span>
                         </div>
                         <div className="gamer-challenger-copy">
                           <div className="gamer-challenger-heading">
                             <span className="gamer-card-game-label">GAME · {game.name}</span>
-                            <span className="gamer-open-badge">OPEN TO CHALLENGE</span>
                             {isOwn ? <small>YOUR PROFILE</small> : null}
                           </div>
-                          <p className="gamer-handle">{challenger.handle}</p>
-                          <h3>{challenger.presentation.displayName}</h3>
-                          <p className="muted">@{challenger.presentation.username}</p>
+                          <div className="gamer-card-handle-block">
+                            <span>GAMER TAG</span>
+                            <p className="gamer-handle">{challenger.handle}</p>
+                          </div>
+                          <div className="gamer-card-identity-block">
+                            <span>HOOMA ID</span>
+                            <h3>{challenger.presentation.displayName}</h3>
+                            <p className="muted">@{challenger.presentation.username}</p>
+                          </div>
+                          <div className="gamer-card-signal" aria-hidden="true">
+                            <i />
+                            <i />
+                            <i />
+                            <i />
+                            <i />
+                          </div>
                           <span className="gamer-card-profile-cue">OPEN PROFILE ›</span>
                         </div>
                       </a>
