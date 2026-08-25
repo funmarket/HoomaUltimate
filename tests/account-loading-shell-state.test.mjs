@@ -71,7 +71,7 @@ test("Telegram delivery never exposes the classic Web login or registration form
   );
   assert.match(
     router,
-    /const accountEntry = runtime\.initData \? \([\s\S]*<TelegramAccountActivationPage \/>[\s\S]*\) : \([\s\S]*<AuthApp \/>[\s\S]*\);/,
+    /const accountEntry = runtime\.initData \? <TelegramAccountActivationPage \/> : <AuthApp \/>;/,
   );
   assert.match(router, /<Route path="\/login" element=\{accountEntry\} \/>/);
   assert.match(router, /<Route path="\/register" element=\{accountEntry\} \/>/);
