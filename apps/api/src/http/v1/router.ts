@@ -33,7 +33,10 @@ export function createMemberV1Router(container: AppContainer, config: ApiConfig)
   router.use("/pitch", createPlaceCapabilityMemberRouter(container.pitchService));
   router.use("/communities", createCommunityMemberRouter(container.communityService));
   router.use("/teams", createTeamMemberRouter(container.teamService));
-  router.use("/events", createEventMemberRouter(container.eventService));
+  router.use(
+    "/events",
+    createEventMemberRouter(container.eventService, container.communityService),
+  );
   router.use("/gamers", createGamerMemberRouter(container.gamerService));
   router.use("/play", createPlayMemberRouter(container.playService));
   router.use("/whistles", createWhistleRouter(container.whistleService));
