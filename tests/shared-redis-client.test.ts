@@ -15,8 +15,7 @@ test("API Redis runtime reuses one client for the configured endpoint", () => {
 
     assert.throws(
       () => getSharedRedisClient("redis://127.0.0.1:6380/0"),
-      (error: unknown) =>
-        error instanceof RedisInfrastructureError && error.code === "CONFIG",
+      (error: unknown) => error instanceof RedisInfrastructureError && error.code === "CONFIG",
     );
   } finally {
     closeSharedRedisClient();
