@@ -199,9 +199,9 @@ export class PrismaPlaceRepository implements PlaceRepository {
 
   async reviewPlace(actorUserId: string, placeId: string, input: ModerationDecisionInput) {
     const status = input.decision === "APPROVE" ? "APPROVED" : "REJECTED";
-    await this.db.$transaction(async (tx) => {
-      await tx.place.update({
-        where: { id: placeId },
+    return this.db.$transaction(async (tx) => {
+      const result = await tx.place.updateMany({
+        where: { id: placeId, moderationStatus: "PENDING" },
         data: {
           moderationStatus: status,
           reviewedByUserId: actorUserId,
@@ -209,6 +209,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
           reviewNote: input.note ?? null,
         },
       });
+      if (!result.count) return false;
       await tx.auditLog.create({
         data: {
           actorUserId,
@@ -218,6 +219,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
           metadata: { note: input.note ?? null },
         },
       });
+      return true;
     });
   }
 
@@ -227,17 +229,22 @@ export class PrismaPlaceRepository implements PlaceRepository {
     input: ModerationDecisionInput,
   ) {
     const status = input.decision === "APPROVE" ? "APPROVED" : "REJECTED";
-    await this.db.$transaction(async (tx) => {
-      const claim = await tx.placeOwnershipClaim.update({
-        where: { id: claimId },
+    return this.db.$transaction(async (tx) => {
+      const claim = await tx.placeOwnershipClaim.findFirst({
+        where: { id: claimId, status: "PENDING" },
+        select: { placeId: true, claimantUserId: true },
+      });
+      if (!claim) return false;
+      const result = await tx.placeOwnershipClaim.updateMany({
+        where: { id: claimId, status: "PENDING" },
         data: {
           status,
           reviewedByUserId: actorUserId,
           reviewedAt: new Date(),
           reviewNote: input.note ?? null,
         },
-        select: { placeId: true, claimantUserId: true },
       });
+      if (!result.count) return false;
       if (status === "APPROVED") {
         await tx.placeOwnership.upsert({
           where: {
@@ -264,6 +271,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
           metadata: { placeId: claim.placeId, note: input.note ?? null },
         },
       });
+      return true;
     });
   }
 }
