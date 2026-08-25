@@ -55,6 +55,12 @@ export class PrismaDiscoveryRepository implements DiscoveryRepository {
                 { homeTeam: { community: { visibility: "PUBLIC" } } },
               ],
             },
+            {
+              OR: [
+                { awayTeam: { communityId: null } },
+                { awayTeam: { community: { visibility: "PUBLIC" } } },
+              ],
+            },
           ],
         },
         orderBy: [{ scheduledAt: "asc" }, { id: "asc" }],
