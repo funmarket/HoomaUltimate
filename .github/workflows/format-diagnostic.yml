@@ -15,23 +15,15 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Print Prettier diffs without modifying source
+      - name: Print formatted CSS without modifying source
         shell: bash
         run: |
           set -euo pipefail
-          files=(
-            apps/api/src/modules/whistle/application/whistle.repository.ts
-            packages/frontend/src/gamers/GamerWhistlePanel.tsx
-            packages/frontend/src/gamers/gamer-whistle-api.ts
-            packages/frontend/src/gamers/gamers.css
-            tests/gamer-challenger-card-presentation.test.mjs
-          )
-          rm -rf /tmp/hooma-format
-          for file in "${files[@]}"; do
-            mkdir -p "/tmp/hooma-format/$(dirname "$file")"
-            cp "$file" "/tmp/hooma-format/$file"
-          done
-          npx prettier --config .prettierrc.json --write "${files[@]/#//tmp/hooma-format/}"
-          for file in "${files[@]}"; do
-            diff -u "$file" "/tmp/hooma-format/$file" || true
-          done
+          file=packages/frontend/src/gamers/gamers.css
+          mkdir -p /tmp/hooma-format/packages/frontend/src/gamers
+          cp "$file" "/tmp/hooma-format/$file"
+          npx prettier --config .prettierrc.json --write "/tmp/hooma-format/$file"
+          echo "FORMATTED_CSS_BASE64_BEGIN"
+          base64 -w0 "/tmp/hooma-format/$file"
+          echo
+          echo "FORMATTED_CSS_BASE64_END"
