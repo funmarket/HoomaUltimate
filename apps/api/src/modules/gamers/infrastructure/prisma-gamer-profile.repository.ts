@@ -60,7 +60,11 @@ export class PrismaGamerProfileRepository implements GamerProfileRepository {
 
   async listOpenByGame(gameId: string): Promise<GamerChallengerSummary[]> {
     const rows = await this.db.gamerProfile.findMany({
-      where: { gameId, openToChallenge: true },
+      where: {
+        gameId,
+        openToChallenge: true,
+        user: { identities: { has: "GAMER" } },
+      },
       orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
       select: {
         id: true,
