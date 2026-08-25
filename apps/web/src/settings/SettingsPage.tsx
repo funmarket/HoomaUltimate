@@ -1,5 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
-import type { LoginMethodsResponse, TelegramLinkCodeResponse } from "@hooma/contracts/auth-linking";
+import type {
+  LoginMethodsResponse,
+  TelegramLinkCodeResponse,
+} from "@hooma/contracts/auth-linking";
 import {
   attachWebCredential,
   claimTelegramLink,
@@ -22,8 +25,16 @@ const WEB_CHOICES = [
     label: "Pitch black / gold",
     description: "Use HOOMA's primary dark football presentation.",
   },
-  { value: "light", label: "Light", description: "Use a bright high-contrast HOOMA presentation." },
-] as const satisfies readonly { value: AppearanceMode; label: string; description: string }[];
+  {
+    value: "light",
+    label: "Light",
+    description: "Use a bright high-contrast HOOMA presentation.",
+  },
+] as const satisfies readonly {
+  value: AppearanceMode;
+  label: string;
+  description: string;
+}[];
 
 export function SettingsPage() {
   const [mode, setMode] = useState<AppearanceMode>(() => getWebAppearanceMode());
@@ -143,7 +154,8 @@ export function SettingsPage() {
               Web login: {methods.web ? `Connected as ${methods.web.loginUsername}` : "Not added"}
             </p>
             <p>
-              Telegram: {methods.telegram ? methods.telegram.username || "Connected" : "Not connected"}
+              Telegram:{" "}
+              {methods.telegram ? methods.telegram.username || "Connected" : "Not connected"}
             </p>
 
             {!methods.web ? (
@@ -205,7 +217,13 @@ export function SettingsPage() {
             </label>
             <label>
               Link code
-              <input name="code" autoComplete="one-time-code" minLength={16} maxLength={16} required />
+              <input
+                name="code"
+                autoComplete="one-time-code"
+                minLength={16}
+                maxLength={16}
+                required
+              />
             </label>
             <button type="submit" disabled={busy}>
               {busy ? "Connecting…" : "Connect Telegram"}
