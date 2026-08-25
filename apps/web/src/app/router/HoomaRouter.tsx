@@ -23,7 +23,7 @@ import {
   TeamsPage,
 } from "@hooma/frontend";
 import { AccountProvider } from "../../account/AccountProvider";
-import { initializeTelegramRuntime } from "../../telegram/runtime";
+import { createTelegramRuntime } from "../../telegram/runtime";
 import { HoomaShell } from "../shell/HoomaShell";
 
 const HomePage = lazy(() =>
@@ -131,7 +131,7 @@ function apiBaseUrl(): string {
 }
 
 function HoomaRoutes() {
-  const runtime = useMemo(() => initializeTelegramRuntime(), []);
+  const runtime = useMemo(() => createTelegramRuntime(), []);
   const transport = useMemo(() => {
     const actionAccountHref = (returnTo: string) =>
       runtime.initData

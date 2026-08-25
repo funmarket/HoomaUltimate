@@ -9,9 +9,17 @@ function isWebAppearanceMode(value: string | null): value is WebAppearanceMode {
   return value === "dark" || value === "light" || value === "system";
 }
 
+function telegramColorScheme(): ResolvedWebAppearanceMode | null {
+  const value = document.documentElement.dataset.telegramColorScheme;
+  return value === "light" || value === "dark" ? value : null;
+}
+
 function resolveWebAppearanceMode(mode: WebAppearanceMode): ResolvedWebAppearanceMode {
   if (mode === "system") {
-    return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+    return (
+      telegramColorScheme() ??
+      (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
+    );
   }
   return mode;
 }
