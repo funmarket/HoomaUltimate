@@ -16,7 +16,7 @@ export function HoomaShell({
   const navigate = useNavigate();
   const location = useLocation();
   const { api } = useHoomaFrontend();
-  const { me, managedTeams, error, refresh } = useAccount();
+  const { me, managedTeams, loading, error, refresh } = useAccount();
   useTelegramBackButton(runtime);
 
   async function signOut() {
@@ -40,6 +40,7 @@ export function HoomaShell({
     <main className="foundation-shell">
       <HoomaAccountHeader
         user={user}
+        loading={loading}
         canManageTeams={managedTeams.length > 0}
         isPlatformAdmin={isPlatformAdmin}
         onHome={() => navigate("/")}
