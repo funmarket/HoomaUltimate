@@ -1,6 +1,7 @@
 import { AppError } from "../../../http/errors/app-error.js";
 import { gamerGameSlug, normalizeGamerGameName } from "../domain/gamer-game-normalization.js";
 import type { GamerChallengeRepository } from "./gamer-challenge.repository.js";
+import type { GamerEligibilityRepository } from "./gamer-eligibility.repository.js";
 import type { GamerGameRepository } from "./gamer-game.repository.js";
 import type { GamerProfileRepository } from "./gamer-profile.repository.js";
 
@@ -9,6 +10,7 @@ export class GamerService {
     private readonly games: GamerGameRepository,
     private readonly profiles: GamerProfileRepository,
     private readonly challenges: GamerChallengeRepository,
+    private readonly eligibility: GamerEligibilityRepository,
   ) {}
 
   listGames() {
@@ -72,6 +74,7 @@ export class GamerService {
     input: { handle: string; openToChallenge: boolean },
   ) {
     await this.requireActiveGame(gameId);
+    await this.requireGamerIdentity(userId);
     const handle = input.handle.normalize("NFKC").trim().replace(/\s+/g, " ");
     if (!handle) throw new AppError(400, "GAMER_HANDLE_INVALID", "Game handle is required");
     return this.profiles.upsert({
@@ -84,6 +87,7 @@ export class GamerService {
 
   async createChallenge(userId: string, gameId: string, challengedProfileId: string) {
     await this.requireActiveGame(gameId);
+    await this.requireGamerIdentity(userId);
     const challenger = await this.profiles.getByUserAndGame(userId, gameId);
     if (!challenger) {
       throw new AppError(
@@ -99,6 +103,13 @@ export class GamerService {
     }
     if (challenger.id === challenged.id) {
       throw new AppError(400, "GAMER_CHALLENGE_SELF_FORBIDDEN", "You cannot challenge yourself");
+    }
+    if (!(await this.eligibility.hasGamerIdentity(challenged.userId))) {
+      throw new AppError(
+        409,
+        "GAMER_CHALLENGE_TARGET_INELIGIBLE",
+        "This gamer is not currently participating in Gamers",
+      );
     }
     if (!challenged.openToChallenge) {
       throw new AppError(
@@ -133,6 +144,7 @@ export class GamerService {
   }
 
   async acceptChallenge(userId: string, gameId: string, challengeId: string) {
+    await this.requireGamerIdentity(userId);
     return this.transitionChallenge(userId, gameId, challengeId, "ACCEPTED");
   }
 
@@ -208,6 +220,16 @@ export class GamerService {
       throw new AppError(404, "GAMER_CHALLENGE_NOT_FOUND", "Challenge not found");
     }
     return access;
+  }
+
+  private async requireGamerIdentity(userId: string): Promise<void> {
+    if (!(await this.eligibility.hasGamerIdentity(userId))) {
+      throw new AppError(
+        409,
+        "GAMER_IDENTITY_REQUIRED",
+        "Select Gamer on your HOOMA profile before using Gamer participation actions",
+      );
+    }
   }
 
   private async requireActiveGame(gameId: string) {
