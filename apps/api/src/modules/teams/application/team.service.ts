@@ -241,21 +241,33 @@ export class TeamService {
   }
 
   async accept(userId: string, challengeId: string) {
-    const challenge = await this.pendingChallenge(challengeId);
-    await this.requireCapability(userId, challenge.challengedTeamId, "RESPOND_TO_CHALLENGE");
-    return this.repository.acceptChallenge(challengeId);
+    return this.transitionChallenge(userId, challengeId, "ACCEPTED");
   }
 
   async decline(userId: string, challengeId: string) {
-    const challenge = await this.pendingChallenge(challengeId);
-    await this.requireCapability(userId, challenge.challengedTeamId, "RESPOND_TO_CHALLENGE");
-    return this.repository.declineChallenge(challengeId);
+    return this.transitionChallenge(userId, challengeId, "DECLINED");
   }
 
   async cancel(userId: string, challengeId: string) {
-    const challenge = await this.pendingChallenge(challengeId);
+    const challenge = await this.requireChallenge(challengeId);
     await this.requireCapability(userId, challenge.challengerTeamId, "CREATE_CHALLENGE");
-    return this.repository.cancelChallenge(challengeId);
+    if (challenge.status === "CANCELLED") return challenge;
+    if (challenge.status !== "PENDING") {
+      throw new AppError(
+        409,
+        "TEAM_CHALLENGE_NOT_PENDING",
+        "Only a pending challenge can be cancelled",
+      );
+    }
+    const updated = await this.repository.cancelChallenge(challengeId);
+    if (!updated) {
+      throw new AppError(
+        409,
+        "TEAM_CHALLENGE_STATE_CHANGED",
+        "Challenge state changed; refresh and try again",
+      );
+    }
+    return updated;
   }
 
   async messages(userId: string, challengeId: string) {
@@ -324,8 +336,7 @@ export class TeamService {
   }
 
   private async requireChallengeCoordination(userId: string, challengeId: string): Promise<void> {
-    const challenge = await this.repository.getChallenge(challengeId);
-    if (!challenge) throw new AppError(404, "TEAM_CHALLENGE_NOT_FOUND", "Challenge not found");
+    const challenge = await this.requireChallenge(challengeId);
     const authorized =
       (await this.hasCapability(userId, challenge.challengerTeamId, "RESPOND_TO_CHALLENGE")) ||
       (await this.hasCapability(userId, challenge.challengedTeamId, "RESPOND_TO_CHALLENGE"));
@@ -339,18 +350,45 @@ export class TeamService {
     }
   }
 
+  private async transitionChallenge(
+    userId: string,
+    challengeId: string,
+    nextStatus: "ACCEPTED" | "DECLINED",
+  ) {
+    const challenge = await this.requireChallenge(challengeId);
+    await this.requireCapability(userId, challenge.challengedTeamId, "RESPOND_TO_CHALLENGE");
+    if (challenge.status === nextStatus) return challenge;
+    if (challenge.status !== "PENDING") {
+      throw new AppError(
+        409,
+        "TEAM_CHALLENGE_NOT_PENDING",
+        "Only a pending challenge can be answered",
+      );
+    }
+    const updated =
+      nextStatus === "ACCEPTED"
+        ? await this.repository.acceptChallenge(challengeId)
+        : await this.repository.declineChallenge(challengeId);
+    if (!updated) {
+      throw new AppError(
+        409,
+        "TEAM_CHALLENGE_STATE_CHANGED",
+        "Challenge state changed; refresh and try again",
+      );
+    }
+    return updated;
+  }
+
+  private async requireChallenge(challengeId: string) {
+    const challenge = await this.repository.getChallenge(challengeId);
+    if (!challenge) throw new AppError(404, "TEAM_CHALLENGE_NOT_FOUND", "Challenge not found");
+    return challenge;
+  }
+
   private async requireDirectCoach(userId: string, teamId: string): Promise<void> {
     const access = await this.repository.access(teamId, userId);
     if (!access || access.responsibility !== "COACH") {
       throw new AppError(403, "TEAM_COACH_REQUIRED", "Direct Team Coach responsibility required");
     }
-  }
-
-  private async pendingChallenge(challengeId: string) {
-    const challenge = await this.repository.getChallenge(challengeId);
-    if (!challenge || challenge.status !== "PENDING") {
-      throw new AppError(404, "TEAM_CHALLENGE_NOT_FOUND", "Pending challenge not found");
-    }
-    return challenge;
   }
 }
