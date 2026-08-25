@@ -12,19 +12,26 @@
 }
 
 .place-card,
-.place-business-form {
+.place-business-form,
+.place-business-form__heading,
+.place-business-field {
   display: grid;
   gap: 12px;
 }
 
 .place-card h2,
-.place-business-form h2 {
+.place-business-form h2,
+.place-business-form__heading p {
   margin: 0;
 }
 
 .place-card p,
 .place-business-form p {
   margin: 0;
+}
+
+.place-business-field > span {
+  font-weight: 700;
 }
 
 .place-business-form input,

@@ -60,50 +60,87 @@ export function PlaceCapabilityOnboarding({
   return (
     <div className="place-business-grid">
       <form className="panel place-business-form" onSubmit={(event) => void claim(event)}>
-        <p className="eyebrow">STEP 1</p>
-        <h2>Verify Place ownership</h2>
-        <select name="placeId" required defaultValue="">
-          <option value="" disabled>
-            Select approved Place
-          </option>
-          {places.map((place) => (
-            <option key={place.id} value={place.id}>
-              {place.name} · {locationLabel(place)}
+        <div className="place-business-form__heading">
+          <p className="eyebrow">STEP 1</p>
+          <h2>Verify Place ownership</h2>
+          <p className="muted">Choose the approved Place you own or manage.</p>
+        </div>
+
+        <label className="place-business-field">
+          <span>Approved Place</span>
+          <select name="placeId" required defaultValue="">
+            <option value="" disabled>
+              Select approved Place
             </option>
-          ))}
-        </select>
-        <textarea
-          name="evidence"
-          placeholder="Ownership or management evidence"
-          minLength={10}
-          required
-        />
+            {places.map((place) => (
+              <option key={place.id} value={place.id}>
+                {place.name} · {locationLabel(place)}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="place-business-field">
+          <span>Ownership or management evidence</span>
+          <textarea
+            name="evidence"
+            placeholder="Describe how you own or manage this Place"
+            minLength={10}
+            required
+          />
+        </label>
+
         <button type="submit">Submit ownership claim</button>
       </form>
 
       <form className="panel place-business-form" onSubmit={(event) => void apply(event)}>
-        <p className="eyebrow">STEP 2</p>
-        <h2>Apply for {title}</h2>
-        <p className="muted">The selected Place must already be approved and verified as yours.</p>
-        <select name="placeId" required defaultValue="">
-          <option value="" disabled>
-            Select approved Place
-          </option>
-          {places.map((place) => (
-            <option key={place.id} value={place.id}>
-              {place.name} · {locationLabel(place)}
+        <div className="place-business-form__heading">
+          <p className="eyebrow">STEP 2</p>
+          <h2>Apply for {title}</h2>
+          <p className="muted">
+            The selected Place must already be approved and verified as yours.
+          </p>
+        </div>
+
+        <label className="place-business-field">
+          <span>Approved Place</span>
+          <select name="placeId" required defaultValue="">
+            <option value="" disabled>
+              Select approved Place
             </option>
-          ))}
-        </select>
-        <textarea
-          name="summary"
-          placeholder={`${title} offering, facilities, services and business details`}
-          minLength={10}
-          required
-        />
-        <input name="contactName" placeholder="Business contact name" required />
-        <input name="contactPhone" placeholder="Phone" />
-        <input name="contactEmail" type="email" placeholder="Email" />
+            {places.map((place) => (
+              <option key={place.id} value={place.id}>
+                {place.name} · {locationLabel(place)}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="place-business-field">
+          <span>{title} offering</span>
+          <textarea
+            name="summary"
+            placeholder={`${title} offering, facilities, services and business details`}
+            minLength={10}
+            required
+          />
+        </label>
+
+        <label className="place-business-field">
+          <span>Business contact name</span>
+          <input name="contactName" placeholder="Name" required />
+        </label>
+
+        <label className="place-business-field">
+          <span>Phone</span>
+          <input name="contactPhone" placeholder="Phone" inputMode="tel" />
+        </label>
+
+        <label className="place-business-field">
+          <span>Email</span>
+          <input name="contactEmail" type="email" placeholder="Email" autoComplete="email" />
+        </label>
+
         <button type="submit">Submit {title} application</button>
       </form>
 
