@@ -4,6 +4,7 @@ import "./teams/team-offers.css";
 import "./places/places.css";
 
 export * from "./api";
+export * from "./auth-login-methods";
 export * from "./context";
 export * from "./communities/HoomaPage";
 export * from "./communities/HoomaEditPage";
