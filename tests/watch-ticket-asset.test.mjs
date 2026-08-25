@@ -13,7 +13,7 @@ async function readGeneratedPart(index) {
     new URL(`../packages/ui/src/brand/generated/watch-ticket-part-${suffix}.ts`, import.meta.url),
     "utf8",
   );
-  const match = source.match(/= "([A-Za-z0-9+/=]+)";/);
+  const match = source.match(/=\s*"([A-Za-z0-9+/=]+)";/);
   assert.ok(match, `Watch ticket asset chunk ${suffix} must contain one encoded string`);
   return match[1];
 }
