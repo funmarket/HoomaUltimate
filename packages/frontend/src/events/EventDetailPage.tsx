@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useHoomaFrontend } from "../context";
 import { HoomaApiError } from "../http";
+import { EventWhistleBoard } from "../whistle/HoomaWhistleBoard";
 import type { EventRsvpState, PublicEvent } from "./api";
 import { useEventApi } from "./useEventApi";
 
@@ -215,30 +216,15 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
             Checked in
           </div>
         ) : rsvp === "WAITLISTED" ? (
-          <button
-            className="play-event-primary-action"
-            type="button"
-            disabled={actionPending}
-            onClick={() => void leave()}
-          >
+          <button className="play-event-primary-action" type="button" disabled={actionPending} onClick={() => void leave()}>
             {actionPending ? "Updating…" : "Leave waitlist"}
           </button>
         ) : rsvp === "CONFIRMED" ? (
-          <button
-            className="play-event-primary-action"
-            type="button"
-            disabled={actionPending}
-            onClick={() => void leave()}
-          >
+          <button className="play-event-primary-action" type="button" disabled={actionPending} onClick={() => void leave()}>
             {actionPending ? "Updating…" : "Cancel RSVP"}
           </button>
         ) : eventOpen ? (
-          <button
-            className="play-event-primary-action"
-            type="button"
-            disabled={actionPending || participationLoading}
-            onClick={() => void join()}
-          >
+          <button className="play-event-primary-action" type="button" disabled={actionPending || participationLoading} onClick={() => void join()}>
             {actionPending ? "Joining…" : "Join in one tap"}
           </button>
         ) : null}
@@ -246,6 +232,8 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
         {status ? <p className="success">{status}</p> : null}
         {error ? <p className="error">{error}</p> : null}
       </section>
+
+      <EventWhistleBoard eventId={eventId} />
 
       <section className="play-matchday-hub" aria-labelledby="play-matchday-title">
         <div>
