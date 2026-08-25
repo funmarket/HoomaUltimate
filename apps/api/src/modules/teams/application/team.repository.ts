@@ -5,7 +5,6 @@ import type {
   TeamLineupInput,
   TeamUpdateInput,
 } from "@hooma/contracts";
-import type { TeamGameScheduleInput } from "@hooma/contracts/team-games";
 
 export interface TeamListInput {
   limit: number;
@@ -27,13 +26,6 @@ export interface TeamChallengeRecord {
   readonly challengerTeamId: string;
   readonly challengedTeamId: string;
   readonly status: "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED";
-}
-
-export interface TeamGameRecord {
-  readonly id: string;
-  readonly homeTeamId: string;
-  readonly awayTeamId: string;
-  readonly status: "SCHEDULING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
 }
 
 export interface TeamRepository {
@@ -68,6 +60,4 @@ export interface TeamRepository {
   createMessage(challengeId: string, userId: string, body: string): Promise<unknown>;
   listGames(userId: string, limit: number): Promise<unknown>;
   getGame(gameId: string, userId: string): Promise<unknown | null>;
-  getGameRecord(gameId: string): Promise<TeamGameRecord | null>;
-  scheduleGame(gameId: string, input: TeamGameScheduleInput): Promise<unknown>;
 }
