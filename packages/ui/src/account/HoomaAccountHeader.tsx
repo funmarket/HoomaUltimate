@@ -204,100 +204,111 @@ export function HoomaAccountHeader({
     action();
   }
 
-  if (loading) {
-    return (
-      <header className="hooma-account-header" aria-busy="true">
-        <button type="button" className="hooma-account-header__brand" onClick={onHome}>
-          <BrandMark />
-        </button>
-        <div className="hooma-account-header__actions">
-          {notificationControl}
-          <span className="hooma-account-header__avatar hooma-account-header__avatar--loading" />
-        </div>
-      </header>
-    );
-  }
+  const accountLabel = loading
+    ? "Loading account"
+    : user
+      ? "Profile and account"
+      : "Sign in or create account";
 
   return (
-    <header className="hooma-account-header">
-      <button type="button" className="hooma-account-header__brand" onClick={onHome}>
-        <BrandMark />
+    <header className="hooma-topbar">
+      <button type="button" className="hooma-wordmark" onClick={onHome} aria-label="HOOMA home">
+        <BrandMark className="hooma-wordmark__image" />
       </button>
-      <div className="hooma-account-header__actions">
+      <div className="hooma-topbar__actions">
         {notificationControl}
-        <div className="hooma-account-header__account" ref={anchorRef}>
+        <div className="hooma-account-anchor" ref={anchorRef}>
           <button
             type="button"
-            className="hooma-account-header__profile"
-            aria-haspopup="menu"
-            aria-expanded={open}
-            onClick={() => setOpen((current) => !current)}
+            className="hooma-profile-trigger"
+            aria-label={accountLabel}
+            aria-busy={loading || undefined}
+            aria-haspopup={!loading && user ? "menu" : undefined}
+            aria-expanded={!loading && user ? open : undefined}
+            disabled={loading}
+            onClick={() => (user ? setOpen((value) => !value) : onGuestProfile())}
           >
-            {user?.photoUrl ? (
-              <img src={user.photoUrl} alt="" className="hooma-account-header__avatar" />
+            {loading ? (
+              <span className="hooma-profile-trigger__loading" aria-hidden="true" />
+            ) : user?.photoUrl ? (
+              <img src={user.photoUrl} alt="" />
             ) : (
-              <span className="hooma-account-header__avatar" aria-hidden="true">
-                {user ? user.displayName.slice(0, 1).toUpperCase() : <UserIcon />}
-              </span>
+              <UserIcon />
             )}
-            <span className="hooma-account-header__profile-copy">
-              <strong>{user?.displayName ?? "Profile"}</strong>
-              <small>{user ? `@${user.username}` : "Sign in or create account"}</small>
-            </span>
           </button>
         </div>
+      </div>
+
+      {user ? (
         <section
           ref={menuRef}
-          popover="auto"
           className="hooma-account-menu"
+          role="menu"
+          aria-label="HOOMA account"
+          popover="auto"
           style={menuStyle}
-          aria-label="Account menu"
         >
-          <div className="hooma-account-menu__identity">
-            <strong>{user?.displayName ?? "HOOMA guest"}</strong>
-            <span>{user ? `@${user.username}` : "Browse freely. Sign in when you act."}</span>
-          </div>
+          <header className="hooma-account-menu__identity">
+            {user.photoUrl ? (
+              <img src={user.photoUrl} alt="" />
+            ) : (
+              <span className="hooma-account-menu__avatar-fallback">
+                {user.displayName.slice(0, 1).toUpperCase()}
+              </span>
+            )}
+            <span>
+              <strong>{user.displayName}</strong>
+              <small>@{user.username}</small>
+            </span>
+          </header>
+
           <div className="hooma-account-menu__rows">
             <MenuRow
               icon={<UserIcon />}
-              title={user ? "My profile" : "Profile"}
-              subtitle={user ? "Identity, teams and activity" : "Sign in or create your account"}
-              onClick={() => navigate(user ? onProfile : onGuestProfile)}
+              title="My HOOMA Profile"
+              subtitle="View your HOOMA identity"
+              onClick={() => navigate(onProfile)}
             />
+
             {canManageTeams && onCoach ? (
               <MenuRow
                 icon={<WhistleIcon />}
-                title="Control Room"
-                subtitle="Team management and responsibilities"
+                title="Coach Control Room"
+                subtitle="Manage your Teams"
                 onClick={() => navigate(onCoach)}
               />
             ) : null}
-            {isPlatformAdmin && onAdmin ? (
-              <MenuRow
-                icon={<ShieldIcon />}
-                title="App Admin"
-                subtitle="Platform approvals and administration"
-                onClick={() => navigate(onAdmin)}
-              />
-            ) : null}
+
             <MenuRow
               icon={<SettingsIcon />}
               title="Settings"
               subtitle="Appearance and preferences"
               onClick={() => navigate(onSettings)}
             />
-            {user && onSignOut ? (
-              <button
-                type="button"
-                className="hooma-account-menu__sign-out"
-                onClick={() => navigate(onSignOut)}
-              >
-                Sign out
-              </button>
-            ) : null}
           </div>
+
+          {isPlatformAdmin && onAdmin ? (
+            <div className="hooma-account-menu__platform">
+              <MenuRow
+                icon={<ShieldIcon />}
+                title="App Admin"
+                subtitle="HOOMA platform control"
+                onClick={() => navigate(onAdmin)}
+              />
+            </div>
+          ) : null}
+
+          {onSignOut ? (
+            <button
+              type="button"
+              className="hooma-account-menu__signout"
+              onClick={() => navigate(onSignOut)}
+            >
+              Sign out
+            </button>
+          ) : null}
         </section>
-      </div>
+      ) : null}
     </header>
   );
 }
