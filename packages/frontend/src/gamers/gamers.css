@@ -659,8 +659,7 @@
   padding: 12px 14px;
   border: 1px solid rgba(49, 215, 255, 0.56);
   border-radius: 3px 10px 3px 10px;
-  background:
-    linear-gradient(135deg, rgba(49, 215, 255, 0.08), rgba(178, 81, 255, 0.06)), #060908;
+  background: linear-gradient(135deg, rgba(49, 215, 255, 0.08), rgba(178, 81, 255, 0.06)), #060908;
   color: var(--gamers-cyan);
   font: inherit;
   font-size: 11px;
