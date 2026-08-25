@@ -9,6 +9,7 @@ export interface HoomaAccountUser {
 
 export interface HoomaAccountHeaderProps {
   readonly user: HoomaAccountUser | null;
+  readonly loading: boolean;
   readonly canManageTeams: boolean;
   readonly isPlatformAdmin: boolean;
   readonly onHome: () => void;
@@ -94,6 +95,7 @@ function MenuRow({
 
 export function HoomaAccountHeader({
   user,
+  loading,
   canManageTeams,
   isPlatformAdmin,
   onHome,
@@ -124,10 +126,20 @@ export function HoomaAccountHeader({
     };
   }, [open]);
 
+  useEffect(() => {
+    if (loading) setOpen(false);
+  }, [loading]);
+
   function navigate(action: () => void) {
     setOpen(false);
     action();
   }
+
+  const accountLabel = loading
+    ? "Loading account"
+    : user
+      ? "Profile and account"
+      : "Sign in or create account";
 
   return (
     <header className="hooma-topbar">
@@ -140,15 +152,23 @@ export function HoomaAccountHeader({
           <button
             type="button"
             className="hooma-profile-trigger"
-            aria-label={user ? "Profile and account" : "Sign in or create account"}
-            aria-haspopup={user ? "menu" : undefined}
-            aria-expanded={user ? open : undefined}
+            aria-label={accountLabel}
+            aria-busy={loading || undefined}
+            aria-haspopup={!loading && user ? "menu" : undefined}
+            aria-expanded={!loading && user ? open : undefined}
+            disabled={loading}
             onClick={() => (user ? setOpen((value) => !value) : onGuestProfile())}
           >
-            {user?.photoUrl ? <img src={user.photoUrl} alt="" /> : <UserIcon />}
+            {loading ? (
+              <span className="hooma-profile-trigger__loading" aria-hidden="true" />
+            ) : user?.photoUrl ? (
+              <img src={user.photoUrl} alt="" />
+            ) : (
+              <UserIcon />
+            )}
           </button>
 
-          {user && open ? (
+          {!loading && user && open ? (
             <section className="hooma-account-menu" role="menu" aria-label="HOOMA account">
               <header className="hooma-account-menu__identity">
                 {user.photoUrl ? (
