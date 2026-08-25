@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ProfileIdentity } from "@hooma/contracts/profile";
-import { createProfileApi, useHoomaFrontend, type PublicProfile } from "@hooma/frontend";
+import {
+  createProfileApi,
+  useHoomaFrontend,
+  type CanonicalPublicProfile,
+} from "@hooma/frontend";
 
 export function PublicProfilePage({ username }: { username: string }) {
   const { transport } = useHoomaFrontend();
   const profileApi = useMemo(() => createProfileApi(transport), [transport]);
-  const [profile, setProfile] = useState<PublicProfile | null>(null);
+  const [profile, setProfile] = useState<CanonicalPublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const normalizedUsername = useMemo(() => username.trim().toLowerCase(), [username]);
