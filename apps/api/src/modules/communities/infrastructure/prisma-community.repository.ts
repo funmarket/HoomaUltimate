@@ -421,7 +421,9 @@ async function reactivateMembership(
     select: { leftAt: true },
   });
   if (!existing) {
-    await tx.communityMembership.create({ data: { communityId, userId, role: "MEMBER", joinedAt } });
+    await tx.communityMembership.create({
+      data: { communityId, userId, role: "MEMBER", joinedAt },
+    });
     return;
   }
   if (existing.leftAt) {
