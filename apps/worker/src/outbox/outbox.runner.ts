@@ -1,5 +1,5 @@
 import type { Prisma } from "@hooma/database";
-import { type ClaimedOutboxEvent, OutboxRepository } from "./outbox.repository.js";
+import type { ClaimedOutboxEvent, OutboxRepository } from "./outbox.repository.js";
 
 const DEFAULT_BATCH_SIZE = 25;
 const DEFAULT_LEASE_MS = 120_000;
