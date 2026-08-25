@@ -23,9 +23,7 @@ const config = loadApiConfig({
 const db = getDatabaseClient();
 
 function encodeRedis(parts: readonly string[]): string {
-  const payload = parts
-    .map((part) => `$${Buffer.byteLength(part)}\r\n${part}\r\n`)
-    .join("");
+  const payload = parts.map((part) => `$${Buffer.byteLength(part)}\r\n${part}\r\n`).join("");
   return `*${parts.length}\r\n${payload}`;
 }
 
@@ -319,10 +317,9 @@ test("Event Whistle reuses canonical Event access and the global Whistle quota",
       "CONFIRMED",
     );
 
-    const disabledTeamContext = await fetch(
-      `${base}${whistlePath("TEAM", "not-enabled")}`,
-      { headers: headers(founder.cookie) },
-    );
+    const disabledTeamContext = await fetch(`${base}${whistlePath("TEAM", "not-enabled")}`, {
+      headers: headers(founder.cookie),
+    });
     assert.equal(disabledTeamContext.status, 409);
   } finally {
     await new Promise<void>((resolve, reject) =>
