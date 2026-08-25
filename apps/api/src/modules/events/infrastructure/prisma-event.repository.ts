@@ -15,6 +15,7 @@ export class PrismaEventRepository implements EventRepository {
       where: {
         status: "PUBLISHED",
         startsAt: { gte: input.from },
+        community: { visibility: "PUBLIC" },
         ...(input.type ? { type: input.type } : {}),
         ...(input.communityId ? { communityId: input.communityId } : {}),
       },
