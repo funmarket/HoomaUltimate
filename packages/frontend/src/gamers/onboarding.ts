@@ -1,5 +1,10 @@
 import type { ProfileResponse, ProfileUpdateInput } from "@hooma/contracts/profile";
-import type { GamerGame, GamerGameList, GamerProfile, GamerProfileInput } from "@hooma/contracts/gamers";
+import type {
+  GamerGame,
+  GamerGameList,
+  GamerProfile,
+  GamerProfileInput,
+} from "@hooma/contracts/gamers";
 import { request, type HoomaTransport } from "../http";
 
 export function createGamerOnboardingApi(transport: HoomaTransport) {
