@@ -60,6 +60,10 @@ export interface CommunityJoinRequestForFounderRecord extends CommunityJoinReque
   } | null;
 }
 
+export type CommunityPrivateJoinOutcome =
+  | { kind: "MEMBERSHIP"; role: CommunityRole }
+  | { kind: "REQUEST"; request: CommunityJoinRequestRecord };
+
 export interface CommunityRepository {
   listPublic(limit: number, cursor?: string): Promise<unknown>;
   getPublic(id: string): Promise<unknown | null>;
@@ -70,7 +74,7 @@ export interface CommunityRepository {
   archive(communityId: string): Promise<void>;
   managerRole(communityId: string, userId: string): Promise<CommunityRole | null>;
   joinOpen(communityId: string, userId: string): Promise<{ role: CommunityRole } | null>;
-  requestJoin(communityId: string, userId: string): Promise<CommunityJoinRequestRecord | null>;
+  requestJoin(communityId: string, userId: string): Promise<CommunityPrivateJoinOutcome | null>;
   getJoinRequest(
     communityId: string,
     userId: string,
