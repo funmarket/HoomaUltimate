@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
+import type { GamerGame } from "@hooma/contracts/gamers";
 import { useHoomaFrontend } from "@hooma/frontend";
+import { createGamerSignupOnboardingApi } from "@hooma/frontend/gamers-signup-onboarding";
 import { useAccount } from "../account/AccountProvider";
 
 function safeReturnTo(): string {
@@ -24,11 +26,16 @@ export function AuthApp() {
     if (!loading && me && returnTo !== "/") window.location.replace(returnTo);
   }, [loading, me, returnTo]);
 
-  async function completeAuthentication() {
+  async function completeAuthentication(nextPath?: string) {
     setError("");
     if (await refresh()) {
-      window.location.replace(returnTo);
+      window.location.replace(returnTo !== "/" ? returnTo : (nextPath ?? "/"));
     }
+  }
+
+  async function completeWithWarning(message: string) {
+    setError(message);
+    await refresh();
   }
 
   async function signOut() {
@@ -82,7 +89,11 @@ export function AuthApp() {
       {mode === "login" ? (
         <LoginForm onSuccess={completeAuthentication} onError={setError} />
       ) : (
-        <RegisterForm onSuccess={completeAuthentication} onError={setError} />
+        <RegisterForm
+          onSuccess={completeAuthentication}
+          onCreatedWithWarning={completeWithWarning}
+          onError={setError}
+        />
       )}
       {visibleError ? <p className="error">{visibleError}</p> : null}
     </section>
@@ -101,7 +112,7 @@ function LoginForm({ onSuccess, onError }: FormCallbacks) {
             loginUsername: String(data.get("loginUsername")),
             password: String(data.get("password")),
           })
-          .then(onSuccess)
+          .then(() => onSuccess())
           .catch((error: Error) => onError(error.message));
       }}
     >
@@ -118,22 +129,114 @@ function LoginForm({ onSuccess, onError }: FormCallbacks) {
   );
 }
 
-function RegisterForm({ onSuccess, onError }: FormCallbacks) {
-  const { api } = useHoomaFrontend();
-  function submit(event: FormEvent<HTMLFormElement>) {
+function RegisterForm({ onSuccess, onCreatedWithWarning, onError }: RegisterFormCallbacks) {
+  const { api, transport } = useHoomaFrontend();
+  const gamerOnboarding = useMemo(() => createGamerSignupOnboardingApi(transport), [transport]);
+  const [games, setGames] = useState<GamerGame[]>([]);
+  const [gamesLoading, setGamesLoading] = useState(true);
+  const [gamesError, setGamesError] = useState("");
+  const [gamerSignup, setGamerSignup] = useState(false);
+  const [selectedGameIds, setSelectedGameIds] = useState<string[]>([]);
+  const [handles, setHandles] = useState<Record<string, string>>({});
+  const [openToChallenge, setOpenToChallenge] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setGamesLoading(true);
+    setGamesError("");
+    void gamerOnboarding
+      .games()
+      .then((response) => {
+        if (active) setGames(response.items);
+      })
+      .catch((reason) => {
+        if (active) {
+          setGamesError(reason instanceof Error ? reason.message : "Unable to load Gamer games");
+        }
+      })
+      .finally(() => {
+        if (active) setGamesLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [gamerOnboarding]);
+
+  function toggleGame(gameId: string, selected: boolean) {
+    setSelectedGameIds((current) =>
+      selected ? [...new Set([...current, gameId])] : current.filter((id) => id !== gameId),
+    );
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    onError("");
+
+    const selectedGames = games.filter((game) => selectedGameIds.includes(game.id));
+    if (gamerSignup && selectedGames.length === 0) {
+      onError("Choose at least one game to finish Gamer setup during signup.");
+      return;
+    }
+    const missingHandle = selectedGames.find((game) => !handles[game.id]?.trim());
+    if (gamerSignup && missingHandle) {
+      onError(`Enter your ${missingHandle.name} handle.`);
+      return;
+    }
+
     const data = new FormData(event.currentTarget);
-    void api.identity
-      .register({
+    setSubmitting(true);
+    let accountCreated = false;
+    try {
+      await api.identity.register({
         loginUsername: String(data.get("loginUsername")),
         password: String(data.get("password")),
         displayUsername: String(data.get("displayUsername")),
         displayName: String(data.get("displayName")) || null,
         email: String(data.get("email")) || null,
-      })
-      .then(onSuccess)
-      .catch((error: Error) => onError(error.message));
+      });
+      accountCreated = true;
+
+      if (gamerSignup) {
+        const profile = await gamerOnboarding.profile();
+        await gamerOnboarding.updateProfile({
+          username: profile.presentation.username,
+          displayName: profile.presentation.displayName,
+          photoUrl: profile.presentation.photoUrl,
+          bio: profile.presentation.bio,
+          identities: [...new Set([...profile.identities, "GAMER" as const])],
+          player: profile.player
+            ? {
+                skillLevel: profile.player.skillLevel,
+                preferredPositions: profile.player.preferredPositions,
+              }
+            : null,
+        });
+        await Promise.all(
+          selectedGames.map((game) =>
+            gamerOnboarding.saveGameProfile(game, {
+              handle: handles[game.id]!.trim(),
+              openToChallenge,
+            }),
+          ),
+        );
+      }
+
+      await onSuccess(gamerSignup ? "/gamers" : undefined);
+    } catch (reason) {
+      const message = reason instanceof Error ? reason.message : "Unable to create account";
+      if (accountCreated) {
+        await onCreatedWithWarning(
+          `Your HOOMA account was created, but Gamer setup did not finish: ${message}`,
+        );
+      } else {
+        onError(message);
+      }
+    } finally {
+      setSubmitting(false);
+    }
   }
+
   return (
     <form onSubmit={submit}>
       <label>
@@ -162,12 +265,78 @@ function RegisterForm({ onSuccess, onError }: FormCallbacks) {
         Email (optional)
         <input name="email" type="email" autoComplete="email" />
       </label>
-      <button type="submit">Create account</button>
+
+      <label>
+        <input
+          type="checkbox"
+          checked={gamerSignup}
+          onChange={(event) => setGamerSignup(event.target.checked)}
+        />
+        I’m a Gamer
+      </label>
+      {gamerSignup ? (
+        <fieldset>
+          <legend>Games I play</legend>
+          <p>
+            Choose at least one game and enter the handle you actually use there. HOOMA will create
+            those game profiles now so you do not have to repeat setup in Gamers.
+          </p>
+          {gamesLoading ? <p className="status">Loading games…</p> : null}
+          {gamesError ? <p className="error">{gamesError}</p> : null}
+          {!gamesLoading && !gamesError && games.length === 0 ? (
+            <p>No Gamer games are available yet.</p>
+          ) : null}
+          {games.map((game) => {
+            const selected = selectedGameIds.includes(game.id);
+            return (
+              <div key={game.id}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={selected}
+                    onChange={(event) => toggleGame(game.id, event.target.checked)}
+                  />
+                  {game.name}
+                </label>
+                {selected ? (
+                  <label>
+                    {game.name} handle
+                    <input
+                      value={handles[game.id] ?? ""}
+                      onChange={(event) =>
+                        setHandles((current) => ({ ...current, [game.id]: event.target.value }))
+                      }
+                      maxLength={100}
+                      required
+                    />
+                  </label>
+                ) : null}
+              </div>
+            );
+          })}
+          <label>
+            <input
+              type="checkbox"
+              checked={openToChallenge}
+              onChange={(event) => setOpenToChallenge(event.target.checked)}
+            />
+            Show my selected game profiles in Challengers
+          </label>
+        </fieldset>
+      ) : null}
+
+      <button type="submit" disabled={submitting || (gamerSignup && gamesLoading)}>
+        {submitting ? "Creating account…" : "Create account"}
+      </button>
     </form>
   );
 }
 
 type FormCallbacks = {
-  onSuccess: () => void | Promise<void>;
+  onSuccess: (nextPath?: string) => void | Promise<void>;
   onError: (message: string) => void;
+};
+
+type RegisterFormCallbacks = FormCallbacks & {
+  onCreatedWithWarning: (message: string) => void | Promise<void>;
 };
