@@ -18,12 +18,25 @@ test("locked bottom navigation and eight-card Home gateway cannot drift", async 
     ["HOOMA", "Teams", "Ultras", "Gamers", "Places", "Requests", "Ride", "FundMe"],
   );
   assert.deepEqual(
-    [...gatewaySource.matchAll(/href: "([^"]+)"/g)].map((match) => match[1]),
-    ["/hooma", "/teams", "/ultras", "/gamers", "/places", "/requests", "/rides", "/fundme"],
+    [...gatewaySource.matchAll(/subtitle: "([^"]+)"/g)].map((match) => match[1]),
+    [
+      "Community",
+      "Manage squads",
+      "Coming soon",
+      "Find opponents",
+      "Watch + Pitch",
+      "Coming soon",
+      "Coming soon",
+      "Coming soon",
+    ],
+  );
+  assert.deepEqual(
+    [...gatewaySource.matchAll(/href: ("[^"]+"|null)/g)].map((match) => match[1]),
+    ['"/hooma"', '"/teams"', "null", '"/gamers"', '"/places"', "null", "null", "null"],
   );
 });
 
-test("Home gateway cards use shared approved artwork and readable typography on Web and Telegram", async () => {
+test("Home gateway cards expose visible labels and disable unavailable destinations", async () => {
   const [grid, card, webHome, telegramPackage, uiIndex] = await Promise.all([
     readFile("packages/ui/src/home/HomeGatewayGrid.tsx", "utf8"),
     readFile("packages/ui/src/home/HomeGatewayCard.tsx", "utf8"),
@@ -32,7 +45,15 @@ test("Home gateway cards use shared approved artwork and readable typography on 
     readFile("packages/ui/src/index.tsx", "utf8"),
   ]);
   assert.match(grid, /grid-template-columns: repeat\(4/);
+  assert.match(grid, />Quick actions<\/p>/);
+  assert.match(grid, /home-gateway-card__title/);
+  assert.match(grid, /home-gateway-card__subtitle/);
+  assert.match(grid, /object-fit: cover/);
   assert.match(uiIndex, /home-gateway-title/);
+  assert.match(card, /home-gateway-card__title/);
+  assert.match(card, /home-gateway-card__subtitle/);
+  assert.match(card, /item\.availability === "coming-soon"/);
+  assert.match(card, /disabled/);
   assert.match(card, /href=\{item\.href\}/);
   assert.match(card, /src=\{item\.artwork\}/);
   assert.match(webHome, /HomeGateway/);
