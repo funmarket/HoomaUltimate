@@ -2,18 +2,57 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { AppError } from "../apps/api/src/http/errors/app-error.js";
 import type {
+  CommunityJoinRequestRecord,
   CommunityRepository,
   CommunityRole,
 } from "../apps/api/src/modules/communities/application/community.repository.js";
 import { CommunityService } from "../apps/api/src/modules/communities/application/community.service.js";
 
-function repositoryStub(roles: Record<string, CommunityRole | null> = {}): CommunityRepository {
+function pendingRequest(userId = "user-1"): CommunityJoinRequestRecord {
+  return {
+    id: `request-${userId}`,
+    communityId: "community-1",
+    userId,
+    status: "PENDING",
+    requestedAt: new Date("2026-08-25T12:00:00.000Z"),
+    resolvedAt: null,
+  };
+}
+
+function repositoryStub(
+  roles: Record<string, CommunityRole | null> = {},
+  joinPolicy: "OPEN" | "APPROVAL_REQUIRED" = "OPEN",
+): CommunityRepository {
   return {
     listPublic: async () => [],
     getPublic: async () => ({ id: "community-1" }),
     create: async () => ({ id: "community-1" }),
+    lifecycle: async () => ({
+      createdByUserId: "founder",
+      status: "ACTIVE",
+      visibility: joinPolicy === "OPEN" ? "PUBLIC" : "PRIVATE",
+      joinPolicy,
+      hasActiveTeam: false,
+      hasPublishedEvent: false,
+    }),
+    membershipPolicy: async () => ({
+      status: "ACTIVE",
+      visibility: joinPolicy === "OPEN" ? "PUBLIC" : "PRIVATE",
+      joinPolicy,
+    }),
+    update: async () => ({ id: "community-1" }),
+    archive: async () => {},
     managerRole: async (_communityId, userId) => roles[userId] ?? null,
-    join: async () => ({ role: "MEMBER" }),
+    joinOpen: async () => ({ role: "MEMBER" }),
+    requestJoin: async (_communityId, userId) => ({
+      kind: "REQUEST",
+      request: pendingRequest(userId),
+    }),
+    getJoinRequest: async () => null,
+    listJoinRequests: async () => [],
+    resolveJoinRequest: async () => true,
+    cancelJoinRequest: async () => true,
+    addMemberByUsername: async () => ({ userId: "member", username: "member" }),
     leave: async () => {},
     listMembers: async () => [],
     removeMember: async () => {},
@@ -22,9 +61,70 @@ function repositoryStub(roles: Record<string, CommunityRole | null> = {}): Commu
   };
 }
 
-test("CommunityService lets an authenticated outsider join as MEMBER", async () => {
+test("CommunityService keeps PUBLIC HOOMA join immediate", async () => {
   const service = new CommunityService(repositoryStub());
-  assert.deepEqual(await service.join("user-1", "community-1"), { membership: { role: "MEMBER" } });
+  assert.deepEqual(await service.join("user-1", "community-1"), {
+    status: "JOINED",
+    membership: { role: "MEMBER" },
+  });
+});
+
+test("CommunityService creates a pending request for PRIVATE HOOMA", async () => {
+  const service = new CommunityService(repositoryStub({}, "APPROVAL_REQUIRED"));
+  assert.deepEqual(await service.join("user-1", "community-1"), {
+    status: "PENDING",
+    request: {
+      id: "request-user-1",
+      communityId: "community-1",
+      userId: "user-1",
+      status: "PENDING",
+      requestedAt: "2026-08-25T12:00:00.000Z",
+      resolvedAt: null,
+    },
+  });
+});
+
+test("CommunityService does not create a second request if membership wins the private join race", async () => {
+  const repository = repositoryStub({}, "APPROVAL_REQUIRED");
+  repository.requestJoin = async () => ({ kind: "MEMBERSHIP", role: "MEMBER" });
+  const service = new CommunityService(repository);
+  assert.deepEqual(await service.join("user-1", "community-1"), {
+    status: "JOINED",
+    membership: { role: "MEMBER" },
+  });
+});
+
+test("CommunityService derives join policy from visibility on create and update", async () => {
+  const repository = repositoryStub({ founder: "FOUNDER" });
+  let createPolicy = "";
+  let updatePolicy = "";
+  repository.create = async (_userId, input) => {
+    createPolicy = input.joinPolicy;
+    return { id: "community-1" };
+  };
+  repository.update = async (_communityId, input) => {
+    updatePolicy = input.joinPolicy ?? "";
+    return { id: "community-1" };
+  };
+  const service = new CommunityService(repository);
+  await service.create("founder", { name: "Private HOOMA", visibility: "PRIVATE" });
+  await service.update("founder", "community-1", { visibility: "PUBLIC" });
+  assert.equal(createPolicy, "APPROVAL_REQUIRED");
+  assert.equal(updatePolicy, "OPEN");
+});
+
+test("CommunityService requires Founder to approve membership requests", async () => {
+  const service = new CommunityService(repositoryStub({ founder: "FOUNDER", coach: "COACH" }));
+  await assert.rejects(
+    () => service.approveJoinRequest("coach", "community-1", "member"),
+    (error: unknown) =>
+      error instanceof AppError &&
+      error.code === "COMMUNITY_FOUNDER_REQUIRED" &&
+      error.statusCode === 403,
+  );
+  assert.deepEqual(await service.approveJoinRequest("founder", "community-1", "member"), {
+    ok: true,
+  });
 });
 
 test("CommunityService prevents Founder from leaving", async () => {
