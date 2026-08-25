@@ -1,7 +1,6 @@
 import type { Prisma, PrismaClient } from "@hooma/database";
 import type {
   CommunityCreateRecordInput,
-  CommunityJoinRequestRecord,
   CommunityRepository,
   CommunityUpdateRecordInput,
 } from "../application/community.repository.js";
