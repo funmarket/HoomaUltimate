@@ -120,6 +120,7 @@ class RedisConnection {
     this.responseBuffer = Buffer.alloc(0);
     this.ready = false;
     socket.setKeepAlive(true, 30_000);
+    socket.unref();
 
     socket.on("data", (chunk: Buffer) => this.onData(chunk));
     socket.on("error", () => this.failConnection(unavailableError()));
