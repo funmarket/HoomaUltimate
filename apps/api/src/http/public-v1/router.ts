@@ -25,7 +25,15 @@ export function createPublicV1Router(container: AppContainer, config: ApiConfig)
   router.use("/pitch", createPlaceCapabilityPublicRouter(container.pitchService));
   router.use("/communities", createCommunityPublicRouter(container.communityService));
   router.use("/teams", createTeamPublicRouter(container.teamService));
-  router.use("/events", createEventPublicRouter(container.eventService));
+  router.use(
+    "/events",
+    createEventPublicRouter(
+      container.eventService,
+      container.communityService,
+      container.identityService,
+      config,
+    ),
+  );
   router.use("/gamers", createGamerPublicRouter(container.gamerService));
   router.use("/play", createPlayPublicRouter(container.playService));
   router.use("/discovery", createDiscoveryPublicRouter(container.discoveryService));
