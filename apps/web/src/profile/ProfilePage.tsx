@@ -12,7 +12,7 @@ const SKILL_LEVELS = skillLevelSchema.options;
 type SkillLevel = NonNullable<ProfileResponse["player"]>["skillLevel"];
 
 export function ProfilePage() {
-  const { api, authenticationHref, transport } = useHoomaFrontend();
+  const { authenticationHref, transport } = useHoomaFrontend();
   const profileApi = useMemo(() => createProfileApi(transport), [transport]);
   const { me, loading, error: accountError, refresh } = useAccount();
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
@@ -417,7 +417,9 @@ function IdentityBadges({ identities }: { identities: readonly ProfileIdentity[]
   return (
     <div className="profile-identity-badges" aria-label="HOOMA identities">
       {values.map((identity) => (
-        <span key={identity}>{identity === "GHOST_RIDER" ? "Ghost Rider" : identityLabel(identity)}</span>
+        <span key={identity}>
+          {identity === "GHOST_RIDER" ? "Ghost Rider" : identityLabel(identity)}
+        </span>
       ))}
     </div>
   );
