@@ -19,14 +19,14 @@
 }
 .play-hero-pro h1 {
   margin: 0.25rem 0 0;
-  color: #f2ead7;
+  color: var(--app-text-strong);
   font-family: Georgia, serif;
   font-size: clamp(3.7rem, 15vw, 6rem);
   line-height: 0.84;
 }
 .play-hero-pro p {
   margin: 0.75rem 0 0;
-  color: #bfb59a;
+  color: var(--app-text-secondary);
   font-size: 0.9rem;
 }
 .play-hero-pro__action {
@@ -62,7 +62,7 @@
 .play-section-heading h2 {
   margin: 0;
   font-family: Georgia, serif;
-  color: #f2ead7;
+  color: var(--app-text-strong);
   font-size: clamp(1.6rem, 5vw, 2.2rem);
 }
 .play-player-empty,
@@ -72,7 +72,7 @@
 }
 .play-player-empty span,
 .play-state span {
-  color: #bfb59a;
+  color: var(--app-text-secondary);
   font-size: 13px;
 }
 .play-match-list {
@@ -261,7 +261,7 @@
 }
 .play-matchday-hub h2 {
   margin: 0;
-  color: #f2ead7;
+  color: var(--app-text-strong);
   font-family: Georgia, serif;
   font-size: clamp(1.6rem, 5vw, 2.2rem);
 }
@@ -298,16 +298,17 @@
 }
 .formation-builder__header h1 {
   margin: 4px 0;
+  color: var(--app-text-strong);
   font-size: clamp(32px, 7vw, 54px);
   line-height: 0.95;
 }
 .formation-builder__header p {
   margin: 0;
-  color: #bfb59a;
+  color: var(--app-text-secondary);
 }
 .formation-builder__header a {
   padding: 9px 12px;
-  border: 1px solid #6f613c;
+  border: 1px solid var(--app-line-strong);
   border-radius: 999px;
   text-decoration: none;
   white-space: nowrap;
@@ -322,7 +323,7 @@
   display: grid;
   gap: 6px;
   font-size: 12px;
-  color: #bfb59a;
+  color: var(--app-text-secondary);
 }
 .formation-toolbar input[type="text"],
 .formation-toolbar input:not([type]) {
@@ -368,6 +369,7 @@
 }
 .formation-team h2 {
   margin: 0 0 8px;
+  color: var(--app-text-strong);
   text-align: center;
   font-size: 14px;
   text-transform: uppercase;
@@ -442,6 +444,7 @@
 }
 .formation-roster h2 {
   margin: 2px 0 0;
+  color: var(--app-text-strong);
   font-family: Georgia, serif;
 }
 .formation-roster__list {
@@ -451,9 +454,9 @@
 }
 .formation-roster__list span {
   padding: 7px 9px;
-  border: 1px solid #403927;
+  border: 1px solid var(--app-line-strong);
   border-radius: 999px;
-  color: #d8d4cb;
+  color: var(--app-text-secondary);
   font-size: 12px;
 }
 .formation-roster__list span[data-assigned="true"] {
@@ -485,7 +488,7 @@
   gap: 12px;
 }
 .formation-history article span {
-  color: #bfb59a;
+  color: var(--app-text-secondary);
   font-size: 12px;
 }
 @media (max-width: 700px) {
