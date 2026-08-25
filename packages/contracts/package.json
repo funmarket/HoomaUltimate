@@ -36,6 +36,10 @@
       "types": "./src/profile.ts",
       "default": "./dist/profile.js"
     },
+    "./team-games": {
+      "types": "./src/team-games.ts",
+      "default": "./dist/team-games.js"
+    },
     "./team-offers": {
       "types": "./src/team-offers.ts",
       "default": "./dist/team-offers.js"
