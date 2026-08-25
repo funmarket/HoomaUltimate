@@ -3,6 +3,8 @@ import type { Prisma, PrismaClient } from "@hooma/database";
 import type {
   IdentityRepository,
   MeRecord,
+  ProfileRecord,
+  ProfileWriteInput,
   PublicProfileRecord,
   SessionRecord,
   WebCredentialRecord,
@@ -179,6 +181,61 @@ export class PrismaIdentityRepository implements IdentityRepository {
       },
       teams: presentation.user.teamPlayers.map((row) => row.team),
     };
+  }
+
+  async findProfile(userId: string): Promise<ProfileRecord | null> {
+    const user = await this.db.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        identities: true,
+        presentation: {
+          select: { username: true, displayName: true, photoUrl: true, bio: true },
+        },
+        playerProfile: {
+          select: { skillLevel: true, preferredPositions: true, overallRating: true },
+        },
+      },
+    });
+    if (!user?.presentation) return null;
+    return {
+      id: user.id,
+      presentation: user.presentation,
+      identities: user.identities,
+      player: user.identities.includes("PLAYER") ? user.playerProfile : null,
+    };
+  }
+
+  async updateProfile(userId: string, input: ProfileWriteInput): Promise<void> {
+    await this.db.$transaction(async (tx) => {
+      await tx.userPresentation.update({
+        where: { userId },
+        data: {
+          username: input.username,
+          displayName: input.displayName,
+          photoUrl: input.photoUrl,
+          bio: input.bio,
+        },
+      });
+      await tx.user.update({
+        where: { id: userId },
+        data: { identities: input.identities },
+      });
+      if (input.identities.includes("PLAYER") && input.player) {
+        await tx.playerProfile.upsert({
+          where: { userId },
+          create: {
+            userId,
+            skillLevel: input.player.skillLevel,
+            preferredPositions: input.player.preferredPositions,
+          },
+          update: {
+            skillLevel: input.player.skillLevel,
+            preferredPositions: input.player.preferredPositions,
+          },
+        });
+      }
+    });
   }
 
   async updatePresentation(
