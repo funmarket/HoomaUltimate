@@ -1,0 +1,37 @@
+name: Format diagnostic
+
+on:
+  push:
+    branches:
+      - fix/gamer-hud-whistle-cleanup
+
+jobs:
+  prettier-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Print Prettier diffs without modifying source
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            apps/api/src/modules/whistle/application/whistle.repository.ts
+            packages/frontend/src/gamers/GamerWhistlePanel.tsx
+            packages/frontend/src/gamers/gamer-whistle-api.ts
+            packages/frontend/src/gamers/gamers.css
+            tests/gamer-challenger-card-presentation.test.mjs
+          )
+          rm -rf /tmp/hooma-format
+          for file in "${files[@]}"; do
+            mkdir -p "/tmp/hooma-format/$(dirname "$file")"
+            cp "$file" "/tmp/hooma-format/$file"
+          done
+          npx prettier --config .prettierrc.json --write "${files[@]/#//tmp/hooma-format/}"
+          for file in "${files[@]}"; do
+            diff -u "$file" "/tmp/hooma-format/$file" || true
+          done
