@@ -46,7 +46,13 @@ export class PlaceCapabilityService {
 
   async review(userId: string, applicationId: string, input: ModerationDecisionInput) {
     await this.platformAdmin.requireCapability(userId, REVIEW_CAPABILITY[this.kind]);
-    await this.repository.review(userId, applicationId, this.kind, input);
+    if (!(await this.repository.review(userId, applicationId, this.kind, input))) {
+      throw new AppError(
+        409,
+        `${this.kind}_APPLICATION_REVIEW_NOT_PENDING`,
+        `This ${this.kind} application review is no longer pending`,
+      );
+    }
     return { ok: true };
   }
 }
