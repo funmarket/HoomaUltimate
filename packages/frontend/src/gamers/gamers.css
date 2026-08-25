@@ -365,42 +365,70 @@
 .gamer-challenger-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: 16px;
 }
 .gamer-challenger-card {
+  position: relative;
   min-width: 0;
-  padding: 15px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
-  background: linear-gradient(145deg, #131916, #0b0f0d);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(183, 230, 61, 0.14);
+  border-radius: 18px;
+  background:
+    linear-gradient(90deg, rgba(183, 230, 61, 0.045), transparent 44%),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.014) 0 1px, transparent 1px 18px),
+    linear-gradient(145deg, #121815, #070a08 78%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.018),
+    0 18px 46px rgba(0, 0, 0, 0.24);
   transition:
     border-color 150ms ease,
-    transform 150ms ease;
+    transform 150ms ease,
+    box-shadow 150ms ease;
 }
-.gamer-challenger-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(183, 230, 61, 0.22);
+.gamer-challenger-card::before {
+  content: "//";
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  color: rgba(183, 230, 61, 0.065);
+  font-size: 44px;
+  font-weight: 950;
+  line-height: 0.8;
+  letter-spacing: -0.18em;
+  pointer-events: none;
 }
 .gamer-card-profile-link {
+  position: relative;
+  min-width: 0;
+  min-height: 238px;
   display: grid;
-  grid-template-columns: 62px minmax(0, 1fr);
-  gap: 13px;
-  align-items: center;
+  grid-template-columns: minmax(132px, 0.78fr) minmax(0, 1fr);
   color: inherit;
   text-decoration: none;
 }
+.gamer-card-profile-link:focus-visible {
+  outline: 2px solid var(--gamers-lime);
+  outline-offset: -4px;
+}
 .gamer-avatar {
-  width: 62px;
-  height: 62px;
+  width: 100%;
+  height: 100%;
+  min-height: 238px;
   display: grid;
   place-items: center;
   overflow: hidden;
-  border: 1px solid rgba(183, 230, 61, 0.22);
-  border-radius: 12px;
-  background: #0a0e0c;
+  border: 0;
+  border-right: 1px solid rgba(183, 230, 61, 0.14);
+  border-radius: 0;
+  background:
+    radial-gradient(circle at 48% 36%, rgba(183, 230, 61, 0.14), transparent 42%),
+    linear-gradient(160deg, #111a15, #080b09 74%);
   color: var(--gamers-lime);
-  font-size: 21px;
+  font-size: clamp(58px, 8vw, 88px);
   font-weight: 950;
+  box-shadow: inset -20px 0 34px rgba(0, 0, 0, 0.16);
 }
 .gamer-avatar img {
   width: 100%;
@@ -409,28 +437,42 @@
 }
 .gamer-challenger-copy {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 20px 18px;
 }
 .gamer-challenger-heading {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
+  display: grid;
+  gap: 7px;
 }
-.gamer-challenger-heading h3 {
-  margin: 4px 0 0;
-  font-size: 18px;
-  line-height: 1.05;
-}
-.gamer-challenger-heading small {
+.gamer-card-game-label {
+  width: fit-content;
+  max-width: 100%;
+  overflow: hidden;
   color: var(--gamers-muted);
   font-size: 9px;
   font-weight: 900;
+  letter-spacing: 0.1em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.gamer-challenger-heading small {
+  width: fit-content;
+  color: var(--gamers-muted);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
   white-space: nowrap;
 }
 .gamer-open-badge,
 .gamer-closed-badge,
 .gamer-self-badge {
-  display: inline-flex;
   width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 5px 7px;
   border-radius: 6px;
   font-size: 9px;
@@ -438,9 +480,18 @@
   letter-spacing: 0.08em;
 }
 .gamer-open-badge {
-  border: 1px solid rgba(183, 230, 61, 0.24);
-  background: rgba(183, 230, 61, 0.08);
+  border: 1px solid rgba(183, 230, 61, 0.28);
+  background: rgba(183, 230, 61, 0.085);
   color: #dfff83;
+}
+.gamer-open-badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 10px currentColor;
 }
 .gamer-closed-badge {
   border: 1px solid rgba(255, 255, 255, 0.11);
@@ -451,19 +502,75 @@
   color: #cbd2cd;
 }
 .gamer-handle {
-  margin: 8px 0 2px;
+  margin: 14px 0 5px;
   color: var(--gamers-text);
-  font-size: 15px;
-  font-weight: 850;
+  font-size: clamp(24px, 3vw, 34px);
+  font-weight: 950;
+  line-height: 0.96;
+  letter-spacing: -0.04em;
+  overflow-wrap: anywhere;
+}
+.gamer-challenger-copy > h3 {
+  margin: 0 0 3px;
+  color: #d2d8d3;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
   overflow-wrap: anywhere;
 }
 .gamer-challenger-card .muted {
   margin: 0;
   font-size: 12px;
 }
-.gamer-challenge-button {
-  width: 100%;
+.gamer-card-profile-cue {
+  width: fit-content;
   margin-top: 13px;
+  color: var(--gamers-lime);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+}
+.gamers-page .gamer-challenge-button {
+  width: 100%;
+  min-height: 58px;
+  margin-top: auto;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border: 0;
+  border-top: 1px solid rgba(183, 230, 61, 0.2);
+  border-radius: 0;
+  background: linear-gradient(90deg, #b7e63d, #c8ef63);
+  color: #0a1106;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.gamer-challenge-button::after {
+  content: "›";
+  font-size: 22px;
+  line-height: 1;
+}
+.gamers-page .gamer-challenge-button:disabled {
+  opacity: 1;
+  background: linear-gradient(90deg, rgba(216, 199, 90, 0.18), rgba(216, 199, 90, 0.08));
+  color: #e4d98d;
+  cursor: default;
+}
+.gamer-challenge-button:disabled::after {
+  content: "•";
+}
+
+@media (hover: hover) {
+  .gamer-challenger-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(183, 230, 61, 0.34);
+    box-shadow:
+      inset 0 0 0 1px rgba(183, 230, 61, 0.035),
+      0 22px 52px rgba(0, 0, 0, 0.32);
+  }
+  .gamer-card-profile-link:hover .gamer-handle {
+    color: #eaffaf;
+  }
 }
 
 .gamer-arena-grid {
@@ -726,11 +833,22 @@
     gap: 16px;
   }
   .gamer-card-profile-link {
-    grid-template-columns: 54px minmax(0, 1fr);
+    min-height: 0;
+    grid-template-columns: 1fr;
   }
   .gamer-avatar {
-    width: 54px;
-    height: 54px;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    aspect-ratio: 1.55;
+    border-right: 0;
+    border-bottom: 1px solid rgba(183, 230, 61, 0.14);
+  }
+  .gamer-challenger-copy {
+    padding: 17px 16px;
+  }
+  .gamers-page .gamer-challenge-button {
+    min-height: 54px;
   }
   .gamer-match-versus {
     grid-template-columns: 1fr;
