@@ -26,48 +26,48 @@ export function PlayPlayerCard({ listing, onHire, offerSent = false }: PlayPlaye
         className="play-player-card__profile-link"
         href={profileHref}
         aria-label={`Open ${presentation.displayName}'s player profile`}
-      />
-
-      <div className="play-player-card__topline">
-        <span className="play-looking-badge">
-          <i aria-hidden="true" />
-          LOOKING FOR {lookingForGame ? "A GAME" : "A TEAM"}
-        </span>
-        <span className="play-player-card__open-profile">OPEN PROFILE ›</span>
-      </div>
-
-      <div className="play-player-card__portrait" aria-hidden="true">
-        {presentation.photoUrl ? (
-          <img src={presentation.photoUrl} alt="" />
-        ) : (
-          <span>{presentation.displayName.slice(0, 1).toUpperCase()}</span>
-        )}
-      </div>
-
-      <div className="play-player-card__identity">
-        <strong>{presentation.displayName}</strong>
-        <small>@{presentation.username}</small>
-        {presentation.bio ? <p>{presentation.bio}</p> : null}
-      </div>
-
-      <div className="play-player-card__facts" aria-label="Availability details">
-        <div>
-          <span>STATUS</span>
-          <strong>AVAILABLE</strong>
+      >
+        <div className="play-player-card__topline">
+          <span className="play-looking-badge">
+            <i aria-hidden="true" />
+            LOOKING FOR {lookingForGame ? "A GAME" : "A TEAM"}
+          </span>
+          <span className="play-player-card__open-profile">OPEN PROFILE ›</span>
         </div>
-        <div>
-          <span>LOOKING FOR</span>
-          <strong>{lookingForGame ? "GAME" : "TEAM"}</strong>
+
+        <div className="play-player-card__portrait" aria-hidden="true">
+          {presentation.photoUrl ? (
+            <img src={presentation.photoUrl} alt="" />
+          ) : (
+            <span>{presentation.displayName.slice(0, 1).toUpperCase()}</span>
+          )}
         </div>
-        <div>
-          <span>UPDATED</span>
-          <strong>{updatedLabel}</strong>
+
+        <div className="play-player-card__identity">
+          <strong>{presentation.displayName}</strong>
+          <small>@{presentation.username}</small>
+          {presentation.bio ? <p>{presentation.bio}</p> : null}
         </div>
-        <div>
-          <span>IDENTITY</span>
-          <strong>HOOMA</strong>
+
+        <div className="play-player-card__facts" aria-label="Availability details">
+          <div>
+            <span>STATUS</span>
+            <strong>AVAILABLE</strong>
+          </div>
+          <div>
+            <span>LOOKING FOR</span>
+            <strong>{lookingForGame ? "GAME" : "TEAM"}</strong>
+          </div>
+          <div>
+            <span>UPDATED</span>
+            <strong>{updatedLabel}</strong>
+          </div>
+          <div>
+            <span>IDENTITY</span>
+            <strong>HOOMA</strong>
+          </div>
         </div>
-      </div>
+      </a>
 
       <div className="play-player-card__action-zone">
         <span>ORGANIZER ACTION</span>
@@ -104,7 +104,7 @@ export function PlayPlayerCard({ listing, onHire, offerSent = false }: PlayPlaye
       </div>
 
       <div className="play-player-card__footer">
-        <span>TAP CARD = PLAYER PROFILE</span>
+        <span>TAP PLAYER = PROFILE</span>
         <span>ONE IDENTITY</span>
       </div>
     </article>
