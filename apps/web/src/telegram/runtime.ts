@@ -13,10 +13,7 @@ type TelegramInsets = {
 };
 
 type TelegramEventType =
-  | "themeChanged"
-  | "viewportChanged"
-  | "safeAreaChanged"
-  | "contentSafeAreaChanged";
+  "themeChanged" | "viewportChanged" | "safeAreaChanged" | "contentSafeAreaChanged";
 
 type TelegramEventHandler = (payload?: unknown) => void;
 
@@ -114,8 +111,7 @@ export function createTelegramRuntime(): TelegramRuntime {
         setLength(root, "--hooma-viewport-height", viewportHeight);
         setLength(root, "--hooma-viewport-stable-height", stableHeight);
       };
-      const syncSafeArea = () =>
-        syncInsets(root, "--hooma-safe-area-inset", webApp.safeAreaInset);
+      const syncSafeArea = () => syncInsets(root, "--hooma-safe-area-inset", webApp.safeAreaInset);
       const syncContentSafeArea = () =>
         syncInsets(root, "--hooma-content-safe-area-inset", webApp.contentSafeAreaInset);
       const syncTheme = () => {
