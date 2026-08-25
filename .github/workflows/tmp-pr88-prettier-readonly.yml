@@ -1,0 +1,31 @@
+name: tmp-pr88-prettier-readonly
+
+on:
+  push:
+    branches:
+      - fix/profile-passport-identities-current-20260825
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - name: Show exact Prettier changes
+        run: |
+          npx prettier --write \
+            apps/web/src/profile/PublicProfilePage.tsx \
+            packages/frontend/src/profile-api.ts \
+            tests/profile-public-identities.integration.test.ts
+          git diff --no-ext-diff -- \
+            apps/web/src/profile/PublicProfilePage.tsx \
+            packages/frontend/src/profile-api.ts \
+            tests/profile-public-identities.integration.test.ts
