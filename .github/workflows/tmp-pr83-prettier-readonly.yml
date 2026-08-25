@@ -1,0 +1,43 @@
+name: tmp-pr83-prettier-readonly
+
+on:
+  push:
+    branches:
+      - feat/community-privacy-media-final
+
+permissions:
+  contents: read
+
+jobs:
+  format-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - name: Format flagged files in checkout only
+        run: >-
+          npx prettier --write
+          apps/api/src/modules/communities/application/community.repository.ts
+          apps/api/src/modules/communities/application/community.service.ts
+          apps/api/src/modules/communities/infrastructure/prisma-community.repository.ts
+          packages/frontend/src/api.ts
+          packages/frontend/src/communities/HoomaEditPage.tsx
+          packages/frontend/src/communities/HoomaMembershipRequests.tsx
+          packages/frontend/src/communities/HoomaPage.tsx
+          tests/community-privacy.integration.test.ts
+      - name: Print exact formatter diff
+        run: >-
+          git diff --no-ext-diff --unified=3 --
+          apps/api/src/modules/communities/application/community.repository.ts
+          apps/api/src/modules/communities/application/community.service.ts
+          apps/api/src/modules/communities/infrastructure/prisma-community.repository.ts
+          packages/frontend/src/api.ts
+          packages/frontend/src/communities/HoomaEditPage.tsx
+          packages/frontend/src/communities/HoomaMembershipRequests.tsx
+          packages/frontend/src/communities/HoomaPage.tsx
+          tests/community-privacy.integration.test.ts
