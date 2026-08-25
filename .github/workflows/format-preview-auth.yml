@@ -1,0 +1,41 @@
+name: Auth format preview
+
+on:
+  push:
+    branches:
+      - feat/account-login-method-linking-on-auth
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - name: Format failing auth files
+        run: >-
+          npm exec -- prettier --write
+          apps/api/src/modules/identity/application/identity.service.ts
+          apps/api/src/modules/identity/http/identity.member.routes.ts
+          apps/api/src/modules/identity/http/telegram-web-auth.ts
+          apps/api/src/modules/identity/infrastructure/prisma-identity.repository.ts
+          apps/web/src/auth/AuthApp.tsx
+          apps/web/src/settings/SettingsPage.tsx
+          packages/auth/src/index.ts
+      - name: Print generated diff
+        run: >-
+          git diff --
+          apps/api/src/modules/identity/application/identity.service.ts
+          apps/api/src/modules/identity/http/identity.member.routes.ts
+          apps/api/src/modules/identity/http/telegram-web-auth.ts
+          apps/api/src/modules/identity/infrastructure/prisma-identity.repository.ts
+          apps/web/src/auth/AuthApp.tsx
+          apps/web/src/settings/SettingsPage.tsx
+          packages/auth/src/index.ts
