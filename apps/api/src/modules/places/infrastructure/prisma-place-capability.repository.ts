@@ -144,13 +144,14 @@ export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepositor
     input: ModerationDecisionInput,
   ) {
     const status = input.decision === "APPROVE" ? "APPROVED" : "REJECTED";
-    await this.db.$transaction(async (tx) => {
-      const application = await tx.placeCapabilityApplication.findFirstOrThrow({
-        where: { id: applicationId, kind },
+    return this.db.$transaction(async (tx) => {
+      const application = await tx.placeCapabilityApplication.findFirst({
+        where: { id: applicationId, kind, status: "PENDING" },
         select: { placeId: true },
       });
-      await tx.placeCapabilityApplication.update({
-        where: { id: applicationId },
+      if (!application) return false;
+      const result = await tx.placeCapabilityApplication.updateMany({
+        where: { id: applicationId, kind, status: "PENDING" },
         data: {
           status,
           reviewedByUserId: actorUserId,
@@ -158,6 +159,7 @@ export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepositor
           reviewNote: input.note ?? null,
         },
       });
+      if (!result.count) return false;
       await tx.auditLog.create({
         data: {
           actorUserId,
@@ -167,6 +169,7 @@ export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepositor
           metadata: { placeId: application.placeId, kind, note: input.note ?? null },
         },
       });
+      return true;
     });
   }
 }
