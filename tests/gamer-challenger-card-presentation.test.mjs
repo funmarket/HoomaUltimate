@@ -4,10 +4,12 @@ import test from "node:test";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("Gamer challenger cards use the neutral HUD identity composition", async () => {
-  const [page, css] = await Promise.all([
+test("Gamer challenger cards keep one HUD presentation with direct actions", async () => {
+  const [page, css, router, index] = await Promise.all([
     read("packages/frontend/src/gamers/GamerGamePage.tsx"),
     read("packages/frontend/src/gamers/gamers.css"),
+    read("apps/web/src/app/router/HoomaRouter.tsx"),
+    read("packages/frontend/src/index.ts"),
   ]);
 
   const cardStart = page.indexOf('<article className="gamer-challenger-card"');
@@ -29,8 +31,13 @@ test("Gamer challenger cards use the neutral HUD identity composition", async ()
   assert.ok(card.indexOf("challenger.handle") < card.indexOf("presentation.displayName}</h3>"));
   assert.match(card, /<span className="gamer-open-badge">OPEN TO CHALLENGE<\/span>/);
   assert.match(card, /gamer-card-signal/);
+  assert.match(card, /className=\{`gamer-whistle-button/);
+  assert.match(card, />\s*WHISTLE\s*<\/button>/);
   assert.match(card, /<button\s+className="button gamer-challenge-button"/);
-  assert.match(card, /<\/a>\s+\{!isOwn \? \(/);
+  assert.match(card, /<GamerWhistlePanel/);
+  assert.doesNotMatch(card, /OPEN PROFILE/);
+  assert.doesNotMatch(card, /gamer-card-profile-link/);
+  assert.doesNotMatch(card, /\/profiles\//);
   assert.doesNotMatch(
     card,
     /\b(?:ONLINE|LEVEL|XP|CLASS|RANK|eFootball|PES|FC Mobile|Ludo|football)\b/i,
@@ -40,20 +47,24 @@ test("Gamer challenger cards use the neutral HUD identity composition", async ()
   assert.match(css, /--gamers-violet:\s*#b251ff/);
   assert.match(css, /\.gamer-card-hud-rail\s*\{/);
   assert.match(css, /\.gamer-card-portrait-panel\s*\{/);
-  assert.match(css, /\.gamer-card-profile-link\s*\{[^}]*min-height:\s*280px/s);
+  assert.match(css, /\.gamer-card-profile-content\s*\{[^}]*min-height:\s*280px/s);
   assert.match(
     css,
-    /\.gamer-card-profile-link\s*\{[^}]*grid-template-columns:\s*minmax\(148px, 0\.82fr\) minmax\(0, 1\.18fr\)/s,
+    /\.gamer-card-profile-content\s*\{[^}]*grid-template-columns:\s*minmax\(148px, 0\.82fr\) minmax\(0, 1\.18fr\)/s,
   );
   assert.match(css, /\.gamer-card-handle-block\s*\{/);
   assert.match(css, /\.gamer-card-identity-block\s*\{/);
   assert.match(css, /\.gamer-card-signal\s*\{/);
-  assert.match(css, /\.gamer-open-badge::before\s*\{/);
+  assert.match(css, /\.gamer-card-actions\s*\{/);
+  assert.match(css, /\.gamer-whistle-button\s*\{/);
+  assert.match(css, /\.gamer-whistle-panel\s*\{/);
   assert.match(css, /\.gamers-page \.gamer-challenge-button\s*\{/);
   assert.match(css, /@media \(max-width: 500px\)/);
   assert.match(css, /\.gamer-avatar\s*\{[^}]*aspect-ratio:\s*1\.58/s);
-  assert.doesNotMatch(
-    css,
-    /\.gamer-card-profile-link\s*\{[^}]*position:\s*absolute[^}]*inset:\s*0/s,
-  );
+  assert.doesNotMatch(css, /\.gamer-profile-showcase\s*\{/);
+  assert.doesNotMatch(css, /\.gamer-profile-main\s*\{/);
+
+  assert.doesNotMatch(router, /GamerProfilePage/);
+  assert.doesNotMatch(router, /\/gamers\/games\/:gameSlug\/profiles\/:profileId/);
+  assert.doesNotMatch(index, /GamerProfilePage/);
 });
