@@ -29,13 +29,23 @@ jobs:
           apps/web/src/auth/AuthApp.tsx
           apps/web/src/settings/SettingsPage.tsx
           packages/auth/src/index.ts
-      - name: Print generated diff
-        run: >-
-          git diff --
-          apps/api/src/modules/identity/application/identity.service.ts
-          apps/api/src/modules/identity/http/identity.member.routes.ts
-          apps/api/src/modules/identity/http/telegram-web-auth.ts
-          apps/api/src/modules/identity/infrastructure/prisma-identity.repository.ts
-          apps/web/src/auth/AuthApp.tsx
-          apps/web/src/settings/SettingsPage.tsx
-          packages/auth/src/index.ts
+      - name: Stage formatted files
+        run: |
+          mkdir -p formatted/apps/api/src/modules/identity/application
+          mkdir -p formatted/apps/api/src/modules/identity/http
+          mkdir -p formatted/apps/api/src/modules/identity/infrastructure
+          mkdir -p formatted/apps/web/src/auth
+          mkdir -p formatted/apps/web/src/settings
+          mkdir -p formatted/packages/auth/src
+          cp apps/api/src/modules/identity/application/identity.service.ts formatted/apps/api/src/modules/identity/application/
+          cp apps/api/src/modules/identity/http/identity.member.routes.ts formatted/apps/api/src/modules/identity/http/
+          cp apps/api/src/modules/identity/http/telegram-web-auth.ts formatted/apps/api/src/modules/identity/http/
+          cp apps/api/src/modules/identity/infrastructure/prisma-identity.repository.ts formatted/apps/api/src/modules/identity/infrastructure/
+          cp apps/web/src/auth/AuthApp.tsx formatted/apps/web/src/auth/
+          cp apps/web/src/settings/SettingsPage.tsx formatted/apps/web/src/settings/
+          cp packages/auth/src/index.ts formatted/packages/auth/src/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: auth-prettier-output
+          path: formatted
+          if-no-files-found: error
