@@ -50,7 +50,7 @@ const HOME_GATEWAY_STYLES = `
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 .home-gateway-card__title,
 .home-gateway-card__subtitle {
