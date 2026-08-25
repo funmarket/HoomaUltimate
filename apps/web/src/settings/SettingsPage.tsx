@@ -1,8 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import type {
-  LoginMethodsResponse,
-  TelegramLinkCodeResponse,
-} from "@hooma/contracts/auth-linking";
+import type { LoginMethodsResponse, TelegramLinkCodeResponse } from "@hooma/contracts/auth-linking";
 import {
   attachWebCredential,
   claimTelegramLink,
