@@ -56,14 +56,8 @@ console.log(
 );
 void runEventChatCleanup();
 void runOutbox();
-const cleanupTimer = setInterval(
-  () => void runEventChatCleanup(),
-  EVENT_CHAT_CLEANUP_INTERVAL_MS,
-);
-const outboxTimer = setInterval(
-  () => void runOutbox(),
-  OUTBOX_POLL_INTERVAL_MS,
-);
+const cleanupTimer = setInterval(() => void runEventChatCleanup(), EVENT_CHAT_CLEANUP_INTERVAL_MS);
+const outboxTimer = setInterval(() => void runOutbox(), OUTBOX_POLL_INTERVAL_MS);
 
 async function shutdown(signal: NodeJS.Signals): Promise<void> {
   if (shuttingDown) return;
