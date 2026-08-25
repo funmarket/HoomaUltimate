@@ -13,7 +13,8 @@
 .admin-hero dl div,
 .admin-review-row,
 .admin-manager-list article,
-.admin-audit-list article {
+.admin-audit-list article,
+.admin-entity-detail {
   border: 1px solid var(--app-line-strong);
   border-radius: 14px;
   padding: 14px;
@@ -26,7 +27,8 @@
 
 .admin-review-list,
 .admin-manager-list,
-.admin-audit-list {
+.admin-audit-list,
+.admin-entity-picker {
   display: grid;
   gap: 12px;
 }
@@ -40,7 +42,8 @@
 
 .admin-review-row > div:first-child,
 .admin-manager-list article,
-.admin-audit-list article {
+.admin-audit-list article,
+.admin-entity-detail-copy {
   display: grid;
   gap: 6px;
 }
@@ -81,13 +84,43 @@
   overflow-wrap: anywhere;
 }
 
+.admin-entity-select-label {
+  display: grid;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.admin-entity-select {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  border: 1px solid var(--app-line-strong);
+  border-radius: 14px;
+  padding: 0 14px;
+  background: inherit;
+  color: inherit;
+  font: inherit;
+}
+
+.admin-entity-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+}
+
+.admin-entity-detail small {
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 720px) {
   .admin-hero dl,
   .admin-capability-grid {
     grid-template-columns: 1fr;
   }
 
-  .admin-review-row {
+  .admin-review-row,
+  .admin-entity-detail {
     grid-template-columns: 1fr;
   }
 }
