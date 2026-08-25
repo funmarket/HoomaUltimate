@@ -1,0 +1,31 @@
+name: tmp-pr81-prettier-readonly
+
+on:
+  push:
+    branches:
+      - tmp/pr81-prettier-readonly
+
+permissions:
+  contents: read
+
+jobs:
+  format-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - name: Format flagged files in checkout only
+        run: >-
+          npx prettier --write
+          apps/web/src/auth/GamerSignupOnboarding.tsx
+          tests/gamer-identity-eligibility.integration.test.ts
+      - name: Print exact formatter diff
+        run: >-
+          git diff --no-ext-diff --unified=3 --
+          apps/web/src/auth/GamerSignupOnboarding.tsx
+          tests/gamer-identity-eligibility.integration.test.ts
