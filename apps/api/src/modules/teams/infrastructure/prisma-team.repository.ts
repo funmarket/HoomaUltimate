@@ -383,6 +383,7 @@ export class PrismaTeamRepository implements TeamRepository {
         challengedTeamId: input.challengedTeamId,
         format: input.format,
         proposedAt: input.proposedAt ? new Date(input.proposedAt) : null,
+        proposedEndsAt: input.proposedEndsAt ? new Date(input.proposedEndsAt) : null,
         createdByUserId: userId,
         ...(input.message !== undefined ? { message: input.message } : {}),
       },
@@ -443,7 +444,8 @@ export class PrismaTeamRepository implements TeamRepository {
           homeTeamId: challenge.challengerTeamId,
           awayTeamId: challenge.challengedTeamId,
           scheduledAt: challenge.proposedAt,
-          status: challenge.proposedAt ? "CONFIRMED" : "SCHEDULING",
+          endsAt: challenge.proposedEndsAt,
+          status: challenge.proposedAt && challenge.proposedEndsAt ? "CONFIRMED" : "SCHEDULING",
         },
       });
       return challenge;
