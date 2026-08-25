@@ -20,5 +20,5 @@ export interface PlaceCapabilityRepository {
     applicationId: string,
     kind: PlaceCapabilityKind,
     input: ModerationDecisionInput,
-  ): Promise<void>;
+  ): Promise<boolean>;
 }
