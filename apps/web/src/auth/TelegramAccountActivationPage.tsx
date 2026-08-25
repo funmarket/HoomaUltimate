@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { useHoomaFrontend } from "@hooma/frontend";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { attachWebCredential, useHoomaFrontend } from "@hooma/frontend";
 
 function safeReturnTo(): string {
   const value = new URLSearchParams(window.location.search).get("returnTo");
@@ -8,10 +8,12 @@ function safeReturnTo(): string {
 }
 
 export function TelegramAccountActivationPage() {
-  const { api, createAccountFromDeliveryIdentity } = useHoomaFrontend();
+  const { api, transport, createAccountFromDeliveryIdentity } = useHoomaFrontend();
   const returnTo = useMemo(safeReturnTo, []);
   const [checking, setChecking] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [activated, setActivated] = useState(false);
+  const [savingWebLogin, setSavingWebLogin] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -41,11 +43,70 @@ export function TelegramAccountActivationPage() {
     try {
       await createAccountFromDeliveryIdentity();
       await api.identity.me();
-      window.location.replace(returnTo);
+      setActivated(true);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Unable to create your HOOMA account");
+    } finally {
       setCreating(false);
     }
+  }
+
+  async function addWebLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSavingWebLogin(true);
+    setError("");
+    const data = new FormData(event.currentTarget);
+    try {
+      await attachWebCredential(transport, {
+        loginUsername: String(data.get("loginUsername")),
+        password: String(data.get("password")),
+        email: String(data.get("email")) || null,
+      });
+      window.location.replace(returnTo);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unable to add Web login");
+      setSavingWebLogin(false);
+    }
+  }
+
+  if (activated) {
+    return (
+      <section className="auth-card">
+        <p className="eyebrow">ACCOUNT CREATED</p>
+        <h2>Add a Web login?</h2>
+        <p>
+          Optional. Add a username and password if you also want to sign in to this same HOOMA
+          account from the normal Web app. You can always do this later in Settings.
+        </p>
+        <form onSubmit={(event) => void addWebLogin(event)}>
+          <label>
+            Login username
+            <input name="loginUsername" autoComplete="username" required />
+          </label>
+          <label>
+            Password
+            <input
+              name="password"
+              type="password"
+              minLength={10}
+              autoComplete="new-password"
+              required
+            />
+          </label>
+          <label>
+            Email (optional)
+            <input name="email" type="email" autoComplete="email" />
+          </label>
+          <button type="submit" disabled={savingWebLogin}>
+            {savingWebLogin ? "Adding…" : "Add Web login"}
+          </button>
+        </form>
+        <button type="button" onClick={() => window.location.replace(returnTo)}>
+          Maybe later
+        </button>
+        {error ? <p className="error">{error}</p> : null}
+      </section>
+    );
   }
 
   return (
