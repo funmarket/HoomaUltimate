@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type {
   AdminQueueItem,
+  AppManagerSummary,
   PlatformManagerCapability,
 } from "@hooma/contracts/platform-management";
 import {
   createPlatformManagementApi,
   useHoomaFrontend,
-  type AppManagerSummary,
   type PlatformAuditEntry,
   type PlatformOverview,
   type PublicCommunitySummary,
