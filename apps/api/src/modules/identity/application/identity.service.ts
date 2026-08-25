@@ -28,11 +28,7 @@ import {
   type ProfileUpdateInput,
 } from "@hooma/contracts/profile";
 import { AppError } from "../../../http/errors/app-error.js";
-import {
-  defaultDisplayName,
-  normalizeEmail,
-  normalizeUsername,
-} from "../domain/normalization.js";
+import { defaultDisplayName, normalizeEmail, normalizeUsername } from "../domain/normalization.js";
 import type { IdentityRepository } from "./identity.repository.js";
 
 export type TelegramResolution =
@@ -203,11 +199,7 @@ export class IdentityService {
     const methods = await this.repository.findLoginMethods(userId);
     if (!methods) throw new AppError(404, "USER_NOT_FOUND", "User not found");
     if (!methods.web) {
-      throw new AppError(
-        409,
-        "WEB_CREDENTIAL_REQUIRED",
-        "This account does not have a Web login",
-      );
+      throw new AppError(409, "WEB_CREDENTIAL_REQUIRED", "This account does not have a Web login");
     }
     if (methods.telegram) {
       throw new AppError(
@@ -223,10 +215,7 @@ export class IdentityService {
         "Telegram authentication is unavailable",
       );
     }
-    const { code, expiresAt } = createAccountLinkCode(
-      userId,
-      this.config.TELEGRAM_BOT_TOKEN,
-    );
+    const { code, expiresAt } = createAccountLinkCode(userId, this.config.TELEGRAM_BOT_TOKEN);
     return {
       loginUsername: methods.web.loginUsername,
       code,
