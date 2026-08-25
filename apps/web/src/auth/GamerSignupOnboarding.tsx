@@ -77,7 +77,8 @@ export function useGamerSignupSelection() {
 
 export function validateGamerSignupSelection(selection: GamerSignupSelection): string | null {
   if (!selection.enabled) return null;
-  if (selection.gamesError) return "Gamer games could not be loaded. Try again before continuing.";
+  if (selection.gamesError)
+    return "Gamer games could not be loaded. Try again before continuing.";
   const selectedGames = selection.games.filter((game) =>
     selection.selectedGameIds.includes(game.id),
   );
