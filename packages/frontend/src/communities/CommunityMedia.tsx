@@ -16,11 +16,13 @@ export function CommunityMediaSurface({
   className,
   children,
   gradient,
+  as = "div",
 }: {
   readonly bannerUrl: string | null | undefined;
   readonly className: string;
   readonly children: ReactNode;
   readonly gradient?: string;
+  readonly as?: "div" | "section";
 }) {
   const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
 
@@ -50,11 +52,12 @@ export function CommunityMediaSurface({
         backgroundImage: `${gradient ? `${gradient}, ` : ""}url(${JSON.stringify(loadedUrl)})`,
       }
     : undefined;
+  const Surface = as;
 
   return (
-    <section className={className} style={style}>
+    <Surface className={className} style={style}>
       {children}
-    </section>
+    </Surface>
   );
 }
 
@@ -71,7 +74,7 @@ export function CommunityLogo({
 }) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const source = logoUrl?.trim() || null;
-  const showImage = source && source !== failedUrl;
+  const displayUrl = source && source !== failedUrl ? source : null;
 
   useEffect(() => {
     setFailedUrl(null);
@@ -79,12 +82,12 @@ export function CommunityLogo({
 
   return (
     <div className={className}>
-      {showImage ? (
+      {displayUrl ? (
         <img
           className="hooma-community-logo-image"
-          src={source}
+          src={displayUrl}
           alt={alt ?? ""}
-          onError={() => setFailedUrl(source)}
+          onError={() => setFailedUrl(displayUrl)}
         />
       ) : (
         <span className="hooma-community-logo-fallback">{initials(name)}</span>
