@@ -206,7 +206,10 @@ function RegisterForm({ onSuccess, onCreatedWithWarning, onError }: RegisterForm
       <GamerSignupFields onboarding={gamerOnboarding} />
       <button
         type="submit"
-        disabled={submitting || (gamerOnboarding.selection.enabled && gamerOnboarding.selection.gamesLoading)}
+        disabled={
+          submitting ||
+          (gamerOnboarding.selection.enabled && gamerOnboarding.selection.gamesLoading)
+        }
       >
         {submitting ? "Creating account…" : "Create account"}
       </button>
