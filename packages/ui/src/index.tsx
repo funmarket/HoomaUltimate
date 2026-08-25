@@ -22,6 +22,7 @@ export { TeamBadge, TeamBanner } from "./teams/TeamMedia.js";
 export type { TeamBadgeProps, TeamBannerProps } from "./teams/TeamMedia.js";
 export { PlayHero } from "./play/PlayHero.js";
 export { PickupMatchCard } from "./play/PickupMatchCard.js";
+export { WATCH_COLLECTOR_TICKET_MASTER } from "./brand/watch-assets.js";
 
 const HOME_GATEWAY_TYPOGRAPHY = `
 .home-gateway-title {
