@@ -1,3 +1,4 @@
+import "./communities/community-media.css";
 import "./communities/community-membership.css";
 import "./teams/team-media.css";
 import "./teams/coach-control-room.css";
