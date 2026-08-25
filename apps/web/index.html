@@ -10,9 +10,7 @@
         const storageKey = "hooma-web-appearance";
         const saved = window.localStorage.getItem(storageKey);
         const mode = saved === "dark" || saved === "light" || saved === "system" ? saved : "system";
-        const resolved = mode === "system"
-          ? (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
-          : mode;
+        const resolved = mode === "system" ? "dark" : mode;
         document.documentElement.dataset.appearance = mode;
         document.documentElement.dataset.theme = resolved;
         document.documentElement.style.colorScheme = resolved;
