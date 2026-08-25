@@ -63,7 +63,8 @@ export function TelegramAccountActivationPage() {
         returnTo !== "/" ? returnTo : gamerOnboarding.selection.enabled ? "/gamers" : "/",
       );
     } catch (reason) {
-      const message = reason instanceof Error ? reason.message : "Unable to create your HOOMA account";
+      const message =
+        reason instanceof Error ? reason.message : "Unable to create your HOOMA account";
       setError(
         created
           ? `Your HOOMA account was created, but Gamer setup did not finish: ${message}`
@@ -87,13 +88,20 @@ export function TelegramAccountActivationPage() {
       {!checking && !accountCreated ? (
         <button
           type="button"
-          disabled={creating || (gamerOnboarding.selection.enabled && gamerOnboarding.selection.gamesLoading)}
+          disabled={
+            creating ||
+            (gamerOnboarding.selection.enabled && gamerOnboarding.selection.gamesLoading)
+          }
           onClick={() => void createAccount()}
         >
           {creating ? "Creating…" : "Create HOOMA account"}
         </button>
       ) : null}
-      {accountCreated ? <a href="/gamers">Continue to Gamers</a> : <a href={returnTo}>Keep browsing</a>}
+      {accountCreated ? (
+        <a href="/gamers">Continue to Gamers</a>
+      ) : (
+        <a href={returnTo}>Keep browsing</a>
+      )}
       {error ? <p className="error">{error}</p> : null}
     </section>
   );
