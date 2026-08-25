@@ -4,7 +4,9 @@ import { getDatabaseClient } from "@hooma/database";
 import { PrismaTeamRepository } from "../apps/api/src/modules/teams/infrastructure/prisma-team.repository.js";
 
 const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) throw new Error("DATABASE_URL is required for Team challenge concurrency tests");
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL is required for Team challenge concurrency tests");
+}
 
 const db = getDatabaseClient();
 const repository = new PrismaTeamRepository(db);
@@ -48,7 +50,9 @@ async function createFixture(label: string) {
 async function cleanupFixture(fixture: Awaited<ReturnType<typeof createFixture>>) {
   await db.teamGame.deleteMany({ where: { challengeId: fixture.challenge.id } });
   await db.teamChallenge.deleteMany({ where: { id: fixture.challenge.id } });
-  await db.team.deleteMany({ where: { id: { in: [fixture.challenger.id, fixture.challenged.id] } } });
+  await db.team.deleteMany({
+    where: { id: { in: [fixture.challenger.id, fixture.challenged.id] } },
+  });
   await db.community.deleteMany({ where: { id: fixture.community.id } });
   await db.user.deleteMany({ where: { id: fixture.user.id } });
 }
@@ -65,7 +69,9 @@ test("concurrent Team challenge accept and decline cannot produce a declined cha
       where: { id: fixture.challenge.id },
       select: { status: true },
     });
-    const gameCount = await db.teamGame.count({ where: { challengeId: fixture.challenge.id } });
+    const gameCount = await db.teamGame.count({
+      where: { challengeId: fixture.challenge.id },
+    });
 
     assert.ok(challenge.status === "ACCEPTED" || challenge.status === "DECLINED");
     assert.equal(gameCount, challenge.status === "ACCEPTED" ? 1 : 0);
@@ -89,7 +95,9 @@ test("concurrent Team challenge accepts are idempotent and create exactly one Te
       where: { id: fixture.challenge.id },
       select: { status: true },
     });
-    const games = await db.teamGame.findMany({ where: { challengeId: fixture.challenge.id } });
+    const games = await db.teamGame.findMany({
+      where: { challengeId: fixture.challenge.id },
+    });
 
     assert.equal(challenge.status, "ACCEPTED");
     assert.equal(games.length, 1);
@@ -110,7 +118,9 @@ test("concurrent Team challenge accept and cancel leave one coherent terminal st
       where: { id: fixture.challenge.id },
       select: { status: true },
     });
-    const gameCount = await db.teamGame.count({ where: { challengeId: fixture.challenge.id } });
+    const gameCount = await db.teamGame.count({
+      where: { challengeId: fixture.challenge.id },
+    });
 
     assert.ok(challenge.status === "ACCEPTED" || challenge.status === "CANCELLED");
     assert.equal(gameCount, challenge.status === "ACCEPTED" ? 1 : 0);
