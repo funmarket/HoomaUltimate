@@ -1,10 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import {
-  startTelegramLink,
-  startTelegramWebLogin,
-  useHoomaFrontend,
-} from "@hooma/frontend";
+import { startTelegramLink, startTelegramWebLogin, useHoomaFrontend } from "@hooma/frontend";
 import { useAccount } from "../account/AccountProvider";
 
 function safeReturnTo(): string {
@@ -58,9 +54,7 @@ export function AuthApp() {
       await api.identity.logout();
       await refresh();
     } catch (reason) {
-      setError(
-        reason instanceof Error ? reason.message : "Unable to sign out",
-      );
+      setError(reason instanceof Error ? reason.message : "Unable to sign out");
     }
   }
 
@@ -70,18 +64,12 @@ export function AuthApp() {
     try {
       const result = await startTelegramWebLogin(transport, returnTo);
       if (!result.enabled || !result.authorizationUrl) {
-        setError(
-          "Telegram Web login is not configured for this environment yet.",
-        );
+        setError("Telegram Web login is not configured for this environment yet.");
         return;
       }
       window.location.assign(result.authorizationUrl);
     } catch (reason) {
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : "Unable to start Telegram sign-in",
-      );
+      setError(reason instanceof Error ? reason.message : "Unable to start Telegram sign-in");
     } finally {
       setTelegramStarting(false);
     }
@@ -93,18 +81,12 @@ export function AuthApp() {
     try {
       const result = await startTelegramLink(transport, returnTo);
       if (!result.enabled || !result.authorizationUrl) {
-        setError(
-          "Telegram Web login is not configured for this environment yet.",
-        );
+        setError("Telegram Web login is not configured for this environment yet.");
         return;
       }
       window.location.assign(result.authorizationUrl);
     } catch (reason) {
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : "Unable to start Telegram linking",
-      );
+      setError(reason instanceof Error ? reason.message : "Unable to start Telegram linking");
     } finally {
       setTelegramStarting(false);
     }
@@ -126,8 +108,8 @@ export function AuthApp() {
         <p className="eyebrow">ACCOUNT CREATED</p>
         <h2>Connect Telegram?</h2>
         <p>
-          Optional. Connect Telegram if you also want to use this same HOOMA
-          account through Telegram. You can always do this later in Settings.
+          Optional. Connect Telegram if you also want to use this same HOOMA account through
+          Telegram. You can always do this later in Settings.
         </p>
         <button
           type="button"
@@ -136,10 +118,7 @@ export function AuthApp() {
         >
           {telegramStarting ? "Opening Telegram…" : "Connect Telegram"}
         </button>
-        <button
-          type="button"
-          onClick={() => window.location.replace(returnTo)}
-        >
+        <button type="button" onClick={() => window.location.replace(returnTo)}>
           Maybe later
         </button>
         {visibleError ? <p className="error">{visibleError}</p> : null}
@@ -164,11 +143,7 @@ export function AuthApp() {
   return (
     <section className="auth-card">
       <div className="auth-tabs">
-        <button
-          type="button"
-          aria-pressed={mode === "login"}
-          onClick={() => setMode("login")}
-        >
+        <button type="button" aria-pressed={mode === "login"} onClick={() => setMode("login")}>
           Sign in
         </button>
         <button
@@ -197,8 +172,8 @@ export function AuthApp() {
         </>
       ) : (
         <p className="status">
-          Telegram is optional. After creating your Web account you can connect
-          it now or later in Settings.
+          Telegram is optional. After creating your Web account you can connect it now or later in
+          Settings.
         </p>
       )}
       {visibleError ? <p className="error">{visibleError}</p> : null}
@@ -228,12 +203,7 @@ function LoginForm({ onSuccess, onError }: FormCallbacks) {
       </label>
       <label>
         Password
-        <input
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-        />
+        <input name="password" type="password" autoComplete="current-password" required />
       </label>
       <button type="submit">Sign in</button>
     </form>

@@ -1,15 +1,6 @@
-import {
-  createHash,
-  createPublicKey,
-  randomBytes,
-  verify as verifySignature,
-} from "node:crypto";
+import { createHash, createPublicKey, randomBytes, verify as verifySignature } from "node:crypto";
 import * as argon2 from "argon2";
-import {
-  deepSnakeToCamelObjKeys,
-  parse,
-  validate,
-} from "@tma.js/init-data-node";
+import { deepSnakeToCamelObjKeys, parse, validate } from "@tma.js/init-data-node";
 
 export type AuthTransport = "web" | "telegram";
 
@@ -69,10 +60,7 @@ export async function hashPassword(password: string): Promise<string> {
   });
 }
 
-export async function verifyPassword(
-  hash: string,
-  password: string,
-): Promise<boolean> {
+export async function verifyPassword(hash: string, password: string): Promise<boolean> {
   try {
     return await argon2.verify(hash, password);
   } catch {
@@ -165,9 +153,7 @@ export async function validateTelegramOidcIdToken(
 
   return {
     telegramUserId: BigInt(String(payload.id)),
-    ...(payload.preferred_username
-      ? { username: payload.preferred_username }
-      : {}),
+    ...(payload.preferred_username ? { username: payload.preferred_username } : {}),
     ...(payload.given_name ? { firstName: payload.given_name } : {}),
     ...(payload.family_name ? { lastName: payload.family_name } : {}),
     ...(payload.picture ? { photoUrl: payload.picture } : {}),
@@ -176,9 +162,7 @@ export async function validateTelegramOidcIdToken(
 
 function parseJwtJson<T>(segment: string): T {
   try {
-    return JSON.parse(
-      Buffer.from(segment, "base64url").toString("utf8"),
-    ) as T;
+    return JSON.parse(Buffer.from(segment, "base64url").toString("utf8")) as T;
   } catch {
     throw new Error("Invalid Telegram ID token payload");
   }
@@ -188,9 +172,7 @@ function audienceContains(
   audience: string | readonly string[] | undefined,
   clientId: string,
 ): boolean {
-  return Array.isArray(audience)
-    ? audience.includes(clientId)
-    : audience === clientId;
+  return Array.isArray(audience) ? audience.includes(clientId) : audience === clientId;
 }
 
 async function telegramJwks(): Promise<readonly TelegramJwk[]> {

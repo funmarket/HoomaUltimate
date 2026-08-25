@@ -51,9 +51,7 @@ export class PrismaIdentityRepository implements IdentityRepository {
     await this.db.webCredential.create({ data: input });
   }
 
-  findWebCredential(
-    loginUsername: string,
-  ): Promise<WebCredentialRecord | null> {
+  findWebCredential(loginUsername: string): Promise<WebCredentialRecord | null> {
     return this.db.webCredential.findUnique({
       where: { loginUsername },
       select: {
@@ -83,11 +81,7 @@ export class PrismaIdentityRepository implements IdentityRepository {
     });
   }
 
-  async createSession(
-    userId: string,
-    tokenHash: string,
-    expiresAt: Date,
-  ): Promise<void> {
+  async createSession(userId: string, tokenHash: string, expiresAt: Date): Promise<void> {
     await this.db.webSession.create({ data: { userId, tokenHash, expiresAt } });
   }
 
@@ -113,10 +107,7 @@ export class PrismaIdentityRepository implements IdentityRepository {
     return identity?.userId ?? null;
   }
 
-  async createTelegramIdentityForUser(
-    userId: string,
-    input: TelegramIdentityInput,
-  ): Promise<void> {
+  async createTelegramIdentityForUser(userId: string, input: TelegramIdentityInput): Promise<void> {
     await this.db.telegramIdentity.create({
       data: {
         userId,
@@ -162,10 +153,7 @@ export class PrismaIdentityRepository implements IdentityRepository {
             userId: user.id,
             username,
             displayName:
-              [input.firstName, input.lastName]
-                .filter(Boolean)
-                .join(" ")
-                .trim() ||
+              [input.firstName, input.lastName].filter(Boolean).join(" ").trim() ||
               input.username ||
               "HOOMA member",
             photoUrl: input.photoUrl ?? null,
@@ -185,9 +173,7 @@ export class PrismaIdentityRepository implements IdentityRepository {
     }
   }
 
-  async findLoginMethods(
-    userId: string,
-  ): Promise<LoginMethodsRecord | null> {
+  async findLoginMethods(userId: string): Promise<LoginMethodsRecord | null> {
     const user = await this.db.user.findUnique({
       where: { id: userId },
       select: {
@@ -199,9 +185,7 @@ export class PrismaIdentityRepository implements IdentityRepository {
     return { web: user.webCredential, telegram: user.telegramIdentity };
   }
 
-  async findPublicProfile(
-    username: string,
-  ): Promise<PublicProfileRecord | null> {
+  async findPublicProfile(username: string): Promise<PublicProfileRecord | null> {
     const presentation = await this.db.userPresentation.findUnique({
       where: { username },
       select: {
@@ -268,10 +252,7 @@ export class PrismaIdentityRepository implements IdentityRepository {
     };
   }
 
-  async updateProfile(
-    userId: string,
-    input: ProfileWriteInput,
-  ): Promise<void> {
+  async updateProfile(userId: string, input: ProfileWriteInput): Promise<void> {
     await this.db.$transaction(async (tx) => {
       await tx.userPresentation.update({
         where: { userId },
@@ -415,10 +396,7 @@ export class PrismaIdentityRepository implements IdentityRepository {
     }
     for (const grant of user.teamCapabilityGrants) {
       const existingTeam = teamMap.get(grant.teamId);
-      if (
-        existingTeam &&
-        !existingTeam.capabilities.includes(grant.capability)
-      ) {
+      if (existingTeam && !existingTeam.capabilities.includes(grant.capability)) {
         existingTeam.capabilities.push(grant.capability);
       }
     }

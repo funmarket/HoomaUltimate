@@ -1,9 +1,6 @@
 import { Router } from "express";
 import { profilePresentationUpdateSchema } from "@hooma/contracts";
-import {
-  telegramOidcStartSchema,
-  webCredentialAttachSchema,
-} from "@hooma/contracts/auth-linking";
+import { telegramOidcStartSchema, webCredentialAttachSchema } from "@hooma/contracts/auth-linking";
 import { profileUpdateSchema } from "@hooma/contracts/profile";
 import type { ApiConfig } from "@hooma/config";
 import { AppError } from "../../../http/errors/app-error.js";
@@ -11,15 +8,9 @@ import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import type { IdentityService } from "../application/identity.service.js";
 import { getAuth } from "./auth-request.js";
 import { clearSessionCookie, readCookie } from "./cookies.js";
-import {
-  beginTelegramWebFlow,
-  telegramWebLoginConfigured,
-} from "./telegram-web-auth.js";
+import { beginTelegramWebFlow, telegramWebLoginConfigured } from "./telegram-web-auth.js";
 
-export function createIdentityMemberRouter(
-  service: IdentityService,
-  config: ApiConfig,
-): Router {
+export function createIdentityMemberRouter(service: IdentityService, config: ApiConfig): Router {
   const router = Router();
 
   router.get(
@@ -42,12 +33,14 @@ export function createIdentityMemberRouter(
     "/auth/web-credential",
     asyncHandler(async (request, response) => {
       const auth = getAuth(request);
-      response.status(201).json(
-        await service.addWebCredential(
-          auth.userId,
-          webCredentialAttachSchema.parse(request.body),
-        ),
-      );
+      response
+        .status(201)
+        .json(
+          await service.addWebCredential(
+            auth.userId,
+            webCredentialAttachSchema.parse(request.body),
+          ),
+        );
     }),
   );
 
@@ -85,10 +78,7 @@ export function createIdentityMemberRouter(
     asyncHandler(async (request, response) => {
       const auth = getAuth(request);
       response.json(
-        await service.updateProfile(
-          auth.userId,
-          profileUpdateSchema.parse(request.body),
-        ),
+        await service.updateProfile(auth.userId, profileUpdateSchema.parse(request.body)),
       );
     }),
   );
