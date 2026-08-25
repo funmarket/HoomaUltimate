@@ -6,7 +6,7 @@ on:
       - tmp/pr81-prettier-readonly
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   format-diff:
@@ -19,13 +19,17 @@ jobs:
           cache: npm
       - run: npm install --global npm@10.9.2
       - run: npm ci
-      - name: Format flagged files in checkout only
+      - name: Format flagged files
         run: >-
           npx prettier --write
           apps/web/src/auth/GamerSignupOnboarding.tsx
           tests/gamer-identity-eligibility.integration.test.ts
-      - name: Print exact formatter diff
-        run: >-
-          git diff --no-ext-diff --unified=3 --
-          apps/web/src/auth/GamerSignupOnboarding.tsx
-          tests/gamer-identity-eligibility.integration.test.ts
+      - name: Commit exact formatter output
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/src/auth/GamerSignupOnboarding.tsx tests/gamer-identity-eligibility.integration.test.ts
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: capture PR81 prettier output"
+            git push
+          fi
