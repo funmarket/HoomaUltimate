@@ -16,6 +16,22 @@ export interface SessionRecord {
   readonly userId: string;
 }
 
+export interface LoginMethodsRecord {
+  readonly web: {
+    readonly loginUsername: string;
+    readonly email: string | null;
+  } | null;
+  readonly telegram: {
+    readonly telegramUsername: string | null;
+  } | null;
+}
+
+export type TelegramLinkClaimResult =
+  | { readonly kind: "linked"; readonly userId: string }
+  | { readonly kind: "invalid" }
+  | { readonly kind: "telegram_conflict" }
+  | { readonly kind: "account_conflict" };
+
 export interface PublicProfileRecord {
   readonly presentation: {
     readonly username: string;
@@ -97,6 +113,12 @@ export interface IdentityRepository {
     displayUsername: string;
     displayName: string;
   }): Promise<string>;
+  createWebCredentialForUser(input: {
+    userId: string;
+    loginUsername: string;
+    passwordHash: string;
+    email: string | null;
+  }): Promise<void>;
   findWebCredential(loginUsername: string): Promise<WebCredentialRecord | null>;
   recordLoginFailure(
     userId: string,
@@ -109,6 +131,13 @@ export interface IdentityRepository {
   revokeSession(tokenHash: string): Promise<void>;
   findTelegramUserId(telegramUserId: bigint): Promise<string | null>;
   upsertTelegramIdentity(input: TelegramIdentityInput): Promise<string>;
+  findLoginMethods(userId: string): Promise<LoginMethodsRecord | null>;
+  createTelegramLinkIntent(userId: string, tokenHash: string, expiresAt: Date): Promise<void>;
+  claimTelegramLinkIntent(
+    tokenHash: string,
+    identity: TelegramIdentityInput,
+    now: Date,
+  ): Promise<TelegramLinkClaimResult>;
   findPublicProfile(username: string): Promise<PublicProfileRecord | null>;
   findProfile(userId: string): Promise<ProfileRecord | null>;
   updateProfile(userId: string, input: ProfileWriteInput): Promise<void>;
