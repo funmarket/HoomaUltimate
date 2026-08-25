@@ -9,7 +9,11 @@ import type { WhistleTransientStore } from "../application/whistle.store.js";
 function whistleRedisError(error: unknown): AppError {
   if (error instanceof RedisInfrastructureError) {
     if (error.code === "CONFIG") {
-      return new AppError(503, "WHISTLE_REDIS_CONFIG", "Whistle requires a redis:// transient store");
+      return new AppError(
+        503,
+        "WHISTLE_REDIS_CONFIG",
+        "Whistle requires a redis:// transient store",
+      );
     }
     if (error.code === "TIMEOUT") {
       return new AppError(503, "WHISTLE_REDIS_TIMEOUT", "Whistle transient store timed out");
@@ -29,7 +33,11 @@ function whistleRedisError(error: unknown): AppError {
       );
     }
   }
-  return new AppError(503, "WHISTLE_REDIS_UNAVAILABLE", "Whistle transient store is unavailable");
+  return new AppError(
+    503,
+    "WHISTLE_REDIS_UNAVAILABLE",
+    "Whistle transient store is unavailable",
+  );
 }
 
 export class RedisWhistleStore implements WhistleTransientStore {
@@ -47,7 +55,11 @@ export class RedisWhistleStore implements WhistleTransientStore {
     return `whistle:body:${whistleId}`;
   }
 
-  async putBody(whistleId: string, body: string, expiresInMilliseconds: number): Promise<void> {
+  async putBody(
+    whistleId: string,
+    body: string,
+    expiresInMilliseconds: number,
+  ): Promise<void> {
     const ttl = Math.max(1, Math.floor(expiresInMilliseconds));
     try {
       const result = await this.redis.command([
