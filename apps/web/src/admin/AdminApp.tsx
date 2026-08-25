@@ -86,6 +86,8 @@ export function AdminApp() {
   const [overview, setOverview] = useState<PlatformOverview | null>(null);
   const [communities, setCommunities] = useState<PublicCommunitySummary[]>([]);
   const [teams, setTeams] = useState<PublicTeamSummary[]>([]);
+  const [selectedCommunityId, setSelectedCommunityId] = useState("");
+  const [selectedTeamId, setSelectedTeamId] = useState("");
   const [managers, setManagers] = useState<AppManagerSummary[]>([]);
   const [audit, setAudit] = useState<PlatformAuditEntry[]>([]);
   const [queues, setQueues] = useState<Record<QueueName, AdminQueueItem[]>>({
@@ -96,6 +98,15 @@ export function AdminApp() {
   });
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+
+  const selectedCommunity = useMemo(
+    () => communities.find((community) => community.id === selectedCommunityId) ?? null,
+    [communities, selectedCommunityId],
+  );
+  const selectedTeam = useMemo(
+    () => teams.find((team) => team.id === selectedTeamId) ?? null,
+    [teams, selectedTeamId],
+  );
 
   function can(capability: PlatformManagerCapability): boolean {
     return Boolean(access?.isPlatformOwner || access?.managerCapabilities.includes(capability));
@@ -159,6 +170,12 @@ export function AdminApp() {
           setManagers(managerRows);
           setCommunities(communityPage.items);
           setTeams(teamPage.items);
+          setSelectedCommunityId((current) =>
+            communityPage.items.some((community) => community.id === current) ? current : "",
+          );
+          setSelectedTeamId((current) =>
+            teamPage.items.some((team) => team.id === current) ? current : "",
+          );
         }),
       );
     }
@@ -325,20 +342,46 @@ export function AdminApp() {
               </div>
               <span>{communities.length}</span>
             </div>
-            <div className="admin-entity-list">
-              {communities.map((community) => (
-                <article className="admin-entity-row" key={community.id}>
-                  <div>
-                    <strong>{community.name}</strong>
-                    <span>{community.houma || community.city || `@${community.slug}`}</span>
+            <div className="admin-entity-picker">
+              <label className="admin-entity-select-label">
+                <span>Select a HOOMA to manage</span>
+                <select
+                  className="admin-entity-select"
+                  value={selectedCommunityId}
+                  onChange={(event) => setSelectedCommunityId(event.currentTarget.value)}
+                  disabled={!communities.length}
+                >
+                  <option value="">Select a HOOMA</option>
+                  {communities.map((community) => (
+                    <option key={community.id} value={community.id}>
+                      {community.name}
+                      {community.houma || community.city
+                        ? ` — ${community.houma || community.city}`
+                        : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {!communities.length ? <p className="muted">No active HOOMAs.</p> : null}
+              {selectedCommunity ? (
+                <article className="admin-entity-detail">
+                  <div className="admin-entity-detail-copy">
+                    <strong>{selectedCommunity.name}</strong>
+                    <span>
+                      {selectedCommunity.houma ||
+                        selectedCommunity.city ||
+                        `@${selectedCommunity.slug}`}
+                    </span>
+                    <small>@{selectedCommunity.slug}</small>
                   </div>
-                  <a className="admin-link" href={`/hooma/${community.id}/edit`}>
+                  <a className="admin-link" href={`/hooma/${selectedCommunity.id}/edit`}>
                     Edit / Delete
                   </a>
                 </article>
-              ))}
+              ) : null}
             </div>
           </section>
+
           <section className="panel admin-entity-section">
             <div className="section-heading">
               <div>
@@ -347,18 +390,40 @@ export function AdminApp() {
               </div>
               <span>{teams.length}</span>
             </div>
-            <div className="admin-entity-list">
-              {teams.map((team) => (
-                <article className="admin-entity-row" key={team.id}>
-                  <div>
-                    <strong>{team.name}</strong>
-                    <span>{team.houma || team.city || `@${team.slug}`}</span>
+            <div className="admin-entity-picker">
+              <label className="admin-entity-select-label">
+                <span>Select a Team to manage</span>
+                <select
+                  className="admin-entity-select"
+                  value={selectedTeamId}
+                  onChange={(event) => setSelectedTeamId(event.currentTarget.value)}
+                  disabled={!teams.length}
+                >
+                  <option value="">Select a Team</option>
+                  {teams.map((team) => (
+                    <option key={team.id} value={team.id}>
+                      {team.name}
+                      {team.houma || team.city ? ` — ${team.houma || team.city}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {!teams.length ? <p className="muted">No active Teams.</p> : null}
+              {selectedTeam ? (
+                <article className="admin-entity-detail">
+                  <div className="admin-entity-detail-copy">
+                    <strong>{selectedTeam.name}</strong>
+                    <span>{selectedTeam.houma || selectedTeam.city || `@${selectedTeam.slug}`}</span>
+                    <small>
+                      @{selectedTeam.slug} · {selectedTeam._count.players} active player
+                      {selectedTeam._count.players === 1 ? "" : "s"}
+                    </small>
                   </div>
-                  <a className="admin-link" href={`/teams/${team.id}/edit`}>
+                  <a className="admin-link" href={`/teams/${selectedTeam.id}/edit`}>
                     Edit / Delete
                   </a>
                 </article>
-              ))}
+              ) : null}
             </div>
           </section>
         </>
