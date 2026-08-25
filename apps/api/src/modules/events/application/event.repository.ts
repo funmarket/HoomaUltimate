@@ -8,6 +8,10 @@ export interface EventPublicListInput {
   readonly cursor?: string;
 }
 
+export interface EventPublicRecord {
+  readonly communityId: string;
+}
+
 export interface EventAccessRecord {
   readonly communityId: string;
   readonly createdByUserId: string;
@@ -29,7 +33,7 @@ export interface FormationRosterPlayer {
 
 export interface EventRepository {
   listPublic(input: EventPublicListInput): Promise<unknown>;
-  getPublic(eventId: string): Promise<unknown | null>;
+  getPublic(eventId: string): Promise<EventPublicRecord | null>;
   access(eventId: string): Promise<EventAccessRecord | null>;
   getRsvp(eventId: string, userId: string): Promise<{ status: EventRsvpState } | null>;
   formationRoster(eventId: string): Promise<FormationRosterPlayer[]>;
