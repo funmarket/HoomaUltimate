@@ -1,21 +1,35 @@
-export type CommunityRole = "FOUNDER" | "COACH" | "MEMBER";
+import type {
+  CommunityCreateInput,
+  CommunityJoinPolicy,
+  CommunityJoinRequestStatus,
+  CommunityRole,
+  CommunityUpdateInput,
+  CommunityVisibility,
+} from "@hooma/contracts/communities";
 
-export interface CommunityCreateInput {
-  name: string;
-  description?: string | null;
-  city?: string | null;
-  houma?: string | null;
-  logoUrl?: string | null;
-  bannerUrl?: string | null;
+export type { CommunityRole } from "@hooma/contracts/communities";
+
+export interface CommunityCreateRecordInput extends CommunityCreateInput {
+  joinPolicy: CommunityJoinPolicy;
 }
 
-export type CommunityUpdateInput = Partial<CommunityCreateInput>;
+export interface CommunityUpdateRecordInput extends CommunityUpdateInput {
+  joinPolicy?: CommunityJoinPolicy;
+}
 
 export interface CommunityLifecycleRecord {
   readonly createdByUserId: string;
   readonly status: "ACTIVE" | "ARCHIVED";
+  readonly visibility: CommunityVisibility;
+  readonly joinPolicy: CommunityJoinPolicy;
   readonly hasActiveTeam: boolean;
   readonly hasPublishedEvent: boolean;
+}
+
+export interface CommunityMembershipPolicyRecord {
+  readonly status: "ACTIVE" | "ARCHIVED";
+  readonly visibility: CommunityVisibility;
+  readonly joinPolicy: CommunityJoinPolicy;
 }
 
 export interface CommunityMember {
@@ -29,15 +43,51 @@ export interface CommunityMember {
   } | null;
 }
 
+export interface CommunityJoinRequestRecord {
+  id: string;
+  communityId: string;
+  userId: string;
+  status: CommunityJoinRequestStatus;
+  requestedAt: Date;
+  resolvedAt: Date | null;
+}
+
+export interface CommunityJoinRequestForFounderRecord extends CommunityJoinRequestRecord {
+  presentation: {
+    displayName: string;
+    username: string;
+    photoUrl: string | null;
+  } | null;
+}
+
 export interface CommunityRepository {
   listPublic(limit: number, cursor?: string): Promise<unknown>;
   getPublic(id: string): Promise<unknown | null>;
-  create(userId: string, input: CommunityCreateInput): Promise<unknown>;
+  create(userId: string, input: CommunityCreateRecordInput): Promise<unknown>;
   lifecycle(communityId: string): Promise<CommunityLifecycleRecord | null>;
-  update(communityId: string, input: CommunityUpdateInput): Promise<unknown>;
+  membershipPolicy(communityId: string): Promise<CommunityMembershipPolicyRecord | null>;
+  update(communityId: string, input: CommunityUpdateRecordInput): Promise<unknown>;
   archive(communityId: string): Promise<void>;
   managerRole(communityId: string, userId: string): Promise<CommunityRole | null>;
-  join(communityId: string, userId: string): Promise<{ role: CommunityRole } | null>;
+  joinOpen(communityId: string, userId: string): Promise<{ role: CommunityRole } | null>;
+  requestJoin(communityId: string, userId: string): Promise<CommunityJoinRequestRecord | null>;
+  getJoinRequest(
+    communityId: string,
+    userId: string,
+  ): Promise<CommunityJoinRequestRecord | null>;
+  listJoinRequests(communityId: string): Promise<CommunityJoinRequestForFounderRecord[]>;
+  resolveJoinRequest(
+    communityId: string,
+    targetUserId: string,
+    resolverUserId: string,
+    decision: "APPROVE" | "DECLINE",
+  ): Promise<boolean>;
+  cancelJoinRequest(communityId: string, userId: string): Promise<boolean>;
+  addMemberByUsername(
+    communityId: string,
+    username: string,
+    resolverUserId: string,
+  ): Promise<{ userId: string; username: string } | null>;
   leave(communityId: string, userId: string): Promise<void>;
   listMembers(communityId: string): Promise<CommunityMember[]>;
   removeMember(communityId: string, targetUserId: string): Promise<void>;
