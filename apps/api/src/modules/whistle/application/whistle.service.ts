@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { AppError } from "../../../http/errors/app-error.js";
 import type { CommunityService } from "../../communities/application/community.service.js";
 import type { EventService } from "../../events/application/event.service.js";
+import type { GamerService } from "../../gamers/application/gamer.service.js";
 import type {
   WhistleContextType,
   WhistleMetadataRecord,
@@ -39,6 +40,7 @@ export class WhistleService {
     private readonly transientStore: WhistleTransientStore,
     private readonly communities: CommunityService,
     private readonly events: EventService,
+    private readonly gamers: GamerService,
   ) {}
 
   private async authorizeContext(
@@ -67,6 +69,34 @@ export class WhistleService {
     contextId: string,
   ): Promise<{ items: WhistleListItem[]; remainingToday: number; resetsAt: string }> {
     await this.authorizeContext(userId, contextType, contextId);
+    return this.listAuthorized(userId, contextType, contextId);
+  }
+
+  async create(
+    userId: string,
+    contextType: WhistleContextType,
+    contextId: string,
+    rawBody: string,
+  ) {
+    await this.authorizeContext(userId, contextType, contextId);
+    return this.createAuthorized(userId, contextType, contextId, rawBody);
+  }
+
+  async listDirectGamer(userId: string, otherProfileId: string) {
+    const contextId = await this.gamers.resolveDirectWhistleContext(userId, otherProfileId);
+    return this.listAuthorized(userId, "GAMER_DIRECT", contextId);
+  }
+
+  async createDirectGamer(userId: string, otherProfileId: string, rawBody: string) {
+    const contextId = await this.gamers.resolveDirectWhistleContext(userId, otherProfileId);
+    return this.createAuthorized(userId, "GAMER_DIRECT", contextId, rawBody);
+  }
+
+  private async listAuthorized(
+    userId: string,
+    contextType: WhistleContextType,
+    contextId: string,
+  ): Promise<{ items: WhistleListItem[]; remainingToday: number; resetsAt: string }> {
     const now = new Date();
     const resetsAt = nextUtcMidnight(now);
     await this.repository.deleteExpired(now);
@@ -96,13 +126,12 @@ export class WhistleService {
     };
   }
 
-  async create(
+  private async createAuthorized(
     userId: string,
     contextType: WhistleContextType,
     contextId: string,
     rawBody: string,
   ) {
-    await this.authorizeContext(userId, contextType, contextId);
     const body = rawBody.trim();
     const graphemes = graphemeCount(body);
     if (graphemes < 1) throw new AppError(400, "WHISTLE_EMPTY", "Whistle cannot be empty");
