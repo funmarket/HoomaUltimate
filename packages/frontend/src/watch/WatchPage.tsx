@@ -9,6 +9,7 @@ import type { PublicEvent } from "../events/api";
 import { useEventApi } from "../events/useEventApi";
 import { PlaceCapabilityOnboarding } from "../places/PlaceCapabilityOnboarding";
 import { createPlatformManagementApi } from "../places/platform-management-api";
+import "./watch-business.css";
 
 function normalize(value: string | null | undefined): string {
   return value?.trim().toLocaleLowerCase() ?? "";
@@ -228,6 +229,22 @@ export function WatchPage() {
         </button>
       </header>
 
+      <details className="watch-business-entry">
+        <summary>
+          <span className="watch-business-entry__summary-copy">
+            <span className="eyebrow">BUSINESS OWNER</span>
+            <strong>List or manage a Watch venue</strong>
+            <small>Verify ownership, then apply for Watch approval.</small>
+          </span>
+          <span className="watch-business-entry__toggle" aria-hidden="true">
+            ＋
+          </span>
+        </summary>
+        <div className="watch-business-entry__body">
+          <PlaceCapabilityOnboarding kind="WATCH" places={places} />
+        </div>
+      </details>
+
       <div className="watch-discovery-controls">
         <label className="watch-search">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -313,19 +330,6 @@ export function WatchPage() {
           <p className="muted">No approved Watch places match these filters.</p>
         ) : null}
       </section>
-
-      <details className="watch-business-entry">
-        <summary>
-          <span>
-            <strong>List or manage a Watch venue</strong>
-            <small>Place ownership and App review remain required.</small>
-          </span>
-          <span aria-hidden="true">＋</span>
-        </summary>
-        <div className="watch-business-entry__body">
-          <PlaceCapabilityOnboarding kind="WATCH" places={places} />
-        </div>
-      </details>
     </section>
   );
 }
