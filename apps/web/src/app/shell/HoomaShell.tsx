@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { HoomaAccountHeader, HoomaBottomNav } from "@hooma/ui";
 import { useHoomaFrontend } from "@hooma/frontend";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -18,6 +18,8 @@ export function HoomaShell({
   const { api } = useHoomaFrontend();
   const { me, managedTeams, loading, error, refresh } = useAccount();
   useTelegramBackButton(runtime);
+
+  useEffect(() => runtime.connect(), [runtime]);
 
   async function signOut() {
     await api.identity.logout();
