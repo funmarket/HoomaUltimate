@@ -1,0 +1,34 @@
+name: PR61 exact test prettier
+
+on:
+  push:
+    branches:
+      - tmp/pr61-test-prettier
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp/pr61-test-prettier
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - run: npx prettier --write tests/light-appearance-authority.test.mjs
+      - name: Commit exact Prettier output
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/light-appearance-authority.test.mjs
+          git commit -m "chore: format updated appearance test"
+          git push origin HEAD:tmp/pr61-test-prettier
