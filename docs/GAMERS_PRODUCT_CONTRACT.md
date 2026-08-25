@@ -4,9 +4,9 @@ Status: **OWNER-APPROVED ACTIVE PRODUCT DIRECTION**
 Scope: Gamers vertical slice  
 Product name: **HOOMA**
 
-This document records the product owner's explicit Gamers direction chosen on 2026-08-23. Where older Gamers planning text conflicts with this contract, the newer owner decision wins under `AGENTS.md`.
+This document records the product owner's explicit Gamers direction chosen on 2026-08-23 and updated on 2026-08-25. Where older Gamers planning text conflicts with this contract, the newer owner decision wins under `AGENTS.md`.
 
-Gamers is intentionally human-first: HOOMA introduces people, lets them challenge one another, records what the participants agree happened, builds game-specific reputation/ranking from completed human-confirmed matches, and gives real Gamer Squads a private Whistle Board. External game APIs are not required for the core product.
+Gamers is intentionally human-first: HOOMA introduces people, lets them challenge and directly Whistle one another through the shared transient Whistle engine, records what the participants agree happened, builds game-specific reputation/ranking from completed human-confirmed matches, and gives real Gamer Squads a private Whistle Board. External game APIs are not required for the core product.
 
 ---
 
@@ -96,7 +96,13 @@ CHALLENGERS | SQUADS | ARENA | RANKINGS
 
 There is no global Gamers Whistle feed/tab.
 
-Challenger cards use truthful state such as `OPEN TO CHALLENGE`. Do not display fake `ONLINE` presence unless HOOMA later owns a real presence source.
+The Challenger HUD card is the current canonical Gamer player presentation. It contains the game, Gamer Tag, canonical HOOMA identity projection, truthful challenge state and the relevant direct actions. Opening a Challenger must not switch into a second oversized Gamer profile design or duplicate the same identity information on another Gamer-specific page.
+
+The dedicated `/gamers/games/:gameSlug/profiles/:profileId` presentation is retired. Canonical general HOOMA profile ownership remains separate under Identity/Profile and `GamerProfile` remains the game-specific data model.
+
+Challenger cards use truthful state such as `OPEN TO CHALLENGE`. Do not display fake `ONLINE` presence unless HOOMA later owns a real presence source. Do not invent rank, XP, level, trophies, records or other competitive statistics before the results/ranking domains actually own them.
+
+The card's primary competitive action is Challenge. A secondary `WHISTLE` action may open a compact transient direct-composer/feed within the HUD card; this action tray is not a second player-profile expansion.
 
 ---
 
@@ -120,7 +126,7 @@ Canonical lifecycle starts with:
 
 ```text
 PENDING -> ACCEPTED -> RESULT_PENDING -> COMPLETED
-                         |                
+                         |
                          -> DISPUTED
 ```
 
@@ -241,17 +247,40 @@ Rules:
 
 ---
 
-## 11. Squad-only Whistle
+## 11. Gamer Whistle contexts
 
-Gamers does not create another messaging/chat system.
+Gamers does not create another messaging/chat system. Every Gamer Whistle uses the one shared Whistle engine.
 
-Gamer Squad uses the one shared Whistle engine with context:
+### 11.1 Direct Gamer Whistle
+
+The Challenger HUD card may expose direct Gamer-to-Gamer Whistle with context:
+
+```text
+GAMER_DIRECT
+```
+
+The raw Whistle context identifier is never supplied by the client. The Whistle/Gamers services derive one deterministic unordered pair context from the authenticated sender's GamerProfile and the selected target GamerProfile within the same game.
+
+Authorization:
+
+- sender must have active `GAMER` identity;
+- sender must own a GamerProfile in the target GamerProfile's active game;
+- target GamerProfile must exist and its User must still have active `GAMER` identity;
+- self-Whistle is forbidden;
+- both participants resolve to the same pair context;
+- a random user without the matching per-game GamerProfile cannot list or send that pair's Whistles.
+
+The card may display today's transient pair Whistles and a compact composer. This is not a permanent inbox, chat thread or Gamer profile expansion.
+
+### 11.2 Squad Whistle
+
+Gamer Squad uses the shared Whistle engine with context:
 
 ```text
 GAMER_SQUAD
 ```
 
-Whistle appears only inside the authorized Gamer Squad member page/HQ, not as a global Gamers Whistle feed.
+Squad Whistle appears only inside the authorized Gamer Squad member page/HQ, not as a global Gamers Whistle feed.
 
 Authorization:
 
@@ -274,9 +303,7 @@ no Reveal endpoint
 no per-viewer reveal/seen state
 ```
 
-Community Whistles and future Gamer Squad Whistles therefore consume the same global 11/day quota.
-
-The existing shared Whistle UI/client should be generalized when necessary rather than copied into a parallel Gamers Whistle implementation.
+Community, Event, direct Gamer and future Gamer Squad Whistles consume the same global 11/day quota. The shared Whistle engine remains the only owner of quota, retention, body storage and expiry behavior.
 
 ---
 
@@ -297,7 +324,7 @@ GamerSquadMembership
 
 Do not create an `Arena` table; Arena is a projection of challenge/match lifecycle.
 
-Do not create Gamer chat/message tables for this product direction.
+Do not create Gamer chat/message tables for this product direction. `GAMER_DIRECT` Whistle uses existing Whistle metadata plus Redis body storage and does not create a durable conversation entity.
 
 Do not create a separate `GamerMatch` merely because the UI says Match Card unless implementation proves Challenge and Match require separate durable identities. In the current direction, the accepted GamerChallenge can remain the canonical match identity.
 
@@ -312,6 +339,7 @@ Protected actions require the existing canonical HOOMA account at the action bou
 - add a game;
 - create/update GamerProfile;
 - challenge;
+- direct Gamer Whistle list/send;
 - accept/decline/cancel;
 - submit/confirm/contest result;
 - create/join/manage Squad;
@@ -322,7 +350,7 @@ If the visitor has no HOOMA account/profile, the protected action leads to canon
 
 Server-side authorization is mandatory; hiding a button is not authorization.
 
-Whistle routes remain owned by the Whistle domain rather than moving under Gamers.
+Whistle routes remain owned by the Whistle domain rather than moving under Gamers. Gamers supplies direct-pair authorization/resolution to the shared Whistle service; it does not own Whistle body persistence.
 
 ---
 
@@ -342,8 +370,8 @@ Implement as bounded vertical slices:
 
 0. **G0 — consolidate first**: reconcile the current foundation, retire duplicate ADR numbering, absorb only the useful old Gamers layering into one canonical module tree, remove the hardcoded bootstrap-catalog direction, and align governing documents before persisted Gamers behavior begins.
 1. **G1 — Gamers entry + catalog**: real `/gamers` route, persisted GamerGame catalog, FC Mobile/Ludo launch entries, authenticated missing-game contribution and duplicate handling.
-2. **G2 — Gamer identity + Challengers**: GamerProfile, game username, open-to-challenge, discovery/profile UI. GamerProfile creation reuses an existing canonical HOOMA User/profile and must never introduce a second Gamer signup.
-3. **G3 — Challenge + Match Card**: send/accept/decline/cancel, concurrency-safe lifecycle, Arena projection.
+2. **G2 — Gamer identity + Challengers**: GamerProfile, game username, open-to-challenge, HUD discovery presentation. GamerProfile creation reuses an existing canonical HOOMA User/profile and must never introduce a second Gamer signup. The HUD card is the only current Gamer player presentation; no duplicate Gamer profile page.
+3. **G3 — Challenge + Match Card + direct Whistle**: send/accept/decline/cancel, concurrency-safe lifecycle, Arena projection, plus card-level `GAMER_DIRECT` Whistle through the shared engine and server-derived same-game GamerProfile pair authorization.
 4. **G4 — Results**: submit, optional evidence reference, confirm, contest, independent agreement, completed/disputed, rematch.
 5. **G5 — Ranking**: per-game rating/record, idempotent atomic rating updates/history, Rankings UI.
 6. **G6 — Gamer Squads**: creation, optional logo/banner URL, public Squad community page, membership, Leader/member HQ.
