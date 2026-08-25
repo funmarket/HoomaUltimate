@@ -44,6 +44,14 @@ export function hashSessionToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
+export function newAccountLinkCode(): string {
+  return randomBytes(9).toString("base64url");
+}
+
+export function hashAccountLinkCode(code: string): string {
+  return createHash("sha256").update(`account-link:${code}`).digest("hex");
+}
+
 export function validateTelegramInitData(
   rawInitData: string,
   botToken: string,
