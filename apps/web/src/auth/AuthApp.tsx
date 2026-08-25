@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import { startTelegramWebLogin, useHoomaFrontend } from "@hooma/frontend";
+import {
+  startTelegramLink,
+  startTelegramWebLogin,
+  useHoomaFrontend,
+} from "@hooma/frontend";
 import { useAccount } from "../account/AccountProvider";
 
 function safeReturnTo(): string {
@@ -24,16 +28,27 @@ export function AuthApp() {
   const [error, setError] = useState(telegramError);
   const [mode, setMode] = useState<"login" | "register">(initialMode);
   const [telegramStarting, setTelegramStarting] = useState(false);
+  const [registrationComplete, setRegistrationComplete] = useState(false);
   const returnTo = useMemo(safeReturnTo, []);
 
   useEffect(() => {
-    if (!loading && me && returnTo !== "/") window.location.replace(returnTo);
-  }, [loading, me, returnTo]);
+    if (!registrationComplete && !loading && me && returnTo !== "/") {
+      window.location.replace(returnTo);
+    }
+  }, [loading, me, registrationComplete, returnTo]);
 
   async function completeAuthentication() {
     setError("");
     if (await refresh()) {
       window.location.replace(returnTo);
+    }
+  }
+
+  async function completeRegistration() {
+    setError("");
+    setRegistrationComplete(true);
+    if (!(await refresh())) {
+      setRegistrationComplete(false);
     }
   }
 
@@ -64,6 +79,23 @@ export function AuthApp() {
     }
   }
 
+  async function connectTelegramAfterRegistration() {
+    setError("");
+    setTelegramStarting(true);
+    try {
+      const result = await startTelegramLink(transport, returnTo);
+      if (!result.enabled || !result.authorizationUrl) {
+        setError("Telegram Web login is not configured for this environment yet.");
+        return;
+      }
+      window.location.assign(result.authorizationUrl);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unable to start Telegram linking");
+    } finally {
+      setTelegramStarting(false);
+    }
+  }
+
   if (loading) {
     return (
       <section className="auth-card" aria-busy="true">
@@ -73,6 +105,30 @@ export function AuthApp() {
   }
 
   const visibleError = error || accountError;
+
+  if (registrationComplete && me) {
+    return (
+      <section className="auth-card">
+        <p className="eyebrow">ACCOUNT CREATED</p>
+        <h2>Connect Telegram?</h2>
+        <p>
+          Optional. Connect Telegram if you also want to use this same HOOMA account through
+          Telegram. You can always do this later in Settings.
+        </p>
+        <button
+          type="button"
+          disabled={telegramStarting}
+          onClick={() => void connectTelegramAfterRegistration()}
+        >
+          {telegramStarting ? "Opening Telegram…" : "Connect Telegram"}
+        </button>
+        <button type="button" onClick={() => window.location.replace(returnTo)}>
+          Maybe later
+        </button>
+        {visibleError ? <p className="error">{visibleError}</p> : null}
+      </section>
+    );
+  }
 
   if (me) {
     return (
@@ -105,22 +161,25 @@ export function AuthApp() {
       {mode === "login" ? (
         <LoginForm onSuccess={completeAuthentication} onError={setError} />
       ) : (
-        <RegisterForm onSuccess={completeAuthentication} onError={setError} />
+        <RegisterForm onSuccess={completeRegistration} onError={setError} />
       )}
-      <p className="status">or</p>
-      <button
-        type="button"
-        disabled={telegramStarting}
-        onClick={() => void continueWithTelegram()}
-      >
-        {telegramStarting ? "Opening Telegram…" : "Continue with Telegram"}
-      </button>
-      {mode === "register" ? (
+      {mode === "login" ? (
+        <>
+          <p className="status">or</p>
+          <button
+            type="button"
+            disabled={telegramStarting}
+            onClick={() => void continueWithTelegram()}
+          >
+            {telegramStarting ? "Opening Telegram…" : "Continue with Telegram"}
+          </button>
+        </>
+      ) : (
         <p className="status">
-          Telegram is optional. You can create a Web-only account and connect Telegram later in
+          Telegram is optional. After creating your Web account you can connect it now or later in
           Settings.
         </p>
-      ) : null}
+      )}
       {visibleError ? <p className="error">{visibleError}</p> : null}
     </section>
   );
