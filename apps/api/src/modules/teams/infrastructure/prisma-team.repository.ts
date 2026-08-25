@@ -433,35 +433,83 @@ export class PrismaTeamRepository implements TeamRepository {
 
   async acceptChallenge(challengeId: string) {
     return this.db.$transaction(async (tx) => {
-      const challenge = await tx.teamChallenge.update({
-        where: { id: challengeId },
+      const existing = await tx.teamChallenge.findUnique({ where: { id: challengeId } });
+      if (!existing) return null;
+      if (existing.status === "ACCEPTED") {
+        await tx.teamGame.upsert({
+          where: { challengeId },
+          create: {
+            challengeId,
+            homeTeamId: existing.challengerTeamId,
+            awayTeamId: existing.challengedTeamId,
+            scheduledAt: existing.proposedAt,
+            status: existing.proposedAt ? "CONFIRMED" : "SCHEDULING",
+          },
+          update: {},
+        });
+        return existing;
+      }
+      if (existing.status !== "PENDING") return null;
+
+      const transitioned = await tx.teamChallenge.updateMany({
+        where: { id: challengeId, status: "PENDING" },
         data: { status: "ACCEPTED" },
       });
-      await tx.teamGame.create({
-        data: {
+      if (transitioned.count !== 1) {
+        const current = await tx.teamChallenge.findUnique({ where: { id: challengeId } });
+        if (current?.status !== "ACCEPTED") return null;
+        await tx.teamGame.upsert({
+          where: { challengeId },
+          create: {
+            challengeId,
+            homeTeamId: current.challengerTeamId,
+            awayTeamId: current.challengedTeamId,
+            scheduledAt: current.proposedAt,
+            status: current.proposedAt ? "CONFIRMED" : "SCHEDULING",
+          },
+          update: {},
+        });
+        return current;
+      }
+
+      const challenge = await tx.teamChallenge.findUniqueOrThrow({ where: { id: challengeId } });
+      await tx.teamGame.upsert({
+        where: { challengeId },
+        create: {
           challengeId: challenge.id,
           homeTeamId: challenge.challengerTeamId,
           awayTeamId: challenge.challengedTeamId,
           scheduledAt: challenge.proposedAt,
           status: challenge.proposedAt ? "CONFIRMED" : "SCHEDULING",
         },
+        update: {},
       });
       return challenge;
     });
   }
 
-  declineChallenge(challengeId: string) {
-    return this.db.teamChallenge.update({
-      where: { id: challengeId },
+  async declineChallenge(challengeId: string) {
+    const transitioned = await this.db.teamChallenge.updateMany({
+      where: { id: challengeId, status: "PENDING" },
       data: { status: "DECLINED" },
     });
+    if (transitioned.count === 1) {
+      return this.db.teamChallenge.findUnique({ where: { id: challengeId } });
+    }
+    const current = await this.db.teamChallenge.findUnique({ where: { id: challengeId } });
+    return current?.status === "DECLINED" ? current : null;
   }
 
-  cancelChallenge(challengeId: string) {
-    return this.db.teamChallenge.update({
-      where: { id: challengeId },
+  async cancelChallenge(challengeId: string) {
+    const transitioned = await this.db.teamChallenge.updateMany({
+      where: { id: challengeId, status: "PENDING" },
       data: { status: "CANCELLED" },
     });
+    if (transitioned.count === 1) {
+      return this.db.teamChallenge.findUnique({ where: { id: challengeId } });
+    }
+    const current = await this.db.teamChallenge.findUnique({ where: { id: challengeId } });
+    return current?.status === "CANCELLED" ? current : null;
   }
 
   listMessages(challengeId: string) {
