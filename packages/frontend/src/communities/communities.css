@@ -230,10 +230,10 @@
   background-position: center;
   display: flex;
   align-items: end;
+  justify-content: space-between;
+  gap: 12px;
   padding: 14px;
 }
-.hooma-card-media img,
-.hooma-card-media > span,
 .hooma-hq-logo,
 .hooma-preview-logo {
   width: 64px;
@@ -249,6 +249,28 @@
     800 22px Georgia,
     serif;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+.hooma-visibility-indicator {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(242, 234, 215, 0.3);
+  border-radius: 50%;
+  background: rgba(5, 6, 6, 0.84);
+  color: var(--hooma-cream);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
+  line-height: 1;
+}
+.hooma-visibility-indicator.is-private {
+  border-color: rgba(181, 155, 87, 0.5);
+  color: #d8c584;
+}
+.hooma-visibility-indicator svg {
+  width: 19px;
+  height: 19px;
+  display: block;
 }
 .hooma-card-copy {
   padding: 18px;
@@ -345,6 +367,9 @@
   color: #d9cfba;
   line-height: 1.55;
 }
+.hooma-create-preview .hooma-visibility-indicator {
+  margin-top: 14px;
+}
 
 .hooma-create-form {
   display: grid;
@@ -386,7 +411,7 @@
   flex-wrap: wrap;
   margin-top: 16px;
 }
-.hooma-hq-meta > span:not(.hooma-role-chip) {
+.hooma-hq-meta > span:not(.hooma-role-chip):not(.hooma-visibility-indicator) {
   color: #e7dec9;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 999px;

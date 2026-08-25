@@ -85,6 +85,55 @@ function initials(name: string): string {
   );
 }
 
+function CommunityVisibilityIndicator({
+  visibility,
+}: {
+  readonly visibility: CommunityVisibility;
+}) {
+  const isPrivate = visibility === "PRIVATE";
+  const label = isPrivate ? "Private HOOMA" : "Public HOOMA";
+
+  return (
+    <span
+      className={`hooma-visibility-indicator ${isPrivate ? "is-private" : "is-public"}`}
+      aria-label={label}
+      title={label}
+    >
+      {isPrivate ? (
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+          <rect
+            x="5"
+            y="10.25"
+            width="14"
+            height="10"
+            rx="2.5"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          />
+          <path
+            d="M8 10.25V7.7a4 4 0 0 1 8 0v2.55M12 14.1v2.6"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ) : (
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+          <circle cx="12" cy="12" r="8.25" stroke="currentColor" strokeWidth="1.8" />
+          <path
+            d="M3.75 12h16.5M12 3.75c2.05 2.15 3.15 4.9 3.15 8.25S14.05 18.1 12 20.25C9.95 18.1 8.85 15.35 8.85 12S9.95 5.9 12 3.75Z"
+            stroke="currentColor"
+            strokeWidth="1.55"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      )}
+    </span>
+  );
+}
+
 export function HoomaPage() {
   const { api, authenticationHref } = useHoomaFrontend();
   const navigate = useNavigate();
@@ -260,7 +309,7 @@ export function HoomaPage() {
                     logoUrl={community.logoUrl}
                     name={community.name}
                   />
-                  <span className="hooma-visibility-chip">{community.visibility}</span>
+                  <CommunityVisibilityIndicator visibility={community.visibility} />
                 </CommunityMediaSurface>
                 <div className="hooma-card-copy">
                   <span className="eyebrow">{community.houma || community.city || "HOOMA"}</span>
@@ -336,7 +385,7 @@ export function CreateHoomaPage() {
             {description ||
               "Give your community a banner, a badge and a place people recognize as theirs."}
           </p>
-          <span className="hooma-visibility-chip">{visibility}</span>
+          <CommunityVisibilityIndicator visibility={visibility} />
         </div>
       </CommunityMediaSurface>
       <form className="panel hooma-create-form" onSubmit={submit}>
@@ -588,7 +637,7 @@ export function HoomaDetailPage({ communityId }: { readonly communityId: string 
           <div className="hooma-hq-meta">
             <span>{community._count.memberships} members</span>
             <span>{community._count.teams} teams</span>
-            <span className="hooma-visibility-chip">{community.visibility}</span>
+            <CommunityVisibilityIndicator visibility={community.visibility} />
             {membership ? <span className="hooma-role-chip">{membership.role}</span> : null}
           </div>
           <div className="hooma-hq-actions">
