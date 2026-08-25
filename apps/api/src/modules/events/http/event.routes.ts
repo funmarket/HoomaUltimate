@@ -85,6 +85,14 @@ export function createEventMemberRouter(
   communities: CommunityService,
 ): Router {
   const router = Router();
+
+  async function requireMemberActivity(request: Parameters<typeof getAuth>[0]) {
+    const userId = getAuth(request).userId;
+    const eventId = String(request.params.eventId);
+    await requireActivityAccess(service, communities, eventId, userId);
+    return { userId, eventId };
+  }
+
   router.post(
     "/",
     asyncHandler(async (request, response) =>
@@ -115,18 +123,15 @@ export function createEventMemberRouter(
   );
   router.get(
     "/:eventId/formation-roster",
-    asyncHandler(async (request, response) =>
-      response.json(
-        await service.formationRoster(getAuth(request).userId, String(request.params.eventId)),
-      ),
-    ),
+    asyncHandler(async (request, response) => {
+      const { userId, eventId } = await requireMemberActivity(request);
+      response.json(await service.formationRoster(userId, eventId));
+    }),
   );
   router.post(
     "/:eventId/join",
     asyncHandler(async (request, response) => {
-      const userId = getAuth(request).userId;
-      const eventId = String(request.params.eventId);
-      await requireActivityAccess(service, communities, eventId, userId);
+      const { userId, eventId } = await requireMemberActivity(request);
       response.json(await service.join(userId, eventId));
     }),
   );
@@ -154,55 +159,41 @@ export function createEventMemberRouter(
   );
   router.get(
     "/:eventId/formations",
-    asyncHandler(async (request, response) =>
-      response.json(
-        await service.listFormations(getAuth(request).userId, String(request.params.eventId)),
-      ),
-    ),
+    asyncHandler(async (request, response) => {
+      const { userId, eventId } = await requireMemberActivity(request);
+      response.json(await service.listFormations(userId, eventId));
+    }),
   );
   router.post(
     "/:eventId/formations",
-    asyncHandler(async (request, response) =>
+    asyncHandler(async (request, response) => {
+      const { userId, eventId } = await requireMemberActivity(request);
       response
         .status(201)
-        .json(
-          await service.createFormation(
-            getAuth(request).userId,
-            String(request.params.eventId),
-            eventFormationSchema.parse(request.body),
-          ),
-        ),
-    ),
+        .json(await service.createFormation(userId, eventId, eventFormationSchema.parse(request.body)));
+    }),
   );
   router.post(
     "/:eventId/check-in",
     asyncHandler(async (request, response) => {
-      const userId = getAuth(request).userId;
-      const eventId = String(request.params.eventId);
-      await requireActivityAccess(service, communities, eventId, userId);
+      const { userId, eventId } = await requireMemberActivity(request);
       const input = eventCheckInSchema.parse(request.body ?? {});
       response.json(await service.checkIn(userId, eventId, input.latitude, input.longitude));
     }),
   );
   router.get(
     "/:eventId/chat",
-    asyncHandler(async (request, response) =>
-      response.json(await service.chat(getAuth(request).userId, String(request.params.eventId))),
-    ),
+    asyncHandler(async (request, response) => {
+      const { userId, eventId } = await requireMemberActivity(request);
+      response.json(await service.chat(userId, eventId));
+    }),
   );
   router.post(
     "/:eventId/chat/messages",
     asyncHandler(async (request, response) => {
+      const { userId, eventId } = await requireMemberActivity(request);
       const input = eventChatMessageSchema.parse(request.body);
-      response
-        .status(201)
-        .json(
-          await service.postChat(
-            getAuth(request).userId,
-            String(request.params.eventId),
-            input.body,
-          ),
-        );
+      response.status(201).json(await service.postChat(userId, eventId, input.body));
     }),
   );
   return router;
