@@ -33,10 +33,15 @@ const server = app.listen(listenPort, "0.0.0.0", () => {
   }
 });
 
+let shuttingDown = false;
+
 function shutdown(signal: NodeJS.Signals) {
+  if (shuttingDown) return;
+  shuttingDown = true;
   console.log(`Received ${signal}; shutting down API.`);
   server.close((error) => {
     if (error) console.error(error);
+    container.redis.close();
     void disconnectDatabase().finally(() => {
       process.exitCode = error ? 1 : 0;
     });

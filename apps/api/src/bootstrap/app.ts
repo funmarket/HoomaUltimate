@@ -19,7 +19,7 @@ export function createApp(config: ApiConfig, container: AppContainer) {
     }),
   );
   app.use(express.json({ limit: "1mb" }));
-  app.use(createHealthRouter());
+  app.use(createHealthRouter(container.readinessService));
   app.use("/api/public/v1", createPublicV1Router(container, config));
   app.use("/api/v1", createMemberV1Router(container, config));
   app.use(errorHandler);
