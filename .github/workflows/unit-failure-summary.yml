@@ -20,17 +20,17 @@ jobs:
       - run: npm install --global npm@10.9.2
       - run: npm ci
       - run: npm run db:generate
-      - name: Capture unit failures
+      - name: Capture exact assertion failures
         run: |
           set +e
           npm test > unit.log 2>&1
           status=$?
           {
             echo "exit_status=$status"
-            echo "--- failing markers ---"
-            grep -nE "not ok|AssertionError|ERR_ASSERTION|failureType:|error:" unit.log || true
-            echo "--- tail ---"
-            tail -n 400 unit.log
+            echo "--- account loading failure ---"
+            sed -n '1,335p' unit.log
+            echo "--- router failure ---"
+            sed -n '840,1090p' unit.log
           } > unit-failure-summary.txt
           cat unit-failure-summary.txt
           exit 0
