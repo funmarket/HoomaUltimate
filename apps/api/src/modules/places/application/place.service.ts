@@ -46,13 +46,21 @@ export class PlaceService {
 
   async reviewPlace(userId: string, placeId: string, input: ModerationDecisionInput) {
     await this.platformAdmin.requireCapability(userId, "REVIEW_PLACES");
-    await this.repository.reviewPlace(userId, placeId, input);
+    if (!(await this.repository.reviewPlace(userId, placeId, input))) {
+      throw new AppError(409, "PLACE_REVIEW_NOT_PENDING", "This Place review is no longer pending");
+    }
     return { ok: true };
   }
 
   async reviewOwnershipClaim(userId: string, claimId: string, input: ModerationDecisionInput) {
     await this.platformAdmin.requireCapability(userId, "REVIEW_PLACE_OWNERSHIP");
-    await this.repository.reviewOwnershipClaim(userId, claimId, input);
+    if (!(await this.repository.reviewOwnershipClaim(userId, claimId, input))) {
+      throw new AppError(
+        409,
+        "PLACE_OWNERSHIP_REVIEW_NOT_PENDING",
+        "This Place ownership review is no longer pending",
+      );
+    }
     return { ok: true };
   }
 }
