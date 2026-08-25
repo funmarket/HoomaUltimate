@@ -341,7 +341,7 @@ function CreateChallengeCard({
           End time (required with kickoff)
           <input name="proposedEndsAt" type="datetime-local" />
         </label>
-        <small>Leave both times empty to coordinate the schedule after acceptance.</small>
+        <small>Leave both times empty to send an unscheduled challenge.</small>
         <label>
           Message
           <textarea name="message" rows={3} />
