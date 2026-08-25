@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import type { GamerGame } from "@hooma/contracts/gamers";
-import { useHoomaFrontend } from "@hooma/frontend";
-import { createGamerSignupOnboardingApi } from "@hooma/frontend/gamers-signup-onboarding";
+import { useHoomaFrontend, type HoomaTransport } from "@hooma/frontend";
+import {
+  createGamerOnboardingApi,
+  gamerOptInProfileInput,
+} from "@hooma/frontend/gamer-onboarding";
 
 export type GamerSignupSelection = {
   readonly enabled: boolean;
@@ -15,7 +18,7 @@ export type GamerSignupSelection = {
 
 export function useGamerSignupSelection() {
   const { transport } = useHoomaFrontend();
-  const gamerOnboarding = useMemo(() => createGamerSignupOnboardingApi(transport), [transport]);
+  const gamerOnboarding = useMemo(() => createGamerOnboardingApi(transport), [transport]);
   const [games, setGames] = useState<GamerGame[]>([]);
   const [gamesLoading, setGamesLoading] = useState(true);
   const [gamesError, setGamesError] = useState("");
@@ -85,25 +88,13 @@ export function validateGamerSignupSelection(selection: GamerSignupSelection): s
 
 export async function completeGamerSignupOnboarding(
   selection: GamerSignupSelection,
-  transport: ReturnType<typeof useHoomaFrontend>["transport"],
+  transport: HoomaTransport,
 ): Promise<void> {
   if (!selection.enabled) return;
-  const gamerOnboarding = createGamerSignupOnboardingApi(transport);
+  const gamerOnboarding = createGamerOnboardingApi(transport);
   const selectedGames = selection.games.filter((game) => selection.selectedGameIds.includes(game.id));
   const profile = await gamerOnboarding.profile();
-  await gamerOnboarding.updateProfile({
-    username: profile.presentation.username,
-    displayName: profile.presentation.displayName,
-    photoUrl: profile.presentation.photoUrl,
-    bio: profile.presentation.bio,
-    identities: [...new Set([...profile.identities, "GAMER" as const])],
-    player: profile.player
-      ? {
-          skillLevel: profile.player.skillLevel,
-          preferredPositions: profile.player.preferredPositions,
-        }
-      : null,
-  });
+  await gamerOnboarding.updateProfile(gamerOptInProfileInput(profile));
   await Promise.all(
     selectedGames.map((game) =>
       gamerOnboarding.saveGameProfile(game, {
