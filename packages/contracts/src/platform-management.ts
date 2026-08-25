@@ -5,9 +5,6 @@ export const platformManagerCapabilitySchema = z.enum([
   "REVIEW_PLACE_OWNERSHIP",
   "REVIEW_WATCH_APPLICATIONS",
   "REVIEW_PITCH_APPLICATIONS",
-  "MODERATE_CONTENT",
-  "MANAGE_GAMER_CATALOG",
-  "MANAGE_FOOTBALL_CATALOG",
   "VIEW_AUDIT",
 ]);
 
@@ -42,7 +39,7 @@ export const moderationDecisionSchema = z.object({
 });
 
 export const appManagerUpdateSchema = z.object({
-  capabilities: z.array(platformManagerCapabilitySchema).max(8),
+  capabilities: z.array(platformManagerCapabilitySchema).max(5),
 });
 
 export type PlatformManagerCapability = z.infer<typeof platformManagerCapabilitySchema>;
