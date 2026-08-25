@@ -1,0 +1,55 @@
+name: tmp-pr90-prettier-readonly
+
+on:
+  push:
+    branches:
+      - tmp/pr90-prettier-readonly
+
+permissions:
+  contents: write
+
+jobs:
+  format-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - name: Format flagged files
+        run: |
+          npx prettier --write \
+            packages/frontend/src/places/PlaceCapabilityOnboarding.tsx \
+            packages/frontend/src/watch/WatchPage.tsx \
+            packages/frontend/src/watch/watch.css \
+            packages/ui/src/brand/generated/watch-ticket-part-00.ts \
+            packages/ui/src/brand/generated/watch-ticket-part-01.ts \
+            packages/ui/src/brand/generated/watch-ticket-part-02.ts \
+            packages/ui/src/brand/generated/watch-ticket-part-03.ts \
+            packages/ui/src/brand/generated/watch-ticket-part-04.ts \
+            packages/ui/src/brand/generated/watch-ticket-part-05.ts \
+            packages/ui/src/brand/generated/watch-ticket-part-06.ts \
+            tests/watch-ticket-asset.test.mjs
+      - name: Commit exact formatter output
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            packages/frontend/src/places/PlaceCapabilityOnboarding.tsx \
+            packages/frontend/src/watch/WatchPage.tsx \
+            packages/frontend/src/watch/watch.css \
+            packages/ui/src/brand/generated/watch-ticket-part-00.ts \
+            packages/ui/src/brand/generated/watch-ticket-part-01.ts \
+            packages/ui/src/brand/generated/watch-ticket-part-02.ts \
+            packages/ui/src/brand/generated/watch-ticket-part-03.ts \
+            packages/ui/src/brand/generated/watch-ticket-part-04.ts \
+            packages/ui/src/brand/generated/watch-ticket-part-05.ts \
+            packages/ui/src/brand/generated/watch-ticket-part-06.ts \
+            tests/watch-ticket-asset.test.mjs
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: capture PR90 prettier output"
+            git push
+          fi
