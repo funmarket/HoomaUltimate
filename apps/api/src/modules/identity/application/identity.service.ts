@@ -14,7 +14,11 @@ import type {
   ProfilePresentationUpdateInput,
   RegisterInput,
 } from "@hooma/contracts";
-import type { ProfileResponse, ProfileUpdateInput } from "@hooma/contracts/profile";
+import {
+  profileResponseSchema,
+  type ProfileResponse,
+  type ProfileUpdateInput,
+} from "@hooma/contracts/profile";
 import { AppError } from "../../../http/errors/app-error.js";
 import type { IdentityRepository } from "./identity.repository.js";
 import { defaultDisplayName, normalizeEmail, normalizeUsername } from "../domain/normalization.js";
@@ -157,22 +161,18 @@ export class IdentityService {
   async profile(userId: string): Promise<ProfileResponse> {
     const profile = await this.repository.findProfile(userId);
     if (!profile) throw new AppError(404, "USER_NOT_FOUND", "User not found");
-    return {
+    return profileResponseSchema.parse({
       id: profile.id,
       presentation: profile.presentation,
       identities: [...profile.identities],
       player: profile.player
         ? {
             skillLevel: profile.player.skillLevel,
-            preferredPositions: [...profile.player.preferredPositions] as ProfileResponse["player"] extends infer Player
-              ? Player extends { preferredPositions: infer Positions }
-                ? Positions
-                : never
-              : never,
+            preferredPositions: [...profile.player.preferredPositions],
             overallRating: profile.player.overallRating,
           }
         : null,
-    };
+    });
   }
 
   async updateProfile(userId: string, input: ProfileUpdateInput): Promise<ProfileResponse> {
