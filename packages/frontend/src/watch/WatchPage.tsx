@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import type { PublicPlaceCapability, PublicPlaceSummary } from "@hooma/contracts/platform-management";
+import type {
+  PublicPlaceCapability,
+  PublicPlaceSummary,
+} from "@hooma/contracts/platform-management";
 import { WATCH_COLLECTOR_TICKET_MASTER } from "@hooma/ui";
 import { useHoomaFrontend } from "../context";
 import type { PublicEvent } from "../events/api";
@@ -181,7 +184,9 @@ export function WatchPage() {
     const houmaNeedle = normalize(houma);
     return events.filter((event) => {
       const eventSearch = normalize(
-        [event.title, event.venueName, event.address, event.community.name].filter(Boolean).join(" "),
+        [event.title, event.venueName, event.address, event.community.name]
+          .filter(Boolean)
+          .join(" "),
       );
       if (needle && !eventSearch.includes(needle)) return false;
       if (cityNeedle && !eventSearch.includes(cityNeedle)) return false;
@@ -227,12 +232,7 @@ export function WatchPage() {
         <label className="watch-search">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.8" />
-            <path
-              d="m16 16 4 4"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
+            <path d="m16 16 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
           </svg>
           <input
             aria-label="Search Watch events or venues"
