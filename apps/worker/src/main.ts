@@ -1,19 +1,13 @@
 import { disconnectDatabase, getDatabaseClient } from "@hooma/database";
 import { cleanupExpiredEventChat } from "./events/event-chat-cleanup.js";
 import { OutboxRepository } from "./outbox/outbox.repository.js";
-import {
-  type OutboxHandler,
-  OutboxRunner,
-} from "./outbox/outbox.runner.js";
+import { type OutboxHandler, OutboxRunner } from "./outbox/outbox.runner.js";
 
 const EVENT_CHAT_CLEANUP_INTERVAL_MS = 60_000;
 const OUTBOX_POLL_INTERVAL_MS = 5_000;
 const database = getDatabaseClient();
 const outboxHandlers = new Map<string, OutboxHandler>();
-const outbox = new OutboxRunner(
-  new OutboxRepository(database),
-  outboxHandlers,
-);
+const outbox = new OutboxRunner(new OutboxRepository(database), outboxHandlers);
 
 let cleanupRunning = false;
 let outboxRunning = false;
