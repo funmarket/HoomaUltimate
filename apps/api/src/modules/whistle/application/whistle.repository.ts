@@ -1,4 +1,11 @@
-export type WhistleContextType = "COMMUNITY" | "EVENT" | "TEAM" | "RIDE" | "ULTRAS" | "GAMER_SQUAD";
+export type WhistleContextType =
+  | "COMMUNITY"
+  | "EVENT"
+  | "TEAM"
+  | "RIDE"
+  | "ULTRAS"
+  | "GAMER_SQUAD"
+  | "GAMER_DIRECT";
 
 export type WhistleAuthorPresentation = {
   displayName: string;
