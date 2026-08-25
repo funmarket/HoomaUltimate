@@ -111,6 +111,13 @@ export class GamerService {
         "This gamer is not currently participating in Gamers",
       );
     }
+    if (!ownProfile.openToChallenge || !otherProfile.openToChallenge) {
+      throw new AppError(
+        409,
+        "GAMER_WHISTLE_PAIR_CLOSED",
+        "Direct Gamer Whistle is available between players open to challenge",
+      );
+    }
 
     const pairKey = [ownProfile.id, otherProfile.id].sort().join(":");
     return `${otherProfile.gameId}:${pairKey}`;
