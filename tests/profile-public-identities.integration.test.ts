@@ -6,7 +6,8 @@ import { createApp } from "../apps/api/src/bootstrap/app.js";
 import { createContainer } from "../apps/api/src/bootstrap/container.js";
 
 const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) throw new Error("DATABASE_URL is required for profile identity integration tests");
+if (!databaseUrl)
+  throw new Error("DATABASE_URL is required for profile identity integration tests");
 
 const config = loadApiConfig({
   ...process.env,
