@@ -16,6 +16,7 @@ import "./hooma-membership.css";
 import "./entity-lifecycle.css";
 import "./account/account.css";
 import "./profile/profile.css";
+import "./telegram/runtime.css";
 
 initializeWebAppearance();
 

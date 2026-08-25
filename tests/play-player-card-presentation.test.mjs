@@ -21,6 +21,15 @@ test("Play player cards route to the canonical public profile and keep intent-sp
   assert.match(card, /\{offerSent \? "OFFER SENT" : "HIRE PLAYER"\}/);
   assert.match(card, /onClick=\{\(\) => onHire\?\.\(listing\)\}/);
   assert.match(card, /aria-disabled="true"/);
+  assert.match(card, /<\/a>\s+<div className="play-player-card__action-zone">/);
+  assert.doesNotMatch(
+    css,
+    /\.play-player-card__profile-link\s*\{[^}]*position:\s*absolute[^}]*inset:\s*0/s,
+  );
+  assert.doesNotMatch(
+    css,
+    /\.play-player-card__action-zone\s*\{[^}]*pointer-events:\s*none/s,
+  );
   assert.match(page, /<PlayPlayerCard\s+listing=\{listing\}/);
   assert.match(css, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
   assert.match(css, /@media \(max-width: 720px\)/);

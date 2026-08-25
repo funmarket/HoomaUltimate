@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { BrandMark } from "../brand/BrandMark.js";
 
 export interface HoomaAccountUser {
@@ -93,6 +93,41 @@ function MenuRow({
   );
 }
 
+function accountMenuGeometry(anchor: HTMLElement): CSSProperties {
+  const visualViewport = window.visualViewport;
+  const viewportLeft = visualViewport?.offsetLeft ?? 0;
+  const viewportTop = visualViewport?.offsetTop ?? 0;
+  const viewportWidth = visualViewport?.width ?? window.innerWidth;
+  const viewportHeight = visualViewport?.height ?? window.innerHeight;
+  const viewportRight = viewportLeft + viewportWidth;
+  const viewportBottom = viewportTop + viewportHeight;
+  const margin = 12;
+  const gap = 8;
+  const anchorRect = anchor.getBoundingClientRect();
+  const nav = document.querySelector<HTMLElement>(
+    ".hooma-bottom-nav:not(.hooma-bottom-nav--hidden)",
+  );
+  const navRect = nav?.getBoundingClientRect();
+  const navTop =
+    navRect && navRect.top < viewportBottom && navRect.bottom > viewportTop
+      ? navRect.top - gap
+      : viewportBottom - margin;
+  const bottomLimit = Math.min(viewportBottom - margin, navTop);
+  const width = Math.max(0, Math.min(360, viewportWidth - margin * 2));
+  const left = Math.min(
+    Math.max(viewportLeft + margin, anchorRect.right - width),
+    viewportRight - margin - width,
+  );
+  const top = Math.max(viewportTop + margin, anchorRect.bottom + gap);
+
+  return {
+    top,
+    left,
+    width,
+    maxHeight: Math.max(0, bottomLimit - top),
+  };
+}
+
 export function HoomaAccountHeader({
   user,
   loading,
@@ -108,23 +143,55 @@ export function HoomaAccountHeader({
   notificationControl,
 }: HoomaAccountHeaderProps) {
   const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
+  const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    if (!open) return;
-    function onPointerDown(event: PointerEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    const menu = menuRef.current;
+    if (!menu) return;
+
+    function onToggle(event: Event) {
+      const nextState = (event as Event & { newState?: string }).newState;
+      if (nextState === "closed") setOpen(false);
     }
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
+
+    menu.addEventListener("toggle", onToggle);
+    return () => menu.removeEventListener("toggle", onToggle);
+  }, [user]);
+
+  useEffect(() => {
+    const menu = menuRef.current;
+    const anchor = anchorRef.current;
+    if (!menu || !anchor) return;
+
+    if (!open) {
+      if (menu.matches(":popover-open")) menu.hidePopover();
+      return;
     }
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
+
+    function updateGeometry() {
+      setMenuStyle(accountMenuGeometry(anchor));
+    }
+
+    updateGeometry();
+    if (!menu.matches(":popover-open")) menu.showPopover();
+    const frame = window.requestAnimationFrame(updateGeometry);
+    const visualViewport = window.visualViewport;
+
+    window.addEventListener("resize", updateGeometry);
+    window.addEventListener("scroll", updateGeometry, true);
+    visualViewport?.addEventListener("resize", updateGeometry);
+    visualViewport?.addEventListener("scroll", updateGeometry);
+
     return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", updateGeometry);
+      window.removeEventListener("scroll", updateGeometry, true);
+      visualViewport?.removeEventListener("resize", updateGeometry);
+      visualViewport?.removeEventListener("scroll", updateGeometry);
     };
-  }, [open]);
+  }, [open, user]);
 
   useEffect(() => {
     if (loading) setOpen(false);
@@ -148,7 +215,7 @@ export function HoomaAccountHeader({
       </button>
       <div className="hooma-topbar__actions">
         {notificationControl}
-        <div className="hooma-account-anchor" ref={rootRef}>
+        <div className="hooma-account-anchor" ref={anchorRef}>
           <button
             type="button"
             className="hooma-profile-trigger"
@@ -167,72 +234,79 @@ export function HoomaAccountHeader({
               <UserIcon />
             )}
           </button>
-
-          {!loading && user && open ? (
-            <section className="hooma-account-menu" role="menu" aria-label="HOOMA account">
-              <header className="hooma-account-menu__identity">
-                {user.photoUrl ? (
-                  <img src={user.photoUrl} alt="" />
-                ) : (
-                  <span className="hooma-account-menu__avatar-fallback">
-                    {user.displayName.slice(0, 1).toUpperCase()}
-                  </span>
-                )}
-                <span>
-                  <strong>{user.displayName}</strong>
-                  <small>@{user.username}</small>
-                </span>
-              </header>
-
-              <div className="hooma-account-menu__rows">
-                <MenuRow
-                  icon={<UserIcon />}
-                  title="My HOOMA Profile"
-                  subtitle="View your HOOMA identity"
-                  onClick={() => navigate(onProfile)}
-                />
-
-                {canManageTeams && onCoach ? (
-                  <MenuRow
-                    icon={<WhistleIcon />}
-                    title="Coach Control Room"
-                    subtitle="Manage your Teams"
-                    onClick={() => navigate(onCoach)}
-                  />
-                ) : null}
-
-                <MenuRow
-                  icon={<SettingsIcon />}
-                  title="Settings"
-                  subtitle="Appearance and preferences"
-                  onClick={() => navigate(onSettings)}
-                />
-              </div>
-
-              {isPlatformAdmin && onAdmin ? (
-                <div className="hooma-account-menu__platform">
-                  <MenuRow
-                    icon={<ShieldIcon />}
-                    title="Control Room"
-                    subtitle="HOOMA platform management"
-                    onClick={() => navigate(onAdmin)}
-                  />
-                </div>
-              ) : null}
-
-              {onSignOut ? (
-                <button
-                  type="button"
-                  className="hooma-account-menu__signout"
-                  onClick={() => navigate(onSignOut)}
-                >
-                  Sign out
-                </button>
-              ) : null}
-            </section>
-          ) : null}
         </div>
       </div>
+
+      {user ? (
+        <section
+          ref={menuRef}
+          className="hooma-account-menu"
+          role="menu"
+          aria-label="HOOMA account"
+          popover="auto"
+          style={menuStyle}
+        >
+          <header className="hooma-account-menu__identity">
+            {user.photoUrl ? (
+              <img src={user.photoUrl} alt="" />
+            ) : (
+              <span className="hooma-account-menu__avatar-fallback">
+                {user.displayName.slice(0, 1).toUpperCase()}
+              </span>
+            )}
+            <span>
+              <strong>{user.displayName}</strong>
+              <small>@{user.username}</small>
+            </span>
+          </header>
+
+          <div className="hooma-account-menu__rows">
+            <MenuRow
+              icon={<UserIcon />}
+              title="My HOOMA Profile"
+              subtitle="View your HOOMA identity"
+              onClick={() => navigate(onProfile)}
+            />
+
+            {canManageTeams && onCoach ? (
+              <MenuRow
+                icon={<WhistleIcon />}
+                title="Coach Control Room"
+                subtitle="Manage your Teams"
+                onClick={() => navigate(onCoach)}
+              />
+            ) : null}
+
+            <MenuRow
+              icon={<SettingsIcon />}
+              title="Settings"
+              subtitle="Appearance and preferences"
+              onClick={() => navigate(onSettings)}
+            />
+          </div>
+
+          {isPlatformAdmin && onAdmin ? (
+            <div className="hooma-account-menu__platform">
+              <MenuRow
+                icon={<ShieldIcon />}
+                title="App Admin"
+                subtitle="HOOMA platform control"
+                onClick={() => navigate(onAdmin)}
+              />
+            </div>
+          ) : null}
+
+          {onSignOut ? (
+            <button
+              type="button"
+              className="hooma-account-menu__signout"
+              onClick={() => navigate(onSignOut)}
+            >
+              Sign out
+            </button>
+          ) : null}
+        </section>
+      ) : null}
     </header>
   );
 }

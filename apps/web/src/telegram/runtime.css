@@ -1,0 +1,96 @@
+:root {
+  --hooma-viewport-height: 100dvh;
+  --hooma-viewport-stable-height: 100dvh;
+  --hooma-safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --hooma-safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --hooma-safe-area-inset-left: env(safe-area-inset-left, 0px);
+  --hooma-safe-area-inset-right: env(safe-area-inset-right, 0px);
+  --hooma-content-safe-area-inset-top: 0px;
+  --hooma-content-safe-area-inset-bottom: 0px;
+  --hooma-content-safe-area-inset-left: 0px;
+  --hooma-content-safe-area-inset-right: 0px;
+}
+
+body,
+.foundation-shell {
+  min-height: var(--hooma-viewport-height);
+}
+
+:root[data-telegram-runtime="active"] .foundation-shell {
+  padding-top: max(
+    0px,
+    var(--hooma-safe-area-inset-top),
+    var(--hooma-content-safe-area-inset-top)
+  );
+  padding-left: max(
+    var(--shell-inline, 24px),
+    calc(var(--hooma-safe-area-inset-left) + 12px),
+    calc(var(--hooma-content-safe-area-inset-left) + 12px)
+  );
+  padding-right: max(
+    var(--shell-inline, 24px),
+    calc(var(--hooma-safe-area-inset-right) + 12px),
+    calc(var(--hooma-content-safe-area-inset-right) + 12px)
+  );
+}
+
+:root[data-telegram-runtime="active"] .hooma-bottom-nav {
+  left: max(
+    8px,
+    calc((100vw - 736px) / 2),
+    calc(var(--hooma-safe-area-inset-left) + 8px),
+    calc(var(--hooma-content-safe-area-inset-left) + 8px)
+  );
+  right: max(
+    8px,
+    calc((100vw - 736px) / 2),
+    calc(var(--hooma-safe-area-inset-right) + 8px),
+    calc(var(--hooma-content-safe-area-inset-right) + 8px)
+  );
+  bottom: max(
+    6px,
+    calc(var(--hooma-safe-area-inset-bottom) + 6px),
+    calc(var(--hooma-content-safe-area-inset-bottom) + 6px)
+  );
+}
+
+:root[data-telegram-runtime="active"] .foundation-shell .shell-content {
+  padding-bottom: max(
+    88px,
+    calc(88px + var(--hooma-safe-area-inset-bottom)),
+    calc(88px + var(--hooma-content-safe-area-inset-bottom))
+  );
+}
+
+@media (max-width: 520px) {
+  :root[data-telegram-runtime="active"] .foundation-shell {
+    padding-left: max(
+      var(--shell-inline, 12px),
+      calc(var(--hooma-safe-area-inset-left) + 8px),
+      calc(var(--hooma-content-safe-area-inset-left) + 8px)
+    );
+    padding-right: max(
+      var(--shell-inline, 12px),
+      calc(var(--hooma-safe-area-inset-right) + 8px),
+      calc(var(--hooma-content-safe-area-inset-right) + 8px)
+    );
+  }
+
+  :root[data-telegram-runtime="active"] .hooma-bottom-nav {
+    left: max(
+      8px,
+      calc(var(--hooma-safe-area-inset-left) + 8px),
+      calc(var(--hooma-content-safe-area-inset-left) + 8px)
+    );
+    right: max(
+      8px,
+      calc(var(--hooma-safe-area-inset-right) + 8px),
+      calc(var(--hooma-content-safe-area-inset-right) + 8px)
+    );
+    bottom: max(
+      4px,
+      calc(var(--hooma-safe-area-inset-bottom) + 4px),
+      calc(var(--hooma-content-safe-area-inset-bottom) + 4px)
+    );
+  }
+}

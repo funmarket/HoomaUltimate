@@ -7,16 +7,15 @@
   --hooma-border: var(--app-line-strong);
   --hooma-gold: var(--app-gold);
   --hooma-accent: var(--app-lime);
-}
-
-.hooma-topbar {
   --hooma-chrome-bg: #070808;
   --hooma-chrome-surface: #11120f;
   --hooma-chrome-text: #f2ead7;
   --hooma-chrome-muted: #bfb59a;
   --hooma-chrome-border: #5c4b25;
   --hooma-chrome-gold: #b59b57;
+}
 
+.hooma-topbar {
   position: relative;
   z-index: 20;
   display: flex;
@@ -24,8 +23,8 @@
   justify-content: space-between;
   gap: 18px;
   min-height: 58px;
-  margin-inline: -24px;
-  padding: max(8px, env(safe-area-inset-top, 0px)) 24px 10px;
+  margin-inline: calc(-1 * var(--shell-inline));
+  padding: max(8px, env(safe-area-inset-top, 0px)) var(--shell-inline) 10px;
   border-bottom: 1px solid color-mix(in srgb, var(--hooma-chrome-border) 72%, transparent);
   background: var(--hooma-chrome-bg);
   color: var(--hooma-chrome-text);
@@ -97,11 +96,10 @@
 }
 
 .hooma-account-menu {
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
-  width: min(360px, calc(100vw - 32px));
-  max-height: min(70dvh, 520px);
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  padding: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   border: 1px solid var(--hooma-chrome-border);
@@ -109,6 +107,9 @@
   background: color-mix(in srgb, var(--hooma-chrome-surface) 96%, transparent);
   color: var(--hooma-chrome-text);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+.hooma-account-menu::backdrop {
+  background: transparent;
 }
 
 .hooma-account-menu__identity {
@@ -252,11 +253,6 @@
 @media (max-width: 700px) {
   .hooma-topbar {
     padding-top: max(6px, env(safe-area-inset-top, 0px));
-  }
-  .hooma-account-menu {
-    top: calc(100% + 8px);
-    right: 0;
-    width: min(360px, calc(100vw - 48px));
   }
 }
 

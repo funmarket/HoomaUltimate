@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { HoomaAccountHeader, HoomaBottomNav } from "@hooma/ui";
 import { useHoomaFrontend } from "@hooma/frontend";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -16,8 +16,10 @@ export function HoomaShell({
   const navigate = useNavigate();
   const location = useLocation();
   const { api } = useHoomaFrontend();
-  const { me, managedTeams, hasPlatformControlAccess, loading, error, refresh } = useAccount();
+  const { me, managedTeams, loading, error, refresh } = useAccount();
   useTelegramBackButton(runtime);
+
+  useEffect(() => runtime.connect(), [runtime]);
 
   async function signOut() {
     await api.identity.logout();
@@ -32,6 +34,7 @@ export function HoomaShell({
         photoUrl: me.presentation.photoUrl,
       }
     : null;
+  const isPlatformAdmin = Boolean(me?.platformRoles.includes("PLATFORM_ADMIN"));
   const hasTelegramIdentity = Boolean(runtime.initData);
   const navPathname = location.pathname === "/telegram" ? "/" : location.pathname;
 
@@ -41,7 +44,7 @@ export function HoomaShell({
         user={user}
         loading={loading}
         canManageTeams={managedTeams.length > 0}
-        isPlatformAdmin={hasPlatformControlAccess}
+        isPlatformAdmin={isPlatformAdmin}
         onHome={() => navigate("/")}
         onGuestProfile={() =>
           navigate(
@@ -53,7 +56,7 @@ export function HoomaShell({
         onProfile={() => navigate("/profile")}
         {...(managedTeams.length ? { onCoach: () => navigate("/teams/control") } : {})}
         onSettings={() => navigate("/settings")}
-        {...(hasPlatformControlAccess ? { onAdmin: () => navigate("/admin") } : {})}
+        {...(isPlatformAdmin ? { onAdmin: () => navigate("/admin") } : {})}
         {...(!hasTelegramIdentity ? { onSignOut: () => void signOut() } : {})}
       />
       {error ? <p className="status">{error}</p> : null}
