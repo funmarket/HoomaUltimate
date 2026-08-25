@@ -1,7 +1,5 @@
 :root {
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-  color: #f2ead7;
-  background: #11110f;
 }
 
 * {
@@ -18,7 +16,7 @@ body {
   min-height: 100vh;
   max-width: 960px;
   margin: 0 auto;
-  padding: 48px 24px;
+  padding: 0 24px 48px;
   display: grid;
   align-content: space-between;
   gap: 32px;
@@ -37,9 +35,10 @@ h1 {
 
 .status {
   padding: 16px;
-  border: 1px solid #6f613c;
+  border: 1px solid var(--app-line-strong);
   border-radius: 14px;
-  background: #191915;
+  background: var(--app-surface);
+  color: var(--app-text);
 }
 
 nav {
@@ -55,9 +54,10 @@ nav {
   width: min(100%, 430px);
   margin: 28px auto 0;
   padding: 20px;
-  border: 1px solid #6d624a;
+  border: 1px solid var(--app-line-strong);
   border-radius: 18px;
-  background: #171612;
+  background: var(--app-surface);
+  color: var(--app-text);
 }
 .auth-card form {
   display: grid;
@@ -67,14 +67,14 @@ nav {
 .auth-card label {
   display: grid;
   gap: 6px;
-  color: #e8dfc5;
+  color: var(--app-text-secondary);
   font-size: 14px;
 }
 .auth-card input {
-  border: 1px solid #6d624a;
+  border: 1px solid var(--app-line-strong);
   border-radius: 10px;
-  background: #0e0e0c;
-  color: #f5edd7;
+  background: var(--app-bg-raised);
+  color: var(--app-text);
   padding: 11px 12px;
 }
 .auth-card button {
@@ -92,7 +92,7 @@ nav {
 }
 .auth-tabs button[aria-pressed="false"] {
   background: transparent;
-  color: #e8dfc5;
+  color: var(--app-text-secondary);
 }
 .error {
   color: #ffb4a8;
@@ -105,11 +105,11 @@ nav {
   display: flex;
   justify-content: space-between;
   gap: 20px;
-  border-bottom: 1px solid #3f3a2c;
+  border-bottom: 1px solid var(--app-line);
   padding: 8px 0;
 }
 .auth-card dt {
-  color: #cfc5aa;
+  color: var(--app-text-secondary);
 }
 .auth-card dd {
   margin: 0;
@@ -150,9 +150,10 @@ nav a {
 }
 .panel {
   padding: 18px;
-  border: 1px solid #403927;
+  border: 1px solid var(--app-line-strong);
   border-radius: 16px;
-  background: #151510;
+  background: var(--app-surface);
+  color: var(--app-text);
 }
 .profile-page {
   display: grid;
@@ -385,7 +386,7 @@ nav a {
 .event-card span,
 .event-card small,
 .muted {
-  color: #bfb59a;
+  color: var(--app-text-secondary);
 }
 .event-form {
   display: grid;
@@ -433,7 +434,7 @@ nav a {
   gap: 4px;
 }
 .event-meta span {
-  color: #bfb59a;
+  color: var(--app-text-secondary);
   font-size: 12px;
 }
 .event-actions {

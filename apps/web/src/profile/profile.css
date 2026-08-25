@@ -191,6 +191,15 @@
   color: #35c8e9;
 }
 
+:root[data-theme="light"] .public-profile-teams h2,
+:root[data-theme="light"] .public-profile-contact h2 {
+  color: var(--app-text-strong);
+}
+
+:root[data-theme="light"] .public-profile-state span {
+  color: var(--app-text-secondary);
+}
+
 @media (max-width: 760px) {
   .public-profile-hero {
     grid-template-columns: 1fr;

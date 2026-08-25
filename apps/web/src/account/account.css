@@ -1,56 +1,22 @@
 :root {
-  --hooma-bg: #11110f;
-  --hooma-surface: #171612;
-  --hooma-surface-strong: #0b0b09;
-  --hooma-text: #f2ead7;
-  --hooma-muted: #bfb59a;
-  --hooma-border: #5c4b25;
-  --hooma-gold: #b59b57;
-  --hooma-accent: #c4dc43;
-}
-
-:root[data-theme="light"] {
-  --hooma-bg: #f5f1e7;
-  --hooma-surface: #fffdf7;
-  --hooma-surface-strong: #ffffff;
-  --hooma-text: #17140f;
-  --hooma-muted: #655f54;
-  --hooma-border: #b99a50;
-  --hooma-gold: #8b641c;
-  --hooma-accent: #d56b1f;
-}
-
-html,
-body {
-  background: var(--hooma-bg);
-  color: var(--hooma-text);
-}
-:root[data-theme="light"] .panel,
-:root[data-theme="light"] .auth-card,
-:root[data-theme="light"] .status,
-:root[data-theme="light"] .gateway-card,
-:root[data-theme="light"] .team-card,
-:root[data-theme="light"] .profile-links a,
-:root[data-theme="light"] .event-card {
-  background: var(--hooma-surface);
-  color: var(--hooma-text);
-}
-:root[data-theme="light"] .muted,
-:root[data-theme="light"] .profile-links span,
-:root[data-theme="light"] .team-card span,
-:root[data-theme="light"] .team-card small,
-:root[data-theme="light"] .event-card span,
-:root[data-theme="light"] .event-card small {
-  color: var(--hooma-muted);
-}
-:root[data-theme="light"] input,
-:root[data-theme="light"] textarea,
-:root[data-theme="light"] select {
-  background: #fff;
-  color: var(--hooma-text);
+  --hooma-bg: var(--app-bg);
+  --hooma-surface: var(--app-surface);
+  --hooma-surface-strong: var(--app-bg-raised);
+  --hooma-text: var(--app-text);
+  --hooma-muted: var(--app-text-secondary);
+  --hooma-border: var(--app-line-strong);
+  --hooma-gold: var(--app-gold);
+  --hooma-accent: var(--app-lime);
 }
 
 .hooma-topbar {
+  --hooma-chrome-bg: #070808;
+  --hooma-chrome-surface: #11120f;
+  --hooma-chrome-text: #f2ead7;
+  --hooma-chrome-muted: #bfb59a;
+  --hooma-chrome-border: #5c4b25;
+  --hooma-chrome-gold: #b59b57;
+
   position: relative;
   z-index: 20;
   display: flex;
@@ -58,15 +24,18 @@ body {
   justify-content: space-between;
   gap: 18px;
   min-height: 58px;
-  padding: 10px 0 14px;
-  border-bottom: 1px solid color-mix(in srgb, var(--hooma-border) 65%, transparent);
+  margin-inline: -24px;
+  padding: max(8px, env(safe-area-inset-top, 0px)) 24px 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--hooma-chrome-border) 72%, transparent);
+  background: var(--hooma-chrome-bg);
+  color: var(--hooma-chrome-text);
 }
 
 .hooma-wordmark {
   border: 0;
   padding: 0;
   background: transparent;
-  color: var(--hooma-text);
+  color: var(--hooma-chrome-text);
   font:
     900 clamp(25px, 4vw, 34px)/1 Georgia,
     serif;
@@ -88,10 +57,10 @@ body {
   display: grid;
   place-items: center;
   overflow: hidden;
-  border: 1px solid var(--hooma-gold);
+  border: 1px solid var(--hooma-chrome-gold);
   border-radius: 50%;
-  background: var(--hooma-surface-strong);
-  color: var(--hooma-text);
+  background: var(--hooma-chrome-surface);
+  color: var(--hooma-chrome-text);
   cursor: pointer;
 }
 .hooma-profile-trigger img {
@@ -118,10 +87,10 @@ body {
   max-height: min(70dvh, 520px);
   overflow-y: auto;
   overscroll-behavior: contain;
-  border: 1px solid var(--hooma-border);
+  border: 1px solid var(--hooma-chrome-border);
   border-radius: 20px;
-  background: color-mix(in srgb, var(--hooma-surface-strong) 96%, transparent);
-  color: var(--hooma-text);
+  background: color-mix(in srgb, var(--hooma-chrome-surface) 96%, transparent);
+  color: var(--hooma-chrome-text);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
 }
 
@@ -130,13 +99,13 @@ body {
   align-items: center;
   gap: 12px;
   padding: 16px;
-  border-bottom: 1px solid color-mix(in srgb, var(--hooma-border) 60%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--hooma-chrome-border) 72%, transparent);
 }
 .hooma-account-menu__identity img,
 .hooma-account-menu__avatar-fallback {
   width: 46px;
   height: 46px;
-  border: 1px solid var(--hooma-gold);
+  border: 1px solid var(--hooma-chrome-gold);
   border-radius: 50%;
   object-fit: cover;
 }
@@ -153,7 +122,7 @@ body {
   min-width: 0;
 }
 .hooma-account-menu__identity small {
-  color: var(--hooma-muted);
+  color: var(--hooma-chrome-muted);
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -176,14 +145,14 @@ body {
 }
 .hooma-account-menu__row:hover,
 .hooma-account-menu__row:focus-visible {
-  background: color-mix(in srgb, var(--hooma-gold) 12%, transparent);
+  background: color-mix(in srgb, var(--hooma-chrome-gold) 12%, transparent);
 }
 .hooma-account-menu__row-icon {
   width: 38px;
   height: 38px;
   display: grid;
   place-items: center;
-  border: 1px solid color-mix(in srgb, var(--hooma-gold) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--hooma-chrome-gold) 70%, transparent);
   border-radius: 50%;
 }
 .hooma-account-menu__row-copy {
@@ -193,29 +162,29 @@ body {
 }
 .hooma-account-menu__row-copy small,
 .hooma-account-menu__row-copy span {
-  color: var(--hooma-muted);
+  color: var(--hooma-chrome-muted);
   font-size: 12px;
 }
 .hooma-account-menu__chevron {
   display: grid;
   place-items: center;
-  color: var(--hooma-muted);
+  color: var(--hooma-chrome-muted);
 }
 .hooma-account-menu__chevron svg {
   width: 17px;
   height: 17px;
 }
 .hooma-account-menu__platform {
-  border-top: 1px solid color-mix(in srgb, var(--hooma-border) 60%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--hooma-chrome-border) 72%, transparent);
   padding: 8px;
 }
 .hooma-account-menu__signout {
   width: 100%;
   border: 0;
-  border-top: 1px solid color-mix(in srgb, var(--hooma-border) 60%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--hooma-chrome-border) 72%, transparent);
   padding: 13px 16px;
   background: transparent;
-  color: var(--hooma-muted);
+  color: var(--hooma-chrome-muted);
   text-align: left;
   cursor: pointer;
 }
@@ -225,6 +194,7 @@ body {
 }
 .hooma-settings-panel h2 {
   margin-top: 6px;
+  color: var(--app-text-strong);
   font:
     800 clamp(30px, 6vw, 48px)/1.05 Georgia,
     serif;
@@ -264,7 +234,7 @@ body {
 
 @media (max-width: 700px) {
   .hooma-topbar {
-    padding-top: 2px;
+    padding-top: max(6px, env(safe-area-inset-top, 0px));
   }
   .hooma-account-menu {
     top: calc(100% + 8px);
