@@ -3,9 +3,7 @@ import type { CommunityJoinRequestForFounder } from "../api";
 import { useHoomaFrontend } from "../context";
 
 function requestName(request: CommunityJoinRequestForFounder): string {
-  return (
-    request.presentation?.displayName || request.presentation?.username || "HOOMA member"
-  );
+  return request.presentation?.displayName || request.presentation?.username || "HOOMA member";
 }
 
 export function HoomaMembershipRequests({
