@@ -47,7 +47,9 @@ const ProfilePage = lazy(() =>
   import("../../profile/ProfilePage").then((module) => ({ default: module.ProfilePage })),
 );
 const PublicProfilePage = lazy(() =>
-  import("../../profile/PublicProfilePage").then((module) => ({ default: module.PublicProfilePage })),
+  import("../../profile/PublicProfilePage").then((module) => ({
+    default: module.PublicProfilePage,
+  })),
 );
 const SettingsPage = lazy(() =>
   import("../../settings/SettingsPage").then((module) => ({ default: module.SettingsPage })),

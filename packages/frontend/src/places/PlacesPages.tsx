@@ -22,7 +22,9 @@ export function PlacesPage() {
     void api.places
       .list()
       .then(setPlaces)
-      .catch((reason) => setError(reason instanceof Error ? reason.message : "Unable to load Places"));
+      .catch((reason) =>
+        setError(reason instanceof Error ? reason.message : "Unable to load Places"),
+      );
   }, [api]);
 
   async function suggest(event: FormEvent<HTMLFormElement>) {
@@ -50,7 +52,9 @@ export function PlacesPage() {
         <div>
           <p className="eyebrow">PLACES</p>
           <h1>HOOMA Places</h1>
-          <p className="muted">Approved physical venues. Watch and Pitch capabilities attach to these canonical Places.</p>
+          <p className="muted">
+            Approved physical venues. Watch and Pitch capabilities attach to these canonical Places.
+          </p>
         </div>
       </header>
       <div className="place-directory">
@@ -93,7 +97,9 @@ function CapabilityPage({ kind }: { readonly kind: PlaceCapabilityKind }) {
         setPlaces(placeRows);
         setItems(capabilityRows);
       })
-      .catch((reason) => setError(reason instanceof Error ? reason.message : `Unable to load ${title}`));
+      .catch((reason) =>
+        setError(reason instanceof Error ? reason.message : `Unable to load ${title}`),
+      );
   }, [api, kind, title]);
 
   async function claim(event: FormEvent<HTMLFormElement>) {
@@ -106,7 +112,9 @@ function CapabilityPage({ kind }: { readonly kind: PlaceCapabilityKind }) {
         evidence: String(data.get("evidence") ?? ""),
       });
       event.currentTarget.reset();
-      setMessage("Ownership claim submitted. After approval you can submit the business application.");
+      setMessage(
+        "Ownership claim submitted. After approval you can submit the business application.",
+      );
     } catch (reason) {
       setError(protectedError(reason, "Unable to submit ownership claim"));
     }
@@ -154,7 +162,9 @@ function CapabilityPage({ kind }: { readonly kind: PlaceCapabilityKind }) {
             <p className="muted">{item.place.address}</p>
           </article>
         ))}
-        {!items.length && !error ? <p className="muted">No approved {title} businesses yet.</p> : null}
+        {!items.length && !error ? (
+          <p className="muted">No approved {title} businesses yet.</p>
+        ) : null}
       </div>
 
       <section className="place-business-grid">
@@ -162,22 +172,46 @@ function CapabilityPage({ kind }: { readonly kind: PlaceCapabilityKind }) {
           <p className="eyebrow">STEP 1</p>
           <h2>Verify Place ownership</h2>
           <select name="placeId" required defaultValue="">
-            <option value="" disabled>Select approved Place</option>
-            {places.map((place) => <option key={place.id} value={place.id}>{place.name} · {locationLabel(place)}</option>)}
+            <option value="" disabled>
+              Select approved Place
+            </option>
+            {places.map((place) => (
+              <option key={place.id} value={place.id}>
+                {place.name} · {locationLabel(place)}
+              </option>
+            ))}
           </select>
-          <textarea name="evidence" placeholder="Ownership or management evidence" minLength={10} required />
+          <textarea
+            name="evidence"
+            placeholder="Ownership or management evidence"
+            minLength={10}
+            required
+          />
           <button type="submit">Submit ownership claim</button>
         </form>
 
         <form className="panel place-business-form" onSubmit={(event) => void apply(event)}>
           <p className="eyebrow">STEP 2</p>
           <h2>Apply for {title}</h2>
-          <p className="muted">The selected Place must already be approved and verified as yours.</p>
+          <p className="muted">
+            The selected Place must already be approved and verified as yours.
+          </p>
           <select name="placeId" required defaultValue="">
-            <option value="" disabled>Select approved Place</option>
-            {places.map((place) => <option key={place.id} value={place.id}>{place.name} · {locationLabel(place)}</option>)}
+            <option value="" disabled>
+              Select approved Place
+            </option>
+            {places.map((place) => (
+              <option key={place.id} value={place.id}>
+                {place.name} · {locationLabel(place)}
+              </option>
+            ))}
           </select>
-          <textarea name="summary" placeholder={`${title} offering, facilities, services and business details`} minLength={10} required />
+          <textarea
+            name="summary"
+            placeholder={`${title} offering, facilities, services and business details`}
+            minLength={10}
+            required
+          />
           <input name="contactName" placeholder="Business contact name" required />
           <input name="contactPhone" placeholder="Phone" />
           <input name="contactEmail" type="email" placeholder="Email" />

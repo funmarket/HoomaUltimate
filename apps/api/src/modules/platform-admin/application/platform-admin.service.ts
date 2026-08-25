@@ -72,7 +72,11 @@ export class PlatformAdminService implements PlatformAdminAuthorizer {
     const targetUserId = await this.repository.findUserByUsername(username.trim().toLowerCase());
     if (!targetUserId) throw new AppError(404, "USER_NOT_FOUND", "HOOMA user not found");
     if (targetUserId === ownerUserId) {
-      throw new AppError(409, "PLATFORM_OWNER_MANAGER_FORBIDDEN", "The app owner already has full authority");
+      throw new AppError(
+        409,
+        "PLATFORM_OWNER_MANAGER_FORBIDDEN",
+        "The app owner already has full authority",
+      );
     }
     if (await this.isPlatformAdmin(targetUserId)) {
       throw new AppError(

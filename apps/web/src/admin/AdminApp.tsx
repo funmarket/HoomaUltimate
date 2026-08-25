@@ -60,7 +60,11 @@ function QueueSection({
               <button type="button" onClick={() => onDecision(item.id, "APPROVE")}>
                 Approve
               </button>
-              <button type="button" className="secondary" onClick={() => onDecision(item.id, "REJECT")}>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => onDecision(item.id, "REJECT")}
+              >
                 Reject
               </button>
             </div>
@@ -119,30 +123,30 @@ export function AdminApp() {
     }
     if (allowed("REVIEW_PLACES")) {
       tasks.push(
-        management.admin.queue("places").then((rows) =>
-          setQueues((current) => ({ ...current, places: rows })),
-        ),
+        management.admin
+          .queue("places")
+          .then((rows) => setQueues((current) => ({ ...current, places: rows }))),
       );
     }
     if (allowed("REVIEW_PLACE_OWNERSHIP")) {
       tasks.push(
-        management.admin.queue("place-ownership").then((rows) =>
-          setQueues((current) => ({ ...current, "place-ownership": rows })),
-        ),
+        management.admin
+          .queue("place-ownership")
+          .then((rows) => setQueues((current) => ({ ...current, "place-ownership": rows }))),
       );
     }
     if (allowed("REVIEW_WATCH_APPLICATIONS")) {
       tasks.push(
-        management.admin.queue("watch").then((rows) =>
-          setQueues((current) => ({ ...current, watch: rows })),
-        ),
+        management.admin
+          .queue("watch")
+          .then((rows) => setQueues((current) => ({ ...current, watch: rows }))),
       );
     }
     if (allowed("REVIEW_PITCH_APPLICATIONS")) {
       tasks.push(
-        management.admin.queue("pitch").then((rows) =>
-          setQueues((current) => ({ ...current, pitch: rows })),
-        ),
+        management.admin
+          .queue("pitch")
+          .then((rows) => setQueues((current) => ({ ...current, pitch: rows }))),
       );
     }
     if (currentAccess.isPlatformOwner) {
@@ -166,7 +170,8 @@ export function AdminApp() {
   }, [api, management]);
 
   async function decide(queue: QueueName, id: string, decision: "APPROVE" | "REJECT") {
-    const note = window.prompt(`${decision === "APPROVE" ? "Approval" : "Rejection"} note (optional)`) ?? "";
+    const note =
+      window.prompt(`${decision === "APPROVE" ? "Approval" : "Rejection"} note (optional)`) ?? "";
     setError("");
     setMessage("");
     try {
@@ -188,7 +193,9 @@ export function AdminApp() {
     try {
       await management.admin.setManager(username, capabilities);
       event.currentTarget.reset();
-      setMessage(capabilities.length ? "App Manager permissions saved." : "App Manager permissions revoked.");
+      setMessage(
+        capabilities.length ? "App Manager permissions saved." : "App Manager permissions revoked.",
+      );
       await load();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Unable to update App Manager");
@@ -217,10 +224,22 @@ export function AdminApp() {
         </p>
         {overview ? (
           <dl>
-            <div><dt>Users</dt><dd>{overview.users}</dd></div>
-            <div><dt>Full owners</dt><dd>{overview.activePlatformAdmins}</dd></div>
-            <div><dt>App Managers</dt><dd>{overview.activeAppManagers}</dd></div>
-            <div><dt>Audit entries</dt><dd>{overview.auditEntries}</dd></div>
+            <div>
+              <dt>Users</dt>
+              <dd>{overview.users}</dd>
+            </div>
+            <div>
+              <dt>Full owners</dt>
+              <dd>{overview.activePlatformAdmins}</dd>
+            </div>
+            <div>
+              <dt>App Managers</dt>
+              <dd>{overview.activeAppManagers}</dd>
+            </div>
+            <div>
+              <dt>Audit entries</dt>
+              <dd>{overview.auditEntries}</dd>
+            </div>
           </dl>
         ) : null}
         {message ? <p className="status">{message}</p> : null}
@@ -228,22 +247,45 @@ export function AdminApp() {
       </section>
 
       {can("REVIEW_PLACES") ? (
-        <QueueSection eyebrow="PLACES" title="Place suggestions" items={queues.places} onDecision={(id, decision) => void decide("places", id, decision)} />
+        <QueueSection
+          eyebrow="PLACES"
+          title="Place suggestions"
+          items={queues.places}
+          onDecision={(id, decision) => void decide("places", id, decision)}
+        />
       ) : null}
       {can("REVIEW_PLACE_OWNERSHIP") ? (
-        <QueueSection eyebrow="OWNERSHIP" title="Place ownership claims" items={queues["place-ownership"]} onDecision={(id, decision) => void decide("place-ownership", id, decision)} />
+        <QueueSection
+          eyebrow="OWNERSHIP"
+          title="Place ownership claims"
+          items={queues["place-ownership"]}
+          onDecision={(id, decision) => void decide("place-ownership", id, decision)}
+        />
       ) : null}
       {can("REVIEW_WATCH_APPLICATIONS") ? (
-        <QueueSection eyebrow="WATCH" title="Watch business applications" items={queues.watch} onDecision={(id, decision) => void decide("watch", id, decision)} />
+        <QueueSection
+          eyebrow="WATCH"
+          title="Watch business applications"
+          items={queues.watch}
+          onDecision={(id, decision) => void decide("watch", id, decision)}
+        />
       ) : null}
       {can("REVIEW_PITCH_APPLICATIONS") ? (
-        <QueueSection eyebrow="PITCH" title="Pitch business applications" items={queues.pitch} onDecision={(id, decision) => void decide("pitch", id, decision)} />
+        <QueueSection
+          eyebrow="PITCH"
+          title="Pitch business applications"
+          items={queues.pitch}
+          onDecision={(id, decision) => void decide("pitch", id, decision)}
+        />
       ) : null}
 
       {access?.isPlatformOwner ? (
         <section className="panel admin-manager-section">
           <div className="section-heading">
-            <div><p className="eyebrow">DELEGATION</p><h2>App Managers</h2></div>
+            <div>
+              <p className="eyebrow">DELEGATION</p>
+              <h2>App Managers</h2>
+            </div>
             <span>{managers.length}</span>
           </div>
           <form className="admin-manager-form" onSubmit={(event) => void appointManager(event)}>
@@ -257,7 +299,9 @@ export function AdminApp() {
               ))}
             </div>
             <button type="submit">Save App Manager permissions</button>
-            <p className="muted">Submit with no permissions selected to revoke all App Manager access.</p>
+            <p className="muted">
+              Submit with no permissions selected to revoke all App Manager access.
+            </p>
           </form>
           <div className="admin-manager-list">
             {managers.map((manager) => (
@@ -274,23 +318,45 @@ export function AdminApp() {
       {access?.isPlatformOwner ? (
         <>
           <section className="panel admin-entity-section">
-            <div className="section-heading"><div><p className="eyebrow">COMMUNITIES</p><h2>Active HOOMAs</h2></div><span>{communities.length}</span></div>
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">COMMUNITIES</p>
+                <h2>Active HOOMAs</h2>
+              </div>
+              <span>{communities.length}</span>
+            </div>
             <div className="admin-entity-list">
               {communities.map((community) => (
                 <article className="admin-entity-row" key={community.id}>
-                  <div><strong>{community.name}</strong><span>{community.houma || community.city || `@${community.slug}`}</span></div>
-                  <a className="admin-link" href={`/hooma/${community.id}/edit`}>Edit / Delete</a>
+                  <div>
+                    <strong>{community.name}</strong>
+                    <span>{community.houma || community.city || `@${community.slug}`}</span>
+                  </div>
+                  <a className="admin-link" href={`/hooma/${community.id}/edit`}>
+                    Edit / Delete
+                  </a>
                 </article>
               ))}
             </div>
           </section>
           <section className="panel admin-entity-section">
-            <div className="section-heading"><div><p className="eyebrow">TEAMS</p><h2>Active Teams</h2></div><span>{teams.length}</span></div>
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">TEAMS</p>
+                <h2>Active Teams</h2>
+              </div>
+              <span>{teams.length}</span>
+            </div>
             <div className="admin-entity-list">
               {teams.map((team) => (
                 <article className="admin-entity-row" key={team.id}>
-                  <div><strong>{team.name}</strong><span>{team.houma || team.city || `@${team.slug}`}</span></div>
-                  <a className="admin-link" href={`/teams/${team.id}/edit`}>Edit / Delete</a>
+                  <div>
+                    <strong>{team.name}</strong>
+                    <span>{team.houma || team.city || `@${team.slug}`}</span>
+                  </div>
+                  <a className="admin-link" href={`/teams/${team.id}/edit`}>
+                    Edit / Delete
+                  </a>
                 </article>
               ))}
             </div>
@@ -300,12 +366,21 @@ export function AdminApp() {
 
       {can("VIEW_AUDIT") ? (
         <section className="panel admin-audit-section">
-          <div className="section-heading"><div><p className="eyebrow">AUDIT</p><h2>Recent sensitive actions</h2></div><span>{audit.length}</span></div>
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">AUDIT</p>
+              <h2>Recent sensitive actions</h2>
+            </div>
+            <span>{audit.length}</span>
+          </div>
           <div className="admin-audit-list">
             {audit.map((entry) => (
               <article key={entry.id}>
                 <strong>{entry.action}</strong>
-                <span>{entry.entityType}{entry.entityId ? ` · ${entry.entityId}` : ""}</span>
+                <span>
+                  {entry.entityType}
+                  {entry.entityId ? ` · ${entry.entityId}` : ""}
+                </span>
                 <time>{new Date(entry.createdAt).toLocaleString()}</time>
               </article>
             ))}

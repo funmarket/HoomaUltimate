@@ -25,7 +25,11 @@ export class PlaceService {
     const place = await this.repository.getApproved(placeId);
     if (!place) throw new AppError(404, "PLACE_NOT_FOUND", "Approved Place not found");
     if (await this.repository.hasVerifiedOwnership(placeId, userId)) {
-      throw new AppError(409, "PLACE_ALREADY_OWNED", "You are already a verified owner of this Place");
+      throw new AppError(
+        409,
+        "PLACE_ALREADY_OWNED",
+        "You are already a verified owner of this Place",
+      );
     }
     return this.repository.claimOwnership(userId, placeId, input);
   }

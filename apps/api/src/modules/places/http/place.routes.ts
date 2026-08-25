@@ -23,21 +23,25 @@ export function createPlacesMemberRouter(service: PlaceService): Router {
   router.post(
     "/",
     asyncHandler(async (request, response) => {
-      response.status(201).json(
-        await service.suggest(getAuth(request).userId, placeSuggestionSchema.parse(request.body)),
-      );
+      response
+        .status(201)
+        .json(
+          await service.suggest(getAuth(request).userId, placeSuggestionSchema.parse(request.body)),
+        );
     }),
   );
   router.post(
     "/:placeId/ownership-claims",
     asyncHandler(async (request, response) => {
-      response.status(201).json(
-        await service.claimOwnership(
-          getAuth(request).userId,
-          String(request.params.placeId),
-          placeOwnershipClaimSchema.parse(request.body),
-        ),
-      );
+      response
+        .status(201)
+        .json(
+          await service.claimOwnership(
+            getAuth(request).userId,
+            String(request.params.placeId),
+            placeOwnershipClaimSchema.parse(request.body),
+          ),
+        );
     }),
   );
   return router;
@@ -58,13 +62,15 @@ export function createPlaceCapabilityMemberRouter(service: PlaceCapabilityServic
     "/applications",
     asyncHandler(async (request, response) => {
       const placeId = String((request.body as { placeId?: unknown }).placeId ?? "");
-      response.status(201).json(
-        await service.submit(
-          getAuth(request).userId,
-          placeId,
-          placeCapabilityApplicationSchema.parse(request.body),
-        ),
-      );
+      response
+        .status(201)
+        .json(
+          await service.submit(
+            getAuth(request).userId,
+            placeId,
+            placeCapabilityApplicationSchema.parse(request.body),
+          ),
+        );
     }),
   );
   return router;

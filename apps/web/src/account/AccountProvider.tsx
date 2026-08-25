@@ -1,10 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { MeResponse } from "@hooma/contracts";
-import {
-  createPlatformManagementApi,
-  useHoomaFrontend,
-  type ManagedTeam,
-} from "@hooma/frontend";
+import { createPlatformManagementApi, useHoomaFrontend, type ManagedTeam } from "@hooma/frontend";
 
 type AccountState = {
   readonly me: MeResponse | null;

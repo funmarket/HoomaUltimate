@@ -223,11 +223,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
     });
   }
 
-  async reviewOwnershipClaim(
-    actorUserId: string,
-    claimId: string,
-    input: ModerationDecisionInput,
-  ) {
+  async reviewOwnershipClaim(actorUserId: string, claimId: string, input: ModerationDecisionInput) {
     const status = input.decision === "APPROVE" ? "APPROVED" : "REJECTED";
     return this.db.$transaction(async (tx) => {
       const claim = await tx.placeOwnershipClaim.findFirst({

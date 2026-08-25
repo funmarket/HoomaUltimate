@@ -35,7 +35,9 @@ async function register(base: string, username: string) {
   assert.equal(response.status, 201);
   const cookie = response.headers.get("set-cookie");
   assert.ok(cookie);
-  const credential = await db.webCredential.findUniqueOrThrow({ where: { loginUsername: username } });
+  const credential = await db.webCredential.findUniqueOrThrow({
+    where: { loginUsername: username },
+  });
   return { cookie, userId: credential.userId };
 }
 
@@ -64,9 +66,12 @@ test("configured owner is sole full admin and delegates selective Watch/Pitch mo
       data: { userId: manager.userId, role: "PLATFORM_ADMIN", grantedBy: "rogue-test" },
     });
 
-    assert.deepEqual(await container.platformAdminService.bootstrapConfiguredOwner(ownerTelegramId.toString()), {
-      status: "ready",
-    });
+    assert.deepEqual(
+      await container.platformAdminService.bootstrapConfiguredOwner(ownerTelegramId.toString()),
+      {
+        status: "ready",
+      },
+    );
     assert.equal(
       await db.platformRoleAssignment.count({ where: { role: "PLATFORM_ADMIN", revokedAt: null } }),
       1,
@@ -88,11 +93,7 @@ test("configured owner is sole full admin and delegates selective Watch/Pitch mo
       method: "PUT",
       headers: headers(owner.cookie),
       body: JSON.stringify({
-        capabilities: [
-          "REVIEW_PLACES",
-          "REVIEW_PLACE_OWNERSHIP",
-          "REVIEW_WATCH_APPLICATIONS",
-        ],
+        capabilities: ["REVIEW_PLACES", "REVIEW_PLACE_OWNERSHIP", "REVIEW_WATCH_APPLICATIONS"],
       }),
     });
     assert.equal(managerGrant.status, 200);
@@ -103,11 +104,7 @@ test("configured owner is sole full admin and delegates selective Watch/Pitch mo
     assert.equal(managerAccess.status, 200);
     assert.deepEqual(await managerAccess.json(), {
       isPlatformOwner: false,
-      managerCapabilities: [
-        "REVIEW_PLACES",
-        "REVIEW_PLACE_OWNERSHIP",
-        "REVIEW_WATCH_APPLICATIONS",
-      ],
+      managerCapabilities: ["REVIEW_PLACES", "REVIEW_PLACE_OWNERSHIP", "REVIEW_WATCH_APPLICATIONS"],
     });
 
     const forbiddenDelegation = await fetch(`${base}/api/v1/admin/managers/business_${suffix}`, {
@@ -189,7 +186,9 @@ test("configured owner is sole full admin and delegates selective Watch/Pitch mo
     const publicWatch = await fetch(`${base}/api/public/v1/watch`);
     assert.equal(publicWatch.status, 200);
     assert.equal(
-      ((await publicWatch.json()) as { id: string }[]).some((item) => item.id === watchApplication.id),
+      ((await publicWatch.json()) as { id: string }[]).some(
+        (item) => item.id === watchApplication.id,
+      ),
       true,
     );
 

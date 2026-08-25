@@ -146,12 +146,15 @@ export class PrismaPlatformAdminRepository implements PlatformAdminRepository {
   }
 
   async overview(): Promise<PlatformAdminOverview> {
-    const [users, activePlatformAdmins, activeAppManagers, auditEntries] = await this.db.$transaction([
-      this.db.user.count(),
-      this.db.platformRoleAssignment.count({ where: { role: "PLATFORM_ADMIN", revokedAt: null } }),
-      this.db.user.count({ where: { appManagerGrants: { some: { revokedAt: null } } } }),
-      this.db.auditLog.count(),
-    ]);
+    const [users, activePlatformAdmins, activeAppManagers, auditEntries] =
+      await this.db.$transaction([
+        this.db.user.count(),
+        this.db.platformRoleAssignment.count({
+          where: { role: "PLATFORM_ADMIN", revokedAt: null },
+        }),
+        this.db.user.count({ where: { appManagerGrants: { some: { revokedAt: null } } } }),
+        this.db.auditLog.count(),
+      ]);
     return { users, activePlatformAdmins, activeAppManagers, auditEntries };
   }
 
