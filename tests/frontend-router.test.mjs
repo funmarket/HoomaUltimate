@@ -38,7 +38,7 @@ test("Telegram facade serves the shared HOOMA frontend while the shared runtime 
   assert.match(router, /createTelegramRuntime\(\)/);
   assert.match(runtime, /webApp\.ready\(\)/);
   assert.match(runtime, /webApp\.expand\(\)/);
-  assert.match(runtime, /backButton: webApp\.BackButton \?\? null/);
+  assert.match(runtime, /backButton: webApp\?\.BackButton \?\? null/);
   assert.match(backButton, /button\.show\(\)/);
   assert.match(backButton, /button\.hide\(\)/);
   assert.match(backButton, /button\.onClick\(goBack\)/);
