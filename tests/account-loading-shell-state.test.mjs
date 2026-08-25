@@ -54,8 +54,10 @@ test("classic auth screen consumes AccountProvider as the single account source 
   assert.match(auth, /await api\.identity\.logout\(\);\s+await refresh\(\);/);
   assert.match(
     auth,
-    /async function completeAuthentication\(\)[\s\S]*if \(await refresh\(\)\) \{\s*window\.location\.replace\(returnTo\);/,
+    /async function completeAuthentication\(nextPath\?: string\)[\s\S]*if \(await refresh\(\)\) \{\s*window\.location\.replace\(returnTo !== "\/" \? returnTo : \(nextPath \?\? "\/"\)\);/,
   );
+  assert.match(auth, /<LoginForm onSuccess=\{completeAuthentication\}/);
+  assert.match(auth, /<RegisterForm[\s\S]*onSuccess=\{completeAuthentication\}/);
   assert.match(auth, /const visibleError = error \|\| accountError;/);
   assert.match(auth, /if \(loading\)[\s\S]*aria-busy="true"/);
   assert.match(accountProvider, /readonly refresh: \(\) => Promise<boolean>;/);
