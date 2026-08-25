@@ -8,7 +8,10 @@ import type {
 
 export interface PlaceRepository {
   listPublic(): Promise<readonly PublicPlaceSummary[]>;
-  suggest(userId: string, input: PlaceSuggestionInput): Promise<PublicPlaceSummary & { status: string }>;
+  suggest(
+    userId: string,
+    input: PlaceSuggestionInput,
+  ): Promise<PublicPlaceSummary & { status: string }>;
   getApproved(placeId: string): Promise<PublicPlaceSummary | null>;
   hasVerifiedOwnership(placeId: string, userId: string): Promise<boolean>;
   claimOwnership(
