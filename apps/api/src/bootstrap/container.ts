@@ -41,11 +41,7 @@ export function createContainer(config: ApiConfig) {
   const platformAdminRepository = new PrismaPlatformAdminRepository(database);
   const platformAdminService = new PlatformAdminService(platformAdminRepository);
   const identityRepository = new PrismaIdentityRepository(database);
-  const identityService = new IdentityService(
-    identityRepository,
-    config,
-    platformAdminService,
-  );
+  const identityService = new IdentityService(identityRepository, config, platformAdminService);
 
   const placeRepository = new PrismaPlaceRepository(database);
   const placeCapabilityRepository = new PrismaPlaceCapabilityRepository(database);
@@ -64,10 +60,7 @@ export function createContainer(config: ApiConfig) {
   );
 
   const communityRepository = new PrismaCommunityRepository(database);
-  const communityService = new CommunityService(
-    communityRepository,
-    platformAdminService,
-  );
+  const communityService = new CommunityService(communityRepository, platformAdminService);
   const teamRepository = new PrismaTeamRepository(database);
   const teamLifecycleRepository = new PrismaTeamLifecycleRepository(database);
   const teamService = new TeamService(
@@ -90,11 +83,7 @@ export function createContainer(config: ApiConfig) {
   const playService = new PlayService(playRepository);
   const whistleRepository = new PrismaWhistleRepository(database);
   const whistleStore = new RedisWhistleStore(redis);
-  const whistleService = new WhistleService(
-    whistleRepository,
-    whistleStore,
-    communityService,
-  );
+  const whistleService = new WhistleService(whistleRepository, whistleStore, communityService);
   const discoveryRepository = new PrismaDiscoveryRepository(database);
   const discoveryService = new DiscoveryService(discoveryRepository);
 
