@@ -20,6 +20,10 @@
       "types": "./src/index.ts",
       "default": "./dist/index.js"
     },
+    "./communities": {
+      "types": "./src/communities.ts",
+      "default": "./dist/communities.js"
+    },
     "./discovery": {
       "types": "./src/discovery.ts",
       "default": "./dist/discovery.js"

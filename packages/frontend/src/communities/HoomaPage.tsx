@@ -1,9 +1,17 @@
+import type { MeResponse } from "@hooma/contracts";
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import type { MeResponse } from "@hooma/contracts";
+import type {
+  CommunityJoinRequest,
+  CommunityMember,
+  CommunityVisibility,
+  PublicCommunityDetail,
+  PublicCommunitySummary,
+} from "../api";
 import { useHoomaFrontend } from "../context";
-import type { CommunityMember, PublicCommunityDetail, PublicCommunitySummary } from "../api";
 import { HoomaWhistleBoard } from "../whistle/HoomaWhistleBoard";
+import { CommunityLogo, CommunityMediaSurface } from "./CommunityMedia";
+import { HoomaMembershipRequests } from "./HoomaMembershipRequests";
 
 type CreationType = "HOOMA" | "TEAM" | "ULTRAS" | "GAMERS";
 
@@ -233,7 +241,7 @@ export function HoomaPage() {
         ) : null}
         {!loading && !communities.length && !error ? (
           <div className="state-card">
-            <strong>No public HOOMAs yet.</strong>
+            <strong>No HOOMAs yet.</strong>
             <p className="muted">The first neighborhood community can start here.</p>
           </div>
         ) : null}
@@ -246,20 +254,17 @@ export function HoomaPage() {
                 key={community.id}
                 onClick={() => navigate(`/hooma/${community.id}`)}
               >
-                <div
+                <CommunityMediaSurface
                   className="hooma-card-media"
-                  style={
-                    community.bannerUrl
-                      ? { backgroundImage: `url(${community.bannerUrl})` }
-                      : undefined
-                  }
+                  bannerUrl={community.bannerUrl}
                 >
-                  {community.logoUrl ? (
-                    <img src={community.logoUrl} alt="" />
-                  ) : (
-                    <span>{initials(community.name)}</span>
-                  )}
-                </div>
+                  <CommunityLogo
+                    className="hooma-card-logo"
+                    logoUrl={community.logoUrl}
+                    name={community.name}
+                  />
+                  <span className="hooma-visibility-chip">{community.visibility}</span>
+                </CommunityMediaSurface>
                 <div className="hooma-card-copy">
                   <span className="eyebrow">{community.houma || community.city || "HOOMA"}</span>
                   <h3>{community.name}</h3>
@@ -287,6 +292,7 @@ export function CreateHoomaPage() {
   const [houma, setHouma] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [bannerUrl, setBannerUrl] = useState("");
+  const [visibility, setVisibility] = useState<CommunityVisibility>("PUBLIC");
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
 
@@ -302,6 +308,7 @@ export function CreateHoomaPage() {
         houma: houma.trim() || null,
         logoUrl: logoUrl.trim() || null,
         bannerUrl: bannerUrl.trim() || null,
+        visibility,
       });
       navigate(CREATION_OPTIONS.HOOMA.feedHref);
     } catch (reason) {
@@ -313,23 +320,18 @@ export function CreateHoomaPage() {
 
   return (
     <div className="page hooma-create-page">
-      <section
+      <CommunityMediaSurface
+        as="section"
         className="hooma-create-preview panel"
-        style={
-          bannerUrl
-            ? {
-                backgroundImage: `linear-gradient(180deg, rgba(4,5,5,.12), rgba(4,5,5,.9)), url(${bannerUrl})`,
-              }
-            : undefined
-        }
+        bannerUrl={bannerUrl}
+        gradient="linear-gradient(180deg, rgba(4,5,5,.12), rgba(4,5,5,.9))"
       >
-        <div className="hooma-preview-logo">
-          {logoUrl ? (
-            <img src={logoUrl} alt="Community logo preview" />
-          ) : (
-            <span>{initials(name || "HOOMA")}</span>
-          )}
-        </div>
+        <CommunityLogo
+          className="hooma-preview-logo"
+          logoUrl={logoUrl}
+          name={name || "HOOMA"}
+          alt="Community logo preview"
+        />
         <div>
           <span className="eyebrow">BUILD YOUR NEIGHBORHOOD</span>
           <h1>{name || "Your HOOMA"}</h1>
@@ -337,17 +339,46 @@ export function CreateHoomaPage() {
             {description ||
               "Give your community a banner, a badge and a place people recognize as theirs."}
           </p>
+          <span className="hooma-visibility-chip">{visibility}</span>
         </div>
-      </section>
+      </CommunityMediaSurface>
       <form className="panel hooma-create-form" onSubmit={submit}>
         <div className="hooma-form-intro">
           <span className="eyebrow">IDENTITY</span>
           <h2>Make it feel like your place</h2>
           <p className="muted">
-            Use image links for now. We can add managed uploads later without changing the community
-            model.
+            Community identity, access and media are controlled from this canonical HOOMA record.
           </p>
         </div>
+        <fieldset className="hooma-privacy-choice">
+          <legend>Who can join?</legend>
+          <label className={visibility === "PUBLIC" ? "is-selected" : ""}>
+            <input
+              type="radio"
+              name="visibility"
+              value="PUBLIC"
+              checked={visibility === "PUBLIC"}
+              onChange={() => setVisibility("PUBLIC")}
+            />
+            <span>
+              <strong>Public</strong>
+              <small>People can find this HOOMA and join immediately.</small>
+            </span>
+          </label>
+          <label className={visibility === "PRIVATE" ? "is-selected" : ""}>
+            <input
+              type="radio"
+              name="visibility"
+              value="PRIVATE"
+              checked={visibility === "PRIVATE"}
+              onChange={() => setVisibility("PRIVATE")}
+            />
+            <span>
+              <strong>Private</strong>
+              <small>People can find this HOOMA but the Founder approves membership.</small>
+            </span>
+          </label>
+        </fieldset>
         <div className="hooma-form-grid">
           <label className="field">
             <span>Name</span>
@@ -428,20 +459,36 @@ export function HoomaDetailPage({ communityId }: { readonly communityId: string 
   const [community, setCommunity] = useState<PublicCommunityDetail | null>(null);
   const [me, setMe] = useState<MeResponse | null>(null);
   const [members, setMembers] = useState<CommunityMember[]>([]);
+  const [joinRequest, setJoinRequest] = useState<CommunityJoinRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+
+  async function applyDetail(detail: PublicCommunityDetail, identity: MeResponse | null) {
+    setCommunity(detail);
+    setMe(identity);
+    const currentMembership = identity?.communities.find((item) => item.id === communityId) ?? null;
+    if (currentMembership) {
+      const rows = await api.communities.members(communityId);
+      setMembers(rows);
+      setJoinRequest(null);
+      return;
+    }
+    setMembers([]);
+    if (identity) {
+      const response = await api.communities.myJoinRequest(communityId);
+      setJoinRequest(response.request?.status === "PENDING" ? response.request : null);
+    } else {
+      setJoinRequest(null);
+    }
+  }
 
   async function loadDetail() {
     const [detail, identity] = await Promise.all([
       api.communities.publicDetail(communityId),
       api.identity.meOptional(),
     ]);
-    setCommunity(detail);
-    setMe(identity);
-    const currentMembership = identity?.communities.find((item) => item.id === communityId) ?? null;
-    if (currentMembership) setMembers(await api.communities.members(communityId));
-    else setMembers([]);
+    await applyDetail(detail, identity);
   }
 
   useEffect(() => {
@@ -457,8 +504,19 @@ export function HoomaDetailPage({ communityId }: { readonly communityId: string 
           identity?.communities.find((item) => item.id === communityId) ?? null;
         if (currentMembership) {
           const rows = await api.communities.members(communityId);
-          if (active) setMembers(rows);
-        } else if (active) setMembers([]);
+          if (!active) return;
+          setMembers(rows);
+          setJoinRequest(null);
+        } else {
+          setMembers([]);
+          if (identity) {
+            const response = await api.communities.myJoinRequest(communityId);
+            if (active)
+              setJoinRequest(response.request?.status === "PENDING" ? response.request : null);
+          } else {
+            setJoinRequest(null);
+          }
+        }
       })
       .catch((reason) => {
         if (active) setError(report(reason));
@@ -509,23 +567,18 @@ export function HoomaDetailPage({ communityId }: { readonly communityId: string 
 
   return (
     <div className="page hooma-detail-page">
-      <section
+      <CommunityMediaSurface
+        as="section"
         className="hooma-hq-hero"
-        style={
-          community.bannerUrl
-            ? {
-                backgroundImage: `linear-gradient(180deg, rgba(4,5,5,.08), rgba(4,5,5,.92)), url(${community.bannerUrl})`,
-              }
-            : undefined
-        }
+        bannerUrl={community.bannerUrl}
+        gradient="linear-gradient(180deg, rgba(4,5,5,.08), rgba(4,5,5,.92))"
       >
-        <div className="hooma-hq-logo">
-          {community.logoUrl ? (
-            <img src={community.logoUrl} alt={`${community.name} logo`} />
-          ) : (
-            <span>{initials(community.name)}</span>
-          )}
-        </div>
+        <CommunityLogo
+          className="hooma-hq-logo"
+          logoUrl={community.logoUrl}
+          name={community.name}
+          alt={`${community.name} logo`}
+        />
         <div className="hooma-hq-copy">
           <span className="eyebrow">
             {community.houma || community.city || "NEIGHBORHOOD HOOMA"}
@@ -538,23 +591,47 @@ export function HoomaDetailPage({ communityId }: { readonly communityId: string 
           <div className="hooma-hq-meta">
             <span>{community._count.memberships} members</span>
             <span>{community._count.teams} teams</span>
+            <span className="hooma-visibility-chip">{community.visibility}</span>
             {membership ? <span className="hooma-role-chip">{membership.role}</span> : null}
           </div>
           <div className="hooma-hq-actions">
             {!me && signInHref ? (
               <a className="button" href={signInHref}>
-                Sign in to join
+                Sign in to {community.visibility === "PRIVATE" ? "request access" : "join"}
               </a>
             ) : null}
-            {me && !membership ? (
+            {me && !membership && !joinRequest ? (
               <button
                 className="button"
                 type="button"
                 disabled={Boolean(busy)}
                 onClick={() => void perform("join", () => api.communities.join(community.id))}
               >
-                {busy === "join" ? "Joining…" : "Join HOOMA"}
+                {busy === "join"
+                  ? community.visibility === "PRIVATE"
+                    ? "Requesting…"
+                    : "Joining…"
+                  : community.visibility === "PRIVATE"
+                    ? "Request to join"
+                    : "Join HOOMA"}
               </button>
+            ) : null}
+            {me && !membership && joinRequest ? (
+              <div className="hooma-pending-membership">
+                <span>Membership request pending</span>
+                <button
+                  className="button secondary"
+                  type="button"
+                  disabled={Boolean(busy)}
+                  onClick={() =>
+                    void perform("cancel-request", () =>
+                      api.communities.cancelJoinRequest(community.id),
+                    )
+                  }
+                >
+                  {busy === "cancel-request" ? "Cancelling…" : "Cancel request"}
+                </button>
+              </div>
             ) : null}
             {membership && membership.role !== "FOUNDER" ? (
               <button
@@ -568,7 +645,7 @@ export function HoomaDetailPage({ communityId }: { readonly communityId: string 
             ) : null}
           </div>
         </div>
-      </section>
+      </CommunityMediaSurface>
 
       {error ? <div className="error-box">{error}</div> : null}
 
@@ -678,6 +755,10 @@ export function HoomaDetailPage({ communityId }: { readonly communityId: string 
             })}
           </div>
         </section>
+      ) : null}
+
+      {membership?.role === "FOUNDER" ? (
+        <HoomaMembershipRequests communityId={community.id} onChanged={loadDetail} />
       ) : null}
 
       {canManage ? (

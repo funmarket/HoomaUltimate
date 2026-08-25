@@ -1,3 +1,8 @@
+import {
+  communityCreateSchema,
+  communityMemberAddSchema,
+  communityUpdateSchema,
+} from "@hooma/contracts/communities";
 import { Router } from "express";
 import { z } from "zod";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
@@ -5,18 +10,8 @@ import { getAuth } from "../../identity/http/auth-request.js";
 import type { CommunityService } from "../application/community.service.js";
 
 const coachSchema = z.object({ userId: z.string().min(1) });
-const optionalUrl = z.string().trim().url().max(2000).optional().nullable();
-const createSchema = z.object({
-  name: z.string().trim().min(2).max(100),
-  description: z.string().trim().max(600).optional().nullable(),
-  city: z.string().trim().max(100).optional().nullable(),
-  houma: z.string().trim().max(100).optional().nullable(),
-  logoUrl: optionalUrl,
-  bannerUrl: optionalUrl,
-});
-const updateSchema = createSchema.partial();
 
-function definedCommunityFields(parsed: z.infer<typeof updateSchema>) {
+function definedCommunityFields(parsed: z.infer<typeof communityUpdateSchema>) {
   return {
     ...(parsed.name !== undefined ? { name: parsed.name } : {}),
     ...(parsed.description !== undefined ? { description: parsed.description } : {}),
@@ -24,6 +19,7 @@ function definedCommunityFields(parsed: z.infer<typeof updateSchema>) {
     ...(parsed.houma !== undefined ? { houma: parsed.houma } : {}),
     ...(parsed.logoUrl !== undefined ? { logoUrl: parsed.logoUrl } : {}),
     ...(parsed.bannerUrl !== undefined ? { bannerUrl: parsed.bannerUrl } : {}),
+    ...(parsed.visibility !== undefined ? { visibility: parsed.visibility } : {}),
   };
 }
 
@@ -54,7 +50,50 @@ export function createCommunityMemberRouter(service: CommunityService): Router {
   router.post(
     "/:id/join",
     asyncHandler(async (req, res) => {
-      res.status(201).json(await service.join(getAuth(req).userId, String(req.params.id)));
+      const result = await service.join(getAuth(req).userId, String(req.params.id));
+      res.status(result.status === "PENDING" ? 202 : 201).json(result);
+    }),
+  );
+  router.get(
+    "/:id/join-request",
+    asyncHandler(async (req, res) => {
+      res.json(await service.myJoinRequest(getAuth(req).userId, String(req.params.id)));
+    }),
+  );
+  router.delete(
+    "/:id/join-request",
+    asyncHandler(async (req, res) => {
+      res.json(await service.cancelJoinRequest(getAuth(req).userId, String(req.params.id)));
+    }),
+  );
+  router.get(
+    "/:id/join-requests",
+    asyncHandler(async (req, res) => {
+      res.json(await service.joinRequests(getAuth(req).userId, String(req.params.id)));
+    }),
+  );
+  router.post(
+    "/:id/join-requests/:userId/approve",
+    asyncHandler(async (req, res) => {
+      res.json(
+        await service.approveJoinRequest(
+          getAuth(req).userId,
+          String(req.params.id),
+          String(req.params.userId),
+        ),
+      );
+    }),
+  );
+  router.post(
+    "/:id/join-requests/:userId/decline",
+    asyncHandler(async (req, res) => {
+      res.json(
+        await service.declineJoinRequest(
+          getAuth(req).userId,
+          String(req.params.id),
+          String(req.params.userId),
+        ),
+      );
     }),
   );
   router.delete(
@@ -67,6 +106,15 @@ export function createCommunityMemberRouter(service: CommunityService): Router {
     "/:id/members",
     asyncHandler(async (req, res) => {
       res.json(await service.members(getAuth(req).userId, String(req.params.id)));
+    }),
+  );
+  router.post(
+    "/:id/members",
+    asyncHandler(async (req, res) => {
+      const input = communityMemberAddSchema.parse(req.body);
+      res
+        .status(201)
+        .json(await service.addMember(getAuth(req).userId, String(req.params.id), input.username));
     }),
   );
   router.delete(
@@ -105,7 +153,7 @@ export function createCommunityMemberRouter(service: CommunityService): Router {
   router.patch(
     "/:id",
     asyncHandler(async (req, res) => {
-      const input = definedCommunityFields(updateSchema.parse(req.body));
+      const input = definedCommunityFields(communityUpdateSchema.parse(req.body));
       res.json(await service.update(getAuth(req).userId, String(req.params.id), input));
     }),
   );
@@ -118,7 +166,7 @@ export function createCommunityMemberRouter(service: CommunityService): Router {
   router.post(
     "/",
     asyncHandler(async (req, res) => {
-      const parsed = createSchema.parse(req.body);
+      const parsed = communityCreateSchema.parse(req.body);
       const input = { name: parsed.name, ...definedCommunityFields(parsed) };
       res.status(201).json(await service.create(getAuth(req).userId, input));
     }),
