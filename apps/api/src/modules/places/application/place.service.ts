@@ -1,0 +1,58 @@
+import type {
+  ModerationDecisionInput,
+  PlaceOwnershipClaimInput,
+  PlaceSuggestionInput,
+} from "@hooma/contracts/platform-management";
+import { AppError } from "../../../http/errors/app-error.js";
+import type { PlatformAdminAuthorizer } from "../../platform-admin/application/platform-admin.authorizer.js";
+import type { PlaceRepository } from "./place.repository.js";
+
+export class PlaceService {
+  constructor(
+    private readonly repository: PlaceRepository,
+    private readonly platformAdmin: PlatformAdminAuthorizer,
+  ) {}
+
+  listPublic() {
+    return this.repository.listPublic();
+  }
+
+  suggest(userId: string, input: PlaceSuggestionInput) {
+    return this.repository.suggest(userId, input);
+  }
+
+  async claimOwnership(userId: string, placeId: string, input: PlaceOwnershipClaimInput) {
+    const place = await this.repository.getApproved(placeId);
+    if (!place) throw new AppError(404, "PLACE_NOT_FOUND", "Approved Place not found");
+    if (await this.repository.hasVerifiedOwnership(placeId, userId)) {
+      throw new AppError(409, "PLACE_ALREADY_OWNED", "You are already a verified owner of this Place");
+    }
+    return this.repository.claimOwnership(userId, placeId, input);
+  }
+
+  isVerifiedOwner(placeId: string, userId: string) {
+    return this.repository.hasVerifiedOwnership(placeId, userId);
+  }
+
+  async pendingPlaces(userId: string) {
+    await this.platformAdmin.requireCapability(userId, "REVIEW_PLACES");
+    return this.repository.pendingPlaces();
+  }
+
+  async pendingOwnershipClaims(userId: string) {
+    await this.platformAdmin.requireCapability(userId, "REVIEW_PLACE_OWNERSHIP");
+    return this.repository.pendingOwnershipClaims();
+  }
+
+  async reviewPlace(userId: string, placeId: string, input: ModerationDecisionInput) {
+    await this.platformAdmin.requireCapability(userId, "REVIEW_PLACES");
+    await this.repository.reviewPlace(userId, placeId, input);
+    return { ok: true };
+  }
+
+  async reviewOwnershipClaim(userId: string, claimId: string, input: ModerationDecisionInput) {
+    await this.platformAdmin.requireCapability(userId, "REVIEW_PLACE_OWNERSHIP");
+    await this.repository.reviewOwnershipClaim(userId, claimId, input);
+    return { ok: true };
+  }
+}
