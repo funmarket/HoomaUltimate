@@ -444,20 +444,19 @@
 }
 .gamer-challenger-heading {
   display: grid;
-  gap: 9px;
+  gap: 7px;
 }
-.gamer-challenger-heading > div {
-  display: grid;
-  gap: 8px;
-}
-.gamer-challenger-heading h3 {
-  margin: 0;
-  color: #d2d8d3;
-  font-size: 14px;
-  font-weight: 800;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
-  overflow-wrap: anywhere;
+.gamer-card-game-label {
+  width: fit-content;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--gamers-muted);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 .gamer-challenger-heading small {
   width: fit-content;
@@ -511,9 +510,26 @@
   letter-spacing: -0.04em;
   overflow-wrap: anywhere;
 }
+.gamer-challenger-copy > h3 {
+  margin: 0 0 3px;
+  color: #d2d8d3;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
 .gamer-challenger-card .muted {
   margin: 0;
   font-size: 12px;
+}
+.gamer-card-profile-cue {
+  width: fit-content;
+  margin-top: 13px;
+  color: var(--gamers-lime);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.09em;
 }
 .gamers-page .gamer-challenge-button {
   width: 100%;
