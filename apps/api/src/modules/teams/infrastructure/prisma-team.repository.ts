@@ -64,6 +64,12 @@ function lineupSlots(input: TeamLineupInput) {
   }));
 }
 
+function publicCommunityTeamFilter(): Prisma.TeamWhereInput {
+  return {
+    OR: [{ communityId: null }, { community: { visibility: "PUBLIC" } }],
+  };
+}
+
 const lineupSelect = {
   id: true,
   name: true,
@@ -107,6 +113,7 @@ export class PrismaTeamRepository implements TeamRepository {
     const rows = await this.db.team.findMany({
       where: {
         status: "ACTIVE",
+        AND: [publicCommunityTeamFilter()],
         ...(search
           ? {
               OR: [
@@ -132,7 +139,7 @@ export class PrismaTeamRepository implements TeamRepository {
 
   getPublic(teamId: string) {
     return this.db.team.findFirst({
-      where: { id: teamId, status: "ACTIVE" },
+      where: { id: teamId, status: "ACTIVE", AND: [publicCommunityTeamFilter()] },
       select: {
         id: true,
         communityId: true,
