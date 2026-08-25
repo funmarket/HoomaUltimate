@@ -10,6 +10,7 @@ import { useAccount } from "../account/AccountProvider";
 
 const SKILL_LEVELS = skillLevelSchema.options;
 type SkillLevel = NonNullable<ProfileResponse["player"]>["skillLevel"];
+type TeamPosition = (typeof TEAM_POSITION_ROLES)[number];
 
 export function ProfilePage() {
   const { authenticationHref, transport } = useHoomaFrontend();
@@ -24,7 +25,7 @@ export function ProfilePage() {
   const [bio, setBio] = useState("");
   const [identities, setIdentities] = useState<ProfileIdentity[]>([]);
   const [skillLevel, setSkillLevel] = useState<SkillLevel | "">("");
-  const [preferredPositions, setPreferredPositions] = useState<string[]>([]);
+  const [preferredPositions, setPreferredPositions] = useState<TeamPosition[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
@@ -77,7 +78,7 @@ export function ProfilePage() {
     );
   }
 
-  function togglePosition(position: string, selected: boolean) {
+  function togglePosition(position: TeamPosition, selected: boolean) {
     setPreferredPositions((current) => {
       if (!selected) return current.filter((value) => value !== position);
       if (current.includes(position) || current.length >= 5) return current;
