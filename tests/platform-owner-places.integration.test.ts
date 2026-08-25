@@ -230,6 +230,11 @@ test("configured owner is sole full admin and delegates selective Watch/Pitch mo
       }),
     );
   } finally {
+    await db.placeCapabilityApplication.deleteMany();
+    await db.placeOwnership.deleteMany();
+    await db.placeOwnershipClaim.deleteMany();
+    await db.place.deleteMany();
+    await db.appManagerGrant.deleteMany();
     await new Promise<void>((resolve, reject) =>
       server.close((error) => (error ? reject(error) : resolve())),
     );
