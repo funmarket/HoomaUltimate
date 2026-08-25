@@ -96,9 +96,12 @@ export class CommunityService {
       return { status: "JOINED" as const, membership };
     }
 
-    const request = await this.repository.requestJoin(communityId, userId);
-    if (!request) throw new AppError(404, "COMMUNITY_NOT_FOUND", "HOOMA community not found");
-    return { status: "PENDING" as const, request: serializeJoinRequest(request) };
+    const outcome = await this.repository.requestJoin(communityId, userId);
+    if (!outcome) throw new AppError(404, "COMMUNITY_NOT_FOUND", "HOOMA community not found");
+    if (outcome.kind === "MEMBERSHIP") {
+      return { status: "JOINED" as const, membership: { role: outcome.role } };
+    }
+    return { status: "PENDING" as const, request: serializeJoinRequest(outcome.request) };
   }
 
   async myJoinRequest(userId: string, communityId: string) {
