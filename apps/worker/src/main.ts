@@ -66,9 +66,7 @@ async function shutdown(signal: NodeJS.Signals): Promise<void> {
   clearInterval(cleanupTimer);
   clearInterval(outboxTimer);
   await Promise.allSettled(
-    [cleanupPromise, outboxPromise].filter(
-      (promise): promise is Promise<void> => promise !== null,
-    ),
+    [cleanupPromise, outboxPromise].filter((promise): promise is Promise<void> => promise !== null),
   );
   await disconnectDatabase();
 }
