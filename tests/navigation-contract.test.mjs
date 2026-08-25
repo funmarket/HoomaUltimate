@@ -32,7 +32,16 @@ test("locked bottom navigation and eight-card Home gateway cannot drift", async 
   );
   assert.deepEqual(
     [...gatewaySource.matchAll(/href: ("[^"]+"|null)/g)].map((match) => match[1]),
-    ["\"/hooma\"", "\"/teams\"", "null", "\"/gamers\"", "\"/places\"", "null", "null", "null"],
+    [
+      "\"/hooma\"",
+      "\"/teams\"",
+      "null",
+      "\"/gamers\"",
+      "\"/places\"",
+      "null",
+      "null",
+      "null",
+    ],
   );
 });
 
