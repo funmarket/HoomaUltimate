@@ -68,3 +68,37 @@ test("Gamer challenger cards keep one HUD presentation with direct actions", asy
   assert.doesNotMatch(router, /\/gamers\/games\/:gameSlug\/profiles\/:profileId/);
   assert.doesNotMatch(index, /GamerProfilePage/);
 });
+
+test("Direct Gamer Whistle stays on the shared Whistle engine with server-derived pair authorization", async () => {
+  const [gamerService, whistleService, whistleRoutes, whistleRepository, schema, migration, client] =
+    await Promise.all([
+      read("apps/api/src/modules/gamers/application/gamer.service.ts"),
+      read("apps/api/src/modules/whistle/application/whistle.service.ts"),
+      read("apps/api/src/modules/whistle/http/whistle.routes.ts"),
+      read("apps/api/src/modules/whistle/application/whistle.repository.ts"),
+      read("packages/database/prisma/schema.prisma"),
+      read("packages/database/prisma/migrations/20260825225000_gamer_direct_whistle/migration.sql"),
+      read("packages/frontend/src/gamers/gamer-whistle-api.ts"),
+    ]);
+
+  assert.match(gamerService, /resolveDirectWhistleContext/);
+  assert.match(gamerService, /getByUserAndGame\(userId, otherProfile\.gameId\)/);
+  assert.match(gamerService, /GAMER_WHISTLE_SELF_FORBIDDEN/);
+  assert.match(gamerService, /hasGamerIdentity\(otherProfile\.userId\)/);
+  assert.match(gamerService, /\[ownProfile\.id, otherProfile\.id\]\.sort\(\)\.join\(":"\)/);
+
+  assert.match(whistleService, /listDirectGamer/);
+  assert.match(whistleService, /createDirectGamer/);
+  assert.match(whistleService, /"GAMER_DIRECT"/);
+  assert.match(whistleService, /createAuthorized/);
+  assert.match(whistleService, /DAILY_LIMIT = 11/);
+  assert.match(whistleService, /graphemes > 33/);
+  assert.match(whistleService, /nextUtcMidnight/);
+
+  assert.match(whistleRoutes, /"\/gamers\/:profileId"/);
+  assert.doesNotMatch(whistleRoutes, /contextSchema = z\.enum\(\[[^\]]*GAMER_DIRECT/s);
+  assert.match(whistleRepository, /"GAMER_DIRECT"/);
+  assert.match(schema, /enum WhistleContextType \{[^}]*GAMER_DIRECT/s);
+  assert.match(migration, /ADD VALUE IF NOT EXISTS 'GAMER_DIRECT'/);
+  assert.match(client, /\/api\/v1\/whistles\/gamers\//);
+});
