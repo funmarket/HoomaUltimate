@@ -248,9 +248,13 @@ export function createHoomaApi(transport: HoomaTransport) {
         method: "DELETE",
       }),
     join: (id: string) =>
-      request<CommunityJoinResult>(transport, `/api/v1/communities/${encodeURIComponent(id)}/join`, {
-        method: "POST",
-      }),
+      request<CommunityJoinResult>(
+        transport,
+        `/api/v1/communities/${encodeURIComponent(id)}/join`,
+        {
+          method: "POST",
+        },
+      ),
     myJoinRequest: (id: string) =>
       request<{ request: CommunityJoinRequest | null }>(
         transport,
@@ -284,7 +288,10 @@ export function createHoomaApi(transport: HoomaTransport) {
         method: "DELETE",
       }),
     members: (id: string) =>
-      request<CommunityMember[]>(transport, `/api/v1/communities/${encodeURIComponent(id)}/members`),
+      request<CommunityMember[]>(
+        transport,
+        `/api/v1/communities/${encodeURIComponent(id)}/members`,
+      ),
     addMember: (id: string, username: string) =>
       request<{ member: { userId: string; username: string } }>(
         transport,

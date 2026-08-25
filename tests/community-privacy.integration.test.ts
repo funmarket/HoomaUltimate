@@ -6,7 +6,8 @@ import { createApp } from "../apps/api/src/bootstrap/app.js";
 import { createContainer } from "../apps/api/src/bootstrap/container.js";
 
 const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) throw new Error("DATABASE_URL is required for community privacy integration tests");
+if (!databaseUrl)
+  throw new Error("DATABASE_URL is required for community privacy integration tests");
 
 const config = loadApiConfig({
   ...process.env,
@@ -32,7 +33,9 @@ async function register(base: string, username: string) {
   assert.equal(response.status, 201);
   const cookie = response.headers.get("set-cookie");
   assert.ok(cookie);
-  const credential = await db.webCredential.findUniqueOrThrow({ where: { loginUsername: username } });
+  const credential = await db.webCredential.findUniqueOrThrow({
+    where: { loginUsername: username },
+  });
   return { cookie, userId: credential.userId, username };
 }
 
@@ -139,17 +142,11 @@ test("PRIVATE HOOMA uses pending requests while PUBLIC HOOMA remains open", asyn
       ),
       false,
     );
-    assert.equal(
-      (await fetch(`${base}/api/public/v1/events/${privateEvent.id}`)).status,
-      404,
-    );
+    assert.equal((await fetch(`${base}/api/public/v1/events/${privateEvent.id}`)).status, 404);
 
     const publicShell = await fetch(`${base}/api/public/v1/communities/${privateCommunity.id}`);
     assert.equal(publicShell.status, 200);
-    assert.equal(
-      ((await publicShell.json()) as { visibility: string }).visibility,
-      "PRIVATE",
-    );
+    assert.equal(((await publicShell.json()) as { visibility: string }).visibility, "PRIVATE");
 
     const requestJoin = await fetch(`${base}/api/v1/communities/${privateCommunity.id}/join`, {
       method: "POST",
@@ -288,10 +285,13 @@ test("PRIVATE HOOMA uses pending requests while PUBLIC HOOMA remains open", asyn
       1,
     );
 
-    const directJoinRequest = await fetch(`${base}/api/v1/communities/${privateCommunity.id}/join`, {
-      method: "POST",
-      headers: headers(direct.cookie),
-    });
+    const directJoinRequest = await fetch(
+      `${base}/api/v1/communities/${privateCommunity.id}/join`,
+      {
+        method: "POST",
+        headers: headers(direct.cookie),
+      },
+    );
     assert.equal(directJoinRequest.status, 202);
     const directAdd = await fetch(`${base}/api/v1/communities/${privateCommunity.id}/members`, {
       method: "POST",
@@ -312,8 +312,12 @@ test("PRIVATE HOOMA uses pending requests while PUBLIC HOOMA remains open", asyn
       1,
     );
   } finally {
-    await db.communityJoinRequest.deleteMany({ where: { communityId: { in: createdCommunityIds } } });
-    await db.communityMembership.deleteMany({ where: { communityId: { in: createdCommunityIds } } });
+    await db.communityJoinRequest.deleteMany({
+      where: { communityId: { in: createdCommunityIds } },
+    });
+    await db.communityMembership.deleteMany({
+      where: { communityId: { in: createdCommunityIds } },
+    });
     await db.community.deleteMany({ where: { id: { in: createdCommunityIds } } });
     await db.user.deleteMany({ where: { id: { in: createdUserIds } } });
     await new Promise<void>((resolve, reject) =>

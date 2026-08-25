@@ -254,10 +254,7 @@ export function HoomaPage() {
                 key={community.id}
                 onClick={() => navigate(`/hooma/${community.id}`)}
               >
-                <CommunityMediaSurface
-                  className="hooma-card-media"
-                  bannerUrl={community.bannerUrl}
-                >
+                <CommunityMediaSurface className="hooma-card-media" bannerUrl={community.bannerUrl}>
                   <CommunityLogo
                     className="hooma-card-logo"
                     logoUrl={community.logoUrl}

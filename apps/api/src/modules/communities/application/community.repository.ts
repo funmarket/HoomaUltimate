@@ -75,10 +75,7 @@ export interface CommunityRepository {
   managerRole(communityId: string, userId: string): Promise<CommunityRole | null>;
   joinOpen(communityId: string, userId: string): Promise<{ role: CommunityRole } | null>;
   requestJoin(communityId: string, userId: string): Promise<CommunityPrivateJoinOutcome | null>;
-  getJoinRequest(
-    communityId: string,
-    userId: string,
-  ): Promise<CommunityJoinRequestRecord | null>;
+  getJoinRequest(communityId: string, userId: string): Promise<CommunityJoinRequestRecord | null>;
   listJoinRequests(communityId: string): Promise<CommunityJoinRequestForFounderRecord[]>;
   resolveJoinRequest(
     communityId: string,

@@ -91,8 +91,7 @@ export class CommunityService {
 
     if (policy.joinPolicy === "OPEN") {
       const membership = await this.repository.joinOpen(communityId, userId);
-      if (!membership)
-        throw new AppError(404, "COMMUNITY_NOT_FOUND", "HOOMA community not found");
+      if (!membership) throw new AppError(404, "COMMUNITY_NOT_FOUND", "HOOMA community not found");
       return { status: "JOINED" as const, membership };
     }
 
@@ -150,11 +149,7 @@ export class CommunityService {
 
   async addMember(founderUserId: string, communityId: string, username: string) {
     await this.requireFounder(communityId, founderUserId);
-    const member = await this.repository.addMemberByUsername(
-      communityId,
-      username,
-      founderUserId,
-    );
+    const member = await this.repository.addMemberByUsername(communityId, username, founderUserId);
     if (!member)
       throw new AppError(404, "COMMUNITY_MEMBER_TARGET_NOT_FOUND", "HOOMA user not found");
     return { member };
