@@ -2,11 +2,13 @@ import type { TelegramIdentityInput } from "@hooma/auth";
 import type { Prisma, PrismaClient } from "@hooma/database";
 import type {
   IdentityRepository,
+  LoginMethodsRecord,
   MeRecord,
   ProfileRecord,
   ProfileWriteInput,
   PublicProfileRecord,
   SessionRecord,
+  TelegramLinkResult,
   WebCredentialRecord,
 } from "../application/identity.repository.js";
 
@@ -38,6 +40,22 @@ export class PrismaIdentityRepository implements IdentityRepository {
         },
       });
       return user.id;
+    });
+  }
+
+  async createWebCredentialForUser(input: {
+    userId: string;
+    loginUsername: string;
+    passwordHash: string;
+    email: string | null;
+  }): Promise<void> {
+    await this.db.webCredential.create({
+      data: {
+        userId: input.userId,
+        loginUsername: input.loginUsername,
+        passwordHash: input.passwordHash,
+        email: input.email,
+      },
     });
   }
 
@@ -111,16 +129,7 @@ export class PrismaIdentityRepository implements IdentityRepository {
       return await this.db.$transaction(async (tx) => {
         const user = await tx.user.create({ data: {} });
         await tx.telegramIdentity.create({
-          data: {
-            userId: user.id,
-            telegramUserId: input.telegramUserId,
-            telegramUsername: input.username ?? null,
-            firstName: input.firstName ?? null,
-            lastName: input.lastName ?? null,
-            photoUrl: input.photoUrl ?? null,
-            languageCode: input.languageCode ?? null,
-            isPremium: input.isPremium ?? false,
-          },
+          data: telegramIdentityData(user.id, input),
         });
         const username = await this.uniqueTelegramUsername(tx, input);
         await tx.userPresentation.create({
@@ -146,6 +155,56 @@ export class PrismaIdentityRepository implements IdentityRepository {
       await this.refreshTelegramIdentity(concurrent.userId, input);
       return concurrent.userId;
     }
+  }
+
+  async findLoginMethods(userId: string): Promise<LoginMethodsRecord | null> {
+    const user = await this.db.user.findUnique({
+      where: { id: userId },
+      select: {
+        webCredential: { select: { loginUsername: true, email: true } },
+        telegramIdentity: { select: { telegramUsername: true } },
+      },
+    });
+    if (!user) return null;
+    return {
+      web: user.webCredential,
+      telegram: user.telegramIdentity,
+    };
+  }
+
+  async attachTelegramIdentityToUser(
+    userId: string,
+    input: TelegramIdentityInput,
+  ): Promise<TelegramLinkResult> {
+    return this.db.$transaction(async (tx) => {
+      const existingTelegram = await tx.telegramIdentity.findUnique({
+        where: { telegramUserId: input.telegramUserId },
+        select: { userId: true },
+      });
+      if (existingTelegram && existingTelegram.userId !== userId) {
+        return { kind: "telegram_conflict" };
+      }
+
+      const targetTelegram = await tx.telegramIdentity.findUnique({
+        where: { userId },
+        select: { telegramUserId: true },
+      });
+      if (targetTelegram && targetTelegram.telegramUserId !== input.telegramUserId) {
+        return { kind: "account_conflict" };
+      }
+
+      if (targetTelegram) {
+        await tx.telegramIdentity.update({
+          where: { userId },
+          data: telegramIdentityRefreshData(input),
+        });
+      } else {
+        await tx.telegramIdentity.create({
+          data: telegramIdentityData(userId, input),
+        });
+      }
+      return { kind: "linked", userId };
+    });
   }
 
   async findPublicProfile(username: string): Promise<PublicProfileRecord | null> {
@@ -364,15 +423,7 @@ export class PrismaIdentityRepository implements IdentityRepository {
   ): Promise<void> {
     await this.db.telegramIdentity.update({
       where: { userId },
-      data: {
-        telegramUsername: input.username ?? null,
-        firstName: input.firstName ?? null,
-        lastName: input.lastName ?? null,
-        photoUrl: input.photoUrl ?? null,
-        languageCode: input.languageCode ?? null,
-        isPremium: input.isPremium ?? false,
-        lastAuthenticatedAt: new Date(),
-      },
+      data: telegramIdentityRefreshData(input),
     });
   }
 
@@ -397,6 +448,31 @@ export class PrismaIdentityRepository implements IdentityRepository {
     }
     return candidate;
   }
+}
+
+function telegramIdentityData(userId: string, input: TelegramIdentityInput) {
+  return {
+    userId,
+    telegramUserId: input.telegramUserId,
+    telegramUsername: input.username ?? null,
+    firstName: input.firstName ?? null,
+    lastName: input.lastName ?? null,
+    photoUrl: input.photoUrl ?? null,
+    languageCode: input.languageCode ?? null,
+    isPremium: input.isPremium ?? false,
+  };
+}
+
+function telegramIdentityRefreshData(input: TelegramIdentityInput) {
+  return {
+    telegramUsername: input.username ?? null,
+    firstName: input.firstName ?? null,
+    lastName: input.lastName ?? null,
+    photoUrl: input.photoUrl ?? null,
+    languageCode: input.languageCode ?? null,
+    isPremium: input.isPremium ?? false,
+    lastAuthenticatedAt: new Date(),
+  };
 }
 
 function isUniqueConstraintError(error: unknown): boolean {
