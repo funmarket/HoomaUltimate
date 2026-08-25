@@ -1,6 +1,10 @@
 import { Router } from "express";
 import type { ApiConfig } from "@hooma/config";
 import type { AppContainer } from "../../bootstrap/container.js";
+import { createCommunityPublicRouter } from "../../modules/communities/http/community.routes.js";
+import { createDiscoveryPublicRouter } from "../../modules/discovery/http/discovery.routes.js";
+import { createEventPublicRouter } from "../../modules/events/http/event.routes.js";
+import { createGamerPublicRouter } from "../../modules/gamers/http/gamer.routes.js";
 import {
   createIdentityProfilePublicRouter,
   createIdentityPublicRouter,
@@ -9,12 +13,8 @@ import {
   createPlaceCapabilityPublicRouter,
   createPlacesPublicRouter,
 } from "../../modules/places/http/place.routes.js";
-import { createCommunityPublicRouter } from "../../modules/communities/http/community.routes.js";
-import { createTeamPublicRouter } from "../../modules/teams/http/team.routes.js";
-import { createEventPublicRouter } from "../../modules/events/http/event.routes.js";
-import { createGamerPublicRouter } from "../../modules/gamers/http/gamer.routes.js";
 import { createPlayPublicRouter } from "../../modules/play/http/play.routes.js";
-import { createDiscoveryPublicRouter } from "../../modules/discovery/http/discovery.routes.js";
+import { createTeamPublicRouter } from "../../modules/teams/http/team.routes.js";
 
 export function createPublicV1Router(container: AppContainer, config: ApiConfig): Router {
   const router = Router();
@@ -25,7 +25,15 @@ export function createPublicV1Router(container: AppContainer, config: ApiConfig)
   router.use("/pitch", createPlaceCapabilityPublicRouter(container.pitchService));
   router.use("/communities", createCommunityPublicRouter(container.communityService));
   router.use("/teams", createTeamPublicRouter(container.teamService));
-  router.use("/events", createEventPublicRouter(container.eventService));
+  router.use(
+    "/events",
+    createEventPublicRouter(
+      container.eventService,
+      container.communityService,
+      container.identityService,
+      config,
+    ),
+  );
   router.use("/gamers", createGamerPublicRouter(container.gamerService));
   router.use("/play", createPlayPublicRouter(container.playService));
   router.use("/discovery", createDiscoveryPublicRouter(container.discoveryService));
