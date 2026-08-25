@@ -85,9 +85,7 @@ export function GamerWhistlePanel({
 
       <div className="gamer-whistle-feed" aria-live="polite">
         {loading ? <small>Listening…</small> : null}
-        {!loading && !feed.items.length ? (
-          <small>No Whistles between you today.</small>
-        ) : null}
+        {!loading && !feed.items.length ? <small>No Whistles between you today.</small> : null}
         {feed.items.slice(0, 4).map((whistle) => (
           <div className="gamer-whistle-message" key={whistle.id}>
             <strong>{authorName(whistle)}</strong>
@@ -106,9 +104,7 @@ export function GamerWhistlePanel({
           />
           <button
             type="submit"
-            disabled={
-              !body.trim() || count > MAX_GRAPHEMES || sending || feed.remainingToday <= 0
-            }
+            disabled={!body.trim() || count > MAX_GRAPHEMES || sending || feed.remainingToday <= 0}
           >
             {sending ? "..." : "SEND"}
           </button>
