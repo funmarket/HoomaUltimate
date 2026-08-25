@@ -100,7 +100,18 @@ export class PrismaCommunityRepository implements CommunityRepository {
       slug = `${base}-${suffix++}`;
     return this.db.$transaction(async (tx) => {
       const community = await tx.community.create({
-        data: { ...input, slug, createdByUserId: userId },
+        data: {
+          name: input.name,
+          visibility: input.visibility,
+          joinPolicy: input.joinPolicy,
+          slug,
+          createdByUserId: userId,
+          ...(input.description !== undefined ? { description: input.description } : {}),
+          ...(input.city !== undefined ? { city: input.city } : {}),
+          ...(input.houma !== undefined ? { houma: input.houma } : {}),
+          ...(input.logoUrl !== undefined ? { logoUrl: input.logoUrl } : {}),
+          ...(input.bannerUrl !== undefined ? { bannerUrl: input.bannerUrl } : {}),
+        },
       });
       await tx.communityMembership.create({
         data: { communityId: community.id, userId, role: "FOUNDER" },
