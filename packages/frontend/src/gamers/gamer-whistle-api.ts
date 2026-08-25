@@ -8,11 +8,7 @@ export function listGamerWhistles(transport: HoomaTransport, otherProfileId: str
   );
 }
 
-export function sendGamerWhistle(
-  transport: HoomaTransport,
-  otherProfileId: string,
-  body: string,
-) {
+export function sendGamerWhistle(transport: HoomaTransport, otherProfileId: string, body: string) {
   return request<{ whistle: WhistleListItem; remainingToday: number; resetsAt: string }>(
     transport,
     `/api/v1/whistles/gamers/${encodeURIComponent(otherProfileId)}`,
