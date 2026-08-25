@@ -2,6 +2,11 @@ import { z } from "zod";
 
 const nodeEnvironmentSchema = z.enum(["development", "test", "production"]);
 const portSchema = z.coerce.number().int().positive().max(65535);
+const telegramUserIdSchema = z
+  .string()
+  .trim()
+  .regex(/^\d+$/, "Telegram user ID must contain digits only")
+  .optional();
 
 const apiEnvironmentSchema = z
   .object({
@@ -21,6 +26,7 @@ const apiEnvironmentSchema = z
       .default(720),
     TELEGRAM_BOT_TOKEN: z.string().default(""),
     TELEGRAM_INIT_DATA_MAX_AGE_SECONDS: z.coerce.number().int().positive().default(86400),
+    PLATFORM_ADMIN_BOOTSTRAP_TELEGRAM_USER_ID: telegramUserIdSchema,
   })
   .superRefine((value, context) => {
     if (value.NODE_ENV === "production" && !value.TELEGRAM_BOT_TOKEN) {
