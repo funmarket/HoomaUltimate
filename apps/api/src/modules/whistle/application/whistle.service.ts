@@ -65,23 +65,26 @@ export class WhistleService {
     const resetsAt = nextUtcMidnight(now);
     await this.repository.deleteExpired(now);
     const rows = await this.repository.listActive(contextType, contextId, now, 100);
-    const hydrated = await Promise.all(
-      rows.map(async (row) => ({ row, body: await this.transientStore.getBody(row.id) })),
-    );
-    const used = await this.repository.quotaUsed(userId, dayKey(now));
+    const [bodies, used] = await Promise.all([
+      this.transientStore.getBodies(rows.map((row) => row.id)),
+      this.repository.quotaUsed(userId, dayKey(now)),
+    ]);
+
     return {
-      items: hydrated
-        .filter(
-          (entry): entry is { row: WhistleMetadataRecord; body: string } => entry.body !== null,
-        )
-        .map(({ row, body }) => ({
-          id: row.id,
-          authorUserId: row.authorUserId,
-          body,
-          createdAt: row.createdAt.toISOString(),
-          expiresAt: row.expiresAt.toISOString(),
-          author: row.author,
-        })),
+      items: rows.flatMap((row) => {
+        const body = bodies.get(row.id);
+        if (body === undefined) return [];
+        return [
+          {
+            id: row.id,
+            authorUserId: row.authorUserId,
+            body,
+            createdAt: row.createdAt.toISOString(),
+            expiresAt: row.expiresAt.toISOString(),
+            author: row.author,
+          },
+        ];
+      }),
       remainingToday: Math.max(0, DAILY_LIMIT - used),
       resetsAt: resetsAt.toISOString(),
     };
