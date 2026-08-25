@@ -140,10 +140,20 @@ export class PrismaCommunityRepository implements CommunityRepository {
     });
   }
 
-  update(communityId: string, input: CommunityUpdateRecordInput) {
-    return this.db.community.update({
-      where: { id: communityId },
-      data: communityUpdateData(input),
+  async update(communityId: string, input: CommunityUpdateRecordInput) {
+    return this.db.$transaction(async (tx) => {
+      const community = await tx.community.update({
+        where: { id: communityId },
+        data: communityUpdateData(input),
+      });
+      if (input.joinPolicy === "OPEN") {
+        const now = new Date();
+        await tx.communityJoinRequest.updateMany({
+          where: { communityId, status: "PENDING" },
+          data: { status: "CANCELLED", resolvedAt: now, resolvedByUserId: null },
+        });
+      }
+      return community;
     });
   }
 
