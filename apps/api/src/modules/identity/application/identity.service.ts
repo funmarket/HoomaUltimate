@@ -1,8 +1,10 @@
 import {
+  createAccountLinkCode,
   hashPassword,
   hashSessionToken,
   newSessionToken,
   validateTelegramInitData,
+  verifyAccountLinkCode,
   verifyPassword,
   type AuthTransport,
   type TelegramIdentityInput,
@@ -14,14 +16,20 @@ import type {
   ProfilePresentationUpdateInput,
   RegisterInput,
 } from "@hooma/contracts";
+import type {
+  LoginMethodsResponse,
+  TelegramLinkClaimInput,
+  TelegramLinkCodeResponse,
+  WebCredentialAttachInput,
+} from "@hooma/contracts/auth-linking";
 import {
   profileResponseSchema,
   type ProfileResponse,
   type ProfileUpdateInput,
 } from "@hooma/contracts/profile";
 import { AppError } from "../../../http/errors/app-error.js";
-import type { IdentityRepository } from "./identity.repository.js";
 import { defaultDisplayName, normalizeEmail, normalizeUsername } from "../domain/normalization.js";
+import type { IdentityRepository } from "./identity.repository.js";
 
 export type TelegramResolution =
   | { kind: "absent" }
@@ -116,27 +124,7 @@ export class IdentityService {
     rawInitData: string | undefined,
     webUserId: string | null = null,
   ): Promise<{ userId: string }> {
-    if (!rawInitData || !this.config.TELEGRAM_BOT_TOKEN) {
-      throw new AppError(
-        401,
-        "TELEGRAM_AUTH_REQUIRED",
-        "Valid Telegram authentication is required to create a HOOMA account",
-      );
-    }
-    let identity: TelegramIdentityInput;
-    try {
-      identity = validateTelegramInitData(
-        rawInitData,
-        this.config.TELEGRAM_BOT_TOKEN,
-        this.config.TELEGRAM_INIT_DATA_MAX_AGE_SECONDS,
-      );
-    } catch {
-      throw new AppError(
-        401,
-        "TELEGRAM_AUTH_INVALID",
-        "Invalid or expired Telegram authentication",
-      );
-    }
+    const identity = this.requireTelegramIdentity(rawInitData);
     const existingTelegramUserId = await this.repository.findTelegramUserId(
       identity.telegramUserId,
     );
@@ -155,13 +143,104 @@ export class IdentityService {
       );
     }
     const userId = await this.repository.upsertTelegramIdentity(identity);
-    if (
-      this.platformOwnerBootstrap &&
-      this.config.PLATFORM_ADMIN_BOOTSTRAP_TELEGRAM_USER_ID === identity.telegramUserId.toString()
-    ) {
-      await this.platformOwnerBootstrap.reconcilePlatformOwner(userId);
-    }
+    await this.reconcilePlatformOwner(userId, identity);
     return { userId };
+  }
+
+  async loginMethods(userId: string): Promise<LoginMethodsResponse> {
+    const methods = await this.repository.findLoginMethods(userId);
+    if (!methods) throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    return {
+      web: methods.web,
+      telegram: methods.telegram ? { username: methods.telegram.telegramUsername } : null,
+    };
+  }
+
+  async addWebCredential(
+    userId: string,
+    input: WebCredentialAttachInput,
+  ): Promise<LoginMethodsResponse> {
+    const methods = await this.repository.findLoginMethods(userId);
+    if (!methods) throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    if (methods.web) {
+      throw new AppError(409, "WEB_CREDENTIAL_EXISTS", "This account already has a Web login");
+    }
+    try {
+      await this.repository.createWebCredentialForUser({
+        userId,
+        loginUsername: normalizeUsername(input.loginUsername),
+        passwordHash: await hashPassword(input.password),
+        email: normalizeEmail(input.email),
+      });
+    } catch (error) {
+      if (isUniqueConstraintError(error)) {
+        throw new AppError(
+          409,
+          "IDENTITY_CONFLICT",
+          "Login username or email already belongs to another HOOMA account",
+        );
+      }
+      throw error;
+    }
+    return this.loginMethods(userId);
+  }
+
+  async createTelegramLinkCode(
+    userId: string,
+    transports: readonly AuthTransport[],
+  ): Promise<TelegramLinkCodeResponse> {
+    if (!transports.includes("web")) {
+      throw new AppError(401, "WEB_AUTH_REQUIRED", "A Web session is required to create a link code");
+    }
+    const methods = await this.repository.findLoginMethods(userId);
+    if (!methods) throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    if (!methods.web) {
+      throw new AppError(409, "WEB_CREDENTIAL_REQUIRED", "This account does not have a Web login");
+    }
+    if (methods.telegram) {
+      throw new AppError(409, "TELEGRAM_IDENTITY_EXISTS", "This account is already linked to Telegram");
+    }
+    if (!this.config.TELEGRAM_BOT_TOKEN) {
+      throw new AppError(503, "TELEGRAM_AUTH_UNAVAILABLE", "Telegram authentication is unavailable");
+    }
+    const { code, expiresAt } = createAccountLinkCode(
+      userId,
+      this.config.TELEGRAM_BOT_TOKEN,
+    );
+    return { loginUsername: methods.web.loginUsername, code, expiresAt: expiresAt.toISOString() };
+  }
+
+  async claimTelegramLink(
+    rawInitData: string | undefined,
+    input: TelegramLinkClaimInput,
+  ): Promise<{ ok: true }> {
+    const identity = this.requireTelegramIdentity(rawInitData);
+    const credential = await this.repository.findWebCredential(
+      normalizeUsername(input.loginUsername),
+    );
+    if (
+      !credential ||
+      !this.config.TELEGRAM_BOT_TOKEN ||
+      !verifyAccountLinkCode(
+        input.code,
+        credential.userId,
+        this.config.TELEGRAM_BOT_TOKEN,
+      )
+    ) {
+      throw new AppError(400, "ACCOUNT_LINK_CODE_INVALID", "Link code is invalid or expired");
+    }
+    const result = await this.repository.attachTelegramIdentityToUser(credential.userId, identity);
+    if (result.kind !== "linked") {
+      throw new AppError(
+        409,
+        "ACCOUNT_LINK_CONFLICT",
+        result.kind === "telegram_conflict"
+          ? "This Telegram account already belongs to another HOOMA account"
+          : "This HOOMA account is already linked to another Telegram account",
+      );
+    }
+    await this.reconcilePlatformOwner(result.userId, identity);
+    return { ok: true };
   }
 
   async publicProfile(username: string) {
@@ -255,6 +334,33 @@ export class IdentityService {
       throw error;
     }
     return this.me(userId, transports);
+  }
+
+  private requireTelegramIdentity(rawInitData: string | undefined): TelegramIdentityInput {
+    if (!rawInitData || !this.config.TELEGRAM_BOT_TOKEN) {
+      throw new AppError(401, "TELEGRAM_AUTH_REQUIRED", "Valid Telegram authentication is required");
+    }
+    try {
+      return validateTelegramInitData(
+        rawInitData,
+        this.config.TELEGRAM_BOT_TOKEN,
+        this.config.TELEGRAM_INIT_DATA_MAX_AGE_SECONDS,
+      );
+    } catch {
+      throw new AppError(401, "TELEGRAM_AUTH_INVALID", "Invalid or expired Telegram authentication");
+    }
+  }
+
+  private async reconcilePlatformOwner(
+    userId: string,
+    identity: TelegramIdentityInput,
+  ): Promise<void> {
+    if (
+      this.platformOwnerBootstrap &&
+      this.config.PLATFORM_ADMIN_BOOTSTRAP_TELEGRAM_USER_ID === identity.telegramUserId.toString()
+    ) {
+      await this.platformOwnerBootstrap.reconcilePlatformOwner(userId);
+    }
   }
 
   private async issueSession(userId: string): Promise<{ sessionToken: string }> {
