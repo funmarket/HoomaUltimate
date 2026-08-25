@@ -167,7 +167,11 @@ export function createCommunityMemberRouter(service: CommunityService): Router {
     "/",
     asyncHandler(async (req, res) => {
       const parsed = communityCreateSchema.parse(req.body);
-      const input = { name: parsed.name, ...definedCommunityFields(parsed) };
+      const input = {
+        ...definedCommunityFields(parsed),
+        name: parsed.name,
+        visibility: parsed.visibility,
+      };
       res.status(201).json(await service.create(getAuth(req).userId, input));
     }),
   );
