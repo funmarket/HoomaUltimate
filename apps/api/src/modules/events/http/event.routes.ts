@@ -12,12 +12,25 @@ import type { CommunityService } from "../../communities/application/community.s
 import type { IdentityService } from "../../identity/application/identity.service.js";
 import { resolveAuthentication } from "../../identity/http/auth.middleware.js";
 import { getAuth } from "../../identity/http/auth-request.js";
-import { EventError } from "../domain/event-error.js";
 import type { EventService } from "../application/event.service.js";
+import { EventError } from "../domain/event-error.js";
 
 function numberQuery(value: unknown, fallback: number) {
   const parsed = Number(value ?? fallback);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+async function requireActivityAccess(
+  service: EventService,
+  communities: CommunityService,
+  eventId: string,
+  userId?: string | null,
+) {
+  const event = await service.getPublic(eventId);
+  if (!(await communities.canViewActivity(event.communityId, userId))) {
+    throw new EventError("EVENT_NOT_FOUND", "Event not found");
+  }
+  return event;
 }
 
 export function createEventPublicRouter(
@@ -53,18 +66,24 @@ export function createEventPublicRouter(
   router.get(
     "/:eventId",
     asyncHandler(async (request, response) => {
-      const event = await service.getPublic(String(request.params.eventId));
       const auth = await resolveAuthentication(request, identity, config);
-      if (!(await communities.canViewActivity(event.communityId, auth?.userId))) {
-        throw new EventError("EVENT_NOT_FOUND", "Event not found");
-      }
-      response.json(event);
+      response.json(
+        await requireActivityAccess(
+          service,
+          communities,
+          String(request.params.eventId),
+          auth?.userId,
+        ),
+      );
     }),
   );
   return router;
 }
 
-export function createEventMemberRouter(service: EventService): Router {
+export function createEventMemberRouter(
+  service: EventService,
+  communities: CommunityService,
+): Router {
   const router = Router();
   router.post(
     "/",
@@ -104,9 +123,12 @@ export function createEventMemberRouter(service: EventService): Router {
   );
   router.post(
     "/:eventId/join",
-    asyncHandler(async (request, response) =>
-      response.json(await service.join(getAuth(request).userId, String(request.params.eventId))),
-    ),
+    asyncHandler(async (request, response) => {
+      const userId = getAuth(request).userId;
+      const eventId = String(request.params.eventId);
+      await requireActivityAccess(service, communities, eventId, userId);
+      response.json(await service.join(userId, eventId));
+    }),
   );
   router.delete(
     "/:eventId/rsvp",
@@ -155,15 +177,11 @@ export function createEventMemberRouter(service: EventService): Router {
   router.post(
     "/:eventId/check-in",
     asyncHandler(async (request, response) => {
+      const userId = getAuth(request).userId;
+      const eventId = String(request.params.eventId);
+      await requireActivityAccess(service, communities, eventId, userId);
       const input = eventCheckInSchema.parse(request.body ?? {});
-      response.json(
-        await service.checkIn(
-          getAuth(request).userId,
-          String(request.params.eventId),
-          input.latitude,
-          input.longitude,
-        ),
-      );
+      response.json(await service.checkIn(userId, eventId, input.latitude, input.longitude));
     }),
   );
   router.get(
