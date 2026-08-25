@@ -1,0 +1,32 @@
+name: Temporary PR69 Prettier
+
+on:
+  push:
+    branches:
+      - tmp/pr69-prettier
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp/pr69-prettier
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - run: npx prettier --write packages/ui/src/home/home-gateways.ts tests/navigation-contract.test.mjs
+      - name: Commit exact Prettier output
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/ui/src/home/home-gateways.ts tests/navigation-contract.test.mjs
+          git diff --cached --quiet || git commit -m "style: apply exact prettier output"
+          git push origin HEAD:tmp/pr69-prettier
