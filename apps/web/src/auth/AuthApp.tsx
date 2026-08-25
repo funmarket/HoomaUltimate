@@ -15,7 +15,7 @@ function initialMode(): "login" | "register" {
 
 export function AuthApp() {
   const { api } = useHoomaFrontend();
-  const { me, loading, refresh } = useAccount();
+  const { me, loading, error: accountError, refresh } = useAccount();
   const [error, setError] = useState("");
   const [mode, setMode] = useState<"login" | "register">(initialMode);
   const returnTo = useMemo(safeReturnTo, []);
@@ -25,15 +25,14 @@ export function AuthApp() {
   }, [loading, me, returnTo]);
 
   async function completeAuthentication() {
-    try {
-      await refresh();
+    setError("");
+    if (await refresh()) {
       window.location.replace(returnTo);
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Unable to refresh account state");
     }
   }
 
   async function signOut() {
+    setError("");
     try {
       await api.identity.logout();
       await refresh();
@@ -50,6 +49,8 @@ export function AuthApp() {
     );
   }
 
+  const visibleError = error || accountError;
+
   if (me) {
     return (
       <section className="auth-card">
@@ -59,7 +60,7 @@ export function AuthApp() {
         <button type="button" onClick={() => void signOut()}>
           Sign out
         </button>
-        {error ? <p className="error">{error}</p> : null}
+        {visibleError ? <p className="error">{visibleError}</p> : null}
       </section>
     );
   }
@@ -83,7 +84,7 @@ export function AuthApp() {
       ) : (
         <RegisterForm onSuccess={completeAuthentication} onError={setError} />
       )}
-      {error ? <p className="error">{error}</p> : null}
+      {visibleError ? <p className="error">{visibleError}</p> : null}
     </section>
   );
 }
