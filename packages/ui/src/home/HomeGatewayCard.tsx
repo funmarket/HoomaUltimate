@@ -18,8 +18,8 @@ export function HomeGatewayCard({ item }: HomeGatewayCardProps) {
         alt=""
         width={500}
         height={650}
-        loading="eager"
-        decoding="sync"
+        loading="lazy"
+        decoding="async"
       />
       <span className="home-gateway-card__sr-label">{item.label}</span>
     </a>
