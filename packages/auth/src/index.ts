@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import * as argon2 from "argon2";
 import { deepSnakeToCamelObjKeys, parse, validate } from "@tma.js/init-data-node";
 
@@ -18,6 +18,8 @@ export interface TelegramIdentityInput {
   languageCode?: string;
   isPremium?: boolean;
 }
+
+const ACCOUNT_LINK_WINDOW_MS = 10 * 60_000;
 
 export async function hashPassword(password: string): Promise<string> {
   return argon2.hash(password, {
@@ -42,6 +44,40 @@ export function newSessionToken(): string {
 
 export function hashSessionToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
+}
+
+export function createAccountLinkCode(
+  userId: string,
+  secret: string,
+  now = new Date(),
+): { code: string; expiresAt: Date } {
+  const counter = Math.floor(now.getTime() / ACCOUNT_LINK_WINDOW_MS);
+  return {
+    code: accountLinkCode(userId, secret, counter),
+    expiresAt: new Date((counter + 1) * ACCOUNT_LINK_WINDOW_MS),
+  };
+}
+
+export function verifyAccountLinkCode(
+  code: string,
+  userId: string,
+  secret: string,
+  now = new Date(),
+): boolean {
+  const counter = Math.floor(now.getTime() / ACCOUNT_LINK_WINDOW_MS);
+  const expected = accountLinkCode(userId, secret, counter);
+  const actualBuffer = Buffer.from(code);
+  const expectedBuffer = Buffer.from(expected);
+  return (
+    actualBuffer.length === expectedBuffer.length && timingSafeEqual(actualBuffer, expectedBuffer)
+  );
+}
+
+function accountLinkCode(userId: string, secret: string, counter: number): string {
+  return createHmac("sha256", secret)
+    .update(`hooma-account-link-v1:${userId}:${counter}`)
+    .digest("base64url")
+    .slice(0, 16);
 }
 
 export function validateTelegramInitData(

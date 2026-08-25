@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type { ApiConfig } from "@hooma/config";
 import { loginSchema, registerSchema } from "@hooma/contracts";
+import { telegramLinkClaimSchema } from "@hooma/contracts/auth-linking";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import type { IdentityService } from "../application/identity.service.js";
 import { resolveAuthentication } from "./auth.middleware.js";
@@ -48,6 +49,20 @@ export function createIdentityPublicRouter(service: IdentityService, config: Api
         webUserId,
       );
       response.status(201).json({ ok: true });
+    }),
+  );
+
+  router.post(
+    "/telegram-link/claim",
+    asyncHandler(async (request, response) => {
+      const authorization = request.header("authorization") ?? "";
+      const [scheme, rawInitData] = authorization.split(" ", 2);
+      response.json(
+        await service.claimTelegramLink(
+          scheme?.toLowerCase() === "tma" ? rawInitData : undefined,
+          telegramLinkClaimSchema.parse(request.body),
+        ),
+      );
     }),
   );
 
