@@ -351,14 +351,14 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
                         </div>
                         <div className="gamer-challenger-copy">
                           <div className="gamer-challenger-heading">
-                            <div>
-                              <span className="gamer-open-badge">OPEN TO CHALLENGE</span>
-                              <h3>{challenger.presentation.displayName}</h3>
-                            </div>
+                            <span className="gamer-card-game-label">GAME · {game.name}</span>
+                            <span className="gamer-open-badge">OPEN TO CHALLENGE</span>
                             {isOwn ? <small>YOUR PROFILE</small> : null}
                           </div>
                           <p className="gamer-handle">{challenger.handle}</p>
+                          <h3>{challenger.presentation.displayName}</h3>
                           <p className="muted">@{challenger.presentation.username}</p>
+                          <span className="gamer-card-profile-cue">OPEN PROFILE ›</span>
                         </div>
                       </a>
                       {!isOwn ? (
