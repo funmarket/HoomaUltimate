@@ -1,4 +1,9 @@
 import type { TelegramIdentityInput } from "@hooma/auth";
+import type {
+  PlayerProfileInput,
+  ProfileIdentity,
+  ProfileUpdateInput,
+} from "@hooma/contracts/profile";
 
 export interface WebCredentialRecord {
   readonly userId: string;
@@ -24,6 +29,31 @@ export interface PublicProfileRecord {
     readonly slug: string;
     readonly badgeUrl: string | null;
   }[];
+}
+
+export interface ProfileRecord {
+  readonly id: string;
+  readonly presentation: {
+    readonly username: string;
+    readonly displayName: string;
+    readonly photoUrl: string | null;
+    readonly bio: string | null;
+  };
+  readonly identities: readonly ProfileIdentity[];
+  readonly player: {
+    readonly skillLevel: PlayerProfileInput["skillLevel"];
+    readonly preferredPositions: readonly string[];
+    readonly overallRating: number;
+  } | null;
+}
+
+export interface ProfileWriteInput {
+  readonly username: string;
+  readonly displayName: string;
+  readonly photoUrl: string | null;
+  readonly bio: string | null;
+  readonly identities: ProfileUpdateInput["identities"];
+  readonly player: ProfileUpdateInput["player"];
 }
 
 export interface MeRecord {
@@ -80,6 +110,8 @@ export interface IdentityRepository {
   findTelegramUserId(telegramUserId: bigint): Promise<string | null>;
   upsertTelegramIdentity(input: TelegramIdentityInput): Promise<string>;
   findPublicProfile(username: string): Promise<PublicProfileRecord | null>;
+  findProfile(userId: string): Promise<ProfileRecord | null>;
+  updateProfile(userId: string, input: ProfileWriteInput): Promise<void>;
   updatePresentation(
     userId: string,
     input: {
