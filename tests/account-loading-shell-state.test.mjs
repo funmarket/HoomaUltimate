@@ -20,7 +20,7 @@ test("account loading is a distinct shell/header state rather than guest present
   assert.match(shell, /<HoomaAccountHeader[\s\S]*loading=\{loading\}/);
 
   assert.match(header, /readonly loading: boolean;/);
-  assert.match(header, /loading \? "Loading account"/);
+  assert.match(header, /loading\s*\?\s*"Loading account"/);
   assert.match(header, /aria-busy=\{loading \|\| undefined\}/);
   assert.match(header, /disabled=\{loading\}/);
   assert.match(header, /hooma-profile-trigger__loading/);
