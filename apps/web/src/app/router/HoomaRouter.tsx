@@ -10,7 +10,6 @@ import {
   EventDetailPage,
   FormationBuilderPage,
   GamerGamePage,
-  GamerProfilePage,
   GamersPage,
   HoomaDetailPage,
   HoomaEditPage,
@@ -118,16 +117,6 @@ function GamerGameRoute() {
   return <GamerGamePage gameSlug={requiredParam("gameSlug", gameSlug)} />;
 }
 
-function GamerProfileRoute() {
-  const { gameSlug, profileId } = useParams();
-  return (
-    <GamerProfilePage
-      gameSlug={requiredParam("gameSlug", gameSlug)}
-      profileId={requiredParam("profileId", profileId)}
-    />
-  );
-}
-
 function apiBaseUrl(): string {
   if (import.meta.env.DEV) {
     return import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
@@ -193,10 +182,6 @@ function HoomaRoutes() {
               <Route path="/teams/:teamId" element={<TeamDetailRoute />} />
               <Route path="/gamers" element={<GamersPage />} />
               <Route path="/gamers/games/:gameSlug" element={<GamerGameRoute />} />
-              <Route
-                path="/gamers/games/:gameSlug/profiles/:profileId"
-                element={<GamerProfileRoute />}
-              />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Suspense>

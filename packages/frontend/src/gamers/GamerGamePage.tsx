@@ -9,6 +9,7 @@ import type {
 } from "@hooma/contracts/gamers";
 import { useHoomaFrontend } from "../context";
 import { createGamersApi } from "./api";
+import { GamerWhistlePanel } from "./GamerWhistlePanel";
 import { createGamerOnboardingApi, gamerOptInProfileInput } from "./onboarding";
 
 type HubTab = "CHALLENGERS" | "ARENA";
@@ -41,6 +42,7 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
   const [pendingChallengeProfileId, setPendingChallengeProfileId] = useState<string | null>(
     initialPendingChallengeProfileId,
   );
+  const [whistleProfileId, setWhistleProfileId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<HubTab>("CHALLENGERS");
   const [loading, setLoading] = useState(true);
   const [accountLoading, setAccountLoading] = useState(true);
@@ -122,6 +124,7 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
       setChallenges([]);
       setHandle("");
       setOpenToChallenge(false);
+      setWhistleProfileId(null);
       setIdentityLoading(false);
       return;
     }
@@ -243,6 +246,28 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
       return;
     }
     await sendChallengeNow(challengedProfileId);
+  }
+
+  function toggleWhistle(otherProfileId: string) {
+    if (!game) return;
+    if (!me) {
+      const href = authenticationHref(`/gamers/games/${encodeURIComponent(gameSlug)}`);
+      if (href) window.location.assign(href);
+      return;
+    }
+    if (identityLoading) return;
+    if (!isGamer || !profile) {
+      setMemberError("");
+      setNotice(
+        isGamer
+          ? `Add your ${game.name} handle above before sending a Gamer Whistle.`
+          : "Join Gamers above and add your game handle before sending a Gamer Whistle.",
+      );
+      return;
+    }
+    setNotice("");
+    setMemberError("");
+    setWhistleProfileId((current) => (current === otherProfileId ? null : otherProfileId));
   }
 
   async function updateChallenge(
@@ -452,6 +477,7 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
                 {challengers.map((challenger) => {
                   const isOwn = profile?.id === challenger.id;
                   const alreadyPending = pendingProfileIds.has(challenger.id) && !isOwn;
+                  const whistleOpen = whistleProfileId === challenger.id;
                   return (
                     <article className="gamer-challenger-card" key={challenger.id}>
                       <div className="gamer-card-hud-rail" aria-hidden="true">
@@ -459,11 +485,7 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
                         <b>///</b>
                         <i />
                       </div>
-                      <a
-                        className="gamer-card-profile-link"
-                        href={`/gamers/games/${encodeURIComponent(game.slug)}/profiles/${encodeURIComponent(challenger.id)}`}
-                        aria-label={`Open ${challenger.presentation.displayName} gamer profile`}
-                      >
+                      <div className="gamer-card-profile-content">
                         <div className="gamer-card-portrait-panel">
                           <div className="gamer-avatar" aria-hidden="true">
                             {challenger.presentation.photoUrl ? (
@@ -495,24 +517,42 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
                             <i />
                             <i />
                           </div>
-                          <span className="gamer-card-profile-cue">OPEN PROFILE ›</span>
                         </div>
-                      </a>
+                      </div>
                       {!isOwn ? (
-                        <button
-                          className="button gamer-challenge-button"
-                          type="button"
-                          onClick={() => void challengePlayer(challenger.id)}
-                          disabled={actionId === challenger.id || alreadyPending}
-                        >
-                          {actionId === challenger.id
-                            ? "Sending…"
-                            : alreadyPending
-                              ? "Pending"
-                              : profile && isGamer
-                                ? "Challenge"
-                                : "Set up to challenge"}
-                        </button>
+                        <>
+                          <div className="gamer-card-actions">
+                            <button
+                              className={`gamer-whistle-button${whistleOpen ? " active" : ""}`}
+                              type="button"
+                              onClick={() => toggleWhistle(challenger.id)}
+                              aria-expanded={whistleOpen}
+                            >
+                              WHISTLE
+                            </button>
+                            <button
+                              className="button gamer-challenge-button"
+                              type="button"
+                              onClick={() => void challengePlayer(challenger.id)}
+                              disabled={actionId === challenger.id || alreadyPending}
+                            >
+                              {actionId === challenger.id
+                                ? "Sending…"
+                                : alreadyPending
+                                  ? "Pending"
+                                  : profile && isGamer
+                                    ? "Challenge"
+                                    : "Set up to challenge"}
+                            </button>
+                          </div>
+                          {whistleOpen ? (
+                            <GamerWhistlePanel
+                              otherProfileId={challenger.id}
+                              recipientName={challenger.presentation.displayName}
+                              onClose={() => setWhistleProfileId(null)}
+                            />
+                          ) : null}
+                        </>
                       ) : null}
                     </article>
                   );
@@ -566,21 +606,17 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
                       <strong>{challenge.status}</strong>
                     </div>
                     <div className="gamer-match-versus">
-                      <a
-                        href={`/gamers/games/${encodeURIComponent(game.slug)}/profiles/${encodeURIComponent(challenge.challenger.id)}`}
-                      >
+                      <div className="gamer-match-participant">
                         <small>CHALLENGER</small>
                         <strong>{challenge.challenger.presentation.displayName}</strong>
                         <span>{challenge.challenger.handle}</span>
-                      </a>
+                      </div>
                       <b>VS</b>
-                      <a
-                        href={`/gamers/games/${encodeURIComponent(game.slug)}/profiles/${encodeURIComponent(challenge.challenged.id)}`}
-                      >
+                      <div className="gamer-match-participant">
                         <small>CHALLENGED</small>
                         <strong>{challenge.challenged.presentation.displayName}</strong>
                         <span>{challenge.challenged.handle}</span>
-                      </a>
+                      </div>
                     </div>
                     {challenge.status === "PENDING" && incoming ? (
                       <div className="gamer-match-actions">

@@ -85,6 +85,44 @@ export class GamerService {
     });
   }
 
+  async resolveDirectWhistleContext(userId: string, otherProfileId: string): Promise<string> {
+    await this.requireGamerIdentity(userId);
+    const otherProfile = await this.profiles.getById(otherProfileId);
+    if (!otherProfile) {
+      throw new AppError(404, "GAMER_PROFILE_NOT_FOUND", "Gamer profile not found");
+    }
+    await this.requireActiveGame(otherProfile.gameId);
+
+    const ownProfile = await this.profiles.getByUserAndGame(userId, otherProfile.gameId);
+    if (!ownProfile) {
+      throw new AppError(
+        409,
+        "GAMER_PROFILE_REQUIRED",
+        "Create your profile for this game before sending a Gamer Whistle",
+      );
+    }
+    if (ownProfile.id === otherProfile.id) {
+      throw new AppError(400, "GAMER_WHISTLE_SELF_FORBIDDEN", "You cannot Whistle yourself");
+    }
+    if (!(await this.eligibility.hasGamerIdentity(otherProfile.userId))) {
+      throw new AppError(
+        409,
+        "GAMER_WHISTLE_TARGET_INELIGIBLE",
+        "This gamer is not currently participating in Gamers",
+      );
+    }
+    if (!ownProfile.openToChallenge || !otherProfile.openToChallenge) {
+      throw new AppError(
+        409,
+        "GAMER_WHISTLE_PAIR_CLOSED",
+        "Direct Gamer Whistle is available between players open to challenge",
+      );
+    }
+
+    const pairKey = [ownProfile.id, otherProfile.id].sort().join(":");
+    return `${otherProfile.gameId}:${pairKey}`;
+  }
+
   async createChallenge(userId: string, gameId: string, challengedProfileId: string) {
     await this.requireActiveGame(gameId);
     await this.requireGamerIdentity(userId);

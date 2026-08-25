@@ -91,6 +91,7 @@ export function createContainer(config: ApiConfig) {
     whistleStore,
     communityService,
     eventService,
+    gamerService,
   );
   const discoveryRepository = new PrismaDiscoveryRepository(database);
   const discoveryService = new DiscoveryService(discoveryRepository);

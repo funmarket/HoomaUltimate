@@ -1,0 +1,24 @@
+name: Schema diagnostic
+
+on:
+  push:
+    branches:
+      - fix/gamer-hud-whistle-cleanup
+
+jobs:
+  schema-blob:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Print clean target schema without modifying source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show origin/phase-0-foundation:packages/database/prisma/schema.prisma > /tmp/schema.prisma
+          awk '{ print; if ($0 ~ /^  GAMER_SQUAD$/) print "  GAMER_DIRECT" }' /tmp/schema.prisma > /tmp/schema-target.prisma
+          echo "TARGET_SCHEMA_BASE64_BEGIN"
+          base64 -w0 /tmp/schema-target.prisma
+          echo
+          echo "TARGET_SCHEMA_BASE64_END"
