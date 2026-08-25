@@ -1,6 +1,6 @@
+import type { MeResponse } from "@hooma/contracts";
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import type { MeResponse } from "@hooma/contracts";
 import type { PublicCommunityDetail } from "../api";
 import { useHoomaFrontend } from "../context";
 
@@ -58,6 +58,7 @@ export function HoomaEditPage({ communityId }: { readonly communityId: string })
         houma: String(data.get("houma")).trim() || null,
         logoUrl: String(data.get("logoUrl")).trim() || null,
         bannerUrl: String(data.get("bannerUrl")).trim() || null,
+        visibility: data.get("visibility") === "PRIVATE" ? "PRIVATE" : "PUBLIC",
       });
       setCommunity(await api.communities.publicDetail(community.id));
       setNotice("HOOMA settings saved.");
@@ -108,7 +109,8 @@ export function HoomaEditPage({ communityId }: { readonly communityId: string })
         <span className="eyebrow">HOOMA SETTINGS</span>
         <h1>Edit HOOMA</h1>
         <p className="muted">
-          Update the community identity, neighborhood and media from one canonical settings page.
+          Update the community identity, neighborhood, privacy and media from one canonical settings
+          page.
         </p>
       </section>
       {error ? <div className="error-box">{error}</div> : null}
@@ -116,10 +118,43 @@ export function HoomaEditPage({ communityId }: { readonly communityId: string })
       {community ? (
         <>
           <form className="panel hooma-create-form" onSubmit={submit}>
+            <fieldset className="hooma-privacy-choice">
+              <legend>Who can join?</legend>
+              <label className={community.visibility === "PUBLIC" ? "is-selected" : ""}>
+                <input
+                  type="radio"
+                  name="visibility"
+                  value="PUBLIC"
+                  defaultChecked={community.visibility === "PUBLIC"}
+                />
+                <span>
+                  <strong>Public</strong>
+                  <small>People can find this HOOMA and join immediately.</small>
+                </span>
+              </label>
+              <label className={community.visibility === "PRIVATE" ? "is-selected" : ""}>
+                <input
+                  type="radio"
+                  name="visibility"
+                  value="PRIVATE"
+                  defaultChecked={community.visibility === "PRIVATE"}
+                />
+                <span>
+                  <strong>Private</strong>
+                  <small>People can find this HOOMA but the Founder approves membership.</small>
+                </span>
+              </label>
+            </fieldset>
             <div className="hooma-form-grid">
               <label className="field">
                 <span>Name</span>
-                <input name="name" defaultValue={community.name} required minLength={2} maxLength={100} />
+                <input
+                  name="name"
+                  defaultValue={community.name}
+                  required
+                  minLength={2}
+                  maxLength={100}
+                />
               </label>
               <label className="field">
                 <span>City</span>
