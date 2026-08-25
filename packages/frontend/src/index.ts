@@ -4,6 +4,7 @@ import "./teams/team-media.css";
 import "./teams/coach-control-room.css";
 import "./teams/team-offers.css";
 import "./places/places.css";
+import "./watch/watch.css";
 
 export * from "./api";
 export * from "./auth-login-methods";
@@ -33,3 +34,4 @@ export * from "./discovery/api";
 export * from "./discovery/HoomaNowSection";
 export * from "./places/PlacesPages";
 export * from "./places/platform-management-api";
+export * from "./watch/WatchPage";
