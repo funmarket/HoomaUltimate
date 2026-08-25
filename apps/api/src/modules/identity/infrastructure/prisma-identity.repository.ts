@@ -217,6 +217,10 @@ export class PrismaIdentityRepository implements IdentityRepository {
         bio: true,
         user: {
           select: {
+            identities: true,
+            playerProfile: {
+              select: { skillLevel: true, preferredPositions: true, overallRating: true },
+            },
             teamPlayers: {
               where: { leftAt: null, active: true },
               orderBy: { joinedAt: "asc" },
@@ -231,6 +235,7 @@ export class PrismaIdentityRepository implements IdentityRepository {
       },
     });
     if (!presentation) return null;
+    const identities = presentation.user.identities;
     return {
       presentation: {
         username: presentation.username,
@@ -238,6 +243,8 @@ export class PrismaIdentityRepository implements IdentityRepository {
         photoUrl: presentation.photoUrl,
         bio: presentation.bio,
       },
+      identities,
+      player: identities.includes("PLAYER") ? presentation.user.playerProfile : null,
       teams: presentation.user.teamPlayers.map((row) => row.team),
     };
   }

@@ -8,6 +8,7 @@ import "./places/places.css";
 export * from "./api";
 export * from "./auth-login-methods";
 export * from "./context";
+export * from "./profile-api";
 export * from "./communities/HoomaPage";
 export * from "./communities/HoomaEditPage";
 export * from "./teams/TeamsPage";

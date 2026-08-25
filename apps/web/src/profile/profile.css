@@ -12,6 +12,7 @@
 }
 
 .profile-edit-form input,
+.profile-edit-form select,
 .profile-edit-form textarea {
   width: 100%;
   border: 1px solid var(--hooma-border, #6d624a);
@@ -42,6 +43,81 @@
   opacity: 0.65;
 }
 
+.profile-identity-fieldset,
+.profile-player-fields {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--hooma-border, #6d624a);
+  border-radius: 12px;
+}
+
+.profile-identity-fieldset legend,
+.profile-player-fields legend {
+  padding: 0 6px;
+  color: var(--hooma-text, #f2ead7);
+  font-weight: 800;
+}
+
+.profile-identity-options,
+.profile-position-options,
+.profile-identity-badges,
+.public-profile-identities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.profile-identity-options label,
+.profile-position-options label {
+  display: flex;
+  width: auto;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  border: 1px solid var(--hooma-border, #6d624a);
+  border-radius: 999px;
+  background: var(--hooma-surface-strong, #0e0e0c);
+}
+
+.profile-identity-options input,
+.profile-position-options input {
+  width: auto;
+  margin: 0;
+  padding: 0;
+}
+
+.profile-identity-badges span,
+.public-profile-identities span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 5px 9px;
+  border: 1px solid var(--hooma-border, #6d624a);
+  border-radius: 999px;
+  background: var(--hooma-surface-strong, #0e0e0c);
+  color: var(--hooma-text, #f2ead7);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.profile-gamer-note,
+.profile-inline-state {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--hooma-border, #6d624a);
+  border-radius: 12px;
+  background: var(--hooma-surface-strong, #0e0e0c);
+}
+
+.profile-gamer-note a {
+  width: fit-content;
+  color: var(--hooma-accent, #c4dc43);
+  font-weight: 800;
+}
+
 .public-profile-page {
   display: grid;
   gap: 18px;
@@ -53,12 +129,12 @@
   display: grid;
   grid-template-columns: minmax(180px, 32%) 1fr;
   min-height: 360px;
-  border: 1px solid rgba(203, 159, 57, .55);
+  border: 1px solid rgba(203, 159, 57, 0.55);
   border-radius: 18px;
   background:
-    linear-gradient(115deg, rgba(31, 189, 230, .09), transparent 35%),
+    linear-gradient(115deg, rgba(31, 189, 230, 0.09), transparent 35%),
     linear-gradient(145deg, #0a1117, #040709 68%);
-  box-shadow: inset 0 0 0 1px rgba(54, 183, 221, .08);
+  box-shadow: inset 0 0 0 1px rgba(54, 183, 221, 0.08);
 }
 
 .public-profile-hero::after {
@@ -69,7 +145,7 @@
   width: 34%;
   height: 6px;
   background: linear-gradient(90deg, #1ec8e8, #8a73ff, #c79a2b);
-  opacity: .75;
+  opacity: 0.75;
   transform: skewX(-28deg);
 }
 
@@ -78,8 +154,8 @@
   display: grid;
   place-items: center;
   overflow: hidden;
-  border-right: 1px solid rgba(54, 183, 221, .18);
-  background: radial-gradient(circle at 50% 42%, rgba(54, 183, 221, .19), transparent 52%);
+  border-right: 1px solid rgba(54, 183, 221, 0.18);
+  background: radial-gradient(circle at 50% 42%, rgba(54, 183, 221, 0.19), transparent 52%);
   color: #dff8ff;
   font-size: clamp(80px, 14vw, 160px);
   font-weight: 950;
@@ -100,14 +176,18 @@
   margin: 7px 0 4px;
   color: #f5f2ea;
   font-size: clamp(38px, 7vw, 72px);
-  line-height: .9;
-  letter-spacing: -.045em;
+  line-height: 0.9;
+  letter-spacing: -0.045em;
 }
 
 .public-profile-username {
   margin: 0;
   color: #9fb3c3;
   font-size: 18px;
+}
+
+.public-profile-identities {
+  margin-top: 14px;
 }
 
 .public-profile-bio {
@@ -117,6 +197,7 @@
   line-height: 1.65;
 }
 
+.public-profile-player,
 .public-profile-teams,
 .public-profile-contact,
 .public-profile-state {
@@ -124,10 +205,31 @@
   gap: 14px;
 }
 
+.public-profile-player h2,
 .public-profile-teams h2,
 .public-profile-contact h2 {
   margin: 4px 0 0;
   color: #f2ead7;
+}
+
+.public-profile-player-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.public-profile-player-grid > div {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid var(--hooma-border, #403927);
+  border-radius: 12px;
+  background: var(--hooma-surface-strong, #0b0e0e);
+}
+
+.public-profile-player-grid span {
+  color: var(--hooma-text-muted, #bfb59a);
+  font-size: 12px;
 }
 
 .public-profile-team-list {
@@ -156,7 +258,7 @@
   font-size: 11px;
   font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: .08em;
+  letter-spacing: 0.08em;
 }
 
 .public-profile-team-badge {
@@ -166,7 +268,7 @@
   display: grid;
   place-items: center;
   overflow: hidden;
-  border: 1px solid rgba(196, 220, 67, .35);
+  border: 1px solid rgba(196, 220, 67, 0.35);
   border-radius: 50%;
   background: #101310;
   font-weight: 900;
@@ -179,7 +281,7 @@
 }
 
 .public-profile-contact {
-  border-color: rgba(53, 200, 233, .24);
+  border-color: rgba(53, 200, 233, 0.24);
 }
 
 .public-profile-state span {
@@ -191,6 +293,7 @@
   color: #35c8e9;
 }
 
+:root[data-theme="light"] .public-profile-player h2,
 :root[data-theme="light"] .public-profile-teams h2,
 :root[data-theme="light"] .public-profile-contact h2 {
   color: var(--app-text-strong);
@@ -208,13 +311,14 @@
   .public-profile-photo {
     min-height: 280px;
     border-right: 0;
-    border-bottom: 1px solid rgba(54, 183, 221, .18);
+    border-bottom: 1px solid rgba(54, 183, 221, 0.18);
   }
 
   .public-profile-copy {
     padding: 24px;
   }
 
+  .public-profile-player-grid,
   .public-profile-team-list {
     grid-template-columns: 1fr;
   }

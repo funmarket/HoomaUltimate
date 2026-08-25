@@ -38,6 +38,12 @@ export interface PublicProfileRecord {
     readonly photoUrl: string | null;
     readonly bio: string | null;
   };
+  readonly identities: readonly ProfileIdentity[];
+  readonly player: {
+    readonly skillLevel: PlayerProfileInput["skillLevel"];
+    readonly preferredPositions: readonly string[];
+    readonly overallRating: number;
+  } | null;
   readonly teams: readonly {
     readonly id: string;
     readonly name: string;
