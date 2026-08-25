@@ -1,5 +1,6 @@
 import type { ApiConfig } from "@hooma/config";
 import { getDatabaseClient } from "@hooma/database";
+import { RedisClient } from "../infrastructure/redis/redis-client.js";
 import { IdentityService } from "../modules/identity/application/identity.service.js";
 import { PrismaIdentityRepository } from "../modules/identity/infrastructure/prisma-identity.repository.js";
 import { PrismaPlatformAdminRepository } from "../modules/platform-admin/infrastructure/prisma-platform-admin.repository.js";
@@ -26,13 +27,25 @@ import { PrismaWhistleRepository } from "../modules/whistle/infrastructure/prism
 import { RedisWhistleStore } from "../modules/whistle/infrastructure/redis-whistle-store.js";
 import { DiscoveryService } from "../modules/discovery/application/discovery.service.js";
 import { PrismaDiscoveryRepository } from "../modules/discovery/infrastructure/prisma-discovery.repository.js";
+import { ReadinessService } from "../modules/system/application/readiness.service.js";
+import { PrismaReadinessProbe } from "../modules/system/infrastructure/prisma-readiness.probe.js";
+import { RedisReadinessProbe } from "../modules/system/infrastructure/redis-readiness.probe.js";
 
 export function createContainer(config: ApiConfig) {
   const database = getDatabaseClient();
+  const redis = new RedisClient(config.REDIS_URL ?? "redis://localhost:6379");
+  const readinessService = new ReadinessService(
+    new PrismaReadinessProbe(database),
+    new RedisReadinessProbe(redis),
+  );
   const platformAdminRepository = new PrismaPlatformAdminRepository(database);
   const platformAdminService = new PlatformAdminService(platformAdminRepository);
   const identityRepository = new PrismaIdentityRepository(database);
-  const identityService = new IdentityService(identityRepository, config, platformAdminService);
+  const identityService = new IdentityService(
+    identityRepository,
+    config,
+    platformAdminService,
+  );
 
   const placeRepository = new PrismaPlaceRepository(database);
   const placeCapabilityRepository = new PrismaPlaceCapabilityRepository(database);
@@ -51,7 +64,10 @@ export function createContainer(config: ApiConfig) {
   );
 
   const communityRepository = new PrismaCommunityRepository(database);
-  const communityService = new CommunityService(communityRepository, platformAdminService);
+  const communityService = new CommunityService(
+    communityRepository,
+    platformAdminService,
+  );
   const teamRepository = new PrismaTeamRepository(database);
   const teamLifecycleRepository = new PrismaTeamLifecycleRepository(database);
   const teamService = new TeamService(
@@ -73,13 +89,19 @@ export function createContainer(config: ApiConfig) {
   const playRepository = new PrismaPlayPlayerListingRepository(database);
   const playService = new PlayService(playRepository);
   const whistleRepository = new PrismaWhistleRepository(database);
-  const whistleStore = new RedisWhistleStore(config.REDIS_URL ?? "redis://localhost:6379");
-  const whistleService = new WhistleService(whistleRepository, whistleStore, communityService);
+  const whistleStore = new RedisWhistleStore(redis);
+  const whistleService = new WhistleService(
+    whistleRepository,
+    whistleStore,
+    communityService,
+  );
   const discoveryRepository = new PrismaDiscoveryRepository(database);
   const discoveryService = new DiscoveryService(discoveryRepository);
 
   return {
     database,
+    redis,
+    readinessService,
     identityService,
     platformAdminService,
     placeService,

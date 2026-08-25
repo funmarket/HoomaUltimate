@@ -10,7 +10,9 @@ const ownerBootstrap = await container.platformAdminService.bootstrapConfiguredO
   config.PLATFORM_ADMIN_BOOTSTRAP_TELEGRAM_USER_ID,
 );
 if (ownerBootstrap.status === "pending") {
-  console.log("Configured platform owner has not activated a HOOMA Telegram account yet.");
+  console.log(
+    "Configured platform owner has not activated a HOOMA Telegram account yet.",
+  );
 } else if (ownerBootstrap.status === "ready") {
   console.log("Configured platform owner authority reconciled.");
 }
@@ -25,18 +27,28 @@ const server = app.listen(listenPort, "0.0.0.0", () => {
 
   if (config.TELEGRAM_BOT_TOKEN) {
     const telegramWebAppUrl = `${config.WEB_ORIGIN.replace(/\/$/, "")}/telegram`;
-    void setTelegramChatMenuButton(config.TELEGRAM_BOT_TOKEN, telegramWebAppUrl)
-      .then(() => console.log(`Telegram Web App menu configured for ${telegramWebAppUrl}`))
+    void setTelegramChatMenuButton(
+      config.TELEGRAM_BOT_TOKEN,
+      telegramWebAppUrl,
+    )
+      .then(() =>
+        console.log(`Telegram Web App menu configured for ${telegramWebAppUrl}`),
+      )
       .catch((error: unknown) => {
         console.error("Telegram Web App menu configuration failed", error);
       });
   }
 });
 
+let shuttingDown = false;
+
 function shutdown(signal: NodeJS.Signals) {
+  if (shuttingDown) return;
+  shuttingDown = true;
   console.log(`Received ${signal}; shutting down API.`);
   server.close((error) => {
     if (error) console.error(error);
+    container.redis.close();
     void disconnectDatabase().finally(() => {
       process.exitCode = error ? 1 : 0;
     });
