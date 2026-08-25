@@ -16,6 +16,16 @@ export interface SessionRecord {
   readonly userId: string;
 }
 
+export interface LoginMethodsRecord {
+  readonly web: {
+    readonly loginUsername: string;
+    readonly email: string | null;
+  } | null;
+  readonly telegram: {
+    readonly telegramUsername: string | null;
+  } | null;
+}
+
 export interface PublicProfileRecord {
   readonly presentation: {
     readonly username: string;
@@ -97,6 +107,12 @@ export interface IdentityRepository {
     displayUsername: string;
     displayName: string;
   }): Promise<string>;
+  createWebCredentialForUser(input: {
+    userId: string;
+    loginUsername: string;
+    passwordHash: string;
+    email: string | null;
+  }): Promise<void>;
   findWebCredential(loginUsername: string): Promise<WebCredentialRecord | null>;
   recordLoginFailure(
     userId: string,
@@ -108,7 +124,9 @@ export interface IdentityRepository {
   findActiveSession(tokenHash: string): Promise<SessionRecord | null>;
   revokeSession(tokenHash: string): Promise<void>;
   findTelegramUserId(telegramUserId: bigint): Promise<string | null>;
+  createTelegramIdentityForUser(userId: string, input: TelegramIdentityInput): Promise<void>;
   upsertTelegramIdentity(input: TelegramIdentityInput): Promise<string>;
+  findLoginMethods(userId: string): Promise<LoginMethodsRecord | null>;
   findPublicProfile(username: string): Promise<PublicProfileRecord | null>;
   findProfile(userId: string): Promise<ProfileRecord | null>;
   updateProfile(userId: string, input: ProfileWriteInput): Promise<void>;

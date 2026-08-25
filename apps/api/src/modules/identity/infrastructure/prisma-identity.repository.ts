@@ -2,6 +2,7 @@ import type { TelegramIdentityInput } from "@hooma/auth";
 import type { Prisma, PrismaClient } from "@hooma/database";
 import type {
   IdentityRepository,
+  LoginMethodsRecord,
   MeRecord,
   ProfileRecord,
   ProfileWriteInput,
@@ -39,6 +40,15 @@ export class PrismaIdentityRepository implements IdentityRepository {
       });
       return user.id;
     });
+  }
+
+  async createWebCredentialForUser(input: {
+    userId: string;
+    loginUsername: string;
+    passwordHash: string;
+    email: string | null;
+  }): Promise<void> {
+    await this.db.webCredential.create({ data: input });
   }
 
   findWebCredential(loginUsername: string): Promise<WebCredentialRecord | null> {
@@ -97,6 +107,21 @@ export class PrismaIdentityRepository implements IdentityRepository {
     return identity?.userId ?? null;
   }
 
+  async createTelegramIdentityForUser(userId: string, input: TelegramIdentityInput): Promise<void> {
+    await this.db.telegramIdentity.create({
+      data: {
+        userId,
+        telegramUserId: input.telegramUserId,
+        telegramUsername: input.username ?? null,
+        firstName: input.firstName ?? null,
+        lastName: input.lastName ?? null,
+        photoUrl: input.photoUrl ?? null,
+        languageCode: input.languageCode ?? null,
+        isPremium: input.isPremium ?? false,
+      },
+    });
+  }
+
   async upsertTelegramIdentity(input: TelegramIdentityInput): Promise<string> {
     const existing = await this.db.telegramIdentity.findUnique({
       where: { telegramUserId: input.telegramUserId },
@@ -148,6 +173,18 @@ export class PrismaIdentityRepository implements IdentityRepository {
     }
   }
 
+  async findLoginMethods(userId: string): Promise<LoginMethodsRecord | null> {
+    const user = await this.db.user.findUnique({
+      where: { id: userId },
+      select: {
+        webCredential: { select: { loginUsername: true, email: true } },
+        telegramIdentity: { select: { telegramUsername: true } },
+      },
+    });
+    if (!user) return null;
+    return { web: user.webCredential, telegram: user.telegramIdentity };
+  }
+
   async findPublicProfile(username: string): Promise<PublicProfileRecord | null> {
     const presentation = await this.db.userPresentation.findUnique({
       where: { username },
@@ -190,10 +227,19 @@ export class PrismaIdentityRepository implements IdentityRepository {
         id: true,
         identities: true,
         presentation: {
-          select: { username: true, displayName: true, photoUrl: true, bio: true },
+          select: {
+            username: true,
+            displayName: true,
+            photoUrl: true,
+            bio: true,
+          },
         },
         playerProfile: {
-          select: { skillLevel: true, preferredPositions: true, overallRating: true },
+          select: {
+            skillLevel: true,
+            preferredPositions: true,
+            overallRating: true,
+          },
         },
       },
     });
@@ -264,7 +310,12 @@ export class PrismaIdentityRepository implements IdentityRepository {
       select: {
         id: true,
         presentation: {
-          select: { username: true, displayName: true, photoUrl: true, bio: true },
+          select: {
+            username: true,
+            displayName: true,
+            photoUrl: true,
+            bio: true,
+          },
         },
         platformRoles: {
           where: { revokedAt: null, role: "PLATFORM_ADMIN" },
@@ -281,14 +332,18 @@ export class PrismaIdentityRepository implements IdentityRepository {
         teamPlayers: {
           where: { leftAt: null },
           select: {
-            team: { select: { id: true, name: true, slug: true, badgeUrl: true } },
+            team: {
+              select: { id: true, name: true, slug: true, badgeUrl: true },
+            },
           },
         },
         teamResponsibilities: {
           where: { revokedAt: null },
           select: {
             role: true,
-            team: { select: { id: true, name: true, slug: true, badgeUrl: true } },
+            team: {
+              select: { id: true, name: true, slug: true, badgeUrl: true },
+            },
           },
         },
         teamCapabilityGrants: {
