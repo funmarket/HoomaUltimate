@@ -223,6 +223,14 @@ export class CommunityService {
     return { ok: true };
   }
 
+  async canViewPrivateContent(communityId: string, userId: string | null): Promise<boolean> {
+    const policy = await this.repository.membershipPolicy(communityId);
+    if (!policy || policy.status !== "ACTIVE") return false;
+    if (policy.visibility === "PUBLIC") return true;
+    if (!userId) return false;
+    return Boolean(await this.repository.managerRole(communityId, userId));
+  }
+
   async requireMember(communityId: string, userId: string): Promise<void> {
     const role = await this.repository.managerRole(communityId, userId);
     if (!role) throw new AppError(403, "COMMUNITY_MEMBER_REQUIRED", "HOOMA membership required");
