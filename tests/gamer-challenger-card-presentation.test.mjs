@@ -31,7 +31,10 @@ test("Gamer challenger cards use the neutral HUD identity composition", async ()
   assert.match(card, /gamer-card-signal/);
   assert.match(card, /<button\s+className="button gamer-challenge-button"/);
   assert.match(card, /<\/a>\s+\{!isOwn \? \(/);
-  assert.doesNotMatch(card, /ONLINE|LEVEL|XP|CLASS|RANK|eFootball|PES|FC Mobile|Ludo|football/i);
+  assert.doesNotMatch(
+    card,
+    /\b(?:ONLINE|LEVEL|XP|CLASS|RANK|eFootball|PES|FC Mobile|Ludo|football)\b/i,
+  );
 
   assert.match(css, /--gamers-cyan:\s*#31d7ff/);
   assert.match(css, /--gamers-violet:\s*#b251ff/);
