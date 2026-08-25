@@ -107,7 +107,10 @@ export class RedisClient {
 
   async command(parts: readonly string[]): Promise<RedisValue> {
     if (parts.length === 0) {
-      throw new RedisInfrastructureError("PROTOCOL", "Redis command cannot be empty");
+      throw new RedisInfrastructureError(
+        "PROTOCOL",
+        "Redis command cannot be empty",
+      );
     }
     await this.ensureReady();
     return this.sendConnected(parts);
@@ -169,7 +172,10 @@ export class RedisClient {
     const port = Number(this.url.port || 6379);
     if (!Number.isInteger(port) || port <= 0 || port > 65_535) {
       return Promise.reject(
-        new RedisInfrastructureError("CONFIG", "Redis URL contains an invalid port"),
+        new RedisInfrastructureError(
+          "CONFIG",
+          "Redis URL contains an invalid port",
+        ),
       );
     }
 
@@ -191,7 +197,10 @@ export class RedisClient {
       const connectTimeout = setTimeout(() => {
         if (settled) return;
         settled = true;
-        const error = new RedisInfrastructureError("TIMEOUT", "Redis connection timed out");
+        const error = new RedisInfrastructureError(
+          "TIMEOUT",
+          "Redis connection timed out",
+        );
         this.failConnection(error);
         reject(error);
       }, COMMAND_TIMEOUT_MS);
@@ -221,7 +230,10 @@ export class RedisClient {
         reject,
         timeout: setTimeout(() => {
           this.failConnection(
-            new RedisInfrastructureError("TIMEOUT", "Redis command timed out"),
+            new RedisInfrastructureError(
+              "TIMEOUT",
+              "Redis command timed out",
+            ),
           );
         }, COMMAND_TIMEOUT_MS),
       };
@@ -249,7 +261,10 @@ export class RedisClient {
       this.failConnection(
         error instanceof RedisInfrastructureError
           ? error
-          : new RedisInfrastructureError("PROTOCOL", "Invalid Redis response"),
+          : new RedisInfrastructureError(
+              "PROTOCOL",
+              "Invalid Redis response",
+            ),
       );
     }
   }
@@ -271,7 +286,8 @@ export class RedisClient {
   }
 }
 
-let sharedClient: { readonly url: string; readonly client: RedisClient } | null = null;
+let sharedClient: { readonly url: string; readonly client: RedisClient } | null =
+  null;
 
 export function getSharedRedisClient(redisUrl: string): RedisClient {
   if (!sharedClient) {
