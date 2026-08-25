@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useHoomaFrontend } from "../context";
 import { HoomaApiError } from "../http";
+import { EventWhistleBoard } from "../whistle/HoomaWhistleBoard";
 import type { EventRsvpState, PublicEvent } from "./api";
 import { useEventApi } from "./useEventApi";
 
@@ -246,6 +247,8 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
         {status ? <p className="success">{status}</p> : null}
         {error ? <p className="error">{error}</p> : null}
       </section>
+
+      <EventWhistleBoard eventId={eventId} />
 
       <section className="play-matchday-hub" aria-labelledby="play-matchday-title">
         <div>
