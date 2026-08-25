@@ -1,0 +1,93 @@
+.admin-control-room {
+  display: grid;
+  gap: 20px;
+  padding-bottom: 24px;
+}
+
+.admin-hero dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-hero dl div,
+.admin-review-row,
+.admin-manager-list article,
+.admin-audit-list article {
+  border: 1px solid var(--app-line-strong);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.admin-hero dt,
+.admin-hero dd {
+  margin: 0;
+}
+
+.admin-review-list,
+.admin-manager-list,
+.admin-audit-list {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-review-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+}
+
+.admin-review-row > div:first-child,
+.admin-manager-list article,
+.admin-audit-list article {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-review-evidence {
+  white-space: pre-wrap;
+}
+
+.admin-review-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-manager-form {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-manager-form > input {
+  width: 100%;
+  min-width: 0;
+}
+
+.admin-capability-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+}
+
+.admin-capability-grid label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.admin-manager-list small {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .admin-hero dl,
+  .admin-capability-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-review-row {
+    grid-template-columns: 1fr;
+  }
+}

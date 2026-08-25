@@ -1,0 +1,234 @@
+import { useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
+import type {
+  PlaceCapabilityKind,
+  PublicPlaceCapability,
+  PublicPlaceSummary,
+} from "@hooma/contracts/platform-management";
+import { useHoomaFrontend } from "../context";
+import { createPlatformManagementApi } from "./platform-management-api";
+
+function locationLabel(place: PublicPlaceSummary): string {
+  return [place.houma, place.city].filter(Boolean).join(" · ") || place.address;
+}
+
+export function PlacesPage() {
+  const { transport, protectedError } = useHoomaFrontend();
+  const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
+  const [places, setPlaces] = useState<PublicPlaceSummary[]>([]);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    void api.places
+      .list()
+      .then(setPlaces)
+      .catch((reason) =>
+        setError(reason instanceof Error ? reason.message : "Unable to load Places"),
+      );
+  }, [api]);
+
+  async function suggest(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    setError("");
+    setMessage("");
+    try {
+      await api.places.suggest({
+        name: String(data.get("name") ?? ""),
+        address: String(data.get("address") ?? ""),
+        city: String(data.get("city") ?? "") || null,
+        houma: String(data.get("houma") ?? "") || null,
+      });
+      event.currentTarget.reset();
+      setMessage("Place submitted for App review.");
+    } catch (reason) {
+      setError(protectedError(reason, "Unable to submit Place"));
+    }
+  }
+
+  return (
+    <section className="place-page">
+      <header className="section-heading">
+        <div>
+          <p className="eyebrow">PLACES</p>
+          <h1>HOOMA Places</h1>
+          <p className="muted">
+            Approved physical venues. Watch and Pitch capabilities attach to these canonical Places.
+          </p>
+        </div>
+      </header>
+      <div className="place-directory">
+        {places.map((place) => (
+          <article className="panel place-card" key={place.id}>
+            <h2>{place.name}</h2>
+            <p>{locationLabel(place)}</p>
+            <p className="muted">{place.address}</p>
+          </article>
+        ))}
+        {!places.length && !error ? <p className="muted">No approved Places yet.</p> : null}
+      </div>
+      <form className="panel place-business-form" onSubmit={(event) => void suggest(event)}>
+        <p className="eyebrow">SUGGEST A PLACE</p>
+        <h2>Missing venue?</h2>
+        <input name="name" placeholder="Place name" required minLength={2} />
+        <input name="address" placeholder="Address" required minLength={3} />
+        <input name="city" placeholder="City" />
+        <input name="houma" placeholder="Houma" />
+        <button type="submit">Submit for review</button>
+      </form>
+      {message ? <p className="status">{message}</p> : null}
+      {error ? <p className="error">{error}</p> : null}
+    </section>
+  );
+}
+
+function CapabilityPage({ kind }: { readonly kind: PlaceCapabilityKind }) {
+  const { transport, protectedError } = useHoomaFrontend();
+  const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
+  const [places, setPlaces] = useState<PublicPlaceSummary[]>([]);
+  const [items, setItems] = useState<PublicPlaceCapability[]>([]);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const title = kind === "WATCH" ? "Watch" : "Pitch";
+
+  useEffect(() => {
+    void Promise.all([api.places.list(), api.capability.list(kind)])
+      .then(([placeRows, capabilityRows]) => {
+        setPlaces(placeRows);
+        setItems(capabilityRows);
+      })
+      .catch((reason) =>
+        setError(reason instanceof Error ? reason.message : `Unable to load ${title}`),
+      );
+  }, [api, kind, title]);
+
+  async function claim(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    setError("");
+    setMessage("");
+    try {
+      await api.places.claimOwnership(String(data.get("placeId") ?? ""), {
+        evidence: String(data.get("evidence") ?? ""),
+      });
+      event.currentTarget.reset();
+      setMessage(
+        "Ownership claim submitted. After approval you can submit the business application.",
+      );
+    } catch (reason) {
+      setError(protectedError(reason, "Unable to submit ownership claim"));
+    }
+  }
+
+  async function apply(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    setError("");
+    setMessage("");
+    try {
+      await api.capability.submit(kind, String(data.get("placeId") ?? ""), {
+        summary: String(data.get("summary") ?? ""),
+        contactName: String(data.get("contactName") ?? ""),
+        contactPhone: String(data.get("contactPhone") ?? "") || null,
+        contactEmail: String(data.get("contactEmail") ?? "") || null,
+      });
+      event.currentTarget.reset();
+      setMessage(`${title} business application submitted for App review.`);
+    } catch (reason) {
+      setError(protectedError(reason, `Unable to submit ${title} application`));
+    }
+  }
+
+  return (
+    <section className="place-page">
+      <header className="section-heading">
+        <div>
+          <p className="eyebrow">{kind}</p>
+          <h1>{title}</h1>
+          <p className="muted">
+            {kind === "WATCH"
+              ? "Approved football viewing venues."
+              : "Approved football pitches and bookable playing venues."}
+          </p>
+        </div>
+      </header>
+
+      <div className="place-directory">
+        {items.map((item) => (
+          <article className="panel place-card" key={item.id}>
+            <h2>{item.place.name}</h2>
+            <p>{locationLabel(item.place)}</p>
+            <p>{item.summary}</p>
+            <p className="muted">{item.place.address}</p>
+          </article>
+        ))}
+        {!items.length && !error ? (
+          <p className="muted">No approved {title} businesses yet.</p>
+        ) : null}
+      </div>
+
+      <section className="place-business-grid">
+        <form className="panel place-business-form" onSubmit={(event) => void claim(event)}>
+          <p className="eyebrow">STEP 1</p>
+          <h2>Verify Place ownership</h2>
+          <select name="placeId" required defaultValue="">
+            <option value="" disabled>
+              Select approved Place
+            </option>
+            {places.map((place) => (
+              <option key={place.id} value={place.id}>
+                {place.name} · {locationLabel(place)}
+              </option>
+            ))}
+          </select>
+          <textarea
+            name="evidence"
+            placeholder="Ownership or management evidence"
+            minLength={10}
+            required
+          />
+          <button type="submit">Submit ownership claim</button>
+        </form>
+
+        <form className="panel place-business-form" onSubmit={(event) => void apply(event)}>
+          <p className="eyebrow">STEP 2</p>
+          <h2>Apply for {title}</h2>
+          <p className="muted">
+            The selected Place must already be approved and verified as yours.
+          </p>
+          <select name="placeId" required defaultValue="">
+            <option value="" disabled>
+              Select approved Place
+            </option>
+            {places.map((place) => (
+              <option key={place.id} value={place.id}>
+                {place.name} · {locationLabel(place)}
+              </option>
+            ))}
+          </select>
+          <textarea
+            name="summary"
+            placeholder={`${title} offering, facilities, services and business details`}
+            minLength={10}
+            required
+          />
+          <input name="contactName" placeholder="Business contact name" required />
+          <input name="contactPhone" placeholder="Phone" />
+          <input name="contactEmail" type="email" placeholder="Email" />
+          <button type="submit">Submit {title} application</button>
+        </form>
+      </section>
+      {message ? <p className="status">{message}</p> : null}
+      {error ? <p className="error">{error}</p> : null}
+    </section>
+  );
+}
+
+export function WatchPage() {
+  return <CapabilityPage kind="WATCH" />;
+}
+
+export function PitchPage() {
+  return <CapabilityPage kind="PITCH" />;
+}

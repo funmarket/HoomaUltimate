@@ -4,6 +4,10 @@ import { IdentityService } from "../modules/identity/application/identity.servic
 import { PrismaIdentityRepository } from "../modules/identity/infrastructure/prisma-identity.repository.js";
 import { PrismaPlatformAdminRepository } from "../modules/platform-admin/infrastructure/prisma-platform-admin.repository.js";
 import { PlatformAdminService } from "../modules/platform-admin/application/platform-admin.service.js";
+import { PlaceService } from "../modules/places/application/place.service.js";
+import { PlaceCapabilityService } from "../modules/places/application/place-capability.service.js";
+import { PrismaPlaceRepository } from "../modules/places/infrastructure/prisma-place.repository.js";
+import { PrismaPlaceCapabilityRepository } from "../modules/places/infrastructure/prisma-place-capability.repository.js";
 import { CommunityService } from "../modules/communities/application/community.service.js";
 import { PrismaCommunityRepository } from "../modules/communities/infrastructure/prisma-community.repository.js";
 import { TeamService } from "../modules/teams/application/team.service.js";
@@ -25,10 +29,27 @@ import { PrismaDiscoveryRepository } from "../modules/discovery/infrastructure/p
 
 export function createContainer(config: ApiConfig) {
   const database = getDatabaseClient();
-  const identityRepository = new PrismaIdentityRepository(database);
-  const identityService = new IdentityService(identityRepository, config);
   const platformAdminRepository = new PrismaPlatformAdminRepository(database);
   const platformAdminService = new PlatformAdminService(platformAdminRepository);
+  const identityRepository = new PrismaIdentityRepository(database);
+  const identityService = new IdentityService(identityRepository, config, platformAdminService);
+
+  const placeRepository = new PrismaPlaceRepository(database);
+  const placeCapabilityRepository = new PrismaPlaceCapabilityRepository(database);
+  const placeService = new PlaceService(placeRepository, platformAdminService);
+  const watchService = new PlaceCapabilityService(
+    "WATCH",
+    placeCapabilityRepository,
+    placeRepository,
+    platformAdminService,
+  );
+  const pitchService = new PlaceCapabilityService(
+    "PITCH",
+    placeCapabilityRepository,
+    placeRepository,
+    platformAdminService,
+  );
+
   const communityRepository = new PrismaCommunityRepository(database);
   const communityService = new CommunityService(communityRepository, platformAdminService);
   const teamRepository = new PrismaTeamRepository(database);
@@ -61,6 +82,9 @@ export function createContainer(config: ApiConfig) {
     database,
     identityService,
     platformAdminService,
+    placeService,
+    watchService,
+    pitchService,
     communityService,
     teamService,
     eventService,

@@ -1,39 +1,226 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import type {
+  AdminQueueItem,
+  AppManagerSummary,
+  PlatformManagerCapability,
+} from "@hooma/contracts/platform-management";
 import {
+  createPlatformManagementApi,
   useHoomaFrontend,
-  type PlatformAdminOverview,
+  type PlatformAuditEntry,
+  type PlatformOverview,
   type PublicCommunitySummary,
   type PublicTeamSummary,
 } from "@hooma/frontend";
+import "./admin.css";
+
+const MANAGER_CAPABILITIES: readonly PlatformManagerCapability[] = [
+  "REVIEW_PLACES",
+  "REVIEW_PLACE_OWNERSHIP",
+  "REVIEW_WATCH_APPLICATIONS",
+  "REVIEW_PITCH_APPLICATIONS",
+  "VIEW_AUDIT",
+];
+
+type QueueName = "places" | "place-ownership" | "watch" | "pitch";
+
+function QueueSection({
+  title,
+  eyebrow,
+  items,
+  onDecision,
+}: {
+  readonly title: string;
+  readonly eyebrow: string;
+  readonly items: readonly AdminQueueItem[];
+  readonly onDecision: (id: string, decision: "APPROVE" | "REJECT") => void;
+}) {
+  return (
+    <section className="panel admin-review-section">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">{eyebrow}</p>
+          <h2>{title}</h2>
+        </div>
+        <span>{items.length}</span>
+      </div>
+      <div className="admin-review-list">
+        {items.map((item) => (
+          <article className="admin-review-row" key={item.id}>
+            <div>
+              <strong>{item.place.name}</strong>
+              <span>{item.place.houma || item.place.city || item.place.address}</span>
+              <span>
+                Submitted by {item.applicant.displayName} · @{item.applicant.username}
+              </span>
+              {item.summary ? <p>{item.summary}</p> : null}
+              {item.evidence ? <p className="admin-review-evidence">{item.evidence}</p> : null}
+            </div>
+            <div className="admin-review-actions">
+              <button type="button" onClick={() => onDecision(item.id, "APPROVE")}>
+                Approve
+              </button>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => onDecision(item.id, "REJECT")}
+              >
+                Reject
+              </button>
+            </div>
+          </article>
+        ))}
+        {!items.length ? <p className="muted">Queue is clear.</p> : null}
+      </div>
+    </section>
+  );
+}
 
 export function AdminApp() {
-  const { api } = useHoomaFrontend();
-  const [overview, setOverview] = useState<PlatformAdminOverview | null>(null);
+  const { api, transport } = useHoomaFrontend();
+  const management = useMemo(() => createPlatformManagementApi(transport), [transport]);
+  const [access, setAccess] = useState<{
+    isPlatformOwner: boolean;
+    managerCapabilities: readonly PlatformManagerCapability[];
+  } | null>(null);
+  const [overview, setOverview] = useState<PlatformOverview | null>(null);
   const [communities, setCommunities] = useState<PublicCommunitySummary[]>([]);
   const [teams, setTeams] = useState<PublicTeamSummary[]>([]);
+  const [managers, setManagers] = useState<AppManagerSummary[]>([]);
+  const [audit, setAudit] = useState<PlatformAuditEntry[]>([]);
+  const [queues, setQueues] = useState<Record<QueueName, AdminQueueItem[]>>({
+    places: [],
+    "place-ownership": [],
+    watch: [],
+    pitch: [],
+  });
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+
+  function can(capability: PlatformManagerCapability): boolean {
+    return Boolean(access?.isPlatformOwner || access?.managerCapabilities.includes(capability));
+  }
+
+  async function load() {
+    setError("");
+    const currentAccess = await management.admin.access();
+    setAccess(currentAccess);
+    if (!currentAccess.isPlatformOwner && currentAccess.managerCapabilities.length === 0) return;
+
+    const tasks: Promise<void>[] = [];
+    const allowed = (capability: PlatformManagerCapability) =>
+      currentAccess.isPlatformOwner || currentAccess.managerCapabilities.includes(capability);
+
+    if (allowed("VIEW_AUDIT")) {
+      tasks.push(
+        Promise.all([management.admin.overview(), management.admin.audit()]).then(
+          ([nextOverview, nextAudit]) => {
+            setOverview(nextOverview);
+            setAudit(nextAudit);
+          },
+        ),
+      );
+    }
+    if (allowed("REVIEW_PLACES")) {
+      tasks.push(
+        management.admin
+          .queue("places")
+          .then((rows) => setQueues((current) => ({ ...current, places: rows }))),
+      );
+    }
+    if (allowed("REVIEW_PLACE_OWNERSHIP")) {
+      tasks.push(
+        management.admin
+          .queue("place-ownership")
+          .then((rows) => setQueues((current) => ({ ...current, "place-ownership": rows }))),
+      );
+    }
+    if (allowed("REVIEW_WATCH_APPLICATIONS")) {
+      tasks.push(
+        management.admin
+          .queue("watch")
+          .then((rows) => setQueues((current) => ({ ...current, watch: rows }))),
+      );
+    }
+    if (allowed("REVIEW_PITCH_APPLICATIONS")) {
+      tasks.push(
+        management.admin
+          .queue("pitch")
+          .then((rows) => setQueues((current) => ({ ...current, pitch: rows }))),
+      );
+    }
+    if (currentAccess.isPlatformOwner) {
+      tasks.push(
+        Promise.all([
+          management.admin.managers(),
+          api.communities.publicList(),
+          api.teams.publicList({ limit: 100 }),
+        ]).then(([managerRows, communityPage, teamPage]) => {
+          setManagers(managerRows);
+          setCommunities(communityPage.items);
+          setTeams(teamPage.items);
+        }),
+      );
+    }
+    await Promise.all(tasks);
+  }
 
   useEffect(() => {
-    void Promise.all([
-      api.platformAdmin.overview(),
-      api.communities.publicList(),
-      api.teams.publicList({ limit: 100 }),
-    ])
-      .then(([adminOverview, communityPage, teamPage]) => {
-        setOverview(adminOverview);
-        setCommunities(communityPage.items);
-        setTeams(teamPage.items);
-      })
-      .catch((reason: Error) => setError(reason.message));
-  }, [api]);
+    void load().catch((reason: Error) => setError(reason.message));
+  }, [api, management]);
+
+  async function decide(queue: QueueName, id: string, decision: "APPROVE" | "REJECT") {
+    const note =
+      window.prompt(`${decision === "APPROVE" ? "Approval" : "Rejection"} note (optional)`) ?? "";
+    setError("");
+    setMessage("");
+    try {
+      await management.admin.decide(queue, id, { decision, note: note || null });
+      setMessage("Decision saved and audited.");
+      await load();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unable to save decision");
+    }
+  }
+
+  async function appointManager(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const username = String(data.get("username") ?? "").trim();
+    const capabilities = MANAGER_CAPABILITIES.filter((capability) => data.get(capability) === "on");
+    setError("");
+    setMessage("");
+    try {
+      await management.admin.setManager(username, capabilities);
+      event.currentTarget.reset();
+      setMessage(
+        capabilities.length ? "App Manager permissions saved." : "App Manager permissions revoked.",
+      );
+      await load();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unable to update App Manager");
+    }
+  }
+
+  if (access && !access.isPlatformOwner && access.managerCapabilities.length === 0) {
+    return (
+      <section className="auth-card">
+        <p className="eyebrow">CONTROL ROOM</p>
+        <h2>Access required</h2>
+        <p className="muted">This account has no App Manager permissions.</p>
+      </section>
+    );
+  }
 
   return (
     <section className="admin-control-room">
-      <section className="auth-card">
-        <p className="eyebrow">APP ADMIN</p>
-        <h2>HOOMA Control Room</h2>
+      <section className="auth-card admin-hero">
+        <p className="eyebrow">{access?.isPlatformOwner ? "APP OWNER" : "APP MANAGER"}</p>
+        <h1>HOOMA Control Room</h1>
         <p className="muted">
-          Global App Admin authority is separate from Founder, Coach and Assistant roles.
+          {access?.isPlatformOwner
+            ? "Full platform authority. Only the configured creator account receives this role."
+            : "Delegated authority is limited to the permissions assigned by the App Owner."}
         </p>
         {overview ? (
           <dl>
@@ -42,8 +229,12 @@ export function AdminApp() {
               <dd>{overview.users}</dd>
             </div>
             <div>
-              <dt>Platform Admins</dt>
+              <dt>Full owners</dt>
               <dd>{overview.activePlatformAdmins}</dd>
+            </div>
+            <div>
+              <dt>App Managers</dt>
+              <dd>{overview.activeAppManagers}</dd>
             </div>
             <div>
               <dt>Audit entries</dt>
@@ -51,56 +242,151 @@ export function AdminApp() {
             </div>
           </dl>
         ) : null}
+        {message ? <p className="status">{message}</p> : null}
         {error ? <p className="error">{error}</p> : null}
       </section>
 
-      <section className="panel admin-entity-section">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">COMMUNITIES</p>
-            <h2>Active HOOMAs</h2>
-          </div>
-          <span>{communities.length}</span>
-        </div>
-        <div className="admin-entity-list">
-          {communities.map((community) => (
-            <article className="admin-entity-row" key={community.id}>
-              <div>
-                <strong>{community.name}</strong>
-                <span>{community.houma || community.city || `@${community.slug}`}</span>
-              </div>
-              <a className="admin-link" href={`/hooma/${community.id}/edit`}>
-                Edit / Delete
-              </a>
-            </article>
-          ))}
-          {!communities.length && !error ? <p className="muted">No active HOOMAs.</p> : null}
-        </div>
-      </section>
+      {can("REVIEW_PLACES") ? (
+        <QueueSection
+          eyebrow="PLACES"
+          title="Place suggestions"
+          items={queues.places}
+          onDecision={(id, decision) => void decide("places", id, decision)}
+        />
+      ) : null}
+      {can("REVIEW_PLACE_OWNERSHIP") ? (
+        <QueueSection
+          eyebrow="OWNERSHIP"
+          title="Place ownership claims"
+          items={queues["place-ownership"]}
+          onDecision={(id, decision) => void decide("place-ownership", id, decision)}
+        />
+      ) : null}
+      {can("REVIEW_WATCH_APPLICATIONS") ? (
+        <QueueSection
+          eyebrow="WATCH"
+          title="Watch business applications"
+          items={queues.watch}
+          onDecision={(id, decision) => void decide("watch", id, decision)}
+        />
+      ) : null}
+      {can("REVIEW_PITCH_APPLICATIONS") ? (
+        <QueueSection
+          eyebrow="PITCH"
+          title="Pitch business applications"
+          items={queues.pitch}
+          onDecision={(id, decision) => void decide("pitch", id, decision)}
+        />
+      ) : null}
 
-      <section className="panel admin-entity-section">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">TEAMS</p>
-            <h2>Active Teams</h2>
+      {access?.isPlatformOwner ? (
+        <section className="panel admin-manager-section">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">DELEGATION</p>
+              <h2>App Managers</h2>
+            </div>
+            <span>{managers.length}</span>
           </div>
-          <span>{teams.length}</span>
-        </div>
-        <div className="admin-entity-list">
-          {teams.map((team) => (
-            <article className="admin-entity-row" key={team.id}>
+          <form className="admin-manager-form" onSubmit={(event) => void appointManager(event)}>
+            <input name="username" placeholder="HOOMA username" required />
+            <div className="admin-capability-grid">
+              {MANAGER_CAPABILITIES.map((capability) => (
+                <label key={capability}>
+                  <input type="checkbox" name={capability} />
+                  <span>{capability.replaceAll("_", " ")}</span>
+                </label>
+              ))}
+            </div>
+            <button type="submit">Save App Manager permissions</button>
+            <p className="muted">
+              Submit with no permissions selected to revoke all App Manager access.
+            </p>
+          </form>
+          <div className="admin-manager-list">
+            {managers.map((manager) => (
+              <article key={manager.userId}>
+                <strong>{manager.displayName}</strong>
+                <span>@{manager.username}</span>
+                <small>{manager.capabilities.join(" · ")}</small>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {access?.isPlatformOwner ? (
+        <>
+          <section className="panel admin-entity-section">
+            <div className="section-heading">
               <div>
-                <strong>{team.name}</strong>
-                <span>{team.houma || team.city || `@${team.slug}`}</span>
+                <p className="eyebrow">COMMUNITIES</p>
+                <h2>Active HOOMAs</h2>
               </div>
-              <a className="admin-link" href={`/teams/${team.id}/edit`}>
-                Edit / Delete
-              </a>
-            </article>
-          ))}
-          {!teams.length && !error ? <p className="muted">No active Teams.</p> : null}
-        </div>
-      </section>
+              <span>{communities.length}</span>
+            </div>
+            <div className="admin-entity-list">
+              {communities.map((community) => (
+                <article className="admin-entity-row" key={community.id}>
+                  <div>
+                    <strong>{community.name}</strong>
+                    <span>{community.houma || community.city || `@${community.slug}`}</span>
+                  </div>
+                  <a className="admin-link" href={`/hooma/${community.id}/edit`}>
+                    Edit / Delete
+                  </a>
+                </article>
+              ))}
+            </div>
+          </section>
+          <section className="panel admin-entity-section">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">TEAMS</p>
+                <h2>Active Teams</h2>
+              </div>
+              <span>{teams.length}</span>
+            </div>
+            <div className="admin-entity-list">
+              {teams.map((team) => (
+                <article className="admin-entity-row" key={team.id}>
+                  <div>
+                    <strong>{team.name}</strong>
+                    <span>{team.houma || team.city || `@${team.slug}`}</span>
+                  </div>
+                  <a className="admin-link" href={`/teams/${team.id}/edit`}>
+                    Edit / Delete
+                  </a>
+                </article>
+              ))}
+            </div>
+          </section>
+        </>
+      ) : null}
+
+      {can("VIEW_AUDIT") ? (
+        <section className="panel admin-audit-section">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">AUDIT</p>
+              <h2>Recent sensitive actions</h2>
+            </div>
+            <span>{audit.length}</span>
+          </div>
+          <div className="admin-audit-list">
+            {audit.map((entry) => (
+              <article key={entry.id}>
+                <strong>{entry.action}</strong>
+                <span>
+                  {entry.entityType}
+                  {entry.entityId ? ` · ${entry.entityId}` : ""}
+                </span>
+                <time>{new Date(entry.createdAt).toLocaleString()}</time>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </section>
   );
 }

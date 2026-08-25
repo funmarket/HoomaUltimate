@@ -35,14 +35,15 @@ test("Telegram facade serves the shared HOOMA frontend while the shared runtime 
   assert.equal(telegramPackage.scripts.typecheck, "npm -w @hooma/web run typecheck");
   assert.match(telegramPackage.scripts.start, /serve-static\.mjs \.\.\/web\/dist/);
 
-  assert.match(router, /initializeTelegramRuntime\(\)/);
+  assert.match(router, /createTelegramRuntime\(\)/);
   assert.match(runtime, /webApp\.ready\(\)/);
   assert.match(runtime, /webApp\.expand\(\)/);
-  assert.match(runtime, /backButton: webApp\.BackButton \?\? null/);
+  assert.match(runtime, /backButton: webApp\?\.BackButton \?\? null/);
   assert.match(backButton, /button\.show\(\)/);
   assert.match(backButton, /button\.hide\(\)/);
   assert.match(backButton, /button\.onClick\(goBack\)/);
   assert.match(backButton, /button\.offClick\(goBack\)/);
+  assert.match(shell, /useEffect\(\(\) => runtime\.connect\(\), \[runtime\]\)/);
   assert.match(shell, /useTelegramBackButton\(runtime\)/);
 });
 

@@ -164,6 +164,7 @@ export function HoomaAccountHeader({
     const menu = menuRef.current;
     const anchor = anchorRef.current;
     if (!menu || !anchor) return;
+    const anchorElement = anchor;
 
     if (!open) {
       if (menu.matches(":popover-open")) menu.hidePopover();
@@ -171,7 +172,7 @@ export function HoomaAccountHeader({
     }
 
     function updateGeometry() {
-      setMenuStyle(accountMenuGeometry(anchor));
+      setMenuStyle(accountMenuGeometry(anchorElement));
     }
 
     updateGeometry();
@@ -289,8 +290,8 @@ export function HoomaAccountHeader({
             <div className="hooma-account-menu__platform">
               <MenuRow
                 icon={<ShieldIcon />}
-                title="App Admin"
-                subtitle="HOOMA platform control"
+                title="Control Room"
+                subtitle="HOOMA platform management"
                 onClick={() => navigate(onAdmin)}
               />
             </div>

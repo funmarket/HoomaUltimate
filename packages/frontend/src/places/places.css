@@ -1,0 +1,47 @@
+.place-page {
+  display: grid;
+  gap: 24px;
+  padding-bottom: 24px;
+}
+
+.place-directory,
+.place-business-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.place-card,
+.place-business-form {
+  display: grid;
+  gap: 12px;
+}
+
+.place-card h2,
+.place-business-form h2 {
+  margin: 0;
+}
+
+.place-card p,
+.place-business-form p {
+  margin: 0;
+}
+
+.place-business-form input,
+.place-business-form select,
+.place-business-form textarea {
+  width: 100%;
+  min-width: 0;
+}
+
+.place-business-form textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+@media (max-width: 760px) {
+  .place-directory,
+  .place-business-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -11,6 +11,25 @@ enum PlatformRole {
   PLATFORM_ADMIN
 }
 
+enum AppManagerCapability {
+  REVIEW_PLACES
+  REVIEW_PLACE_OWNERSHIP
+  REVIEW_WATCH_APPLICATIONS
+  REVIEW_PITCH_APPLICATIONS
+  VIEW_AUDIT
+}
+
+enum ModerationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PlaceCapabilityKind {
+  WATCH
+  PITCH
+}
+
 enum OutboxStatus {
   PENDING
   PROCESSING
@@ -150,39 +169,45 @@ enum ProfileIdentity {
 }
 
 model User {
-  id                         String                         @id @default(cuid())
-  createdAt                  DateTime                       @default(now())
-  updatedAt                  DateTime                       @updatedAt
-  identities                 ProfileIdentity[]              @default([])
-  presentation               UserPresentation?
-  playerProfile              PlayerProfile?
-  telegramIdentity           TelegramIdentity?
-  webCredential              WebCredential?
-  webSessions                WebSession[]
-  platformRoles              PlatformRoleAssignment[]
-  auditEntries               AuditLog[]                     @relation("AuditActor")
-  communitiesCreated         Community[]                    @relation("CommunityCreator")
-  communityMemberships       CommunityMembership[]
-  teamsCreated               Team[]                         @relation("TeamCreator")
-  teamPlayers                TeamPlayer[]
-  teamOffersReceived         TeamPlayerOffer[]               @relation("TeamOfferTarget")
-  teamOffersSent             TeamPlayerOffer[]               @relation("TeamOfferSender")
-  teamResponsibilities       TeamResponsibilityAssignment[]
-  teamCapabilityGrants       TeamCapabilityGrant[]          @relation("CapabilityRecipient")
-  teamCapabilityGrantsGiven  TeamCapabilityGrant[]          @relation("CapabilityGrantor")
-  teamLineupsCreated         TeamLineup[]                   @relation("LineupCreator")
-  teamChallengesCreated      TeamChallenge[]                @relation("ChallengeCreator")
-  teamChallengeMessages      TeamChallengeMessage[]
-  eventsCreated              Event[]                        @relation("EventCreator")
-  eventRsvps                 EventRsvp[]
-  eventFormationsCreated     Formation[]                    @relation("FormationCreator")
-  formationSlots             FormationSlot[]
-  eventCheckIns              EventCheckIn[]
-  eventChatMessages          EventChatMessage[]
-  whistlesAuthored           WhistleMetadata[]
-  gamerGamesCreated          GamerGame[]                    @relation("GamerGameCreator")
-  gamerProfiles              GamerProfile[]
-  playPlayerListings         PlayPlayerListing[]
+  id                          String                         @id @default(cuid())
+  createdAt                   DateTime                       @default(now())
+  updatedAt                   DateTime                       @updatedAt
+  identities                  ProfileIdentity[]              @default([])
+  presentation                UserPresentation?
+  playerProfile               PlayerProfile?
+  telegramIdentity            TelegramIdentity?
+  webCredential               WebCredential?
+  webSessions                 WebSession[]
+  platformRoles               PlatformRoleAssignment[]
+  appManagerGrants            AppManagerGrant[]              @relation("AppManagerRecipient")
+  appManagerGrantsGiven       AppManagerGrant[]              @relation("AppManagerGrantor")
+  auditEntries                AuditLog[]                     @relation("AuditActor")
+  communitiesCreated          Community[]                    @relation("CommunityCreator")
+  communityMemberships        CommunityMembership[]
+  teamsCreated                Team[]                         @relation("TeamCreator")
+  teamPlayers                 TeamPlayer[]
+  teamOffersReceived          TeamPlayerOffer[]              @relation("TeamOfferTarget")
+  teamOffersSent              TeamPlayerOffer[]              @relation("TeamOfferSender")
+  teamResponsibilities        TeamResponsibilityAssignment[]
+  teamCapabilityGrants        TeamCapabilityGrant[]          @relation("CapabilityRecipient")
+  teamCapabilityGrantsGiven   TeamCapabilityGrant[]          @relation("CapabilityGrantor")
+  teamLineupsCreated          TeamLineup[]                   @relation("LineupCreator")
+  teamChallengesCreated       TeamChallenge[]                @relation("ChallengeCreator")
+  teamChallengeMessages       TeamChallengeMessage[]
+  eventsCreated               Event[]                        @relation("EventCreator")
+  eventRsvps                  EventRsvp[]
+  eventFormationsCreated      Formation[]                    @relation("FormationCreator")
+  formationSlots              FormationSlot[]
+  eventCheckIns               EventCheckIn[]
+  eventChatMessages           EventChatMessage[]
+  whistlesAuthored            WhistleMetadata[]
+  gamerGamesCreated           GamerGame[]                    @relation("GamerGameCreator")
+  gamerProfiles               GamerProfile[]
+  playPlayerListings          PlayPlayerListing[]
+  placesSuggested             Place[]                        @relation("PlaceSuggester")
+  placeOwnershipClaims        PlaceOwnershipClaim[]          @relation("PlaceClaimant")
+  placeOwnerships             PlaceOwnership[]               @relation("PlaceOwner")
+  placeCapabilityApplications PlaceCapabilityApplication[]   @relation("PlaceCapabilityApplicant")
 }
 
 model UserPresentation {
@@ -259,6 +284,105 @@ model PlatformRoleAssignment {
 
   @@unique([userId, role])
   @@index([role, revokedAt])
+}
+
+model AppManagerGrant {
+  id              String               @id @default(cuid())
+  userId          String
+  capability      AppManagerCapability
+  grantedByUserId String
+  grantedAt       DateTime             @default(now())
+  revokedAt       DateTime?
+  user            User                 @relation("AppManagerRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  grantedBy       User                 @relation("AppManagerGrantor", fields: [grantedByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, capability])
+  @@index([userId, revokedAt])
+  @@index([capability, revokedAt])
+}
+
+model Place {
+  id                String              @id @default(cuid())
+  slug              String              @unique
+  name              String
+  address           String
+  city              String?
+  houma             String?
+  latitude          Decimal?            @db.Decimal(10, 7)
+  longitude         Decimal?            @db.Decimal(10, 7)
+  phone             String?
+  websiteUrl        String?
+  moderationStatus  ModerationStatus    @default(PENDING)
+  suggestedByUserId String
+  reviewedByUserId  String?
+  reviewedAt        DateTime?
+  reviewNote        String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  suggestedBy       User                @relation("PlaceSuggester", fields: [suggestedByUserId], references: [id], onDelete: Restrict)
+  ownershipClaims   PlaceOwnershipClaim[]
+  ownerships        PlaceOwnership[]
+  applications      PlaceCapabilityApplication[]
+
+  @@index([moderationStatus, createdAt])
+  @@index([city, houma])
+}
+
+model PlaceOwnershipClaim {
+  id               String           @id @default(cuid())
+  placeId          String
+  claimantUserId   String
+  evidence         String
+  status           ModerationStatus @default(PENDING)
+  reviewedByUserId String?
+  reviewedAt       DateTime?
+  reviewNote       String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  place            Place            @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  claimant         User             @relation("PlaceClaimant", fields: [claimantUserId], references: [id], onDelete: Cascade)
+
+  @@unique([placeId, claimantUserId])
+  @@index([status, createdAt])
+  @@index([claimantUserId, status])
+}
+
+model PlaceOwnership {
+  id               String   @id @default(cuid())
+  placeId          String
+  userId           String
+  verifiedByUserId String
+  verifiedAt       DateTime @default(now())
+  revokedAt        DateTime?
+  place            Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  user             User     @relation("PlaceOwner", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([placeId, userId])
+  @@index([userId, revokedAt])
+  @@index([placeId, revokedAt])
+}
+
+model PlaceCapabilityApplication {
+  id               String              @id @default(cuid())
+  placeId          String
+  applicantUserId  String
+  kind             PlaceCapabilityKind
+  summary          String
+  contactName      String
+  contactPhone     String?
+  contactEmail     String?
+  status           ModerationStatus    @default(PENDING)
+  reviewedByUserId String?
+  reviewedAt       DateTime?
+  reviewNote       String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  place            Place               @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  applicant        User                @relation("PlaceCapabilityApplicant", fields: [applicantUserId], references: [id], onDelete: Cascade)
+
+  @@unique([placeId, kind])
+  @@index([kind, status, createdAt])
+  @@index([applicantUserId, status])
 }
 
 model Community {

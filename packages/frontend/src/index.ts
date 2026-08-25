@@ -1,6 +1,7 @@
 import "./teams/team-media.css";
 import "./teams/coach-control-room.css";
 import "./teams/team-offers.css";
+import "./places/places.css";
 
 export * from "./api";
 export * from "./context";
@@ -26,3 +27,5 @@ export * from "./gamers/GamerGamePage";
 export * from "./gamers/GamerProfilePage";
 export * from "./discovery/api";
 export * from "./discovery/HoomaNowSection";
+export * from "./places/PlacesPages";
+export * from "./places/platform-management-api";

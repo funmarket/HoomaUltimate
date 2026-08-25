@@ -6,6 +6,15 @@ import { createContainer } from "./container.js";
 
 const config = loadApiConfig();
 const container = createContainer(config);
+const ownerBootstrap = await container.platformAdminService.bootstrapConfiguredOwner(
+  config.PLATFORM_ADMIN_BOOTSTRAP_TELEGRAM_USER_ID,
+);
+if (ownerBootstrap.status === "pending") {
+  console.log("Configured platform owner has not activated a HOOMA Telegram account yet.");
+} else if (ownerBootstrap.status === "ready") {
+  console.log("Configured platform owner authority reconciled.");
+}
+
 const app = createApp(config, container);
 // Railway owns PORT in production; API_PORT remains the explicit local/default
 // HOOMA fallback. The Railway service config pins PORT to the same port used by

@@ -16,11 +16,14 @@ import {
   HoomaEditPage,
   HoomaFrontendProvider,
   HoomaPage,
+  PitchPage,
+  PlacesPage,
   PlayPage,
   TeamDetailPage,
   TeamEditPage,
   TeamLineupPage,
   TeamsPage,
+  WatchPage,
 } from "@hooma/frontend";
 import { AccountProvider } from "../../account/AccountProvider";
 import { createTelegramRuntime } from "../../telegram/runtime";
@@ -44,7 +47,9 @@ const ProfilePage = lazy(() =>
   import("../../profile/ProfilePage").then((module) => ({ default: module.ProfilePage })),
 );
 const PublicProfilePage = lazy(() =>
-  import("../../profile/PublicProfilePage").then((module) => ({ default: module.PublicProfilePage })),
+  import("../../profile/PublicProfilePage").then((module) => ({
+    default: module.PublicProfilePage,
+  })),
 );
 const SettingsPage = lazy(() =>
   import("../../settings/SettingsPage").then((module) => ({ default: module.SettingsPage })),
@@ -167,6 +172,9 @@ function HoomaRoutes() {
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/admin/*" element={<AdminApp />} />
               <Route path="/play" element={<PlayPage />} />
+              <Route path="/watch" element={<WatchPage />} />
+              <Route path="/pitch" element={<PitchPage />} />
+              <Route path="/places" element={<PlacesPage />} />
               <Route path="/events/new" element={<CreateEventPage />} />
               <Route path="/events/:eventId" element={<EventDetailRoute />} />
               <Route path="/events/:eventId/formation" element={<EventFormationRoute />} />
