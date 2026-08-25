@@ -11,8 +11,21 @@ export class PrismaEventRepository implements EventRepository {
   constructor(private readonly db: PrismaClient) {}
 
   async listPublic(input: EventPublicListInput) {
+    const communityVisibility: Prisma.EventWhereInput = input.viewerUserId
+      ? {
+          OR: [
+            { community: { visibility: "PUBLIC" } },
+            {
+              community: {
+                memberships: { some: { userId: input.viewerUserId, leftAt: null } },
+              },
+            },
+          ],
+        }
+      : { community: { visibility: "PUBLIC" } };
     const rows = await this.db.event.findMany({
       where: {
+        ...communityVisibility,
         status: "PUBLISHED",
         startsAt: { gte: input.from },
         ...(input.type ? { type: input.type } : {}),
