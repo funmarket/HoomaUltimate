@@ -2,6 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { useHoomaFrontend } from "@hooma/frontend";
 import { useAccount } from "../account/AccountProvider";
+import {
+  completeGamerSignupOnboarding,
+  GamerSignupFields,
+  useGamerSignupSelection,
+  validateGamerSignupSelection,
+} from "./GamerSignupOnboarding";
 
 function safeReturnTo(): string {
   const value = new URLSearchParams(window.location.search).get("returnTo");
@@ -24,11 +30,16 @@ export function AuthApp() {
     if (!loading && me && returnTo !== "/") window.location.replace(returnTo);
   }, [loading, me, returnTo]);
 
-  async function completeAuthentication() {
+  async function completeAuthentication(nextPath?: string) {
     setError("");
     if (await refresh()) {
-      window.location.replace(returnTo);
+      window.location.replace(returnTo !== "/" ? returnTo : (nextPath ?? "/"));
     }
+  }
+
+  async function completeWithWarning(message: string) {
+    setError(message);
+    await refresh();
   }
 
   async function signOut() {
@@ -82,7 +93,11 @@ export function AuthApp() {
       {mode === "login" ? (
         <LoginForm onSuccess={completeAuthentication} onError={setError} />
       ) : (
-        <RegisterForm onSuccess={completeAuthentication} onError={setError} />
+        <RegisterForm
+          onSuccess={completeAuthentication}
+          onCreatedWithWarning={completeWithWarning}
+          onError={setError}
+        />
       )}
       {visibleError ? <p className="error">{visibleError}</p> : null}
     </section>
@@ -101,7 +116,7 @@ function LoginForm({ onSuccess, onError }: FormCallbacks) {
             loginUsername: String(data.get("loginUsername")),
             password: String(data.get("password")),
           })
-          .then(onSuccess)
+          .then(() => onSuccess())
           .catch((error: Error) => onError(error.message));
       }}
     >
@@ -118,22 +133,48 @@ function LoginForm({ onSuccess, onError }: FormCallbacks) {
   );
 }
 
-function RegisterForm({ onSuccess, onError }: FormCallbacks) {
-  const { api } = useHoomaFrontend();
-  function submit(event: FormEvent<HTMLFormElement>) {
+function RegisterForm({ onSuccess, onCreatedWithWarning, onError }: RegisterFormCallbacks) {
+  const { api, transport } = useHoomaFrontend();
+  const gamerOnboarding = useGamerSignupSelection();
+  const [submitting, setSubmitting] = useState(false);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    onError("");
+    const validationError = validateGamerSignupSelection(gamerOnboarding.selection);
+    if (validationError) {
+      onError(validationError);
+      return;
+    }
+
     const data = new FormData(event.currentTarget);
-    void api.identity
-      .register({
+    setSubmitting(true);
+    let accountCreated = false;
+    try {
+      await api.identity.register({
         loginUsername: String(data.get("loginUsername")),
         password: String(data.get("password")),
         displayUsername: String(data.get("displayUsername")),
         displayName: String(data.get("displayName")) || null,
         email: String(data.get("email")) || null,
-      })
-      .then(onSuccess)
-      .catch((error: Error) => onError(error.message));
+      });
+      accountCreated = true;
+      await completeGamerSignupOnboarding(gamerOnboarding.selection, transport);
+      await onSuccess(gamerOnboarding.selection.enabled ? "/gamers" : undefined);
+    } catch (reason) {
+      const message = reason instanceof Error ? reason.message : "Unable to create account";
+      if (accountCreated) {
+        await onCreatedWithWarning(
+          `Your HOOMA account was created, but Gamer setup did not finish: ${message}`,
+        );
+      } else {
+        onError(message);
+      }
+    } finally {
+      setSubmitting(false);
+    }
   }
+
   return (
     <form onSubmit={submit}>
       <label>
@@ -162,12 +203,25 @@ function RegisterForm({ onSuccess, onError }: FormCallbacks) {
         Email (optional)
         <input name="email" type="email" autoComplete="email" />
       </label>
-      <button type="submit">Create account</button>
+      <GamerSignupFields onboarding={gamerOnboarding} />
+      <button
+        type="submit"
+        disabled={
+          submitting ||
+          (gamerOnboarding.selection.enabled && gamerOnboarding.selection.gamesLoading)
+        }
+      >
+        {submitting ? "Creating account…" : "Create account"}
+      </button>
     </form>
   );
 }
 
 type FormCallbacks = {
-  onSuccess: () => void | Promise<void>;
+  onSuccess: (nextPath?: string) => void | Promise<void>;
   onError: (message: string) => void;
+};
+
+type RegisterFormCallbacks = FormCallbacks & {
+  onCreatedWithWarning: (message: string) => void | Promise<void>;
 };

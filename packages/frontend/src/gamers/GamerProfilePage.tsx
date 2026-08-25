@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import type { GamerGame, GamerProfile, GamerPublicProfile } from "@hooma/contracts/gamers";
 import type { MeResponse } from "@hooma/contracts";
+import type { GamerGame, GamerProfile, GamerPublicProfile } from "@hooma/contracts/gamers";
 import { useHoomaFrontend } from "../context";
+import { HoomaApiError } from "../http";
 import { createGamersApi } from "./api";
 
 function errorMessage(reason: unknown): string {
@@ -99,6 +100,15 @@ export function GamerProfilePage({
       await gamersApi.createChallenge(game.id, { challengedProfileId: publicProfile.id });
       setNotice("Challenge sent. Open Arena from the game hub to follow its status.");
     } catch (reason) {
+      if (
+        reason instanceof HoomaApiError &&
+        (reason.code === "GAMER_IDENTITY_REQUIRED" || reason.code === "GAMER_PROFILE_REQUIRED")
+      ) {
+        window.location.assign(
+          `/gamers/games/${encodeURIComponent(game.slug)}?challenge=${encodeURIComponent(publicProfile.id)}`,
+        );
+        return;
+      }
       setError(protectedError(reason, "Unable to send challenge"));
     } finally {
       setActionLoading(false);

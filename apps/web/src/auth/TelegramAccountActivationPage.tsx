@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useHoomaFrontend } from "@hooma/frontend";
+import {
+  completeGamerSignupOnboarding,
+  GamerSignupFields,
+  useGamerSignupSelection,
+  validateGamerSignupSelection,
+} from "./GamerSignupOnboarding";
 
 function safeReturnTo(): string {
   const value = new URLSearchParams(window.location.search).get("returnTo");
@@ -8,10 +14,12 @@ function safeReturnTo(): string {
 }
 
 export function TelegramAccountActivationPage() {
-  const { api, createAccountFromDeliveryIdentity } = useHoomaFrontend();
+  const { api, transport, createAccountFromDeliveryIdentity } = useHoomaFrontend();
   const returnTo = useMemo(safeReturnTo, []);
+  const gamerOnboarding = useGamerSignupSelection();
   const [checking, setChecking] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [accountCreated, setAccountCreated] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -36,14 +44,33 @@ export function TelegramAccountActivationPage() {
   }, [api, returnTo]);
 
   async function createAccount() {
+    const validationError = validateGamerSignupSelection(gamerOnboarding.selection);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setCreating(true);
     setError("");
+    let created = false;
     try {
       await createAccountFromDeliveryIdentity();
+      created = true;
+      setAccountCreated(true);
       await api.identity.me();
-      window.location.replace(returnTo);
+      await completeGamerSignupOnboarding(gamerOnboarding.selection, transport);
+      window.location.replace(
+        returnTo !== "/" ? returnTo : gamerOnboarding.selection.enabled ? "/gamers" : "/",
+      );
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Unable to create your HOOMA account");
+      const message =
+        reason instanceof Error ? reason.message : "Unable to create your HOOMA account";
+      setError(
+        created
+          ? `Your HOOMA account was created, but Gamer setup did not finish: ${message}`
+          : message,
+      );
+    } finally {
       setCreating(false);
     }
   }
@@ -56,13 +83,25 @@ export function TelegramAccountActivationPage() {
         Browsing stays open without an account. Create your HOOMA profile only when you want to
         join, create, play, contribute, challenge or use member-only features.
       </p>
+      {!accountCreated ? <GamerSignupFields onboarding={gamerOnboarding} /> : null}
       {checking ? <p className="status">Checking your HOOMA account…</p> : null}
-      {!checking ? (
-        <button type="button" disabled={creating} onClick={() => void createAccount()}>
+      {!checking && !accountCreated ? (
+        <button
+          type="button"
+          disabled={
+            creating ||
+            (gamerOnboarding.selection.enabled && gamerOnboarding.selection.gamesLoading)
+          }
+          onClick={() => void createAccount()}
+        >
           {creating ? "Creating…" : "Create HOOMA account"}
         </button>
       ) : null}
-      <a href={returnTo}>Keep browsing</a>
+      {accountCreated ? (
+        <a href="/gamers">Continue to Gamers</a>
+      ) : (
+        <a href={returnTo}>Keep browsing</a>
+      )}
       {error ? <p className="error">{error}</p> : null}
     </section>
   );

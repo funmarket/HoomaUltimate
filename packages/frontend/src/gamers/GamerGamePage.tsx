@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import type { MeResponse } from "@hooma/contracts";
+import type { ProfileResponse } from "@hooma/contracts/profile";
 import type {
   GamerChallenge,
   GamerChallenger,
   GamerGame,
   GamerProfile,
 } from "@hooma/contracts/gamers";
-import type { MeResponse } from "@hooma/contracts";
 import { useHoomaFrontend } from "../context";
 import { createGamersApi } from "./api";
+import { createGamerOnboardingApi, gamerOptInProfileInput } from "./onboarding";
 
 type HubTab = "CHALLENGERS" | "ARENA";
 
@@ -15,24 +17,41 @@ function errorMessage(reason: unknown): string {
   return reason instanceof Error ? reason.message : "Unexpected Gamers error";
 }
 
+function initialPendingChallengeProfileId(): string | null {
+  const url = new URL(window.location.href);
+  const profileId = url.searchParams.get("challenge");
+  if (!profileId) return null;
+  url.searchParams.delete("challenge");
+  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+  return profileId;
+}
+
 export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
   const { api, transport, authenticationHref, protectedError } = useHoomaFrontend();
   const gamersApi = useMemo(() => createGamersApi(transport), [transport]);
+  const onboardingApi = useMemo(() => createGamerOnboardingApi(transport), [transport]);
   const [game, setGame] = useState<GamerGame | null>(null);
   const [challengers, setChallengers] = useState<GamerChallenger[]>([]);
   const [challenges, setChallenges] = useState<GamerChallenge[]>([]);
   const [me, setMe] = useState<MeResponse | null>(null);
+  const [identityProfile, setIdentityProfile] = useState<ProfileResponse | null>(null);
   const [profile, setProfile] = useState<GamerProfile | null>(null);
   const [handle, setHandle] = useState("");
   const [openToChallenge, setOpenToChallenge] = useState(false);
+  const [pendingChallengeProfileId, setPendingChallengeProfileId] = useState<string | null>(
+    initialPendingChallengeProfileId,
+  );
   const [activeTab, setActiveTab] = useState<HubTab>("CHALLENGERS");
   const [loading, setLoading] = useState(true);
   const [accountLoading, setAccountLoading] = useState(true);
+  const [identityLoading, setIdentityLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [actionId, setActionId] = useState("");
   const [error, setError] = useState("");
   const [memberError, setMemberError] = useState("");
   const [notice, setNotice] = useState("");
+
+  const isGamer = identityProfile?.identities.includes("GAMER") ?? false;
 
   const loadChallengers = useCallback(
     async (gameId: string) => {
@@ -98,17 +117,25 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
 
   useEffect(() => {
     if (!game || !me) {
+      setIdentityProfile(null);
       setProfile(null);
       setChallenges([]);
       setHandle("");
       setOpenToChallenge(false);
+      setIdentityLoading(false);
       return;
     }
     let active = true;
+    setIdentityLoading(true);
     setMemberError("");
-    void Promise.all([gamersApi.myProfile(game.id), gamersApi.challenges(game.id)])
-      .then(([profileResponse, challengeResponse]) => {
+    void Promise.all([
+      onboardingApi.profile(),
+      gamersApi.myProfile(game.id),
+      gamersApi.challenges(game.id),
+    ])
+      .then(([identityResponse, profileResponse, challengeResponse]) => {
         if (!active) return;
+        setIdentityProfile(identityResponse);
         setProfile(profileResponse);
         setHandle(profileResponse?.handle ?? "");
         setOpenToChallenge(profileResponse?.openToChallenge ?? false);
@@ -116,11 +143,61 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
       })
       .catch((reason) => {
         if (active) setMemberError(protectedError(reason, "Unable to load your game activity"));
+      })
+      .finally(() => {
+        if (active) setIdentityLoading(false);
       });
     return () => {
       active = false;
     };
-  }, [game, gamersApi, me, protectedError]);
+  }, [game, gamersApi, me, onboardingApi, protectedError]);
+
+  useEffect(() => {
+    if (!pendingChallengeProfileId || !game || !me || identityLoading) return;
+    if (!isGamer || !profile) {
+      setActiveTab("CHALLENGERS");
+      setNotice(
+        isGamer
+          ? `Add your ${game.name} handle above and this challenge will continue automatically.`
+          : "Join Gamers above, then add your game handle. This challenge will continue automatically.",
+      );
+    }
+  }, [game, identityLoading, isGamer, me, pendingChallengeProfileId, profile]);
+
+  async function enableGamerIdentity(): Promise<boolean> {
+    if (!identityProfile) return false;
+    if (identityProfile.identities.includes("GAMER")) return true;
+    setSaving(true);
+    setMemberError("");
+    try {
+      const updated = await onboardingApi.updateProfile(gamerOptInProfileInput(identityProfile));
+      setIdentityProfile(updated);
+      return true;
+    } catch (reason) {
+      setMemberError(protectedError(reason, "Unable to enable Gamer participation"));
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function sendChallengeNow(challengedProfileId: string) {
+    if (!game) return;
+    setActionId(challengedProfileId);
+    setMemberError("");
+    setNotice("");
+    try {
+      await gamersApi.createChallenge(game.id, { challengedProfileId });
+      setPendingChallengeProfileId(null);
+      setNotice("Challenge sent. It is now waiting for a response in Arena.");
+      await loadChallenges(game.id);
+      setActiveTab("ARENA");
+    } catch (reason) {
+      setMemberError(protectedError(reason, "Unable to send challenge"));
+    } finally {
+      setActionId("");
+    }
+  }
 
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -133,8 +210,12 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
       setProfile(saved);
       setHandle(saved.handle);
       setOpenToChallenge(saved.openToChallenge);
-      setNotice("Your game profile is updated.");
       await Promise.all([loadChallengers(game.id), loadChallenges(game.id)]);
+      if (pendingChallengeProfileId) {
+        await sendChallengeNow(pendingChallengeProfileId);
+      } else {
+        setNotice("Your game profile is updated.");
+      }
     } catch (reason) {
       setMemberError(protectedError(reason, "Unable to save your game profile"));
     } finally {
@@ -149,19 +230,19 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
       if (href) window.location.assign(href);
       return;
     }
-    setActionId(challengedProfileId);
-    setMemberError("");
-    setNotice("");
-    try {
-      await gamersApi.createChallenge(game.id, { challengedProfileId });
-      setNotice("Challenge sent. It is now waiting for a response in Arena.");
-      await loadChallenges(game.id);
-      setActiveTab("ARENA");
-    } catch (reason) {
-      setMemberError(protectedError(reason, "Unable to send challenge"));
-    } finally {
-      setActionId("");
+    if (identityLoading) return;
+    if (!isGamer || !profile) {
+      setPendingChallengeProfileId(challengedProfileId);
+      setActiveTab("CHALLENGERS");
+      setMemberError("");
+      setNotice(
+        isGamer
+          ? `Add your ${game.name} handle above and this challenge will continue automatically.`
+          : "Join Gamers above, then add your game handle. This challenge will continue automatically.",
+      );
+      return;
     }
+    await sendChallengeNow(challengedProfileId);
   }
 
   async function updateChallenge(
@@ -173,6 +254,9 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
     setMemberError("");
     setNotice("");
     try {
+      if (action === "accept" && !isGamer) {
+        if (!(await enableGamerIdentity())) return;
+      }
       if (action === "accept") await gamersApi.acceptChallenge(game.id, challenge.id);
       if (action === "decline") await gamersApi.declineChallenge(game.id, challenge.id);
       if (action === "cancel") await gamersApi.cancelChallenge(game.id, challenge.id);
@@ -189,6 +273,20 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
     } finally {
       setActionId("");
     }
+  }
+
+  async function joinGamers() {
+    const enabled = await enableGamerIdentity();
+    if (!enabled) return;
+    if (profile && pendingChallengeProfileId) {
+      await sendChallengeNow(pendingChallengeProfileId);
+      return;
+    }
+    setNotice(
+      profile
+        ? "Gamer participation is enabled."
+        : `Gamer participation is enabled. Add your ${game?.name ?? "game"} handle to continue.`,
+    );
   }
 
   const signInHref = authenticationHref(`/gamers/games/${encodeURIComponent(gameSlug)}`);
@@ -272,8 +370,27 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
                 main profile.
               </p>
             </div>
-            {accountLoading ? <p className="muted">Checking your HOOMA account…</p> : null}
-            {!accountLoading && me ? (
+            {accountLoading || identityLoading ? (
+              <p className="muted">Checking your HOOMA account…</p>
+            ) : null}
+            {!accountLoading && !identityLoading && me && !isGamer ? (
+              <div className="member-gate">
+                <strong>Join Gamers with your existing HOOMA profile.</strong>
+                <span className="muted">
+                  This enables Gamer participation on your canonical HOOMA identity. It does not
+                  create a second account.
+                </span>
+                <button
+                  className="button"
+                  type="button"
+                  disabled={saving}
+                  onClick={() => void joinGamers()}
+                >
+                  {saving ? "Joining…" : "Join Gamers"}
+                </button>
+              </div>
+            ) : null}
+            {!accountLoading && !identityLoading && me && isGamer ? (
               <form className="gamer-profile-form" onSubmit={saveProfile}>
                 <label className="field">
                   <span>Game username / handle</span>
@@ -372,7 +489,9 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
                             ? "Sending…"
                             : alreadyPending
                               ? "Pending"
-                              : "Challenge"}
+                              : profile && isGamer
+                                ? "Challenge"
+                                : "Set up to challenge"}
                         </button>
                       ) : null}
                     </article>
@@ -451,7 +570,7 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
                           disabled={actionId === challenge.id}
                           onClick={() => void updateChallenge(challenge, "accept")}
                         >
-                          Accept
+                          {isGamer ? "Accept" : "Rejoin & Accept"}
                         </button>
                         <button
                           className="button secondary"

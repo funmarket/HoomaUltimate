@@ -31,6 +31,48 @@ async function resetTestData() {
   await db.user.deleteMany();
 }
 
+async function enableGamerIdentity(base: string, cookie: string) {
+  const currentResponse = await fetch(`${base}/api/v1/me/profile`, {
+    headers: { cookie, origin: config.WEB_ORIGIN },
+  });
+  assert.equal(currentResponse.status, 200);
+  const current = (await currentResponse.json()) as {
+    presentation: {
+      username: string;
+      displayName: string;
+      photoUrl: string | null;
+      bio: string | null;
+    };
+    identities: Array<"PLAYER" | "FAN" | "GAMER">;
+    player: {
+      skillLevel: string;
+      preferredPositions: string[];
+    } | null;
+  };
+  const response = await fetch(`${base}/api/v1/me/profile`, {
+    method: "PATCH",
+    headers: {
+      "content-type": "application/json",
+      cookie,
+      origin: config.WEB_ORIGIN,
+    },
+    body: JSON.stringify({
+      username: current.presentation.username,
+      displayName: current.presentation.displayName,
+      photoUrl: current.presentation.photoUrl,
+      bio: current.presentation.bio,
+      identities: [...new Set([...current.identities, "GAMER"])],
+      player: current.player
+        ? {
+            skillLevel: current.player.skillLevel,
+            preferredPositions: current.player.preferredPositions,
+          }
+        : null,
+    }),
+  });
+  assert.equal(response.status, 200);
+}
+
 async function register(base: string, suffix = "catalog-owner") {
   const username = `gamer-${suffix}`;
   const response = await fetch(`${base}/api/public/v1/auth/register`, {
@@ -46,6 +88,7 @@ async function register(base: string, suffix = "catalog-owner") {
   assert.equal(response.status, 201);
   const cookie = response.headers.get("set-cookie");
   assert.ok(cookie?.includes(`${config.SESSION_COOKIE_NAME}=`));
+  await enableGamerIdentity(base, cookie);
   return cookie;
 }
 

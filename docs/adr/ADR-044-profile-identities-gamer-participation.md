@@ -1,6 +1,6 @@
 # ADR-044 — Profile identities and Gamer participation
 
-Status: **Accepted by product owner on 2026-08-24**
+Status: **Accepted by product owner on 2026-08-24; signup onboarding extended 2026-08-25**
 
 ## Context
 
@@ -51,6 +51,27 @@ User
 ```
 
 A `GamerProfile` continues to own the handle and `openToChallenge` state for one specific game. HOOMA display name, username, photo, bio, and selected profile identities remain owned by Identity/Profile and must not be duplicated into GamerProfile.
+
+### Account-creation Gamer onboarding
+
+Both canonical HOOMA account-creation surfaces may offer an optional `I'm a Gamer` choice.
+
+If selected, the account-creation UI also lets the user choose one or more active Gamer games and provide the explicit handle they actually use for each selected game. HOOMA must not guess a game handle from the HOOMA username or display name.
+
+The implementation preserves domain ownership in this order:
+
+```text
+create canonical HOOMA User/account through Identity
+-> add GAMER to the canonical User identities through Identity/Profile
+-> create/upsert one GamerProfile per selected game through Gamers
+-> continue into Gamers when onboarding succeeds
+```
+
+The registration contract does not become a second Gamers write model and Identity must not persist game-specific handles. Web registration and Telegram account activation share the same Gamer onboarding behavior.
+
+The user explicitly controls `openToChallenge`. Selecting Gamer or choosing a game does not silently publish that game profile in Challengers.
+
+If account creation succeeds but a later Gamer-onboarding step fails, the UI must report that the canonical HOOMA account already exists rather than inviting the user to register the same account again.
 
 ### Challenge behavior
 
