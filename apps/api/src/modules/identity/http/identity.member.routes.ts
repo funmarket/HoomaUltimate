@@ -16,7 +16,10 @@ import {
   telegramWebLoginConfigured,
 } from "./telegram-web-auth.js";
 
-export function createIdentityMemberRouter(service: IdentityService, config: ApiConfig): Router {
+export function createIdentityMemberRouter(
+  service: IdentityService,
+  config: ApiConfig,
+): Router {
   const router = Router();
 
   router.get(
@@ -40,34 +43,34 @@ export function createIdentityMemberRouter(service: IdentityService, config: Api
     asyncHandler(async (request, response) => {
       const auth = getAuth(request);
       response.status(201).json(
-        await service.addWebCredential(auth.userId, webCredentialAttachSchema.parse(request.body)),
+        await service.addWebCredential(
+          auth.userId,
+          webCredentialAttachSchema.parse(request.body),
+        ),
       );
     }),
   );
 
-  router.post(
-    "/auth/telegram/link/start",
-    (request, response) => {
-      const auth = getAuth(request);
-      if (!auth.transports.includes("web")) {
-        throw new AppError(
-          401,
-          "WEB_AUTH_REQUIRED",
-          "A current Web session is required to link a Telegram account",
-        );
-      }
-      const input = telegramOidcStartSchema.parse(request.body);
-      const authorizationUrl = beginTelegramWebFlow(response, config, {
-        mode: "link",
-        returnTo: input.returnTo,
-        userId: auth.userId,
-      });
-      response.json({
-        enabled: telegramWebLoginConfigured(config),
-        authorizationUrl,
-      });
-    },
-  );
+  router.post("/auth/telegram/link/start", (request, response) => {
+    const auth = getAuth(request);
+    if (!auth.transports.includes("web")) {
+      throw new AppError(
+        401,
+        "WEB_AUTH_REQUIRED",
+        "A current Web session is required to link a Telegram account",
+      );
+    }
+    const input = telegramOidcStartSchema.parse(request.body);
+    const authorizationUrl = beginTelegramWebFlow(response, config, {
+      mode: "link",
+      returnTo: input.returnTo,
+      userId: auth.userId,
+    });
+    response.json({
+      enabled: telegramWebLoginConfigured(config),
+      authorizationUrl,
+    });
+  });
 
   router.get(
     "/me/profile",
@@ -82,7 +85,10 @@ export function createIdentityMemberRouter(service: IdentityService, config: Api
     asyncHandler(async (request, response) => {
       const auth = getAuth(request);
       response.json(
-        await service.updateProfile(auth.userId, profileUpdateSchema.parse(request.body)),
+        await service.updateProfile(
+          auth.userId,
+          profileUpdateSchema.parse(request.body),
+        ),
       );
     }),
   );
