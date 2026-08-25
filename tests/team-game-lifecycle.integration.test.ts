@@ -11,7 +11,7 @@ function offset(date: Date, minutes: number): Date {
   return new Date(date.getTime() + minutes * 60_000);
 }
 
-test("confirmed TeamGame keeps its canonical end time and stays in HOOMA NOW after 15 minutes", async () => {
+test("confirmed TeamGame keeps canonical timing through the full HOOMA NOW lifecycle", async () => {
   const suffix = Date.now().toString(36);
   const userOne = await db.user.create({ data: {} });
   const userTwo = await db.user.create({ data: {} });
@@ -68,17 +68,26 @@ test("confirmed TeamGame keeps its canonical end time and stays in HOOMA NOW aft
     assert.equal(game.endsAt?.toISOString(), endsAt.toISOString());
 
     const discovery = new DiscoveryService(new PrismaDiscoveryRepository(db));
-    const response = await discovery.now(now, 30, communityOne.id);
-    const item = response.items.find(
-      (candidate) => candidate.activityType === "TEAM_GAME" && candidate.sourceId === game.id,
-    );
+    const itemAt = async (at: Date) => {
+      const response = await discovery.now(at, 30, communityOne.id);
+      return response.items.find(
+        (candidate) => candidate.activityType === "TEAM_GAME" && candidate.sourceId === game.id,
+      );
+    };
 
-    assert.ok(item, "TeamGame should remain discoverable more than 15 minutes after kickoff");
-    assert.equal(item.urgency, "LIVE_NOW");
-    assert.equal(item.startsAt, kickoff.toISOString());
-    assert.equal(item.endsAt, endsAt.toISOString());
+    const live = await itemAt(now);
+    assert.ok(live, "TeamGame should remain discoverable more than 15 minutes after kickoff");
+    assert.equal(live.urgency, "LIVE_NOW");
+    assert.equal(live.startsAt, kickoff.toISOString());
+    assert.equal(live.endsAt, endsAt.toISOString());
+
+    assert.equal((await itemAt(offset(endsAt, -10)))?.urgency, "ENDING_SOON");
+    assert.equal((await itemAt(offset(endsAt, -4)))?.urgency, "FINAL_MINUTES");
+    assert.equal(await itemAt(offset(endsAt, 1)), undefined);
   } finally {
-    await db.teamGame.deleteMany({ where: { OR: [{ homeTeamId: homeTeam.id }, { awayTeamId: awayTeam.id }] } });
+    await db.teamGame.deleteMany({
+      where: { OR: [{ homeTeamId: homeTeam.id }, { awayTeamId: awayTeam.id }] },
+    });
     await db.teamChallenge.deleteMany({
       where: {
         OR: [
@@ -90,7 +99,9 @@ test("confirmed TeamGame keeps its canonical end time and stays in HOOMA NOW aft
       },
     });
     await db.team.deleteMany({ where: { id: { in: [homeTeam.id, awayTeam.id] } } });
-    await db.community.deleteMany({ where: { id: { in: [communityOne.id, communityTwo.id] } } });
+    await db.community.deleteMany({
+      where: { id: { in: [communityOne.id, communityTwo.id] } },
+    });
     await db.user.deleteMany({ where: { id: { in: [userOne.id, userTwo.id] } } });
   }
 });
