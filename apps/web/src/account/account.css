@@ -63,6 +63,9 @@
   color: var(--hooma-chrome-text);
   cursor: pointer;
 }
+.hooma-profile-trigger:disabled {
+  cursor: wait;
+}
 .hooma-profile-trigger img {
   width: 100%;
   height: 100%;
@@ -77,6 +80,20 @@
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+.hooma-profile-trigger__loading {
+  width: 20px;
+  height: 20px;
+  border: 2px solid color-mix(in srgb, var(--hooma-chrome-muted) 45%, transparent);
+  border-top-color: var(--hooma-chrome-text);
+  border-radius: 50%;
+  animation: hooma-account-loading 700ms linear infinite;
+}
+
+@keyframes hooma-account-loading {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .hooma-account-menu {
@@ -240,5 +257,11 @@
     top: calc(100% + 8px);
     right: 0;
     width: min(360px, calc(100vw - 48px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hooma-profile-trigger__loading {
+    animation: none;
   }
 }
