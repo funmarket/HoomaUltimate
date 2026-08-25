@@ -1,7 +1,7 @@
 import type { ProfileIdentity, ProfileResponse, ProfileUpdateInput } from "@hooma/contracts/profile";
 import { request, type HoomaTransport } from "./http";
 
-export type PublicProfile = {
+export type CanonicalPublicProfile = {
   presentation: {
     username: string;
     displayName: string;
@@ -31,7 +31,7 @@ export function createProfileApi(transport: HoomaTransport) {
         body: JSON.stringify(input),
       }),
     publicByUsername: (username: string) =>
-      request<PublicProfile>(
+      request<CanonicalPublicProfile>(
         transport,
         `/api/public/v1/profiles/${encodeURIComponent(username)}`,
       ),
