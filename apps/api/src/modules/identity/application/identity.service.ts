@@ -14,6 +14,10 @@ import type {
   ProfilePresentationUpdateInput,
   RegisterInput,
 } from "@hooma/contracts";
+import type {
+  LoginMethodsResponse,
+  WebCredentialAttachInput,
+} from "@hooma/contracts/auth-linking";
 import {
   profileResponseSchema,
   type ProfileResponse,
@@ -79,6 +83,20 @@ export class IdentityService {
     }
     await this.repository.recordLoginSuccess(credential.userId);
     return this.issueSession(credential.userId);
+  }
+
+  async loginWithTelegramIdentity(
+    identity: TelegramIdentityInput,
+  ): Promise<{ sessionToken: string }> {
+    const userId = await this.repository.findTelegramUserId(identity.telegramUserId);
+    if (!userId) {
+      throw new AppError(
+        409,
+        "TELEGRAM_ACCOUNT_NOT_LINKED",
+        "This Telegram account is not linked to a HOOMA account yet",
+      );
+    }
+    return this.issueSession(userId);
   }
 
   async resolveWebSession(rawToken: string | undefined): Promise<string | null> {
@@ -150,6 +168,82 @@ export class IdentityService {
       );
     }
     return { userId: await this.repository.upsertTelegramIdentity(identity) };
+  }
+
+  async loginMethods(userId: string): Promise<LoginMethodsResponse> {
+    const methods = await this.repository.findLoginMethods(userId);
+    if (!methods) throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    return {
+      web: methods.web,
+      telegram: methods.telegram
+        ? { username: methods.telegram.telegramUsername }
+        : null,
+    };
+  }
+
+  async addWebCredential(userId: string, input: WebCredentialAttachInput): Promise<LoginMethodsResponse> {
+    const existing = await this.repository.findLoginMethods(userId);
+    if (!existing) throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    if (existing.web) {
+      throw new AppError(409, "WEB_CREDENTIAL_EXISTS", "This HOOMA account already has a Web login");
+    }
+    try {
+      await this.repository.createWebCredentialForUser({
+        userId,
+        loginUsername: normalizeUsername(input.loginUsername),
+        passwordHash: await hashPassword(input.password),
+        email: normalizeEmail(input.email),
+      });
+    } catch (error) {
+      if (isUniqueConstraintError(error)) {
+        throw new AppError(
+          409,
+          "IDENTITY_CONFLICT",
+          "Login username or email already belongs to another HOOMA account",
+        );
+      }
+      throw error;
+    }
+    return this.loginMethods(userId);
+  }
+
+  async linkTelegramIdentity(
+    userId: string,
+    identity: TelegramIdentityInput,
+  ): Promise<LoginMethodsResponse> {
+    const telegramOwner = await this.repository.findTelegramUserId(identity.telegramUserId);
+    if (telegramOwner === userId) return this.loginMethods(userId);
+    if (telegramOwner) {
+      throw new AppError(
+        409,
+        "ACCOUNT_LINK_CONFLICT",
+        "This Telegram account already belongs to another HOOMA account",
+      );
+    }
+
+    const methods = await this.repository.findLoginMethods(userId);
+    if (!methods) throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    if (methods.telegram) {
+      throw new AppError(
+        409,
+        "ACCOUNT_LINK_CONFLICT",
+        "This HOOMA account is already linked to another Telegram account",
+      );
+    }
+
+    try {
+      await this.repository.createTelegramIdentityForUser(userId, identity);
+    } catch (error) {
+      if (isUniqueConstraintError(error)) {
+        throw new AppError(
+          409,
+          "ACCOUNT_LINK_CONFLICT",
+          "Telegram account linking conflicted with another account",
+        );
+      }
+      throw error;
+    }
+    return this.loginMethods(userId);
   }
 
   async publicProfile(username: string) {
