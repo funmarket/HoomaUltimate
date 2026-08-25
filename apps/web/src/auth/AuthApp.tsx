@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import type { GamerGame } from "@hooma/contracts/gamers";
 import { useHoomaFrontend } from "@hooma/frontend";
-import { createGamerSignupOnboardingApi } from "@hooma/frontend/gamers-signup-onboarding";
 import { useAccount } from "../account/AccountProvider";
+import {
+  completeGamerSignupOnboarding,
+  GamerSignupFields,
+  useGamerSignupSelection,
+  validateGamerSignupSelection,
+} from "./GamerSignupOnboarding";
 
 function safeReturnTo(): string {
   const value = new URLSearchParams(window.location.search).get("returnTo");
@@ -131,56 +135,15 @@ function LoginForm({ onSuccess, onError }: FormCallbacks) {
 
 function RegisterForm({ onSuccess, onCreatedWithWarning, onError }: RegisterFormCallbacks) {
   const { api, transport } = useHoomaFrontend();
-  const gamerOnboarding = useMemo(() => createGamerSignupOnboardingApi(transport), [transport]);
-  const [games, setGames] = useState<GamerGame[]>([]);
-  const [gamesLoading, setGamesLoading] = useState(true);
-  const [gamesError, setGamesError] = useState("");
-  const [gamerSignup, setGamerSignup] = useState(false);
-  const [selectedGameIds, setSelectedGameIds] = useState<string[]>([]);
-  const [handles, setHandles] = useState<Record<string, string>>({});
-  const [openToChallenge, setOpenToChallenge] = useState(false);
+  const gamerOnboarding = useGamerSignupSelection();
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    setGamesLoading(true);
-    setGamesError("");
-    void gamerOnboarding
-      .games()
-      .then((response) => {
-        if (active) setGames(response.items);
-      })
-      .catch((reason) => {
-        if (active) {
-          setGamesError(reason instanceof Error ? reason.message : "Unable to load Gamer games");
-        }
-      })
-      .finally(() => {
-        if (active) setGamesLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [gamerOnboarding]);
-
-  function toggleGame(gameId: string, selected: boolean) {
-    setSelectedGameIds((current) =>
-      selected ? [...new Set([...current, gameId])] : current.filter((id) => id !== gameId),
-    );
-  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     onError("");
-
-    const selectedGames = games.filter((game) => selectedGameIds.includes(game.id));
-    if (gamerSignup && selectedGames.length === 0) {
-      onError("Choose at least one game to finish Gamer setup during signup.");
-      return;
-    }
-    const missingHandle = selectedGames.find((game) => !handles[game.id]?.trim());
-    if (gamerSignup && missingHandle) {
-      onError(`Enter your ${missingHandle.name} handle.`);
+    const validationError = validateGamerSignupSelection(gamerOnboarding.selection);
+    if (validationError) {
+      onError(validationError);
       return;
     }
 
@@ -196,33 +159,8 @@ function RegisterForm({ onSuccess, onCreatedWithWarning, onError }: RegisterForm
         email: String(data.get("email")) || null,
       });
       accountCreated = true;
-
-      if (gamerSignup) {
-        const profile = await gamerOnboarding.profile();
-        await gamerOnboarding.updateProfile({
-          username: profile.presentation.username,
-          displayName: profile.presentation.displayName,
-          photoUrl: profile.presentation.photoUrl,
-          bio: profile.presentation.bio,
-          identities: [...new Set([...profile.identities, "GAMER" as const])],
-          player: profile.player
-            ? {
-                skillLevel: profile.player.skillLevel,
-                preferredPositions: profile.player.preferredPositions,
-              }
-            : null,
-        });
-        await Promise.all(
-          selectedGames.map((game) =>
-            gamerOnboarding.saveGameProfile(game, {
-              handle: handles[game.id]!.trim(),
-              openToChallenge,
-            }),
-          ),
-        );
-      }
-
-      await onSuccess(gamerSignup ? "/gamers" : undefined);
+      await completeGamerSignupOnboarding(gamerOnboarding.selection, transport);
+      await onSuccess(gamerOnboarding.selection.enabled ? "/gamers" : undefined);
     } catch (reason) {
       const message = reason instanceof Error ? reason.message : "Unable to create account";
       if (accountCreated) {
@@ -265,67 +203,11 @@ function RegisterForm({ onSuccess, onCreatedWithWarning, onError }: RegisterForm
         Email (optional)
         <input name="email" type="email" autoComplete="email" />
       </label>
-
-      <label>
-        <input
-          type="checkbox"
-          checked={gamerSignup}
-          onChange={(event) => setGamerSignup(event.target.checked)}
-        />
-        I’m a Gamer
-      </label>
-      {gamerSignup ? (
-        <fieldset>
-          <legend>Games I play</legend>
-          <p>
-            Choose at least one game and enter the handle you actually use there. HOOMA will create
-            those game profiles now so you do not have to repeat setup in Gamers.
-          </p>
-          {gamesLoading ? <p className="status">Loading games…</p> : null}
-          {gamesError ? <p className="error">{gamesError}</p> : null}
-          {!gamesLoading && !gamesError && games.length === 0 ? (
-            <p>No Gamer games are available yet.</p>
-          ) : null}
-          {games.map((game) => {
-            const selected = selectedGameIds.includes(game.id);
-            return (
-              <div key={game.id}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={selected}
-                    onChange={(event) => toggleGame(game.id, event.target.checked)}
-                  />
-                  {game.name}
-                </label>
-                {selected ? (
-                  <label>
-                    {game.name} handle
-                    <input
-                      value={handles[game.id] ?? ""}
-                      onChange={(event) =>
-                        setHandles((current) => ({ ...current, [game.id]: event.target.value }))
-                      }
-                      maxLength={100}
-                      required
-                    />
-                  </label>
-                ) : null}
-              </div>
-            );
-          })}
-          <label>
-            <input
-              type="checkbox"
-              checked={openToChallenge}
-              onChange={(event) => setOpenToChallenge(event.target.checked)}
-            />
-            Show my selected game profiles in Challengers
-          </label>
-        </fieldset>
-      ) : null}
-
-      <button type="submit" disabled={submitting || (gamerSignup && gamesLoading)}>
+      <GamerSignupFields onboarding={gamerOnboarding} />
+      <button
+        type="submit"
+        disabled={submitting || (gamerOnboarding.selection.enabled && gamerOnboarding.selection.gamesLoading)}
+      >
         {submitting ? "Creating account…" : "Create account"}
       </button>
     </form>
