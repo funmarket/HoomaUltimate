@@ -17,6 +17,15 @@ function errorMessage(reason: unknown): string {
   return reason instanceof Error ? reason.message : "Unexpected Gamers error";
 }
 
+function initialPendingChallengeProfileId(): string | null {
+  const url = new URL(window.location.href);
+  const profileId = url.searchParams.get("challenge");
+  if (!profileId) return null;
+  url.searchParams.delete("challenge");
+  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+  return profileId;
+}
+
 export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
   const { api, transport, authenticationHref, protectedError } = useHoomaFrontend();
   const gamersApi = useMemo(() => createGamersApi(transport), [transport]);
@@ -29,7 +38,9 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
   const [profile, setProfile] = useState<GamerProfile | null>(null);
   const [handle, setHandle] = useState("");
   const [openToChallenge, setOpenToChallenge] = useState(false);
-  const [pendingChallengeProfileId, setPendingChallengeProfileId] = useState<string | null>(null);
+  const [pendingChallengeProfileId, setPendingChallengeProfileId] = useState<string | null>(
+    initialPendingChallengeProfileId,
+  );
   const [activeTab, setActiveTab] = useState<HubTab>("CHALLENGERS");
   const [loading, setLoading] = useState(true);
   const [accountLoading, setAccountLoading] = useState(true);
@@ -140,6 +151,18 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
       active = false;
     };
   }, [game, gamersApi, me, onboardingApi, protectedError]);
+
+  useEffect(() => {
+    if (!pendingChallengeProfileId || !game || !me || identityLoading) return;
+    if (!isGamer || !profile) {
+      setActiveTab("CHALLENGERS");
+      setNotice(
+        isGamer
+          ? `Add your ${game.name} handle above and this challenge will continue automatically.`
+          : "Join Gamers above, then add your game handle. This challenge will continue automatically.",
+      );
+    }
+  }, [game, identityLoading, isGamer, me, pendingChallengeProfileId, profile]);
 
   async function enableGamerIdentity(): Promise<boolean> {
     if (!identityProfile) return false;
@@ -357,7 +380,12 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
                   This enables Gamer participation on your canonical HOOMA identity. It does not
                   create a second account.
                 </span>
-                <button className="button" type="button" disabled={saving} onClick={() => void joinGamers()}>
+                <button
+                  className="button"
+                  type="button"
+                  disabled={saving}
+                  onClick={() => void joinGamers()}
+                >
                   {saving ? "Joining…" : "Join Gamers"}
                 </button>
               </div>
