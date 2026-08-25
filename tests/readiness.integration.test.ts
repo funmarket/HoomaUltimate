@@ -8,9 +8,7 @@ import { RedisReadinessProbe } from "../apps/api/src/modules/system/infrastructu
 
 const redisUrl = process.env.REDIS_URL;
 if (!process.env.DATABASE_URL || !redisUrl) {
-  throw new Error(
-    "DATABASE_URL and REDIS_URL are required for readiness integration tests",
-  );
+  throw new Error("DATABASE_URL and REDIS_URL are required for readiness integration tests");
 }
 
 const database = getDatabaseClient();
