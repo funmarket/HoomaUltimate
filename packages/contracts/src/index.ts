@@ -198,13 +198,35 @@ export const teamLineupSchema = z
     }
   });
 
-export const teamChallengeCreateSchema = z.object({
-  challengerTeamId: z.string().min(1),
-  challengedTeamId: z.string().min(1),
-  format: footballFormatSchema,
-  proposedAt: z.string().datetime().optional().nullable(),
-  message: z.string().trim().max(300).optional().nullable(),
-});
+export const teamChallengeCreateSchema = z
+  .object({
+    challengerTeamId: z.string().min(1),
+    challengedTeamId: z.string().min(1),
+    format: footballFormatSchema,
+    proposedAt: z.string().datetime().optional().nullable(),
+    proposedEndsAt: z.string().datetime().optional().nullable(),
+    message: z.string().trim().max(300).optional().nullable(),
+  })
+  .superRefine((input, context) => {
+    if (input.proposedEndsAt && !input.proposedAt) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["proposedEndsAt"],
+        message: "proposedEndsAt requires proposedAt",
+      });
+    }
+    if (
+      input.proposedAt &&
+      input.proposedEndsAt &&
+      new Date(input.proposedEndsAt) <= new Date(input.proposedAt)
+    ) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["proposedEndsAt"],
+        message: "proposedEndsAt must be after proposedAt",
+      });
+    }
+  });
 export const teamChallengeMessageSchema = z.object({
   body: z.string().trim().min(1).max(1000),
 });
