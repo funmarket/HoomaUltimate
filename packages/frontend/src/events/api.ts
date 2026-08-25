@@ -59,6 +59,11 @@ export function createEventApi(transport: HoomaTransport) {
         transport,
         "/api/public/v1/events?type=PLAY&limit=50",
       ),
+    publicWatch: () =>
+      request<{ items: PublicEvent[]; nextCursor: string | null }>(
+        transport,
+        "/api/public/v1/events?type=WATCH&limit=50",
+      ),
     publicDetail: (id: string) =>
       request<PublicEvent>(transport, `/api/public/v1/events/${encodeURIComponent(id)}`),
     myRsvp: (id: string) =>
