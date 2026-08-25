@@ -16,7 +16,7 @@ export function HoomaShell({
   const navigate = useNavigate();
   const location = useLocation();
   const { api } = useHoomaFrontend();
-  const { me, managedTeams, loading, error, refresh } = useAccount();
+  const { me, managedTeams, hasPlatformControlAccess, loading, error, refresh } = useAccount();
   useTelegramBackButton(runtime);
 
   async function signOut() {
@@ -32,7 +32,6 @@ export function HoomaShell({
         photoUrl: me.presentation.photoUrl,
       }
     : null;
-  const isPlatformAdmin = Boolean(me?.platformRoles.includes("PLATFORM_ADMIN"));
   const hasTelegramIdentity = Boolean(runtime.initData);
   const navPathname = location.pathname === "/telegram" ? "/" : location.pathname;
 
@@ -42,7 +41,7 @@ export function HoomaShell({
         user={user}
         loading={loading}
         canManageTeams={managedTeams.length > 0}
-        isPlatformAdmin={isPlatformAdmin}
+        isPlatformAdmin={hasPlatformControlAccess}
         onHome={() => navigate("/")}
         onGuestProfile={() =>
           navigate(
@@ -54,7 +53,7 @@ export function HoomaShell({
         onProfile={() => navigate("/profile")}
         {...(managedTeams.length ? { onCoach: () => navigate("/teams/control") } : {})}
         onSettings={() => navigate("/settings")}
-        {...(isPlatformAdmin ? { onAdmin: () => navigate("/admin") } : {})}
+        {...(hasPlatformControlAccess ? { onAdmin: () => navigate("/admin") } : {})}
         {...(!hasTelegramIdentity ? { onSignOut: () => void signOut() } : {})}
       />
       {error ? <p className="status">{error}</p> : null}
