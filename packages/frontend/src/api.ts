@@ -9,10 +9,30 @@ import type {
   TeamLineupInput,
   TeamUpdateInput,
 } from "@hooma/contracts";
+import type {
+  CommunityCreateInput,
+  CommunityJoinRequest,
+  CommunityJoinRequestForFounder,
+  CommunityJoinResult,
+  CommunityPublicDetail,
+  CommunityPublicSummary,
+  CommunityRole,
+  CommunityUpdateInput,
+  CommunityVisibility,
+} from "@hooma/contracts/communities";
 import { request, type HoomaTransport } from "./http";
 
 export { HoomaApiError, request } from "./http";
 export type { HoomaTransport } from "./http";
+export type {
+  CommunityCreateInput,
+  CommunityJoinRequest,
+  CommunityJoinRequestForFounder,
+  CommunityJoinResult,
+  CommunityRole,
+  CommunityUpdateInput,
+  CommunityVisibility,
+};
 
 export type PublicProfile = {
   presentation: {
@@ -28,38 +48,8 @@ export type PublicProfile = {
     badgeUrl: string | null;
   }[];
 };
-export type CommunityRole = "FOUNDER" | "COACH" | "MEMBER";
-export type CommunityCreateInput = {
-  name: string;
-  description?: string | null;
-  city?: string | null;
-  houma?: string | null;
-  logoUrl?: string | null;
-  bannerUrl?: string | null;
-};
-export type CommunityUpdateInput = Partial<CommunityCreateInput>;
-export type PublicCommunitySummary = {
-  id: string;
-  slug: string;
-  name: string;
-  description: string | null;
-  city: string | null;
-  houma: string | null;
-  logoUrl: string | null;
-  bannerUrl: string | null;
-  createdAt: string;
-};
-export type PublicCommunityDetail = {
-  id: string;
-  slug: string;
-  name: string;
-  description: string | null;
-  city: string | null;
-  houma: string | null;
-  logoUrl: string | null;
-  bannerUrl: string | null;
-  _count: { teams: number; memberships: number };
-};
+export type PublicCommunitySummary = CommunityPublicSummary;
+export type PublicCommunityDetail = CommunityPublicDetail;
 export type PublicCommunityList = { items: PublicCommunitySummary[]; nextCursor: string | null };
 export type CreatedCommunity = {
   id: string;
@@ -70,6 +60,8 @@ export type CreatedCommunity = {
   houma: string | null;
   logoUrl: string | null;
   bannerUrl: string | null;
+  visibility: CommunityVisibility;
+  joinPolicy: "OPEN" | "APPROVAL_REQUIRED";
   status: "ACTIVE" | "ARCHIVED";
   createdByUserId: string;
   createdAt: string;
@@ -247,7 +239,7 @@ export function createHoomaApi(transport: HoomaTransport) {
         body: JSON.stringify(input),
       }),
     update: (id: string, input: CommunityUpdateInput) =>
-      request(transport, `/api/v1/communities/${encodeURIComponent(id)}`, {
+      request<CreatedCommunity>(transport, `/api/v1/communities/${encodeURIComponent(id)}`, {
         method: "PATCH",
         body: JSON.stringify(input),
       }),
@@ -256,21 +248,48 @@ export function createHoomaApi(transport: HoomaTransport) {
         method: "DELETE",
       }),
     join: (id: string) =>
-      request<{ membership: { role: CommunityRole } }>(
+      request<CommunityJoinResult>(transport, `/api/v1/communities/${encodeURIComponent(id)}/join`, {
+        method: "POST",
+      }),
+    myJoinRequest: (id: string) =>
+      request<{ request: CommunityJoinRequest | null }>(
         transport,
-        `/api/v1/communities/${encodeURIComponent(id)}/join`,
-        {
-          method: "POST",
-        },
+        `/api/v1/communities/${encodeURIComponent(id)}/join-request`,
+      ),
+    cancelJoinRequest: (id: string) =>
+      request<{ ok: true }>(
+        transport,
+        `/api/v1/communities/${encodeURIComponent(id)}/join-request`,
+        { method: "DELETE" },
+      ),
+    joinRequests: (id: string) =>
+      request<{ requests: CommunityJoinRequestForFounder[] }>(
+        transport,
+        `/api/v1/communities/${encodeURIComponent(id)}/join-requests`,
+      ),
+    approveJoinRequest: (id: string, userId: string) =>
+      request<{ ok: true }>(
+        transport,
+        `/api/v1/communities/${encodeURIComponent(id)}/join-requests/${encodeURIComponent(userId)}/approve`,
+        { method: "POST" },
+      ),
+    declineJoinRequest: (id: string, userId: string) =>
+      request<{ ok: true }>(
+        transport,
+        `/api/v1/communities/${encodeURIComponent(id)}/join-requests/${encodeURIComponent(userId)}/decline`,
+        { method: "POST" },
       ),
     leave: (id: string) =>
       request<{ ok: true }>(transport, `/api/v1/communities/${encodeURIComponent(id)}/membership`, {
         method: "DELETE",
       }),
     members: (id: string) =>
-      request<CommunityMember[]>(
+      request<CommunityMember[]>(transport, `/api/v1/communities/${encodeURIComponent(id)}/members`),
+    addMember: (id: string, username: string) =>
+      request<{ member: { userId: string; username: string } }>(
         transport,
         `/api/v1/communities/${encodeURIComponent(id)}/members`,
+        { method: "POST", body: JSON.stringify({ username }) },
       ),
     removeMember: (id: string, userId: string) =>
       request<{ ok: true }>(
@@ -330,9 +349,7 @@ export function createHoomaApi(transport: HoomaTransport) {
       request(
         transport,
         `/api/v1/teams/${encodeURIComponent(teamId)}/players/${encodeURIComponent(userId)}`,
-        {
-          method: "DELETE",
-        },
+        { method: "DELETE" },
       ),
     assignAssistant: (
       teamId: string,
@@ -347,9 +364,7 @@ export function createHoomaApi(transport: HoomaTransport) {
       request(
         transport,
         `/api/v1/teams/${encodeURIComponent(teamId)}/assistants/${encodeURIComponent(userId)}`,
-        {
-          method: "DELETE",
-        },
+        { method: "DELETE" },
       ),
     currentLineup: (teamId: string) =>
       request<TeamLineupView | null>(
