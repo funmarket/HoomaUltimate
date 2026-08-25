@@ -10,6 +10,7 @@ import type {
 } from "../api";
 import { useHoomaFrontend } from "../context";
 import { HoomaWhistleBoard } from "../whistle/HoomaWhistleBoard";
+import { CommunityLogo, CommunityMediaSurface } from "./CommunityMedia";
 import { HoomaMembershipRequests } from "./HoomaMembershipRequests";
 
 type CreationType = "HOOMA" | "TEAM" | "ULTRAS" | "GAMERS";
@@ -253,21 +254,17 @@ export function HoomaPage() {
                 key={community.id}
                 onClick={() => navigate(`/hooma/${community.id}`)}
               >
-                <div
+                <CommunityMediaSurface
                   className="hooma-card-media"
-                  style={
-                    community.bannerUrl
-                      ? { backgroundImage: `url(${community.bannerUrl})` }
-                      : undefined
-                  }
+                  bannerUrl={community.bannerUrl}
                 >
-                  {community.logoUrl ? (
-                    <img src={community.logoUrl} alt="" />
-                  ) : (
-                    <span>{initials(community.name)}</span>
-                  )}
+                  <CommunityLogo
+                    className="hooma-card-logo"
+                    logoUrl={community.logoUrl}
+                    name={community.name}
+                  />
                   <span className="hooma-visibility-chip">{community.visibility}</span>
-                </div>
+                </CommunityMediaSurface>
                 <div className="hooma-card-copy">
                   <span className="eyebrow">{community.houma || community.city || "HOOMA"}</span>
                   <h3>{community.name}</h3>
@@ -323,23 +320,18 @@ export function CreateHoomaPage() {
 
   return (
     <div className="page hooma-create-page">
-      <section
+      <CommunityMediaSurface
+        as="section"
         className="hooma-create-preview panel"
-        style={
-          bannerUrl
-            ? {
-                backgroundImage: `linear-gradient(180deg, rgba(4,5,5,.12), rgba(4,5,5,.9)), url(${bannerUrl})`,
-              }
-            : undefined
-        }
+        bannerUrl={bannerUrl}
+        gradient="linear-gradient(180deg, rgba(4,5,5,.12), rgba(4,5,5,.9))"
       >
-        <div className="hooma-preview-logo">
-          {logoUrl ? (
-            <img src={logoUrl} alt="Community logo preview" />
-          ) : (
-            <span>{initials(name || "HOOMA")}</span>
-          )}
-        </div>
+        <CommunityLogo
+          className="hooma-preview-logo"
+          logoUrl={logoUrl}
+          name={name || "HOOMA"}
+          alt="Community logo preview"
+        />
         <div>
           <span className="eyebrow">BUILD YOUR NEIGHBORHOOD</span>
           <h1>{name || "Your HOOMA"}</h1>
@@ -349,7 +341,7 @@ export function CreateHoomaPage() {
           </p>
           <span className="hooma-visibility-chip">{visibility}</span>
         </div>
-      </section>
+      </CommunityMediaSurface>
       <form className="panel hooma-create-form" onSubmit={submit}>
         <div className="hooma-form-intro">
           <span className="eyebrow">IDENTITY</span>
@@ -575,23 +567,18 @@ export function HoomaDetailPage({ communityId }: { readonly communityId: string 
 
   return (
     <div className="page hooma-detail-page">
-      <section
+      <CommunityMediaSurface
+        as="section"
         className="hooma-hq-hero"
-        style={
-          community.bannerUrl
-            ? {
-                backgroundImage: `linear-gradient(180deg, rgba(4,5,5,.08), rgba(4,5,5,.92)), url(${community.bannerUrl})`,
-              }
-            : undefined
-        }
+        bannerUrl={community.bannerUrl}
+        gradient="linear-gradient(180deg, rgba(4,5,5,.08), rgba(4,5,5,.92))"
       >
-        <div className="hooma-hq-logo">
-          {community.logoUrl ? (
-            <img src={community.logoUrl} alt={`${community.name} logo`} />
-          ) : (
-            <span>{initials(community.name)}</span>
-          )}
-        </div>
+        <CommunityLogo
+          className="hooma-hq-logo"
+          logoUrl={community.logoUrl}
+          name={community.name}
+          alt={`${community.name} logo`}
+        />
         <div className="hooma-hq-copy">
           <span className="eyebrow">
             {community.houma || community.city || "NEIGHBORHOOD HOOMA"}
@@ -658,7 +645,7 @@ export function HoomaDetailPage({ communityId }: { readonly communityId: string 
             ) : null}
           </div>
         </div>
-      </section>
+      </CommunityMediaSurface>
 
       {error ? <div className="error-box">{error}</div> : null}
 
