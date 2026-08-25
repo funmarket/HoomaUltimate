@@ -1,9 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import type { LoginMethodsResponse } from "@hooma/contracts/auth-linking";
-import {
-  AppearanceSettings,
-  type AppearanceMode,
-} from "@hooma/ui";
+import { AppearanceSettings, type AppearanceMode } from "@hooma/ui";
 import {
   attachWebCredential,
   readLoginMethods,
@@ -25,11 +22,21 @@ const WEB_CHOICES = [
     label: "Pitch black / gold",
     description: "Use HOOMA's primary dark football presentation.",
   },
-  { value: "light", label: "Light", description: "Use a bright high-contrast HOOMA presentation." },
-] as const satisfies readonly { value: AppearanceMode; label: string; description: string }[];
+  {
+    value: "light",
+    label: "Light",
+    description: "Use a bright high-contrast HOOMA presentation.",
+  },
+] as const satisfies readonly {
+  value: AppearanceMode;
+  label: string;
+  description: string;
+}[];
 
 export function SettingsPage() {
-  const [mode, setMode] = useState<AppearanceMode>(() => getWebAppearanceMode());
+  const [mode, setMode] = useState<AppearanceMode>(() =>
+    getWebAppearanceMode(),
+  );
   const { me, loading: accountLoading } = useAccount();
   const { transport } = useHoomaFrontend();
   const [methods, setMethods] = useState<LoginMethodsResponse | null>(null);
@@ -61,12 +68,18 @@ export function SettingsPage() {
     try {
       const result = await startTelegramLink(transport, "/settings");
       if (!result.enabled || !result.authorizationUrl) {
-        setError("Telegram Web login is not configured for this environment yet.");
+        setError(
+          "Telegram Web login is not configured for this environment yet.",
+        );
         return;
       }
       window.location.assign(result.authorizationUrl);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Unable to start Telegram linking");
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : "Unable to start Telegram linking",
+      );
     }
   }
 
@@ -82,32 +95,46 @@ export function SettingsPage() {
         email: String(data.get("email")) || null,
       });
       setMethods(next);
-      setMessage("Web login added. You can now sign in to this same HOOMA account either way.");
+      setMessage(
+        "Web login added. You can now sign in to this same HOOMA account either way.",
+      );
       event.currentTarget.reset();
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Unable to add Web login");
+      setError(
+        reason instanceof Error ? reason.message : "Unable to add Web login",
+      );
     }
   }
 
   return (
     <div className="settings-stack">
-      <AppearanceSettings mode={mode} choices={WEB_CHOICES} onChange={updateMode} />
+      <AppearanceSettings
+        mode={mode}
+        choices={WEB_CHOICES}
+        onChange={updateMode}
+      />
 
-      <section className="settings-security" aria-labelledby="login-methods-title">
+      <section
+        className="settings-security"
+        aria-labelledby="login-methods-title"
+      >
         <p className="eyebrow">SIGN-IN &amp; SECURITY</p>
         <h2 id="login-methods-title">Login methods</h2>
         <p className="settings-security__intro">
-          Link another sign-in method only if you want it. Your profile, Teams and activity stay on
-          one HOOMA account.
+          Link another sign-in method only if you want it. Your profile, Teams
+          and activity stay on one HOOMA account.
         </p>
 
         {accountLoading ? <p className="status">Loading account…</p> : null}
         {!accountLoading && !me ? (
           <p>
-            <a href="/login?returnTo=%2Fsettings">Sign in</a> to manage login methods.
+            <a href="/login?returnTo=%2Fsettings">Sign in</a> to manage login
+            methods.
           </p>
         ) : null}
-        {me && methodsLoading ? <p className="status">Loading login methods…</p> : null}
+        {me && methodsLoading ? (
+          <p className="status">Loading login methods…</p>
+        ) : null}
 
         {me && methods ? (
           <div className="login-methods">
@@ -135,16 +162,25 @@ export function SettingsPage() {
               <div>
                 <strong>Web login</strong>
                 <p>
-                  {methods.web ? `Connected as ${methods.web.loginUsername}` : "Not configured"}
+                  {methods.web
+                    ? `Connected as ${methods.web.loginUsername}`
+                    : "Not configured"}
                 </p>
               </div>
               {methods.web ? (
                 <span className="login-method-status">Connected</span>
               ) : (
-                <form className="login-method-form" onSubmit={(event) => void addWebLogin(event)}>
+                <form
+                  className="login-method-form"
+                  onSubmit={(event) => void addWebLogin(event)}
+                >
                   <label>
                     Login username
-                    <input name="loginUsername" autoComplete="username" required />
+                    <input
+                      name="loginUsername"
+                      autoComplete="username"
+                      required
+                    />
                   </label>
                   <label>
                     Password
