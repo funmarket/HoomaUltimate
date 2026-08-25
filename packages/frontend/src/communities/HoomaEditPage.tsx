@@ -195,11 +195,7 @@ export function HoomaEditPage({ communityId }: { readonly communityId: string })
             <div className="hooma-form-actions">
               <a
                 className="button secondary"
-                href={
-                  me?.platformRoles.includes("PLATFORM_ADMIN")
-                    ? "/admin"
-                    : `/hooma/${community.id}`
-                }
+                href={me?.platformRoles.includes("PLATFORM_ADMIN") ? "/admin" : `/hooma/${community.id}`}
               >
                 Cancel
               </a>
