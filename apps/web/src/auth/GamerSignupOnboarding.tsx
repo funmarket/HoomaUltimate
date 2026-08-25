@@ -78,7 +78,9 @@ export function useGamerSignupSelection() {
 export function validateGamerSignupSelection(selection: GamerSignupSelection): string | null {
   if (!selection.enabled) return null;
   if (selection.gamesError) return "Gamer games could not be loaded. Try again before continuing.";
-  const selectedGames = selection.games.filter((game) => selection.selectedGameIds.includes(game.id));
+  const selectedGames = selection.games.filter((game) =>
+    selection.selectedGameIds.includes(game.id),
+  );
   if (selectedGames.length === 0) {
     return "Choose at least one game to finish Gamer setup during signup.";
   }
@@ -92,7 +94,9 @@ export async function completeGamerSignupOnboarding(
 ): Promise<void> {
   if (!selection.enabled) return;
   const gamerOnboarding = createGamerOnboardingApi(transport);
-  const selectedGames = selection.games.filter((game) => selection.selectedGameIds.includes(game.id));
+  const selectedGames = selection.games.filter((game) =>
+    selection.selectedGameIds.includes(game.id),
+  );
   const profile = await gamerOnboarding.profile();
   await gamerOnboarding.updateProfile(gamerOptInProfileInput(profile));
   await Promise.all(
