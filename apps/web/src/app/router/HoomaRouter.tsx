@@ -150,6 +150,7 @@ function HoomaRoutes() {
       },
     };
   }, [runtime.initData]);
+  const accountEntry = runtime.initData ? <TelegramAccountActivationPage /> : <AuthApp />;
 
   return (
     <HoomaFrontendProvider transport={transport}>
@@ -159,8 +160,8 @@ function HoomaRoutes() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/telegram" element={<HomePage />} />
-              <Route path="/login" element={<AuthApp />} />
-              <Route path="/register" element={<AuthApp />} />
+              <Route path="/login" element={accountEntry} />
+              <Route path="/register" element={accountEntry} />
               <Route path="/account/create" element={<TelegramAccountActivationPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/profile/:username" element={<PublicProfileRoute />} />
