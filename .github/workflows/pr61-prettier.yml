@@ -1,0 +1,55 @@
+name: PR61 exact prettier
+
+on:
+  push:
+    branches:
+      - tmp/pr61-prettier
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp/pr61-prettier
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - name: Format only CI-flagged PR 61 files
+        run: >-
+          npx prettier --write
+          apps/api/src/modules/places/application/place.service.ts
+          apps/api/src/modules/places/http/place.routes.ts
+          apps/api/src/modules/places/infrastructure/prisma-place.repository.ts
+          apps/api/src/modules/platform-admin/application/platform-admin.service.ts
+          apps/api/src/modules/platform-admin/infrastructure/prisma-platform-admin.repository.ts
+          apps/web/src/account/AccountProvider.tsx
+          apps/web/src/admin/AdminApp.tsx
+          apps/web/src/app/router/HoomaRouter.tsx
+          packages/frontend/src/places/PlacesPages.tsx
+          tests/platform-owner-places.integration.test.ts
+      - name: Commit exact Prettier output
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/api/src/modules/places/application/place.service.ts \
+            apps/api/src/modules/places/http/place.routes.ts \
+            apps/api/src/modules/places/infrastructure/prisma-place.repository.ts \
+            apps/api/src/modules/platform-admin/application/platform-admin.service.ts \
+            apps/api/src/modules/platform-admin/infrastructure/prisma-platform-admin.repository.ts \
+            apps/web/src/account/AccountProvider.tsx \
+            apps/web/src/admin/AdminApp.tsx \
+            apps/web/src/app/router/HoomaRouter.tsx \
+            packages/frontend/src/places/PlacesPages.tsx \
+            tests/platform-owner-places.integration.test.ts
+          git commit -m "chore: apply exact Prettier output for PR 61"
+          git push origin HEAD:tmp/pr61-prettier
