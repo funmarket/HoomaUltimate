@@ -48,7 +48,11 @@ export class RedisWhistleStore implements WhistleTransientStore {
     }
   }
 
-  async putBody(whistleId: string, body: string, expiresInMilliseconds: number): Promise<void> {
+  async putBody(
+    whistleId: string,
+    body: string,
+    expiresInMilliseconds: number,
+  ): Promise<void> {
     const ttl = Math.max(1, Math.floor(expiresInMilliseconds));
     const result = await this.command([
       "SET",
