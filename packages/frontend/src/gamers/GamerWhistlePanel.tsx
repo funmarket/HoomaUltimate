@@ -28,7 +28,11 @@ export function GamerWhistlePanel({
   readonly onClose: () => void;
 }) {
   const { transport, protectedError } = useHoomaFrontend();
-  const [feed, setFeed] = useState<WhistleList>({ items: [], remainingToday: 11, resetsAt: "" });
+  const [feed, setFeed] = useState<WhistleList>({
+    items: [],
+    remainingToday: 11,
+    resetsAt: "",
+  });
   const [body, setBody] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -102,7 +106,9 @@ export function GamerWhistlePanel({
           />
           <button
             type="submit"
-            disabled={!body.trim() || count > MAX_GRAPHEMES || sending || feed.remainingToday <= 0}
+            disabled={
+              !body.trim() || count > MAX_GRAPHEMES || sending || feed.remainingToday <= 0
+            }
           >
             {sending ? "..." : "SEND"}
           </button>
