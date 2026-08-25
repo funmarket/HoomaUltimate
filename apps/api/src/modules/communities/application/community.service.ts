@@ -50,6 +50,14 @@ export class CommunityService {
     return community;
   }
 
+  async canViewActivity(communityId: string, userId?: string | null): Promise<boolean> {
+    const policy = await this.repository.membershipPolicy(communityId);
+    if (!policy || policy.status !== "ACTIVE") return false;
+    if (policy.visibility === "PUBLIC") return true;
+    if (!userId) return false;
+    return Boolean(await this.repository.managerRole(communityId, userId));
+  }
+
   create(userId: string, input: CommunityCreateInput) {
     return this.repository.create(userId, {
       ...input,
