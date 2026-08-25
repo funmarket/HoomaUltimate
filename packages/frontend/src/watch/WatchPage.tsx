@@ -154,12 +154,24 @@ export function WatchPage() {
 
   const cities = useMemo(
     () =>
-      [...new Set(watchPlaces.map((item) => item.place.city).filter((value): value is string => Boolean(value)))].sort(),
+      [
+        ...new Set(
+          watchPlaces
+            .map((item) => item.place.city)
+            .filter((value): value is string => Boolean(value)),
+        ),
+      ].sort(),
     [watchPlaces],
   );
   const houmas = useMemo(
     () =>
-      [...new Set(watchPlaces.map((item) => item.place.houma).filter((value): value is string => Boolean(value)))].sort(),
+      [
+        ...new Set(
+          watchPlaces
+            .map((item) => item.place.houma)
+            .filter((value): value is string => Boolean(value)),
+        ),
+      ].sort(),
     [watchPlaces],
   );
 
@@ -213,12 +225,17 @@ export function WatchPage() {
 
       <div className="watch-discovery-controls">
         <label className="watch-search">
-          <span className="sr-only">Search Watch events or venues</span>
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.8" />
-            <path d="m16 16 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            <path
+              d="m16 16 4 4"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
           </svg>
           <input
+            aria-label="Search Watch events or venues"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search events or venues"
