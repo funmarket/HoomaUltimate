@@ -7,8 +7,13 @@ export const webCredentialAttachSchema = z.object({
   email: z.string().trim().email().max(320).optional().nullable(),
 });
 
-export const telegramLinkCodeSchema = z.object({
-  code: z.string().trim().min(12).max(64),
+export const telegramLinkClaimSchema = z.object({
+  loginUsername: usernameSchema,
+  code: z
+    .string()
+    .trim()
+    .length(16)
+    .regex(/^[A-Za-z0-9_-]+$/),
 });
 
 export const loginMethodsResponseSchema = z.object({
@@ -25,12 +30,13 @@ export const loginMethodsResponseSchema = z.object({
     .nullable(),
 });
 
-export const telegramLinkIntentResponseSchema = z.object({
+export const telegramLinkCodeResponseSchema = z.object({
+  loginUsername: z.string(),
   code: z.string(),
   expiresAt: z.string().datetime(),
 });
 
 export type WebCredentialAttachInput = z.infer<typeof webCredentialAttachSchema>;
-export type TelegramLinkCodeInput = z.infer<typeof telegramLinkCodeSchema>;
+export type TelegramLinkClaimInput = z.infer<typeof telegramLinkClaimSchema>;
 export type LoginMethodsResponse = z.infer<typeof loginMethodsResponseSchema>;
-export type TelegramLinkIntentResponse = z.infer<typeof telegramLinkIntentResponseSchema>;
+export type TelegramLinkCodeResponse = z.infer<typeof telegramLinkCodeResponseSchema>;
