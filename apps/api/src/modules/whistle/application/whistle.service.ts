@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { AppError } from "../../../http/errors/app-error.js";
 import type { CommunityService } from "../../communities/application/community.service.js";
+import type { EventService } from "../../events/application/event.service.js";
 import type {
   WhistleContextType,
   WhistleMetadataRecord,
@@ -37,6 +38,7 @@ export class WhistleService {
     private readonly repository: WhistleRepository,
     private readonly transientStore: WhistleTransientStore,
     private readonly communities: CommunityService,
+    private readonly events: EventService,
   ) {}
 
   private async authorizeContext(
@@ -46,6 +48,10 @@ export class WhistleService {
   ): Promise<void> {
     if (contextType === "COMMUNITY") {
       await this.communities.requireMember(contextId, userId);
+      return;
+    }
+    if (contextType === "EVENT") {
+      await this.events.requireMemberContent(userId, contextId);
       return;
     }
     throw new AppError(
