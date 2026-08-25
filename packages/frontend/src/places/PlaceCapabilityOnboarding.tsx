@@ -1,8 +1,5 @@
 import { useMemo, useState, type FormEvent } from "react";
-import type {
-  PlaceCapabilityKind,
-  PublicPlaceSummary,
-} from "@hooma/contracts/platform-management";
+import type { PlaceCapabilityKind, PublicPlaceSummary } from "@hooma/contracts/platform-management";
 import { useHoomaFrontend } from "../context";
 import { createPlatformManagementApi } from "./platform-management-api";
 
