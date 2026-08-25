@@ -23,7 +23,10 @@ const config = loadApiConfig({
 const db = getDatabaseClient();
 
 function encodeRedis(parts: readonly string[]): string {
-  return `*${parts.length}\r\n${parts.map((part) => `$${Buffer.byteLength(part)}\r\n${part}\r\n`).join("")}`;
+  const payload = parts
+    .map((part) => `$${Buffer.byteLength(part)}\r\n${part}\r\n`)
+    .join("");
+  return `*${parts.length}\r\n${payload}`;
 }
 
 async function redisCommand(parts: readonly string[]): Promise<string | number | null> {
