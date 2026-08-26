@@ -15,7 +15,9 @@ function eventDateParts(event: PublicEvent): EventDateParts {
   const startsAt = new Date(event.startsAt);
   const options = { timeZone: event.timezone } as const;
   try {
-    const weekday = new Intl.DateTimeFormat("en-US", { weekday: "short", ...options }).format(startsAt);
+    const weekday = new Intl.DateTimeFormat("en-US", { weekday: "short", ...options }).format(
+      startsAt,
+    );
     const day = new Intl.DateTimeFormat("en-US", { day: "2-digit", ...options }).format(startsAt);
     const month = new Intl.DateTimeFormat("en-US", { month: "short", ...options })
       .format(startsAt)
