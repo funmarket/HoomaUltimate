@@ -23,7 +23,9 @@ export type S3ObjectStorageConfig = {
 };
 
 function hex(bytes: ArrayBuffer): string {
-  return Array.from(new Uint8Array(bytes), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return Array.from(new Uint8Array(bytes), (byte) => byte.toString(16).padStart(2, "0")).join(
+    "",
+  );
 }
 
 async function sha256(value: string | Uint8Array): Promise<string> {
@@ -43,8 +45,9 @@ async function hmac(key: ArrayBuffer | Uint8Array, value: string): Promise<Array
 }
 
 function encodePathSegment(value: string): string {
-  return encodeURIComponent(value).replace(/[!'()*]/g, (character) =>
-    `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
+  return encodeURIComponent(value).replace(
+    /[!'()*]/g,
+    (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
   );
 }
 
@@ -117,7 +120,10 @@ export class S3ObjectStorage implements ObjectStorage {
       scope,
       await sha256(canonicalRequest),
     ].join("\n");
-    const dateKey = await hmac(new TextEncoder().encode(`AWS4${this.config.secretAccessKey}`), shortDate);
+    const dateKey = await hmac(
+      new TextEncoder().encode(`AWS4${this.config.secretAccessKey}`),
+      shortDate,
+    );
     const regionKey = await hmac(dateKey, this.config.region);
     const serviceKey = await hmac(regionKey, "s3");
     const signingKey = await hmac(serviceKey, "aws4_request");
