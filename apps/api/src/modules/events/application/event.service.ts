@@ -25,6 +25,11 @@ export class EventService {
     return event;
   }
 
+  async getManaged(userId: string, eventId: string) {
+    await this.requireManage(userId, eventId);
+    return this.getPublic(eventId);
+  }
+
   async getMyRsvp(userId: string, eventId: string) {
     const access = await this.repository.access(eventId);
     if (!access) throw new EventError("EVENT_NOT_FOUND", "Event not found");
