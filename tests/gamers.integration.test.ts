@@ -266,7 +266,10 @@ test("global Gamer discovery includes real active profiles while Challengers sta
       items: Array<{ id: string; handle: string }>;
     };
     assert.ok(challengerBody.items.some((item) => item.id === openProfile.id));
-    assert.equal(challengerBody.items.some((item) => item.id === closedProfile.id), false);
+    assert.equal(
+      challengerBody.items.some((item) => item.id === closedProfile.id),
+      false,
+    );
 
     const discoveryResponse = await fetch(`${base}/api/public/v1/gamers/discovery`);
     assert.equal(discoveryResponse.status, 200);
@@ -335,7 +338,10 @@ test("global Gamer discovery includes real active profiles while Challengers sta
     const afterInactive = (await discoveryAfterInactive.json()) as {
       items: Array<{ id: string }>;
     };
-    assert.equal(afterInactive.items.some((item) => item.id === inactiveProfile.id), false);
+    assert.equal(
+      afterInactive.items.some((item) => item.id === inactiveProfile.id),
+      false,
+    );
 
     const inactivePublic = await fetch(
       `${base}/api/public/v1/gamers/games/${inactiveGame.id}/challengers`,
@@ -432,10 +438,7 @@ test("G3 challenges enforce ownership, same-game/open rules, duplicate safety an
       authenticatedPost(bobCookie, { challengedProfileId: alice.id }),
     );
     assert.equal(reverseDirectionDuplicate.status, 409);
-    assert.equal(
-      await db.gamerChallenge.count({ where: { gameId: fc.id, status: "PENDING" } }),
-      1,
-    );
+    assert.equal(await db.gamerChallenge.count({ where: { gameId: fc.id, status: "PENDING" } }), 1);
 
     const forbiddenAccept = await fetch(
       `${base}/api/v1/gamers/games/${fc.id}/challenges/${challenge.id}/accept`,
@@ -478,7 +481,9 @@ test("G3 challenges enforce ownership, same-game/open rules, duplicate safety an
     });
     assert.equal(aliceArena.status, 200);
     const arenaBody = (await aliceArena.json()) as { items: Array<{ id: string; status: string }> };
-    assert.ok(arenaBody.items.some((item) => item.id === challenge.id && item.status === "ACCEPTED"));
+    assert.ok(
+      arenaBody.items.some((item) => item.id === challenge.id && item.status === "ACCEPTED"),
+    );
 
     const second = await fetch(
       `${base}/api/v1/gamers/games/${fc.id}/challenges`,
@@ -528,10 +533,7 @@ test("G3 challenges enforce ownership, same-game/open rules, duplicate safety an
       ),
     ]);
     assert.deepEqual(concurrentPair.map((response) => response.status).sort(), [201, 409]);
-    assert.equal(
-      await db.gamerChallenge.count({ where: { gameId: fc.id, status: "PENDING" } }),
-      1,
-    );
+    assert.equal(await db.gamerChallenge.count({ where: { gameId: fc.id, status: "PENDING" } }), 1);
 
     const inactiveCreate = await fetch(
       `${base}/api/v1/gamers/games`,
@@ -540,10 +542,9 @@ test("G3 challenges enforce ownership, same-game/open rules, duplicate safety an
     assert.equal(inactiveCreate.status, 201);
     const inactive = (await inactiveCreate.json()) as { id: string };
     await db.gamerGame.update({ where: { id: inactive.id }, data: { status: "INACTIVE" } });
-    const inactiveChallenges = await fetch(
-      `${base}/api/v1/gamers/games/${inactive.id}/challenges`,
-      { headers: { cookie: aliceCookie, origin: config.WEB_ORIGIN } },
-    );
+    const inactiveChallenges = await fetch(`${base}/api/v1/gamers/games/${inactive.id}/challenges`, {
+      headers: { cookie: aliceCookie, origin: config.WEB_ORIGIN },
+    });
     assert.equal(inactiveChallenges.status, 404);
   } finally {
     await new Promise<void>((resolve, reject) =>
