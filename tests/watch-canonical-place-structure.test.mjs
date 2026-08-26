@@ -41,9 +41,14 @@ test("Prisma keeps one Place and one Event path for Watch", () => {
   assert.match(schema, /model Place \{[\s\S]*?events\s+Event\[\]/);
 });
 
-test("Watch uses the collector ticket master and canonical Place image", () => {
+test("Watch uses one shared collector ticket component with canonical Place context", () => {
   const watch = source("packages/frontend/src/watch/WatchPage.tsx");
-  assert.match(watch, /WATCH_COLLECTOR_TICKET_MASTER/);
-  assert.match(watch, /place\.imageUrl/);
-  assert.match(watch, /href=\{`\/places\/\$\{place\.id\}`\}/);
+  const ticket = source("packages/frontend/src/watch/WatchTicket.tsx");
+  const places = source("packages/frontend/src/places/PlacesPages.tsx");
+
+  assert.match(watch, /import \{ WatchTicket \} from "\.\/WatchTicket"/);
+  assert.match(ticket, /WATCH_COLLECTOR_TICKET_MASTER/);
+  assert.match(ticket, /place\.imageUrl/);
+  assert.match(ticket, /\/places\/\$\{place\.id\}\?eventId=/);
+  assert.match(places, /<WatchTicket event=\{selectedEvent\} \/>/);
 });
