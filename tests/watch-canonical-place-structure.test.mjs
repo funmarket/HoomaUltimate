@@ -112,7 +112,7 @@ test("Watch Event errors use canonical Community, Place and manage boundaries", 
   }
 });
 
-test("Watch uses one shared collector ticket with contained logo title logo layout", () => {
+test("Watch uses one shared collector ticket with full centered team names between logos", () => {
   const watch = source("packages/frontend/src/watch/WatchPage.tsx");
   const ticket = source("packages/frontend/src/watch/WatchTicket.tsx");
   const ticketCss = source("packages/frontend/src/watch/watch.css");
@@ -124,7 +124,17 @@ test("Watch uses one shared collector ticket with contained logo title logo layo
   assert.match(ticket, /TeamMark name=\{matchup\.teamOneName\}/);
   assert.match(ticket, /watch-ticket__matchup-title/);
   assert.match(ticket, /TeamMark name=\{matchup\.teamTwoName\}/);
-  assert.match(ticketCss, /\.watch-ticket__matchup \{[\s\S]*?grid-template-columns:/);
+  assert.match(
+    ticketCss,
+    /\.watch-ticket__matchup \{[\s\S]*?grid-template-columns:\s*minmax\(24px, 0\.2fr\) minmax\(0, 1\.6fr\) minmax\(24px, 0\.2fr\)/,
+  );
+  const titleRule =
+    ticketCss.match(/\.watch-ticket__matchup-title strong \{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.match(titleRule, /font-size:\s*clamp\(0\.48rem, 1\.85cqw, 1\.15rem\)/);
+  assert.match(titleRule, /white-space:\s*normal/);
+  assert.match(titleRule, /overflow-wrap:\s*anywhere/);
+  assert.doesNotMatch(titleRule, /text-overflow:\s*ellipsis/);
+  assert.doesNotMatch(titleRule, /white-space:\s*nowrap/);
   assert.match(ticket, /\/places\/\$\{place\.id\}\?eventId=/);
   assert.match(places, /<WatchTicket event=\{selectedEvent\} \/>/);
 });
