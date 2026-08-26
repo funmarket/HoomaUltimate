@@ -12,7 +12,8 @@ export function CreateEventPage() {
   const placeApi = useMemo(() => createPlatformManagementApi(transport), [transport]);
   const searchParams = new URLSearchParams(window.location.search);
   const watchMode = searchParams.get("type") === "WATCH";
-  const initialWatchKind: WatchEventKind = searchParams.get("kind") === "CULTURAL" ? "CULTURAL" : "MATCH";
+  const initialWatchKind: WatchEventKind =
+    searchParams.get("kind") === "CULTURAL" ? "CULTURAL" : "MATCH";
   const [me, setMe] = useState<MeResponse | null>(null);
   const [places, setPlaces] = useState<PublicPlaceSummary[]>([]);
   const [pending, setPending] = useState(false);
