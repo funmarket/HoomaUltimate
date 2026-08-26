@@ -9,8 +9,9 @@ import type {
 } from "@hooma/contracts/gamers";
 import { useHoomaFrontend } from "../context";
 import { createGamersApi } from "./api";
-import { GamerWhistlePanel } from "./GamerWhistlePanel";
-import { createGamerOnboardingApi, gamerOptInProfileInput } from "./onboarding";
+import { GamerChallengeSetupModal } from "./GamerChallengeSetupModal";
+import { GamerHudCard } from "./GamerHudCard";
+import { createGamerOnboardingApi } from "./onboarding";
 
 type HubTab = "CHALLENGERS" | "ARENA";
 
@@ -18,13 +19,8 @@ function errorMessage(reason: unknown): string {
   return reason instanceof Error ? reason.message : "Unexpected Gamers error";
 }
 
-function initialPendingChallengeProfileId(): string | null {
-  const url = new URL(window.location.href);
-  const profileId = url.searchParams.get("challenge");
-  if (!profileId) return null;
-  url.searchParams.delete("challenge");
-  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
-  return profileId;
+function initialChallengeProfileId(): string | null {
+  return new URL(window.location.href).searchParams.get("challenge");
 }
 
 export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
@@ -39,9 +35,8 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
   const [profile, setProfile] = useState<GamerProfile | null>(null);
   const [handle, setHandle] = useState("");
   const [openToChallenge, setOpenToChallenge] = useState(false);
-  const [pendingChallengeProfileId, setPendingChallengeProfileId] = useState<string | null>(
-    initialPendingChallengeProfileId,
-  );
+  const [challengeIntentId, setChallengeIntentId] = useState(initialChallengeProfileId);
+  const [challengeTarget, setChallengeTarget] = useState<GamerChallenger | null>(null);
   const [whistleProfileId, setWhistleProfileId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<HubTab>("CHALLENGERS");
   const [loading, setLoading] = useState(true);
@@ -71,6 +66,31 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
     [gamersApi],
   );
 
+  const loadMemberState = useCallback(
+    async (nextGame: GamerGame, account: MeResponse) => {
+      setIdentityLoading(true);
+      setMemberError("");
+      try {
+        const [identityResponse, profileResponse, challengeResponse] = await Promise.all([
+          onboardingApi.profile(),
+          gamersApi.myProfile(nextGame.id),
+          gamersApi.challenges(nextGame.id),
+        ]);
+        setIdentityProfile(identityResponse);
+        setProfile(profileResponse);
+        setHandle(profileResponse?.handle ?? "");
+        setOpenToChallenge(profileResponse?.openToChallenge ?? false);
+        setChallenges(challengeResponse.items);
+        setMe(account);
+      } catch (reason) {
+        setMemberError(protectedError(reason, "Unable to load your game activity"));
+      } finally {
+        setIdentityLoading(false);
+      }
+    },
+    [gamersApi, onboardingApi, protectedError],
+  );
+
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -80,12 +100,8 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
       .then(async (nextGame) => {
         if (!active) return;
         setGame(nextGame);
-        try {
-          const response = await gamersApi.challengers(nextGame.id);
-          if (active) setChallengers(response.items);
-        } catch (reason) {
-          if (active) setError(errorMessage(reason));
-        }
+        const response = await gamersApi.challengers(nextGame.id);
+        if (active) setChallengers(response.items);
       })
       .catch((reason) => {
         if (active) setError(errorMessage(reason));
@@ -99,12 +115,23 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
   }, [gameSlug, gamersApi]);
 
   useEffect(() => {
+    if (!game) return;
     let active = true;
     setAccountLoading(true);
     void api.identity
       .meOptional()
-      .then((response) => {
-        if (active) setMe(response);
+      .then(async (account) => {
+        if (!active) return;
+        setMe(account);
+        if (!account) {
+          setIdentityProfile(null);
+          setProfile(null);
+          setChallenges([]);
+          setHandle("");
+          setOpenToChallenge(false);
+          return;
+        }
+        await loadMemberState(game, account);
       })
       .catch((reason) => {
         if (active) setMemberError(errorMessage(reason));
@@ -115,92 +142,17 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
     return () => {
       active = false;
     };
-  }, [api]);
+  }, [api, game, loadMemberState]);
 
   useEffect(() => {
-    if (!game || !me) {
-      setIdentityProfile(null);
-      setProfile(null);
-      setChallenges([]);
-      setHandle("");
-      setOpenToChallenge(false);
-      setWhistleProfileId(null);
-      setIdentityLoading(false);
-      return;
-    }
-    let active = true;
-    setIdentityLoading(true);
-    setMemberError("");
-    void Promise.all([
-      onboardingApi.profile(),
-      gamersApi.myProfile(game.id),
-      gamersApi.challenges(game.id),
-    ])
-      .then(([identityResponse, profileResponse, challengeResponse]) => {
-        if (!active) return;
-        setIdentityProfile(identityResponse);
-        setProfile(profileResponse);
-        setHandle(profileResponse?.handle ?? "");
-        setOpenToChallenge(profileResponse?.openToChallenge ?? false);
-        setChallenges(challengeResponse.items);
-      })
-      .catch((reason) => {
-        if (active) setMemberError(protectedError(reason, "Unable to load your game activity"));
-      })
-      .finally(() => {
-        if (active) setIdentityLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [game, gamersApi, me, onboardingApi, protectedError]);
-
-  useEffect(() => {
-    if (!pendingChallengeProfileId || !game || !me || identityLoading) return;
-    if (!isGamer || !profile) {
-      setActiveTab("CHALLENGERS");
-      setNotice(
-        isGamer
-          ? `Add your ${game.name} handle above and this challenge will continue automatically.`
-          : "Join Gamers above, then add your game handle. This challenge will continue automatically.",
-      );
-    }
-  }, [game, identityLoading, isGamer, me, pendingChallengeProfileId, profile]);
-
-  async function enableGamerIdentity(): Promise<boolean> {
-    if (!identityProfile) return false;
-    if (identityProfile.identities.includes("GAMER")) return true;
-    setSaving(true);
-    setMemberError("");
-    try {
-      const updated = await onboardingApi.updateProfile(gamerOptInProfileInput(identityProfile));
-      setIdentityProfile(updated);
-      return true;
-    } catch (reason) {
-      setMemberError(protectedError(reason, "Unable to enable Gamer participation"));
-      return false;
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function sendChallengeNow(challengedProfileId: string) {
-    if (!game) return;
-    setActionId(challengedProfileId);
-    setMemberError("");
-    setNotice("");
-    try {
-      await gamersApi.createChallenge(game.id, { challengedProfileId });
-      setPendingChallengeProfileId(null);
-      setNotice("Challenge sent. It is now waiting for a response in Arena.");
-      await loadChallenges(game.id);
-      setActiveTab("ARENA");
-    } catch (reason) {
-      setMemberError(protectedError(reason, "Unable to send challenge"));
-    } finally {
-      setActionId("");
-    }
-  }
+    if (!challengeIntentId || !challengers.length) return;
+    const target = challengers.find((challenger) => challenger.id === challengeIntentId);
+    setChallengeIntentId(null);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("challenge");
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    if (target) setChallengeTarget(target);
+  }, [challengeIntentId, challengers]);
 
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -214,11 +166,7 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
       setHandle(saved.handle);
       setOpenToChallenge(saved.openToChallenge);
       await Promise.all([loadChallengers(game.id), loadChallenges(game.id)]);
-      if (pendingChallengeProfileId) {
-        await sendChallengeNow(pendingChallengeProfileId);
-      } else {
-        setNotice("Your game profile is updated.");
-      }
+      setNotice("Your game profile is updated.");
     } catch (reason) {
       setMemberError(protectedError(reason, "Unable to save your game profile"));
     } finally {
@@ -226,26 +174,33 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
     }
   }
 
-  async function challengePlayer(challengedProfileId: string) {
+  async function sendChallengeNow(challengedProfileId: string) {
     if (!game) return;
-    if (!me) {
-      const href = authenticationHref(`/gamers/games/${encodeURIComponent(gameSlug)}`);
-      if (href) window.location.assign(href);
+    setActionId(challengedProfileId);
+    setMemberError("");
+    setNotice("");
+    try {
+      await gamersApi.createChallenge(game.id, { challengedProfileId });
+      setNotice("Challenge sent. It is now waiting for a response in Arena.");
+      await loadChallenges(game.id);
+      setActiveTab("ARENA");
+    } catch (reason) {
+      setMemberError(protectedError(reason, "Unable to send challenge"));
+    } finally {
+      setActionId("");
+    }
+  }
+
+  function challengePlayer(challenger: GamerChallenger) {
+    if (!game) return;
+    if (me && isGamer && profile && !identityLoading) {
+      void sendChallengeNow(challenger.id);
       return;
     }
-    if (identityLoading) return;
-    if (!isGamer || !profile) {
-      setPendingChallengeProfileId(challengedProfileId);
-      setActiveTab("CHALLENGERS");
-      setMemberError("");
-      setNotice(
-        isGamer
-          ? `Add your ${game.name} handle above and this challenge will continue automatically.`
-          : "Join Gamers above, then add your game handle. This challenge will continue automatically.",
-      );
-      return;
-    }
-    await sendChallengeNow(challengedProfileId);
+    setNotice("");
+    setMemberError("");
+    setWhistleProfileId(null);
+    setChallengeTarget(challenger);
   }
 
   function toggleWhistle(otherProfileId: string) {
@@ -260,8 +215,8 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
       setMemberError("");
       setNotice(
         isGamer
-          ? `Add your ${game.name} handle above before sending a Gamer Whistle.`
-          : "Join Gamers above and add your game handle before sending a Gamer Whistle.",
+          ? `Add your ${game.name} handle before sending a Gamer Whistle.`
+          : "Join Gamers from the Gamers homepage before sending a Gamer Whistle.",
       );
       return;
     }
@@ -280,7 +235,7 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
     setNotice("");
     try {
       if (action === "accept" && !isGamer) {
-        if (!(await enableGamerIdentity())) return;
+        setIdentityProfile(await onboardingApi.joinGamers());
       }
       if (action === "accept") await gamersApi.acceptChallenge(game.id, challenge.id);
       if (action === "decline") await gamersApi.declineChallenge(game.id, challenge.id);
@@ -298,20 +253,6 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
     } finally {
       setActionId("");
     }
-  }
-
-  async function joinGamers() {
-    const enabled = await enableGamerIdentity();
-    if (!enabled) return;
-    if (profile && pendingChallengeProfileId) {
-      await sendChallengeNow(pendingChallengeProfileId);
-      return;
-    }
-    setNotice(
-      profile
-        ? "Gamer participation is enabled."
-        : `Gamer participation is enabled. Add your ${game?.name ?? "game"} handle to continue.`,
-    );
   }
 
   const signInHref = authenticationHref(`/gamers/games/${encodeURIComponent(gameSlug)}`);
@@ -352,9 +293,7 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
         </a>
         <span className="eyebrow">GAME HUB</span>
         <h1>{game.name}</h1>
-        <p>
-          Build your game identity, find a real opponent, and take accepted challenges into Arena.
-        </p>
+        <p>Build your game identity, find a real opponent, and take accepted challenges into Arena.</p>
       </header>
 
       <nav className="gamer-hub-tabs" aria-label={`${game.name} sections`}>
@@ -391,8 +330,8 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
               <span className="eyebrow">YOUR GAME IDENTITY</span>
               <h2 id="gamer-profile-heading">Your {game.name} profile</h2>
               <p className="muted">
-                Your game handle belongs here. Your HOOMA name, photo and bio stay owned by your
-                main profile.
+                Your game handle belongs here. Your HOOMA name, photo and bio stay owned by your main
+                profile.
               </p>
             </div>
             {accountLoading || identityLoading ? (
@@ -400,19 +339,13 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
             ) : null}
             {!accountLoading && !identityLoading && me && !isGamer ? (
               <div className="member-gate">
-                <strong>Join Gamers with your existing HOOMA profile.</strong>
+                <strong>Gamer participation is enabled from the Gamers homepage.</strong>
                 <span className="muted">
-                  This enables Gamer participation on your canonical HOOMA identity. It does not
-                  create a second account.
+                  Join once on your canonical HOOMA identity, then add game-specific handles here.
                 </span>
-                <button
-                  className="button"
-                  type="button"
-                  disabled={saving}
-                  onClick={() => void joinGamers()}
-                >
-                  {saving ? "Joining…" : "Join Gamers"}
-                </button>
+                <a className="button secondary" href="/gamers">
+                  Go to Gamers
+                </a>
               </div>
             ) : null}
             {!accountLoading && !identityLoading && me && isGamer ? (
@@ -445,14 +378,12 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
             ) : null}
             {!accountLoading && !me ? (
               <div className="member-gate">
-                <strong>Challengers are public. Challenge actions use your HOOMA account.</strong>
+                <strong>Challengers are public. Gamer actions use your HOOMA account.</strong>
                 {signInHref ? (
                   <a className="button secondary" href={signInHref}>
                     Sign in
                   </a>
-                ) : (
-                  <span className="muted">Open HOOMA through Telegram to authenticate.</span>
-                )}
+                ) : null}
               </div>
             ) : null}
           </section>
@@ -479,82 +410,18 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
                   const alreadyPending = pendingProfileIds.has(challenger.id) && !isOwn;
                   const whistleOpen = whistleProfileId === challenger.id;
                   return (
-                    <article className="gamer-challenger-card" key={challenger.id}>
-                      <div className="gamer-card-hud-rail" aria-hidden="true">
-                        <span>PLAYER PROFILE</span>
-                        <b>///</b>
-                        <i />
-                      </div>
-                      <div className="gamer-card-profile-content">
-                        <div className="gamer-card-portrait-panel">
-                          <div className="gamer-avatar" aria-hidden="true">
-                            {challenger.presentation.photoUrl ? (
-                              <img src={challenger.presentation.photoUrl} alt="" />
-                            ) : (
-                              challenger.presentation.displayName.slice(0, 1).toUpperCase()
-                            )}
-                          </div>
-                          <span className="gamer-open-badge">OPEN TO CHALLENGE</span>
-                        </div>
-                        <div className="gamer-challenger-copy">
-                          <div className="gamer-challenger-heading">
-                            <span className="gamer-card-game-label">GAME · {game.name}</span>
-                            {isOwn ? <small>YOUR PROFILE</small> : null}
-                          </div>
-                          <div className="gamer-card-handle-block">
-                            <span>GAMER TAG</span>
-                            <p className="gamer-handle">{challenger.handle}</p>
-                          </div>
-                          <div className="gamer-card-identity-block">
-                            <span>HOOMA ID</span>
-                            <h3>{challenger.presentation.displayName}</h3>
-                            <p className="muted">@{challenger.presentation.username}</p>
-                          </div>
-                          <div className="gamer-card-signal" aria-hidden="true">
-                            <i />
-                            <i />
-                            <i />
-                            <i />
-                            <i />
-                          </div>
-                        </div>
-                      </div>
-                      {!isOwn ? (
-                        <>
-                          <div className="gamer-card-actions">
-                            <button
-                              className={`gamer-whistle-button${whistleOpen ? " active" : ""}`}
-                              type="button"
-                              onClick={() => toggleWhistle(challenger.id)}
-                              aria-expanded={whistleOpen}
-                            >
-                              WHISTLE
-                            </button>
-                            <button
-                              className="button gamer-challenge-button"
-                              type="button"
-                              onClick={() => void challengePlayer(challenger.id)}
-                              disabled={actionId === challenger.id || alreadyPending}
-                            >
-                              {actionId === challenger.id
-                                ? "Sending…"
-                                : alreadyPending
-                                  ? "Pending"
-                                  : profile && isGamer
-                                    ? "Challenge"
-                                    : "Set up to challenge"}
-                            </button>
-                          </div>
-                          {whistleOpen ? (
-                            <GamerWhistlePanel
-                              otherProfileId={challenger.id}
-                              recipientName={challenger.presentation.displayName}
-                              onClose={() => setWhistleProfileId(null)}
-                            />
-                          ) : null}
-                        </>
-                      ) : null}
-                    </article>
+                    <GamerHudCard
+                      key={challenger.id}
+                      player={{ ...challenger, openToChallenge: true }}
+                      game={game}
+                      isOwn={isOwn}
+                      challengeLabel={profile && isGamer ? "Challenge" : "Set up to challenge"}
+                      challengeDisabled={actionId === challenger.id || alreadyPending}
+                      whistleOpen={whistleOpen}
+                      onChallenge={() => challengePlayer(challenger)}
+                      onToggleWhistle={() => toggleWhistle(challenger.id)}
+                      onCloseWhistle={() => setWhistleProfileId(null)}
+                    />
                   );
                 })}
               </div>
@@ -580,10 +447,7 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
           ) : !challenges.length ? (
             <div className="state-card">
               <strong>No challenge activity yet.</strong>
-              <p className="muted">
-                Send a challenge from a player card. Pending requests and accepted Match Cards
-                appear here.
-              </p>
+              <p className="muted">Send a challenge from a Gamer card.</p>
             </div>
           ) : (
             <div className="gamer-arena-grid">
@@ -661,6 +525,23 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
           )}
         </section>
       )}
+
+      {challengeTarget ? (
+        <GamerChallengeSetupModal
+          game={game}
+          challengedProfileId={challengeTarget.id}
+          challengedName={challengeTarget.presentation.displayName}
+          returnTo={`/gamers/games/${encodeURIComponent(game.slug)}?challenge=${encodeURIComponent(challengeTarget.id)}`}
+          onClose={() => setChallengeTarget(null)}
+          onSent={async () => {
+            const account = await api.identity.meOptional();
+            if (account) await loadMemberState(game, account);
+            await loadChallengers(game.id);
+            setNotice("Challenge sent. It is now waiting for a response in Arena.");
+            setActiveTab("ARENA");
+          }}
+        />
+      ) : null}
     </div>
   );
 }
