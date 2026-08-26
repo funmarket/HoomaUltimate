@@ -22,9 +22,7 @@ function launchEaFcMobile(): void {
     window.location.href = EA_FC_IOS_SCHEME;
     return;
   }
-  window.alert(
-    "Open this Match Card on your Android or iOS device to launch EA SPORTS FC Mobile.",
-  );
+  window.alert("Open this Match Card on your Android or iOS device to launch EA SPORTS FC Mobile.");
 }
 
 export function EaFcMatchBridge({
