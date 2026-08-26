@@ -4,6 +4,7 @@ import type {
   GamerChallengeStatus,
   GamerGame,
 } from "@hooma/contracts/gamers";
+import "./gamer-match-card.css";
 
 function GamerMatchParticipant({
   label,
