@@ -29,6 +29,16 @@ function eventDateParts(event: PublicEvent): { date: string; time: string } {
   }
 }
 
+function TeamMark({ name, logoUrl }: { readonly name: string; readonly logoUrl: string | null }) {
+  return logoUrl ? (
+    <img className="watch-ticket__team-logo" src={logoUrl} alt={`${name} logo`} />
+  ) : (
+    <span className="watch-ticket__team-placeholder" aria-hidden="true">
+      {name.slice(0, 1).toUpperCase()}
+    </span>
+  );
+}
+
 export function WatchTicket({ event }: { readonly event: PublicEvent }) {
   const { date, time } = eventDateParts(event);
   const place = event.place;
@@ -39,6 +49,7 @@ export function WatchTicket({ event }: { readonly event: PublicEvent }) {
   const status =
     event.venueAuthority === "OFFICIAL_VENUE" ? "OFFICIAL VENUE" : "SUGGESTED BY COMMUNITY";
   const placeHref = `/places/${place.id}?eventId=${encodeURIComponent(event.id)}`;
+  const matchup = event.watchDetails;
 
   return (
     <article
@@ -57,8 +68,22 @@ export function WatchTicket({ event }: { readonly event: PublicEvent }) {
         {place.imageUrl ? <img src={place.imageUrl} alt={place.name} /> : <span>{place.name}</span>}
       </a>
       <span className="watch-ticket__series">COLLECTOR SERIES</span>
-      <a className="watch-ticket__event-title" href={`/events/${event.id}`} title={event.title}>
-        {event.title}
+      <a className="watch-ticket__matchup" href={`/events/${event.id}`} title={event.title}>
+        {matchup ? (
+          <>
+            <TeamMark name={matchup.teamOneName} logoUrl={matchup.teamOneLogoUrl} />
+            <span className="watch-ticket__matchup-title">
+              <strong>{matchup.teamOneName}</strong>
+              <small>VS</small>
+              <strong>{matchup.teamTwoName}</strong>
+            </span>
+            <TeamMark name={matchup.teamTwoName} logoUrl={matchup.teamTwoLogoUrl} />
+          </>
+        ) : (
+          <span className="watch-ticket__matchup-title watch-ticket__matchup-title--legacy">
+            <strong>{event.title}</strong>
+          </span>
+        )}
       </a>
       <a className="watch-ticket__venue" href={placeHref} title={place.name}>
         <strong>{place.name}</strong>
