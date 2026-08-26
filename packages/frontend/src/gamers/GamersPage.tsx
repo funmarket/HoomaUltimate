@@ -97,7 +97,8 @@ export function GamersPage() {
   useEffect(() => {
     if (!challengeIntent || !gamers.length) return;
     const target = gamers.find(
-      (gamer) => gamer.id === challengeIntent.profileId && gamer.game.slug === challengeIntent.gameSlug,
+      (gamer) =>
+        gamer.id === challengeIntent.profileId && gamer.game.slug === challengeIntent.gameSlug,
     );
     setChallengeIntent(null);
     const url = new URL(window.location.href);
@@ -251,7 +252,12 @@ export function GamersPage() {
               This enables Gamer participation on your canonical HOOMA identity. It does not create
               a second account.
             </span>
-            <button className="button" type="button" disabled={joining} onClick={() => void joinGamers()}>
+            <button
+              className="button"
+              type="button"
+              disabled={joining}
+              onClick={() => void joinGamers()}
+            >
               {joining ? "Joining…" : "Join Gamers"}
             </button>
           </div>
