@@ -1,25 +1,34 @@
-name: Temporary PR95 format diagnostic
+name: Temporary PR95 formatter
 
 on:
   push:
     branches:
       - feat/gamers-home-discovery-onboarding
 
+permissions:
+  contents: write
+
 jobs:
   format:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: feat/gamers-home-discovery-onboarding
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Print Prettier diff only
+      - name: Apply repository Prettier and remove formatter
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p /tmp/pr95/tests
-          cp tests/gamers.integration.test.ts /tmp/pr95/tests/gamers.integration.test.ts
-          npx prettier --config .prettierrc.json --write /tmp/pr95/tests/gamers.integration.test.ts
-          diff -u tests/gamers.integration.test.ts /tmp/pr95/tests/gamers.integration.test.ts || true
+          npx prettier --config .prettierrc.json --write tests/gamers.integration.test.ts
+          rm .github/workflows/tmp-pr95-format.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/gamers.integration.test.ts .github/workflows/tmp-pr95-format.yml
+          git diff --cached --quiet && exit 0
+          git commit -m "chore(gamers): apply repository formatting"
+          git push origin HEAD:feat/gamers-home-discovery-onboarding
