@@ -3,9 +3,9 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const EXPECTED_BASE64_LENGTH = 42_956;
-const EXPECTED_BYTE_LENGTH = 32_216;
-const EXPECTED_SHA256 = "9444b5fb36290ed45d04937e919ec993fa289b1127429d5e644c68dfb48fd3ec";
+const EXPECTED_BASE64_LENGTH = 61_340;
+const EXPECTED_BYTE_LENGTH = 46_004;
+const EXPECTED_SHA256 = "e36640289c338f0dcf20a02837eefd73a51b91d8d21fd8c9d5bcf6000c8fc36f";
 
 async function readGeneratedPart(index) {
   const suffix = String(index).padStart(2, "0");
