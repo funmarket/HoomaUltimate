@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useHoomaFrontend } from "../context";
 import { createEventApi, type PublicEvent } from "./api";
-import { WatchEventForm } from "./WatchEventForm";
+import { WatchEventForm, type WatchEventFormValue } from "./WatchEventForm";
 
 export function EditEventPage({ eventId }: { readonly eventId: string }) {
   const { transport, protectedError } = useHoomaFrontend();
@@ -25,7 +25,7 @@ export function EditEventPage({ eventId }: { readonly eventId: string }) {
       .catch((reason) => setError(protectedError(reason, "Unable to open Event settings")));
   }, [api, eventId, protectedError]);
 
-  async function save(value: Parameters<React.ComponentProps<typeof WatchEventForm>["onSubmit"]>[0]) {
+  async function save(value: WatchEventFormValue) {
     if (!event) return;
     setPending(true);
     setNotice("");
