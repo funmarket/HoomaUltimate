@@ -1,4 +1,3 @@
-CREATE TYPE "WatchEventKind" AS ENUM ('MATCH', 'CULTURAL');
 CREATE TYPE "WatchCulturalCategory" AS ENUM (
   'MUSIC',
   'CONCERT',
@@ -10,12 +9,13 @@ CREATE TYPE "WatchCulturalCategory" AS ENUM (
   'OTHER'
 );
 
-ALTER TABLE "WatchEventDetails"
-  ADD COLUMN "kind" "WatchEventKind" NOT NULL DEFAULT 'MATCH',
-  ADD COLUMN "culturalCategory" "WatchCulturalCategory",
-  ADD COLUMN "imageUrl" TEXT,
-  ALTER COLUMN "teamOneName" DROP NOT NULL,
-  ALTER COLUMN "teamTwoName" DROP NOT NULL;
+CREATE TABLE "WatchCulturalEventDetails" (
+  "eventId" TEXT NOT NULL,
+  "culturalCategory" "WatchCulturalCategory" NOT NULL,
+  "imageUrl" TEXT,
+
+  CONSTRAINT "WatchCulturalEventDetails_pkey" PRIMARY KEY ("eventId")
+);
 
 CREATE TABLE "PlaceImage" (
   "id" TEXT NOT NULL,
@@ -30,6 +30,10 @@ CREATE TABLE "PlaceImage" (
 
 CREATE UNIQUE INDEX "PlaceImage_placeId_sortOrder_key" ON "PlaceImage"("placeId", "sortOrder");
 CREATE INDEX "PlaceImage_placeId_sortOrder_idx" ON "PlaceImage"("placeId", "sortOrder");
+
+ALTER TABLE "WatchCulturalEventDetails"
+  ADD CONSTRAINT "WatchCulturalEventDetails_eventId_fkey"
+  FOREIGN KEY ("eventId") REFERENCES "Event"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE "PlaceImage"
   ADD CONSTRAINT "PlaceImage_placeId_fkey"
