@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  gamerArenaQuerySchema,
   gamerChallengeCreateSchema,
   gamerGameCreateSchema,
   gamerProfileInputSchema,
@@ -20,7 +21,10 @@ export function createGamerPublicRouter(service: GamerService): Router {
   );
   router.get(
     "/arena",
-    asyncHandler(async (_req, res) => res.json({ items: await service.listArenaMatches() })),
+    asyncHandler(async (req, res) => {
+      const query = gamerArenaQuerySchema.parse(req.query);
+      res.json(await service.listArenaMatches(query.cursor));
+    }),
   );
   router.get(
     "/games/:slug",
