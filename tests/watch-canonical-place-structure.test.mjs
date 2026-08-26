@@ -8,7 +8,7 @@ function source(path) {
 
 function cssRule(css, selector) {
   const marker = `${selector} {`;
-  const start = css.lastIndexOf(marker);
+  const start = css.indexOf(marker);
   if (start < 0) return "";
   const bodyStart = start + marker.length;
   const bodyEnd = css.indexOf("\n}", bodyStart);
