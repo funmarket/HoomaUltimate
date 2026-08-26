@@ -220,6 +220,52 @@
   color: #f2ead7;
   font-size: 13px;
 }
+.play-event-card__management {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 12px;
+  border: 1px solid rgba(242, 234, 215, 0.13);
+  border-top-color: rgba(196, 220, 67, 0.24);
+  border-radius: 12px;
+  background: #10110e;
+}
+.play-event-card__management-label {
+  color: #bfb59a;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.play-event-card__management-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.play-event-management-action {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 10px 14px;
+  border: 1px solid #514936;
+  border-radius: 10px;
+  background: #171812;
+  color: #f2ead7;
+  font-size: 13px;
+  font-weight: 900;
+  text-align: center;
+  text-decoration: none;
+}
+.play-event-management-action--place {
+  border-color: rgba(196, 220, 67, 0.32);
+  background: rgba(196, 220, 67, 0.06);
+  color: #d7e681;
+}
+.play-event-management-action--edit {
+  color: #d8d4cb;
+}
 .play-event-rsvp-state {
   margin-top: 16px;
   padding: 11px 13px;
@@ -520,7 +566,8 @@
   }
 }
 @media (max-width: 460px) {
-  .play-event-card__facts {
+  .play-event-card__facts,
+  .play-event-card__management-actions {
     grid-template-columns: 1fr;
   }
   .formation-slot {
