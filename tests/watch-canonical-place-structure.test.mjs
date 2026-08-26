@@ -128,7 +128,8 @@ test("Watch uses one shared collector ticket with full centered team names betwe
     ticketCss,
     /\.watch-ticket__matchup \{[\s\S]*?grid-template-columns:\s*minmax\(24px, 0\.2fr\) minmax\(0, 1\.6fr\) minmax\(24px, 0\.2fr\)/,
   );
-  const titleRule = ticketCss.match(/\.watch-ticket__matchup-title strong \{([\s\S]*?)\n\}/)?.[1] ?? "";
+  const titleRule =
+    ticketCss.match(/\.watch-ticket__matchup-title strong \{([\s\S]*?)\n\}/)?.[1] ?? "";
   assert.match(titleRule, /font-size:\s*clamp\(0\.48rem, 1\.85cqw, 1\.15rem\)/);
   assert.match(titleRule, /white-space:\s*normal/);
   assert.match(titleRule, /overflow-wrap:\s*anywhere/);
