@@ -6,7 +6,7 @@ import type {
   PlaceSuggestionInput,
   PublicPlaceSummary,
 } from "@hooma/contracts/platform-management";
-import type { PrismaClient } from "@hooma/database";
+import { Prisma, type PrismaClient } from "@hooma/database";
 import type { PlaceRepository } from "../application/place.repository.js";
 
 function slugBase(value: string): string {
@@ -19,6 +19,11 @@ function slugBase(value: string): string {
       .replace(/^-+|-+$/g, "")
       .slice(0, 70) || "place"
   );
+}
+
+function duplicateKey(input: PlaceSuggestionInput): string {
+  const normalize = (value: string) => value.trim().toLocaleLowerCase().replace(/\s+/g, " ");
+  return `${normalize(input.name)}|${normalize(input.address)}`;
 }
 
 function placeSummary(place: {
@@ -85,36 +90,41 @@ export class PrismaPlaceRepository implements PlaceRepository {
   }
 
   async suggest(userId: string, input: PlaceSuggestionInput) {
-    const existing = await this.db.place.findFirst({
-      where: {
-        name: { equals: input.name, mode: "insensitive" },
-        address: { equals: input.address, mode: "insensitive" },
-        moderationStatus: { in: ["PENDING", "APPROVED"] },
-      },
-      select: { id: true },
-    });
-    if (existing) throw new Error("PLACE_ALREADY_EXISTS");
+    return this.db.$transaction(async (tx) => {
+      const key = duplicateKey(input);
+      await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${key}))`);
 
-    const place = await this.db.place.create({
-      data: {
-        slug: `${slugBase(input.name)}-${randomUUID().slice(0, 8)}`,
-        name: input.name,
-        address: input.address,
-        city: input.city ?? null,
-        houma: input.houma ?? null,
-        latitude: input.latitude ?? null,
-        longitude: input.longitude ?? null,
-        phone: input.phone ?? null,
-        websiteUrl: input.websiteUrl ?? null,
-        imageUrl: input.imageUrl ?? null,
-        description: input.description ?? null,
-        category: input.category ?? null,
-        email: input.email ?? null,
-        suggestedByUserId: userId,
-      },
-      select: { ...placeSelect, moderationStatus: true },
+      const existing = await tx.place.findFirst({
+        where: {
+          name: { equals: input.name, mode: "insensitive" },
+          address: { equals: input.address, mode: "insensitive" },
+          moderationStatus: { in: ["PENDING", "APPROVED"] },
+        },
+        select: { id: true },
+      });
+      if (existing) throw new Error("PLACE_ALREADY_EXISTS");
+
+      const place = await tx.place.create({
+        data: {
+          slug: `${slugBase(input.name)}-${randomUUID().slice(0, 8)}`,
+          name: input.name,
+          address: input.address,
+          city: input.city ?? null,
+          houma: input.houma ?? null,
+          latitude: input.latitude ?? null,
+          longitude: input.longitude ?? null,
+          phone: input.phone ?? null,
+          websiteUrl: input.websiteUrl ?? null,
+          imageUrl: input.imageUrl ?? null,
+          description: input.description ?? null,
+          category: input.category ?? null,
+          email: input.email ?? null,
+          suggestedByUserId: userId,
+        },
+        select: { ...placeSelect, moderationStatus: true },
+      });
+      return { ...placeSummary(place), status: place.moderationStatus };
     });
-    return { ...placeSummary(place), status: place.moderationStatus };
   }
 
   async getApproved(placeId: string): Promise<PublicPlaceSummary | null> {
