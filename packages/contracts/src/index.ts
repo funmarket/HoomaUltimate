@@ -251,7 +251,8 @@ export const playPitchTypeSchema = z.enum([
 ]);
 export const eventCreateSchema = z
   .object({
-    communityId: z.string().min(1),
+    communityId: z.string().min(1).optional().nullable(),
+    placeId: z.string().min(1).optional().nullable(),
     type: eventTypeSchema.default("PLAY"),
     title: z.string().trim().min(2).max(120),
     description: z.string().trim().max(1200).optional().nullable(),
@@ -274,19 +275,51 @@ export const eventCreateSchema = z
       .nullable(),
   })
   .superRefine((input, context) => {
-    if (input.type === "PLAY" && !input.play) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["play"],
-        message: "Play details are required for PLAY events",
-      });
+    if (input.type === "PLAY") {
+      if (!input.communityId) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["communityId"],
+          message: "Community is required for PLAY events",
+        });
+      }
+      if (!input.play) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["play"],
+          message: "Play details are required for PLAY events",
+        });
+      }
+      if (input.placeId) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["placeId"],
+          message: "Canonical Watch Places are only valid for WATCH events",
+        });
+      }
     }
-    if (input.type !== "PLAY" && input.play) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["play"],
-        message: "Play details are only valid for PLAY events",
-      });
+    if (input.type === "WATCH") {
+      if (!input.placeId) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["placeId"],
+          message: "An approved Place is required for WATCH events",
+        });
+      }
+      if (input.play) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["play"],
+          message: "Play details are only valid for PLAY events",
+        });
+      }
+      if (input.venueName || input.address) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["placeId"],
+          message: "WATCH venue information comes from the selected canonical Place",
+        });
+      }
     }
     if (input.endsAt && new Date(input.endsAt) <= new Date(input.startsAt)) {
       context.addIssue({
