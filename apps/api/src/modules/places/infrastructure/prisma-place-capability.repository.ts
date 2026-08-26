@@ -45,6 +45,7 @@ function placeSummary(place: PlaceRow): PublicPlaceSummary {
     phone: place.phone,
     websiteUrl: place.websiteUrl,
     imageUrl: place.imageUrl,
+    images: [],
     description: place.description,
     category: place.category,
     email: place.email,
