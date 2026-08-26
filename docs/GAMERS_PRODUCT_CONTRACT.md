@@ -4,7 +4,7 @@ Status: **OWNER-APPROVED ACTIVE PRODUCT DIRECTION**
 Scope: Gamers vertical slice  
 Product name: **HOOMA**
 
-This document records the product owner's explicit Gamers direction chosen on 2026-08-23 and updated on 2026-08-25. Where older Gamers planning text conflicts with this contract, the newer owner decision wins under `AGENTS.md`.
+This document records the product owner's explicit Gamers direction chosen on 2026-08-23 and updated through 2026-08-26. Where older Gamers planning text conflicts with this contract, the newer owner decision wins under `AGENTS.md`.
 
 Gamers is intentionally human-first: HOOMA introduces people, lets them challenge and directly Whistle one another through the shared transient Whistle engine, records what the participants agree happened, builds game-specific reputation/ranking from completed human-confirmed matches, and gives real Gamer Squads a private Whistle Board. External game APIs are not required for the core product.
 
@@ -16,6 +16,16 @@ Gamers is intentionally human-first: HOOMA introduces people, lets them challeng
 - Permanent bottom navigation remains exactly `Home | Play | Watch | HOOMA | Pitch`.
 - Gamers must not add a sixth permanent bottom-navigation item.
 - `/gamers` is the Gamers landing route.
+- Its global top-level sections are exactly:
+
+```text
+GAMERS | CHALLENGERS | ARENA | GAME CATALOG
+```
+
+- `GAMERS` is the default cross-game Gamer discovery surface.
+- `CHALLENGERS` is the cross-game subset explicitly open to challenge.
+- `ARENA` is the public privacy-safe cross-game projection of accepted Gamer challenges from active games.
+- `GAME CATALOG` owns the persisted active-game catalog and missing-game contribution flow.
 - Game-specific child routes are added only as the implemented slice requires them.
 
 ---
@@ -80,13 +90,13 @@ Each GamerProfile contains game-specific presentation/participation data, includ
 - open-to-challenge state;
 - created/updated timestamps.
 
-HOOMA profile presentation remains owned by Identity. Do not duplicate HOOMA display name/photo/bio into GamerProfile merely for rendering convenience.
+HOOMA profile presentation remains owned by Identity. Do not duplicate HOOMA display name/photo/bio into GamerProfile merely for rendering convenience. Gamer HUD cards and Match Cards project the canonical `UserPresentation` photo; missing photos use a controlled UI fallback rather than a second Gamer avatar field.
 
 Rankings and records are per game, never globally shared across unrelated games.
 
 ---
 
-## 5. Game hub UX
+## 5. Game hub UX and Match Card presentation
 
 Inside a selected game, the primary product areas are:
 
@@ -104,6 +114,14 @@ Challenger cards use truthful state such as `OPEN TO CHALLENGE`. Do not display 
 
 The card's primary competitive action is Challenge. A secondary `WHISTLE` action may open a compact transient direct-composer/feed within the HUD card; this action tray is not a second player-profile expansion.
 
+The local game Arena remains the signed-in Gamer's detailed challenge lifecycle surface. It may show pending, accepted, declined and cancelled challenge activity as appropriate, including the authorized Accept, Reject and Cancel controls.
+
+The global `/gamers` Arena is different: it displays accepted Match Cards across active games only. It does not expose pending, declined or cancelled challenge records or member-only response controls. It must use one cross-game Gamers-domain query rather than fetching every game and fanning out per-game Arena requests.
+
+Both local and global Arena cards reuse the same `GamerMatchCard` presentation source. Match Cards show both participants' canonical HOOMA profile photos, HOOMA display names and game handles. The global card is a smaller compact variant and also identifies the game. A second Match Card implementation is not permitted.
+
+The global Arena is paginated/cursor-backed so cross-game accepted-match discovery remains bounded as match history grows; loading more pages must continue the same accepted-only projection rather than introducing client-side per-game fan-out.
+
 ---
 
 ## 6. Human challenge lifecycle
@@ -120,6 +138,7 @@ Rules:
 - challenger may cancel only while policy permits;
 - duplicate unresolved challenges for the same relevant pair/game must be prevented safely;
 - accepted challenges become the canonical HOOMA Match Card for that interaction;
+- accepted Match Cards may be projected into the public global Arena with only privacy-safe game/Gamer presentation;
 - gameplay occurs outside HOOMA in the users' chosen game app/device.
 
 Canonical lifecycle starts with:
@@ -322,7 +341,7 @@ GamerSquad
 GamerSquadMembership
 ```
 
-Do not create an `Arena` table; Arena is a projection of challenge/match lifecycle.
+Do not create an `Arena` table; both the selected-game Arena and global Arena are projections of `GamerChallenge` lifecycle.
 
 Do not create Gamer chat/message tables for this product direction. `GAMER_DIRECT` Whistle uses existing Whistle metadata plus Redis body storage and does not create a durable conversation entity.
 
@@ -332,7 +351,9 @@ Do not create a separate `GamerMatch` merely because the UI says Match Card unle
 
 ## 13. Public/member boundary
 
-Privacy-safe Gamers discovery remains public where appropriate. Opening `/gamers` or a public game/Squad surface must not itself create a HOOMA profile.
+Privacy-safe Gamers discovery remains public where appropriate. Opening `/gamers`, the global accepted-match Arena, or a public game/Squad surface must not itself create a HOOMA profile.
+
+The global Arena public projection is accepted-only and includes only the active game identity plus GamerProfile id/handle and canonical public HOOMA username/display name/photo for each participant. It must not expose User ids, account/security data, pending challenge state or member-only controls.
 
 Protected actions require the existing canonical HOOMA account at the action boundary, including:
 
@@ -371,7 +392,7 @@ Implement as bounded vertical slices:
 0. **G0 — consolidate first**: reconcile the current foundation, retire duplicate ADR numbering, absorb only the useful old Gamers layering into one canonical module tree, remove the hardcoded bootstrap-catalog direction, and align governing documents before persisted Gamers behavior begins.
 1. **G1 — Gamers entry + catalog**: real `/gamers` route, persisted GamerGame catalog, FC Mobile/Ludo launch entries, authenticated missing-game contribution and duplicate handling.
 2. **G2 — Gamer identity + Challengers**: GamerProfile, game username, open-to-challenge, HUD discovery presentation. GamerProfile creation reuses an existing canonical HOOMA User/profile and must never introduce a second Gamer signup. The HUD card is the only current Gamer player presentation; no duplicate Gamer profile page.
-3. **G3 — Challenge + Match Card + direct Whistle**: send/accept/decline/cancel, concurrency-safe lifecycle, Arena projection, plus card-level `GAMER_DIRECT` Whistle through the shared engine and server-derived same-game GamerProfile pair authorization.
+3. **G3 — Challenge + Match Card + direct Whistle**: send/accept/decline/cancel, concurrency-safe lifecycle, selected-game Arena projection, shared photo Match Card presentation, public cross-game accepted-only Arena projection, plus card-level `GAMER_DIRECT` Whistle through the shared engine and server-derived same-game GamerProfile pair authorization.
 4. **G4 — Results**: submit, optional evidence reference, confirm, contest, independent agreement, completed/disputed, rematch.
 5. **G5 — Ranking**: per-game rating/record, idempotent atomic rating updates/history, Rankings UI.
 6. **G6 — Gamer Squads**: creation, optional logo/banner URL, public Squad community page, membership, Leader/member HQ.
