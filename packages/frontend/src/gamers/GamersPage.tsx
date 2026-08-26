@@ -33,6 +33,8 @@ export function GamersPage() {
   const [games, setGames] = useState<GamerGame[]>([]);
   const [gamers, setGamers] = useState<GamerDiscoveryItem[]>([]);
   const [arenaMatches, setArenaMatches] = useState<GamerArenaMatch[]>([]);
+  const [arenaNextCursor, setArenaNextCursor] = useState<string | null>(null);
+  const [arenaLoadingMore, setArenaLoadingMore] = useState(false);
   const [me, setMe] = useState<MeResponse | null>(null);
   const [identityProfile, setIdentityProfile] = useState<ProfileResponse | null>(null);
   const [activeTab, setActiveTab] = useState<GamersHomeTab>("GAMERS");
@@ -64,6 +66,7 @@ export function GamersPage() {
       setGames(gameResponse.items);
       setGamers(discoveryResponse.items);
       setArenaMatches(arenaResponse.items);
+      setArenaNextCursor(arenaResponse.nextCursor);
     } catch (reason) {
       setError(errorMessage(reason));
     } finally {
@@ -144,6 +147,24 @@ export function GamersPage() {
       setMemberError(protectedError(reason, "Unable to add this game"));
     } finally {
       setCreating(false);
+    }
+  }
+
+  async function loadMoreArena() {
+    if (!arenaNextCursor || arenaLoadingMore) return;
+    setArenaLoadingMore(true);
+    setError("");
+    try {
+      const response = await gamersApi.arena(arenaNextCursor);
+      setArenaMatches((current) => {
+        const ids = new Set(current.map((match) => match.id));
+        return [...current, ...response.items.filter((match) => !ids.has(match.id))];
+      });
+      setArenaNextCursor(response.nextCursor);
+    } catch (reason) {
+      setError(errorMessage(reason));
+    } finally {
+      setArenaLoadingMore(false);
     }
   }
 
@@ -332,7 +353,7 @@ export function GamersPage() {
               <span className="eyebrow">ARENA</span>
               <h2 id="gamers-arena-heading">Accepted matches across HOOMA</h2>
             </div>
-            <span className="gamers-count">{arenaMatches.length} matches</span>
+            <span className="gamers-count">{arenaMatches.length} loaded</span>
           </div>
           {loading && !arenaMatches.length ? (
             <div className="state-card">
@@ -344,19 +365,31 @@ export function GamersPage() {
               <p className="muted">Accepted Gamer challenges from active games appear here.</p>
             </div>
           ) : (
-            <div className="gamer-arena-grid gamer-global-arena-grid">
-              {arenaMatches.map((match) => (
-                <GamerMatchCard
-                  key={match.id}
-                  status={match.status}
-                  challenger={match.challenger}
-                  challenged={match.challenged}
-                  label="MATCH CARD"
-                  game={match.game}
-                  compact
-                />
-              ))}
-            </div>
+            <>
+              <div className="gamer-arena-grid gamer-global-arena-grid">
+                {arenaMatches.map((match) => (
+                  <GamerMatchCard
+                    key={match.id}
+                    status={match.status}
+                    challenger={match.challenger}
+                    challenged={match.challenged}
+                    label="MATCH CARD"
+                    game={match.game}
+                    compact
+                  />
+                ))}
+              </div>
+              {arenaNextCursor ? (
+                <button
+                  className="button secondary gamer-arena-more"
+                  type="button"
+                  disabled={arenaLoadingMore}
+                  onClick={() => void loadMoreArena()}
+                >
+                  {arenaLoadingMore ? "Loading…" : "Load more matches"}
+                </button>
+              ) : null}
+            </>
           )}
         </section>
       ) : null}
