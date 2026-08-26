@@ -65,18 +65,27 @@ test("Gamer discovery reuses one HUD card across homepage and game hub", async (
 });
 
 test("Gamer enrollment is additive and global discovery is canonical", async () => {
-  const [identityRoute, identityService, identityRepository, identityPrisma, gamerRoutes, gamerService, gamerRepository, gamerPrisma, onboarding] =
-    await Promise.all([
-      read("apps/api/src/modules/identity/http/identity.member.routes.ts"),
-      read("apps/api/src/modules/identity/application/identity.service.ts"),
-      read("apps/api/src/modules/identity/application/identity.repository.ts"),
-      read("apps/api/src/modules/identity/infrastructure/prisma-identity.repository.ts"),
-      read("apps/api/src/modules/gamers/http/gamer.routes.ts"),
-      read("apps/api/src/modules/gamers/application/gamer.service.ts"),
-      read("apps/api/src/modules/gamers/application/gamer-profile.repository.ts"),
-      read("apps/api/src/modules/gamers/infrastructure/prisma-gamer-profile.repository.ts"),
-      read("packages/frontend/src/gamers/onboarding.ts"),
-    ]);
+  const [
+    identityRoute,
+    identityService,
+    identityRepository,
+    identityPrisma,
+    gamerRoutes,
+    gamerService,
+    gamerRepository,
+    gamerPrisma,
+    onboarding,
+  ] = await Promise.all([
+    read("apps/api/src/modules/identity/http/identity.member.routes.ts"),
+    read("apps/api/src/modules/identity/application/identity.service.ts"),
+    read("apps/api/src/modules/identity/application/identity.repository.ts"),
+    read("apps/api/src/modules/identity/infrastructure/prisma-identity.repository.ts"),
+    read("apps/api/src/modules/gamers/http/gamer.routes.ts"),
+    read("apps/api/src/modules/gamers/application/gamer.service.ts"),
+    read("apps/api/src/modules/gamers/application/gamer-profile.repository.ts"),
+    read("apps/api/src/modules/gamers/infrastructure/prisma-gamer-profile.repository.ts"),
+    read("packages/frontend/src/gamers/onboarding.ts"),
+  ]);
 
   assert.match(identityRoute, /\/me\/profile\/identities\/gamer/);
   assert.match(identityService, /enableProfileIdentity/);
