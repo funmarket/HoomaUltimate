@@ -114,26 +114,23 @@ test("Gamer match reconciliation verifies aligned scorecards and disputes confli
   }
 });
 
-test(
-  "Gamer match reconciliation resolves one expired scorecard after the ghosting window",
-  async () => {
-    await cleanup();
-    try {
-      const match = await createFixture("timeout");
-      await addSubmission(match.id, "CHALLENGER", 2, 0);
-      await db.gamerMatchSession.update({
-        where: { id: match.id },
-        data: { submissionDeadline: new Date("2026-08-26T10:00:00.000Z") },
-      });
+test("Gamer match reconciliation resolves one expired scorecard after the ghosting window", async () => {
+  await cleanup();
+  try {
+    const match = await createFixture("timeout");
+    await addSubmission(match.id, "CHALLENGER", 2, 0);
+    await db.gamerMatchSession.update({
+      where: { id: match.id },
+      data: { submissionDeadline: new Date("2026-08-26T10:00:00.000Z") },
+    });
 
-      await reconcileGamerMatches(db, new Date("2026-08-26T10:30:00.000Z"));
-      const after = await db.gamerMatchSession.findUnique({ where: { id: match.id } });
-      assert.equal(after?.status, "VERIFIED");
-      assert.equal(after?.resolution, "SINGLE_SUBMISSION_TIMEOUT");
-      assert.equal(after?.finalChallengerScore, 2);
-      assert.equal(after?.finalChallengedScore, 0);
-    } finally {
-      await cleanup();
-    }
-  },
-);
+    await reconcileGamerMatches(db, new Date("2026-08-26T10:30:00.000Z"));
+    const after = await db.gamerMatchSession.findUnique({ where: { id: match.id } });
+    assert.equal(after?.status, "VERIFIED");
+    assert.equal(after?.resolution, "SINGLE_SUBMISSION_TIMEOUT");
+    assert.equal(after?.finalChallengerScore, 2);
+    assert.equal(after?.finalChallengedScore, 0);
+  } finally {
+    await cleanup();
+  }
+});
