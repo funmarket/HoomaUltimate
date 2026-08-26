@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import type { MeResponse } from "@hooma/contracts";
-import type { GamerDiscoveryItem, GamerGame } from "@hooma/contracts/gamers";
+import type { GamerArenaMatch, GamerDiscoveryItem, GamerGame } from "@hooma/contracts/gamers";
 import type { ProfileResponse } from "@hooma/contracts/profile";
 import { useHoomaFrontend } from "../context";
 import { createGamersApi } from "./api";
 import { GamerChallengeSetupModal } from "./GamerChallengeSetupModal";
 import { GamerHudCard } from "./GamerHudCard";
+import { GamerMatchCard } from "./GamerMatchCard";
 import { createGamerOnboardingApi } from "./onboarding";
 
-type GamersHomeTab = "GAMERS" | "CHALLENGERS" | "CATALOG";
+type GamersHomeTab = "GAMERS" | "CHALLENGERS" | "ARENA" | "CATALOG";
 
 function errorMessage(reason: unknown): string {
   return reason instanceof Error ? reason.message : "Unexpected Gamers error";
@@ -27,6 +28,9 @@ export function GamersPage() {
   const onboardingApi = useMemo(() => createGamerOnboardingApi(transport), [transport]);
   const [games, setGames] = useState<GamerGame[]>([]);
   const [gamers, setGamers] = useState<GamerDiscoveryItem[]>([]);
+  const [arenaMatches, setArenaMatches] = useState<GamerArenaMatch[]>([]);
+  const [arenaNextCursor, setArenaNextCursor] = useState<string | null>(null);
+  const [arenaLoadingMore, setArenaLoadingMore] = useState(false);
   const [me, setMe] = useState<MeResponse | null>(null);
   const [identityProfile, setIdentityProfile] = useState<ProfileResponse | null>(null);
   const [activeTab, setActiveTab] = useState<GamersHomeTab>("GAMERS");
@@ -50,12 +54,15 @@ export function GamersPage() {
     setLoading(true);
     setError("");
     try {
-      const [gameResponse, discoveryResponse] = await Promise.all([
+      const [gameResponse, discoveryResponse, arenaResponse] = await Promise.all([
         gamersApi.games(),
         gamersApi.discovery(),
+        gamersApi.arena(),
       ]);
       setGames(gameResponse.items);
       setGamers(discoveryResponse.items);
+      setArenaMatches(arenaResponse.items);
+      setArenaNextCursor(arenaResponse.nextCursor);
     } catch (reason) {
       setError(errorMessage(reason));
     } finally {
@@ -136,6 +143,24 @@ export function GamersPage() {
       setMemberError(protectedError(reason, "Unable to add this game"));
     } finally {
       setCreating(false);
+    }
+  }
+
+  async function loadMoreArena() {
+    if (!arenaNextCursor || arenaLoadingMore) return;
+    setArenaLoadingMore(true);
+    setError("");
+    try {
+      const response = await gamersApi.arena(arenaNextCursor);
+      setArenaMatches((current) => {
+        const ids = new Set(current.map((match) => match.id));
+        return [...current, ...response.items.filter((match) => !ids.has(match.id))];
+      });
+      setArenaNextCursor(response.nextCursor);
+    } catch (reason) {
+      setError(errorMessage(reason));
+    } finally {
+      setArenaLoadingMore(false);
     }
   }
 
@@ -231,6 +256,13 @@ export function GamersPage() {
           CHALLENGERS
         </button>
         <button
+          className={activeTab === "ARENA" ? "active" : ""}
+          type="button"
+          onClick={() => setActiveTab("ARENA")}
+        >
+          ARENA
+        </button>
+        <button
           className={activeTab === "CATALOG" ? "active" : ""}
           type="button"
           onClick={() => setActiveTab("CATALOG")}
@@ -307,6 +339,57 @@ export function GamersPage() {
             <span className="gamers-count">{challengers.length} open</span>
           </div>
           {renderCards(challengers)}
+        </section>
+      ) : null}
+
+      {activeTab === "ARENA" ? (
+        <section
+          className="gamers-section gamer-global-arena"
+          aria-labelledby="gamers-arena-heading"
+        >
+          <div className="gamers-section-heading">
+            <div>
+              <span className="eyebrow">ARENA</span>
+              <h2 id="gamers-arena-heading">Accepted matches across HOOMA</h2>
+            </div>
+            <span className="gamers-count">{arenaMatches.length} loaded</span>
+          </div>
+          {loading && !arenaMatches.length ? (
+            <div className="state-card">
+              <strong>Loading Arena…</strong>
+            </div>
+          ) : !arenaMatches.length ? (
+            <div className="state-card">
+              <strong>No accepted Match Cards yet.</strong>
+              <p className="muted">Accepted Gamer challenges from active games appear here.</p>
+            </div>
+          ) : (
+            <>
+              <div className="gamer-arena-grid gamer-global-arena-grid">
+                {arenaMatches.map((match) => (
+                  <GamerMatchCard
+                    key={match.id}
+                    status={match.status}
+                    challenger={match.challenger}
+                    challenged={match.challenged}
+                    label="MATCH CARD"
+                    game={match.game}
+                    compact
+                  />
+                ))}
+              </div>
+              {arenaNextCursor ? (
+                <button
+                  className="button secondary gamer-arena-more"
+                  type="button"
+                  disabled={arenaLoadingMore}
+                  onClick={() => void loadMoreArena()}
+                >
+                  {arenaLoadingMore ? "Loading…" : "Load more matches"}
+                </button>
+              ) : null}
+            </>
+          )}
         </section>
       ) : null}
 
@@ -394,7 +477,9 @@ export function GamersPage() {
           game={challengeTarget.game}
           challengedProfileId={challengeTarget.id}
           challengedName={challengeTarget.presentation.displayName}
-          returnTo={`/gamers?challenge=${encodeURIComponent(challengeTarget.id)}&game=${encodeURIComponent(challengeTarget.game.slug)}`}
+          returnTo={`/gamers?challenge=${encodeURIComponent(challengeTarget.id)}&game=${encodeURIComponent(
+            challengeTarget.game.slug,
+          )}`}
           onClose={() => setChallengeTarget(null)}
           onSent={async () => {
             setNotice(`Challenge sent to ${challengeTarget.presentation.displayName}.`);

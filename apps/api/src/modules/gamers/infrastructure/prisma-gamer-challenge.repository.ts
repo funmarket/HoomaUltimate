@@ -1,5 +1,7 @@
 import type { PrismaClient } from "@hooma/database";
 import type {
+  GamerArenaMatchPage,
+  GamerArenaMatchRecord,
   GamerChallengeAccessRecord,
   GamerChallengeRecord,
   GamerChallengeRepository,
@@ -43,6 +45,16 @@ const challengeSelect = {
   },
 } as const;
 
+const arenaMatchSelect = {
+  id: true,
+  status: true,
+  game: {
+    select: { id: true, slug: true, name: true },
+  },
+  challengerProfile: challengeSelect.challengerProfile,
+  challengedProfile: challengeSelect.challengedProfile,
+} as const;
+
 type SelectedChallenge = {
   id: string;
   gameId: string;
@@ -68,6 +80,14 @@ type SelectedChallenge = {
   };
 };
 
+type SelectedArenaMatch = {
+  id: string;
+  status: GamerChallengeStatus;
+  game: { id: string; slug: string; name: string };
+  challengerProfile: SelectedChallenge["challengerProfile"];
+  challengedProfile: SelectedChallenge["challengedProfile"];
+};
+
 function mapChallenge(row: SelectedChallenge): GamerChallengeRecord | null {
   const challengerPresentation = row.challengerProfile.user.presentation;
   const challengedPresentation = row.challengedProfile.user.presentation;
@@ -79,6 +99,28 @@ function mapChallenge(row: SelectedChallenge): GamerChallengeRecord | null {
     createdAt: row.createdAt,
     respondedAt: row.respondedAt,
     cancelledAt: row.cancelledAt,
+    challenger: {
+      id: row.challengerProfile.id,
+      handle: row.challengerProfile.handle,
+      presentation: challengerPresentation,
+    },
+    challenged: {
+      id: row.challengedProfile.id,
+      handle: row.challengedProfile.handle,
+      presentation: challengedPresentation,
+    },
+  };
+}
+
+function mapArenaMatch(row: SelectedArenaMatch): GamerArenaMatchRecord | null {
+  if (row.status !== "ACCEPTED") return null;
+  const challengerPresentation = row.challengerProfile.user.presentation;
+  const challengedPresentation = row.challengedProfile.user.presentation;
+  if (!challengerPresentation || !challengedPresentation) return null;
+  return {
+    id: row.id,
+    status: "ACCEPTED",
+    game: row.game,
     challenger: {
       id: row.challengerProfile.id,
       handle: row.challengerProfile.handle,
@@ -148,6 +190,32 @@ export class PrismaGamerChallengeRepository implements GamerChallengeRepository 
       const mapped = mapChallenge(row);
       return mapped ? [mapped] : [];
     });
+  }
+
+  async listAcceptedAcrossActiveGames(input: {
+    cursor?: string;
+    limit: number;
+  }): Promise<GamerArenaMatchPage> {
+    const rows = (await this.db.gamerChallenge.findMany({
+      where: {
+        status: "ACCEPTED",
+        game: { status: "ACTIVE" },
+      },
+      orderBy: [{ respondedAt: "desc" }, { createdAt: "desc" }, { id: "desc" }],
+      take: input.limit + 1,
+      ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
+      select: arenaMatchSelect,
+    })) as SelectedArenaMatch[];
+    const hasMore = rows.length > input.limit;
+    const pageRows = hasMore ? rows.slice(0, input.limit) : rows;
+    const items = pageRows.flatMap((row) => {
+      const mapped = mapArenaMatch(row);
+      return mapped ? [mapped] : [];
+    });
+    return {
+      items,
+      nextCursor: hasMore ? (pageRows.at(-1)?.id ?? null) : null,
+    };
   }
 
   acceptForChallengedUser(challengeId: string, userId: string) {
