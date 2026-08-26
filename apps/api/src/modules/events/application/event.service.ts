@@ -1,5 +1,6 @@
 import type { EventCreateInput, EventFormationInput, EventUpdateInput } from "@hooma/contracts";
 import type { CommunityService } from "../../communities/application/community.service.js";
+import type { PlaceService } from "../../places/application/place.service.js";
 import { EventError } from "../domain/event-error.js";
 import type { EventPublicListInput, EventRepository } from "./event.repository.js";
 
@@ -7,6 +8,7 @@ export class EventService {
   constructor(
     private readonly repository: EventRepository,
     private readonly communities: CommunityService,
+    private readonly places: PlaceService,
   ) {}
 
   listPublic(input: Omit<EventPublicListInput, "from"> & { from?: Date }) {
@@ -44,10 +46,13 @@ export class EventService {
   }
 
   async create(userId: string, input: EventCreateInput) {
-    if (input.type !== "PLAY") {
-      throw new EventError("WATCH_NOT_ENABLED", "Watch events will be enabled by the Watch slice");
+    if (input.type === "PLAY") {
+      if (!input.communityId) throw new EventError("COMMUNITY_REQUIRED", "Community is required");
+      await this.communities.requireCoach(input.communityId, userId);
+    } else {
+      if (!input.placeId) throw new EventError("PLACE_REQUIRED", "Approved Place is required");
+      await this.places.getPublic(input.placeId);
     }
-    await this.communities.requireCoach(input.communityId, userId);
     if (input.entryFeeMinor > 0) {
       throw new EventError(
         "EVENT_PAYMENTS_NOT_ENABLED",
@@ -179,8 +184,11 @@ export class EventService {
   private async requireManage(userId: string, eventId: string) {
     const access = await this.repository.access(eventId);
     if (!access) throw new EventError("EVENT_NOT_FOUND", "Event not found");
-    if (access.createdByUserId !== userId)
+    if (access.createdByUserId === userId) return access;
+    if (access.type === "PLAY" && access.communityId) {
       await this.communities.requireCoach(access.communityId, userId);
-    return access;
+      return access;
+    }
+    throw new EventError("EVENT_MANAGE_FORBIDDEN", "Only the Watch event creator can manage it");
   }
 }
