@@ -11,7 +11,9 @@ import "./gamer-disputes.css";
 type ProofUrls = Record<string, Partial<Record<GamerMatchSide, string>>>;
 
 function claimLabel(submission: GamerMatchSubmission | undefined): string {
-  return submission ? `${submission.challengerScore}–${submission.challengedScore}` : "No submission";
+  return submission
+    ? `${submission.challengerScore}–${submission.challengedScore}`
+    : "No submission";
 }
 
 function DisputeCard({
