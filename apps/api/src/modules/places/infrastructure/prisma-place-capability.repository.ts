@@ -20,6 +20,10 @@ const placeSelect = {
   longitude: true,
   phone: true,
   websiteUrl: true,
+  imageUrl: true,
+  description: true,
+  category: true,
+  email: true,
 } as const;
 
 function placeSummary(place: {
@@ -33,6 +37,10 @@ function placeSummary(place: {
   longitude: { toNumber(): number } | null;
   phone: string | null;
   websiteUrl: string | null;
+  imageUrl: string | null;
+  description: string | null;
+  category: string | null;
+  email: string | null;
 }): PublicPlaceSummary {
   return {
     id: place.id,
@@ -45,6 +53,10 @@ function placeSummary(place: {
     longitude: place.longitude?.toNumber() ?? null,
     phone: place.phone,
     websiteUrl: place.websiteUrl,
+    imageUrl: place.imageUrl,
+    description: place.description,
+    category: place.category,
+    email: place.email,
   };
 }
 
