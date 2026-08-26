@@ -57,7 +57,7 @@ test("Watch matchup uses one measured fitter so names expand or shrink without w
   assert.match(css, /\.watch-ticket__team-logo \{[\s\S]*?object-fit:\s*contain/);
 });
 
-test("Watch practical information gives the date all available width and never renders a calendar icon", () => {
+test("Watch date uses full width without a calendar icon", () => {
   const ticket = source("packages/frontend/src/watch/WatchTicket.tsx");
   const css = source("packages/frontend/src/watch/watch.css");
   const details = cssRule(css, ".watch-ticket__details");
@@ -88,7 +88,7 @@ test("Watch practical information gives the date all available width and never r
   assert.doesNotMatch(cssRule(css, ".watch-ticket__date"), /position:\s*absolute|top:|left:/);
 });
 
-test("Watch side stub uses only the supplied HOOMA logo across the full upper-ticket height", () => {
+test("Watch stub uses only the HOOMA logo at full upper-ticket height", () => {
   const ticket = source("packages/frontend/src/watch/WatchTicket.tsx");
   const css = source("packages/frontend/src/watch/watch.css");
   const stub = cssRule(css, ".watch-ticket__stub");
