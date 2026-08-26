@@ -11,6 +11,7 @@ import { useHoomaFrontend } from "../context";
 import { createGamersApi } from "./api";
 import { GamerChallengeSetupModal } from "./GamerChallengeSetupModal";
 import { GamerHudCard } from "./GamerHudCard";
+import { GamerMatchCard } from "./GamerMatchCard";
 import { createGamerOnboardingApi } from "./onboarding";
 
 type HubTab = "CHALLENGERS" | "ARENA";
@@ -456,71 +457,52 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
               {challenges.map((challenge) => {
                 const incoming = profile?.id === challenge.challenged.id;
                 const outgoing = profile?.id === challenge.challenger.id;
-                return (
-                  <article
-                    className={`gamer-match-card status-${challenge.status.toLowerCase()}`}
-                    key={challenge.id}
-                  >
-                    <div className="gamer-match-card-top">
-                      <span>
-                        {challenge.status === "ACCEPTED"
-                          ? "MATCH CARD"
-                          : incoming
-                            ? "INCOMING CHALLENGE"
-                            : "OUTGOING CHALLENGE"}
-                      </span>
-                      <strong>{challenge.status}</strong>
-                    </div>
-                    <div className="gamer-match-versus">
-                      <div className="gamer-match-participant">
-                        <small>CHALLENGER</small>
-                        <strong>{challenge.challenger.presentation.displayName}</strong>
-                        <span>{challenge.challenger.handle}</span>
-                      </div>
-                      <b>VS</b>
-                      <div className="gamer-match-participant">
-                        <small>CHALLENGED</small>
-                        <strong>{challenge.challenged.presentation.displayName}</strong>
-                        <span>{challenge.challenged.handle}</span>
-                      </div>
-                    </div>
-                    {challenge.status === "PENDING" && incoming ? (
-                      <div className="gamer-match-actions">
-                        <button
-                          className="button"
-                          type="button"
-                          disabled={actionId === challenge.id}
-                          onClick={() => void updateChallenge(challenge, "accept")}
-                        >
-                          {isGamer ? "Accept" : "Rejoin & Accept"}
-                        </button>
-                        <button
-                          className="button secondary"
-                          type="button"
-                          disabled={actionId === challenge.id}
-                          onClick={() => void updateChallenge(challenge, "decline")}
-                        >
-                          Reject
-                        </button>
-                      </div>
-                    ) : null}
-                    {challenge.status === "PENDING" && outgoing ? (
+                const label =
+                  challenge.status === "ACCEPTED"
+                    ? "MATCH CARD"
+                    : incoming
+                      ? "INCOMING CHALLENGE"
+                      : "OUTGOING CHALLENGE";
+                const actions =
+                  challenge.status === "PENDING" && incoming ? (
+                    <div className="gamer-match-actions">
+                      <button
+                        className="button"
+                        type="button"
+                        disabled={actionId === challenge.id}
+                        onClick={() => void updateChallenge(challenge, "accept")}
+                      >
+                        {isGamer ? "Accept" : "Rejoin & Accept"}
+                      </button>
                       <button
                         className="button secondary"
                         type="button"
                         disabled={actionId === challenge.id}
-                        onClick={() => void updateChallenge(challenge, "cancel")}
+                        onClick={() => void updateChallenge(challenge, "decline")}
                       >
-                        Cancel challenge
+                        Reject
                       </button>
-                    ) : null}
-                    {challenge.status === "ACCEPTED" ? (
-                      <p className="gamer-match-note">
-                        Accepted challenge = canonical HOOMA Match Card. Gameplay happens in the
-                        external game.
-                      </p>
-                    ) : null}
-                  </article>
+                    </div>
+                  ) : challenge.status === "PENDING" && outgoing ? (
+                    <button
+                      className="button secondary"
+                      type="button"
+                      disabled={actionId === challenge.id}
+                      onClick={() => void updateChallenge(challenge, "cancel")}
+                    >
+                      Cancel challenge
+                    </button>
+                  ) : null;
+                return (
+                  <GamerMatchCard
+                    key={challenge.id}
+                    status={challenge.status}
+                    challenger={challenge.challenger}
+                    challenged={challenge.challenged}
+                    label={label}
+                    actions={actions}
+                    showAcceptedNote
+                  />
                 );
               })}
             </div>
