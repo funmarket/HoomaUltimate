@@ -66,5 +66,8 @@ export interface GamerMatchRepository {
     actorUserId: string;
     resolution: GamerDisputeResolutionInput;
   }): Promise<GamerMatchSessionRecord | null>;
-  getSubmissionProof(matchId: string, side: GamerMatchSide): Promise<GamerMatchSubmissionRecord | null>;
+  getSubmissionProof(
+    matchId: string,
+    side: GamerMatchSide,
+  ): Promise<GamerMatchSubmissionRecord | null>;
 }
