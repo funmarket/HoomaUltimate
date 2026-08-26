@@ -24,12 +24,10 @@ export function createMemberV1Router(container: AppContainer, config: ApiConfig)
     createPlatformAdminRouter(
       container.platformAdminService,
       container.placeService,
-      container.watchService,
       container.pitchService,
     ),
   );
   router.use("/places", createPlacesMemberRouter(container.placeService));
-  router.use("/watch", createPlaceCapabilityMemberRouter(container.watchService));
   router.use("/pitch", createPlaceCapabilityMemberRouter(container.pitchService));
   router.use("/communities", createCommunityMemberRouter(container.communityService));
   router.use("/teams", createTeamMemberRouter(container.teamService));
