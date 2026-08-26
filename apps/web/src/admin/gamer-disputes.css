@@ -1,0 +1,70 @@
+.gamer-dispute-console,
+.gamer-dispute-list,
+.gamer-dispute-card,
+.gamer-dispute-resolution {
+  display: grid;
+  gap: 1rem;
+}
+
+.gamer-dispute-card {
+  padding: 1rem;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.14));
+  border-radius: 0.9rem;
+}
+
+.gamer-dispute-card > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.gamer-dispute-card h3,
+.gamer-dispute-card p {
+  margin: 0;
+}
+
+.gamer-dispute-evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.gamer-dispute-evidence-grid > section,
+.gamer-dispute-player {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.gamer-dispute-evidence-grid img,
+.gamer-dispute-proof-missing {
+  width: 100%;
+  min-height: 14rem;
+  max-height: 28rem;
+  border-radius: 0.75rem;
+  object-fit: contain;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.gamer-dispute-proof-missing {
+  display: grid;
+  place-items: center;
+}
+
+.gamer-dispute-resolution textarea {
+  width: 100%;
+  min-height: 7rem;
+  resize: vertical;
+}
+
+.gamer-dispute-resolution > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+@media (max-width: 720px) {
+  .gamer-dispute-evidence-grid {
+    grid-template-columns: 1fr;
+  }
+}
