@@ -142,7 +142,7 @@
 .watch-ticket {
   position: relative;
   width: 100%;
-  aspect-ratio: 1672 / 941;
+  aspect-ratio: 16 / 9;
   overflow: hidden;
   isolation: isolate;
   color: #21170b;
@@ -174,14 +174,14 @@
 }
 
 .watch-ticket__place-photo {
-  top: 8.5%;
-  left: 3.8%;
-  width: 24.5%;
-  height: 72%;
+  top: 4.8%;
+  left: 4.4%;
+  width: 27.6%;
+  height: 86.6%;
   overflow: hidden;
   display: grid;
   place-items: center;
-  border-radius: 1.8cqw;
+  border-radius: 1.1cqw;
   color: #f0d8a2;
   background: #18130c;
   font-size: clamp(0.5rem, 2cqw, 1rem);
@@ -192,7 +192,9 @@
 .watch-ticket__place-photo img {
   width: 100%;
   height: 100%;
+  display: block;
   object-fit: cover;
+  object-position: center;
 }
 
 .watch-ticket__series {
@@ -208,36 +210,48 @@
 }
 
 .watch-ticket__matchup {
-  top: 19%;
+  top: 18.5%;
   left: 31.2%;
   width: 47.2%;
-  height: 27%;
+  height: 28.5%;
   display: grid;
-  grid-template-columns: minmax(24px, 0.2fr) minmax(0, 1.6fr) minmax(24px, 0.2fr);
+  grid-template-columns: minmax(0, 8.6cqw) minmax(0, 1fr) minmax(0, 8.6cqw);
   align-items: center;
-  gap: 1cqw;
+  gap: 0.7cqw;
   overflow: hidden;
   color: #21170b;
   text-decoration: none;
 }
 
-.watch-ticket__team-logo,
-.watch-ticket__team-placeholder {
-  width: min(100%, 7cqw);
-  max-height: 100%;
+.watch-ticket__team-mark {
+  width: 8.3cqw;
+  max-width: 100%;
   aspect-ratio: 1;
+  display: grid;
+  place-items: center;
   justify-self: center;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+.watch-ticket__team-logo {
+  width: 100%;
+  height: 100%;
+  display: block;
   object-fit: contain;
+  object-position: center;
 }
 
 .watch-ticket__team-placeholder {
+  width: 100%;
+  height: 100%;
   display: grid;
   place-items: center;
-  border: 0.35cqw solid #8a6b35;
-  border-radius: 28% 28% 42% 42%;
+  border-radius: 50%;
   color: #5e441d;
+  background: color-mix(in srgb, #8a6b35 12%, transparent);
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(0.5rem, 2.35cqw, 1.15rem);
+  font-size: clamp(0.62rem, 3cqw, 1.45rem);
   font-weight: 900;
 }
 
@@ -245,27 +259,29 @@
   min-width: 0;
   width: 100%;
   height: 100%;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: center;
-  gap: 0.65cqw;
+  column-gap: 0.6cqw;
   font-family: Georgia, "Times New Roman", serif;
-  line-height: 0.98;
+  line-height: 0.96;
   text-align: center;
   text-transform: uppercase;
 }
 
 .watch-ticket__matchup-title strong {
   min-width: 0;
-  flex: 1 1 0;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: visible;
-  font-size: clamp(0.48rem, 1.85cqw, 1.15rem);
+  overflow: hidden;
+  padding-inline: 0.15cqw;
+  font-size: clamp(0.42rem, 1.65cqw, 1.06rem);
   font-weight: 900;
-  letter-spacing: -0.03em;
-  line-height: 0.98;
+  letter-spacing: -0.035em;
+  line-height: 0.96;
   overflow-wrap: anywhere;
   text-align: center;
   text-wrap: balance;
@@ -273,14 +289,15 @@
 }
 
 .watch-ticket__matchup-title small {
-  flex: 0 0 auto;
+  align-self: center;
   font-family: ui-sans-serif, system-ui, sans-serif;
-  font-size: clamp(0.32rem, 1.05cqw, 0.58rem);
+  font-size: clamp(0.3rem, 0.9cqw, 0.54rem);
   font-weight: 900;
+  line-height: 1;
 }
 
 .watch-ticket__matchup-title--legacy {
-  display: grid;
+  grid-column: 1 / -1;
   grid-template-columns: 1fr;
 }
 
@@ -465,11 +482,11 @@
   }
 
   .watch-ticket__matchup {
-    gap: 0.55cqw;
+    gap: 0.45cqw;
   }
 
   .watch-ticket__matchup-title {
-    gap: 0.3cqw;
+    column-gap: 0.25cqw;
   }
 
   .watch-ticket__venue,
