@@ -93,6 +93,12 @@ export function createEventMemberRouter(service: EventService): Router {
         .json(await service.create(getAuth(request).userId, eventCreateSchema.parse(request.body))),
     ),
   );
+  router.get(
+    "/:eventId/manage",
+    asyncHandler(async (request, response) =>
+      response.json(await service.getManaged(getAuth(request).userId, String(request.params.eventId))),
+    ),
+  );
   router.patch(
     "/:eventId",
     asyncHandler(async (request, response) =>
