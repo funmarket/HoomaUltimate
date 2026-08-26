@@ -1,4 +1,5 @@
 import type {
+  EaFcRoomCodeInput,
   GamerArenaMatchList,
   GamerChallenge,
   GamerChallengeCreateInput,
@@ -8,10 +9,15 @@ import type {
   GamerGame,
   GamerGameCreateInput,
   GamerGameList,
+  GamerMatchSession,
   GamerProfile,
   GamerProfileInput,
 } from "@hooma/contracts/gamers";
 import { request, type HoomaTransport } from "../http";
+
+function challengeMatchPath(gameId: string, challengeId: string): string {
+  return `/api/v1/gamers/games/${encodeURIComponent(gameId)}/challenges/${encodeURIComponent(challengeId)}/match`;
+}
 
 export function createGamersApi(transport: HoomaTransport) {
   return {
@@ -77,6 +83,27 @@ export function createGamersApi(transport: HoomaTransport) {
         `/api/v1/gamers/games/${encodeURIComponent(gameId)}/challenges/${encodeURIComponent(challengeId)}/cancel`,
         { method: "POST" },
       ),
+    match: (gameId: string, challengeId: string) =>
+      request<GamerMatchSession>(transport, challengeMatchPath(gameId, challengeId)),
+    setMatchCode: (gameId: string, challengeId: string, input: EaFcRoomCodeInput) =>
+      request<GamerMatchSession>(transport, `${challengeMatchPath(gameId, challengeId)}/code`, {
+        method: "PUT",
+        body: JSON.stringify(input),
+      }),
+    submitMatchResult: (
+      gameId: string,
+      challengeId: string,
+      input: { yourScore: number; opponentScore: number; proof: File },
+    ) =>
+      request<GamerMatchSession>(transport, `${challengeMatchPath(gameId, challengeId)}/result`, {
+        method: "POST",
+        headers: {
+          "content-type": input.proof.type,
+          "x-hooma-your-score": String(input.yourScore),
+          "x-hooma-opponent-score": String(input.opponentScore),
+        },
+        body: input.proof,
+      }),
   };
 }
 
