@@ -57,6 +57,15 @@ export class EventService {
     } else {
       if (!input.placeId) throw new EventError("PLACE_REQUIRED", "Approved Place is required");
       await this.places.getPublic(input.placeId);
+      if (
+        input.watch?.kind === "CULTURAL" &&
+        !(await this.places.isVerifiedOwner(input.placeId, userId))
+      ) {
+        throw new EventError(
+          "WATCH_CULTURAL_OWNER_REQUIRED",
+          "Only a verified owner of this Place can publish Cultural events",
+        );
+      }
     }
     if (input.entryFeeMinor > 0) {
       throw new EventError(
@@ -71,11 +80,27 @@ export class EventService {
     const access = await this.requireManage(userId, eventId);
     if (access.status !== "PUBLISHED")
       throw new EventError("EVENT_NOT_EDITABLE", "Only published events can be edited");
+    if (
+      access.type === "WATCH" &&
+      access.placeId &&
+      input.watch?.kind === "CULTURAL" &&
+      !(await this.places.isVerifiedOwner(access.placeId, userId))
+    ) {
+      throw new EventError(
+        "WATCH_CULTURAL_OWNER_REQUIRED",
+        "Only a verified owner of this Place can manage Cultural events",
+      );
+    }
     try {
       return await this.repository.update(eventId, input);
     } catch (error) {
       if (error instanceof Error && error.message === "EVENT_TIME_INVALID")
         throw new EventError("EVENT_TIME_INVALID", "Event end time must be after start time");
+      if (error instanceof Error && error.message === "WATCH_EVENT_KIND_IMMUTABLE")
+        throw new EventError(
+          "WATCH_EVENT_KIND_IMMUTABLE",
+          "A Watch event cannot change between Match and Cultural after publishing",
+        );
       throw error;
     }
   }

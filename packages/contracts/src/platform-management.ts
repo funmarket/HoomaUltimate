@@ -11,6 +11,8 @@ export const placeMenuItemSchema = z.object({
   currency: z.string().trim().length(3).default("TND"),
 });
 
+export const placeImageUrlSchema = z.string().trim().url().max(4000);
+
 export const placeSuggestionSchema = z.object({
   name: z.string().trim().min(2).max(160),
   address: z.string().trim().min(3).max(300),
@@ -20,7 +22,8 @@ export const placeSuggestionSchema = z.object({
   longitude: z.number().min(-180).max(180).optional().nullable(),
   phone: z.string().trim().max(60).optional().nullable(),
   websiteUrl: z.string().trim().url().max(2000).optional().nullable(),
-  imageUrl: z.string().trim().url().max(4000).optional().nullable(),
+  imageUrl: placeImageUrlSchema.optional().nullable(),
+  imageUrls: z.array(placeImageUrlSchema).max(4).optional().default([]),
   description: z.string().trim().max(2000).optional().nullable(),
   category: z.string().trim().max(120).optional().nullable(),
   email: z.string().trim().email().max(320).optional().nullable(),
@@ -70,6 +73,12 @@ export interface PublicPlaceMenuItem {
   readonly currency: string;
 }
 
+export interface PublicPlaceImage {
+  readonly id: string;
+  readonly imageUrl: string;
+  readonly sortOrder: number;
+}
+
 export interface PublicPlaceSummary {
   readonly id: string;
   readonly slug: string;
@@ -82,6 +91,7 @@ export interface PublicPlaceSummary {
   readonly phone: string | null;
   readonly websiteUrl: string | null;
   readonly imageUrl: string | null;
+  readonly images: readonly PublicPlaceImage[];
   readonly description: string | null;
   readonly category: string | null;
   readonly email: string | null;

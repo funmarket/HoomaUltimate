@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import type { MeResponse } from "@hooma/contracts";
+import type { MeResponse, WatchEventKind } from "@hooma/contracts";
 import type { PublicPlaceSummary } from "@hooma/contracts/platform-management";
 import { useHoomaFrontend } from "../context";
 import { createPlatformManagementApi } from "../places/platform-management-api";
@@ -10,7 +10,9 @@ export function CreateEventPage() {
   const eventApi = useEventApi();
   const { api, transport, protectedError } = useHoomaFrontend();
   const placeApi = useMemo(() => createPlatformManagementApi(transport), [transport]);
-  const watchMode = new URLSearchParams(window.location.search).get("type") === "WATCH";
+  const searchParams = new URLSearchParams(window.location.search);
+  const watchMode = searchParams.get("type") === "WATCH";
+  const initialWatchKind: WatchEventKind = searchParams.get("kind") === "CULTURAL" ? "CULTURAL" : "MATCH";
   const [me, setMe] = useState<MeResponse | null>(null);
   const [places, setPlaces] = useState<PublicPlaceSummary[]>([]);
   const [pending, setPending] = useState(false);
@@ -47,7 +49,7 @@ export function CreateEventPage() {
         communityId: null,
         placeId: value.placeId,
         type: "WATCH",
-        title: `${value.watch.teamOneName} vs ${value.watch.teamTwoName}`,
+        title: value.title,
         description: value.description,
         startsAt: value.startsAt,
         endsAt: value.endsAt,
@@ -119,7 +121,7 @@ export function CreateEventPage() {
         <header className="watch-event-form-page__header">
           <p className="eyebrow">WATCH</p>
           <h1>Create Event</h1>
-          <p>Build the match ticket around two teams and one approved Place.</p>
+          <p>Create a Match watch night or a Cultural event at one approved Place.</p>
         </header>
         {!places.length ? (
           <div className="panel">
@@ -131,6 +133,7 @@ export function CreateEventPage() {
         ) : (
           <WatchEventForm
             places={places}
+            initialKind={initialWatchKind}
             submitLabel="Publish Watch Event"
             pending={pending}
             onSubmit={submitWatch}

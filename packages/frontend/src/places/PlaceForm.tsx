@@ -21,6 +21,12 @@ function menuDrafts(place?: PublicPlaceSummary | null): MenuDraft[] {
   ];
 }
 
+function imageDrafts(place?: PublicPlaceSummary | null): string[] {
+  const existing = place?.images.map((image) => image.imageUrl) ?? [];
+  const source = existing.length ? existing : place?.imageUrl ? [place.imageUrl] : [];
+  return Array.from({ length: 4 }, (_, index) => source[index] ?? "");
+}
+
 export function PlaceForm({
   initialPlace,
   submitLabel,
@@ -33,6 +39,7 @@ export function PlaceForm({
   readonly onSubmit: (input: PlaceSuggestionInput) => Promise<void>;
 }) {
   const [menu, setMenu] = useState<MenuDraft[]>(() => menuDrafts(initialPlace));
+  const [imageUrls, setImageUrls] = useState<string[]>(() => imageDrafts(initialPlace));
   const [latitude, setLatitude] = useState(initialPlace?.latitude?.toString() ?? "");
   const [longitude, setLongitude] = useState(initialPlace?.longitude?.toString() ?? "");
   const [locationError, setLocationError] = useState("");
@@ -47,6 +54,20 @@ export function PlaceForm({
 
   function removeMenuItem(id: string) {
     setMenu((items) => items.filter((item) => item.id !== id));
+  }
+
+  function updateImage(index: number, value: string) {
+    setImageUrls((items) => items.map((item, itemIndex) => (itemIndex === index ? value : item)));
+  }
+
+  function moveImage(index: number, direction: -1 | 1) {
+    const target = index + direction;
+    if (target < 0 || target >= imageUrls.length) return;
+    setImageUrls((items) => {
+      const next = [...items];
+      [next[index], next[target]] = [next[target] ?? "", next[index] ?? ""];
+      return next;
+    });
   }
 
   function useCurrentLocation() {
@@ -73,12 +94,14 @@ export function PlaceForm({
     const menuItems = menu
       .map((item) => ({ name: item.name.trim(), price: Number(item.price), currency: "TND" }))
       .filter((item) => item.name && Number.isFinite(item.price) && item.price >= 0);
+    const canonicalImages = imageUrls.map((value) => value.trim()).filter(Boolean).slice(0, 4);
 
     await onSubmit({
       name: String(data.get("name") ?? "").trim(),
       category: optionalText("category"),
       description: optionalText("description"),
-      imageUrl: optionalText("imageUrl"),
+      imageUrl: canonicalImages[0] ?? null,
+      imageUrls: canonicalImages,
       address: String(data.get("address") ?? "").trim(),
       city: optionalText("city"),
       houma: optionalText("houma"),
@@ -115,17 +138,44 @@ export function PlaceForm({
             />
           </label>
         </div>
-        <label className="hooma-field">
-          <span>Photo URL</span>
-          <input
-            name="imageUrl"
-            type="url"
-            maxLength={4000}
-            defaultValue={initialPlace?.imageUrl ?? ""}
-            placeholder="https://…"
-          />
-          <small>Public image, CDN and signed image URLs are accepted.</small>
-        </label>
+        <div className="place-photo-editor">
+          <div className="place-photo-editor__heading">
+            <strong>Place photos</strong>
+            <small>Up to 4 external image links. The first photo is the Place cover.</small>
+          </div>
+          {imageUrls.map((imageUrl, index) => (
+            <div className="place-photo-editor__row" key={index}>
+              <label className="hooma-field">
+                <span>Photo {index + 1} URL</span>
+                <input
+                  type="url"
+                  maxLength={4000}
+                  value={imageUrl}
+                  placeholder="https://…"
+                  onChange={(event) => updateImage(index, event.target.value)}
+                />
+              </label>
+              <div className="place-photo-editor__order" aria-label={`Photo ${index + 1} order`}>
+                <button
+                  type="button"
+                  disabled={index === 0}
+                  aria-label={`Move photo ${index + 1} up`}
+                  onClick={() => moveImage(index, -1)}
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  disabled={index === imageUrls.length - 1}
+                  aria-label={`Move photo ${index + 1} down`}
+                  onClick={() => moveImage(index, 1)}
+                >
+                  ↓
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
         <label className="hooma-field">
           <span>About</span>
           <textarea

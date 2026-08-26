@@ -249,13 +249,39 @@ export const playPitchTypeSchema = z.enum([
   "STREET",
   "OTHER",
 ]);
+export const watchEventKindSchema = z.enum(["MATCH", "CULTURAL"]);
+export const watchCulturalCategorySchema = z.enum([
+  "MUSIC",
+  "CONCERT",
+  "COMEDY",
+  "ART",
+  "SCREENING",
+  "FOOD",
+  "COMMUNITY",
+  "OTHER",
+]);
 
-export const watchEventDetailsSchema = z.object({
+const watchMatchEventDetailsSchema = z.object({
+  kind: z.literal("MATCH"),
   teamOneName: z.string().trim().min(1).max(100),
   teamOneLogoUrl: z.string().trim().url().max(4000).optional().nullable(),
   teamTwoName: z.string().trim().min(1).max(100),
   teamTwoLogoUrl: z.string().trim().url().max(4000).optional().nullable(),
 });
+
+const watchCulturalEventDetailsSchema = z.object({
+  kind: z.literal("CULTURAL"),
+  culturalCategory: watchCulturalCategorySchema,
+  imageUrl: z.string().trim().url().max(4000).optional().nullable(),
+});
+
+export const watchEventDetailsSchema = z.preprocess(
+  (value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value) || "kind" in value) return value;
+    return { ...value, kind: "MATCH" };
+  },
+  z.discriminatedUnion("kind", [watchMatchEventDetailsSchema, watchCulturalEventDetailsSchema]),
+);
 
 export const eventCreateSchema = z
   .object({
@@ -310,7 +336,7 @@ export const eventCreateSchema = z
         context.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["watch"],
-          message: "Watch matchup details are only valid for WATCH events",
+          message: "Watch details are only valid for WATCH events",
         });
       }
     }
@@ -326,7 +352,7 @@ export const eventCreateSchema = z
         context.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["watch"],
-          message: "Both teams are required for WATCH events",
+          message: "Watch event details are required for WATCH events",
         });
       }
       if (input.play) {
@@ -386,6 +412,8 @@ export const eventCheckInSchema = z.object({
   longitude: z.number().min(-180).max(180).optional().nullable(),
 });
 export const eventChatMessageSchema = z.object({ body: z.string().trim().min(1).max(1200) });
+export type WatchEventKind = z.infer<typeof watchEventKindSchema>;
+export type WatchCulturalCategory = z.infer<typeof watchCulturalCategorySchema>;
 export type WatchEventDetailsInput = z.infer<typeof watchEventDetailsSchema>;
 export type EventCreateInput = z.infer<typeof eventCreateSchema>;
 export type EventUpdateInput = z.infer<typeof eventUpdateSchema>;

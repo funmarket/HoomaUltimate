@@ -1,17 +1,46 @@
 import { useEffect, useMemo, useState } from "react";
+import type { WatchEventKind } from "@hooma/contracts";
 import type { PublicEvent } from "../events/api";
 import { useEventApi } from "../events/useEventApi";
+import { CulturalEventCard } from "./CulturalEventCard";
 import { WatchTicket } from "./WatchTicket";
 
 function normalize(value: string | null | undefined): string {
   return value?.trim().toLocaleLowerCase() ?? "";
 }
 
+function watchKind(event: PublicEvent): WatchEventKind {
+  return event.watchDetails?.kind === "CULTURAL" ? "CULTURAL" : "MATCH";
+}
+
+type TimeGroup = "Today" | "Tomorrow" | "This Week" | "Later";
+
+function groupForEvent(event: PublicEvent): TimeGroup {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  const afterTomorrow = new Date(today);
+  afterTomorrow.setDate(today.getDate() + 2);
+  const nextWeek = new Date(today);
+  nextWeek.setDate(today.getDate() + 7);
+  const startsAt = new Date(event.startsAt);
+  if (startsAt < tomorrow) return "Today";
+  if (startsAt < afterTomorrow) return "Tomorrow";
+  if (startsAt < nextWeek) return "This Week";
+  return "Later";
+}
+
+const timeGroupOrder: readonly TimeGroup[] = ["Today", "Tomorrow", "This Week", "Later"];
+
 export function WatchPage() {
   const eventApi = useEventApi();
+  const initialKind: WatchEventKind =
+    new URLSearchParams(window.location.search).get("kind") === "CULTURAL" ? "CULTURAL" : "MATCH";
   const [events, setEvents] = useState<PublicEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [kind, setKind] = useState<WatchEventKind>(initialKind);
   const [query, setQuery] = useState("");
   const [city, setCity] = useState("");
   const [houma, setHouma] = useState("");
@@ -36,40 +65,45 @@ export function WatchPage() {
     };
   }, [eventApi]);
 
+  const visibleKindEvents = useMemo(() => events.filter((event) => watchKind(event) === kind), [events, kind]);
+
   const cities = useMemo(
     () =>
       [
         ...new Set(
-          events
+          visibleKindEvents
             .map((event) => event.place?.city)
             .filter((value): value is string => Boolean(value)),
         ),
       ].sort(),
-    [events],
+    [visibleKindEvents],
   );
   const houmas = useMemo(
     () =>
       [
         ...new Set(
-          events
+          visibleKindEvents
             .map((event) => event.place?.houma)
             .filter((value): value is string => Boolean(value)),
         ),
       ].sort(),
-    [events],
+    [visibleKindEvents],
   );
 
   const filteredEvents = useMemo(() => {
     const needle = normalize(query);
-    return events.filter((event) => {
+    return visibleKindEvents.filter((event) => {
       if (!event.place) return false;
       if (city && event.place.city !== city) return false;
       if (houma && event.place.houma !== houma) return false;
       if (!needle) return true;
+      const culturalCategory =
+        event.watchDetails?.kind === "CULTURAL" ? event.watchDetails.culturalCategory : null;
       return normalize(
         [
           event.title,
           event.description,
+          culturalCategory,
           event.place.name,
           event.place.address,
           event.place.city,
@@ -79,14 +113,35 @@ export function WatchPage() {
           .join(" "),
       ).includes(needle);
     });
-  }, [city, events, houma, query]);
+  }, [city, houma, query, visibleKindEvents]);
+
+  const groups = useMemo(() => {
+    const grouped = new Map<TimeGroup, PublicEvent[]>();
+    for (const event of filteredEvents) {
+      const label = groupForEvent(event);
+      const group = grouped.get(label) ?? [];
+      group.push(event);
+      grouped.set(label, group);
+    }
+    return grouped;
+  }, [filteredEvents]);
+
+  function selectKind(nextKind: WatchEventKind) {
+    setKind(nextKind);
+    setCity("");
+    setHouma("");
+    const url = new URL(window.location.href);
+    if (nextKind === "MATCH") url.searchParams.delete("kind");
+    else url.searchParams.set("kind", nextKind);
+    window.history.replaceState(null, "", `${url.pathname}${url.search}`);
+  }
 
   return (
     <section className="watch-page">
       <header className="watch-hero">
         <div>
           <h1>Watch</h1>
-          <p>Watch together. Find the match. Find the crowd.</p>
+          <p>Watch together. Find the match, the culture and the crowd.</p>
         </div>
       </header>
 
@@ -97,13 +152,34 @@ export function WatchPage() {
         <a className="watch-action" href="/places">
           Places
         </a>
-        <a className="watch-action watch-action--primary" href="/events/new?type=WATCH">
+        <a className="watch-action watch-action--primary" href={`/events/new?type=WATCH&kind=${kind}`}>
           Create Event
         </a>
         <a className="watch-action" href="/places/new">
           Add a Place
         </a>
       </nav>
+
+      <div className="watch-kind-tabs" role="tablist" aria-label="Watch event categories">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={kind === "MATCH"}
+          className={kind === "MATCH" ? "watch-kind-tab is-active" : "watch-kind-tab"}
+          onClick={() => selectKind("MATCH")}
+        >
+          Match
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={kind === "CULTURAL"}
+          className={kind === "CULTURAL" ? "watch-kind-tab is-active" : "watch-kind-tab"}
+          onClick={() => selectKind("CULTURAL")}
+        >
+          Cultural
+        </button>
+      </div>
 
       <div className="watch-discovery-controls">
         <label className="watch-search">
@@ -112,10 +188,10 @@ export function WatchPage() {
             <path d="m16 16 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
           </svg>
           <input
-            aria-label="Search Watch events, teams or venues"
+            aria-label="Search Watch events or venues"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search events, teams or venues"
+            placeholder={kind === "MATCH" ? "Search matches, teams or venues" : "Search cultural events or venues"}
           />
         </label>
         <div className="watch-location-filters">
@@ -146,20 +222,33 @@ export function WatchPage() {
 
       {error ? <p className="error">{error}</p> : null}
       {loading ? <p className="status">Loading Watch events…</p> : null}
-      {!loading && filteredEvents.length ? (
-        <div className="watch-ticket-list">
-          {filteredEvents.map((event) => (
-            <WatchTicket key={event.id} event={event} />
-          ))}
-        </div>
-      ) : null}
+      {!loading && filteredEvents.length
+        ? timeGroupOrder.map((label) => {
+            const items = groups.get(label);
+            if (!items?.length) return null;
+            return (
+              <section className="watch-time-group" key={label}>
+                <h2 className="watch-time-group__heading">{label}</h2>
+                <div className="watch-time-group__items">
+                  {items.map((event) =>
+                    kind === "MATCH" ? (
+                      <WatchTicket key={event.id} event={event} />
+                    ) : (
+                      <CulturalEventCard key={event.id} event={event} />
+                    ),
+                  )}
+                </div>
+              </section>
+            );
+          })
+        : null}
       {!loading && !filteredEvents.length && !error ? (
         <div className="watch-empty-state">
           <div className="watch-empty-state__icon" aria-hidden="true">
             ◫
           </div>
-          <strong>No watch events yet.</strong>
-          <p>New watch events across HOOMA will appear here.</p>
+          <strong>No {kind === "MATCH" ? "match" : "cultural"} events yet.</strong>
+          <p>New Watch events across HOOMA will appear here.</p>
         </div>
       ) : null}
     </section>

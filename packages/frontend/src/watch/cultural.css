@@ -1,0 +1,219 @@
+.watch-kind-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 5px;
+  border: 1px solid var(--app-line-strong);
+  border-radius: 16px;
+  background: var(--app-surface);
+}
+
+.watch-kind-tab {
+  min-height: 46px;
+  border: 0;
+  border-radius: 12px;
+  color: var(--app-text-secondary);
+  background: transparent;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.watch-kind-tab.is-active {
+  color: #111500;
+  background: var(--app-lime);
+}
+
+.watch-time-group {
+  display: grid;
+  gap: 14px;
+}
+
+.watch-time-group__heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  color: var(--app-text-strong);
+  font-size: 0.82rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.watch-time-group__heading::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: var(--app-line);
+}
+
+.watch-time-group__items {
+  display: grid;
+  gap: 18px;
+}
+
+.watch-cultural-card {
+  min-width: 0;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(220px, 38%) minmax(0, 1fr);
+  border: 1px solid var(--app-line);
+  border-radius: 20px;
+  background: var(--app-surface);
+}
+
+.watch-cultural-card__media {
+  position: relative;
+  min-height: 240px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  color: var(--app-gold);
+  background: var(--app-bg-raised);
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.watch-cultural-card__media img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.watch-cultural-card__category {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--app-gold) 55%, transparent);
+  border-radius: 10px;
+  color: var(--app-gold);
+  background: color-mix(in srgb, #050505 88%, transparent);
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.watch-cultural-card__body {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 13px;
+  padding: clamp(18px, 4vw, 30px);
+}
+
+.watch-cultural-card__time {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--app-lime);
+  font-size: 0.88rem;
+}
+
+.watch-cultural-card__title {
+  color: var(--app-text-strong);
+  font-size: clamp(1.55rem, 4vw, 2.5rem);
+  font-weight: 950;
+  line-height: 1;
+  letter-spacing: -0.025em;
+  text-decoration: none;
+}
+
+.watch-cultural-card__body > p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  color: var(--app-text-secondary);
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.watch-cultural-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--app-line);
+  color: var(--app-text-secondary);
+}
+
+.watch-cultural-card__meta > a,
+.watch-cultural-card__meta > span {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.watch-cultural-card__meta svg {
+  flex: 0 0 19px;
+  width: 19px;
+}
+
+.watch-cultural-card__meta a > span {
+  min-width: 0;
+  display: grid;
+}
+
+.watch-cultural-card__meta small {
+  overflow: hidden;
+  color: var(--app-text-caption);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.watch-kind-selector {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 5px;
+  border: 1px solid var(--app-line-strong);
+  border-radius: 14px;
+  background: var(--app-bg-raised);
+}
+
+.watch-kind-selector__option {
+  min-height: 44px;
+  border: 0;
+  border-radius: 10px;
+  color: var(--app-text-secondary);
+  background: transparent;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.watch-kind-selector__option.is-active {
+  color: #111500;
+  background: var(--app-lime);
+}
+
+.watch-kind-selector__option:disabled {
+  cursor: default;
+}
+
+.watch-cultural-form {
+  display: grid;
+  gap: 14px;
+}
+
+@media (max-width: 700px) {
+  .watch-cultural-card {
+    grid-template-columns: 1fr;
+  }
+
+  .watch-cultural-card__media {
+    min-height: 0;
+    aspect-ratio: 16 / 9;
+  }
+}

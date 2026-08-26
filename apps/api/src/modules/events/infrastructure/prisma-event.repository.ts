@@ -51,6 +51,11 @@ const publicEventSelect = Prisma.validator<Prisma.EventSelect>()({
 });
 
 type PublicEventRow = Prisma.EventGetPayload<{ select: typeof publicEventSelect }>;
+type CulturalDetails = {
+  eventId: string;
+  culturalCategory: string;
+  imageUrl: string | null;
+};
 
 export class PrismaEventRepository implements EventRepository {
   constructor(private readonly db: PrismaClient) {}
@@ -92,8 +97,15 @@ export class PrismaEventRepository implements EventRepository {
       ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
       select: publicEventSelect,
     });
+    const pageRows = rows.slice(0, input.limit);
+    const culturalRows = pageRows.length
+      ? await this.db.watchCulturalEventDetails.findMany({
+          where: { eventId: { in: pageRows.map((event) => event.id) } },
+        })
+      : [];
+    const culturalByEvent = new Map(culturalRows.map((details) => [details.eventId, details]));
     return {
-      items: rows.slice(0, input.limit).map(serializePublicEvent),
+      items: pageRows.map((event) => serializePublicEvent(event, culturalByEvent.get(event.id))),
       nextCursor: rows.length > input.limit ? (rows[input.limit - 1]?.id ?? null) : null,
     };
   }
@@ -113,7 +125,12 @@ export class PrismaEventRepository implements EventRepository {
       },
       select: publicEventSelect,
     });
-    return row ? serializePublicEvent(row) : null;
+    if (!row) return null;
+    const cultural =
+      row.type === "WATCH"
+        ? await this.db.watchCulturalEventDetails.findUnique({ where: { eventId } })
+        : null;
+    return serializePublicEvent(row, cultural ?? undefined);
   }
 
   access(eventId: string): Promise<EventAccessRecord | null> {
@@ -163,7 +180,7 @@ export class PrismaEventRepository implements EventRepository {
     const endsAt = input.endsAt ? new Date(input.endsAt) : null;
     const chatWindow = eventChatWindow(startsAt, endsAt);
     const title =
-      input.type === "WATCH" && input.watch
+      input.type === "WATCH" && input.watch?.kind === "MATCH"
         ? `${input.watch.teamOneName} vs ${input.watch.teamTwoName}`
         : input.title;
     return this.db.$transaction(async (tx) => {
@@ -196,7 +213,7 @@ export class PrismaEventRepository implements EventRepository {
           },
         });
       }
-      if (input.type === "WATCH" && input.watch) {
+      if (input.type === "WATCH" && input.watch?.kind === "MATCH") {
         await tx.watchEventDetails.create({
           data: {
             eventId: event.id,
@@ -207,24 +224,45 @@ export class PrismaEventRepository implements EventRepository {
           },
         });
       }
+      if (input.type === "WATCH" && input.watch?.kind === "CULTURAL") {
+        await tx.watchCulturalEventDetails.create({
+          data: {
+            eventId: event.id,
+            culturalCategory: input.watch.culturalCategory,
+            imageUrl: input.watch.imageUrl ?? null,
+          },
+        });
+      }
       await tx.eventChatRoom.create({ data: { eventId: event.id, ...chatWindow } });
       const created = await tx.event.findUniqueOrThrow({
         where: { id: event.id },
         select: publicEventSelect,
       });
-      return serializePublicEvent(created);
+      const cultural =
+        input.type === "WATCH" && input.watch?.kind === "CULTURAL"
+          ? await tx.watchCulturalEventDetails.findUnique({ where: { eventId: event.id } })
+          : null;
+      return serializePublicEvent(created, cultural ?? undefined);
     });
   }
 
   async update(eventId: string, input: EventUpdateInput) {
     return this.db.$transaction(async (tx) => {
       const current = await tx.event.findUniqueOrThrow({ where: { id: eventId } });
+      const currentCultural =
+        current.type === "WATCH"
+          ? await tx.watchCulturalEventDetails.findUnique({ where: { eventId } })
+          : null;
+      const currentWatchKind = current.type === "WATCH" ? (currentCultural ? "CULTURAL" : "MATCH") : null;
+      if (input.watch && currentWatchKind && input.watch.kind !== currentWatchKind) {
+        throw new Error("WATCH_EVENT_KIND_IMMUTABLE");
+      }
       const startsAt = input.startsAt ? new Date(input.startsAt) : current.startsAt;
       const endsAt =
         input.endsAt === undefined ? current.endsAt : input.endsAt ? new Date(input.endsAt) : null;
       if (endsAt && endsAt <= startsAt) throw new Error("EVENT_TIME_INVALID");
       const data: Prisma.EventUpdateInput = {
-        ...(input.watch !== undefined
+        ...(input.watch?.kind === "MATCH"
           ? { title: `${input.watch.teamOneName} vs ${input.watch.teamTwoName}` }
           : input.title !== undefined
             ? { title: input.title }
@@ -243,7 +281,7 @@ export class PrismaEventRepository implements EventRepository {
         ...(input.waitlistEnabled !== undefined ? { waitlistEnabled: input.waitlistEnabled } : {}),
       };
       await tx.event.update({ where: { id: eventId }, data });
-      if (current.type === "WATCH" && input.watch !== undefined) {
+      if (current.type === "WATCH" && input.watch?.kind === "MATCH") {
         await tx.watchEventDetails.upsert({
           where: { eventId },
           create: {
@@ -261,6 +299,15 @@ export class PrismaEventRepository implements EventRepository {
           },
         });
       }
+      if (current.type === "WATCH" && input.watch?.kind === "CULTURAL") {
+        await tx.watchCulturalEventDetails.update({
+          where: { eventId },
+          data: {
+            culturalCategory: input.watch.culturalCategory,
+            imageUrl: input.watch.imageUrl ?? null,
+          },
+        });
+      }
       await tx.eventChatRoom.update({
         where: { eventId },
         data: eventChatWindow(startsAt, endsAt),
@@ -269,7 +316,11 @@ export class PrismaEventRepository implements EventRepository {
         where: { id: eventId },
         select: publicEventSelect,
       });
-      return serializePublicEvent(updated);
+      const cultural =
+        current.type === "WATCH"
+          ? await tx.watchCulturalEventDetails.findUnique({ where: { eventId } })
+          : null;
+      return serializePublicEvent(updated, cultural ?? undefined);
     });
   }
 
@@ -463,7 +514,7 @@ async function lockEvent(tx: Prisma.TransactionClient, eventId: string): Promise
   if (rows.length === 0) throw new Error("EVENT_NOT_FOUND");
 }
 
-function serializePublicEvent(event: PublicEventRow) {
+function serializePublicEvent(event: PublicEventRow, cultural?: CulturalDetails) {
   const officialVenue = Boolean(
     event.place?.ownerships.some((ownership) => ownership.userId === event.createdByUserId),
   );
@@ -472,9 +523,19 @@ function serializePublicEvent(event: PublicEventRow) {
         Object.entries(event.place).filter(([key]) => key !== "ownerships" && key !== "archivedAt"),
       )
     : null;
+  const watchDetails = cultural
+    ? {
+        kind: "CULTURAL" as const,
+        culturalCategory: cultural.culturalCategory,
+        imageUrl: cultural.imageUrl,
+      }
+    : event.watchDetails
+      ? { kind: "MATCH" as const, ...event.watchDetails }
+      : null;
   const output = {
     ...event,
     place,
+    watchDetails,
     venueAuthority:
       event.place === null ? null : officialVenue ? "OFFICIAL_VENUE" : "SUGGESTED_BY_COMMUNITY",
   };
