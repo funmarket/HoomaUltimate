@@ -31,7 +31,13 @@ function eventDateParts(event: PublicEvent): { date: string; time: string } {
   }
 }
 
-function TeamMark({ name, logoUrl }: { readonly name: string; readonly logoUrl: string | null }) {
+function TeamMark({
+  name,
+  logoUrl,
+}: {
+  readonly name: string;
+  readonly logoUrl: string | null;
+}) {
   return (
     <span className="watch-ticket__team-mark">
       {logoUrl ? (
@@ -83,7 +89,11 @@ export function WatchTicket({
           href={placeHref}
           aria-label={`Open ${place.name}`}
         >
-          {place.imageUrl ? <img src={place.imageUrl} alt={place.name} /> : <span>{place.name}</span>}
+          {place.imageUrl ? (
+            <img src={place.imageUrl} alt={place.name} />
+          ) : (
+            <span>{place.name}</span>
+          )}
         </a>
       ) : null}
       <span className="watch-ticket__series">COLLECTOR SERIES</span>
