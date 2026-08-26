@@ -32,6 +32,10 @@ function placeSummary(place: {
   longitude: { toNumber(): number } | null;
   phone: string | null;
   websiteUrl: string | null;
+  imageUrl: string | null;
+  description: string | null;
+  category: string | null;
+  email: string | null;
 }): PublicPlaceSummary {
   return {
     id: place.id,
@@ -44,6 +48,10 @@ function placeSummary(place: {
     longitude: place.longitude?.toNumber() ?? null,
     phone: place.phone,
     websiteUrl: place.websiteUrl,
+    imageUrl: place.imageUrl,
+    description: place.description,
+    category: place.category,
+    email: place.email,
   };
 }
 
@@ -58,6 +66,10 @@ const placeSelect = {
   longitude: true,
   phone: true,
   websiteUrl: true,
+  imageUrl: true,
+  description: true,
+  category: true,
+  email: true,
 } as const;
 
 export class PrismaPlaceRepository implements PlaceRepository {
@@ -73,6 +85,16 @@ export class PrismaPlaceRepository implements PlaceRepository {
   }
 
   async suggest(userId: string, input: PlaceSuggestionInput) {
+    const existing = await this.db.place.findFirst({
+      where: {
+        name: { equals: input.name, mode: "insensitive" },
+        address: { equals: input.address, mode: "insensitive" },
+        moderationStatus: { in: ["PENDING", "APPROVED"] },
+      },
+      select: { id: true },
+    });
+    if (existing) throw new Error("PLACE_ALREADY_EXISTS");
+
     const place = await this.db.place.create({
       data: {
         slug: `${slugBase(input.name)}-${randomUUID().slice(0, 8)}`,
@@ -84,6 +106,10 @@ export class PrismaPlaceRepository implements PlaceRepository {
         longitude: input.longitude ?? null,
         phone: input.phone ?? null,
         websiteUrl: input.websiteUrl ?? null,
+        imageUrl: input.imageUrl ?? null,
+        description: input.description ?? null,
+        category: input.category ?? null,
+        email: input.email ?? null,
         suggestedByUserId: userId,
       },
       select: { ...placeSelect, moderationStatus: true },
@@ -200,6 +226,12 @@ export class PrismaPlaceRepository implements PlaceRepository {
   async reviewPlace(actorUserId: string, placeId: string, input: ModerationDecisionInput) {
     const status = input.decision === "APPROVE" ? "APPROVED" : "REJECTED";
     return this.db.$transaction(async (tx) => {
+      const place = await tx.place.findFirst({
+        where: { id: placeId, moderationStatus: "PENDING" },
+        select: { suggestedByUserId: true },
+      });
+      if (!place) return false;
+
       const result = await tx.place.updateMany({
         where: { id: placeId, moderationStatus: "PENDING" },
         data: {
@@ -210,6 +242,23 @@ export class PrismaPlaceRepository implements PlaceRepository {
         },
       });
       if (!result.count) return false;
+
+      if (status === "APPROVED") {
+        await tx.placeOwnership.upsert({
+          where: { placeId_userId: { placeId, userId: place.suggestedByUserId } },
+          create: {
+            placeId,
+            userId: place.suggestedByUserId,
+            verifiedByUserId: actorUserId,
+          },
+          update: {
+            verifiedByUserId: actorUserId,
+            verifiedAt: new Date(),
+            revokedAt: null,
+          },
+        });
+      }
+
       await tx.auditLog.create({
         data: {
           actorUserId,
