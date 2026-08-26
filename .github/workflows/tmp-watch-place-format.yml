@@ -1,0 +1,40 @@
+name: Temporary Watch management formatter
+
+on:
+  push:
+    branches:
+      - fix/watch-place-event-management-ui
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - name: Format changed source files and remove helper
+        shell: bash
+        run: |
+          git diff --name-only 1f2589cce3bad4d3e6ff2a506513e91c62ef3332...HEAD \
+            | grep -E '\.(ts|tsx|css|mjs|json|md)$' \
+            | grep -v '^\.github/workflows/tmp-watch-place-format\.yml$' \
+            | xargs --no-run-if-empty npx prettier --write
+          rm .github/workflows/tmp-watch-place-format.yml
+          git add -A
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'chore(format): normalize final Watch management files'
+          git push origin HEAD:fix/watch-place-event-management-ui
