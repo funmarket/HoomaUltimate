@@ -16,7 +16,9 @@ import {
   UserPlusIcon,
   UsersIcon,
 } from "../ui/HoomaIcons";
+import { CulturalEventCard } from "../watch/CulturalEventCard";
 import { WatchTicket } from "../watch/WatchTicket";
+import { PlaceGallery } from "./PlaceGallery";
 import { createPlatformManagementApi } from "./platform-management-api";
 
 type ActiveRsvpState = "CONFIRMED" | "WAITLISTED" | "ATTENDED" | null;
@@ -76,7 +78,14 @@ function mapHref(place: PublicPlaceSummary): string {
 
 function EventTeamMarks({ event }: { readonly event: PublicEvent }) {
   const details = event.watchDetails;
-  if (!details) return null;
+  if (details?.kind === "CULTURAL") {
+    return (
+      <span className="place-event-row__teams" aria-hidden="true">
+        <span>{details.culturalCategory.slice(0, 1)}</span>
+      </span>
+    );
+  }
+  if (details?.kind !== "MATCH") return <span className="place-event-row__teams" aria-hidden="true" />;
   return (
     <span className="place-event-row__teams" aria-hidden="true">
       {details.teamOneLogoUrl ? <img src={details.teamOneLogoUrl} alt="" /> : <span />}
@@ -255,22 +264,13 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
         ) : null}
       </div>
 
-      {selectedEvent ? <WatchTicket event={selectedEvent} variant="place-detail" /> : null}
+      {selectedEvent?.watchDetails?.kind === "CULTURAL" ? (
+        <CulturalEventCard event={selectedEvent} />
+      ) : selectedEvent ? (
+        <WatchTicket event={selectedEvent} variant="place-detail" />
+      ) : null}
 
-      <section className="place-detail-hero">
-        <div className="place-detail-hero__media">
-          {place.imageUrl ? <img src={place.imageUrl} alt={place.name} /> : <span>HOOMA</span>}
-          {selectedEvent ? (
-            <span
-              className={`place-venue-badge place-venue-badge--${selectedEvent.venueAuthority === "OFFICIAL_VENUE" ? "official" : "community"}`}
-            >
-              {selectedEvent.venueAuthority === "OFFICIAL_VENUE"
-                ? "OFFICIAL VENUE"
-                : "SUGGESTED BY COMMUNITY"}
-            </span>
-          ) : null}
-        </div>
-
+      <section className="place-detail-hero place-detail-hero--copy-only">
         <div className="place-detail-hero__copy">
           {place.category ? <p className="place-detail-category">{place.category}</p> : null}
           <h1>{place.name}</h1>
@@ -286,6 +286,12 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
               <span className="place-event-summary__divider" aria-hidden="true" />
               <span>
                 <CalendarIcon /> {selectedDate.date} · {selectedDate.time}
+              </span>
+              <span className="place-event-summary__divider" aria-hidden="true" />
+              <span>
+                {selectedEvent.venueAuthority === "OFFICIAL_VENUE"
+                  ? "Official venue"
+                  : "Suggested by community"}
               </span>
             </div>
           ) : null}
@@ -402,6 +408,8 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
         </article>
       </div>
 
+      <PlaceGallery place={place} />
+
       {place.menuItems.length ? (
         <section className="place-menu-section" id="place-menu">
           <div className="place-section-heading">
@@ -434,7 +442,7 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
       <section className="place-events-section">
         <div className="place-section-heading">
           <h2>
-            <CalendarIcon /> Upcoming watch events at this place
+            <CalendarIcon /> Upcoming Watch events at this place
           </h2>
           {events.length > 2 ? (
             <button type="button" onClick={() => setEventsExpanded((value) => !value)}>
@@ -447,6 +455,7 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
           {visibleEvents.map((event) => {
             const date = eventDateParts(event);
             const details = event.watchDetails;
+            const match = details?.kind === "MATCH" ? details : null;
             return (
               <a className="place-event-row" key={event.id} href={`/events/${event.id}`}>
                 <span className="place-event-row__date">
@@ -455,18 +464,18 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
                 </span>
                 <EventTeamMarks event={event} />
                 <span className="place-event-row__match">
-                  {details ? (
+                  {match ? (
                     <span className="place-event-row__matchup">
                       <FitSingleLineText
                         className="place-event-row__team-name place-event-row__team-name--one"
-                        text={details.teamOneName}
+                        text={match.teamOneName}
                         minFontSize={10}
                         maxFontSize={24}
                       />
                       <small>VS</small>
                       <FitSingleLineText
                         className="place-event-row__team-name place-event-row__team-name--two"
-                        text={details.teamTwoName}
+                        text={match.teamTwoName}
                         minFontSize={10}
                         maxFontSize={24}
                       />
@@ -499,6 +508,9 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
           <div>
             <a href={`/places/${place.id}/edit`}>
               <EditIcon size={16} /> Edit Place
+            </a>
+            <a href={`/events/new?type=WATCH&kind=CULTURAL&placeId=${encodeURIComponent(place.id)}`}>
+              Create Cultural Event
             </a>
             <button type="button" disabled={deleting} onClick={() => void deletePlace()}>
               {deleting ? "Deleting…" : "Delete Place"}
