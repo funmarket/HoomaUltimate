@@ -5,6 +5,7 @@ import type {
 } from "@hooma/contracts/platform-management";
 import { useHoomaFrontend } from "../context";
 import { createEventApi, type PublicEvent } from "../events/api";
+import { WatchTicket } from "../watch/WatchTicket";
 import { PlaceCapabilityOnboarding } from "./PlaceCapabilityOnboarding";
 import { createPlatformManagementApi } from "./platform-management-api";
 
@@ -199,6 +200,7 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
   const [claimOpen, setClaimOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const selectedEventId = new URLSearchParams(window.location.search).get("eventId");
 
   useEffect(() => {
     void Promise.all([management.places.get(placeId), eventsApi.publicWatch()])
@@ -230,11 +232,16 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
   if (!place)
     return error ? <p className="error">{error}</p> : <p className="status">Loading Place…</p>;
 
+  const selectedEvent = selectedEventId
+    ? events.find((event) => event.id === selectedEventId) ?? null
+    : null;
+
   return (
     <section className="place-detail-page">
-      <a className="place-back-link" href="/places">
-        ← Places
+      <a className="place-back-link" href="/watch">
+        ← Watch
       </a>
+      {selectedEvent ? <WatchTicket event={selectedEvent} /> : null}
       <div className="place-detail-hero">
         <div className="place-detail-hero__media">
           {place.imageUrl ? <img src={place.imageUrl} alt={place.name} /> : <span>HOOMA</span>}
