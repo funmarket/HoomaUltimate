@@ -344,6 +344,11 @@
   text-decoration: none;
 }
 
+.watch-ticket__detail.watch-ticket__date {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
 .watch-ticket__detail + .watch-ticket__detail {
   border-left: 1px solid color-mix(in srgb, var(--watch-ticket-ink) 45%, transparent);
 }
@@ -391,6 +396,12 @@
   white-space: nowrap;
 }
 
+.watch-ticket__date-text {
+  width: 100%;
+  font-weight: 950 !important;
+  line-height: 0.98 !important;
+}
+
 .watch-ticket__attendance .watch-ticket__detail-copy > strong {
   display: flex;
   align-items: baseline;
@@ -423,9 +434,8 @@
   position: relative;
   min-width: 0;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr);
   place-items: center;
-  gap: clamp(5px, 1cqw, 10px);
   padding: clamp(8px, 1.5cqw, 14px) clamp(5px, 0.9cqw, 9px);
   border-left: 2px dashed color-mix(in srgb, var(--watch-ticket-gold) 85%, #fff 8%);
   color: var(--watch-ticket-gold);
@@ -461,29 +471,6 @@
   display: block;
   object-fit: contain;
   object-position: center;
-}
-
-.watch-ticket__stub-date {
-  display: grid;
-  place-items: center;
-  gap: 1px;
-  color: var(--app-lime);
-  font-family: var(--watch-ticket-font-condensed);
-  font-weight: 950;
-  line-height: 0.9;
-  text-align: center;
-  text-transform: uppercase;
-}
-
-.watch-ticket__stub-date strong {
-  font-size: clamp(0.72rem, 2.5cqw, 1.15rem);
-  letter-spacing: 0.03em;
-}
-
-.watch-ticket__stub-date small {
-  font-size: clamp(0.56rem, 1.8cqw, 0.84rem);
-  font-weight: 950;
-  letter-spacing: 0.08em;
 }
 
 .watch-ticket__photo-panel {
@@ -652,16 +639,7 @@
   }
 
   .watch-ticket__stub {
-    gap: 4px;
     padding: 7px 4px;
-  }
-
-  .watch-ticket__stub-date strong {
-    font-size: clamp(0.68rem, 2.4cqw, 0.88rem);
-  }
-
-  .watch-ticket__stub-date small {
-    font-size: clamp(0.5rem, 1.75cqw, 0.66rem);
   }
 
   .watch-ticket__photo-panel {
