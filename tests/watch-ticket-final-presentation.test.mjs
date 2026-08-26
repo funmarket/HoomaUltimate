@@ -57,48 +57,52 @@ test("Watch matchup uses one measured fitter so names expand or shrink without w
   assert.match(css, /\.watch-ticket__team-logo \{[\s\S]*?object-fit:\s*contain/);
 });
 
-test("Watch practical information keeps full date and status text instead of ellipsis", () => {
+test("Watch practical information gives the date all available width and never renders a calendar icon", () => {
   const ticket = source("packages/frontend/src/watch/WatchTicket.tsx");
   const css = source("packages/frontend/src/watch/watch.css");
   const details = cssRule(css, ".watch-ticket__details");
-  const detail = cssRule(css, ".watch-ticket__detail");
+  const date = cssRule(css, ".watch-ticket__detail.watch-ticket__date");
   const primary = cssRule(css, ".watch-ticket__detail-copy > strong");
   const secondary = cssRule(css, ".watch-ticket__detail-copy > span:not(.watch-ticket__status)");
+  const dateText = cssRule(css, ".watch-ticket__date-text");
   const status = cssRule(css, ".watch-ticket__status");
 
   assert.match(
     details,
     /grid-template-columns:\s*minmax\(0, 1\.22fr\) minmax\(0, 0\.95fr\) minmax\(0, 0\.9fr\)/,
   );
-  assert.match(detail, /align-items:\s*center/);
-  assert.match(primary, /font-size:\s*clamp\(0\.82rem, 3\.65cqw, 1\.7rem\)/);
-  assert.match(primary, /font-weight:\s*950/);
-  assert.match(secondary, /font-size:\s*clamp\(0\.66rem, 2\.55cqw, 1\.15rem\)/);
+  assert.match(date, /grid-template-columns:\s*minmax\(0, 1fr\)/);
+  assert.match(date, /gap:\s*0/);
+  assert.doesNotMatch(ticket, /CalendarIcon/);
+  assert.match(ticket, /className="watch-ticket__date-text"/);
+  assert.match(ticket, /text=\{date\}/);
+  assert.match(ticket, /minFontSize=\{10\}/);
+  assert.match(ticket, /maxFontSize=\{27\}/);
+  assert.match(dateText, /width:\s*100%/);
   assert.doesNotMatch(primary, /text-overflow:\s*ellipsis/);
   assert.doesNotMatch(secondary, /text-overflow:\s*ellipsis/);
   assert.doesNotMatch(status, /text-overflow:\s*ellipsis/);
   assert.match(status, /white-space:\s*normal/);
-  assert.match(ticket, /month:\s*string/);
   assert.match(ticket, /\.slice\(0, 3\)/);
   assert.doesNotMatch(cssRule(css, ".watch-ticket__venue"), /position:\s*absolute|top:|left:/);
   assert.doesNotMatch(cssRule(css, ".watch-ticket__date"), /position:\s*absolute|top:|left:/);
 });
 
-test("Watch side stub uses the supplied HOOMA logo plus a visible three-letter month date", () => {
+test("Watch side stub uses only the supplied HOOMA logo across the full upper-ticket height", () => {
   const ticket = source("packages/frontend/src/watch/WatchTicket.tsx");
   const css = source("packages/frontend/src/watch/watch.css");
   const stub = cssRule(css, ".watch-ticket__stub");
   const logo = cssRule(css, ".watch-ticket__stub-logo");
-  const date = cssRule(css, ".watch-ticket__stub-date");
 
   assert.match(ticket, /src="\/brand\/hooma-watch-stub\.webp"/);
-  assert.match(ticket, /className="watch-ticket__stub-date"/);
-  assert.match(ticket, /<strong>\{day\}<\/strong>/);
-  assert.match(ticket, /<small>\{month\}<\/small>/);
+  assert.doesNotMatch(ticket, /className="watch-ticket__stub-date"/);
   assert.doesNotMatch(ticket, /watch-ticket__stub-ball|>⚽<|<strong>HOOMA<\/strong>/);
+  assert.doesNotMatch(css, /\.watch-ticket__stub-date/);
   assert.match(stub, /border-left:\s*2px dashed/);
-  assert.match(stub, /grid-template-rows:\s*minmax\(0, 1fr\) auto/);
+  assert.match(stub, /grid-template-rows:\s*minmax\(0, 1fr\)/);
+  assert.doesNotMatch(stub, /grid-template-rows:\s*minmax\(0, 1fr\) auto/);
+  assert.doesNotMatch(stub, /gap:/);
+  assert.match(logo, /width:\s*100%/);
+  assert.match(logo, /height:\s*100%/);
   assert.match(logo, /object-fit:\s*contain/);
-  assert.match(date, /color:\s*var\(--app-lime\)/);
-  assert.match(date, /text-transform:\s*uppercase/);
 });
