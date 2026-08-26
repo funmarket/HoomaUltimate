@@ -24,6 +24,10 @@ const placeSelect = {
   description: true,
   category: true,
   email: true,
+  menuItems: {
+    orderBy: [{ sortOrder: "asc" as const }, { id: "asc" as const }],
+    select: { id: true, name: true, price: true, currency: true },
+  },
 } as const;
 
 function placeSummary(place: {
@@ -41,6 +45,12 @@ function placeSummary(place: {
   description: string | null;
   category: string | null;
   email: string | null;
+  menuItems: {
+    id: string;
+    name: string;
+    price: { toNumber(): number };
+    currency: string;
+  }[];
 }): PublicPlaceSummary {
   return {
     id: place.id,
@@ -57,6 +67,12 @@ function placeSummary(place: {
     description: place.description,
     category: place.category,
     email: place.email,
+    menuItems: place.menuItems.map((item) => ({
+      id: item.id,
+      name: item.name,
+      price: item.price.toNumber(),
+      currency: item.currency,
+    })),
   };
 }
 
