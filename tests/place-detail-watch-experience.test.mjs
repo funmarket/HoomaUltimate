@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -73,4 +73,11 @@ test("Place detail map action keeps coordinates optional", () => {
   assert.match(detail, /place\.latitude != null && place\.longitude != null/);
   assert.match(detail, /\[place\.address, place\.houma, place\.city\]\.filter\(Boolean\)/);
   assert.match(detail, /google\.com\/maps\/search/);
+});
+
+test("temporary Place formatter does not remain in the final source tree", () => {
+  assert.equal(
+    existsSync(new URL("../.github/workflows/tmp-place-detail-format.yml", import.meta.url)),
+    false,
+  );
 });
