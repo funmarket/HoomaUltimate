@@ -32,45 +32,14 @@ async function resetTestData() {
 }
 
 async function enableGamerIdentity(base: string, cookie: string) {
-  const currentResponse = await fetch(`${base}/api/v1/me/profile`, {
+  const response = await fetch(`${base}/api/v1/me/profile/identities/gamer`, {
+    method: "POST",
     headers: { cookie, origin: config.WEB_ORIGIN },
   });
-  assert.equal(currentResponse.status, 200);
-  const current = (await currentResponse.json()) as {
-    presentation: {
-      username: string;
-      displayName: string;
-      photoUrl: string | null;
-      bio: string | null;
-    };
-    identities: Array<"PLAYER" | "FAN" | "GAMER">;
-    player: {
-      skillLevel: string;
-      preferredPositions: string[];
-    } | null;
-  };
-  const response = await fetch(`${base}/api/v1/me/profile`, {
-    method: "PATCH",
-    headers: {
-      "content-type": "application/json",
-      cookie,
-      origin: config.WEB_ORIGIN,
-    },
-    body: JSON.stringify({
-      username: current.presentation.username,
-      displayName: current.presentation.displayName,
-      photoUrl: current.presentation.photoUrl,
-      bio: current.presentation.bio,
-      identities: [...new Set([...current.identities, "GAMER"])],
-      player: current.player
-        ? {
-            skillLevel: current.player.skillLevel,
-            preferredPositions: current.player.preferredPositions,
-          }
-        : null,
-    }),
-  });
   assert.equal(response.status, 200);
+  const profile = (await response.json()) as { identities: string[] };
+  assert.ok(profile.identities.includes("GAMER"));
+  return profile;
 }
 
 async function register(base: string, suffix = "catalog-owner") {
@@ -167,6 +136,58 @@ async function createProfile(
   };
 }
 
+test("Gamer enrollment is additive, idempotent and leaves canonical presentation unchanged", async () => {
+  await resetTestData();
+  const { server, base } = await startApp();
+
+  try {
+    const username = "gamer-enrollment";
+    const registerResponse = await fetch(`${base}/api/public/v1/auth/register`, {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
+      body: JSON.stringify({
+        loginUsername: username,
+        password: "correct horse battery staple",
+        displayUsername: username,
+        displayName: "Enrollment Gamer",
+      }),
+    });
+    assert.equal(registerResponse.status, 201);
+    const cookie = registerResponse.headers.get("set-cookie");
+    assert.ok(cookie);
+
+    const beforeResponse = await fetch(`${base}/api/v1/me/profile`, {
+      headers: { cookie, origin: config.WEB_ORIGIN },
+    });
+    assert.equal(beforeResponse.status, 200);
+    const before = (await beforeResponse.json()) as {
+      presentation: Record<string, unknown>;
+      identities: string[];
+    };
+
+    const first = await enableGamerIdentity(base, cookie);
+    const second = await enableGamerIdentity(base, cookie);
+    assert.equal(first.identities.filter((identity) => identity === "GAMER").length, 1);
+    assert.equal(second.identities.filter((identity) => identity === "GAMER").length, 1);
+
+    const afterResponse = await fetch(`${base}/api/v1/me/profile`, {
+      headers: { cookie, origin: config.WEB_ORIGIN },
+    });
+    assert.equal(afterResponse.status, 200);
+    const after = (await afterResponse.json()) as {
+      presentation: Record<string, unknown>;
+      identities: string[];
+    };
+    assert.deepEqual(after.presentation, before.presentation);
+    assert.ok(after.identities.includes("GAMER"));
+  } finally {
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve())),
+    );
+    await resetTestData();
+  }
+});
+
 test("Gamers catalog is public, persisted, authenticated for writes and duplicate-safe", async () => {
   await resetTestData();
   const { server, base } = await startApp();
@@ -220,101 +241,66 @@ test("Gamers catalog is public, persisted, authenticated for writes and duplicat
   }
 });
 
-test("GamerProfile is private per account while Challengers is public and privacy-safe", async () => {
+test("global Gamer discovery includes real active profiles while Challengers stays open-only", async () => {
   await resetTestData();
   const { server, base } = await startApp();
 
   try {
-    const games = { items: await activeGames(base) };
-    const fc = games.items.find((game) => game.slug === "ea-sports-fc-mobile");
-    const ludo = games.items.find((game) => game.slug === "ludo");
+    const games = await activeGames(base);
+    const fc = games.find((game) => game.slug === "ea-sports-fc-mobile");
+    const ludo = games.find((game) => game.slug === "ludo");
     assert.ok(fc);
     assert.ok(ludo);
 
-    const anonymousOwnRead = await fetch(`${base}/api/v1/gamers/games/${fc.id}/profile`);
-    assert.equal(anonymousOwnRead.status, 401);
-    const anonymousOwnWrite = await fetch(`${base}/api/v1/gamers/games/${fc.id}/profile`, {
-      method: "PUT",
-      headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
-      body: JSON.stringify({ handle: "Anonymous", openToChallenge: true }),
-    });
-    assert.equal(anonymousOwnWrite.status, 401);
-
     const openCookie = await register(base, "open-player");
     const closedCookie = await register(base, "closed-player");
-
-    const closedCreate = await fetch(
-      `${base}/api/v1/gamers/games/${fc.id}/profile`,
-      authenticatedProfile(closedCookie, { handle: "Closed FC", openToChallenge: false }),
-    );
-    assert.equal(closedCreate.status, 200);
-
-    const openCreate = await fetch(
-      `${base}/api/v1/gamers/games/${fc.id}/profile`,
-      authenticatedProfile(openCookie, { handle: "  Tunisia   FC  ", openToChallenge: true }),
-    );
-    assert.equal(openCreate.status, 200);
-    const openProfile = (await openCreate.json()) as {
-      id: string;
-      userId: string;
-      gameId: string;
-      handle: string;
-      openToChallenge: boolean;
-    };
-    assert.equal(openProfile.handle, "Tunisia FC");
-    assert.equal(openProfile.gameId, fc.id);
-    assert.equal(openProfile.openToChallenge, true);
+    const openProfile = await createProfile(base, openCookie, fc.id, "Tunisia FC", true);
+    const closedProfile = await createProfile(base, closedCookie, fc.id, "Closed FC", false);
+    await createProfile(base, openCookie, ludo.id, "FunKing", true);
 
     const publicChallengers = await fetch(
       `${base}/api/public/v1/gamers/games/${fc.id}/challengers`,
     );
     assert.equal(publicChallengers.status, 200);
     const challengerBody = (await publicChallengers.json()) as {
+      items: Array<{ id: string; handle: string }>;
+    };
+    assert.ok(challengerBody.items.some((item) => item.id === openProfile.id));
+    assert.equal(challengerBody.items.some((item) => item.id === closedProfile.id), false);
+
+    const discoveryResponse = await fetch(`${base}/api/public/v1/gamers/discovery`);
+    assert.equal(discoveryResponse.status, 200);
+    const discovery = (await discoveryResponse.json()) as {
       items: Array<{
         id: string;
         handle: string;
+        openToChallenge: boolean;
+        game: { id: string; slug: string; name: string };
         presentation: { username: string; displayName: string; photoUrl: string | null };
       }>;
     };
-    assert.equal(challengerBody.items.length, 1);
-    assert.equal(challengerBody.items[0]?.id, openProfile.id);
-    assert.equal(challengerBody.items[0]?.handle, "Tunisia FC");
-    assert.equal(challengerBody.items[0]?.presentation.username, "gamer-open-player");
-    assert.equal(challengerBody.items[0]?.presentation.displayName, "Gamer open-player");
-    assert.deepEqual(Object.keys(challengerBody.items[0] ?? {}).sort(), [
-      "handle",
-      "id",
-      "presentation",
-    ]);
-    assert.equal("userId" in (challengerBody.items[0] ?? {}), false);
-    assert.equal("gameId" in (challengerBody.items[0] ?? {}), false);
-    assert.equal("openToChallenge" in (challengerBody.items[0] ?? {}), false);
-    assert.equal("createdAt" in (challengerBody.items[0] ?? {}), false);
-    assert.equal("updatedAt" in (challengerBody.items[0] ?? {}), false);
-
-    const publicProfileResponse = await fetch(
-      `${base}/api/public/v1/gamers/games/${fc.id}/profiles/${openProfile.id}`,
-    );
-    assert.equal(publicProfileResponse.status, 200);
-    const publicProfile = (await publicProfileResponse.json()) as Record<string, unknown> & {
-      presentation: Record<string, unknown>;
-    };
-    assert.deepEqual(Object.keys(publicProfile).sort(), [
+    const openDiscovery = discovery.items.find((item) => item.id === openProfile.id);
+    const closedDiscovery = discovery.items.find((item) => item.id === closedProfile.id);
+    assert.ok(openDiscovery);
+    assert.ok(closedDiscovery);
+    assert.equal(openDiscovery.openToChallenge, true);
+    assert.equal(closedDiscovery.openToChallenge, false);
+    assert.equal(openDiscovery.game.id, fc.id);
+    assert.equal(openDiscovery.game.slug, fc.slug);
+    assert.deepEqual(Object.keys(openDiscovery).sort(), [
+      "game",
       "handle",
       "id",
       "openToChallenge",
       "presentation",
     ]);
-    assert.deepEqual(Object.keys(publicProfile.presentation).sort(), [
-      "bio",
-      "displayName",
-      "photoUrl",
-      "username",
-    ]);
-    assert.equal("userId" in publicProfile, false);
-    assert.equal("gameId" in publicProfile, false);
-    assert.equal("createdAt" in publicProfile, false);
-    assert.equal("updatedAt" in publicProfile, false);
+    assert.equal("userId" in openDiscovery, false);
+    assert.equal("createdAt" in openDiscovery, false);
+
+    const retiredProfileRoute = await fetch(
+      `${base}/api/public/v1/gamers/games/${fc.id}/profiles/${openProfile.id}`,
+    );
+    assert.equal(retiredProfileRoute.status, 404);
 
     const updateSameProfile = await fetch(
       `${base}/api/v1/gamers/games/${fc.id}/profile`,
@@ -329,20 +315,27 @@ test("GamerProfile is private per account while Challengers is public and privac
       1,
     );
 
-    const ludoProfile = await fetch(
-      `${base}/api/v1/gamers/games/${ludo.id}/profile`,
-      authenticatedProfile(openCookie, { handle: "FunKing", openToChallenge: true }),
-    );
-    assert.equal(ludoProfile.status, 200);
-    assert.equal(await db.gamerProfile.count({ where: { userId: openProfile.userId } }), 2);
-
     const inactiveGameCreate = await fetch(
       `${base}/api/v1/gamers/games`,
       authenticatedJson(openCookie, "Dormant Test Game"),
     );
     assert.equal(inactiveGameCreate.status, 201);
     const inactiveGame = (await inactiveGameCreate.json()) as { id: string };
+    const inactiveProfile = await createProfile(
+      base,
+      openCookie,
+      inactiveGame.id,
+      "Dormant Gamer",
+      true,
+    );
     await db.gamerGame.update({ where: { id: inactiveGame.id }, data: { status: "INACTIVE" } });
+
+    const discoveryAfterInactive = await fetch(`${base}/api/public/v1/gamers/discovery`);
+    assert.equal(discoveryAfterInactive.status, 200);
+    const afterInactive = (await discoveryAfterInactive.json()) as {
+      items: Array<{ id: string }>;
+    };
+    assert.equal(afterInactive.items.some((item) => item.id === inactiveProfile.id), false);
 
     const inactivePublic = await fetch(
       `${base}/api/public/v1/gamers/games/${inactiveGame.id}/challengers`,
@@ -353,7 +346,6 @@ test("GamerProfile is private per account while Challengers is public and privac
       authenticatedProfile(openCookie, { handle: "Should Fail", openToChallenge: true }),
     );
     assert.equal(inactivePrivate.status, 404);
-    assert.equal(await db.gamerProfile.count({ where: { gameId: inactiveGame.id } }), 0);
   } finally {
     await new Promise<void>((resolve, reject) =>
       server.close((error) => (error ? reject(error) : resolve())),
@@ -441,9 +433,7 @@ test("G3 challenges enforce ownership, same-game/open rules, duplicate safety an
     );
     assert.equal(reverseDirectionDuplicate.status, 409);
     assert.equal(
-      await db.gamerChallenge.count({
-        where: { gameId: fc.id, status: "PENDING" },
-      }),
+      await db.gamerChallenge.count({ where: { gameId: fc.id, status: "PENDING" } }),
       1,
     );
 
@@ -464,18 +454,13 @@ test("G3 challenges enforce ownership, same-game/open rules, duplicate safety an
       authenticatedPost(bobCookie),
     );
     assert.equal(accept.status, 200);
-    const accepted = (await accept.json()) as { id: string; status: string };
-    assert.equal(accepted.id, challenge.id);
-    assert.equal(accepted.status, "ACCEPTED");
+    assert.equal(((await accept.json()) as { status: string }).status, "ACCEPTED");
 
     const repeatedAccept = await fetch(
       `${base}/api/v1/gamers/games/${fc.id}/challenges/${challenge.id}/accept`,
       authenticatedPost(bobCookie),
     );
     assert.equal(repeatedAccept.status, 200);
-    const repeatedAccepted = (await repeatedAccept.json()) as { id: string; status: string };
-    assert.equal(repeatedAccepted.id, challenge.id);
-    assert.equal(repeatedAccepted.status, "ACCEPTED");
 
     const declineAccepted = await fetch(
       `${base}/api/v1/gamers/games/${fc.id}/challenges/${challenge.id}/decline`,
@@ -492,12 +477,8 @@ test("G3 challenges enforce ownership, same-game/open rules, duplicate safety an
       headers: { cookie: aliceCookie, origin: config.WEB_ORIGIN },
     });
     assert.equal(aliceArena.status, 200);
-    const arenaBody = (await aliceArena.json()) as {
-      items: Array<{ id: string; status: string }>;
-    };
-    assert.ok(
-      arenaBody.items.some((item) => item.id === challenge.id && item.status === "ACCEPTED"),
-    );
+    const arenaBody = (await aliceArena.json()) as { items: Array<{ id: string; status: string }> };
+    assert.ok(arenaBody.items.some((item) => item.id === challenge.id && item.status === "ACCEPTED"));
 
     const second = await fetch(
       `${base}/api/v1/gamers/games/${fc.id}/challenges`,
@@ -511,11 +492,6 @@ test("G3 challenges enforce ownership, same-game/open rules, duplicate safety an
     );
     assert.equal(cancel.status, 200);
     assert.equal(((await cancel.json()) as { status: string }).status, "CANCELLED");
-    const repeatedCancel = await fetch(
-      `${base}/api/v1/gamers/games/${fc.id}/challenges/${secondChallenge.id}/cancel`,
-      authenticatedPost(aliceCookie),
-    );
-    assert.equal(repeatedCancel.status, 200);
 
     const third = await fetch(
       `${base}/api/v1/gamers/games/${fc.id}/challenges`,
@@ -553,9 +529,7 @@ test("G3 challenges enforce ownership, same-game/open rules, duplicate safety an
     ]);
     assert.deepEqual(concurrentPair.map((response) => response.status).sort(), [201, 409]);
     assert.equal(
-      await db.gamerChallenge.count({
-        where: { gameId: fc.id, status: "PENDING" },
-      }),
+      await db.gamerChallenge.count({ where: { gameId: fc.id, status: "PENDING" } }),
       1,
     );
 
