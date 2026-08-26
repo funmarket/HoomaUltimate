@@ -18,14 +18,15 @@ test("Place detail uses canonical Watch event context for ticket, RSVP and share
   assert.match(detail, /selectedEvent\.venueAuthority === "OFFICIAL_VENUE"/);
 });
 
-test("Place detail ticket reuses WatchTicket without repeating the Place photo", () => {
+test("Place detail ticket reuses WatchTicket without repeating the stacked Place photo", () => {
   const ticket = source("packages/frontend/src/watch/WatchTicket.tsx");
 
   assert.match(ticket, /export type WatchTicketVariant = "feed" \| "place-detail"/);
   assert.match(ticket, /variant = "feed"/);
-  assert.match(ticket, /const detailVariant = variant === "place-detail"/);
-  assert.match(ticket, /!detailVariant \? \(/);
-  assert.match(ticket, /className="watch-ticket__place-photo"/);
+  assert.match(ticket, /const feedVariant = variant === "feed"/);
+  assert.match(ticket, /\{feedVariant \? \(/);
+  assert.match(ticket, /className="watch-ticket__photo-panel"/);
+  assert.doesNotMatch(ticket, /watch-ticket__place-photo/);
   assert.match(ticket, /className=\{`watch-ticket watch-ticket--\$\{variant\}`\}/);
 });
 
