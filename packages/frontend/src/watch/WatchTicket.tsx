@@ -53,11 +53,7 @@ export function WatchTicket({ event }: { readonly event: PublicEvent }) {
         alt=""
         aria-hidden="true"
       />
-      <a
-        className="watch-ticket__place-photo"
-        href={placeHref}
-        aria-label={`Open ${place.name}`}
-      >
+      <a className="watch-ticket__place-photo" href={placeHref} aria-label={`Open ${place.name}`}>
         {place.imageUrl ? <img src={place.imageUrl} alt={place.name} /> : <span>{place.name}</span>}
       </a>
       <span className="watch-ticket__series">COLLECTOR SERIES</span>

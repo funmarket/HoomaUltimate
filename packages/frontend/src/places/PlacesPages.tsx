@@ -233,7 +233,7 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
     return error ? <p className="error">{error}</p> : <p className="status">Loading Place…</p>;
 
   const selectedEvent = selectedEventId
-    ? events.find((event) => event.id === selectedEventId) ?? null
+    ? (events.find((event) => event.id === selectedEventId) ?? null)
     : null;
 
   return (
