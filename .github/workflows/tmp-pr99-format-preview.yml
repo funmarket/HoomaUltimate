@@ -1,0 +1,42 @@
+name: PR99 Format Preview
+
+on:
+  push:
+    branches:
+      - feat/ea-fc-mobile-challenge-bridge
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - name: Print Prettier patch
+        shell: bash
+        run: |
+          npx prettier --write \
+            apps/api/src/modules/gamers/application/gamer-match.service.ts \
+            apps/api/src/modules/platform-admin/http/platform-admin.routes.ts \
+            apps/web/src/admin/GamerDisputeConsole.tsx \
+            packages/contracts/src/gamers.ts \
+            packages/frontend/src/gamers/EaFcMatchBridge.tsx \
+            packages/storage/src/index.ts \
+            tests/gamer-match-reconciliation.integration.test.ts
+          git diff -- \
+            apps/api/src/modules/gamers/application/gamer-match.service.ts \
+            apps/api/src/modules/platform-admin/http/platform-admin.routes.ts \
+            apps/web/src/admin/GamerDisputeConsole.tsx \
+            packages/contracts/src/gamers.ts \
+            packages/frontend/src/gamers/EaFcMatchBridge.tsx \
+            packages/storage/src/index.ts \
+            tests/gamer-match-reconciliation.integration.test.ts
