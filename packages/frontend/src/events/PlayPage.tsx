@@ -340,19 +340,22 @@ export function PlayPage() {
         ) : null}
         {!eventsLoading && !eventsError && events.length ? (
           <div className="play-match-list">
-            {events.map((event) => (
-              <PickupMatchCard
-                key={event.id}
-                title={event.title}
-                dateLabel={formatDate(event.startsAt)}
-                venueName={event.venueName || event.address}
-                communityName={event.community.name}
-                goingCount={event._count.rsvps}
-                capacity={event.capacity}
-                format={event.playDetails?.format ?? null}
-                href={`/events/${event.id}`}
-              />
-            ))}
+            {events.map((event) => {
+              if (!event.community) return null;
+              return (
+                <PickupMatchCard
+                  key={event.id}
+                  title={event.title}
+                  dateLabel={formatDate(event.startsAt)}
+                  venueName={event.venueName || event.address}
+                  communityName={event.community.name}
+                  goingCount={event._count.rsvps}
+                  capacity={event.capacity}
+                  format={event.playDetails?.format ?? null}
+                  href={`/events/${event.id}`}
+                />
+              );
+            })}
           </div>
         ) : null}
         {!eventsLoading && !eventsError && !events.length ? (

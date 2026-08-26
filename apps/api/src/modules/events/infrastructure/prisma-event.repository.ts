@@ -7,7 +7,7 @@ import type {
   EventRepository,
 } from "../application/event.repository.js";
 
-const publicEventSelect = {
+const publicEventSelect = Prisma.validator<Prisma.EventSelect>()({
   id: true,
   communityId: true,
   placeId: true,
@@ -46,7 +46,9 @@ const publicEventSelect = {
       checkIns: true,
     },
   },
-} as const;
+});
+
+type PublicEventRow = Prisma.EventGetPayload<{ select: typeof publicEventSelect }>;
 
 export class PrismaEventRepository implements EventRepository {
   constructor(private readonly db: PrismaClient) {}
@@ -416,14 +418,7 @@ async function lockEvent(tx: Prisma.TransactionClient, eventId: string): Promise
   if (rows.length === 0) throw new Error("EVENT_NOT_FOUND");
 }
 
-function serializePublicEvent(event: {
-  createdByUserId: string;
-  place: null | {
-    ownerships: { userId: string }[];
-    [key: string]: unknown;
-  };
-  [key: string]: unknown;
-}) {
+function serializePublicEvent(event: PublicEventRow) {
   const officialVenue = Boolean(
     event.place?.ownerships.some((ownership) => ownership.userId === event.createdByUserId),
   );
