@@ -47,12 +47,6 @@ export function createContainer(config: ApiConfig) {
   const placeRepository = new PrismaPlaceRepository(database);
   const placeCapabilityRepository = new PrismaPlaceCapabilityRepository(database);
   const placeService = new PlaceService(placeRepository, platformAdminService);
-  const watchService = new PlaceCapabilityService(
-    "WATCH",
-    placeCapabilityRepository,
-    placeRepository,
-    platformAdminService,
-  );
   const pitchService = new PlaceCapabilityService(
     "PITCH",
     placeCapabilityRepository,
@@ -71,7 +65,7 @@ export function createContainer(config: ApiConfig) {
     platformAdminService,
   );
   const eventRepository = new PrismaEventRepository(database);
-  const eventService = new EventService(eventRepository, communityService);
+  const eventService = new EventService(eventRepository, communityService, placeService);
   const gamerGameRepository = new PrismaGamerGameRepository(database);
   const gamerProfileRepository = new PrismaGamerProfileRepository(database);
   const gamerChallengeRepository = new PrismaGamerChallengeRepository(database);
@@ -103,7 +97,6 @@ export function createContainer(config: ApiConfig) {
     identityService,
     platformAdminService,
     placeService,
-    watchService,
     pitchService,
     communityService,
     teamService,

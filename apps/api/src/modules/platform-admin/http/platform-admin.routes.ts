@@ -12,7 +12,6 @@ import type { PlatformAdminService } from "../application/platform-admin.service
 export function createPlatformAdminRouter(
   service: PlatformAdminService,
   places: PlaceService,
-  watch: PlaceCapabilityService,
   pitch: PlaceCapabilityService,
 ): Router {
   const router = Router();
@@ -94,25 +93,6 @@ export function createPlatformAdminRouter(
         await places.reviewOwnershipClaim(
           getAuth(request).userId,
           String(request.params.claimId),
-          moderationDecisionSchema.parse(request.body),
-        ),
-      );
-    }),
-  );
-
-  router.get(
-    "/queues/watch",
-    asyncHandler(async (request, response) => {
-      response.json(await watch.pending(getAuth(request).userId));
-    }),
-  );
-  router.post(
-    "/queues/watch/:applicationId/decision",
-    asyncHandler(async (request, response) => {
-      response.json(
-        await watch.review(
-          getAuth(request).userId,
-          String(request.params.applicationId),
           moderationDecisionSchema.parse(request.body),
         ),
       );

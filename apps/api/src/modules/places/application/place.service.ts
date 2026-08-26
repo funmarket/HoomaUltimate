@@ -17,8 +17,25 @@ export class PlaceService {
     return this.repository.listPublic();
   }
 
-  suggest(userId: string, input: PlaceSuggestionInput) {
-    return this.repository.suggest(userId, input);
+  async getPublic(placeId: string) {
+    const place = await this.repository.getApproved(placeId);
+    if (!place) throw new AppError(404, "PLACE_NOT_FOUND", "Approved Place not found");
+    return place;
+  }
+
+  async suggest(userId: string, input: PlaceSuggestionInput) {
+    try {
+      return await this.repository.suggest(userId, input);
+    } catch (error) {
+      if (error instanceof Error && error.message === "PLACE_ALREADY_EXISTS") {
+        throw new AppError(
+          409,
+          "PLACE_ALREADY_EXISTS",
+          "A Place with this name and address is already pending or approved",
+        );
+      }
+      throw error;
+    }
   }
 
   async claimOwnership(userId: string, placeId: string, input: PlaceOwnershipClaimInput) {
@@ -39,17 +56,17 @@ export class PlaceService {
   }
 
   async pendingPlaces(userId: string) {
-    await this.platformAdmin.requireCapability(userId, "REVIEW_PLACES");
+    await this.platformAdmin.requirePlatformAdmin(userId);
     return this.repository.pendingPlaces();
   }
 
   async pendingOwnershipClaims(userId: string) {
-    await this.platformAdmin.requireCapability(userId, "REVIEW_PLACE_OWNERSHIP");
+    await this.platformAdmin.requirePlatformAdmin(userId);
     return this.repository.pendingOwnershipClaims();
   }
 
   async reviewPlace(userId: string, placeId: string, input: ModerationDecisionInput) {
-    await this.platformAdmin.requireCapability(userId, "REVIEW_PLACES");
+    await this.platformAdmin.requirePlatformAdmin(userId);
     if (!(await this.repository.reviewPlace(userId, placeId, input))) {
       throw new AppError(409, "PLACE_REVIEW_NOT_PENDING", "This Place review is no longer pending");
     }
@@ -57,7 +74,7 @@ export class PlaceService {
   }
 
   async reviewOwnershipClaim(userId: string, claimId: string, input: ModerationDecisionInput) {
-    await this.platformAdmin.requireCapability(userId, "REVIEW_PLACE_OWNERSHIP");
+    await this.platformAdmin.requirePlatformAdmin(userId);
     if (!(await this.repository.reviewOwnershipClaim(userId, claimId, input))) {
       throw new AppError(
         409,

@@ -12,9 +12,6 @@ enum PlatformRole {
 }
 
 enum AppManagerCapability {
-  REVIEW_PLACES
-  REVIEW_PLACE_OWNERSHIP
-  REVIEW_WATCH_APPLICATIONS
   REVIEW_PITCH_APPLICATIONS
   VIEW_AUDIT
 }
@@ -26,7 +23,6 @@ enum ModerationStatus {
 }
 
 enum PlaceCapabilityKind {
-  WATCH
   PITCH
 }
 
@@ -322,27 +318,32 @@ model AppManagerGrant {
 }
 
 model Place {
-  id                String              @id @default(cuid())
-  slug               String              @unique
-  name               String
-  address            String
-  city               String?
-  houma              String?
-  latitude           Decimal?            @db.Decimal(10, 7)
-  longitude          Decimal?            @db.Decimal(10, 7)
-  phone              String?
-  websiteUrl         String?
-  moderationStatus   ModerationStatus    @default(PENDING)
-  suggestedByUserId  String
-  reviewedByUserId   String?
-  reviewedAt         DateTime?
-  reviewNote         String?
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  suggestedBy        User                @relation("PlaceSuggester", fields: [suggestedByUserId], references: [id], onDelete: Restrict)
-  ownershipClaims    PlaceOwnershipClaim[]
-  ownerships         PlaceOwnership[]
-  applications       PlaceCapabilityApplication[]
+  id                String                       @id @default(cuid())
+  slug              String                       @unique
+  name              String
+  address           String
+  city              String?
+  houma             String?
+  latitude          Decimal?                     @db.Decimal(10, 7)
+  longitude         Decimal?                     @db.Decimal(10, 7)
+  phone             String?
+  email             String?
+  websiteUrl        String?
+  imageUrl          String?
+  category          String?
+  description       String?
+  moderationStatus  ModerationStatus             @default(PENDING)
+  suggestedByUserId String
+  reviewedByUserId  String?
+  reviewedAt        DateTime?
+  reviewNote        String?
+  createdAt         DateTime                     @default(now())
+  updatedAt         DateTime                     @updatedAt
+  suggestedBy       User                         @relation("PlaceSuggester", fields: [suggestedByUserId], references: [id], onDelete: Restrict)
+  ownershipClaims   PlaceOwnershipClaim[]
+  ownerships        PlaceOwnership[]
+  applications      PlaceCapabilityApplication[]
+  events            Event[]
 
   @@index([moderationStatus, createdAt])
   @@index([city, houma])
@@ -649,26 +650,28 @@ model TeamGame {
 }
 
 model Event {
-  id              String          @id @default(cuid())
-  communityId     String
+  id              String           @id @default(cuid())
+  communityId     String?
+  placeId         String?
   createdByUserId String
   type            EventType
-  status          EventStatus     @default(PUBLISHED)
+  status          EventStatus      @default(PUBLISHED)
   title           String
   description     String?
   startsAt        DateTime
   endsAt          DateTime?
-  timezone        String          @default("Africa/Tunis")
+  timezone        String           @default("Africa/Tunis")
   venueName       String?
   address         String?
   capacity        Int?
-  waitlistEnabled Boolean         @default(true)
-  entryFeeMinor   BigInt          @default(0)
-  currency        String          @default("TND")
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  community       Community       @relation(fields: [communityId], references: [id], onDelete: Cascade)
-  createdBy       User            @relation("EventCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  waitlistEnabled Boolean          @default(true)
+  entryFeeMinor   BigInt           @default(0)
+  currency        String           @default("TND")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  community       Community?       @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  place           Place?           @relation(fields: [placeId], references: [id], onDelete: Restrict)
+  createdBy       User             @relation("EventCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
   playDetails     PlayEventDetails?
   rsvps           EventRsvp[]
   formations      Formation[]
@@ -677,6 +680,7 @@ model Event {
 
   @@index([type, status, startsAt, id])
   @@index([communityId, type, status, startsAt])
+  @@index([placeId, type, status, startsAt])
   @@index([createdByUserId])
 }
 

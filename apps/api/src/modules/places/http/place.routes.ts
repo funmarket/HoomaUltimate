@@ -15,6 +15,12 @@ export function createPlacesPublicRouter(service: PlaceService): Router {
     "/",
     asyncHandler(async (_request, response) => response.json(await service.listPublic())),
   );
+  router.get(
+    "/:placeId",
+    asyncHandler(async (request, response) => {
+      response.json(await service.getPublic(String(request.params.placeId)));
+    }),
+  );
   return router;
 }
 

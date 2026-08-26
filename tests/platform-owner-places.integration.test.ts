@@ -45,7 +45,7 @@ function headers(cookie: string) {
   return { cookie, origin: config.WEB_ORIGIN, "content-type": "application/json" };
 }
 
-test("configured owner is sole full admin and delegates selective Watch/Pitch moderation", async () => {
+test("App Admin approves a submitted Place once, then its owner publishes Watch events directly", async () => {
   const container = createContainer(config);
   const app = createApp(config, container);
   const server = app.listen(0, "127.0.0.1");
@@ -68,9 +68,7 @@ test("configured owner is sole full admin and delegates selective Watch/Pitch mo
 
     assert.deepEqual(
       await container.platformAdminService.bootstrapConfiguredOwner(ownerTelegramId.toString()),
-      {
-        status: "ready",
-      },
+      { status: "ready" },
     );
     assert.equal(
       await db.platformRoleAssignment.count({ where: { role: "PLATFORM_ADMIN", revokedAt: null } }),
@@ -92,9 +90,7 @@ test("configured owner is sole full admin and delegates selective Watch/Pitch mo
     const managerGrant = await fetch(`${base}/api/v1/admin/managers/manager_${suffix}`, {
       method: "PUT",
       headers: headers(owner.cookie),
-      body: JSON.stringify({
-        capabilities: ["REVIEW_PLACES", "REVIEW_PLACE_OWNERSHIP", "REVIEW_WATCH_APPLICATIONS"],
-      }),
+      body: JSON.stringify({ capabilities: ["REVIEW_PITCH_APPLICATIONS", "VIEW_AUDIT"] }),
     });
     assert.equal(managerGrant.status, 200);
 
@@ -104,7 +100,7 @@ test("configured owner is sole full admin and delegates selective Watch/Pitch mo
     assert.equal(managerAccess.status, 200);
     assert.deepEqual(await managerAccess.json(), {
       isPlatformOwner: false,
-      managerCapabilities: ["REVIEW_PLACES", "REVIEW_PLACE_OWNERSHIP", "REVIEW_WATCH_APPLICATIONS"],
+      managerCapabilities: ["REVIEW_PITCH_APPLICATIONS", "VIEW_AUDIT"],
     });
 
     const forbiddenDelegation = await fetch(`${base}/api/v1/admin/managers/business_${suffix}`, {
@@ -119,9 +115,15 @@ test("configured owner is sole full admin and delegates selective Watch/Pitch mo
       headers: headers(business.cookie),
       body: JSON.stringify({
         name: `Owner Venue ${suffix}`,
+        category: "Sports café",
+        description: "Match-night venue with large screens",
+        imageUrl: "https://images.example.com/venue/photo?id=123&size=large",
         address: "1 Football Street",
         city: "Tunis",
         houma: "Centre",
+        phone: "+21671000000",
+        email: "venue@example.com",
+        websiteUrl: "https://venue.example.com",
       }),
     });
     assert.equal(placeResponse.status, 201);
@@ -135,62 +137,89 @@ test("configured owner is sole full admin and delegates selective Watch/Pitch mo
       false,
     );
 
-    const placeDecision = await fetch(`${base}/api/v1/admin/queues/places/${place.id}/decision`, {
-      method: "POST",
-      headers: headers(manager.cookie),
-      body: JSON.stringify({ decision: "APPROVE", note: "Verified venue" }),
-    });
-    assert.equal(placeDecision.status, 200);
-
-    const claimResponse = await fetch(`${base}/api/v1/places/${place.id}/ownership-claims`, {
-      method: "POST",
-      headers: headers(business.cookie),
-      body: JSON.stringify({ evidence: "Registered manager evidence for this venue" }),
-    });
-    assert.equal(claimResponse.status, 201);
-    const claim = (await claimResponse.json()) as { id: string };
-
-    const claimDecision = await fetch(
-      `${base}/api/v1/admin/queues/place-ownership/${claim.id}/decision`,
-      {
-        method: "POST",
-        headers: headers(manager.cookie),
-        body: JSON.stringify({ decision: "APPROVE", note: "Ownership confirmed" }),
-      },
-    );
-    assert.equal(claimDecision.status, 200);
-
-    const watchResponse = await fetch(`${base}/api/v1/watch/applications`, {
-      method: "POST",
-      headers: headers(business.cookie),
-      body: JSON.stringify({
-        placeId: place.id,
-        summary: "Football viewing lounge with match-night screens and reservations",
-        contactName: "Venue Manager",
-        contactEmail: "venue@example.com",
-      }),
-    });
-    assert.equal(watchResponse.status, 201);
-    const watchApplication = (await watchResponse.json()) as { id: string };
-
-    const watchDecision = await fetch(
-      `${base}/api/v1/admin/queues/watch/${watchApplication.id}/decision`,
+    const managerPlaceDecision = await fetch(
+      `${base}/api/v1/admin/queues/places/${place.id}/decision`,
       {
         method: "POST",
         headers: headers(manager.cookie),
         body: JSON.stringify({ decision: "APPROVE" }),
       },
     );
-    assert.equal(watchDecision.status, 200);
+    assert.equal(managerPlaceDecision.status, 403);
 
-    const publicWatch = await fetch(`${base}/api/public/v1/watch`);
-    assert.equal(publicWatch.status, 200);
-    assert.equal(
-      ((await publicWatch.json()) as { id: string }[]).some(
-        (item) => item.id === watchApplication.id,
-      ),
-      true,
+    const placeDecision = await fetch(`${base}/api/v1/admin/queues/places/${place.id}/decision`, {
+      method: "POST",
+      headers: headers(owner.cookie),
+      body: JSON.stringify({ decision: "APPROVE", note: "Approved by App Admin" }),
+    });
+    assert.equal(placeDecision.status, 200);
+
+    assert.ok(
+      await db.placeOwnership.findFirst({
+        where: { placeId: place.id, userId: business.userId, revokedAt: null },
+      }),
     );
+
+    const publicPlace = await fetch(`${base}/api/public/v1/places/${place.id}`);
+    assert.equal(publicPlace.status, 200);
+    const approvedPlace = (await publicPlace.json()) as {
+      id: string;
+      imageUrl: string | null;
+      category: string | null;
+    };
+    assert.equal(approvedPlace.id, place.id);
+    assert.equal(
+      approvedPlace.imageUrl,
+      "https://images.example.com/venue/photo?id=123&size=large",
+    );
+    assert.equal(approvedPlace.category, "Sports café");
+
+    const startsAt = new Date(Date.now() + 86_400_000).toISOString();
+    const watchResponse = await fetch(`${base}/api/v1/events`, {
+      method: "POST",
+      headers: headers(business.cookie),
+      body: JSON.stringify({
+        communityId: null,
+        placeId: place.id,
+        type: "WATCH",
+        title: `Derby night ${suffix}`,
+        startsAt,
+        timezone: "Africa/Tunis",
+        waitlistEnabled: true,
+        entryFeeMinor: 0,
+        currency: "TND",
+        play: null,
+      }),
+    });
+    assert.equal(watchResponse.status, 201);
+    const watchEvent = (await watchResponse.json()) as {
+      id: string;
+      placeId: string;
+      venueAuthority: string;
+    };
+    assert.equal(watchEvent.placeId, place.id);
+    assert.equal(watchEvent.venueAuthority, "OFFICIAL_VENUE");
+
+    const publicWatch = await fetch(`${base}/api/public/v1/events?type=WATCH&limit=50`);
+    assert.equal(publicWatch.status, 200);
+    const watchPage = (await publicWatch.json()) as {
+      items: { id: string; placeId: string; venueAuthority: string }[];
+    };
+    const publishedWatch = watchPage.items.find((item) => item.id === watchEvent.id);
+    assert.ok(publishedWatch);
+    assert.equal(publishedWatch.placeId, place.id);
+    assert.equal(publishedWatch.venueAuthority, "OFFICIAL_VENUE");
+
+    const removedWatchApplication = await fetch(`${base}/api/v1/watch/applications`, {
+      method: "POST",
+      headers: headers(business.cookie),
+      body: JSON.stringify({
+        placeId: place.id,
+        summary: "obsolete Watch capability application",
+        contactName: "Venue Manager",
+      }),
+    });
+    assert.equal(removedWatchApplication.status, 404);
 
     const pitchResponse = await fetch(`${base}/api/v1/pitch/applications`, {
       method: "POST",
@@ -204,24 +233,19 @@ test("configured owner is sole full admin and delegates selective Watch/Pitch mo
     assert.equal(pitchResponse.status, 201);
     const pitchApplication = (await pitchResponse.json()) as { id: string };
 
-    const managerPitchQueue = await fetch(`${base}/api/v1/admin/queues/pitch`, {
-      headers: headers(manager.cookie),
-    });
-    assert.equal(managerPitchQueue.status, 403);
-
-    const ownerPitchDecision = await fetch(
+    const managerPitchDecision = await fetch(
       `${base}/api/v1/admin/queues/pitch/${pitchApplication.id}/decision`,
       {
         method: "POST",
-        headers: headers(owner.cookie),
+        headers: headers(manager.cookie),
         body: JSON.stringify({ decision: "APPROVE" }),
       },
     );
-    assert.equal(ownerPitchDecision.status, 200);
+    assert.equal(managerPitchDecision.status, 200);
 
     assert.ok(
       await db.auditLog.findFirst({
-        where: { action: "WATCH_APPLICATION_APPROVED", entityId: watchApplication.id },
+        where: { action: "PLACE_APPROVED", entityId: place.id },
       }),
     );
     assert.ok(
@@ -230,6 +254,10 @@ test("configured owner is sole full admin and delegates selective Watch/Pitch mo
       }),
     );
   } finally {
+    await db.eventChatMessage.deleteMany();
+    await db.eventChatRoom.deleteMany();
+    await db.eventRsvp.deleteMany();
+    await db.event.deleteMany();
     await db.placeCapabilityApplication.deleteMany();
     await db.placeOwnership.deleteMany();
     await db.placeOwnershipClaim.deleteMany();

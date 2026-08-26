@@ -1,129 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import type {
-  PublicPlaceCapability,
-  PublicPlaceSummary,
-} from "@hooma/contracts/platform-management";
-import { WATCH_COLLECTOR_TICKET_MASTER } from "@hooma/ui";
-import { useHoomaFrontend } from "../context";
 import type { PublicEvent } from "../events/api";
 import { useEventApi } from "../events/useEventApi";
-import { PlaceCapabilityOnboarding } from "../places/PlaceCapabilityOnboarding";
-import { createPlatformManagementApi } from "../places/platform-management-api";
-import "./watch-business.css";
+import { WatchTicket } from "./WatchTicket";
 
 function normalize(value: string | null | undefined): string {
   return value?.trim().toLocaleLowerCase() ?? "";
 }
 
-function placeLocation(place: PublicPlaceSummary): string {
-  return [place.city, place.houma].filter(Boolean).join(" · ") || place.address;
-}
-
-function eventDateParts(event: PublicEvent): { date: string; time: string } {
-  const startsAt = new Date(event.startsAt);
-  try {
-    return {
-      date: new Intl.DateTimeFormat(undefined, {
-        weekday: "short",
-        day: "2-digit",
-        month: "short",
-        timeZone: event.timezone,
-      }).format(startsAt),
-      time: new Intl.DateTimeFormat(undefined, {
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZone: event.timezone,
-      }).format(startsAt),
-    };
-  } catch {
-    return {
-      date: startsAt.toLocaleDateString(undefined, {
-        weekday: "short",
-        day: "2-digit",
-        month: "short",
-      }),
-      time: startsAt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }),
-    };
-  }
-}
-
-function WatchTicket({ event }: { readonly event: PublicEvent }) {
-  const { date, time } = eventDateParts(event);
-  const venue = event.venueName || "Venue to be confirmed";
-  const location = event.address || event.community.name;
-
-  return (
-    <article className="watch-ticket" aria-label={`${event.title}, ${date} at ${time}`}>
-      <img
-        className="watch-ticket__master"
-        src={WATCH_COLLECTOR_TICKET_MASTER.src}
-        width={WATCH_COLLECTOR_TICKET_MASTER.width}
-        height={WATCH_COLLECTOR_TICKET_MASTER.height}
-        alt=""
-        aria-hidden="true"
-      />
-      <span className="watch-ticket__series">COLLECTOR SERIES</span>
-      <div className="watch-ticket__event-title" title={event.title}>
-        {event.title}
-      </div>
-      <div className="watch-ticket__venue" title={venue}>
-        <strong>{venue}</strong>
-        <span>{location}</span>
-      </div>
-      <div className="watch-ticket__date">
-        <strong>{date}</strong>
-        <span>{time}</span>
-      </div>
-      <div className="watch-ticket__going">
-        <strong>{event._count.rsvps}</strong>
-        <span>going</span>
-      </div>
-      <span className="watch-ticket__status">WATCH EVENT</span>
-      <div className="watch-ticket__stub" aria-hidden="true">
-        <strong>{event.title}</strong>
-        <span>{date}</span>
-      </div>
-    </article>
-  );
-}
-
-function WatchPlaceCard({ item }: { readonly item: PublicPlaceCapability }) {
-  return (
-    <article className="watch-place-card">
-      <div>
-        <span className="eyebrow">APPROVED WATCH PLACE</span>
-        <h3>{item.place.name}</h3>
-        <p>{item.summary}</p>
-      </div>
-      <dl>
-        <div>
-          <dt>Location</dt>
-          <dd>{placeLocation(item.place)}</dd>
-        </div>
-        <div>
-          <dt>Address</dt>
-          <dd>{item.place.address}</dd>
-        </div>
-      </dl>
-      <div className="watch-place-card__actions">
-        {item.place.phone ? <a href={`tel:${item.place.phone}`}>Call</a> : null}
-        {item.place.websiteUrl ? (
-          <a href={item.place.websiteUrl} target="_blank" rel="noreferrer">
-            Website
-          </a>
-        ) : null}
-      </div>
-    </article>
-  );
-}
-
 export function WatchPage() {
   const eventApi = useEventApi();
-  const { transport } = useHoomaFrontend();
-  const managementApi = useMemo(() => createPlatformManagementApi(transport), [transport]);
   const [events, setEvents] = useState<PublicEvent[]>([]);
-  const [places, setPlaces] = useState<PublicPlaceSummary[]>([]);
-  const [watchPlaces, setWatchPlaces] = useState<PublicPlaceCapability[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
@@ -134,16 +20,10 @@ export function WatchPage() {
     let active = true;
     setLoading(true);
     setError("");
-    void Promise.all([
-      eventApi.publicWatch(),
-      managementApi.places.list(),
-      managementApi.capability.list("WATCH"),
-    ])
-      .then(([eventPage, placeRows, capabilityRows]) => {
-        if (!active) return;
-        setEvents(eventPage.items);
-        setPlaces(placeRows);
-        setWatchPlaces(capabilityRows);
+    void eventApi
+      .publicWatch()
+      .then((page) => {
+        if (active) setEvents(page.items);
       })
       .catch((reason) => {
         if (active) setError(reason instanceof Error ? reason.message : "Unable to load Watch");
@@ -154,96 +34,76 @@ export function WatchPage() {
     return () => {
       active = false;
     };
-  }, [eventApi, managementApi]);
+  }, [eventApi]);
 
   const cities = useMemo(
     () =>
       [
         ...new Set(
-          watchPlaces
-            .map((item) => item.place.city)
+          events
+            .map((event) => event.place?.city)
             .filter((value): value is string => Boolean(value)),
         ),
       ].sort(),
-    [watchPlaces],
+    [events],
   );
   const houmas = useMemo(
     () =>
       [
         ...new Set(
-          watchPlaces
-            .map((item) => item.place.houma)
+          events
+            .map((event) => event.place?.houma)
             .filter((value): value is string => Boolean(value)),
         ),
       ].sort(),
-    [watchPlaces],
+    [events],
   );
 
   const filteredEvents = useMemo(() => {
     const needle = normalize(query);
-    const cityNeedle = normalize(city);
-    const houmaNeedle = normalize(houma);
     return events.filter((event) => {
-      const eventSearch = normalize(
-        [event.title, event.venueName, event.address, event.community.name]
-          .filter(Boolean)
-          .join(" "),
-      );
-      if (needle && !eventSearch.includes(needle)) return false;
-      if (cityNeedle && !eventSearch.includes(cityNeedle)) return false;
-      if (houmaNeedle && !eventSearch.includes(houmaNeedle)) return false;
-      return true;
-    });
-  }, [city, events, houma, query]);
-
-  const filteredWatchPlaces = useMemo(() => {
-    const needle = normalize(query);
-    return watchPlaces.filter((item) => {
-      if (city && item.place.city !== city) return false;
-      if (houma && item.place.houma !== houma) return false;
+      if (!event.place) return false;
+      if (city && event.place.city !== city) return false;
+      if (houma && event.place.houma !== houma) return false;
       if (!needle) return true;
       return normalize(
-        [item.place.name, item.place.city, item.place.houma, item.place.address, item.summary]
+        [
+          event.title,
+          event.description,
+          event.place.name,
+          event.place.address,
+          event.place.city,
+          event.place.houma,
+        ]
           .filter(Boolean)
           .join(" "),
       ).includes(needle);
     });
-  }, [city, houma, query, watchPlaces]);
+  }, [city, events, houma, query]);
 
   return (
     <section className="watch-page">
       <header className="watch-hero">
         <div>
-          <span className="eyebrow">MATCH NIGHT</span>
           <h1>Watch</h1>
           <p>Watch together. Find the match. Find the crowd.</p>
         </div>
-        <button
-          className="watch-create-action"
-          type="button"
-          disabled
-          title="Watch event creation is being connected to canonical Places"
-        >
-          <span aria-hidden="true">＋</span>
-          Create watch event
-        </button>
       </header>
 
-      <details className="watch-business-entry">
-        <summary>
-          <span className="watch-business-entry__summary-copy">
-            <span className="eyebrow">BUSINESS OWNER</span>
-            <strong>List or manage a Watch venue</strong>
-            <small>Verify ownership, then apply for Watch approval.</small>
-          </span>
-          <span className="watch-business-entry__toggle" aria-hidden="true">
-            ＋
-          </span>
-        </summary>
-        <div className="watch-business-entry__body">
-          <PlaceCapabilityOnboarding kind="WATCH" places={places} />
-        </div>
-      </details>
+      <nav className="watch-actions" aria-label="Watch sections">
+        <a className="watch-action watch-action--active" href="/watch">
+          Events
+        </a>
+        <a className="watch-action" href="/places">
+          Places
+        </a>
+        <a className="watch-action watch-action--primary" href="/events/new?type=WATCH">
+          Create Event
+        </a>
+        <a className="watch-action" href="/places/new">
+          Add a Place
+        </a>
+      </nav>
 
       <div className="watch-discovery-controls">
         <label className="watch-search">
@@ -252,10 +112,10 @@ export function WatchPage() {
             <path d="m16 16 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
           </svg>
           <input
-            aria-label="Search Watch events or venues"
+            aria-label="Search Watch events, teams or venues"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search events or venues"
+            placeholder="Search events, teams or venues"
           />
         </label>
         <div className="watch-location-filters">
@@ -285,51 +145,23 @@ export function WatchPage() {
       </div>
 
       {error ? <p className="error">{error}</p> : null}
-
-      <section className="watch-event-section" aria-labelledby="watch-events-title">
-        <div className="watch-section-heading">
-          <div>
-            <span className="eyebrow">COLLECTOR SERIES</span>
-            <h2 id="watch-events-title">Upcoming watch events</h2>
-          </div>
-          <span>{filteredEvents.length}</span>
-        </div>
-        {loading ? <p className="status">Loading Watch events…</p> : null}
-        {!loading && filteredEvents.length ? (
-          <div className="watch-ticket-list">
-            {filteredEvents.map((event) => (
-              <WatchTicket key={event.id} event={event} />
-            ))}
-          </div>
-        ) : null}
-        {!loading && !filteredEvents.length && !error ? (
-          <div className="watch-empty-state">
-            <strong>No Watch events match yet.</strong>
-            <p>
-              Approved Watch venues remain available below while Watch event publishing is connected
-              to canonical Places.
-            </p>
-          </div>
-        ) : null}
-      </section>
-
-      <section className="watch-places-section" aria-labelledby="watch-places-title">
-        <div className="watch-section-heading">
-          <div>
-            <span className="eyebrow">WATCH PLACES</span>
-            <h2 id="watch-places-title">Places built for match night</h2>
-          </div>
-          <span>{filteredWatchPlaces.length}</span>
-        </div>
-        <div className="watch-place-grid">
-          {filteredWatchPlaces.map((item) => (
-            <WatchPlaceCard key={item.id} item={item} />
+      {loading ? <p className="status">Loading Watch events…</p> : null}
+      {!loading && filteredEvents.length ? (
+        <div className="watch-ticket-list">
+          {filteredEvents.map((event) => (
+            <WatchTicket key={event.id} event={event} />
           ))}
         </div>
-        {!loading && !filteredWatchPlaces.length && !error ? (
-          <p className="muted">No approved Watch places match these filters.</p>
-        ) : null}
-      </section>
+      ) : null}
+      {!loading && !filteredEvents.length && !error ? (
+        <div className="watch-empty-state">
+          <div className="watch-empty-state__icon" aria-hidden="true">
+            ◫
+          </div>
+          <strong>No watch events yet.</strong>
+          <p>New watch events across HOOMA will appear here.</p>
+        </div>
+      ) : null}
     </section>
   );
 }

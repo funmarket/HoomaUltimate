@@ -15,14 +15,11 @@ import {
 import "./admin.css";
 
 const MANAGER_CAPABILITIES: readonly PlatformManagerCapability[] = [
-  "REVIEW_PLACES",
-  "REVIEW_PLACE_OWNERSHIP",
-  "REVIEW_WATCH_APPLICATIONS",
   "REVIEW_PITCH_APPLICATIONS",
   "VIEW_AUDIT",
 ];
 
-type QueueName = "places" | "place-ownership" | "watch" | "pitch";
+type QueueName = "places" | "place-ownership" | "pitch";
 
 function QueueSection({
   title,
@@ -93,7 +90,6 @@ export function AdminApp() {
   const [queues, setQueues] = useState<Record<QueueName, AdminQueueItem[]>>({
     places: [],
     "place-ownership": [],
-    watch: [],
     pitch: [],
   });
   const [error, setError] = useState("");
@@ -132,25 +128,14 @@ export function AdminApp() {
         ),
       );
     }
-    if (allowed("REVIEW_PLACES")) {
+    if (currentAccess.isPlatformOwner) {
       tasks.push(
         management.admin
           .queue("places")
           .then((rows) => setQueues((current) => ({ ...current, places: rows }))),
-      );
-    }
-    if (allowed("REVIEW_PLACE_OWNERSHIP")) {
-      tasks.push(
         management.admin
           .queue("place-ownership")
           .then((rows) => setQueues((current) => ({ ...current, "place-ownership": rows }))),
-      );
-    }
-    if (allowed("REVIEW_WATCH_APPLICATIONS")) {
-      tasks.push(
-        management.admin
-          .queue("watch")
-          .then((rows) => setQueues((current) => ({ ...current, watch: rows }))),
       );
     }
     if (allowed("REVIEW_PITCH_APPLICATIONS")) {
@@ -232,12 +217,12 @@ export function AdminApp() {
   return (
     <section className="admin-control-room">
       <section className="auth-card admin-hero">
-        <p className="eyebrow">{access?.isPlatformOwner ? "APP OWNER" : "APP MANAGER"}</p>
+        <p className="eyebrow">{access?.isPlatformOwner ? "APP ADMIN" : "APP MANAGER"}</p>
         <h1>HOOMA Control Room</h1>
         <p className="muted">
           {access?.isPlatformOwner
-            ? "Full platform authority. Only the configured creator account receives this role."
-            : "Delegated authority is limited to the permissions assigned by the App Owner."}
+            ? "Full app authority. Only the configured App Admin account receives this role."
+            : "Delegated authority is limited to the permissions assigned by the App Admin."}
         </p>
         {overview ? (
           <dl>
@@ -246,7 +231,7 @@ export function AdminApp() {
               <dd>{overview.users}</dd>
             </div>
             <div>
-              <dt>Full owners</dt>
+              <dt>App Admins</dt>
               <dd>{overview.activePlatformAdmins}</dd>
             </div>
             <div>
@@ -263,28 +248,20 @@ export function AdminApp() {
         {error ? <p className="error">{error}</p> : null}
       </section>
 
-      {can("REVIEW_PLACES") ? (
+      {access?.isPlatformOwner ? (
         <QueueSection
           eyebrow="PLACES"
-          title="Place suggestions"
+          title="Place submissions"
           items={queues.places}
           onDecision={(id, decision) => void decide("places", id, decision)}
         />
       ) : null}
-      {can("REVIEW_PLACE_OWNERSHIP") ? (
+      {access?.isPlatformOwner ? (
         <QueueSection
           eyebrow="OWNERSHIP"
           title="Place ownership claims"
           items={queues["place-ownership"]}
           onDecision={(id, decision) => void decide("place-ownership", id, decision)}
-        />
-      ) : null}
-      {can("REVIEW_WATCH_APPLICATIONS") ? (
-        <QueueSection
-          eyebrow="WATCH"
-          title="Watch business applications"
-          items={queues.watch}
-          onDecision={(id, decision) => void decide("watch", id, decision)}
         />
       ) : null}
       {can("REVIEW_PITCH_APPLICATIONS") ? (
@@ -317,7 +294,8 @@ export function AdminApp() {
             </div>
             <button type="submit">Save App Manager permissions</button>
             <p className="muted">
-              Submit with no permissions selected to revoke all App Manager access.
+              Place submissions and ownership claims are App Admin-only. Submit with no permissions
+              selected to revoke all App Manager access.
             </p>
           </form>
           <div className="admin-manager-list">

@@ -103,11 +103,8 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
       const result = await eventApi.myRsvp(eventId);
       setRsvp(activeRsvp(result.rsvp?.status));
     } catch (reason) {
-      if (reason instanceof HoomaApiError && reason.status === 401) {
-        setRsvp(null);
-      } else {
-        setError(reason instanceof Error ? reason.message : "Unable to load RSVP state");
-      }
+      if (reason instanceof HoomaApiError && reason.status === 401) setRsvp(null);
+      else setError(reason instanceof Error ? reason.message : "Unable to load RSVP state");
     } finally {
       setParticipationLoading(false);
     }
@@ -123,7 +120,7 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
       setStatus(result.status === "WAITLISTED" ? "Added to the waitlist." : "You are going.");
       await reloadEvent();
     } catch (reason) {
-      setError(protectedError(reason, "Unable to join game"));
+      setError(protectedError(reason, "Unable to join event"));
     } finally {
       setActionPending(false);
     }
@@ -139,7 +136,7 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
       setStatus("RSVP cancelled.");
       await reloadEvent();
     } catch (reason) {
-      setError(protectedError(reason, "Unable to leave game"));
+      setError(protectedError(reason, "Unable to leave event"));
     } finally {
       setActionPending(false);
     }
@@ -149,7 +146,10 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
     return error ? <p className="error">{error}</p> : <p className="status">Loading event…</p>;
 
   const eventOpen = event.status !== "COMPLETED";
-  const location = event.venueName || event.address || "Venue to be confirmed";
+  const isWatch = event.type === "WATCH";
+  const location = isWatch
+    ? event.place?.name || "Place to be confirmed"
+    : event.venueName || event.address || "Venue to be confirmed";
   const play = event.playDetails;
   const rsvpLabel =
     rsvp === "WAITLISTED"
@@ -163,7 +163,7 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
   return (
     <div className="play-event-page">
       <section className="play-event-card">
-        <div className="play-event-card__kicker">Pickup match</div>
+        <div className="play-event-card__kicker">{isWatch ? "Watch event" : "Pickup match"}</div>
         <div className="play-event-card__title-row">
           <span className="play-event-card__ball">
             <BallIcon />
@@ -173,7 +173,6 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
             {event.description ? <p>{event.description}</p> : null}
           </div>
         </div>
-
         <div className="play-event-card__meta">
           <span>
             <CalendarIcon />
@@ -190,48 +189,68 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
           </span>
         </div>
 
-        <div className="play-event-card__facts">
-          <div>
-            <span>Format</span>
-            <strong>{pretty(play?.format)}</strong>
+        {isWatch ? (
+          <div className="play-event-card__facts">
+            <div>
+              <span>Place</span>
+              <strong>{event.place?.name || "—"}</strong>
+            </div>
+            <div>
+              <span>Houma</span>
+              <strong>{event.place?.houma || "—"}</strong>
+            </div>
+            <div>
+              <span>City</span>
+              <strong>{event.place?.city || "—"}</strong>
+            </div>
+            <div>
+              <span>Status</span>
+              <strong>
+                {event.venueAuthority === "OFFICIAL_VENUE"
+                  ? "Official venue"
+                  : "Suggested by community"}
+              </strong>
+            </div>
           </div>
-          <div>
-            <span>Pitch</span>
-            <strong>{pretty(play?.pitchType)}</strong>
+        ) : (
+          <div className="play-event-card__facts">
+            <div>
+              <span>Format</span>
+              <strong>{pretty(play?.format)}</strong>
+            </div>
+            <div>
+              <span>Pitch</span>
+              <strong>{pretty(play?.pitchType)}</strong>
+            </div>
+            <div>
+              <span>Level</span>
+              <strong>{pretty(play?.skillLevel)}</strong>
+            </div>
+            <div>
+              <span>Community</span>
+              <strong>{event.community?.name || "—"}</strong>
+            </div>
           </div>
-          <div>
-            <span>Level</span>
-            <strong>{pretty(play?.skillLevel)}</strong>
-          </div>
-          <div>
-            <span>Community</span>
-            <strong>{event.community.name}</strong>
-          </div>
-        </div>
+        )}
 
+        {isWatch && event.place ? (
+          <a className="play-event-primary-action" href={`/places/${event.place.id}`}>
+            View Place
+          </a>
+        ) : null}
         {rsvpLabel ? <div className="play-event-rsvp-state">{rsvpLabel}</div> : null}
-
         {rsvp === "ATTENDED" ? (
           <div className="play-event-primary-action play-event-primary-action--static">
             Checked in
           </div>
-        ) : rsvp === "WAITLISTED" ? (
+        ) : rsvp === "WAITLISTED" || rsvp === "CONFIRMED" ? (
           <button
             className="play-event-primary-action"
             type="button"
             disabled={actionPending}
             onClick={() => void leave()}
           >
-            {actionPending ? "Updating…" : "Leave waitlist"}
-          </button>
-        ) : rsvp === "CONFIRMED" ? (
-          <button
-            className="play-event-primary-action"
-            type="button"
-            disabled={actionPending}
-            onClick={() => void leave()}
-          >
-            {actionPending ? "Updating…" : "Cancel RSVP"}
+            {actionPending ? "Updating…" : rsvp === "WAITLISTED" ? "Leave waitlist" : "Cancel RSVP"}
           </button>
         ) : eventOpen ? (
           <button
@@ -240,36 +259,37 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
             disabled={actionPending || participationLoading}
             onClick={() => void join()}
           >
-            {actionPending ? "Joining…" : "Join in one tap"}
+            {actionPending ? "Joining…" : isWatch ? "Join event" : "Join in one tap"}
           </button>
         ) : null}
-
         {status ? <p className="success">{status}</p> : null}
         {error ? <p className="error">{error}</p> : null}
       </section>
 
       <EventWhistleBoard eventId={eventId} />
 
-      <section className="play-matchday-hub" aria-labelledby="play-matchday-title">
-        <div>
-          <p className="eyebrow">Matchday hub</p>
-          <h2 id="play-matchday-title">Event actions</h2>
-        </div>
-        <div className="play-matchday-actions">
-          <a href={`/events/${eventId}/formation`}>
-            <strong>Formation builder</strong>
-            <span>{pretty(play?.format)} · build teams and positions</span>
-          </a>
-          <a href={`/events/${eventId}/chat`}>
-            <strong>Temporary event chat</strong>
-            <span>Available only to participants while the event chat window is open</span>
-          </a>
-          <a href={`/events/${eventId}/check-in`}>
-            <strong>Check in</strong>
-            <span>Confirmed participants can mark attendance on matchday</span>
-          </a>
-        </div>
-      </section>
+      {!isWatch ? (
+        <section className="play-matchday-hub" aria-labelledby="play-matchday-title">
+          <div>
+            <p className="eyebrow">Matchday hub</p>
+            <h2 id="play-matchday-title">Event actions</h2>
+          </div>
+          <div className="play-matchday-actions">
+            <a href={`/events/${eventId}/formation`}>
+              <strong>Formation builder</strong>
+              <span>{pretty(play?.format)} · build teams and positions</span>
+            </a>
+            <a href={`/events/${eventId}/chat`}>
+              <strong>Temporary event chat</strong>
+              <span>Available only to participants while the event chat window is open</span>
+            </a>
+            <a href={`/events/${eventId}/check-in`}>
+              <strong>Check in</strong>
+              <span>Confirmed participants can mark attendance on matchday</span>
+            </a>
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

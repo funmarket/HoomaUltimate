@@ -7,96 +7,118 @@ import type {
   EventRepository,
 } from "../application/event.repository.js";
 
+const publicEventSelect = Prisma.validator<Prisma.EventSelect>()({
+  id: true,
+  communityId: true,
+  placeId: true,
+  createdByUserId: true,
+  type: true,
+  status: true,
+  title: true,
+  description: true,
+  startsAt: true,
+  endsAt: true,
+  timezone: true,
+  venueName: true,
+  address: true,
+  capacity: true,
+  waitlistEnabled: true,
+  entryFeeMinor: true,
+  currency: true,
+  community: { select: { id: true, name: true, slug: true } },
+  place: {
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      address: true,
+      city: true,
+      houma: true,
+      imageUrl: true,
+      category: true,
+      ownerships: { where: { revokedAt: null }, select: { userId: true } },
+    },
+  },
+  playDetails: true,
+  _count: {
+    select: {
+      rsvps: { where: { status: { in: ["CONFIRMED", "ATTENDED"] } } },
+      checkIns: true,
+    },
+  },
+});
+
+type PublicEventRow = Prisma.EventGetPayload<{ select: typeof publicEventSelect }>;
+
 export class PrismaEventRepository implements EventRepository {
   constructor(private readonly db: PrismaClient) {}
 
   async listPublic(input: EventPublicListInput) {
-    const communityVisibility: Prisma.EventWhereInput = input.viewerUserId
+    const playVisibility: Prisma.EventWhereInput = input.viewerUserId
       ? {
+          type: "PLAY",
           OR: [
-            { community: { visibility: "PUBLIC" } },
+            { community: { is: { visibility: "PUBLIC" } } },
             {
               community: {
-                memberships: { some: { userId: input.viewerUserId, leftAt: null } },
+                is: { memberships: { some: { userId: input.viewerUserId, leftAt: null } } },
               },
             },
           ],
         }
-      : { community: { visibility: "PUBLIC" } };
+      : { type: "PLAY", community: { is: { visibility: "PUBLIC" } } };
+    const watchVisibility: Prisma.EventWhereInput = {
+      type: "WATCH",
+      place: { is: { moderationStatus: "APPROVED" } },
+    };
+    const visibility =
+      input.type === "PLAY"
+        ? playVisibility
+        : input.type === "WATCH"
+          ? watchVisibility
+          : { OR: [playVisibility, watchVisibility] };
+
     const rows = await this.db.event.findMany({
       where: {
-        ...communityVisibility,
+        ...visibility,
         status: "PUBLISHED",
         startsAt: { gte: input.from },
-        ...(input.type ? { type: input.type } : {}),
         ...(input.communityId ? { communityId: input.communityId } : {}),
       },
       orderBy: [{ startsAt: "asc" }, { id: "asc" }],
       take: input.limit + 1,
       ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
-      select: {
-        id: true,
-        communityId: true,
-        type: true,
-        title: true,
-        description: true,
-        startsAt: true,
-        endsAt: true,
-        timezone: true,
-        venueName: true,
-        address: true,
-        capacity: true,
-        waitlistEnabled: true,
-        entryFeeMinor: true,
-        currency: true,
-        community: { select: { id: true, name: true, slug: true } },
-        playDetails: true,
-        _count: { select: { rsvps: { where: { status: { in: ["CONFIRMED", "ATTENDED"] } } } } },
-      },
+      select: publicEventSelect,
     });
     return {
-      items: rows.slice(0, input.limit).map(serializeEvent),
+      items: rows.slice(0, input.limit).map(serializePublicEvent),
       nextCursor: rows.length > input.limit ? (rows[input.limit - 1]?.id ?? null) : null,
     };
   }
 
   async getPublic(eventId: string) {
     const row = await this.db.event.findFirst({
-      where: { id: eventId, status: { in: ["PUBLISHED", "COMPLETED"] } },
-      select: {
-        id: true,
-        communityId: true,
-        createdByUserId: true,
-        type: true,
-        status: true,
-        title: true,
-        description: true,
-        startsAt: true,
-        endsAt: true,
-        timezone: true,
-        venueName: true,
-        address: true,
-        capacity: true,
-        waitlistEnabled: true,
-        entryFeeMinor: true,
-        currency: true,
-        community: { select: { id: true, name: true, slug: true } },
-        playDetails: true,
-        _count: {
-          select: {
-            rsvps: { where: { status: { in: ["CONFIRMED", "ATTENDED"] } } },
-            checkIns: true,
-          },
-        },
+      where: {
+        id: eventId,
+        status: { in: ["PUBLISHED", "COMPLETED"] },
+        OR: [{ type: "PLAY" }, { type: "WATCH", place: { is: { moderationStatus: "APPROVED" } } }],
       },
+      select: publicEventSelect,
     });
-    return row ? serializeEvent(row) : null;
+    return row ? serializePublicEvent(row) : null;
   }
 
   access(eventId: string): Promise<EventAccessRecord | null> {
     return this.db.event.findUnique({
       where: { id: eventId },
-      select: { communityId: true, createdByUserId: true, status: true, entryFeeMinor: true },
+      select: {
+        communityId: true,
+        placeId: true,
+        type: true,
+        createdByUserId: true,
+        status: true,
+        entryFeeMinor: true,
+      },
     });
   }
 
@@ -135,7 +157,8 @@ export class PrismaEventRepository implements EventRepository {
     return this.db.$transaction(async (tx) => {
       const event = await tx.event.create({
         data: {
-          communityId: input.communityId,
+          communityId: input.communityId ?? null,
+          placeId: input.placeId ?? null,
           createdByUserId: userId,
           type: input.type,
           title: input.title,
@@ -143,8 +166,8 @@ export class PrismaEventRepository implements EventRepository {
           startsAt,
           endsAt,
           timezone: input.timezone,
-          venueName: input.venueName ?? null,
-          address: input.address ?? null,
+          venueName: input.type === "PLAY" ? (input.venueName ?? null) : null,
+          address: input.type === "PLAY" ? (input.address ?? null) : null,
           capacity: input.capacity ?? null,
           waitlistEnabled: input.waitlistEnabled,
           entryFeeMinor: BigInt(input.entryFeeMinor),
@@ -162,7 +185,11 @@ export class PrismaEventRepository implements EventRepository {
         });
       }
       await tx.eventChatRoom.create({ data: { eventId: event.id, ...chatWindow } });
-      return serializeEvent(event);
+      const created = await tx.event.findUniqueOrThrow({
+        where: { id: event.id },
+        select: publicEventSelect,
+      });
+      return serializePublicEvent(created);
     });
   }
 
@@ -179,30 +206,36 @@ export class PrismaEventRepository implements EventRepository {
         ...(input.startsAt !== undefined ? { startsAt } : {}),
         ...(input.endsAt !== undefined ? { endsAt } : {}),
         ...(input.timezone !== undefined ? { timezone: input.timezone } : {}),
-        ...(input.venueName !== undefined ? { venueName: input.venueName } : {}),
-        ...(input.address !== undefined ? { address: input.address } : {}),
+        ...(current.type === "PLAY" && input.venueName !== undefined
+          ? { venueName: input.venueName }
+          : {}),
+        ...(current.type === "PLAY" && input.address !== undefined
+          ? { address: input.address }
+          : {}),
         ...(input.capacity !== undefined ? { capacity: input.capacity } : {}),
         ...(input.waitlistEnabled !== undefined ? { waitlistEnabled: input.waitlistEnabled } : {}),
       };
-      const event = await tx.event.update({ where: { id: eventId }, data });
+      await tx.event.update({ where: { id: eventId }, data });
       await tx.eventChatRoom.update({
         where: { eventId },
         data: eventChatWindow(startsAt, endsAt),
       });
-      return serializeEvent(event);
+      const updated = await tx.event.findUniqueOrThrow({
+        where: { id: eventId },
+        select: publicEventSelect,
+      });
+      return serializePublicEvent(updated);
     });
   }
 
   async cancel(eventId: string) {
-    return serializeEvent(
-      await this.db.event.update({ where: { id: eventId }, data: { status: "CANCELLED" } }),
-    );
+    await this.db.event.update({ where: { id: eventId }, data: { status: "CANCELLED" } });
+    return { cancelled: true };
   }
 
   async complete(eventId: string) {
-    return serializeEvent(
-      await this.db.event.update({ where: { id: eventId }, data: { status: "COMPLETED" } }),
-    );
+    await this.db.event.update({ where: { id: eventId }, data: { status: "COMPLETED" } });
+    return this.getPublic(eventId);
   }
 
   async join(eventId: string, userId: string) {
@@ -301,7 +334,11 @@ export class PrismaEventRepository implements EventRepository {
             { createdByUserId: userId },
             {
               community: {
-                memberships: { some: { userId, leftAt: null, role: { in: ["FOUNDER", "COACH"] } } },
+                is: {
+                  memberships: {
+                    some: { userId, leftAt: null, role: { in: ["FOUNDER", "COACH"] } },
+                  },
+                },
               },
             },
             {
@@ -381,8 +418,21 @@ async function lockEvent(tx: Prisma.TransactionClient, eventId: string): Promise
   if (rows.length === 0) throw new Error("EVENT_NOT_FOUND");
 }
 
-function serializeEvent<T>(event: T): T {
+function serializePublicEvent(event: PublicEventRow) {
+  const officialVenue = Boolean(
+    event.place?.ownerships.some((ownership) => ownership.userId === event.createdByUserId),
+  );
+  const place = event.place
+    ? Object.fromEntries(Object.entries(event.place).filter(([key]) => key !== "ownerships"))
+    : null;
+  const output = {
+    ...event,
+    place,
+    venueAuthority:
+      event.place === null ? null : officialVenue ? "OFFICIAL_VENUE" : "SUGGESTED_BY_COMMUNITY",
+  };
+  delete (output as { createdByUserId?: string }).createdByUserId;
   return JSON.parse(
-    JSON.stringify(event, (_key, value) => (typeof value === "bigint" ? value.toString() : value)),
-  ) as T;
+    JSON.stringify(output, (_key, value) => (typeof value === "bigint" ? value.toString() : value)),
+  );
 }

@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from "react";
-import type { PlaceCapabilityKind, PublicPlaceSummary } from "@hooma/contracts/platform-management";
+import type { PublicPlaceSummary } from "@hooma/contracts/platform-management";
 import { useHoomaFrontend } from "../context";
 import { createPlatformManagementApi } from "./platform-management-api";
 
@@ -8,17 +8,14 @@ function locationLabel(place: PublicPlaceSummary): string {
 }
 
 export function PlaceCapabilityOnboarding({
-  kind,
   places,
 }: {
-  readonly kind: PlaceCapabilityKind;
   readonly places: readonly PublicPlaceSummary[];
 }) {
   const { transport, protectedError } = useHoomaFrontend();
   const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const title = kind === "WATCH" ? "Watch" : "Pitch";
 
   async function claim(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -30,9 +27,7 @@ export function PlaceCapabilityOnboarding({
         evidence: String(data.get("evidence") ?? ""),
       });
       event.currentTarget.reset();
-      setMessage(
-        "Ownership claim submitted. After approval you can submit the business application.",
-      );
+      setMessage("Ownership claim submitted. After approval you can submit the Pitch application.");
     } catch (reason) {
       setError(protectedError(reason, "Unable to submit ownership claim"));
     }
@@ -44,16 +39,16 @@ export function PlaceCapabilityOnboarding({
     setError("");
     setMessage("");
     try {
-      await api.capability.submit(kind, String(data.get("placeId") ?? ""), {
+      await api.capability.submit("PITCH", String(data.get("placeId") ?? ""), {
         summary: String(data.get("summary") ?? ""),
         contactName: String(data.get("contactName") ?? ""),
         contactPhone: String(data.get("contactPhone") ?? "") || null,
         contactEmail: String(data.get("contactEmail") ?? "") || null,
       });
       event.currentTarget.reset();
-      setMessage(`${title} business application submitted for App review.`);
+      setMessage("Pitch business application submitted for App review.");
     } catch (reason) {
-      setError(protectedError(reason, `Unable to submit ${title} application`));
+      setError(protectedError(reason, "Unable to submit Pitch application"));
     }
   }
 
@@ -96,7 +91,7 @@ export function PlaceCapabilityOnboarding({
       <form className="panel place-business-form" onSubmit={(event) => void apply(event)}>
         <div className="place-business-form__heading">
           <p className="eyebrow">STEP 2</p>
-          <h2>Apply for {title}</h2>
+          <h2>Apply for Pitch</h2>
           <p className="muted">
             The selected Place must already be approved and verified as yours.
           </p>
@@ -117,10 +112,10 @@ export function PlaceCapabilityOnboarding({
         </label>
 
         <label className="place-business-field">
-          <span>{title} offering</span>
+          <span>Pitch offering</span>
           <textarea
             name="summary"
-            placeholder={`${title} offering, facilities, services and business details`}
+            placeholder="Pitch offering, facilities, services and business details"
             minLength={10}
             required
           />
@@ -141,7 +136,7 @@ export function PlaceCapabilityOnboarding({
           <input name="contactEmail" type="email" placeholder="Email" autoComplete="email" />
         </label>
 
-        <button type="submit">Submit {title} application</button>
+        <button type="submit">Submit Pitch application</button>
       </form>
 
       {message ? <p className="status place-business-message">{message}</p> : null}

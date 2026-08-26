@@ -33,6 +33,11 @@ export function createPlatformManagementApi(transport: HoomaTransport) {
   return {
     places: {
       list: () => request<PublicPlaceSummary[]>(transport, "/api/public/v1/places"),
+      get: (placeId: string) =>
+        request<PublicPlaceSummary>(
+          transport,
+          `/api/public/v1/places/${encodeURIComponent(placeId)}`,
+        ),
       suggest: (input: PlaceSuggestionInput) =>
         request<PublicPlaceSummary & { status: string }>(transport, "/api/v1/places", {
           method: "POST",
@@ -72,10 +77,10 @@ export function createPlatformManagementApi(transport: HoomaTransport) {
           method: "PUT",
           body: JSON.stringify({ capabilities }),
         }),
-      queue: (name: "places" | "place-ownership" | "watch" | "pitch") =>
+      queue: (name: "places" | "place-ownership" | "pitch") =>
         request<AdminQueueItem[]>(transport, `/api/v1/admin/queues/${name}`),
       decide: (
-        name: "places" | "place-ownership" | "watch" | "pitch",
+        name: "places" | "place-ownership" | "pitch",
         id: string,
         input: ModerationDecisionInput,
       ) =>
