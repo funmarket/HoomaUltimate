@@ -2,17 +2,11 @@ import type {
   ModerationDecisionInput,
   PlaceCapabilityApplicationInput,
   PlaceCapabilityKind,
-  PlatformManagerCapability,
 } from "@hooma/contracts/platform-management";
 import { AppError } from "../../../http/errors/app-error.js";
 import type { PlatformAdminAuthorizer } from "../../platform-admin/application/platform-admin.authorizer.js";
 import type { PlaceRepository } from "./place.repository.js";
 import type { PlaceCapabilityRepository } from "./place-capability.repository.js";
-
-const REVIEW_CAPABILITY: Readonly<Record<PlaceCapabilityKind, PlatformManagerCapability>> = {
-  WATCH: "REVIEW_WATCH_APPLICATIONS",
-  PITCH: "REVIEW_PITCH_APPLICATIONS",
-};
 
 export class PlaceCapabilityService {
   constructor(
@@ -33,24 +27,24 @@ export class PlaceCapabilityService {
       throw new AppError(
         403,
         "VERIFIED_PLACE_OWNER_REQUIRED",
-        "Verified Place ownership is required before submitting a business application",
+        "Verified Place ownership is required before submitting a Pitch application",
       );
     }
     return this.repository.submit(userId, placeId, this.kind, input);
   }
 
   async pending(userId: string) {
-    await this.platformAdmin.requireCapability(userId, REVIEW_CAPABILITY[this.kind]);
+    await this.platformAdmin.requireCapability(userId, "REVIEW_PITCH_APPLICATIONS");
     return this.repository.pending(this.kind);
   }
 
   async review(userId: string, applicationId: string, input: ModerationDecisionInput) {
-    await this.platformAdmin.requireCapability(userId, REVIEW_CAPABILITY[this.kind]);
+    await this.platformAdmin.requireCapability(userId, "REVIEW_PITCH_APPLICATIONS");
     if (!(await this.repository.review(userId, applicationId, this.kind, input))) {
       throw new AppError(
         409,
-        `${this.kind}_APPLICATION_REVIEW_NOT_PENDING`,
-        `This ${this.kind} application review is no longer pending`,
+        "PITCH_APPLICATION_REVIEW_NOT_PENDING",
+        "This Pitch application review is no longer pending",
       );
     }
     return { ok: true };
