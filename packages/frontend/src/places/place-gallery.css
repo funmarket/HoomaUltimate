@@ -1,3 +1,13 @@
+.place-detail-hero.place-detail-hero--copy-only {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+.place-detail-hero--copy-only .place-detail-hero__copy {
+  width: 100%;
+  max-width: 820px;
+}
+
 .place-gallery {
   display: grid;
   gap: 10px;
@@ -112,6 +122,12 @@
   color: var(--app-text-caption);
   cursor: default;
   opacity: 0.45;
+}
+
+@media (max-width: 760px) {
+  .place-detail-hero.place-detail-hero--copy-only {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 560px) {
