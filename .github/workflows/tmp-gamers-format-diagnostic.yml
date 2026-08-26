@@ -15,7 +15,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Print formatted sources without modifying repository
+      - name: Print Prettier diffs without modifying repository
         shell: bash
         run: |
           set -euo pipefail
@@ -34,8 +34,7 @@ jobs:
           done
           npx prettier --config .prettierrc.json --write "${files[@]/#//tmp/hooma-format/}"
           for file in "${files[@]}"; do
-            echo "FORMAT_BASE64_BEGIN:$file"
-            base64 -w0 "/tmp/hooma-format/$file"
-            echo
-            echo "FORMAT_BASE64_END:$file"
+            echo "FORMAT_DIFF_BEGIN:$file"
+            diff -u "$file" "/tmp/hooma-format/$file" || true
+            echo "FORMAT_DIFF_END:$file"
           done
