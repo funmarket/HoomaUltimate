@@ -347,7 +347,10 @@ export function GamersPage() {
       ) : null}
 
       {activeTab === "ARENA" ? (
-        <section className="gamers-section gamer-global-arena" aria-labelledby="gamers-arena-heading">
+        <section
+          className="gamers-section gamer-global-arena"
+          aria-labelledby="gamers-arena-heading"
+        >
           <div className="gamers-section-heading">
             <div>
               <span className="eyebrow">ARENA</span>
@@ -478,7 +481,9 @@ export function GamersPage() {
           game={challengeTarget.game}
           challengedProfileId={challengeTarget.id}
           challengedName={challengeTarget.presentation.displayName}
-          returnTo={`/gamers?challenge=${encodeURIComponent(challengeTarget.id)}&game=${encodeURIComponent(challengeTarget.game.slug)}`}
+          returnTo={`/gamers?challenge=${encodeURIComponent(challengeTarget.id)}&game=${encodeURIComponent(
+            challengeTarget.game.slug,
+          )}`}
           onClose={() => setChallengeTarget(null)}
           onSent={async () => {
             setNotice(`Challenge sent to ${challengeTarget.presentation.displayName}.`);
