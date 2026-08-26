@@ -41,15 +41,21 @@ test("Watch matchup keeps contrasting centered team-name presentation", () => {
   assert.match(title, /text-align:\s*center/);
 });
 
-test("Watch side stub stays lime, centered and intentionally larger", () => {
+test("Watch side stub stays centered below the logo and above the bottom border", () => {
   const css = source("packages/frontend/src/watch/watch.css");
   const stub = cssRule(css, ".watch-ticket__stub");
 
-  assert.match(stub, /top:\s*15%/);
-  assert.match(stub, /height:\s*65%/);
+  assert.match(stub, /top:\s*35%/);
+  assert.match(stub, /height:\s*53\.5%/);
   assert.match(stub, /color:\s*#c8f23a/);
   assert.match(stub, /align-items:\s*center/);
   assert.match(stub, /justify-content:\s*center/);
   assert.match(stub, /text-align:\s*center/);
   assert.match(stub, /font-size:\s*clamp\(0\.42rem, 1\.72cqw, 0\.86rem\)/);
+
+  const top = Number(stub.match(/top:\s*([0-9.]+)%/)?.[1]);
+  const height = Number(stub.match(/height:\s*([0-9.]+)%/)?.[1]);
+  assert.ok(Number.isFinite(top) && Number.isFinite(height));
+  assert.ok(top >= 35, "Stub text must start below the logo safe area");
+  assert.ok(top + height <= 88.5, "Stub text must end above the bottom inner border");
 });
