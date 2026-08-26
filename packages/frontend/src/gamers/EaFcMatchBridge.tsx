@@ -22,7 +22,9 @@ function launchEaFcMobile(): void {
     window.location.href = EA_FC_IOS_SCHEME;
     return;
   }
-  window.alert("Open this Match Card on your Android or iOS device to launch EA SPORTS FC Mobile.");
+  window.alert(
+    "Open this Match Card on your Android or iOS device to launch EA SPORTS FC Mobile.",
+  );
 }
 
 export function EaFcMatchBridge({
@@ -133,7 +135,9 @@ export function EaFcMatchBridge({
 
   const ownSide = isHost ? "CHALLENGER" : "CHALLENGED";
   const ownSubmission = session?.submissions.find((submission) => submission.side === ownSide);
-  const resultLocked = session ? ["VERIFIED", "DISPUTED", "VOIDED"].includes(session.status) : false;
+  const resultLocked = session
+    ? ["VERIFIED", "DISPUTED", "VOIDED"].includes(session.status)
+    : false;
 
   return (
     <section className="ea-fc-bridge" aria-label="EA SPORTS FC Mobile match bridge">
@@ -154,7 +158,9 @@ export function EaFcMatchBridge({
               pattern="[0-9]{6}"
               maxLength={6}
               value={roomCode}
-              onChange={(event) => setRoomCode(event.currentTarget.value.replace(/\D/g, "").slice(0, 6))}
+              onChange={(event) =>
+                setRoomCode(event.currentTarget.value.replace(/\D/g, "").slice(0, 6))
+              }
               placeholder="582910"
               required
             />
@@ -227,9 +233,13 @@ export function EaFcMatchBridge({
         </p>
       ) : null}
       {session?.status === "DISPUTED" ? (
-        <p className="error-box">The scorecards conflict. This Match Card is locked for App Admin review.</p>
+        <p className="error-box">
+          The scorecards conflict. This Match Card is locked for App Admin review.
+        </p>
       ) : null}
-      {session?.status === "VOIDED" ? <p className="muted">This match was voided by App Admin.</p> : null}
+      {session?.status === "VOIDED" ? (
+        <p className="muted">This match was voided by App Admin.</p>
+      ) : null}
       {notice ? <p className="ea-fc-notice">{notice}</p> : null}
       {error ? <p className="error-box">{error}</p> : null}
     </section>
