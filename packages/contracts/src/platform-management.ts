@@ -27,7 +27,10 @@ export const placeSuggestionSchema = z.object({
   menuItems: z.array(placeMenuItemSchema).max(20).optional().default([]),
 });
 
-export const placeUpdateSchema = placeSuggestionSchema.partial();
+export const placeUpdateSchema = placeSuggestionSchema
+  .omit({ menuItems: true })
+  .partial()
+  .extend({ menuItems: z.array(placeMenuItemSchema).max(20).optional() });
 
 export const placeOwnershipClaimSchema = z.object({
   evidence: z.string().trim().min(10).max(4000),
