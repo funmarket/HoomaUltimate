@@ -22,16 +22,6 @@ jobs:
       - name: Format changed files without mutating repository
         run: |
           npx prettier --write packages/frontend/src/watch/WatchTicket.tsx packages/frontend/src/watch/watch.css tests/watch-canonical-place-structure.test.mjs tests/watch-ticket-final-presentation.test.mjs
-      - name: Print exact formatted files
+      - name: Print exact formatter diff
         run: |
-          for file in \
-            packages/frontend/src/watch/WatchTicket.tsx \
-            packages/frontend/src/watch/watch.css \
-            tests/watch-canonical-place-structure.test.mjs \
-            tests/watch-ticket-final-presentation.test.mjs
-          do
-            echo "FORMAT_FILE_BEGIN:$file"
-            base64 -w 0 "$file"
-            echo
-            echo "FORMAT_FILE_END:$file"
-          done
+          git diff -- packages/frontend/src/watch/WatchTicket.tsx packages/frontend/src/watch/watch.css tests/watch-canonical-place-structure.test.mjs tests/watch-ticket-final-presentation.test.mjs
