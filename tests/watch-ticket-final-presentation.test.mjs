@@ -76,7 +76,9 @@ test("Watch side stub contains only collector branding below its football emblem
   const css = source("packages/frontend/src/watch/watch.css");
   const stub = cssRule(css, ".watch-ticket__stub");
   const branding = cssRule(css, ".watch-ticket__stub strong");
-  const visibleStub = ticket.match(/<span className="watch-ticket__stub-ball"[\s\S]*?<strong>HOOMA<\/strong>/)?.[0] ?? "";
+  const visibleStub =
+    ticket.match(/<span className="watch-ticket__stub-ball"[\s\S]*?<strong>HOOMA<\/strong>/)?.[0] ??
+    "";
 
   assert.match(ticket, /watch-ticket__stub-ball/);
   assert.match(visibleStub, /⚽/);
