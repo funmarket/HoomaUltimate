@@ -1,0 +1,27 @@
+name: Temporary Watch ticket test formatter preview
+
+on:
+  push:
+    branches:
+      - fix/watch-ticket-information-photo-stack
+
+permissions:
+  contents: read
+
+jobs:
+  format-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - name: Format changed tests without mutating repository
+        run: |
+          npx prettier --write tests/place-detail-watch-experience.test.mjs tests/watch-ticket-asset.test.mjs tests/watch-canonical-place-structure.test.mjs tests/watch-ticket-final-presentation.test.mjs
+      - name: Print exact formatter diff
+        run: |
+          git diff -- tests/place-detail-watch-experience.test.mjs tests/watch-ticket-asset.test.mjs tests/watch-canonical-place-structure.test.mjs tests/watch-ticket-final-presentation.test.mjs
