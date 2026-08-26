@@ -137,14 +137,14 @@ test("Watch collector ticket is shared, information-first and adaptively readabl
   assert.match(ticket, /watch-ticket__details/);
   assert.match(ticket, /watch-ticket__photo-panel/);
   assert.match(ticket, /PinIcon/);
-  assert.match(ticket, /CalendarIcon/);
+  assert.doesNotMatch(ticket, /CalendarIcon/);
   assert.match(ticket, /UsersIcon/);
   assert.match(ticket, /TeamMark name=\{matchup\.teamOneName\}/);
   assert.match(ticket, /TeamMark name=\{matchup\.teamTwoName\}/);
   assert.match(ticket, /FitSingleLineText/);
   assert.match(fitter, /ResizeObserver/);
   assert.match(ticket, /\/brand\/hooma-watch-stub\.webp/);
-  assert.match(ticket, /watch-ticket__stub-date/);
+  assert.doesNotMatch(ticket, /watch-ticket__stub-date/);
   assert.doesNotMatch(ticket, /watch-ticket__stub-ball|<strong>HOOMA<\/strong>/);
 
   assert.match(
@@ -170,10 +170,18 @@ test("Watch collector ticket is shared, information-first and adaptively readabl
     /grid-template-columns:\s*minmax\(0, 1\.22fr\) minmax\(0, 0\.95fr\) minmax\(0, 0\.9fr\)/,
   );
 
+  const dateRule = cssRule(ticketCss, ".watch-ticket__detail.watch-ticket__date");
+  assert.match(dateRule, /grid-template-columns:\s*minmax\(0, 1fr\)/);
+
+  const stubRule = cssRule(ticketCss, ".watch-ticket__stub");
+  assert.match(stubRule, /grid-template-rows:\s*minmax\(0, 1fr\)/);
+  assert.doesNotMatch(stubRule, /grid-template-rows:\s*minmax\(0, 1fr\) auto/);
+
   const stubLogoRule = cssRule(ticketCss, ".watch-ticket__stub-logo");
+  assert.match(stubLogoRule, /width:\s*100%/);
+  assert.match(stubLogoRule, /height:\s*100%/);
   assert.match(stubLogoRule, /object-fit:\s*contain/);
-  const stubDateRule = cssRule(ticketCss, ".watch-ticket__stub-date");
-  assert.match(stubDateRule, /color:\s*var\(--app-lime\)/);
+  assert.doesNotMatch(ticketCss, /\.watch-ticket__stub-date/);
 
   const photoRule = cssRule(ticketCss, ".watch-ticket__photo-panel");
   assert.match(photoRule, /width:\s*calc\(100% - clamp\(10px, 2cqw, 18px\)\)/);
