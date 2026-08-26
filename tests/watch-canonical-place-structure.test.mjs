@@ -46,9 +46,18 @@ test("Prisma keeps canonical Place and Event ownership while storing details bel
 
 test("Place coordinates stay optional and menu updates do not default to destructive replacement", () => {
   const contracts = source("packages/contracts/src/platform-management.ts");
-  assert.match(contracts, /latitude: z\.number\(\)\.min\(-90\)\.max\(90\)\.optional\(\)\.nullable\(\)/);
-  assert.match(contracts, /longitude: z\.number\(\)\.min\(-180\)\.max\(180\)\.optional\(\)\.nullable\(\)/);
-  assert.match(contracts, /placeUpdateSchema[\s\S]*?omit\(\{ menuItems: true \}\)[\s\S]*?menuItems: z\.array\(placeMenuItemSchema\)\.max\(20\)\.optional\(\)/);
+  assert.match(
+    contracts,
+    /latitude: z\.number\(\)\.min\(-90\)\.max\(90\)\.optional\(\)\.nullable\(\)/,
+  );
+  assert.match(
+    contracts,
+    /longitude: z\.number\(\)\.min\(-180\)\.max\(180\)\.optional\(\)\.nullable\(\)/,
+  );
+  assert.match(
+    contracts,
+    /placeUpdateSchema[\s\S]*?omit\(\{ menuItems: true \}\)[\s\S]*?menuItems: z\.array\(placeMenuItemSchema\)\.max\(20\)\.optional\(\)/,
+  );
 });
 
 test("Place Add and Edit share one branded form and management stays on canonical Place routes", () => {
@@ -75,7 +84,9 @@ test("Watch Create and Edit share structured two-team matchup fields", () => {
   const create = source("packages/frontend/src/events/CreateEventPage.tsx");
   const edit = source("packages/frontend/src/events/EditEventPage.tsx");
   const form = source("packages/frontend/src/events/WatchEventForm.tsx");
-  const repository = source("apps/api/src/modules/events/infrastructure/prisma-event.repository.ts");
+  const repository = source(
+    "apps/api/src/modules/events/infrastructure/prisma-event.repository.ts",
+  );
 
   for (const field of ["teamOneName", "teamOneLogoUrl", "teamTwoName", "teamTwoLogoUrl"]) {
     assert.match(contracts, new RegExp(field));

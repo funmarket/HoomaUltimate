@@ -338,7 +338,10 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
     const afterEventDelete = (await (
       await fetch(`${base}/api/public/v1/events?type=WATCH&limit=50`)
     ).json()) as { items: { id: string }[] };
-    assert.equal(afterEventDelete.items.some((item) => item.id === watchEvent.id), false);
+    assert.equal(
+      afterEventDelete.items.some((item) => item.id === watchEvent.id),
+      false,
+    );
 
     const deletePlace = await fetch(`${base}/api/v1/places/${place.id}`, {
       method: "DELETE",
