@@ -77,9 +77,13 @@ export function WatchTicket({ event }: { readonly event: PublicEvent }) {
           <>
             <TeamMark name={matchup.teamOneName} logoUrl={matchup.teamOneLogoUrl} />
             <span className="watch-ticket__matchup-title">
-              <strong>{matchup.teamOneName}</strong>
+              <strong className="watch-ticket__team-name watch-ticket__team-name--one">
+                {matchup.teamOneName}
+              </strong>
               <small>VS</small>
-              <strong>{matchup.teamTwoName}</strong>
+              <strong className="watch-ticket__team-name watch-ticket__team-name--two">
+                {matchup.teamTwoName}
+              </strong>
             </span>
             <TeamMark name={matchup.teamTwoName} logoUrl={matchup.teamTwoLogoUrl} />
           </>
