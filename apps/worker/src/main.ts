@@ -1,18 +1,22 @@
 import { disconnectDatabase, getDatabaseClient } from "@hooma/database";
 import { cleanupExpiredEventChat } from "./events/event-chat-cleanup.js";
+import { reconcileGamerMatches } from "./gamers/match-reconciliation.js";
 import { OutboxRepository } from "./outbox/outbox.repository.js";
 import { type OutboxHandler, OutboxRunner } from "./outbox/outbox.runner.js";
 
 const EVENT_CHAT_CLEANUP_INTERVAL_MS = 60_000;
+const GAMER_MATCH_RECONCILIATION_INTERVAL_MS = 15_000;
 const OUTBOX_POLL_INTERVAL_MS = 5_000;
 const database = getDatabaseClient();
 const outboxHandlers = new Map<string, OutboxHandler>();
 const outbox = new OutboxRunner(new OutboxRepository(database), outboxHandlers);
 
 let cleanupRunning = false;
+let gamerMatchesRunning = false;
 let outboxRunning = false;
 let shuttingDown = false;
 let cleanupPromise: Promise<void> | null = null;
+let gamerMatchesPromise: Promise<void> | null = null;
 let outboxPromise: Promise<void> | null = null;
 
 async function runEventChatCleanup(): Promise<void> {
@@ -34,6 +38,23 @@ async function runEventChatCleanup(): Promise<void> {
   await cleanupPromise;
 }
 
+async function runGamerMatchReconciliation(): Promise<void> {
+  if (gamerMatchesRunning || shuttingDown) return;
+  gamerMatchesRunning = true;
+  gamerMatchesPromise = (async () => {
+    try {
+      const result = await reconcileGamerMatches(database);
+      if (result.scanned > 0) console.log("Gamer match reconciliation completed", result);
+    } catch (error) {
+      console.error("Gamer match reconciliation batch failed", error);
+    } finally {
+      gamerMatchesRunning = false;
+      gamerMatchesPromise = null;
+    }
+  })();
+  await gamerMatchesPromise;
+}
+
 async function runOutbox(): Promise<void> {
   if (outboxRunning || shuttingDown || outboxHandlers.size === 0) return;
   outboxRunning = true;
@@ -52,11 +73,16 @@ async function runOutbox(): Promise<void> {
 }
 
 console.log(
-  `HOOMA worker started with Event chat cleanup and Outbox engine (${outboxHandlers.size} handlers registered).`,
+  `HOOMA worker started with Event chat cleanup, Gamer match reconciliation and Outbox engine (${outboxHandlers.size} handlers registered).`,
 );
 void runEventChatCleanup();
+void runGamerMatchReconciliation();
 void runOutbox();
 const cleanupTimer = setInterval(() => void runEventChatCleanup(), EVENT_CHAT_CLEANUP_INTERVAL_MS);
+const gamerMatchesTimer = setInterval(
+  () => void runGamerMatchReconciliation(),
+  GAMER_MATCH_RECONCILIATION_INTERVAL_MS,
+);
 const outboxTimer = setInterval(() => void runOutbox(), OUTBOX_POLL_INTERVAL_MS);
 
 async function shutdown(signal: NodeJS.Signals): Promise<void> {
@@ -64,9 +90,12 @@ async function shutdown(signal: NodeJS.Signals): Promise<void> {
   shuttingDown = true;
   console.log(`Received ${signal}; shutting down worker.`);
   clearInterval(cleanupTimer);
+  clearInterval(gamerMatchesTimer);
   clearInterval(outboxTimer);
   await Promise.allSettled(
-    [cleanupPromise, outboxPromise].filter((promise): promise is Promise<void> => promise !== null),
+    [cleanupPromise, gamerMatchesPromise, outboxPromise].filter(
+      (promise): promise is Promise<void> => promise !== null,
+    ),
   );
   await disconnectDatabase();
 }
