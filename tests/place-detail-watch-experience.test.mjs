@@ -18,9 +18,13 @@ test("Place detail uses canonical Watch event context for ticket, RSVP and share
   assert.match(detail, /selectedEvent\.venueAuthority === "OFFICIAL_VENUE"/);
 });
 
-test("Place detail uses shared icon-led information, menu and upcoming-event presentation", () => {
+test("Place detail uses the shared HOOMA icon source and rich Watch presentation", () => {
   const detail = source("packages/frontend/src/places/PlaceDetailPage.tsx");
+  const icons = source("packages/frontend/src/ui/HoomaIcons.tsx");
   const css = source("packages/frontend/src/places/places.css");
+
+  assert.match(detail, /from "\.\.\/ui\/HoomaIcons"/);
+  assert.doesNotMatch(detail, /function CalendarIcon|function PinIcon|function UsersIcon/);
 
   for (const icon of [
     "CalendarIcon",
@@ -33,6 +37,7 @@ test("Place detail uses shared icon-led information, menu and upcoming-event pre
     "ChevronRightIcon",
   ]) {
     assert.match(detail, new RegExp(icon));
+    assert.match(icons, new RegExp(`export function ${icon}`));
   }
 
   assert.match(detail, /place-info-card__action/);
