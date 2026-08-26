@@ -31,6 +31,20 @@ test("Watch collector ticket master asset remains complete and uncorrupted", asy
   assert.equal(bytes.subarray(8, 12).toString("ascii"), "WEBP");
 });
 
+test("Watch collector stub uses the supplied optimized HOOMA logo asset", async () => {
+  const bytes = await readFile(
+    new URL("../apps/web/public/brand/hooma-watch-stub.webp", import.meta.url),
+  );
+  const ticket = await readFile(
+    new URL("../packages/frontend/src/watch/WatchTicket.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.equal(bytes.subarray(0, 4).toString("ascii"), "RIFF");
+  assert.equal(bytes.subarray(8, 12).toString("ascii"), "WEBP");
+  assert.match(ticket, /src="\/brand\/hooma-watch-stub\.webp"/);
+});
+
 test("Watch venue photo uses the new inset stacked panel instead of the obsolete master side slot", async () => {
   const ticket = await readFile(
     new URL("../packages/frontend/src/watch/WatchTicket.tsx", import.meta.url),

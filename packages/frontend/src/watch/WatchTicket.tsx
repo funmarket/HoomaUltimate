@@ -1,32 +1,52 @@
 import type { PublicEvent } from "../events/api";
+import { FitSingleLineText } from "../ui/FitSingleLineText";
 import { CalendarIcon, PinIcon, UsersIcon } from "../ui/HoomaIcons";
 
 export type WatchTicketVariant = "feed" | "place-detail";
 
-function eventDateParts(event: PublicEvent): { date: string; time: string } {
+type EventDateParts = {
+  readonly date: string;
+  readonly time: string;
+  readonly day: string;
+  readonly month: string;
+};
+
+function eventDateParts(event: PublicEvent): EventDateParts {
   const startsAt = new Date(event.startsAt);
+  const options = { timeZone: event.timezone } as const;
   try {
+    const weekday = new Intl.DateTimeFormat("en-US", { weekday: "short", ...options }).format(
+      startsAt,
+    );
+    const day = new Intl.DateTimeFormat("en-US", { day: "2-digit", ...options }).format(startsAt);
+    const month = new Intl.DateTimeFormat("en-US", { month: "short", ...options })
+      .format(startsAt)
+      .slice(0, 3)
+      .toUpperCase();
+    const time = new Intl.DateTimeFormat(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+      ...options,
+    }).format(startsAt);
+
     return {
-      date: new Intl.DateTimeFormat(undefined, {
-        weekday: "short",
-        day: "2-digit",
-        month: "short",
-        timeZone: event.timezone,
-      }).format(startsAt),
-      time: new Intl.DateTimeFormat(undefined, {
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZone: event.timezone,
-      }).format(startsAt),
+      date: `${weekday}, ${month[0]}${month.slice(1).toLowerCase()} ${day}`,
+      time,
+      day,
+      month,
     };
   } catch {
+    const day = String(startsAt.getDate()).padStart(2, "0");
+    const month = startsAt
+      .toLocaleDateString("en-US", { month: "short" })
+      .slice(0, 3)
+      .toUpperCase();
+    const weekday = startsAt.toLocaleDateString("en-US", { weekday: "short" });
     return {
-      date: startsAt.toLocaleDateString(undefined, {
-        weekday: "short",
-        day: "2-digit",
-        month: "short",
-      }),
+      date: `${weekday}, ${month[0]}${month.slice(1).toLowerCase()} ${day}`,
       time: startsAt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }),
+      day,
+      month,
     };
   }
 }
@@ -52,7 +72,7 @@ export function WatchTicket({
   readonly event: PublicEvent;
   readonly variant?: WatchTicketVariant;
 }) {
-  const { date, time } = eventDateParts(event);
+  const { date, time, day, month } = eventDateParts(event);
   const place = event.place;
   if (!place) return null;
 
@@ -83,19 +103,30 @@ export function WatchTicket({
               <>
                 <TeamMark name={matchup.teamOneName} logoUrl={matchup.teamOneLogoUrl} />
                 <span className="watch-ticket__matchup-title">
-                  <strong className="watch-ticket__team-name watch-ticket__team-name--one">
-                    {matchup.teamOneName}
-                  </strong>
+                  <FitSingleLineText
+                    className="watch-ticket__team-name watch-ticket__team-name--one"
+                    text={matchup.teamOneName}
+                    minFontSize={11}
+                    maxFontSize={38}
+                  />
                   <small>VS</small>
-                  <strong className="watch-ticket__team-name watch-ticket__team-name--two">
-                    {matchup.teamTwoName}
-                  </strong>
+                  <FitSingleLineText
+                    className="watch-ticket__team-name watch-ticket__team-name--two"
+                    text={matchup.teamTwoName}
+                    minFontSize={11}
+                    maxFontSize={38}
+                  />
                 </span>
                 <TeamMark name={matchup.teamTwoName} logoUrl={matchup.teamTwoLogoUrl} />
               </>
             ) : (
               <span className="watch-ticket__matchup-title watch-ticket__matchup-title--legacy">
-                <strong>{event.title}</strong>
+                <FitSingleLineText
+                  className="watch-ticket__team-name"
+                  text={event.title}
+                  minFontSize={12}
+                  maxFontSize={40}
+                />
               </span>
             )}
           </a>
@@ -138,12 +169,13 @@ export function WatchTicket({
         <a
           className="watch-ticket__stub"
           href={`/events/${event.id}`}
-          aria-label={`Open ${event.title}`}
+          aria-label={`Open ${event.title}, ${day} ${month}`}
         >
-          <span className="watch-ticket__stub-ball" aria-hidden="true">
-            ⚽
+          <img className="watch-ticket__stub-logo" src="/brand/hooma-watch-stub.webp" alt="" />
+          <span className="watch-ticket__stub-date" aria-hidden="true">
+            <strong>{day}</strong>
+            <small>{month}</small>
           </span>
-          <strong>HOOMA</strong>
         </a>
       </section>
 

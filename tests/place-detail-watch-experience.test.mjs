@@ -18,8 +18,9 @@ test("Place detail uses canonical Watch event context for ticket, RSVP and share
   assert.match(detail, /selectedEvent\.venueAuthority === "OFFICIAL_VENUE"/);
 });
 
-test("Place detail ticket reuses WatchTicket without repeating the stacked Place photo", () => {
+test("Place detail ticket reuses WatchTicket without stale local ticket geometry", () => {
   const ticket = source("packages/frontend/src/watch/WatchTicket.tsx");
+  const css = source("packages/frontend/src/places/places.css");
 
   assert.match(ticket, /export type WatchTicketVariant = "feed" \| "place-detail"/);
   assert.match(ticket, /variant = "feed"/);
@@ -28,6 +29,22 @@ test("Place detail ticket reuses WatchTicket without repeating the stacked Place
   assert.match(ticket, /className="watch-ticket__photo-panel"/);
   assert.doesNotMatch(ticket, /watch-ticket__place-photo/);
   assert.match(ticket, /className=\{`watch-ticket watch-ticket--\$\{variant\}`\}/);
+  assert.doesNotMatch(
+    css,
+    /\.place-detail-page > \.watch-ticket--place-detail \.watch-ticket__(?:series|matchup|venue|date|going|status)/,
+  );
+});
+
+test("Place detail exposes canonical contact fields instead of hiding them behind phone", () => {
+  const detail = source("packages/frontend/src/places/PlaceDetailPage.tsx");
+
+  assert.match(detail, /place-info-card__secondary/);
+  assert.match(detail, /\{place\.city\}/);
+  assert.match(detail, /place-info-values/);
+  assert.match(detail, /href=\{`tel:\$\{place\.phone\}`\}/);
+  assert.match(detail, /href=\{`mailto:\$\{place\.email\}`\}/);
+  assert.match(detail, /href=\{place\.websiteUrl\}/);
+  assert.doesNotMatch(detail, /place\.phone \|\| place\.email \|\| "—"/);
 });
 
 test("Place detail uses the shared HOOMA icon source and rich Watch presentation", () => {
@@ -57,8 +74,6 @@ test("Place detail uses the shared HOOMA icon source and rich Watch presentation
   assert.match(detail, /View full menu/);
   assert.match(detail, /Upcoming watch events at this place/);
   assert.match(detail, /place-event-row__date/);
-  assert.match(detail, /event\.watchDetails\.teamOneName/);
-  assert.match(detail, /event\.watchDetails\.teamTwoName/);
 
   assert.match(css, /\.place-watch-action--primary/);
   assert.match(css, /\.place-watch-action--secondary/);
@@ -66,6 +81,22 @@ test("Place detail uses the shared HOOMA icon source and rich Watch presentation
   assert.match(css, /\.place-menu-preview\s*\{[\s\S]*?display:\s*grid/);
   assert.doesNotMatch(css, /\.place-menu-preview\s*\{[\s\S]*?overflow-x:\s*auto/);
   assert.match(css, /\.place-event-row\s*\{[\s\S]*?display:\s*grid/);
+});
+
+test("Upcoming Place events show one colored fitted matchup instead of a duplicate white title", () => {
+  const detail = source("packages/frontend/src/places/PlaceDetailPage.tsx");
+  const css = source("packages/frontend/src/places/places.css");
+
+  assert.match(detail, /const details = event\.watchDetails/);
+  assert.match(detail, /className="place-event-row__matchup"/);
+  assert.match(detail, /text=\{details\.teamOneName\}/);
+  assert.match(detail, /text=\{details\.teamTwoName\}/);
+  assert.match(detail, /className="place-event-row__legacy-title"/);
+  assert.doesNotMatch(detail, /<strong>\{event\.title\}<\/strong>/);
+  assert.match(css, /\.place-event-row__team-name--one\s*\{[\s\S]*?color:\s*#4f91e8/);
+  assert.match(css, /\.place-event-row__team-name--two\s*\{[\s\S]*?color:\s*#d95145/);
+  assert.match(css, /\.place-event-row__matchup\s*\{[\s\S]*?grid-template-columns/);
+  assert.doesNotMatch(css, /\.place-event-row__match > strong/);
 });
 
 test("Place detail keeps a proportional mobile composition instead of giant stacked panels", () => {
