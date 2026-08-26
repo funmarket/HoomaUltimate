@@ -31,12 +31,28 @@ export type PublicEvent = {
   } | null;
   venueAuthority: "OFFICIAL_VENUE" | "SUGGESTED_BY_COMMUNITY" | null;
   playDetails: { pitchType: string; skillLevel: string; format: string } | null;
-  watchDetails: {
-    teamOneName: string;
-    teamOneLogoUrl: string | null;
-    teamTwoName: string;
-    teamTwoLogoUrl: string | null;
-  } | null;
+  watchDetails:
+    | {
+        kind: "MATCH";
+        teamOneName: string;
+        teamOneLogoUrl: string | null;
+        teamTwoName: string;
+        teamTwoLogoUrl: string | null;
+      }
+    | {
+        kind: "CULTURAL";
+        culturalCategory:
+          | "MUSIC"
+          | "CONCERT"
+          | "COMEDY"
+          | "ART"
+          | "SCREENING"
+          | "FOOD"
+          | "COMMUNITY"
+          | "OTHER";
+        imageUrl: string | null;
+      }
+    | null;
   _count: { rsvps: number; checkIns?: number };
 };
 export type EventRsvpState = "CONFIRMED" | "WAITLISTED" | "CANCELLED" | "ATTENDED" | "NO_SHOW";
