@@ -99,10 +99,7 @@ export class PrismaEventRepository implements EventRepository {
       where: {
         id: eventId,
         status: { in: ["PUBLISHED", "COMPLETED"] },
-        OR: [
-          { type: "PLAY" },
-          { type: "WATCH", place: { is: { moderationStatus: "APPROVED" } } },
-        ],
+        OR: [{ type: "PLAY" }, { type: "WATCH", place: { is: { moderationStatus: "APPROVED" } } }],
       },
       select: publicEventSelect,
     });
@@ -210,7 +207,9 @@ export class PrismaEventRepository implements EventRepository {
         ...(current.type === "PLAY" && input.venueName !== undefined
           ? { venueName: input.venueName }
           : {}),
-        ...(current.type === "PLAY" && input.address !== undefined ? { address: input.address } : {}),
+        ...(current.type === "PLAY" && input.address !== undefined
+          ? { address: input.address }
+          : {}),
         ...(input.capacity !== undefined ? { capacity: input.capacity } : {}),
         ...(input.waitlistEnabled !== undefined ? { waitlistEnabled: input.waitlistEnabled } : {}),
       };

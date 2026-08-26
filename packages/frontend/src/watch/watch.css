@@ -12,7 +12,11 @@
   border: 1px solid var(--app-line);
   border-radius: 24px;
   background:
-    radial-gradient(circle at 82% 28%, color-mix(in srgb, var(--app-lime) 18%, transparent), transparent 28%),
+    radial-gradient(
+      circle at 82% 28%,
+      color-mix(in srgb, var(--app-lime) 18%, transparent),
+      transparent 28%
+    ),
     linear-gradient(150deg, #050605, color-mix(in srgb, var(--app-lime) 7%, #050605));
 }
 

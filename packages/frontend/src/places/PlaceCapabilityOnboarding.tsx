@@ -92,7 +92,9 @@ export function PlaceCapabilityOnboarding({
         <div className="place-business-form__heading">
           <p className="eyebrow">STEP 2</p>
           <h2>Apply for Pitch</h2>
-          <p className="muted">The selected Place must already be approved and verified as yours.</p>
+          <p className="muted">
+            The selected Place must already be approved and verified as yours.
+          </p>
         </div>
 
         <label className="place-business-field">

@@ -86,11 +86,21 @@ export function CreateEventPage() {
         window.location.href = `/events/${created.id}`;
       })
       .catch((reason) =>
-        setError(protectedError(reason, watchMode ? "Unable to create Watch event" : "Unable to create game")),
+        setError(
+          protectedError(
+            reason,
+            watchMode ? "Unable to create Watch event" : "Unable to create game",
+          ),
+        ),
       );
   }
 
-  if (!me && error) return <section className="panel"><p className="error">{error}</p></section>;
+  if (!me && error)
+    return (
+      <section className="panel">
+        <p className="error">{error}</p>
+      </section>
+    );
 
   if (watchMode) {
     return (
@@ -99,7 +109,9 @@ export function CreateEventPage() {
         <h2>Create Watch event</h2>
         {!places.length ? (
           <div className="panel">
-            <p className="status">An approved Place is required before a Watch event can be created.</p>
+            <p className="status">
+              An approved Place is required before a Watch event can be created.
+            </p>
             <a href="/places/new">Add a Place</a>
           </div>
         ) : (
@@ -107,17 +119,38 @@ export function CreateEventPage() {
             <label>
               Place
               <select name="placeId" required defaultValue="">
-                <option value="" disabled>Select approved Place</option>
-                {places.map((place) => <option key={place.id} value={place.id}>{place.name} · {place.houma || place.city || place.address}</option>)}
+                <option value="" disabled>
+                  Select approved Place
+                </option>
+                {places.map((place) => (
+                  <option key={place.id} value={place.id}>
+                    {place.name} · {place.houma || place.city || place.address}
+                  </option>
+                ))}
               </select>
             </label>
-            <label>Match / event title<input name="title" required /></label>
-            <label>Description<textarea name="description" rows={4} /></label>
+            <label>
+              Match / event title
+              <input name="title" required />
+            </label>
+            <label>
+              Description
+              <textarea name="description" rows={4} />
+            </label>
             <div className="form-grid">
-              <label>Starts<input name="startsAt" type="datetime-local" required /></label>
-              <label>Ends<input name="endsAt" type="datetime-local" /></label>
+              <label>
+                Starts
+                <input name="startsAt" type="datetime-local" required />
+              </label>
+              <label>
+                Ends
+                <input name="endsAt" type="datetime-local" />
+              </label>
             </div>
-            <label>Capacity<input name="capacity" type="number" min="1" max="1000" /></label>
+            <label>
+              Capacity
+              <input name="capacity" type="number" min="1" max="1000" />
+            </label>
             <button type="submit">Publish Watch event</button>
             {error ? <p className="error">{error}</p> : null}
           </form>
@@ -131,27 +164,87 @@ export function CreateEventPage() {
       <p className="eyebrow">PLAY</p>
       <h2>Create a game</h2>
       {!communities.length ? (
-        <p className="status">You need Founder or Coach authority in a HOOMA community to create a community game.</p>
+        <p className="status">
+          You need Founder or Coach authority in a HOOMA community to create a community game.
+        </p>
       ) : (
         <form className="event-form panel" onSubmit={submit}>
-          <label>HOOMA community<select name="communityId" required>{communities.map((community) => <option value={community.id} key={community.id}>{community.name}</option>)}</select></label>
-          <label>Game title<input name="title" required /></label>
-          <label>Description<textarea name="description" rows={4} /></label>
+          <label>
+            HOOMA community
+            <select name="communityId" required>
+              {communities.map((community) => (
+                <option value={community.id} key={community.id}>
+                  {community.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Game title
+            <input name="title" required />
+          </label>
+          <label>
+            Description
+            <textarea name="description" rows={4} />
+          </label>
           <div className="form-grid">
-            <label>Starts<input name="startsAt" type="datetime-local" required /></label>
-            <label>Ends<input name="endsAt" type="datetime-local" /></label>
+            <label>
+              Starts
+              <input name="startsAt" type="datetime-local" required />
+            </label>
+            <label>
+              Ends
+              <input name="endsAt" type="datetime-local" />
+            </label>
           </div>
           <div className="form-grid">
-            <label>Capacity<input name="capacity" type="number" min="1" max="1000" /></label>
-            <label>Format<select name="format" defaultValue="FIVE_V_FIVE"><option value="FIVE_V_FIVE">5 v 5</option><option value="SEVEN_V_SEVEN">7 v 7</option><option value="ELEVEN_V_ELEVEN">11 v 11</option></select></label>
+            <label>
+              Capacity
+              <input name="capacity" type="number" min="1" max="1000" />
+            </label>
+            <label>
+              Format
+              <select name="format" defaultValue="FIVE_V_FIVE">
+                <option value="FIVE_V_FIVE">5 v 5</option>
+                <option value="SEVEN_V_SEVEN">7 v 7</option>
+                <option value="ELEVEN_V_ELEVEN">11 v 11</option>
+              </select>
+            </label>
           </div>
           <div className="form-grid">
-            <label>Pitch type<select name="pitchType" defaultValue="FIVE_A_SIDE"><option value="FIVE_A_SIDE">5-a-side</option><option value="SEVEN_A_SIDE">7-a-side</option><option value="ELEVEN_A_SIDE">11-a-side</option><option value="FUTSAL">Futsal</option><option value="STREET">Street</option><option value="OTHER">Other</option></select></label>
-            <label>Skill level<select name="skillLevel" defaultValue="MIXED"><option value="MIXED">Mixed</option><option value="BEGINNER">Beginner</option><option value="INTERMEDIATE">Intermediate</option><option value="ADVANCED">Advanced</option></select></label>
+            <label>
+              Pitch type
+              <select name="pitchType" defaultValue="FIVE_A_SIDE">
+                <option value="FIVE_A_SIDE">5-a-side</option>
+                <option value="SEVEN_A_SIDE">7-a-side</option>
+                <option value="ELEVEN_A_SIDE">11-a-side</option>
+                <option value="FUTSAL">Futsal</option>
+                <option value="STREET">Street</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </label>
+            <label>
+              Skill level
+              <select name="skillLevel" defaultValue="MIXED">
+                <option value="MIXED">Mixed</option>
+                <option value="BEGINNER">Beginner</option>
+                <option value="INTERMEDIATE">Intermediate</option>
+                <option value="ADVANCED">Advanced</option>
+              </select>
+            </label>
           </div>
-          <label>Venue<input name="venueName" /></label>
-          <label>Address<input name="address" /></label>
-          <p className="muted">Paid game entry is intentionally disabled until Cash and Telegram Stars are wired into Payments.</p>
+          <label>
+            Venue
+            <input name="venueName" />
+          </label>
+          <label>
+            Address
+            <input name="address" />
+          </label>
+          <p className="muted">
+            Paid game entry is intentionally disabled until Cash and Telegram Stars are wired into
+            Payments.
+          </p>
           <button type="submit">Publish game</button>
           {error ? <p className="error">{error}</p> : null}
         </form>

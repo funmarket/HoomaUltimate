@@ -1,9 +1,6 @@
 import { z } from "zod";
 
-export const platformManagerCapabilitySchema = z.enum([
-  "REVIEW_PITCH_APPLICATIONS",
-  "VIEW_AUDIT",
-]);
+export const platformManagerCapabilitySchema = z.enum(["REVIEW_PITCH_APPLICATIONS", "VIEW_AUDIT"]);
 
 export const moderationStatusSchema = z.enum(["PENDING", "APPROVED", "REJECTED"]);
 export const placeCapabilityKindSchema = z.literal("PITCH");

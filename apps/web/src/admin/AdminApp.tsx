@@ -200,7 +200,7 @@ export function AdminApp() {
       );
       await load();
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Unable to update App Manager" );
+      setError(reason instanceof Error ? reason.message : "Unable to update App Manager");
     }
   }
 
@@ -294,7 +294,8 @@ export function AdminApp() {
             </div>
             <button type="submit">Save App Manager permissions</button>
             <p className="muted">
-              Place submissions and ownership claims are App Admin-only. Submit with no permissions selected to revoke all App Manager access.
+              Place submissions and ownership claims are App Admin-only. Submit with no permissions
+              selected to revoke all App Manager access.
             </p>
           </form>
           <div className="admin-manager-list">

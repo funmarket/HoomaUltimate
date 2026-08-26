@@ -11,8 +11,14 @@ test("Watch page exposes only the four product functions and no business onboard
   for (const label of ["Events", "Places", "Create Event", "Add a Place"]) {
     assert.match(watch, new RegExp(`>${label}<`));
   }
-  assert.doesNotMatch(watch, /PlaceCapabilityOnboarding|Apply for Watch|Verify Place ownership|BUSINESS OWNER/);
-  assert.equal(existsSync(new URL("../packages/frontend/src/watch/watch-business.css", import.meta.url)), false);
+  assert.doesNotMatch(
+    watch,
+    /PlaceCapabilityOnboarding|Apply for Watch|Verify Place ownership|BUSINESS OWNER/,
+  );
+  assert.equal(
+    existsSync(new URL("../packages/frontend/src/watch/watch-business.css", import.meta.url)),
+    false,
+  );
 });
 
 test("Watch capability application routes and service wiring are gone", () => {

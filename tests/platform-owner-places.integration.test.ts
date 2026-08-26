@@ -168,7 +168,10 @@ test("App Admin approves a submitted Place once, then its owner publishes Watch 
       category: string | null;
     };
     assert.equal(approvedPlace.id, place.id);
-    assert.equal(approvedPlace.imageUrl, "https://images.example.com/venue/photo?id=123&size=large");
+    assert.equal(
+      approvedPlace.imageUrl,
+      "https://images.example.com/venue/photo?id=123&size=large",
+    );
     assert.equal(approvedPlace.category, "Sports café");
 
     const startsAt = new Date(Date.now() + 86_400_000).toISOString();
