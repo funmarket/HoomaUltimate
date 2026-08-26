@@ -15,14 +15,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Print formatted integration test
+      - name: Print Prettier diff only
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p /tmp/pr95/tests
           cp tests/gamers.integration.test.ts /tmp/pr95/tests/gamers.integration.test.ts
           npx prettier --config .prettierrc.json --write /tmp/pr95/tests/gamers.integration.test.ts
-          echo FORMAT_BEGIN
-          base64 -w0 /tmp/pr95/tests/gamers.integration.test.ts
-          echo
-          echo FORMAT_END
+          diff -u tests/gamers.integration.test.ts /tmp/pr95/tests/gamers.integration.test.ts || true
