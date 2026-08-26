@@ -3,7 +3,8 @@ import { request, type HoomaTransport } from "../http";
 
 export type PublicEvent = {
   id: string;
-  communityId: string;
+  communityId: string | null;
+  placeId: string | null;
   type: "PLAY" | "WATCH";
   status?: "PUBLISHED" | "COMPLETED";
   title: string;
@@ -17,7 +18,18 @@ export type PublicEvent = {
   waitlistEnabled: boolean;
   entryFeeMinor: number;
   currency: string;
-  community: { id: string; name: string; slug: string };
+  community: { id: string; name: string; slug: string } | null;
+  place: {
+    id: string;
+    slug: string;
+    name: string;
+    address: string;
+    city: string | null;
+    houma: string | null;
+    imageUrl: string | null;
+    category: string | null;
+  } | null;
+  venueAuthority: "OFFICIAL_VENUE" | "SUGGESTED_BY_COMMUNITY" | null;
   playDetails: { pitchType: string; skillLevel: string; format: string } | null;
   _count: { rsvps: number; checkIns?: number };
 };
