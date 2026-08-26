@@ -161,7 +161,9 @@ export function PlaceForm({
         </div>
         <div className="hooma-form__grid">
           <label className="hooma-field">
-            <span>Latitude <em>optional</em></span>
+            <span>
+              Latitude <em>optional</em>
+            </span>
             <input
               name="latitude"
               type="number"
@@ -173,7 +175,9 @@ export function PlaceForm({
             />
           </label>
           <label className="hooma-field">
-            <span>Longitude <em>optional</em></span>
+            <span>
+              Longitude <em>optional</em>
+            </span>
             <input
               name="longitude"
               type="number"

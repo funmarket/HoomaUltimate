@@ -94,7 +94,9 @@
   font: inherit;
   font-size: 1rem;
   line-height: 1.35;
-  transition: border-color 140ms ease, box-shadow 140ms ease;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
 }
 
 .hooma-field textarea {

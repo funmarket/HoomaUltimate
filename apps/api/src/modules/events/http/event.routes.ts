@@ -51,7 +51,8 @@ export function createEventPublicRouter(
       const communityId =
         typeof request.query.communityId === "string" ? request.query.communityId : undefined;
       const cursor = typeof request.query.cursor === "string" ? request.query.cursor : undefined;
-      const from = typeof request.query.from === "string" ? new Date(request.query.from) : undefined;
+      const from =
+        typeof request.query.from === "string" ? new Date(request.query.from) : undefined;
       const auth = await resolveAuthentication(request, identity, config);
       response.json(
         await service.listPublic({
@@ -96,7 +97,9 @@ export function createEventMemberRouter(service: EventService): Router {
   router.get(
     "/:eventId/manage",
     asyncHandler(async (request, response) =>
-      response.json(await service.getManaged(getAuth(request).userId, String(request.params.eventId))),
+      response.json(
+        await service.getManaged(getAuth(request).userId, String(request.params.eventId)),
+      ),
     ),
   );
   router.patch(
@@ -114,7 +117,9 @@ export function createEventMemberRouter(service: EventService): Router {
   router.get(
     "/:eventId/rsvp",
     asyncHandler(async (request, response) =>
-      response.json(await service.getMyRsvp(getAuth(request).userId, String(request.params.eventId))),
+      response.json(
+        await service.getMyRsvp(getAuth(request).userId, String(request.params.eventId)),
+      ),
     ),
   );
   router.get(
@@ -148,13 +153,17 @@ export function createEventMemberRouter(service: EventService): Router {
   router.post(
     "/:eventId/complete",
     asyncHandler(async (request, response) =>
-      response.json(await service.complete(getAuth(request).userId, String(request.params.eventId))),
+      response.json(
+        await service.complete(getAuth(request).userId, String(request.params.eventId)),
+      ),
     ),
   );
   router.get(
     "/:eventId/formations",
     asyncHandler(async (request, response) =>
-      response.json(await service.listFormations(getAuth(request).userId, String(request.params.eventId))),
+      response.json(
+        await service.listFormations(getAuth(request).userId, String(request.params.eventId)),
+      ),
     ),
   );
   router.post(

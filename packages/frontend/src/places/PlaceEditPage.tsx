@@ -55,11 +55,18 @@ export function PlaceEditPage({ placeId }: { readonly placeId: string }) {
   }
 
   if (!place)
-    return error ? <p className="error">{error}</p> : <p className="status">Loading Place settings…</p>;
+    return error ? (
+      <p className="error">{error}</p>
+    ) : (
+      <p className="status">Loading Place settings…</p>
+    );
 
   return (
     <section className="place-page place-form-page">
-      <a className="place-back-link" href={place.moderationStatus === "APPROVED" ? `/places/${place.id}` : "/watch"}>
+      <a
+        className="place-back-link"
+        href={place.moderationStatus === "APPROVED" ? `/places/${place.id}` : "/watch"}
+      >
         ← {place.moderationStatus === "APPROVED" ? place.name : "Watch"}
       </a>
       <header className="place-page__header place-form-page__header">

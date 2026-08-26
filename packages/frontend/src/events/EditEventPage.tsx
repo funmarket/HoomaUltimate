@@ -67,7 +67,11 @@ export function EditEventPage({ eventId }: { readonly eventId: string }) {
   }
 
   if (!event)
-    return error ? <p className="error">{error}</p> : <p className="status">Loading Event settings…</p>;
+    return error ? (
+      <p className="error">{error}</p>
+    ) : (
+      <p className="status">Loading Event settings…</p>
+    );
 
   return (
     <section className="watch-event-form-page">

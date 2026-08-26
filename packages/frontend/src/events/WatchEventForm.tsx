@@ -75,7 +75,8 @@ export function WatchEventForm({
               <option value="">Select a Place</option>
               {places.map((place) => (
                 <option key={place.id} value={place.id}>
-                  {place.name} · {[place.houma, place.city].filter(Boolean).join(", ") || place.address}
+                  {place.name} ·{" "}
+                  {[place.houma, place.city].filter(Boolean).join(", ") || place.address}
                 </option>
               ))}
             </select>

@@ -469,9 +469,7 @@ function serializePublicEvent(event: PublicEventRow) {
   );
   const place = event.place
     ? Object.fromEntries(
-        Object.entries(event.place).filter(
-          ([key]) => key !== "ownerships" && key !== "archivedAt",
-        ),
+        Object.entries(event.place).filter(([key]) => key !== "ownerships" && key !== "archivedAt"),
       )
     : null;
   const output = {
