@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@hooma/database";
 import type {
+  GamerArenaMatchPage,
   GamerArenaMatchRecord,
   GamerChallengeAccessRecord,
   GamerChallengeRecord,
@@ -191,19 +192,30 @@ export class PrismaGamerChallengeRepository implements GamerChallengeRepository 
     });
   }
 
-  async listAcceptedAcrossActiveGames(): Promise<GamerArenaMatchRecord[]> {
+  async listAcceptedAcrossActiveGames(input: {
+    cursor?: string;
+    limit: number;
+  }): Promise<GamerArenaMatchPage> {
     const rows = (await this.db.gamerChallenge.findMany({
       where: {
         status: "ACCEPTED",
         game: { status: "ACTIVE" },
       },
       orderBy: [{ respondedAt: "desc" }, { createdAt: "desc" }, { id: "desc" }],
+      take: input.limit + 1,
+      ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
       select: arenaMatchSelect,
     })) as SelectedArenaMatch[];
-    return rows.flatMap((row) => {
+    const hasMore = rows.length > input.limit;
+    const pageRows = hasMore ? rows.slice(0, input.limit) : rows;
+    const items = pageRows.flatMap((row) => {
       const mapped = mapArenaMatch(row);
       return mapped ? [mapped] : [];
     });
+    return {
+      items,
+      nextCursor: hasMore ? (pageRows.at(-1)?.id ?? null) : null,
+    };
   }
 
   acceptForChallengedUser(challengeId: string, userId: string) {
