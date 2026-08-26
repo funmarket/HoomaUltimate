@@ -174,10 +174,10 @@
 }
 
 .watch-ticket__place-photo {
-  top: 5.2%;
+  top: 8.1%;
   left: 4.5%;
   width: 25.5%;
-  height: 84.2%;
+  height: 82%;
   overflow: hidden;
   display: grid;
   place-items: center;
@@ -288,8 +288,17 @@
   white-space: normal;
 }
 
+.watch-ticket__team-name--one {
+  color: #174f93;
+}
+
+.watch-ticket__team-name--two {
+  color: #a6342c;
+}
+
 .watch-ticket__matchup-title small {
   align-self: center;
+  color: #21170b;
   font-family: ui-sans-serif, system-ui, sans-serif;
   font-size: clamp(0.3rem, 0.9cqw, 0.54rem);
   font-weight: 900;
@@ -303,6 +312,7 @@
 
 .watch-ticket__matchup-title--legacy strong {
   width: 100%;
+  color: #21170b;
   white-space: normal;
 }
 
@@ -387,17 +397,18 @@
 }
 
 .watch-ticket__stub {
-  top: 18%;
+  top: 15%;
   right: 4.4%;
   width: 7%;
-  height: 59%;
+  height: 65%;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1.5cqw;
+  gap: 1.2cqw;
   overflow: hidden;
-  color: #3a2307;
-  font-size: clamp(0.34rem, 1.45cqw, 0.72rem);
+  color: #c8f23a;
+  font-size: clamp(0.42rem, 1.72cqw, 0.86rem);
+  font-weight: 800;
   line-height: 1;
   text-align: center;
   text-decoration: none;
@@ -406,8 +417,16 @@
   transform: rotate(180deg);
 }
 
+.watch-ticket__stub strong,
+.watch-ticket__stub span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
 .watch-ticket__stub strong {
-  max-height: 65%;
+  max-height: 68%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
