@@ -32,6 +32,7 @@ export function EditEventPage({ eventId }: { readonly eventId: string }) {
     setError("");
     try {
       const updated = await api.update(event.id, {
+        title: value.title,
         description: value.description,
         startsAt: value.startsAt,
         endsAt: value.endsAt,
@@ -81,7 +82,7 @@ export function EditEventPage({ eventId }: { readonly eventId: string }) {
       <header className="watch-event-form-page__header">
         <p className="eyebrow">WATCH EVENT SETTINGS</p>
         <h1>Edit Event</h1>
-        <p>Update the same canonical Event rendered by the collector ticket.</p>
+        <p>Update this Watch event without changing its published event type.</p>
       </header>
       <WatchEventForm
         places={[]}
