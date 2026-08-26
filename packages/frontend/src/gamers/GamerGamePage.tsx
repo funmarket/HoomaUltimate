@@ -9,6 +9,7 @@ import type {
 } from "@hooma/contracts/gamers";
 import { useHoomaFrontend } from "../context";
 import { createGamersApi } from "./api";
+import { EaFcMatchBridge } from "./EaFcMatchBridge";
 import { GamerChallengeSetupModal } from "./GamerChallengeSetupModal";
 import { GamerHudCard } from "./GamerHudCard";
 import { GamerMatchCard } from "./GamerMatchCard";
@@ -492,6 +493,12 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
                     >
                       Cancel challenge
                     </button>
+                  ) : challenge.status === "ACCEPTED" && game.slug === "ea-sports-fc-mobile" ? (
+                    <EaFcMatchBridge
+                      game={game}
+                      challenge={challenge}
+                      currentProfileId={profile?.id ?? null}
+                    />
                   ) : null;
                 return (
                   <GamerMatchCard
@@ -501,7 +508,7 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
                     challenged={challenge.challenged}
                     label={label}
                     actions={actions}
-                    showAcceptedNote
+                    showAcceptedNote={game.slug !== "ea-sports-fc-mobile"}
                   />
                 );
               })}
