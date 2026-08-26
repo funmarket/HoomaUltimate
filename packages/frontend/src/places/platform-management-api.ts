@@ -2,11 +2,13 @@ import type {
   AdminAccess,
   AdminQueueItem,
   AppManagerSummary,
+  ManagedPlaceSummary,
   ModerationDecisionInput,
   PlaceCapabilityApplicationInput,
   PlaceCapabilityKind,
   PlaceOwnershipClaimInput,
   PlaceSuggestionInput,
+  PlaceUpdateInput,
   PlatformManagerCapability,
   PublicPlaceCapability,
   PublicPlaceSummary,
@@ -38,10 +40,24 @@ export function createPlatformManagementApi(transport: HoomaTransport) {
           transport,
           `/api/public/v1/places/${encodeURIComponent(placeId)}`,
         ),
+      manage: (placeId: string) =>
+        request<ManagedPlaceSummary>(
+          transport,
+          `/api/v1/places/${encodeURIComponent(placeId)}/manage`,
+        ),
       suggest: (input: PlaceSuggestionInput) =>
         request<PublicPlaceSummary & { status: string }>(transport, "/api/v1/places", {
           method: "POST",
           body: JSON.stringify(input),
+        }),
+      update: (placeId: string, input: PlaceUpdateInput) =>
+        request<ManagedPlaceSummary>(transport, `/api/v1/places/${encodeURIComponent(placeId)}`, {
+          method: "PATCH",
+          body: JSON.stringify(input),
+        }),
+      archive: (placeId: string) =>
+        request<{ ok: true }>(transport, `/api/v1/places/${encodeURIComponent(placeId)}`, {
+          method: "DELETE",
         }),
       claimOwnership: (placeId: string, input: PlaceOwnershipClaimInput) =>
         request<{ id: string; status: string }>(
