@@ -15,6 +15,12 @@ export function createGamerPublicRouter(service: GamerService): Router {
     asyncHandler(async (_req, res) => res.json({ items: await service.listGames() })),
   );
   router.get(
+    "/discovery",
+    asyncHandler(async (_req, res) =>
+      res.json({ items: await service.listDiscoverableGamers() }),
+    ),
+  );
+  router.get(
     "/games/:slug",
     asyncHandler(async (req, res) => res.json(await service.getGame(String(req.params.slug)))),
   );
@@ -22,14 +28,6 @@ export function createGamerPublicRouter(service: GamerService): Router {
     "/games/:gameId/challengers",
     asyncHandler(async (req, res) =>
       res.json({ items: await service.listChallengers(String(req.params.gameId)) }),
-    ),
-  );
-  router.get(
-    "/games/:gameId/profiles/:profileId",
-    asyncHandler(async (req, res) =>
-      res.json(
-        await service.getPublicProfile(String(req.params.gameId), String(req.params.profileId)),
-      ),
     ),
   );
   return router;
