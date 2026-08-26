@@ -41,6 +41,18 @@ test("Prisma keeps one Place and one Event path for Watch", () => {
   assert.match(schema, /model Place \{[\s\S]*?events\s+Event\[\]/);
 });
 
+test("Watch Event errors use canonical Community, Place and manage boundaries", () => {
+  const eventError = source("apps/api/src/modules/events/domain/event-error.ts");
+  const errorHandler = source("apps/api/src/http/errors/error-handler.ts");
+
+  assert.doesNotMatch(eventError, /WATCH_NOT_ENABLED/);
+  assert.doesNotMatch(errorHandler, /WATCH_NOT_ENABLED/);
+  for (const code of ["COMMUNITY_REQUIRED", "PLACE_REQUIRED", "EVENT_MANAGE_FORBIDDEN"]) {
+    assert.match(eventError, new RegExp(code));
+    assert.match(errorHandler, new RegExp(code));
+  }
+});
+
 test("Watch uses one shared collector ticket component with canonical Place context", () => {
   const watch = source("packages/frontend/src/watch/WatchPage.tsx");
   const ticket = source("packages/frontend/src/watch/WatchTicket.tsx");
