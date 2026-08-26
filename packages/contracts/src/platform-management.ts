@@ -1,8 +1,6 @@
 import { z } from "zod";
 
 export const platformManagerCapabilitySchema = z.enum([
-  "REVIEW_PLACES",
-  "REVIEW_PLACE_OWNERSHIP",
   "REVIEW_PITCH_APPLICATIONS",
   "VIEW_AUDIT",
 ]);
@@ -42,7 +40,7 @@ export const moderationDecisionSchema = z.object({
 });
 
 export const appManagerUpdateSchema = z.object({
-  capabilities: z.array(platformManagerCapabilitySchema).max(4),
+  capabilities: z.array(platformManagerCapabilitySchema).max(2),
 });
 
 export type PlatformManagerCapability = z.infer<typeof platformManagerCapabilitySchema>;
