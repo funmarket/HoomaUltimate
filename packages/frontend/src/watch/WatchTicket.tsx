@@ -76,7 +76,7 @@ export function WatchTicket({
   const status =
     event.venueAuthority === "OFFICIAL_VENUE" ? "OFFICIAL VENUE" : "SUGGESTED BY COMMUNITY";
   const placeHref = `/places/${place.id}?eventId=${encodeURIComponent(event.id)}`;
-  const matchup = event.watchDetails;
+  const matchup = event.watchDetails?.kind === "MATCH" ? event.watchDetails : null;
   const feedVariant = variant === "feed";
 
   return (
