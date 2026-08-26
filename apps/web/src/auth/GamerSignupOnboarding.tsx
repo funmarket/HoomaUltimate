@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { GamerGame } from "@hooma/contracts/gamers";
 import { useHoomaFrontend, type HoomaTransport } from "@hooma/frontend";
-import { createGamerOnboardingApi, gamerOptInProfileInput } from "@hooma/frontend/gamer-onboarding";
+import { createGamerOnboardingApi } from "@hooma/frontend/gamer-onboarding";
 
 export type GamerSignupSelection = {
   readonly enabled: boolean;
@@ -94,8 +94,7 @@ export async function completeGamerSignupOnboarding(
   const selectedGames = selection.games.filter((game) =>
     selection.selectedGameIds.includes(game.id),
   );
-  const profile = await gamerOnboarding.profile();
-  await gamerOnboarding.updateProfile(gamerOptInProfileInput(profile));
+  await gamerOnboarding.joinGamers();
   await Promise.all(
     selectedGames.map((game) =>
       gamerOnboarding.saveGameProfile(game, {
