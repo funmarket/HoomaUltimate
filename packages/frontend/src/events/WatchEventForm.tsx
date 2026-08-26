@@ -42,7 +42,7 @@ export function WatchEventForm({
     const optionalText = (name: string) => String(data.get(name) ?? "").trim() || null;
     const capacityValue = String(data.get("capacity") ?? "").trim();
     await onSubmit({
-      placeId: lockPlace ? undefined : String(data.get("placeId") ?? ""),
+      ...(lockPlace ? {} : { placeId: String(data.get("placeId") ?? "") }),
       watch: {
         teamOneName: String(data.get("teamOneName") ?? "").trim(),
         teamOneLogoUrl: optionalText("teamOneLogoUrl"),
