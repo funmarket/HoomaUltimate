@@ -26,15 +26,22 @@ function hex(bytes: ArrayBuffer): string {
   return Array.from(new Uint8Array(bytes), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+function copyArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy.buffer;
+}
+
 async function sha256(value: string | Uint8Array): Promise<string> {
   const bytes = typeof value === "string" ? new TextEncoder().encode(value) : value;
-  return hex(await crypto.subtle.digest("SHA-256", bytes));
+  return hex(await crypto.subtle.digest("SHA-256", copyArrayBuffer(bytes)));
 }
 
 async function hmac(key: ArrayBuffer | Uint8Array, value: string): Promise<ArrayBuffer> {
+  const rawKey = key instanceof ArrayBuffer ? key : copyArrayBuffer(key);
   const imported = await crypto.subtle.importKey(
     "raw",
-    key,
+    rawKey,
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],
@@ -124,14 +131,15 @@ export class S3ObjectStorage implements ObjectStorage {
     const signingKey = await hmac(serviceKey, "aws4_request");
     const signature = hex(await hmac(signingKey, stringToSign));
     const url = new URL(canonicalUri, this.endpoint);
-    const response = await fetch(url, {
+    const requestInit: RequestInit = {
       method,
       headers: {
         ...headers,
         authorization: `AWS4-HMAC-SHA256 Credential=${this.config.accessKeyId}/${scope}, SignedHeaders=${signedHeaders}, Signature=${signature}`,
       },
-      ...(body ? { body } : {}),
-    });
+    };
+    if (body) requestInit.body = copyArrayBuffer(body);
+    const response = await fetch(url, requestInit);
     if (!response.ok) {
       throw new Error(`Object storage ${method} failed (${response.status})`);
     }
