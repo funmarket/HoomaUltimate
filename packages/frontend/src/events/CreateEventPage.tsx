@@ -4,6 +4,7 @@ import type { PublicPlaceSummary } from "@hooma/contracts/platform-management";
 import { useHoomaFrontend } from "../context";
 import { createPlatformManagementApi } from "../places/platform-management-api";
 import { useEventApi } from "./useEventApi";
+import { WatchEventForm, type WatchEventFormValue } from "./WatchEventForm";
 
 export function CreateEventPage() {
   const eventApi = useEventApi();
@@ -12,6 +13,7 @@ export function CreateEventPage() {
   const watchMode = new URLSearchParams(window.location.search).get("type") === "WATCH";
   const [me, setMe] = useState<MeResponse | null>(null);
   const [places, setPlaces] = useState<PublicPlaceSummary[]>([]);
+  const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -36,7 +38,38 @@ export function CreateEventPage() {
       (membership) => membership.role === "FOUNDER" || membership.role === "COACH",
     ) ?? [];
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submitWatch(value: WatchEventFormValue) {
+    if (!value.placeId) return;
+    setPending(true);
+    setError("");
+    try {
+      const created = await eventApi.create({
+        communityId: null,
+        placeId: value.placeId,
+        type: "WATCH",
+        title: `${value.watch.teamOneName} vs ${value.watch.teamTwoName}`,
+        description: value.description,
+        startsAt: value.startsAt,
+        endsAt: value.endsAt,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Africa/Tunis",
+        venueName: null,
+        address: null,
+        capacity: value.capacity,
+        waitlistEnabled: true,
+        entryFeeMinor: 0,
+        currency: "TND",
+        play: null,
+        watch: value.watch,
+      });
+      window.location.href = `/events/${created.id}`;
+    } catch (reason) {
+      setError(protectedError(reason, "Unable to create Watch event"));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  function submitPlay(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const startsAt = new Date(String(data.get("startsAt")));
@@ -44,55 +77,33 @@ export function CreateEventPage() {
     const endsAt = endsValue ? new Date(endsValue) : null;
     setError("");
 
-    const common = {
-      title: String(data.get("title")),
-      description: String(data.get("description")) || null,
-      startsAt: startsAt.toISOString(),
-      endsAt: endsAt?.toISOString() ?? null,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Africa/Tunis",
-      capacity: data.get("capacity") ? Number(data.get("capacity")) : null,
-      waitlistEnabled: true,
-      entryFeeMinor: 0,
-      currency: "TND",
-    } as const;
-
-    const input = watchMode
-      ? {
-          ...common,
-          communityId: null,
-          placeId: String(data.get("placeId")),
-          type: "WATCH" as const,
-          venueName: null,
-          address: null,
-          play: null,
-        }
-      : {
-          ...common,
-          communityId: String(data.get("communityId")),
-          placeId: null,
-          type: "PLAY" as const,
-          venueName: String(data.get("venueName")) || null,
-          address: String(data.get("address")) || null,
-          play: {
-            pitchType: String(data.get("pitchType")) as "FIVE_A_SIDE",
-            skillLevel: String(data.get("skillLevel")) as "MIXED",
-            format: String(data.get("format")) as "FIVE_V_FIVE",
-          },
-        };
-
     void eventApi
-      .create(input)
+      .create({
+        title: String(data.get("title")),
+        description: String(data.get("description")) || null,
+        startsAt: startsAt.toISOString(),
+        endsAt: endsAt?.toISOString() ?? null,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Africa/Tunis",
+        capacity: data.get("capacity") ? Number(data.get("capacity")) : null,
+        waitlistEnabled: true,
+        entryFeeMinor: 0,
+        currency: "TND",
+        communityId: String(data.get("communityId")),
+        placeId: null,
+        type: "PLAY",
+        venueName: String(data.get("venueName")) || null,
+        address: String(data.get("address")) || null,
+        play: {
+          pitchType: String(data.get("pitchType")) as "FIVE_A_SIDE",
+          skillLevel: String(data.get("skillLevel")) as "MIXED",
+          format: String(data.get("format")) as "FIVE_V_FIVE",
+        },
+        watch: null,
+      })
       .then((created) => {
         window.location.href = `/events/${created.id}`;
       })
-      .catch((reason) =>
-        setError(
-          protectedError(
-            reason,
-            watchMode ? "Unable to create Watch event" : "Unable to create game",
-          ),
-        ),
-      );
+      .catch((reason) => setError(protectedError(reason, "Unable to create game")));
   }
 
   if (!me && error)
@@ -104,9 +115,12 @@ export function CreateEventPage() {
 
   if (watchMode) {
     return (
-      <section>
-        <p className="eyebrow">WATCH</p>
-        <h2>Create Watch event</h2>
+      <section className="watch-event-form-page">
+        <header className="watch-event-form-page__header">
+          <p className="eyebrow">WATCH</p>
+          <h1>Create Event</h1>
+          <p>Build the match ticket around two teams and one approved Place.</p>
+        </header>
         {!places.length ? (
           <div className="panel">
             <p className="status">
@@ -115,46 +129,14 @@ export function CreateEventPage() {
             <a href="/places/new">Add a Place</a>
           </div>
         ) : (
-          <form className="event-form panel" onSubmit={submit}>
-            <label>
-              Place
-              <select name="placeId" required defaultValue="">
-                <option value="" disabled>
-                  Select approved Place
-                </option>
-                {places.map((place) => (
-                  <option key={place.id} value={place.id}>
-                    {place.name} · {place.houma || place.city || place.address}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Match / event title
-              <input name="title" required />
-            </label>
-            <label>
-              Description
-              <textarea name="description" rows={4} />
-            </label>
-            <div className="form-grid">
-              <label>
-                Starts
-                <input name="startsAt" type="datetime-local" required />
-              </label>
-              <label>
-                Ends
-                <input name="endsAt" type="datetime-local" />
-              </label>
-            </div>
-            <label>
-              Capacity
-              <input name="capacity" type="number" min="1" max="1000" />
-            </label>
-            <button type="submit">Publish Watch event</button>
-            {error ? <p className="error">{error}</p> : null}
-          </form>
+          <WatchEventForm
+            places={places}
+            submitLabel="Publish Watch Event"
+            pending={pending}
+            onSubmit={submitWatch}
+          />
         )}
+        {error ? <p className="error">{error}</p> : null}
       </section>
     );
   }
@@ -168,7 +150,7 @@ export function CreateEventPage() {
           You need Founder or Coach authority in a HOOMA community to create a community game.
         </p>
       ) : (
-        <form className="event-form panel" onSubmit={submit}>
+        <form className="event-form panel" onSubmit={submitPlay}>
           <label>
             HOOMA community
             <select name="communityId" required>
