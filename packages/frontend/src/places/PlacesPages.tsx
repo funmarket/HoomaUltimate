@@ -4,6 +4,8 @@ import type {
   PublicPlaceSummary,
 } from "@hooma/contracts/platform-management";
 import { useHoomaFrontend } from "../context";
+import type { PublicEvent } from "../events/api";
+import { useEventApi } from "../events/useEventApi";
 import { PlaceCapabilityOnboarding } from "./PlaceCapabilityOnboarding";
 import { PlaceForm } from "./PlaceForm";
 import { createPlatformManagementApi } from "./platform-management-api";
@@ -14,10 +16,30 @@ function locationLabel(place: PublicPlaceSummary): string {
   return [place.houma, place.city].filter(Boolean).join(" · ") || place.address;
 }
 
+function nextEventTime(event: PublicEvent): string {
+  const startsAt = new Date(event.startsAt);
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      weekday: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: event.timezone,
+    }).format(startsAt);
+  } catch {
+    return startsAt.toLocaleString(undefined, {
+      weekday: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+}
+
 export function PlacesPage() {
   const { transport } = useHoomaFrontend();
   const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
+  const eventApi = useEventApi();
   const [places, setPlaces] = useState<PublicPlaceSummary[]>([]);
+  const [watchEvents, setWatchEvents] = useState<PublicEvent[]>([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -27,7 +49,32 @@ export function PlacesPage() {
       .catch((reason) =>
         setError(reason instanceof Error ? reason.message : "Unable to load Places"),
       );
-  }, [api]);
+    void eventApi
+      .publicWatch()
+      .then((page) => setWatchEvents(page.items))
+      .catch(() => setWatchEvents([]));
+  }, [api, eventApi]);
+
+  const nextEventByPlace = useMemo(() => {
+    const now = Date.now();
+    const upcoming = watchEvents
+      .filter(
+        (event) =>
+          event.placeId &&
+          event.status !== "COMPLETED" &&
+          Number.isFinite(new Date(event.startsAt).getTime()) &&
+          new Date(event.startsAt).getTime() >= now,
+      )
+      .sort(
+        (left, right) =>
+          new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime(),
+      );
+    const byPlace = new Map<string, PublicEvent>();
+    for (const event of upcoming) {
+      if (event.placeId && !byPlace.has(event.placeId)) byPlace.set(event.placeId, event);
+    }
+    return byPlace;
+  }, [watchEvents]);
 
   return (
     <section className="place-page">
@@ -43,23 +90,32 @@ export function PlacesPage() {
       </header>
       {error ? <p className="error">{error}</p> : null}
       <div className="place-directory">
-        {places.map((place) => (
-          <a
-            className="place-card place-card--directory"
-            href={`/places/${place.id}`}
-            key={place.id}
-          >
-            <div className="place-card__copy">
-              {place.category ? <span className="eyebrow">{place.category}</span> : null}
-              <h2>{place.name}</h2>
-              <p>{locationLabel(place)}</p>
-              <small>{place.address}</small>
-            </div>
-            <div className="place-card__media">
-              {place.imageUrl ? <img src={place.imageUrl} alt="" /> : <span>HOOMA</span>}
-            </div>
-          </a>
-        ))}
+        {places.map((place) => {
+          const nextEvent = nextEventByPlace.get(place.id);
+          return (
+            <a
+              className="place-card place-card--directory"
+              href={`/places/${place.id}`}
+              key={place.id}
+            >
+              <div className="place-card__copy">
+                {place.category ? <span className="eyebrow">{place.category}</span> : null}
+                <h2>{place.name}</h2>
+                <p>{locationLabel(place)}</p>
+                <small>{place.address}</small>
+                {nextEvent ? (
+                  <div>
+                    <p className="eyebrow">NEXT · {nextEventTime(nextEvent)}</p>
+                    <strong>{nextEvent.title}</strong>
+                  </div>
+                ) : null}
+              </div>
+              <div className="place-card__media">
+                {place.imageUrl ? <img src={place.imageUrl} alt="" /> : <span>HOOMA</span>}
+              </div>
+            </a>
+          );
+        })}
         {!places.length && !error ? <p className="muted">No approved Places yet.</p> : null}
       </div>
     </section>
