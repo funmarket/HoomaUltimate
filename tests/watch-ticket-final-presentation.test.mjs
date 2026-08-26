@@ -45,6 +45,8 @@ test("Watch side stub stays lime, centered and intentionally larger", () => {
   const css = source("packages/frontend/src/watch/watch.css");
   const stub = cssRule(css, ".watch-ticket__stub");
 
+  assert.match(stub, /top:\s*15%/);
+  assert.match(stub, /height:\s*65%/);
   assert.match(stub, /color:\s*#c8f23a/);
   assert.match(stub, /align-items:\s*center/);
   assert.match(stub, /justify-content:\s*center/);
