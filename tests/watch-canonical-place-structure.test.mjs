@@ -185,8 +185,7 @@ test("Watch collector ticket aligns media, readable typography and matchup to th
 
   const venueStrongRule =
     ticketCss.match(/\.watch-ticket__venue strong \{([\s\S]*?)\n\}/)?.[1] ?? "";
-  const dateStrongRule =
-    ticketCss.match(/\.watch-ticket__date strong \{([\s\S]*?)\n\}/)?.[1] ?? "";
+  const dateStrongRule = ticketCss.match(/\.watch-ticket__date strong \{([\s\S]*?)\n\}/)?.[1] ?? "";
   assert.match(venueStrongRule, /font-size:\s*clamp\(0\.56rem, 3cqw, 1\.3rem\)/);
   assert.match(dateStrongRule, /font-size:\s*clamp\(0\.52rem, 2\.7cqw, 1\.15rem\)/);
 
