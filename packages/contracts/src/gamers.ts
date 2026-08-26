@@ -87,6 +87,10 @@ export const gamerChallengeListSchema = z.object({
   items: z.array(gamerChallengeSchema),
 });
 
+export const gamerArenaQuerySchema = z.object({
+  cursor: z.string().min(1).optional(),
+});
+
 export const gamerArenaMatchSchema = z.object({
   id: z.string().min(1),
   status: z.literal("ACCEPTED"),
@@ -97,6 +101,7 @@ export const gamerArenaMatchSchema = z.object({
 
 export const gamerArenaMatchListSchema = z.object({
   items: z.array(gamerArenaMatchSchema),
+  nextCursor: z.string().min(1).nullable(),
 });
 
 export type GamerGame = z.infer<typeof gamerGameSchema>;
@@ -113,5 +118,6 @@ export type GamerChallengeCreateInput = z.infer<typeof gamerChallengeCreateSchem
 export type GamerChallengeParticipant = z.infer<typeof gamerChallengeParticipantSchema>;
 export type GamerChallenge = z.infer<typeof gamerChallengeSchema>;
 export type GamerChallengeList = z.infer<typeof gamerChallengeListSchema>;
+export type GamerArenaQuery = z.infer<typeof gamerArenaQuerySchema>;
 export type GamerArenaMatch = z.infer<typeof gamerArenaMatchSchema>;
 export type GamerArenaMatchList = z.infer<typeof gamerArenaMatchListSchema>;
