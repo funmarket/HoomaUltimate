@@ -1,5 +1,6 @@
 import type { ApiConfig } from "@hooma/config";
 import { getDatabaseClient } from "@hooma/database";
+import { S3ObjectStorage } from "@hooma/storage";
 import { RedisClient } from "../infrastructure/redis/redis-client.js";
 import { IdentityService } from "../modules/identity/application/identity.service.js";
 import { PrismaIdentityRepository } from "../modules/identity/infrastructure/prisma-identity.repository.js";
@@ -16,10 +17,12 @@ import { PrismaTeamLifecycleRepository } from "../modules/teams/infrastructure/p
 import { PrismaTeamRepository } from "../modules/teams/infrastructure/prisma-team.repository.js";
 import { EventService } from "../modules/events/application/event.service.js";
 import { PrismaEventRepository } from "../modules/events/infrastructure/prisma-event.repository.js";
+import { GamerMatchService } from "../modules/gamers/application/gamer-match.service.js";
 import { GamerService } from "../modules/gamers/application/gamer.service.js";
 import { PrismaGamerChallengeRepository } from "../modules/gamers/infrastructure/prisma-gamer-challenge.repository.js";
 import { PrismaGamerEligibilityRepository } from "../modules/gamers/infrastructure/prisma-gamer-eligibility.repository.js";
 import { PrismaGamerGameRepository } from "../modules/gamers/infrastructure/prisma-gamer-game.repository.js";
+import { PrismaGamerMatchRepository } from "../modules/gamers/infrastructure/prisma-gamer-match.repository.js";
 import { PrismaGamerProfileRepository } from "../modules/gamers/infrastructure/prisma-gamer-profile.repository.js";
 import { PlayService } from "../modules/play/application/play.service.js";
 import { PrismaPlayPlayerListingRepository } from "../modules/play/infrastructure/prisma-play.repository.js";
@@ -31,6 +34,25 @@ import { PrismaDiscoveryRepository } from "../modules/discovery/infrastructure/p
 import { ReadinessService } from "../modules/system/application/readiness.service.js";
 import { PrismaReadinessProbe } from "../modules/system/infrastructure/prisma-readiness.probe.js";
 import { RedisReadinessProbe } from "../modules/system/infrastructure/redis-readiness.probe.js";
+
+function matchProofStorage(config: ApiConfig) {
+  if (
+    !config.OBJECT_STORAGE_ENDPOINT ||
+    !config.OBJECT_STORAGE_REGION ||
+    !config.OBJECT_STORAGE_BUCKET ||
+    !config.OBJECT_STORAGE_ACCESS_KEY_ID ||
+    !config.OBJECT_STORAGE_SECRET_ACCESS_KEY
+  ) {
+    return null;
+  }
+  return new S3ObjectStorage({
+    endpoint: config.OBJECT_STORAGE_ENDPOINT,
+    region: config.OBJECT_STORAGE_REGION,
+    bucket: config.OBJECT_STORAGE_BUCKET,
+    accessKeyId: config.OBJECT_STORAGE_ACCESS_KEY_ID,
+    secretAccessKey: config.OBJECT_STORAGE_SECRET_ACCESS_KEY,
+  });
+}
 
 export function createContainer(config: ApiConfig) {
   const database = getDatabaseClient();
@@ -70,11 +92,19 @@ export function createContainer(config: ApiConfig) {
   const gamerProfileRepository = new PrismaGamerProfileRepository(database);
   const gamerChallengeRepository = new PrismaGamerChallengeRepository(database);
   const gamerEligibilityRepository = new PrismaGamerEligibilityRepository(database);
+  const gamerMatchRepository = new PrismaGamerMatchRepository(database);
   const gamerService = new GamerService(
     gamerGameRepository,
     gamerProfileRepository,
     gamerChallengeRepository,
     gamerEligibilityRepository,
+  );
+  const gamerMatchService = new GamerMatchService(
+    gamerGameRepository,
+    gamerChallengeRepository,
+    gamerMatchRepository,
+    matchProofStorage(config),
+    platformAdminService,
   );
   const playRepository = new PrismaPlayPlayerListingRepository(database);
   const playService = new PlayService(playRepository);
@@ -102,6 +132,7 @@ export function createContainer(config: ApiConfig) {
     teamService,
     eventService,
     gamerService,
+    gamerMatchService,
     playService,
     whistleService,
     discoveryService,

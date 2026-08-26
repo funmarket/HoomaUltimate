@@ -1,0 +1,57 @@
+enum GamerMatchSessionStatus {
+  WAITING_FOR_CODE
+  IN_PROGRESS
+  PENDING_VERIFICATION
+  VERIFIED
+  DISPUTED
+  VOIDED
+}
+
+enum GamerMatchSide {
+  CHALLENGER
+  CHALLENGED
+}
+
+enum GamerMatchResolution {
+  MATCHED_SUBMISSIONS
+  SINGLE_SUBMISSION_TIMEOUT
+  PLATFORM_ADMIN
+  PLATFORM_ADMIN_VOID
+}
+
+model GamerMatchSession {
+  id                    String                  @id @default(cuid())
+  /// Canonical accepted GamerChallenge id. The governed migration enforces the foreign key.
+  challengeId           String                  @unique
+  status                GamerMatchSessionStatus @default(WAITING_FOR_CODE)
+  roomCode              String?
+  submissionDeadline    DateTime?
+  finalChallengerScore  Int?
+  finalChallengedScore  Int?
+  winnerSide            GamerMatchSide?
+  resolution            GamerMatchResolution?
+  resolvedAt            DateTime?
+  moderatorNotes        String?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  submissions           GamerMatchSubmission[]
+
+  @@index([status, updatedAt])
+}
+
+model GamerMatchSubmission {
+  id                 String            @id @default(cuid())
+  matchSessionId     String
+  side               GamerMatchSide
+  challengerScore    Int
+  challengedScore    Int
+  proofObjectKey     String
+  proofContentType   String
+  proofSizeBytes     Int
+  submittedAt        DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  matchSession       GamerMatchSession @relation(fields: [matchSessionId], references: [id], onDelete: Cascade)
+
+  @@unique([matchSessionId, side])
+  @@index([matchSessionId, submittedAt])
+}

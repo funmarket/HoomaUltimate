@@ -3,7 +3,9 @@ import {
   appManagerUpdateSchema,
   moderationDecisionSchema,
 } from "@hooma/contracts/platform-management";
+import { gamerDisputeResolutionInputSchema, gamerMatchSideSchema } from "@hooma/contracts/gamers";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
+import type { GamerMatchService } from "../../gamers/application/gamer-match.service.js";
 import { getAuth } from "../../identity/http/auth-request.js";
 import type { PlaceCapabilityService } from "../../places/application/place-capability.service.js";
 import type { PlaceService } from "../../places/application/place.service.js";
@@ -13,6 +15,7 @@ export function createPlatformAdminRouter(
   service: PlatformAdminService,
   places: PlaceService,
   pitch: PlaceCapabilityService,
+  gamerMatches: GamerMatchService,
 ): Router {
   const router = Router();
 
@@ -113,6 +116,36 @@ export function createPlatformAdminRouter(
           getAuth(request).userId,
           String(request.params.applicationId),
           moderationDecisionSchema.parse(request.body),
+        ),
+      );
+    }),
+  );
+
+  router.get(
+    "/queues/gamer-disputes",
+    asyncHandler(async (request, response) => {
+      response.json(await gamerMatches.listDisputes(getAuth(request).userId));
+    }),
+  );
+  router.get(
+    "/queues/gamer-disputes/:matchId/proof/:side",
+    asyncHandler(async (request, response) => {
+      const proof = await gamerMatches.getDisputeProof(
+        getAuth(request).userId,
+        String(request.params.matchId),
+        gamerMatchSideSchema.parse(String(request.params.side).toUpperCase()),
+      );
+      response.type(proof.contentType).send(Buffer.from(proof.body));
+    }),
+  );
+  router.post(
+    "/queues/gamer-disputes/:matchId/resolve",
+    asyncHandler(async (request, response) => {
+      response.json(
+        await gamerMatches.resolveDispute(
+          getAuth(request).userId,
+          String(request.params.matchId),
+          gamerDisputeResolutionInputSchema.parse(request.body),
         ),
       );
     }),

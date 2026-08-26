@@ -1,12 +1,15 @@
-import { Router } from "express";
+import { Router, raw } from "express";
 import {
+  eaFcRoomCodeInputSchema,
   gamerArenaQuerySchema,
   gamerChallengeCreateSchema,
   gamerGameCreateSchema,
+  gamerMatchResultHeadersSchema,
   gamerProfileInputSchema,
 } from "@hooma/contracts/gamers";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import { getAuth } from "../../identity/http/auth-request.js";
+import type { GamerMatchService } from "../application/gamer-match.service.js";
 import type { GamerService } from "../application/gamer.service.js";
 
 export function createGamerPublicRouter(service: GamerService): Router {
@@ -39,7 +42,7 @@ export function createGamerPublicRouter(service: GamerService): Router {
   return router;
 }
 
-export function createGamerMemberRouter(service: GamerService): Router {
+export function createGamerMemberRouter(service: GamerService, matches: GamerMatchService): Router {
   const router = Router();
   router.post(
     "/games",
@@ -121,6 +124,60 @@ export function createGamerMemberRouter(service: GamerService): Router {
         ),
       ),
     ),
+  );
+  router.get(
+    "/games/:gameId/challenges/:challengeId/match",
+    asyncHandler(async (req, res) =>
+      res.json(
+        await matches.getMatch(
+          getAuth(req).userId,
+          String(req.params.gameId),
+          String(req.params.challengeId),
+        ),
+      ),
+    ),
+  );
+  router.put(
+    "/games/:gameId/challenges/:challengeId/match/code",
+    asyncHandler(async (req, res) => {
+      const input = eaFcRoomCodeInputSchema.parse(req.body);
+      res.json(
+        await matches.setRoomCode(
+          getAuth(req).userId,
+          String(req.params.gameId),
+          String(req.params.challengeId),
+          input.roomCode,
+        ),
+      );
+    }),
+  );
+  router.post(
+    "/games/:gameId/challenges/:challengeId/match/result",
+    raw({ type: ["image/jpeg", "image/png", "image/webp"], limit: "5mb" }),
+    asyncHandler(async (req, res) => {
+      const scores = gamerMatchResultHeadersSchema.parse({
+        yourScore: req.header("x-hooma-your-score"),
+        opponentScore: req.header("x-hooma-opponent-score"),
+      });
+      if (!Buffer.isBuffer(req.body)) {
+        res.status(415).json({
+          error: { code: "GAMER_MATCH_PROOF_REQUIRED", message: "A match screenshot is required" },
+        });
+        return;
+      }
+      res.json(
+        await matches.submitResult(
+          getAuth(req).userId,
+          String(req.params.gameId),
+          String(req.params.challengeId),
+          {
+            ...scores,
+            contentType: req.header("content-type") ?? "application/octet-stream",
+            proof: new Uint8Array(req.body),
+          },
+        ),
+      );
+    }),
   );
   return router;
 }

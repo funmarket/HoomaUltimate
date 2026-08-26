@@ -13,6 +13,12 @@ import type {
   PublicPlaceCapability,
   PublicPlaceSummary,
 } from "@hooma/contracts/platform-management";
+import type {
+  GamerDisputeList,
+  GamerDisputeResolutionInput,
+  GamerMatchSession,
+  GamerMatchSide,
+} from "@hooma/contracts/gamers";
 import { request, type HoomaTransport } from "../http";
 
 export interface PlatformOverview {
@@ -105,6 +111,26 @@ export function createPlatformManagementApi(transport: HoomaTransport) {
           `/api/v1/admin/queues/${name}/${encodeURIComponent(id)}/decision`,
           { method: "POST", body: JSON.stringify(input) },
         ),
+      gamerDisputes: () =>
+        request<GamerDisputeList>(transport, "/api/v1/admin/queues/gamer-disputes"),
+      resolveGamerDispute: (matchId: string, input: GamerDisputeResolutionInput) =>
+        request<GamerMatchSession>(
+          transport,
+          `/api/v1/admin/queues/gamer-disputes/${encodeURIComponent(matchId)}/resolve`,
+          { method: "POST", body: JSON.stringify(input) },
+        ),
+      gamerDisputeProof: async (matchId: string, side: GamerMatchSide): Promise<Blob> => {
+        const headers = transport.getHeaders?.();
+        const response = await fetch(
+          `${transport.baseUrl}/api/v1/admin/queues/gamer-disputes/${encodeURIComponent(matchId)}/proof/${side.toLowerCase()}`,
+          {
+            ...(transport.credentials ? { credentials: transport.credentials } : {}),
+            ...(headers ? { headers } : {}),
+          },
+        );
+        if (!response.ok) throw new Error(`Unable to load match proof (${response.status})`);
+        return response.blob();
+      },
     },
   };
 }

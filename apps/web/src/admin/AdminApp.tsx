@@ -12,6 +12,7 @@ import {
   type PublicCommunitySummary,
   type PublicTeamSummary,
 } from "@hooma/frontend";
+import { GamerDisputeConsole } from "./GamerDisputeConsole";
 import "./admin.css";
 
 const MANAGER_CAPABILITIES: readonly PlatformManagerCapability[] = [
@@ -272,6 +273,7 @@ export function AdminApp() {
           onDecision={(id, decision) => void decide("pitch", id, decision)}
         />
       ) : null}
+      {access?.isPlatformOwner ? <GamerDisputeConsole /> : null}
 
       {access?.isPlatformOwner ? (
         <section className="panel admin-manager-section">

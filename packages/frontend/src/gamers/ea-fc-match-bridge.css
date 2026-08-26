@@ -1,0 +1,89 @@
+.ea-fc-bridge {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+}
+
+.ea-fc-bridge-heading,
+.ea-fc-handoff-actions,
+.ea-fc-score-grid {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ea-fc-bridge-heading {
+  justify-content: space-between;
+}
+
+.ea-fc-bridge-heading > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.ea-fc-bridge-heading small,
+.ea-fc-code-form span,
+.ea-fc-result-form label > span {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.68;
+}
+
+.ea-fc-bridge-heading code {
+  padding: 0.45rem 0.65rem;
+  border: 1px solid currentColor;
+  border-radius: 0.55rem;
+  font-size: 1rem;
+  letter-spacing: 0.16em;
+}
+
+.ea-fc-code-form,
+.ea-fc-result-form,
+.ea-fc-code-form label,
+.ea-fc-result-form label {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.ea-fc-code-form input,
+.ea-fc-result-form input[type="number"] {
+  width: 100%;
+}
+
+.ea-fc-code-form input {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 1.05rem;
+  letter-spacing: 0.14em;
+}
+
+.ea-fc-handoff-actions > * {
+  flex: 1;
+}
+
+.ea-fc-score-grid {
+  justify-content: center;
+}
+
+.ea-fc-score-grid label {
+  flex: 1;
+}
+
+.ea-fc-score-grid > span {
+  align-self: end;
+  padding-bottom: 0.75rem;
+  font-weight: 800;
+}
+
+.ea-fc-proof-input {
+  padding: 0.8rem;
+  border: 1px dashed var(--border-subtle, rgba(255, 255, 255, 0.18));
+  border-radius: 0.7rem;
+}
+
+.ea-fc-notice {
+  margin: 0;
+  font-size: 0.86rem;
+}
