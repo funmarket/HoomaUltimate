@@ -92,7 +92,9 @@ export class PrismaPlaceRepository implements PlaceRepository {
   async suggest(userId: string, input: PlaceSuggestionInput) {
     return this.db.$transaction(async (tx) => {
       const key = duplicateKey(input);
-      await tx.$queryRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${key}))`);
+      await tx.$queryRaw<Array<{ locked: string }>>(
+        Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${key}))::text AS "locked"`,
+      );
 
       const existing = await tx.place.findFirst({
         where: {
