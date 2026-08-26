@@ -1,5 +1,6 @@
 import type { TelegramIdentityInput } from "@hooma/auth";
-import type { Prisma, PrismaClient } from "@hooma/database";
+import { Prisma, type PrismaClient } from "@hooma/database";
+import type { ProfileIdentity } from "@hooma/contracts/profile";
 import type {
   IdentityRepository,
   LoginMethodsRecord,
@@ -270,6 +271,18 @@ export class PrismaIdentityRepository implements IdentityRepository {
       identities: user.identities,
       player: user.identities.includes("PLAYER") ? user.playerProfile : null,
     };
+  }
+
+  async addProfileIdentity(userId: string, identity: ProfileIdentity): Promise<void> {
+    await this.db.$executeRaw(
+      Prisma.sql`
+        UPDATE "User"
+        SET "identities" = array_append("identities", CAST(${identity} AS "ProfileIdentity")),
+            "updatedAt" = CURRENT_TIMESTAMP
+        WHERE "id" = ${userId}
+          AND NOT (CAST(${identity} AS "ProfileIdentity") = ANY("identities"))
+      `,
+    );
   }
 
   async updateProfile(userId: string, input: ProfileWriteInput): Promise<void> {

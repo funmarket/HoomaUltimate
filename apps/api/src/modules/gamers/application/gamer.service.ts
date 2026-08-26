@@ -17,6 +17,10 @@ export class GamerService {
     return this.games.listActive();
   }
 
+  listDiscoverableGamers() {
+    return this.profiles.listDiscoverable();
+  }
+
   async getGame(slug: string) {
     const game = await this.games.getActive(slug);
     if (!game) throw new AppError(404, "GAMER_GAME_NOT_FOUND", "Game not found");
@@ -54,13 +58,6 @@ export class GamerService {
   async listChallengers(gameId: string) {
     await this.requireActiveGame(gameId);
     return this.profiles.listOpenByGame(gameId);
-  }
-
-  async getPublicProfile(gameId: string, profileId: string) {
-    await this.requireActiveGame(gameId);
-    const profile = await this.profiles.getPublicByGameAndId(gameId, profileId);
-    if (!profile) throw new AppError(404, "GAMER_PROFILE_NOT_FOUND", "Gamer profile not found");
-    return profile;
   }
 
   async getMyProfile(userId: string, gameId: string) {
@@ -265,7 +262,7 @@ export class GamerService {
       throw new AppError(
         409,
         "GAMER_IDENTITY_REQUIRED",
-        "Select Gamer on your HOOMA profile before using Gamer participation actions",
+        "Join Gamers with your canonical HOOMA profile before using Gamer participation actions",
       );
     }
   }

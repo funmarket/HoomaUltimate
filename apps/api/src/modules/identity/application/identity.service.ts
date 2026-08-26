@@ -24,6 +24,7 @@ import type {
 } from "@hooma/contracts/auth-linking";
 import {
   profileResponseSchema,
+  type ProfileIdentity,
   type ProfileResponse,
   type ProfileUpdateInput,
 } from "@hooma/contracts/profile";
@@ -273,6 +274,14 @@ export class IdentityService {
           }
         : null,
     });
+  }
+
+  async enableProfileIdentity(userId: string, identity: ProfileIdentity): Promise<ProfileResponse> {
+    const current = await this.profile(userId);
+    if (!current.identities.includes(identity)) {
+      await this.repository.addProfileIdentity(userId, identity);
+    }
+    return this.profile(userId);
   }
 
   async updateProfile(userId: string, input: ProfileUpdateInput): Promise<ProfileResponse> {

@@ -58,6 +58,14 @@ export function createIdentityMemberRouter(service: IdentityService, config: Api
     }),
   );
 
+  router.post(
+    "/me/profile/identities/gamer",
+    asyncHandler(async (request, response) => {
+      const auth = getAuth(request);
+      response.json(await service.enableProfileIdentity(auth.userId, "GAMER"));
+    }),
+  );
+
   router.patch(
     "/me/profile",
     asyncHandler(async (request, response) => {

@@ -3,6 +3,7 @@ import type {
   GamerChallengeCreateInput,
   GamerChallengeList,
   GamerChallengerList,
+  GamerDiscoveryList,
   GamerGame,
   GamerGameCreateInput,
   GamerGameList,
@@ -14,6 +15,7 @@ import { request, type HoomaTransport } from "../http";
 export function createGamersApi(transport: HoomaTransport) {
   return {
     games: () => request<GamerGameList>(transport, "/api/public/v1/gamers/games"),
+    discovery: () => request<GamerDiscoveryList>(transport, "/api/public/v1/gamers/discovery"),
     game: (slug: string) =>
       request<GamerGame>(transport, `/api/public/v1/gamers/games/${encodeURIComponent(slug)}`),
     addGame: (input: GamerGameCreateInput) =>

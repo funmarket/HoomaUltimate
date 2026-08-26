@@ -1,4 +1,4 @@
-import type { ProfileResponse, ProfileUpdateInput } from "@hooma/contracts/profile";
+import type { ProfileResponse } from "@hooma/contracts/profile";
 import type {
   GamerGame,
   GamerGameList,
@@ -13,7 +13,10 @@ export function createGamerOnboardingApi(transport: HoomaTransport) {
   return {
     games: () => request<GamerGameList>(transport, "/api/public/v1/gamers/games"),
     profile: () => profileApi.mine(),
-    updateProfile: (input: ProfileUpdateInput) => profileApi.updateMine(input),
+    joinGamers: () =>
+      request<ProfileResponse>(transport, "/api/v1/me/profile/identities/gamer", {
+        method: "POST",
+      }),
     saveGameProfile: (game: GamerGame, input: GamerProfileInput) =>
       request<GamerProfile>(
         transport,
@@ -23,21 +26,5 @@ export function createGamerOnboardingApi(transport: HoomaTransport) {
           body: JSON.stringify(input),
         },
       ),
-  };
-}
-
-export function gamerOptInProfileInput(profile: ProfileResponse): ProfileUpdateInput {
-  return {
-    username: profile.presentation.username,
-    displayName: profile.presentation.displayName,
-    photoUrl: profile.presentation.photoUrl,
-    bio: profile.presentation.bio,
-    identities: [...new Set([...profile.identities, "GAMER" as const])],
-    player: profile.player
-      ? {
-          skillLevel: profile.player.skillLevel,
-          preferredPositions: profile.player.preferredPositions,
-        }
-      : null,
   };
 }

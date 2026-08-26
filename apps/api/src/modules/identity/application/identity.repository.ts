@@ -143,6 +143,7 @@ export interface IdentityRepository {
   ): Promise<TelegramLinkResult>;
   findPublicProfile(username: string): Promise<PublicProfileRecord | null>;
   findProfile(userId: string): Promise<ProfileRecord | null>;
+  addProfileIdentity(userId: string, identity: ProfileIdentity): Promise<void>;
   updateProfile(userId: string, input: ProfileWriteInput): Promise<void>;
   updatePresentation(
     userId: string,

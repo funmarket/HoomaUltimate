@@ -1,9 +1,9 @@
 import type { PrismaClient } from "@hooma/database";
 import type {
   GamerChallengerSummary,
+  GamerDiscoverySummary,
   GamerProfileRecord,
   GamerProfileRepository,
-  GamerPublicProfile,
 } from "../application/gamer-profile.repository.js";
 
 const profileSelect = {
@@ -30,34 +30,6 @@ export class PrismaGamerProfileRepository implements GamerProfileRepository {
     return this.db.gamerProfile.findUnique({ where: { id: profileId }, select: profileSelect });
   }
 
-  async getPublicByGameAndId(
-    gameId: string,
-    profileId: string,
-  ): Promise<GamerPublicProfile | null> {
-    const row = await this.db.gamerProfile.findFirst({
-      where: { id: profileId, gameId },
-      select: {
-        id: true,
-        handle: true,
-        openToChallenge: true,
-        user: {
-          select: {
-            presentation: {
-              select: { username: true, displayName: true, photoUrl: true, bio: true },
-            },
-          },
-        },
-      },
-    });
-    if (!row?.user.presentation) return null;
-    return {
-      id: row.id,
-      handle: row.handle,
-      openToChallenge: row.openToChallenge,
-      presentation: row.user.presentation,
-    };
-  }
-
   async listOpenByGame(gameId: string): Promise<GamerChallengerSummary[]> {
     const rows = await this.db.gamerProfile.findMany({
       where: {
@@ -82,6 +54,43 @@ export class PrismaGamerProfileRepository implements GamerProfileRepository {
     return rows.flatMap((row) =>
       row.user.presentation
         ? [{ id: row.id, handle: row.handle, presentation: row.user.presentation }]
+        : [],
+    );
+  }
+
+  async listDiscoverable(): Promise<GamerDiscoverySummary[]> {
+    const rows = await this.db.gamerProfile.findMany({
+      where: {
+        game: { status: "ACTIVE" },
+        user: { identities: { has: "GAMER" } },
+      },
+      orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+      select: {
+        id: true,
+        handle: true,
+        openToChallenge: true,
+        game: { select: { id: true, slug: true, name: true } },
+        user: {
+          select: {
+            presentation: {
+              select: { username: true, displayName: true, photoUrl: true },
+            },
+          },
+        },
+      },
+    });
+
+    return rows.flatMap((row) =>
+      row.user.presentation
+        ? [
+            {
+              id: row.id,
+              handle: row.handle,
+              openToChallenge: row.openToChallenge,
+              game: row.game,
+              presentation: row.user.presentation,
+            },
+          ]
         : [],
     );
   }
