@@ -6,7 +6,7 @@ const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "u
 
 function cssRule(css, selector) {
   const marker = `${selector} {`;
-  const start = css.lastIndexOf(marker);
+  const start = css.indexOf(marker);
   if (start < 0) return "";
   const bodyStart = start + marker.length;
   const bodyEnd = css.indexOf("\n}", bodyStart);
@@ -76,11 +76,12 @@ test("Watch side stub contains only collector branding below its football emblem
   const css = source("packages/frontend/src/watch/watch.css");
   const stub = cssRule(css, ".watch-ticket__stub");
   const branding = cssRule(css, ".watch-ticket__stub strong");
+  const visibleStub = ticket.match(/<span className="watch-ticket__stub-ball"[\s\S]*?<strong>HOOMA<\/strong>/)?.[0] ?? "";
 
   assert.match(ticket, /watch-ticket__stub-ball/);
-  assert.match(ticket, /<strong>HOOMA<\/strong>/);
-  assert.doesNotMatch(ticket, /watch-ticket__stub[\s\S]{0,500}\{event\.title\}/);
-  assert.doesNotMatch(ticket, /watch-ticket__stub[\s\S]{0,500}>\{date\}</);
+  assert.match(visibleStub, /⚽/);
+  assert.match(visibleStub, /<strong>HOOMA<\/strong>/);
+  assert.doesNotMatch(visibleStub, /event\.title|\{date\}|\{time\}|status|place\.name/);
   assert.match(stub, /border-left:\s*2px dashed/);
   assert.match(branding, /color:\s*var\(--watch-ticket-gold\)/);
   assert.match(branding, /writing-mode:\s*vertical-rl/);
