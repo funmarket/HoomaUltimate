@@ -129,6 +129,18 @@ test("Watch uses one shared collector ticket with contained logo title logo layo
   assert.match(places, /<WatchTicket event=\{selectedEvent\} \/>/);
 });
 
+test("archived Places stay off public Place and Watch discovery", () => {
+  const placeRepository = source(
+    "apps/api/src/modules/places/infrastructure/prisma-place.repository.ts",
+  );
+  const eventRepository = source(
+    "apps/api/src/modules/events/infrastructure/prisma-event.repository.ts",
+  );
+
+  assert.match(placeRepository, /moderationStatus: "APPROVED", archivedAt: null/);
+  assert.match(eventRepository, /moderationStatus: "APPROVED", archivedAt: null/);
+});
+
 test("temporary formatting workflow is not left in the final source tree", () => {
   assert.equal(
     existsSync(new URL("../.github/workflows/tmp-watch-place-format.yml", import.meta.url)),
