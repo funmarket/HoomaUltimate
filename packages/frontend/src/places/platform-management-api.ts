@@ -72,10 +72,10 @@ export function createPlatformManagementApi(transport: HoomaTransport) {
           method: "PUT",
           body: JSON.stringify({ capabilities }),
         }),
-      queue: (name: "places" | "place-ownership" | "watch" | "pitch") =>
+      queue: (name: "places" | "place-ownership" | "pitch") =>
         request<AdminQueueItem[]>(transport, `/api/v1/admin/queues/${name}`),
       decide: (
-        name: "places" | "place-ownership" | "watch" | "pitch",
+        name: "places" | "place-ownership" | "pitch",
         id: string,
         input: ModerationDecisionInput,
       ) =>
