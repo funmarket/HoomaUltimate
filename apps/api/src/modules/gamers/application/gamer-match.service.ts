@@ -54,11 +54,7 @@ export class GamerMatchService {
   ) {
     const access = await this.requireAcceptedEaFcChallenge(userId, gameId, challengeId);
     if (!ALLOWED_PROOF_TYPES.has(input.contentType)) {
-      throw new AppError(
-        415,
-        "GAMER_MATCH_PROOF_TYPE_INVALID",
-        "Proof must be JPEG, PNG, or WebP",
-      );
+      throw new AppError(415, "GAMER_MATCH_PROOF_TYPE_INVALID", "Proof must be JPEG, PNG, or WebP");
     }
     if (!input.proof.byteLength || input.proof.byteLength > RESULT_PROOF_MAX_BYTES) {
       throw new AppError(
@@ -75,8 +71,7 @@ export class GamerMatchService {
       );
     }
 
-    const side: GamerMatchSide =
-      access.challengerUserId === userId ? "CHALLENGER" : "CHALLENGED";
+    const side: GamerMatchSide = access.challengerUserId === userId ? "CHALLENGER" : "CHALLENGED";
     const challengerScore = side === "CHALLENGER" ? input.yourScore : input.opponentScore;
     const challengedScore = side === "CHALLENGER" ? input.opponentScore : input.yourScore;
     const match = await this.matches.ensureForAcceptedChallenge(challengeId);
