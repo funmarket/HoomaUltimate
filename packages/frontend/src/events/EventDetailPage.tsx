@@ -240,21 +240,29 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
           </div>
         )}
 
-        <div className="play-event-card__management-actions">
-          {isWatch && event.place ? (
-            <a
-              className="play-event-primary-action"
-              href={`/places/${event.place.id}?eventId=${encodeURIComponent(event.id)}`}
-            >
-              View Place
-            </a>
-          ) : null}
-          {isWatch && canManage ? (
-            <a className="play-event-secondary-action" href={`/events/${event.id}/edit`}>
-              Edit Event
-            </a>
-          ) : null}
-        </div>
+        {isWatch && (event.place || canManage) ? (
+          <section className="play-event-card__management" aria-label="Watch event actions">
+            <span className="play-event-card__management-label">Event actions</span>
+            <div className="play-event-card__management-actions">
+              {event.place ? (
+                <a
+                  className="play-event-management-action play-event-management-action--place"
+                  href={`/places/${event.place.id}?eventId=${encodeURIComponent(event.id)}`}
+                >
+                  View Place
+                </a>
+              ) : null}
+              {canManage ? (
+                <a
+                  className="play-event-management-action play-event-management-action--edit"
+                  href={`/events/${event.id}/edit`}
+                >
+                  Edit Event
+                </a>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
         {rsvpLabel ? <div className="play-event-rsvp-state">{rsvpLabel}</div> : null}
         {rsvp === "ATTENDED" ? (
           <div className="play-event-primary-action play-event-primary-action--static">
