@@ -23,9 +23,7 @@ export type S3ObjectStorageConfig = {
 };
 
 function hex(bytes: ArrayBuffer): string {
-  return Array.from(new Uint8Array(bytes), (byte) => byte.toString(16).padStart(2, "0")).join(
-    "",
-  );
+  return Array.from(new Uint8Array(bytes), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 async function sha256(value: string | Uint8Array): Promise<string> {
@@ -114,12 +112,9 @@ export class S3ObjectStorage implements ObjectStorage {
       payloadHash,
     ].join("\n");
     const scope = `${shortDate}/${this.config.region}/s3/aws4_request`;
-    const stringToSign = [
-      "AWS4-HMAC-SHA256",
-      amzDate,
-      scope,
-      await sha256(canonicalRequest),
-    ].join("\n");
+    const stringToSign = ["AWS4-HMAC-SHA256", amzDate, scope, await sha256(canonicalRequest)].join(
+      "\n",
+    );
     const dateKey = await hmac(
       new TextEncoder().encode(`AWS4${this.config.secretAccessKey}`),
       shortDate,
