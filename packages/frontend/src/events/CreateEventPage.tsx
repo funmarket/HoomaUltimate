@@ -14,6 +14,7 @@ export function CreateEventPage() {
   const watchMode = searchParams.get("type") === "WATCH";
   const initialWatchKind: WatchEventKind =
     searchParams.get("kind") === "CULTURAL" ? "CULTURAL" : "MATCH";
+  const initialPlaceId = searchParams.get("placeId") ?? "";
   const [me, setMe] = useState<MeResponse | null>(null);
   const [places, setPlaces] = useState<PublicPlaceSummary[]>([]);
   const [pending, setPending] = useState(false);
@@ -135,6 +136,7 @@ export function CreateEventPage() {
           <WatchEventForm
             places={places}
             initialKind={initialWatchKind}
+            initialPlaceId={initialPlaceId}
             submitLabel="Publish Watch Event"
             pending={pending}
             onSubmit={submitWatch}

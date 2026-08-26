@@ -24,6 +24,7 @@ export function WatchEventForm({
   places,
   initialEvent,
   initialKind = "MATCH",
+  initialPlaceId = "",
   submitLabel,
   pending,
   lockPlace = false,
@@ -32,6 +33,7 @@ export function WatchEventForm({
   readonly places: readonly PublicPlaceSummary[];
   readonly initialEvent?: PublicEvent | null;
   readonly initialKind?: WatchEventKind;
+  readonly initialPlaceId?: string;
   readonly submitLabel: string;
   readonly pending: boolean;
   readonly lockPlace?: boolean;
@@ -136,7 +138,11 @@ export function WatchEventForm({
           </div>
           <label className="hooma-field">
             <span>Place *</span>
-            <select name="placeId" defaultValue={initialEvent?.placeId ?? ""} required>
+            <select
+              name="placeId"
+              defaultValue={initialEvent?.placeId ?? initialPlaceId}
+              required
+            >
               <option value="">Select a Place</option>
               {places.map((place) => (
                 <option key={place.id} value={place.id}>
