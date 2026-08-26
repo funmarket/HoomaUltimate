@@ -3,13 +3,12 @@ import { z } from "zod";
 export const platformManagerCapabilitySchema = z.enum([
   "REVIEW_PLACES",
   "REVIEW_PLACE_OWNERSHIP",
-  "REVIEW_WATCH_APPLICATIONS",
   "REVIEW_PITCH_APPLICATIONS",
   "VIEW_AUDIT",
 ]);
 
 export const moderationStatusSchema = z.enum(["PENDING", "APPROVED", "REJECTED"]);
-export const placeCapabilityKindSchema = z.enum(["WATCH", "PITCH"]);
+export const placeCapabilityKindSchema = z.literal("PITCH");
 
 export const placeSuggestionSchema = z.object({
   name: z.string().trim().min(2).max(160),
@@ -20,6 +19,10 @@ export const placeSuggestionSchema = z.object({
   longitude: z.number().min(-180).max(180).optional().nullable(),
   phone: z.string().trim().max(60).optional().nullable(),
   websiteUrl: z.string().trim().url().max(2000).optional().nullable(),
+  imageUrl: z.string().trim().url().max(4000).optional().nullable(),
+  description: z.string().trim().max(2000).optional().nullable(),
+  category: z.string().trim().max(120).optional().nullable(),
+  email: z.string().trim().email().max(320).optional().nullable(),
 });
 
 export const placeOwnershipClaimSchema = z.object({
@@ -39,7 +42,7 @@ export const moderationDecisionSchema = z.object({
 });
 
 export const appManagerUpdateSchema = z.object({
-  capabilities: z.array(platformManagerCapabilitySchema).max(5),
+  capabilities: z.array(platformManagerCapabilitySchema).max(4),
 });
 
 export type PlatformManagerCapability = z.infer<typeof platformManagerCapabilitySchema>;
@@ -62,6 +65,10 @@ export interface PublicPlaceSummary {
   readonly longitude: number | null;
   readonly phone: string | null;
   readonly websiteUrl: string | null;
+  readonly imageUrl: string | null;
+  readonly description: string | null;
+  readonly category: string | null;
+  readonly email: string | null;
 }
 
 export interface PublicPlaceCapability {
