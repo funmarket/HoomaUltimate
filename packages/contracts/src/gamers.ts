@@ -48,13 +48,16 @@ export const gamerChallengerListSchema = z.object({
   items: z.array(gamerChallengerSchema),
 });
 
-export const gamerPublicProfileSchema = z.object({
+export const gamerDiscoveryItemSchema = z.object({
   id: z.string().min(1),
   handle: z.string().min(1),
   openToChallenge: z.boolean(),
-  presentation: gamerPublicPresentationSchema.extend({
-    bio: z.string().nullable(),
-  }),
+  game: gamerGameSchema.pick({ id: true, slug: true, name: true }),
+  presentation: gamerPublicPresentationSchema,
+});
+
+export const gamerDiscoveryListSchema = z.object({
+  items: z.array(gamerDiscoveryItemSchema),
 });
 
 export const gamerChallengeStatusSchema = z.enum(["PENDING", "ACCEPTED", "DECLINED", "CANCELLED"]);
@@ -91,7 +94,8 @@ export type GamerProfileInput = z.infer<typeof gamerProfileInputSchema>;
 export type GamerProfile = z.infer<typeof gamerProfileSchema>;
 export type GamerChallenger = z.infer<typeof gamerChallengerSchema>;
 export type GamerChallengerList = z.infer<typeof gamerChallengerListSchema>;
-export type GamerPublicProfile = z.infer<typeof gamerPublicProfileSchema>;
+export type GamerDiscoveryItem = z.infer<typeof gamerDiscoveryItemSchema>;
+export type GamerDiscoveryList = z.infer<typeof gamerDiscoveryListSchema>;
 export type GamerChallengeStatus = z.infer<typeof gamerChallengeStatusSchema>;
 export type GamerChallengeCreateInput = z.infer<typeof gamerChallengeCreateSchema>;
 export type GamerChallengeParticipant = z.infer<typeof gamerChallengeParticipantSchema>;
