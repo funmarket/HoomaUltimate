@@ -103,7 +103,11 @@ export function WatchTicket({
           <div className="watch-ticket__divider" aria-hidden="true" />
 
           <div className="watch-ticket__details">
-            <a className="watch-ticket__detail watch-ticket__venue" href={placeHref} title={place.name}>
+            <a
+              className="watch-ticket__detail watch-ticket__venue"
+              href={placeHref}
+              title={place.name}
+            >
               <PinIcon className="watch-ticket__detail-icon" />
               <span className="watch-ticket__detail-copy">
                 <strong>{place.name}</strong>
@@ -131,7 +135,11 @@ export function WatchTicket({
           </div>
         </div>
 
-        <a className="watch-ticket__stub" href={`/events/${event.id}`} aria-label={`Open ${event.title}`}>
+        <a
+          className="watch-ticket__stub"
+          href={`/events/${event.id}`}
+          aria-label={`Open ${event.title}`}
+        >
           <span className="watch-ticket__stub-ball" aria-hidden="true">
             ⚽
           </span>
