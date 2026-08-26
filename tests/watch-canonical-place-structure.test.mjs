@@ -9,7 +9,7 @@ function source(path) {
 test("Watch page exposes only the four product functions and no business onboarding", () => {
   const watch = source("packages/frontend/src/watch/WatchPage.tsx");
   for (const label of ["Events", "Places", "Create Event", "Add a Place"]) {
-    assert.match(watch, new RegExp(`>${label}<`));
+    assert.match(watch, new RegExp(`>\\s*${label}\\s*<`));
   }
   assert.doesNotMatch(
     watch,
