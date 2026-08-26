@@ -8,7 +8,7 @@ test("Place detail uses canonical Watch event context for ticket, RSVP and share
   const detail = source("packages/frontend/src/places/PlaceDetailPage.tsx");
 
   assert.match(detail, /new URLSearchParams\(window\.location\.search\)\.get\("eventId"\)/);
-  assert.match(detail, /<WatchTicket event=\{selectedEvent\} \/>/);
+  assert.match(detail, /<WatchTicket event=\{selectedEvent\} variant="place-detail" \/>/);
   assert.match(detail, /eventsApi\.myRsvp\(eventId\)/);
   assert.match(detail, /eventsApi\.join\(selectedEventId\)/);
   assert.match(detail, /eventsApi\.cancelRsvp\(selectedEventId\)/);
@@ -16,6 +16,17 @@ test("Place detail uses canonical Watch event context for ticket, RSVP and share
   assert.match(detail, /Share event/);
   assert.match(detail, /Join event/);
   assert.match(detail, /selectedEvent\.venueAuthority === "OFFICIAL_VENUE"/);
+});
+
+test("Place detail ticket reuses WatchTicket without repeating the Place photo", () => {
+  const ticket = source("packages/frontend/src/watch/WatchTicket.tsx");
+
+  assert.match(ticket, /export type WatchTicketVariant = "feed" \| "place-detail"/);
+  assert.match(ticket, /variant = "feed"/);
+  assert.match(ticket, /const detailVariant = variant === "place-detail"/);
+  assert.match(ticket, /!detailVariant \? \(/);
+  assert.match(ticket, /className="watch-ticket__place-photo"/);
+  assert.match(ticket, /className=\{`watch-ticket watch-ticket--\$\{variant\}`\}/);
 });
 
 test("Place detail uses the shared HOOMA icon source and rich Watch presentation", () => {
@@ -51,8 +62,22 @@ test("Place detail uses the shared HOOMA icon source and rich Watch presentation
   assert.match(css, /\.place-watch-action--primary/);
   assert.match(css, /\.place-watch-action--secondary/);
   assert.match(css, /\.place-info-grid\s*\{[\s\S]*?repeat\(4, minmax\(0, 1fr\)\)/);
-  assert.match(css, /\.place-menu-preview\s*\{[\s\S]*?display:\s*flex/);
+  assert.match(css, /\.place-menu-preview\s*\{[\s\S]*?display:\s*grid/);
+  assert.doesNotMatch(css, /\.place-menu-preview\s*\{[\s\S]*?overflow-x:\s*auto/);
   assert.match(css, /\.place-event-row\s*\{[\s\S]*?display:\s*grid/);
+});
+
+test("Place detail keeps a proportional mobile composition instead of giant stacked panels", () => {
+  const css = source("packages/frontend/src/places/places.css");
+  const mobile = css.match(/@media \(max-width: 520px\) \{([\s\S]*?)\n\}/)?.[1] ?? "";
+
+  assert.match(css, /@media \(max-width: 760px\)[\s\S]*?\.place-detail-hero\s*\{[\s\S]*?40%/);
+  assert.match(mobile, /\.place-detail-hero\s*\{[\s\S]*?41%/);
+  assert.match(mobile, /\.place-info-grid\s*\{[\s\S]*?repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(mobile, /\.place-menu-preview\s*\{[\s\S]*?repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(mobile, /\.place-event-row__time/);
+  assert.match(mobile, /\.place-event-row__teams/);
+  assert.doesNotMatch(mobile, /\.place-info-grid\s*\{[\s\S]*?grid-template-columns:\s*1fr\s*;/);
 });
 
 test("Place detail keeps owner management contextual instead of a dominant danger zone", () => {
