@@ -104,11 +104,12 @@ export function createPlatformManagementApi(transport: HoomaTransport) {
           { method: "POST", body: JSON.stringify(input) },
         ),
       gamerDisputeProof: async (matchId: string, side: GamerMatchSide): Promise<Blob> => {
+        const headers = transport.getHeaders?.();
         const response = await fetch(
           `${transport.baseUrl}/api/v1/admin/queues/gamer-disputes/${encodeURIComponent(matchId)}/proof/${side.toLowerCase()}`,
           {
             ...(transport.credentials ? { credentials: transport.credentials } : {}),
-            headers: transport.getHeaders?.(),
+            ...(headers ? { headers } : {}),
           },
         );
         if (!response.ok) throw new Error(`Unable to load match proof (${response.status})`);
