@@ -11,9 +11,7 @@ import "./gamer-disputes.css";
 type ProofUrls = Record<string, Partial<Record<GamerMatchSide, string>>>;
 
 function claimLabel(submission: GamerMatchSubmission | undefined): string {
-  return submission
-    ? `${submission.challengerScore}–${submission.challengedScore}`
-    : "No submission";
+  return submission ? `${submission.challengerScore}–${submission.challengedScore}` : "No submission";
 }
 
 function DisputeCard({
@@ -109,9 +107,7 @@ function DisputeCard({
             className="secondary"
             type="button"
             disabled={busy || !notes.trim()}
-            onClick={() =>
-              onResolve({ decision: "VOID", moderatorNotes: notes.trim() })
-            }
+            onClick={() => onResolve({ decision: "VOID", moderatorNotes: notes.trim() })}
           >
             Void Match
           </button>
