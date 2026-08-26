@@ -21,7 +21,11 @@ function eventDate(event: PublicEvent): { date: string; time: string } {
     };
   } catch {
     return {
-      date: startsAt.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }),
+      date: startsAt.toLocaleDateString(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      }),
       time: startsAt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }),
     };
   }
@@ -42,8 +46,14 @@ export function CulturalEventCard({ event }: { readonly event: PublicEvent }) {
   return (
     <article className="watch-cultural-card">
       <a className="watch-cultural-card__media" href={`/events/${event.id}`}>
-        {imageUrl ? <img src={imageUrl} alt="" /> : <span>{categoryLabel(details.culturalCategory)}</span>}
-        <span className="watch-cultural-card__category">{categoryLabel(details.culturalCategory)}</span>
+        {imageUrl ? (
+          <img src={imageUrl} alt="" />
+        ) : (
+          <span>{categoryLabel(details.culturalCategory)}</span>
+        )}
+        <span className="watch-cultural-card__category">
+          {categoryLabel(details.culturalCategory)}
+        </span>
       </a>
       <div className="watch-cultural-card__body">
         <div className="watch-cultural-card__time">

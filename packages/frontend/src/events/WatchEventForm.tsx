@@ -60,14 +60,7 @@ export function WatchEventForm({
         : {
             kind: "CULTURAL",
             culturalCategory: String(data.get("culturalCategory")) as
-              | "MUSIC"
-              | "CONCERT"
-              | "COMEDY"
-              | "ART"
-              | "SCREENING"
-              | "FOOD"
-              | "COMMUNITY"
-              | "OTHER",
+              "MUSIC" | "CONCERT" | "COMEDY" | "ART" | "SCREENING" | "FOOD" | "COMMUNITY" | "OTHER",
             imageUrl: optionalText("culturalImageUrl"),
           };
     const title =
@@ -100,7 +93,11 @@ export function WatchEventForm({
         <div className="watch-kind-selector" role="group" aria-label="Watch event type">
           <button
             type="button"
-            className={kind === "MATCH" ? "watch-kind-selector__option is-active" : "watch-kind-selector__option"}
+            className={
+              kind === "MATCH"
+                ? "watch-kind-selector__option is-active"
+                : "watch-kind-selector__option"
+            }
             aria-pressed={kind === "MATCH"}
             disabled={kindLocked}
             onClick={() => setKind("MATCH")}
@@ -122,7 +119,9 @@ export function WatchEventForm({
           </button>
         </div>
         {kind === "CULTURAL" ? (
-          <p className="muted">Cultural events can only be published by a verified owner of the selected Place.</p>
+          <p className="muted">
+            Cultural events can only be published by a verified owner of the selected Place.
+          </p>
         ) : null}
       </section>
 
@@ -202,12 +201,21 @@ export function WatchEventForm({
           <div className="watch-cultural-form">
             <label className="hooma-field">
               <span>Event title *</span>
-              <input name="title" maxLength={220} defaultValue={initialEvent?.title ?? ""} required />
+              <input
+                name="title"
+                maxLength={220}
+                defaultValue={initialEvent?.title ?? ""}
+                required
+              />
             </label>
             <div className="hooma-form__grid">
               <label className="hooma-field">
                 <span>Category *</span>
-                <select name="culturalCategory" defaultValue={cultural?.culturalCategory ?? "MUSIC"} required>
+                <select
+                  name="culturalCategory"
+                  defaultValue={cultural?.culturalCategory ?? "MUSIC"}
+                  required
+                >
                   <option value="MUSIC">Music</option>
                   <option value="CONCERT">Concert</option>
                   <option value="COMEDY">Comedy</option>
@@ -237,7 +245,9 @@ export function WatchEventForm({
             name="description"
             rows={4}
             defaultValue={initialEvent?.description ?? ""}
-            placeholder={kind === "MATCH" ? "Optional match-night information" : "What should guests know?"}
+            placeholder={
+              kind === "MATCH" ? "Optional match-night information" : "What should guests know?"
+            }
           />
         </label>
       </section>

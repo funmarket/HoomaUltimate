@@ -253,7 +253,8 @@ export class PrismaEventRepository implements EventRepository {
         current.type === "WATCH"
           ? await tx.watchCulturalEventDetails.findUnique({ where: { eventId } })
           : null;
-      const currentWatchKind = current.type === "WATCH" ? (currentCultural ? "CULTURAL" : "MATCH") : null;
+      const currentWatchKind =
+        current.type === "WATCH" ? (currentCultural ? "CULTURAL" : "MATCH") : null;
       if (input.watch && currentWatchKind && input.watch.kind !== currentWatchKind) {
         throw new Error("WATCH_EVENT_KIND_IMMUTABLE");
       }
