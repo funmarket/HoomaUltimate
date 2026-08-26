@@ -6,6 +6,15 @@ function source(path) {
   return readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 }
 
+function cssRule(css, selector) {
+  const marker = `${selector} {`;
+  const start = css.lastIndexOf(marker);
+  if (start < 0) return "";
+  const bodyStart = start + marker.length;
+  const bodyEnd = css.indexOf("\n}", bodyStart);
+  return bodyEnd < 0 ? "" : css.slice(bodyStart, bodyEnd);
+}
+
 test("Watch page exposes only the four product functions and no business onboarding", () => {
   const watch = source("packages/frontend/src/watch/WatchPage.tsx");
   for (const label of ["Events", "Places", "Create Event", "Add a Place"]) {
@@ -135,7 +144,7 @@ test("Watch collector ticket aligns media, readable typography and matchup to th
     /--watch-ticket-font-condensed:\s*"Arial Narrow", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif/,
   );
 
-  const photoRule = ticketCss.match(/\.watch-ticket__place-photo \{([\s\S]*?)\n\}/)?.[1] ?? "";
+  const photoRule = cssRule(ticketCss, ".watch-ticket__place-photo");
   assert.match(photoRule, /top:\s*8\.1%/);
   assert.match(photoRule, /left:\s*4\.5%/);
   assert.match(photoRule, /width:\s*25\.5%/);
@@ -143,7 +152,7 @@ test("Watch collector ticket aligns media, readable typography and matchup to th
   assert.match(ticketCss, /\.watch-ticket__place-photo img \{[\s\S]*?object-fit:\s*cover/);
   assert.match(ticketCss, /\.watch-ticket__place-photo img \{[\s\S]*?object-position:\s*center/);
 
-  const matchupRule = ticketCss.match(/\.watch-ticket__matchup \{([\s\S]*?)\n\}/)?.[1] ?? "";
+  const matchupRule = cssRule(ticketCss, ".watch-ticket__matchup");
   assert.match(matchupRule, /top:\s*15\.6%/);
   assert.match(matchupRule, /left:\s*31%/);
   assert.match(matchupRule, /height:\s*24\.2%/);
@@ -152,20 +161,19 @@ test("Watch collector ticket aligns media, readable typography and matchup to th
     /grid-template-columns:\s*minmax\(0, 8\.3cqw\) minmax\(0, 1fr\) minmax\(0, 8\.3cqw\)/,
   );
 
-  const markRule = ticketCss.match(/\.watch-ticket__team-mark \{([\s\S]*?)\n\}/)?.[1] ?? "";
+  const markRule = cssRule(ticketCss, ".watch-ticket__team-mark");
   assert.match(markRule, /width:\s*8\.3cqw/);
   assert.match(markRule, /border-radius:\s*50%/);
   assert.match(ticketCss, /\.watch-ticket__team-logo \{[\s\S]*?object-fit:\s*contain/);
   assert.match(ticketCss, /\.watch-ticket__team-logo \{[\s\S]*?object-position:\s*center/);
 
-  const titleRule = ticketCss.match(/\.watch-ticket__matchup-title \{([\s\S]*?)\n\}/)?.[1] ?? "";
+  const titleRule = cssRule(ticketCss, ".watch-ticket__matchup-title");
   assert.match(titleRule, /grid-template-columns:\s*minmax\(0, 1fr\) auto minmax\(0, 1fr\)/);
   assert.match(titleRule, /font-family:\s*var\(--watch-ticket-font-display\)/);
   assert.match(titleRule, /line-height:\s*0\.9/);
   assert.doesNotMatch(titleRule, /Georgia|Times New Roman|serif/);
 
-  const teamNameRule =
-    ticketCss.match(/\.watch-ticket__matchup-title strong \{([\s\S]*?)\n\}/)?.[1] ?? "";
+  const teamNameRule = cssRule(ticketCss, ".watch-ticket__matchup-title strong");
   assert.match(teamNameRule, /align-items:\s*center/);
   assert.match(teamNameRule, /justify-content:\s*center/);
   assert.match(teamNameRule, /font-size:\s*clamp\(0\.78rem, 3\.35cqw, 1\.55rem\)/);
@@ -175,17 +183,16 @@ test("Watch collector ticket aligns media, readable typography and matchup to th
   assert.match(teamNameRule, /overflow-wrap:\s*anywhere/);
   assert.doesNotMatch(teamNameRule, /text-overflow:\s*ellipsis/);
 
-  const seriesRule = ticketCss.match(/\.watch-ticket__series \{([\s\S]*?)\n\}/)?.[1] ?? "";
-  const statusRule = ticketCss.match(/\.watch-ticket__status \{([\s\S]*?)\n\}/)?.[1] ?? "";
-  const stubRule = ticketCss.match(/\.watch-ticket__stub \{([\s\S]*?)\n\}/)?.[1] ?? "";
+  const seriesRule = cssRule(ticketCss, ".watch-ticket__series");
+  const statusRule = cssRule(ticketCss, ".watch-ticket__status");
+  const stubRule = cssRule(ticketCss, ".watch-ticket__stub");
   for (const rule of [seriesRule, statusRule, stubRule]) {
     assert.match(rule, /font-family:\s*var\(--watch-ticket-font-condensed\)/);
     assert.match(rule, /font-weight:\s*9(?:00|50)/);
   }
 
-  const venueStrongRule =
-    ticketCss.match(/\.watch-ticket__venue strong \{([\s\S]*?)\n\}/)?.[1] ?? "";
-  const dateStrongRule = ticketCss.match(/\.watch-ticket__date strong \{([\s\S]*?)\n\}/)?.[1] ?? "";
+  const venueStrongRule = cssRule(ticketCss, ".watch-ticket__venue strong");
+  const dateStrongRule = cssRule(ticketCss, ".watch-ticket__date strong");
   assert.match(venueStrongRule, /font-size:\s*clamp\(0\.56rem, 3cqw, 1\.3rem\)/);
   assert.match(dateStrongRule, /font-size:\s*clamp\(0\.52rem, 2\.7cqw, 1\.15rem\)/);
 
