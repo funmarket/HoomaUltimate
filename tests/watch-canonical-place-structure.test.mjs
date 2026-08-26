@@ -162,7 +162,7 @@ test("Watch collector ticket aligns media and matchup to the corrected master sa
   assert.doesNotMatch(teamNameRule, /text-overflow:\s*ellipsis/);
 
   assert.match(ticket, /\/places\/\$\{place\.id\}\?eventId=/);
-  assert.match(placeDetail, /<WatchTicket event=\{selectedEvent\} \/>/);
+  assert.match(placeDetail, /<WatchTicket event=\{selectedEvent\} variant="place-detail" \/>/);
 });
 
 test("archived Places stay off public Place and Watch discovery", () => {

@@ -252,7 +252,7 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
         ) : null}
       </div>
 
-      {selectedEvent ? <WatchTicket event={selectedEvent} /> : null}
+      {selectedEvent ? <WatchTicket event={selectedEvent} variant="place-detail" /> : null}
 
       <section className="place-detail-hero">
         <div className="place-detail-hero__media">
