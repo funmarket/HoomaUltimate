@@ -1,6 +1,7 @@
 import { lazy, Suspense, useMemo } from "react";
 import { BrowserRouter, Route, Routes, useParams } from "react-router-dom";
 import {
+  AddPlacePage,
   CheckInPage,
   CoachControlRoomPage,
   CreateEventPage,
@@ -16,6 +17,7 @@ import {
   HoomaFrontendProvider,
   HoomaPage,
   PitchPage,
+  PlaceDetailPage,
   PlacesPage,
   PlayPage,
   TeamDetailPage,
@@ -92,6 +94,11 @@ function HoomaEditRoute() {
   return <HoomaEditPage communityId={requiredParam("communityId", communityId)} />;
 }
 
+function PlaceDetailRoute() {
+  const { placeId } = useParams();
+  return <PlaceDetailPage placeId={requiredParam("placeId", placeId)} />;
+}
+
 function EventDetailRoute() {
   const { eventId } = useParams();
   return <EventDetailPage eventId={requiredParam("eventId", eventId)} />;
@@ -165,6 +172,8 @@ function HoomaRoutes() {
               <Route path="/watch" element={<WatchPage />} />
               <Route path="/pitch" element={<PitchPage />} />
               <Route path="/places" element={<PlacesPage />} />
+              <Route path="/places/new" element={<AddPlacePage />} />
+              <Route path="/places/:placeId" element={<PlaceDetailRoute />} />
               <Route path="/events/new" element={<CreateEventPage />} />
               <Route path="/events/:eventId" element={<EventDetailRoute />} />
               <Route path="/events/:eventId/formation" element={<EventFormationRoute />} />
