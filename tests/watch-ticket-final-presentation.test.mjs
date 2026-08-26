@@ -55,7 +55,9 @@ test("Watch side stub stays centered below the logo and above the bottom border"
   assert.match(stub, /align-items:\s*center/);
   assert.match(stub, /justify-content:\s*center/);
   assert.match(stub, /text-align:\s*center/);
-  assert.match(stub, /font-size:\s*clamp\(0\.42rem, 1\.72cqw, 0\.86rem\)/);
+  assert.match(stub, /font-family:\s*var\(--watch-ticket-font-condensed\)/);
+  assert.match(stub, /font-size:\s*clamp\(0\.46rem, 1\.8cqw, 0\.9rem\)/);
+  assert.match(stub, /font-weight:\s*950/);
 
   const top = Number(stub.match(/top:\s*([0-9.]+)%/)?.[1]);
   const height = Number(stub.match(/height:\s*([0-9.]+)%/)?.[1]);
