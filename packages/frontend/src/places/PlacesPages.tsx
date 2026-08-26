@@ -44,7 +44,11 @@ export function PlacesPage() {
       {error ? <p className="error">{error}</p> : null}
       <div className="place-directory">
         {places.map((place) => (
-          <a className="place-card place-card--directory" href={`/places/${place.id}`} key={place.id}>
+          <a
+            className="place-card place-card--directory"
+            href={`/places/${place.id}`}
+            key={place.id}
+          >
             <div className="place-card__copy">
               {place.category ? <span className="eyebrow">{place.category}</span> : null}
               <h2>{place.name}</h2>
