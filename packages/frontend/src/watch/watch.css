@@ -142,7 +142,7 @@
 .watch-ticket {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 1672 / 941;
   overflow: hidden;
   isolation: isolate;
   color: #21170b;
@@ -174,14 +174,14 @@
 }
 
 .watch-ticket__place-photo {
-  top: 4.8%;
-  left: 4.4%;
-  width: 27.6%;
-  height: 86.6%;
+  top: 5.2%;
+  left: 4.5%;
+  width: 25.5%;
+  height: 84.2%;
   overflow: hidden;
   display: grid;
   place-items: center;
-  border-radius: 1.1cqw;
+  border-radius: 1cqw;
   color: #f0d8a2;
   background: #18130c;
   font-size: clamp(0.5rem, 2cqw, 1rem);
@@ -198,7 +198,7 @@
 }
 
 .watch-ticket__series {
-  top: 10.5%;
+  top: 7.8%;
   left: 31%;
   max-width: 46%;
   overflow: hidden;
@@ -210,12 +210,12 @@
 }
 
 .watch-ticket__matchup {
-  top: 18.5%;
-  left: 31.2%;
-  width: 47.2%;
-  height: 28.5%;
+  top: 15.6%;
+  left: 31%;
+  width: 47.5%;
+  height: 24.2%;
   display: grid;
-  grid-template-columns: minmax(0, 8.6cqw) minmax(0, 1fr) minmax(0, 8.6cqw);
+  grid-template-columns: minmax(0, 8.3cqw) minmax(0, 1fr) minmax(0, 8.3cqw);
   align-items: center;
   gap: 0.7cqw;
   overflow: hidden;
@@ -278,7 +278,7 @@
   justify-content: center;
   overflow: hidden;
   padding-inline: 0.15cqw;
-  font-size: clamp(0.42rem, 1.65cqw, 1.06rem);
+  font-size: clamp(0.4rem, 1.55cqw, 1.02rem);
   font-weight: 900;
   letter-spacing: -0.035em;
   line-height: 0.96;
