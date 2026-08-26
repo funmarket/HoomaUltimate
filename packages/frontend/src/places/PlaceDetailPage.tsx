@@ -24,7 +24,12 @@ function activeRsvp(status: EventRsvpState | undefined): ActiveRsvpState {
   return status === "CONFIRMED" || status === "WAITLISTED" || status === "ATTENDED" ? status : null;
 }
 
-function eventDateParts(event: PublicEvent): { date: string; time: string; day: string; month: string } {
+function eventDateParts(event: PublicEvent): {
+  date: string;
+  time: string;
+  day: string;
+  month: string;
+} {
   const startsAt = new Date(event.startsAt);
   const options = { timeZone: event.timezone } as const;
   try {
@@ -47,7 +52,11 @@ function eventDateParts(event: PublicEvent): { date: string; time: string; day: 
     };
   } catch {
     return {
-      date: startsAt.toLocaleDateString(undefined, { weekday: "short", day: "2-digit", month: "short" }),
+      date: startsAt.toLocaleDateString(undefined, {
+        weekday: "short",
+        day: "2-digit",
+        month: "short",
+      }),
       time: startsAt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }),
       day: String(startsAt.getDate()).padStart(2, "0"),
       month: startsAt.toLocaleDateString(undefined, { month: "short" }).toUpperCase(),
@@ -93,7 +102,10 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
   const selectedEventId = new URLSearchParams(window.location.search).get("eventId");
 
   async function loadPlaceAndEvents() {
-    const [row, eventPage] = await Promise.all([management.places.get(placeId), eventsApi.publicWatch()]);
+    const [row, eventPage] = await Promise.all([
+      management.places.get(placeId),
+      eventsApi.publicWatch(),
+    ]);
     setPlace(row);
     setEvents(eventPage.items.filter((event) => event.placeId === placeId));
   }
@@ -246,8 +258,12 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
         <div className="place-detail-hero__media">
           {place.imageUrl ? <img src={place.imageUrl} alt={place.name} /> : <span>HOOMA</span>}
           {selectedEvent ? (
-            <span className={`place-venue-badge place-venue-badge--${selectedEvent.venueAuthority === "OFFICIAL_VENUE" ? "official" : "community"}`}>
-              {selectedEvent.venueAuthority === "OFFICIAL_VENUE" ? "OFFICIAL VENUE" : "SUGGESTED BY COMMUNITY"}
+            <span
+              className={`place-venue-badge place-venue-badge--${selectedEvent.venueAuthority === "OFFICIAL_VENUE" ? "official" : "community"}`}
+            >
+              {selectedEvent.venueAuthority === "OFFICIAL_VENUE"
+                ? "OFFICIAL VENUE"
+                : "SUGGESTED BY COMMUNITY"}
             </span>
           ) : null}
         </div>
@@ -255,13 +271,19 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
         <div className="place-detail-hero__copy">
           {place.category ? <p className="place-detail-category">{place.category}</p> : null}
           <h1>{place.name}</h1>
-          <p className="place-detail-description">{place.description || "Watch together at this HOOMA Place."}</p>
+          <p className="place-detail-description">
+            {place.description || "Watch together at this HOOMA Place."}
+          </p>
 
           {selectedEvent && selectedDate ? (
             <div className="place-event-summary">
-              <span><UsersIcon /> <strong>{selectedEvent._count.rsvps}</strong> going</span>
+              <span>
+                <UsersIcon /> <strong>{selectedEvent._count.rsvps}</strong> going
+              </span>
               <span className="place-event-summary__divider" aria-hidden="true" />
-              <span><CalendarIcon /> {selectedDate.date} · {selectedDate.time}</span>
+              <span>
+                <CalendarIcon /> {selectedDate.date} · {selectedDate.time}
+              </span>
             </div>
           ) : null}
 
@@ -270,25 +292,51 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
               {rsvp === "ATTENDED" ? (
                 <div className="place-watch-action place-watch-action--joined">Checked in</div>
               ) : isGoing ? (
-                <button type="button" className="place-watch-action place-watch-action--primary" disabled={actionPending} onClick={() => void leaveSelectedEvent()}>
+                <button
+                  type="button"
+                  className="place-watch-action place-watch-action--primary"
+                  disabled={actionPending}
+                  onClick={() => void leaveSelectedEvent()}
+                >
                   <UserPlusIcon />
-                  {actionPending ? "Updating…" : rsvp === "WAITLISTED" ? "Leave waitlist" : "Cancel RSVP"}
+                  {actionPending
+                    ? "Updating…"
+                    : rsvp === "WAITLISTED"
+                      ? "Leave waitlist"
+                      : "Cancel RSVP"}
                 </button>
               ) : eventOpen ? (
-                <button type="button" className="place-watch-action place-watch-action--primary" disabled={actionPending || participationLoading} onClick={() => void joinSelectedEvent()}>
+                <button
+                  type="button"
+                  className="place-watch-action place-watch-action--primary"
+                  disabled={actionPending || participationLoading}
+                  onClick={() => void joinSelectedEvent()}
+                >
                   <UserPlusIcon />
                   {actionPending ? "Joining…" : "Join event"}
                 </button>
               ) : null}
-              <button type="button" className="place-watch-action place-watch-action--secondary" onClick={() => void shareSelectedEvent()}>
+              <button
+                type="button"
+                className="place-watch-action place-watch-action--secondary"
+                onClick={() => void shareSelectedEvent()}
+              >
                 <ShareIcon />
                 Share event
               </button>
             </div>
           ) : (
             <div className="place-detail-secondary-links">
-              {place.phone ? <a href={`tel:${place.phone}`}><PhoneIcon size={18} /> Call</a> : null}
-              {place.websiteUrl ? <a href={place.websiteUrl} target="_blank" rel="noreferrer">Website</a> : null}
+              {place.phone ? (
+                <a href={`tel:${place.phone}`}>
+                  <PhoneIcon size={18} /> Call
+                </a>
+              ) : null}
+              {place.websiteUrl ? (
+                <a href={place.websiteUrl} target="_blank" rel="noreferrer">
+                  Website
+                </a>
+              ) : null}
             </div>
           )}
         </div>
@@ -296,21 +344,44 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
 
       <div className="place-info-grid">
         <article>
-          <div className="place-info-card__heading"><PinIcon /><span>Address</span></div>
+          <div className="place-info-card__heading">
+            <PinIcon />
+            <span>Address</span>
+          </div>
           <strong>{place.address}</strong>
         </article>
         <article>
-          <div className="place-info-card__heading"><PinIcon /><span>Houma</span></div>
+          <div className="place-info-card__heading">
+            <PinIcon />
+            <span>Houma</span>
+          </div>
           <strong>{place.houma || "—"}</strong>
-          <a className="place-info-card__action" href={mapHref(place)} target="_blank" rel="noreferrer">View on map</a>
+          <a
+            className="place-info-card__action"
+            href={mapHref(place)}
+            target="_blank"
+            rel="noreferrer"
+          >
+            View on map
+          </a>
         </article>
         <article>
-          <div className="place-info-card__heading"><PhoneIcon /><span>Contact</span></div>
+          <div className="place-info-card__heading">
+            <PhoneIcon />
+            <span>Contact</span>
+          </div>
           <strong>{place.phone || place.email || "—"}</strong>
-          {place.phone ? <a className="place-info-card__action" href={`tel:${place.phone}`}><PhoneIcon size={16} /> Call</a> : null}
+          {place.phone ? (
+            <a className="place-info-card__action" href={`tel:${place.phone}`}>
+              <PhoneIcon size={16} /> Call
+            </a>
+          ) : null}
         </article>
         <article>
-          <div className="place-info-card__heading"><InfoIcon /><span>About</span></div>
+          <div className="place-info-card__heading">
+            <InfoIcon />
+            <span>About</span>
+          </div>
           <strong>{place.description || "—"}</strong>
         </article>
       </div>
@@ -318,7 +389,9 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
       {place.menuItems.length ? (
         <section className="place-menu-section" id="place-menu">
           <div className="place-section-heading">
-            <h2><MenuIcon /> Menu</h2>
+            <h2>
+              <MenuIcon /> Menu
+            </h2>
             {place.menuItems.length > 5 ? (
               <button type="button" onClick={() => setMenuExpanded((value) => !value)}>
                 {menuExpanded ? "Show less" : "View full menu"}
@@ -332,7 +405,9 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
                 <MenuIcon size={22} />
                 <div>
                   <strong>{item.name}</strong>
-                  <span>{item.price} {item.currency}</span>
+                  <span>
+                    {item.price} {item.currency}
+                  </span>
                 </div>
               </article>
             ))}
@@ -342,7 +417,9 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
 
       <section className="place-events-section">
         <div className="place-section-heading">
-          <h2><CalendarIcon /> Upcoming watch events at this place</h2>
+          <h2>
+            <CalendarIcon /> Upcoming watch events at this place
+          </h2>
           {events.length > 2 ? (
             <button type="button" onClick={() => setEventsExpanded((value) => !value)}>
               {eventsExpanded ? "Show less" : "View all"}
@@ -355,7 +432,10 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
             const date = eventDateParts(event);
             return (
               <a className="place-event-row" key={event.id} href={`/events/${event.id}`}>
-                <span className="place-event-row__date"><small>{date.month}</small><strong>{date.day}</strong></span>
+                <span className="place-event-row__date">
+                  <small>{date.month}</small>
+                  <strong>{date.day}</strong>
+                </span>
                 <EventTeamMarks event={event} />
                 <span className="place-event-row__match">
                   <strong>{event.title}</strong>
@@ -367,7 +447,10 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
                     </span>
                   ) : null}
                 </span>
-                <span className="place-event-row__attendance"><UsersIcon size={18} /><strong>{event._count.rsvps}</strong> going</span>
+                <span className="place-event-row__attendance">
+                  <UsersIcon size={18} />
+                  <strong>{event._count.rsvps}</strong> going
+                </span>
                 <span className="place-event-row__time">{date.time}</span>
                 <ChevronRightIcon className="place-event-row__chevron" />
               </a>
@@ -381,7 +464,9 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
         <details className="place-owner-tools">
           <summary>Place management</summary>
           <div>
-            <a href={`/places/${place.id}/edit`}><EditIcon size={16} /> Edit Place</a>
+            <a href={`/places/${place.id}/edit`}>
+              <EditIcon size={16} /> Edit Place
+            </a>
             <button type="button" disabled={deleting} onClick={() => void deletePlace()}>
               {deleting ? "Deleting…" : "Delete Place"}
             </button>
@@ -389,7 +474,11 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
         </details>
       ) : (
         <section className="place-claim-section">
-          <button type="button" className="place-claim-toggle" onClick={() => setClaimOpen((value) => !value)}>
+          <button
+            type="button"
+            className="place-claim-toggle"
+            onClick={() => setClaimOpen((value) => !value)}
+          >
             Own/manage this place?
           </button>
           {claimOpen ? (
