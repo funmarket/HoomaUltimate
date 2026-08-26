@@ -72,7 +72,7 @@ test("Place detail uses the shared HOOMA icon source and rich Watch presentation
   assert.match(detail, /place-info-card__action/);
   assert.match(detail, /View on map/);
   assert.match(detail, /View full menu/);
-  assert.match(detail, /Upcoming watch events at this place/);
+  assert.match(detail, /Upcoming Watch events at this place/);
   assert.match(detail, /place-event-row__date/);
 
   assert.match(css, /\.place-watch-action--primary/);
@@ -88,9 +88,10 @@ test("Upcoming Place events show one colored fitted matchup instead of a duplica
   const css = source("packages/frontend/src/places/places.css");
 
   assert.match(detail, /const details = event\.watchDetails/);
+  assert.match(detail, /const match = details\?\.kind === "MATCH" \? details : null/);
   assert.match(detail, /className="place-event-row__matchup"/);
-  assert.match(detail, /text=\{details\.teamOneName\}/);
-  assert.match(detail, /text=\{details\.teamTwoName\}/);
+  assert.match(detail, /text=\{match\.teamOneName\}/);
+  assert.match(detail, /text=\{match\.teamTwoName\}/);
   assert.match(detail, /className="place-event-row__legacy-title"/);
   assert.doesNotMatch(detail, /<strong>\{event\.title\}<\/strong>/);
   assert.match(css, /\.place-event-row__team-name--one\s*\{[\s\S]*?color:\s*#4f91e8/);
