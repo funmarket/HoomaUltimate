@@ -1,5 +1,5 @@
-import { WATCH_COLLECTOR_TICKET_MASTER } from "@hooma/ui";
 import type { PublicEvent } from "../events/api";
+import { CalendarIcon, PinIcon, UsersIcon } from "../ui/HoomaIcons";
 
 export type WatchTicketVariant = "feed" | "place-detail";
 
@@ -55,6 +55,7 @@ export function WatchTicket({
   const { date, time } = eventDateParts(event);
   const place = event.place;
   if (!place) return null;
+
   const location =
     [place.city, place.houma ? `Houma: ${place.houma}` : null].filter(Boolean).join(", ") ||
     place.address;
@@ -62,23 +63,84 @@ export function WatchTicket({
     event.venueAuthority === "OFFICIAL_VENUE" ? "OFFICIAL VENUE" : "SUGGESTED BY COMMUNITY";
   const placeHref = `/places/${place.id}?eventId=${encodeURIComponent(event.id)}`;
   const matchup = event.watchDetails;
-  const detailVariant = variant === "place-detail";
+  const feedVariant = variant === "feed";
 
   return (
     <article
       className={`watch-ticket watch-ticket--${variant}`}
       aria-label={`${event.title}, ${place.name}, ${date} at ${time}`}
     >
-      <img
-        className="watch-ticket__master"
-        src={WATCH_COLLECTOR_TICKET_MASTER.src}
-        width={WATCH_COLLECTOR_TICKET_MASTER.width}
-        height={WATCH_COLLECTOR_TICKET_MASTER.height}
-        alt=""
-        aria-hidden="true"
-      />
-      {!detailVariant ? (
-        <a className="watch-ticket__place-photo" href={placeHref} aria-label={`Open ${place.name}`}>
+      <section className="watch-ticket__upper">
+        <div className="watch-ticket__paper">
+          <header className="watch-ticket__series" aria-label="Collector Series">
+            <span aria-hidden="true">★ ★</span>
+            <strong>COLLECTOR SERIES</strong>
+            <span aria-hidden="true">★ ★</span>
+          </header>
+
+          <a className="watch-ticket__matchup" href={`/events/${event.id}`} title={event.title}>
+            {matchup ? (
+              <>
+                <TeamMark name={matchup.teamOneName} logoUrl={matchup.teamOneLogoUrl} />
+                <span className="watch-ticket__matchup-title">
+                  <strong className="watch-ticket__team-name watch-ticket__team-name--one">
+                    {matchup.teamOneName}
+                  </strong>
+                  <small>VS</small>
+                  <strong className="watch-ticket__team-name watch-ticket__team-name--two">
+                    {matchup.teamTwoName}
+                  </strong>
+                </span>
+                <TeamMark name={matchup.teamTwoName} logoUrl={matchup.teamTwoLogoUrl} />
+              </>
+            ) : (
+              <span className="watch-ticket__matchup-title watch-ticket__matchup-title--legacy">
+                <strong>{event.title}</strong>
+              </span>
+            )}
+          </a>
+
+          <div className="watch-ticket__divider" aria-hidden="true" />
+
+          <div className="watch-ticket__details">
+            <a className="watch-ticket__detail watch-ticket__venue" href={placeHref} title={place.name}>
+              <PinIcon className="watch-ticket__detail-icon" />
+              <span className="watch-ticket__detail-copy">
+                <strong>{place.name}</strong>
+                <span>{location}</span>
+              </span>
+            </a>
+
+            <div className="watch-ticket__detail watch-ticket__date">
+              <CalendarIcon className="watch-ticket__detail-icon" />
+              <span className="watch-ticket__detail-copy">
+                <strong>{date}</strong>
+                <span>{time}</span>
+              </span>
+            </div>
+
+            <div className="watch-ticket__detail watch-ticket__attendance">
+              <UsersIcon className="watch-ticket__detail-icon" />
+              <span className="watch-ticket__detail-copy">
+                <strong>
+                  {event._count.rsvps} <small>going</small>
+                </strong>
+                <span className="watch-ticket__status">{status}</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <a className="watch-ticket__stub" href={`/events/${event.id}`} aria-label={`Open ${event.title}`}>
+          <span className="watch-ticket__stub-ball" aria-hidden="true">
+            ⚽
+          </span>
+          <strong>HOOMA</strong>
+        </a>
+      </section>
+
+      {feedVariant ? (
+        <a className="watch-ticket__photo-panel" href={placeHref} aria-label={`Open ${place.name}`}>
           {place.imageUrl ? (
             <img src={place.imageUrl} alt={place.name} />
           ) : (
@@ -86,49 +148,6 @@ export function WatchTicket({
           )}
         </a>
       ) : null}
-      <span className="watch-ticket__series">COLLECTOR SERIES</span>
-      <a className="watch-ticket__matchup" href={`/events/${event.id}`} title={event.title}>
-        {matchup ? (
-          <>
-            <TeamMark name={matchup.teamOneName} logoUrl={matchup.teamOneLogoUrl} />
-            <span className="watch-ticket__matchup-title">
-              <strong className="watch-ticket__team-name watch-ticket__team-name--one">
-                {matchup.teamOneName}
-              </strong>
-              <small>VS</small>
-              <strong className="watch-ticket__team-name watch-ticket__team-name--two">
-                {matchup.teamTwoName}
-              </strong>
-            </span>
-            <TeamMark name={matchup.teamTwoName} logoUrl={matchup.teamTwoLogoUrl} />
-          </>
-        ) : (
-          <span className="watch-ticket__matchup-title watch-ticket__matchup-title--legacy">
-            <strong>{event.title}</strong>
-          </span>
-        )}
-      </a>
-      <a className="watch-ticket__venue" href={placeHref} title={place.name}>
-        <strong>{place.name}</strong>
-        <span>{location}</span>
-      </a>
-      <div className="watch-ticket__date">
-        <strong>{date}</strong>
-        <span>{time}</span>
-      </div>
-      <div className="watch-ticket__going">
-        <strong>{event._count.rsvps}</strong>
-        <span>going</span>
-      </div>
-      <span className="watch-ticket__status">{status}</span>
-      <a
-        className="watch-ticket__stub"
-        href={`/events/${event.id}`}
-        aria-label={`Open ${event.title}`}
-      >
-        <strong>{event.title}</strong>
-        <span>{date}</span>
-      </a>
     </article>
   );
 }
