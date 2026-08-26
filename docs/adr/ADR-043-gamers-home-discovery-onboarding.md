@@ -15,7 +15,7 @@ GAMERS | CHALLENGERS | GAME CATALOG
 
 The homepage consumes one Gamers-domain cross-game discovery query. It must not fetch the game catalog and fan out one Challenger request per game.
 
-The same `GamerHudCard` component is reused by global discovery and individual game hubs. A second Gamer-card implementation is not permitted.
+The same `GamerHudCard` component is reused by global discovery and individual game hubs. A second Gamer-card implementation is not permitted. Challenge remains the primary HUD action; direct Whistle remains the secondary transient action on the same shared card.
 
 ## Canonical Gamer enrollment
 
