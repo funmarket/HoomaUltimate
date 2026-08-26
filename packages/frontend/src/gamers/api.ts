@@ -17,7 +17,11 @@ export function createGamersApi(transport: HoomaTransport) {
   return {
     games: () => request<GamerGameList>(transport, "/api/public/v1/gamers/games"),
     discovery: () => request<GamerDiscoveryList>(transport, "/api/public/v1/gamers/discovery"),
-    arena: () => request<GamerArenaMatchList>(transport, "/api/public/v1/gamers/arena"),
+    arena: (cursor?: string) =>
+      request<GamerArenaMatchList>(
+        transport,
+        `/api/public/v1/gamers/arena${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}`,
+      ),
     game: (slug: string) =>
       request<GamerGame>(transport, `/api/public/v1/gamers/games/${encodeURIComponent(slug)}`),
     addGame: (input: GamerGameCreateInput) =>
