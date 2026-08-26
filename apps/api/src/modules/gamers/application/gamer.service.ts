@@ -21,6 +21,10 @@ export class GamerService {
     return this.profiles.listDiscoverable();
   }
 
+  listArenaMatches() {
+    return this.challenges.listAcceptedAcrossActiveGames();
+  }
+
   async getGame(slug: string) {
     const game = await this.games.getActive(slug);
     if (!game) throw new AppError(404, "GAMER_GAME_NOT_FOUND", "Game not found");
