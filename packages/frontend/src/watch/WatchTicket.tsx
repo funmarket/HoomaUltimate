@@ -1,14 +1,12 @@
 import type { PublicEvent } from "../events/api";
 import { FitSingleLineText } from "../ui/FitSingleLineText";
-import { CalendarIcon, PinIcon, UsersIcon } from "../ui/HoomaIcons";
+import { PinIcon, UsersIcon } from "../ui/HoomaIcons";
 
 export type WatchTicketVariant = "feed" | "place-detail";
 
 type EventDateParts = {
   readonly date: string;
   readonly time: string;
-  readonly day: string;
-  readonly month: string;
 };
 
 function eventDateParts(event: PublicEvent): EventDateParts {
@@ -32,8 +30,6 @@ function eventDateParts(event: PublicEvent): EventDateParts {
     return {
       date: `${weekday}, ${month[0]}${month.slice(1).toLowerCase()} ${day}`,
       time,
-      day,
-      month,
     };
   } catch {
     const day = String(startsAt.getDate()).padStart(2, "0");
@@ -45,8 +41,6 @@ function eventDateParts(event: PublicEvent): EventDateParts {
     return {
       date: `${weekday}, ${month[0]}${month.slice(1).toLowerCase()} ${day}`,
       time: startsAt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }),
-      day,
-      month,
     };
   }
 }
@@ -72,7 +66,7 @@ export function WatchTicket({
   readonly event: PublicEvent;
   readonly variant?: WatchTicketVariant;
 }) {
-  const { date, time, day, month } = eventDateParts(event);
+  const { date, time } = eventDateParts(event);
   const place = event.place;
   if (!place) return null;
 
@@ -147,9 +141,13 @@ export function WatchTicket({
             </a>
 
             <div className="watch-ticket__detail watch-ticket__date">
-              <CalendarIcon className="watch-ticket__detail-icon" />
               <span className="watch-ticket__detail-copy">
-                <strong>{date}</strong>
+                <FitSingleLineText
+                  className="watch-ticket__date-text"
+                  text={date}
+                  minFontSize={10}
+                  maxFontSize={27}
+                />
                 <span>{time}</span>
               </span>
             </div>
@@ -169,13 +167,9 @@ export function WatchTicket({
         <a
           className="watch-ticket__stub"
           href={`/events/${event.id}`}
-          aria-label={`Open ${event.title}, ${day} ${month}`}
+          aria-label={`Open ${event.title}, ${date} at ${time}`}
         >
           <img className="watch-ticket__stub-logo" src="/brand/hooma-watch-stub.webp" alt="" />
-          <span className="watch-ticket__stub-date" aria-hidden="true">
-            <strong>{day}</strong>
-            <small>{month}</small>
-          </span>
         </a>
       </section>
 
