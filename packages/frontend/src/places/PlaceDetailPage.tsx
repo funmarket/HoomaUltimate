@@ -61,10 +61,7 @@ function eventDateParts(event: PublicEvent): {
       }),
       time: startsAt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }),
       day: String(startsAt.getDate()).padStart(2, "0"),
-      month: startsAt
-        .toLocaleDateString("en-US", { month: "short" })
-        .slice(0, 3)
-        .toUpperCase(),
+      month: startsAt.toLocaleDateString("en-US", { month: "short" }).slice(0, 3).toUpperCase(),
     };
   }
 }
