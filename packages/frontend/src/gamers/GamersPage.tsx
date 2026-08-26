@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import type { MeResponse } from "@hooma/contracts";
-import type {
-  GamerArenaMatch,
-  GamerDiscoveryItem,
-  GamerGame,
-} from "@hooma/contracts/gamers";
+import type { GamerArenaMatch, GamerDiscoveryItem, GamerGame } from "@hooma/contracts/gamers";
 import type { ProfileResponse } from "@hooma/contracts/profile";
 import { useHoomaFrontend } from "../context";
 import { createGamersApi } from "./api";
