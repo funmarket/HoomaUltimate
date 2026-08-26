@@ -5,8 +5,12 @@ import test from "node:test";
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
 function cssRule(css, selector) {
-  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return css.match(new RegExp(`${escaped} \\{([\\s\\S]*?)\\n\\}`))?.[1] ?? "";
+  const marker = `${selector} {`;
+  const start = css.lastIndexOf(marker);
+  if (start < 0) return "";
+  const bodyStart = start + marker.length;
+  const bodyEnd = css.indexOf("\n}", bodyStart);
+  return bodyEnd < 0 ? "" : css.slice(bodyStart, bodyEnd);
 }
 
 test("Watch ticket keeps Place photo vertically inside corrected master rails", () => {

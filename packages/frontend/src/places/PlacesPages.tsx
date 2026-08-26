@@ -1,15 +1,14 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type {
   PublicPlaceCapability,
   PublicPlaceSummary,
 } from "@hooma/contracts/platform-management";
 import { useHoomaFrontend } from "../context";
-import { HoomaApiError } from "../http";
-import { createEventApi, type PublicEvent } from "../events/api";
-import { WatchTicket } from "../watch/WatchTicket";
 import { PlaceCapabilityOnboarding } from "./PlaceCapabilityOnboarding";
 import { PlaceForm } from "./PlaceForm";
 import { createPlatformManagementApi } from "./platform-management-api";
+
+export { PlaceDetailPage } from "./PlaceDetailPage";
 
 function locationLabel(place: PublicPlaceSummary): string {
   return [place.houma, place.city].filter(Boolean).join(" · ") || place.address;
@@ -114,199 +113,6 @@ export function AddPlacePage() {
         </div>
       </header>
       <PlaceForm submitLabel="Submit Place" pending={pending} onSubmit={submit} />
-      {error ? <p className="error">{error}</p> : null}
-    </section>
-  );
-}
-
-export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
-  const { transport, protectedError } = useHoomaFrontend();
-  const management = useMemo(() => createPlatformManagementApi(transport), [transport]);
-  const eventsApi = useMemo(() => createEventApi(transport), [transport]);
-  const [place, setPlace] = useState<PublicPlaceSummary | null>(null);
-  const [events, setEvents] = useState<PublicEvent[]>([]);
-  const [canManage, setCanManage] = useState(false);
-  const [claimOpen, setClaimOpen] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-  const [deleting, setDeleting] = useState(false);
-  const selectedEventId = new URLSearchParams(window.location.search).get("eventId");
-
-  useEffect(() => {
-    void Promise.all([management.places.get(placeId), eventsApi.publicWatch()])
-      .then(([row, eventPage]) => {
-        setPlace(row);
-        setEvents(eventPage.items.filter((event) => event.placeId === placeId));
-      })
-      .catch((reason) =>
-        setError(reason instanceof Error ? reason.message : "Unable to load Place"),
-      );
-    void management.places
-      .manage(placeId)
-      .then(() => setCanManage(true))
-      .catch((reason) => {
-        if (reason instanceof HoomaApiError && [401, 403].includes(reason.status)) return;
-      });
-  }, [eventsApi, management, placeId]);
-
-  async function claim(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    setError("");
-    setMessage("");
-    try {
-      await management.places.claimOwnership(placeId, {
-        evidence: String(data.get("evidence") ?? ""),
-      });
-      setMessage("Ownership claim submitted to the App Admin.");
-      setClaimOpen(false);
-    } catch (reason) {
-      setError(protectedError(reason, "Unable to submit ownership claim"));
-    }
-  }
-
-  async function deletePlace() {
-    if (deleting || !place) return;
-    if (
-      !window.confirm(
-        `Delete ${place.name}? It will disappear from active Places and Watch surfaces while historical records are preserved.`,
-      )
-    )
-      return;
-    setDeleting(true);
-    setError("");
-    try {
-      await management.places.archive(placeId);
-      window.location.href = "/places";
-    } catch (reason) {
-      setError(protectedError(reason, "Unable to delete Place"));
-      setDeleting(false);
-    }
-  }
-
-  if (!place)
-    return error ? <p className="error">{error}</p> : <p className="status">Loading Place…</p>;
-
-  const selectedEvent = selectedEventId
-    ? (events.find((event) => event.id === selectedEventId) ?? null)
-    : null;
-
-  return (
-    <section className="place-detail-page">
-      <a className="place-back-link" href="/watch">
-        ← Watch
-      </a>
-      {selectedEvent ? <WatchTicket event={selectedEvent} /> : null}
-      <div className="place-detail-hero">
-        <div className="place-detail-hero__media">
-          {place.imageUrl ? <img src={place.imageUrl} alt={place.name} /> : <span>HOOMA</span>}
-        </div>
-        <div className="place-detail-hero__copy">
-          {place.category ? <p className="eyebrow">{place.category}</p> : null}
-          <h1>{place.name}</h1>
-          <p>{place.description || "Watch together at this HOOMA Place."}</p>
-          <div className="place-detail-actions">
-            {place.phone ? <a href={`tel:${place.phone}`}>Call</a> : null}
-            {place.websiteUrl ? (
-              <a href={place.websiteUrl} target="_blank" rel="noreferrer">
-                Website
-              </a>
-            ) : null}
-            {canManage ? <a href={`/places/${place.id}/edit`}>Edit Place</a> : null}
-          </div>
-        </div>
-      </div>
-      <div className="place-info-grid">
-        <article>
-          <span>Address</span>
-          <strong>{place.address}</strong>
-        </article>
-        <article>
-          <span>Houma</span>
-          <strong>{place.houma || "—"}</strong>
-        </article>
-        <article>
-          <span>Contact</span>
-          <strong>{place.phone || place.email || "—"}</strong>
-        </article>
-        <article>
-          <span>About</span>
-          <strong>{place.description || "—"}</strong>
-        </article>
-      </div>
-
-      {place.menuItems.length ? (
-        <section className="place-menu-section">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">MENU</p>
-              <h2>Menu</h2>
-            </div>
-          </div>
-          <div className="place-menu-preview">
-            {place.menuItems.map((item) => (
-              <article key={item.id}>
-                <strong>{item.name}</strong>
-                <span>
-                  {item.price} {item.currency}
-                </span>
-              </article>
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      <section className="place-events-section">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">WATCH</p>
-            <h2>Upcoming watch events at this place</h2>
-          </div>
-          <span>{events.length}</span>
-        </div>
-        <div className="place-event-list">
-          {events.map((event) => (
-            <a key={event.id} href={`/events/${event.id}`}>
-              <strong>{event.title}</strong>
-              <span>
-                {new Date(event.startsAt).toLocaleString()} · {event._count.rsvps} going
-              </span>
-            </a>
-          ))}
-          {!events.length ? <p className="muted">No upcoming Watch events yet.</p> : null}
-        </div>
-      </section>
-
-      {canManage ? (
-        <section className="entity-danger-zone place-danger-zone">
-          <p className="eyebrow">PLACE MANAGEMENT</p>
-          <h3>Delete Place</h3>
-          <p>Remove this Place from active discovery while preserving historical event records.</p>
-          <button type="button" disabled={deleting} onClick={() => void deletePlace()}>
-            {deleting ? "Deleting…" : "Delete Place"}
-          </button>
-        </section>
-      ) : (
-        <section className="place-claim-section">
-          <button
-            type="button"
-            className="place-claim-toggle"
-            onClick={() => setClaimOpen((value) => !value)}
-          >
-            Own/manage this place?
-          </button>
-          {claimOpen ? (
-            <form className="panel place-claim-form" onSubmit={(event) => void claim(event)}>
-              <label>
-                Ownership or management evidence
-                <textarea name="evidence" minLength={10} required />
-              </label>
-              <button type="submit">Submit ownership claim</button>
-            </form>
-          ) : null}
-        </section>
-      )}
-      {message ? <p className="status">{message}</p> : null}
       {error ? <p className="error">{error}</p> : null}
     </section>
   );

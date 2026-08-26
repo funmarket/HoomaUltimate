@@ -116,7 +116,7 @@ test("Watch collector ticket aligns media and matchup to the corrected master sa
   const watch = source("packages/frontend/src/watch/WatchPage.tsx");
   const ticket = source("packages/frontend/src/watch/WatchTicket.tsx");
   const ticketCss = source("packages/frontend/src/watch/watch.css");
-  const places = source("packages/frontend/src/places/PlacesPages.tsx");
+  const placeDetail = source("packages/frontend/src/places/PlaceDetailPage.tsx");
 
   assert.match(watch, /import \{ WatchTicket \} from "\.\/WatchTicket"/);
   assert.match(ticket, /WATCH_COLLECTOR_TICKET_MASTER/);
@@ -128,10 +128,10 @@ test("Watch collector ticket aligns media and matchup to the corrected master sa
   assert.match(ticketCss, /\.watch-ticket \{[\s\S]*?aspect-ratio:\s*1672 \/ 941/);
 
   const photoRule = ticketCss.match(/\.watch-ticket__place-photo \{([\s\S]*?)\n\}/)?.[1] ?? "";
-  assert.match(photoRule, /top:\s*5\.2%/);
+  assert.match(photoRule, /top:\s*8\.1%/);
   assert.match(photoRule, /left:\s*4\.5%/);
   assert.match(photoRule, /width:\s*25\.5%/);
-  assert.match(photoRule, /height:\s*84\.2%/);
+  assert.match(photoRule, /height:\s*82%/);
   assert.match(ticketCss, /\.watch-ticket__place-photo img \{[\s\S]*?object-fit:\s*cover/);
   assert.match(ticketCss, /\.watch-ticket__place-photo img \{[\s\S]*?object-position:\s*center/);
 
@@ -162,7 +162,7 @@ test("Watch collector ticket aligns media and matchup to the corrected master sa
   assert.doesNotMatch(teamNameRule, /text-overflow:\s*ellipsis/);
 
   assert.match(ticket, /\/places\/\$\{place\.id\}\?eventId=/);
-  assert.match(places, /<WatchTicket event=\{selectedEvent\} \/>/);
+  assert.match(placeDetail, /<WatchTicket event=\{selectedEvent\} \/>/);
 });
 
 test("archived Places stay off public Place and Watch discovery", () => {
