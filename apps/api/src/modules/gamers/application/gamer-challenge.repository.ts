@@ -31,6 +31,11 @@ export type GamerArenaMatchRecord = {
   challenged: GamerChallengeParticipant;
 };
 
+export type GamerArenaMatchPage = {
+  items: GamerArenaMatchRecord[];
+  nextCursor: string | null;
+};
+
 export type GamerChallengeAccessRecord = {
   record: GamerChallengeRecord;
   challengerUserId: string;
@@ -46,7 +51,10 @@ export interface GamerChallengeRepository {
   }): Promise<GamerChallengeRecord | null>;
   getAccessRecord(challengeId: string): Promise<GamerChallengeAccessRecord | null>;
   listForUserAndGame(userId: string, gameId: string): Promise<GamerChallengeRecord[]>;
-  listAcceptedAcrossActiveGames(): Promise<GamerArenaMatchRecord[]>;
+  listAcceptedAcrossActiveGames(input: {
+    cursor?: string;
+    limit: number;
+  }): Promise<GamerArenaMatchPage>;
   acceptForChallengedUser(
     challengeId: string,
     userId: string,
