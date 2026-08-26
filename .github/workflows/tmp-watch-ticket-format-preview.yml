@@ -1,0 +1,37 @@
+name: Temporary Watch ticket formatter preview
+
+on:
+  push:
+    branches:
+      - fix/watch-ticket-information-photo-stack
+
+permissions:
+  contents: read
+
+jobs:
+  format-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - name: Format changed files without mutating repository
+        run: |
+          npx prettier --write packages/frontend/src/watch/WatchTicket.tsx packages/frontend/src/watch/watch.css tests/watch-canonical-place-structure.test.mjs tests/watch-ticket-final-presentation.test.mjs
+      - name: Print exact formatted files
+        run: |
+          for file in \
+            packages/frontend/src/watch/WatchTicket.tsx \
+            packages/frontend/src/watch/watch.css \
+            tests/watch-canonical-place-structure.test.mjs \
+            tests/watch-ticket-final-presentation.test.mjs
+          do
+            echo "FORMAT_FILE_BEGIN:$file"
+            base64 -w 0 "$file"
+            echo
+            echo "FORMAT_FILE_END:$file"
+          done
