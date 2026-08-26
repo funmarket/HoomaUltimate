@@ -1,12 +1,6 @@
 import { Router } from "express";
-import {
-  appManagerUpdateSchema,
-  moderationDecisionSchema,
-} from "@hooma/contracts/platform-management";
-import {
-  gamerDisputeResolutionInputSchema,
-  gamerMatchSideSchema,
-} from "@hooma/contracts/gamers";
+import { appManagerUpdateSchema, moderationDecisionSchema } from "@hooma/contracts/platform-management";
+import { gamerDisputeResolutionInputSchema, gamerMatchSideSchema } from "@hooma/contracts/gamers";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import type { GamerMatchService } from "../../gamers/application/gamer-match.service.js";
 import { getAuth } from "../../identity/http/auth-request.js";
