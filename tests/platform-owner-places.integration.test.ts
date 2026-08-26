@@ -45,7 +45,7 @@ function headers(cookie: string) {
   return { cookie, origin: config.WEB_ORIGIN, "content-type": "application/json" };
 }
 
-test("App Admin approves a submitted Place once, then its owner publishes Watch events directly", async () => {
+test("App Admin approves a Place once while its owner manages Place and Watch Event lifecycle", async () => {
   const container = createContainer(config);
   const app = createApp(config, container);
   const server = app.listen(0, "127.0.0.1");
@@ -121,14 +121,25 @@ test("App Admin approves a submitted Place once, then its owner publishes Watch 
         address: "1 Football Street",
         city: "Tunis",
         houma: "Centre",
+        latitude: null,
+        longitude: null,
         phone: "+21671000000",
         email: "venue@example.com",
         websiteUrl: "https://venue.example.com",
+        menuItems: [
+          { name: "Espresso", price: 4, currency: "TND" },
+          { name: "Pizza", price: 18, currency: "TND" },
+        ],
       }),
     });
     assert.equal(placeResponse.status, 201);
     const place = (await placeResponse.json()) as { id: string; status: string };
     assert.equal(place.status, "PENDING");
+
+    const pendingManage = await fetch(`${base}/api/v1/places/${place.id}/manage`, {
+      headers: headers(business.cookie),
+    });
+    assert.equal(pendingManage.status, 200);
 
     const beforeApproval = await fetch(`${base}/api/public/v1/places`);
     assert.equal(beforeApproval.status, 200);
@@ -160,12 +171,30 @@ test("App Admin approves a submitted Place once, then its owner publishes Watch 
       }),
     );
 
+    const updatePlace = await fetch(`${base}/api/v1/places/${place.id}`, {
+      method: "PATCH",
+      headers: headers(business.cookie),
+      body: JSON.stringify({
+        description: "Updated match-night venue",
+        menuItems: [
+          { name: "Espresso", price: 4, currency: "TND" },
+          { name: "Mint Tea", price: 4, currency: "TND" },
+          { name: "Pizza", price: 18, currency: "TND" },
+        ],
+      }),
+    });
+    assert.equal(updatePlace.status, 200);
+
     const publicPlace = await fetch(`${base}/api/public/v1/places/${place.id}`);
     assert.equal(publicPlace.status, 200);
     const approvedPlace = (await publicPlace.json()) as {
       id: string;
       imageUrl: string | null;
       category: string | null;
+      description: string | null;
+      latitude: number | null;
+      longitude: number | null;
+      menuItems: { name: string; price: number; currency: string }[];
     };
     assert.equal(approvedPlace.id, place.id);
     assert.equal(
@@ -173,6 +202,17 @@ test("App Admin approves a submitted Place once, then its owner publishes Watch 
       "https://images.example.com/venue/photo?id=123&size=large",
     );
     assert.equal(approvedPlace.category, "Sports café");
+    assert.equal(approvedPlace.description, "Updated match-night venue");
+    assert.equal(approvedPlace.latitude, null);
+    assert.equal(approvedPlace.longitude, null);
+    assert.deepEqual(
+      approvedPlace.menuItems.map(({ name, price, currency }) => ({ name, price, currency })),
+      [
+        { name: "Espresso", price: 4, currency: "TND" },
+        { name: "Mint Tea", price: 4, currency: "TND" },
+        { name: "Pizza", price: 18, currency: "TND" },
+      ],
+    );
 
     const startsAt = new Date(Date.now() + 86_400_000).toISOString();
     const watchResponse = await fetch(`${base}/api/v1/events`, {
@@ -182,23 +222,66 @@ test("App Admin approves a submitted Place once, then its owner publishes Watch 
         communityId: null,
         placeId: place.id,
         type: "WATCH",
-        title: `Derby night ${suffix}`,
+        title: "Esperance vs Club Africain",
         startsAt,
         timezone: "Africa/Tunis",
         waitlistEnabled: true,
         entryFeeMinor: 0,
         currency: "TND",
         play: null,
+        watch: {
+          teamOneName: "Esperance",
+          teamOneLogoUrl: "https://images.example.com/esperance",
+          teamTwoName: "Club Africain",
+          teamTwoLogoUrl: "https://images.example.com/club-africain?size=512",
+        },
       }),
     });
     assert.equal(watchResponse.status, 201);
     const watchEvent = (await watchResponse.json()) as {
       id: string;
+      title: string;
       placeId: string;
       venueAuthority: string;
+      watchDetails: {
+        teamOneName: string;
+        teamOneLogoUrl: string | null;
+        teamTwoName: string;
+        teamTwoLogoUrl: string | null;
+      };
     };
+    assert.equal(watchEvent.title, "Esperance vs Club Africain");
     assert.equal(watchEvent.placeId, place.id);
     assert.equal(watchEvent.venueAuthority, "OFFICIAL_VENUE");
+    assert.equal(watchEvent.watchDetails.teamOneName, "Esperance");
+    assert.equal(
+      watchEvent.watchDetails.teamTwoLogoUrl,
+      "https://images.example.com/club-africain?size=512",
+    );
+
+    const editWatch = await fetch(`${base}/api/v1/events/${watchEvent.id}`, {
+      method: "PATCH",
+      headers: headers(business.cookie),
+      body: JSON.stringify({
+        watch: {
+          teamOneName: "Esperance",
+          teamOneLogoUrl: "https://images.example.com/esperance-updated",
+          teamTwoName: "Etoile du Sahel",
+          teamTwoLogoUrl: "https://images.example.com/etoile",
+        },
+      }),
+    });
+    assert.equal(editWatch.status, 200);
+    const editedWatch = (await editWatch.json()) as {
+      title: string;
+      watchDetails: { teamTwoName: string; teamOneLogoUrl: string | null };
+    };
+    assert.equal(editedWatch.title, "Esperance vs Etoile du Sahel");
+    assert.equal(editedWatch.watchDetails.teamTwoName, "Etoile du Sahel");
+    assert.equal(
+      editedWatch.watchDetails.teamOneLogoUrl,
+      "https://images.example.com/esperance-updated",
+    );
 
     const publicWatch = await fetch(`${base}/api/public/v1/events?type=WATCH&limit=50`);
     assert.equal(publicWatch.status, 200);
@@ -242,6 +325,31 @@ test("App Admin approves a submitted Place once, then its owner publishes Watch 
       },
     );
     assert.equal(managerPitchDecision.status, 200);
+
+    const deleteEvent = await fetch(`${base}/api/v1/events/${watchEvent.id}/cancel`, {
+      method: "POST",
+      headers: headers(business.cookie),
+    });
+    assert.equal(deleteEvent.status, 200);
+    assert.equal(
+      (await db.event.findUniqueOrThrow({ where: { id: watchEvent.id } })).status,
+      "CANCELLED",
+    );
+    const afterEventDelete = (await (
+      await fetch(`${base}/api/public/v1/events?type=WATCH&limit=50`)
+    ).json()) as { items: { id: string }[] };
+    assert.equal(
+      afterEventDelete.items.some((item) => item.id === watchEvent.id),
+      false,
+    );
+
+    const deletePlace = await fetch(`${base}/api/v1/places/${place.id}`, {
+      method: "DELETE",
+      headers: headers(business.cookie),
+    });
+    assert.equal(deletePlace.status, 200);
+    assert.ok((await db.place.findUniqueOrThrow({ where: { id: place.id } })).archivedAt);
+    assert.equal((await fetch(`${base}/api/public/v1/places/${place.id}`)).status, 404);
 
     assert.ok(
       await db.auditLog.findFirst({

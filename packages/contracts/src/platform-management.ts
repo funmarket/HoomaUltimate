@@ -5,6 +5,12 @@ export const platformManagerCapabilitySchema = z.enum(["REVIEW_PITCH_APPLICATION
 export const moderationStatusSchema = z.enum(["PENDING", "APPROVED", "REJECTED"]);
 export const placeCapabilityKindSchema = z.literal("PITCH");
 
+export const placeMenuItemSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  price: z.number().min(0).max(1_000_000),
+  currency: z.string().trim().length(3).default("TND"),
+});
+
 export const placeSuggestionSchema = z.object({
   name: z.string().trim().min(2).max(160),
   address: z.string().trim().min(3).max(300),
@@ -18,7 +24,13 @@ export const placeSuggestionSchema = z.object({
   description: z.string().trim().max(2000).optional().nullable(),
   category: z.string().trim().max(120).optional().nullable(),
   email: z.string().trim().email().max(320).optional().nullable(),
+  menuItems: z.array(placeMenuItemSchema).max(20).optional().default([]),
 });
+
+export const placeUpdateSchema = placeSuggestionSchema
+  .omit({ menuItems: true })
+  .partial()
+  .extend({ menuItems: z.array(placeMenuItemSchema).max(20).optional() });
 
 export const placeOwnershipClaimSchema = z.object({
   evidence: z.string().trim().min(10).max(4000),
@@ -43,11 +55,20 @@ export const appManagerUpdateSchema = z.object({
 export type PlatformManagerCapability = z.infer<typeof platformManagerCapabilitySchema>;
 export type ModerationStatus = z.infer<typeof moderationStatusSchema>;
 export type PlaceCapabilityKind = z.infer<typeof placeCapabilityKindSchema>;
+export type PlaceMenuItemInput = z.infer<typeof placeMenuItemSchema>;
 export type PlaceSuggestionInput = z.infer<typeof placeSuggestionSchema>;
+export type PlaceUpdateInput = z.infer<typeof placeUpdateSchema>;
 export type PlaceOwnershipClaimInput = z.infer<typeof placeOwnershipClaimSchema>;
 export type PlaceCapabilityApplicationInput = z.infer<typeof placeCapabilityApplicationSchema>;
 export type ModerationDecisionInput = z.infer<typeof moderationDecisionSchema>;
 export type AppManagerUpdateInput = z.infer<typeof appManagerUpdateSchema>;
+
+export interface PublicPlaceMenuItem {
+  readonly id: string;
+  readonly name: string;
+  readonly price: number;
+  readonly currency: string;
+}
 
 export interface PublicPlaceSummary {
   readonly id: string;
@@ -64,6 +85,12 @@ export interface PublicPlaceSummary {
   readonly description: string | null;
   readonly category: string | null;
   readonly email: string | null;
+  readonly menuItems: readonly PublicPlaceMenuItem[];
+}
+
+export interface ManagedPlaceSummary extends PublicPlaceSummary {
+  readonly moderationStatus: ModerationStatus;
+  readonly archivedAt: string | null;
 }
 
 export interface PublicPlaceCapability {

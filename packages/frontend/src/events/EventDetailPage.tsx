@@ -79,6 +79,7 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
   const { protectedError } = useHoomaFrontend();
   const [event, setEvent] = useState<PublicEvent | null>(null);
   const [rsvp, setRsvp] = useState<ActiveRsvpState>(null);
+  const [canManage, setCanManage] = useState(false);
   const [participationLoading, setParticipationLoading] = useState(true);
   const [actionPending, setActionPending] = useState(false);
   const [status, setStatus] = useState("");
@@ -87,6 +88,12 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
   useEffect(() => {
     void reloadEvent();
     void reloadParticipation();
+    void eventApi
+      .manage(eventId)
+      .then(() => setCanManage(true))
+      .catch((reason) => {
+        if (reason instanceof HoomaApiError && [401, 403].includes(reason.status)) return;
+      });
   }, [eventApi, eventId]);
 
   async function reloadEvent() {
@@ -233,11 +240,21 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
           </div>
         )}
 
-        {isWatch && event.place ? (
-          <a className="play-event-primary-action" href={`/places/${event.place.id}`}>
-            View Place
-          </a>
-        ) : null}
+        <div className="play-event-card__management-actions">
+          {isWatch && event.place ? (
+            <a
+              className="play-event-primary-action"
+              href={`/places/${event.place.id}?eventId=${encodeURIComponent(event.id)}`}
+            >
+              View Place
+            </a>
+          ) : null}
+          {isWatch && canManage ? (
+            <a className="play-event-secondary-action" href={`/events/${event.id}/edit`}>
+              Edit Event
+            </a>
+          ) : null}
+        </div>
         {rsvpLabel ? <div className="play-event-rsvp-state">{rsvpLabel}</div> : null}
         {rsvp === "ATTENDED" ? (
           <div className="play-event-primary-action play-event-primary-action--static">

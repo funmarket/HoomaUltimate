@@ -54,7 +54,7 @@ test("Gamer discovery reuses one HUD card across homepage and game hub", async (
   assert.match(css, /\.gamer-card-portrait-panel\s*\{/);
   assert.match(css, /\.gamer-card-actions\s*\{/);
   assert.match(homeCss, /\.gamers-home-tabs\s*\{/);
-  assert.match(homeCss, /grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
+  assert.match(homeCss, /grid-template-columns:\s*repeat\(4, minmax\(0, 1fr\)\)/);
   assert.match(homeCss, /\.gamer-modal-backdrop\s*\{/);
   assert.match(homeCss, /\.gamer-setup-modal\s*\{/);
   assert.match(homeCss, /@media \(max-width: 500px\)/);

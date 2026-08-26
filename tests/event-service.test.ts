@@ -35,13 +35,19 @@ const watchInput: EventCreateInput = {
   communityId: null,
   placeId: "place-1",
   type: "WATCH",
-  title: "Derby night",
+  title: "Esperance vs Club Africain",
   startsAt: "2026-08-22T18:00:00.000Z",
   timezone: "Africa/Tunis",
   waitlistEnabled: true,
   entryFeeMinor: 0,
   currency: "TND",
   play: null,
+  watch: {
+    teamOneName: "Esperance",
+    teamOneLogoUrl: "https://images.example.com/esperance",
+    teamTwoName: "Club Africain",
+    teamTwoLogoUrl: "https://images.example.com/club-africain?size=512",
+  },
 };
 const playInput: EventCreateInput = {
   communityId: "community-1",
@@ -54,6 +60,7 @@ const playInput: EventCreateInput = {
   entryFeeMinor: 0,
   currency: "TND",
   play: { pitchType: "FIVE_A_SIDE", skillLevel: "MIXED", format: "FIVE_V_FIVE" },
+  watch: null,
 };
 
 function approvedPlaces(onGet?: (placeId: string) => void): PlaceService {

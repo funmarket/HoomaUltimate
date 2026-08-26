@@ -7,6 +7,7 @@ import {
   CreateEventPage,
   CreateHoomaPage,
   CreateTeamPage,
+  EditEventPage,
   EventChatPage,
   EventDetailPage,
   FormationBuilderPage,
@@ -18,6 +19,7 @@ import {
   HoomaPage,
   PitchPage,
   PlaceDetailPage,
+  PlaceEditPage,
   PlacesPage,
   PlayPage,
   TeamDetailPage,
@@ -99,9 +101,19 @@ function PlaceDetailRoute() {
   return <PlaceDetailPage placeId={requiredParam("placeId", placeId)} />;
 }
 
+function PlaceEditRoute() {
+  const { placeId } = useParams();
+  return <PlaceEditPage placeId={requiredParam("placeId", placeId)} />;
+}
+
 function EventDetailRoute() {
   const { eventId } = useParams();
   return <EventDetailPage eventId={requiredParam("eventId", eventId)} />;
+}
+
+function EventEditRoute() {
+  const { eventId } = useParams();
+  return <EditEventPage eventId={requiredParam("eventId", eventId)} />;
 }
 
 function EventFormationRoute() {
@@ -173,8 +185,10 @@ function HoomaRoutes() {
               <Route path="/pitch" element={<PitchPage />} />
               <Route path="/places" element={<PlacesPage />} />
               <Route path="/places/new" element={<AddPlacePage />} />
+              <Route path="/places/:placeId/edit" element={<PlaceEditRoute />} />
               <Route path="/places/:placeId" element={<PlaceDetailRoute />} />
               <Route path="/events/new" element={<CreateEventPage />} />
+              <Route path="/events/:eventId/edit" element={<EventEditRoute />} />
               <Route path="/events/:eventId" element={<EventDetailRoute />} />
               <Route path="/events/:eventId/formation" element={<EventFormationRoute />} />
               <Route path="/events/:eventId/chat" element={<EventChatRoute />} />

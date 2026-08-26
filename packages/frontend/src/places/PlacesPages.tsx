@@ -4,9 +4,11 @@ import type {
   PublicPlaceSummary,
 } from "@hooma/contracts/platform-management";
 import { useHoomaFrontend } from "../context";
+import { HoomaApiError } from "../http";
 import { createEventApi, type PublicEvent } from "../events/api";
 import { WatchTicket } from "../watch/WatchTicket";
 import { PlaceCapabilityOnboarding } from "./PlaceCapabilityOnboarding";
+import { PlaceForm } from "./PlaceForm";
 import { createPlatformManagementApi } from "./platform-management-api";
 
 function locationLabel(place: PublicPlaceSummary): string {
@@ -65,40 +67,23 @@ export function AddPlacePage() {
   const { transport, protectedError } = useHoomaFrontend();
   const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
   const [error, setError] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [submittedPlaceId, setSubmittedPlaceId] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const optionalNumber = (name: string) => {
-      const value = String(data.get(name) ?? "").trim();
-      return value ? Number(value) : null;
-    };
-    const optionalText = (name: string) => String(data.get(name) ?? "").trim() || null;
+  async function submit(input: Parameters<typeof api.places.suggest>[0]) {
+    setPending(true);
     setError("");
     try {
-      await api.places.suggest({
-        name: String(data.get("name") ?? ""),
-        category: optionalText("category"),
-        description: optionalText("description"),
-        imageUrl: optionalText("imageUrl"),
-        address: String(data.get("address") ?? ""),
-        city: optionalText("city"),
-        houma: optionalText("houma"),
-        latitude: optionalNumber("latitude"),
-        longitude: optionalNumber("longitude"),
-        phone: optionalText("phone"),
-        email: optionalText("email"),
-        websiteUrl: optionalText("websiteUrl"),
-      });
-      event.currentTarget.reset();
-      setSubmitted(true);
+      const created = await api.places.suggest(input);
+      setSubmittedPlaceId(created.id);
     } catch (reason) {
       setError(protectedError(reason, "Unable to submit Place"));
+    } finally {
+      setPending(false);
     }
   }
 
-  if (submitted) {
+  if (submittedPlaceId) {
     return (
       <section className="place-page">
         <div className="place-submitted panel">
@@ -108,85 +93,28 @@ export function AddPlacePage() {
             The App Admin will review the Place. Once approved, it will appear in Places and can be
             used for Watch events.
           </p>
-          <a className="place-primary-link" href="/watch">
-            Back to Watch
-          </a>
+          <div className="place-detail-actions">
+            <a className="place-primary-link" href={`/places/${submittedPlaceId}/edit`}>
+              Manage submitted Place
+            </a>
+            <a href="/watch">Back to Watch</a>
+          </div>
         </div>
       </section>
     );
   }
 
   return (
-    <section className="place-page">
-      <header className="place-page__header">
+    <section className="place-page place-form-page">
+      <header className="place-page__header place-form-page__header">
         <div>
           <p className="eyebrow">ADD A PLACE</p>
           <h1>List your Place</h1>
-          <p>
-            Submit the business information once. App Admin approval makes it available to Watch.
-          </p>
+          <p>Build the full venue profile once. Coordinates are optional.</p>
         </div>
       </header>
-      <form className="panel place-add-form" onSubmit={(event) => void submit(event)}>
-        <div className="place-form-grid">
-          <label>
-            Place name
-            <input name="name" required minLength={2} />
-          </label>
-          <label>
-            Category
-            <input name="category" placeholder="Sports café, bar, restaurant…" />
-          </label>
-        </div>
-        <label>
-          Description
-          <textarea name="description" rows={4} placeholder="Tell people about the Place" />
-        </label>
-        <label>
-          Image URL
-          <input name="imageUrl" type="url" placeholder="https://…" />
-        </label>
-        <label>
-          Address
-          <input name="address" required minLength={3} />
-        </label>
-        <div className="place-form-grid">
-          <label>
-            City
-            <input name="city" />
-          </label>
-          <label>
-            Houma
-            <input name="houma" />
-          </label>
-        </div>
-        <div className="place-form-grid">
-          <label>
-            Latitude
-            <input name="latitude" type="number" min="-90" max="90" step="any" />
-          </label>
-          <label>
-            Longitude
-            <input name="longitude" type="number" min="-180" max="180" step="any" />
-          </label>
-        </div>
-        <div className="place-form-grid">
-          <label>
-            Phone
-            <input name="phone" inputMode="tel" />
-          </label>
-          <label>
-            Email
-            <input name="email" type="email" />
-          </label>
-        </div>
-        <label>
-          Website
-          <input name="websiteUrl" type="url" placeholder="https://…" />
-        </label>
-        <button type="submit">Submit Place</button>
-        {error ? <p className="error">{error}</p> : null}
-      </form>
+      <PlaceForm submitLabel="Submit Place" pending={pending} onSubmit={submit} />
+      {error ? <p className="error">{error}</p> : null}
     </section>
   );
 }
@@ -197,9 +125,11 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
   const eventsApi = useMemo(() => createEventApi(transport), [transport]);
   const [place, setPlace] = useState<PublicPlaceSummary | null>(null);
   const [events, setEvents] = useState<PublicEvent[]>([]);
+  const [canManage, setCanManage] = useState(false);
   const [claimOpen, setClaimOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const selectedEventId = new URLSearchParams(window.location.search).get("eventId");
 
   useEffect(() => {
@@ -211,6 +141,12 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
       .catch((reason) =>
         setError(reason instanceof Error ? reason.message : "Unable to load Place"),
       );
+    void management.places
+      .manage(placeId)
+      .then(() => setCanManage(true))
+      .catch((reason) => {
+        if (reason instanceof HoomaApiError && [401, 403].includes(reason.status)) return;
+      });
   }, [eventsApi, management, placeId]);
 
   async function claim(event: FormEvent<HTMLFormElement>) {
@@ -226,6 +162,25 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
       setClaimOpen(false);
     } catch (reason) {
       setError(protectedError(reason, "Unable to submit ownership claim"));
+    }
+  }
+
+  async function deletePlace() {
+    if (deleting || !place) return;
+    if (
+      !window.confirm(
+        `Delete ${place.name}? It will disappear from active Places and Watch surfaces while historical records are preserved.`,
+      )
+    )
+      return;
+    setDeleting(true);
+    setError("");
+    try {
+      await management.places.archive(placeId);
+      window.location.href = "/places";
+    } catch (reason) {
+      setError(protectedError(reason, "Unable to delete Place"));
+      setDeleting(false);
     }
   }
 
@@ -257,6 +212,7 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
                 Website
               </a>
             ) : null}
+            {canManage ? <a href={`/places/${place.id}/edit`}>Edit Place</a> : null}
           </div>
         </div>
       </div>
@@ -270,19 +226,41 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
           <strong>{place.houma || "—"}</strong>
         </article>
         <article>
-          <span>City</span>
-          <strong>{place.city || "—"}</strong>
-        </article>
-        <article>
           <span>Contact</span>
           <strong>{place.phone || place.email || "—"}</strong>
         </article>
+        <article>
+          <span>About</span>
+          <strong>{place.description || "—"}</strong>
+        </article>
       </div>
+
+      {place.menuItems.length ? (
+        <section className="place-menu-section">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">MENU</p>
+              <h2>Menu</h2>
+            </div>
+          </div>
+          <div className="place-menu-preview">
+            {place.menuItems.map((item) => (
+              <article key={item.id}>
+                <strong>{item.name}</strong>
+                <span>
+                  {item.price} {item.currency}
+                </span>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <section className="place-events-section">
         <div className="section-heading">
           <div>
             <p className="eyebrow">WATCH</p>
-            <h2>Upcoming Watch events at this Place</h2>
+            <h2>Upcoming watch events at this place</h2>
           </div>
           <span>{events.length}</span>
         </div>
@@ -298,26 +276,38 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
           {!events.length ? <p className="muted">No upcoming Watch events yet.</p> : null}
         </div>
       </section>
-      <section className="place-claim-section">
-        <button
-          type="button"
-          className="place-claim-toggle"
-          onClick={() => setClaimOpen((value) => !value)}
-        >
-          Own/manage this place?
-        </button>
-        {claimOpen ? (
-          <form className="panel place-claim-form" onSubmit={(event) => void claim(event)}>
-            <label>
-              Ownership or management evidence
-              <textarea name="evidence" minLength={10} required />
-            </label>
-            <button type="submit">Submit ownership claim</button>
-          </form>
-        ) : null}
-        {message ? <p className="status">{message}</p> : null}
-        {error ? <p className="error">{error}</p> : null}
-      </section>
+
+      {canManage ? (
+        <section className="entity-danger-zone place-danger-zone">
+          <p className="eyebrow">PLACE MANAGEMENT</p>
+          <h3>Delete Place</h3>
+          <p>Remove this Place from active discovery while preserving historical event records.</p>
+          <button type="button" disabled={deleting} onClick={() => void deletePlace()}>
+            {deleting ? "Deleting…" : "Delete Place"}
+          </button>
+        </section>
+      ) : (
+        <section className="place-claim-section">
+          <button
+            type="button"
+            className="place-claim-toggle"
+            onClick={() => setClaimOpen((value) => !value)}
+          >
+            Own/manage this place?
+          </button>
+          {claimOpen ? (
+            <form className="panel place-claim-form" onSubmit={(event) => void claim(event)}>
+              <label>
+                Ownership or management evidence
+                <textarea name="evidence" minLength={10} required />
+              </label>
+              <button type="submit">Submit ownership claim</button>
+            </form>
+          ) : null}
+        </section>
+      )}
+      {message ? <p className="status">{message}</p> : null}
+      {error ? <p className="error">{error}</p> : null}
     </section>
   );
 }

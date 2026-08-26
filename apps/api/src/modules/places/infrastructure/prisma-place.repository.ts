@@ -1,9 +1,11 @@
 import { randomUUID } from "node:crypto";
 import type {
   AdminQueueItem,
+  ManagedPlaceSummary,
   ModerationDecisionInput,
   PlaceOwnershipClaimInput,
   PlaceSuggestionInput,
+  PlaceUpdateInput,
   PublicPlaceSummary,
 } from "@hooma/contracts/platform-management";
 import { Prisma, type PrismaClient } from "@hooma/database";
@@ -21,27 +23,35 @@ function slugBase(value: string): string {
   );
 }
 
-function duplicateKey(input: PlaceSuggestionInput): string {
+function duplicateKey(input: Pick<PlaceSuggestionInput, "name" | "address">): string {
   const normalize = (value: string) => value.trim().toLocaleLowerCase().replace(/\s+/g, " ");
   return `${normalize(input.name)}|${normalize(input.address)}`;
 }
 
-function placeSummary(place: {
-  id: string;
-  slug: string;
-  name: string;
-  address: string;
-  city: string | null;
-  houma: string | null;
-  latitude: { toNumber(): number } | null;
-  longitude: { toNumber(): number } | null;
-  phone: string | null;
-  websiteUrl: string | null;
-  imageUrl: string | null;
-  description: string | null;
-  category: string | null;
-  email: string | null;
-}): PublicPlaceSummary {
+const placeSelect = Prisma.validator<Prisma.PlaceSelect>()({
+  id: true,
+  slug: true,
+  name: true,
+  address: true,
+  city: true,
+  houma: true,
+  latitude: true,
+  longitude: true,
+  phone: true,
+  websiteUrl: true,
+  imageUrl: true,
+  description: true,
+  category: true,
+  email: true,
+  menuItems: {
+    orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+    select: { id: true, name: true, price: true, currency: true },
+  },
+});
+
+type PlaceRow = Prisma.PlaceGetPayload<{ select: typeof placeSelect }>;
+
+function placeSummary(place: PlaceRow): PublicPlaceSummary {
   return {
     id: place.id,
     slug: place.slug,
@@ -57,32 +67,30 @@ function placeSummary(place: {
     description: place.description,
     category: place.category,
     email: place.email,
+    menuItems: place.menuItems.map((item) => ({
+      id: item.id,
+      name: item.name,
+      price: item.price.toNumber(),
+      currency: item.currency,
+    })),
   };
 }
 
-const placeSelect = {
-  id: true,
-  slug: true,
-  name: true,
-  address: true,
-  city: true,
-  houma: true,
-  latitude: true,
-  longitude: true,
-  phone: true,
-  websiteUrl: true,
-  imageUrl: true,
-  description: true,
-  category: true,
-  email: true,
-} as const;
+function menuCreate(input: PlaceSuggestionInput["menuItems"]) {
+  return input.map((item, index) => ({
+    name: item.name,
+    price: new Prisma.Decimal(item.price),
+    currency: item.currency.toUpperCase(),
+    sortOrder: index,
+  }));
+}
 
 export class PrismaPlaceRepository implements PlaceRepository {
   constructor(private readonly db: PrismaClient) {}
 
   async listPublic(): Promise<readonly PublicPlaceSummary[]> {
     const places = await this.db.place.findMany({
-      where: { moderationStatus: "APPROVED" },
+      where: { moderationStatus: "APPROVED", archivedAt: null },
       select: placeSelect,
       orderBy: [{ city: "asc" }, { name: "asc" }],
     });
@@ -122,6 +130,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
           category: input.category ?? null,
           email: input.email ?? null,
           suggestedByUserId: userId,
+          menuItems: { create: menuCreate(input.menuItems) },
         },
         select: { ...placeSelect, moderationStatus: true },
       });
@@ -131,10 +140,100 @@ export class PrismaPlaceRepository implements PlaceRepository {
 
   async getApproved(placeId: string): Promise<PublicPlaceSummary | null> {
     const place = await this.db.place.findFirst({
-      where: { id: placeId, moderationStatus: "APPROVED" },
+      where: { id: placeId, moderationStatus: "APPROVED", archivedAt: null },
       select: placeSelect,
     });
     return place ? placeSummary(place) : null;
+  }
+
+  async getManaged(placeId: string): Promise<ManagedPlaceSummary | null> {
+    const place = await this.db.place.findUnique({
+      where: { id: placeId },
+      select: { ...placeSelect, moderationStatus: true, archivedAt: true },
+    });
+    return place
+      ? {
+          ...placeSummary(place),
+          moderationStatus: place.moderationStatus,
+          archivedAt: place.archivedAt?.toISOString() ?? null,
+        }
+      : null;
+  }
+
+  async canManage(placeId: string, userId: string): Promise<boolean> {
+    return Boolean(
+      await this.db.place.findFirst({
+        where: {
+          id: placeId,
+          OR: [
+            { suggestedByUserId: userId },
+            { ownerships: { some: { userId, revokedAt: null } } },
+          ],
+        },
+        select: { id: true },
+      }),
+    );
+  }
+
+  async update(placeId: string, input: PlaceUpdateInput): Promise<ManagedPlaceSummary> {
+    return this.db.$transaction(async (tx) => {
+      const current = await tx.place.findUniqueOrThrow({
+        where: { id: placeId },
+        select: { name: true, address: true },
+      });
+      const name = input.name ?? current.name;
+      const address = input.address ?? current.address;
+      if (name !== current.name || address !== current.address) {
+        const key = duplicateKey({ name, address });
+        await tx.$queryRaw<Array<{ locked: string }>>(
+          Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${key}))::text AS "locked"`,
+        );
+        const duplicate = await tx.place.findFirst({
+          where: {
+            id: { not: placeId },
+            name: { equals: name, mode: "insensitive" },
+            address: { equals: address, mode: "insensitive" },
+            moderationStatus: { in: ["PENDING", "APPROVED"] },
+          },
+          select: { id: true },
+        });
+        if (duplicate) throw new Error("PLACE_ALREADY_EXISTS");
+      }
+
+      if (input.menuItems !== undefined) {
+        await tx.placeMenuItem.deleteMany({ where: { placeId } });
+      }
+      const place = await tx.place.update({
+        where: { id: placeId },
+        data: {
+          ...(input.name !== undefined ? { name: input.name } : {}),
+          ...(input.address !== undefined ? { address: input.address } : {}),
+          ...(input.city !== undefined ? { city: input.city } : {}),
+          ...(input.houma !== undefined ? { houma: input.houma } : {}),
+          ...(input.latitude !== undefined ? { latitude: input.latitude } : {}),
+          ...(input.longitude !== undefined ? { longitude: input.longitude } : {}),
+          ...(input.phone !== undefined ? { phone: input.phone } : {}),
+          ...(input.websiteUrl !== undefined ? { websiteUrl: input.websiteUrl } : {}),
+          ...(input.imageUrl !== undefined ? { imageUrl: input.imageUrl } : {}),
+          ...(input.description !== undefined ? { description: input.description } : {}),
+          ...(input.category !== undefined ? { category: input.category } : {}),
+          ...(input.email !== undefined ? { email: input.email } : {}),
+          ...(input.menuItems !== undefined
+            ? { menuItems: { create: menuCreate(input.menuItems) } }
+            : {}),
+        },
+        select: { ...placeSelect, moderationStatus: true, archivedAt: true },
+      });
+      return {
+        ...placeSummary(place),
+        moderationStatus: place.moderationStatus,
+        archivedAt: place.archivedAt?.toISOString() ?? null,
+      };
+    });
+  }
+
+  async archive(placeId: string): Promise<void> {
+    await this.db.place.update({ where: { id: placeId }, data: { archivedAt: new Date() } });
   }
 
   async hasVerifiedOwnership(placeId: string, userId: string): Promise<boolean> {
@@ -164,7 +263,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
 
   async pendingPlaces(): Promise<readonly AdminQueueItem[]> {
     const rows = await this.db.place.findMany({
-      where: { moderationStatus: "PENDING" },
+      where: { moderationStatus: "PENDING", archivedAt: null },
       select: {
         ...placeSelect,
         moderationStatus: true,
@@ -199,7 +298,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
 
   async pendingOwnershipClaims(): Promise<readonly AdminQueueItem[]> {
     const rows = await this.db.placeOwnershipClaim.findMany({
-      where: { status: "PENDING" },
+      where: { status: "PENDING", place: { archivedAt: null } },
       select: {
         id: true,
         status: true,
@@ -239,13 +338,13 @@ export class PrismaPlaceRepository implements PlaceRepository {
     const status = input.decision === "APPROVE" ? "APPROVED" : "REJECTED";
     return this.db.$transaction(async (tx) => {
       const place = await tx.place.findFirst({
-        where: { id: placeId, moderationStatus: "PENDING" },
+        where: { id: placeId, moderationStatus: "PENDING", archivedAt: null },
         select: { suggestedByUserId: true },
       });
       if (!place) return false;
 
       const result = await tx.place.updateMany({
-        where: { id: placeId, moderationStatus: "PENDING" },
+        where: { id: placeId, moderationStatus: "PENDING", archivedAt: null },
         data: {
           moderationStatus: status,
           reviewedByUserId: actorUserId,
@@ -288,7 +387,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
     const status = input.decision === "APPROVE" ? "APPROVED" : "REJECTED";
     return this.db.$transaction(async (tx) => {
       const claim = await tx.placeOwnershipClaim.findFirst({
-        where: { id: claimId, status: "PENDING" },
+        where: { id: claimId, status: "PENDING", place: { archivedAt: null } },
         select: { placeId: true, claimantUserId: true },
       });
       if (!claim) return false;

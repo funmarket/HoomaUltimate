@@ -20,14 +20,16 @@ function numberQuery(value: unknown, fallback: number) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function communityIdOf(event: unknown): string {
+function eventScope(event: unknown): { type: "PLAY" | "WATCH"; communityId: string | null } {
   if (
     typeof event === "object" &&
     event !== null &&
+    "type" in event &&
+    (event.type === "PLAY" || event.type === "WATCH") &&
     "communityId" in event &&
-    typeof event.communityId === "string"
+    (typeof event.communityId === "string" || event.communityId === null)
   ) {
-    return event.communityId;
+    return { type: event.type, communityId: event.communityId };
   }
   throw new EventError("EVENT_NOT_FOUND", "Event not found");
 }
@@ -68,9 +70,13 @@ export function createEventPublicRouter(
     "/:eventId",
     asyncHandler(async (request, response) => {
       const event = await service.getPublic(String(request.params.eventId));
-      const auth = await resolveAuthentication(request, identity, config);
-      if (!(await communities.canViewPrivateContent(communityIdOf(event), auth?.userId ?? null))) {
-        throw new EventError("EVENT_NOT_FOUND", "Event not found");
+      const scope = eventScope(event);
+      if (scope.type === "PLAY") {
+        if (!scope.communityId) throw new EventError("EVENT_NOT_FOUND", "Event not found");
+        const auth = await resolveAuthentication(request, identity, config);
+        if (!(await communities.canViewPrivateContent(scope.communityId, auth?.userId ?? null))) {
+          throw new EventError("EVENT_NOT_FOUND", "Event not found");
+        }
       }
       response.json(event);
     }),
@@ -86,6 +92,14 @@ export function createEventMemberRouter(service: EventService): Router {
       response
         .status(201)
         .json(await service.create(getAuth(request).userId, eventCreateSchema.parse(request.body))),
+    ),
+  );
+  router.get(
+    "/:eventId/manage",
+    asyncHandler(async (request, response) =>
+      response.json(
+        await service.getManaged(getAuth(request).userId, String(request.params.eventId)),
+      ),
     ),
   );
   router.patch(

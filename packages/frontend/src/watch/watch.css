@@ -163,7 +163,7 @@
 
 .watch-ticket__place-photo,
 .watch-ticket__series,
-.watch-ticket__event-title,
+.watch-ticket__matchup,
 .watch-ticket__venue,
 .watch-ticket__date,
 .watch-ticket__going,
@@ -207,24 +207,74 @@
   white-space: nowrap;
 }
 
-.watch-ticket__event-title {
-  top: 20%;
-  left: 32.5%;
-  display: -webkit-box;
-  width: 45.5%;
-  max-height: 23%;
+.watch-ticket__matchup {
+  top: 19%;
+  left: 31.2%;
+  width: 47.2%;
+  height: 27%;
+  display: grid;
+  grid-template-columns: minmax(32px, 0.24fr) minmax(0, 1fr) minmax(32px, 0.24fr);
+  align-items: center;
+  gap: 1.3cqw;
   overflow: hidden;
   color: #21170b;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(0.72rem, 4.8cqw, 2.25rem);
-  font-weight: 900;
-  line-height: 0.95;
-  letter-spacing: -0.04em;
   text-decoration: none;
+}
+
+.watch-ticket__team-logo,
+.watch-ticket__team-placeholder {
+  width: min(100%, 8.5cqw);
+  max-height: 100%;
+  aspect-ratio: 1;
+  justify-self: center;
+  object-fit: contain;
+}
+
+.watch-ticket__team-placeholder {
+  display: grid;
+  place-items: center;
+  border: 0.35cqw solid #8a6b35;
+  border-radius: 28% 28% 42% 42%;
+  color: #5e441d;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(0.5rem, 3cqw, 1.4rem);
+  font-weight: 900;
+}
+
+.watch-ticket__matchup-title {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.8cqw;
+  font-family: Georgia, "Times New Roman", serif;
+  line-height: 0.94;
+  text-align: center;
   text-transform: uppercase;
-  text-wrap: balance;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+}
+
+.watch-ticket__matchup-title strong {
+  min-width: 0;
+  overflow: hidden;
+  font-size: clamp(0.62rem, 3.25cqw, 1.7rem);
+  font-weight: 900;
+  letter-spacing: -0.045em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.watch-ticket__matchup-title small {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(0.34rem, 1.4cqw, 0.68rem);
+  font-weight: 900;
+}
+
+.watch-ticket__matchup-title--legacy {
+  grid-template-columns: 1fr;
+}
+
+.watch-ticket__matchup-title--legacy strong {
+  white-space: normal;
 }
 
 .watch-ticket__venue {
@@ -402,8 +452,8 @@
     font-size: 0.9rem;
   }
 
-  .watch-ticket__event-title {
-    font-size: clamp(0.68rem, 4.8cqw, 1.4rem);
+  .watch-ticket__matchup {
+    gap: 0.7cqw;
   }
 
   .watch-ticket__venue,

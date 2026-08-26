@@ -2,6 +2,7 @@ import type {
   ModerationDecisionInput,
   PlaceOwnershipClaimInput,
   PlaceSuggestionInput,
+  PlaceUpdateInput,
 } from "@hooma/contracts/platform-management";
 import { AppError } from "../../../http/errors/app-error.js";
 import type { PlatformAdminAuthorizer } from "../../platform-admin/application/platform-admin.authorizer.js";
@@ -23,6 +24,13 @@ export class PlaceService {
     return place;
   }
 
+  async getManaged(userId: string, placeId: string) {
+    await this.requireManage(userId, placeId);
+    const place = await this.repository.getManaged(placeId);
+    if (!place) throw new AppError(404, "PLACE_NOT_FOUND", "Place not found");
+    return place;
+  }
+
   async suggest(userId: string, input: PlaceSuggestionInput) {
     try {
       return await this.repository.suggest(userId, input);
@@ -36,6 +44,31 @@ export class PlaceService {
       }
       throw error;
     }
+  }
+
+  async update(userId: string, placeId: string, input: PlaceUpdateInput) {
+    await this.requireManage(userId, placeId);
+    try {
+      return await this.repository.update(placeId, input);
+    } catch (error) {
+      if (error instanceof Error && error.message === "PLACE_ALREADY_EXISTS") {
+        throw new AppError(
+          409,
+          "PLACE_ALREADY_EXISTS",
+          "A Place with this name and address already exists",
+        );
+      }
+      throw error;
+    }
+  }
+
+  async archive(userId: string, placeId: string) {
+    await this.requireManage(userId, placeId);
+    const place = await this.repository.getManaged(placeId);
+    if (!place) throw new AppError(404, "PLACE_NOT_FOUND", "Place not found");
+    if (place.archivedAt) return { ok: true };
+    await this.repository.archive(placeId);
+    return { ok: true };
   }
 
   async claimOwnership(userId: string, placeId: string, input: PlaceOwnershipClaimInput) {
@@ -83,5 +116,11 @@ export class PlaceService {
       );
     }
     return { ok: true };
+  }
+
+  private async requireManage(userId: string, placeId: string): Promise<void> {
+    if (await this.repository.canManage(placeId, userId)) return;
+    if (await this.platformAdmin.isPlatformAdmin(userId)) return;
+    throw new AppError(403, "PLACE_MANAGE_FORBIDDEN", "Place owner or App Admin access required");
   }
 }

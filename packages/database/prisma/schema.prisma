@@ -221,7 +221,7 @@ model User {
   gamerProfiles                 GamerProfile[]
   playPlayerListings            PlayPlayerListing[]
   placesSuggested               Place[]                        @relation("PlaceSuggester")
-  placeOwnershipClaims          PlaceOwnershipClaim[]         @relation("PlaceClaimant")
+  placeOwnershipClaims          PlaceOwnershipClaim[]          @relation("PlaceClaimant")
   placeOwnerships               PlaceOwnership[]               @relation("PlaceOwner")
   placeCapabilityApplications   PlaceCapabilityApplication[]   @relation("PlaceCapabilityApplicant")
 }
@@ -259,7 +259,7 @@ model TelegramIdentity {
   lastAuthenticatedAt DateTime @default(now())
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
-  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model WebCredential {
@@ -337,16 +337,32 @@ model Place {
   reviewedByUserId  String?
   reviewedAt        DateTime?
   reviewNote        String?
+  archivedAt        DateTime?
   createdAt         DateTime                     @default(now())
   updatedAt         DateTime                     @updatedAt
   suggestedBy       User                         @relation("PlaceSuggester", fields: [suggestedByUserId], references: [id], onDelete: Restrict)
   ownershipClaims   PlaceOwnershipClaim[]
   ownerships        PlaceOwnership[]
   applications      PlaceCapabilityApplication[]
+  menuItems         PlaceMenuItem[]
   events            Event[]
 
-  @@index([moderationStatus, createdAt])
+  @@index([moderationStatus, archivedAt, createdAt])
   @@index([city, houma])
+}
+
+model PlaceMenuItem {
+  id        String   @id @default(cuid())
+  placeId   String
+  name      String
+  price     Decimal  @db.Decimal(10, 3)
+  currency  String   @default("TND")
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  place     Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  @@index([placeId, sortOrder])
 }
 
 model PlaceOwnershipClaim {
@@ -407,21 +423,21 @@ model PlaceCapabilityApplication {
 }
 
 model Community {
-  id              String                @id @default(cuid())
-  slug            String                @unique
+  id              String                      @id @default(cuid())
+  slug            String                      @unique
   name            String
   description     String?
   city            String?
   houma           String?
   logoUrl         String?
   bannerUrl       String?
-  status          CommunityStatus       @default(ACTIVE)
-  visibility      CommunityVisibility   @default(PUBLIC)
-  joinPolicy      CommunityJoinPolicy   @default(OPEN)
+  status          CommunityStatus             @default(ACTIVE)
+  visibility      CommunityVisibility         @default(PUBLIC)
+  joinPolicy      CommunityJoinPolicy         @default(OPEN)
   createdByUserId String
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
-  createdBy       User                  @relation("CommunityCreator", fields: [createdByUserId], references: [id])
+  createdAt       DateTime                    @default(now())
+  updatedAt       DateTime                    @updatedAt
+  createdBy       User                        @relation("CommunityCreator", fields: [createdByUserId], references: [id])
   memberships     CommunityMembership[]
   joinRequests    CommunityJoinRequest[]
   teams           Team[]
@@ -650,29 +666,30 @@ model TeamGame {
 }
 
 model Event {
-  id              String           @id @default(cuid())
+  id              String             @id @default(cuid())
   communityId     String?
   placeId         String?
   createdByUserId String
   type            EventType
-  status          EventStatus      @default(PUBLISHED)
+  status          EventStatus        @default(PUBLISHED)
   title           String
   description     String?
   startsAt        DateTime
   endsAt          DateTime?
-  timezone        String           @default("Africa/Tunis")
+  timezone        String             @default("Africa/Tunis")
   venueName       String?
   address         String?
   capacity        Int?
-  waitlistEnabled Boolean          @default(true)
-  entryFeeMinor   BigInt           @default(0)
-  currency        String           @default("TND")
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  community       Community?       @relation(fields: [communityId], references: [id], onDelete: Cascade)
-  place           Place?           @relation(fields: [placeId], references: [id], onDelete: Restrict)
-  createdBy       User             @relation("EventCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  waitlistEnabled Boolean            @default(true)
+  entryFeeMinor   BigInt             @default(0)
+  currency        String             @default("TND")
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  community       Community?         @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  place           Place?             @relation(fields: [placeId], references: [id], onDelete: Restrict)
+  createdBy       User               @relation("EventCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
   playDetails     PlayEventDetails?
+  watchDetails    WatchEventDetails?
   rsvps           EventRsvp[]
   formations      Formation[]
   checkIns        EventCheckIn[]
@@ -690,6 +707,15 @@ model PlayEventDetails {
   skillLevel SkillLevel     @default(MIXED)
   format     FootballFormat
   event      Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model WatchEventDetails {
+  eventId        String @id
+  teamOneName    String
+  teamOneLogoUrl String?
+  teamTwoName    String
+  teamTwoLogoUrl String?
+  event          Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
 }
 
 model EventRsvp {
@@ -813,16 +839,16 @@ model GamerGame {
 }
 
 model GamerProfile {
-  id                 String           @id @default(cuid())
-  userId             String
-  gameId             String
-  handle             String
-  openToChallenge    Boolean
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
-  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  game               GamerGame        @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  challengesSent     GamerChallenge[] @relation("GamerChallengeChallenger")
+  id              String           @id @default(cuid())
+  userId          String
+  gameId          String
+  handle          String
+  openToChallenge Boolean
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game            GamerGame        @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  challengesSent  GamerChallenge[] @relation("GamerChallengeChallenger")
   challengesReceived GamerChallenge[] @relation("GamerChallengeChallenged")
 
   @@unique([userId, gameId])
@@ -836,13 +862,13 @@ model GamerChallenge {
   challengedProfileId String
   pairKey             String
   status              GamerChallengeStatus @default(PENDING)
-  createdAt           DateTime              @default(now())
+  createdAt           DateTime             @default(now())
   respondedAt         DateTime?
   cancelledAt         DateTime?
-  updatedAt           DateTime              @updatedAt
-  game                GamerGame             @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  challengerProfile   GamerProfile          @relation("GamerChallengeChallenger", fields: [challengerProfileId], references: [id], onDelete: Cascade)
-  challengedProfile   GamerProfile          @relation("GamerChallengeChallenged", fields: [challengedProfileId], references: [id], onDelete: Cascade)
+  updatedAt           DateTime             @updatedAt
+  game                GamerGame            @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  challengerProfile   GamerProfile         @relation("GamerChallengeChallenger", fields: [challengerProfileId], references: [id], onDelete: Cascade)
+  challengedProfile   GamerProfile         @relation("GamerChallengeChallenged", fields: [challengedProfileId], references: [id], onDelete: Cascade)
 
   @@index([gameId, status, createdAt])
   @@index([challengerProfileId, status, createdAt])

@@ -249,12 +249,20 @@ export const playPitchTypeSchema = z.enum([
   "STREET",
   "OTHER",
 ]);
+
+export const watchEventDetailsSchema = z.object({
+  teamOneName: z.string().trim().min(1).max(100),
+  teamOneLogoUrl: z.string().trim().url().max(4000).optional().nullable(),
+  teamTwoName: z.string().trim().min(1).max(100),
+  teamTwoLogoUrl: z.string().trim().url().max(4000).optional().nullable(),
+});
+
 export const eventCreateSchema = z
   .object({
     communityId: z.string().min(1).optional().nullable(),
     placeId: z.string().min(1).optional().nullable(),
     type: eventTypeSchema.default("PLAY"),
-    title: z.string().trim().min(2).max(120),
+    title: z.string().trim().min(2).max(220),
     description: z.string().trim().max(1200).optional().nullable(),
     startsAt: z.string().datetime(),
     endsAt: z.string().datetime().optional().nullable(),
@@ -273,6 +281,7 @@ export const eventCreateSchema = z
       })
       .optional()
       .nullable(),
+    watch: watchEventDetailsSchema.optional().nullable(),
   })
   .superRefine((input, context) => {
     if (input.type === "PLAY") {
@@ -297,6 +306,13 @@ export const eventCreateSchema = z
           message: "Canonical Watch Places are only valid for WATCH events",
         });
       }
+      if (input.watch) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["watch"],
+          message: "Watch matchup details are only valid for WATCH events",
+        });
+      }
     }
     if (input.type === "WATCH") {
       if (!input.placeId) {
@@ -304,6 +320,13 @@ export const eventCreateSchema = z
           code: z.ZodIssueCode.custom,
           path: ["placeId"],
           message: "An approved Place is required for WATCH events",
+        });
+      }
+      if (!input.watch) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["watch"],
+          message: "Both teams are required for WATCH events",
         });
       }
       if (input.play) {
@@ -330,7 +353,7 @@ export const eventCreateSchema = z
     }
   });
 export const eventUpdateSchema = z.object({
-  title: z.string().trim().min(2).max(120).optional(),
+  title: z.string().trim().min(2).max(220).optional(),
   description: z.string().trim().max(1200).optional().nullable(),
   startsAt: z.string().datetime().optional(),
   endsAt: z.string().datetime().optional().nullable(),
@@ -339,6 +362,7 @@ export const eventUpdateSchema = z.object({
   address: z.string().trim().max(240).optional().nullable(),
   capacity: z.number().int().positive().max(1000).optional().nullable(),
   waitlistEnabled: z.boolean().optional(),
+  watch: watchEventDetailsSchema.optional(),
 });
 export const eventFormationSchema = z.object({
   name: z.string().trim().min(1).max(80),
@@ -362,6 +386,7 @@ export const eventCheckInSchema = z.object({
   longitude: z.number().min(-180).max(180).optional().nullable(),
 });
 export const eventChatMessageSchema = z.object({ body: z.string().trim().min(1).max(1200) });
+export type WatchEventDetailsInput = z.infer<typeof watchEventDetailsSchema>;
 export type EventCreateInput = z.infer<typeof eventCreateSchema>;
 export type EventUpdateInput = z.infer<typeof eventUpdateSchema>;
 export type EventFormationInput = z.infer<typeof eventFormationSchema>;

@@ -36,10 +36,12 @@ const publicEventSelect = Prisma.validator<Prisma.EventSelect>()({
       houma: true,
       imageUrl: true,
       category: true,
+      archivedAt: true,
       ownerships: { where: { revokedAt: null }, select: { userId: true } },
     },
   },
   playDetails: true,
+  watchDetails: true,
   _count: {
     select: {
       rsvps: { where: { status: { in: ["CONFIRMED", "ATTENDED"] } } },
@@ -69,7 +71,7 @@ export class PrismaEventRepository implements EventRepository {
       : { type: "PLAY", community: { is: { visibility: "PUBLIC" } } };
     const watchVisibility: Prisma.EventWhereInput = {
       type: "WATCH",
-      place: { is: { moderationStatus: "APPROVED" } },
+      place: { is: { moderationStatus: "APPROVED", archivedAt: null } },
     };
     const visibility =
       input.type === "PLAY"
@@ -101,7 +103,13 @@ export class PrismaEventRepository implements EventRepository {
       where: {
         id: eventId,
         status: { in: ["PUBLISHED", "COMPLETED"] },
-        OR: [{ type: "PLAY" }, { type: "WATCH", place: { is: { moderationStatus: "APPROVED" } } }],
+        OR: [
+          { type: "PLAY" },
+          {
+            type: "WATCH",
+            place: { is: { moderationStatus: "APPROVED", archivedAt: null } },
+          },
+        ],
       },
       select: publicEventSelect,
     });
@@ -154,6 +162,10 @@ export class PrismaEventRepository implements EventRepository {
     const startsAt = new Date(input.startsAt);
     const endsAt = input.endsAt ? new Date(input.endsAt) : null;
     const chatWindow = eventChatWindow(startsAt, endsAt);
+    const title =
+      input.type === "WATCH" && input.watch
+        ? `${input.watch.teamOneName} vs ${input.watch.teamTwoName}`
+        : input.title;
     return this.db.$transaction(async (tx) => {
       const event = await tx.event.create({
         data: {
@@ -161,7 +173,7 @@ export class PrismaEventRepository implements EventRepository {
           placeId: input.placeId ?? null,
           createdByUserId: userId,
           type: input.type,
-          title: input.title,
+          title,
           description: input.description ?? null,
           startsAt,
           endsAt,
@@ -184,6 +196,17 @@ export class PrismaEventRepository implements EventRepository {
           },
         });
       }
+      if (input.type === "WATCH" && input.watch) {
+        await tx.watchEventDetails.create({
+          data: {
+            eventId: event.id,
+            teamOneName: input.watch.teamOneName,
+            teamOneLogoUrl: input.watch.teamOneLogoUrl ?? null,
+            teamTwoName: input.watch.teamTwoName,
+            teamTwoLogoUrl: input.watch.teamTwoLogoUrl ?? null,
+          },
+        });
+      }
       await tx.eventChatRoom.create({ data: { eventId: event.id, ...chatWindow } });
       const created = await tx.event.findUniqueOrThrow({
         where: { id: event.id },
@@ -201,7 +224,11 @@ export class PrismaEventRepository implements EventRepository {
         input.endsAt === undefined ? current.endsAt : input.endsAt ? new Date(input.endsAt) : null;
       if (endsAt && endsAt <= startsAt) throw new Error("EVENT_TIME_INVALID");
       const data: Prisma.EventUpdateInput = {
-        ...(input.title !== undefined ? { title: input.title } : {}),
+        ...(input.watch !== undefined
+          ? { title: `${input.watch.teamOneName} vs ${input.watch.teamTwoName}` }
+          : input.title !== undefined
+            ? { title: input.title }
+            : {}),
         ...(input.description !== undefined ? { description: input.description } : {}),
         ...(input.startsAt !== undefined ? { startsAt } : {}),
         ...(input.endsAt !== undefined ? { endsAt } : {}),
@@ -216,6 +243,24 @@ export class PrismaEventRepository implements EventRepository {
         ...(input.waitlistEnabled !== undefined ? { waitlistEnabled: input.waitlistEnabled } : {}),
       };
       await tx.event.update({ where: { id: eventId }, data });
+      if (current.type === "WATCH" && input.watch !== undefined) {
+        await tx.watchEventDetails.upsert({
+          where: { eventId },
+          create: {
+            eventId,
+            teamOneName: input.watch.teamOneName,
+            teamOneLogoUrl: input.watch.teamOneLogoUrl ?? null,
+            teamTwoName: input.watch.teamTwoName,
+            teamTwoLogoUrl: input.watch.teamTwoLogoUrl ?? null,
+          },
+          update: {
+            teamOneName: input.watch.teamOneName,
+            teamOneLogoUrl: input.watch.teamOneLogoUrl ?? null,
+            teamTwoName: input.watch.teamTwoName,
+            teamTwoLogoUrl: input.watch.teamTwoLogoUrl ?? null,
+          },
+        });
+      }
       await tx.eventChatRoom.update({
         where: { eventId },
         data: eventChatWindow(startsAt, endsAt),
@@ -423,7 +468,9 @@ function serializePublicEvent(event: PublicEventRow) {
     event.place?.ownerships.some((ownership) => ownership.userId === event.createdByUserId),
   );
   const place = event.place
-    ? Object.fromEntries(Object.entries(event.place).filter(([key]) => key !== "ownerships"))
+    ? Object.fromEntries(
+        Object.entries(event.place).filter(([key]) => key !== "ownerships" && key !== "archivedAt"),
+      )
     : null;
   const output = {
     ...event,

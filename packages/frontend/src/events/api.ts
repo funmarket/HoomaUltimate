@@ -31,6 +31,12 @@ export type PublicEvent = {
   } | null;
   venueAuthority: "OFFICIAL_VENUE" | "SUGGESTED_BY_COMMUNITY" | null;
   playDetails: { pitchType: string; skillLevel: string; format: string } | null;
+  watchDetails: {
+    teamOneName: string;
+    teamOneLogoUrl: string | null;
+    teamTwoName: string;
+    teamTwoLogoUrl: string | null;
+  } | null;
   _count: { rsvps: number; checkIns?: number };
 };
 export type EventRsvpState = "CONFIRMED" | "WAITLISTED" | "CANCELLED" | "ATTENDED" | "NO_SHOW";
@@ -78,6 +84,8 @@ export function createEventApi(transport: HoomaTransport) {
       ),
     publicDetail: (id: string) =>
       request<PublicEvent>(transport, `/api/public/v1/events/${encodeURIComponent(id)}`),
+    manage: (id: string) =>
+      request<PublicEvent>(transport, `/api/v1/events/${encodeURIComponent(id)}/manage`),
     myRsvp: (id: string) =>
       request<MyEventRsvp>(transport, `/api/v1/events/${encodeURIComponent(id)}/rsvp`),
     formationRoster: (id: string) =>

@@ -1,0 +1,257 @@
+.hooma-form {
+  display: grid;
+  gap: 20px;
+  width: min(100%, 920px);
+  margin-inline: auto;
+}
+
+.hooma-form__section {
+  display: grid;
+  gap: 18px;
+  padding: clamp(18px, 4vw, 30px);
+  border: 1px solid var(--app-line-strong);
+  border-radius: 24px;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--app-gold) 4%, transparent), transparent 42%),
+    var(--app-surface);
+}
+
+.hooma-form__section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.hooma-form__section-heading > span {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--app-gold);
+  border-radius: 50%;
+  color: var(--app-gold);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.hooma-form__section-heading h2,
+.hooma-form__section-heading p {
+  margin: 0;
+}
+
+.hooma-form__section-heading h2 {
+  color: var(--app-text-strong);
+  font-size: clamp(1.15rem, 4vw, 1.45rem);
+}
+
+.hooma-form__section-heading p {
+  margin-top: 4px;
+  color: var(--app-text-secondary);
+}
+
+.hooma-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.hooma-field {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  color: var(--app-text-strong);
+  font-weight: 800;
+}
+
+.hooma-field > span {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.hooma-field em {
+  color: var(--app-text-caption);
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.hooma-field input,
+.hooma-field select,
+.hooma-field textarea,
+.place-menu-editor input {
+  width: 100%;
+  min-width: 0;
+  min-height: 58px;
+  padding: 14px 16px;
+  border: 1px solid var(--app-line-strong);
+  border-radius: 16px;
+  outline: 0;
+  color: var(--app-text);
+  background: color-mix(in srgb, var(--app-surface) 92%, #000);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.35;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.hooma-field textarea {
+  min-height: 126px;
+  resize: vertical;
+}
+
+.hooma-field input:focus,
+.hooma-field select:focus,
+.hooma-field textarea:focus,
+.place-menu-editor input:focus {
+  border-color: var(--app-lime);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--app-lime) 16%, transparent);
+}
+
+.hooma-field input::placeholder,
+.hooma-field textarea::placeholder,
+.place-menu-editor input::placeholder {
+  color: var(--app-text-caption);
+}
+
+.hooma-field small {
+  color: var(--app-text-caption);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.hooma-form__submit,
+.hooma-form__secondary-action {
+  min-height: 58px;
+  padding: 13px 20px;
+  border-radius: 16px;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.hooma-form__submit {
+  border: 1px solid var(--app-lime);
+  color: #0a0c00;
+  background: var(--app-lime);
+}
+
+.hooma-form__secondary-action {
+  border: 1px solid var(--app-gold);
+  color: var(--app-gold);
+  background: transparent;
+}
+
+.hooma-form__submit:disabled,
+.hooma-form__secondary-action:disabled {
+  cursor: progress;
+  opacity: 0.62;
+}
+
+.watch-event-form-page,
+.place-form-page {
+  display: grid;
+  gap: 22px;
+  padding-bottom: 32px;
+}
+
+.watch-event-form-page__header,
+.place-form-page__header {
+  width: min(100%, 920px);
+  margin-inline: auto;
+}
+
+.watch-event-form-page__header h1,
+.watch-event-form-page__header p,
+.place-form-page__header h1,
+.place-form-page__header p {
+  margin-top: 0;
+}
+
+.watch-match-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+}
+
+.watch-team-form {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.watch-match-form__versus {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--app-gold);
+  border-radius: 50%;
+  color: var(--app-gold);
+  font-weight: 950;
+}
+
+.place-menu-editor {
+  display: grid;
+  gap: 10px;
+}
+
+.place-menu-editor__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(130px, 0.32fr) 44px;
+  gap: 10px;
+  align-items: center;
+}
+
+.place-menu-editor__price {
+  position: relative;
+}
+
+.place-menu-editor__price input {
+  padding-right: 58px;
+}
+
+.place-menu-editor__price span {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--app-text-caption);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.place-menu-editor__remove {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--app-line-strong);
+  border-radius: 50%;
+  color: var(--app-text-secondary);
+  background: transparent;
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+@media (max-width: 700px) {
+  .hooma-form__grid,
+  .watch-match-form {
+    grid-template-columns: 1fr;
+  }
+
+  .watch-match-form__versus {
+    margin-inline: auto;
+  }
+
+  .place-menu-editor__row {
+    grid-template-columns: minmax(0, 1fr) minmax(105px, 0.42fr) 40px;
+  }
+
+  .hooma-form__section {
+    border-radius: 20px;
+  }
+}
