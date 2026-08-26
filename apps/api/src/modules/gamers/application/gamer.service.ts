@@ -5,6 +5,8 @@ import type { GamerEligibilityRepository } from "./gamer-eligibility.repository.
 import type { GamerGameRepository } from "./gamer-game.repository.js";
 import type { GamerProfileRepository } from "./gamer-profile.repository.js";
 
+const GLOBAL_ARENA_PAGE_SIZE = 24;
+
 export class GamerService {
   constructor(
     private readonly games: GamerGameRepository,
@@ -21,8 +23,11 @@ export class GamerService {
     return this.profiles.listDiscoverable();
   }
 
-  listArenaMatches() {
-    return this.challenges.listAcceptedAcrossActiveGames();
+  listArenaMatches(cursor?: string) {
+    return this.challenges.listAcceptedAcrossActiveGames({
+      ...(cursor ? { cursor } : {}),
+      limit: GLOBAL_ARENA_PAGE_SIZE,
+    });
   }
 
   async getGame(slug: string) {
