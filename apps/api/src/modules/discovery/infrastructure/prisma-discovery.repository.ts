@@ -103,21 +103,26 @@ export class PrismaDiscoveryRepository implements DiscoveryRepository {
     ]);
 
     return [
-      ...events.map((event): DiscoveryRecord => ({
-        kind: "EVENT",
-        id: event.id,
-        type: event.type,
-        title: event.title,
-        description: event.description,
-        startsAt: event.startsAt,
-        endsAt: event.endsAt,
-        context: {
-          communityId: event.community.id,
-          communityName: event.community.name,
-          city: event.community.city,
-          houma: event.community.houma,
-        },
-      })),
+      ...events.flatMap((event): DiscoveryRecord[] => {
+        if (!event.community) return [];
+        return [
+          {
+            kind: "EVENT",
+            id: event.id,
+            type: event.type,
+            title: event.title,
+            description: event.description,
+            startsAt: event.startsAt,
+            endsAt: event.endsAt,
+            context: {
+              communityId: event.community.id,
+              communityName: event.community.name,
+              city: event.community.city,
+              houma: event.community.houma,
+            },
+          },
+        ];
+      }),
       ...teamGames.flatMap((game): DiscoveryRecord[] => {
         if (!game.scheduledAt) return [];
         const community = game.homeTeam.community;
