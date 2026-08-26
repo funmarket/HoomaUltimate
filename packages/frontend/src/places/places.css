@@ -57,6 +57,11 @@
   text-decoration: none;
 }
 
+.place-card.place-card--directory {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto;
+}
+
 .place-card__media {
   min-height: 180px;
   overflow: hidden;
@@ -67,10 +72,23 @@
   font-weight: 900;
 }
 
+.place-card.place-card--directory .place-card__media {
+  width: 100%;
+  min-height: 0;
+  aspect-ratio: 16 / 9;
+  border-top: 1px solid var(--app-line);
+}
+
 .place-card__media img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.place-card.place-card--directory .place-card__media img {
+  display: block;
+  object-fit: contain;
+  object-position: center;
 }
 
 .place-card__copy {
@@ -79,6 +97,11 @@
   gap: 7px;
   min-width: 0;
   padding: 18px;
+}
+
+.place-card.place-card--directory .place-card__copy {
+  align-content: start;
+  min-height: 148px;
 }
 
 .place-card h2,
