@@ -542,9 +542,12 @@ test("G3 challenges enforce ownership, same-game/open rules, duplicate safety an
     assert.equal(inactiveCreate.status, 201);
     const inactive = (await inactiveCreate.json()) as { id: string };
     await db.gamerGame.update({ where: { id: inactive.id }, data: { status: "INACTIVE" } });
-    const inactiveChallenges = await fetch(`${base}/api/v1/gamers/games/${inactive.id}/challenges`, {
-      headers: { cookie: aliceCookie, origin: config.WEB_ORIGIN },
-    });
+    const inactiveChallenges = await fetch(
+      `${base}/api/v1/gamers/games/${inactive.id}/challenges`,
+      {
+        headers: { cookie: aliceCookie, origin: config.WEB_ORIGIN },
+      },
+    );
     assert.equal(inactiveChallenges.status, 404);
   } finally {
     await new Promise<void>((resolve, reject) =>
