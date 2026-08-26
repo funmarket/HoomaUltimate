@@ -3,6 +3,7 @@ import type { PublicPlaceSummary } from "@hooma/contracts/platform-management";
 import { useHoomaFrontend } from "../context";
 import { createEventApi, type EventRsvpState, type PublicEvent } from "../events/api";
 import { HoomaApiError } from "../http";
+import { FitSingleLineText } from "../ui/FitSingleLineText";
 import {
   CalendarIcon,
   ChevronRightIcon,
@@ -46,8 +47,9 @@ function eventDateParts(event: PublicEvent): {
         ...options,
       }).format(startsAt),
       day: new Intl.DateTimeFormat(undefined, { day: "2-digit", ...options }).format(startsAt),
-      month: new Intl.DateTimeFormat(undefined, { month: "short", ...options })
+      month: new Intl.DateTimeFormat("en-US", { month: "short", ...options })
         .format(startsAt)
+        .slice(0, 3)
         .toUpperCase(),
     };
   } catch {
@@ -59,7 +61,10 @@ function eventDateParts(event: PublicEvent): {
       }),
       time: startsAt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }),
       day: String(startsAt.getDate()).padStart(2, "0"),
-      month: startsAt.toLocaleDateString(undefined, { month: "short" }).toUpperCase(),
+      month: startsAt
+        .toLocaleDateString("en-US", { month: "short" })
+        .slice(0, 3)
+        .toUpperCase(),
     };
   }
 }
@@ -237,6 +242,7 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
   const visibleEvents = eventsExpanded ? events : events.slice(0, 2);
   const eventOpen = selectedEvent?.status !== "COMPLETED";
   const isGoing = rsvp === "CONFIRMED" || rsvp === "WAITLISTED";
+  const hasContact = Boolean(place.phone || place.email || place.websiteUrl);
 
   return (
     <section className="place-detail-page">
@@ -349,6 +355,7 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
             <span>Address</span>
           </div>
           <strong>{place.address}</strong>
+          {place.city ? <span className="place-info-card__secondary">{place.city}</span> : null}
         </article>
         <article>
           <div className="place-info-card__heading">
@@ -370,7 +377,19 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
             <PhoneIcon />
             <span>Contact</span>
           </div>
-          <strong>{place.phone || place.email || "—"}</strong>
+          {hasContact ? (
+            <div className="place-info-values">
+              {place.phone ? <a href={`tel:${place.phone}`}>{place.phone}</a> : null}
+              {place.email ? <a href={`mailto:${place.email}`}>{place.email}</a> : null}
+              {place.websiteUrl ? (
+                <a href={place.websiteUrl} target="_blank" rel="noreferrer">
+                  Website
+                </a>
+              ) : null}
+            </div>
+          ) : (
+            <strong>—</strong>
+          )}
           {place.phone ? (
             <a className="place-info-card__action" href={`tel:${place.phone}`}>
               <PhoneIcon size={16} /> Call
@@ -430,6 +449,7 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
         <div className="place-event-list">
           {visibleEvents.map((event) => {
             const date = eventDateParts(event);
+            const details = event.watchDetails;
             return (
               <a className="place-event-row" key={event.id} href={`/events/${event.id}`}>
                 <span className="place-event-row__date">
@@ -438,14 +458,30 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
                 </span>
                 <EventTeamMarks event={event} />
                 <span className="place-event-row__match">
-                  <strong>{event.title}</strong>
-                  {event.watchDetails ? (
-                    <span>
-                      <em>{event.watchDetails.teamOneName}</em>
+                  {details ? (
+                    <span className="place-event-row__matchup">
+                      <FitSingleLineText
+                        className="place-event-row__team-name place-event-row__team-name--one"
+                        text={details.teamOneName}
+                        minFontSize={10}
+                        maxFontSize={24}
+                      />
                       <small>VS</small>
-                      <b>{event.watchDetails.teamTwoName}</b>
+                      <FitSingleLineText
+                        className="place-event-row__team-name place-event-row__team-name--two"
+                        text={details.teamTwoName}
+                        minFontSize={10}
+                        maxFontSize={24}
+                      />
                     </span>
-                  ) : null}
+                  ) : (
+                    <FitSingleLineText
+                      className="place-event-row__legacy-title"
+                      text={event.title}
+                      minFontSize={11}
+                      maxFontSize={20}
+                    />
+                  )}
                 </span>
                 <span className="place-event-row__attendance">
                   <UsersIcon size={18} />
