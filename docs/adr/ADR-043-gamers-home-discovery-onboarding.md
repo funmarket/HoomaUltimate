@@ -1,21 +1,37 @@
-# ADR-043 — Gamers home discovery and canonical onboarding
+# ADR-043 — Gamers home discovery, Arena and canonical onboarding
 
 Status: **Accepted**  
 Date: **2026-08-26**
 
 ## Decision
 
-`/gamers` is the global Gamers discovery surface with three top-level sections:
+`/gamers` is the global Gamers discovery surface with four top-level sections:
 
 ```text
-GAMERS | CHALLENGERS | GAME CATALOG
+GAMERS | CHALLENGERS | ARENA | GAME CATALOG
 ```
 
-`GAMERS` is the default view and displays the canonical Gamer HUD card across active games. `CHALLENGERS` is the subset whose game profiles explicitly have `openToChallenge = true`. `GAME CATALOG` owns the existing active-game browsing and add-game flow.
+`GAMERS` is the default view and displays the canonical Gamer HUD card across active games. `CHALLENGERS` is the subset whose game profiles explicitly have `openToChallenge = true`. `ARENA` is the public privacy-safe projection of accepted Gamer challenges across active games. `GAME CATALOG` owns the existing active-game browsing and add-game flow.
 
-The homepage consumes one Gamers-domain cross-game discovery query. It must not fetch the game catalog and fan out one Challenger request per game.
+The homepage consumes one Gamers-domain cross-game discovery query and one Gamers-domain global Arena query. It must not fetch the game catalog and fan out Challenger or Arena requests per game.
 
 The same `GamerHudCard` component is reused by global discovery and individual game hubs. A second Gamer-card implementation is not permitted. Challenge remains the primary HUD action; direct Whistle remains the secondary transient action on the same shared card.
+
+The same `GamerMatchCard` presentation is reused by the local game Arena and the global Arena. The local game Arena uses the detailed form for that signed-in Gamer's challenge lifecycle; the global Arena uses a smaller compact form and exposes accepted Match Cards only. Both forms project each participant's canonical HOOMA profile photo, display name and game handle. Missing photos use a controlled presentation fallback; GamerProfile does not gain a duplicate avatar field.
+
+## Global Arena boundary
+
+An accepted `GamerChallenge` remains the canonical Match Card identity. No `Arena` table and no duplicate `GamerMatch` table are introduced for this projection.
+
+The public global Arena returns only accepted challenges whose `GamerGame` is active. Each item contains:
+
+- challenge id and accepted status;
+- active game id/slug/name;
+- challenger GamerProfile id and game handle;
+- challenged GamerProfile id and game handle;
+- each participant's canonical HOOMA username/display name/photo.
+
+It does not expose User ids, private account data, pending/declined/cancelled challenges, or member-only challenge actions. The selected-game Arena remains the authenticated place for incoming/outgoing pending actions and full per-game challenge activity.
 
 ## Canonical Gamer enrollment
 
