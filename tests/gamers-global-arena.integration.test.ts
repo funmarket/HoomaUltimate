@@ -82,9 +82,7 @@ test(
     const { server, base } = await startApp();
 
     try {
-      const fc = await db.gamerGame.findUnique({
-        where: { slug: "ea-sports-fc-mobile" },
-      });
+      const fc = await db.gamerGame.findUnique({ where: { slug: "ea-sports-fc-mobile" } });
       const ludo = await db.gamerGame.findUnique({ where: { slug: "ludo" } });
       assert.ok(fc);
       assert.ok(ludo);
@@ -155,20 +153,12 @@ test(
           challenger: {
             id: string;
             handle: string;
-            presentation: {
-              username: string;
-              displayName: string;
-              photoUrl: string | null;
-            };
+            presentation: { username: string; displayName: string; photoUrl: string | null };
           };
           challenged: {
             id: string;
             handle: string;
-            presentation: {
-              username: string;
-              displayName: string;
-              photoUrl: string | null;
-            };
+            presentation: { username: string; displayName: string; photoUrl: string | null };
           };
         }>;
       };
@@ -181,10 +171,7 @@ test(
         [acceptedLudo.id, acceptedFc.id],
       );
       assert.ok(fixtureMatches.every((item) => item.status === "ACCEPTED"));
-      assert.equal(
-        fixtureMatches.some((item) => item.id === inactiveAccepted.id),
-        false,
-      );
+      assert.equal(fixtureMatches.some((item) => item.id === inactiveAccepted.id), false);
       assert.deepEqual(
         fixtureMatches.map((item) => item.game.slug),
         [ludo.slug, fc.slug],
