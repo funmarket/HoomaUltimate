@@ -168,7 +168,7 @@
 
 .watch-ticket__upper {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(62px, 13cqw, 108px);
+  grid-template-columns: minmax(0, 1fr) clamp(68px, 14cqw, 112px);
   overflow: hidden;
   border: clamp(2px, 0.45cqw, 4px) solid var(--watch-ticket-black);
   border-radius: clamp(10px, 2.3cqw, 20px);
@@ -231,16 +231,16 @@
 .watch-ticket__matchup {
   min-width: 0;
   display: grid;
-  grid-template-columns: clamp(42px, 11cqw, 92px) minmax(0, 1fr) clamp(42px, 11cqw, 92px);
+  grid-template-columns: clamp(38px, 9.5cqw, 82px) minmax(0, 1fr) clamp(38px, 9.5cqw, 82px);
   align-items: center;
-  gap: clamp(7px, 1.5cqw, 15px);
+  gap: clamp(6px, 1.2cqw, 12px);
   color: var(--watch-ticket-ink);
   text-decoration: none;
 }
 
 .watch-ticket__team-mark {
   width: 100%;
-  max-width: 92px;
+  max-width: 82px;
   aspect-ratio: 1;
   display: grid;
   place-items: center;
@@ -277,7 +277,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  gap: clamp(4px, 0.9cqw, 9px);
+  gap: clamp(4px, 0.8cqw, 8px);
   font-family: var(--watch-ticket-font-display);
   letter-spacing: -0.01em;
   line-height: 0.88;
@@ -285,14 +285,14 @@
   text-transform: uppercase;
 }
 
-.watch-ticket__matchup-title strong {
+.watch-ticket__team-name {
   min-width: 0;
+  width: 100%;
+  display: block;
   overflow: hidden;
-  font-size: clamp(1.08rem, 5.2cqw, 2.7rem);
   font-weight: 950;
   line-height: 0.88;
   text-align: center;
-  text-overflow: clip;
   white-space: nowrap;
 }
 
@@ -317,9 +317,8 @@
   grid-template-columns: 1fr;
 }
 
-.watch-ticket__matchup-title--legacy strong {
+.watch-ticket__matchup-title--legacy .watch-ticket__team-name {
   color: var(--watch-ticket-ink);
-  font-size: clamp(1.1rem, 5.7cqw, 3rem);
 }
 
 .watch-ticket__divider {
@@ -379,7 +378,6 @@
   font-size: clamp(0.82rem, 3.65cqw, 1.7rem);
   font-weight: 950;
   line-height: 0.98;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -390,7 +388,6 @@
   font-size: clamp(0.66rem, 2.55cqw, 1.15rem);
   font-weight: 800;
   line-height: 1.05;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -408,29 +405,28 @@
 .watch-ticket__status {
   width: fit-content;
   max-width: 100%;
-  overflow: hidden;
   padding: clamp(3px, 0.55cqw, 6px) clamp(5px, 0.85cqw, 9px);
   border: 2px solid #426126;
   border-radius: clamp(4px, 0.75cqw, 8px);
   color: #426126;
   background: rgb(238 216 173 / 55%);
   font-family: var(--watch-ticket-font-condensed);
-  font-size: clamp(0.5rem, 1.85cqw, 0.88rem);
+  font-size: clamp(0.48rem, 1.72cqw, 0.82rem);
   font-weight: 950;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   line-height: 1;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  text-align: center;
+  white-space: normal;
 }
 
 .watch-ticket__stub {
   position: relative;
   min-width: 0;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
   place-items: center;
-  gap: clamp(8px, 1.6cqw, 16px);
-  padding: clamp(12px, 2.3cqw, 22px) clamp(7px, 1.3cqw, 13px);
+  gap: clamp(5px, 1cqw, 10px);
+  padding: clamp(8px, 1.5cqw, 14px) clamp(5px, 0.9cqw, 9px);
   border-left: 2px dashed color-mix(in srgb, var(--watch-ticket-gold) 85%, #fff 8%);
   color: var(--watch-ticket-gold);
   background:
@@ -458,36 +454,36 @@
   bottom: 14%;
 }
 
-.watch-ticket__stub-ball {
-  width: clamp(34px, 7cqw, 60px);
-  aspect-ratio: 1;
-  display: grid;
-  place-items: center;
-  border: 2px solid var(--watch-ticket-gold);
-  border-radius: 50%;
-  color: #d6a031;
-  background: #0c0c0c;
-  box-shadow:
-    0 0 0 3px #0c0c0c,
-    0 0 0 4px color-mix(in srgb, var(--watch-ticket-gold) 75%, transparent);
-  font-size: clamp(1rem, 3.8cqw, 2rem);
-  line-height: 1;
+.watch-ticket__stub-logo {
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  object-position: center;
 }
 
-.watch-ticket__stub strong {
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--watch-ticket-gold);
+.watch-ticket__stub-date {
+  display: grid;
+  place-items: center;
+  gap: 1px;
+  color: var(--app-lime);
   font-family: var(--watch-ticket-font-condensed);
-  font-size: clamp(0.78rem, 2.8cqw, 1.35rem);
   font-weight: 950;
-  letter-spacing: 0.18em;
-  line-height: 1;
+  line-height: 0.9;
   text-align: center;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
+  text-transform: uppercase;
+}
+
+.watch-ticket__stub-date strong {
+  font-size: clamp(0.72rem, 2.5cqw, 1.15rem);
+  letter-spacing: 0.03em;
+}
+
+.watch-ticket__stub-date small {
+  font-size: clamp(0.56rem, 1.8cqw, 0.84rem);
+  font-weight: 950;
+  letter-spacing: 0.08em;
 }
 
 .watch-ticket__photo-panel {
@@ -595,7 +591,7 @@
   }
 
   .watch-ticket__upper {
-    grid-template-columns: minmax(0, 1fr) clamp(52px, 12.5cqw, 66px);
+    grid-template-columns: minmax(0, 1fr) clamp(58px, 13.5cqw, 72px);
   }
 
   .watch-ticket__paper {
@@ -614,20 +610,16 @@
   }
 
   .watch-ticket__matchup {
-    grid-template-columns: clamp(34px, 10cqw, 44px) minmax(0, 1fr) clamp(34px, 10cqw, 44px);
-    gap: clamp(4px, 1cqw, 6px);
+    grid-template-columns: clamp(30px, 8.5cqw, 38px) minmax(0, 1fr) clamp(30px, 8.5cqw, 38px);
+    gap: clamp(3px, 0.8cqw, 5px);
   }
 
   .watch-ticket__matchup-title {
-    gap: 3px;
-  }
-
-  .watch-ticket__matchup-title strong {
-    font-size: clamp(0.86rem, 4.55cqw, 1.12rem);
+    gap: 2px;
   }
 
   .watch-ticket__matchup-title small {
-    font-size: clamp(0.6rem, 2.5cqw, 0.76rem);
+    font-size: clamp(0.58rem, 2.35cqw, 0.74rem);
   }
 
   .watch-ticket__details {
@@ -646,32 +638,30 @@
   }
 
   .watch-ticket__detail-copy > strong {
-    font-size: clamp(0.68rem, 3.2cqw, 0.88rem);
+    font-size: clamp(0.74rem, 3.5cqw, 1rem);
   }
 
   .watch-ticket__detail-copy > span:not(.watch-ticket__status) {
-    font-size: clamp(0.55rem, 2.35cqw, 0.7rem);
+    font-size: clamp(0.58rem, 2.5cqw, 0.76rem);
   }
 
   .watch-ticket__status {
     padding: 2px 4px;
     border-width: 1px;
-    font-size: clamp(0.43rem, 1.75cqw, 0.56rem);
+    font-size: clamp(0.44rem, 1.7cqw, 0.58rem);
   }
 
   .watch-ticket__stub {
-    gap: 7px;
-    padding: 9px 5px;
+    gap: 4px;
+    padding: 7px 4px;
   }
 
-  .watch-ticket__stub-ball {
-    width: clamp(29px, 7cqw, 38px);
-    font-size: clamp(0.85rem, 3.5cqw, 1.15rem);
+  .watch-ticket__stub-date strong {
+    font-size: clamp(0.68rem, 2.4cqw, 0.88rem);
   }
 
-  .watch-ticket__stub strong {
-    font-size: clamp(0.68rem, 2.7cqw, 0.84rem);
-    letter-spacing: 0.13em;
+  .watch-ticket__stub-date small {
+    font-size: clamp(0.5rem, 1.75cqw, 0.66rem);
   }
 
   .watch-ticket__photo-panel {
