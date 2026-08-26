@@ -30,10 +30,10 @@
 .place-primary-link,
 .place-detail-actions a {
   display: inline-flex;
-  min-height: 44px;
+  min-height: 48px;
   align-items: center;
   justify-content: center;
-  padding: 0 16px;
+  padding: 0 18px;
   border: 1px solid var(--app-lime);
   border-radius: 14px;
   color: #111500;
@@ -61,7 +61,7 @@
 }
 
 .place-card__media {
-  min-height: 160px;
+  min-height: 180px;
   overflow: hidden;
   display: grid;
   place-items: center;
@@ -96,7 +96,6 @@
   color: var(--app-text-secondary);
 }
 
-.place-add-form,
 .place-business-grid,
 .place-business-form,
 .place-business-form__heading,
@@ -106,7 +105,6 @@
   gap: 14px;
 }
 
-.place-add-form label,
 .place-claim-form label,
 .place-business-field {
   display: grid;
@@ -114,20 +112,12 @@
   font-weight: 700;
 }
 
-.place-add-form input,
-.place-add-form textarea,
 .place-business-form input,
 .place-business-form select,
 .place-business-form textarea,
 .place-claim-form textarea {
   width: 100%;
   min-width: 0;
-}
-
-.place-form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
 }
 
 .place-submitted {
@@ -138,18 +128,18 @@
 
 .place-detail-hero {
   display: grid;
-  grid-template-columns: minmax(220px, 40%) 1fr;
-  gap: 24px;
+  grid-template-columns: minmax(260px, 38%) 1fr;
+  gap: 26px;
   align-items: stretch;
 }
 
 .place-detail-hero__media {
-  min-height: 300px;
+  min-height: 330px;
   overflow: hidden;
   display: grid;
   place-items: center;
   border: 1px solid var(--app-line);
-  border-radius: 22px;
+  border-radius: 24px;
   color: var(--app-gold);
   background: var(--app-bg-raised);
   font-size: 2rem;
@@ -159,7 +149,18 @@
 .place-detail-hero__copy {
   display: grid;
   align-content: center;
-  gap: 14px;
+  gap: 16px;
+}
+
+.place-detail-hero__copy h1 {
+  font-size: clamp(2rem, 6vw, 3.2rem);
+  line-height: 0.95;
+}
+
+.place-detail-hero__copy > p:not(.eyebrow) {
+  color: var(--app-text-secondary);
+  font-size: 1.05rem;
+  line-height: 1.5;
 }
 
 .place-detail-actions {
@@ -181,11 +182,13 @@
 }
 
 .place-info-grid article {
+  min-width: 0;
   display: grid;
-  gap: 7px;
-  padding: 16px;
+  align-content: start;
+  gap: 8px;
+  padding: 17px;
   border: 1px solid var(--app-line);
-  border-radius: 16px;
+  border-radius: 18px;
   background: var(--app-surface);
 }
 
@@ -194,10 +197,48 @@
   font-weight: 800;
 }
 
+.place-info-grid strong {
+  overflow-wrap: anywhere;
+  line-height: 1.45;
+}
+
+.place-menu-section,
 .place-events-section,
 .place-claim-section {
   display: grid;
   gap: 14px;
+}
+
+.place-menu-preview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--app-line);
+  border-radius: 18px;
+  background: var(--app-surface);
+}
+
+.place-menu-preview article {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  border-right: 1px dashed var(--app-line-strong);
+}
+
+.place-menu-preview article:last-child {
+  border-right: 0;
+}
+
+.place-menu-preview strong {
+  overflow: hidden;
+  color: var(--app-gold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.place-menu-preview span {
+  color: var(--app-text-secondary);
 }
 
 .place-event-list {
@@ -207,11 +248,13 @@
 
 .place-event-list a {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 14px;
-  padding: 16px;
+  min-height: 70px;
+  padding: 16px 18px;
   border: 1px solid var(--app-line);
-  border-radius: 16px;
+  border-radius: 18px;
   color: var(--app-text);
   background: var(--app-surface);
   text-decoration: none;
@@ -231,6 +274,37 @@
 
 .place-business-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.place-danger-zone,
+.event-danger-zone {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 20px;
+  border: 1px solid color-mix(in srgb, #d65454 55%, var(--app-line));
+  border-radius: 18px;
+  background: color-mix(in srgb, #5b1515 12%, var(--app-surface));
+}
+
+.place-danger-zone h3,
+.place-danger-zone p,
+.event-danger-zone h3,
+.event-danger-zone p {
+  margin: 0;
+}
+
+.place-danger-zone > button,
+.event-danger-zone > button {
+  width: fit-content;
+  min-height: 48px;
+  padding: 0 18px;
+  border: 1px solid #d65454;
+  border-radius: 14px;
+  color: #ffdede;
+  background: #651c1c;
+  font-weight: 900;
+  cursor: pointer;
 }
 
 @media (max-width: 760px) {
@@ -255,15 +329,11 @@
   }
 
   .place-detail-hero__media {
-    min-height: 240px;
+    min-height: 260px;
   }
 }
 
 @media (max-width: 520px) {
-  .place-form-grid {
-    grid-template-columns: 1fr;
-  }
-
   .place-card {
     grid-template-columns: 1fr;
   }
@@ -275,5 +345,9 @@
 
   .place-event-list a {
     display: grid;
+  }
+
+  .place-menu-preview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
