@@ -112,7 +112,7 @@ test("Watch Event errors use canonical Community, Place and manage boundaries", 
   }
 });
 
-test("Watch uses one shared collector ticket with full centered team names between logos", () => {
+test("Watch collector ticket gives Place media and team crests dedicated responsive slots", () => {
   const watch = source("packages/frontend/src/watch/WatchPage.tsx");
   const ticket = source("packages/frontend/src/watch/WatchTicket.tsx");
   const ticketCss = source("packages/frontend/src/watch/watch.css");
@@ -121,20 +121,37 @@ test("Watch uses one shared collector ticket with full centered team names betwe
   assert.match(watch, /import \{ WatchTicket \} from "\.\/WatchTicket"/);
   assert.match(ticket, /WATCH_COLLECTOR_TICKET_MASTER/);
   assert.match(ticket, /place\.imageUrl/);
+  assert.match(ticket, /watch-ticket__team-mark/);
   assert.match(ticket, /TeamMark name=\{matchup\.teamOneName\}/);
   assert.match(ticket, /watch-ticket__matchup-title/);
   assert.match(ticket, /TeamMark name=\{matchup\.teamTwoName\}/);
+
+  const photoRule = ticketCss.match(/\.watch-ticket__place-photo \{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.match(photoRule, /width:\s*27\.6%/);
+  assert.match(photoRule, /height:\s*86\.6%/);
+  assert.match(ticketCss, /\.watch-ticket__place-photo img \{[\s\S]*?object-fit:\s*cover/);
+
+  const matchupRule = ticketCss.match(/\.watch-ticket__matchup \{([\s\S]*?)\n\}/)?.[1] ?? "";
   assert.match(
-    ticketCss,
-    /\.watch-ticket__matchup \{[\s\S]*?grid-template-columns:\s*minmax\(24px, 0\.2fr\) minmax\(0, 1\.6fr\) minmax\(24px, 0\.2fr\)/,
+    matchupRule,
+    /grid-template-columns:\s*minmax\(0, 8\.6cqw\) minmax\(0, 1fr\) minmax\(0, 8\.6cqw\)/,
   );
-  const titleRule =
+
+  const markRule = ticketCss.match(/\.watch-ticket__team-mark \{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.match(markRule, /width:\s*8\.3cqw/);
+  assert.match(markRule, /border-radius:\s*50%/);
+  assert.match(ticketCss, /\.watch-ticket__team-logo \{[\s\S]*?object-fit:\s*contain/);
+
+  const titleRule = ticketCss.match(/\.watch-ticket__matchup-title \{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.match(titleRule, /grid-template-columns:\s*minmax\(0, 1fr\) auto minmax\(0, 1fr\)/);
+  const teamNameRule =
     ticketCss.match(/\.watch-ticket__matchup-title strong \{([\s\S]*?)\n\}/)?.[1] ?? "";
-  assert.match(titleRule, /font-size:\s*clamp\(0\.48rem, 1\.85cqw, 1\.15rem\)/);
-  assert.match(titleRule, /white-space:\s*normal/);
-  assert.match(titleRule, /overflow-wrap:\s*anywhere/);
-  assert.doesNotMatch(titleRule, /text-overflow:\s*ellipsis/);
-  assert.doesNotMatch(titleRule, /white-space:\s*nowrap/);
+  assert.match(teamNameRule, /justify-content:\s*center/);
+  assert.match(teamNameRule, /font-size:\s*clamp\(0\.42rem, 1\.65cqw, 1\.06rem\)/);
+  assert.match(teamNameRule, /white-space:\s*normal/);
+  assert.match(teamNameRule, /overflow-wrap:\s*anywhere/);
+  assert.doesNotMatch(teamNameRule, /text-overflow:\s*ellipsis/);
+
   assert.match(ticket, /\/places\/\$\{place\.id\}\?eventId=/);
   assert.match(places, /<WatchTicket event=\{selectedEvent\} \/>/);
 });

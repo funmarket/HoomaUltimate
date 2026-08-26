@@ -30,11 +30,15 @@ function eventDateParts(event: PublicEvent): { date: string; time: string } {
 }
 
 function TeamMark({ name, logoUrl }: { readonly name: string; readonly logoUrl: string | null }) {
-  return logoUrl ? (
-    <img className="watch-ticket__team-logo" src={logoUrl} alt={`${name} logo`} />
-  ) : (
-    <span className="watch-ticket__team-placeholder" aria-hidden="true">
-      {name.slice(0, 1).toUpperCase()}
+  return (
+    <span className="watch-ticket__team-mark">
+      {logoUrl ? (
+        <img className="watch-ticket__team-logo" src={logoUrl} alt={`${name} logo`} />
+      ) : (
+        <span className="watch-ticket__team-placeholder" aria-hidden="true">
+          {name.slice(0, 1).toUpperCase()}
+        </span>
+      )}
     </span>
   );
 }
