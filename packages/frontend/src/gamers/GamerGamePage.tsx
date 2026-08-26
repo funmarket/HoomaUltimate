@@ -293,7 +293,9 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
         </a>
         <span className="eyebrow">GAME HUB</span>
         <h1>{game.name}</h1>
-        <p>Build your game identity, find a real opponent, and take accepted challenges into Arena.</p>
+        <p>
+          Build your game identity, find a real opponent, and take accepted challenges into Arena.
+        </p>
       </header>
 
       <nav className="gamer-hub-tabs" aria-label={`${game.name} sections`}>
@@ -330,8 +332,8 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
               <span className="eyebrow">YOUR GAME IDENTITY</span>
               <h2 id="gamer-profile-heading">Your {game.name} profile</h2>
               <p className="muted">
-                Your game handle belongs here. Your HOOMA name, photo and bio stay owned by your main
-                profile.
+                Your game handle belongs here. Your HOOMA name, photo and bio stay owned by your
+                main profile.
               </p>
             </div>
             {accountLoading || identityLoading ? (
