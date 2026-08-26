@@ -65,7 +65,10 @@ export function WatchPage() {
     };
   }, [eventApi]);
 
-  const visibleKindEvents = useMemo(() => events.filter((event) => watchKind(event) === kind), [events, kind]);
+  const visibleKindEvents = useMemo(
+    () => events.filter((event) => watchKind(event) === kind),
+    [events, kind],
+  );
 
   const cities = useMemo(
     () =>
@@ -152,7 +155,10 @@ export function WatchPage() {
         <a className="watch-action" href="/places">
           Places
         </a>
-        <a className="watch-action watch-action--primary" href={`/events/new?type=WATCH&kind=${kind}`}>
+        <a
+          className="watch-action watch-action--primary"
+          href={`/events/new?type=WATCH&kind=${kind}`}
+        >
           Create Event
         </a>
         <a className="watch-action" href="/places/new">
@@ -191,7 +197,11 @@ export function WatchPage() {
             aria-label="Search Watch events or venues"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder={kind === "MATCH" ? "Search matches, teams or venues" : "Search cultural events or venues"}
+            placeholder={
+              kind === "MATCH"
+                ? "Search matches, teams or venues"
+                : "Search cultural events or venues"
+            }
           />
         </label>
         <div className="watch-location-filters">

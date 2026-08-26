@@ -94,7 +94,10 @@ export function PlaceForm({
     const menuItems = menu
       .map((item) => ({ name: item.name.trim(), price: Number(item.price), currency: "TND" }))
       .filter((item) => item.name && Number.isFinite(item.price) && item.price >= 0);
-    const canonicalImages = imageUrls.map((value) => value.trim()).filter(Boolean).slice(0, 4);
+    const canonicalImages = imageUrls
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .slice(0, 4);
 
     await onSubmit({
       name: String(data.get("name") ?? "").trim(),

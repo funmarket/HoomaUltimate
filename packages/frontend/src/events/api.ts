@@ -42,14 +42,7 @@ export type PublicEvent = {
     | {
         kind: "CULTURAL";
         culturalCategory:
-          | "MUSIC"
-          | "CONCERT"
-          | "COMEDY"
-          | "ART"
-          | "SCREENING"
-          | "FOOD"
-          | "COMMUNITY"
-          | "OTHER";
+          "MUSIC" | "CONCERT" | "COMEDY" | "ART" | "SCREENING" | "FOOD" | "COMMUNITY" | "OTHER";
         imageUrl: string | null;
       }
     | null;

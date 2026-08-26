@@ -277,7 +277,8 @@ const watchCulturalEventDetailsSchema = z.object({
 
 export const watchEventDetailsSchema = z.preprocess(
   (value) => {
-    if (!value || typeof value !== "object" || Array.isArray(value) || "kind" in value) return value;
+    if (!value || typeof value !== "object" || Array.isArray(value) || "kind" in value)
+      return value;
     return { ...value, kind: "MATCH" };
   },
   z.discriminatedUnion("kind", [watchMatchEventDetailsSchema, watchCulturalEventDetailsSchema]),

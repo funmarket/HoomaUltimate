@@ -85,7 +85,8 @@ function EventTeamMarks({ event }: { readonly event: PublicEvent }) {
       </span>
     );
   }
-  if (details?.kind !== "MATCH") return <span className="place-event-row__teams" aria-hidden="true" />;
+  if (details?.kind !== "MATCH")
+    return <span className="place-event-row__teams" aria-hidden="true" />;
   return (
     <span className="place-event-row__teams" aria-hidden="true">
       {details.teamOneLogoUrl ? <img src={details.teamOneLogoUrl} alt="" /> : <span />}
@@ -509,7 +510,9 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
             <a href={`/places/${place.id}/edit`}>
               <EditIcon size={16} /> Edit Place
             </a>
-            <a href={`/events/new?type=WATCH&kind=CULTURAL&placeId=${encodeURIComponent(place.id)}`}>
+            <a
+              href={`/events/new?type=WATCH&kind=CULTURAL&placeId=${encodeURIComponent(place.id)}`}
+            >
               Create Cultural Event
             </a>
             <button type="button" disabled={deleting} onClick={() => void deletePlace()}>
