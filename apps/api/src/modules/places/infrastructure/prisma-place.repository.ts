@@ -6,6 +6,7 @@ import type {
   PlaceOwnershipClaimInput,
   PlaceSuggestionInput,
   PlaceUpdateInput,
+  PublicPlaceImage,
   PublicPlaceSummary,
 } from "@hooma/contracts/platform-management";
 import { Prisma, type PrismaClient } from "@hooma/database";
@@ -50,8 +51,14 @@ const placeSelect = Prisma.validator<Prisma.PlaceSelect>()({
 });
 
 type PlaceRow = Prisma.PlaceGetPayload<{ select: typeof placeSelect }>;
+type PlaceImageRow = { id: string; placeId: string; imageUrl: string; sortOrder: number };
 
-function placeSummary(place: PlaceRow): PublicPlaceSummary {
+function placeSummary(place: PlaceRow, images: readonly PlaceImageRow[] = []): PublicPlaceSummary {
+  const publicImages: PublicPlaceImage[] = images.map((image) => ({
+    id: image.id,
+    imageUrl: image.imageUrl,
+    sortOrder: image.sortOrder,
+  }));
   return {
     id: place.id,
     slug: place.slug,
@@ -63,7 +70,8 @@ function placeSummary(place: PlaceRow): PublicPlaceSummary {
     longitude: place.longitude?.toNumber() ?? null,
     phone: place.phone,
     websiteUrl: place.websiteUrl,
-    imageUrl: place.imageUrl,
+    imageUrl: publicImages[0]?.imageUrl ?? place.imageUrl,
+    images: publicImages,
     description: place.description,
     category: place.category,
     email: place.email,
@@ -85,6 +93,25 @@ function menuCreate(input: PlaceSuggestionInput["menuItems"]) {
   }));
 }
 
+function canonicalImageUrls(input: Pick<PlaceSuggestionInput, "imageUrl" | "imageUrls">): string[] {
+  if (input.imageUrls.length) return input.imageUrls;
+  return input.imageUrl ? [input.imageUrl] : [];
+}
+
+function imageCreate(imageUrls: readonly string[]) {
+  return imageUrls.slice(0, 4).map((imageUrl, sortOrder) => ({ imageUrl, sortOrder }));
+}
+
+function groupImages(rows: readonly PlaceImageRow[]): Map<string, PlaceImageRow[]> {
+  const grouped = new Map<string, PlaceImageRow[]>();
+  for (const row of rows) {
+    const group = grouped.get(row.placeId) ?? [];
+    group.push(row);
+    grouped.set(row.placeId, group);
+  }
+  return grouped;
+}
+
 export class PrismaPlaceRepository implements PlaceRepository {
   constructor(private readonly db: PrismaClient) {}
 
@@ -94,7 +121,14 @@ export class PrismaPlaceRepository implements PlaceRepository {
       select: placeSelect,
       orderBy: [{ city: "asc" }, { name: "asc" }],
     });
-    return places.map(placeSummary);
+    const images = places.length
+      ? await this.db.placeImage.findMany({
+          where: { placeId: { in: places.map((place) => place.id) } },
+          orderBy: [{ placeId: "asc" }, { sortOrder: "asc" }, { id: "asc" }],
+        })
+      : [];
+    const byPlace = groupImages(images);
+    return places.map((place) => placeSummary(place, byPlace.get(place.id) ?? []));
   }
 
   async suggest(userId: string, input: PlaceSuggestionInput) {
@@ -114,6 +148,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
       });
       if (existing) throw new Error("PLACE_ALREADY_EXISTS");
 
+      const imageUrls = canonicalImageUrls(input);
       const place = await tx.place.create({
         data: {
           slug: `${slugBase(input.name)}-${randomUUID().slice(0, 8)}`,
@@ -125,7 +160,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
           longitude: input.longitude ?? null,
           phone: input.phone ?? null,
           websiteUrl: input.websiteUrl ?? null,
-          imageUrl: input.imageUrl ?? null,
+          imageUrl: imageUrls[0] ?? null,
           description: input.description ?? null,
           category: input.category ?? null,
           email: input.email ?? null,
@@ -134,7 +169,16 @@ export class PrismaPlaceRepository implements PlaceRepository {
         },
         select: { ...placeSelect, moderationStatus: true },
       });
-      return { ...placeSummary(place), status: place.moderationStatus };
+      if (imageUrls.length) {
+        await tx.placeImage.createMany({
+          data: imageCreate(imageUrls).map((image) => ({ ...image, placeId: place.id })),
+        });
+      }
+      const images = await tx.placeImage.findMany({
+        where: { placeId: place.id },
+        orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+      });
+      return { ...placeSummary(place, images), status: place.moderationStatus };
     });
   }
 
@@ -143,7 +187,12 @@ export class PrismaPlaceRepository implements PlaceRepository {
       where: { id: placeId, moderationStatus: "APPROVED", archivedAt: null },
       select: placeSelect,
     });
-    return place ? placeSummary(place) : null;
+    if (!place) return null;
+    const images = await this.db.placeImage.findMany({
+      where: { placeId },
+      orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+    });
+    return placeSummary(place, images);
   }
 
   async getManaged(placeId: string): Promise<ManagedPlaceSummary | null> {
@@ -151,13 +200,16 @@ export class PrismaPlaceRepository implements PlaceRepository {
       where: { id: placeId },
       select: { ...placeSelect, moderationStatus: true, archivedAt: true },
     });
-    return place
-      ? {
-          ...placeSummary(place),
-          moderationStatus: place.moderationStatus,
-          archivedAt: place.archivedAt?.toISOString() ?? null,
-        }
-      : null;
+    if (!place) return null;
+    const images = await this.db.placeImage.findMany({
+      where: { placeId },
+      orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+    });
+    return {
+      ...placeSummary(place, images),
+      moderationStatus: place.moderationStatus,
+      archivedAt: place.archivedAt?.toISOString() ?? null,
+    };
   }
 
   async canManage(placeId: string, userId: string): Promise<boolean> {
@@ -203,6 +255,22 @@ export class PrismaPlaceRepository implements PlaceRepository {
       if (input.menuItems !== undefined) {
         await tx.placeMenuItem.deleteMany({ where: { placeId } });
       }
+      const imageUrls =
+        input.imageUrls !== undefined
+          ? input.imageUrls
+          : input.imageUrl !== undefined
+            ? input.imageUrl
+              ? [input.imageUrl]
+              : []
+            : undefined;
+      if (imageUrls !== undefined) {
+        await tx.placeImage.deleteMany({ where: { placeId } });
+        if (imageUrls.length) {
+          await tx.placeImage.createMany({
+            data: imageCreate(imageUrls).map((image) => ({ ...image, placeId })),
+          });
+        }
+      }
       const place = await tx.place.update({
         where: { id: placeId },
         data: {
@@ -214,7 +282,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
           ...(input.longitude !== undefined ? { longitude: input.longitude } : {}),
           ...(input.phone !== undefined ? { phone: input.phone } : {}),
           ...(input.websiteUrl !== undefined ? { websiteUrl: input.websiteUrl } : {}),
-          ...(input.imageUrl !== undefined ? { imageUrl: input.imageUrl } : {}),
+          ...(imageUrls !== undefined ? { imageUrl: imageUrls[0] ?? null } : {}),
           ...(input.description !== undefined ? { description: input.description } : {}),
           ...(input.category !== undefined ? { category: input.category } : {}),
           ...(input.email !== undefined ? { email: input.email } : {}),
@@ -224,8 +292,12 @@ export class PrismaPlaceRepository implements PlaceRepository {
         },
         select: { ...placeSelect, moderationStatus: true, archivedAt: true },
       });
+      const images = await tx.placeImage.findMany({
+        where: { placeId },
+        orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+      });
       return {
-        ...placeSummary(place),
+        ...placeSummary(place, images),
         moderationStatus: place.moderationStatus,
         archivedAt: place.archivedAt?.toISOString() ?? null,
       };
