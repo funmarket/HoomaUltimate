@@ -8,7 +8,7 @@ function source(path) {
 
 function cssRule(css, selector) {
   const marker = `${selector} {`;
-  const start = css.lastIndexOf(marker);
+  const start = css.indexOf(marker);
   if (start < 0) return "";
   const bodyStart = start + marker.length;
   const bodyEnd = css.indexOf("\n}", bodyStart);
@@ -121,80 +121,67 @@ test("Watch Event errors use canonical Community, Place and manage boundaries", 
   }
 });
 
-test("Watch collector ticket aligns media, readable typography and matchup to the corrected master", () => {
+test("Watch collector ticket is information-first with one stacked Place photo source", () => {
   const watch = source("packages/frontend/src/watch/WatchPage.tsx");
   const ticket = source("packages/frontend/src/watch/WatchTicket.tsx");
   const ticketCss = source("packages/frontend/src/watch/watch.css");
   const placeDetail = source("packages/frontend/src/places/PlaceDetailPage.tsx");
 
   assert.match(watch, /import \{ WatchTicket \} from "\.\/WatchTicket"/);
-  assert.match(ticket, /WATCH_COLLECTOR_TICKET_MASTER/);
-  assert.match(ticket, /place\.imageUrl/);
-  assert.match(ticket, /watch-ticket__team-mark/);
+  assert.doesNotMatch(ticket, /WATCH_COLLECTOR_TICKET_MASTER/);
+  assert.doesNotMatch(ticket, /watch-ticket__place-photo/);
+  assert.match(ticket, /watch-ticket__upper/);
+  assert.match(ticket, /watch-ticket__paper/);
+  assert.match(ticket, /watch-ticket__details/);
+  assert.match(ticket, /watch-ticket__photo-panel/);
+  assert.match(ticket, /PinIcon/);
+  assert.match(ticket, /CalendarIcon/);
+  assert.match(ticket, /UsersIcon/);
   assert.match(ticket, /TeamMark name=\{matchup\.teamOneName\}/);
-  assert.match(ticket, /watch-ticket__matchup-title/);
   assert.match(ticket, /TeamMark name=\{matchup\.teamTwoName\}/);
-  assert.match(ticketCss, /\.watch-ticket \{[\s\S]*?aspect-ratio:\s*1672 \/ 941/);
-  assert.match(
-    ticketCss,
-    /--watch-ticket-font-display:\s*Impact, Haettenschweiler, "Arial Narrow Bold", "Arial Narrow", sans-serif/,
-  );
-  assert.match(
-    ticketCss,
-    /--watch-ticket-font-condensed:\s*"Arial Narrow", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif/,
-  );
+  assert.match(ticket, /<strong>HOOMA<\/strong>/);
 
-  const photoRule = cssRule(ticketCss, ".watch-ticket__place-photo");
-  assert.match(photoRule, /top:\s*8\.1%/);
-  assert.match(photoRule, /left:\s*4\.5%/);
-  assert.match(photoRule, /width:\s*25\.5%/);
-  assert.match(photoRule, /height:\s*82%/);
-  assert.match(ticketCss, /\.watch-ticket__place-photo img \{[\s\S]*?object-fit:\s*cover/);
-  assert.match(ticketCss, /\.watch-ticket__place-photo img \{[\s\S]*?object-position:\s*center/);
+  assert.match(
+    ticketCss,
+    /--watch-ticket-font-display:[\s\S]*?Impact, Haettenschweiler, "Arial Narrow Bold", "Arial Narrow", sans-serif/,
+  );
+  assert.match(
+    ticketCss,
+    /--watch-ticket-font-condensed:[\s\S]*?"Arial Narrow", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif/,
+  );
 
   const matchupRule = cssRule(ticketCss, ".watch-ticket__matchup");
-  assert.match(matchupRule, /top:\s*15\.6%/);
-  assert.match(matchupRule, /left:\s*31%/);
-  assert.match(matchupRule, /height:\s*24\.2%/);
   assert.match(
     matchupRule,
-    /grid-template-columns:\s*minmax\(0, 8\.3cqw\) minmax\(0, 1fr\) minmax\(0, 8\.3cqw\)/,
+    /grid-template-columns:\s*clamp\(42px, 11cqw, 92px\) minmax\(0, 1fr\) clamp\(42px, 11cqw, 92px\)/,
   );
-
-  const markRule = cssRule(ticketCss, ".watch-ticket__team-mark");
-  assert.match(markRule, /width:\s*8\.3cqw/);
-  assert.match(markRule, /border-radius:\s*50%/);
-  assert.match(ticketCss, /\.watch-ticket__team-logo \{[\s\S]*?object-fit:\s*contain/);
-  assert.match(ticketCss, /\.watch-ticket__team-logo \{[\s\S]*?object-position:\s*center/);
-
-  const titleRule = cssRule(ticketCss, ".watch-ticket__matchup-title");
-  assert.match(titleRule, /grid-template-columns:\s*minmax\(0, 1fr\) auto minmax\(0, 1fr\)/);
-  assert.match(titleRule, /font-family:\s*var\(--watch-ticket-font-display\)/);
-  assert.match(titleRule, /line-height:\s*0\.9/);
-  assert.doesNotMatch(titleRule, /Georgia|Times New Roman|serif/);
+  assert.doesNotMatch(matchupRule, /position:\s*absolute|top:|left:/);
 
   const teamNameRule = cssRule(ticketCss, ".watch-ticket__matchup-title strong");
-  assert.match(teamNameRule, /align-items:\s*center/);
-  assert.match(teamNameRule, /justify-content:\s*center/);
-  assert.match(teamNameRule, /font-size:\s*clamp\(0\.78rem, 3\.35cqw, 1\.55rem\)/);
+  assert.match(teamNameRule, /font-size:\s*clamp\(1\.08rem, 5\.2cqw, 2\.7rem\)/);
   assert.match(teamNameRule, /font-weight:\s*950/);
-  assert.match(teamNameRule, /line-height:\s*0\.9/);
-  assert.match(teamNameRule, /white-space:\s*normal/);
-  assert.match(teamNameRule, /overflow-wrap:\s*anywhere/);
-  assert.doesNotMatch(teamNameRule, /text-overflow:\s*ellipsis/);
+  assert.match(teamNameRule, /white-space:\s*nowrap/);
+  assert.doesNotMatch(teamNameRule, /overflow-wrap:\s*anywhere/);
 
-  const seriesRule = cssRule(ticketCss, ".watch-ticket__series");
-  const statusRule = cssRule(ticketCss, ".watch-ticket__status");
-  const stubRule = cssRule(ticketCss, ".watch-ticket__stub");
-  for (const rule of [seriesRule, statusRule, stubRule]) {
-    assert.match(rule, /font-family:\s*var\(--watch-ticket-font-condensed\)/);
-    assert.match(rule, /font-weight:\s*9(?:00|50)/);
-  }
+  const detailsRule = cssRule(ticketCss, ".watch-ticket__details");
+  assert.match(
+    detailsRule,
+    /grid-template-columns:\s*minmax\(0, 1\.22fr\) minmax\(0, 0\.95fr\) minmax\(0, 0\.9fr\)/,
+  );
 
-  const venueStrongRule = cssRule(ticketCss, ".watch-ticket__venue strong");
-  const dateStrongRule = cssRule(ticketCss, ".watch-ticket__date strong");
-  assert.match(venueStrongRule, /font-size:\s*clamp\(0\.56rem, 3cqw, 1\.3rem\)/);
-  assert.match(dateStrongRule, /font-size:\s*clamp\(0\.52rem, 2\.7cqw, 1\.15rem\)/);
+  const primaryRule = cssRule(ticketCss, ".watch-ticket__detail-copy > strong");
+  assert.match(primaryRule, /font-size:\s*clamp\(0\.82rem, 3\.65cqw, 1\.7rem\)/);
+  assert.match(primaryRule, /font-weight:\s*950/);
+
+  const stubRule = cssRule(ticketCss, ".watch-ticket__stub strong");
+  assert.match(stubRule, /color:\s*var\(--watch-ticket-gold\)/);
+  assert.match(stubRule, /writing-mode:\s*vertical-rl/);
+
+  const photoRule = cssRule(ticketCss, ".watch-ticket__photo-panel");
+  assert.match(photoRule, /width:\s*calc\(100% - clamp\(10px, 2cqw, 18px\)\)/);
+  assert.match(photoRule, /aspect-ratio:\s*2 \/ 1/);
+  assert.match(photoRule, /justify-self:\s*center/);
+  assert.match(ticketCss, /\.watch-ticket__photo-panel img \{[\s\S]*?object-fit:\s*contain/);
 
   assert.match(ticket, /\/places\/\$\{place\.id\}\?eventId=/);
   assert.match(placeDetail, /<WatchTicket event=\{selectedEvent\} variant="place-detail" \/>/);
