@@ -6,10 +6,10 @@ import type {
   PublicPlaceCapability,
   PublicPlaceSummary,
 } from "@hooma/contracts/platform-management";
-import type { PrismaClient } from "@hooma/database";
+import { Prisma, type PrismaClient } from "@hooma/database";
 import type { PlaceCapabilityRepository } from "../application/place-capability.repository.js";
 
-const placeSelect = {
+const placeSelect = Prisma.validator<Prisma.PlaceSelect>()({
   id: true,
   slug: true,
   name: true,
@@ -25,33 +25,14 @@ const placeSelect = {
   category: true,
   email: true,
   menuItems: {
-    orderBy: [{ sortOrder: "asc" as const }, { id: "asc" as const }],
+    orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
     select: { id: true, name: true, price: true, currency: true },
   },
-} as const;
+});
 
-function placeSummary(place: {
-  id: string;
-  slug: string;
-  name: string;
-  address: string;
-  city: string | null;
-  houma: string | null;
-  latitude: { toNumber(): number } | null;
-  longitude: { toNumber(): number } | null;
-  phone: string | null;
-  websiteUrl: string | null;
-  imageUrl: string | null;
-  description: string | null;
-  category: string | null;
-  email: string | null;
-  menuItems: {
-    id: string;
-    name: string;
-    price: { toNumber(): number };
-    currency: string;
-  }[];
-}): PublicPlaceSummary {
+type PlaceRow = Prisma.PlaceGetPayload<{ select: typeof placeSelect }>;
+
+function placeSummary(place: PlaceRow): PublicPlaceSummary {
   return {
     id: place.id,
     slug: place.slug,
