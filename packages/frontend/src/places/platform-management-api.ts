@@ -33,6 +33,8 @@ export function createPlatformManagementApi(transport: HoomaTransport) {
   return {
     places: {
       list: () => request<PublicPlaceSummary[]>(transport, "/api/public/v1/places"),
+      get: (placeId: string) =>
+        request<PublicPlaceSummary>(transport, `/api/public/v1/places/${encodeURIComponent(placeId)}`),
       suggest: (input: PlaceSuggestionInput) =>
         request<PublicPlaceSummary & { status: string }>(transport, "/api/v1/places", {
           method: "POST",
