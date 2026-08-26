@@ -60,7 +60,12 @@ export const gamerDiscoveryListSchema = z.object({
   items: z.array(gamerDiscoveryItemSchema),
 });
 
-export const gamerChallengeStatusSchema = z.enum(["PENDING", "ACCEPTED", "DECLINED", "CANCELLED"]);
+export const gamerChallengeStatusSchema = z.enum([
+  "PENDING",
+  "ACCEPTED",
+  "DECLINED",
+  "CANCELLED",
+]);
 
 export const gamerChallengeCreateSchema = z.object({
   challengedProfileId: z.string().min(1),
