@@ -121,11 +121,13 @@ test("Watch Event errors use canonical Community, Place and manage boundaries", 
   }
 });
 
-test("Watch collector ticket is information-first with one stacked Place photo source", () => {
+test("Watch collector ticket is shared, information-first and adaptively readable", () => {
   const watch = source("packages/frontend/src/watch/WatchPage.tsx");
   const ticket = source("packages/frontend/src/watch/WatchTicket.tsx");
   const ticketCss = source("packages/frontend/src/watch/watch.css");
   const placeDetail = source("packages/frontend/src/places/PlaceDetailPage.tsx");
+  const placesCss = source("packages/frontend/src/places/places.css");
+  const fitter = source("packages/frontend/src/ui/FitSingleLineText.tsx");
 
   assert.match(watch, /import \{ WatchTicket \} from "\.\/WatchTicket"/);
   assert.doesNotMatch(ticket, /WATCH_COLLECTOR_TICKET_MASTER/);
@@ -139,7 +141,11 @@ test("Watch collector ticket is information-first with one stacked Place photo s
   assert.match(ticket, /UsersIcon/);
   assert.match(ticket, /TeamMark name=\{matchup\.teamOneName\}/);
   assert.match(ticket, /TeamMark name=\{matchup\.teamTwoName\}/);
-  assert.match(ticket, /<strong>HOOMA<\/strong>/);
+  assert.match(ticket, /FitSingleLineText/);
+  assert.match(fitter, /ResizeObserver/);
+  assert.match(ticket, /\/brand\/hooma-watch-stub\.webp/);
+  assert.match(ticket, /watch-ticket__stub-date/);
+  assert.doesNotMatch(ticket, /watch-ticket__stub-ball|<strong>HOOMA<\/strong>/);
 
   assert.match(
     ticketCss,
@@ -151,17 +157,12 @@ test("Watch collector ticket is information-first with one stacked Place photo s
   );
 
   const matchupRule = cssRule(ticketCss, ".watch-ticket__matchup");
-  assert.match(
-    matchupRule,
-    /grid-template-columns:\s*clamp\(42px, 11cqw, 92px\) minmax\(0, 1fr\) clamp\(42px, 11cqw, 92px\)/,
-  );
   assert.doesNotMatch(matchupRule, /position:\s*absolute|top:|left:/);
 
-  const teamNameRule = cssRule(ticketCss, ".watch-ticket__matchup-title strong");
-  assert.match(teamNameRule, /font-size:\s*clamp\(1\.08rem, 5\.2cqw, 2\.7rem\)/);
+  const teamNameRule = cssRule(ticketCss, ".watch-ticket__team-name");
   assert.match(teamNameRule, /font-weight:\s*950/);
   assert.match(teamNameRule, /white-space:\s*nowrap/);
-  assert.doesNotMatch(teamNameRule, /overflow-wrap:\s*anywhere/);
+  assert.doesNotMatch(teamNameRule, /text-overflow:\s*ellipsis|overflow-wrap:\s*anywhere/);
 
   const detailsRule = cssRule(ticketCss, ".watch-ticket__details");
   assert.match(
@@ -169,13 +170,10 @@ test("Watch collector ticket is information-first with one stacked Place photo s
     /grid-template-columns:\s*minmax\(0, 1\.22fr\) minmax\(0, 0\.95fr\) minmax\(0, 0\.9fr\)/,
   );
 
-  const primaryRule = cssRule(ticketCss, ".watch-ticket__detail-copy > strong");
-  assert.match(primaryRule, /font-size:\s*clamp\(0\.82rem, 3\.65cqw, 1\.7rem\)/);
-  assert.match(primaryRule, /font-weight:\s*950/);
-
-  const stubRule = cssRule(ticketCss, ".watch-ticket__stub strong");
-  assert.match(stubRule, /color:\s*var\(--watch-ticket-gold\)/);
-  assert.match(stubRule, /writing-mode:\s*vertical-rl/);
+  const stubLogoRule = cssRule(ticketCss, ".watch-ticket__stub-logo");
+  assert.match(stubLogoRule, /object-fit:\s*contain/);
+  const stubDateRule = cssRule(ticketCss, ".watch-ticket__stub-date");
+  assert.match(stubDateRule, /color:\s*var\(--app-lime\)/);
 
   const photoRule = cssRule(ticketCss, ".watch-ticket__photo-panel");
   assert.match(photoRule, /width:\s*calc\(100% - clamp\(10px, 2cqw, 18px\)\)/);
@@ -185,6 +183,10 @@ test("Watch collector ticket is information-first with one stacked Place photo s
 
   assert.match(ticket, /\/places\/\$\{place\.id\}\?eventId=/);
   assert.match(placeDetail, /<WatchTicket event=\{selectedEvent\} variant="place-detail" \/>/);
+  assert.doesNotMatch(
+    placesCss,
+    /\.place-detail-page > \.watch-ticket--place-detail \.watch-ticket__(?:series|matchup|venue|date|going|status)/,
+  );
 });
 
 test("archived Places stay off public Place and Watch discovery", () => {
