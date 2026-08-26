@@ -39,7 +39,10 @@ test("Watch matchup stays single-line, dominant and centered between fully conta
 
   assert.match(ticket, /watch-ticket__team-name--one/);
   assert.match(ticket, /watch-ticket__team-name--two/);
-  assert.match(matchup, /grid-template-columns:\s*clamp\(42px, 11cqw, 92px\) minmax\(0, 1fr\) clamp\(42px, 11cqw, 92px\)/);
+  assert.match(
+    matchup,
+    /grid-template-columns:\s*clamp\(42px, 11cqw, 92px\) minmax\(0, 1fr\) clamp\(42px, 11cqw, 92px\)/,
+  );
   assert.match(title, /grid-template-columns:\s*minmax\(0, 1fr\) auto minmax\(0, 1fr\)/);
   assert.match(title, /font-family:\s*var\(--watch-ticket-font-display\)/);
   assert.match(teamName, /font-size:\s*clamp\(1\.08rem, 5\.2cqw, 2\.7rem\)/);
@@ -56,7 +59,10 @@ test("Watch practical information uses three readable columns instead of absolut
   const primary = cssRule(css, ".watch-ticket__detail-copy > strong");
   const secondary = cssRule(css, ".watch-ticket__detail-copy > span:not(.watch-ticket__status)");
 
-  assert.match(details, /grid-template-columns:\s*minmax\(0, 1\.22fr\) minmax\(0, 0\.95fr\) minmax\(0, 0\.9fr\)/);
+  assert.match(
+    details,
+    /grid-template-columns:\s*minmax\(0, 1\.22fr\) minmax\(0, 0\.95fr\) minmax\(0, 0\.9fr\)/,
+  );
   assert.match(detail, /align-items:\s*center/);
   assert.match(primary, /font-size:\s*clamp\(0\.82rem, 3\.65cqw, 1\.7rem\)/);
   assert.match(primary, /font-weight:\s*950/);
