@@ -67,15 +67,15 @@ export function AddPlacePage() {
   const { transport, protectedError } = useHoomaFrontend();
   const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
   const [error, setError] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [submittedPlaceId, setSubmittedPlaceId] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
   async function submit(input: Parameters<typeof api.places.suggest>[0]) {
     setPending(true);
     setError("");
     try {
-      await api.places.suggest(input);
-      setSubmitted(true);
+      const created = await api.places.suggest(input);
+      setSubmittedPlaceId(created.id);
     } catch (reason) {
       setError(protectedError(reason, "Unable to submit Place"));
     } finally {
@@ -83,7 +83,7 @@ export function AddPlacePage() {
     }
   }
 
-  if (submitted) {
+  if (submittedPlaceId) {
     return (
       <section className="place-page">
         <div className="place-submitted panel">
@@ -93,9 +93,12 @@ export function AddPlacePage() {
             The App Admin will review the Place. Once approved, it will appear in Places and can be
             used for Watch events.
           </p>
-          <a className="place-primary-link" href="/watch">
-            Back to Watch
-          </a>
+          <div className="place-detail-actions">
+            <a className="place-primary-link" href={`/places/${submittedPlaceId}/edit`}>
+              Manage submitted Place
+            </a>
+            <a href="/watch">Back to Watch</a>
+          </div>
         </div>
       </section>
     );
