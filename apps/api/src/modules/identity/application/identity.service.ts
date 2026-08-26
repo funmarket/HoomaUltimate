@@ -276,10 +276,7 @@ export class IdentityService {
     });
   }
 
-  async enableProfileIdentity(
-    userId: string,
-    identity: ProfileIdentity,
-  ): Promise<ProfileResponse> {
+  async enableProfileIdentity(userId: string, identity: ProfileIdentity): Promise<ProfileResponse> {
     const current = await this.profile(userId);
     if (!current.identities.includes(identity)) {
       await this.repository.addProfileIdentity(userId, identity);
