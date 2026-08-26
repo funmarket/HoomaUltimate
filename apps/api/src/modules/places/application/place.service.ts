@@ -17,8 +17,25 @@ export class PlaceService {
     return this.repository.listPublic();
   }
 
-  suggest(userId: string, input: PlaceSuggestionInput) {
-    return this.repository.suggest(userId, input);
+  async getPublic(placeId: string) {
+    const place = await this.repository.getApproved(placeId);
+    if (!place) throw new AppError(404, "PLACE_NOT_FOUND", "Approved Place not found");
+    return place;
+  }
+
+  async suggest(userId: string, input: PlaceSuggestionInput) {
+    try {
+      return await this.repository.suggest(userId, input);
+    } catch (error) {
+      if (error instanceof Error && error.message === "PLACE_ALREADY_EXISTS") {
+        throw new AppError(
+          409,
+          "PLACE_ALREADY_EXISTS",
+          "A Place with this name and address is already pending or approved",
+        );
+      }
+      throw error;
+    }
   }
 
   async claimOwnership(userId: string, placeId: string, input: PlaceOwnershipClaimInput) {
