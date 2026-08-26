@@ -20,14 +20,16 @@ function numberQuery(value: unknown, fallback: number) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function communityIdOf(event: unknown): string {
+function eventScope(event: unknown): { type: "PLAY" | "WATCH"; communityId: string | null } {
   if (
     typeof event === "object" &&
     event !== null &&
+    "type" in event &&
+    (event.type === "PLAY" || event.type === "WATCH") &&
     "communityId" in event &&
-    typeof event.communityId === "string"
+    (typeof event.communityId === "string" || event.communityId === null)
   ) {
-    return event.communityId;
+    return { type: event.type, communityId: event.communityId };
   }
   throw new EventError("EVENT_NOT_FOUND", "Event not found");
 }
@@ -49,8 +51,7 @@ export function createEventPublicRouter(
       const communityId =
         typeof request.query.communityId === "string" ? request.query.communityId : undefined;
       const cursor = typeof request.query.cursor === "string" ? request.query.cursor : undefined;
-      const from =
-        typeof request.query.from === "string" ? new Date(request.query.from) : undefined;
+      const from = typeof request.query.from === "string" ? new Date(request.query.from) : undefined;
       const auth = await resolveAuthentication(request, identity, config);
       response.json(
         await service.listPublic({
@@ -68,9 +69,13 @@ export function createEventPublicRouter(
     "/:eventId",
     asyncHandler(async (request, response) => {
       const event = await service.getPublic(String(request.params.eventId));
-      const auth = await resolveAuthentication(request, identity, config);
-      if (!(await communities.canViewPrivateContent(communityIdOf(event), auth?.userId ?? null))) {
-        throw new EventError("EVENT_NOT_FOUND", "Event not found");
+      const scope = eventScope(event);
+      if (scope.type === "PLAY") {
+        if (!scope.communityId) throw new EventError("EVENT_NOT_FOUND", "Event not found");
+        const auth = await resolveAuthentication(request, identity, config);
+        if (!(await communities.canViewPrivateContent(scope.communityId, auth?.userId ?? null))) {
+          throw new EventError("EVENT_NOT_FOUND", "Event not found");
+        }
       }
       response.json(event);
     }),
@@ -103,9 +108,7 @@ export function createEventMemberRouter(service: EventService): Router {
   router.get(
     "/:eventId/rsvp",
     asyncHandler(async (request, response) =>
-      response.json(
-        await service.getMyRsvp(getAuth(request).userId, String(request.params.eventId)),
-      ),
+      response.json(await service.getMyRsvp(getAuth(request).userId, String(request.params.eventId))),
     ),
   );
   router.get(
@@ -139,17 +142,13 @@ export function createEventMemberRouter(service: EventService): Router {
   router.post(
     "/:eventId/complete",
     asyncHandler(async (request, response) =>
-      response.json(
-        await service.complete(getAuth(request).userId, String(request.params.eventId)),
-      ),
+      response.json(await service.complete(getAuth(request).userId, String(request.params.eventId))),
     ),
   );
   router.get(
     "/:eventId/formations",
     asyncHandler(async (request, response) =>
-      response.json(
-        await service.listFormations(getAuth(request).userId, String(request.params.eventId)),
-      ),
+      response.json(await service.listFormations(getAuth(request).userId, String(request.params.eventId))),
     ),
   );
   router.post(
