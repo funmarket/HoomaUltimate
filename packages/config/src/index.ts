@@ -27,6 +27,11 @@ const apiEnvironmentSchema = z
     TELEGRAM_BOT_TOKEN: z.string().default(""),
     TELEGRAM_INIT_DATA_MAX_AGE_SECONDS: z.coerce.number().int().positive().default(86400),
     PLATFORM_ADMIN_BOOTSTRAP_TELEGRAM_USER_ID: telegramUserIdSchema,
+    OBJECT_STORAGE_ENDPOINT: z.string().url().optional(),
+    OBJECT_STORAGE_REGION: z.string().min(1).optional(),
+    OBJECT_STORAGE_BUCKET: z.string().min(1).optional(),
+    OBJECT_STORAGE_ACCESS_KEY_ID: z.string().min(1).optional(),
+    OBJECT_STORAGE_SECRET_ACCESS_KEY: z.string().min(1).optional(),
   })
   .superRefine((value, context) => {
     if (value.NODE_ENV === "production" && !value.TELEGRAM_BOT_TOKEN) {
@@ -41,6 +46,21 @@ const apiEnvironmentSchema = z
         code: z.ZodIssueCode.custom,
         path: ["REDIS_URL"],
         message: "REDIS_URL is required in production for Whistle transient state",
+      });
+    }
+    const storageValues = [
+      value.OBJECT_STORAGE_ENDPOINT,
+      value.OBJECT_STORAGE_REGION,
+      value.OBJECT_STORAGE_BUCKET,
+      value.OBJECT_STORAGE_ACCESS_KEY_ID,
+      value.OBJECT_STORAGE_SECRET_ACCESS_KEY,
+    ];
+    const configured = storageValues.filter(Boolean).length;
+    if (configured > 0 && configured < storageValues.length) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["OBJECT_STORAGE_ENDPOINT"],
+        message: "Object storage configuration must be provided as a complete set",
       });
     }
   });
