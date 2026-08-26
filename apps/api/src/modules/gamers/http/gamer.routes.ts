@@ -16,9 +16,7 @@ export function createGamerPublicRouter(service: GamerService): Router {
   );
   router.get(
     "/discovery",
-    asyncHandler(async (_req, res) =>
-      res.json({ items: await service.listDiscoverableGamers() }),
-    ),
+    asyncHandler(async (_req, res) => res.json({ items: await service.listDiscoverableGamers() })),
   );
   router.get(
     "/games/:slug",
