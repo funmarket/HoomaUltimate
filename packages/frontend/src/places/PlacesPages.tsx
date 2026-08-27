@@ -32,7 +32,10 @@ function nextEventTime(event: PublicEvent): string {
 
 export function PlacesPage() {
   const { transport } = useHoomaFrontend();
-  const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
+  const api = useMemo(
+    () => createPlatformManagementApi(transport),
+    [transport],
+  );
   const eventApi = useEventApi();
   const [places, setPlaces] = useState<PublicPlaceSummary[]>([]);
   const [watchEvents, setWatchEvents] = useState<PublicEvent[]>([]);
@@ -129,7 +132,10 @@ export function PlacesPage() {
 
 export function AddPlacePage() {
   const { transport, protectedError } = useHoomaFrontend();
-  const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
+  const api = useMemo(
+    () => createPlatformManagementApi(transport),
+    [transport],
+  );
   const isPitchSuggestion =
     new URLSearchParams(window.location.search).get("kind") === "PITCH";
   const [error, setError] = useState("");
