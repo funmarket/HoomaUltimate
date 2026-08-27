@@ -50,8 +50,7 @@
   border-radius: 18px 18px 0 0;
   background:
     linear-gradient(rgba(99, 77, 42, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(99, 77, 42, 0.035) 1px, transparent 1px),
-    #efe2c2;
+    linear-gradient(90deg, rgba(99, 77, 42, 0.035) 1px, transparent 1px), #efe2c2;
   background-size: 18px 18px;
   color: #282015;
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
