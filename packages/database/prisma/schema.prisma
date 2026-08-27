@@ -257,8 +257,8 @@ model TelegramIdentity {
   languageCode        String?
   isPremium           Boolean  @default(false)
   lastAuthenticatedAt DateTime @default(now())
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
   user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -318,34 +318,36 @@ model AppManagerGrant {
 }
 
 model Place {
-  id                String                       @id @default(cuid())
-  slug              String                       @unique
-  name              String
-  address           String
-  city              String?
-  houma             String?
-  latitude          Decimal?                     @db.Decimal(10, 7)
-  longitude         Decimal?                     @db.Decimal(10, 7)
-  phone             String?
-  email             String?
-  websiteUrl        String?
-  imageUrl          String?
-  category          String?
-  description       String?
-  moderationStatus  ModerationStatus             @default(PENDING)
-  suggestedByUserId String
-  reviewedByUserId  String?
-  reviewedAt        DateTime?
-  reviewNote        String?
-  archivedAt        DateTime?
-  createdAt         DateTime                     @default(now())
-  updatedAt         DateTime                     @updatedAt
-  suggestedBy       User                         @relation("PlaceSuggester", fields: [suggestedByUserId], references: [id], onDelete: Restrict)
-  ownershipClaims   PlaceOwnershipClaim[]
-  ownerships        PlaceOwnership[]
-  applications      PlaceCapabilityApplication[]
-  menuItems         PlaceMenuItem[]
-  events            Event[]
+  id                  String                       @id @default(cuid())
+  slug                String                       @unique
+  name                String
+  address             String
+  city                String?
+  houma               String?
+  latitude            Decimal?                     @db.Decimal(10, 7)
+  longitude           Decimal?                     @db.Decimal(10, 7)
+  phone               String?
+  email               String?
+  websiteUrl          String?
+  imageUrl            String?
+  category            String?
+  description         String?
+  moderationStatus    ModerationStatus             @default(PENDING)
+  suggestedByUserId   String
+  reviewedByUserId    String?
+  reviewedAt          DateTime?
+  reviewNote          String?
+  archivedAt          DateTime?
+  createdAt           DateTime                     @default(now())
+  updatedAt           DateTime                     @updatedAt
+  suggestedBy         User                         @relation("PlaceSuggester", fields: [suggestedByUserId], references: [id], onDelete: Restrict)
+  ownershipClaims     PlaceOwnershipClaim[]
+  ownerships          PlaceOwnership[]
+  applications        PlaceCapabilityApplication[]
+  menuItems           PlaceMenuItem[]
+  events              Event[]
+  teamChallengeVenues TeamChallenge[]              @relation("TeamChallengePlace")
+  teamGameVenues      TeamGame[]                   @relation("TeamGamePlace")
 
   @@index([moderationStatus, archivedAt, createdAt])
   @@index([city, houma])
@@ -623,6 +625,9 @@ model TeamChallenge {
   format           FootballFormat
   proposedAt       DateTime?
   proposedEndsAt   DateTime?
+  placeId          String?
+  venueName        String?
+  address          String?
   message          String?
   status           TeamChallengeStatus @default(PENDING)
   createdAt        DateTime             @default(now())
@@ -630,11 +635,13 @@ model TeamChallenge {
   challengerTeam   Team                @relation("ChallengeChallenger", fields: [challengerTeamId], references: [id], onDelete: Cascade)
   challengedTeam   Team                @relation("ChallengeChallenged", fields: [challengedTeamId], references: [id], onDelete: Cascade)
   createdBy        User                @relation("ChallengeCreator", fields: [createdByUserId], references: [id])
+  place            Place?              @relation("TeamChallengePlace", fields: [placeId], references: [id], onDelete: Restrict)
   messages         TeamChallengeMessage[]
   game             TeamGame?
 
   @@index([challengerTeamId, status, createdAt])
   @@index([challengedTeamId, status, createdAt])
+  @@index([placeId, status, createdAt])
 }
 
 model TeamChallengeMessage {
@@ -656,15 +663,20 @@ model TeamGame {
   awayTeamId  String
   scheduledAt DateTime?
   endsAt      DateTime?
+  placeId     String?
+  venueName   String?
+  address     String?
   status      TeamGameStatus @default(SCHEDULING)
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
   challenge   TeamChallenge  @relation(fields: [challengeId], references: [id], onDelete: Cascade)
   homeTeam    Team           @relation("GameHomeTeam", fields: [homeTeamId], references: [id], onDelete: Cascade)
   awayTeam    Team           @relation("GameAwayTeam", fields: [awayTeamId], references: [id], onDelete: Cascade)
+  place       Place?         @relation("TeamGamePlace", fields: [placeId], references: [id], onDelete: Restrict)
 
   @@index([homeTeamId, scheduledAt])
   @@index([awayTeamId, scheduledAt])
+  @@index([placeId, scheduledAt])
 }
 
 model Event {
