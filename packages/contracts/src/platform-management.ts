@@ -33,7 +33,8 @@ export const placeSuggestionSchema = z.object({
 });
 
 export const placeUpdateSchema = placeSuggestionSchema
-  .omit({ imageUrl: true, imageUrls: true, menuItems: true, suggestedCapabilities: true })
+  .omit({ imageUrl: true, imageUrls: true, menuItems: true })
+  .omit({ suggestedCapabilities: true })
   .partial()
   .extend({
     imageUrl: placeImageUrlSchema.optional().nullable(),
