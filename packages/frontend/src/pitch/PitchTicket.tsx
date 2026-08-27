@@ -20,8 +20,9 @@ export function PitchTicket({ item }: { readonly item: PublicPlaceCapability }) 
   const images = useMemo(() => imageCandidates(item), [item]);
   const [imageIndex, setImageIndex] = useState(0);
   const cover = images[imageIndex] ?? null;
+  const hasHourlyRate = item.hourlyRateMinor !== null && item.currency !== null;
   const rate = formatPitchHourlyRate(item.hourlyRateMinor, item.currency);
-  const summary = item.summary ?? item.place.description;
+  const contact = item.place.phone || item.place.email || "Contact venue";
 
   function showNextImage() {
     setImageIndex((current) => (current + 1 < images.length ? current + 1 : images.length));
@@ -36,25 +37,34 @@ export function PitchTicket({ item }: { readonly item: PublicPlaceCapability }) 
       >
         <div className="pitch-ticket__paper">
           <div className="pitch-ticket__information">
-            <p className="pitch-ticket__eyebrow">PITCH RENTAL</p>
-            <div className="pitch-ticket__name-wrap">
-              <FitSingleLineText
-                text={item.place.name}
-                className="pitch-ticket__name"
-                minFontSize={25}
-                maxFontSize={42}
-              />
-            </div>
-            <p className="pitch-ticket__location">{locationLabel(item)}</p>
+            <div className="pitch-ticket__main">
+              <div className="pitch-ticket__identity">
+                <p className="pitch-ticket__eyebrow">PITCH RENTAL</p>
+                <div className="pitch-ticket__name-wrap">
+                  <FitSingleLineText
+                    text={item.place.name}
+                    className="pitch-ticket__name"
+                    minFontSize={25}
+                    maxFontSize={46}
+                  />
+                </div>
+                <p className="pitch-ticket__location">{locationLabel(item)}</p>
+              </div>
 
-            <div className="pitch-ticket__rate">
-              <strong>{rate}</strong>
-              {item.hourlyRateMinor !== null && item.currency ? (
-                <span>{item.currency} / hour</span>
-              ) : null}
+              <div className={`pitch-ticket__rate${hasHourlyRate ? "" : " pitch-ticket__rate--contact"}`}>
+                <span className="pitch-ticket__rate-label">HOURLY RATE</span>
+                {hasHourlyRate ? (
+                  <div className="pitch-ticket__rate-value">
+                    <strong>{rate}</strong>
+                    <span>{item.currency}</span>
+                  </div>
+                ) : (
+                  <strong>{rate}</strong>
+                )}
+                <span className="pitch-ticket__rate-period">/ hour</span>
+                <span className="pitch-ticket__offer">FULL PITCH RENTAL</span>
+              </div>
             </div>
-
-            {summary ? <p className="pitch-ticket__summary">{summary}</p> : null}
 
             <dl className="pitch-ticket__facts">
               <div>
@@ -62,15 +72,18 @@ export function PitchTicket({ item }: { readonly item: PublicPlaceCapability }) 
                 <dd>{item.place.address}</dd>
               </div>
               <div>
+                <dt>Houma</dt>
+                <dd>{item.place.houma || item.place.city || item.place.name}</dd>
+              </div>
+              <div>
                 <dt>Contact</dt>
-                <dd>{item.place.phone || item.place.email || "Contact venue"}</dd>
+                <dd>{contact}</dd>
               </div>
             </dl>
           </div>
 
-          <aside className="pitch-ticket__stub" aria-hidden="true">
-            <img src="/brand/hooma-wordmark.webp" alt="" />
-            <span>PITCH</span>
+          <aside className="pitch-ticket__stub" aria-label="HOOMA Pitch">
+            <img src="/brand/hooma-pitch-stub.svg" alt="HOOMA" />
           </aside>
         </div>
 
