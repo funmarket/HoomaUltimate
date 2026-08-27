@@ -75,6 +75,11 @@ export function createPlatformManagementApi(transport: HoomaTransport) {
     capability: {
       list: (kind: PlaceCapabilityKind) =>
         request<PublicPlaceCapability[]>(transport, `/api/public/v1/${kind.toLowerCase()}`),
+      get: (kind: PlaceCapabilityKind, placeId: string) =>
+        request<PublicPlaceCapability>(
+          transport,
+          `/api/public/v1/${kind.toLowerCase()}/${encodeURIComponent(placeId)}`,
+        ),
       submit: (
         kind: PlaceCapabilityKind,
         placeId: string,
