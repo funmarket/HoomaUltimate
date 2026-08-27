@@ -174,6 +174,66 @@
   opacity: 0.65;
 }
 
+.play-event-card__tagged-pitch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 12px 13px;
+  border: 1px solid color-mix(in srgb, var(--color-accent, #d8e95b) 34%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--color-accent, #d8e95b) 7%, transparent);
+}
+
+.play-event-card__tagged-pitch > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.play-event-card__tagged-pitch small {
+  color: var(--color-accent, #d8e95b);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+}
+
+.play-event-card__tagged-pitch strong {
+  color: var(--app-text-strong, #fff);
+}
+
+.play-event-card__tagged-pitch span,
+.team-game-location {
+  color: var(--color-muted, #bdbdad);
+  font-size: 0.76rem;
+}
+
+.play-event-card__tagged-pitch a,
+.team-game-pitch-link {
+  flex: 0 0 auto;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 12px;
+  border: 1px solid color-mix(in srgb, #d9a928 70%, transparent);
+  border-radius: 999px;
+  color: #f2c246;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.team-game-location {
+  margin: 6px 0;
+}
+
+.team-game-pitch-link {
+  min-height: 34px;
+  margin-top: 2px;
+}
+
 @media (max-width: 420px) {
   .game-location-picker {
     padding: 14px 12px;
@@ -197,5 +257,10 @@
     grid-column: 1 / -1;
     justify-self: start;
     min-height: 38px;
+  }
+
+  .play-event-card__tagged-pitch {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
