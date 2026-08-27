@@ -113,13 +113,24 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
   const [deleting, setDeleting] = useState(false);
   const selectedEventId = new URLSearchParams(window.location.search).get("eventId");
 
+  async function loadPlaceEvents(): Promise<PublicEvent[]> {
+    const items: PublicEvent[] = [];
+    let cursor: string | undefined;
+    do {
+      const page = await eventsApi.publicWatch({ placeId, cursor, limit: 100 });
+      items.push(...page.items);
+      cursor = page.nextCursor ?? undefined;
+    } while (cursor);
+    return items;
+  }
+
   async function loadPlaceAndEvents() {
-    const [row, eventPage] = await Promise.all([
+    const [row, placeEvents] = await Promise.all([
       management.places.get(placeId),
-      eventsApi.publicWatch(),
+      loadPlaceEvents(),
     ]);
     setPlace(row);
-    setEvents(eventPage.items.filter((event) => event.placeId === placeId));
+    setEvents(placeEvents);
   }
 
   async function loadParticipation(eventId: string) {
