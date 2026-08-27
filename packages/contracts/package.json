@@ -32,6 +32,10 @@
       "types": "./src/discovery.ts",
       "default": "./dist/discovery.js"
     },
+    "./events": {
+      "types": "./src/events.ts",
+      "default": "./dist/events.js"
+    },
     "./gamers": {
       "types": "./src/gamers.ts",
       "default": "./dist/gamers.js"
