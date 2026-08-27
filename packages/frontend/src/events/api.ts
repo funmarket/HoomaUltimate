@@ -49,7 +49,11 @@ export type PublicEvent = {
   _count: { rsvps: number; checkIns?: number };
 };
 export type PublicEventPage = { items: PublicEvent[]; nextCursor: string | null };
-export type PublicWatchQuery = { cursor?: string; placeId?: string; limit?: number };
+export type PublicWatchQuery = {
+  cursor?: string | undefined;
+  placeId?: string;
+  limit?: number;
+};
 export type EventRsvpState = "CONFIRMED" | "WAITLISTED" | "CANCELLED" | "ATTENDED" | "NO_SHOW";
 export type MyEventRsvp = { rsvp: { status: EventRsvpState } | null };
 export type FormationRosterPlayer = {
