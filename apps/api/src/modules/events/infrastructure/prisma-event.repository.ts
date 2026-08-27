@@ -103,11 +103,7 @@ export class PrismaEventRepository implements EventRepository {
         })
       : [];
     const placeIds = [
-      ...new Set(
-        pageRows
-          .map((event) => event.placeId)
-          .filter((id): id is string => Boolean(id)),
-      ),
+      ...new Set(pageRows.map((event) => event.placeId).filter((id): id is string => Boolean(id))),
     ];
     const placeImages = placeIds.length
       ? await this.db.placeImage.findMany({
