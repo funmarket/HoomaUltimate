@@ -231,6 +231,42 @@ test("Pitch projections read canonical PlaceImage rows instead of legacy-only co
   assert.match(repository, /placeSummary\(row\.place, byPlace\.get\(row\.place\.id\) \?\? \[\]\)/);
 });
 
+test("Pitch rental pricing is canonical from contract through Prisma and repository", () => {
+  const contracts = source("packages/contracts/src/platform-management.ts");
+  const schema = source("packages/database/prisma/schema.prisma");
+  const repository = source(
+    "apps/api/src/modules/places/infrastructure/prisma-place-capability.repository.ts",
+  );
+  const migration = source(
+    "packages/database/prisma/migrations/20260827112000_pitch_hourly_rental_pricing/migration.sql",
+  );
+
+  assert.match(contracts, /hourlyRateMinor: z\.number\(\)\.int\(\)\.min\(0\)/);
+  assert.match(schema, /model PlaceCapabilityApplication \{[\s\S]*?hourlyRateMinor\s+Int\?/);
+  assert.match(schema, /model PlaceCapabilityApplication \{[\s\S]*?currency\s+String\?/);
+  assert.match(migration, /ADD COLUMN "hourlyRateMinor" INTEGER/);
+  assert.match(migration, /ADD COLUMN "currency" VARCHAR\(3\)/);
+  assert.match(repository, /hourlyRateMinor: input\.hourlyRateMinor/);
+  assert.match(repository, /currency: input\.currency/);
+  assert.doesNotMatch(repository, /\$queryRaw|\$executeRaw/);
+});
+
+test("Pitch owns its discovery page and does not live inside generic PlacesPages", () => {
+  const pitch = source("packages/frontend/src/pitch/PitchPage.tsx");
+  const pitchCss = source("packages/frontend/src/pitch/pitch.css");
+  const places = source("packages/frontend/src/places/PlacesPages.tsx");
+  const entry = source("packages/frontend/src/index.ts");
+
+  assert.match(pitch, /export function PitchPage/);
+  assert.match(pitch, /pitch-rental-card/);
+  assert.match(pitch, /hourlyRateMinor/);
+  assert.match(pitch, /item\.place\.images\[0\]/);
+  assert.match(pitchCss, /\.pitch-rental-card__media img/);
+  assert.doesNotMatch(places, /export function PitchPage/);
+  assert.match(entry, /\.\/pitch\/PitchPage/);
+  assert.match(entry, /\.\/pitch\/pitch\.css/);
+});
+
 test("temporary formatting workflow is not left in the final source tree", () => {
   assert.equal(
     existsSync(new URL("../.github/workflows/tmp-watch-place-format.yml", import.meta.url)),
