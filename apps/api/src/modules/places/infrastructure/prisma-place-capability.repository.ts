@@ -1,6 +1,7 @@
 import type {
   AdminQueueItem,
   ModerationDecisionInput,
+  PitchRentalCurrency,
   PlaceCapabilityApplicationInput,
   PlaceCapabilityKind,
   PublicPlaceCapability,
@@ -31,8 +32,22 @@ const placeSelect = Prisma.validator<Prisma.PlaceSelect>()({
   },
 });
 
+const capabilitySelect = Prisma.validator<Prisma.PlaceCapabilityApplicationSelect>()({
+  id: true,
+  kind: true,
+  summary: true,
+  hourlyRateMinor: true,
+  currency: true,
+  place: { select: placeSelect },
+});
+
 type PlaceRow = Prisma.PlaceGetPayload<{ select: typeof placeSelect }>;
+type CapabilityRow = Prisma.PlaceCapabilityApplicationGetPayload<{ select: typeof capabilitySelect }>;
 type PlaceImageRow = { id: string; placeId: string; imageUrl: string; sortOrder: number };
+
+function pitchRentalCurrency(value: string | null): PitchRentalCurrency | null {
+  return value === "TND" || value === "EUR" || value === "USD" ? value : null;
+}
 
 function placeSummary(place: PlaceRow, images: readonly PlaceImageRow[] = []): PublicPlaceSummary {
   const publicImages: PublicPlaceImage[] = images.map((image) => ({
@@ -65,6 +80,20 @@ function placeSummary(place: PlaceRow, images: readonly PlaceImageRow[] = []): P
   };
 }
 
+function capabilitySummary(
+  row: CapabilityRow,
+  images: readonly PlaceImageRow[] = [],
+): PublicPlaceCapability {
+  return {
+    id: row.id,
+    kind: row.kind,
+    summary: row.summary,
+    hourlyRateMinor: row.hourlyRateMinor,
+    currency: pitchRentalCurrency(row.currency),
+    place: placeSummary(row.place, images),
+  };
+}
+
 function groupImages(rows: readonly PlaceImageRow[]): Map<string, PlaceImageRow[]> {
   const grouped = new Map<string, PlaceImageRow[]>();
   for (const row of rows) {
@@ -80,8 +109,12 @@ export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepositor
 
   async listApproved(kind: PlaceCapabilityKind): Promise<readonly PublicPlaceCapability[]> {
     const rows = await this.db.placeCapabilityApplication.findMany({
-      where: { kind, status: "APPROVED", place: { moderationStatus: "APPROVED" } },
-      select: { id: true, kind: true, summary: true, place: { select: placeSelect } },
+      where: {
+        kind,
+        status: "APPROVED",
+        place: { moderationStatus: "APPROVED", archivedAt: null },
+      },
+      select: capabilitySelect,
       orderBy: { updatedAt: "desc" },
     });
     const images = rows.length
@@ -91,12 +124,28 @@ export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepositor
         })
       : [];
     const byPlace = groupImages(images);
-    return rows.map((row) => ({
-      id: row.id,
-      kind: row.kind,
-      summary: row.summary,
-      place: placeSummary(row.place, byPlace.get(row.place.id) ?? []),
-    }));
+    return rows.map((row) => capabilitySummary(row, byPlace.get(row.place.id) ?? []));
+  }
+
+  async getApprovedByPlace(
+    kind: PlaceCapabilityKind,
+    placeId: string,
+  ): Promise<PublicPlaceCapability | null> {
+    const row = await this.db.placeCapabilityApplication.findFirst({
+      where: {
+        kind,
+        placeId,
+        status: "APPROVED",
+        place: { moderationStatus: "APPROVED", archivedAt: null },
+      },
+      select: capabilitySelect,
+    });
+    if (!row) return null;
+    const images = await this.db.placeImage.findMany({
+      where: { placeId },
+      orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+    });
+    return capabilitySummary(row, images);
   }
 
   async submit(
@@ -112,6 +161,8 @@ export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepositor
         applicantUserId: userId,
         kind,
         summary: input.summary,
+        hourlyRateMinor: input.hourlyRateMinor,
+        currency: input.currency,
         contactName: input.contactName,
         contactPhone: input.contactPhone ?? null,
         contactEmail: input.contactEmail ?? null,
@@ -119,6 +170,8 @@ export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepositor
       update: {
         applicantUserId: userId,
         summary: input.summary,
+        hourlyRateMinor: input.hourlyRateMinor,
+        currency: input.currency,
         contactName: input.contactName,
         contactPhone: input.contactPhone ?? null,
         contactEmail: input.contactEmail ?? null,
@@ -139,6 +192,8 @@ export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepositor
         kind: true,
         status: true,
         summary: true,
+        hourlyRateMinor: true,
+        currency: true,
         createdAt: true,
         reviewedAt: true,
         reviewNote: true,
@@ -166,6 +221,8 @@ export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepositor
         kind: row.kind,
         status: row.status,
         summary: row.summary,
+        hourlyRateMinor: row.hourlyRateMinor,
+        currency: pitchRentalCurrency(row.currency),
         createdAt: row.createdAt.toISOString(),
         reviewedAt: row.reviewedAt?.toISOString() ?? null,
         reviewNote: row.reviewNote,

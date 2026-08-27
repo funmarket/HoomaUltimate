@@ -5,6 +5,7 @@ import "./teams/coach-control-room.css";
 import "./teams/team-offers.css";
 import "./forms/hooma-form.css";
 import "./places/places.css";
+import "./pitch/pitch.css";
 import "./watch/watch.css";
 
 export * from "./api";
@@ -36,4 +37,8 @@ export * from "./discovery/HoomaNowSection";
 export * from "./places/PlacesPages";
 export * from "./places/PlaceEditPage";
 export * from "./places/platform-management-api";
+export * from "./pitch/PitchDetailPage";
+export * from "./pitch/PitchManagePage";
+export * from "./pitch/PitchPage";
+export * from "./pitch/pricing";
 export * from "./watch/WatchPage";

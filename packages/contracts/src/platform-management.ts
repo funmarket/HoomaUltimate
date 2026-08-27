@@ -4,6 +4,7 @@ export const platformManagerCapabilitySchema = z.enum(["REVIEW_PITCH_APPLICATION
 
 export const moderationStatusSchema = z.enum(["PENDING", "APPROVED", "REJECTED"]);
 export const placeCapabilityKindSchema = z.literal("PITCH");
+export const pitchRentalCurrencySchema = z.enum(["TND", "EUR", "USD"]);
 
 export const placeMenuItemSchema = z.object({
   name: z.string().trim().min(1).max(120),
@@ -45,6 +46,8 @@ export const placeOwnershipClaimSchema = z.object({
 
 export const placeCapabilityApplicationSchema = z.object({
   summary: z.string().trim().min(10).max(1500),
+  hourlyRateMinor: z.number().int().min(0).max(100_000_000),
+  currency: pitchRentalCurrencySchema,
   contactName: z.string().trim().min(2).max(120),
   contactPhone: z.string().trim().max(60).optional().nullable(),
   contactEmail: z.string().trim().email().max(320).optional().nullable(),
@@ -62,6 +65,7 @@ export const appManagerUpdateSchema = z.object({
 export type PlatformManagerCapability = z.infer<typeof platformManagerCapabilitySchema>;
 export type ModerationStatus = z.infer<typeof moderationStatusSchema>;
 export type PlaceCapabilityKind = z.infer<typeof placeCapabilityKindSchema>;
+export type PitchRentalCurrency = z.infer<typeof pitchRentalCurrencySchema>;
 export type PlaceMenuItemInput = z.infer<typeof placeMenuItemSchema>;
 export type PlaceSuggestionInput = z.infer<typeof placeSuggestionSchema>;
 export type PlaceUpdateInput = z.infer<typeof placeUpdateSchema>;
@@ -111,6 +115,8 @@ export interface PublicPlaceCapability {
   readonly id: string;
   readonly kind: PlaceCapabilityKind;
   readonly summary: string;
+  readonly hourlyRateMinor: number | null;
+  readonly currency: PitchRentalCurrency | null;
   readonly place: PublicPlaceSummary;
 }
 
@@ -133,6 +139,8 @@ export interface AdminQueueItem {
   readonly place: PublicPlaceSummary;
   readonly kind?: PlaceCapabilityKind;
   readonly summary?: string;
+  readonly hourlyRateMinor?: number | null;
+  readonly currency?: PitchRentalCurrency | null;
   readonly evidence?: string;
 }
 

@@ -1,12 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import type {
-  PublicPlaceCapability,
-  PublicPlaceSummary,
-} from "@hooma/contracts/platform-management";
+import type { PublicPlaceSummary } from "@hooma/contracts/platform-management";
 import { useHoomaFrontend } from "../context";
 import type { PublicEvent } from "../events/api";
 import { useEventApi } from "../events/useEventApi";
-import { PlaceCapabilityOnboarding } from "./PlaceCapabilityOnboarding";
 import { PlaceForm } from "./PlaceForm";
 import { createPlatformManagementApi } from "./platform-management-api";
 
@@ -173,48 +169,6 @@ export function AddPlacePage() {
         </div>
       </header>
       <PlaceForm submitLabel="Submit Place" pending={pending} onSubmit={submit} />
-      {error ? <p className="error">{error}</p> : null}
-    </section>
-  );
-}
-
-export function PitchPage() {
-  const { transport } = useHoomaFrontend();
-  const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
-  const [places, setPlaces] = useState<PublicPlaceSummary[]>([]);
-  const [items, setItems] = useState<PublicPlaceCapability[]>([]);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    void Promise.all([api.places.list(), api.capability.list("PITCH")])
-      .then(([placeRows, capabilityRows]) => {
-        setPlaces(placeRows);
-        setItems(capabilityRows);
-      })
-      .catch((reason) =>
-        setError(reason instanceof Error ? reason.message : "Unable to load Pitch"),
-      );
-  }, [api]);
-
-  return (
-    <section className="place-page">
-      <header className="section-heading">
-        <div>
-          <p className="eyebrow">PITCH</p>
-          <h1>Pitch</h1>
-          <p className="muted">Approved football pitches and bookable playing venues.</p>
-        </div>
-      </header>
-      <div className="place-directory">
-        {items.map((item) => (
-          <article className="panel place-card" key={item.id}>
-            <h2>{item.place.name}</h2>
-            <p>{locationLabel(item.place)}</p>
-            <p>{item.summary}</p>
-          </article>
-        ))}
-      </div>
-      <PlaceCapabilityOnboarding places={places} />
       {error ? <p className="error">{error}</p> : null}
     </section>
   );

@@ -20,6 +20,12 @@ export class PlaceCapabilityService {
     return this.repository.listApproved(this.kind);
   }
 
+  async getPublic(placeId: string) {
+    const capability = await this.repository.getApprovedByPlace(this.kind, placeId);
+    if (!capability) throw new AppError(404, "PITCH_NOT_FOUND", "Approved Pitch not found");
+    return capability;
+  }
+
   async submit(userId: string, placeId: string, input: PlaceCapabilityApplicationInput) {
     const place = await this.places.getApproved(placeId);
     if (!place) throw new AppError(404, "PLACE_NOT_FOUND", "Approved Place not found");

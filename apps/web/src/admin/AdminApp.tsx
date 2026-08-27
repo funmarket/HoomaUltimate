@@ -6,6 +6,7 @@ import type {
 } from "@hooma/contracts/platform-management";
 import {
   createPlatformManagementApi,
+  formatPitchHourlyRate,
   useHoomaFrontend,
   type PlatformAuditEntry,
   type PlatformOverview,
@@ -51,6 +52,13 @@ function QueueSection({
               <span>
                 Submitted by {item.applicant.displayName} · @{item.applicant.username}
               </span>
+              {item.hourlyRateMinor !== null &&
+              item.hourlyRateMinor !== undefined &&
+              item.currency ? (
+                <p>
+                  {formatPitchHourlyRate(item.hourlyRateMinor, item.currency)} {item.currency} / hour
+                </p>
+              ) : null}
               {item.summary ? <p>{item.summary}</p> : null}
               {item.evidence ? <p className="admin-review-evidence">{item.evidence}</p> : null}
             </div>

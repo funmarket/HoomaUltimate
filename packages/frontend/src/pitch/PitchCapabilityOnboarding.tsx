@@ -1,13 +1,16 @@
 import { useMemo, useState, type FormEvent } from "react";
-import type { PublicPlaceSummary } from "@hooma/contracts/platform-management";
+import type { PitchRentalCurrency, PublicPlaceSummary } from "@hooma/contracts/platform-management";
 import { useHoomaFrontend } from "../context";
-import { createPlatformManagementApi } from "./platform-management-api";
+import { createPlatformManagementApi } from "../places/platform-management-api";
+import { pitchRateToMinor } from "./pricing";
+
+const RENTAL_CURRENCIES: readonly PitchRentalCurrency[] = ["TND", "EUR", "USD"];
 
 function locationLabel(place: PublicPlaceSummary): string {
   return [place.houma, place.city].filter(Boolean).join(" · ") || place.address;
 }
 
-export function PlaceCapabilityOnboarding({
+export function PitchCapabilityOnboarding({
   places,
 }: {
   readonly places: readonly PublicPlaceSummary[];
@@ -27,7 +30,9 @@ export function PlaceCapabilityOnboarding({
         evidence: String(data.get("evidence") ?? ""),
       });
       event.currentTarget.reset();
-      setMessage("Ownership claim submitted. After approval you can submit the Pitch application.");
+      setMessage(
+        "Ownership claim submitted. After approval you can submit the Pitch application.",
+      );
     } catch (reason) {
       setError(protectedError(reason, "Unable to submit ownership claim"));
     }
@@ -36,11 +41,16 @@ export function PlaceCapabilityOnboarding({
   async function apply(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+    const hourlyRate = Number(data.get("hourlyRate") ?? 0);
+    const rawCurrency = String(data.get("currency") ?? "TND");
+    const currency = RENTAL_CURRENCIES.find((value) => value === rawCurrency) ?? "TND";
     setError("");
     setMessage("");
     try {
       await api.capability.submit("PITCH", String(data.get("placeId") ?? ""), {
         summary: String(data.get("summary") ?? ""),
+        hourlyRateMinor: pitchRateToMinor(hourlyRate, currency),
+        currency,
         contactName: String(data.get("contactName") ?? ""),
         contactPhone: String(data.get("contactPhone") ?? "") || null,
         contactEmail: String(data.get("contactEmail") ?? "") || null,
@@ -111,11 +121,36 @@ export function PlaceCapabilityOnboarding({
           </select>
         </label>
 
+        <div className="place-business-rate-row">
+          <label className="place-business-field">
+            <span>Hourly rental price</span>
+            <input
+              name="hourlyRate"
+              type="number"
+              min="0"
+              step="0.001"
+              inputMode="decimal"
+              placeholder="120.000"
+              required
+            />
+          </label>
+          <label className="place-business-field">
+            <span>Currency</span>
+            <select name="currency" defaultValue="TND" required>
+              {RENTAL_CURRENCIES.map((currency) => (
+                <option key={currency} value={currency}>
+                  {currency}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
         <label className="place-business-field">
           <span>Pitch offering</span>
           <textarea
             name="summary"
-            placeholder="Pitch offering, facilities, services and business details"
+            placeholder="Pitch type, facilities, lighting, changing rooms and rental details"
             minLength={10}
             required
           />
