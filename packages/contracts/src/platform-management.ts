@@ -31,9 +31,13 @@ export const placeSuggestionSchema = z.object({
 });
 
 export const placeUpdateSchema = placeSuggestionSchema
-  .omit({ menuItems: true })
+  .omit({ imageUrl: true, imageUrls: true, menuItems: true })
   .partial()
-  .extend({ menuItems: z.array(placeMenuItemSchema).max(20).optional() });
+  .extend({
+    imageUrl: placeImageUrlSchema.optional().nullable(),
+    imageUrls: z.array(placeImageUrlSchema).max(4).optional(),
+    menuItems: z.array(placeMenuItemSchema).max(20).optional(),
+  });
 
 export const placeOwnershipClaimSchema = z.object({
   evidence: z.string().trim().min(10).max(4000),

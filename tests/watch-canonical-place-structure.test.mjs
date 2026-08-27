@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
+import { placeUpdateSchema } from "../packages/contracts/src/platform-management.ts";
 
 function source(path) {
   return readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -53,7 +54,7 @@ test("Prisma keeps canonical Place and Event ownership while storing details bel
   assert.match(schema, /model WatchEventDetails \{[\s\S]*?eventId\s+String\s+@id/);
 });
 
-test("Place coordinates stay optional and menu updates do not default to destructive replacement", () => {
+test("Place coordinates stay optional and update defaults stay out of partial PATCH fields", () => {
   const contracts = source("packages/contracts/src/platform-management.ts");
   assert.match(
     contracts,
@@ -65,8 +66,17 @@ test("Place coordinates stay optional and menu updates do not default to destruc
   );
   assert.match(
     contracts,
-    /placeUpdateSchema[\s\S]*?omit\(\{ menuItems: true \}\)[\s\S]*?menuItems: z\.array\(placeMenuItemSchema\)\.max\(20\)\.optional\(\)/,
+    /placeUpdateSchema[\s\S]*?omit\(\{ imageUrl: true, imageUrls: true, menuItems: true \}\)[\s\S]*?imageUrls: z\.array\(placeImageUrlSchema\)\.max\(4\)\.optional\(\)[\s\S]*?menuItems: z\.array\(placeMenuItemSchema\)\.max\(20\)\.optional\(\)/,
   );
+});
+
+test("Place partial updates preserve omitted images while explicit empty imageUrls clears them", () => {
+  const partial = placeUpdateSchema.parse({ description: "Updated description" });
+  assert.equal(partial.imageUrl, undefined);
+  assert.equal(partial.imageUrls, undefined);
+
+  const explicitClear = placeUpdateSchema.parse({ imageUrls: [] });
+  assert.deepEqual(explicitClear.imageUrls, []);
 });
 
 test("Place Add and Edit share one branded form and management stays on canonical Place routes", () => {
