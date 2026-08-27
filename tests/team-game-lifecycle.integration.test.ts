@@ -105,3 +105,61 @@ test("confirmed TeamGame keeps canonical timing through the full HOOMA NOW lifec
     await db.user.deleteMany({ where: { id: { in: [userOne.id, userTwo.id] } } });
   }
 });
+
+test("approved canonical Place WATCH event participates in HOOMA NOW without a Community", async () => {
+  const suffix = `${Date.now().toString(36)}-watch`;
+  const owner = await db.user.create({ data: {} });
+  const place = await db.place.create({
+    data: {
+      slug: `watch-now-place-${suffix}`,
+      name: "Watch Now Place",
+      address: "1 Discovery Street",
+      city: "Tunis",
+      houma: "Centre",
+      moderationStatus: "APPROVED",
+      suggestedByUserId: owner.id,
+    },
+  });
+  const now = new Date();
+  const startsAt = offset(now, 20);
+  const event = await db.event.create({
+    data: {
+      communityId: null,
+      placeId: place.id,
+      createdByUserId: owner.id,
+      type: "WATCH",
+      title: "Watch Discovery Event",
+      startsAt,
+      timezone: "Africa/Tunis",
+    },
+  });
+
+  try {
+    const discovery = new DiscoveryService(new PrismaDiscoveryRepository(db));
+    const response = await discovery.now(now, 30);
+    const item = response.items.find(
+      (candidate) => candidate.activityType === "WATCH_EVENT" && candidate.sourceId === event.id,
+    );
+
+    assert.ok(item, "approved Place WATCH event should appear in HOOMA NOW");
+    assert.equal(item.sourceDomain, "EVENTS");
+    assert.equal(item.href, `/events/${event.id}`);
+    assert.equal(item.urgency, "STARTING_SOON");
+    assert.equal(item.context.communityId, null);
+    assert.equal(item.context.communityName, null);
+    assert.equal(item.context.city, "Tunis");
+    assert.equal(item.context.houma, "Centre");
+
+    await db.place.update({ where: { id: place.id }, data: { archivedAt: new Date() } });
+    const archivedResponse = await discovery.now(now, 30);
+    assert.equal(
+      archivedResponse.items.some((candidate) => candidate.sourceId === event.id),
+      false,
+      "archived Place WATCH event should remain excluded from HOOMA NOW",
+    );
+  } finally {
+    await db.event.deleteMany({ where: { id: event.id } });
+    await db.place.deleteMany({ where: { id: place.id } });
+    await db.user.deleteMany({ where: { id: owner.id } });
+  }
+});
