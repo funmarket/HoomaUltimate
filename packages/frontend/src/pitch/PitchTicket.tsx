@@ -51,7 +51,9 @@ export function PitchTicket({ item }: { readonly item: PublicPlaceCapability }) 
                 <p className="pitch-ticket__location">{locationLabel(item)}</p>
               </div>
 
-              <div className={`pitch-ticket__rate${hasHourlyRate ? "" : " pitch-ticket__rate--contact"}`}>
+              <div
+                className={`pitch-ticket__rate${hasHourlyRate ? "" : " pitch-ticket__rate--contact"}`}
+              >
                 <span className="pitch-ticket__rate-label">HOURLY RATE</span>
                 {hasHourlyRate ? (
                   <div className="pitch-ticket__rate-value">
