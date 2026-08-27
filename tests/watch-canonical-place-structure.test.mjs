@@ -253,15 +253,19 @@ test("Pitch rental pricing is canonical from contract through Prisma and reposit
 
 test("Pitch owns its discovery page and does not live inside generic PlacesPages", () => {
   const pitch = source("packages/frontend/src/pitch/PitchPage.tsx");
+  const ticket = source("packages/frontend/src/pitch/PitchTicket.tsx");
   const pitchCss = source("packages/frontend/src/pitch/pitch.css");
   const places = source("packages/frontend/src/places/PlacesPages.tsx");
   const entry = source("packages/frontend/src/index.ts");
 
   assert.match(pitch, /export function PitchPage/);
-  assert.match(pitch, /pitch-rental-card/);
-  assert.match(pitch, /hourlyRateMinor/);
-  assert.match(pitch, /item\.place\.images\[0\]/);
-  assert.match(pitchCss, /\.pitch-rental-card__media img/);
+  assert.match(pitch, /import \{ PitchTicket \} from "\.\/PitchTicket"/);
+  assert.match(pitch, /<PitchTicket item=\{item\} key=\{item\.id\} \/>/);
+  assert.doesNotMatch(pitch, /pitch-rental-card/);
+  assert.match(ticket, /hourlyRateMinor/);
+  assert.match(ticket, /item\.place\.images\.map/);
+  assert.match(pitchCss, /\.pitch-ticket__photo > img/);
+  assert.doesNotMatch(pitchCss, /\.pitch-rental-card/);
   assert.doesNotMatch(places, /export function PitchPage/);
   assert.match(entry, /\.\/pitch\/PitchPage/);
   assert.match(entry, /\.\/pitch\/pitch\.css/);
