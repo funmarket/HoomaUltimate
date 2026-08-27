@@ -111,7 +111,9 @@ export function GameLocationPicker({
               <div>
                 <small>Selected HOOMA Pitch</small>
                 <strong>{selected.place.name}</strong>
-                <span>{[selected.place.city, selected.place.houma].filter(Boolean).join(" · ")}</span>
+                <span>
+                  {[selected.place.city, selected.place.houma].filter(Boolean).join(" · ")}
+                </span>
               </div>
               <button type="button" onClick={() => setSelectedPlaceId("")}>
                 Change
@@ -127,7 +129,11 @@ export function GameLocationPicker({
                     className="game-location-picker__result"
                     onClick={() => setSelectedPlaceId(pitch.place.id)}
                   >
-                    {pitch.place.imageUrl ? <img src={pitch.place.imageUrl} alt="" /> : <span>⚽</span>}
+                    {pitch.place.imageUrl ? (
+                      <img src={pitch.place.imageUrl} alt="" />
+                    ) : (
+                      <span>⚽</span>
+                    )}
                     <span>
                       <strong>{pitch.place.name}</strong>
                       <small>

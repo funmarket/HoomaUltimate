@@ -88,7 +88,12 @@ export function createContainer(config: ApiConfig) {
     pitchService,
   );
   const eventRepository = new PrismaEventRepository(database);
-  const eventService = new EventService(eventRepository, communityService, placeService, pitchService);
+  const eventService = new EventService(
+    eventRepository,
+    communityService,
+    placeService,
+    pitchService,
+  );
   const gamerGameRepository = new PrismaGamerGameRepository(database);
   const gamerProfileRepository = new PrismaGamerProfileRepository(database);
   const gamerChallengeRepository = new PrismaGamerChallengeRepository(database);

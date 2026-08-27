@@ -58,10 +58,7 @@ export class EventService {
       await this.communities.requireCoach(input.communityId, userId);
       if (input.placeId) {
         if (!this.pitch) {
-          throw new EventError(
-            "PLACE_REQUIRED",
-            "Pitch validation is unavailable for this game",
-          );
+          throw new EventError("PLACE_REQUIRED", "Pitch validation is unavailable for this game");
         }
         await this.pitch.getPublic(input.placeId);
       }

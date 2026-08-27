@@ -34,7 +34,10 @@ export function CoachControlRoomPage() {
   useEffect(() => {
     void reloadManagedTeams();
     void reloadChallenges();
-    void placeApi.capability.list("PITCH").then(setPitches).catch(() => setPitches([]));
+    void placeApi.capability
+      .list("PITCH")
+      .then(setPitches)
+      .catch(() => setPitches([]));
   }, [api, placeApi]);
 
   useEffect(() => {
