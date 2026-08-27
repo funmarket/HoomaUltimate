@@ -45,6 +45,12 @@ test("confirmed TeamGame keeps canonical timing and optional location through it
       createdByUserId: userTwo.id,
     },
   });
+  await db.teamPlayer.createMany({
+    data: [
+      { teamId: homeTeam.id, userId: userOne.id },
+      { teamId: awayTeam.id, userId: userTwo.id },
+    ],
+  });
   await db.teamResponsibilityAssignment.createMany({
     data: [
       { teamId: homeTeam.id, userId: userOne.id, role: "COACH" },
