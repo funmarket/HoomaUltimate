@@ -85,7 +85,11 @@ export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepositor
 
   async listApproved(kind: PlaceCapabilityKind): Promise<readonly PublicPlaceCapability[]> {
     const rows = await this.db.placeCapabilityApplication.findMany({
-      where: { kind, status: "APPROVED", place: { moderationStatus: "APPROVED" } },
+      where: {
+        kind,
+        status: "APPROVED",
+        place: { moderationStatus: "APPROVED", archivedAt: null },
+      },
       select: {
         id: true,
         kind: true,
