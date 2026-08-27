@@ -67,7 +67,8 @@ export function PlacesPage() {
       );
     const byPlace = new Map<string, PublicEvent>();
     for (const event of upcoming) {
-      if (event.placeId && !byPlace.has(event.placeId)) byPlace.set(event.placeId, event);
+      if (event.placeId && !byPlace.has(event.placeId))
+        byPlace.set(event.placeId, event);
     }
     return byPlace;
   }, [watchEvents]);
@@ -95,7 +96,9 @@ export function PlacesPage() {
               key={place.id}
             >
               <div className="place-card__copy">
-                {place.category ? <span className="eyebrow">{place.category}</span> : null}
+                {place.category ? (
+                  <span className="eyebrow">{place.category}</span>
+                ) : null}
                 <h2>{place.name}</h2>
                 <p>{locationLabel(place)}</p>
                 <small>{place.address}</small>
@@ -107,12 +110,18 @@ export function PlacesPage() {
                 ) : null}
               </div>
               <div className="place-card__media">
-                {place.imageUrl ? <img src={place.imageUrl} alt="" /> : <span>HOOMA</span>}
+                {place.imageUrl ? (
+                  <img src={place.imageUrl} alt="" />
+                ) : (
+                  <span>HOOMA</span>
+                )}
               </div>
             </a>
           );
         })}
-        {!places.length && !error ? <p className="muted">No approved Places yet.</p> : null}
+        {!places.length && !error ? (
+          <p className="muted">No approved Places yet.</p>
+        ) : null}
       </div>
     </section>
   );
