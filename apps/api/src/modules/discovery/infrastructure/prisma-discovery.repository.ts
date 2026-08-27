@@ -15,12 +15,24 @@ export class PrismaDiscoveryRepository implements DiscoveryRepository {
       this.db.event.findMany({
         where: {
           status: "PUBLISHED",
-          community: { visibility: "PUBLIC" },
           startsAt: { lte: input.lookaheadUntil },
-          OR: [
-            { startsAt: { gte: input.now } },
-            { startsAt: { gte: input.justStartedSince } },
-            { endsAt: { gt: input.now } },
+          AND: [
+            {
+              OR: [
+                { type: "PLAY", community: { visibility: "PUBLIC" } },
+                {
+                  type: "WATCH",
+                  place: { moderationStatus: "APPROVED", archivedAt: null },
+                },
+              ],
+            },
+            {
+              OR: [
+                { startsAt: { gte: input.now } },
+                { startsAt: { gte: input.justStartedSince } },
+                { endsAt: { gt: input.now } },
+              ],
+            },
           ],
         },
         orderBy: [{ startsAt: "asc" }, { id: "asc" }],
@@ -34,6 +46,9 @@ export class PrismaDiscoveryRepository implements DiscoveryRepository {
           endsAt: true,
           community: {
             select: { id: true, name: true, city: true, houma: true },
+          },
+          place: {
+            select: { city: true, houma: true },
           },
         },
       }),
@@ -104,7 +119,28 @@ export class PrismaDiscoveryRepository implements DiscoveryRepository {
 
     return [
       ...events.flatMap((event): DiscoveryRecord[] => {
-        if (!event.community) return [];
+        if (event.type === "PLAY") {
+          if (!event.community) return [];
+          return [
+            {
+              kind: "EVENT",
+              id: event.id,
+              type: event.type,
+              title: event.title,
+              description: event.description,
+              startsAt: event.startsAt,
+              endsAt: event.endsAt,
+              context: {
+                communityId: event.community.id,
+                communityName: event.community.name,
+                city: event.community.city,
+                houma: event.community.houma,
+              },
+            },
+          ];
+        }
+
+        if (!event.place) return [];
         return [
           {
             kind: "EVENT",
@@ -115,10 +151,10 @@ export class PrismaDiscoveryRepository implements DiscoveryRepository {
             startsAt: event.startsAt,
             endsAt: event.endsAt,
             context: {
-              communityId: event.community.id,
-              communityName: event.community.name,
-              city: event.community.city,
-              houma: event.community.houma,
+              communityId: null,
+              communityName: null,
+              city: event.place.city,
+              houma: event.place.houma,
             },
           },
         ];
