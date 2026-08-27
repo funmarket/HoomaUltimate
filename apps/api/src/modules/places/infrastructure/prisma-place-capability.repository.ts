@@ -1,6 +1,7 @@
 import type {
   AdminQueueItem,
   ModerationDecisionInput,
+  PitchRentalCurrency,
   PlaceCapabilityApplicationInput,
   PlaceCapabilityKind,
   PublicPlaceCapability,
@@ -33,6 +34,10 @@ const placeSelect = Prisma.validator<Prisma.PlaceSelect>()({
 
 type PlaceRow = Prisma.PlaceGetPayload<{ select: typeof placeSelect }>;
 type PlaceImageRow = { id: string; placeId: string; imageUrl: string; sortOrder: number };
+
+function pitchRentalCurrency(value: string | null): PitchRentalCurrency | null {
+  return value === "TND" || value === "EUR" || value === "USD" ? value : null;
+}
 
 function placeSummary(place: PlaceRow, images: readonly PlaceImageRow[] = []): PublicPlaceSummary {
   const publicImages: PublicPlaceImage[] = images.map((image) => ({
@@ -103,7 +108,7 @@ export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepositor
       kind: row.kind,
       summary: row.summary,
       hourlyRateMinor: row.hourlyRateMinor,
-      currency: row.currency,
+      currency: pitchRentalCurrency(row.currency),
       place: placeSummary(row.place, byPlace.get(row.place.id) ?? []),
     }));
   }
@@ -182,7 +187,7 @@ export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepositor
         status: row.status,
         summary: row.summary,
         hourlyRateMinor: row.hourlyRateMinor,
-        currency: row.currency,
+        currency: pitchRentalCurrency(row.currency),
         createdAt: row.createdAt.toISOString(),
         reviewedAt: row.reviewedAt?.toISOString() ?? null,
         reviewNote: row.reviewNote,
