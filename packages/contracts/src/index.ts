@@ -205,6 +205,9 @@ export const teamChallengeCreateSchema = z
     format: footballFormatSchema,
     proposedAt: z.string().datetime().optional().nullable(),
     proposedEndsAt: z.string().datetime().optional().nullable(),
+    placeId: z.string().min(1).optional().nullable(),
+    venueName: z.string().trim().min(1).max(120).optional().nullable(),
+    address: z.string().trim().max(240).optional().nullable(),
     message: z.string().trim().max(300).optional().nullable(),
   })
   .superRefine((input, context) => {
@@ -224,6 +227,20 @@ export const teamChallengeCreateSchema = z
         code: z.ZodIssueCode.custom,
         path: ["proposedEndsAt"],
         message: "proposedEndsAt must be after proposedAt",
+      });
+    }
+    if (input.placeId && (input.venueName || input.address)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["placeId"],
+        message: "Choose a HOOMA Pitch or add a game location, not both",
+      });
+    }
+    if (!input.placeId && input.address && !input.venueName) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["venueName"],
+        message: "A location name is required when an address is provided",
       });
     }
   });
@@ -326,11 +343,18 @@ export const eventCreateSchema = z
           message: "Play details are required for PLAY events",
         });
       }
-      if (input.placeId) {
+      if (input.placeId && (input.venueName || input.address)) {
         context.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["placeId"],
-          message: "Canonical Watch Places are only valid for WATCH events",
+          message: "Choose a HOOMA Pitch or add a game location, not both",
+        });
+      }
+      if (!input.placeId && input.address && !input.venueName) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["venueName"],
+          message: "A location name is required when an address is provided",
         });
       }
       if (input.watch) {
