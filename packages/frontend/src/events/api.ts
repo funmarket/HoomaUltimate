@@ -1,54 +1,8 @@
 import type { EventCreateInput, EventFormationInput, EventUpdateInput } from "@hooma/contracts";
+import type { PublicEvent, PublicEventPage } from "@hooma/contracts/events";
 import { request, type HoomaTransport } from "../http";
 
-export type PublicEvent = {
-  id: string;
-  communityId: string | null;
-  placeId: string | null;
-  type: "PLAY" | "WATCH";
-  status?: "PUBLISHED" | "COMPLETED";
-  title: string;
-  description: string | null;
-  startsAt: string;
-  endsAt: string | null;
-  timezone: string;
-  venueName: string | null;
-  address: string | null;
-  capacity: number | null;
-  waitlistEnabled: boolean;
-  entryFeeMinor: number;
-  currency: string;
-  community: { id: string; name: string; slug: string } | null;
-  place: {
-    id: string;
-    slug: string;
-    name: string;
-    address: string;
-    city: string | null;
-    houma: string | null;
-    imageUrl: string | null;
-    category: string | null;
-  } | null;
-  venueAuthority: "OFFICIAL_VENUE" | "SUGGESTED_BY_COMMUNITY" | null;
-  playDetails: { pitchType: string; skillLevel: string; format: string } | null;
-  watchDetails:
-    | {
-        kind: "MATCH";
-        teamOneName: string;
-        teamOneLogoUrl: string | null;
-        teamTwoName: string;
-        teamTwoLogoUrl: string | null;
-      }
-    | {
-        kind: "CULTURAL";
-        culturalCategory:
-          "MUSIC" | "CONCERT" | "COMEDY" | "ART" | "SCREENING" | "FOOD" | "COMMUNITY" | "OTHER";
-        imageUrl: string | null;
-      }
-    | null;
-  _count: { rsvps: number; checkIns?: number };
-};
-export type PublicEventPage = { items: PublicEvent[]; nextCursor: string | null };
+export type { PublicEvent, PublicEventPage } from "@hooma/contracts/events";
 export type PublicWatchQuery = {
   cursor?: string | undefined;
   placeId?: string;
