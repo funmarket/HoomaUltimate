@@ -153,6 +153,13 @@ export type TeamControlDetail = {
   }[];
   lineups?: TeamLineupView[];
 };
+export type TeamGamePlace = {
+  id: string;
+  name: string;
+  address: string;
+  city: string | null;
+  houma: string | null;
+};
 export type TeamChallengeSummary = {
   id: string;
   challengerTeamId: string;
@@ -160,16 +167,26 @@ export type TeamChallengeSummary = {
   status: "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED";
   format: string;
   proposedAt: string | null;
+  proposedEndsAt?: string | null;
+  placeId: string | null;
+  venueName: string | null;
+  address: string | null;
+  place: TeamGamePlace | null;
   message: string | null;
   challengerTeam: { id: string; name: string };
   challengedTeam: { id: string; name: string };
-  game?: { id: string; status?: string } | null;
+  game?: { id: string; status?: string; place?: TeamGamePlace | null } | null;
 };
 export type TeamGameSummary = {
   id: string;
   challengeId: string;
   status: "SCHEDULING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
   scheduledAt: string | null;
+  endsAt?: string | null;
+  placeId: string | null;
+  venueName: string | null;
+  address: string | null;
+  place: TeamGamePlace | null;
   homeTeam: { id: string; name: string };
   awayTeam: { id: string; name: string };
 };
