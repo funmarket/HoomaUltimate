@@ -105,7 +105,10 @@ test(
         }),
         true,
       );
-      assert.equal(await places.hasVerifiedOwnership(placeId, claimant.id), true);
+      assert.equal(
+        await places.hasVerifiedOwnership(placeId, claimant.id),
+        true,
+      );
 
       const application = await pitch.submit(claimant.id, placeId, {
         summary: "Floodlit five-a-side pitch with changing rooms.",
