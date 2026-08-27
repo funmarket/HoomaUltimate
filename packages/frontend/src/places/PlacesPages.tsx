@@ -156,7 +156,10 @@ export function AddPlacePage() {
           </p>
           <div className="place-detail-actions">
             {!isPitchSuggestion ? (
-              <a className="place-primary-link" href={`/places/${submittedPlaceId}/edit`}>
+              <a
+                className="place-primary-link"
+                href={`/places/${submittedPlaceId}/edit`}
+              >
                 Manage submitted Place
               </a>
             ) : null}
@@ -173,7 +176,9 @@ export function AddPlacePage() {
     <section className="place-page place-form-page">
       <header className="place-page__header place-form-page__header">
         <div>
-          <p className="eyebrow">{isPitchSuggestion ? "SUGGEST A PITCH" : "ADD A PLACE"}</p>
+          <p className="eyebrow">
+            {isPitchSuggestion ? "SUGGEST A PITCH" : "ADD A PLACE"}
+          </p>
           <h1>{isPitchSuggestion ? "Suggest a football pitch" : "List your Place"}</h1>
           <p>
             {isPitchSuggestion
