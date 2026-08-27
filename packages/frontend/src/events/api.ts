@@ -48,6 +48,8 @@ export type PublicEvent = {
     | null;
   _count: { rsvps: number; checkIns?: number };
 };
+export type PublicEventPage = { items: PublicEvent[]; nextCursor: string | null };
+export type PublicWatchQuery = { cursor?: string; placeId?: string; limit?: number };
 export type EventRsvpState = "CONFIRMED" | "WAITLISTED" | "CANCELLED" | "ATTENDED" | "NO_SHOW";
 export type MyEventRsvp = { rsvp: { status: EventRsvpState } | null };
 export type FormationRosterPlayer = {
@@ -79,18 +81,19 @@ export type EventChatRecord = {
   user?: { presentation: { displayName: string; username: string } | null };
 };
 
+function publicWatchPath(query: PublicWatchQuery = {}): string {
+  const params = new URLSearchParams({ type: "WATCH", limit: String(query.limit ?? 50) });
+  if (query.cursor) params.set("cursor", query.cursor);
+  if (query.placeId) params.set("placeId", query.placeId);
+  return `/api/public/v1/events?${params.toString()}`;
+}
+
 export function createEventApi(transport: HoomaTransport) {
   return {
     publicPlay: () =>
-      request<{ items: PublicEvent[]; nextCursor: string | null }>(
-        transport,
-        "/api/public/v1/events?type=PLAY&limit=50",
-      ),
-    publicWatch: () =>
-      request<{ items: PublicEvent[]; nextCursor: string | null }>(
-        transport,
-        "/api/public/v1/events?type=WATCH&limit=50",
-      ),
+      request<PublicEventPage>(transport, "/api/public/v1/events?type=PLAY&limit=50"),
+    publicWatch: (query: PublicWatchQuery = {}) =>
+      request<PublicEventPage>(transport, publicWatchPath(query)),
     publicDetail: (id: string) =>
       request<PublicEvent>(transport, `/api/public/v1/events/${encodeURIComponent(id)}`),
     manage: (id: string) =>
