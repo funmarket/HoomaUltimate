@@ -1,3 +1,5 @@
+@import "./watch-event-detail.css";
+
 .play-page {
   display: grid;
   gap: 28px;
@@ -488,10 +490,10 @@
   display: grid;
   gap: 12px;
 }
-.formation-roster h2 {
-  margin: 2px 0 0;
+.formation-roster h3 {
+  margin: 0;
   color: var(--app-text-strong);
-  font-family: Georgia, serif;
+  font-size: 14px;
 }
 .formation-roster__list {
   display: flex;

@@ -166,60 +166,167 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
         : rsvp === "ATTENDED"
           ? "CHECKED IN"
           : null;
+  const startsAt = new Date(event.startsAt);
+  const watchDate = startsAt.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  const watchTime = startsAt.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  const watchArea = [event.place?.houma, event.place?.city]
+    .filter((value): value is string => Boolean(value))
+    .join(" · ");
+  const watchAuthority =
+    event.venueAuthority === "OFFICIAL_VENUE" ? "Official venue" : "Suggested by community";
 
   return (
     <div className="play-event-page">
-      <section className="play-event-card">
-        <div className="play-event-card__kicker">{isWatch ? "Watch event" : "Pickup match"}</div>
-        <div className="play-event-card__title-row">
-          <span className="play-event-card__ball">
-            <BallIcon />
-          </span>
-          <div>
-            <h1>{event.title}</h1>
-            {event.description ? <p>{event.description}</p> : null}
-          </div>
-        </div>
-        <div className="play-event-card__meta">
-          <span>
-            <CalendarIcon />
-            {new Date(event.startsAt).toLocaleString()}
-          </span>
-          <span>
-            <PinIcon />
-            {location}
-          </span>
-          <span>
-            <UsersIcon />
-            {event._count.rsvps}
-            {event.capacity ? ` / ${event.capacity}` : ""} going
-          </span>
-        </div>
+      {isWatch ? (
+        <section className="watch-event-detail">
+          <div className="watch-event-detail__kicker">Watch event</div>
 
-        {isWatch ? (
-          <div className="play-event-card__facts">
-            <div>
-              <span>Place</span>
-              <strong>{event.place?.name || "—"}</strong>
-            </div>
-            <div>
-              <span>Houma</span>
-              <strong>{event.place?.houma || "—"}</strong>
-            </div>
-            <div>
-              <span>City</span>
-              <strong>{event.place?.city || "—"}</strong>
-            </div>
-            <div>
-              <span>Status</span>
-              <strong>
-                {event.venueAuthority === "OFFICIAL_VENUE"
-                  ? "Official venue"
-                  : "Suggested by community"}
-              </strong>
+          <div className="watch-event-detail__title-row">
+            <span className="watch-event-detail__ball">
+              <BallIcon />
+            </span>
+            <div className="watch-event-detail__title-copy">
+              <h1>{event.title}</h1>
+              {event.description ? (
+                <p className="watch-event-detail__subtitle">{event.description}</p>
+              ) : null}
             </div>
           </div>
-        ) : (
+
+          <div className="watch-event-detail__meta" aria-label="Event essentials">
+            <div className="watch-event-detail__meta-item watch-event-detail__meta-item--date">
+              <CalendarIcon />
+              <span>
+                <strong>{watchDate}</strong>
+                <small>{watchTime}</small>
+              </span>
+            </div>
+            <div className="watch-event-detail__meta-item watch-event-detail__meta-item--place">
+              <PinIcon />
+              <span>
+                <strong>{location}</strong>
+              </span>
+            </div>
+            <div className="watch-event-detail__meta-item watch-event-detail__meta-item--going">
+              <UsersIcon />
+              <span>
+                <strong>
+                  {event._count.rsvps}
+                  {event.capacity ? ` / ${event.capacity}` : ""} going
+                </strong>
+              </span>
+            </div>
+          </div>
+
+          <div className="watch-event-detail__venue">
+            {event.place?.imageUrl ? (
+              <img
+                className="watch-event-detail__venue-image"
+                src={event.place.imageUrl}
+                alt={event.place.name}
+              />
+            ) : (
+              <span className="watch-event-detail__venue-placeholder" aria-hidden="true">
+                <PinIcon />
+              </span>
+            )}
+            <div className="watch-event-detail__venue-copy">
+              <span className="watch-event-detail__venue-label">Venue</span>
+              <strong>{event.place?.name || location}</strong>
+              {watchArea ? <small>{watchArea}</small> : null}
+            </div>
+            <span className="watch-event-detail__authority">{watchAuthority}</span>
+          </div>
+
+          <div className="watch-event-detail__actions" aria-label="Watch event actions">
+            {!rsvp && eventOpen ? (
+              <button
+                className="watch-event-detail__action watch-event-detail__action--primary"
+                type="button"
+                disabled={actionPending || participationLoading}
+                onClick={() => void join()}
+              >
+                <UsersIcon />
+                {actionPending ? "Joining…" : "Join event"}
+              </button>
+            ) : null}
+            {event.place ? (
+              <a
+                className="watch-event-detail__action watch-event-detail__action--place"
+                href={`/places/${event.place.id}?eventId=${encodeURIComponent(event.id)}`}
+              >
+                <PinIcon />
+                View place
+              </a>
+            ) : null}
+            {canManage ? (
+              <a
+                className="watch-event-detail__action watch-event-detail__action--edit"
+                href={`/events/${event.id}/edit`}
+              >
+                Edit event
+              </a>
+            ) : null}
+          </div>
+
+          {rsvpLabel ? (
+            <div className="watch-event-detail__participation">
+              <span className="watch-event-detail__rsvp-state">{rsvpLabel}</span>
+              {rsvp === "WAITLISTED" || rsvp === "CONFIRMED" ? (
+                <button
+                  className="watch-event-detail__cancel"
+                  type="button"
+                  disabled={actionPending}
+                  onClick={() => void leave()}
+                >
+                  {actionPending
+                    ? "Updating…"
+                    : rsvp === "WAITLISTED"
+                      ? "Leave waitlist"
+                      : "Cancel RSVP"}
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+
+          {status ? <p className="success">{status}</p> : null}
+          {error ? <p className="error">{error}</p> : null}
+        </section>
+      ) : (
+        <section className="play-event-card">
+          <div className="play-event-card__kicker">Pickup match</div>
+          <div className="play-event-card__title-row">
+            <span className="play-event-card__ball">
+              <BallIcon />
+            </span>
+            <div>
+              <h1>{event.title}</h1>
+              {event.description ? <p>{event.description}</p> : null}
+            </div>
+          </div>
+          <div className="play-event-card__meta">
+            <span>
+              <CalendarIcon />
+              {new Date(event.startsAt).toLocaleString()}
+            </span>
+            <span>
+              <PinIcon />
+              {location}
+            </span>
+            <span>
+              <UsersIcon />
+              {event._count.rsvps}
+              {event.capacity ? ` / ${event.capacity}` : ""} going
+            </span>
+          </div>
+
           <div className="play-event-card__facts">
             <div>
               <span>Format</span>
@@ -238,58 +345,39 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
               <strong>{event.community?.name || "—"}</strong>
             </div>
           </div>
-        )}
 
-        {isWatch && (event.place || canManage) ? (
-          <section className="play-event-card__management" aria-label="Watch event actions">
-            <span className="play-event-card__management-label">Event actions</span>
-            <div className="play-event-card__management-actions">
-              {event.place ? (
-                <a
-                  className="play-event-management-action play-event-management-action--place"
-                  href={`/places/${event.place.id}?eventId=${encodeURIComponent(event.id)}`}
-                >
-                  View Place
-                </a>
-              ) : null}
-              {canManage ? (
-                <a
-                  className="play-event-management-action play-event-management-action--edit"
-                  href={`/events/${event.id}/edit`}
-                >
-                  Edit Event
-                </a>
-              ) : null}
+          {rsvpLabel ? <div className="play-event-rsvp-state">{rsvpLabel}</div> : null}
+          {rsvp === "ATTENDED" ? (
+            <div className="play-event-primary-action play-event-primary-action--static">
+              Checked in
             </div>
-          </section>
-        ) : null}
-        {rsvpLabel ? <div className="play-event-rsvp-state">{rsvpLabel}</div> : null}
-        {rsvp === "ATTENDED" ? (
-          <div className="play-event-primary-action play-event-primary-action--static">
-            Checked in
-          </div>
-        ) : rsvp === "WAITLISTED" || rsvp === "CONFIRMED" ? (
-          <button
-            className="play-event-primary-action"
-            type="button"
-            disabled={actionPending}
-            onClick={() => void leave()}
-          >
-            {actionPending ? "Updating…" : rsvp === "WAITLISTED" ? "Leave waitlist" : "Cancel RSVP"}
-          </button>
-        ) : eventOpen ? (
-          <button
-            className="play-event-primary-action"
-            type="button"
-            disabled={actionPending || participationLoading}
-            onClick={() => void join()}
-          >
-            {actionPending ? "Joining…" : isWatch ? "Join event" : "Join in one tap"}
-          </button>
-        ) : null}
-        {status ? <p className="success">{status}</p> : null}
-        {error ? <p className="error">{error}</p> : null}
-      </section>
+          ) : rsvp === "WAITLISTED" || rsvp === "CONFIRMED" ? (
+            <button
+              className="play-event-primary-action"
+              type="button"
+              disabled={actionPending}
+              onClick={() => void leave()}
+            >
+              {actionPending
+                ? "Updating…"
+                : rsvp === "WAITLISTED"
+                  ? "Leave waitlist"
+                  : "Cancel RSVP"}
+            </button>
+          ) : eventOpen ? (
+            <button
+              className="play-event-primary-action"
+              type="button"
+              disabled={actionPending || participationLoading}
+              onClick={() => void join()}
+            >
+              {actionPending ? "Joining…" : "Join in one tap"}
+            </button>
+          ) : null}
+          {status ? <p className="success">{status}</p> : null}
+          {error ? <p className="error">{error}</p> : null}
+        </section>
+      )}
 
       <EventWhistleBoard eventId={eventId} />
 
