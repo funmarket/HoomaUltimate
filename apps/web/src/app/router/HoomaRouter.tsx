@@ -17,6 +17,8 @@ import {
   HoomaEditPage,
   HoomaFrontendProvider,
   HoomaPage,
+  PitchDetailPage,
+  PitchManagePage,
   PitchPage,
   PlaceDetailPage,
   PlaceEditPage,
@@ -106,6 +108,11 @@ function PlaceEditRoute() {
   return <PlaceEditPage placeId={requiredParam("placeId", placeId)} />;
 }
 
+function PitchDetailRoute() {
+  const { placeId } = useParams();
+  return <PitchDetailPage placeId={requiredParam("placeId", placeId)} />;
+}
+
 function EventDetailRoute() {
   const { eventId } = useParams();
   return <EventDetailPage eventId={requiredParam("eventId", eventId)} />;
@@ -183,6 +190,8 @@ function HoomaRoutes() {
               <Route path="/play" element={<PlayPage />} />
               <Route path="/watch" element={<WatchPage />} />
               <Route path="/pitch" element={<PitchPage />} />
+              <Route path="/pitch/manage" element={<PitchManagePage />} />
+              <Route path="/pitch/:placeId" element={<PitchDetailRoute />} />
               <Route path="/places" element={<PlacesPage />} />
               <Route path="/places/new" element={<AddPlacePage />} />
               <Route path="/places/:placeId/edit" element={<PlaceEditRoute />} />
