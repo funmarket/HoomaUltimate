@@ -63,11 +63,18 @@ export type PublicEvent = {
   readonly waitlistEnabled: boolean;
   readonly entryFeeMinor: string;
   readonly currency: string;
-  readonly community: { readonly id: string; readonly name: string; readonly slug: string } | null;
+  readonly community: {
+    readonly id: string;
+    readonly name: string;
+    readonly slug: string;
+  } | null;
   readonly place: PublicEventPlace | null;
   readonly venueAuthority: PublicEventVenueAuthority;
   readonly playDetails: PublicEventPlayDetails | null;
-  readonly watchDetails: PublicWatchMatchDetails | PublicWatchCulturalDetails | null;
+  readonly watchDetails:
+    | PublicWatchMatchDetails
+    | PublicWatchCulturalDetails
+    | null;
   readonly _count: { readonly rsvps: number; readonly checkIns: number };
 };
 
