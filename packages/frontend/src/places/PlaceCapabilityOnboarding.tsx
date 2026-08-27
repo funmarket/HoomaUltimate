@@ -36,11 +36,14 @@ export function PlaceCapabilityOnboarding({
   async function apply(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+    const hourlyRate = Number(data.get("hourlyRate") ?? 0);
     setError("");
     setMessage("");
     try {
       await api.capability.submit("PITCH", String(data.get("placeId") ?? ""), {
         summary: String(data.get("summary") ?? ""),
+        hourlyRateMinor: Math.round(hourlyRate * 1000),
+        currency: String(data.get("currency") ?? "TND"),
         contactName: String(data.get("contactName") ?? ""),
         contactPhone: String(data.get("contactPhone") ?? "") || null,
         contactEmail: String(data.get("contactEmail") ?? "") || null,
@@ -111,11 +114,34 @@ export function PlaceCapabilityOnboarding({
           </select>
         </label>
 
+        <div className="place-business-rate-row">
+          <label className="place-business-field">
+            <span>Hourly rental price</span>
+            <input
+              name="hourlyRate"
+              type="number"
+              min="0"
+              step="0.001"
+              inputMode="decimal"
+              placeholder="120.000"
+              required
+            />
+          </label>
+          <label className="place-business-field">
+            <span>Currency</span>
+            <select name="currency" defaultValue="TND" required>
+              <option value="TND">TND</option>
+              <option value="EUR">EUR</option>
+              <option value="USD">USD</option>
+            </select>
+          </label>
+        </div>
+
         <label className="place-business-field">
           <span>Pitch offering</span>
           <textarea
             name="summary"
-            placeholder="Pitch offering, facilities, services and business details"
+            placeholder="Pitch type, facilities, lighting, changing rooms and rental details"
             minLength={10}
             required
           />
