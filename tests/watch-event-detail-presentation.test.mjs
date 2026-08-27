@@ -27,7 +27,7 @@ test("Watch event title has no decorative football icon", () => {
   assert.doesNotMatch(css, /\.watch-event-detail__ball\s*\{/);
   assert.doesNotMatch(
     css,
-    /\.watch-event-detail__title-row\s*\{[\s\S]*?grid-template-columns:\s*auto\s+minmax\(0,\s*1fr\)/,
+    /\.watch-event-detail__title-row\s*\{[^}]*grid-template-columns/,
   );
 });
 
