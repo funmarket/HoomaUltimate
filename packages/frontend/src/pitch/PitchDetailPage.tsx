@@ -149,7 +149,10 @@ export function PitchDetailPage({ placeId }: { readonly placeId: string }) {
           <div className="pitch-detail-card__actions">
             {place.phone ? <a href={`tel:${place.phone}`}>Contact venue</a> : null}
             {verifiedOwner ? (
-              <a className="pitch-owner-link" href={`/pitch/manage?placeId=${encodeURIComponent(place.id)}`}>
+              <a
+                className="pitch-owner-link"
+                href={`/pitch/manage?placeId=${encodeURIComponent(place.id)}`}
+              >
                 Manage pitch
               </a>
             ) : (
