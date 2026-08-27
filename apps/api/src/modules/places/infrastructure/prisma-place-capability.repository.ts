@@ -4,6 +4,7 @@ import type {
   PlaceCapabilityApplicationInput,
   PlaceCapabilityKind,
   PublicPlaceCapability,
+  PublicPlaceImage,
   PublicPlaceSummary,
 } from "@hooma/contracts/platform-management";
 import { Prisma, type PrismaClient } from "@hooma/database";
@@ -31,8 +32,14 @@ const placeSelect = Prisma.validator<Prisma.PlaceSelect>()({
 });
 
 type PlaceRow = Prisma.PlaceGetPayload<{ select: typeof placeSelect }>;
+type PlaceImageRow = { id: string; placeId: string; imageUrl: string; sortOrder: number };
 
-function placeSummary(place: PlaceRow): PublicPlaceSummary {
+function placeSummary(place: PlaceRow, images: readonly PlaceImageRow[] = []): PublicPlaceSummary {
+  const publicImages: PublicPlaceImage[] = images.map((image) => ({
+    id: image.id,
+    imageUrl: image.imageUrl,
+    sortOrder: image.sortOrder,
+  }));
   return {
     id: place.id,
     slug: place.slug,
@@ -44,8 +51,8 @@ function placeSummary(place: PlaceRow): PublicPlaceSummary {
     longitude: place.longitude?.toNumber() ?? null,
     phone: place.phone,
     websiteUrl: place.websiteUrl,
-    imageUrl: place.imageUrl,
-    images: [],
+    imageUrl: publicImages[0]?.imageUrl ?? place.imageUrl,
+    images: publicImages,
     description: place.description,
     category: place.category,
     email: place.email,
@@ -58,6 +65,16 @@ function placeSummary(place: PlaceRow): PublicPlaceSummary {
   };
 }
 
+function groupImages(rows: readonly PlaceImageRow[]): Map<string, PlaceImageRow[]> {
+  const grouped = new Map<string, PlaceImageRow[]>();
+  for (const row of rows) {
+    const group = grouped.get(row.placeId) ?? [];
+    group.push(row);
+    grouped.set(row.placeId, group);
+  }
+  return grouped;
+}
+
 export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepository {
   constructor(private readonly db: PrismaClient) {}
 
@@ -67,11 +84,18 @@ export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepositor
       select: { id: true, kind: true, summary: true, place: { select: placeSelect } },
       orderBy: { updatedAt: "desc" },
     });
+    const images = rows.length
+      ? await this.db.placeImage.findMany({
+          where: { placeId: { in: rows.map((row) => row.place.id) } },
+          orderBy: [{ placeId: "asc" }, { sortOrder: "asc" }, { id: "asc" }],
+        })
+      : [];
+    const byPlace = groupImages(images);
     return rows.map((row) => ({
       id: row.id,
       kind: row.kind,
       summary: row.summary,
-      place: placeSummary(row.place),
+      place: placeSummary(row.place, byPlace.get(row.place.id) ?? []),
     }));
   }
 
@@ -128,6 +152,13 @@ export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepositor
       },
       orderBy: { createdAt: "asc" },
     });
+    const images = rows.length
+      ? await this.db.placeImage.findMany({
+          where: { placeId: { in: rows.map((row) => row.place.id) } },
+          orderBy: [{ placeId: "asc" }, { sortOrder: "asc" }, { id: "asc" }],
+        })
+      : [];
+    const byPlace = groupImages(images);
     return rows
       .filter((row) => row.applicant.presentation)
       .map((row) => ({
@@ -143,7 +174,7 @@ export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepositor
           username: row.applicant.presentation!.username,
           displayName: row.applicant.presentation!.displayName,
         },
-        place: placeSummary(row.place),
+        place: placeSummary(row.place, byPlace.get(row.place.id) ?? []),
       }));
   }
 
