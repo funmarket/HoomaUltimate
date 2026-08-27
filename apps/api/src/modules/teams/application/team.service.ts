@@ -9,6 +9,7 @@ import {
 import type { TeamPlayerOfferCreateInput } from "@hooma/contracts/team-offers";
 import { AppError } from "../../../http/errors/app-error.js";
 import type { CommunityService } from "../../communities/application/community.service.js";
+import type { PlaceCapabilityService } from "../../places/application/place-capability.service.js";
 import type { PlatformAdminAuthorizer } from "../../platform-admin/application/platform-admin.authorizer.js";
 import { directResponsibilityHasCapability } from "../domain/team-access.js";
 import type { TeamLifecycleRepository } from "./team-lifecycle.repository.js";
@@ -20,6 +21,7 @@ export class TeamService {
     private readonly communities: CommunityService,
     private readonly lifecycle: TeamLifecycleRepository,
     private readonly platformAdmin: PlatformAdminAuthorizer,
+    private readonly pitch?: PlaceCapabilityService,
   ) {}
 
   listPublic(input: TeamListInput) {
@@ -222,6 +224,12 @@ export class TeamService {
     await this.requireCapability(userId, input.challengerTeamId, "CREATE_CHALLENGE");
     if (!(await this.lifecycle.isActive(input.challengedTeamId))) {
       throw new AppError(404, "TEAM_NOT_FOUND", "Challenged Team not found");
+    }
+    if (input.placeId) {
+      if (!this.pitch) {
+        throw new AppError(503, "PITCH_VALIDATION_UNAVAILABLE", "Pitch validation is unavailable");
+      }
+      await this.pitch.getPublic(input.placeId);
     }
     return this.repository.createChallenge(userId, input);
   }
