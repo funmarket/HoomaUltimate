@@ -1,8 +1,5 @@
 import { useMemo, useState, type FormEvent } from "react";
-import type {
-  PitchRentalCurrency,
-  PublicPlaceSummary,
-} from "@hooma/contracts/platform-management";
+import type { PitchRentalCurrency, PublicPlaceSummary } from "@hooma/contracts/platform-management";
 import { useHoomaFrontend } from "../context";
 import { createPlatformManagementApi } from "../places/platform-management-api";
 import { pitchRateToMinor } from "./pricing";
@@ -33,7 +30,9 @@ export function PitchCapabilityOnboarding({
         evidence: String(data.get("evidence") ?? ""),
       });
       event.currentTarget.reset();
-      setMessage("Ownership claim submitted. After approval you can submit the Pitch application.");
+      setMessage(
+        "Ownership claim submitted. After approval you can submit the Pitch application.",
+      );
     } catch (reason) {
       setError(protectedError(reason, "Unable to submit ownership claim"));
     }
