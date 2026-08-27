@@ -11,5 +11,8 @@ ALTER TABLE "PlaceCapabilityApplication"
   CHECK (
     ("hourlyRateMinor" IS NULL AND "currency" IS NULL)
     OR
-    ("hourlyRateMinor" IS NOT NULL AND "currency" IS NOT NULL AND char_length("currency") = 3)
+    (
+      "hourlyRateMinor" IS NOT NULL
+      AND "currency" IN ('TND', 'EUR', 'USD')
+    )
   );
