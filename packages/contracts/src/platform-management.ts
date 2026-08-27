@@ -29,10 +29,11 @@ export const placeSuggestionSchema = z.object({
   category: z.string().trim().max(120).optional().nullable(),
   email: z.string().trim().email().max(320).optional().nullable(),
   menuItems: z.array(placeMenuItemSchema).max(20).optional().default([]),
+  suggestedCapabilities: z.array(placeCapabilityKindSchema).max(1).optional(),
 });
 
 export const placeUpdateSchema = placeSuggestionSchema
-  .omit({ imageUrl: true, imageUrls: true, menuItems: true })
+  .omit({ imageUrl: true, imageUrls: true, menuItems: true, suggestedCapabilities: true })
   .partial()
   .extend({
     imageUrl: placeImageUrlSchema.optional().nullable(),
@@ -114,7 +115,7 @@ export interface ManagedPlaceSummary extends PublicPlaceSummary {
 export interface PublicPlaceCapability {
   readonly id: string;
   readonly kind: PlaceCapabilityKind;
-  readonly summary: string;
+  readonly summary: string | null;
   readonly hourlyRateMinor: number | null;
   readonly currency: PitchRentalCurrency | null;
   readonly place: PublicPlaceSummary;
