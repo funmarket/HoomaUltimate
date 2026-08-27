@@ -6,6 +6,7 @@ import type {
 } from "@hooma/contracts/platform-management";
 import {
   createPlatformManagementApi,
+  formatPitchHourlyRate,
   useHoomaFrontend,
   type PlatformAuditEntry,
   type PlatformOverview,
@@ -21,18 +22,6 @@ const MANAGER_CAPABILITIES: readonly PlatformManagerCapability[] = [
 ];
 
 type QueueName = "places" | "place-ownership" | "pitch";
-
-function formatQueueRentalPrice(item: AdminQueueItem): string | null {
-  if (item.hourlyRateMinor === null || item.hourlyRateMinor === undefined || !item.currency) {
-    return null;
-  }
-  const scale = item.currency === "TND" ? 1000 : 100;
-  const amount = item.hourlyRateMinor / scale;
-  return `${new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: item.currency === "TND" ? 3 : 2,
-  }).format(amount)} ${item.currency} / hour`;
-}
 
 function QueueSection({
   title,
@@ -63,7 +52,13 @@ function QueueSection({
               <span>
                 Submitted by {item.applicant.displayName} · @{item.applicant.username}
               </span>
-              {formatQueueRentalPrice(item) ? <p>{formatQueueRentalPrice(item)}</p> : null}
+              {item.hourlyRateMinor !== null &&
+              item.hourlyRateMinor !== undefined &&
+              item.currency ? (
+                <p>
+                  {formatPitchHourlyRate(item.hourlyRateMinor, item.currency)} {item.currency} / hour
+                </p>
+              ) : null}
               {item.summary ? <p>{item.summary}</p> : null}
               {item.evidence ? <p className="admin-review-evidence">{item.evidence}</p> : null}
             </div>
