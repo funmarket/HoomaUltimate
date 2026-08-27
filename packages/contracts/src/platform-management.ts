@@ -45,12 +45,8 @@ export const placeOwnershipClaimSchema = z.object({
 
 export const placeCapabilityApplicationSchema = z.object({
   summary: z.string().trim().min(10).max(1500),
-  hourlyRate: z.number().positive().max(1_000_000),
-  currency: z
-    .string()
-    .trim()
-    .length(3)
-    .transform((value) => value.toUpperCase()),
+  hourlyRateMinor: z.number().int().min(0).max(100_000_000),
+  currency: z.string().trim().length(3).transform((value) => value.toUpperCase()),
   contactName: z.string().trim().min(2).max(120),
   contactPhone: z.string().trim().max(60).optional().nullable(),
   contactEmail: z.string().trim().email().max(320).optional().nullable(),
@@ -117,8 +113,8 @@ export interface PublicPlaceCapability {
   readonly id: string;
   readonly kind: PlaceCapabilityKind;
   readonly summary: string;
-  readonly hourlyRate: number | null;
-  readonly currency: string;
+  readonly hourlyRateMinor: number | null;
+  readonly currency: string | null;
   readonly place: PublicPlaceSummary;
 }
 
@@ -141,8 +137,8 @@ export interface AdminQueueItem {
   readonly place: PublicPlaceSummary;
   readonly kind?: PlaceCapabilityKind;
   readonly summary?: string;
-  readonly hourlyRate?: number | null;
-  readonly currency?: string;
+  readonly hourlyRateMinor?: number | null;
+  readonly currency?: string | null;
   readonly evidence?: string;
 }
 
