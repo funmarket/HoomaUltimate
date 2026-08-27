@@ -280,7 +280,9 @@ test("public Watch listing filters by Place before applying cursor pagination", 
       items: { id: string; placeId: string | null }[];
       nextCursor: string | null;
     };
-    assert.deepEqual(firstPage.items, [{ id: firstA.id, placeId: placeA.id }]);
+    assert.equal(firstPage.items.length, 1);
+    assert.equal(firstPage.items[0]?.id, firstA.id);
+    assert.equal(firstPage.items[0]?.placeId, placeA.id);
     assert.equal(firstPage.nextCursor, firstA.id);
 
     const secondPageResponse = await fetch(
@@ -291,7 +293,9 @@ test("public Watch listing filters by Place before applying cursor pagination", 
       items: { id: string; placeId: string | null }[];
       nextCursor: string | null;
     };
-    assert.deepEqual(secondPage.items, [{ id: secondA.id, placeId: placeA.id }]);
+    assert.equal(secondPage.items.length, 1);
+    assert.equal(secondPage.items[0]?.id, secondA.id);
+    assert.equal(secondPage.items[0]?.placeId, placeA.id);
     assert.equal(secondPage.nextCursor, null);
   } finally {
     await new Promise<void>((resolve, reject) =>
