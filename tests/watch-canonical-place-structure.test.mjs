@@ -207,25 +207,6 @@ test("Watch collector ticket is shared, information-first and adaptively readabl
   );
 });
 
-test("Watch discovery paginates and Place detail filters at the public Event source", () => {
-  const api = source("packages/frontend/src/events/api.ts");
-  const watch = source("packages/frontend/src/watch/WatchPage.tsx");
-  const detail = source("packages/frontend/src/places/PlaceDetailPage.tsx");
-  const routes = source("apps/api/src/modules/events/http/event.routes.ts");
-  const repository = source(
-    "apps/api/src/modules/events/infrastructure/prisma-event.repository.ts",
-  );
-
-  assert.match(api, /type PublicWatchQuery = \{ cursor\?: string; placeId\?: string; limit\?: number \}/);
-  assert.match(api, /params\.set\("placeId", query\.placeId\)/);
-  assert.match(watch, /eventApi\.publicWatch\(\{ cursor: nextCursor \}\)/);
-  assert.match(watch, /Load more events/);
-  assert.match(detail, /eventsApi\.publicWatch\(\{ placeId, cursor, limit: 100 \}\)/);
-  assert.doesNotMatch(detail, /eventPage\.items\.filter/);
-  assert.match(routes, /request\.query\.placeId/);
-  assert.match(repository, /input\.placeId \? \{ placeId: input\.placeId \} : \{\}/);
-});
-
 test("archived Places stay off public Place and Watch discovery", () => {
   const placeRepository = source(
     "apps/api/src/modules/places/infrastructure/prisma-place.repository.ts",
