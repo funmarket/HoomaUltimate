@@ -11,10 +11,7 @@
   gap: 6px;
 }
 
-.pitch-page__header h1 {
-  margin: 0;
-}
-
+.pitch-page__header h1,
 .pitch-page__header p {
   margin: 0;
 }
@@ -33,7 +30,199 @@
   gap: 18px;
 }
 
-.pitch-rental-card,
+.pitch-ticket {
+  min-width: 0;
+}
+
+.pitch-ticket__link {
+  display: grid;
+  color: inherit;
+  text-decoration: none;
+}
+
+.pitch-ticket__paper {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(66px, 19vw, 90px);
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(99, 77, 42, 0.42);
+  border-bottom: 0;
+  border-radius: 18px 18px 0 0;
+  background:
+    linear-gradient(rgba(99, 77, 42, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99, 77, 42, 0.035) 1px, transparent 1px),
+    #efe2c2;
+  background-size: 18px 18px;
+  color: #282015;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
+}
+
+.pitch-ticket__information {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+  padding: 17px 16px 15px;
+}
+
+.pitch-ticket__eyebrow,
+.pitch-ticket__location,
+.pitch-ticket__summary {
+  margin: 0;
+}
+
+.pitch-ticket__eyebrow {
+  color: #7b5b2f;
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+}
+
+.pitch-ticket__name-wrap {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.pitch-ticket__name {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  white-space: nowrap;
+}
+
+.pitch-ticket__location {
+  color: #654d2f;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.pitch-ticket__rate {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.pitch-ticket__rate strong {
+  min-width: 0;
+  font-size: clamp(1.5rem, 7vw, 2.35rem);
+  line-height: 1;
+}
+
+.pitch-ticket__rate span {
+  color: #6b522f;
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pitch-ticket__summary {
+  color: #433725;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.pitch-ticket__facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 2px 0 0;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(99, 77, 42, 0.38);
+}
+
+.pitch-ticket__facts div {
+  min-width: 0;
+}
+
+.pitch-ticket__facts dt {
+  margin: 0 0 2px;
+  color: #80643c;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.pitch-ticket__facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.7rem;
+  font-weight: 750;
+  line-height: 1.3;
+}
+
+.pitch-ticket__stub {
+  display: grid;
+  min-width: 0;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  border-left: 1px dashed rgba(99, 77, 42, 0.48);
+  background: rgba(112, 83, 45, 0.07);
+}
+
+.pitch-ticket__stub img {
+  width: min(60px, 72%);
+  max-height: 120px;
+  object-fit: contain;
+  transform: rotate(-90deg);
+}
+
+.pitch-ticket__stub span {
+  color: #725630;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  writing-mode: vertical-rl;
+}
+
+.pitch-ticket__photo {
+  min-height: 210px;
+  overflow: hidden;
+  border: 1px solid rgba(99, 77, 42, 0.42);
+  border-radius: 0 0 18px 18px;
+  background: #0b0b09;
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.22);
+}
+
+.pitch-ticket__photo > img {
+  display: block;
+  width: 100%;
+  height: clamp(210px, 64vw, 330px);
+  object-fit: cover;
+}
+
+.pitch-ticket__photo-empty {
+  display: grid;
+  min-height: 210px;
+  place-items: center;
+  align-content: center;
+  gap: 12px;
+  padding: 24px;
+  color: var(--color-muted, #bdbdad);
+  text-align: center;
+}
+
+.pitch-ticket__photo-empty img {
+  width: min(180px, 60%);
+  opacity: 0.72;
+}
+
+.pitch-ticket__photo-empty span {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .pitch-detail-card {
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--color-accent, #d8e95b) 42%, transparent);
@@ -42,18 +231,6 @@
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
 }
 
-.pitch-rental-card__body {
-  display: grid;
-  gap: 18px;
-  padding: 22px 20px 18px;
-}
-
-.pitch-rental-card__identity {
-  display: grid;
-  gap: 7px;
-}
-
-.pitch-rental-card__identity h2,
 .pitch-detail-card__header h1 {
   margin: 0;
   font-family: Georgia, "Times New Roman", serif;
@@ -62,40 +239,17 @@
   letter-spacing: -0.035em;
 }
 
-.pitch-rental-card__location,
-.pitch-rental-card__summary,
-.pitch-rental-card__meta {
-  margin: 0;
-}
-
-.pitch-rental-card__location {
-  color: var(--color-accent, #d8e95b);
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.pitch-rental-card__summary {
-  max-width: 56ch;
-  color: var(--color-muted, #bdbdad);
-  line-height: 1.45;
-}
-
-.pitch-rental-card__price,
 .pitch-detail-card__price {
   display: flex;
   align-items: baseline;
   gap: 10px;
 }
 
-.pitch-rental-card__price strong,
 .pitch-detail-card__price strong {
   font-size: clamp(1.8rem, 8vw, 2.8rem);
   line-height: 1;
 }
 
-.pitch-rental-card__price span,
 .pitch-detail-card__price span {
   color: var(--color-accent, #d8e95b);
   font-size: 0.72rem;
@@ -103,38 +257,6 @@
   letter-spacing: 0.12em;
 }
 
-.pitch-rental-card__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 14px;
-  color: var(--color-muted, #bdbdad);
-  font-size: 0.86rem;
-}
-
-.pitch-rental-card__media {
-  min-height: 230px;
-  background: #080904;
-}
-
-.pitch-rental-card__media img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  min-height: 230px;
-  max-height: 360px;
-  object-fit: cover;
-}
-
-.pitch-rental-card__media span {
-  display: grid;
-  min-height: 230px;
-  place-items: center;
-  color: var(--color-muted, #bdbdad);
-  font-weight: 800;
-  letter-spacing: 0.14em;
-}
-
-.pitch-rental-card__footer,
 .pitch-detail-card__footer {
   display: flex;
   align-items: center;
@@ -144,7 +266,6 @@
   border-top: 1px dashed color-mix(in srgb, var(--color-accent, #d8e95b) 35%, transparent);
 }
 
-.pitch-rental-card__stamp,
 .pitch-detail-card__footer > span {
   color: var(--color-muted, #bdbdad);
   font-size: 0.68rem;
@@ -152,16 +273,15 @@
   letter-spacing: 0.11em;
 }
 
-.pitch-rental-card__footer > a,
 .pitch-detail-card__actions > a:first-child {
-  min-height: 42px;
   display: inline-flex;
+  min-height: 42px;
   align-items: center;
   justify-content: center;
+  padding: 8px 15px;
   border-radius: 999px;
   background: var(--color-accent, #d8e95b);
   color: #11120d;
-  padding: 8px 15px;
   font-size: 0.78rem;
   font-weight: 900;
   text-decoration: none;
@@ -178,14 +298,15 @@
 
 .pitch-owner-link,
 .pitch-claim-link {
-  min-height: 40px;
   display: inline-flex;
+  min-height: 40px;
   align-items: center;
   justify-content: center;
+  padding: 6px 4px;
   border: 0;
   background: transparent;
   color: color-mix(in srgb, var(--color-accent, #d8e95b) 82%, white 18%);
-  padding: 6px 4px;
+  cursor: pointer;
   font: inherit;
   font-size: 0.72rem;
   font-weight: 850;
@@ -193,7 +314,6 @@
   text-decoration: underline;
   text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
   text-underline-offset: 3px;
-  cursor: pointer;
 }
 
 .pitch-manage-page {
@@ -235,13 +355,13 @@
 }
 
 .pitch-claim-form button[type="submit"] {
-  min-height: 44px;
   width: fit-content;
+  min-height: 44px;
+  padding: 9px 16px;
   border: 1px solid color-mix(in srgb, var(--color-accent, #d8e95b) 65%, transparent);
   border-radius: 999px;
   background: var(--color-accent, #d8e95b);
   color: #11120d;
-  padding: 9px 16px;
   font-weight: 900;
 }
 
@@ -317,7 +437,28 @@
 }
 
 @media (max-width: 520px) {
-  .pitch-rental-card__footer,
+  .pitch-ticket__paper {
+    grid-template-columns: minmax(0, 1fr) 64px;
+  }
+
+  .pitch-ticket__information {
+    padding: 15px 13px 13px;
+  }
+
+  .pitch-ticket__facts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 7px;
+  }
+
+  .pitch-ticket__photo,
+  .pitch-ticket__photo-empty {
+    min-height: 190px;
+  }
+
+  .pitch-ticket__photo > img {
+    height: clamp(190px, 62vw, 260px);
+  }
+
   .pitch-detail-card__footer {
     align-items: flex-start;
     flex-direction: column;
@@ -336,12 +477,6 @@
 @media (min-width: 720px) {
   .pitch-directory {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .pitch-rental-card__media,
-  .pitch-rental-card__media img,
-  .pitch-rental-card__media span {
-    min-height: 280px;
   }
 
   .pitch-detail-card__header {
