@@ -179,7 +179,9 @@ export function AddPlacePage() {
           <p className="eyebrow">
             {isPitchSuggestion ? "SUGGEST A PITCH" : "ADD A PLACE"}
           </p>
-          <h1>{isPitchSuggestion ? "Suggest a football pitch" : "List your Place"}</h1>
+          <h1>
+            {isPitchSuggestion ? "Suggest a football pitch" : "List your Place"}
+          </h1>
           <p>
             {isPitchSuggestion
               ? "Add the real venue details. Suggesting a pitch does not make you its owner."
