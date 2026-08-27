@@ -343,6 +343,7 @@ model Place {
   suggestedBy         User                         @relation("PlaceSuggester", fields: [suggestedByUserId], references: [id], onDelete: Restrict)
   ownershipClaims     PlaceOwnershipClaim[]
   ownerships          PlaceOwnership[]
+  capabilities        PlaceCapability[]
   applications        PlaceCapabilityApplication[]
   menuItems           PlaceMenuItem[]
   events              Event[]
@@ -401,6 +402,25 @@ model PlaceOwnership {
   @@index([placeId, revokedAt])
 }
 
+model PlaceCapability {
+  id               String              @id @default(cuid())
+  placeId          String
+  kind             PlaceCapabilityKind
+  status           ModerationStatus    @default(PENDING)
+  summary          String?
+  hourlyRateMinor  Int?
+  currency         String?             @db.VarChar(3)
+  reviewedByUserId String?
+  reviewedAt       DateTime?
+  reviewNote       String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  place            Place               @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  @@unique([placeId, kind])
+  @@index([kind, status, updatedAt])
+}
+
 model PlaceCapabilityApplication {
   id               String              @id @default(cuid())
   placeId          String
@@ -432,7 +452,7 @@ model Community {
   name            String
   description     String?
   city            String?
-  houma           String?
+  houma            String?
   logoUrl         String?
   bannerUrl       String?
   status          CommunityStatus             @default(ACTIVE)
