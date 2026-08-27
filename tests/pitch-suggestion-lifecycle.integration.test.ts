@@ -26,7 +26,12 @@ test("an approved suggested Pitch stays public and claimable before rental owner
   const admin = await db.user.create({ data: {} });
   const places = new PrismaPlaceRepository(db);
   const capabilityRepository = new PrismaPlaceCapabilityRepository(db);
-  const pitch = new PlaceCapabilityService("PITCH", capabilityRepository, places, allowAdmin);
+  const pitch = new PlaceCapabilityService(
+    "PITCH",
+    capabilityRepository,
+    places,
+    allowAdmin,
+  );
 
   let placeId: string | null = null;
   let applicationId: string | null = null;
@@ -135,7 +140,10 @@ test("an approved suggested Pitch stays public and claimable before rental owner
     assert.equal(update.status, "PENDING");
 
     const previousApprovedProfile = await pitch.getPublic(placeId);
-    assert.equal(previousApprovedProfile.summary, "Floodlit five-a-side pitch with changing rooms.");
+    assert.equal(
+      previousApprovedProfile.summary,
+      "Floodlit five-a-side pitch with changing rooms.",
+    );
     assert.equal(previousApprovedProfile.hourlyRateMinor, 45_000);
 
     await pitch.review(admin.id, update.id, {
@@ -144,7 +152,10 @@ test("an approved suggested Pitch stays public and claimable before rental owner
     });
 
     const afterRejectedUpdate = await pitch.getPublic(placeId);
-    assert.equal(afterRejectedUpdate.summary, "Floodlit five-a-side pitch with changing rooms.");
+    assert.equal(
+      afterRejectedUpdate.summary,
+      "Floodlit five-a-side pitch with changing rooms.",
+    );
     assert.equal(afterRejectedUpdate.hourlyRateMinor, 45_000);
   } finally {
     if (applicationId) {
@@ -161,6 +172,8 @@ test("an approved suggested Pitch stays public and claimable before rental owner
       await db.placeOwnership.deleteMany({ where: { placeId } });
       await db.place.deleteMany({ where: { id: placeId } });
     }
-    await db.user.deleteMany({ where: { id: { in: [suggester.id, claimant.id, admin.id] } } });
+    await db.user.deleteMany({
+      where: { id: { in: [suggester.id, claimant.id, admin.id] } },
+    });
   }
 });
