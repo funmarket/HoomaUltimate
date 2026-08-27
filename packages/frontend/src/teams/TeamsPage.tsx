@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { MeResponse } from "@hooma/contracts";
 import { TeamDiscoveryCard, TeamsHero } from "@hooma/ui";
-import { useHoomaFrontend } from "../context";
 import type { ManagedTeam, PublicTeamSummary, TeamChallengeSummary, TeamGameSummary } from "../api";
+import { useHoomaFrontend } from "../context";
 
 type TeamsTab = "discover" | "mine" | "requests" | "games";
 
@@ -361,6 +361,7 @@ export function TeamsPage() {
               {challenges.map((challenge) => {
                 const incomingChallenge = managedIds.has(challenge.challengedTeamId);
                 const outgoingChallenge = managedIds.has(challenge.challengerTeamId);
+                const location = challenge.place?.name || challenge.venueName || challenge.address;
                 return (
                   <article className="challenge-card" key={challenge.id}>
                     <div>
@@ -374,6 +375,12 @@ export function TeamsPage() {
                         {challenge.format.replaceAll("_", " ")} ·{" "}
                         {friendlyDate(challenge.proposedAt)}
                       </p>
+                      {location ? <p className="team-game-location">{location}</p> : null}
+                      {challenge.place ? (
+                        <a className="team-game-pitch-link" href={`/pitch/${challenge.place.id}`}>
+                          View Pitch
+                        </a>
+                      ) : null}
                       {challenge.message ? <p className="muted">{challenge.message}</p> : null}
                     </div>
                     {challenge.status === "PENDING" ? (
@@ -441,18 +448,27 @@ export function TeamsPage() {
               <p className="muted">No accepted Team games yet.</p>
             ) : null}
             <div className="game-list">
-              {games.map((game) => (
-                <article className="team-game-card" key={game.id}>
-                  <div>
-                    <span className="eyebrow">{game.status}</span>
-                    <h3>
-                      {game.homeTeam.name} <em>vs</em> {game.awayTeam.name}
-                    </h3>
-                    <p>{friendlyDate(game.scheduledAt)}</p>
-                  </div>
-                  <strong>{game.status === "SCHEDULING" ? "TBA" : "MATCH"}</strong>
-                </article>
-              ))}
+              {games.map((game) => {
+                const location = game.place?.name || game.venueName || game.address;
+                return (
+                  <article className="team-game-card" key={game.id}>
+                    <div>
+                      <span className="eyebrow">{game.status}</span>
+                      <h3>
+                        {game.homeTeam.name} <em>vs</em> {game.awayTeam.name}
+                      </h3>
+                      <p>{friendlyDate(game.scheduledAt)}</p>
+                      {location ? <p className="team-game-location">{location}</p> : null}
+                      {game.place ? (
+                        <a className="team-game-pitch-link" href={`/pitch/${game.place.id}`}>
+                          View Pitch
+                        </a>
+                      ) : null}
+                    </div>
+                    <strong>{game.status === "SCHEDULING" ? "TBA" : "MATCH"}</strong>
+                  </article>
+                );
+              })}
             </div>
           </section>
         )
