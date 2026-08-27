@@ -33,11 +33,8 @@ export function PitchPage() {
         <div>
           <p className="eyebrow">PITCH</p>
           <h1>Find your pitch</h1>
-          <p>Bookable football grounds from verified local venue operators.</p>
+          <p>Football grounds and rental offers from local venues.</p>
         </div>
-        <a className="pitch-manage-link" href="/pitch/manage">
-          List a pitch
-        </a>
       </header>
 
       {error ? <p className="error">{error}</p> : null}
@@ -83,7 +80,7 @@ export function PitchPage() {
         {!items.length && !error ? (
           <div className="pitch-empty panel">
             <h2>No verified pitches yet</h2>
-            <p className="muted">Verified rental venues will appear here after App review.</p>
+            <p className="muted">Approved football venues will appear here.</p>
           </div>
         ) : null}
       </div>

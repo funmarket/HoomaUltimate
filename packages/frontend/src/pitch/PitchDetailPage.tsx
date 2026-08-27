@@ -1,14 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type { PublicPlaceCapability } from "@hooma/contracts/platform-management";
 import { useHoomaFrontend } from "../context";
+import { HoomaApiError } from "../http";
 import { createPlatformManagementApi } from "../places/platform-management-api";
 import { formatPitchHourlyRate } from "./pricing";
 
 export function PitchDetailPage({ placeId }: { readonly placeId: string }) {
-  const { transport } = useHoomaFrontend();
+  const { transport, protectedError } = useHoomaFrontend();
   const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
   const [item, setItem] = useState<PublicPlaceCapability | null>(null);
   const [loading, setLoading] = useState(true);
+  const [canManage, setCanManage] = useState(false);
+  const [claimOpen, setClaimOpen] = useState(false);
+  const [claimPending, setClaimPending] = useState(false);
+  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -21,10 +26,37 @@ export function PitchDetailPage({ placeId }: { readonly placeId: string }) {
         setError(reason instanceof Error ? reason.message : "Unable to load Pitch"),
       )
       .finally(() => setLoading(false));
+
+    void api.places
+      .manage(placeId)
+      .then(() => setCanManage(true))
+      .catch((reason) => {
+        if (reason instanceof HoomaApiError && [401, 403].includes(reason.status)) return;
+      });
   }, [api, placeId]);
 
+  async function claim(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    setClaimPending(true);
+    setError("");
+    setMessage("");
+    try {
+      await api.places.claimOwnership(placeId, {
+        evidence: String(data.get("evidence") ?? ""),
+      });
+      event.currentTarget.reset();
+      setClaimOpen(false);
+      setMessage("Ownership claim submitted for App review.");
+    } catch (reason) {
+      setError(protectedError(reason, "Unable to submit ownership claim"));
+    } finally {
+      setClaimPending(false);
+    }
+  }
+
   if (loading) return <p className="status">Loading pitch…</p>;
-  if (error) return <p className="error">{error}</p>;
+  if (error && !item) return <p className="error">{error}</p>;
   if (!item) {
     return (
       <section className="pitch-detail-page">
@@ -113,9 +145,44 @@ export function PitchDetailPage({ placeId }: { readonly placeId: string }) {
 
         <footer className="pitch-detail-card__footer">
           <span>HOOMA · VERIFIED PITCH RENTAL</span>
-          {place.phone ? <a href={`tel:${place.phone}`}>Contact venue</a> : null}
+          <div className="pitch-detail-card__actions">
+            {place.phone ? <a href={`tel:${place.phone}`}>Contact venue</a> : null}
+            {canManage ? (
+              <a className="pitch-owner-link" href={`/pitch/manage?placeId=${encodeURIComponent(place.id)}`}>
+                Manage pitch
+              </a>
+            ) : (
+              <button
+                className="pitch-claim-link"
+                type="button"
+                onClick={() => setClaimOpen((value) => !value)}
+              >
+                Own this pitch?
+              </button>
+            )}
+          </div>
         </footer>
       </article>
+
+      {claimOpen && !canManage ? (
+        <form className="panel pitch-claim-form" onSubmit={(event) => void claim(event)}>
+          <div>
+            <p className="eyebrow">CLAIM THIS PITCH</p>
+            <h2>{place.name}</h2>
+            <p className="muted">Tell the App Admin how you own or manage this venue.</p>
+          </div>
+          <label>
+            Ownership or management evidence
+            <textarea name="evidence" minLength={10} required />
+          </label>
+          <button type="submit" disabled={claimPending}>
+            {claimPending ? "Submitting…" : "Submit claim"}
+          </button>
+        </form>
+      ) : null}
+
+      {message ? <p className="success">{message}</p> : null}
+      {error ? <p className="error">{error}</p> : null}
     </section>
   );
 }

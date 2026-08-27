@@ -7,30 +7,18 @@
 }
 
 .pitch-page__header {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 18px;
-}
-
-.pitch-page__header > div,
-.pitch-owner-entry__heading {
   display: grid;
   gap: 6px;
 }
 
-.pitch-page__header h1,
-.pitch-owner-entry__heading h1,
-.pitch-owner-entry__heading h2 {
+.pitch-page__header h1 {
   margin: 0;
 }
 
-.pitch-page__header p,
-.pitch-owner-entry__heading p {
+.pitch-page__header p {
   margin: 0;
 }
 
-.pitch-manage-link,
 .pitch-back-link {
   color: var(--color-accent, #d8e95b);
   font-size: 0.78rem;
@@ -38,13 +26,6 @@
   letter-spacing: 0.08em;
   text-decoration: none;
   text-transform: uppercase;
-}
-
-.pitch-manage-link {
-  flex: 0 0 auto;
-  border: 1px solid color-mix(in srgb, var(--color-accent, #d8e95b) 55%, transparent);
-  border-radius: 999px;
-  padding: 10px 14px;
 }
 
 .pitch-directory {
@@ -171,20 +152,97 @@
   letter-spacing: 0.11em;
 }
 
-.pitch-rental-card__footer a,
-.pitch-detail-card__footer a {
+.pitch-rental-card__footer > a,
+.pitch-detail-card__actions > a:first-child {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 999px;
   background: var(--color-accent, #d8e95b);
   color: #11120d;
-  padding: 10px 15px;
-  font-size: 0.8rem;
+  padding: 8px 15px;
+  font-size: 0.78rem;
   font-weight: 900;
   text-decoration: none;
   text-transform: uppercase;
 }
 
+.pitch-detail-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.pitch-owner-link,
+.pitch-claim-link {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: color-mix(in srgb, var(--color-accent, #d8e95b) 82%, white 18%);
+  padding: 6px 4px;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
 .pitch-manage-page {
   align-content: start;
+}
+
+.pitch-owner-form,
+.pitch-claim-form {
+  width: min(100%, 620px);
+  justify-self: center;
+}
+
+.pitch-claim-form {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+.pitch-claim-form > div {
+  display: grid;
+  gap: 5px;
+}
+
+.pitch-claim-form h2,
+.pitch-claim-form p {
+  margin: 0;
+}
+
+.pitch-claim-form label {
+  display: grid;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.pitch-claim-form textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.pitch-claim-form button[type="submit"] {
+  min-height: 44px;
+  width: fit-content;
+  border: 1px solid color-mix(in srgb, var(--color-accent, #d8e95b) 65%, transparent);
+  border-radius: 999px;
+  background: var(--color-accent, #d8e95b);
+  color: #11120d;
+  padding: 9px 16px;
+  font-weight: 900;
 }
 
 .place-business-rate-row {
@@ -259,13 +317,15 @@
 }
 
 @media (max-width: 520px) {
-  .pitch-page__header {
-    align-items: start;
+  .pitch-rental-card__footer,
+  .pitch-detail-card__footer {
+    align-items: flex-start;
     flex-direction: column;
   }
 
-  .pitch-manage-link {
-    align-self: start;
+  .pitch-detail-card__actions {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .place-business-rate-row {
