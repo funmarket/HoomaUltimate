@@ -8,6 +8,10 @@ import type {
 
 export interface PlaceCapabilityRepository {
   listApproved(kind: PlaceCapabilityKind): Promise<readonly PublicPlaceCapability[]>;
+  getApprovedByPlace(
+    kind: PlaceCapabilityKind,
+    placeId: string,
+  ): Promise<PublicPlaceCapability | null>;
   submit(
     userId: string,
     placeId: string,
