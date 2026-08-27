@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { PublicPlaceCapability } from "@hooma/contracts/platform-management";
 
 type LocationMode = "none" | "pitch" | "manual";
@@ -10,9 +10,22 @@ export function GameLocationPicker({
   readonly pitches: readonly PublicPlaceCapability[];
   readonly disabled?: boolean;
 }) {
+  const fieldsetRef = useRef<HTMLFieldSetElement>(null);
   const [mode, setMode] = useState<LocationMode>("none");
   const [query, setQuery] = useState("");
   const [selectedPlaceId, setSelectedPlaceId] = useState("");
+
+  useEffect(() => {
+    const form = fieldsetRef.current?.form;
+    if (!form) return;
+    const handleReset = () => {
+      setMode("none");
+      setQuery("");
+      setSelectedPlaceId("");
+    };
+    form.addEventListener("reset", handleReset);
+    return () => form.removeEventListener("reset", handleReset);
+  }, []);
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -35,7 +48,7 @@ export function GameLocationPicker({
   }
 
   return (
-    <fieldset className="game-location-picker" disabled={disabled}>
+    <fieldset ref={fieldsetRef} className="game-location-picker" disabled={disabled}>
       <legend>
         <span>Where are you playing?</span>
         <small>Optional</small>
@@ -62,7 +75,11 @@ export function GameLocationPicker({
           Add game location
         </button>
         {mode !== "none" ? (
-          <button className="game-location-picker__clear" type="button" onClick={() => chooseMode("none")}>
+          <button
+            className="game-location-picker__clear"
+            type="button"
+            onClick={() => chooseMode("none")}
+          >
             Clear
           </button>
         ) : null}
@@ -121,7 +138,9 @@ export function GameLocationPicker({
                   </button>
                 ))
               ) : (
-                <p className="game-location-picker__empty">No approved HOOMA Pitch matches that search.</p>
+                <p className="game-location-picker__empty">
+                  No approved HOOMA Pitch matches that search.
+                </p>
               )}
             </div>
           )}
@@ -138,7 +157,9 @@ export function GameLocationPicker({
             <span>Address</span>
             <input name="address" maxLength={240} placeholder="Street, area or meeting point" />
           </label>
-          <small>This stays attached only to this game. It does not create a HOOMA Pitch listing.</small>
+          <small>
+            This stays attached only to this game. It does not create a HOOMA Pitch listing.
+          </small>
         </div>
       ) : null}
     </fieldset>
