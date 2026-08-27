@@ -378,6 +378,8 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
       body: JSON.stringify({
         placeId: place.id,
         summary: "Bookable football pitch with changing rooms and floodlights",
+        hourlyRateMinor: 12_000,
+        currency: "TND",
         contactName: "Venue Manager",
       }),
     });
