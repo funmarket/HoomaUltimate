@@ -10,6 +10,8 @@ if (!databaseUrl) throw new Error("DATABASE_URL is required for platform owner i
 
 const suffix = Date.now().toString(36);
 const ownerTelegramId = BigInt(`9${Date.now()}${Math.floor(Math.random() * 1000)}`);
+const canonicalPlaceCover = "https://images.example.com/venue/photo?id=123&size=large";
+const staleLegacyCover = "https://images.example.com/legacy-stale-cover";
 const config = loadApiConfig({
   ...process.env,
   NODE_ENV: "test",
@@ -58,6 +60,7 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
     const owner = await register(base, `owner_${suffix}`);
     const manager = await register(base, `manager_${suffix}`);
     const business = await register(base, `business_${suffix}`);
+    const claimant = await register(base, `claimant_${suffix}`);
 
     await db.telegramIdentity.create({
       data: { userId: owner.userId, telegramUserId: ownerTelegramId },
@@ -117,7 +120,7 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
         name: `Owner Venue ${suffix}`,
         category: "Sports café",
         description: "Match-night venue with large screens",
-        imageUrl: "https://images.example.com/venue/photo?id=123&size=large",
+        imageUrl: canonicalPlaceCover,
         address: "1 Football Street",
         city: "Tunis",
         houma: "Centre",
@@ -148,6 +151,26 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
       false,
     );
 
+    await db.place.update({
+      where: { id: place.id },
+      data: { imageUrl: staleLegacyCover },
+    });
+    const pendingPlacesResponse = await fetch(`${base}/api/v1/admin/queues/places`, {
+      headers: headers(owner.cookie),
+    });
+    assert.equal(pendingPlacesResponse.status, 200);
+    const pendingPlaces = (await pendingPlacesResponse.json()) as {
+      id: string;
+      place: { id: string; imageUrl: string | null };
+    }[];
+    const pendingPlace = pendingPlaces.find((item) => item.id === place.id);
+    assert.ok(pendingPlace);
+    assert.equal(
+      pendingPlace.place.imageUrl,
+      canonicalPlaceCover,
+      "Pending Place queue must read its cover from canonical PlaceImage rows",
+    );
+
     const managerPlaceDecision = await fetch(
       `${base}/api/v1/admin/queues/places/${place.id}/decision`,
       {
@@ -169,6 +192,35 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
       await db.placeOwnership.findFirst({
         where: { placeId: place.id, userId: business.userId, revokedAt: null },
       }),
+    );
+
+    const ownershipClaimResponse = await fetch(
+      `${base}/api/v1/places/${place.id}/ownership-claims`,
+      {
+        method: "POST",
+        headers: headers(claimant.cookie),
+        body: JSON.stringify({ evidence: "Claimant has venue ownership documents" }),
+      },
+    );
+    assert.equal(ownershipClaimResponse.status, 201);
+    const ownershipClaim = (await ownershipClaimResponse.json()) as { id: string; status: string };
+    assert.equal(ownershipClaim.status, "PENDING");
+
+    const ownershipQueueResponse = await fetch(`${base}/api/v1/admin/queues/place-ownership`, {
+      headers: headers(owner.cookie),
+    });
+    assert.equal(ownershipQueueResponse.status, 200);
+    const ownershipQueue = (await ownershipQueueResponse.json()) as {
+      id: string;
+      place: { id: string; imageUrl: string | null };
+    }[];
+    const queuedOwnershipClaim = ownershipQueue.find((item) => item.id === ownershipClaim.id);
+    assert.ok(queuedOwnershipClaim);
+    assert.equal(queuedOwnershipClaim.place.id, place.id);
+    assert.equal(
+      queuedOwnershipClaim.place.imageUrl,
+      canonicalPlaceCover,
+      "Ownership claim queue must read its Place cover from canonical PlaceImage rows",
     );
 
     const updatePlace = await fetch(`${base}/api/v1/places/${place.id}`, {
@@ -197,10 +249,7 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
       menuItems: { name: string; price: number; currency: string }[];
     };
     assert.equal(approvedPlace.id, place.id);
-    assert.equal(
-      approvedPlace.imageUrl,
-      "https://images.example.com/venue/photo?id=123&size=large",
-    );
+    assert.equal(approvedPlace.imageUrl, canonicalPlaceCover);
     assert.equal(approvedPlace.category, "Sports café");
     assert.equal(approvedPlace.description, "Updated match-night venue");
     assert.equal(approvedPlace.latitude, null);
@@ -283,16 +332,12 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
       "https://images.example.com/esperance-updated",
     );
 
-    await db.place.update({
-      where: { id: place.id },
-      data: { imageUrl: "https://images.example.com/legacy-stale-cover" },
-    });
     const canonicalPlace = (await (
       await fetch(`${base}/api/public/v1/places/${place.id}`)
     ).json()) as { imageUrl: string | null };
     assert.equal(
       canonicalPlace.imageUrl,
-      "https://images.example.com/venue/photo?id=123&size=large",
+      canonicalPlaceCover,
       "PlaceImage must remain the canonical cover when the legacy Place.imageUrl diverges",
     );
 
@@ -312,7 +357,7 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
     assert.equal(publishedWatch.venueAuthority, "OFFICIAL_VENUE");
     assert.equal(
       publishedWatch.place?.imageUrl,
-      "https://images.example.com/venue/photo?id=123&size=large",
+      canonicalPlaceCover,
       "Watch Event serialization must use the canonical PlaceImage cover",
     );
 
