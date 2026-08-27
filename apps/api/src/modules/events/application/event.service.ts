@@ -83,7 +83,7 @@ export class EventService {
     if (
       access.type === "WATCH" &&
       access.placeId &&
-      input.watch?.kind === "CULTURAL" &&
+      access.watchKind === "CULTURAL" &&
       !(await this.places.isVerifiedOwner(access.placeId, userId))
     ) {
       throw new EventError(

@@ -161,8 +161,8 @@ export class PrismaEventRepository implements EventRepository {
     return serializePublicEvent(row, cultural ?? undefined, cover?.imageUrl ?? null);
   }
 
-  access(eventId: string): Promise<EventAccessRecord | null> {
-    return this.db.event.findUnique({
+  async access(eventId: string): Promise<EventAccessRecord | null> {
+    const event = await this.db.event.findUnique({
       where: { id: eventId },
       select: {
         communityId: true,
@@ -173,6 +173,13 @@ export class PrismaEventRepository implements EventRepository {
         entryFeeMinor: true,
       },
     });
+    if (!event) return null;
+    if (event.type !== "WATCH") return { ...event, watchKind: null };
+    const cultural = await this.db.watchCulturalEventDetails.findUnique({
+      where: { eventId },
+      select: { eventId: true },
+    });
+    return { ...event, watchKind: cultural ? "CULTURAL" : "MATCH" };
   }
 
   getRsvp(eventId: string, userId: string) {
