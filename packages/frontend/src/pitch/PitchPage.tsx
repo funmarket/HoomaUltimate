@@ -4,20 +4,12 @@ import type {
   PublicPlaceSummary,
 } from "@hooma/contracts/platform-management";
 import { useHoomaFrontend } from "../context";
-import { PlaceCapabilityOnboarding } from "../places/PlaceCapabilityOnboarding";
 import { createPlatformManagementApi } from "../places/platform-management-api";
+import { PitchCapabilityOnboarding } from "./PitchCapabilityOnboarding";
+import { formatPitchHourlyRate } from "./pricing";
 
 function locationLabel(place: PublicPlaceSummary): string {
   return [place.city, place.houma].filter(Boolean).join(" · ") || place.address;
-}
-
-function formatHourlyRate(item: PublicPlaceCapability): string {
-  if (item.hourlyRateMinor === null || !item.currency) return "Contact for price";
-  const amount = item.hourlyRateMinor / 1000;
-  return new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 3,
-  }).format(amount);
 }
 
 export function PitchPage() {
@@ -53,7 +45,7 @@ export function PitchPage() {
       <div className="pitch-directory">
         {items.map((item) => {
           const cover = item.place.images[0]?.imageUrl ?? item.place.imageUrl;
-          const rate = formatHourlyRate(item);
+          const rate = formatPitchHourlyRate(item.hourlyRateMinor, item.currency);
           return (
             <article className="pitch-rental-card" key={item.id}>
               <div className="pitch-rental-card__body">
@@ -102,7 +94,7 @@ export function PitchPage() {
           <h2>List a football pitch</h2>
           <p>Verify the Place first, then submit its rental offer and hourly price for review.</p>
         </div>
-        <PlaceCapabilityOnboarding places={places} />
+        <PitchCapabilityOnboarding places={places} />
       </section>
     </section>
   );
