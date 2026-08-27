@@ -51,6 +51,24 @@ test("Event schema keeps RSVP, formation, check-in, and temporary chat as explic
   assert.match(schema, /expiresAt DateTime/);
 });
 
+test("PLAY location stays optional and supports either canonical Pitch or manual venue", async () => {
+  const contracts = await readFile("packages/contracts/src/index.ts", "utf8");
+  const createPage = await readFile("packages/frontend/src/events/CreateEventPage.tsx", "utf8");
+  const picker = await readFile(
+    "packages/frontend/src/game-location/GameLocationPicker.tsx",
+    "utf8",
+  );
+
+  assert.doesNotMatch(contracts, /Canonical Watch Places are only valid for WATCH events/);
+  assert.match(contracts, /Choose a HOOMA Pitch or add a game location, not both/);
+  assert.match(createPage, /<GameLocationPicker pitches=\{pitches\} \/>/);
+  assert.match(picker, /Where are you playing\?/);
+  assert.match(picker, /<small>Optional<\/small>/);
+  assert.match(picker, /name="placeId"/);
+  assert.match(picker, /name="venueName"/);
+  assert.match(picker, /name="address"/);
+});
+
 test("RSVP implementation locks an Event row before capacity decision", async () => {
   const repo = await readFile(
     "apps/api/src/modules/events/infrastructure/prisma-event.repository.ts",

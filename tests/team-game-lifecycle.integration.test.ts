@@ -11,7 +11,7 @@ function offset(date: Date, minutes: number): Date {
   return new Date(date.getTime() + minutes * 60_000);
 }
 
-test("confirmed TeamGame keeps canonical timing through the full HOOMA NOW lifecycle", async () => {
+test("confirmed TeamGame keeps canonical timing and optional location through its lifecycle", async () => {
   const suffix = Date.now().toString(36);
   const userOne = await db.user.create({ data: {} });
   const userTwo = await db.user.create({ data: {} });
@@ -45,6 +45,41 @@ test("confirmed TeamGame keeps canonical timing through the full HOOMA NOW lifec
       createdByUserId: userTwo.id,
     },
   });
+  await db.teamPlayer.createMany({
+    data: [
+      { teamId: homeTeam.id, userId: userOne.id },
+      { teamId: awayTeam.id, userId: userTwo.id },
+    ],
+  });
+  await db.teamResponsibilityAssignment.createMany({
+    data: [
+      { teamId: homeTeam.id, userId: userOne.id, role: "COACH" },
+      { teamId: awayTeam.id, userId: userTwo.id, role: "COACH" },
+    ],
+  });
+  const place = await db.place.create({
+    data: {
+      slug: `team-game-pitch-${suffix}`,
+      name: "Team Game Pitch",
+      address: "11 Matchday Road",
+      city: "Tunis",
+      houma: "Centre",
+      moderationStatus: "APPROVED",
+      suggestedByUserId: userOne.id,
+    },
+  });
+  await db.placeCapabilityApplication.create({
+    data: {
+      placeId: place.id,
+      applicantUserId: userOne.id,
+      kind: "PITCH",
+      summary: "Approved integration-test football pitch",
+      hourlyRateMinor: 45_000,
+      currency: "TND",
+      contactName: "Pitch Operator",
+      status: "APPROVED",
+    },
+  });
 
   try {
     const now = new Date();
@@ -57,7 +92,10 @@ test("confirmed TeamGame keeps canonical timing through the full HOOMA NOW lifec
       format: "FIVE_V_FIVE",
       proposedAt: kickoff.toISOString(),
       proposedEndsAt: endsAt.toISOString(),
-      message: "Canonical timing regression",
+      placeId: place.id,
+      venueName: null,
+      address: null,
+      message: "Canonical timing and Pitch regression",
     });
 
     await teams.acceptChallenge(challenge.id);
@@ -66,6 +104,36 @@ test("confirmed TeamGame keeps canonical timing through the full HOOMA NOW lifec
     assert.equal(game.status, "CONFIRMED");
     assert.equal(game.scheduledAt?.toISOString(), kickoff.toISOString());
     assert.equal(game.endsAt?.toISOString(), endsAt.toISOString());
+    assert.equal(game.placeId, place.id);
+    assert.equal(game.venueName, null);
+    assert.equal(game.address, null);
+
+    const listedGames = (await teams.listGames(userOne.id, 30)) as Array<{
+      id: string;
+      place: { id: string; name: string } | null;
+    }>;
+    const listedGame = listedGames.find((candidate) => candidate.id === game.id);
+    assert.equal(listedGame?.place?.id, place.id);
+    assert.equal(listedGame?.place?.name, "Team Game Pitch");
+
+    const manualChallenge = await teams.createChallenge(userOne.id, {
+      challengerTeamId: homeTeam.id,
+      challengedTeamId: awayTeam.id,
+      format: "FIVE_V_FIVE",
+      proposedAt: null,
+      proposedEndsAt: null,
+      placeId: null,
+      venueName: "Neighbourhood training field",
+      address: "7 Local Street",
+      message: "Manual game location regression",
+    });
+    await teams.acceptChallenge(manualChallenge.id);
+    const manualGame = await db.teamGame.findUniqueOrThrow({
+      where: { challengeId: manualChallenge.id },
+    });
+    assert.equal(manualGame.placeId, null);
+    assert.equal(manualGame.venueName, "Neighbourhood training field");
+    assert.equal(manualGame.address, "7 Local Street");
 
     const discovery = new DiscoveryService(new PrismaDiscoveryRepository(db));
     const itemAt = async (at: Date) => {
@@ -98,6 +166,8 @@ test("confirmed TeamGame keeps canonical timing through the full HOOMA NOW lifec
         ],
       },
     });
+    await db.placeCapabilityApplication.deleteMany({ where: { placeId: place.id } });
+    await db.place.deleteMany({ where: { id: place.id } });
     await db.team.deleteMany({ where: { id: { in: [homeTeam.id, awayTeam.id] } } });
     await db.community.deleteMany({
       where: { id: { in: [communityOne.id, communityTwo.id] } },

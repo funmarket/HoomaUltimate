@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type { MeResponse, WatchEventKind } from "@hooma/contracts";
-import type { PublicPlaceSummary } from "@hooma/contracts/platform-management";
+import type {
+  PublicPlaceCapability,
+  PublicPlaceSummary,
+} from "@hooma/contracts/platform-management";
 import { useHoomaFrontend } from "../context";
+import { GameLocationPicker } from "../game-location/GameLocationPicker";
 import { createPlatformManagementApi } from "../places/platform-management-api";
 import { useEventApi } from "./useEventApi";
 import { WatchEventForm, type WatchEventFormValue } from "./WatchEventForm";
@@ -17,6 +21,7 @@ export function CreateEventPage() {
   const initialPlaceId = searchParams.get("placeId") ?? "";
   const [me, setMe] = useState<MeResponse | null>(null);
   const [places, setPlaces] = useState<PublicPlaceSummary[]>([]);
+  const [pitches, setPitches] = useState<PublicPlaceCapability[]>([]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
 
@@ -31,9 +36,11 @@ export function CreateEventPage() {
         .catch((reason) => setError(protectedError(reason, "Authentication required")));
       return;
     }
-    void api.identity
-      .me()
-      .then(setMe)
+    void Promise.all([api.identity.me(), placeApi.capability.list("PITCH")])
+      .then(([identity, pitchRows]) => {
+        setMe(identity);
+        setPitches(pitchRows);
+      })
       .catch((reason) => setError(protectedError(reason, "Authentication required")));
   }, [api, placeApi, protectedError, watchMode]);
 
@@ -79,6 +86,9 @@ export function CreateEventPage() {
     const startsAt = new Date(String(data.get("startsAt")));
     const endsValue = String(data.get("endsAt") || "");
     const endsAt = endsValue ? new Date(endsValue) : null;
+    const placeId = String(data.get("placeId") || "").trim() || null;
+    const venueName = placeId ? null : String(data.get("venueName") || "").trim() || null;
+    const address = placeId ? null : String(data.get("address") || "").trim() || null;
     setError("");
 
     void eventApi
@@ -93,10 +103,10 @@ export function CreateEventPage() {
         entryFeeMinor: 0,
         currency: "TND",
         communityId: String(data.get("communityId")),
-        placeId: null,
+        placeId,
         type: "PLAY",
-        venueName: String(data.get("venueName")) || null,
-        address: String(data.get("address")) || null,
+        venueName,
+        address,
         play: {
           pitchType: String(data.get("pitchType")) as "FIVE_A_SIDE",
           skillLevel: String(data.get("skillLevel")) as "MIXED",
@@ -221,14 +231,7 @@ export function CreateEventPage() {
               </select>
             </label>
           </div>
-          <label>
-            Venue
-            <input name="venueName" />
-          </label>
-          <label>
-            Address
-            <input name="address" />
-          </label>
+          <GameLocationPicker pitches={pitches} />
           <p className="muted">
             Paid game entry is intentionally disabled until Cash and Telegram Stars are wired into
             Payments.

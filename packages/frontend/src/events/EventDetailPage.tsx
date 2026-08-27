@@ -156,7 +156,7 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
   const isWatch = event.type === "WATCH";
   const location = isWatch
     ? event.place?.name || "Place to be confirmed"
-    : event.venueName || event.address || "Venue to be confirmed";
+    : event.place?.name || event.venueName || event.address || "Venue to be confirmed";
   const play = event.playDetails;
   const rsvpLabel =
     rsvp === "WAITLISTED"
@@ -326,6 +326,17 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
               {event.capacity ? ` / ${event.capacity}` : ""} going
             </span>
           </div>
+
+          {event.place ? (
+            <div className="play-event-card__tagged-pitch">
+              <div>
+                <small>HOOMA PITCH</small>
+                <strong>{event.place.name}</strong>
+                <span>{[event.place.city, event.place.houma].filter(Boolean).join(" · ")}</span>
+              </div>
+              <a href={`/pitch/${event.place.id}`}>View Pitch</a>
+            </div>
+          ) : null}
 
           <div className="play-event-card__facts">
             <div>

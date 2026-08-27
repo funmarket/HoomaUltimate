@@ -105,6 +105,14 @@ const teamSummarySelect = {
   _count: { select: { players: { where: { leftAt: null, active: true } } } },
 } satisfies Prisma.TeamSelect;
 
+const gamePlaceSelect = {
+  id: true,
+  name: true,
+  address: true,
+  city: true,
+  houma: true,
+} satisfies Prisma.PlaceSelect;
+
 export class PrismaTeamRepository implements TeamRepository {
   constructor(private readonly db: PrismaClient) {}
 
@@ -391,9 +399,13 @@ export class PrismaTeamRepository implements TeamRepository {
         format: input.format,
         proposedAt: input.proposedAt ? new Date(input.proposedAt) : null,
         proposedEndsAt: input.proposedEndsAt ? new Date(input.proposedEndsAt) : null,
+        placeId: input.placeId ?? null,
+        venueName: input.placeId ? null : (input.venueName ?? null),
+        address: input.placeId ? null : (input.address ?? null),
         createdByUserId: userId,
         ...(input.message !== undefined ? { message: input.message } : {}),
       },
+      include: { challengerTeam: true, challengedTeam: true, place: { select: gamePlaceSelect } },
     });
   }
 
@@ -407,7 +419,12 @@ export class PrismaTeamRepository implements TeamRepository {
   getChallengeForUser(challengeId: string, userId: string) {
     return this.db.teamChallenge.findFirst({
       where: { id: challengeId, OR: this.challengeViewFilters(userId) },
-      include: { challengerTeam: true, challengedTeam: true, game: true },
+      include: {
+        challengerTeam: true,
+        challengedTeam: true,
+        place: { select: gamePlaceSelect },
+        game: { include: { place: { select: gamePlaceSelect } } },
+      },
     });
   }
 
@@ -416,7 +433,12 @@ export class PrismaTeamRepository implements TeamRepository {
       where: {
         challengedTeam: { OR: this.capabilityTeamFilters(userId, "RESPOND_TO_CHALLENGE") },
       },
-      include: { challengerTeam: true, challengedTeam: true, game: true },
+      include: {
+        challengerTeam: true,
+        challengedTeam: true,
+        place: { select: gamePlaceSelect },
+        game: { include: { place: { select: gamePlaceSelect } } },
+      },
       orderBy: { createdAt: "desc" },
       take: limit,
     });
@@ -433,7 +455,12 @@ export class PrismaTeamRepository implements TeamRepository {
           },
         ],
       },
-      include: { challengerTeam: true, challengedTeam: true, game: true },
+      include: {
+        challengerTeam: true,
+        challengedTeam: true,
+        place: { select: gamePlaceSelect },
+        game: { include: { place: { select: gamePlaceSelect } } },
+      },
       orderBy: { createdAt: "desc" },
       take: limit,
     });
@@ -452,6 +479,9 @@ export class PrismaTeamRepository implements TeamRepository {
             awayTeamId: existing.challengedTeamId,
             scheduledAt: existing.proposedAt,
             endsAt: existing.proposedEndsAt,
+            placeId: existing.placeId,
+            venueName: existing.venueName,
+            address: existing.address,
             status: existing.proposedAt && existing.proposedEndsAt ? "CONFIRMED" : "SCHEDULING",
           },
           update: {},
@@ -475,6 +505,9 @@ export class PrismaTeamRepository implements TeamRepository {
             awayTeamId: current.challengedTeamId,
             scheduledAt: current.proposedAt,
             endsAt: current.proposedEndsAt,
+            placeId: current.placeId,
+            venueName: current.venueName,
+            address: current.address,
             status: current.proposedAt && current.proposedEndsAt ? "CONFIRMED" : "SCHEDULING",
           },
           update: {},
@@ -491,6 +524,9 @@ export class PrismaTeamRepository implements TeamRepository {
           awayTeamId: challenge.challengedTeamId,
           scheduledAt: challenge.proposedAt,
           endsAt: challenge.proposedEndsAt,
+          placeId: challenge.placeId,
+          venueName: challenge.venueName,
+          address: challenge.address,
           status: challenge.proposedAt && challenge.proposedEndsAt ? "CONFIRMED" : "SCHEDULING",
         },
         update: {},
@@ -545,7 +581,12 @@ export class PrismaTeamRepository implements TeamRepository {
           { awayTeam: { OR: this.managedTeamFilters(userId) } },
         ],
       },
-      include: { homeTeam: true, awayTeam: true, challenge: true },
+      include: {
+        homeTeam: true,
+        awayTeam: true,
+        place: { select: gamePlaceSelect },
+        challenge: true,
+      },
       orderBy: [{ scheduledAt: "asc" }, { createdAt: "desc" }],
       take: limit,
     });
@@ -560,7 +601,12 @@ export class PrismaTeamRepository implements TeamRepository {
           { awayTeam: { OR: this.managedTeamFilters(userId) } },
         ],
       },
-      include: { homeTeam: true, awayTeam: true, challenge: true },
+      include: {
+        homeTeam: true,
+        awayTeam: true,
+        place: { select: gamePlaceSelect },
+        challenge: true,
+      },
     });
   }
 

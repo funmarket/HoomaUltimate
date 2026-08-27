@@ -1,5 +1,6 @@
 import type { EventCreateInput, EventFormationInput, EventUpdateInput } from "@hooma/contracts";
 import type { CommunityService } from "../../communities/application/community.service.js";
+import type { PlaceCapabilityService } from "../../places/application/place-capability.service.js";
 import type { PlaceService } from "../../places/application/place.service.js";
 import { EventError } from "../domain/event-error.js";
 import type { EventPublicListInput, EventRepository } from "./event.repository.js";
@@ -9,6 +10,7 @@ export class EventService {
     private readonly repository: EventRepository,
     private readonly communities: CommunityService,
     private readonly places: PlaceService,
+    private readonly pitch?: PlaceCapabilityService,
   ) {}
 
   listPublic(input: Omit<EventPublicListInput, "from"> & { from?: Date }) {
@@ -54,6 +56,12 @@ export class EventService {
     if (input.type === "PLAY") {
       if (!input.communityId) throw new EventError("COMMUNITY_REQUIRED", "Community is required");
       await this.communities.requireCoach(input.communityId, userId);
+      if (input.placeId) {
+        if (!this.pitch) {
+          throw new EventError("PLACE_REQUIRED", "Pitch validation is unavailable for this game");
+        }
+        await this.pitch.getPublic(input.placeId);
+      }
     } else {
       if (!input.placeId) throw new EventError("PLACE_REQUIRED", "Approved Place is required");
       await this.places.getPublic(input.placeId);

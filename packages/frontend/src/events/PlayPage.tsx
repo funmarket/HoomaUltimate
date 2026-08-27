@@ -347,7 +347,7 @@ export function PlayPage() {
                   key={event.id}
                   title={event.title}
                   dateLabel={formatDate(event.startsAt)}
-                  venueName={event.venueName || event.address}
+                  venueName={event.place?.name || event.venueName || event.address}
                   communityName={event.community.name}
                   goingCount={event._count.rsvps}
                   capacity={event.capacity}
