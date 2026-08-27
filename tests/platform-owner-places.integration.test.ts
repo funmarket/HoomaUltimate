@@ -283,15 +283,38 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
       "https://images.example.com/esperance-updated",
     );
 
+    await db.place.update({
+      where: { id: place.id },
+      data: { imageUrl: "https://images.example.com/legacy-stale-cover" },
+    });
+    const canonicalPlace = (await (
+      await fetch(`${base}/api/public/v1/places/${place.id}`)
+    ).json()) as { imageUrl: string | null };
+    assert.equal(
+      canonicalPlace.imageUrl,
+      "https://images.example.com/venue/photo?id=123&size=large",
+      "PlaceImage must remain the canonical cover when the legacy Place.imageUrl diverges",
+    );
+
     const publicWatch = await fetch(`${base}/api/public/v1/events?type=WATCH&limit=50`);
     assert.equal(publicWatch.status, 200);
     const watchPage = (await publicWatch.json()) as {
-      items: { id: string; placeId: string; venueAuthority: string }[];
+      items: {
+        id: string;
+        placeId: string;
+        venueAuthority: string;
+        place: { imageUrl: string | null } | null;
+      }[];
     };
     const publishedWatch = watchPage.items.find((item) => item.id === watchEvent.id);
     assert.ok(publishedWatch);
     assert.equal(publishedWatch.placeId, place.id);
     assert.equal(publishedWatch.venueAuthority, "OFFICIAL_VENUE");
+    assert.equal(
+      publishedWatch.place?.imageUrl,
+      "https://images.example.com/venue/photo?id=123&size=large",
+      "Watch Event serialization must use the canonical PlaceImage cover",
+    );
 
     const removedWatchApplication = await fetch(`${base}/api/v1/watch/applications`, {
       method: "POST",
