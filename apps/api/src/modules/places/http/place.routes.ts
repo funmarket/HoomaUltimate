@@ -38,6 +38,17 @@ export function createPlacesMemberRouter(service: PlaceService): Router {
     }),
   );
   router.get(
+    "/:placeId/ownership-status",
+    asyncHandler(async (request, response) => {
+      response.json({
+        verified: await service.isVerifiedOwner(
+          String(request.params.placeId),
+          getAuth(request).userId,
+        ),
+      });
+    }),
+  );
+  router.get(
     "/:placeId/manage",
     asyncHandler(async (request, response) => {
       response.json(
