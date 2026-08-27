@@ -11,6 +11,7 @@ if (!databaseUrl) throw new Error("DATABASE_URL is required for platform owner i
 const suffix = Date.now().toString(36);
 const ownerTelegramId = BigInt(`9${Date.now()}${Math.floor(Math.random() * 1000)}`);
 const canonicalPlaceCover = "https://images.example.com/venue/photo?id=123&size=large";
+const replacementCanonicalPlaceCover = "https://images.example.com/venue/photo?id=456&size=large";
 const staleLegacyCover = "https://images.example.com/legacy-stale-cover";
 const config = loadApiConfig({
   ...process.env,
@@ -138,6 +139,16 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
     assert.equal(placeResponse.status, 201);
     const place = (await placeResponse.json()) as { id: string; status: string };
     assert.equal(place.status, "PENDING");
+    assert.equal(
+      (
+        await db.place.findUniqueOrThrow({
+          where: { id: place.id },
+          select: { imageUrl: true },
+        })
+      ).imageUrl,
+      null,
+      "New Place writes must store images only in canonical PlaceImage rows",
+    );
 
     const pendingManage = await fetch(`${base}/api/v1/places/${place.id}/manage`, {
       headers: headers(business.cookie),
@@ -223,6 +234,32 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
       "Ownership claim queue must read its Place cover from canonical PlaceImage rows",
     );
 
+    const galleryUpdate = await fetch(`${base}/api/v1/places/${place.id}`, {
+      method: "PATCH",
+      headers: headers(business.cookie),
+      body: JSON.stringify({ imageUrls: [replacementCanonicalPlaceCover] }),
+    });
+    assert.equal(galleryUpdate.status, 200);
+    const updatedGallery = (await galleryUpdate.json()) as {
+      imageUrl: string | null;
+      images: { imageUrl: string; sortOrder: number }[];
+    };
+    assert.equal(updatedGallery.imageUrl, replacementCanonicalPlaceCover);
+    assert.deepEqual(
+      updatedGallery.images.map(({ imageUrl, sortOrder }) => ({ imageUrl, sortOrder })),
+      [{ imageUrl: replacementCanonicalPlaceCover, sortOrder: 0 }],
+    );
+    assert.equal(
+      (
+        await db.place.findUniqueOrThrow({
+          where: { id: place.id },
+          select: { imageUrl: true },
+        })
+      ).imageUrl,
+      staleLegacyCover,
+      "Canonical gallery updates must not mirror back into legacy Place.imageUrl",
+    );
+
     const updatePlace = await fetch(`${base}/api/v1/places/${place.id}`, {
       method: "PATCH",
       headers: headers(business.cookie),
@@ -249,7 +286,7 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
       menuItems: { name: string; price: number; currency: string }[];
     };
     assert.equal(approvedPlace.id, place.id);
-    assert.equal(approvedPlace.imageUrl, canonicalPlaceCover);
+    assert.equal(approvedPlace.imageUrl, replacementCanonicalPlaceCover);
     assert.equal(approvedPlace.category, "Sports café");
     assert.equal(approvedPlace.description, "Updated match-night venue");
     assert.equal(approvedPlace.latitude, null);
@@ -337,7 +374,7 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
     ).json()) as { imageUrl: string | null };
     assert.equal(
       canonicalPlace.imageUrl,
-      canonicalPlaceCover,
+      replacementCanonicalPlaceCover,
       "PlaceImage must remain the canonical cover when the legacy Place.imageUrl diverges",
     );
 
@@ -357,7 +394,7 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
     assert.equal(publishedWatch.venueAuthority, "OFFICIAL_VENUE");
     assert.equal(
       publishedWatch.place?.imageUrl,
-      canonicalPlaceCover,
+      replacementCanonicalPlaceCover,
       "Watch Event serialization must use the canonical PlaceImage cover",
     );
 
