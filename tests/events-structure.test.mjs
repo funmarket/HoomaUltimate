@@ -69,6 +69,22 @@ test("PLAY location stays optional and supports either canonical Pitch or manual
   assert.match(picker, /name="address"/);
 });
 
+test("Public Event response has one shared contract authority", async () => {
+  const sharedContract = await readFile("packages/contracts/src/events.ts", "utf8");
+  const frontendApi = await readFile("packages/frontend/src/events/api.ts", "utf8");
+  const repositoryContract = await readFile(
+    "apps/api/src/modules/events/application/event.repository.ts",
+    "utf8",
+  );
+
+  assert.match(sharedContract, /export type PublicEvent =/);
+  assert.match(sharedContract, /export type PublicEventPage =/);
+  assert.match(frontendApi, /from "@hooma\/contracts\/events"/);
+  assert.doesNotMatch(frontendApi, /export type PublicEvent = \{/);
+  assert.match(repositoryContract, /from "@hooma\/contracts\/events"/);
+  assert.match(repositoryContract, /Promise<PublicEventPage>/);
+});
+
 test("RSVP implementation locks an Event row before capacity decision", async () => {
   const repo = await readFile(
     "apps/api/src/modules/events/infrastructure/prisma-event.repository.ts",

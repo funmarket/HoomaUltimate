@@ -1,4 +1,5 @@
 import type { EventCreateInput, EventFormationInput, EventUpdateInput } from "@hooma/contracts";
+import type { PublicEvent, PublicEventPage } from "@hooma/contracts/events";
 
 export interface EventPublicListInput {
   readonly type?: "PLAY" | "WATCH";
@@ -33,15 +34,15 @@ export interface FormationRosterPlayer {
 }
 
 export interface EventRepository {
-  listPublic(input: EventPublicListInput): Promise<unknown>;
-  getPublic(eventId: string): Promise<unknown | null>;
+  listPublic(input: EventPublicListInput): Promise<PublicEventPage>;
+  getPublic(eventId: string): Promise<PublicEvent | null>;
   access(eventId: string): Promise<EventAccessRecord | null>;
   getRsvp(eventId: string, userId: string): Promise<{ status: EventRsvpState } | null>;
   formationRoster(eventId: string): Promise<FormationRosterPlayer[]>;
-  create(userId: string, input: EventCreateInput): Promise<unknown>;
-  update(eventId: string, input: EventUpdateInput): Promise<unknown>;
+  create(userId: string, input: EventCreateInput): Promise<PublicEvent>;
+  update(eventId: string, input: EventUpdateInput): Promise<PublicEvent>;
   cancel(eventId: string): Promise<unknown>;
-  complete(eventId: string): Promise<unknown>;
+  complete(eventId: string): Promise<PublicEvent | null>;
   join(
     eventId: string,
     userId: string,
