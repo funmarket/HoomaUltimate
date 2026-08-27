@@ -35,7 +35,7 @@ export function PitchPage() {
           <h1>Find your pitch</h1>
           <p>Football grounds and rental offers from local venues.</p>
         </div>
-        <a className="pitch-suggest-link" href="/places/new?kind=PITCH">
+        <a className="pitch-back-link pitch-suggest-link" href="/places/new?kind=PITCH">
           Suggest a pitch
         </a>
       </header>
