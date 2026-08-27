@@ -26,6 +26,7 @@ async function resetDatabase() {
   await db.eventRsvp.deleteMany();
   await db.playEventDetails.deleteMany();
   await db.event.deleteMany();
+  await db.place.deleteMany();
   await db.teamGame.deleteMany();
   await db.teamChallengeMessage.deleteMany();
   await db.teamChallenge.deleteMany();
@@ -202,6 +203,100 @@ test("Play event preserves capacity/waitlist, formation, check-in, temporary cha
     assert.equal(complete.status, 200);
     const completed = await db.event.findUniqueOrThrow({ where: { id: event.id } });
     assert.equal(completed.status, "COMPLETED");
+  } finally {
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve())),
+    );
+    await resetDatabase();
+  }
+});
+
+test("public Watch listing filters by Place before applying cursor pagination", async () => {
+  await resetDatabase();
+  const app = createApp(config, createContainer(config));
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise<void>((resolve) => server.once("listening", resolve));
+  const address = server.address();
+  assert.ok(address && typeof address === "object");
+  const base = `http://127.0.0.1:${address.port}`;
+
+  try {
+    const creator = await register(base, "watch_pagination_creator");
+    const suffix = Date.now().toString(36);
+    const placeA = await db.place.create({
+      data: {
+        slug: `watch-page-a-${suffix}`,
+        name: "Watch Page A",
+        address: "10 First Street",
+        moderationStatus: "APPROVED",
+        suggestedByUserId: creator.userId,
+      },
+    });
+    const placeB = await db.place.create({
+      data: {
+        slug: `watch-page-b-${suffix}`,
+        name: "Watch Page B",
+        address: "20 Second Street",
+        moderationStatus: "APPROVED",
+        suggestedByUserId: creator.userId,
+      },
+    });
+
+    const startsAt = new Date(Date.now() + 60 * 60_000);
+    async function createWatch(placeId: string, title: string, offsetMinutes: number) {
+      const response = await fetch(`${base}/api/v1/events`, {
+        method: "POST",
+        headers: headers(creator.cookie),
+        body: JSON.stringify({
+          communityId: null,
+          placeId,
+          type: "WATCH",
+          title,
+          startsAt: new Date(startsAt.getTime() + offsetMinutes * 60_000).toISOString(),
+          timezone: "Africa/Tunis",
+          waitlistEnabled: true,
+          entryFeeMinor: 0,
+          currency: "TND",
+          play: null,
+          watch: {
+            teamOneName: `${title} Home`,
+            teamTwoName: `${title} Away`,
+          },
+        }),
+      });
+      assert.equal(response.status, 201);
+      return (await response.json()) as { id: string };
+    }
+
+    const firstA = await createWatch(placeA.id, "First A", 0);
+    const secondA = await createWatch(placeA.id, "Second A", 30);
+    await createWatch(placeB.id, "Only B", 15);
+
+    const firstPageResponse = await fetch(
+      `${base}/api/public/v1/events?type=WATCH&placeId=${placeA.id}&limit=1`,
+    );
+    assert.equal(firstPageResponse.status, 200);
+    const firstPage = (await firstPageResponse.json()) as {
+      items: { id: string; placeId: string | null }[];
+      nextCursor: string | null;
+    };
+    assert.equal(firstPage.items.length, 1);
+    assert.equal(firstPage.items[0]?.id, firstA.id);
+    assert.equal(firstPage.items[0]?.placeId, placeA.id);
+    assert.equal(firstPage.nextCursor, firstA.id);
+
+    const secondPageResponse = await fetch(
+      `${base}/api/public/v1/events?type=WATCH&placeId=${placeA.id}&limit=1&cursor=${firstPage.nextCursor}`,
+    );
+    assert.equal(secondPageResponse.status, 200);
+    const secondPage = (await secondPageResponse.json()) as {
+      items: { id: string; placeId: string | null }[];
+      nextCursor: string | null;
+    };
+    assert.equal(secondPage.items.length, 1);
+    assert.equal(secondPage.items[0]?.id, secondA.id);
+    assert.equal(secondPage.items[0]?.placeId, placeA.id);
+    assert.equal(secondPage.nextCursor, null);
   } finally {
     await new Promise<void>((resolve, reject) =>
       server.close((error) => (error ? reject(error) : resolve())),

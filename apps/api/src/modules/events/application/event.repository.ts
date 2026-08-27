@@ -3,6 +3,7 @@ import type { EventCreateInput, EventFormationInput, EventUpdateInput } from "@h
 export interface EventPublicListInput {
   readonly type?: "PLAY" | "WATCH";
   readonly communityId?: string;
+  readonly placeId?: string;
   readonly from: Date;
   readonly limit: number;
   readonly cursor?: string;

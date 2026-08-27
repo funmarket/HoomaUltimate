@@ -50,6 +50,7 @@ export function createEventPublicRouter(
           : undefined;
       const communityId =
         typeof request.query.communityId === "string" ? request.query.communityId : undefined;
+      const placeId = typeof request.query.placeId === "string" ? request.query.placeId : undefined;
       const cursor = typeof request.query.cursor === "string" ? request.query.cursor : undefined;
       const from =
         typeof request.query.from === "string" ? new Date(request.query.from) : undefined;
@@ -59,6 +60,7 @@ export function createEventPublicRouter(
           limit: numberQuery(request.query.limit, 30),
           ...(type !== undefined ? { type } : {}),
           ...(communityId !== undefined ? { communityId } : {}),
+          ...(placeId !== undefined ? { placeId } : {}),
           ...(cursor !== undefined ? { cursor } : {}),
           ...(from !== undefined ? { from } : {}),
           ...(auth ? { viewerUserId: auth.userId } : {}),

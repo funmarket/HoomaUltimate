@@ -90,6 +90,7 @@ export class PrismaEventRepository implements EventRepository {
         status: "PUBLISHED",
         startsAt: { gte: input.from },
         ...(input.communityId ? { communityId: input.communityId } : {}),
+        ...(input.placeId ? { placeId: input.placeId } : {}),
       },
       orderBy: [{ startsAt: "asc" }, { id: "asc" }],
       take: input.limit + 1,
