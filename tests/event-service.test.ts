@@ -4,6 +4,7 @@ import type { EventCreateInput } from "@hooma/contracts";
 import type { CommunityService } from "../apps/api/src/modules/communities/application/community.service.js";
 import type { EventRepository } from "../apps/api/src/modules/events/application/event.repository.js";
 import { EventService } from "../apps/api/src/modules/events/application/event.service.js";
+import { EventError } from "../apps/api/src/modules/events/domain/event-error.js";
 import type { PlaceService } from "../apps/api/src/modules/places/application/place.service.js";
 
 function repositoryStub(onCreate: () => void): EventRepository {
@@ -119,12 +120,46 @@ test("EventService still creates free PLAY events through community coach author
   assert.equal(createCalled, true);
 });
 
+test("EventService checks persisted Cultural subtype on partial updates", async () => {
+  const repository = repositoryStub(() => {});
+  let updateCalled = false;
+  repository.access = async () => ({
+    communityId: null,
+    placeId: "place-1",
+    type: "WATCH",
+    watchKind: "CULTURAL",
+    createdByUserId: "user-1",
+    status: "PUBLISHED",
+    entryFeeMinor: 0n,
+  });
+  repository.update = async () => {
+    updateCalled = true;
+    return {};
+  };
+  const places = {
+    isVerifiedOwner: async (placeId: string, userId: string) => {
+      assert.equal(placeId, "place-1");
+      assert.equal(userId, "user-1");
+      return false;
+    },
+  } as unknown as PlaceService;
+  const service = new EventService(repository, {} as CommunityService, places);
+
+  await assert.rejects(
+    () => service.update("user-1", "event-1", { title: "Updated Cultural title" }),
+    (error: unknown) =>
+      error instanceof EventError && error.code === "WATCH_CULTURAL_OWNER_REQUIRED",
+  );
+  assert.equal(updateCalled, false);
+});
+
 test("EventService returns only the authenticated user's RSVP state", async () => {
   const repository = repositoryStub(() => {});
   repository.access = async () => ({
     communityId: "community-1",
     placeId: null,
     type: "PLAY",
+    watchKind: null,
     createdByUserId: "founder",
     status: "PUBLISHED",
     entryFeeMinor: 0n,
@@ -146,6 +181,7 @@ test("EventService rejects formation players outside the confirmed event roster"
     communityId: "community-1",
     placeId: null,
     type: "PLAY",
+    watchKind: null,
     createdByUserId: "user-1",
     status: "PUBLISHED",
     entryFeeMinor: 0n,
