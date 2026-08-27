@@ -53,6 +53,24 @@
   gap: 18px;
 }
 
+.watch-load-more {
+  min-height: 46px;
+  justify-self: center;
+  padding: 0 18px;
+  border: 1px solid var(--app-gold);
+  border-radius: 14px;
+  color: var(--app-gold);
+  background: var(--app-surface);
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.watch-load-more:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 .watch-cultural-card {
   min-width: 0;
   overflow: hidden;
