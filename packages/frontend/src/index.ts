@@ -37,5 +37,7 @@ export * from "./discovery/HoomaNowSection";
 export * from "./places/PlacesPages";
 export * from "./places/PlaceEditPage";
 export * from "./places/platform-management-api";
+export * from "./pitch/PitchDetailPage";
+export * from "./pitch/PitchManagePage";
 export * from "./pitch/PitchPage";
 export * from "./watch/WatchPage";
