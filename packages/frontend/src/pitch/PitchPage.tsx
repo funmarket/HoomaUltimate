@@ -5,7 +5,6 @@ import type {
 } from "@hooma/contracts/platform-management";
 import { useHoomaFrontend } from "../context";
 import { createPlatformManagementApi } from "../places/platform-management-api";
-import { PitchCapabilityOnboarding } from "./PitchCapabilityOnboarding";
 import { formatPitchHourlyRate } from "./pricing";
 
 function locationLabel(place: PublicPlaceSummary): string {
@@ -15,16 +14,14 @@ function locationLabel(place: PublicPlaceSummary): string {
 export function PitchPage() {
   const { transport } = useHoomaFrontend();
   const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
-  const [places, setPlaces] = useState<PublicPlaceSummary[]>([]);
   const [items, setItems] = useState<PublicPlaceCapability[]>([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    void Promise.all([api.places.list(), api.capability.list("PITCH")])
-      .then(([placeRows, capabilityRows]) => {
-        setPlaces(placeRows);
-        setItems(capabilityRows);
-      })
+    setError("");
+    void api.capability
+      .list("PITCH")
+      .then(setItems)
       .catch((reason) =>
         setError(reason instanceof Error ? reason.message : "Unable to load Pitch"),
       );
@@ -38,6 +35,9 @@ export function PitchPage() {
           <h1>Find your pitch</h1>
           <p>Bookable football grounds from verified local venue operators.</p>
         </div>
+        <a className="pitch-manage-link" href="/pitch/manage">
+          List a pitch
+        </a>
       </header>
 
       {error ? <p className="error">{error}</p> : null}
@@ -74,7 +74,7 @@ export function PitchPage() {
 
               <div className="pitch-rental-card__footer">
                 <span className="pitch-rental-card__stamp">HOOMA · PITCH RENTAL</span>
-                <a href={`/places/${item.place.id}`}>View pitch</a>
+                <a href={`/pitch/${item.place.id}`}>View pitch</a>
               </div>
             </article>
           );
@@ -87,15 +87,6 @@ export function PitchPage() {
           </div>
         ) : null}
       </div>
-
-      <section className="pitch-owner-entry">
-        <div className="pitch-owner-entry__heading">
-          <p className="eyebrow">FOR VENUE OPERATORS</p>
-          <h2>List a football pitch</h2>
-          <p>Verify the Place first, then submit its rental offer and hourly price for review.</p>
-        </div>
-        <PitchCapabilityOnboarding places={places} />
-      </section>
     </section>
   );
 }
