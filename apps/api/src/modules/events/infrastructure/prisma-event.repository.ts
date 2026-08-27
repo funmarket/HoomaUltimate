@@ -34,7 +34,6 @@ const publicEventSelect = Prisma.validator<Prisma.EventSelect>()({
       address: true,
       city: true,
       houma: true,
-      imageUrl: true,
       category: true,
       archivedAt: true,
       ownerships: { where: { revokedAt: null }, select: { userId: true } },
@@ -103,9 +102,29 @@ export class PrismaEventRepository implements EventRepository {
           where: { eventId: { in: pageRows.map((event) => event.id) } },
         })
       : [];
+    const placeIds = [
+      ...new Set(pageRows.map((event) => event.placeId).filter((id): id is string => Boolean(id))),
+    ];
+    const placeImages = placeIds.length
+      ? await this.db.placeImage.findMany({
+          where: { placeId: { in: placeIds } },
+          orderBy: [{ placeId: "asc" }, { sortOrder: "asc" }, { id: "asc" }],
+          select: { placeId: true, imageUrl: true },
+        })
+      : [];
+    const coverByPlace = new Map<string, string>();
+    for (const image of placeImages) {
+      if (!coverByPlace.has(image.placeId)) coverByPlace.set(image.placeId, image.imageUrl);
+    }
     const culturalByEvent = new Map(culturalRows.map((details) => [details.eventId, details]));
     return {
-      items: pageRows.map((event) => serializePublicEvent(event, culturalByEvent.get(event.id))),
+      items: pageRows.map((event) =>
+        serializePublicEvent(
+          event,
+          culturalByEvent.get(event.id),
+          event.placeId ? (coverByPlace.get(event.placeId) ?? null) : null,
+        ),
+      ),
       nextCursor: rows.length > input.limit ? (rows[input.limit - 1]?.id ?? null) : null,
     };
   }
@@ -126,11 +145,19 @@ export class PrismaEventRepository implements EventRepository {
       select: publicEventSelect,
     });
     if (!row) return null;
-    const cultural =
+    const [cultural, cover] = await Promise.all([
       row.type === "WATCH"
-        ? await this.db.watchCulturalEventDetails.findUnique({ where: { eventId } })
-        : null;
-    return serializePublicEvent(row, cultural ?? undefined);
+        ? this.db.watchCulturalEventDetails.findUnique({ where: { eventId } })
+        : null,
+      row.placeId
+        ? this.db.placeImage.findFirst({
+            where: { placeId: row.placeId },
+            orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+            select: { imageUrl: true },
+          })
+        : null,
+    ]);
+    return serializePublicEvent(row, cultural ?? undefined, cover?.imageUrl ?? null);
   }
 
   access(eventId: string): Promise<EventAccessRecord | null> {
@@ -238,11 +265,19 @@ export class PrismaEventRepository implements EventRepository {
         where: { id: event.id },
         select: publicEventSelect,
       });
-      const cultural =
+      const [cultural, cover] = await Promise.all([
         input.type === "WATCH" && input.watch?.kind === "CULTURAL"
-          ? await tx.watchCulturalEventDetails.findUnique({ where: { eventId: event.id } })
-          : null;
-      return serializePublicEvent(created, cultural ?? undefined);
+          ? tx.watchCulturalEventDetails.findUnique({ where: { eventId: event.id } })
+          : null,
+        created.placeId
+          ? tx.placeImage.findFirst({
+              where: { placeId: created.placeId },
+              orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+              select: { imageUrl: true },
+            })
+          : null,
+      ]);
+      return serializePublicEvent(created, cultural ?? undefined, cover?.imageUrl ?? null);
     });
   }
 
@@ -317,11 +352,19 @@ export class PrismaEventRepository implements EventRepository {
         where: { id: eventId },
         select: publicEventSelect,
       });
-      const cultural =
+      const [cultural, cover] = await Promise.all([
         current.type === "WATCH"
-          ? await tx.watchCulturalEventDetails.findUnique({ where: { eventId } })
-          : null;
-      return serializePublicEvent(updated, cultural ?? undefined);
+          ? tx.watchCulturalEventDetails.findUnique({ where: { eventId } })
+          : null,
+        updated.placeId
+          ? tx.placeImage.findFirst({
+              where: { placeId: updated.placeId },
+              orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+              select: { imageUrl: true },
+            })
+          : null,
+      ]);
+      return serializePublicEvent(updated, cultural ?? undefined, cover?.imageUrl ?? null);
     });
   }
 
@@ -515,14 +558,21 @@ async function lockEvent(tx: Prisma.TransactionClient, eventId: string): Promise
   if (rows.length === 0) throw new Error("EVENT_NOT_FOUND");
 }
 
-function serializePublicEvent(event: PublicEventRow, cultural?: CulturalDetails) {
+function serializePublicEvent(
+  event: PublicEventRow,
+  cultural?: CulturalDetails,
+  canonicalPlaceImageUrl: string | null = null,
+) {
   const officialVenue = Boolean(
     event.place?.ownerships.some((ownership) => ownership.userId === event.createdByUserId),
   );
   const place = event.place
-    ? Object.fromEntries(
-        Object.entries(event.place).filter(([key]) => key !== "ownerships" && key !== "archivedAt"),
-      )
+    ? {
+        ...Object.fromEntries(
+          Object.entries(event.place).filter(([key]) => key !== "ownerships" && key !== "archivedAt"),
+        ),
+        imageUrl: canonicalPlaceImageUrl,
+      }
     : null;
   const watchDetails = cultural
     ? {
