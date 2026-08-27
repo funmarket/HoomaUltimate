@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { TeamCapabilityInput, TeamChallengeCreateInput } from "@hooma/contracts";
-import { useHoomaFrontend } from "../context";
+import type { PublicPlaceCapability } from "@hooma/contracts/platform-management";
 import type { ManagedTeam, TeamChallengeSummary, TeamControlDetail, createHoomaApi } from "../api";
+import { useHoomaFrontend } from "../context";
+import { GameLocationPicker } from "../game-location/GameLocationPicker";
+import { createPlatformManagementApi } from "../places/platform-management-api";
 
 const CAPABILITIES: readonly TeamCapabilityInput[] = [
   "EDIT_TEAM",
@@ -13,8 +16,10 @@ const CAPABILITIES: readonly TeamCapabilityInput[] = [
 ];
 
 export function CoachControlRoomPage() {
-  const { api, protectedError } = useHoomaFrontend();
+  const { api, transport, protectedError } = useHoomaFrontend();
+  const placeApi = useMemo(() => createPlatformManagementApi(transport), [transport]);
   const [teams, setTeams] = useState<ManagedTeam[]>([]);
+  const [pitches, setPitches] = useState<PublicPlaceCapability[]>([]);
   const [selectedTeamId, setSelectedTeamId] = useState("");
   const [team, setTeam] = useState<TeamControlDetail | null>(null);
   const [incoming, setIncoming] = useState<TeamChallengeSummary[]>([]);
@@ -29,7 +34,8 @@ export function CoachControlRoomPage() {
   useEffect(() => {
     void reloadManagedTeams();
     void reloadChallenges();
-  }, [api]);
+    void placeApi.capability.list("PITCH").then(setPitches).catch(() => setPitches([]));
+  }, [api, placeApi]);
 
   useEffect(() => {
     if (!selectedTeamId) {
@@ -137,6 +143,7 @@ export function CoachControlRoomPage() {
               api={api.teams}
               team={team}
               managedTeams={teams}
+              pitches={pitches}
               onRun={runAction}
             />
           </div>
@@ -294,8 +301,9 @@ function CreateChallengeCard({
   api,
   team,
   managedTeams,
+  pitches,
   onRun,
-}: CardProps & { managedTeams: ManagedTeam[] }) {
+}: CardProps & { managedTeams: ManagedTeam[]; pitches: PublicPlaceCapability[] }) {
   return (
     <section className="panel">
       <h3>Create Challenge</h3>
@@ -306,6 +314,9 @@ function CreateChallengeCard({
           const data = new FormData(form);
           const proposedAt = localDateTimeToIso(data.get("proposedAt"));
           const proposedEndsAt = localDateTimeToIso(data.get("proposedEndsAt"));
+          const placeId = String(data.get("placeId") || "").trim() || null;
+          const venueName = placeId ? null : String(data.get("venueName") || "").trim() || null;
+          const address = placeId ? null : String(data.get("address") || "").trim() || null;
           void onRun(
             () =>
               api.createChallenge({
@@ -315,6 +326,9 @@ function CreateChallengeCard({
                 message: String(data.get("message")) || null,
                 proposedAt,
                 proposedEndsAt,
+                placeId,
+                venueName,
+                address,
               }),
             "Challenge sent.",
             false,
@@ -342,6 +356,7 @@ function CreateChallengeCard({
           <input name="proposedEndsAt" type="datetime-local" />
         </label>
         <small>Leave both times empty to send an unscheduled challenge.</small>
+        <GameLocationPicker pitches={pitches} />
         <label>
           Message
           <textarea name="message" rows={3} />
@@ -446,6 +461,7 @@ function ChallengeRow({
   challenge: TeamChallengeSummary;
   actions: ReactNode;
 }) {
+  const location = challenge.place?.name || challenge.venueName || challenge.address;
   return (
     <article className="challenge-row">
       <div>
@@ -453,6 +469,8 @@ function ChallengeRow({
           {challenge.challengerTeam.name} → {challenge.challengedTeam.name}
         </strong>
         <span>{challenge.status}</span>
+        {location ? <span>{location}</span> : null}
+        {challenge.place ? <a href={`/pitch/${challenge.place.id}`}>View Pitch</a> : null}
       </div>
       <div className="challenge-actions">
         {actions}
