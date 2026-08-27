@@ -14,6 +14,7 @@ export interface EventAccessRecord {
   readonly communityId: string | null;
   readonly placeId: string | null;
   readonly type: "PLAY" | "WATCH";
+  readonly watchKind: "MATCH" | "CULTURAL" | null;
   readonly createdByUserId: string;
   readonly status: "PUBLISHED" | "CANCELLED" | "COMPLETED";
   readonly entryFeeMinor: bigint;
