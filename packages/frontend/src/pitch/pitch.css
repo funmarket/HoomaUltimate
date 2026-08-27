@@ -32,48 +32,66 @@
 
 .pitch-ticket {
   min-width: 0;
+  container-type: inline-size;
 }
 
 .pitch-ticket__link {
   display: grid;
+  min-width: 0;
+  overflow: hidden;
+  border: 2px solid #a66b16;
+  border-radius: 22px;
+  background: #050505;
   color: inherit;
+  box-shadow:
+    0 0 0 1px rgba(255, 207, 102, 0.16),
+    0 18px 42px rgba(0, 0, 0, 0.34);
   text-decoration: none;
 }
 
 .pitch-ticket__paper {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(66px, 19vw, 90px);
+  grid-template-columns: minmax(0, 1fr) clamp(74px, 20cqw, 104px);
   min-width: 0;
   overflow: hidden;
-  border: 1px solid rgba(99, 77, 42, 0.42);
-  border-bottom: 0;
-  border-radius: 18px 18px 0 0;
+  border-bottom: 2px solid #8d5c18;
   background:
     linear-gradient(rgba(99, 77, 42, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(99, 77, 42, 0.035) 1px, transparent 1px), #efe2c2;
+    linear-gradient(90deg, rgba(99, 77, 42, 0.035) 1px, transparent 1px), #f0dfb7;
   background-size: 18px 18px;
-  color: #282015;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
+  color: #21190f;
 }
 
 .pitch-ticket__information {
   display: grid;
   min-width: 0;
-  gap: 8px;
-  padding: 17px 16px 15px;
+}
+
+.pitch-ticket__main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(104px, 0.72fr);
+  min-width: 0;
+  align-items: stretch;
+}
+
+.pitch-ticket__identity {
+  display: grid;
+  min-width: 0;
+  align-content: center;
+  gap: 7px;
+  padding: 17px 15px 15px;
 }
 
 .pitch-ticket__eyebrow,
-.pitch-ticket__location,
-.pitch-ticket__summary {
+.pitch-ticket__location {
   margin: 0;
 }
 
 .pitch-ticket__eyebrow {
-  color: #7b5b2f;
-  font-size: 0.66rem;
-  font-weight: 900;
-  letter-spacing: 0.18em;
+  color: #855919;
+  font-size: 0.65rem;
+  font-weight: 950;
+  letter-spacing: 0.19em;
 }
 
 .pitch-ticket__name-wrap {
@@ -85,118 +103,161 @@
   display: block;
   width: 100%;
   overflow: hidden;
+  color: #18120b;
   font-family: Georgia, "Times New Roman", serif;
-  font-weight: 800;
-  line-height: 0.95;
-  letter-spacing: -0.04em;
+  font-weight: 900;
+  line-height: 0.9;
+  letter-spacing: -0.045em;
   white-space: nowrap;
 }
 
 .pitch-ticket__location {
-  color: #654d2f;
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-}
-
-.pitch-ticket__rate {
-  display: flex;
-  min-width: 0;
-  align-items: baseline;
-  gap: 8px;
-  padding-top: 2px;
-}
-
-.pitch-ticket__rate strong {
-  min-width: 0;
-  font-size: clamp(1.5rem, 7vw, 2.35rem);
-  line-height: 1;
-}
-
-.pitch-ticket__rate span {
-  color: #6b522f;
-  font-size: 0.65rem;
+  color: #6d4c20;
+  font-size: 0.72rem;
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.pitch-ticket__summary {
-  color: #433725;
+.pitch-ticket__rate {
+  display: grid;
+  min-width: 0;
+  align-content: center;
+  justify-items: start;
+  gap: 3px;
+  padding: 14px 12px;
+  border-left: 1px solid rgba(72, 48, 16, 0.62);
+}
+
+.pitch-ticket__rate-label {
+  color: #8b611f;
+  font-size: 0.52rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+}
+
+.pitch-ticket__rate-value {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.pitch-ticket__rate-value strong,
+.pitch-ticket__rate--contact > strong {
+  min-width: 0;
+  color: #173f27;
+  font-size: clamp(1.65rem, 8cqw, 2.75rem);
+  font-weight: 950;
+  line-height: 0.92;
+}
+
+.pitch-ticket__rate-value span {
+  color: #173f27;
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.06em;
+}
+
+.pitch-ticket__rate-period {
+  color: #173f27;
   font-size: 0.82rem;
-  line-height: 1.4;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.pitch-ticket__offer {
+  display: inline-flex;
+  min-height: 26px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 7px;
+  padding: 4px 7px;
+  border: 1px solid #426243;
+  border-radius: 5px;
+  color: #244b32;
+  font-size: 0.48rem;
+  font-weight: 950;
+  letter-spacing: 0.045em;
+  text-align: center;
+}
+
+.pitch-ticket__rate--contact > strong {
+  font-size: clamp(0.95rem, 4.4cqw, 1.35rem);
+  line-height: 1.05;
 }
 
 .pitch-ticket__facts {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin: 2px 0 0;
-  padding-top: 10px;
-  border-top: 1px dashed rgba(99, 77, 42, 0.38);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-width: 0;
+  margin: 0;
+  border-top: 1px solid rgba(72, 48, 16, 0.55);
 }
 
 .pitch-ticket__facts div {
+  display: grid;
   min-width: 0;
+  align-content: center;
+  gap: 3px;
+  padding: 10px 11px 11px;
+}
+
+.pitch-ticket__facts div + div {
+  border-left: 1px solid rgba(72, 48, 16, 0.45);
 }
 
 .pitch-ticket__facts dt {
-  margin: 0 0 2px;
-  color: #80643c;
-  font-size: 0.58rem;
-  font-weight: 900;
-  letter-spacing: 0.1em;
+  margin: 0;
+  color: #855919;
+  font-size: 0.54rem;
+  font-weight: 950;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
 }
 
 .pitch-ticket__facts dd {
   margin: 0;
   overflow-wrap: anywhere;
-  font-size: 0.7rem;
-  font-weight: 750;
-  line-height: 1.3;
+  color: #21190f;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.24;
 }
 
 .pitch-ticket__stub {
   display: grid;
   min-width: 0;
-  place-items: center;
-  align-content: center;
-  gap: 10px;
-  border-left: 1px dashed rgba(99, 77, 42, 0.48);
-  background: rgba(112, 83, 45, 0.07);
+  min-height: 100%;
+  place-items: stretch;
+  overflow: hidden;
+  border-left: 2px solid #8d5c18;
+  background: #030303;
 }
 
 .pitch-ticket__stub img {
-  width: min(60px, 72%);
-  max-height: 120px;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
   object-fit: contain;
-  transform: rotate(-90deg);
-}
-
-.pitch-ticket__stub span {
-  color: #725630;
-  font-size: 0.58rem;
-  font-weight: 900;
-  letter-spacing: 0.18em;
-  writing-mode: vertical-rl;
+  background: #030303;
 }
 
 .pitch-ticket__photo {
+  display: grid;
   min-height: 210px;
+  place-items: center;
   overflow: hidden;
-  border: 1px solid rgba(99, 77, 42, 0.42);
-  border-radius: 0 0 18px 18px;
-  background: #0b0b09;
-  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.22);
+  background: #050505;
 }
 
 .pitch-ticket__photo > img {
   display: block;
   width: 100%;
-  height: clamp(210px, 64vw, 330px);
-  object-fit: cover;
+  aspect-ratio: 16 / 10;
+  object-fit: contain;
+  background: #050505;
 }
 
 .pitch-ticket__photo-empty {
@@ -435,27 +496,36 @@
   text-decoration: none;
 }
 
-@media (max-width: 520px) {
+@container (max-width: 360px) {
   .pitch-ticket__paper {
-    grid-template-columns: minmax(0, 1fr) 64px;
+    grid-template-columns: minmax(0, 1fr) 66px;
   }
 
-  .pitch-ticket__information {
-    padding: 15px 13px 13px;
+  .pitch-ticket__main {
+    grid-template-columns: minmax(0, 1fr) 96px;
   }
 
-  .pitch-ticket__facts {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 7px;
+  .pitch-ticket__identity {
+    padding: 14px 11px 12px;
   }
 
+  .pitch-ticket__rate {
+    padding: 11px 8px;
+  }
+
+  .pitch-ticket__facts div {
+    padding: 9px 8px 10px;
+  }
+
+  .pitch-ticket__facts dd {
+    font-size: 0.61rem;
+  }
+}
+
+@media (max-width: 520px) {
   .pitch-ticket__photo,
   .pitch-ticket__photo-empty {
     min-height: 190px;
-  }
-
-  .pitch-ticket__photo > img {
-    height: clamp(190px, 62vw, 260px);
   }
 
   .pitch-detail-card__footer {
