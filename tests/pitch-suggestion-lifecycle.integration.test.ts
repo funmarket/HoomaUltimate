@@ -98,7 +98,9 @@ test("an approved suggested Pitch stays public and claimable before rental owner
     claimId = claim.id;
     assert.equal(claim.status, "PENDING");
     assert.equal(
-      await places.reviewOwnershipClaim(admin.id, claim.id, { decision: "APPROVE" }),
+      await places.reviewOwnershipClaim(admin.id, claim.id, {
+        decision: "APPROVE",
+      }),
       true,
     );
     assert.equal(await places.hasVerifiedOwnership(placeId, claimant.id), true);
@@ -124,7 +126,10 @@ test("an approved suggested Pitch stays public and claimable before rental owner
     });
 
     const approvedRental = await pitch.getPublic(placeId);
-    assert.equal(approvedRental.summary, "Floodlit five-a-side pitch with changing rooms.");
+    assert.equal(
+      approvedRental.summary,
+      "Floodlit five-a-side pitch with changing rooms.",
+    );
     assert.equal(approvedRental.hourlyRateMinor, 45_000);
     assert.equal(approvedRental.currency, "TND");
 
