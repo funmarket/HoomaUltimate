@@ -219,16 +219,27 @@ test("archived Places stay off public Place and Watch discovery", () => {
   assert.match(eventRepository, /moderationStatus: "APPROVED", archivedAt: null/);
 });
 
-test("Pitch projections read canonical PlaceImage rows instead of legacy-only covers", () => {
-  const repository = source(
+test("PlaceImage is the only runtime Place image authority", () => {
+  const placeRepository = source(
+    "apps/api/src/modules/places/infrastructure/prisma-place.repository.ts",
+  );
+  const pitchRepository = source(
     "apps/api/src/modules/places/infrastructure/prisma-place-capability.repository.ts",
   );
 
-  assert.match(repository, /type PlaceImageRow/);
-  assert.match(repository, /function groupImages/);
-  assert.match(repository, /this\.db\.placeImage\.findMany/);
-  assert.match(repository, /publicImages\[0\]\?\.imageUrl \?\? place\.imageUrl/);
-  assert.match(repository, /placeSummary\(row\.place, byPlace\.get\(row\.place\.id\) \?\? \[\]\)/);
+  for (const repository of [placeRepository, pitchRepository]) {
+    assert.match(repository, /type PlaceImageRow/);
+    assert.match(repository, /function groupImages/);
+    assert.match(repository, /this\.db\.placeImage\.findMany/);
+    assert.match(repository, /imageUrl: publicImages\[0\]\?\.imageUrl \?\? null/);
+    assert.doesNotMatch(repository, /\n  imageUrl: true,/);
+    assert.doesNotMatch(repository, /publicImages\[0\]\?\.imageUrl \?\? place\.imageUrl/);
+  }
+  assert.doesNotMatch(placeRepository, /imageUrl: imageUrls\[0\] \?\? null/);
+  assert.match(
+    pitchRepository,
+    /placeSummary\(row\.place, byPlace\.get\(row\.place\.id\) \?\? \[\]\)/,
+  );
 });
 
 test("Pitch rental pricing is canonical from contract through Prisma and repository", () => {
