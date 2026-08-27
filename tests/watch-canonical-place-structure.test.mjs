@@ -54,7 +54,7 @@ test("Prisma keeps canonical Place and Event ownership while storing details bel
   assert.match(schema, /model WatchEventDetails \{[\s\S]*?eventId\s+String\s+@id/);
 });
 
-test("Place coordinates stay optional and menu updates do not default to destructive replacement", () => {
+test("Place coordinates stay optional and update defaults stay out of partial PATCH fields", () => {
   const contracts = source("packages/contracts/src/platform-management.ts");
   assert.match(
     contracts,
@@ -66,7 +66,7 @@ test("Place coordinates stay optional and menu updates do not default to destruc
   );
   assert.match(
     contracts,
-    /placeUpdateSchema[\s\S]*?omit\(\{ menuItems: true \}\)[\s\S]*?menuItems: z\.array\(placeMenuItemSchema\)\.max\(20\)\.optional\(\)/,
+    /placeUpdateSchema[\s\S]*?omit\(\{ imageUrl: true, imageUrls: true, menuItems: true \}\)[\s\S]*?imageUrls: z\.array\(placeImageUrlSchema\)\.max\(4\)\.optional\(\)[\s\S]*?menuItems: z\.array\(placeMenuItemSchema\)\.max\(20\)\.optional\(\)/,
   );
 });
 
