@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
+import { placeUpdateSchema } from "../packages/contracts/src/platform-management.ts";
 
 function source(path) {
   return readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -67,6 +68,15 @@ test("Place coordinates stay optional and menu updates do not default to destruc
     contracts,
     /placeUpdateSchema[\s\S]*?omit\(\{ menuItems: true \}\)[\s\S]*?menuItems: z\.array\(placeMenuItemSchema\)\.max\(20\)\.optional\(\)/,
   );
+});
+
+test("Place partial updates preserve omitted images while explicit empty imageUrls clears them", () => {
+  const partial = placeUpdateSchema.parse({ description: "Updated description" });
+  assert.equal(partial.imageUrl, undefined);
+  assert.equal(partial.imageUrls, undefined);
+
+  const explicitClear = placeUpdateSchema.parse({ imageUrls: [] });
+  assert.deepEqual(explicitClear.imageUrls, []);
 });
 
 test("Place Add and Edit share one branded form and management stays on canonical Place routes", () => {
