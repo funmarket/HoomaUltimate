@@ -121,7 +121,8 @@ export function PlacesPage() {
 export function AddPlacePage() {
   const { transport, protectedError } = useHoomaFrontend();
   const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
-  const isPitchSuggestion = new URLSearchParams(window.location.search).get("kind") === "PITCH";
+  const isPitchSuggestion =
+    new URLSearchParams(window.location.search).get("kind") === "PITCH";
   const [error, setError] = useState("");
   const [submittedPlaceId, setSubmittedPlaceId] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
