@@ -5,6 +5,7 @@ import type { CommunityService } from "../apps/api/src/modules/communities/appli
 import type { EventRepository } from "../apps/api/src/modules/events/application/event.repository.js";
 import { EventService } from "../apps/api/src/modules/events/application/event.service.js";
 import { EventError } from "../apps/api/src/modules/events/domain/event-error.js";
+import type { PlaceCapabilityService } from "../apps/api/src/modules/places/application/place-capability.service.js";
 import type { PlaceService } from "../apps/api/src/modules/places/application/place.service.js";
 
 function repositoryStub(onCreate: () => void): EventRepository {
@@ -73,6 +74,15 @@ function approvedPlaces(onGet?: (placeId: string) => void): PlaceService {
   } as unknown as PlaceService;
 }
 
+function approvedPitch(onGet?: (placeId: string) => void): PlaceCapabilityService {
+  return {
+    getPublic: async (placeId: string) => {
+      onGet?.(placeId);
+      return { id: "pitch-1", place: { id: placeId } };
+    },
+  } as unknown as PlaceCapabilityService;
+}
+
 test("EventService creates WATCH events through an approved canonical Place", async () => {
   let createCalled = false;
   let coachCheckCalled = false;
@@ -117,6 +127,29 @@ test("EventService still creates free PLAY events through community coach author
   );
   await service.create("user-1", playInput);
   assert.equal(coachCheckCalled, true);
+  assert.equal(createCalled, true);
+});
+
+test("EventService validates an optional PLAY placeId as an approved Pitch", async () => {
+  let pitchCheckCalled = false;
+  let createCalled = false;
+  const communities = {
+    requireCoach: async () => undefined,
+  } as unknown as CommunityService;
+  const service = new EventService(
+    repositoryStub(() => {
+      createCalled = true;
+    }),
+    communities,
+    approvedPlaces(),
+    approvedPitch((placeId) => {
+      assert.equal(placeId, "pitch-place-1");
+      pitchCheckCalled = true;
+    }),
+  );
+
+  await service.create("user-1", { ...playInput, placeId: "pitch-place-1" });
+  assert.equal(pitchCheckCalled, true);
   assert.equal(createCalled, true);
 });
 
