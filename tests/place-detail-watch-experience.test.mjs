@@ -133,6 +133,25 @@ test("Place detail map action keeps coordinates optional", () => {
   assert.match(detail, /google\.com\/maps\/search/);
 });
 
+test("Watch discovery paginates while Place detail filters before pagination", () => {
+  const api = source("packages/frontend/src/events/api.ts");
+  const watch = source("packages/frontend/src/watch/WatchPage.tsx");
+  const detail = source("packages/frontend/src/places/PlaceDetailPage.tsx");
+  const routes = source("apps/api/src/modules/events/http/event.routes.ts");
+  const repository = source(
+    "apps/api/src/modules/events/infrastructure/prisma-event.repository.ts",
+  );
+
+  assert.match(api, /placeId\?: string/);
+  assert.match(api, /params\.set\("placeId", query\.placeId\)/);
+  assert.match(watch, /eventApi\.publicWatch\(\{ cursor: nextCursor \}\)/);
+  assert.match(watch, /Load more events/);
+  assert.match(detail, /eventsApi\.publicWatch\(\{ placeId, cursor, limit: 100 \}\)/);
+  assert.doesNotMatch(detail, /eventPage\.items\.filter/);
+  assert.match(routes, /request\.query\.placeId/);
+  assert.match(repository, /input\.placeId \? \{ placeId: input\.placeId \} : \{\}/);
+});
+
 test("temporary Place formatter does not remain in the final source tree", () => {
   assert.equal(
     existsSync(new URL("../.github/workflows/tmp-place-detail-format.yml", import.meta.url)),
