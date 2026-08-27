@@ -6,37 +6,15 @@ import { pitchRateToMinor } from "./pricing";
 
 const RENTAL_CURRENCIES: readonly PitchRentalCurrency[] = ["TND", "EUR", "USD"];
 
-function locationLabel(place: PublicPlaceSummary): string {
-  return [place.houma, place.city].filter(Boolean).join(" · ") || place.address;
-}
-
 export function PitchCapabilityOnboarding({
-  places,
+  place,
 }: {
-  readonly places: readonly PublicPlaceSummary[];
+  readonly place: PublicPlaceSummary;
 }) {
   const { transport, protectedError } = useHoomaFrontend();
   const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-
-  async function claim(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    setError("");
-    setMessage("");
-    try {
-      await api.places.claimOwnership(String(data.get("placeId") ?? ""), {
-        evidence: String(data.get("evidence") ?? ""),
-      });
-      event.currentTarget.reset();
-      setMessage(
-        "Ownership claim submitted. After approval you can submit the Pitch application.",
-      );
-    } catch (reason) {
-      setError(protectedError(reason, "Unable to submit ownership claim"));
-    }
-  }
 
   async function apply(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -47,7 +25,7 @@ export function PitchCapabilityOnboarding({
     setError("");
     setMessage("");
     try {
-      await api.capability.submit("PITCH", String(data.get("placeId") ?? ""), {
+      await api.capability.submit("PITCH", place.id, {
         summary: String(data.get("summary") ?? ""),
         hourlyRateMinor: pitchRateToMinor(hourlyRate, currency),
         currency,
@@ -56,126 +34,73 @@ export function PitchCapabilityOnboarding({
         contactEmail: String(data.get("contactEmail") ?? "") || null,
       });
       event.currentTarget.reset();
-      setMessage("Pitch business application submitted for App review.");
+      setMessage("Pitch rental details submitted for App review.");
     } catch (reason) {
       setError(protectedError(reason, "Unable to submit Pitch application"));
     }
   }
 
   return (
-    <div className="place-business-grid">
-      <form className="panel place-business-form" onSubmit={(event) => void claim(event)}>
-        <div className="place-business-form__heading">
-          <p className="eyebrow">STEP 1</p>
-          <h2>Verify Place ownership</h2>
-          <p className="muted">Choose the approved Place you own or manage.</p>
-        </div>
+    <form className="panel place-business-form pitch-owner-form" onSubmit={(event) => void apply(event)}>
+      <div className="place-business-form__heading">
+        <p className="eyebrow">MANAGE PITCH</p>
+        <h2>{place.name}</h2>
+        <p className="muted">Update the rental offer shown after App review.</p>
+      </div>
 
+      <div className="place-business-rate-row">
         <label className="place-business-field">
-          <span>Approved Place</span>
-          <select name="placeId" required defaultValue="">
-            <option value="" disabled>
-              Select approved Place
-            </option>
-            {places.map((place) => (
-              <option key={place.id} value={place.id}>
-                {place.name} · {locationLabel(place)}
+          <span>Hourly rental price</span>
+          <input
+            name="hourlyRate"
+            type="number"
+            min="0"
+            step="0.001"
+            inputMode="decimal"
+            placeholder="120.000"
+            required
+          />
+        </label>
+        <label className="place-business-field">
+          <span>Currency</span>
+          <select name="currency" defaultValue="TND" required>
+            {RENTAL_CURRENCIES.map((currency) => (
+              <option key={currency} value={currency}>
+                {currency}
               </option>
             ))}
           </select>
         </label>
+      </div>
 
-        <label className="place-business-field">
-          <span>Ownership or management evidence</span>
-          <textarea
-            name="evidence"
-            placeholder="Describe how you own or manage this Place"
-            minLength={10}
-            required
-          />
-        </label>
+      <label className="place-business-field">
+        <span>Pitch offering</span>
+        <textarea
+          name="summary"
+          placeholder="Pitch type, facilities, lighting, changing rooms and rental details"
+          minLength={10}
+          required
+        />
+      </label>
 
-        <button type="submit">Submit ownership claim</button>
-      </form>
+      <label className="place-business-field">
+        <span>Business contact name</span>
+        <input name="contactName" placeholder="Name" required />
+      </label>
 
-      <form className="panel place-business-form" onSubmit={(event) => void apply(event)}>
-        <div className="place-business-form__heading">
-          <p className="eyebrow">STEP 2</p>
-          <h2>Apply for Pitch</h2>
-          <p className="muted">
-            The selected Place must already be approved and verified as yours.
-          </p>
-        </div>
+      <label className="place-business-field">
+        <span>Phone</span>
+        <input name="contactPhone" placeholder="Phone" inputMode="tel" />
+      </label>
 
-        <label className="place-business-field">
-          <span>Approved Place</span>
-          <select name="placeId" required defaultValue="">
-            <option value="" disabled>
-              Select approved Place
-            </option>
-            {places.map((place) => (
-              <option key={place.id} value={place.id}>
-                {place.name} · {locationLabel(place)}
-              </option>
-            ))}
-          </select>
-        </label>
+      <label className="place-business-field">
+        <span>Email</span>
+        <input name="contactEmail" type="email" placeholder="Email" autoComplete="email" />
+      </label>
 
-        <div className="place-business-rate-row">
-          <label className="place-business-field">
-            <span>Hourly rental price</span>
-            <input
-              name="hourlyRate"
-              type="number"
-              min="0"
-              step="0.001"
-              inputMode="decimal"
-              placeholder="120.000"
-              required
-            />
-          </label>
-          <label className="place-business-field">
-            <span>Currency</span>
-            <select name="currency" defaultValue="TND" required>
-              {RENTAL_CURRENCIES.map((currency) => (
-                <option key={currency} value={currency}>
-                  {currency}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <label className="place-business-field">
-          <span>Pitch offering</span>
-          <textarea
-            name="summary"
-            placeholder="Pitch type, facilities, lighting, changing rooms and rental details"
-            minLength={10}
-            required
-          />
-        </label>
-
-        <label className="place-business-field">
-          <span>Business contact name</span>
-          <input name="contactName" placeholder="Name" required />
-        </label>
-
-        <label className="place-business-field">
-          <span>Phone</span>
-          <input name="contactPhone" placeholder="Phone" inputMode="tel" />
-        </label>
-
-        <label className="place-business-field">
-          <span>Email</span>
-          <input name="contactEmail" type="email" placeholder="Email" autoComplete="email" />
-        </label>
-
-        <button type="submit">Submit Pitch application</button>
-      </form>
-
+      <button type="submit">Submit for review</button>
       {message ? <p className="status place-business-message">{message}</p> : null}
       {error ? <p className="error place-business-message">{error}</p> : null}
-    </div>
+    </form>
   );
 }
