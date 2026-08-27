@@ -38,7 +38,9 @@ export function WatchPage() {
   const initialKind: WatchEventKind =
     new URLSearchParams(window.location.search).get("kind") === "CULTURAL" ? "CULTURAL" : "MATCH";
   const [events, setEvents] = useState<PublicEvent[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
   const [kind, setKind] = useState<WatchEventKind>(initialKind);
   const [query, setQuery] = useState("");
@@ -52,7 +54,9 @@ export function WatchPage() {
     void eventApi
       .publicWatch()
       .then((page) => {
-        if (active) setEvents(page.items);
+        if (!active) return;
+        setEvents(page.items);
+        setNextCursor(page.nextCursor);
       })
       .catch((reason) => {
         if (active) setError(reason instanceof Error ? reason.message : "Unable to load Watch");
@@ -137,6 +141,21 @@ export function WatchPage() {
     if (nextKind === "MATCH") url.searchParams.delete("kind");
     else url.searchParams.set("kind", nextKind);
     window.history.replaceState(null, "", `${url.pathname}${url.search}`);
+  }
+
+  async function loadMore() {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    setError("");
+    try {
+      const page = await eventApi.publicWatch({ cursor: nextCursor });
+      setEvents((current) => [...current, ...page.items]);
+      setNextCursor(page.nextCursor);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unable to load more Watch events");
+    } finally {
+      setLoadingMore(false);
+    }
   }
 
   return (
@@ -252,6 +271,16 @@ export function WatchPage() {
             );
           })
         : null}
+      {!loading && nextCursor ? (
+        <button
+          type="button"
+          className="watch-load-more"
+          disabled={loadingMore}
+          onClick={() => void loadMore()}
+        >
+          {loadingMore ? "Loading…" : "Load more events"}
+        </button>
+      ) : null}
       {!loading && !filteredEvents.length && !error ? (
         <div className="watch-empty-state">
           <div className="watch-empty-state__icon" aria-hidden="true">
