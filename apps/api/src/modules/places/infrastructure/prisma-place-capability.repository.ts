@@ -32,7 +32,7 @@ const placeSelect = Prisma.validator<Prisma.PlaceSelect>()({
   },
 });
 
-const capabilitySelect = Prisma.validator<Prisma.PlaceCapabilityApplicationSelect>()({
+const capabilitySelect = Prisma.validator<Prisma.PlaceCapabilitySelect>()({
   id: true,
   kind: true,
   summary: true,
@@ -42,7 +42,7 @@ const capabilitySelect = Prisma.validator<Prisma.PlaceCapabilityApplicationSelec
 });
 
 type PlaceRow = Prisma.PlaceGetPayload<{ select: typeof placeSelect }>;
-type CapabilityRow = Prisma.PlaceCapabilityApplicationGetPayload<{ select: typeof capabilitySelect }>;
+type CapabilityRow = Prisma.PlaceCapabilityGetPayload<{ select: typeof capabilitySelect }>;
 type PlaceImageRow = { id: string; placeId: string; imageUrl: string; sortOrder: number };
 
 function pitchRentalCurrency(value: string | null): PitchRentalCurrency | null {
@@ -108,7 +108,7 @@ export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepositor
   constructor(private readonly db: PrismaClient) {}
 
   async listApproved(kind: PlaceCapabilityKind): Promise<readonly PublicPlaceCapability[]> {
-    const rows = await this.db.placeCapabilityApplication.findMany({
+    const rows = await this.db.placeCapability.findMany({
       where: {
         kind,
         status: "APPROVED",
@@ -131,7 +131,7 @@ export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepositor
     kind: PlaceCapabilityKind,
     placeId: string,
   ): Promise<PublicPlaceCapability | null> {
-    const row = await this.db.placeCapabilityApplication.findFirst({
+    const row = await this.db.placeCapability.findFirst({
       where: {
         kind,
         placeId,
@@ -245,19 +245,52 @@ export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepositor
     return this.db.$transaction(async (tx) => {
       const application = await tx.placeCapabilityApplication.findFirst({
         where: { id: applicationId, kind, status: "PENDING" },
-        select: { placeId: true },
+        select: {
+          placeId: true,
+          summary: true,
+          hourlyRateMinor: true,
+          currency: true,
+        },
       });
       if (!application) return false;
+      const reviewedAt = new Date();
       const result = await tx.placeCapabilityApplication.updateMany({
         where: { id: applicationId, kind, status: "PENDING" },
         data: {
           status,
           reviewedByUserId: actorUserId,
-          reviewedAt: new Date(),
+          reviewedAt,
           reviewNote: input.note ?? null,
         },
       });
       if (!result.count) return false;
+
+      if (status === "APPROVED") {
+        await tx.placeCapability.upsert({
+          where: { placeId_kind: { placeId: application.placeId, kind } },
+          create: {
+            placeId: application.placeId,
+            kind,
+            status: "APPROVED",
+            summary: application.summary,
+            hourlyRateMinor: application.hourlyRateMinor,
+            currency: application.currency,
+            reviewedByUserId: actorUserId,
+            reviewedAt,
+            reviewNote: input.note ?? null,
+          },
+          update: {
+            status: "APPROVED",
+            summary: application.summary,
+            hourlyRateMinor: application.hourlyRateMinor,
+            currency: application.currency,
+            reviewedByUserId: actorUserId,
+            reviewedAt,
+            reviewNote: input.note ?? null,
+          },
+        });
+      }
+
       await tx.auditLog.create({
         data: {
           actorUserId,
