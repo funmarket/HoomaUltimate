@@ -149,6 +149,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
       if (existing) throw new Error("PLACE_ALREADY_EXISTS");
 
       const imageUrls = canonicalImageUrls(input);
+      const suggestedCapabilities = input.suggestedCapabilities ?? [];
       const place = await tx.place.create({
         data: {
           slug: `${slugBase(input.name)}-${randomUUID().slice(0, 8)}`,
@@ -166,6 +167,13 @@ export class PrismaPlaceRepository implements PlaceRepository {
           email: input.email ?? null,
           suggestedByUserId: userId,
           menuItems: { create: menuCreate(input.menuItems) },
+          ...(suggestedCapabilities.length
+            ? {
+                capabilities: {
+                  create: suggestedCapabilities.map((kind) => ({ kind })),
+                },
+              }
+            : {}),
         },
         select: { ...placeSelect, moderationStatus: true },
       });
@@ -213,18 +221,20 @@ export class PrismaPlaceRepository implements PlaceRepository {
   }
 
   async canManage(placeId: string, userId: string): Promise<boolean> {
-    return Boolean(
-      await this.db.place.findFirst({
-        where: {
-          id: placeId,
-          OR: [
-            { suggestedByUserId: userId },
-            { ownerships: { some: { userId, revokedAt: null } } },
-          ],
-        },
-        select: { id: true },
-      }),
-    );
+    const place = await this.db.place.findUnique({
+      where: { id: placeId },
+      select: {
+        suggestedByUserId: true,
+        moderationStatus: true,
+        ownerships: { where: { userId, revokedAt: null }, select: { id: true }, take: 1 },
+        capabilities: { select: { kind: true } },
+      },
+    });
+    if (!place) return false;
+    if (place.ownerships.length) return true;
+    if (place.suggestedByUserId !== userId) return false;
+    if (place.moderationStatus !== "APPROVED") return true;
+    return !place.capabilities.some((capability) => capability.kind === "PITCH");
   }
 
   async update(placeId: string, input: PlaceUpdateInput): Promise<ManagedPlaceSummary> {
@@ -407,10 +417,10 @@ export class PrismaPlaceRepository implements PlaceRepository {
       .map((row) => ({
         id: row.id,
         status: row.status,
+        evidence: row.evidence,
         createdAt: row.createdAt.toISOString(),
         reviewedAt: row.reviewedAt?.toISOString() ?? null,
         reviewNote: row.reviewNote,
-        evidence: row.evidence,
         applicant: {
           userId: row.claimant.id,
           username: row.claimant.presentation!.username,
@@ -425,22 +435,37 @@ export class PrismaPlaceRepository implements PlaceRepository {
     return this.db.$transaction(async (tx) => {
       const place = await tx.place.findFirst({
         where: { id: placeId, moderationStatus: "PENDING", archivedAt: null },
-        select: { suggestedByUserId: true },
+        select: {
+          suggestedByUserId: true,
+          capabilities: { where: { status: "PENDING" }, select: { id: true, kind: true } },
+        },
       });
       if (!place) return false;
 
+      const reviewedAt = new Date();
       const result = await tx.place.updateMany({
         where: { id: placeId, moderationStatus: "PENDING", archivedAt: null },
         data: {
           moderationStatus: status,
           reviewedByUserId: actorUserId,
-          reviewedAt: new Date(),
+          reviewedAt,
           reviewNote: input.note ?? null,
         },
       });
       if (!result.count) return false;
 
-      if (status === "APPROVED") {
+      await tx.placeCapability.updateMany({
+        where: { placeId, status: "PENDING" },
+        data: {
+          status,
+          reviewedByUserId: actorUserId,
+          reviewedAt,
+          reviewNote: input.note ?? null,
+        },
+      });
+
+      const isSuggestedPitch = place.capabilities.some((capability) => capability.kind === "PITCH");
+      if (status === "APPROVED" && !isSuggestedPitch) {
         await tx.placeOwnership.upsert({
           where: { placeId_userId: { placeId, userId: place.suggestedByUserId } },
           create: {
@@ -450,7 +475,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
           },
           update: {
             verifiedByUserId: actorUserId,
-            verifiedAt: new Date(),
+            verifiedAt: reviewedAt,
             revokedAt: null,
           },
         });
