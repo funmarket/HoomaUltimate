@@ -7,34 +7,41 @@ import { PitchCapabilityOnboarding } from "./PitchCapabilityOnboarding";
 export function PitchManagePage() {
   const { transport } = useHoomaFrontend();
   const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
-  const [places, setPlaces] = useState<PublicPlaceSummary[]>([]);
+  const placeId = new URLSearchParams(window.location.search).get("placeId");
+  const [place, setPlace] = useState<PublicPlaceSummary | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    setLoading(true);
     setError("");
-    void api.places
-      .list()
-      .then(setPlaces)
+    if (!placeId) {
+      setError("Choose a Pitch you own from its detail page first.");
+      setLoading(false);
+      return;
+    }
+
+    void Promise.all([api.places.get(placeId), api.places.manage(placeId)])
+      .then(([publicPlace]) => setPlace(publicPlace))
       .catch((reason) =>
-        setError(reason instanceof Error ? reason.message : "Unable to load approved Places"),
-      );
-  }, [api]);
+        setError(
+          reason instanceof Error
+            ? reason.message
+            : "Verified Place ownership is required to manage this Pitch.",
+        ),
+      )
+      .finally(() => setLoading(false));
+  }, [api, placeId]);
+
+  if (loading) return <p className="status">Loading Pitch management…</p>;
 
   return (
     <section className="pitch-manage-page">
-      <a className="pitch-back-link" href="/pitch">
+      <a className="pitch-back-link" href={placeId ? `/pitch/${placeId}` : "/pitch"}>
         ← Pitch
       </a>
-      <header className="pitch-owner-entry__heading">
-        <p className="eyebrow">VENUE OPERATORS</p>
-        <h1>List a football pitch</h1>
-        <p>
-          Verify the approved Place you operate, then submit its rental offer and hourly price for
-          App review.
-        </p>
-      </header>
       {error ? <p className="error">{error}</p> : null}
-      <PitchCapabilityOnboarding places={places} />
+      {place ? <PitchCapabilityOnboarding place={place} /> : null}
     </section>
   );
 }
