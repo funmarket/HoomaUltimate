@@ -10,7 +10,7 @@ export function PitchDetailPage({ placeId }: { readonly placeId: string }) {
   const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
   const [item, setItem] = useState<PublicPlaceCapability | null>(null);
   const [loading, setLoading] = useState(true);
-  const [canManage, setCanManage] = useState(false);
+  const [verifiedOwner, setVerifiedOwner] = useState(false);
   const [claimOpen, setClaimOpen] = useState(false);
   const [claimPending, setClaimPending] = useState(false);
   const [message, setMessage] = useState("");
@@ -28,8 +28,8 @@ export function PitchDetailPage({ placeId }: { readonly placeId: string }) {
       .finally(() => setLoading(false));
 
     void api.places
-      .manage(placeId)
-      .then(() => setCanManage(true))
+      .ownershipStatus(placeId)
+      .then((status) => setVerifiedOwner(status.verified))
       .catch((reason) => {
         if (reason instanceof HoomaApiError && [401, 403].includes(reason.status)) return;
       });
@@ -62,7 +62,7 @@ export function PitchDetailPage({ placeId }: { readonly placeId: string }) {
       <section className="pitch-detail-page">
         <div className="panel pitch-empty">
           <h1>Pitch unavailable</h1>
-          <p className="muted">This rental is not currently approved or publicly available.</p>
+          <p className="muted">This pitch is not currently approved or publicly available.</p>
           <a className="pitch-back-link" href="/pitch">
             Back to Pitch
           </a>
@@ -79,6 +79,7 @@ export function PitchDetailPage({ placeId }: { readonly placeId: string }) {
       : [];
   const location = [place.city, place.houma].filter(Boolean).join(" · ") || place.address;
   const rate = formatPitchHourlyRate(item.hourlyRateMinor, item.currency);
+  const description = item.summary ?? place.description;
 
   return (
     <section className="pitch-detail-page">
@@ -91,7 +92,7 @@ export function PitchDetailPage({ placeId }: { readonly placeId: string }) {
           <div>
             <p className="pitch-rental-card__location">{location}</p>
             <h1>{place.name}</h1>
-            <p>{item.summary}</p>
+            {description ? <p>{description}</p> : null}
           </div>
           <div className="pitch-detail-card__price">
             <strong>{rate}</strong>
@@ -144,11 +145,14 @@ export function PitchDetailPage({ placeId }: { readonly placeId: string }) {
         </div>
 
         <footer className="pitch-detail-card__footer">
-          <span>HOOMA · VERIFIED PITCH RENTAL</span>
+          <span>{item.summary ? "HOOMA · VERIFIED PITCH RENTAL" : "HOOMA · PITCH"}</span>
           <div className="pitch-detail-card__actions">
             {place.phone ? <a href={`tel:${place.phone}`}>Contact venue</a> : null}
-            {canManage ? (
-              <a className="pitch-owner-link" href={`/pitch/manage?placeId=${encodeURIComponent(place.id)}`}>
+            {verifiedOwner ? (
+              <a
+                className="pitch-owner-link"
+                href={`/pitch/manage?placeId=${encodeURIComponent(place.id)}`}
+              >
                 Manage pitch
               </a>
             ) : (
@@ -164,7 +168,7 @@ export function PitchDetailPage({ placeId }: { readonly placeId: string }) {
         </footer>
       </article>
 
-      {claimOpen && !canManage ? (
+      {claimOpen && !verifiedOwner ? (
         <form className="panel pitch-claim-form" onSubmit={(event) => void claim(event)}>
           <div>
             <p className="eyebrow">CLAIM THIS PITCH</p>

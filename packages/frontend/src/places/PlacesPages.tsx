@@ -62,8 +62,7 @@ export function PlacesPage() {
           new Date(event.startsAt).getTime() >= now,
       )
       .sort(
-        (left, right) =>
-          new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime(),
+        (left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime(),
       );
     const byPlace = new Map<string, PublicEvent>();
     for (const event of upcoming) {
@@ -121,6 +120,7 @@ export function PlacesPage() {
 export function AddPlacePage() {
   const { transport, protectedError } = useHoomaFrontend();
   const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
+  const isPitchSuggestion = new URLSearchParams(window.location.search).get("kind") === "PITCH";
   const [error, setError] = useState("");
   const [submittedPlaceId, setSubmittedPlaceId] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -129,7 +129,10 @@ export function AddPlacePage() {
     setPending(true);
     setError("");
     try {
-      const created = await api.places.suggest(input);
+      const created = await api.places.suggest({
+        ...input,
+        ...(isPitchSuggestion ? { suggestedCapabilities: ["PITCH"] } : {}),
+      });
       setSubmittedPlaceId(created.id);
     } catch (reason) {
       setError(protectedError(reason, "Unable to submit Place"));
@@ -143,16 +146,21 @@ export function AddPlacePage() {
       <section className="place-page">
         <div className="place-submitted panel">
           <p className="eyebrow">SUBMITTED</p>
-          <h1>Place submitted</h1>
+          <h1>{isPitchSuggestion ? "Pitch suggested" : "Place submitted"}</h1>
           <p>
-            The App Admin will review the Place. Once approved, it will appear in Places and can be
-            used for Watch events.
+            {isPitchSuggestion
+              ? "The App Admin will review this football pitch. Once approved, it can appear in Pitch and the real owner can claim it."
+              : "The App Admin will review the Place. Once approved, it will appear in Places and can be used for Watch events."}
           </p>
           <div className="place-detail-actions">
-            <a className="place-primary-link" href={`/places/${submittedPlaceId}/edit`}>
-              Manage submitted Place
+            {!isPitchSuggestion ? (
+              <a className="place-primary-link" href={`/places/${submittedPlaceId}/edit`}>
+                Manage submitted Place
+              </a>
+            ) : null}
+            <a href={isPitchSuggestion ? "/pitch" : "/watch"}>
+              {isPitchSuggestion ? "Back to Pitch" : "Back to Watch"}
             </a>
-            <a href="/watch">Back to Watch</a>
           </div>
         </div>
       </section>
@@ -163,12 +171,21 @@ export function AddPlacePage() {
     <section className="place-page place-form-page">
       <header className="place-page__header place-form-page__header">
         <div>
-          <p className="eyebrow">ADD A PLACE</p>
-          <h1>List your Place</h1>
-          <p>Build the full venue profile once. Coordinates are optional.</p>
+          <p className="eyebrow">{isPitchSuggestion ? "SUGGEST A PITCH" : "ADD A PLACE"}</p>
+          <h1>{isPitchSuggestion ? "Suggest a football pitch" : "List your Place"}</h1>
+          <p>
+            {isPitchSuggestion
+              ? "Add the real venue details. Suggesting a pitch does not make you its owner."
+              : "Build the full venue profile once. Coordinates are optional."}
+          </p>
         </div>
       </header>
-      <PlaceForm submitLabel="Submit Place" pending={pending} onSubmit={submit} />
+      <PlaceForm
+        submitLabel={isPitchSuggestion ? "Suggest Pitch" : "Submit Place"}
+        pending={pending}
+        showMenu={!isPitchSuggestion}
+        onSubmit={submit}
+      />
       {error ? <p className="error">{error}</p> : null}
     </section>
   );

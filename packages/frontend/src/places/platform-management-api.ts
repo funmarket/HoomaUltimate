@@ -51,6 +51,11 @@ export function createPlatformManagementApi(transport: HoomaTransport) {
           transport,
           `/api/v1/places/${encodeURIComponent(placeId)}/manage`,
         ),
+      ownershipStatus: (placeId: string) =>
+        request<{ verified: boolean }>(
+          transport,
+          `/api/v1/places/${encodeURIComponent(placeId)}/ownership-status`,
+        ),
       suggest: (input: PlaceSuggestionInput) =>
         request<PublicPlaceSummary & { status: string }>(transport, "/api/v1/places", {
           method: "POST",

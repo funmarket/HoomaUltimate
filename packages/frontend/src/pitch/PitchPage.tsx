@@ -35,6 +35,9 @@ export function PitchPage() {
           <h1>Find your pitch</h1>
           <p>Football grounds and rental offers from local venues.</p>
         </div>
+        <a className="pitch-back-link pitch-suggest-link" href="/places/new?kind=PITCH">
+          Suggest a pitch
+        </a>
       </header>
 
       {error ? <p className="error">{error}</p> : null}
@@ -43,13 +46,14 @@ export function PitchPage() {
         {items.map((item) => {
           const cover = item.place.images[0]?.imageUrl ?? item.place.imageUrl;
           const rate = formatPitchHourlyRate(item.hourlyRateMinor, item.currency);
+          const summary = item.summary ?? item.place.description;
           return (
             <article className="pitch-rental-card" key={item.id}>
               <div className="pitch-rental-card__body">
                 <div className="pitch-rental-card__identity">
                   <p className="pitch-rental-card__location">{locationLabel(item.place)}</p>
                   <h2>{item.place.name}</h2>
-                  <p className="pitch-rental-card__summary">{item.summary}</p>
+                  {summary ? <p className="pitch-rental-card__summary">{summary}</p> : null}
                 </div>
 
                 <div className="pitch-rental-card__price" aria-label="Hourly rental price">
@@ -70,7 +74,7 @@ export function PitchPage() {
               </div>
 
               <div className="pitch-rental-card__footer">
-                <span className="pitch-rental-card__stamp">HOOMA · PITCH RENTAL</span>
+                <span className="pitch-rental-card__stamp">HOOMA · PITCH</span>
                 <a href={`/pitch/${item.place.id}`}>View pitch</a>
               </div>
             </article>

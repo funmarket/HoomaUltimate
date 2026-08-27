@@ -21,8 +21,13 @@ export function PitchManagePage() {
       return;
     }
 
-    void Promise.all([api.places.get(placeId), api.places.manage(placeId)])
-      .then(([publicPlace]) => setPlace(publicPlace))
+    void Promise.all([api.places.get(placeId), api.places.ownershipStatus(placeId)])
+      .then(([publicPlace, ownership]) => {
+        if (!ownership.verified) {
+          throw new Error("Verified Place ownership is required to manage this Pitch.");
+        }
+        setPlace(publicPlace);
+      })
       .catch((reason) =>
         setError(
           reason instanceof Error

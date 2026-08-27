@@ -31,11 +31,13 @@ export function PlaceForm({
   initialPlace,
   submitLabel,
   pending,
+  showMenu = true,
   onSubmit,
 }: {
   readonly initialPlace?: PublicPlaceSummary | null;
   readonly submitLabel: string;
   readonly pending: boolean;
+  readonly showMenu?: boolean;
   readonly onSubmit: (input: PlaceSuggestionInput) => Promise<void>;
 }) {
   const [menu, setMenu] = useState<MenuDraft[]>(() => menuDrafts(initialPlace));
@@ -91,9 +93,11 @@ export function PlaceForm({
     const data = new FormData(event.currentTarget);
     const optionalText = (name: string) => String(data.get(name) ?? "").trim() || null;
     const optionalNumber = (value: string) => (value.trim() ? Number(value) : null);
-    const menuItems = menu
-      .map((item) => ({ name: item.name.trim(), price: Number(item.price), currency: "TND" }))
-      .filter((item) => item.name && Number.isFinite(item.price) && item.price >= 0);
+    const menuItems = showMenu
+      ? menu
+          .map((item) => ({ name: item.name.trim(), price: Number(item.price), currency: "TND" }))
+          .filter((item) => item.name && Number.isFinite(item.price) && item.price >= 0)
+      : [];
     const canonicalImages = imageUrls
       .map((value) => value.trim())
       .filter(Boolean)
@@ -278,51 +282,53 @@ export function PlaceForm({
         </label>
       </section>
 
-      <section className="hooma-form__section">
-        <div className="hooma-form__section-heading">
-          <span>04</span>
-          <div>
-            <h2>Menu preview</h2>
-            <p>Add the items supporters should see on the expanded Place page.</p>
-          </div>
-        </div>
-        <div className="place-menu-editor">
-          {menu.map((item, index) => (
-            <div className="place-menu-editor__row" key={item.id}>
-              <input
-                aria-label={`Menu item ${index + 1}`}
-                value={item.name}
-                maxLength={120}
-                placeholder="Item"
-                onChange={(event) => updateMenu(item.id, "name", event.target.value)}
-              />
-              <div className="place-menu-editor__price">
-                <input
-                  aria-label={`Menu item ${index + 1} price`}
-                  value={item.price}
-                  type="number"
-                  min="0"
-                  step="0.001"
-                  placeholder="Price"
-                  onChange={(event) => updateMenu(item.id, "price", event.target.value)}
-                />
-                <span>TND</span>
-              </div>
-              <button
-                type="button"
-                className="place-menu-editor__remove"
-                aria-label={`Remove menu item ${index + 1}`}
-                onClick={() => removeMenuItem(item.id)}
-              >
-                ×
-              </button>
+      {showMenu ? (
+        <section className="hooma-form__section">
+          <div className="hooma-form__section-heading">
+            <span>04</span>
+            <div>
+              <h2>Menu preview</h2>
+              <p>Add the items supporters should see on the expanded Place page.</p>
             </div>
-          ))}
-        </div>
-        <button className="hooma-form__secondary-action" type="button" onClick={addMenuItem}>
-          + Add menu item
-        </button>
-      </section>
+          </div>
+          <div className="place-menu-editor">
+            {menu.map((item, index) => (
+              <div className="place-menu-editor__row" key={item.id}>
+                <input
+                  aria-label={`Menu item ${index + 1}`}
+                  value={item.name}
+                  maxLength={120}
+                  placeholder="Item"
+                  onChange={(event) => updateMenu(item.id, "name", event.target.value)}
+                />
+                <div className="place-menu-editor__price">
+                  <input
+                    aria-label={`Menu item ${index + 1} price`}
+                    value={item.price}
+                    type="number"
+                    min="0"
+                    step="0.001"
+                    placeholder="Price"
+                    onChange={(event) => updateMenu(item.id, "price", event.target.value)}
+                  />
+                  <span>TND</span>
+                </div>
+                <button
+                  type="button"
+                  className="place-menu-editor__remove"
+                  aria-label={`Remove menu item ${index + 1}`}
+                  onClick={() => removeMenuItem(item.id)}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+          <button className="hooma-form__secondary-action" type="button" onClick={addMenuItem}>
+            + Add menu item
+          </button>
+        </section>
+      ) : null}
 
       <button className="hooma-form__submit" type="submit" disabled={pending}>
         {pending ? "Saving…" : submitLabel}
