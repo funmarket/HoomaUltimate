@@ -33,7 +33,6 @@ const placeSelect = Prisma.validator<Prisma.PlaceSelect>()({
 
 type PlaceRow = Prisma.PlaceGetPayload<{ select: typeof placeSelect }>;
 type PlaceImageRow = { id: string; placeId: string; imageUrl: string; sortOrder: number };
-type PitchPricingRow = { id: string; hourlyRateMinor: number | null; currency: string | null };
 
 function placeSummary(place: PlaceRow, images: readonly PlaceImageRow[] = []): PublicPlaceSummary {
   const publicImages: PublicPlaceImage[] = images.map((image) => ({
@@ -76,52 +75,37 @@ function groupImages(rows: readonly PlaceImageRow[]): Map<string, PlaceImageRow[
   return grouped;
 }
 
-async function pricingByApplication(
-  db: PrismaClient,
-  applicationIds: readonly string[],
-): Promise<Map<string, PitchPricingRow>> {
-  if (!applicationIds.length) return new Map();
-  const rows = await db.$queryRaw<PitchPricingRow[]>(Prisma.sql`
-    SELECT "id", "hourlyRateMinor", "currency"
-    FROM "PlaceCapabilityApplication"
-    WHERE "id" IN (${Prisma.join(applicationIds)})
-  `);
-  return new Map(rows.map((row) => [row.id, row]));
-}
-
 export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepository {
   constructor(private readonly db: PrismaClient) {}
 
   async listApproved(kind: PlaceCapabilityKind): Promise<readonly PublicPlaceCapability[]> {
     const rows = await this.db.placeCapabilityApplication.findMany({
       where: { kind, status: "APPROVED", place: { moderationStatus: "APPROVED" } },
-      select: { id: true, kind: true, summary: true, place: { select: placeSelect } },
+      select: {
+        id: true,
+        kind: true,
+        summary: true,
+        hourlyRateMinor: true,
+        currency: true,
+        place: { select: placeSelect },
+      },
       orderBy: { updatedAt: "desc" },
     });
-    const [images, pricing] = await Promise.all([
-      rows.length
-        ? this.db.placeImage.findMany({
-            where: { placeId: { in: rows.map((row) => row.place.id) } },
-            orderBy: [{ placeId: "asc" }, { sortOrder: "asc" }, { id: "asc" }],
-          })
-        : Promise.resolve([]),
-      pricingByApplication(
-        this.db,
-        rows.map((row) => row.id),
-      ),
-    ]);
+    const images = rows.length
+      ? await this.db.placeImage.findMany({
+          where: { placeId: { in: rows.map((row) => row.place.id) } },
+          orderBy: [{ placeId: "asc" }, { sortOrder: "asc" }, { id: "asc" }],
+        })
+      : [];
     const byPlace = groupImages(images);
-    return rows.map((row) => {
-      const rental = pricing.get(row.id);
-      return {
-        id: row.id,
-        kind: row.kind,
-        summary: row.summary,
-        hourlyRateMinor: rental?.hourlyRateMinor ?? null,
-        currency: rental?.currency ?? null,
-        place: placeSummary(row.place, byPlace.get(row.place.id) ?? []),
-      };
-    });
+    return rows.map((row) => ({
+      id: row.id,
+      kind: row.kind,
+      summary: row.summary,
+      hourlyRateMinor: row.hourlyRateMinor,
+      currency: row.currency,
+      place: placeSummary(row.place, byPlace.get(row.place.id) ?? []),
+    }));
   }
 
   async submit(
@@ -130,39 +114,33 @@ export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepositor
     kind: PlaceCapabilityKind,
     input: PlaceCapabilityApplicationInput,
   ) {
-    return this.db.$transaction(async (tx) => {
-      const application = await tx.placeCapabilityApplication.upsert({
-        where: { placeId_kind: { placeId, kind } },
-        create: {
-          placeId,
-          applicantUserId: userId,
-          kind,
-          summary: input.summary,
-          contactName: input.contactName,
-          contactPhone: input.contactPhone ?? null,
-          contactEmail: input.contactEmail ?? null,
-        },
-        update: {
-          applicantUserId: userId,
-          summary: input.summary,
-          contactName: input.contactName,
-          contactPhone: input.contactPhone ?? null,
-          contactEmail: input.contactEmail ?? null,
-          status: "PENDING",
-          reviewedByUserId: null,
-          reviewedAt: null,
-          reviewNote: null,
-        },
-        select: { id: true, status: true },
-      });
-      await tx.$executeRaw(Prisma.sql`
-        UPDATE "PlaceCapabilityApplication"
-        SET
-          "hourlyRateMinor" = ${input.hourlyRateMinor},
-          "currency" = ${input.currency}
-        WHERE "id" = ${application.id}
-      `);
-      return application;
+    return this.db.placeCapabilityApplication.upsert({
+      where: { placeId_kind: { placeId, kind } },
+      create: {
+        placeId,
+        applicantUserId: userId,
+        kind,
+        summary: input.summary,
+        hourlyRateMinor: input.hourlyRateMinor,
+        currency: input.currency,
+        contactName: input.contactName,
+        contactPhone: input.contactPhone ?? null,
+        contactEmail: input.contactEmail ?? null,
+      },
+      update: {
+        applicantUserId: userId,
+        summary: input.summary,
+        hourlyRateMinor: input.hourlyRateMinor,
+        currency: input.currency,
+        contactName: input.contactName,
+        contactPhone: input.contactPhone ?? null,
+        contactEmail: input.contactEmail ?? null,
+        status: "PENDING",
+        reviewedByUserId: null,
+        reviewedAt: null,
+        reviewNote: null,
+      },
+      select: { id: true, status: true },
     });
   }
 
@@ -174,6 +152,8 @@ export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepositor
         kind: true,
         status: true,
         summary: true,
+        hourlyRateMinor: true,
+        currency: true,
         createdAt: true,
         reviewedAt: true,
         reviewNote: true,
@@ -187,41 +167,32 @@ export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepositor
       },
       orderBy: { createdAt: "asc" },
     });
-    const [images, pricing] = await Promise.all([
-      rows.length
-        ? this.db.placeImage.findMany({
-            where: { placeId: { in: rows.map((row) => row.place.id) } },
-            orderBy: [{ placeId: "asc" }, { sortOrder: "asc" }, { id: "asc" }],
-          })
-        : Promise.resolve([]),
-      pricingByApplication(
-        this.db,
-        rows.map((row) => row.id),
-      ),
-    ]);
+    const images = rows.length
+      ? await this.db.placeImage.findMany({
+          where: { placeId: { in: rows.map((row) => row.place.id) } },
+          orderBy: [{ placeId: "asc" }, { sortOrder: "asc" }, { id: "asc" }],
+        })
+      : [];
     const byPlace = groupImages(images);
     return rows
       .filter((row) => row.applicant.presentation)
-      .map((row) => {
-        const rental = pricing.get(row.id);
-        return {
-          id: row.id,
-          kind: row.kind,
-          status: row.status,
-          summary: row.summary,
-          hourlyRateMinor: rental?.hourlyRateMinor ?? null,
-          currency: rental?.currency ?? null,
-          createdAt: row.createdAt.toISOString(),
-          reviewedAt: row.reviewedAt?.toISOString() ?? null,
-          reviewNote: row.reviewNote,
-          applicant: {
-            userId: row.applicant.id,
-            username: row.applicant.presentation!.username,
-            displayName: row.applicant.presentation!.displayName,
-          },
-          place: placeSummary(row.place, byPlace.get(row.place.id) ?? []),
-        };
-      });
+      .map((row) => ({
+        id: row.id,
+        kind: row.kind,
+        status: row.status,
+        summary: row.summary,
+        hourlyRateMinor: row.hourlyRateMinor,
+        currency: row.currency,
+        createdAt: row.createdAt.toISOString(),
+        reviewedAt: row.reviewedAt?.toISOString() ?? null,
+        reviewNote: row.reviewNote,
+        applicant: {
+          userId: row.applicant.id,
+          username: row.applicant.presentation!.username,
+          displayName: row.applicant.presentation!.displayName,
+        },
+        place: placeSummary(row.place, byPlace.get(row.place.id) ?? []),
+      }));
   }
 
   async review(
