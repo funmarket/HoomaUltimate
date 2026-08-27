@@ -19,6 +19,15 @@ test("Watch event detail is an informative card instead of form-like fact boxes"
   );
 });
 
+test("Watch event title has no decorative football icon", () => {
+  const page = source("packages/frontend/src/events/EventDetailPage.tsx");
+  const css = source("packages/frontend/src/events/watch-event-detail.css");
+
+  assert.doesNotMatch(page, /className="watch-event-detail__ball"/);
+  assert.doesNotMatch(css, /\.watch-event-detail__ball\s*\{/);
+  assert.doesNotMatch(css, /\.watch-event-detail__title-row\s*\{[^}]*grid-template-columns/);
+});
+
 test("Creator-only Event edit authority remains capability-driven", () => {
   const page = source("packages/frontend/src/events/EventDetailPage.tsx");
 
@@ -51,6 +60,7 @@ test("Watch detail remains compact and responsive on phone-width layouts", () =>
 test("Play event detail keeps its existing domain presentation", () => {
   const page = source("packages/frontend/src/events/EventDetailPage.tsx");
 
+  assert.match(page, /className="play-event-card__ball"/);
   assert.match(page, /<span>Format<\/span>/);
   assert.match(page, /<span>Pitch<\/span>/);
   assert.match(page, /<span>Level<\/span>/);

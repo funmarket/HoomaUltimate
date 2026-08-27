@@ -189,9 +189,6 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
           <div className="watch-event-detail__kicker">Watch event</div>
 
           <div className="watch-event-detail__title-row">
-            <span className="watch-event-detail__ball">
-              <BallIcon />
-            </span>
             <div className="watch-event-detail__title-copy">
               <h1>{event.title}</h1>
               {event.description ? (

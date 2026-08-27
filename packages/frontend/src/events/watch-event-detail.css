@@ -24,22 +24,7 @@
 
 .watch-event-detail__title-row {
   min-width: 0;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: clamp(12px, 3.5cqw, 18px);
   margin-top: 14px;
-}
-
-.watch-event-detail__ball {
-  width: clamp(48px, 13cqw, 62px);
-  aspect-ratio: 1;
-  display: grid;
-  place-items: center;
-  border: 1px solid color-mix(in srgb, var(--app-gold) 70%, transparent);
-  border-radius: 14px;
-  color: var(--app-text-strong);
-  background: #0a0b09;
 }
 
 .watch-event-detail__title-copy {
@@ -320,14 +305,6 @@
 }
 
 @media (max-width: 360px) {
-  .watch-event-detail__title-row {
-    align-items: start;
-  }
-
-  .watch-event-detail__ball {
-    width: 44px;
-  }
-
   .watch-event-detail h1 {
     font-size: clamp(1.55rem, 8cqw, 1.9rem);
   }
