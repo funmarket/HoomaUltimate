@@ -15,10 +15,8 @@ export function PitchDetailPage({ placeId }: { readonly placeId: string }) {
     setLoading(true);
     setError("");
     void api.capability
-      .list("PITCH")
-      .then((rows) => {
-        setItem(rows.find((row) => row.place.id === placeId) ?? null);
-      })
+      .get("PITCH", placeId)
+      .then(setItem)
       .catch((reason) =>
         setError(reason instanceof Error ? reason.message : "Unable to load Pitch"),
       )
