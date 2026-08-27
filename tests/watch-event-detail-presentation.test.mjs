@@ -25,10 +25,7 @@ test("Watch event title has no decorative football icon", () => {
 
   assert.doesNotMatch(page, /className="watch-event-detail__ball"/);
   assert.doesNotMatch(css, /\.watch-event-detail__ball\s*\{/);
-  assert.doesNotMatch(
-    css,
-    /\.watch-event-detail__title-row\s*\{[^}]*grid-template-columns/,
-  );
+  assert.doesNotMatch(css, /\.watch-event-detail__title-row\s*\{[^}]*grid-template-columns/);
 });
 
 test("Creator-only Event edit authority remains capability-driven", () => {
