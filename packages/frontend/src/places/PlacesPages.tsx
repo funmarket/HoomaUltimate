@@ -32,10 +32,7 @@ function nextEventTime(event: PublicEvent): string {
 
 export function PlacesPage() {
   const { transport } = useHoomaFrontend();
-  const api = useMemo(
-    () => createPlatformManagementApi(transport),
-    [transport],
-  );
+  const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
   const eventApi = useEventApi();
   const [places, setPlaces] = useState<PublicPlaceSummary[]>([]);
   const [watchEvents, setWatchEvents] = useState<PublicEvent[]>([]);
@@ -65,13 +62,11 @@ export function PlacesPage() {
           new Date(event.startsAt).getTime() >= now,
       )
       .sort(
-        (left, right) =>
-          new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime(),
+        (left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime(),
       );
     const byPlace = new Map<string, PublicEvent>();
     for (const event of upcoming) {
-      if (event.placeId && !byPlace.has(event.placeId))
-        byPlace.set(event.placeId, event);
+      if (event.placeId && !byPlace.has(event.placeId)) byPlace.set(event.placeId, event);
     }
     return byPlace;
   }, [watchEvents]);
@@ -99,9 +94,7 @@ export function PlacesPage() {
               key={place.id}
             >
               <div className="place-card__copy">
-                {place.category ? (
-                  <span className="eyebrow">{place.category}</span>
-                ) : null}
+                {place.category ? <span className="eyebrow">{place.category}</span> : null}
                 <h2>{place.name}</h2>
                 <p>{locationLabel(place)}</p>
                 <small>{place.address}</small>
@@ -113,18 +106,12 @@ export function PlacesPage() {
                 ) : null}
               </div>
               <div className="place-card__media">
-                {place.imageUrl ? (
-                  <img src={place.imageUrl} alt="" />
-                ) : (
-                  <span>HOOMA</span>
-                )}
+                {place.imageUrl ? <img src={place.imageUrl} alt="" /> : <span>HOOMA</span>}
               </div>
             </a>
           );
         })}
-        {!places.length && !error ? (
-          <p className="muted">No approved Places yet.</p>
-        ) : null}
+        {!places.length && !error ? <p className="muted">No approved Places yet.</p> : null}
       </div>
     </section>
   );
@@ -132,12 +119,8 @@ export function PlacesPage() {
 
 export function AddPlacePage() {
   const { transport, protectedError } = useHoomaFrontend();
-  const api = useMemo(
-    () => createPlatformManagementApi(transport),
-    [transport],
-  );
-  const isPitchSuggestion =
-    new URLSearchParams(window.location.search).get("kind") === "PITCH";
+  const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
+  const isPitchSuggestion = new URLSearchParams(window.location.search).get("kind") === "PITCH";
   const [error, setError] = useState("");
   const [submittedPlaceId, setSubmittedPlaceId] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -171,10 +154,7 @@ export function AddPlacePage() {
           </p>
           <div className="place-detail-actions">
             {!isPitchSuggestion ? (
-              <a
-                className="place-primary-link"
-                href={`/places/${submittedPlaceId}/edit`}
-              >
+              <a className="place-primary-link" href={`/places/${submittedPlaceId}/edit`}>
                 Manage submitted Place
               </a>
             ) : null}
@@ -191,12 +171,8 @@ export function AddPlacePage() {
     <section className="place-page place-form-page">
       <header className="place-page__header place-form-page__header">
         <div>
-          <p className="eyebrow">
-            {isPitchSuggestion ? "SUGGEST A PITCH" : "ADD A PLACE"}
-          </p>
-          <h1>
-            {isPitchSuggestion ? "Suggest a football pitch" : "List your Place"}
-          </h1>
+          <p className="eyebrow">{isPitchSuggestion ? "SUGGEST A PITCH" : "ADD A PLACE"}</p>
+          <h1>{isPitchSuggestion ? "Suggest a football pitch" : "List your Place"}</h1>
           <p>
             {isPitchSuggestion
               ? "Add the real venue details. Suggesting a pitch does not make you its owner."
