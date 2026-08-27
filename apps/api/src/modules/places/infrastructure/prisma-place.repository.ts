@@ -351,6 +351,13 @@ export class PrismaPlaceRepository implements PlaceRepository {
       },
       orderBy: { createdAt: "asc" },
     });
+    const images = rows.length
+      ? await this.db.placeImage.findMany({
+          where: { placeId: { in: rows.map((row) => row.id) } },
+          orderBy: [{ placeId: "asc" }, { sortOrder: "asc" }, { id: "asc" }],
+        })
+      : [];
+    const byPlace = groupImages(images);
     return rows
       .filter((row) => row.suggestedBy.presentation)
       .map((row) => ({
@@ -364,7 +371,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
           username: row.suggestedBy.presentation!.username,
           displayName: row.suggestedBy.presentation!.displayName,
         },
-        place: placeSummary(row),
+        place: placeSummary(row, byPlace.get(row.id) ?? []),
       }));
   }
 
@@ -388,6 +395,13 @@ export class PrismaPlaceRepository implements PlaceRepository {
       },
       orderBy: { createdAt: "asc" },
     });
+    const images = rows.length
+      ? await this.db.placeImage.findMany({
+          where: { placeId: { in: rows.map((row) => row.place.id) } },
+          orderBy: [{ placeId: "asc" }, { sortOrder: "asc" }, { id: "asc" }],
+        })
+      : [];
+    const byPlace = groupImages(images);
     return rows
       .filter((row) => row.claimant.presentation)
       .map((row) => ({
@@ -402,7 +416,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
           username: row.claimant.presentation!.username,
           displayName: row.claimant.presentation!.displayName,
         },
-        place: placeSummary(row.place),
+        place: placeSummary(row.place, byPlace.get(row.place.id) ?? []),
       }));
   }
 
