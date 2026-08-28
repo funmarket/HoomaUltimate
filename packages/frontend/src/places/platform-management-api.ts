@@ -4,6 +4,7 @@ import type {
   AppManagerSummary,
   ManagedPlaceSummary,
   ModerationDecisionInput,
+  PitchManagementState,
   PlaceCapabilityApplicationInput,
   PlaceCapabilityKind,
   PlaceOwnershipClaimInput,
@@ -84,6 +85,11 @@ export function createPlatformManagementApi(transport: HoomaTransport) {
         request<PublicPlaceCapability>(
           transport,
           `/api/public/v1/${kind.toLowerCase()}/${encodeURIComponent(placeId)}`,
+        ),
+      manage: (kind: PlaceCapabilityKind, placeId: string) =>
+        request<PitchManagementState>(
+          transport,
+          `/api/v1/${kind.toLowerCase()}/${encodeURIComponent(placeId)}/manage`,
         ),
       submit: (
         kind: PlaceCapabilityKind,

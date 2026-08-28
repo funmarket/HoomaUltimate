@@ -150,6 +150,43 @@ export interface PublicPlaceCapability {
   readonly place: PublicPlaceSummary;
 }
 
+export interface ManagedPitchApprovedState {
+  readonly id: string;
+  readonly summary: string | null;
+  readonly hourlyRateMinor: number;
+  readonly currency: PitchRentalCurrency;
+  readonly approvedAt: string | null;
+}
+
+export interface ManagedPitchPendingApplication {
+  readonly id: string;
+  readonly summary: string;
+  readonly hourlyRateMinor: number | null;
+  readonly currency: PitchRentalCurrency | null;
+  readonly submittedAt: string;
+}
+
+export interface ManagedPitchRejectedApplication {
+  readonly id: string;
+  readonly summary: string;
+  readonly hourlyRateMinor: number | null;
+  readonly currency: PitchRentalCurrency | null;
+  readonly submittedAt: string;
+  readonly reviewedAt: string | null;
+  readonly reviewNote: string | null;
+}
+
+export interface PitchCapabilityManagementState {
+  readonly approvedPitch: ManagedPitchApprovedState | null;
+  readonly pendingApplication: ManagedPitchPendingApplication | null;
+  readonly latestRejectedApplication: ManagedPitchRejectedApplication | null;
+}
+
+export interface PitchManagementState extends PitchCapabilityManagementState {
+  readonly place: PublicPlaceSummary;
+  readonly verifiedOwnership: boolean;
+}
+
 export interface AdminAccess {
   readonly isPlatformOwner: boolean;
   readonly managerCapabilities: readonly PlatformManagerCapability[];

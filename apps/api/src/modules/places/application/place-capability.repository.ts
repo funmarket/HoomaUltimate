@@ -1,6 +1,7 @@
 import type {
   AdminQueueItem,
   ModerationDecisionInput,
+  PitchCapabilityManagementState,
   PlaceCapabilityApplicationInput,
   PlaceCapabilityKind,
   PublicPlaceCapability,
@@ -12,6 +13,10 @@ export interface PlaceCapabilityRepository {
     kind: PlaceCapabilityKind,
     placeId: string,
   ): Promise<PublicPlaceCapability | null>;
+  getManagementState(
+    kind: PlaceCapabilityKind,
+    placeId: string,
+  ): Promise<PitchCapabilityManagementState>;
   submit(
     userId: string,
     placeId: string,

@@ -108,6 +108,14 @@ export function createPlaceCapabilityPublicRouter(service: PlaceCapabilityServic
 
 export function createPlaceCapabilityMemberRouter(service: PlaceCapabilityService): Router {
   const router = Router();
+  router.get(
+    "/:placeId/manage",
+    asyncHandler(async (request, response) => {
+      response.json(
+        await service.getManagementState(getAuth(request).userId, String(request.params.placeId)),
+      );
+    }),
+  );
   router.post(
     "/applications",
     asyncHandler(async (request, response) => {
