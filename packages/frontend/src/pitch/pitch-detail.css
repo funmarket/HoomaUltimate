@@ -1,0 +1,227 @@
+.pitch-hero {
+  min-height: clamp(160px, 26vw, 230px);
+  display: grid;
+  align-items: end;
+  padding: clamp(22px, 5vw, 40px);
+  border: 1px solid var(--app-line);
+  border-radius: 24px;
+  background:
+    radial-gradient(
+      circle at 82% 28%,
+      color-mix(in srgb, var(--app-gold) 18%, transparent),
+      transparent 30%
+    ),
+    linear-gradient(150deg, #050505, color-mix(in srgb, var(--app-gold) 7%, #050505));
+}
+
+.pitch-hero h1,
+.pitch-hero p {
+  margin: 0;
+}
+
+.pitch-hero h1 {
+  color: var(--app-text-strong);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(3.5rem, 13vw, 7rem);
+  line-height: 0.86;
+  letter-spacing: -0.055em;
+}
+
+.pitch-hero p {
+  margin-top: 16px;
+  color: var(--app-text-secondary);
+  font-size: clamp(1rem, 3vw, 1.25rem);
+}
+
+.pitch-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.pitch-action {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  border: 1px solid var(--app-gold);
+  border-radius: 16px;
+  color: var(--app-gold);
+  background: var(--app-surface);
+  font-weight: 800;
+  text-align: center;
+  text-decoration: none;
+}
+
+.pitch-action--active {
+  border-color: var(--app-lime);
+  color: var(--app-lime);
+}
+
+.pitch-action--primary {
+  border-color: var(--app-lime);
+  color: #111500;
+  background: var(--app-lime);
+}
+
+.pitch-detail-page {
+  width: 100%;
+  max-width: 1180px;
+  margin-inline: auto;
+  gap: clamp(16px, 2.4vw, 26px);
+}
+
+.pitch-detail-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.pitch-owner-link--toolbar {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--app-line-strong);
+  border-radius: 12px;
+  text-decoration: none;
+}
+
+.pitch-detail-hero {
+  display: grid;
+  gap: 10px;
+  padding-block: clamp(4px, 1vw, 12px);
+}
+
+.pitch-detail-hero h1,
+.pitch-detail-hero p {
+  margin: 0;
+}
+
+.pitch-detail-hero h1 {
+  color: var(--app-text-strong);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.8rem, 8vw, 5.2rem);
+  line-height: 0.9;
+  letter-spacing: -0.045em;
+}
+
+.pitch-detail-hero__eyebrow {
+  color: var(--app-lime);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.pitch-detail-hero__description {
+  max-width: 62ch;
+  color: var(--app-text-secondary);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.pitch-detail-rate {
+  width: fit-content;
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin-top: 4px;
+  color: var(--app-lime);
+}
+
+.pitch-detail-rate strong {
+  color: var(--app-text-strong);
+  font-size: clamp(1.7rem, 5vw, 2.7rem);
+  line-height: 1;
+}
+
+.pitch-detail-rate span {
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pitch-info-grid article {
+  background: var(--app-surface);
+}
+
+.pitch-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pitch-detail-action {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  border-radius: 12px;
+  font: inherit;
+  font-weight: 850;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.pitch-detail-action--primary {
+  border: 1px solid var(--app-lime);
+  color: #111500;
+  background: var(--app-lime);
+}
+
+.pitch-detail-action--secondary {
+  border: 1px solid var(--app-gold);
+  color: var(--app-gold);
+  background: transparent;
+}
+
+@media (max-width: 760px) {
+  .pitch-hero {
+    min-height: 150px;
+    border-radius: 18px;
+  }
+
+  .pitch-actions {
+    gap: 8px;
+  }
+
+  .pitch-action {
+    min-height: 48px;
+    padding-inline: 10px;
+    border-radius: 12px;
+    font-size: 0.82rem;
+  }
+
+  .pitch-detail-page {
+    gap: 14px;
+  }
+
+  .pitch-detail-hero {
+    gap: 8px;
+  }
+
+  .pitch-detail-hero h1 {
+    font-size: clamp(2.35rem, 12vw, 3.6rem);
+  }
+
+  .pitch-detail-hero__description {
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+
+  .pitch-detail-rate strong {
+    font-size: clamp(1.55rem, 8vw, 2.25rem);
+  }
+
+  .pitch-detail-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .pitch-detail-action {
+    width: 100%;
+  }
+}
