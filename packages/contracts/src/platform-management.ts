@@ -4,6 +4,7 @@ export const platformManagerCapabilitySchema = z.enum(["REVIEW_PITCH_APPLICATION
 
 export const moderationStatusSchema = z.enum(["PENDING", "APPROVED", "REJECTED"]);
 export const placeCapabilityKindSchema = z.literal("PITCH");
+export const placeSubmissionOriginSchema = z.enum(["OWNER", "FANHUB"]);
 export const pitchRentalCurrencySchema = z.enum(["TND", "EUR", "USD"]);
 
 export const placeMenuItemSchema = z.object({
@@ -38,6 +39,7 @@ const placeSuggestionBaseSchema = z.object({
 
 export const placeSuggestionSchema = placeSuggestionBaseSchema
   .extend({
+    submissionOrigin: placeSubmissionOriginSchema.default("FANHUB"),
     suggestedCapabilities: z.array(placeCapabilityKindSchema).max(1).optional(),
     pitch: pitchSuggestionSchema.optional(),
   })
@@ -93,6 +95,7 @@ export const appManagerUpdateSchema = z.object({
 export type PlatformManagerCapability = z.infer<typeof platformManagerCapabilitySchema>;
 export type ModerationStatus = z.infer<typeof moderationStatusSchema>;
 export type PlaceCapabilityKind = z.infer<typeof placeCapabilityKindSchema>;
+export type PlaceSubmissionOrigin = z.infer<typeof placeSubmissionOriginSchema>;
 export type PitchRentalCurrency = z.infer<typeof pitchRentalCurrencySchema>;
 export type PlaceMenuItemInput = z.infer<typeof placeMenuItemSchema>;
 export type PitchSuggestionInput = z.infer<typeof pitchSuggestionSchema>;
@@ -133,6 +136,7 @@ export interface PublicPlaceSummary {
   readonly category: string | null;
   readonly email: string | null;
   readonly menuItems: readonly PublicPlaceMenuItem[];
+  readonly submissionOrigin: PlaceSubmissionOrigin;
 }
 
 export interface ManagedPlaceSummary extends PublicPlaceSummary {
