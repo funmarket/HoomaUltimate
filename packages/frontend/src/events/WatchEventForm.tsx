@@ -62,14 +62,7 @@ export function WatchEventForm({
         : {
             kind: "CULTURAL",
             culturalCategory: String(data.get("culturalCategory")) as
-              | "MUSIC"
-              | "CONCERT"
-              | "COMEDY"
-              | "ART"
-              | "SCREENING"
-              | "FOOD"
-              | "COMMUNITY"
-              | "OTHER",
+              "MUSIC" | "CONCERT" | "COMEDY" | "ART" | "SCREENING" | "FOOD" | "COMMUNITY" | "OTHER",
             imageUrl: optionalText("culturalImageUrl"),
           };
     const title =
@@ -145,11 +138,7 @@ export function WatchEventForm({
           </div>
           <label className="hooma-field">
             <span>Place *</span>
-            <select
-              name="placeId"
-              defaultValue={initialEvent?.placeId ?? initialPlaceId}
-              required
-            >
+            <select name="placeId" defaultValue={initialEvent?.placeId ?? initialPlaceId} required>
               <option value="">Select a Place</option>
               {places.map((place) => (
                 <option key={place.id} value={place.id}>
