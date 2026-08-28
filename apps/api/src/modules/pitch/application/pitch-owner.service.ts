@@ -1,6 +1,6 @@
 import type { PitchApplicationInput, PitchManagementState } from "@hooma/contracts/pitch";
+import type { PlatformAdminAccessPort } from "../../../application/platform-admin-access.port.js";
 import { AppError } from "../../../http/errors/app-error.js";
-import type { PlatformAdminAuthorizer } from "../../platform-admin/application/platform-admin.authorizer.js";
 import type { PlaceRepository } from "../../places/application/place.repository.js";
 import type { PitchRepository } from "./pitch.repository.js";
 
@@ -8,7 +8,7 @@ export class PitchOwnerService {
   constructor(
     private readonly repository: PitchRepository,
     private readonly places: PlaceRepository,
-    private readonly platformAdmin: PlatformAdminAuthorizer,
+    private readonly platformAdmin: PlatformAdminAccessPort,
   ) {}
 
   async getManagementState(userId: string, placeId: string): Promise<PitchManagementState> {
