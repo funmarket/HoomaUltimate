@@ -122,6 +122,8 @@ test("Pitch owner management reads approved pending and latest rejected state", 
     await db.placeCapability.deleteMany({ where: { placeId: place.id } });
     await db.placeOwnership.deleteMany({ where: { placeId: place.id } });
     await db.place.delete({ where: { id: place.id } });
-    await db.user.deleteMany({ where: { id: { in: [owner.id, admin.id, outsider.id] } } });
+    await db.user.deleteMany({
+      where: { id: { in: [owner.id, admin.id, outsider.id] } },
+    });
   }
 });
