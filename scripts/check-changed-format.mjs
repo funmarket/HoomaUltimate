@@ -23,8 +23,14 @@ if (files.length === 0) {
   process.exit(0);
 }
 
-console.log(`Checking formatting for ${files.length} changed file(s).`);
-const prettier = spawnSync("npm", ["exec", "--", "prettier", "--check", ...files], {
+console.log("Formatting diagnostic for Spots provenance test.");
+const write = spawnSync(
+  "npm",
+  ["exec", "--", "prettier", "--write", "tests/spots-provenance.test.mjs"],
+  { stdio: "inherit" },
+);
+if (write.status !== 0) process.exit(write.status ?? 1);
+spawnSync("git", ["diff", "--", "tests/spots-provenance.test.mjs"], {
   stdio: "inherit",
 });
-process.exit(prettier.status ?? 1);
+process.exit(1);
