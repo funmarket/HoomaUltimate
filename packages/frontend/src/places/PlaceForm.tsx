@@ -1,8 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from "react";
-import type {
-  PlaceSuggestionInput,
-  PublicPlaceSummary,
-} from "@hooma/contracts/platform-management";
+import type { PlaceSuggestionInput, PublicPlaceSummary } from "@hooma/contracts/places";
 
 type PlaceFormInput = Omit<
   PlaceSuggestionInput,
