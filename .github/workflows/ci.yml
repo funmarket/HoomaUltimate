@@ -24,13 +24,32 @@ jobs:
       - name: Pin repository npm version
         run: npm install --global npm@10.9.2
       - run: npm ci
-      - name: Apply exact Prettier output to PR 153
+      - name: Fix PR 153 typecheck sources
         run: |
-          npm exec -- prettier --write apps/api/src/modules/places/infrastructure/prisma-place.repository.ts packages/contracts/src/events.ts
+          node --input-type=module <<'NODE'
+          import { readFile, writeFile } from "node:fs/promises";
+
+          const placesPath = "packages/frontend/src/places/PlacesPages.tsx";
+          let places = await readFile(placesPath, "utf8");
+          const oldProp = "  readonly nextEvent?: PublicEvent;";
+          const newProp = "  readonly nextEvent?: PublicEvent | undefined;";
+          if (!places.includes(oldProp)) throw new Error("Places nextEvent prop source not found");
+          places = places.replace(oldProp, newProp);
+          await writeFile(placesPath, places);
+
+          const ticketPath = "packages/frontend/src/watch/WatchTicket.tsx";
+          let ticket = await readFile(ticketPath, "utf8");
+          const oldStatus = `  const status =\n    event.venueAuthority === "OFFICIAL_VENUE" ? "OFFICIAL VENUE" : "SUGGESTED BY COMMUNITY";`;
+          const newStatus = `  const status =\n    event.publisherAuthority === "VERIFIED_PLACE_OWNER"\n      ? "PUBLISHED BY VENUE"\n      : "COMMUNITY-PUBLISHED";`;
+          if (!ticket.includes(oldStatus)) throw new Error("WatchTicket old authority source not found");
+          ticket = ticket.replace(oldStatus, newStatus);
+          await writeFile(ticketPath, ticket);
+          NODE
+          npm exec -- prettier --write packages/frontend/src/places/PlacesPages.tsx packages/frontend/src/watch/WatchTicket.tsx
           git diff --check
           git diff --exit-code --quiet && exit 0
           git config user.name "Out Of Sight"
           git config user.email "33332777+funmarket@users.noreply.github.com"
-          git add apps/api/src/modules/places/infrastructure/prisma-place.repository.ts packages/contracts/src/events.ts
-          git commit -m "chore(format): normalize pr153 changed files"
+          git add packages/frontend/src/places/PlacesPages.tsx packages/frontend/src/watch/WatchTicket.tsx
+          git commit -m "fix(places): align frontend with publisher contract"
           git push origin HEAD:fix/place-provenance-canonical-identity-v2
