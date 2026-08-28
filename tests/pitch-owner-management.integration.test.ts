@@ -101,10 +101,7 @@ test("Pitch owner management reads approved pending and latest rejected state", 
     assert.equal(management.pendingApplication?.hourlyRateMinor, 60_000);
     assert.equal(management.latestRejectedApplication?.id, rejected.id);
     assert.equal(management.latestRejectedApplication?.hourlyRateMinor, 55_000);
-    assert.equal(
-      management.latestRejectedApplication?.reviewNote,
-      "Price could not be verified",
-    );
+    assert.equal(management.latestRejectedApplication?.reviewNote, "Price could not be verified");
 
     const adminManagement = await pitch.getManagementState(admin.id, place.id);
     assert.equal(adminManagement.verifiedOwnership, false);
@@ -122,8 +119,6 @@ test("Pitch owner management reads approved pending and latest rejected state", 
     await db.placeCapability.deleteMany({ where: { placeId: place.id } });
     await db.placeOwnership.deleteMany({ where: { placeId: place.id } });
     await db.place.delete({ where: { id: place.id } });
-    await db.user.deleteMany({
-      where: { id: { in: [owner.id, admin.id, outsider.id] } },
-    });
+    await db.user.deleteMany({ where: { id: { in: [owner.id, admin.id, outsider.id] } } });
   }
 });
