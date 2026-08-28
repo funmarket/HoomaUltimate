@@ -3,9 +3,9 @@ import type {
   AdminQueueItem,
   AppManagerSummary,
   PlatformManagerCapability,
-} from "@hooma/contracts/platform-management";
+} from "@hooma/contracts/platform-admin";
 import {
-  createPlatformManagementApi,
+  createPlatformAdminApi,
   formatPitchHourlyRate,
   useHoomaFrontend,
   type PlatformAuditEntry,
@@ -84,7 +84,7 @@ function QueueSection({
 
 export function AdminApp() {
   const { api, transport } = useHoomaFrontend();
-  const management = useMemo(() => createPlatformManagementApi(transport), [transport]);
+  const admin = useMemo(() => createPlatformAdminApi(transport), [transport]);
   const [access, setAccess] = useState<{
     isPlatformOwner: boolean;
     managerCapabilities: readonly PlatformManagerCapability[];
@@ -119,7 +119,7 @@ export function AdminApp() {
 
   async function load() {
     setError("");
-    const currentAccess = await management.admin.access();
+    const currentAccess = await admin.access();
     setAccess(currentAccess);
     if (!currentAccess.isPlatformOwner && currentAccess.managerCapabilities.length === 0) return;
 
@@ -129,27 +129,25 @@ export function AdminApp() {
 
     if (allowed("VIEW_AUDIT")) {
       tasks.push(
-        Promise.all([management.admin.overview(), management.admin.audit()]).then(
-          ([nextOverview, nextAudit]) => {
-            setOverview(nextOverview);
-            setAudit(nextAudit);
-          },
-        ),
+        Promise.all([admin.overview(), admin.audit()]).then(([nextOverview, nextAudit]) => {
+          setOverview(nextOverview);
+          setAudit(nextAudit);
+        }),
       );
     }
     if (currentAccess.isPlatformOwner) {
       tasks.push(
-        management.admin
+        admin
           .queue("places")
           .then((rows) => setQueues((current) => ({ ...current, places: rows }))),
-        management.admin
+        admin
           .queue("place-ownership")
           .then((rows) => setQueues((current) => ({ ...current, "place-ownership": rows }))),
       );
     }
     if (allowed("REVIEW_PITCH_APPLICATIONS")) {
       tasks.push(
-        management.admin
+        admin
           .queue("pitch")
           .then((rows) => setQueues((current) => ({ ...current, pitch: rows }))),
       );
@@ -157,7 +155,7 @@ export function AdminApp() {
     if (currentAccess.isPlatformOwner) {
       tasks.push(
         Promise.all([
-          management.admin.managers(),
+          admin.managers(),
           api.communities.publicList(),
           api.teams.publicList({ limit: 100 }),
         ]).then(([managerRows, communityPage, teamPage]) => {
@@ -178,7 +176,7 @@ export function AdminApp() {
 
   useEffect(() => {
     void load().catch((reason: Error) => setError(reason.message));
-  }, [api, management]);
+  }, [admin, api]);
 
   async function decide(queue: QueueName, id: string, decision: "APPROVE" | "REJECT") {
     const note =
@@ -186,7 +184,7 @@ export function AdminApp() {
     setError("");
     setMessage("");
     try {
-      await management.admin.decide(queue, id, { decision, note: note || null });
+      await admin.decide(queue, id, { decision, note: note || null });
       setMessage("Decision saved and audited.");
       await load();
     } catch (reason) {
@@ -202,7 +200,7 @@ export function AdminApp() {
     setError("");
     setMessage("");
     try {
-      await management.admin.setManager(username, capabilities);
+      await admin.setManager(username, capabilities);
       event.currentTarget.reset();
       setMessage(
         capabilities.length ? "App Manager permissions saved." : "App Manager permissions revoked.",
