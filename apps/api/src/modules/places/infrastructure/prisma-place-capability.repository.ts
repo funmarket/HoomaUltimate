@@ -11,6 +11,8 @@ import type {
 import { Prisma, type PrismaClient } from "@hooma/database";
 import type { PlaceCapabilityRepository } from "../application/place-capability.repository.js";
 
+const OWNER_SUBMISSION_EVIDENCE = "Ownership asserted during Place submission";
+
 const placeSelect = Prisma.validator<Prisma.PlaceSelect>()({
   id: true,
   slug: true,
@@ -26,9 +28,8 @@ const placeSelect = Prisma.validator<Prisma.PlaceSelect>()({
   category: true,
   email: true,
   suggestedByUserId: true,
-  ownerships: {
-    where: { revokedAt: null },
-    select: { userId: true },
+  ownershipClaims: {
+    select: { claimantUserId: true, evidence: true },
   },
   menuItems: {
     orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
@@ -59,8 +60,10 @@ function placeSummary(place: PlaceRow, images: readonly PlaceImageRow[] = []): P
     imageUrl: image.imageUrl,
     sortOrder: image.sortOrder,
   }));
-  const suggestedByVerifiedOwner = place.ownerships.some(
-    (ownership) => ownership.userId === place.suggestedByUserId,
+  const ownerSubmitted = place.ownershipClaims.some(
+    (claim) =>
+      claim.claimantUserId === place.suggestedByUserId &&
+      claim.evidence === OWNER_SUBMISSION_EVIDENCE,
   );
   return {
     id: place.id,
@@ -84,7 +87,7 @@ function placeSummary(place: PlaceRow, images: readonly PlaceImageRow[] = []): P
       price: item.price.toNumber(),
       currency: item.currency,
     })),
-    submissionOrigin: suggestedByVerifiedOwner ? "OWNER" : "FANHUB",
+    submissionOrigin: ownerSubmitted ? "OWNER" : "FANHUB",
   };
 }
 
