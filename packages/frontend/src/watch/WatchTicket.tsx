@@ -74,7 +74,9 @@ export function WatchTicket({
     [place.city, place.houma ? `Houma: ${place.houma}` : null].filter(Boolean).join(", ") ||
     place.address;
   const status =
-    event.venueAuthority === "OFFICIAL_VENUE" ? "OFFICIAL VENUE" : "SUGGESTED BY COMMUNITY";
+    event.publisherAuthority === "VERIFIED_PLACE_OWNER"
+      ? "PUBLISHED BY VENUE"
+      : "COMMUNITY-PUBLISHED";
   const placeHref = `/places/${place.id}?eventId=${encodeURIComponent(event.id)}`;
   const matchup = event.watchDetails?.kind === "MATCH" ? event.watchDetails : null;
   const feedVariant = variant === "feed";

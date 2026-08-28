@@ -35,13 +35,6 @@ export class PlaceService {
     try {
       return await this.repository.suggest(userId, input);
     } catch (error) {
-      if (error instanceof Error && error.message === "PLACE_ALREADY_EXISTS") {
-        throw new AppError(
-          409,
-          "PLACE_ALREADY_EXISTS",
-          "A Place with this name and address is already pending or approved",
-        );
-      }
       if (error instanceof Error && error.message === "PITCH_PRICING_REQUIRED") {
         throw new AppError(
           400,
@@ -62,7 +55,7 @@ export class PlaceService {
         throw new AppError(
           409,
           "PLACE_ALREADY_EXISTS",
-          "A Place with this name and address already exists",
+          "Another canonical Place already matches this identity",
         );
       }
       throw error;
