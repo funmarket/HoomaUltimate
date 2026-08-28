@@ -1,4 +1,4 @@
-import type { PlatformManagerCapability } from "@hooma/contracts/platform-management";
+import type { PlatformManagerCapability } from "@hooma/contracts/platform-admin";
 import type { PrismaClient } from "@hooma/database";
 import type {
   AppManagerRecord,

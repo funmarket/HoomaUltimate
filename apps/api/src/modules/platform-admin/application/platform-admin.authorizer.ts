@@ -1,8 +1,3 @@
-import type { PlatformManagerCapability } from "@hooma/contracts/platform-management";
+import type { PlatformAdminAccessPort } from "../../../application/platform-admin-access.port.js";
 
-export interface PlatformAdminAuthorizer {
-  isPlatformAdmin(userId: string): Promise<boolean>;
-  requirePlatformAdmin(userId: string): Promise<void>;
-  can(userId: string, capability: PlatformManagerCapability): Promise<boolean>;
-  requireCapability(userId: string, capability: PlatformManagerCapability): Promise<void>;
-}
+export interface PlatformAdminAuthorizer extends PlatformAdminAccessPort {}

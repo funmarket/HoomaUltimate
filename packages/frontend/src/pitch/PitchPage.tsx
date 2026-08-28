@@ -1,19 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
-import type { PublicPlaceCapability } from "@hooma/contracts/platform-management";
+import type { PublicPitch } from "@hooma/contracts/pitch";
 import { useHoomaFrontend } from "../context";
-import { createPlatformManagementApi } from "../places/platform-management-api";
+import { createPitchApi } from "./api";
 import { PitchTicket } from "./PitchTicket";
 
 export function PitchPage() {
   const { transport } = useHoomaFrontend();
-  const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
-  const [items, setItems] = useState<PublicPlaceCapability[]>([]);
+  const api = useMemo(() => createPitchApi(transport), [transport]);
+  const [items, setItems] = useState<PublicPitch[]>([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
     setError("");
-    void api.capability
-      .list("PITCH")
+    void api
+      .list()
       .then(setItems)
       .catch((reason) =>
         setError(reason instanceof Error ? reason.message : "Unable to load Pitch"),

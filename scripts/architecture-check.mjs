@@ -79,6 +79,66 @@ for (const file of await walk(root)) {
       "HTTP layer must not access persistence directly",
     );
   }
+
+  if (rel.startsWith("apps/api/src/modules/places/")) {
+    forbid(file, source, /modules\/pitch|\.\.\/\.\.\/pitch\//, "Places must not depend on Pitch");
+    forbid(
+      file,
+      source,
+      /modules\/platform-admin|\.\.\/\.\.\/platform-admin\//,
+      "Places must not depend on Platform Admin application code",
+    );
+    forbid(file, source, /@hooma\/contracts\/pitch/, "Places must not depend on Pitch contracts");
+    forbid(
+      file,
+      source,
+      /@hooma\/contracts\/platform-admin/,
+      "Places must not depend directly on Platform Admin contracts",
+    );
+  }
+
+  if (rel.startsWith("apps/api/src/modules/pitch/")) {
+    forbid(
+      file,
+      source,
+      /modules\/platform-admin|\.\.\/\.\.\/platform-admin\//,
+      "Pitch must not depend on Platform Admin application code",
+    );
+    forbid(
+      file,
+      source,
+      /places\/infrastructure\//,
+      "Pitch must use the explicit Places boundary, not Places infrastructure",
+    );
+  }
+
+  if (/^apps\/api\/src\/modules\/(places|pitch)\//.test(rel)) {
+    forbid(
+      file,
+      source,
+      /@hooma\/contracts\/platform-management/,
+      "Places and Pitch must not depend on the legacy shared platform-management contract",
+    );
+  }
+
+  if (rel.startsWith("packages/frontend/src/pitch/")) {
+    forbid(
+      file,
+      source,
+      /places\/platform-management-api|@hooma\/contracts\/platform-management/,
+      "Pitch frontend must use Pitch-owned contracts and API client",
+    );
+  }
+
+  if (rel.startsWith("packages/frontend/src/places/")) {
+    forbid(
+      file,
+      source,
+      /@hooma\/contracts\/platform-management/,
+      "Places frontend must use Place/Pitch domain contracts instead of platform-management",
+    );
+  }
+
   if (rel.startsWith("apps/worker/") && /apps\/api\/src\/.*\/http\//.test(source)) {
     violations.push(`${rel}: worker must not import API HTTP controllers/routes`);
   }

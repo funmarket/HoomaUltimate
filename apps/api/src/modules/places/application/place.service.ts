@@ -1,17 +1,16 @@
 import type {
-  ModerationDecisionInput,
   PlaceOwnershipClaimInput,
   PlaceSuggestionInput,
   PlaceUpdateInput,
-} from "@hooma/contracts/platform-management";
+} from "@hooma/contracts/places";
+import type { PlatformAdminAccessPort } from "../../../application/platform-admin-access.port.js";
 import { AppError } from "../../../http/errors/app-error.js";
-import type { PlatformAdminAuthorizer } from "../../platform-admin/application/platform-admin.authorizer.js";
-import type { PlaceRepository } from "./place.repository.js";
+import type { PlaceModerationDecision, PlaceRepository } from "./place.repository.js";
 
 export class PlaceService {
   constructor(
     private readonly repository: PlaceRepository,
-    private readonly platformAdmin: PlatformAdminAuthorizer,
+    private readonly platformAdmin: PlatformAdminAccessPort,
   ) {}
 
   listPublic() {
@@ -31,19 +30,8 @@ export class PlaceService {
     return place;
   }
 
-  async suggest(userId: string, input: PlaceSuggestionInput) {
-    try {
-      return await this.repository.suggest(userId, input);
-    } catch (error) {
-      if (error instanceof Error && error.message === "PITCH_PRICING_REQUIRED") {
-        throw new AppError(
-          400,
-          "PITCH_PRICING_REQUIRED",
-          "Pitch hourly rental price and currency are required",
-        );
-      }
-      throw error;
-    }
+  suggest(userId: string, input: PlaceSuggestionInput) {
+    return this.repository.suggest(userId, input);
   }
 
   async update(userId: string, placeId: string, input: PlaceUpdateInput) {
@@ -98,30 +86,19 @@ export class PlaceService {
     return this.repository.pendingOwnershipClaims();
   }
 
-  async reviewPlace(userId: string, placeId: string, input: ModerationDecisionInput) {
+  async reviewPlace(userId: string, placeId: string, input: PlaceModerationDecision) {
     await this.platformAdmin.requirePlatformAdmin(userId);
-    try {
-      if (!(await this.repository.reviewPlace(userId, placeId, input))) {
-        throw new AppError(
-          409,
-          "PLACE_REVIEW_NOT_PENDING",
-          "This Place review is no longer pending",
-        );
-      }
-    } catch (error) {
-      if (error instanceof Error && error.message === "PITCH_PRICING_REQUIRED") {
-        throw new AppError(
-          409,
-          "PITCH_PRICING_REQUIRED",
-          "This Pitch cannot be approved until its hourly rental price and currency are present",
-        );
-      }
-      throw error;
+    if (!(await this.repository.reviewPlace(userId, placeId, input))) {
+      throw new AppError(
+        409,
+        "PLACE_REVIEW_NOT_PENDING",
+        "This Place review is no longer pending",
+      );
     }
     return { ok: true };
   }
 
-  async reviewOwnershipClaim(userId: string, claimId: string, input: ModerationDecisionInput) {
+  async reviewOwnershipClaim(userId: string, claimId: string, input: PlaceModerationDecision) {
     await this.platformAdmin.requirePlatformAdmin(userId);
     if (!(await this.repository.reviewOwnershipClaim(userId, claimId, input))) {
       throw new AppError(

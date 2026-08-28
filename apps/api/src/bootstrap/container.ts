@@ -7,9 +7,12 @@ import { PrismaIdentityRepository } from "../modules/identity/infrastructure/pri
 import { PrismaPlatformAdminRepository } from "../modules/platform-admin/infrastructure/prisma-platform-admin.repository.js";
 import { PlatformAdminService } from "../modules/platform-admin/application/platform-admin.service.js";
 import { PlaceService } from "../modules/places/application/place.service.js";
-import { PlaceCapabilityService } from "../modules/places/application/place-capability.service.js";
 import { PrismaPlaceRepository } from "../modules/places/infrastructure/prisma-place.repository.js";
-import { PrismaPlaceCapabilityRepository } from "../modules/places/infrastructure/prisma-place-capability.repository.js";
+import { ApprovedPitchReader } from "../modules/pitch/application/approved-pitch.reader.js";
+import { PitchOwnerService } from "../modules/pitch/application/pitch-owner.service.js";
+import { PitchModerationService } from "../modules/pitch/application/pitch-moderation.service.js";
+import { PitchSuggestionService } from "../modules/pitch/application/pitch-suggestion.service.js";
+import { PrismaPitchRepository } from "../modules/pitch/infrastructure/prisma-pitch.repository.js";
 import { CommunityService } from "../modules/communities/application/community.service.js";
 import { PrismaCommunityRepository } from "../modules/communities/infrastructure/prisma-community.repository.js";
 import { TeamService } from "../modules/teams/application/team.service.js";
@@ -67,12 +70,17 @@ export function createContainer(config: ApiConfig) {
   const identityService = new IdentityService(identityRepository, config, platformAdminService);
 
   const placeRepository = new PrismaPlaceRepository(database);
-  const placeCapabilityRepository = new PrismaPlaceCapabilityRepository(database);
   const placeService = new PlaceService(placeRepository, platformAdminService);
-  const pitchService = new PlaceCapabilityService(
-    "PITCH",
-    placeCapabilityRepository,
+  const pitchRepository = new PrismaPitchRepository(database);
+  const approvedPitchReader = new ApprovedPitchReader(pitchRepository);
+  const pitchSuggestionService = new PitchSuggestionService(pitchRepository);
+  const pitchOwnerService = new PitchOwnerService(
+    pitchRepository,
     placeRepository,
+    platformAdminService,
+  );
+  const pitchModerationService = new PitchModerationService(
+    pitchRepository,
     platformAdminService,
   );
 
@@ -85,14 +93,14 @@ export function createContainer(config: ApiConfig) {
     communityService,
     teamLifecycleRepository,
     platformAdminService,
-    pitchService,
+    approvedPitchReader,
   );
   const eventRepository = new PrismaEventRepository(database);
   const eventService = new EventService(
     eventRepository,
     communityService,
     placeService,
-    pitchService,
+    approvedPitchReader,
   );
   const gamerGameRepository = new PrismaGamerGameRepository(database);
   const gamerProfileRepository = new PrismaGamerProfileRepository(database);
@@ -133,7 +141,10 @@ export function createContainer(config: ApiConfig) {
     identityService,
     platformAdminService,
     placeService,
-    pitchService,
+    approvedPitchReader,
+    pitchSuggestionService,
+    pitchOwnerService,
+    pitchModerationService,
     communityService,
     teamService,
     eventService,

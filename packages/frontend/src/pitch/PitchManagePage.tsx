@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { PitchManagementState } from "@hooma/contracts/platform-management";
+import type { PitchManagementState } from "@hooma/contracts/pitch";
 import { useHoomaFrontend } from "../context";
-import { createPlatformManagementApi } from "../places/platform-management-api";
+import { createPitchApi } from "./api";
 import { PitchCapabilityOnboarding } from "./PitchCapabilityOnboarding";
 import { formatPitchHourlyRate } from "./pricing";
 
@@ -17,7 +17,7 @@ function priceLabel(hourlyRateMinor: number | null, currency: string | null) {
 
 export function PitchManagePage() {
   const { transport, protectedError } = useHoomaFrontend();
-  const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
+  const api = useMemo(() => createPitchApi(transport), [transport]);
   const placeId = new URLSearchParams(window.location.search).get("placeId");
   const [management, setManagement] = useState<PitchManagementState | null>(null);
   const [loading, setLoading] = useState(true);
@@ -31,7 +31,7 @@ export function PitchManagePage() {
     }
     setError("");
     try {
-      setManagement(await api.capability.manage("PITCH", placeId));
+      setManagement(await api.manage(placeId));
     } catch (reason) {
       setManagement(null);
       setError(protectedError(reason, "Unable to load Pitch management"));

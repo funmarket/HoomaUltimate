@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import type {
-  PublicPlaceCapability,
-  PublicPlaceSummary,
-} from "@hooma/contracts/platform-management";
+import type { PublicPlaceSummary } from "@hooma/contracts/places";
+import type { PublicPitch } from "@hooma/contracts/pitch";
 import { useHoomaFrontend } from "../context";
 import { HoomaApiError } from "../http";
 import { PlaceGallery } from "../places/PlaceGallery";
-import { createPlatformManagementApi } from "../places/platform-management-api";
+import { createPlacesApi } from "../places/api";
 import { InfoIcon, PhoneIcon, PinIcon } from "../ui/HoomaIcons";
+import { createPitchApi } from "./api";
 import { formatPitchHourlyRate } from "./pricing";
 
 function mapHref(place: PublicPlaceSummary): string {
@@ -20,8 +19,9 @@ function mapHref(place: PublicPlaceSummary): string {
 
 export function PitchDetailPage({ placeId }: { readonly placeId: string }) {
   const { transport, protectedError } = useHoomaFrontend();
-  const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
-  const [item, setItem] = useState<PublicPlaceCapability | null>(null);
+  const pitchApi = useMemo(() => createPitchApi(transport), [transport]);
+  const placesApi = useMemo(() => createPlacesApi(transport), [transport]);
+  const [item, setItem] = useState<PublicPitch | null>(null);
   const [loading, setLoading] = useState(true);
   const [verifiedOwner, setVerifiedOwner] = useState(false);
   const [claimOpen, setClaimOpen] = useState(false);
@@ -32,21 +32,21 @@ export function PitchDetailPage({ placeId }: { readonly placeId: string }) {
   useEffect(() => {
     setLoading(true);
     setError("");
-    void api.capability
-      .get("PITCH", placeId)
+    void pitchApi
+      .get(placeId)
       .then(setItem)
       .catch((reason) =>
         setError(reason instanceof Error ? reason.message : "Unable to load Pitch"),
       )
       .finally(() => setLoading(false));
 
-    void api.places
+    void placesApi
       .ownershipStatus(placeId)
       .then((status) => setVerifiedOwner(status.verified))
       .catch((reason) => {
         if (reason instanceof HoomaApiError && [401, 403].includes(reason.status)) return;
       });
-  }, [api, placeId]);
+  }, [pitchApi, placesApi, placeId]);
 
   async function claim(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -55,7 +55,7 @@ export function PitchDetailPage({ placeId }: { readonly placeId: string }) {
     setError("");
     setMessage("");
     try {
-      await api.places.claimOwnership(placeId, {
+      await placesApi.claimOwnership(placeId, {
         evidence: String(data.get("evidence") ?? ""),
       });
       event.currentTarget.reset();

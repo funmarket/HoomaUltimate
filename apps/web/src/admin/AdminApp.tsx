@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type {
-  AdminQueueItem,
+  AdminPitchReviewQueueItem,
+  AdminPlaceOwnershipReviewQueueItem,
+  AdminPlaceReviewQueueItem,
   AppManagerSummary,
   PlatformManagerCapability,
-} from "@hooma/contracts/platform-management";
+} from "@hooma/contracts/platform-admin";
 import {
-  createPlatformManagementApi,
+  createPlatformAdminApi,
   formatPitchHourlyRate,
   useHoomaFrontend,
   type PlatformAuditEntry,
@@ -22,6 +24,16 @@ const MANAGER_CAPABILITIES: readonly PlatformManagerCapability[] = [
 ];
 
 type QueueName = "places" | "place-ownership" | "pitch";
+type AdminQueueDisplayItem =
+  | AdminPlaceReviewQueueItem
+  | AdminPlaceOwnershipReviewQueueItem
+  | AdminPitchReviewQueueItem;
+
+interface AdminQueues {
+  places: AdminPlaceReviewQueueItem[];
+  "place-ownership": AdminPlaceOwnershipReviewQueueItem[];
+  pitch: AdminPitchReviewQueueItem[];
+}
 
 function QueueSection({
   title,
@@ -31,7 +43,7 @@ function QueueSection({
 }: {
   readonly title: string;
   readonly eyebrow: string;
-  readonly items: readonly AdminQueueItem[];
+  readonly items: readonly AdminQueueDisplayItem[];
   readonly onDecision: (id: string, decision: "APPROVE" | "REJECT") => void;
 }) {
   return (
@@ -52,15 +64,15 @@ function QueueSection({
               <span>
                 Submitted by {item.applicant.displayName} · @{item.applicant.username}
               </span>
-              {item.hourlyRateMinor !== null &&
-              item.hourlyRateMinor !== undefined &&
-              item.currency ? (
+              {"hourlyRateMinor" in item && item.hourlyRateMinor !== null && item.currency ? (
                 <p>
                   {formatPitchHourlyRate(item.hourlyRateMinor, item.currency)} {item.currency} / hour
                 </p>
               ) : null}
-              {item.summary ? <p>{item.summary}</p> : null}
-              {item.evidence ? <p className="admin-review-evidence">{item.evidence}</p> : null}
+              {"summary" in item && item.summary ? <p>{item.summary}</p> : null}
+              {"evidence" in item && item.evidence ? (
+                <p className="admin-review-evidence">{item.evidence}</p>
+              ) : null}
             </div>
             <div className="admin-review-actions">
               <button type="button" onClick={() => onDecision(item.id, "APPROVE")}>
@@ -84,7 +96,7 @@ function QueueSection({
 
 export function AdminApp() {
   const { api, transport } = useHoomaFrontend();
-  const management = useMemo(() => createPlatformManagementApi(transport), [transport]);
+  const adminApi = useMemo(() => createPlatformAdminApi(transport), [transport]);
   const [access, setAccess] = useState<{
     isPlatformOwner: boolean;
     managerCapabilities: readonly PlatformManagerCapability[];
@@ -96,7 +108,7 @@ export function AdminApp() {
   const [selectedTeamId, setSelectedTeamId] = useState("");
   const [managers, setManagers] = useState<AppManagerSummary[]>([]);
   const [audit, setAudit] = useState<PlatformAuditEntry[]>([]);
-  const [queues, setQueues] = useState<Record<QueueName, AdminQueueItem[]>>({
+  const [queues, setQueues] = useState<AdminQueues>({
     places: [],
     "place-ownership": [],
     pitch: [],
@@ -119,7 +131,7 @@ export function AdminApp() {
 
   async function load() {
     setError("");
-    const currentAccess = await management.admin.access();
+    const currentAccess = await adminApi.access();
     setAccess(currentAccess);
     if (!currentAccess.isPlatformOwner && currentAccess.managerCapabilities.length === 0) return;
 
@@ -129,35 +141,31 @@ export function AdminApp() {
 
     if (allowed("VIEW_AUDIT")) {
       tasks.push(
-        Promise.all([management.admin.overview(), management.admin.audit()]).then(
-          ([nextOverview, nextAudit]) => {
-            setOverview(nextOverview);
-            setAudit(nextAudit);
-          },
-        ),
+        Promise.all([adminApi.overview(), adminApi.audit()]).then(([nextOverview, nextAudit]) => {
+          setOverview(nextOverview);
+          setAudit(nextAudit);
+        }),
       );
     }
     if (currentAccess.isPlatformOwner) {
       tasks.push(
-        management.admin
-          .queue("places")
+        adminApi
+          .placeQueue()
           .then((rows) => setQueues((current) => ({ ...current, places: rows }))),
-        management.admin
-          .queue("place-ownership")
+        adminApi
+          .placeOwnershipQueue()
           .then((rows) => setQueues((current) => ({ ...current, "place-ownership": rows }))),
       );
     }
     if (allowed("REVIEW_PITCH_APPLICATIONS")) {
       tasks.push(
-        management.admin
-          .queue("pitch")
-          .then((rows) => setQueues((current) => ({ ...current, pitch: rows }))),
+        adminApi.pitchQueue().then((rows) => setQueues((current) => ({ ...current, pitch: rows }))),
       );
     }
     if (currentAccess.isPlatformOwner) {
       tasks.push(
         Promise.all([
-          management.admin.managers(),
+          adminApi.managers(),
           api.communities.publicList(),
           api.teams.publicList({ limit: 100 }),
         ]).then(([managerRows, communityPage, teamPage]) => {
@@ -178,15 +186,24 @@ export function AdminApp() {
 
   useEffect(() => {
     void load().catch((reason: Error) => setError(reason.message));
-  }, [api, management]);
+  }, [api, adminApi]);
 
   async function decide(queue: QueueName, id: string, decision: "APPROVE" | "REJECT") {
     const note =
       window.prompt(`${decision === "APPROVE" ? "Approval" : "Rejection"} note (optional)`) ?? "";
+    const input = { decision, note: note || null } as const;
     setError("");
     setMessage("");
     try {
-      await management.admin.decide(queue, id, { decision, note: note || null });
+      if (queue === "places") {
+        await adminApi.decidePlace(id, input);
+      } else if (queue === "place-ownership") {
+        await adminApi.decidePlaceOwnership(id, input);
+      } else {
+        const row = queues.pitch.find((item) => item.id === id);
+        if (!row) throw new Error("Pitch review item is no longer available");
+        await adminApi.decidePitch(row.target, id, input);
+      }
       setMessage("Decision saved and audited.");
       await load();
     } catch (reason) {
@@ -202,7 +219,7 @@ export function AdminApp() {
     setError("");
     setMessage("");
     try {
-      await management.admin.setManager(username, capabilities);
+      await adminApi.setManager(username, capabilities);
       event.currentTarget.reset();
       setMessage(
         capabilities.length ? "App Manager permissions saved." : "App Manager permissions revoked.",

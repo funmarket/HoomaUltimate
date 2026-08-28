@@ -1,13 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from "react";
-import type {
-  PlaceSuggestionInput,
-  PublicPlaceSummary,
-} from "@hooma/contracts/platform-management";
+import type { PlaceSuggestionInput, PublicPlaceSummary } from "@hooma/contracts/places";
 
-type PlaceFormInput = Omit<
-  PlaceSuggestionInput,
-  "submissionOrigin" | "suggestedCapabilities" | "pitch"
->;
+type PlaceFormInput = Omit<PlaceSuggestionInput, "submissionOrigin">;
 type MenuDraft = { id: string; name: string; price: string };
 
 function menuDrafts(place?: PublicPlaceSummary | null): MenuDraft[] {
