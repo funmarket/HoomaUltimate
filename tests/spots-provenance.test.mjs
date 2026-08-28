@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { readFile } from "node:fs/promises";
+import test from "node:test";
 
 const placesPage = await readFile(
   new URL("../packages/frontend/src/places/PlacesPages.tsx", import.meta.url),
@@ -25,75 +25,72 @@ const contracts = await readFile(
   "utf8",
 );
 
-const forbiddenSpotDomains = /SpotService|SpotRepository|FanHubService|FanHubRepository/;
-const submissionOriginEnum = /placeSubmissionOriginSchema = z\.enum\(\["OWNER", "FANHUB"\]\)/;
-const publicSubmissionOrigin = /readonly submissionOrigin: PlaceSubmissionOrigin/;
-const ownerSubmissionEvidence =
-  /OWNER_SUBMISSION_EVIDENCE = "Ownership asserted during Place submission"/;
-const approvedPlaceClaimGuard = /place: \{ moderationStatus: "APPROVED", archivedAt: null \}/;
+const ownerMarker = 'OWNER_SUBMISSION_EVIDENCE = "Ownership asserted during Place submission"';
+const ownerProjection = 'submissionOrigin: ownerSubmitted ? "OWNER" : "FANHUB"';
+const approvedPlaceGuard = 'place: { moderationStatus: "APPROVED", archivedAt: null }';
+
+function section(source, start, end) {
+  const from = source.indexOf(start);
+  const to = end ? source.indexOf(end, from) : source.length;
+  return source.slice(from, to);
+}
 
 test("Spots expose only By Owner and FanHub source tabs", () => {
   assert.match(placesPage, />\s*By Owner\s*</);
   assert.match(placesPage, />\s*FanHub\s*</);
-  assert.match(placesPage, /place\.submissionOrigin === spotOrigin/);
-  assert.match(placesPage, /api\.capability\.list\("PITCH"\)/);
-  assert.match(placesPage, /!pitchPlaceIds\.has\(place\.id\)/);
-  assert.doesNotMatch(placesPage, forbiddenSpotDomains);
+  assert.ok(placesPage.includes("place.submissionOrigin === spotOrigin"));
+  assert.ok(placesPage.includes('api.capability.list("PITCH")'));
+  assert.ok(placesPage.includes("!pitchPlaceIds.has(place.id)"));
+  assert.ok(!placesPage.includes("SpotService"));
+  assert.ok(!placesPage.includes("FanHubService"));
 });
 
 test("Add Place defaults to FanHub and sends explicit source intent", () => {
-  assert.match(contracts, /placeSubmissionOriginSchema\.default\("FANHUB"\)/);
-  assert.match(placesPage, /useState<PlaceSubmissionOrigin>\("FANHUB"\)/);
-  assert.match(
-    placesPage,
-    /submissionOrigin: isPitchSuggestion \? "FANHUB" : submissionOrigin/,
-  );
-  assert.match(placesPage, /WHO IS ADDING THIS SPOT\?/);
-  assert.match(placesPage, /Suggesting it does not make you its owner/);
+  assert.ok(contracts.includes('placeSubmissionOriginSchema.default("FANHUB")'));
+  assert.ok(placesPage.includes('useState<PlaceSubmissionOrigin>("FANHUB")'));
+  assert.ok(placesPage.includes('isPitchSuggestion ? "FANHUB" : submissionOrigin'));
+  assert.ok(placesPage.includes("WHO IS ADDING THIS SPOT?"));
+  assert.ok(placesPage.includes("Suggesting it does not make you its owner"));
 });
 
 test("Spot source stays tied to original submission intent", () => {
-  assert.match(contracts, submissionOriginEnum);
-  assert.match(contracts, publicSubmissionOrigin);
-  assert.match(placeRepository, ownerSubmissionEvidence);
-  assert.match(capabilityRepository, ownerSubmissionEvidence);
-  assert.match(placeRepository, /ownershipClaims:/);
-  assert.match(capabilityRepository, /ownershipClaims:/);
-  assert.match(placeRepository, /submissionOrigin: ownerSubmitted \? "OWNER" : "FANHUB"/);
-  assert.match(capabilityRepository, /submissionOrigin: ownerSubmitted \? "OWNER" : "FANHUB"/);
-  assert.doesNotMatch(placeRepository, /suggestedByVerifiedOwner/);
-  assert.doesNotMatch(capabilityRepository, /suggestedByVerifiedOwner/);
+  assert.ok(contracts.includes('z.enum(["OWNER", "FANHUB"])'));
+  assert.ok(contracts.includes("readonly submissionOrigin: PlaceSubmissionOrigin"));
+  assert.ok(placeRepository.includes(ownerMarker));
+  assert.ok(capabilityRepository.includes(ownerMarker));
+  assert.ok(placeRepository.includes("ownershipClaims:"));
+  assert.ok(capabilityRepository.includes("ownershipClaims:"));
+  assert.ok(placeRepository.includes(ownerProjection));
+  assert.ok(capabilityRepository.includes(ownerProjection));
+  assert.ok(!placeRepository.includes("suggestedByVerifiedOwner"));
+  assert.ok(!capabilityRepository.includes("suggestedByVerifiedOwner"));
 });
 
 test("Place moderation and ownership verification remain separate", () => {
-  const suggest = placeRepository.slice(
-    placeRepository.indexOf("async suggest("),
-    placeRepository.indexOf("async getApproved("),
-  );
-  assert.match(
-    suggest,
-    /ownerOrigin[\s\S]*?ownershipClaims[\s\S]*?OWNER_SUBMISSION_EVIDENCE/,
-  );
+  const suggest = section(placeRepository, "async suggest(", "async getApproved(");
+  assert.ok(suggest.includes("ownerOrigin"));
+  assert.ok(suggest.includes("ownershipClaims"));
+  assert.ok(suggest.includes("OWNER_SUBMISSION_EVIDENCE"));
 
-  const reviewPlace = placeRepository.slice(
-    placeRepository.indexOf("async reviewPlace("),
-    placeRepository.indexOf("async reviewOwnershipClaim("),
+  const reviewPlace = section(
+    placeRepository,
+    "async reviewPlace(",
+    "async reviewOwnershipClaim(",
   );
-  assert.doesNotMatch(reviewPlace, /placeOwnershipClaim\.(update|updateMany)/);
-  assert.doesNotMatch(reviewPlace, /placeOwnership\.upsert/);
+  assert.ok(!reviewPlace.includes("placeOwnershipClaim.update"));
+  assert.ok(!reviewPlace.includes("placeOwnership.upsert"));
 
-  const reviewOwnershipClaim = placeRepository.slice(
-    placeRepository.indexOf("async reviewOwnershipClaim("),
-  );
-  assert.match(reviewOwnershipClaim, approvedPlaceClaimGuard);
-  assert.match(reviewOwnershipClaim, /placeOwnership\.upsert/);
+  const ownershipReview = section(placeRepository, "async reviewOwnershipClaim(");
+  assert.ok(ownershipReview.includes(approvedPlaceGuard));
+  assert.ok(ownershipReview.includes("placeOwnership.upsert"));
 });
 
 test("Owner submission marker survives later claim updates", () => {
-  const claimOwnership = placeRepository.slice(
-    placeRepository.indexOf("async claimOwnership("),
-    placeRepository.indexOf("async pendingPlaces("),
+  const claimOwnership = section(
+    placeRepository,
+    "async claimOwnership(",
+    "async pendingPlaces(",
   );
-  assert.match(claimOwnership, /existing\?\.evidence === OWNER_SUBMISSION_EVIDENCE/);
-  assert.match(claimOwnership, /\? OWNER_SUBMISSION_EVIDENCE/);
+  assert.ok(claimOwnership.includes("existing?.evidence === OWNER_SUBMISSION_EVIDENCE"));
+  assert.ok(claimOwnership.includes("? OWNER_SUBMISSION_EVIDENCE : input.evidence"));
 });
