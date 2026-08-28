@@ -142,6 +142,7 @@ export interface PlaceSuggestionResult {
   readonly place: PublicPlaceSummary;
   readonly status: ModerationStatus;
   readonly matchedBy: PlaceDuplicateMatch | null;
+  readonly archivedAt: string | null;
 }
 
 export interface ManagedPlaceSummary extends PublicPlaceSummary {
