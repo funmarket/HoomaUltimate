@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import type { ManagedPlaceSummary } from "@hooma/contracts/platform-management";
+import type { ManagedPlaceSummary } from "@hooma/contracts/places";
 import { useHoomaFrontend } from "../context";
 import { PlaceForm } from "./PlaceForm";
-import { createPlatformManagementApi } from "./platform-management-api";
+import { createPlacesApi } from "./api";
 
 export function PlaceEditPage({ placeId }: { readonly placeId: string }) {
   const { transport, protectedError } = useHoomaFrontend();
-  const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
+  const api = useMemo(() => createPlacesApi(transport), [transport]);
   const [place, setPlace] = useState<ManagedPlaceSummary | null>(null);
   const [pending, setPending] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -14,18 +14,18 @@ export function PlaceEditPage({ placeId }: { readonly placeId: string }) {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    void api.places
+    void api
       .manage(placeId)
       .then(setPlace)
       .catch((reason) => setError(protectedError(reason, "Unable to open Place settings")));
   }, [api, placeId, protectedError]);
 
-  async function save(input: Parameters<typeof api.places.update>[1]) {
+  async function save(input: Parameters<typeof api.update>[1]) {
     setPending(true);
     setError("");
     setNotice("");
     try {
-      const updated = await api.places.update(placeId, input);
+      const updated = await api.update(placeId, input);
       setPlace(updated);
       setNotice("Place saved.");
     } catch (reason) {
@@ -46,7 +46,7 @@ export function PlaceEditPage({ placeId }: { readonly placeId: string }) {
     setDeleting(true);
     setError("");
     try {
-      await api.places.archive(placeId);
+      await api.archive(placeId);
       window.location.href = "/places";
     } catch (reason) {
       setError(protectedError(reason, "Unable to delete Place"));
