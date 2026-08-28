@@ -1,9 +1,6 @@
 export type PublicEventStatus = "PUBLISHED" | "CANCELLED" | "COMPLETED";
 
-export type PublicEventPublisherAuthority =
-  | "VERIFIED_PLACE_OWNER"
-  | "COMMUNITY_PUBLISHER"
-  | null;
+export type PublicEventPublisherAuthority = "VERIFIED_PLACE_OWNER" | "COMMUNITY_PUBLISHER" | null;
 
 export type PublicEventPlace = {
   readonly id: string;
