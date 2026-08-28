@@ -102,6 +102,7 @@ export type PlaceOwnershipClaimInput = z.infer<typeof placeOwnershipClaimSchema>
 export type PlaceCapabilityApplicationInput = z.infer<typeof placeCapabilityApplicationSchema>;
 export type ModerationDecisionInput = z.infer<typeof moderationDecisionSchema>;
 export type AppManagerUpdateInput = z.infer<typeof appManagerUpdateSchema>;
+export type PlaceDuplicateMatch = "NAME_ADDRESS" | "PHONE" | "WEBSITE" | "NAME_COORDINATES";
 
 export interface PublicPlaceMenuItem {
   readonly id: string;
@@ -133,7 +134,14 @@ export interface PublicPlaceSummary {
   readonly category: string | null;
   readonly email: string | null;
   readonly menuItems: readonly PublicPlaceMenuItem[];
-  readonly submissionOrigin: PlaceSubmissionOrigin;
+  readonly submissionOrigin: PlaceSubmissionOrigin | null;
+}
+
+export interface PlaceSuggestionResult {
+  readonly outcome: "CREATED" | "EXISTING";
+  readonly place: PublicPlaceSummary;
+  readonly status: ModerationStatus;
+  readonly matchedBy: PlaceDuplicateMatch | null;
 }
 
 export interface ManagedPlaceSummary extends PublicPlaceSummary {
