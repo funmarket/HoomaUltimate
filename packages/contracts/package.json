@@ -40,10 +40,6 @@
       "types": "./src/gamers.ts",
       "default": "./dist/gamers.js"
     },
-    "./moderation": {
-      "types": "./src/moderation.ts",
-      "default": "./dist/moderation.js"
-    },
     "./places": {
       "types": "./src/places.ts",
       "default": "./dist/places.js"
