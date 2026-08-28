@@ -1,17 +1,16 @@
-import type { ModerationDecisionInput } from "@hooma/contracts/moderation";
 import type {
   PlaceOwnershipClaimInput,
   PlaceSuggestionInput,
   PlaceUpdateInput,
 } from "@hooma/contracts/places";
+import type { PlatformAdminAccessPort } from "../../../application/platform-admin-access.port.js";
 import { AppError } from "../../../http/errors/app-error.js";
-import type { PlatformAdminAuthorizer } from "../../platform-admin/application/platform-admin.authorizer.js";
-import type { PlaceRepository } from "./place.repository.js";
+import type { PlaceModerationDecision, PlaceRepository } from "./place.repository.js";
 
 export class PlaceService {
   constructor(
     private readonly repository: PlaceRepository,
-    private readonly platformAdmin: PlatformAdminAuthorizer,
+    private readonly platformAdmin: PlatformAdminAccessPort,
   ) {}
 
   listPublic() {
@@ -87,7 +86,7 @@ export class PlaceService {
     return this.repository.pendingOwnershipClaims();
   }
 
-  async reviewPlace(userId: string, placeId: string, input: ModerationDecisionInput) {
+  async reviewPlace(userId: string, placeId: string, input: PlaceModerationDecision) {
     await this.platformAdmin.requirePlatformAdmin(userId);
     if (!(await this.repository.reviewPlace(userId, placeId, input))) {
       throw new AppError(
@@ -99,7 +98,7 @@ export class PlaceService {
     return { ok: true };
   }
 
-  async reviewOwnershipClaim(userId: string, claimId: string, input: ModerationDecisionInput) {
+  async reviewOwnershipClaim(userId: string, claimId: string, input: PlaceModerationDecision) {
     await this.platformAdmin.requirePlatformAdmin(userId);
     if (!(await this.repository.reviewOwnershipClaim(userId, claimId, input))) {
       throw new AppError(
