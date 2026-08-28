@@ -443,9 +443,6 @@ model PlaceCapabilityApplication {
   summary          String
   hourlyRateMinor  Int?
   currency         String?             @db.VarChar(3)
-  contactName      String
-  contactPhone     String?
-  contactEmail     String?
   status           ModerationStatus    @default(PENDING)
   reviewedByUserId String?
   reviewedAt       DateTime?

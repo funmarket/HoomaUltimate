@@ -6,11 +6,7 @@ import { pitchRateToMinor } from "./pricing";
 
 const RENTAL_CURRENCIES: readonly PitchRentalCurrency[] = ["TND", "EUR", "USD"];
 
-export function PitchCapabilityOnboarding({
-  place,
-}: {
-  readonly place: PublicPlaceSummary;
-}) {
+export function PitchCapabilityOnboarding({ place }: { readonly place: PublicPlaceSummary }) {
   const { transport, protectedError } = useHoomaFrontend();
   const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
   const [error, setError] = useState("");
@@ -29,9 +25,6 @@ export function PitchCapabilityOnboarding({
         summary: String(data.get("summary") ?? ""),
         hourlyRateMinor: pitchRateToMinor(hourlyRate, currency),
         currency,
-        contactName: String(data.get("contactName") ?? ""),
-        contactPhone: String(data.get("contactPhone") ?? "") || null,
-        contactEmail: String(data.get("contactEmail") ?? "") || null,
       });
       event.currentTarget.reset();
       setMessage("Pitch rental details submitted for App review.");
@@ -41,11 +34,16 @@ export function PitchCapabilityOnboarding({
   }
 
   return (
-    <form className="panel place-business-form pitch-owner-form" onSubmit={(event) => void apply(event)}>
+    <form
+      className="panel place-business-form pitch-owner-form"
+      onSubmit={(event) => void apply(event)}
+    >
       <div className="place-business-form__heading">
         <p className="eyebrow">MANAGE PITCH</p>
         <h2>{place.name}</h2>
-        <p className="muted">Update the rental offer shown after App review.</p>
+        <p className="muted">
+          Update the rental offer after App review. Contact details come from the Place.
+        </p>
       </div>
 
       <div className="place-business-rate-row">
@@ -81,21 +79,6 @@ export function PitchCapabilityOnboarding({
           minLength={10}
           required
         />
-      </label>
-
-      <label className="place-business-field">
-        <span>Business contact name</span>
-        <input name="contactName" placeholder="Name" required />
-      </label>
-
-      <label className="place-business-field">
-        <span>Phone</span>
-        <input name="contactPhone" placeholder="Phone" inputMode="tel" />
-      </label>
-
-      <label className="place-business-field">
-        <span>Email</span>
-        <input name="contactEmail" type="email" placeholder="Email" autoComplete="email" />
       </label>
 
       <button type="submit">Submit for review</button>

@@ -303,3 +303,11 @@ Authenticated users may contribute missing games to the persisted Gamers catalog
 The dedicated decision record is `docs/adr/ADR-041-gamers-human-match-system.md`.
 
 **Reason:** HOOMA should coordinate human gaming interaction, preserve what participants agree happened, and build game-specific reputation without duplicating identity/community/messaging systems or relying on opaque external automation.
+
+## ADR-042 — Pitch suggestion and claim lifecycle
+
+**Decision:** Pitch is an implemented dedicated product over canonical `Place`. A Pitch suggestion creates the Place and pending `PITCH` capability with real hourly pricing for App Admin review. Suggestion does not imply ownership. Verified owners use `PlaceCapabilityApplication` for later Pitch profile/pricing updates, while canonical Place contact and `PlaceImage[]` remain the single contact/media authorities.
+
+The dedicated decision record is `docs/adr/ADR-042-pitch-suggestion-claim-lifecycle.md`.
+
+**Reason:** Preserve one physical venue/contact/media truth while allowing Pitch discovery, moderation, ownership claims, and reviewed rental-profile updates without duplicate venue data or fabricated pricing.
