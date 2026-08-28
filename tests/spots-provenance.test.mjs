@@ -25,11 +25,9 @@ const contracts = await readFile(
   "utf8",
 );
 
-const ownerMarker =
-  'OWNER_SUBMISSION_EVIDENCE = "Ownership asserted during Place submission"';
+const ownerMarker = 'OWNER_SUBMISSION_EVIDENCE = "Ownership asserted during Place submission"';
 const ownerProjection = 'submissionOrigin: ownerSubmitted ? "OWNER" : "FANHUB"';
-const approvedPlaceGuard =
-  'place: { moderationStatus: "APPROVED", archivedAt: null }';
+const approvedPlaceGuard = 'place: { moderationStatus: "APPROVED", archivedAt: null }';
 
 function section(source, start, end) {
   const from = source.indexOf(start);
@@ -50,9 +48,7 @@ test("Spots expose only By Owner and FanHub source tabs", () => {
 test("Add Place defaults to FanHub and sends explicit source intent", () => {
   assert.ok(contracts.includes('placeSubmissionOriginSchema.default("FANHUB")'));
   assert.ok(placesPage.includes('useState<PlaceSubmissionOrigin>("FANHUB")'));
-  assert.ok(
-    placesPage.includes('isPitchSuggestion ? "FANHUB" : submissionOrigin'),
-  );
+  assert.ok(placesPage.includes('isPitchSuggestion ? "FANHUB" : submissionOrigin'));
   assert.ok(placesPage.includes("WHO IS ADDING THIS SPOT?"));
   assert.ok(placesPage.includes("Suggesting it does not make you its owner"));
 });
@@ -76,32 +72,17 @@ test("Place moderation and ownership verification remain separate", () => {
   assert.ok(suggest.includes("ownershipClaims"));
   assert.ok(suggest.includes("OWNER_SUBMISSION_EVIDENCE"));
 
-  const reviewPlace = section(
-    placeRepository,
-    "async reviewPlace(",
-    "async reviewOwnershipClaim(",
-  );
+  const reviewPlace = section(placeRepository, "async reviewPlace(", "async reviewOwnershipClaim(");
   assert.ok(!reviewPlace.includes("placeOwnershipClaim.update"));
   assert.ok(!reviewPlace.includes("placeOwnership.upsert"));
 
-  const ownershipReview = section(
-    placeRepository,
-    "async reviewOwnershipClaim(",
-  );
+  const ownershipReview = section(placeRepository, "async reviewOwnershipClaim(");
   assert.ok(ownershipReview.includes(approvedPlaceGuard));
   assert.ok(ownershipReview.includes("placeOwnership.upsert"));
 });
 
 test("Owner submission marker survives later claim updates", () => {
-  const claimOwnership = section(
-    placeRepository,
-    "async claimOwnership(",
-    "async pendingPlaces(",
-  );
-  assert.ok(
-    claimOwnership.includes("existing?.evidence === OWNER_SUBMISSION_EVIDENCE"),
-  );
-  assert.ok(
-    claimOwnership.includes("? OWNER_SUBMISSION_EVIDENCE : input.evidence"),
-  );
+  const claimOwnership = section(placeRepository, "async claimOwnership(", "async pendingPlaces(");
+  assert.ok(claimOwnership.includes("existing?.evidence === OWNER_SUBMISSION_EVIDENCE"));
+  assert.ok(claimOwnership.includes("? OWNER_SUBMISSION_EVIDENCE : input.evidence"));
 });
