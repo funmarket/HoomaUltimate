@@ -30,18 +30,20 @@ for (const file of await walk(root)) {
   if (!sourceExtensions.has(path.extname(file))) continue;
   const source = await readFile(file, "utf8");
 
-  forbid(
-    file,
-    source,
-    /@hooma\/contracts\/platform-management/,
-    "Place, Pitch and platform-admin contracts must use their owned contract surfaces",
-  );
-  forbid(
-    file,
-    source,
-    /createPlatformManagementApi|places\/platform-management-api/,
-    "frontend Place, Pitch and platform-admin calls must use their owned API clients",
-  );
+  if (rel !== "scripts/architecture-check.mjs") {
+    forbid(
+      file,
+      source,
+      /@hooma\/contracts\/platform-management/,
+      "Place, Pitch and platform-admin contracts must use their owned contract surfaces",
+    );
+    forbid(
+      file,
+      source,
+      /createPlatformManagementApi|places\/platform-management-api/,
+      "frontend Place, Pitch and platform-admin calls must use their owned API clients",
+    );
+  }
 
   if (rel === "apps/api/src/modules/places/application/place-capability.service.ts") {
     violations.push(
