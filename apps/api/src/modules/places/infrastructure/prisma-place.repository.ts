@@ -13,6 +13,8 @@ import type {
 import { Prisma, type PrismaClient } from "@hooma/database";
 import type { PlaceRepository } from "../application/place.repository.js";
 
+const OWNER_SUBMISSION_EVIDENCE = "Ownership asserted during Place submission";
+
 function slugBase(value: string): string {
   return (
     value
@@ -175,6 +177,8 @@ export class PrismaPlaceRepository implements PlaceRepository {
 
       const imageUrls = canonicalImageUrls(input);
       const capabilityCreates = suggestedCapabilityCreate(input);
+      const isPitchSuggestion = capabilityCreates.some((capability) => capability.kind === "PITCH");
+      const ownerOrigin = input.submissionOrigin === "OWNER" && !isPitchSuggestion;
       const place = await tx.place.create({
         data: {
           slug: `${slugBase(input.name)}-${randomUUID().slice(0, 8)}`,
@@ -191,6 +195,16 @@ export class PrismaPlaceRepository implements PlaceRepository {
           email: input.email ?? null,
           suggestedByUserId: userId,
           menuItems: { create: menuCreate(input.menuItems) },
+          ...(ownerOrigin
+            ? {
+                ownershipClaims: {
+                  create: {
+                    claimantUserId: userId,
+                    evidence: OWNER_SUBMISSION_EVIDENCE,
+                  },
+                },
+              }
+            : {}),
           ...(capabilityCreates.length
             ? {
                 capabilities: {
@@ -423,7 +437,10 @@ export class PrismaPlaceRepository implements PlaceRepository {
 
   async pendingOwnershipClaims(): Promise<readonly AdminQueueItem[]> {
     const rows = await this.db.placeOwnershipClaim.findMany({
-      where: { status: "PENDING", place: { archivedAt: null } },
+      where: {
+        status: "PENDING",
+        place: { moderationStatus: "APPROVED", archivedAt: null },
+      },
       select: {
         id: true,
         status: true,
@@ -472,6 +489,12 @@ export class PrismaPlaceRepository implements PlaceRepository {
       const place = await tx.place.findFirst({
         where: { id: placeId, moderationStatus: "PENDING", archivedAt: null },
         select: {
+          suggestedByUserId: true,
+          ownershipClaims: {
+            where: { status: "PENDING", evidence: OWNER_SUBMISSION_EVIDENCE },
+            select: { id: true, claimantUserId: true },
+            take: 1,
+          },
           capabilities: {
             where: { status: "PENDING" },
             select: { id: true, kind: true, hourlyRateMinor: true, currency: true },
@@ -510,6 +533,37 @@ export class PrismaPlaceRepository implements PlaceRepository {
           reviewNote: input.note ?? null,
         },
       });
+
+      const ownerSubmissionClaim = place.ownershipClaims.find(
+        (claim) => claim.claimantUserId === place.suggestedByUserId,
+      );
+      if (ownerSubmissionClaim) {
+        await tx.placeOwnershipClaim.update({
+          where: { id: ownerSubmissionClaim.id },
+          data: {
+            status,
+            reviewedByUserId: actorUserId,
+            reviewedAt,
+            reviewNote: input.note ?? null,
+          },
+        });
+      }
+      if (status === "APPROVED" && ownerSubmissionClaim) {
+        await tx.placeOwnership.upsert({
+          where: { placeId_userId: { placeId, userId: place.suggestedByUserId } },
+          create: {
+            placeId,
+            userId: place.suggestedByUserId,
+            verifiedByUserId: actorUserId,
+            verifiedAt: reviewedAt,
+          },
+          update: {
+            verifiedByUserId: actorUserId,
+            verifiedAt: reviewedAt,
+            revokedAt: null,
+          },
+        });
+      }
 
       await tx.auditLog.create({
         data: {
