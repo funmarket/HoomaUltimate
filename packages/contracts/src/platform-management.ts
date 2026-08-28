@@ -14,7 +14,12 @@ export const placeMenuItemSchema = z.object({
 
 export const placeImageUrlSchema = z.string().trim().url().max(4000);
 
-export const placeSuggestionSchema = z.object({
+export const pitchSuggestionSchema = z.object({
+  hourlyRateMinor: z.number().int().min(0).max(100_000_000),
+  currency: pitchRentalCurrencySchema,
+});
+
+const placeSuggestionBaseSchema = z.object({
   name: z.string().trim().min(2).max(160),
   address: z.string().trim().min(3).max(300),
   city: z.string().trim().max(100).optional().nullable(),
@@ -29,12 +34,33 @@ export const placeSuggestionSchema = z.object({
   category: z.string().trim().max(120).optional().nullable(),
   email: z.string().trim().email().max(320).optional().nullable(),
   menuItems: z.array(placeMenuItemSchema).max(20).optional().default([]),
-  suggestedCapabilities: z.array(placeCapabilityKindSchema).max(1).optional(),
 });
 
-export const placeUpdateSchema = placeSuggestionSchema
+export const placeSuggestionSchema = placeSuggestionBaseSchema
+  .extend({
+    suggestedCapabilities: z.array(placeCapabilityKindSchema).max(1).optional(),
+    pitch: pitchSuggestionSchema.optional(),
+  })
+  .superRefine((input, context) => {
+    const suggestsPitch = input.suggestedCapabilities?.includes("PITCH") ?? false;
+    if (suggestsPitch && !input.pitch) {
+      context.addIssue({
+        code: "custom",
+        path: ["pitch"],
+        message: "Pitch hourly rental price and currency are required",
+      });
+    }
+    if (!suggestsPitch && input.pitch) {
+      context.addIssue({
+        code: "custom",
+        path: ["pitch"],
+        message: "Pitch pricing is only valid for a Pitch suggestion",
+      });
+    }
+  });
+
+export const placeUpdateSchema = placeSuggestionBaseSchema
   .omit({ imageUrl: true, imageUrls: true, menuItems: true })
-  .omit({ suggestedCapabilities: true })
   .partial()
   .extend({
     imageUrl: placeImageUrlSchema.optional().nullable(),
@@ -69,6 +95,7 @@ export type ModerationStatus = z.infer<typeof moderationStatusSchema>;
 export type PlaceCapabilityKind = z.infer<typeof placeCapabilityKindSchema>;
 export type PitchRentalCurrency = z.infer<typeof pitchRentalCurrencySchema>;
 export type PlaceMenuItemInput = z.infer<typeof placeMenuItemSchema>;
+export type PitchSuggestionInput = z.infer<typeof pitchSuggestionSchema>;
 export type PlaceSuggestionInput = z.infer<typeof placeSuggestionSchema>;
 export type PlaceUpdateInput = z.infer<typeof placeUpdateSchema>;
 export type PlaceOwnershipClaimInput = z.infer<typeof placeOwnershipClaimSchema>;
@@ -117,8 +144,8 @@ export interface PublicPlaceCapability {
   readonly id: string;
   readonly kind: PlaceCapabilityKind;
   readonly summary: string | null;
-  readonly hourlyRateMinor: number | null;
-  readonly currency: PitchRentalCurrency | null;
+  readonly hourlyRateMinor: number;
+  readonly currency: PitchRentalCurrency;
   readonly place: PublicPlaceSummary;
 }
 
