@@ -1,14 +1,14 @@
 import type { PitchApplicationInput, PitchManagementState } from "@hooma/contracts/pitch";
 import { AppError } from "../../../http/errors/app-error.js";
-import type { PlatformAdminAuthorizer } from "../../platform-admin/application/platform-admin.authorizer.js";
 import type { PlaceRepository } from "../../places/application/place.repository.js";
+import type { PitchAccessAuthorizer } from "./pitch-access.authorizer.js";
 import type { PitchRepository } from "./pitch.repository.js";
 
 export class PitchOwnerService {
   constructor(
     private readonly repository: PitchRepository,
     private readonly places: PlaceRepository,
-    private readonly platformAdmin: PlatformAdminAuthorizer,
+    private readonly access: PitchAccessAuthorizer,
   ) {}
 
   async getManagementState(userId: string, placeId: string): Promise<PitchManagementState> {
@@ -16,7 +16,7 @@ export class PitchOwnerService {
     if (!place) throw new AppError(404, "PLACE_NOT_FOUND", "Approved Place not found");
 
     const verifiedOwnership = await this.places.hasVerifiedOwnership(placeId, userId);
-    if (!verifiedOwnership && !(await this.platformAdmin.isPlatformAdmin(userId))) {
+    if (!verifiedOwnership && !(await this.access.isPlatformAdmin(userId))) {
       throw new AppError(
         403,
         "PITCH_MANAGEMENT_ACCESS_DENIED",
