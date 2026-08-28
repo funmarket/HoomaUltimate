@@ -174,6 +174,7 @@ export function AddPlacePage() {
   const { transport, protectedError } = useHoomaFrontend();
   const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
   const isPitchSuggestion = new URLSearchParams(window.location.search).get("kind") === "PITCH";
+  const [submissionOrigin, setSubmissionOrigin] = useState<PlaceSubmissionOrigin>("FANHUB");
   const [pitchHourlyRate, setPitchHourlyRate] = useState("");
   const [pitchCurrency, setPitchCurrency] = useState<PitchRentalCurrency>("TND");
   const [error, setError] = useState("");
@@ -186,6 +187,7 @@ export function AddPlacePage() {
     try {
       const created = await api.places.suggest({
         ...input,
+        submissionOrigin: isPitchSuggestion ? "FANHUB" : submissionOrigin,
         ...(isPitchSuggestion
           ? {
               suggestedCapabilities: ["PITCH"],
@@ -213,7 +215,9 @@ export function AddPlacePage() {
           <p>
             {isPitchSuggestion
               ? "The App Admin will review this football pitch and its hourly rental price. Once approved, it can appear in Pitch and the real owner can claim it."
-              : "The App Admin will review this Spot. Community suggestions appear in FanHub. If you are the real owner, claim the same Place after approval; no duplicate listing is created."}
+              : submissionOrigin === "OWNER"
+                ? "The App Admin will review this owner-submitted Spot. Approval verifies your ownership on this same canonical Place so you can manage it without creating another listing."
+                : "The App Admin will review this Spot. Community suggestions appear in FanHub. If the real owner claims it later, the same canonical Place is kept and the FanHub source remains unchanged."}
           </p>
           <div className="place-detail-actions">
             {!isPitchSuggestion ? (
@@ -277,14 +281,50 @@ export function AddPlacePage() {
       <header className="place-page__header place-form-page__header">
         <div>
           <p className="eyebrow">{isPitchSuggestion ? "SUGGEST A PITCH" : "ADD A PLACE"}</p>
-          <h1>{isPitchSuggestion ? "Suggest a football pitch" : "List your Place"}</h1>
+          <h1>{isPitchSuggestion ? "Suggest a football pitch" : "Add a Watch Spot"}</h1>
           <p>
             {isPitchSuggestion
               ? "Add the real venue details and hourly rental price. Suggesting a pitch does not make you its owner."
-              : "Suggest a café, lounge, restaurant or other Watch Spot. Suggesting it does not make you its owner."}
+              : "Add a café, lounge, restaurant or other place where people can watch together."}
           </p>
         </div>
       </header>
+
+      {!isPitchSuggestion ? (
+        <section className="panel">
+          <p className="eyebrow">WHO IS ADDING THIS SPOT?</p>
+          <div className="watch-kind-tabs" role="tablist" aria-label="Place submission source">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={submissionOrigin === "OWNER"}
+              className={
+                submissionOrigin === "OWNER" ? "watch-kind-tab is-active" : "watch-kind-tab"
+              }
+              onClick={() => setSubmissionOrigin("OWNER")}
+            >
+              By Owner
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={submissionOrigin === "FANHUB"}
+              className={
+                submissionOrigin === "FANHUB" ? "watch-kind-tab is-active" : "watch-kind-tab"
+              }
+              onClick={() => setSubmissionOrigin("FANHUB")}
+            >
+              FanHub
+            </button>
+          </div>
+          <p className="muted">
+            {submissionOrigin === "OWNER"
+              ? "Choose By Owner only when you own or manage this business. Approval verifies you against this same Place record."
+              : "FanHub is for any registered HOOMA member suggesting a Spot for the community. Suggesting it does not make you its owner."}
+          </p>
+        </section>
+      ) : null}
+
       <PlaceForm
         submitLabel={isPitchSuggestion ? "Suggest Pitch" : "Submit Place"}
         pending={pending}
