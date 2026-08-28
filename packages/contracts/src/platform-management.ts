@@ -161,8 +161,8 @@ export interface ManagedPitchApprovedState {
 export interface ManagedPitchPendingApplication {
   readonly id: string;
   readonly summary: string;
-  readonly hourlyRateMinor: number;
-  readonly currency: PitchRentalCurrency;
+  readonly hourlyRateMinor: number | null;
+  readonly currency: PitchRentalCurrency | null;
   readonly submittedAt: string;
 }
 
