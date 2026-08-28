@@ -4,6 +4,10 @@ import type {
   PublicPlaceSummary,
 } from "@hooma/contracts/platform-management";
 
+type PlaceFormInput = Omit<
+  PlaceSuggestionInput,
+  "submissionOrigin" | "suggestedCapabilities" | "pitch"
+>;
 type MenuDraft = { id: string; name: string; price: string };
 
 function menuDrafts(place?: PublicPlaceSummary | null): MenuDraft[] {
@@ -40,7 +44,7 @@ export function PlaceForm({
   readonly pending: boolean;
   readonly showMenu?: boolean;
   readonly extraSection?: ReactNode;
-  readonly onSubmit: (input: PlaceSuggestionInput) => Promise<void>;
+  readonly onSubmit: (input: PlaceFormInput) => Promise<void>;
 }) {
   const [menu, setMenu] = useState<MenuDraft[]>(() => menuDrafts(initialPlace));
   const [imageUrls, setImageUrls] = useState<string[]>(() => imageDrafts(initialPlace));
