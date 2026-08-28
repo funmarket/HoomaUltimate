@@ -9,12 +9,15 @@ export const moderationDecisionSchema = z.object({
   note: z.string().trim().max(1000).optional().nullable(),
 });
 
+export const adminPitchReviewTargetSchema = z.enum(["INITIAL_SUGGESTION", "OWNER_REVISION"]);
+
 export const appManagerUpdateSchema = z.object({
   capabilities: z.array(platformManagerCapabilitySchema).max(2),
 });
 
 export type PlatformManagerCapability = z.infer<typeof platformManagerCapabilitySchema>;
 export type ModerationDecisionInput = z.infer<typeof moderationDecisionSchema>;
+export type AdminPitchReviewTarget = z.infer<typeof adminPitchReviewTargetSchema>;
 export type AppManagerUpdateInput = z.infer<typeof appManagerUpdateSchema>;
 export type AdminModerationStatus = "PENDING" | "APPROVED" | "REJECTED";
 
@@ -45,7 +48,7 @@ export interface AdminPlaceOwnershipReviewQueueItem extends AdminPlaceReviewQueu
 
 export interface AdminPitchReviewQueueItem {
   readonly id: string;
-  readonly target: "INITIAL_SUGGESTION" | "OWNER_REVISION";
+  readonly target: AdminPitchReviewTarget;
   readonly status: AdminModerationStatus;
   readonly summary: string;
   readonly hourlyRateMinor: number | null;
