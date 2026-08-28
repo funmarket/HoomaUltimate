@@ -303,7 +303,7 @@ export function PlaceForm({
                   value={item.name}
                   maxLength={120}
                   placeholder="Item"
-                  onChange={(event) => updateMenuItem(item.id, "name", event.target.value)}
+                  onChange={(event) => updateMenu(item.id, "name", event.target.value)}
                 />
                 <div className="place-menu-editor__price">
                   <input
@@ -313,7 +313,7 @@ export function PlaceForm({
                     min="0"
                     step="0.001"
                     placeholder="Price"
-                    onChange={(event) => updateMenuItem(item.id, "price", event.target.value)}
+                    onChange={(event) => updateMenu(item.id, "price", event.target.value)}
                   />
                   <span>TND</span>
                 </div>
