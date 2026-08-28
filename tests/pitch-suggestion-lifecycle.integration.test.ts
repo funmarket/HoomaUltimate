@@ -117,9 +117,6 @@ test("an approved suggested Pitch publishes the reviewed creation price before o
       summary: "Floodlit five-a-side pitch with changing rooms.",
       hourlyRateMinor: 50_000,
       currency: "TND",
-      contactName: "Pitch Manager",
-      contactPhone: "+21671000123",
-      contactEmail: null,
     });
     applicationId = application.id;
     assert.equal(application.status, "PENDING");
@@ -127,6 +124,7 @@ test("an approved suggested Pitch publishes the reviewed creation price before o
     const stillPublicWhilePending = await pitch.getPublic(placeId);
     assert.equal(stillPublicWhilePending.hourlyRateMinor, 45_000);
     assert.equal(stillPublicWhilePending.currency, "TND");
+    assert.equal(stillPublicWhilePending.place.phone, "+21671000123");
 
     await pitch.review(admin.id, application.id, {
       decision: "APPROVE",
@@ -137,14 +135,12 @@ test("an approved suggested Pitch publishes the reviewed creation price before o
     assert.equal(approvedRental.summary, "Floodlit five-a-side pitch with changing rooms.");
     assert.equal(approvedRental.hourlyRateMinor, 50_000);
     assert.equal(approvedRental.currency, "TND");
+    assert.equal(approvedRental.place.phone, "+21671000123");
 
     const update = await pitch.submit(claimant.id, placeId, {
       summary: "Updated rental details awaiting review.",
       hourlyRateMinor: 55_000,
       currency: "TND",
-      contactName: "Pitch Manager",
-      contactPhone: "+21671000123",
-      contactEmail: null,
     });
     assert.equal(update.id, application.id);
     assert.equal(update.status, "PENDING");
