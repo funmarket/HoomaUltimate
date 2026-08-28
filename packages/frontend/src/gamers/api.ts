@@ -6,10 +6,13 @@ import type {
   GamerChallengeList,
   GamerChallengerList,
   GamerDiscoveryList,
+  GamerDisputeList,
+  GamerDisputeResolutionInput,
   GamerGame,
   GamerGameCreateInput,
   GamerGameList,
   GamerMatchSession,
+  GamerMatchSide,
   GamerProfile,
   GamerProfileInput,
 } from "@hooma/contracts/gamers";
@@ -104,6 +107,25 @@ export function createGamersApi(transport: HoomaTransport) {
         },
         body: input.proof,
       }),
+    adminDisputes: () => request<GamerDisputeList>(transport, "/api/v1/admin/queues/gamer-disputes"),
+    resolveAdminDispute: (matchId: string, input: GamerDisputeResolutionInput) =>
+      request<GamerMatchSession>(
+        transport,
+        `/api/v1/admin/queues/gamer-disputes/${encodeURIComponent(matchId)}/resolve`,
+        { method: "POST", body: JSON.stringify(input) },
+      ),
+    adminDisputeProof: async (matchId: string, side: GamerMatchSide): Promise<Blob> => {
+      const headers = transport.getHeaders?.();
+      const response = await fetch(
+        `${transport.baseUrl}/api/v1/admin/queues/gamer-disputes/${encodeURIComponent(matchId)}/proof/${side.toLowerCase()}`,
+        {
+          ...(transport.credentials ? { credentials: transport.credentials } : {}),
+          ...(headers ? { headers } : {}),
+        },
+      );
+      if (!response.ok) throw new Error(`Unable to load match proof (${response.status})`);
+      return response.blob();
+    },
   };
 }
 
