@@ -28,9 +28,6 @@ export function PitchCapabilityOnboarding({
   const defaultHourlyRate = approved
     ? String(pitchRateFromMinor(approved.hourlyRateMinor, approved.currency))
     : "";
-  let buttonLabel = "Submit for review";
-  if (pending) buttonLabel = "Update pending review";
-  if (submitting) buttonLabel = "Submitting…";
 
   async function apply(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,8 +35,7 @@ export function PitchCapabilityOnboarding({
     const data = new FormData(event.currentTarget);
     const hourlyRate = Number(data.get("hourlyRate") ?? 0);
     const rawCurrency = String(data.get("currency") ?? defaultCurrency);
-    const currency =
-      RENTAL_CURRENCIES.find((value) => value === rawCurrency) ?? defaultCurrency;
+    const currency = RENTAL_CURRENCIES.find((value) => value === rawCurrency) ?? defaultCurrency;
     setError("");
     setMessage("");
     setSubmitting(true);
@@ -79,9 +75,7 @@ export function PitchCapabilityOnboarding({
         </p>
       ) : null}
       {pending ? (
-        <p className="muted">
-          Editing is disabled while the current update is pending App review.
-        </p>
+        <p className="muted">Editing is disabled while the current update is pending App review.</p>
       ) : null}
 
       <div className="place-business-rate-row">
@@ -101,12 +95,7 @@ export function PitchCapabilityOnboarding({
         </label>
         <label className="place-business-field">
           <span>Currency</span>
-          <select
-            name="currency"
-            defaultValue={defaultCurrency}
-            disabled={!canSubmit}
-            required
-          >
+          <select name="currency" defaultValue={defaultCurrency} disabled={!canSubmit} required>
             {RENTAL_CURRENCIES.map((currency) => (
               <option key={currency} value={currency}>
                 {currency}
@@ -129,7 +118,7 @@ export function PitchCapabilityOnboarding({
       </label>
 
       <button type="submit" disabled={!canSubmit}>
-        {buttonLabel}
+        {submitting ? "Submitting…" : pending ? "Update pending review" : "Submit for review"}
       </button>
       {message ? <p className="status place-business-message">{message}</p> : null}
       {error ? <p className="error place-business-message">{error}</p> : null}
