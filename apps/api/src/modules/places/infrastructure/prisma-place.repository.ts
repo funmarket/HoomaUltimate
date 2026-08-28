@@ -1,15 +1,14 @@
 import { randomUUID } from "node:crypto";
 import type {
-  AdminQueueItem,
   ManagedPlaceSummary,
-  ModerationDecisionInput,
-  PitchRentalCurrency,
   PlaceOwnershipClaimInput,
   PlaceSuggestionInput,
   PlaceUpdateInput,
   PublicPlaceImage,
   PublicPlaceSummary,
-} from "@hooma/contracts/platform-management";
+} from "@hooma/contracts/places";
+import type { PitchRentalCurrency } from "@hooma/contracts/pitch";
+import type { AdminQueueItem, ModerationDecisionInput } from "@hooma/contracts/platform-admin";
 import { Prisma, type PrismaClient } from "@hooma/database";
 import type { PlaceRepository } from "../application/place.repository.js";
 
