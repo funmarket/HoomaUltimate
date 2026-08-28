@@ -30,13 +30,16 @@ test("Pitch ticket uses canonical ordered Place images and supplied Pitch brandi
   assert.match(css, /\.pitch-ticket__photo > img \{[\s\S]*?object-fit:\s*contain/);
 });
 
-test("Pitch ticket presents the canonical hourly rental rate without inventing sample pricing", () => {
+test("Pitch ticket presents the canonical hourly rental rate without fallback pricing", () => {
   const ticket = source("packages/frontend/src/pitch/PitchTicket.tsx");
+  const pricing = source("packages/frontend/src/pitch/pricing.ts");
 
   assert.match(ticket, /formatPitchHourlyRate\(item\.hourlyRateMinor, item\.currency\)/);
   assert.match(ticket, /HOURLY RATE/);
   assert.match(ticket, /item\.currency/);
   assert.match(ticket, />\/ hour</);
   assert.match(ticket, /FULL PITCH RENTAL/);
+  assert.doesNotMatch(ticket, /hasHourlyRate/);
   assert.doesNotMatch(ticket, /45\s*TND|45 TND/);
+  assert.doesNotMatch(pricing, /Contact for price/);
 });
