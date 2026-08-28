@@ -1,9 +1,10 @@
 import { Router } from "express";
-import { pitchApplicationSchema } from "@hooma/contracts/pitch";
+import { pitchApplicationSchema, pitchPlaceSuggestionSchema } from "@hooma/contracts/pitch";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import { getAuth } from "../../identity/http/auth-request.js";
 import type { ApprovedPitchReader } from "../application/approved-pitch.reader.js";
 import type { PitchOwnerService } from "../application/pitch-owner.service.js";
+import type { PitchSuggestionService } from "../application/pitch-suggestion.service.js";
 
 export function createPitchPublicRouter(reader: ApprovedPitchReader): Router {
   const router = Router();
@@ -20,8 +21,24 @@ export function createPitchPublicRouter(reader: ApprovedPitchReader): Router {
   return router;
 }
 
-export function createPitchMemberRouter(owner: PitchOwnerService): Router {
+export function createPitchMemberRouter(
+  suggestions: PitchSuggestionService,
+  owner: PitchOwnerService,
+): Router {
   const router = Router();
+  router.post(
+    "/suggestions",
+    asyncHandler(async (request, response) => {
+      response
+        .status(201)
+        .json(
+          await suggestions.suggest(
+            getAuth(request).userId,
+            pitchPlaceSuggestionSchema.parse(request.body),
+          ),
+        );
+    }),
+  );
   router.get(
     "/:placeId/manage",
     asyncHandler(async (request, response) => {
