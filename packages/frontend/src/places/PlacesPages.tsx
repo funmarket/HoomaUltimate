@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import type {
-  PitchRentalCurrency,
   PlaceSubmissionOrigin,
   PlaceSuggestionResult,
   PublicPlaceSummary,
-} from "@hooma/contracts/platform-management";
+} from "@hooma/contracts/places";
+import type { PitchRentalCurrency } from "@hooma/contracts/pitch";
 import { useHoomaFrontend } from "../context";
 import type { PublicEvent } from "../events/api";
 import { useEventApi } from "../events/useEventApi";
+import { createPitchApi } from "../pitch/api";
 import { pitchRateToMinor } from "../pitch/pricing";
 import { CalendarIcon, PinIcon } from "../ui/HoomaIcons";
+import { createPlacesApi } from "./api";
 import { PlaceForm } from "./PlaceForm";
-import { createPlatformManagementApi } from "./platform-management-api";
 
 export { PlaceDetailPage } from "./PlaceDetailPage";
 
@@ -84,7 +85,8 @@ function duplicateMatchLabel(result: PlaceSuggestionResult): string {
 
 export function PlacesPage() {
   const { transport } = useHoomaFrontend();
-  const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
+  const placesApi = useMemo(() => createPlacesApi(transport), [transport]);
+  const pitchApi = useMemo(() => createPitchApi(transport), [transport]);
   const eventApi = useEventApi();
   const [places, setPlaces] = useState<PublicPlaceSummary[]>([]);
   const [watchEvents, setWatchEvents] = useState<PublicEvent[]>([]);
@@ -92,7 +94,7 @@ export function PlacesPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    void Promise.all([api.places.list(), api.capability.list("PITCH")])
+    void Promise.all([placesApi.list(), pitchApi.list()])
       .then(([allPlaces, pitches]) => {
         const pitchPlaceIds = new Set(pitches.map((pitch) => pitch.place.id));
         setPlaces(allPlaces.filter((place) => !pitchPlaceIds.has(place.id)));
@@ -104,7 +106,7 @@ export function PlacesPage() {
       .publicWatch()
       .then((page) => setWatchEvents(page.items))
       .catch(() => setWatchEvents([]));
-  }, [api, eventApi]);
+  }, [placesApi, pitchApi, eventApi]);
 
   const visiblePlaces = useMemo(
     () => places.filter((place) => place.submissionOrigin === spotOrigin),
@@ -225,7 +227,8 @@ export function PlacesPage() {
 
 export function AddPlacePage() {
   const { transport, protectedError } = useHoomaFrontend();
-  const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
+  const placesApi = useMemo(() => createPlacesApi(transport), [transport]);
+  const pitchApi = useMemo(() => createPitchApi(transport), [transport]);
   const isPitchSuggestion = new URLSearchParams(window.location.search).get("kind") === "PITCH";
   const [submissionOrigin, setSubmissionOrigin] = useState<PlaceSubmissionOrigin>("FANHUB");
   const [pitchHourlyRate, setPitchHourlyRate] = useState("");
@@ -238,21 +241,16 @@ export function AddPlacePage() {
     setPending(true);
     setError("");
     try {
-      setSubmissionResult(
-        await api.places.suggest({
-          ...input,
-          submissionOrigin: isPitchSuggestion ? "FANHUB" : submissionOrigin,
-          ...(isPitchSuggestion
-            ? {
-                suggestedCapabilities: ["PITCH"],
-                pitch: {
-                  hourlyRateMinor: pitchRateToMinor(Number(pitchHourlyRate), pitchCurrency),
-                  currency: pitchCurrency,
-                },
-              }
-            : {}),
-        }),
-      );
+      const result = isPitchSuggestion
+        ? await pitchApi.suggestPlace({
+            place: input,
+            pitch: {
+              hourlyRateMinor: pitchRateToMinor(Number(pitchHourlyRate), pitchCurrency),
+              currency: pitchCurrency,
+            },
+          })
+        : await placesApi.suggest({ ...input, submissionOrigin });
+      setSubmissionResult(result);
     } catch (reason) {
       setError(protectedError(reason, "Unable to submit Place"));
     } finally {
