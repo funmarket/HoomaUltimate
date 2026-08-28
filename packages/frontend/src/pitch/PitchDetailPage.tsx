@@ -121,9 +121,7 @@ export function PitchDetailPage({ placeId }: { readonly placeId: string }) {
         <p className="pitch-detail-hero__description">{description}</p>
         <div className="pitch-detail-rate" aria-label="Hourly rental price">
           <strong>{rate}</strong>
-          {item.hourlyRateMinor !== null && item.currency ? (
-            <span>{item.currency} / hour</span>
-          ) : null}
+          <span>{item.currency} / hour</span>
         </div>
       </header>
 
