@@ -46,12 +46,23 @@ export class PlaceCapabilityService {
 
   async review(userId: string, applicationId: string, input: ModerationDecisionInput) {
     await this.platformAdmin.requireCapability(userId, "REVIEW_PITCH_APPLICATIONS");
-    if (!(await this.repository.review(userId, applicationId, this.kind, input))) {
-      throw new AppError(
-        409,
-        "PITCH_APPLICATION_REVIEW_NOT_PENDING",
-        "This Pitch application review is no longer pending",
-      );
+    try {
+      if (!(await this.repository.review(userId, applicationId, this.kind, input))) {
+        throw new AppError(
+          409,
+          "PITCH_APPLICATION_REVIEW_NOT_PENDING",
+          "This Pitch application review is no longer pending",
+        );
+      }
+    } catch (error) {
+      if (error instanceof Error && error.message === "PITCH_PRICING_REQUIRED") {
+        throw new AppError(
+          409,
+          "PITCH_PRICING_REQUIRED",
+          "This Pitch application cannot be approved without hourly rental price and currency",
+        );
+      }
+      throw error;
     }
     return { ok: true };
   }
