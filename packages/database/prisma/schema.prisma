@@ -462,7 +462,7 @@ model Community {
   name            String
   description     String?
   city            String?
-  houma           String?
+  houma            String?
   logoUrl         String?
   bannerUrl       String?
   status          CommunityStatus             @default(ACTIVE)
@@ -872,8 +872,8 @@ model GamerGame {
   normalizedName  String          @unique
   status          GamerGameStatus @default(ACTIVE)
   createdByUserId String?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
   createdBy       User?           @relation("GamerGameCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
   profiles        GamerProfile[]
   challenges      GamerChallenge[]
