@@ -1,11 +1,8 @@
-import type { ModerationDecisionInput } from "@hooma/contracts/moderation";
 import type {
   PitchApplicationInput,
   PitchPlaceSuggestionInput,
   PitchPlaceSuggestionResult,
   PitchRentalCurrency,
-  PitchReviewQueueItem,
-  PitchReviewTarget,
   PublicPitch,
 } from "@hooma/contracts/pitch";
 import { Prisma, type PrismaClient } from "@hooma/database";
@@ -15,7 +12,12 @@ import {
   groupCanonicalPlaceImages,
   suggestCanonicalPlace,
 } from "../../places/infrastructure/canonical-place.persistence.js";
-import type { PitchRepository } from "../application/pitch.repository.js";
+import type {
+  PendingPitchReview,
+  PitchModerationDecision,
+  PitchRepository,
+  PitchReviewTarget,
+} from "../application/pitch.repository.js";
 
 const pitchSelect = Prisma.validator<Prisma.PlaceCapabilitySelect>()({
   id: true,
@@ -221,7 +223,7 @@ export class PrismaPitchRepository implements PitchRepository {
     return rows.map((row) => row.placeId);
   }
 
-  async pending(): Promise<readonly PitchReviewQueueItem[]> {
+  async pending(): Promise<readonly PendingPitchReview[]> {
     const [initialRows, revisionRows] = await Promise.all([
       this.db.placeCapability.findMany({
         where: {
@@ -288,7 +290,7 @@ export class PrismaPitchRepository implements PitchRepository {
       : [];
     const byPlace = groupCanonicalPlaceImages(images);
 
-    const initial: PitchReviewQueueItem[] = initialRows
+    const initial: PendingPitchReview[] = initialRows
       .filter((row) => row.place.suggestedBy.presentation)
       .map((row) => ({
         id: row.id,
@@ -309,7 +311,7 @@ export class PrismaPitchRepository implements PitchRepository {
         place: canonicalPlaceSummary(row.place, byPlace.get(row.place.id) ?? []),
       }));
 
-    const revisions: PitchReviewQueueItem[] = revisionRows
+    const revisions: PendingPitchReview[] = revisionRows
       .filter((row) => row.applicant.presentation)
       .map((row) => ({
         id: row.id,
@@ -338,7 +340,7 @@ export class PrismaPitchRepository implements PitchRepository {
     actorUserId: string,
     target: PitchReviewTarget,
     reviewId: string,
-    input: ModerationDecisionInput,
+    input: PitchModerationDecision,
   ) {
     return target === "INITIAL_SUGGESTION"
       ? this.reviewInitialSuggestion(actorUserId, reviewId, input)
@@ -348,7 +350,7 @@ export class PrismaPitchRepository implements PitchRepository {
   private async reviewInitialSuggestion(
     actorUserId: string,
     capabilityId: string,
-    input: ModerationDecisionInput,
+    input: PitchModerationDecision,
   ) {
     const status = input.decision === "APPROVE" ? "APPROVED" : "REJECTED";
     return this.db.$transaction(async (tx) => {
@@ -408,7 +410,7 @@ export class PrismaPitchRepository implements PitchRepository {
   private async reviewOwnerRevision(
     actorUserId: string,
     applicationId: string,
-    input: ModerationDecisionInput,
+    input: PitchModerationDecision,
   ) {
     const status = input.decision === "APPROVE" ? "APPROVED" : "REJECTED";
     return this.db.$transaction(async (tx) => {
