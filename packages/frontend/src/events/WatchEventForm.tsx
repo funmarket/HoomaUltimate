@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import type { WatchEventDetailsInput, WatchEventKind } from "@hooma/contracts";
-import type { PublicPlaceSummary } from "@hooma/contracts/platform-management";
+import type { PublicPlaceSummary } from "@hooma/contracts/places";
 import type { PublicEvent } from "./api";
 
 export type WatchEventFormValue = {
