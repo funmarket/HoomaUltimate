@@ -1,4 +1,4 @@
-import type { PlatformManagerCapability } from "@hooma/contracts/platform-management";
+import type { PlatformManagerCapability } from "@hooma/contracts/platform-admin";
 import type { PrismaClient } from "@hooma/database";
 import type {
   AppManagerRecord,
@@ -152,7 +152,7 @@ export class PrismaPlatformAdminRepository implements PlatformAdminRepository {
         this.db.platformRoleAssignment.count({
           where: { role: "PLATFORM_ADMIN", revokedAt: null },
         }),
-        this.db.user.count({ where: { appManagerGrants: { some: { revokedAt: null } } } }),
+        this.db.user.count({ where: { appManagerGrants: { some: { revokedAt: null } } }),
         this.db.auditLog.count(),
       ]);
     return { users, activePlatformAdmins, activeAppManagers, auditEntries };
