@@ -1,4 +1,4 @@
-import type { PlatformManagerCapability } from "@hooma/contracts/platform-management";
+import type { PlatformManagerCapability } from "@hooma/contracts/platform-admin";
 import { AppError } from "../../../http/errors/app-error.js";
 import type { PlatformAdminAuthorizer } from "./platform-admin.authorizer.js";
 import type { PlatformAdminRepository } from "./platform-admin.repository.js";
