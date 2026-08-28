@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import type {
   PlaceSuggestionInput,
   PublicPlaceSummary,
@@ -32,12 +32,14 @@ export function PlaceForm({
   submitLabel,
   pending,
   showMenu = true,
+  extraSection,
   onSubmit,
 }: {
   readonly initialPlace?: PublicPlaceSummary | null;
   readonly submitLabel: string;
   readonly pending: boolean;
   readonly showMenu?: boolean;
+  readonly extraSection?: ReactNode;
   readonly onSubmit: (input: PlaceSuggestionInput) => Promise<void>;
 }) {
   const [menu, setMenu] = useState<MenuDraft[]>(() => menuDrafts(initialPlace));
@@ -282,6 +284,8 @@ export function PlaceForm({
         </label>
       </section>
 
+      {extraSection}
+
       {showMenu ? (
         <section className="hooma-form__section">
           <div className="hooma-form__section-heading">
@@ -299,7 +303,7 @@ export function PlaceForm({
                   value={item.name}
                   maxLength={120}
                   placeholder="Item"
-                  onChange={(event) => updateMenu(item.id, "name", event.target.value)}
+                  onChange={(event) => updateMenuItem(item.id, "name", event.target.value)}
                 />
                 <div className="place-menu-editor__price">
                   <input
@@ -309,7 +313,7 @@ export function PlaceForm({
                     min="0"
                     step="0.001"
                     placeholder="Price"
-                    onChange={(event) => updateMenu(item.id, "price", event.target.value)}
+                    onChange={(event) => updateMenuItem(item.id, "price", event.target.value)}
                   />
                   <span>TND</span>
                 </div>
