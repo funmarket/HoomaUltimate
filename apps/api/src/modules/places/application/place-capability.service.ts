@@ -1,5 +1,6 @@
 import type {
   ModerationDecisionInput,
+  PitchManagementState,
   PlaceCapabilityApplicationInput,
   PlaceCapabilityKind,
 } from "@hooma/contracts/platform-management";
@@ -24,6 +25,26 @@ export class PlaceCapabilityService {
     const capability = await this.repository.getApprovedByPlace(this.kind, placeId);
     if (!capability) throw new AppError(404, "PITCH_NOT_FOUND", "Approved Pitch not found");
     return capability;
+  }
+
+  async getManagementState(userId: string, placeId: string): Promise<PitchManagementState> {
+    const place = await this.places.getApproved(placeId);
+    if (!place) throw new AppError(404, "PLACE_NOT_FOUND", "Approved Place not found");
+
+    const verifiedOwnership = await this.places.hasVerifiedOwnership(placeId, userId);
+    if (!verifiedOwnership && !(await this.platformAdmin.isPlatformAdmin(userId))) {
+      throw new AppError(
+        403,
+        "PITCH_MANAGEMENT_ACCESS_DENIED",
+        "Verified Place ownership or platform admin access is required to manage this Pitch",
+      );
+    }
+
+    return {
+      place,
+      verifiedOwnership,
+      ...(await this.repository.getManagementState(this.kind, placeId)),
+    };
   }
 
   async submit(userId: string, placeId: string, input: PlaceCapabilityApplicationInput) {
