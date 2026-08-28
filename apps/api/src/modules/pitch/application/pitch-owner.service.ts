@@ -41,7 +41,7 @@ export class PitchOwnerService {
         "Verified Place ownership is required before submitting a Pitch application",
       );
     }
-    const application = await this.repository.submit(userId, placeId, input);
+    const application = await this.repository.submitRevision(userId, placeId, input);
     if (!application) {
       throw new AppError(
         409,
