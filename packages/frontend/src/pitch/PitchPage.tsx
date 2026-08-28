@@ -25,7 +25,7 @@ export function PitchPage() {
       <header className="pitch-hero">
         <div>
           <h1>Pitch</h1>
-          <p>Find football grounds and rental offers around your Houma.</p>
+          <p>Find your pitch. Football grounds and rental offers around your Houma.</p>
         </div>
       </header>
 
