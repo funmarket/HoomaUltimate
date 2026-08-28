@@ -1,4 +1,3 @@
-import type { ModerationDecisionInput } from "@hooma/contracts/moderation";
 import type {
   ManagedPlaceSummary,
   PlaceOwnershipClaimInput,
@@ -9,6 +8,11 @@ import type {
   PlaceUpdateInput,
   PublicPlaceSummary,
 } from "@hooma/contracts/places";
+
+export interface PlaceModerationDecision {
+  readonly decision: "APPROVE" | "REJECT";
+  readonly note?: string | null;
+}
 
 export interface PlaceRepository {
   listPublic(): Promise<readonly PublicPlaceSummary[]>;
@@ -29,11 +33,11 @@ export interface PlaceRepository {
   reviewPlace(
     actorUserId: string,
     placeId: string,
-    input: ModerationDecisionInput,
+    input: PlaceModerationDecision,
   ): Promise<boolean>;
   reviewOwnershipClaim(
     actorUserId: string,
     claimId: string,
-    input: ModerationDecisionInput,
+    input: PlaceModerationDecision,
   ): Promise<boolean>;
 }
