@@ -162,7 +162,7 @@ export function PlacesPage() {
         })}
         {!visiblePlaces.length && !error ? (
           <p className="muted">
-            {spotOrigin === "OWNER" ? "No owner-suggested Spots yet." : "No FanHub Spots yet."}
+            {spotOrigin === "OWNER" ? "No owner-submitted Spots yet." : "No FanHub Spots yet."}
           </p>
         ) : null}
       </div>
@@ -216,7 +216,7 @@ export function AddPlacePage() {
             {isPitchSuggestion
               ? "The App Admin will review this football pitch and its hourly rental price. Once approved, it can appear in Pitch and the real owner can claim it."
               : submissionOrigin === "OWNER"
-                ? "The App Admin will review this owner-submitted Spot. Approval verifies your ownership on this same canonical Place so you can manage it without creating another listing."
+                ? "The App Admin will review this Spot first. Your ownership claim stays separate and can be verified after the Place itself is approved."
                 : "The App Admin will review this Spot. Community suggestions appear in FanHub. If the real owner claims it later, the same canonical Place is kept and the FanHub source remains unchanged."}
           </p>
           <div className="place-detail-actions">
@@ -319,7 +319,7 @@ export function AddPlacePage() {
           </div>
           <p className="muted">
             {submissionOrigin === "OWNER"
-              ? "Choose By Owner only when you own or manage this business. Approval verifies you against this same Place record."
+              ? "Choose By Owner only when you own or manage this business. This creates an ownership claim on the same Place; verification remains a separate Admin decision."
               : "FanHub is for any registered HOOMA member suggesting a Spot for the community. Suggesting it does not make you its owner."}
           </p>
         </section>
