@@ -112,10 +112,7 @@ export function createPlaceCapabilityMemberRouter(service: PlaceCapabilityServic
     "/:placeId/manage",
     asyncHandler(async (request, response) => {
       response.json(
-        await service.getManagementState(
-          getAuth(request).userId,
-          String(request.params.placeId),
-        ),
+        await service.getManagementState(getAuth(request).userId, String(request.params.placeId)),
       );
     }),
   );
