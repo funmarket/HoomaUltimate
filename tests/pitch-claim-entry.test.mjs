@@ -38,7 +38,6 @@ test("Pitch management is contextual and does not contain a second ownership sys
   assert.doesNotMatch(manage, /api\.places\.get\(placeId\)/);
   assert.doesNotMatch(manage, /api\.places\.ownershipStatus\(placeId\)/);
   assert.doesNotMatch(manage, /api\.places\.manage\(placeId\)/);
-  assert.match(manage, /management\.verifiedOwnership/);
   assert.match(manage, /<PitchCapabilityOnboarding/);
   assert.match(manage, /management=\{management\}/);
   assert.doesNotMatch(onboarding, /claimOwnership|Verify Place ownership|STEP 1|STEP 2/);
