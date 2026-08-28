@@ -1,13 +1,14 @@
+import type { ModerationDecisionInput } from "@hooma/contracts/moderation";
 import type {
-  AdminQueueItem,
   ManagedPlaceSummary,
-  ModerationDecisionInput,
   PlaceOwnershipClaimInput,
+  PlaceOwnershipReviewQueueItem,
+  PlaceReviewQueueItem,
   PlaceSuggestionInput,
   PlaceSuggestionResult,
   PlaceUpdateInput,
   PublicPlaceSummary,
-} from "@hooma/contracts/platform-management";
+} from "@hooma/contracts/places";
 
 export interface PlaceRepository {
   listPublic(): Promise<readonly PublicPlaceSummary[]>;
@@ -23,8 +24,8 @@ export interface PlaceRepository {
     placeId: string,
     input: PlaceOwnershipClaimInput,
   ): Promise<{ id: string; status: string }>;
-  pendingPlaces(): Promise<readonly AdminQueueItem[]>;
-  pendingOwnershipClaims(): Promise<readonly AdminQueueItem[]>;
+  pendingPlaces(): Promise<readonly PlaceReviewQueueItem[]>;
+  pendingOwnershipClaims(): Promise<readonly PlaceOwnershipReviewQueueItem[]>;
   reviewPlace(
     actorUserId: string,
     placeId: string,

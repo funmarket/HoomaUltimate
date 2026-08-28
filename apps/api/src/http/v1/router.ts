@@ -4,10 +4,8 @@ import type { AppContainer } from "../../bootstrap/container.js";
 import { requireAuthentication } from "../../modules/identity/http/auth.middleware.js";
 import { createIdentityMemberRouter } from "../../modules/identity/http/identity.member.routes.js";
 import { createPlatformAdminRouter } from "../../modules/platform-admin/http/platform-admin.routes.js";
-import {
-  createPlaceCapabilityMemberRouter,
-  createPlacesMemberRouter,
-} from "../../modules/places/http/place.routes.js";
+import { createPlacesMemberRouter } from "../../modules/places/http/place.routes.js";
+import { createPitchMemberRouter } from "../../modules/pitch/http/pitch.routes.js";
 import { createCommunityMemberRouter } from "../../modules/communities/http/community.routes.js";
 import { createTeamMemberRouter } from "../../modules/teams/http/team.routes.js";
 import { createEventMemberRouter } from "../../modules/events/http/event.routes.js";
@@ -24,12 +22,15 @@ export function createMemberV1Router(container: AppContainer, config: ApiConfig)
     createPlatformAdminRouter(
       container.platformAdminService,
       container.placeService,
-      container.pitchService,
+      container.pitchModerationService,
       container.gamerMatchService,
     ),
   );
   router.use("/places", createPlacesMemberRouter(container.placeService));
-  router.use("/pitch", createPlaceCapabilityMemberRouter(container.pitchService));
+  router.use(
+    "/pitch",
+    createPitchMemberRouter(container.pitchSuggestionService, container.pitchOwnerService),
+  );
   router.use("/communities", createCommunityMemberRouter(container.communityService));
   router.use("/teams", createTeamMemberRouter(container.teamService));
   router.use("/events", createEventMemberRouter(container.eventService));

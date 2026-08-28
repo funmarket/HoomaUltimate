@@ -1,9 +1,9 @@
+import type { ModerationDecisionInput } from "@hooma/contracts/moderation";
 import type {
-  ModerationDecisionInput,
   PlaceOwnershipClaimInput,
   PlaceSuggestionInput,
   PlaceUpdateInput,
-} from "@hooma/contracts/platform-management";
+} from "@hooma/contracts/places";
 import { AppError } from "../../../http/errors/app-error.js";
 import type { PlatformAdminAuthorizer } from "../../platform-admin/application/platform-admin.authorizer.js";
 import type { PlaceRepository } from "./place.repository.js";
@@ -31,19 +31,8 @@ export class PlaceService {
     return place;
   }
 
-  async suggest(userId: string, input: PlaceSuggestionInput) {
-    try {
-      return await this.repository.suggest(userId, input);
-    } catch (error) {
-      if (error instanceof Error && error.message === "PITCH_PRICING_REQUIRED") {
-        throw new AppError(
-          400,
-          "PITCH_PRICING_REQUIRED",
-          "Pitch hourly rental price and currency are required",
-        );
-      }
-      throw error;
-    }
+  suggest(userId: string, input: PlaceSuggestionInput) {
+    return this.repository.suggest(userId, input);
   }
 
   async update(userId: string, placeId: string, input: PlaceUpdateInput) {
@@ -100,23 +89,12 @@ export class PlaceService {
 
   async reviewPlace(userId: string, placeId: string, input: ModerationDecisionInput) {
     await this.platformAdmin.requirePlatformAdmin(userId);
-    try {
-      if (!(await this.repository.reviewPlace(userId, placeId, input))) {
-        throw new AppError(
-          409,
-          "PLACE_REVIEW_NOT_PENDING",
-          "This Place review is no longer pending",
-        );
-      }
-    } catch (error) {
-      if (error instanceof Error && error.message === "PITCH_PRICING_REQUIRED") {
-        throw new AppError(
-          409,
-          "PITCH_PRICING_REQUIRED",
-          "This Pitch cannot be approved until its hourly rental price and currency are present",
-        );
-      }
-      throw error;
+    if (!(await this.repository.reviewPlace(userId, placeId, input))) {
+      throw new AppError(
+        409,
+        "PLACE_REVIEW_NOT_PENDING",
+        "This Place review is no longer pending",
+      );
     }
     return { ok: true };
   }

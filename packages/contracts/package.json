@@ -40,6 +40,18 @@
       "types": "./src/gamers.ts",
       "default": "./dist/gamers.js"
     },
+    "./places": {
+      "types": "./src/places.ts",
+      "default": "./dist/places.js"
+    },
+    "./pitch": {
+      "types": "./src/pitch.ts",
+      "default": "./dist/pitch.js"
+    },
+    "./platform-admin": {
+      "types": "./src/platform-admin.ts",
+      "default": "./dist/platform-admin.js"
+    },
     "./platform-management": {
       "types": "./src/platform-management.ts",
       "default": "./dist/platform-management.js"
