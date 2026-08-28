@@ -111,12 +111,12 @@ export function PlacesPage() {
         </a>
       </nav>
 
-      <div className="spot-origin-tabs" role="tablist" aria-label="Spot source">
+      <div className="watch-kind-tabs" role="tablist" aria-label="Spot source">
         <button
           type="button"
           role="tab"
           aria-selected={spotOrigin === "OWNER"}
-          className={spotOrigin === "OWNER" ? "spot-origin-tab is-active" : "spot-origin-tab"}
+          className={spotOrigin === "OWNER" ? "watch-kind-tab is-active" : "watch-kind-tab"}
           onClick={() => setSpotOrigin("OWNER")}
         >
           By Owner
@@ -125,7 +125,7 @@ export function PlacesPage() {
           type="button"
           role="tab"
           aria-selected={spotOrigin === "FANHUB"}
-          className={spotOrigin === "FANHUB" ? "spot-origin-tab is-active" : "spot-origin-tab"}
+          className={spotOrigin === "FANHUB" ? "watch-kind-tab is-active" : "watch-kind-tab"}
           onClick={() => setSpotOrigin("FANHUB")}
         >
           FanHub
