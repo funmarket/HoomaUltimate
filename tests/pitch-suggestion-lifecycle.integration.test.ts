@@ -58,7 +58,8 @@ test("an approved suggested Pitch preserves immutable owner moderation history",
       suggestedCapabilities: ["PITCH"],
       pitch: { hourlyRateMinor: 45_000, currency: "TND" },
     });
-    placeId = suggested.id;
+    assert.equal(suggested.outcome, "CREATED");
+    placeId = suggested.place.id;
     assert.equal(suggested.status, "PENDING");
 
     const pendingCapability = await db.placeCapability.findUnique({

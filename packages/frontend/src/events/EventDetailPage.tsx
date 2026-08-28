@@ -180,7 +180,9 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
     .filter((value): value is string => Boolean(value))
     .join(" · ");
   const watchAuthority =
-    event.venueAuthority === "OFFICIAL_VENUE" ? "Official venue" : "Suggested by community";
+    event.publisherAuthority === "VERIFIED_PLACE_OWNER"
+      ? "Published by venue"
+      : "Community-published";
 
   return (
     <div className="play-event-page">

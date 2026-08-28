@@ -47,7 +47,15 @@ function headers(cookie: string) {
   return { cookie, origin: config.WEB_ORIGIN, "content-type": "application/json" };
 }
 
-test("App Admin approves a Place once while its owner manages Place and Watch Event lifecycle", async () => {
+type PlaceSuggestionResponse = {
+  outcome: "CREATED" | "EXISTING";
+  place: { id: string; submissionOrigin: "OWNER" | "FANHUB" | null };
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  matchedBy: "NAME_ADDRESS" | "PHONE" | "WEBSITE" | "NAME_COORDINATES" | null;
+  archivedAt: string | null;
+};
+
+test("App Admin preserves canonical Place identity while ownership and Watch lifecycle stay separate", async () => {
   const container = createContainer(config);
   const app = createApp(config, container);
   const server = app.listen(0, "127.0.0.1");
@@ -112,6 +120,43 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
     });
     assert.equal(forbiddenDelegation.status, 403);
 
+    const ownerOriginResponse = await fetch(`${base}/api/v1/places`, {
+      method: "POST",
+      headers: headers(business.cookie),
+      body: JSON.stringify({
+        name: `Owner Origin Venue ${suffix}`,
+        address: "44 Owner Street",
+        city: "Tunis",
+        submissionOrigin: "OWNER",
+      }),
+    });
+    assert.equal(ownerOriginResponse.status, 201);
+    const ownerOriginResult = (await ownerOriginResponse.json()) as PlaceSuggestionResponse;
+    assert.equal(ownerOriginResult.outcome, "CREATED");
+    assert.equal(ownerOriginResult.place.submissionOrigin, "OWNER");
+    const atomicOwnerPlace = await db.place.findUniqueOrThrow({
+      where: { id: ownerOriginResult.place.id },
+      select: { submissionOrigin: true, ownershipClaims: true },
+    });
+    assert.equal(atomicOwnerPlace.submissionOrigin, "OWNER");
+    assert.equal(atomicOwnerPlace.ownershipClaims.length, 1);
+    assert.equal(atomicOwnerPlace.ownershipClaims[0]?.claimantUserId, business.userId);
+    assert.equal(atomicOwnerPlace.ownershipClaims[0]?.status, "PENDING");
+
+    const prematureOwnershipDecision = await fetch(
+      `${base}/api/v1/admin/queues/place-ownership/${atomicOwnerPlace.ownershipClaims[0]!.id}/decision`,
+      {
+        method: "POST",
+        headers: headers(owner.cookie),
+        body: JSON.stringify({ decision: "APPROVE" }),
+      },
+    );
+    assert.equal(prematureOwnershipDecision.status, 409);
+    assert.equal(
+      await db.placeOwnership.count({ where: { placeId: ownerOriginResult.place.id } }),
+      0,
+    );
+
     const placeResponse = await fetch(`${base}/api/v1/places`, {
       method: "POST",
       headers: headers(business.cookie),
@@ -123,11 +168,11 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
         address: "1 Football Street",
         city: "Tunis",
         houma: "Centre",
-        latitude: null,
-        longitude: null,
-        phone: "+21671000000",
+        latitude: 36.8065,
+        longitude: 10.1815,
+        phone: "+216 71 000 000",
         email: "venue@example.com",
-        websiteUrl: "https://venue.example.com",
+        websiteUrl: "https://www.venue.example.com/",
         menuItems: [
           { name: "Espresso", price: 4, currency: "TND" },
           { name: "Pizza", price: 18, currency: "TND" },
@@ -135,8 +180,92 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
       }),
     });
     assert.equal(placeResponse.status, 201);
-    const place = (await placeResponse.json()) as { id: string; status: string };
-    assert.equal(place.status, "PENDING");
+    const placeResult = (await placeResponse.json()) as PlaceSuggestionResponse;
+    assert.equal(placeResult.outcome, "CREATED");
+    assert.equal(placeResult.status, "PENDING");
+    assert.equal(placeResult.place.submissionOrigin, "FANHUB");
+    const place = placeResult.place;
+    const originalPlaceCount = await db.place.count();
+    assert.equal(
+      await db.placeOwnershipClaim.count({ where: { placeId: place.id } }),
+      0,
+      "FanHub submission must not create an ownership claim",
+    );
+
+    const duplicateCases = [
+      {
+        matchedBy: "NAME_ADDRESS",
+        payload: {
+          name: `  OWNER   VENUE ${suffix.toUpperCase()}  `,
+          address: "  1   FOOTBALL STREET ",
+          phone: null,
+          websiteUrl: null,
+        },
+      },
+      {
+        matchedBy: "PHONE",
+        payload: {
+          name: `Phone Alias ${suffix}`,
+          address: "Different Address 2",
+          phone: "216-71-000-000",
+          websiteUrl: null,
+        },
+      },
+      {
+        matchedBy: "WEBSITE",
+        payload: {
+          name: `Website Alias ${suffix}`,
+          address: "Different Address 3",
+          phone: null,
+          websiteUrl: "http://venue.example.com",
+        },
+      },
+      {
+        matchedBy: "NAME_COORDINATES",
+        payload: {
+          name: `Owner Venue ${suffix}`,
+          address: "Different Address 4",
+          phone: null,
+          websiteUrl: null,
+          latitude: 36.8065,
+          longitude: 10.1815,
+        },
+      },
+    ] as const;
+
+    for (const duplicateCase of duplicateCases) {
+      const response = await fetch(`${base}/api/v1/places`, {
+        method: "POST",
+        headers: headers(business.cookie),
+        body: JSON.stringify(duplicateCase.payload),
+      });
+      assert.equal(response.status, 200);
+      const result = (await response.json()) as PlaceSuggestionResponse;
+      assert.equal(result.outcome, "EXISTING");
+      assert.equal(result.place.id, place.id);
+      assert.equal(result.matchedBy, duplicateCase.matchedBy);
+      assert.equal(await db.place.count(), originalPlaceCount);
+    }
+
+    const duplicateOwnerIntent = await fetch(`${base}/api/v1/places`, {
+      method: "POST",
+      headers: headers(business.cookie),
+      body: JSON.stringify({
+        name: `Owner Venue ${suffix}`,
+        address: "1 Football Street",
+        submissionOrigin: "OWNER",
+      }),
+    });
+    assert.equal(duplicateOwnerIntent.status, 200);
+    const duplicateOwnerResult = (await duplicateOwnerIntent.json()) as PlaceSuggestionResponse;
+    assert.equal(duplicateOwnerResult.outcome, "EXISTING");
+    assert.equal(duplicateOwnerResult.place.id, place.id);
+    assert.equal(await db.place.count(), originalPlaceCount);
+    assert.equal(
+      await db.placeOwnershipClaim.count({ where: { placeId: place.id } }),
+      0,
+      "Duplicate owner intent must not silently create ownership authority on a pending Place",
+    );
 
     const pendingManage = await fetch(`${base}/api/v1/places/${place.id}/manage`, {
       headers: headers(business.cookie),
@@ -206,6 +335,11 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
     assert.equal(ownershipClaimResponse.status, 201);
     const ownershipClaim = (await ownershipClaimResponse.json()) as { id: string; status: string };
     assert.equal(ownershipClaim.status, "PENDING");
+    assert.equal(
+      (await db.place.findUniqueOrThrow({ where: { id: place.id } })).submissionOrigin,
+      "FANHUB",
+      "A later ownership claim must not rewrite original Place provenance",
+    );
 
     const ownershipQueueResponse = await fetch(`${base}/api/v1/admin/queues/place-ownership`, {
       headers: headers(owner.cookie),
@@ -239,6 +373,10 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
       }),
       "Verified ownership must exist before owner-only Place actions",
     );
+    assert.equal(
+      (await db.place.findUniqueOrThrow({ where: { id: place.id } })).submissionOrigin,
+      "FANHUB",
+    );
 
     const updatePlace = await fetch(`${base}/api/v1/places/${place.id}`, {
       method: "PATCH",
@@ -263,14 +401,16 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
       description: string | null;
       latitude: number | null;
       longitude: number | null;
+      submissionOrigin: "OWNER" | "FANHUB" | null;
       menuItems: { name: string; price: number; currency: string }[];
     };
     assert.equal(approvedPlace.id, place.id);
     assert.equal(approvedPlace.imageUrl, canonicalPlaceCover);
     assert.equal(approvedPlace.category, "Sports café");
     assert.equal(approvedPlace.description, "Updated match-night venue");
-    assert.equal(approvedPlace.latitude, null);
-    assert.equal(approvedPlace.longitude, null);
+    assert.equal(approvedPlace.latitude, 36.8065);
+    assert.equal(approvedPlace.longitude, 10.1815);
+    assert.equal(approvedPlace.submissionOrigin, "FANHUB");
     assert.deepEqual(
       approvedPlace.menuItems.map(({ name, price, currency }) => ({ name, price, currency })),
       [
@@ -308,7 +448,7 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
       id: string;
       title: string;
       placeId: string;
-      venueAuthority: string;
+      publisherAuthority: string;
       watchDetails: {
         teamOneName: string;
         teamOneLogoUrl: string | null;
@@ -318,7 +458,7 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
     };
     assert.equal(watchEvent.title, "Esperance vs Club Africain");
     assert.equal(watchEvent.placeId, place.id);
-    assert.equal(watchEvent.venueAuthority, "OFFICIAL_VENUE");
+    assert.equal(watchEvent.publisherAuthority, "VERIFIED_PLACE_OWNER");
     assert.equal(watchEvent.watchDetails.teamOneName, "Esperance");
     assert.equal(
       watchEvent.watchDetails.teamTwoLogoUrl,
@@ -364,14 +504,14 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
       items: {
         id: string;
         placeId: string;
-        venueAuthority: string;
+        publisherAuthority: string;
         place: { imageUrl: string | null } | null;
       }[];
     };
     const publishedWatch = watchPage.items.find((item) => item.id === watchEvent.id);
     assert.ok(publishedWatch);
     assert.equal(publishedWatch.placeId, place.id);
-    assert.equal(publishedWatch.venueAuthority, "OFFICIAL_VENUE");
+    assert.equal(publishedWatch.publisherAuthority, "VERIFIED_PLACE_OWNER");
     assert.equal(
       publishedWatch.place?.imageUrl,
       canonicalPlaceCover,
