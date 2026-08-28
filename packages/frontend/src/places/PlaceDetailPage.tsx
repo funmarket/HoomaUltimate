@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import type { PublicPlaceSummary } from "@hooma/contracts/platform-management";
+import type { PublicPlaceSummary } from "@hooma/contracts/places";
 import { useHoomaFrontend } from "../context";
 import { createEventApi, type EventRsvpState, type PublicEvent } from "../events/api";
 import { HoomaApiError } from "../http";
@@ -18,8 +18,8 @@ import {
 } from "../ui/HoomaIcons";
 import { CulturalEventCard } from "../watch/CulturalEventCard";
 import { WatchTicket } from "../watch/WatchTicket";
+import { createPlacesApi } from "./api";
 import { PlaceGallery } from "./PlaceGallery";
-import { createPlatformManagementApi } from "./platform-management-api";
 
 type ActiveRsvpState = "CONFIRMED" | "WAITLISTED" | "ATTENDED" | null;
 
@@ -97,7 +97,7 @@ function EventTeamMarks({ event }: { readonly event: PublicEvent }) {
 
 export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
   const { transport, protectedError } = useHoomaFrontend();
-  const management = useMemo(() => createPlatformManagementApi(transport), [transport]);
+  const placesApi = useMemo(() => createPlacesApi(transport), [transport]);
   const eventsApi = useMemo(() => createEventApi(transport), [transport]);
   const [place, setPlace] = useState<PublicPlaceSummary | null>(null);
   const [events, setEvents] = useState<PublicEvent[]>([]);
@@ -125,10 +125,7 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
   }
 
   async function loadPlaceAndEvents() {
-    const [row, placeEvents] = await Promise.all([
-      management.places.get(placeId),
-      loadPlaceEvents(),
-    ]);
+    const [row, placeEvents] = await Promise.all([placesApi.get(placeId), loadPlaceEvents()]);
     setPlace(row);
     setEvents(placeEvents);
   }
@@ -150,13 +147,13 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
     void loadPlaceAndEvents().catch((reason) =>
       setError(reason instanceof Error ? reason.message : "Unable to load Place"),
     );
-    void management.places
+    void placesApi
       .manage(placeId)
       .then(() => setCanManage(true))
       .catch((reason) => {
         if (reason instanceof HoomaApiError && [401, 403].includes(reason.status)) return;
       });
-  }, [eventsApi, management, placeId]);
+  }, [eventsApi, placesApi, placeId]);
 
   useEffect(() => {
     if (selectedEventId) void loadParticipation(selectedEventId);
@@ -220,7 +217,7 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
     setError("");
     setMessage("");
     try {
-      await management.places.claimOwnership(placeId, {
+      await placesApi.claimOwnership(placeId, {
         evidence: String(data.get("evidence") ?? ""),
       });
       setMessage("Ownership claim submitted to the App Admin.");
@@ -241,7 +238,7 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
     setDeleting(true);
     setError("");
     try {
-      await management.places.archive(placeId);
+      await placesApi.archive(placeId);
       window.location.href = "/places";
     } catch (reason) {
       setError(protectedError(reason, "Unable to delete Place"));
