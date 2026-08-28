@@ -1,10 +1,7 @@
 import { useMemo, useState, type FormEvent } from "react";
-import type {
-  PitchManagementState,
-  PitchRentalCurrency,
-} from "@hooma/contracts/platform-management";
+import type { PitchManagementState, PitchRentalCurrency } from "@hooma/contracts/pitch";
 import { useHoomaFrontend } from "../context";
-import { createPlatformManagementApi } from "../places/platform-management-api";
+import { createPitchApi } from "./api";
 import { pitchRateFromMinor, pitchRateToMinor } from "./pricing";
 
 const RENTAL_CURRENCIES: readonly PitchRentalCurrency[] = ["TND", "EUR", "USD"];
@@ -17,7 +14,7 @@ export function PitchCapabilityOnboarding({
   readonly onSubmitted: () => Promise<void>;
 }) {
   const { transport, protectedError } = useHoomaFrontend();
-  const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
+  const api = useMemo(() => createPitchApi(transport), [transport]);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -40,7 +37,7 @@ export function PitchCapabilityOnboarding({
     setMessage("");
     setSubmitting(true);
     try {
-      await api.capability.submit("PITCH", management.place.id, {
+      await api.submitRevision(management.place.id, {
         summary: String(data.get("summary") ?? ""),
         hourlyRateMinor: pitchRateToMinor(hourlyRate, currency),
         currency,
