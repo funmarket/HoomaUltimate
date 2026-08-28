@@ -15,13 +15,15 @@ Read `AGENTS.md` first. Then use this file during every implementation task.
 Permanent project truth remains in:
 
 - `requirements.md` — product behavior and acceptance rules;
-- `structure.md` — repository/application architecture;
+- `structure.md` — repository/application architecture and domain ownership;
 - `docs/CANONICAL_MODEL.md` — current canonical data and authority model;
 - `docs/DECISIONS.md` — explicit architectural decisions.
 
 The product owner's newest explicit instruction overrides older project documents when they conflict.
 
 This living plan controls **execution quality**, not product scope.
+
+Documentation is part of execution quality. The affected governing docs must be updated with every completed task so the repository does not accumulate stale architectural or product instructions.
 
 ---
 
@@ -35,6 +37,7 @@ For every issue or feature:
 - Read the relevant product/architecture sources.
 - Confirm current branch and HEAD.
 - Identify whether the task is frontend, backend, data, infrastructure, or cross-layer.
+- Identify another agent's active overlapping work before claiming ownership.
 
 ### B. Inspect
 
@@ -70,7 +73,9 @@ Search before creating:
 - DTOs/contracts;
 - hooks/providers/stores;
 - components/styles;
+- scripts;
 - migrations/tests;
+- documentation;
 - environment variables/infrastructure.
 
 If an existing implementation owns the concept, extend or fix it there. Do not create a parallel source of truth.
@@ -87,19 +92,36 @@ Keep architecture boundaries intact.
 
 If implementation uncovers a contradiction that changes the product/domain model, stop and resolve it against the authoritative sources before continuing.
 
-### F. Verify
+Never solve a difficult cross-domain workflow by creating a generic catch-all service, repository, contract file, frontend API client/store, or repair script. Keep business and persistence ownership with the owning domains and compose them through explicit application/orchestration boundaries.
+
+### F. Update living documentation
+
+Before verification, reconcile the affected authoritative docs with the implementation:
+
+- product behavior -> `requirements.md`;
+- architecture/domain ownership -> `structure.md`;
+- canonical durable model/authority -> `docs/CANONICAL_MODEL.md`;
+- architectural decision -> `docs/DECISIONS.md` / dedicated ADR when appropriate;
+- execution discipline -> `AGENTS.md` / this file;
+- implementation evidence/history -> `progress.md` or an established scoped audit document.
+
+Do not create a new overlapping document merely because updating the authoritative one is inconvenient.
+
+Open/draft PR behavior is **in-flight**, not current foundation truth. Documentation must say which is which.
+
+### G. Verify
 
 Use evidence appropriate to the changed layer. Prefer real behavior over static inspection when possible.
 
-### G. Report
+### H. Report
 
-Provide proof, exact changed files, commit SHA, remaining uncertainty, and an evidence-based score out of 10.
+Provide proof, exact changed files, documentation updated, commit SHA, remaining uncertainty, and an evidence-based score out of 10.
 
 Do not automatically begin another issue unless told to continue.
 
 ---
 
-## 3. Non-drift rules
+## 3. Non-drift and no-monolith rules
 
 The following are always prohibited unless the product owner explicitly changes the rule:
 
@@ -107,6 +129,11 @@ The following are always prohibited unless the product owner explicitly changes 
 - silently changing architecture to make a feature easier;
 - copying donor architecture blindly;
 - duplicate models/tables/services/routes/auth state/API clients;
+- cross-domain monolithic services/repositories/contracts/stores/controllers;
+- catch-all `shared`, `common`, `management`, `platform`, or `utils` modules that hide business ownership;
+- giant migration/repair/normalization scripts that change independent domains together;
+- circular domain dependencies;
+- lower-level canonical domains importing higher-level feature domains to make one workflow convenient;
 - scoped generic `ADMIN` roles that blur App Admin with domain authority;
 - hardcoded production secrets or replaceable bot credentials;
 - frontend-only protected-action authorization;
@@ -117,7 +144,9 @@ The following are always prohibited unless the product owner explicitly changes 
 - destructive branch operations to resolve agent concurrency;
 - changing unrelated files because they look old or imperfect.
 
-When the task touches shared infrastructure, inspect all known consumers before changing it.
+When a task touches shared infrastructure or shared contracts, inspect all known consumers before changing it.
+
+Scalability and user experience are part of architecture quality. A user opening one product area should not unnecessarily trigger unrelated domain queries, locks, validation, caches, or rerenders because several domains were coupled into one catch-all implementation.
 
 ---
 
@@ -128,6 +157,7 @@ Multiple agents may work on the repository. Parallel work is allowed; **interfer
 Each agent must:
 
 - snapshot HEAD before editing;
+- check open PRs and active overlapping branches;
 - keep its task narrow;
 - re-check HEAD before committing/writing;
 - inspect any incoming commit that appeared during the task;
@@ -138,6 +168,8 @@ Never revert another agent's valid work merely because an older document or assu
 
 Never force-push over another agent.
 
+When two tasks overlap authoritative files, choose a clear sequence and ownership boundary rather than racing both branches.
+
 ---
 
 ## 5. Database and persistence rules
@@ -146,9 +178,10 @@ Never force-push over another agent.
 - Redis is transient where the architecture explicitly assigns transient state.
 - S3-compatible/object storage owns binary media when applicable.
 - Prisma schema, migration SQL, repository behavior, and service assumptions must agree.
+- Tables are single-purpose and owned by domain semantics.
 - Add indexes/constraints deliberately from actual query/invariant needs.
-- Keep tables single-purpose and relationships explicit.
 - Do not add speculative tables for a feature that is not actually being implemented.
+- Cross-domain atomic workflows may share an application transaction boundary without transferring persistence ownership into the wrong domain.
 - Once the product is released, migrations are forward-only. Before release, any migration-history cleanup must still be deliberate, reviewed, and proven from a clean database.
 - Never expose secrets or transient Whistle body content through durable persistence/logging.
 
@@ -195,17 +228,18 @@ Current HOOMA architecture remains authoritative.
 Use the strongest relevant levels. More complex/high-risk work should climb higher.
 
 1. **Source proof** — changed source re-read; imports/usages traced.
-2. **Static proof** — typecheck/lint/architecture checks as relevant.
-3. **Build proof** — affected packages/apps build successfully.
-4. **Focused test proof** — permanent regression/unit tests pass.
-5. **Infrastructure integration proof** — real disposable PostgreSQL/Redis/storage where behavior depends on them.
-6. **Migration proof** — validate/status/deploy/read-back where schema changes occur.
-7. **Deployment proof** — exact commit deployed successfully; health/logs checked.
-8. **Live behavior proof** — safe authenticated/public end-to-end behavior tested and read back.
+2. **Architecture/document proof** — ownership/dependency rules and governing docs match the source.
+3. **Static proof** — typecheck/lint/architecture checks as relevant.
+4. **Build proof** — affected packages/apps build successfully.
+5. **Focused test proof** — permanent regression/unit tests pass.
+6. **Infrastructure integration proof** — real disposable PostgreSQL/Redis/storage where behavior depends on them.
+7. **Migration proof** — validate/status/deploy/read-back where schema changes occur.
+8. **Deployment proof** — exact commit deployed successfully; health/logs checked.
+9. **Live behavior proof** — safe authenticated/public end-to-end behavior tested and read back.
 
 Do not claim a higher verification level than was actually performed.
 
-A successful build does not prove database behavior. A source review does not prove deployment. A deployed container does not prove the user flow works.
+A successful build does not prove database behavior. A source review does not prove deployment. A deployed container does not prove the user flow works. A CI run stopped at formatting does not prove later skipped gates.
 
 ---
 
@@ -219,7 +253,7 @@ Every completed task receives **one score from 1 to 10** based on evidence, not 
 - **7:** complete source-level fix with good regression/static/build evidence; production/integration proof still limited.
 - **8:** complete vertical slice with strong tests and relevant infrastructure verification; minor live/deployment evidence missing.
 - **9:** source + tests + real infrastructure + successful exact-commit deployment; only narrow live/user-path proof or noncritical evidence remains.
-- **10:** complete applicable vertical slice proven from UI/action through API/authz/service/repository/persistence/read-back on the intended runtime, with no known unresolved issue in the assigned scope.
+- **10:** complete applicable vertical slice proven from UI/action through API/authz/service/repository/persistence/read-back on the intended runtime, governing docs updated, with no known unresolved issue in the assigned scope.
 
 Never award 10 because “the code looks correct.”
 
@@ -239,6 +273,10 @@ What changed:
 Changed files:
 - exact/path/one
 - exact/path/two
+
+Documentation updated:
+- exact/path/doc
+- or: audited; no governing document required a change
 
 Commit / current HEAD:
 
@@ -267,8 +305,10 @@ A task is complete only for the exact scope assigned.
 
 - the root cause is addressed at the authoritative layer;
 - affected dependencies/consumers remain coherent;
-- no duplicate truth was introduced;
+- domain ownership remains clean and one-way;
+- no duplicate or monolithic authority was introduced;
 - relevant authorization/data boundaries are intact;
+- affected governing documentation describes the resulting source state;
 - verification evidence supports the claim;
 - remaining uncertainty is disclosed.
 
@@ -284,6 +324,6 @@ Do not turn it into another giant feature-status ledger.
 
 Do not add temporary issue lists, percentages, freeze tables, or per-feature progress tracking here.
 
-Product decisions belong in `docs/DECISIONS.md`; canonical model changes belong in `docs/CANONICAL_MODEL.md`; product requirements belong in `requirements.md`; architecture belongs in `structure.md`.
+Product behavior belongs in `requirements.md`; architecture belongs in `structure.md`; decisions belong in `docs/DECISIONS.md`; canonical model changes belong in `docs/CANONICAL_MODEL.md`; implementation evidence/history belongs in the established current-state/history source.
 
-This separation is intentional so agents can keep building instead of treating stale planning prose as a reason to delete valid work.
+Every task must audit those sources and update the ones its work actually changes. This keeps the documentation alive without multiplying authorities.
