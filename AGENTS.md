@@ -37,10 +37,11 @@ Before the first edit of every task:
 2. Record the current branch HEAD SHA.
 3. Read the relevant governing sources listed above.
 4. Trace the issue from its actual source through every applicable layer.
-5. Search for existing implementations, routes, services, repositories, models, components, hooks, stores, styles, tests, and migrations before creating anything new.
+5. Search for existing implementations, routes, services, repositories, models, components, hooks, stores, styles, tests, migrations, scripts, and documentation before creating anything new.
 6. Identify the authoritative source that should change.
 7. Check whether the branch moved while tracing. If it did, inspect the incoming changes before writing.
 8. Define a narrow task boundary. Work one issue at a time unless the product owner explicitly asks for parallel scope.
+9. Identify which living documents are affected by the task and must be updated before the task can be reported complete.
 
 No edit is allowed merely because a symptom is visible in the frontend.
 
@@ -84,11 +85,17 @@ When a shared component/service/domain is the source, fix it there instead of ov
 
 ---
 
-## 5. Domain and dependency discipline
+## 5. Domain, scalability, and dependency discipline
+
+Every durable product concept must have one clean canonical domain. Domain ownership is an operational scalability rule, not just a folder preference: clean boundaries keep queries, transactions, caches, authorization, frontend state, deployment work, and future scaling independently understandable as HOOMA grows to many users.
+
+Mandatory:
 
 - One authoritative owner per concept.
 - Reuse existing domain services and shared resources instead of creating parallel implementations.
-- Preserve explicit dependency direction and avoid circular dependencies.
+- Preserve explicit one-way dependency direction and avoid circular dependencies.
+- A lower-level canonical domain must not import a higher-level product domain merely to make one workflow convenient.
+- Cross-domain workflows use explicit application ports/orchestrators while the owning domain retains its own business and persistence authority.
 - Keep HTTP/transport concerns out of domain/application policy.
 - Keep Prisma/database-specific behavior in infrastructure/repository boundaries.
 - Keep authorization server-side and capability-specific.
@@ -96,6 +103,25 @@ When a shared component/service/domain is the source, fix it there instead of ov
 - Never persist Whistle body content in PostgreSQL, logs, analytics, audit metadata, outbox payloads, notifications, URLs, or query strings.
 - Global App Admin is `PLATFORM_ADMIN`; scoped Team/Community/product roles must not be renamed to generic Admin.
 - Public browsing stays public where product rules require it; authentication belongs at protected-action/private-data boundaries.
+
+### No monolithic authorities
+
+Do **not** create or expand monolithic files, scripts, services, repositories, clients, contracts, state stores, controllers, components, or catch-all modules that own unrelated domains.
+
+Examples of forbidden direction include:
+
+- one contract file that becomes the authority for Places + Pitch + Platform Admin + another product;
+- one application service that mixes public reads, owner writes, moderation, unrelated domain policy, and persistence orchestration;
+- one repository that becomes the persistence owner for unrelated domain tables merely because the tables are relationally connected;
+- one frontend API client/store that becomes the gateway for unrelated products;
+- one large migration/repair/normalization script that changes several independent domains at once;
+- a generic `shared`, `common`, `management`, `platform`, or `utils` module used to hide unclear ownership.
+
+A script must be single-purpose and bounded. A domain may share genuinely generic primitives, but shared code must not become a second business owner or a dumping ground.
+
+When a file/module is growing across multiple domain responsibilities, stop and identify the owning domains before adding more code. Split by ownership at the authoritative boundary instead of adding another conditional branch to the catch-all.
+
+Performance and user experience must be considered at the domain boundary. Avoid architectures that force unrelated data to load, validate, lock, cache, or rerender together when the user only needs one product flow.
 
 Original/live HOOMA is a **read-only donor/reference**. Learn from its behavior or visuals when useful, but never wire its runtime, data, auth, routes, schema, or architecture into this repository.
 
@@ -127,15 +153,30 @@ A non-fast-forward rejection is a safety signal, not a reason to force the updat
 
 ---
 
-## 7. Change discipline
+## 7. Change discipline and living documentation
 
 Every implementation should be the smallest complete source-level change that solves the assigned issue.
 
-Before adding a new file/model/endpoint/store/component, prove an equivalent authoritative implementation does not already exist.
+Before adding a new file/model/endpoint/store/component/script, prove an equivalent authoritative implementation does not already exist.
 
 When changing schema or contracts, inspect and reconcile all consumers. When changing a shared API, inspect Web and Telegram consumers. When changing authorization, inspect every route/service path that uses the affected policy.
 
 Do not opportunistically refactor unrelated code in the same task.
+
+Documentation is part of the implementation and must stay alive with the source. **Every task must audit and update the documents affected by that task before completion.** A task that changes product behavior, architecture, canonical data ownership, migrations, runtime topology, routes, authorization, or implementation state is not complete while its governing documentation still describes the old state.
+
+Use the existing authoritative document for the subject instead of creating a new overlapping status/architecture file:
+
+- product behavior -> `requirements.md`;
+- repository/domain architecture -> `structure.md`;
+- canonical data/authority -> `docs/CANONICAL_MODEL.md`;
+- architectural decisions -> `docs/DECISIONS.md` and a dedicated ADR only when useful;
+- execution discipline -> `AGENTS.md` / `docs/LIVING_BUILD_PLAN.md`;
+- current implementation history/evidence -> `progress.md` and scoped audit documents where already established.
+
+Do not duplicate an authoritative document just to record the same truth in another place. If an older document duplicates a newer authority, convert it to an explicit reference/retired pointer or update it so it cannot contradict the canonical source.
+
+Documentation updates must describe **merged/current truth** separately from **in-flight PR work**. An open PR is not current foundation truth until merged.
 
 ---
 
@@ -151,7 +192,8 @@ Run the strongest relevant verification available for the changed slice. Dependi
 - API read-back;
 - Web/Telegram route behavior;
 - Railway build/deploy/health/log evidence;
-- production smoke verification when explicitly appropriate and safe.
+- production smoke verification when explicitly appropriate and safe;
+- documentation/source consistency review for the changed domain.
 
 Never say “fixed,” “working,” “deployed,” “complete,” or “DONE” beyond what the evidence proves.
 
@@ -166,8 +208,9 @@ Every finished task report must include:
 - **Issue / root cause** — what was actually wrong.
 - **Source trace** — which layers were inspected and why the chosen source is authoritative.
 - **Changed files** — exact file list.
+- **Documentation updated** — exact governing/current-state docs changed, or an explicit statement that the task was audited and no document required a change.
 - **Commit / branch head** — exact SHA when repository changes were made.
-- **Proof** — tests, builds, logs, migration checks, runtime evidence, or other concrete verification.
+- **Proof** — tests, builds, logs, migration checks, runtime evidence, documentation consistency, or other concrete verification.
 - **Not verified / remaining risk** — explicit gaps; never hide them.
 - **Implementation score: X/10** — evidence-based using the rubric in `docs/LIVING_BUILD_PLAN.md`.
 - **Next issue** — state that it was not started unless the product owner explicitly requested continuation.
@@ -187,6 +230,7 @@ Stop and report instead of improvising when:
 - required infrastructure/credentials are unavailable;
 - runtime evidence contradicts the expected architecture;
 - the only apparent solution is a workaround rather than a source fix;
-- implementing the request would require inventing missing product behavior.
+- implementing the request would require inventing missing product behavior;
+- the only way forward appears to require creating another cross-domain monolith or duplicate source of truth.
 
 Stopping with evidence is correct engineering. Guessing is not.

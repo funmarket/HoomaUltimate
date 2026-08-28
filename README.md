@@ -18,6 +18,7 @@ packages/
   contracts/
   database/
   domain/
+  frontend/
   storage/
   testing/
   ui/
@@ -34,9 +35,29 @@ Every agent or developer must read:
 5. the relevant ADRs in `docs/DECISIONS.md`
 6. the relevant data/authority contracts in `docs/CANONICAL_MODEL.md`
 
-Then inspect the actual source before editing.
+Then inspect the actual source, current branch HEAD, open overlapping PRs, and relevant runtime/database evidence before editing.
 
 The retired `docs/NORMALIZATION_PLAN.md` and `docs/IMPLEMENTATION_STATUS.md` are not active governance and must not be recreated unless the product owner explicitly asks for them.
+
+## Domain ownership rule
+
+HOOMA is organized by clean owning domains. Do not create cross-domain monolithic services, repositories, scripts, contracts, frontend clients/stores, or catch-all modules to make implementation faster. Cross-domain workflows must preserve one authoritative owner per concept and use explicit orchestration/ports where composition is required.
+
+This is a scalability and product-performance rule as well as a code-organization rule: unrelated product flows should not be forced to query, lock, validate, cache, load, or rerender together.
+
+## Living documentation
+
+Documentation is part of each implementation task. When a task changes product behavior, architecture, canonical data ownership, routes, authorization, persistence, deployment/runtime topology, or current source state, the affected authoritative docs must be updated in that same task.
+
+Current authority is intentionally centralized:
+
+- `requirements.md` — product behavior;
+- `structure.md` — architecture/current topology;
+- `docs/CANONICAL_MODEL.md` — canonical data and authority;
+- `docs/DECISIONS.md` — architectural decisions;
+- `AGENTS.md` and `docs/LIVING_BUILD_PLAN.md` — execution discipline.
+
+Do not create duplicate architecture/status documents when an authoritative file already owns the subject. Open PR behavior is in-flight and must not be documented as merged foundation truth.
 
 ## First run
 
