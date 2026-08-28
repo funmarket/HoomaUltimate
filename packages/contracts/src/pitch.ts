@@ -5,7 +5,9 @@ import {
   type PublicPlaceSummary,
 } from "./places.js";
 
+export const pitchCapabilityKindSchema = z.literal("PITCH");
 export const pitchRentalCurrencySchema = z.enum(["TND", "EUR", "USD"]);
+export const pitchReviewTargetSchema = z.enum(["INITIAL_SUGGESTION", "OWNER_REVISION"]);
 
 export const pitchSuggestionSchema = z.object({
   hourlyRateMinor: z.number().int().min(0).max(100_000_000),
@@ -23,7 +25,9 @@ export const pitchApplicationSchema = z.object({
   currency: pitchRentalCurrencySchema,
 });
 
+export type PitchCapabilityKind = z.infer<typeof pitchCapabilityKindSchema>;
 export type PitchRentalCurrency = z.infer<typeof pitchRentalCurrencySchema>;
+export type PitchReviewTarget = z.infer<typeof pitchReviewTargetSchema>;
 export type PitchSuggestionInput = z.infer<typeof pitchSuggestionSchema>;
 export type PitchPlaceSuggestionInput = z.infer<typeof pitchPlaceSuggestionSchema>;
 export type PitchPlaceSuggestionResult = PlaceSuggestionResult;
