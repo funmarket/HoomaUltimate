@@ -1,8 +1,8 @@
 export type PublicEventStatus = "PUBLISHED" | "CANCELLED" | "COMPLETED";
 
-export type PublicEventVenueAuthority =
-  | "OFFICIAL_VENUE"
-  | "SUGGESTED_BY_COMMUNITY"
+export type PublicEventPublisherAuthority =
+  | "VERIFIED_PLACE_OWNER"
+  | "COMMUNITY_PUBLISHER"
   | null;
 
 export type PublicEventPlace = {
@@ -69,7 +69,7 @@ export type PublicEvent = {
     readonly slug: string;
   } | null;
   readonly place: PublicEventPlace | null;
-  readonly venueAuthority: PublicEventVenueAuthority;
+  readonly publisherAuthority: PublicEventPublisherAuthority;
   readonly playDetails: PublicEventPlayDetails | null;
   readonly watchDetails:
     | PublicWatchMatchDetails
