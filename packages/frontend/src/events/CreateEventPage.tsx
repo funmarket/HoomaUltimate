@@ -1,19 +1,19 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type { MeResponse, WatchEventKind } from "@hooma/contracts";
-import type {
-  PublicPlaceCapability,
-  PublicPlaceSummary,
-} from "@hooma/contracts/platform-management";
+import type { PublicPlaceSummary } from "@hooma/contracts/places";
+import type { PublicPlaceCapability } from "@hooma/contracts/pitch";
 import { useHoomaFrontend } from "../context";
 import { GameLocationPicker } from "../game-location/GameLocationPicker";
-import { createPlatformManagementApi } from "../places/platform-management-api";
+import { createPitchApi } from "../pitch/api";
+import { createPlacesApi } from "../places/api";
 import { useEventApi } from "./useEventApi";
 import { WatchEventForm, type WatchEventFormValue } from "./WatchEventForm";
 
 export function CreateEventPage() {
   const eventApi = useEventApi();
   const { api, transport, protectedError } = useHoomaFrontend();
-  const placeApi = useMemo(() => createPlatformManagementApi(transport), [transport]);
+  const placesApi = useMemo(() => createPlacesApi(transport), [transport]);
+  const pitchApi = useMemo(() => createPitchApi(transport), [transport]);
   const searchParams = new URLSearchParams(window.location.search);
   const watchMode = searchParams.get("type") === "WATCH";
   const initialWatchKind: WatchEventKind =
@@ -28,7 +28,7 @@ export function CreateEventPage() {
   useEffect(() => {
     setError("");
     if (watchMode) {
-      void Promise.all([api.identity.me(), placeApi.places.list()])
+      void Promise.all([api.identity.me(), placesApi.list()])
         .then(([identity, placeRows]) => {
           setMe(identity);
           setPlaces(placeRows);
@@ -36,13 +36,13 @@ export function CreateEventPage() {
         .catch((reason) => setError(protectedError(reason, "Authentication required")));
       return;
     }
-    void Promise.all([api.identity.me(), placeApi.capability.list("PITCH")])
+    void Promise.all([api.identity.me(), pitchApi.list()])
       .then(([identity, pitchRows]) => {
         setMe(identity);
         setPitches(pitchRows);
       })
       .catch((reason) => setError(protectedError(reason, "Authentication required")));
-  }, [api, placeApi, protectedError, watchMode]);
+  }, [api, pitchApi, placesApi, protectedError, watchMode]);
 
   const communities =
     me?.communities.filter(
