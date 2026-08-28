@@ -1,5 +1,8 @@
 import { useMemo, useState, type FormEvent } from "react";
-import type { PitchRentalCurrency, PublicPlaceSummary } from "@hooma/contracts/platform-management";
+import type {
+  PitchRentalCurrency,
+  PublicPlaceSummary,
+} from "@hooma/contracts/platform-management";
 import { useHoomaFrontend } from "../context";
 import { createPlatformManagementApi } from "../places/platform-management-api";
 import { pitchRateToMinor } from "./pricing";
