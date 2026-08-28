@@ -86,9 +86,7 @@ async function findDuplicateCandidate(
   const normalizedAddress = normalizeIdentityText(input.address);
   const phone = canonicalPhone(input.phone);
   const website = canonicalWebsite(input.websiteUrl);
-  const exclude = excludePlaceId
-    ? Prisma.sql`AND "id" <> ${excludePlaceId}`
-    : Prisma.sql``;
+  const exclude = excludePlaceId ? Prisma.sql`AND "id" <> ${excludePlaceId}` : Prisma.sql``;
 
   const nameAddress = await tx.$queryRaw<Array<{ id: string }>>(
     Prisma.sql`
