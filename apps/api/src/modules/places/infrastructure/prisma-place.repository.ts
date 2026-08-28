@@ -60,6 +60,11 @@ const placeSelect = Prisma.validator<Prisma.PlaceSelect>()({
   description: true,
   category: true,
   email: true,
+  suggestedByUserId: true,
+  ownerships: {
+    where: { revokedAt: null },
+    select: { userId: true },
+  },
   menuItems: {
     orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
     select: { id: true, name: true, price: true, currency: true },
@@ -75,6 +80,9 @@ function placeSummary(place: PlaceRow, images: readonly PlaceImageRow[] = []): P
     imageUrl: image.imageUrl,
     sortOrder: image.sortOrder,
   }));
+  const suggestedByVerifiedOwner = place.ownerships.some(
+    (ownership) => ownership.userId === place.suggestedByUserId,
+  );
   return {
     id: place.id,
     slug: place.slug,
@@ -97,6 +105,7 @@ function placeSummary(place: PlaceRow, images: readonly PlaceImageRow[] = []): P
       price: item.price.toNumber(),
       currency: item.currency,
     })),
+    submissionOrigin: suggestedByVerifiedOwner ? "OWNER" : "FANHUB",
   };
 }
 
@@ -242,14 +251,12 @@ export class PrismaPlaceRepository implements PlaceRepository {
         suggestedByUserId: true,
         moderationStatus: true,
         ownerships: { where: { userId, revokedAt: null }, select: { id: true }, take: 1 },
-        capabilities: { select: { kind: true } },
       },
     });
     if (!place) return false;
     if (place.ownerships.length) return true;
     if (place.suggestedByUserId !== userId) return false;
-    if (place.moderationStatus !== "APPROVED") return true;
-    return !place.capabilities.some((capability) => capability.kind === "PITCH");
+    return place.moderationStatus === "PENDING";
   }
 
   async update(placeId: string, input: PlaceUpdateInput): Promise<ManagedPlaceSummary> {
@@ -465,7 +472,6 @@ export class PrismaPlaceRepository implements PlaceRepository {
       const place = await tx.place.findFirst({
         where: { id: placeId, moderationStatus: "PENDING", archivedAt: null },
         select: {
-          suggestedByUserId: true,
           capabilities: {
             where: { status: "PENDING" },
             select: { id: true, kind: true, hourlyRateMinor: true, currency: true },
@@ -504,23 +510,6 @@ export class PrismaPlaceRepository implements PlaceRepository {
           reviewNote: input.note ?? null,
         },
       });
-
-      const isSuggestedPitch = place.capabilities.some((capability) => capability.kind === "PITCH");
-      if (status === "APPROVED" && !isSuggestedPitch) {
-        await tx.placeOwnership.upsert({
-          where: { placeId_userId: { placeId, userId: place.suggestedByUserId } },
-          create: {
-            placeId,
-            userId: place.suggestedByUserId,
-            verifiedByUserId: actorUserId,
-          },
-          update: {
-            verifiedByUserId: actorUserId,
-            verifiedAt: reviewedAt,
-            revokedAt: null,
-          },
-        });
-      }
 
       await tx.auditLog.create({
         data: {
