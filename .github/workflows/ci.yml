@@ -5,7 +5,7 @@ on:
     branches: [tmp/pr153-prettier-exact]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify:
@@ -13,6 +13,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: fix/place-provenance-canonical-identity-v2
+          fetch-depth: 0
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -21,8 +24,13 @@ jobs:
       - name: Pin repository npm version
         run: npm install --global npm@10.9.2
       - run: npm ci
-      - name: Print exact Prettier output for PR 153
+      - name: Apply exact Prettier output to PR 153
         run: |
           npm exec -- prettier --write apps/api/src/modules/places/infrastructure/prisma-place.repository.ts packages/contracts/src/events.ts
-          git diff -- apps/api/src/modules/places/infrastructure/prisma-place.repository.ts packages/contracts/src/events.ts
-          exit 1
+          git diff --check
+          git diff --exit-code --quiet && exit 0
+          git config user.name "Out Of Sight"
+          git config user.email "33332777+funmarket@users.noreply.github.com"
+          git add apps/api/src/modules/places/infrastructure/prisma-place.repository.ts packages/contracts/src/events.ts
+          git commit -m "chore(format): normalize pr153 changed files"
+          git push origin HEAD:fix/place-provenance-canonical-identity-v2
