@@ -1,4 +1,3 @@
-import type { ModerationDecisionInput } from "@hooma/contracts/moderation";
 import type {
   ManagedPlaceSummary,
   PlaceOwnershipClaimInput,
@@ -10,7 +9,7 @@ import type {
   PublicPlaceSummary,
 } from "@hooma/contracts/places";
 import { Prisma, type PrismaClient } from "@hooma/database";
-import type { PlaceRepository } from "../application/place.repository.js";
+import type { PlaceModerationDecision, PlaceRepository } from "../application/place.repository.js";
 import {
   canonicalPlaceImageCreate,
   canonicalPlaceSelect,
@@ -311,7 +310,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
       }));
   }
 
-  async reviewPlace(actorUserId: string, placeId: string, input: ModerationDecisionInput) {
+  async reviewPlace(actorUserId: string, placeId: string, input: PlaceModerationDecision) {
     const status = input.decision === "APPROVE" ? "APPROVED" : "REJECTED";
     return this.db.$transaction(async (tx) => {
       const reviewedAt = new Date();
@@ -339,7 +338,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
     });
   }
 
-  async reviewOwnershipClaim(actorUserId: string, claimId: string, input: ModerationDecisionInput) {
+  async reviewOwnershipClaim(actorUserId: string, claimId: string, input: PlaceModerationDecision) {
     const status = input.decision === "APPROVE" ? "APPROVED" : "REJECTED";
     return this.db.$transaction(async (tx) => {
       const claim = await tx.placeOwnershipClaim.findFirst({
