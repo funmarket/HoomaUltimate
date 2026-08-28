@@ -1,12 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
-import type { PublicPlaceSummary } from "@hooma/contracts/platform-management";
+import type {
+  PitchRentalCurrency,
+  PublicPlaceSummary,
+} from "@hooma/contracts/platform-management";
 import { useHoomaFrontend } from "../context";
 import type { PublicEvent } from "../events/api";
 import { useEventApi } from "../events/useEventApi";
+import { pitchRateToMinor } from "../pitch/pricing";
 import { PlaceForm } from "./PlaceForm";
 import { createPlatformManagementApi } from "./platform-management-api";
 
 export { PlaceDetailPage } from "./PlaceDetailPage";
+
+const PITCH_RENTAL_CURRENCIES: readonly PitchRentalCurrency[] = ["TND", "EUR", "USD"];
 
 function locationLabel(place: PublicPlaceSummary): string {
   return [place.houma, place.city].filter(Boolean).join(" · ") || place.address;
@@ -121,6 +127,8 @@ export function AddPlacePage() {
   const { transport, protectedError } = useHoomaFrontend();
   const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
   const isPitchSuggestion = new URLSearchParams(window.location.search).get("kind") === "PITCH";
+  const [pitchHourlyRate, setPitchHourlyRate] = useState("");
+  const [pitchCurrency, setPitchCurrency] = useState<PitchRentalCurrency>("TND");
   const [error, setError] = useState("");
   const [submittedPlaceId, setSubmittedPlaceId] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -131,7 +139,15 @@ export function AddPlacePage() {
     try {
       const created = await api.places.suggest({
         ...input,
-        ...(isPitchSuggestion ? { suggestedCapabilities: ["PITCH"] } : {}),
+        ...(isPitchSuggestion
+          ? {
+              suggestedCapabilities: ["PITCH"],
+              pitch: {
+                hourlyRateMinor: pitchRateToMinor(Number(pitchHourlyRate), pitchCurrency),
+                currency: pitchCurrency,
+              },
+            }
+          : {}),
       });
       setSubmittedPlaceId(created.id);
     } catch (reason) {
@@ -149,7 +165,7 @@ export function AddPlacePage() {
           <h1>{isPitchSuggestion ? "Pitch suggested" : "Place submitted"}</h1>
           <p>
             {isPitchSuggestion
-              ? "The App Admin will review this football pitch. Once approved, it can appear in Pitch and the real owner can claim it."
+              ? "The App Admin will review this football pitch and its hourly rental price. Once approved, it can appear in Pitch and the real owner can claim it."
               : "The App Admin will review the Place. Once approved, it will appear in Places and can be used for Watch events."}
           </p>
           <div className="place-detail-actions">
@@ -167,6 +183,48 @@ export function AddPlacePage() {
     );
   }
 
+  const pitchPricingSection = isPitchSuggestion ? (
+    <section className="hooma-form__section">
+      <div className="hooma-form__section-heading">
+        <span>04</span>
+        <div>
+          <h2>Rental price</h2>
+          <p>The hourly price that will be reviewed before this Pitch is published.</p>
+        </div>
+      </div>
+      <div className="hooma-form__grid">
+        <label className="hooma-field">
+          <span>Hourly rental price *</span>
+          <input
+            name="pitchHourlyRate"
+            type="number"
+            min="0"
+            step="0.001"
+            inputMode="decimal"
+            value={pitchHourlyRate}
+            onChange={(event) => setPitchHourlyRate(event.target.value)}
+            required
+          />
+        </label>
+        <label className="hooma-field">
+          <span>Currency *</span>
+          <select
+            name="pitchCurrency"
+            value={pitchCurrency}
+            onChange={(event) => setPitchCurrency(event.target.value as PitchRentalCurrency)}
+            required
+          >
+            {PITCH_RENTAL_CURRENCIES.map((currency) => (
+              <option key={currency} value={currency}>
+                {currency}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+    </section>
+  ) : null;
+
   return (
     <section className="place-page place-form-page">
       <header className="place-page__header place-form-page__header">
@@ -175,7 +233,7 @@ export function AddPlacePage() {
           <h1>{isPitchSuggestion ? "Suggest a football pitch" : "List your Place"}</h1>
           <p>
             {isPitchSuggestion
-              ? "Add the real venue details. Suggesting a pitch does not make you its owner."
+              ? "Add the real venue details and hourly rental price. Suggesting a pitch does not make you its owner."
               : "Build the full venue profile once. Coordinates are optional."}
           </p>
         </div>
@@ -184,6 +242,7 @@ export function AddPlacePage() {
         submitLabel={isPitchSuggestion ? "Suggest Pitch" : "Submit Place"}
         pending={pending}
         showMenu={!isPitchSuggestion}
+        extraSection={pitchPricingSection}
         onSubmit={submit}
       />
       {error ? <p className="error">{error}</p> : null}
