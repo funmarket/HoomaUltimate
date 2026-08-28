@@ -18,9 +18,10 @@ function cssRule(css, selector) {
 
 test("Watch page exposes only the four product functions and no business onboarding", () => {
   const watch = source("packages/frontend/src/watch/WatchPage.tsx");
-  for (const label of ["Events", "Places", "Create Event", "Add a Place"]) {
+  for (const label of ["Events", "Spots", "Create Event", "Add a Place"]) {
     assert.match(watch, new RegExp(`>\\s*${label}\\s*<`));
   }
+  assert.doesNotMatch(watch, />\s*Places\s*</);
   assert.doesNotMatch(
     watch,
     /PlaceCapabilityOnboarding|Apply for Watch|Verify Place ownership|BUSINESS OWNER/,
@@ -29,6 +30,19 @@ test("Watch page exposes only the four product functions and no business onboard
     existsSync(new URL("../packages/frontend/src/watch/watch-business.css", import.meta.url)),
     false,
   );
+});
+
+test("Watch Spots reuse canonical Places and exclude canonical Pitch capabilities", () => {
+  const places = source("packages/frontend/src/places/PlacesPages.tsx");
+  assert.match(places, /<h1>Spots<\/h1>/);
+  assert.match(places, /api\.capability\.list\("PITCH"\)/);
+  assert.match(places, /pitchPlaceIds/);
+  assert.match(places, /!pitchPlaceIds\.has\(place\.id\)/);
+  assert.match(places, />\s*Events\s*</);
+  assert.match(places, />\s*Spots\s*</);
+  assert.match(places, /href="\/events\/new\?type=WATCH&kind=MATCH"/);
+  assert.match(places, /href="\/places\/new"/);
+  assert.doesNotMatch(places, /SpotService|SpotRepository|SpotVenue/);
 });
 
 test("Watch capability application routes and service wiring are gone", () => {

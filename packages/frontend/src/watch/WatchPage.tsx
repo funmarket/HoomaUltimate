@@ -172,7 +172,7 @@ export function WatchPage() {
           Events
         </a>
         <a className="watch-action" href="/places">
-          Places
+          Spots
         </a>
         <a
           className="watch-action watch-action--primary"
