@@ -24,6 +24,13 @@ test("an approved suggested Pitch publishes the reviewed creation price before o
   const suggester = await db.user.create({ data: {} });
   const claimant = await db.user.create({ data: {} });
   const admin = await db.user.create({ data: {} });
+  await db.userPresentation.create({
+    data: {
+      userId: suggester.id,
+      username: `pitch_suggester_${suffix}`,
+      displayName: "Pitch Suggester",
+    },
+  });
   const places = new PrismaPlaceRepository(db);
   const capabilityRepository = new PrismaPlaceCapabilityRepository(db);
   const pitch = new PlaceCapabilityService("PITCH", capabilityRepository, places, allowAdmin);
