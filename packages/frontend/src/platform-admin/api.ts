@@ -1,12 +1,10 @@
-import type { ModerationDecisionInput } from "@hooma/contracts/moderation";
-import type {
-  PlaceOwnershipReviewQueueItem,
-  PlaceReviewQueueItem,
-} from "@hooma/contracts/places";
-import type { PitchReviewQueueItem, PitchReviewTarget } from "@hooma/contracts/pitch";
 import type {
   AdminAccess,
+  AdminPitchReviewQueueItem,
+  AdminPlaceOwnershipReviewQueueItem,
+  AdminPlaceReviewQueueItem,
   AppManagerSummary,
+  ModerationDecisionInput,
   PlatformManagerCapability,
 } from "@hooma/contracts/platform-admin";
 import { request, type HoomaTransport } from "../http";
@@ -38,10 +36,15 @@ export function createPlatformAdminApi(transport: HoomaTransport) {
         method: "PUT",
         body: JSON.stringify({ capabilities }),
       }),
-    placeQueue: () => request<PlaceReviewQueueItem[]>(transport, "/api/v1/admin/queues/places"),
+    placeQueue: () =>
+      request<AdminPlaceReviewQueueItem[]>(transport, "/api/v1/admin/queues/places"),
     placeOwnershipQueue: () =>
-      request<PlaceOwnershipReviewQueueItem[]>(transport, "/api/v1/admin/queues/place-ownership"),
-    pitchQueue: () => request<PitchReviewQueueItem[]>(transport, "/api/v1/admin/queues/pitch"),
+      request<AdminPlaceOwnershipReviewQueueItem[]>(
+        transport,
+        "/api/v1/admin/queues/place-ownership",
+      ),
+    pitchQueue: () =>
+      request<AdminPitchReviewQueueItem[]>(transport, "/api/v1/admin/queues/pitch"),
     decidePlace: (placeId: string, input: ModerationDecisionInput) =>
       request<{ ok: true }>(
         transport,
@@ -55,7 +58,7 @@ export function createPlatformAdminApi(transport: HoomaTransport) {
         { method: "POST", body: JSON.stringify(input) },
       ),
     decidePitch: (
-      target: PitchReviewTarget,
+      target: AdminPitchReviewQueueItem["target"],
       reviewId: string,
       input: ModerationDecisionInput,
     ) =>
