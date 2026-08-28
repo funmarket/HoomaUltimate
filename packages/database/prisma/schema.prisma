@@ -465,18 +465,18 @@ model Community {
   city            String?
   houma            String?
   logoUrl         String?
-  bannerUrl       String?
-  status          CommunityStatus             @default(ACTIVE)
-  visibility      CommunityVisibility         @default(PUBLIC)
-  joinPolicy      CommunityJoinPolicy         @default(OPEN)
-  createdByUserId String
-  createdAt       DateTime                    @default(now())
-  updatedAt       DateTime                    @updatedAt
-  createdBy       User                        @relation("CommunityCreator", fields: [createdByUserId], references: [id])
-  memberships     CommunityMembership[]
-  joinRequests    CommunityJoinRequest[]
-  teams           Team[]
-  events          Event[]
+  bannerUrl        String?
+  status           CommunityStatus             @default(ACTIVE)
+  visibility       CommunityVisibility         @default(PUBLIC)
+  joinPolicy       CommunityJoinPolicy         @default(OPEN)
+  createdByUserId  String
+  createdAt        DateTime                    @default(now())
+  updatedAt        DateTime                    @updatedAt
+  createdBy        User                        @relation("CommunityCreator", fields: [createdByUserId], references: [id])
+  memberships      CommunityMembership[]
+  joinRequests     CommunityJoinRequest[]
+  teams            Team[]
+  events           Event[]
 
   @@index([status, visibility, createdAt])
   @@index([city, houma])
@@ -521,7 +521,7 @@ model Team {
   name                 String
   motto                String?
   city                 String?
-  houma                 String?
+  houma                String?
   badgeUrl             String?
   bannerUrl            String?
   status               TeamStatus                     @default(ACTIVE)
