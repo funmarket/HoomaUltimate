@@ -39,11 +39,13 @@ export function PlacesPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    void api.places
-      .list()
-      .then(setPlaces)
+    void Promise.all([api.places.list(), api.capability.list("PITCH")])
+      .then(([allPlaces, pitches]) => {
+        const pitchPlaceIds = new Set(pitches.map((pitch) => pitch.place.id));
+        setPlaces(allPlaces.filter((place) => !pitchPlaceIds.has(place.id)));
+      })
       .catch((reason) =>
-        setError(reason instanceof Error ? reason.message : "Unable to load Places"),
+        setError(reason instanceof Error ? reason.message : "Unable to load Spots"),
       );
     void eventApi
       .publicWatch()
@@ -75,14 +77,27 @@ export function PlacesPage() {
     <section className="place-page">
       <header className="place-page__header">
         <div>
-          <p className="eyebrow">PLACES</p>
-          <h1>Places</h1>
-          <p>Approved businesses and venues for Watch.</p>
+          <p className="eyebrow">SPOTS</p>
+          <h1>Spots</h1>
+          <p>Cafés, lounges, restaurants and other places to watch together.</p>
         </div>
-        <a className="place-primary-link" href="/places/new">
+      </header>
+
+      <nav className="watch-actions" aria-label="Watch sections">
+        <a className="watch-action" href="/watch">
+          Events
+        </a>
+        <a className="watch-action watch-action--active" href="/places">
+          Spots
+        </a>
+        <a className="watch-action watch-action--primary" href="/events/new?type=WATCH&kind=MATCH">
+          Create Event
+        </a>
+        <a className="watch-action" href="/places/new">
           Add a Place
         </a>
-      </header>
+      </nav>
+
       {error ? <p className="error">{error}</p> : null}
       <div className="place-directory">
         {places.map((place) => {
@@ -111,7 +126,7 @@ export function PlacesPage() {
             </a>
           );
         })}
-        {!places.length && !error ? <p className="muted">No approved Places yet.</p> : null}
+        {!places.length && !error ? <p className="muted">No approved Spots yet.</p> : null}
       </div>
     </section>
   );
@@ -150,7 +165,7 @@ export function AddPlacePage() {
           <p>
             {isPitchSuggestion
               ? "The App Admin will review this football pitch. Once approved, it can appear in Pitch and the real owner can claim it."
-              : "The App Admin will review the Place. Once approved, it will appear in Places and can be used for Watch events."}
+              : "The App Admin will review the Place. Once approved, it will appear in Spots and can be used for Watch events."}
           </p>
           <div className="place-detail-actions">
             {!isPitchSuggestion ? (
