@@ -1,14 +1,12 @@
+import type { PublicPlaceImage, PublicPlaceSummary } from "@hooma/contracts/places";
 import type {
-  AdminQueueItem,
-  ModerationDecisionInput,
   PitchCapabilityManagementState,
   PitchRentalCurrency,
   PlaceCapabilityApplicationInput,
   PlaceCapabilityKind,
   PublicPlaceCapability,
-  PublicPlaceImage,
-  PublicPlaceSummary,
-} from "@hooma/contracts/platform-management";
+} from "@hooma/contracts/pitch";
+import type { AdminQueueItem, ModerationDecisionInput } from "@hooma/contracts/platform-admin";
 import { Prisma, type PrismaClient } from "@hooma/database";
 import type { PlaceCapabilityRepository } from "../application/place-capability.repository.js";
 
