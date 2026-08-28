@@ -1,5 +1,5 @@
 import { AppError } from "../../../http/errors/app-error.js";
-import type { PlatformAdminAuthorizer } from "../../platform-admin/application/platform-admin.authorizer.js";
+import type { PitchAccessAuthorizer } from "./pitch-access.authorizer.js";
 import type {
   PitchModerationDecision,
   PitchRepository,
@@ -9,16 +9,16 @@ import type {
 export class PitchModerationService {
   constructor(
     private readonly repository: PitchRepository,
-    private readonly platformAdmin: PlatformAdminAuthorizer,
+    private readonly access: PitchAccessAuthorizer,
   ) {}
 
   async pending(userId: string) {
-    await this.platformAdmin.requireCapability(userId, "REVIEW_PITCH_APPLICATIONS");
+    await this.access.requireCapability(userId, "REVIEW_PITCH_APPLICATIONS");
     return this.repository.pending();
   }
 
   async pendingInitialPlaceIds(userId: string) {
-    await this.platformAdmin.requireCapability(userId, "REVIEW_PITCH_APPLICATIONS");
+    await this.access.requireCapability(userId, "REVIEW_PITCH_APPLICATIONS");
     return this.repository.pendingInitialPlaceIds();
   }
 
@@ -28,7 +28,7 @@ export class PitchModerationService {
     reviewId: string,
     input: PitchModerationDecision,
   ) {
-    await this.platformAdmin.requireCapability(userId, "REVIEW_PITCH_APPLICATIONS");
+    await this.access.requireCapability(userId, "REVIEW_PITCH_APPLICATIONS");
     try {
       if (!(await this.repository.review(userId, target, reviewId, input))) {
         throw new AppError(
