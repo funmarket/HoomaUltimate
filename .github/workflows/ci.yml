@@ -24,36 +24,24 @@ jobs:
       - name: Pin repository npm version
         run: npm install --global npm@10.9.2
       - run: npm ci
-      - name: Align stale PR 153 unit expectations
+      - name: Align Pitch integration with canonical Place result
         run: |
           node --input-type=module <<'NODE'
           import { readFile, writeFile } from "node:fs/promises";
 
-          const placeTestPath = "tests/place-detail-watch-experience.test.mjs";
-          let placeTest = await readFile(placeTestPath, "utf8");
-          const oldQueryAssertion = '  assert.match(detail, /new URLSearchParams\\(window\\.location\\.search\\)\\.get\\("eventId"\\)/);';
-          const newQueryAssertions = '  assert.match(detail, /const query = new URLSearchParams\\(window\\.location\\.search\\)/);\n  assert.match(detail, /const selectedEventId = query\\.get\\("eventId"\\)/);';
-          if (!placeTest.includes(oldQueryAssertion)) throw new Error("stale Place query assertion not found");
-          placeTest = placeTest.replace(oldQueryAssertion, newQueryAssertions);
-          const oldAuthorityAssertion = '  assert.match(detail, /selectedEvent\\.venueAuthority === "OFFICIAL_VENUE"/);';
-          const newAuthorityAssertion = '  assert.match(detail, /selectedEvent\\.publisherAuthority === "VERIFIED_PLACE_OWNER"/);';
-          if (!placeTest.includes(oldAuthorityAssertion)) throw new Error("stale Place authority assertion not found");
-          placeTest = placeTest.replace(oldAuthorityAssertion, newAuthorityAssertion);
-          await writeFile(placeTestPath, placeTest);
-
-          const eventTestPath = "tests/watch-event-detail-presentation.test.mjs";
-          let eventTest = await readFile(eventTestPath, "utf8");
-          const oldLabels = '  assert.match(page, /Official venue/);\n  assert.match(page, /Suggested by community/);';
-          const newLabels = '  assert.match(page, /event\\.publisherAuthority === "VERIFIED_PLACE_OWNER"/);\n  assert.match(page, /Published by venue/);\n  assert.match(page, /Community-published/);\n  assert.doesNotMatch(page, /Official venue|Suggested by community/);';
-          if (!eventTest.includes(oldLabels)) throw new Error("stale Watch publisher labels not found");
-          eventTest = eventTest.replace(oldLabels, newLabels);
-          await writeFile(eventTestPath, eventTest);
+          const path = "tests/pitch-suggestion-lifecycle.integration.test.ts";
+          let source = await readFile(path, "utf8");
+          const oldSource = '    placeId = suggested.id;\n    assert.equal(suggested.status, "PENDING");';
+          const newSource = '    assert.equal(suggested.outcome, "CREATED");\n    placeId = suggested.place.id;\n    assert.equal(suggested.status, "PENDING");';
+          if (!source.includes(oldSource)) throw new Error("stale Pitch suggestion result usage not found");
+          source = source.replace(oldSource, newSource);
+          await writeFile(path, source);
           NODE
-          npm exec -- prettier --write tests/place-detail-watch-experience.test.mjs tests/watch-event-detail-presentation.test.mjs
+          npm exec -- prettier --write tests/pitch-suggestion-lifecycle.integration.test.ts
           git diff --check
           git diff --exit-code --quiet && exit 0
           git config user.name "Out Of Sight"
           git config user.email "33332777+funmarket@users.noreply.github.com"
-          git add tests/place-detail-watch-experience.test.mjs tests/watch-event-detail-presentation.test.mjs
-          git commit -m "test(watch): align publisher authority expectations"
+          git add tests/pitch-suggestion-lifecycle.integration.test.ts
+          git commit -m "test(pitch): consume canonical Place suggestion result"
           git push origin HEAD:fix/place-provenance-canonical-identity-v2
