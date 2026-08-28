@@ -1,12 +1,11 @@
 import type {
-  AdminQueueItem,
   ManagedPlaceSummary,
-  ModerationDecisionInput,
   PlaceOwnershipClaimInput,
   PlaceSuggestionInput,
   PlaceUpdateInput,
   PublicPlaceSummary,
-} from "@hooma/contracts/platform-management";
+} from "@hooma/contracts/places";
+import type { AdminQueueItem, ModerationDecisionInput } from "@hooma/contracts/platform-admin";
 
 export interface PlaceRepository {
   listPublic(): Promise<readonly PublicPlaceSummary[]>;
