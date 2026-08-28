@@ -4,16 +4,14 @@ import type {
   ModerationDecisionInput,
   PlaceOwnershipClaimInput,
   PlaceSuggestionInput,
+  PlaceSuggestionResult,
   PlaceUpdateInput,
   PublicPlaceSummary,
 } from "@hooma/contracts/platform-management";
 
 export interface PlaceRepository {
   listPublic(): Promise<readonly PublicPlaceSummary[]>;
-  suggest(
-    userId: string,
-    input: PlaceSuggestionInput,
-  ): Promise<PublicPlaceSummary & { status: string }>;
+  suggest(userId: string, input: PlaceSuggestionInput): Promise<PlaceSuggestionResult>;
   getApproved(placeId: string): Promise<PublicPlaceSummary | null>;
   getManaged(placeId: string): Promise<ManagedPlaceSummary | null>;
   canManage(placeId: string, userId: string): Promise<boolean>;
