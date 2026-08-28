@@ -346,6 +346,7 @@ model Place {
   capabilities        PlaceCapability[]
   applications        PlaceCapabilityApplication[]
   menuItems           PlaceMenuItem[]
+  images              PlaceImage[]
   events              Event[]
   teamChallengeVenues TeamChallenge[]              @relation("TeamChallengePlace")
   teamGameVenues      TeamGame[]                   @relation("TeamGamePlace")
@@ -365,6 +366,19 @@ model PlaceMenuItem {
   updatedAt DateTime @updatedAt
   place     Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
 
+  @@index([placeId, sortOrder])
+}
+
+model PlaceImage {
+  id        String   @id @default(cuid())
+  placeId   String
+  imageUrl  String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  place     Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  @@unique([placeId, sortOrder])
   @@index([placeId, sortOrder])
 }
 
