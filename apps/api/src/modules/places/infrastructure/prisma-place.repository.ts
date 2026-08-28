@@ -369,9 +369,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
       select: { evidence: true },
     });
     const evidence =
-      existing?.evidence === OWNER_SUBMISSION_EVIDENCE
-        ? OWNER_SUBMISSION_EVIDENCE
-        : input.evidence;
+      existing?.evidence === OWNER_SUBMISSION_EVIDENCE ? OWNER_SUBMISSION_EVIDENCE : input.evidence;
     const claim = await this.db.placeOwnershipClaim.upsert({
       where: { placeId_claimantUserId: { placeId, claimantUserId: userId } },
       create: { placeId, claimantUserId: userId, evidence },
