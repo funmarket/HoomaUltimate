@@ -32,14 +32,7 @@ export type PublicWatchMatchDetails = {
 export type PublicWatchCulturalDetails = {
   readonly kind: "CULTURAL";
   readonly culturalCategory:
-    | "MUSIC"
-    | "CONCERT"
-    | "COMEDY"
-    | "ART"
-    | "SCREENING"
-    | "FOOD"
-    | "COMMUNITY"
-    | "OTHER";
+    "MUSIC" | "CONCERT" | "COMEDY" | "ART" | "SCREENING" | "FOOD" | "COMMUNITY" | "OTHER";
   readonly imageUrl: string | null;
 };
 
