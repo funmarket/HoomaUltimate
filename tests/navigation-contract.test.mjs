@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-test("locked bottom navigation and eight-card Home gateway cannot drift", async () => {
+test("locked bottom navigation and nine-card Home gateway cannot drift", async () => {
   const navSource = await readFile("packages/ui/src/navigation/HoomaBottomNav.tsx", "utf8");
   const gatewaySource = await readFile("packages/ui/src/home/home-gateways.ts", "utf8");
   const nav = navSource.slice(
@@ -15,7 +15,7 @@ test("locked bottom navigation and eight-card Home gateway cannot drift", async 
   );
   assert.deepEqual(
     [...gatewaySource.matchAll(/label: "([^"]+)"/g)].map((match) => match[1]),
-    ["HOOMA", "Teams", "Ultras", "Gamers", "Places", "Requests", "Ride", "FundMe"],
+    ["HOOMA", "Teams", "Ultras", "Spots", "Pitch", "Gamers", "Ride", "Requests", "FundMe"],
   );
   assert.deepEqual(
     [...gatewaySource.matchAll(/subtitle: "([^"]+)"/g)].map((match) => match[1]),
@@ -23,8 +23,9 @@ test("locked bottom navigation and eight-card Home gateway cannot drift", async 
       "Community",
       "Manage squads",
       "Coming soon",
+      "Cafés & lounges",
+      "Find a pitch",
       "Find opponents",
-      "Watch + Pitch",
       "Coming soon",
       "Coming soon",
       "Coming soon",
@@ -32,7 +33,17 @@ test("locked bottom navigation and eight-card Home gateway cannot drift", async 
   );
   assert.deepEqual(
     [...gatewaySource.matchAll(/href: ("[^"]+"|null)/g)].map((match) => match[1]),
-    ['"/hooma"', '"/teams"', "null", '"/gamers"', '"/places"', "null", "null", "null"],
+    [
+      '"/hooma"',
+      '"/teams"',
+      "null",
+      '"/places"',
+      '"/pitch"',
+      '"/gamers"',
+      "null",
+      "null",
+      "null",
+    ],
   );
 });
 
@@ -44,7 +55,7 @@ test("Home gateway cards expose visible labels and disable unavailable destinati
     readFile("apps/telegram/package.json", "utf8"),
     readFile("packages/ui/src/index.tsx", "utf8"),
   ]);
-  assert.match(grid, /grid-template-columns: repeat\(4/);
+  assert.match(grid, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
   assert.match(grid, />Quick actions<\/p>/);
   assert.match(grid, /home-gateway-card__title/);
   assert.match(grid, /home-gateway-card__subtitle/);
