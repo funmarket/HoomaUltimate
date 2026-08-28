@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { ModerationStatus } from "./moderation.js";
 
 export const placeSubmissionOriginSchema = z.enum(["OWNER", "FANHUB"]);
 
@@ -51,6 +50,7 @@ export type PlaceSuggestionInput = z.infer<typeof placeSuggestionSchema>;
 export type PlaceUpdateInput = z.infer<typeof placeUpdateSchema>;
 export type PlaceOwnershipClaimInput = z.infer<typeof placeOwnershipClaimSchema>;
 export type PlaceDuplicateMatch = "NAME_ADDRESS" | "PHONE" | "WEBSITE" | "NAME_COORDINATES";
+export type PlaceModerationStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export interface PublicPlaceMenuItem {
   readonly id: string;
@@ -88,30 +88,12 @@ export interface PublicPlaceSummary {
 export interface PlaceSuggestionResult {
   readonly outcome: "CREATED" | "EXISTING";
   readonly place: PublicPlaceSummary;
-  readonly status: ModerationStatus;
+  readonly status: PlaceModerationStatus;
   readonly matchedBy: PlaceDuplicateMatch | null;
   readonly archivedAt: string | null;
 }
 
 export interface ManagedPlaceSummary extends PublicPlaceSummary {
-  readonly moderationStatus: ModerationStatus;
+  readonly moderationStatus: PlaceModerationStatus;
   readonly archivedAt: string | null;
-}
-
-export interface PlaceReviewQueueItem {
-  readonly id: string;
-  readonly status: ModerationStatus;
-  readonly createdAt: string;
-  readonly reviewedAt: string | null;
-  readonly reviewNote: string | null;
-  readonly applicant: {
-    readonly userId: string;
-    readonly username: string;
-    readonly displayName: string;
-  };
-  readonly place: PublicPlaceSummary;
-}
-
-export interface PlaceOwnershipReviewQueueItem extends PlaceReviewQueueItem {
-  readonly evidence: string;
 }
