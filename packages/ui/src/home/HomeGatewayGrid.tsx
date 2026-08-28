@@ -39,10 +39,6 @@ const HOME_GATEWAY_STYLES = `
   filter: brightness(1.04);
 }
 .home-gateway-card:active:not(:disabled) { transform: translateY(0); }
-.home-gateway-card:focus-visible {
-  outline: 2px solid #f3cf7a;
-  outline-offset: 3px;
-}
 .home-gateway-card--disabled {
   cursor: not-allowed;
   opacity: .78;
