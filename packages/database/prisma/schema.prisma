@@ -452,7 +452,6 @@ model PlaceCapabilityApplication {
   place            Place               @relation(fields: [placeId], references: [id], onDelete: Cascade)
   applicant        User                @relation("PlaceCapabilityApplicant", fields: [applicantUserId], references: [id], onDelete: Cascade)
 
-  @@unique([placeId, kind])
   @@index([kind, status, createdAt])
   @@index([applicantUserId, status])
 }

@@ -19,7 +19,7 @@ const allowAdmin: PlatformAdminAuthorizer = {
   async requireCapability() {},
 };
 
-test("an approved suggested Pitch publishes the reviewed creation price before ownership", async () => {
+test("an approved suggested Pitch preserves immutable owner moderation history", async () => {
   const suffix = Date.now().toString(36);
   const suggester = await db.user.create({ data: {} });
   const claimant = await db.user.create({ data: {} });
@@ -36,7 +36,7 @@ test("an approved suggested Pitch publishes the reviewed creation price before o
   const pitch = new PlaceCapabilityService("PITCH", capabilityRepository, places, allowAdmin);
 
   let placeId: string | null = null;
-  let applicationId: string | null = null;
+  const applicationIds: string[] = [];
   let claimId: string | null = null;
 
   try {
@@ -113,23 +113,30 @@ test("an approved suggested Pitch publishes the reviewed creation price before o
     );
     assert.equal(await places.hasVerifiedOwnership(placeId, claimant.id), true);
 
-    const application = await pitch.submit(claimant.id, placeId, {
+    const firstRevision = await pitch.submit(claimant.id, placeId, {
       summary: "Floodlit five-a-side pitch with changing rooms.",
       hourlyRateMinor: 50_000,
       currency: "TND",
     });
-    applicationId = application.id;
-    assert.equal(application.status, "PENDING");
+    applicationIds.push(firstRevision.id);
+    assert.equal(firstRevision.status, "PENDING");
 
     const stillPublicWhilePending = await pitch.getPublic(placeId);
     assert.equal(stillPublicWhilePending.hourlyRateMinor, 45_000);
     assert.equal(stillPublicWhilePending.currency, "TND");
     assert.equal(stillPublicWhilePending.place.phone, "+21671000123");
 
-    await pitch.review(admin.id, application.id, {
+    await pitch.review(admin.id, firstRevision.id, {
       decision: "APPROVE",
       note: "Updated rental details verified",
     });
+
+    const approvedFirstRevision = await db.placeCapabilityApplication.findUnique({
+      where: { id: firstRevision.id },
+    });
+    assert.equal(approvedFirstRevision?.status, "APPROVED");
+    assert.equal(approvedFirstRevision?.hourlyRateMinor, 50_000);
+    assert.equal(approvedFirstRevision?.currency, "TND");
 
     const approvedRental = await pitch.getPublic(placeId);
     assert.equal(approvedRental.summary, "Floodlit five-a-side pitch with changing rooms.");
@@ -137,18 +144,19 @@ test("an approved suggested Pitch publishes the reviewed creation price before o
     assert.equal(approvedRental.currency, "TND");
     assert.equal(approvedRental.place.phone, "+21671000123");
 
-    const update = await pitch.submit(claimant.id, placeId, {
+    const secondRevision = await pitch.submit(claimant.id, placeId, {
       summary: "Updated rental details awaiting review.",
       hourlyRateMinor: 55_000,
       currency: "TND",
     });
-    assert.equal(update.id, application.id);
-    assert.equal(update.status, "PENDING");
+    applicationIds.push(secondRevision.id);
+    assert.notEqual(secondRevision.id, firstRevision.id);
+    assert.equal(secondRevision.status, "PENDING");
 
     const previousApprovedProfile = await pitch.getPublic(placeId);
     assert.equal(previousApprovedProfile.hourlyRateMinor, 50_000);
 
-    await pitch.review(admin.id, update.id, {
+    await pitch.review(admin.id, secondRevision.id, {
       decision: "REJECT",
       note: "Updated price could not be verified",
     });
@@ -156,9 +164,56 @@ test("an approved suggested Pitch publishes the reviewed creation price before o
     const afterRejectedUpdate = await pitch.getPublic(placeId);
     assert.equal(afterRejectedUpdate.hourlyRateMinor, 50_000);
     assert.equal(afterRejectedUpdate.currency, "TND");
+
+    const preservedFirstRevision = await db.placeCapabilityApplication.findUnique({
+      where: { id: firstRevision.id },
+    });
+    const rejectedSecondRevision = await db.placeCapabilityApplication.findUnique({
+      where: { id: secondRevision.id },
+    });
+    assert.equal(preservedFirstRevision?.status, "APPROVED");
+    assert.equal(preservedFirstRevision?.hourlyRateMinor, 50_000);
+    assert.equal(rejectedSecondRevision?.status, "REJECTED");
+    assert.equal(rejectedSecondRevision?.hourlyRateMinor, 55_000);
+    assert.equal(rejectedSecondRevision?.reviewNote, "Updated price could not be verified");
+
+    const thirdRevision = await pitch.submit(claimant.id, placeId, {
+      summary: "Verified new rental details.",
+      hourlyRateMinor: 60_000,
+      currency: "TND",
+    });
+    applicationIds.push(thirdRevision.id);
+    assert.notEqual(thirdRevision.id, firstRevision.id);
+    assert.notEqual(thirdRevision.id, secondRevision.id);
+
+    const stillPublicBeforeThirdApproval = await pitch.getPublic(placeId);
+    assert.equal(stillPublicBeforeThirdApproval.hourlyRateMinor, 50_000);
+
+    await pitch.review(admin.id, thirdRevision.id, {
+      decision: "APPROVE",
+      note: "New rental price verified",
+    });
+
+    const finalPublicProfile = await pitch.getPublic(placeId);
+    assert.equal(finalPublicProfile.hourlyRateMinor, 60_000);
+    assert.equal(finalPublicProfile.currency, "TND");
+
+    const preservedHistory = await db.placeCapabilityApplication.findMany({
+      where: { placeId, kind: "PITCH" },
+      select: { id: true, status: true, hourlyRateMinor: true },
+    });
+    assert.equal(preservedHistory.length, 3);
+    assert.deepEqual(
+      new Map(preservedHistory.map((revision) => [revision.id, revision])),
+      new Map([
+        [firstRevision.id, { id: firstRevision.id, status: "APPROVED", hourlyRateMinor: 50_000 }],
+        [secondRevision.id, { id: secondRevision.id, status: "REJECTED", hourlyRateMinor: 55_000 }],
+        [thirdRevision.id, { id: thirdRevision.id, status: "APPROVED", hourlyRateMinor: 60_000 }],
+      ]),
+    );
   } finally {
-    if (applicationId) {
-      await db.auditLog.deleteMany({ where: { entityId: applicationId } });
+    if (applicationIds.length) {
+      await db.auditLog.deleteMany({ where: { entityId: { in: applicationIds } } });
     }
     if (claimId) {
       await db.auditLog.deleteMany({ where: { entityId: claimId } });

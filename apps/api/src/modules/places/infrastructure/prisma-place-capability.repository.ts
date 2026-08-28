@@ -170,28 +170,24 @@ export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepositor
     kind: PlaceCapabilityKind,
     input: PlaceCapabilityApplicationInput,
   ) {
-    return this.db.placeCapabilityApplication.upsert({
-      where: { placeId_kind: { placeId, kind } },
-      create: {
-        placeId,
-        applicantUserId: userId,
-        kind,
-        summary: input.summary,
-        hourlyRateMinor: input.hourlyRateMinor,
-        currency: input.currency,
-      },
-      update: {
-        applicantUserId: userId,
-        summary: input.summary,
-        hourlyRateMinor: input.hourlyRateMinor,
-        currency: input.currency,
-        status: "PENDING",
-        reviewedByUserId: null,
-        reviewedAt: null,
-        reviewNote: null,
-      },
-      select: { id: true, status: true },
-    });
+    try {
+      return await this.db.placeCapabilityApplication.create({
+        data: {
+          placeId,
+          applicantUserId: userId,
+          kind,
+          summary: input.summary,
+          hourlyRateMinor: input.hourlyRateMinor,
+          currency: input.currency,
+        },
+        select: { id: true, status: true },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        return null;
+      }
+      throw error;
+    }
   }
 
   async pending(kind: PlaceCapabilityKind): Promise<readonly AdminQueueItem[]> {

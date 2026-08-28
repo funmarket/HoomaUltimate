@@ -17,7 +17,7 @@ export interface PlaceCapabilityRepository {
     placeId: string,
     kind: PlaceCapabilityKind,
     input: PlaceCapabilityApplicationInput,
-  ): Promise<{ id: string; status: string }>;
+  ): Promise<{ id: string; status: string } | null>;
   pending(kind: PlaceCapabilityKind): Promise<readonly AdminQueueItem[]>;
   review(
     actorUserId: string,
