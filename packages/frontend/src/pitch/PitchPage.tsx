@@ -22,16 +22,21 @@ export function PitchPage() {
 
   return (
     <section className="pitch-page">
-      <header className="pitch-page__header">
+      <header className="pitch-hero">
         <div>
-          <p className="eyebrow">PITCH</p>
-          <h1>Find your pitch</h1>
-          <p>Football grounds and rental offers from local venues.</p>
+          <h1>Pitch</h1>
+          <p>Find football grounds and rental offers around your Houma.</p>
         </div>
-        <a className="pitch-back-link pitch-suggest-link" href="/places/new?kind=PITCH">
-          Suggest a pitch
-        </a>
       </header>
+
+      <nav className="pitch-actions" aria-label="Pitch sections">
+        <a className="pitch-action pitch-action--active" href="/pitch">
+          Pitches
+        </a>
+        <a className="pitch-action pitch-action--primary" href="/places/new?kind=PITCH">
+          Suggest a Pitch
+        </a>
+      </nav>
 
       {error ? <p className="error">{error}</p> : null}
 
