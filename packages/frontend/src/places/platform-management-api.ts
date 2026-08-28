@@ -9,6 +9,7 @@ import type {
   PlaceCapabilityKind,
   PlaceOwnershipClaimInput,
   PlaceSuggestionInput,
+  PlaceSuggestionResult,
   PlaceUpdateInput,
   PlatformManagerCapability,
   PublicPlaceCapability,
@@ -58,7 +59,7 @@ export function createPlatformManagementApi(transport: HoomaTransport) {
           `/api/v1/places/${encodeURIComponent(placeId)}/ownership-status`,
         ),
       suggest: (input: PlaceSuggestionInput) =>
-        request<PublicPlaceSummary & { status: string }>(transport, "/api/v1/places", {
+        request<PlaceSuggestionResult>(transport, "/api/v1/places", {
           method: "POST",
           body: JSON.stringify(input),
         }),
