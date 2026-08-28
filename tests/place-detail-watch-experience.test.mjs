@@ -7,7 +7,8 @@ const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "u
 test("Place detail uses canonical Watch event context for ticket, RSVP and share actions", () => {
   const detail = source("packages/frontend/src/places/PlaceDetailPage.tsx");
 
-  assert.match(detail, /new URLSearchParams\(window\.location\.search\)\.get\("eventId"\)/);
+  assert.match(detail, /const query = new URLSearchParams\(window\.location\.search\)/);
+  assert.match(detail, /const selectedEventId = query\.get\("eventId"\)/);
   assert.match(detail, /<WatchTicket event=\{selectedEvent\} variant="place-detail" \/>/);
   assert.match(detail, /eventsApi\.myRsvp\(eventId\)/);
   assert.match(detail, /eventsApi\.join\(selectedEventId\)/);
@@ -15,7 +16,7 @@ test("Place detail uses canonical Watch event context for ticket, RSVP and share
   assert.match(detail, /navigator\.share/);
   assert.match(detail, /Share event/);
   assert.match(detail, /Join event/);
-  assert.match(detail, /selectedEvent\.venueAuthority === "OFFICIAL_VENUE"/);
+  assert.match(detail, /selectedEvent\.publisherAuthority === "VERIFIED_PLACE_OWNER"/);
 });
 
 test("Place detail ticket reuses WatchTicket without stale local ticket geometry", () => {
