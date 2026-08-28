@@ -28,10 +28,7 @@ test("Spots expose only By Owner and FanHub source tabs", () => {
 });
 
 test("Add Place defaults to FanHub and sends explicit source intent", () => {
-  assert.match(
-    placesPage,
-    /useState<PlaceSubmissionOrigin>\("FANHUB"\)/,
-  );
+  assert.match(placesPage, /useState<PlaceSubmissionOrigin>\("FANHUB"\)/);
   assert.match(
     placesPage,
     /submissionOrigin: isPitchSuggestion \? "FANHUB" : submissionOrigin/,
