@@ -30,6 +30,43 @@ for (const file of await walk(root)) {
   if (!sourceExtensions.has(path.extname(file))) continue;
   const source = await readFile(file, "utf8");
 
+  forbid(
+    file,
+    source,
+    /@hooma\/contracts\/platform-management/,
+    "Place, Pitch and platform-admin contracts must use their owned contract surfaces",
+  );
+  forbid(
+    file,
+    source,
+    /createPlatformManagementApi|places\/platform-management-api/,
+    "frontend Place, Pitch and platform-admin calls must use their owned API clients",
+  );
+
+  if (rel === "apps/api/src/modules/places/application/place-capability.service.ts") {
+    violations.push(
+      `${rel}: mixed public Pitch reads, owner writes and moderation must not share one application service`,
+    );
+  }
+  if (rel === "packages/contracts/src/platform-management.ts") {
+    violations.push(`${rel}: monolithic Place/Pitch/platform-admin contract authority is forbidden`);
+  }
+  if (rel === "packages/frontend/src/places/platform-management-api.ts") {
+    violations.push(`${rel}: monolithic Place/Pitch/platform-admin frontend API authority is forbidden`);
+  }
+
+  if (
+    rel === "apps/api/src/modules/teams/application/team.service.ts" ||
+    rel === "apps/api/src/modules/events/application/event.service.ts"
+  ) {
+    forbid(
+      file,
+      source,
+      /PitchOwnerService|PitchModerationService|place-capability\.service/,
+      "Teams and Events may depend only on the approved-Pitch read boundary",
+    );
+  }
+
   if (rel.startsWith("apps/web/") || rel.startsWith("apps/telegram/")) {
     forbid(
       file,
