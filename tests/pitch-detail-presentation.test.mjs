@@ -12,8 +12,8 @@ test("Pitch discovery exposes the Pitch action bar", () => {
   assert.match(page, /aria-label="Pitch sections"/);
   assert.match(page, /href="\/pitch"/);
   assert.match(page, /href="\/places\/new\?kind=PITCH"/);
-  assert.match(page, />Pitches</);
-  assert.match(page, />Suggest a Pitch</);
+  assert.match(page, /\bPitches\b/);
+  assert.match(page, /Suggest a Pitch/);
 });
 
 test("Pitch detail follows the shared Place detail composition", () => {
