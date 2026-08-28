@@ -11,7 +11,8 @@ import {
   canonicalPlaceSummary,
   groupCanonicalPlaceImages,
   suggestCanonicalPlace,
-} from "../../places/infrastructure/canonical-place.persistence.js";
+} from "../../places/boundary/canonical-place.persistence.js";
+import { reviewPendingPlace } from "../../places/boundary/place-moderation.persistence.js";
 import type {
   PendingPitchReview,
   PitchModerationDecision,
@@ -383,16 +384,9 @@ export class PrismaPitchRepository implements PitchRepository {
       });
       if (!capabilityResult.count) return false;
 
-      const placeResult = await tx.place.updateMany({
-        where: { id: pitch.placeId, moderationStatus: "PENDING", archivedAt: null },
-        data: {
-          moderationStatus: status,
-          reviewedByUserId: actorUserId,
-          reviewedAt,
-          reviewNote: input.note ?? null,
-        },
-      });
-      if (!placeResult.count) throw new Error("PITCH_INITIAL_PLACE_STATE_CHANGED");
+      if (!(await reviewPendingPlace(tx, actorUserId, pitch.placeId, input, reviewedAt))) {
+        throw new Error("PITCH_INITIAL_PLACE_STATE_CHANGED");
+      }
 
       await tx.auditLog.create({
         data: {
