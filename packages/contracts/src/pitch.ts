@@ -24,11 +24,14 @@ export const pitchApplicationSchema = z.object({
   currency: pitchRentalCurrencySchema,
 });
 
+export const pitchReviewTargetSchema = z.enum(["INITIAL_SUGGESTION", "OWNER_REVISION"]);
+
 export type PitchRentalCurrency = z.infer<typeof pitchRentalCurrencySchema>;
 export type PitchSuggestionInput = z.infer<typeof pitchSuggestionSchema>;
 export type PitchPlaceSuggestionInput = z.infer<typeof pitchPlaceSuggestionSchema>;
 export type PitchPlaceSuggestionResult = PlaceSuggestionResult;
 export type PitchApplicationInput = z.infer<typeof pitchApplicationSchema>;
+export type PitchReviewTarget = z.infer<typeof pitchReviewTargetSchema>;
 
 export interface PublicPitch {
   readonly id: string;
@@ -72,10 +75,11 @@ export interface PitchManagementState {
   readonly latestRejectedApplication: ManagedPitchRejectedApplication | null;
 }
 
-export interface PitchReviewQueueItem {
+interface PitchReviewQueueBase {
   readonly id: string;
+  readonly target: PitchReviewTarget;
   readonly status: ModerationStatus;
-  readonly summary: string;
+  readonly summary: string | null;
   readonly hourlyRateMinor: number | null;
   readonly currency: PitchRentalCurrency | null;
   readonly createdAt: string;
@@ -88,3 +92,17 @@ export interface PitchReviewQueueItem {
   };
   readonly place: PublicPlaceSummary;
 }
+
+export interface PitchInitialSuggestionReviewItem extends PitchReviewQueueBase {
+  readonly target: "INITIAL_SUGGESTION";
+  readonly placeStatus: ModerationStatus;
+}
+
+export interface PitchOwnerRevisionReviewItem extends PitchReviewQueueBase {
+  readonly target: "OWNER_REVISION";
+  readonly summary: string;
+}
+
+export type PitchReviewQueueItem =
+  | PitchInitialSuggestionReviewItem
+  | PitchOwnerRevisionReviewItem;
