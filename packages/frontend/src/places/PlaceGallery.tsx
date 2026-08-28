@@ -1,5 +1,5 @@
 import { useRef, useState, type TouchEvent } from "react";
-import type { PublicPlaceSummary } from "@hooma/contracts/platform-management";
+import type { PublicPlaceSummary } from "@hooma/contracts/places";
 import "./place-gallery.css";
 
 export function PlaceGallery({ place }: { readonly place: PublicPlaceSummary }) {
