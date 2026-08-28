@@ -152,7 +152,7 @@ export class PrismaPlatformAdminRepository implements PlatformAdminRepository {
         this.db.platformRoleAssignment.count({
           where: { role: "PLATFORM_ADMIN", revokedAt: null },
         }),
-        this.db.user.count({ where: { appManagerGrants: { some: { revokedAt: null } } }),
+        this.db.user.count({ where: { appManagerGrants: { some: { revokedAt: null } } } }),
         this.db.auditLog.count(),
       ]);
     return { users, activePlatformAdmins, activeAppManagers, auditEntries };
