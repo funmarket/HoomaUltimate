@@ -7,6 +7,7 @@ import "./forms/hooma-form.css";
 import "./game-location/game-location.css";
 import "./places/places.css";
 import "./pitch/pitch.css";
+import "./pitch/pitch-detail.css";
 import "./watch/watch.css";
 
 export * from "./api";
