@@ -18,13 +18,19 @@ const contracts = await readFile(
   "utf8",
 );
 
+const forbiddenSpotDomains = /SpotService|SpotRepository|FanHubService|FanHubRepository/;
+const submissionOriginEnum = /placeSubmissionOriginSchema = z\.enum\(\["OWNER", "FANHUB"\]\)/;
+const publicSubmissionOrigin = /readonly submissionOrigin: PlaceSubmissionOrigin/;
+const activeOwnerships = /ownerships:[\s\S]*?where: \{ revokedAt: null \}/;
+const ownerOrigin = /ownerOrigin = input\.submissionOrigin === "OWNER" && !isPitchSuggestion/;
+
 test("Spots expose only By Owner and FanHub source tabs", () => {
   assert.match(placesPage, />\s*By Owner\s*</);
   assert.match(placesPage, />\s*FanHub\s*</);
   assert.match(placesPage, /place\.submissionOrigin === spotOrigin/);
   assert.match(placesPage, /api\.capability\.list\("PITCH"\)/);
   assert.match(placesPage, /!pitchPlaceIds\.has\(place\.id\)/);
-  assert.doesNotMatch(placesPage, /SpotService|SpotRepository|FanHubService|FanHubRepository/);
+  assert.doesNotMatch(placesPage, forbiddenSpotDomains);
 });
 
 test("Add Place defaults to FanHub and sends explicit source intent", () => {
@@ -37,11 +43,11 @@ test("Add Place defaults to FanHub and sends explicit source intent", () => {
   assert.match(placesPage, /Suggesting it does not make you its owner/);
 });
 
-test("Spot source is derived from canonical suggester and verified ownership", () => {
-  assert.match(contracts, /placeSubmissionOriginSchema = z\.enum\(\["OWNER", "FANHUB"\]\)/);
-  assert.match(contracts, /readonly submissionOrigin: PlaceSubmissionOrigin/);
+test("Spot source is derived from canonical suggester and ownership", () => {
+  assert.match(contracts, submissionOriginEnum);
+  assert.match(contracts, publicSubmissionOrigin);
   assert.match(placeRepository, /suggestedByUserId: true/);
-  assert.match(placeRepository, /ownerships:[\s\S]*?where: \{ revokedAt: null \}/);
+  assert.match(placeRepository, activeOwnerships);
   assert.match(placeRepository, /ownership\.userId === place\.suggestedByUserId/);
   assert.match(
     placeRepository,
@@ -49,15 +55,12 @@ test("Spot source is derived from canonical suggester and verified ownership", (
   );
 });
 
-test("FanHub does not create ownership while owner submissions reuse canonical ownership", () => {
+test("FanHub and owner submissions keep separate ownership semantics", () => {
   const suggest = placeRepository.slice(
     placeRepository.indexOf("async suggest("),
     placeRepository.indexOf("async getApproved("),
   );
-  assert.match(
-    suggest,
-    /ownerOrigin = input\.submissionOrigin === "OWNER" && !isPitchSuggestion/,
-  );
+  assert.match(suggest, ownerOrigin);
   assert.match(suggest, /ownerOrigin[\s\S]*?ownershipClaims/);
 
   const reviewPlace = placeRepository.slice(
