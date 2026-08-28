@@ -97,3 +97,23 @@ export interface ManagedPlaceSummary extends PublicPlaceSummary {
   readonly moderationStatus: PlaceModerationStatus;
   readonly archivedAt: string | null;
 }
+
+export interface PlaceReviewApplicant {
+  readonly userId: string;
+  readonly username: string;
+  readonly displayName: string;
+}
+
+export interface PlaceReviewQueueItem {
+  readonly id: string;
+  readonly status: PlaceModerationStatus;
+  readonly createdAt: string;
+  readonly reviewedAt: string | null;
+  readonly reviewNote: string | null;
+  readonly applicant: PlaceReviewApplicant;
+  readonly place: PublicPlaceSummary;
+}
+
+export interface PlaceOwnershipReviewQueueItem extends PlaceReviewQueueItem {
+  readonly evidence: string;
+}
