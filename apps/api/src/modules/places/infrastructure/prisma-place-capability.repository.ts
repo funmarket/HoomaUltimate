@@ -25,6 +25,11 @@ const placeSelect = Prisma.validator<Prisma.PlaceSelect>()({
   description: true,
   category: true,
   email: true,
+  suggestedByUserId: true,
+  ownerships: {
+    where: { revokedAt: null },
+    select: { userId: true },
+  },
   menuItems: {
     orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
     select: { id: true, name: true, price: true, currency: true },
@@ -54,6 +59,9 @@ function placeSummary(place: PlaceRow, images: readonly PlaceImageRow[] = []): P
     imageUrl: image.imageUrl,
     sortOrder: image.sortOrder,
   }));
+  const suggestedByVerifiedOwner = place.ownerships.some(
+    (ownership) => ownership.userId === place.suggestedByUserId,
+  );
   return {
     id: place.id,
     slug: place.slug,
@@ -76,6 +84,7 @@ function placeSummary(place: PlaceRow, images: readonly PlaceImageRow[] = []): P
       price: item.price.toNumber(),
       currency: item.currency,
     })),
+    submissionOrigin: suggestedByVerifiedOwner ? "OWNER" : "FANHUB",
   };
 }
 
