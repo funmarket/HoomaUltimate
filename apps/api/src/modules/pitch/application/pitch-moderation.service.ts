@@ -1,5 +1,6 @@
 import { AppError } from "../../../http/errors/app-error.js";
 import type { PitchAccessAuthorizer } from "./pitch-access.authorizer.js";
+import type { PitchPlaceWorkflow } from "./pitch-place.workflow.js";
 import type {
   PitchModerationDecision,
   PitchRepository,
@@ -10,6 +11,7 @@ export class PitchModerationService {
   constructor(
     private readonly repository: PitchRepository,
     private readonly access: PitchAccessAuthorizer,
+    private readonly workflow: PitchPlaceWorkflow,
   ) {}
 
   async pending(userId: string) {
@@ -30,7 +32,11 @@ export class PitchModerationService {
   ) {
     await this.access.requireCapability(userId, "REVIEW_PITCH_APPLICATIONS");
     try {
-      if (!(await this.repository.review(userId, target, reviewId, input))) {
+      const reviewed =
+        target === "INITIAL_SUGGESTION"
+          ? await this.workflow.reviewInitial(userId, reviewId, input)
+          : await this.repository.reviewOwnerRevision(userId, reviewId, input);
+      if (!reviewed) {
         throw new AppError(
           409,
           "PITCH_REVIEW_NOT_PENDING",
