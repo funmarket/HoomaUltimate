@@ -8,6 +8,7 @@ import { useHoomaFrontend } from "../context";
 import type { PublicEvent } from "../events/api";
 import { useEventApi } from "../events/useEventApi";
 import { pitchRateToMinor } from "../pitch/pricing";
+import { CalendarIcon, PinIcon } from "../ui/HoomaIcons";
 import { PlaceForm } from "./PlaceForm";
 import { createPlatformManagementApi } from "./platform-management-api";
 
@@ -97,27 +98,31 @@ export function PlacesPage() {
         </div>
       </header>
 
-      <nav className="watch-actions" aria-label="Watch sections">
-        <a className="watch-action" href="/watch">
-          Events
+      <nav className="watch-section-actions" aria-label="Watch sections">
+        <a className="watch-section-action" href="/watch">
+          <CalendarIcon size={28} className="watch-section-action__icon" />
+          <span>Events</span>
         </a>
-        <a className="watch-action watch-action--active" href="/places">
-          Spots
+        <a className="watch-section-action" href="/places" aria-current="page">
+          <PinIcon size={28} className="watch-section-action__icon" />
+          <span>Spots</span>
         </a>
-        <a className="watch-action watch-action--primary" href="/events/new?type=WATCH&kind=MATCH">
-          Create Event
+        <a className="watch-section-action" href="/events/new?type=WATCH&kind=MATCH">
+          <CalendarIcon size={28} className="watch-section-action__icon" />
+          <span>Create Event</span>
         </a>
-        <a className="watch-action" href="/places/new">
-          Add a Place
+        <a className="watch-section-action" href="/places/new">
+          <PinIcon size={28} className="watch-section-action__icon" />
+          <span>Add a Place</span>
         </a>
       </nav>
 
-      <div className="watch-kind-tabs" role="tablist" aria-label="Spot source">
+      <div className="place-source-tabs" role="tablist" aria-label="Spot source">
         <button
           type="button"
           role="tab"
           aria-selected={spotOrigin === "OWNER"}
-          className={spotOrigin === "OWNER" ? "watch-kind-tab is-active" : "watch-kind-tab"}
+          className={spotOrigin === "OWNER" ? "place-source-tab is-active" : "place-source-tab"}
           onClick={() => setSpotOrigin("OWNER")}
         >
           By Owner
@@ -126,7 +131,7 @@ export function PlacesPage() {
           type="button"
           role="tab"
           aria-selected={spotOrigin === "FANHUB"}
-          className={spotOrigin === "FANHUB" ? "watch-kind-tab is-active" : "watch-kind-tab"}
+          className={spotOrigin === "FANHUB" ? "place-source-tab is-active" : "place-source-tab"}
           onClick={() => setSpotOrigin("FANHUB")}
         >
           FanHub
@@ -294,13 +299,13 @@ export function AddPlacePage() {
       {!isPitchSuggestion ? (
         <section className="panel">
           <p className="eyebrow">WHO IS ADDING THIS SPOT?</p>
-          <div className="watch-kind-tabs" role="tablist" aria-label="Place submission source">
+          <div className="place-source-tabs" role="tablist" aria-label="Place submission source">
             <button
               type="button"
               role="tab"
               aria-selected={submissionOrigin === "OWNER"}
               className={
-                submissionOrigin === "OWNER" ? "watch-kind-tab is-active" : "watch-kind-tab"
+                submissionOrigin === "OWNER" ? "place-source-tab is-active" : "place-source-tab"
               }
               onClick={() => setSubmissionOrigin("OWNER")}
             >
@@ -311,7 +316,7 @@ export function AddPlacePage() {
               role="tab"
               aria-selected={submissionOrigin === "FANHUB"}
               className={
-                submissionOrigin === "FANHUB" ? "watch-kind-tab is-active" : "watch-kind-tab"
+                submissionOrigin === "FANHUB" ? "place-source-tab is-active" : "place-source-tab"
               }
               onClick={() => setSubmissionOrigin("FANHUB")}
             >
