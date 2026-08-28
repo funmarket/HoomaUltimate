@@ -188,10 +188,12 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
     });
     assert.equal(placeDecision.status, 200);
 
-    assert.ok(
+    assert.equal(
       await db.placeOwnership.findFirst({
         where: { placeId: place.id, userId: business.userId, revokedAt: null },
       }),
+      null,
+      "Place approval must not grant ownership; ownership verification is a separate Admin decision",
     );
 
     const ownershipClaimResponse = await fetch(
