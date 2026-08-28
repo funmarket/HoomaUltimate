@@ -58,7 +58,7 @@ export const HOME_GATEWAYS: readonly HomeGatewayItem[] = [
     label: "Pitch",
     subtitle: "Find a pitch",
     href: "/pitch",
-    artwork: "/home-gateways/pitch.png",
+    artwork: "/home-gateways/pitch.webp",
     availability: "available",
   },
   {
