@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { pitchReviewTargetSchema } from "@hooma/contracts/pitch";
 import {
+  adminPitchReviewTargetSchema,
   appManagerUpdateSchema,
   moderationDecisionSchema,
 } from "@hooma/contracts/platform-admin";
@@ -128,7 +128,7 @@ export function createPlatformAdminRouter(
       response.json(
         await pitchModeration.review(
           getAuth(request).userId,
-          pitchReviewTargetSchema.parse(String(request.params.target)),
+          adminPitchReviewTargetSchema.parse(String(request.params.target)),
           String(request.params.reviewId),
           moderationDecisionSchema.parse(request.body),
         ),
