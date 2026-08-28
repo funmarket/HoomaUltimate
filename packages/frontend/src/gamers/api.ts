@@ -107,7 +107,8 @@ export function createGamersApi(transport: HoomaTransport) {
         },
         body: input.proof,
       }),
-    adminDisputes: () => request<GamerDisputeList>(transport, "/api/v1/admin/queues/gamer-disputes"),
+    adminDisputes: () =>
+      request<GamerDisputeList>(transport, "/api/v1/admin/queues/gamer-disputes"),
     resolveAdminDispute: (matchId: string, input: GamerDisputeResolutionInput) =>
       request<GamerMatchSession>(
         transport,
