@@ -76,7 +76,6 @@ test("confirmed TeamGame keeps canonical timing and optional location through it
       summary: "Approved integration-test football pitch",
       hourlyRateMinor: 45_000,
       currency: "TND",
-      contactName: "Pitch Operator",
       status: "APPROVED",
     },
   });
