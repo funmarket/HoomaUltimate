@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { PublicPlaceCapability } from "@hooma/contracts/platform-management";
+import type { PublicPlaceCapability } from "@hooma/contracts/pitch";
 
 type LocationMode = "none" | "pitch" | "manual";
 
