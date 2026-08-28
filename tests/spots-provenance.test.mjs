@@ -18,11 +18,17 @@ const contracts = await readFile(
   "utf8",
 );
 
-const forbiddenSpotDomains = /SpotService|SpotRepository|FanHubService|FanHubRepository/;
-const submissionOriginEnum = /placeSubmissionOriginSchema = z\.enum\(\["OWNER", "FANHUB"\]\)/;
-const publicSubmissionOrigin = /readonly submissionOrigin: PlaceSubmissionOrigin/;
+const forbiddenSpotDomains =
+  /SpotService|SpotRepository|FanHubService|FanHubRepository/;
+const submissionOriginEnum =
+  /placeSubmissionOriginSchema = z\.enum\(\["OWNER", "FANHUB"\]\)/;
+const publicSubmissionOrigin =
+  /readonly submissionOrigin: PlaceSubmissionOrigin/;
 const activeOwnerships = /ownerships:[\s\S]*?where: \{ revokedAt: null \}/;
-const ownerOrigin = /ownerOrigin = input\.submissionOrigin === "OWNER" && !isPitchSuggestion/;
+const ownerOrigin =
+  /ownerOrigin = input\.submissionOrigin === "OWNER" && !isPitchSuggestion/;
+const verifiedSuggester = /ownership\.userId === place\.suggestedByUserId/;
+const ownerApproval = /if \(status === "APPROVED" && ownerSubmissionClaim\)/;
 
 test("Spots expose only By Owner and FanHub source tabs", () => {
   assert.match(placesPage, />\s*By Owner\s*</);
@@ -48,7 +54,7 @@ test("Spot source is derived from canonical suggester and ownership", () => {
   assert.match(contracts, publicSubmissionOrigin);
   assert.match(placeRepository, /suggestedByUserId: true/);
   assert.match(placeRepository, activeOwnerships);
-  assert.match(placeRepository, /ownership\.userId === place\.suggestedByUserId/);
+  assert.match(placeRepository, verifiedSuggester);
   assert.match(
     placeRepository,
     /submissionOrigin: suggestedByVerifiedOwner \? "OWNER" : "FANHUB"/,
@@ -67,7 +73,7 @@ test("FanHub and owner submissions keep separate ownership semantics", () => {
     placeRepository.indexOf("async reviewPlace("),
     placeRepository.indexOf("async reviewOwnershipClaim("),
   );
-  assert.match(reviewPlace, /if \(status === "APPROVED" && ownerSubmissionClaim\)/);
+  assert.match(reviewPlace, ownerApproval);
   assert.match(reviewPlace, /placeOwnership\.upsert/);
   assert.match(reviewPlace, /placeCapability\.updateMany/);
 
