@@ -1,4 +1,4 @@
-import type { PitchRentalCurrency } from "@hooma/contracts/platform-management";
+import type { PitchRentalCurrency } from "@hooma/contracts/pitch";
 
 const MINOR_UNIT_SCALE: Record<PitchRentalCurrency, number> = {
   TND: 1000,
