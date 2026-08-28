@@ -1,6 +1,9 @@
 export type PublicEventStatus = "PUBLISHED" | "CANCELLED" | "COMPLETED";
 
-export type PublicEventPublisherAuthority = "VERIFIED_PLACE_OWNER" | "COMMUNITY_PUBLISHER" | null;
+export type PublicEventPublisherAuthority =
+  | "VERIFIED_PLACE_OWNER"
+  | "COMMUNITY_PUBLISHER"
+  | null;
 
 export type PublicEventPlace = {
   readonly id: string;
@@ -32,7 +35,14 @@ export type PublicWatchMatchDetails = {
 export type PublicWatchCulturalDetails = {
   readonly kind: "CULTURAL";
   readonly culturalCategory:
-    "MUSIC" | "CONCERT" | "COMEDY" | "ART" | "SCREENING" | "FOOD" | "COMMUNITY" | "OTHER";
+    | "MUSIC"
+    | "CONCERT"
+    | "COMEDY"
+    | "ART"
+    | "SCREENING"
+    | "FOOD"
+    | "COMMUNITY"
+    | "OTHER";
   readonly imageUrl: string | null;
 };
 
@@ -61,7 +71,10 @@ export type PublicEvent = {
   readonly place: PublicEventPlace | null;
   readonly publisherAuthority: PublicEventPublisherAuthority;
   readonly playDetails: PublicEventPlayDetails | null;
-  readonly watchDetails: PublicWatchMatchDetails | PublicWatchCulturalDetails | null;
+  readonly watchDetails:
+    | PublicWatchMatchDetails
+    | PublicWatchCulturalDetails
+    | null;
   readonly _count: { readonly rsvps: number; readonly checkIns: number };
 };
 

@@ -1,20 +1,22 @@
 import { Router } from "express";
 import {
+  adminPitchReviewTargetSchema,
   appManagerUpdateSchema,
   moderationDecisionSchema,
-} from "@hooma/contracts/platform-management";
+} from "@hooma/contracts/platform-admin";
 import { gamerDisputeResolutionInputSchema, gamerMatchSideSchema } from "@hooma/contracts/gamers";
+import { AppError } from "../../../http/errors/app-error.js";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import type { GamerMatchService } from "../../gamers/application/gamer-match.service.js";
 import { getAuth } from "../../identity/http/auth-request.js";
-import type { PlaceCapabilityService } from "../../places/application/place-capability.service.js";
+import type { PitchModerationService } from "../../pitch/application/pitch-moderation.service.js";
 import type { PlaceService } from "../../places/application/place.service.js";
 import type { PlatformAdminService } from "../application/platform-admin.service.js";
 
 export function createPlatformAdminRouter(
   service: PlatformAdminService,
   places: PlaceService,
-  pitch: PlaceCapabilityService,
+  pitchModeration: PitchModerationService,
   gamerMatches: GamerMatchService,
 ): Router {
   const router = Router();
@@ -67,18 +69,30 @@ export function createPlatformAdminRouter(
   router.get(
     "/queues/places",
     asyncHandler(async (request, response) => {
-      response.json(await places.pendingPlaces(getAuth(request).userId));
+      const userId = getAuth(request).userId;
+      const [placeQueue, pitchPlaceIds] = await Promise.all([
+        places.pendingPlaces(userId),
+        pitchModeration.pendingInitialPlaceIds(userId),
+      ]);
+      const pitchOwned = new Set(pitchPlaceIds);
+      response.json(placeQueue.filter((item) => !pitchOwned.has(item.place.id)));
     }),
   );
   router.post(
     "/queues/places/:placeId/decision",
     asyncHandler(async (request, response) => {
+      const userId = getAuth(request).userId;
+      const placeId = String(request.params.placeId);
+      const pitchOwned = new Set(await pitchModeration.pendingInitialPlaceIds(userId));
+      if (pitchOwned.has(placeId)) {
+        throw new AppError(
+          409,
+          "PLACE_REVIEW_OWNED_BY_PITCH",
+          "This pending Place belongs to the Pitch initial-suggestion review workflow",
+        );
+      }
       response.json(
-        await places.reviewPlace(
-          getAuth(request).userId,
-          String(request.params.placeId),
-          moderationDecisionSchema.parse(request.body),
-        ),
+        await places.reviewPlace(userId, placeId, moderationDecisionSchema.parse(request.body)),
       );
     }),
   );
@@ -105,16 +119,17 @@ export function createPlatformAdminRouter(
   router.get(
     "/queues/pitch",
     asyncHandler(async (request, response) => {
-      response.json(await pitch.pending(getAuth(request).userId));
+      response.json(await pitchModeration.pending(getAuth(request).userId));
     }),
   );
   router.post(
-    "/queues/pitch/:applicationId/decision",
+    "/queues/pitch/:target/:reviewId/decision",
     asyncHandler(async (request, response) => {
       response.json(
-        await pitch.review(
+        await pitchModeration.review(
           getAuth(request).userId,
-          String(request.params.applicationId),
+          adminPitchReviewTargetSchema.parse(String(request.params.target)),
+          String(request.params.reviewId),
           moderationDecisionSchema.parse(request.body),
         ),
       );
