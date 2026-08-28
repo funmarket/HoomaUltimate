@@ -9,10 +9,8 @@ import {
   createIdentityProfilePublicRouter,
   createIdentityPublicRouter,
 } from "../../modules/identity/http/identity.public.routes.js";
-import {
-  createPlaceCapabilityPublicRouter,
-  createPlacesPublicRouter,
-} from "../../modules/places/http/place.routes.js";
+import { createPlacesPublicRouter } from "../../modules/places/http/place.routes.js";
+import { createPitchPublicRouter } from "../../modules/pitch/http/pitch.routes.js";
 import { createPlayPublicRouter } from "../../modules/play/http/play.routes.js";
 import { createTeamPublicRouter } from "../../modules/teams/http/team.routes.js";
 
@@ -21,7 +19,7 @@ export function createPublicV1Router(container: AppContainer, config: ApiConfig)
   router.use("/auth", createIdentityPublicRouter(container.identityService, config));
   router.use("/profiles", createIdentityProfilePublicRouter(container.identityService));
   router.use("/places", createPlacesPublicRouter(container.placeService));
-  router.use("/pitch", createPlaceCapabilityPublicRouter(container.pitchService));
+  router.use("/pitch", createPitchPublicRouter(container.approvedPitchReader));
   router.use("/communities", createCommunityPublicRouter(container.communityService));
   router.use("/teams", createTeamPublicRouter(container.teamService));
   router.use(
