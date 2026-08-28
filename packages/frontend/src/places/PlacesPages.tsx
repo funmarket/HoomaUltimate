@@ -45,7 +45,7 @@ function PlaceDirectoryCard({
   nextEvent,
 }: {
   readonly place: PublicPlaceSummary;
-  readonly nextEvent?: PublicEvent;
+  readonly nextEvent?: PublicEvent | undefined;
 }) {
   return (
     <a className="place-card place-card--directory" href={`/places/${place.id}`}>
