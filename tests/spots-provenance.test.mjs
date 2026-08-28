@@ -25,16 +25,12 @@ const contracts = await readFile(
   "utf8",
 );
 
-const forbiddenSpotDomains =
-  /SpotService|SpotRepository|FanHubService|FanHubRepository/;
-const submissionOriginEnum =
-  /placeSubmissionOriginSchema = z\.enum\(\["OWNER", "FANHUB"\]\)/;
-const publicSubmissionOrigin =
-  /readonly submissionOrigin: PlaceSubmissionOrigin/;
+const forbiddenSpotDomains = /SpotService|SpotRepository|FanHubService|FanHubRepository/;
+const submissionOriginEnum = /placeSubmissionOriginSchema = z\.enum\(\["OWNER", "FANHUB"\]\)/;
+const publicSubmissionOrigin = /readonly submissionOrigin: PlaceSubmissionOrigin/;
 const ownerSubmissionEvidence =
   /OWNER_SUBMISSION_EVIDENCE = "Ownership asserted during Place submission"/;
-const approvedPlaceClaimGuard =
-  /place: \{ moderationStatus: "APPROVED", archivedAt: null \}/;
+const approvedPlaceClaimGuard = /place: \{ moderationStatus: "APPROVED", archivedAt: null \}/;
 
 test("Spots expose only By Owner and FanHub source tabs", () => {
   assert.match(placesPage, />\s*By Owner\s*</);
@@ -63,14 +59,8 @@ test("Spot source stays tied to original submission intent", () => {
   assert.match(capabilityRepository, ownerSubmissionEvidence);
   assert.match(placeRepository, /ownershipClaims:/);
   assert.match(capabilityRepository, /ownershipClaims:/);
-  assert.match(
-    placeRepository,
-    /submissionOrigin: ownerSubmitted \? "OWNER" : "FANHUB"/,
-  );
-  assert.match(
-    capabilityRepository,
-    /submissionOrigin: ownerSubmitted \? "OWNER" : "FANHUB"/,
-  );
+  assert.match(placeRepository, /submissionOrigin: ownerSubmitted \? "OWNER" : "FANHUB"/);
+  assert.match(capabilityRepository, /submissionOrigin: ownerSubmitted \? "OWNER" : "FANHUB"/);
   assert.doesNotMatch(placeRepository, /suggestedByVerifiedOwner/);
   assert.doesNotMatch(capabilityRepository, /suggestedByVerifiedOwner/);
 });
