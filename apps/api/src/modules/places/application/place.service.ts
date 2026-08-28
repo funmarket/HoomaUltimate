@@ -1,9 +1,9 @@
 import type {
-  ModerationDecisionInput,
   PlaceOwnershipClaimInput,
   PlaceSuggestionInput,
   PlaceUpdateInput,
-} from "@hooma/contracts/platform-management";
+} from "@hooma/contracts/places";
+import type { ModerationDecisionInput } from "@hooma/contracts/platform-admin";
 import { AppError } from "../../../http/errors/app-error.js";
 import type { PlatformAdminAuthorizer } from "../../platform-admin/application/platform-admin.authorizer.js";
 import type { PlaceRepository } from "./place.repository.js";
