@@ -30,11 +30,11 @@ export function createPlacesMemberRouter(service: PlaceService): Router {
   router.post(
     "/",
     asyncHandler(async (request, response) => {
-      response
-        .status(201)
-        .json(
-          await service.suggest(getAuth(request).userId, placeSuggestionSchema.parse(request.body)),
-        );
+      const result = await service.suggest(
+        getAuth(request).userId,
+        placeSuggestionSchema.parse(request.body),
+      );
+      response.status(result.outcome === "CREATED" ? 201 : 200).json(result);
     }),
   );
   router.get(

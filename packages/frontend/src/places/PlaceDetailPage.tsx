@@ -99,10 +99,11 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
   const { transport, protectedError } = useHoomaFrontend();
   const management = useMemo(() => createPlatformManagementApi(transport), [transport]);
   const eventsApi = useMemo(() => createEventApi(transport), [transport]);
+  const query = new URLSearchParams(window.location.search);
   const [place, setPlace] = useState<PublicPlaceSummary | null>(null);
   const [events, setEvents] = useState<PublicEvent[]>([]);
   const [canManage, setCanManage] = useState(false);
-  const [claimOpen, setClaimOpen] = useState(false);
+  const [claimOpen, setClaimOpen] = useState(query.get("claim") === "1");
   const [menuExpanded, setMenuExpanded] = useState(false);
   const [eventsExpanded, setEventsExpanded] = useState(false);
   const [rsvp, setRsvp] = useState<ActiveRsvpState>(null);
@@ -111,7 +112,7 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState(false);
-  const selectedEventId = new URLSearchParams(window.location.search).get("eventId");
+  const selectedEventId = query.get("eventId");
 
   async function loadPlaceEvents(): Promise<PublicEvent[]> {
     const items: PublicEvent[] = [];
@@ -301,9 +302,9 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
               </span>
               <span className="place-event-summary__divider" aria-hidden="true" />
               <span>
-                {selectedEvent.venueAuthority === "OFFICIAL_VENUE"
-                  ? "Official venue"
-                  : "Suggested by community"}
+                {selectedEvent.publisherAuthority === "VERIFIED_PLACE_OWNER"
+                  ? "Published by venue"
+                  : "Community-published"}
               </span>
             </div>
           ) : null}

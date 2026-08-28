@@ -4,8 +4,10 @@ import type {
   ManagedPlaceSummary,
   ModerationDecisionInput,
   PitchRentalCurrency,
+  PlaceDuplicateMatch,
   PlaceOwnershipClaimInput,
   PlaceSuggestionInput,
+  PlaceSuggestionResult,
   PlaceUpdateInput,
   PublicPlaceImage,
   PublicPlaceSummary,
@@ -13,7 +15,12 @@ import type {
 import { Prisma, type PrismaClient } from "@hooma/database";
 import type { PlaceRepository } from "../application/place.repository.js";
 
-const OWNER_SUBMISSION_EVIDENCE = "Ownership asserted during Place submission";
+const OWNER_SUBMISSION_CLAIM_EVIDENCE = "Ownership asserted during Place submission";
+
+type PlaceIdentityInput = Pick<
+  PlaceSuggestionInput,
+  "name" | "address" | "phone" | "websiteUrl" | "latitude" | "longitude"
+>;
 
 function slugBase(value: string): string {
   return (
@@ -27,9 +34,134 @@ function slugBase(value: string): string {
   );
 }
 
-function duplicateKey(input: Pick<PlaceSuggestionInput, "name" | "address">): string {
-  const normalize = (value: string) => value.trim().toLocaleLowerCase().replace(/\s+/g, " ");
-  return `${normalize(input.name)}|${normalize(input.address)}`;
+function normalizeIdentityText(value: string): string {
+  return value.trim().toLocaleLowerCase().replace(/\s+/g, " ");
+}
+
+function canonicalPhone(value: string | null | undefined): string | null {
+  const digits = value?.replace(/[^0-9]/g, "") ?? "";
+  return digits || null;
+}
+
+function canonicalWebsite(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const normalized = value
+    .trim()
+    .replace(/^https?:\/\/(?:www\.)?/i, "")
+    .replace(/\/+$/, "")
+    .toLocaleLowerCase();
+  return normalized || null;
+}
+
+function duplicateLockKeys(input: PlaceIdentityInput): string[] {
+  const keys = [
+    `place:name-address:${normalizeIdentityText(input.name)}|${normalizeIdentityText(input.address)}`,
+  ];
+  const phone = canonicalPhone(input.phone);
+  const website = canonicalWebsite(input.websiteUrl);
+  if (phone) keys.push(`place:phone:${phone}`);
+  if (website) keys.push(`place:website:${website}`);
+  if (input.latitude != null && input.longitude != null) {
+    keys.push(
+      `place:name-coordinates:${normalizeIdentityText(input.name)}|${input.latitude.toFixed(7)}|${input.longitude.toFixed(7)}`,
+    );
+  }
+  return [...new Set(keys)].sort();
+}
+
+async function lockPlaceIdentity(tx: Prisma.TransactionClient, input: PlaceIdentityInput) {
+  for (const key of duplicateLockKeys(input)) {
+    await tx.$queryRaw<Array<{ locked: string }>>(
+      Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${key}))::text AS "locked"`,
+    );
+  }
+}
+
+async function findDuplicateCandidate(
+  tx: Prisma.TransactionClient,
+  input: PlaceIdentityInput,
+  excludePlaceId?: string,
+): Promise<{ id: string; matchedBy: PlaceDuplicateMatch } | null> {
+  const normalizedName = normalizeIdentityText(input.name);
+  const normalizedAddress = normalizeIdentityText(input.address);
+  const phone = canonicalPhone(input.phone);
+  const website = canonicalWebsite(input.websiteUrl);
+  const exclude = excludePlaceId ? Prisma.sql`AND "id" <> ${excludePlaceId}` : Prisma.sql``;
+
+  const nameAddress = await tx.$queryRaw<Array<{ id: string }>>(
+    Prisma.sql`
+      SELECT "id"
+      FROM "Place"
+      WHERE "moderationStatus" IN ('PENDING', 'APPROVED')
+        ${exclude}
+        AND lower(regexp_replace(btrim("name"), '[[:space:]]+', ' ', 'g')) = ${normalizedName}
+        AND lower(regexp_replace(btrim("address"), '[[:space:]]+', ' ', 'g')) = ${normalizedAddress}
+      ORDER BY "createdAt" ASC, "id" ASC
+      LIMIT 1
+    `,
+  );
+  if (nameAddress[0]) return { id: nameAddress[0].id, matchedBy: "NAME_ADDRESS" };
+
+  if (phone) {
+    const phoneMatch = await tx.$queryRaw<Array<{ id: string }>>(
+      Prisma.sql`
+        SELECT "id"
+        FROM "Place"
+        WHERE "moderationStatus" IN ('PENDING', 'APPROVED')
+          ${exclude}
+          AND "phone" IS NOT NULL
+          AND regexp_replace("phone", '[^0-9]', '', 'g') = ${phone}
+        ORDER BY "createdAt" ASC, "id" ASC
+        LIMIT 1
+      `,
+    );
+    if (phoneMatch[0]) return { id: phoneMatch[0].id, matchedBy: "PHONE" };
+  }
+
+  if (website) {
+    const websiteMatch = await tx.$queryRaw<Array<{ id: string }>>(
+      Prisma.sql`
+        SELECT "id"
+        FROM "Place"
+        WHERE "moderationStatus" IN ('PENDING', 'APPROVED')
+          ${exclude}
+          AND "websiteUrl" IS NOT NULL
+          AND lower(
+            regexp_replace(
+              regexp_replace(btrim("websiteUrl"), '^https?://(www[.])?', '', 'i'),
+              '/+$',
+              ''
+            )
+          ) = ${website}
+        ORDER BY "createdAt" ASC, "id" ASC
+        LIMIT 1
+      `,
+    );
+    if (websiteMatch[0]) return { id: websiteMatch[0].id, matchedBy: "WEBSITE" };
+  }
+
+  if (input.latitude != null && input.longitude != null) {
+    const latitude = new Prisma.Decimal(input.latitude);
+    const longitude = new Prisma.Decimal(input.longitude);
+    const coordinateMatch = await tx.$queryRaw<Array<{ id: string }>>(
+      Prisma.sql`
+        SELECT "id"
+        FROM "Place"
+        WHERE "moderationStatus" IN ('PENDING', 'APPROVED')
+          ${exclude}
+          AND "latitude" = ${latitude}
+          AND "longitude" = ${longitude}
+          AND lower(regexp_replace(btrim("name"), '[[:space:]]+', ' ', 'g')) = ${normalizedName}
+        ORDER BY "createdAt" ASC, "id" ASC
+        LIMIT 1
+      `,
+    );
+    if (coordinateMatch[0]) {
+      return { id: coordinateMatch[0].id, matchedBy: "NAME_COORDINATES" };
+    }
+  }
+
+  return null;
 }
 
 function pitchRentalCurrency(value: string | null): PitchRentalCurrency | null {
@@ -62,10 +194,7 @@ const placeSelect = Prisma.validator<Prisma.PlaceSelect>()({
   description: true,
   category: true,
   email: true,
-  suggestedByUserId: true,
-  ownershipClaims: {
-    select: { claimantUserId: true, evidence: true },
-  },
+  submissionOrigin: true,
   menuItems: {
     orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
     select: { id: true, name: true, price: true, currency: true },
@@ -81,11 +210,6 @@ function placeSummary(place: PlaceRow, images: readonly PlaceImageRow[] = []): P
     imageUrl: image.imageUrl,
     sortOrder: image.sortOrder,
   }));
-  const ownerSubmitted = place.ownershipClaims.some(
-    (claim) =>
-      claim.claimantUserId === place.suggestedByUserId &&
-      claim.evidence === OWNER_SUBMISSION_EVIDENCE,
-  );
   return {
     id: place.id,
     slug: place.slug,
@@ -108,7 +232,7 @@ function placeSummary(place: PlaceRow, images: readonly PlaceImageRow[] = []): P
       price: item.price.toNumber(),
       currency: item.currency,
     })),
-    submissionOrigin: ownerSubmitted ? "OWNER" : "FANHUB",
+    submissionOrigin: place.submissionOrigin,
   };
 }
 
@@ -159,27 +283,33 @@ export class PrismaPlaceRepository implements PlaceRepository {
     return places.map((place) => placeSummary(place, byPlace.get(place.id) ?? []));
   }
 
-  async suggest(userId: string, input: PlaceSuggestionInput) {
+  async suggest(userId: string, input: PlaceSuggestionInput): Promise<PlaceSuggestionResult> {
     return this.db.$transaction(async (tx) => {
-      const key = duplicateKey(input);
-      await tx.$queryRaw<Array<{ locked: string }>>(
-        Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${key}))::text AS "locked"`,
-      );
-
-      const existing = await tx.place.findFirst({
-        where: {
-          name: { equals: input.name, mode: "insensitive" },
-          address: { equals: input.address, mode: "insensitive" },
-          moderationStatus: { in: ["PENDING", "APPROVED"] },
-        },
-        select: { id: true },
-      });
-      if (existing) throw new Error("PLACE_ALREADY_EXISTS");
+      await lockPlaceIdentity(tx, input);
+      const duplicate = await findDuplicateCandidate(tx, input);
+      if (duplicate) {
+        const existing = await tx.place.findUniqueOrThrow({
+          where: { id: duplicate.id },
+          select: { ...placeSelect, moderationStatus: true, archivedAt: true },
+        });
+        const images = await tx.placeImage.findMany({
+          where: { placeId: existing.id },
+          orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+        });
+        return {
+          outcome: "EXISTING",
+          place: placeSummary(existing, images),
+          status: existing.moderationStatus,
+          matchedBy: duplicate.matchedBy,
+          archivedAt: existing.archivedAt?.toISOString() ?? null,
+        };
+      }
 
       const imageUrls = canonicalImageUrls(input);
       const capabilityCreates = suggestedCapabilityCreate(input);
       const isPitchSuggestion = capabilityCreates.some((capability) => capability.kind === "PITCH");
-      const ownerOrigin = input.submissionOrigin === "OWNER" && !isPitchSuggestion;
+      const submissionOrigin = isPitchSuggestion ? "FANHUB" : input.submissionOrigin;
+      const ownerOrigin = submissionOrigin === "OWNER";
       const place = await tx.place.create({
         data: {
           slug: `${slugBase(input.name)}-${randomUUID().slice(0, 8)}`,
@@ -194,6 +324,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
           description: input.description ?? null,
           category: input.category ?? null,
           email: input.email ?? null,
+          submissionOrigin,
           suggestedByUserId: userId,
           menuItems: { create: menuCreate(input.menuItems) },
           ...(ownerOrigin
@@ -201,7 +332,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
                 ownershipClaims: {
                   create: {
                     claimantUserId: userId,
-                    evidence: OWNER_SUBMISSION_EVIDENCE,
+                    evidence: OWNER_SUBMISSION_CLAIM_EVIDENCE,
                   },
                 },
               }
@@ -225,7 +356,13 @@ export class PrismaPlaceRepository implements PlaceRepository {
         where: { placeId: place.id },
         orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
       });
-      return { ...placeSummary(place, images), status: place.moderationStatus };
+      return {
+        outcome: "CREATED",
+        place: placeSummary(place, images),
+        status: place.moderationStatus,
+        matchedBy: null,
+        archivedAt: null,
+      };
     });
   }
 
@@ -278,25 +415,37 @@ export class PrismaPlaceRepository implements PlaceRepository {
     return this.db.$transaction(async (tx) => {
       const current = await tx.place.findUniqueOrThrow({
         where: { id: placeId },
-        select: { name: true, address: true },
+        select: {
+          name: true,
+          address: true,
+          phone: true,
+          websiteUrl: true,
+          latitude: true,
+          longitude: true,
+        },
       });
-      const name = input.name ?? current.name;
-      const address = input.address ?? current.address;
-      if (name !== current.name || address !== current.address) {
-        const key = duplicateKey({ name, address });
-        await tx.$queryRaw<Array<{ locked: string }>>(
-          Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${key}))::text AS "locked"`,
-        );
-        const duplicate = await tx.place.findFirst({
-          where: {
-            id: { not: placeId },
-            name: { equals: name, mode: "insensitive" },
-            address: { equals: address, mode: "insensitive" },
-            moderationStatus: { in: ["PENDING", "APPROVED"] },
-          },
-          select: { id: true },
-        });
-        if (duplicate) throw new Error("PLACE_ALREADY_EXISTS");
+      const identity: PlaceIdentityInput = {
+        name: input.name ?? current.name,
+        address: input.address ?? current.address,
+        phone: input.phone === undefined ? current.phone : input.phone,
+        websiteUrl: input.websiteUrl === undefined ? current.websiteUrl : input.websiteUrl,
+        latitude:
+          input.latitude === undefined ? (current.latitude?.toNumber() ?? null) : input.latitude,
+        longitude:
+          input.longitude === undefined ? (current.longitude?.toNumber() ?? null) : input.longitude,
+      };
+      const identityChanged =
+        identity.name !== current.name ||
+        identity.address !== current.address ||
+        identity.phone !== current.phone ||
+        identity.websiteUrl !== current.websiteUrl ||
+        identity.latitude !== (current.latitude?.toNumber() ?? null) ||
+        identity.longitude !== (current.longitude?.toNumber() ?? null);
+      if (identityChanged) {
+        await lockPlaceIdentity(tx, identity);
+        if (await findDuplicateCandidate(tx, identity, placeId)) {
+          throw new Error("PLACE_ALREADY_EXISTS");
+        }
       }
 
       if (input.menuItems !== undefined) {
@@ -364,17 +513,11 @@ export class PrismaPlaceRepository implements PlaceRepository {
   }
 
   async claimOwnership(userId: string, placeId: string, input: PlaceOwnershipClaimInput) {
-    const existing = await this.db.placeOwnershipClaim.findUnique({
+    return this.db.placeOwnershipClaim.upsert({
       where: { placeId_claimantUserId: { placeId, claimantUserId: userId } },
-      select: { evidence: true },
-    });
-    const evidence =
-      existing?.evidence === OWNER_SUBMISSION_EVIDENCE ? OWNER_SUBMISSION_EVIDENCE : input.evidence;
-    const claim = await this.db.placeOwnershipClaim.upsert({
-      where: { placeId_claimantUserId: { placeId, claimantUserId: userId } },
-      create: { placeId, claimantUserId: userId, evidence },
+      create: { placeId, claimantUserId: userId, evidence: input.evidence },
       update: {
-        evidence,
+        evidence: input.evidence,
         status: "PENDING",
         reviewedByUserId: null,
         reviewedAt: null,
@@ -382,7 +525,6 @@ export class PrismaPlaceRepository implements PlaceRepository {
       },
       select: { id: true, status: true },
     });
-    return claim;
   }
 
   async pendingPlaces(): Promise<readonly AdminQueueItem[]> {

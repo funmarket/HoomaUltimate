@@ -22,6 +22,11 @@ enum ModerationStatus {
   REJECTED
 }
 
+enum PlaceSubmissionOrigin {
+  OWNER
+  FANHUB
+}
+
 enum PlaceCapabilityKind {
   PITCH
 }
@@ -203,7 +208,7 @@ model User {
   teamsCreated                  Team[]                         @relation("TeamCreator")
   teamPlayers                   TeamPlayer[]
   teamOffersReceived            TeamPlayerOffer[]              @relation("TeamOfferTarget")
-  teamOffersSent                TeamPlayerOffer[]              @relation("TeamOfferSender")
+  teamOffersSent                TeamPlayerOffer[]               @relation("TeamOfferSender")
   teamResponsibilities          TeamResponsibilityAssignment[]
   teamCapabilityGrants          TeamCapabilityGrant[]          @relation("CapabilityRecipient")
   teamCapabilityGrantsGiven     TeamCapabilityGrant[]          @relation("CapabilityGrantor")
@@ -333,6 +338,7 @@ model Place {
   category            String?
   description         String?
   moderationStatus    ModerationStatus             @default(PENDING)
+  submissionOrigin    PlaceSubmissionOrigin?
   suggestedByUserId   String
   reviewedByUserId    String?
   reviewedAt          DateTime?
@@ -352,6 +358,7 @@ model Place {
   teamGameVenues      TeamGame[]                   @relation("TeamGamePlace")
 
   @@index([moderationStatus, archivedAt, createdAt])
+  @@index([submissionOrigin, moderationStatus, archivedAt])
   @@index([city, houma])
 }
 
