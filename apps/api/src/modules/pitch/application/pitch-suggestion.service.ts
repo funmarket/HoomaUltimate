@@ -1,10 +1,10 @@
 import type { PitchPlaceSuggestionInput } from "@hooma/contracts/pitch";
-import type { PitchRepository } from "./pitch.repository.js";
+import type { PitchPlaceWorkflow } from "./pitch-place.workflow.js";
 
 export class PitchSuggestionService {
-  constructor(private readonly repository: PitchRepository) {}
+  constructor(private readonly workflow: PitchPlaceWorkflow) {}
 
   suggest(userId: string, input: PitchPlaceSuggestionInput) {
-    return this.repository.suggestPlace(userId, input);
+    return this.workflow.suggestInitial(userId, input);
   }
 }
