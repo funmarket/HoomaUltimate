@@ -1,19 +1,12 @@
 import { useMemo, useState, type FormEvent } from "react";
-import type {
-  PitchRentalCurrency,
-  PublicPlaceSummary,
-} from "@hooma/contracts/platform-management";
+import type { PitchRentalCurrency, PublicPlaceSummary } from "@hooma/contracts/platform-management";
 import { useHoomaFrontend } from "../context";
 import { createPlatformManagementApi } from "../places/platform-management-api";
 import { pitchRateToMinor } from "./pricing";
 
 const RENTAL_CURRENCIES: readonly PitchRentalCurrency[] = ["TND", "EUR", "USD"];
 
-export function PitchCapabilityOnboarding({
-  place,
-}: {
-  readonly place: PublicPlaceSummary;
-}) {
+export function PitchCapabilityOnboarding({ place }: { readonly place: PublicPlaceSummary }) {
   const { transport, protectedError } = useHoomaFrontend();
   const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
   const [error, setError] = useState("");
