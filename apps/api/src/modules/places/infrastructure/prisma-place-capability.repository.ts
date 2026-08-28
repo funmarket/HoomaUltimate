@@ -1,6 +1,7 @@
 import type {
   AdminQueueItem,
   ModerationDecisionInput,
+  PitchCapabilityManagementState,
   PitchRentalCurrency,
   PlaceCapabilityApplicationInput,
   PlaceCapabilityKind,
@@ -162,6 +163,87 @@ export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepositor
       orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
     });
     return capabilitySummary(row, images);
+  }
+
+  async getManagementState(
+    kind: PlaceCapabilityKind,
+    placeId: string,
+  ): Promise<PitchCapabilityManagementState> {
+    const [approved, pending, latestRejected] = await Promise.all([
+      this.db.placeCapability.findFirst({
+        where: {
+          kind,
+          placeId,
+          status: "APPROVED",
+          place: { moderationStatus: "APPROVED", archivedAt: null },
+        },
+        select: {
+          id: true,
+          summary: true,
+          hourlyRateMinor: true,
+          currency: true,
+          reviewedAt: true,
+        },
+      }),
+      this.db.placeCapabilityApplication.findFirst({
+        where: { kind, placeId, status: "PENDING" },
+        select: {
+          id: true,
+          summary: true,
+          hourlyRateMinor: true,
+          currency: true,
+          createdAt: true,
+        },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      }),
+      this.db.placeCapabilityApplication.findFirst({
+        where: { kind, placeId, status: "REJECTED" },
+        select: {
+          id: true,
+          summary: true,
+          hourlyRateMinor: true,
+          currency: true,
+          createdAt: true,
+          reviewedAt: true,
+          reviewNote: true,
+        },
+        orderBy: [{ reviewedAt: "desc" }, { createdAt: "desc" }, { id: "desc" }],
+      }),
+    ]);
+
+    const approvedCurrency = pitchRentalCurrency(approved?.currency ?? null);
+    return {
+      approvedPitch:
+        approved && approved.hourlyRateMinor !== null && approvedCurrency
+          ? {
+              id: approved.id,
+              summary: approved.summary,
+              hourlyRateMinor: approved.hourlyRateMinor,
+              currency: approvedCurrency,
+              approvedAt: approved.reviewedAt?.toISOString() ?? null,
+            }
+          : null,
+      pendingApplication: pending
+        ? {
+            id: pending.id,
+            summary: pending.summary,
+            hourlyRateMinor: pending.hourlyRateMinor,
+            currency: pitchRentalCurrency(pending.currency),
+            submittedAt: pending.createdAt.toISOString(),
+          }
+        : null,
+      latestRejectedApplication: latestRejected
+        ? {
+            id: latestRejected.id,
+            summary: latestRejected.summary,
+            hourlyRateMinor: latestRejected.hourlyRateMinor,
+            currency: pitchRentalCurrency(latestRejected.currency),
+            submittedAt: latestRejected.createdAt.toISOString(),
+            reviewedAt: latestRejected.reviewedAt?.toISOString() ?? null,
+            reviewNote: latestRejected.reviewNote,
+          }
+        : null,
+    };
   }
 
   async submit(
