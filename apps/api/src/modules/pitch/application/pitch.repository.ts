@@ -1,8 +1,6 @@
 import type {
   PitchApplicationInput,
   PitchManagementState,
-  PitchPlaceSuggestionInput,
-  PitchPlaceSuggestionResult,
   PitchRentalCurrency,
   PublicPitch,
 } from "@hooma/contracts/pitch";
@@ -37,7 +35,6 @@ export interface PendingPitchReview {
 export interface PitchRepository {
   listApproved(): Promise<readonly PublicPitch[]>;
   getApprovedByPlace(placeId: string): Promise<PublicPitch | null>;
-  suggestPlace(userId: string, input: PitchPlaceSuggestionInput): Promise<PitchPlaceSuggestionResult>;
   getManagementState(
     placeId: string,
   ): Promise<Omit<PitchManagementState, "place" | "verifiedOwnership">>;
@@ -48,10 +45,9 @@ export interface PitchRepository {
   ): Promise<{ id: string; status: string } | null>;
   pending(): Promise<readonly PendingPitchReview[]>;
   pendingInitialPlaceIds(): Promise<readonly string[]>;
-  review(
+  reviewOwnerRevision(
     actorUserId: string,
-    target: PitchReviewTarget,
-    reviewId: string,
+    applicationId: string,
     input: PitchModerationDecision,
   ): Promise<boolean>;
 }
