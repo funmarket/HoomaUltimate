@@ -15,10 +15,9 @@ export function pitchRateFromMinor(amount: number, currency: PitchRentalCurrency
 }
 
 export function formatPitchHourlyRate(
-  amountMinor: number | null,
-  currency: PitchRentalCurrency | null,
+  amountMinor: number,
+  currency: PitchRentalCurrency,
 ): string {
-  if (amountMinor === null || currency === null) return "Contact for price";
   const amount = pitchRateFromMinor(amountMinor, currency);
   return new Intl.NumberFormat(undefined, {
     minimumFractionDigits: 0,
