@@ -18,7 +18,7 @@ import {
   groupCanonicalPlaceImages,
   lockCanonicalPlaceIdentity,
   suggestCanonicalPlace,
-} from "./canonical-place.persistence.js";
+} from "../boundary/canonical-place.persistence.js";
 
 type PlaceIdentityInput = Pick<
   PlaceSuggestionInput,
