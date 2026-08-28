@@ -109,7 +109,11 @@ export class PlaceService {
     await this.platformAdmin.requirePlatformAdmin(userId);
     try {
       if (!(await this.repository.reviewPlace(userId, placeId, input))) {
-        throw new AppError(409, "PLACE_REVIEW_NOT_PENDING", "This Place review is no longer pending");
+        throw new AppError(
+          409,
+          "PLACE_REVIEW_NOT_PENDING",
+          "This Place review is no longer pending",
+        );
       }
     } catch (error) {
       if (error instanceof Error && error.message === "PITCH_PRICING_REQUIRED") {
