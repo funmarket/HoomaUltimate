@@ -1,20 +1,17 @@
 import { Router } from "express";
-import {
-  appManagerUpdateSchema,
-  moderationDecisionSchema,
-} from "@hooma/contracts/platform-management";
+import { appManagerUpdateSchema, moderationDecisionSchema } from "@hooma/contracts/platform-admin";
 import { gamerDisputeResolutionInputSchema, gamerMatchSideSchema } from "@hooma/contracts/gamers";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import type { GamerMatchService } from "../../gamers/application/gamer-match.service.js";
 import { getAuth } from "../../identity/http/auth-request.js";
-import type { PlaceCapabilityService } from "../../places/application/place-capability.service.js";
 import type { PlaceService } from "../../places/application/place.service.js";
+import type { PitchModerationService } from "../../pitch/application/pitch-moderation.service.js";
 import type { PlatformAdminService } from "../application/platform-admin.service.js";
 
 export function createPlatformAdminRouter(
   service: PlatformAdminService,
   places: PlaceService,
-  pitch: PlaceCapabilityService,
+  pitch: PitchModerationService,
   gamerMatches: GamerMatchService,
 ): Router {
   const router = Router();
