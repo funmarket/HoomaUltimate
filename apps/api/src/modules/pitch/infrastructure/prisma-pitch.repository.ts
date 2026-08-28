@@ -1,37 +1,83 @@
+import type { PublicPlaceImage, PublicPlaceSummary } from "@hooma/contracts/places";
 import type {
   PitchApplicationInput,
-  PitchPlaceSuggestionInput,
-  PitchPlaceSuggestionResult,
   PitchRentalCurrency,
   PublicPitch,
 } from "@hooma/contracts/pitch";
 import { Prisma, type PrismaClient } from "@hooma/database";
-import {
-  canonicalPlaceSelect,
-  canonicalPlaceSummary,
-  groupCanonicalPlaceImages,
-  suggestCanonicalPlace,
-} from "../../places/infrastructure/canonical-place.persistence.js";
 import type {
   PendingPitchReview,
   PitchModerationDecision,
   PitchRepository,
-  PitchReviewTarget,
 } from "../application/pitch.repository.js";
+
+const placeSelect = Prisma.validator<Prisma.PlaceSelect>()({
+  id: true,
+  slug: true,
+  name: true,
+  address: true,
+  city: true,
+  houma: true,
+  latitude: true,
+  longitude: true,
+  phone: true,
+  websiteUrl: true,
+  description: true,
+  category: true,
+  email: true,
+  submissionOrigin: true,
+  menuItems: {
+    orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+    select: { id: true, name: true, price: true, currency: true },
+  },
+});
 
 const pitchSelect = Prisma.validator<Prisma.PlaceCapabilitySelect>()({
   id: true,
   summary: true,
   hourlyRateMinor: true,
   currency: true,
-  place: { select: canonicalPlaceSelect },
+  place: { select: placeSelect },
 });
 
+type PlaceRow = Prisma.PlaceGetPayload<{ select: typeof placeSelect }>;
 type PitchRow = Prisma.PlaceCapabilityGetPayload<{ select: typeof pitchSelect }>;
 type PlaceImageRow = { id: string; placeId: string; imageUrl: string; sortOrder: number };
 
 function pitchRentalCurrency(value: string | null): PitchRentalCurrency | null {
   return value === "TND" || value === "EUR" || value === "USD" ? value : null;
+}
+
+function placeSummary(place: PlaceRow, images: readonly PlaceImageRow[] = []): PublicPlaceSummary {
+  const publicImages: PublicPlaceImage[] = images.map((image) => ({
+    id: image.id,
+    imageUrl: image.imageUrl,
+    sortOrder: image.sortOrder,
+  }));
+  return {
+    id: place.id,
+    slug: place.slug,
+    name: place.name,
+    address: place.address,
+    city: place.city,
+    houma: place.houma,
+    latitude: place.latitude?.toNumber() ?? null,
+    longitude: place.longitude?.toNumber() ?? null,
+    phone: place.phone,
+    websiteUrl: place.websiteUrl,
+    imageUrl: publicImages[0]?.imageUrl ?? null,
+    images: publicImages,
+    description: place.description,
+    category: place.category,
+    email: place.email,
+    menuItems: place.menuItems.map((item) => ({
+      id: item.id,
+      name: item.name,
+      price: item.price.toNumber(),
+      currency: item.currency,
+    })),
+    submissionOrigin: place.submissionOrigin,
+  };
 }
 
 function pitchSummary(row: PitchRow, images: readonly PlaceImageRow[] = []): PublicPitch | null {
@@ -42,8 +88,18 @@ function pitchSummary(row: PitchRow, images: readonly PlaceImageRow[] = []): Pub
     summary: row.summary,
     hourlyRateMinor: row.hourlyRateMinor,
     currency,
-    place: canonicalPlaceSummary(row.place, images),
+    place: placeSummary(row.place, images),
   };
+}
+
+function groupImages(rows: readonly PlaceImageRow[]): Map<string, PlaceImageRow[]> {
+  const grouped = new Map<string, PlaceImageRow[]>();
+  for (const row of rows) {
+    const group = grouped.get(row.placeId) ?? [];
+    group.push(row);
+    grouped.set(row.placeId, group);
+  }
+  return grouped;
 }
 
 export class PrismaPitchRepository implements PitchRepository {
@@ -65,7 +121,7 @@ export class PrismaPitchRepository implements PitchRepository {
           orderBy: [{ placeId: "asc" }, { sortOrder: "asc" }, { id: "asc" }],
         })
       : [];
-    const byPlace = groupCanonicalPlaceImages(images);
+    const byPlace = groupImages(images);
     return rows.flatMap((row) => {
       const summary = pitchSummary(row, byPlace.get(row.place.id) ?? []);
       return summary ? [summary] : [];
@@ -88,27 +144,6 @@ export class PrismaPitchRepository implements PitchRepository {
       orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
     });
     return pitchSummary(row, images);
-  }
-
-  async suggestPlace(
-    userId: string,
-    input: PitchPlaceSuggestionInput,
-  ): Promise<PitchPlaceSuggestionResult> {
-    return this.db.$transaction(async (tx) => {
-      const result = await suggestCanonicalPlace(tx, userId, input.place, "FANHUB");
-      if (result.outcome === "EXISTING") return result;
-
-      await tx.placeCapability.create({
-        data: {
-          placeId: result.place.id,
-          kind: "PITCH",
-          status: "PENDING",
-          hourlyRateMinor: input.pitch.hourlyRateMinor,
-          currency: input.pitch.currency,
-        },
-      });
-      return result;
-    });
   }
 
   async getManagementState(placeId: string) {
@@ -242,7 +277,7 @@ export class PrismaPitchRepository implements PitchRepository {
           reviewNote: true,
           place: {
             select: {
-              ...canonicalPlaceSelect,
+              ...placeSelect,
               moderationStatus: true,
               suggestedBy: {
                 select: {
@@ -266,7 +301,7 @@ export class PrismaPitchRepository implements PitchRepository {
           createdAt: true,
           reviewedAt: true,
           reviewNote: true,
-          place: { select: canonicalPlaceSelect },
+          place: { select: placeSelect },
           applicant: {
             select: {
               id: true,
@@ -288,7 +323,7 @@ export class PrismaPitchRepository implements PitchRepository {
           orderBy: [{ placeId: "asc" }, { sortOrder: "asc" }, { id: "asc" }],
         })
       : [];
-    const byPlace = groupCanonicalPlaceImages(images);
+    const byPlace = groupImages(images);
 
     const initial: PendingPitchReview[] = initialRows
       .filter((row) => row.place.suggestedBy.presentation)
@@ -308,7 +343,7 @@ export class PrismaPitchRepository implements PitchRepository {
           username: row.place.suggestedBy.presentation!.username,
           displayName: row.place.suggestedBy.presentation!.displayName,
         },
-        place: canonicalPlaceSummary(row.place, byPlace.get(row.place.id) ?? []),
+        place: placeSummary(row.place, byPlace.get(row.place.id) ?? []),
       }));
 
     const revisions: PendingPitchReview[] = revisionRows
@@ -328,7 +363,7 @@ export class PrismaPitchRepository implements PitchRepository {
           username: row.applicant.presentation!.username,
           displayName: row.applicant.presentation!.displayName,
         },
-        place: canonicalPlaceSummary(row.place, byPlace.get(row.place.id) ?? []),
+        place: placeSummary(row.place, byPlace.get(row.place.id) ?? []),
       }));
 
     return [...initial, ...revisions].sort((left, right) =>
@@ -336,78 +371,7 @@ export class PrismaPitchRepository implements PitchRepository {
     );
   }
 
-  async review(
-    actorUserId: string,
-    target: PitchReviewTarget,
-    reviewId: string,
-    input: PitchModerationDecision,
-  ) {
-    return target === "INITIAL_SUGGESTION"
-      ? this.reviewInitialSuggestion(actorUserId, reviewId, input)
-      : this.reviewOwnerRevision(actorUserId, reviewId, input);
-  }
-
-  private async reviewInitialSuggestion(
-    actorUserId: string,
-    capabilityId: string,
-    input: PitchModerationDecision,
-  ) {
-    const status = input.decision === "APPROVE" ? "APPROVED" : "REJECTED";
-    return this.db.$transaction(async (tx) => {
-      const pitch = await tx.placeCapability.findFirst({
-        where: {
-          id: capabilityId,
-          kind: "PITCH",
-          status: "PENDING",
-          place: { moderationStatus: "PENDING", archivedAt: null },
-        },
-        select: { placeId: true, hourlyRateMinor: true, currency: true },
-      });
-      if (!pitch) return false;
-      if (
-        status === "APPROVED" &&
-        (pitch.hourlyRateMinor === null || pitchRentalCurrency(pitch.currency) === null)
-      ) {
-        throw new Error("PITCH_PRICING_REQUIRED");
-      }
-
-      const reviewedAt = new Date();
-      const capabilityResult = await tx.placeCapability.updateMany({
-        where: { id: capabilityId, kind: "PITCH", status: "PENDING" },
-        data: {
-          status,
-          reviewedByUserId: actorUserId,
-          reviewedAt,
-          reviewNote: input.note ?? null,
-        },
-      });
-      if (!capabilityResult.count) return false;
-
-      const placeResult = await tx.place.updateMany({
-        where: { id: pitch.placeId, moderationStatus: "PENDING", archivedAt: null },
-        data: {
-          moderationStatus: status,
-          reviewedByUserId: actorUserId,
-          reviewedAt,
-          reviewNote: input.note ?? null,
-        },
-      });
-      if (!placeResult.count) throw new Error("PITCH_INITIAL_PLACE_STATE_CHANGED");
-
-      await tx.auditLog.create({
-        data: {
-          actorUserId,
-          action: `PITCH_INITIAL_SUGGESTION_${status}`,
-          entityType: "PlaceCapability",
-          entityId: capabilityId,
-          metadata: { placeId: pitch.placeId, kind: "PITCH", note: input.note ?? null },
-        },
-      });
-      return true;
-    });
-  }
-
-  private async reviewOwnerRevision(
+  async reviewOwnerRevision(
     actorUserId: string,
     applicationId: string,
     input: PitchModerationDecision,
