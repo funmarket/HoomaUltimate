@@ -63,9 +63,8 @@ const placeSelect = Prisma.validator<Prisma.PlaceSelect>()({
   category: true,
   email: true,
   suggestedByUserId: true,
-  ownerships: {
-    where: { revokedAt: null },
-    select: { userId: true },
+  ownershipClaims: {
+    select: { claimantUserId: true, evidence: true },
   },
   menuItems: {
     orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
@@ -82,8 +81,10 @@ function placeSummary(place: PlaceRow, images: readonly PlaceImageRow[] = []): P
     imageUrl: image.imageUrl,
     sortOrder: image.sortOrder,
   }));
-  const suggestedByVerifiedOwner = place.ownerships.some(
-    (ownership) => ownership.userId === place.suggestedByUserId,
+  const ownerSubmitted = place.ownershipClaims.some(
+    (claim) =>
+      claim.claimantUserId === place.suggestedByUserId &&
+      claim.evidence === OWNER_SUBMISSION_EVIDENCE,
   );
   return {
     id: place.id,
@@ -107,7 +108,7 @@ function placeSummary(place: PlaceRow, images: readonly PlaceImageRow[] = []): P
       price: item.price.toNumber(),
       currency: item.currency,
     })),
-    submissionOrigin: suggestedByVerifiedOwner ? "OWNER" : "FANHUB",
+    submissionOrigin: ownerSubmitted ? "OWNER" : "FANHUB",
   };
 }
 
@@ -363,11 +364,19 @@ export class PrismaPlaceRepository implements PlaceRepository {
   }
 
   async claimOwnership(userId: string, placeId: string, input: PlaceOwnershipClaimInput) {
+    const existing = await this.db.placeOwnershipClaim.findUnique({
+      where: { placeId_claimantUserId: { placeId, claimantUserId: userId } },
+      select: { evidence: true },
+    });
+    const evidence =
+      existing?.evidence === OWNER_SUBMISSION_EVIDENCE
+        ? OWNER_SUBMISSION_EVIDENCE
+        : input.evidence;
     const claim = await this.db.placeOwnershipClaim.upsert({
       where: { placeId_claimantUserId: { placeId, claimantUserId: userId } },
-      create: { placeId, claimantUserId: userId, evidence: input.evidence },
+      create: { placeId, claimantUserId: userId, evidence },
       update: {
-        evidence: input.evidence,
+        evidence,
         status: "PENDING",
         reviewedByUserId: null,
         reviewedAt: null,
@@ -489,12 +498,6 @@ export class PrismaPlaceRepository implements PlaceRepository {
       const place = await tx.place.findFirst({
         where: { id: placeId, moderationStatus: "PENDING", archivedAt: null },
         select: {
-          suggestedByUserId: true,
-          ownershipClaims: {
-            where: { status: "PENDING", evidence: OWNER_SUBMISSION_EVIDENCE },
-            select: { id: true, claimantUserId: true },
-            take: 1,
-          },
           capabilities: {
             where: { status: "PENDING" },
             select: { id: true, kind: true, hourlyRateMinor: true, currency: true },
@@ -534,37 +537,6 @@ export class PrismaPlaceRepository implements PlaceRepository {
         },
       });
 
-      const ownerSubmissionClaim = place.ownershipClaims.find(
-        (claim) => claim.claimantUserId === place.suggestedByUserId,
-      );
-      if (ownerSubmissionClaim) {
-        await tx.placeOwnershipClaim.update({
-          where: { id: ownerSubmissionClaim.id },
-          data: {
-            status,
-            reviewedByUserId: actorUserId,
-            reviewedAt,
-            reviewNote: input.note ?? null,
-          },
-        });
-      }
-      if (status === "APPROVED" && ownerSubmissionClaim) {
-        await tx.placeOwnership.upsert({
-          where: { placeId_userId: { placeId, userId: place.suggestedByUserId } },
-          create: {
-            placeId,
-            userId: place.suggestedByUserId,
-            verifiedByUserId: actorUserId,
-            verifiedAt: reviewedAt,
-          },
-          update: {
-            verifiedByUserId: actorUserId,
-            verifiedAt: reviewedAt,
-            revokedAt: null,
-          },
-        });
-      }
-
       await tx.auditLog.create({
         data: {
           actorUserId,
@@ -582,16 +554,21 @@ export class PrismaPlaceRepository implements PlaceRepository {
     const status = input.decision === "APPROVE" ? "APPROVED" : "REJECTED";
     return this.db.$transaction(async (tx) => {
       const claim = await tx.placeOwnershipClaim.findFirst({
-        where: { id: claimId, status: "PENDING", place: { archivedAt: null } },
+        where: {
+          id: claimId,
+          status: "PENDING",
+          place: { moderationStatus: "APPROVED", archivedAt: null },
+        },
         select: { placeId: true, claimantUserId: true },
       });
       if (!claim) return false;
+      const reviewedAt = new Date();
       const result = await tx.placeOwnershipClaim.updateMany({
         where: { id: claimId, status: "PENDING" },
         data: {
           status,
           reviewedByUserId: actorUserId,
-          reviewedAt: new Date(),
+          reviewedAt,
           reviewNote: input.note ?? null,
         },
       });
@@ -605,10 +582,11 @@ export class PrismaPlaceRepository implements PlaceRepository {
             placeId: claim.placeId,
             userId: claim.claimantUserId,
             verifiedByUserId: actorUserId,
+            verifiedAt: reviewedAt,
           },
           update: {
             verifiedByUserId: actorUserId,
-            verifiedAt: new Date(),
+            verifiedAt: reviewedAt,
             revokedAt: null,
           },
         });
