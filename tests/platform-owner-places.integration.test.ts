@@ -60,7 +60,6 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
     const owner = await register(base, `owner_${suffix}`);
     const manager = await register(base, `manager_${suffix}`);
     const business = await register(base, `business_${suffix}`);
-    const claimant = await register(base, `claimant_${suffix}`);
 
     await db.telegramIdentity.create({
       data: { userId: owner.userId, telegramUserId: ownerTelegramId },
@@ -200,8 +199,8 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
       `${base}/api/v1/places/${place.id}/ownership-claims`,
       {
         method: "POST",
-        headers: headers(claimant.cookie),
-        body: JSON.stringify({ evidence: "Claimant has venue ownership documents" }),
+        headers: headers(business.cookie),
+        body: JSON.stringify({ evidence: "Business has venue ownership documents" }),
       },
     );
     assert.equal(ownershipClaimResponse.status, 201);
@@ -223,6 +222,22 @@ test("App Admin approves a Place once while its owner manages Place and Watch Ev
       queuedOwnershipClaim.place.imageUrl,
       canonicalPlaceCover,
       "Ownership claim queue must read its Place cover from canonical PlaceImage rows",
+    );
+
+    const ownershipDecision = await fetch(
+      `${base}/api/v1/admin/queues/place-ownership/${ownershipClaim.id}/decision`,
+      {
+        method: "POST",
+        headers: headers(owner.cookie),
+        body: JSON.stringify({ decision: "APPROVE", note: "Ownership verified by App Admin" }),
+      },
+    );
+    assert.equal(ownershipDecision.status, 200);
+    assert.ok(
+      await db.placeOwnership.findFirst({
+        where: { placeId: place.id, userId: business.userId, revokedAt: null },
+      }),
+      "Verified ownership must exist before owner-only Place actions",
     );
 
     const updatePlace = await fetch(`${base}/api/v1/places/${place.id}`, {
