@@ -52,10 +52,6 @@
       "types": "./src/platform-admin.ts",
       "default": "./dist/platform-admin.js"
     },
-    "./platform-management": {
-      "types": "./src/platform-management.ts",
-      "default": "./dist/platform-management.js"
-    },
     "./play": {
       "types": "./src/play.ts",
       "default": "./dist/play.js"
