@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { TeamCapabilityInput, TeamChallengeCreateInput } from "@hooma/contracts";
-import type { PublicPlaceCapability } from "@hooma/contracts/platform-management";
+import type { PublicPlaceCapability } from "@hooma/contracts/pitch";
 import type { ManagedTeam, TeamChallengeSummary, TeamControlDetail, createHoomaApi } from "../api";
 import { useHoomaFrontend } from "../context";
 import { GameLocationPicker } from "../game-location/GameLocationPicker";
-import { createPlatformManagementApi } from "../places/platform-management-api";
+import { createPitchApi } from "../pitch/api";
 
 const CAPABILITIES: readonly TeamCapabilityInput[] = [
   "EDIT_TEAM",
@@ -17,7 +17,7 @@ const CAPABILITIES: readonly TeamCapabilityInput[] = [
 
 export function CoachControlRoomPage() {
   const { api, transport, protectedError } = useHoomaFrontend();
-  const placeApi = useMemo(() => createPlatformManagementApi(transport), [transport]);
+  const pitchApi = useMemo(() => createPitchApi(transport), [transport]);
   const [teams, setTeams] = useState<ManagedTeam[]>([]);
   const [pitches, setPitches] = useState<PublicPlaceCapability[]>([]);
   const [selectedTeamId, setSelectedTeamId] = useState("");
@@ -34,11 +34,11 @@ export function CoachControlRoomPage() {
   useEffect(() => {
     void reloadManagedTeams();
     void reloadChallenges();
-    void placeApi.capability
-      .list("PITCH")
+    void pitchApi
+      .list()
       .then(setPitches)
       .catch(() => setPitches([]));
-  }, [api, placeApi]);
+  }, [api, pitchApi]);
 
   useEffect(() => {
     if (!selectedTeamId) {
