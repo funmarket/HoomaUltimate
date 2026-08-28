@@ -68,10 +68,7 @@ export type PublicEvent = {
   readonly place: PublicEventPlace | null;
   readonly publisherAuthority: PublicEventPublisherAuthority;
   readonly playDetails: PublicEventPlayDetails | null;
-  readonly watchDetails:
-    | PublicWatchMatchDetails
-    | PublicWatchCulturalDetails
-    | null;
+  readonly watchDetails: PublicWatchMatchDetails | PublicWatchCulturalDetails | null;
   readonly _count: { readonly rsvps: number; readonly checkIns: number };
 };
 
