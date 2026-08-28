@@ -5,7 +5,7 @@ import type {
   GamerMatchSide,
   GamerMatchSubmission,
 } from "@hooma/contracts/gamers";
-import { createPlatformManagementApi, useHoomaFrontend } from "@hooma/frontend";
+import { createGamersApi, useHoomaFrontend } from "@hooma/frontend";
 import "./gamer-disputes.css";
 
 type ProofUrls = Record<string, Partial<Record<GamerMatchSide, string>>>;
@@ -121,21 +121,21 @@ function DisputeCard({
 
 export function GamerDisputeConsole() {
   const { transport } = useHoomaFrontend();
-  const management = useMemo(() => createPlatformManagementApi(transport), [transport]);
+  const gamersApi = useMemo(() => createGamersApi(transport), [transport]);
   const [disputes, setDisputes] = useState<GamerDispute[]>([]);
   const [proofUrls, setProofUrls] = useState<ProofUrls>({});
   const [busyId, setBusyId] = useState("");
   const [error, setError] = useState("");
 
   async function load() {
-    const response = await management.admin.gamerDisputes();
+    const response = await gamersApi.adminDisputes();
     setDisputes(response.items);
     const nextUrls: ProofUrls = {};
     await Promise.all(
       response.items.flatMap((dispute) =>
         (["CHALLENGER", "CHALLENGED"] as const).map(async (side) => {
           if (!dispute.submissions.some((item) => item.side === side)) return;
-          const blob = await management.admin.gamerDisputeProof(dispute.id, side);
+          const blob = await gamersApi.adminDisputeProof(dispute.id, side);
           (nextUrls[dispute.id] ??= {})[side] = URL.createObjectURL(blob);
         }),
       ),
@@ -161,13 +161,13 @@ export function GamerDisputeConsole() {
         }),
       );
     };
-  }, [management]);
+  }, [gamersApi]);
 
   async function resolve(matchId: string, input: GamerDisputeResolutionInput) {
     setBusyId(matchId);
     setError("");
     try {
-      await management.admin.resolveGamerDispute(matchId, input);
+      await gamersApi.resolveAdminDispute(matchId, input);
       await load();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Unable to resolve Gamer dispute");
