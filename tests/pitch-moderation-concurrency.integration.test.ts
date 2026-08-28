@@ -79,12 +79,7 @@ test(
 
     const places = new PrismaPlaceRepository(db);
     const capabilityRepository = new PrismaPlaceCapabilityRepository(db);
-    const pitch = new PlaceCapabilityService(
-      "PITCH",
-      capabilityRepository,
-      places,
-      allowAdmin,
-    );
+    const pitch = new PlaceCapabilityService("PITCH", capabilityRepository, places, allowAdmin);
     let applicationId: string | null = null;
 
     try {
@@ -132,10 +127,7 @@ test(
         }),
       ]);
 
-      assert.equal(
-        reviews.filter((result) => result.status === "fulfilled").length,
-        1,
-      );
+      assert.equal(reviews.filter((result) => result.status === "fulfilled").length, 1);
       assert.equal(
         reviews.filter((result) =>
           rejectedWithCode(result, "PITCH_APPLICATION_REVIEW_NOT_PENDING"),
