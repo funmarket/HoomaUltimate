@@ -42,7 +42,7 @@ test("an approved suggested Pitch preserves immutable owner moderation history",
   try {
     const suggested = await places.suggest(suggester.id, {
       name: `Community Pitch ${suffix}`,
-      address: "18 Football Road",
+      address: `18 Football Road ${suffix}`,
       city: "Tunis",
       houma: "El Menzah",
       latitude: null,
