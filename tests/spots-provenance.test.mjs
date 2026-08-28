@@ -13,6 +13,13 @@ const placeRepository = await readFile(
   ),
   "utf8",
 );
+const capabilityRepository = await readFile(
+  new URL(
+    "../apps/api/src/modules/places/infrastructure/prisma-place-capability.repository.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const contracts = await readFile(
   new URL("../packages/contracts/src/platform-management.ts", import.meta.url),
   "utf8",
@@ -24,11 +31,10 @@ const submissionOriginEnum =
   /placeSubmissionOriginSchema = z\.enum\(\["OWNER", "FANHUB"\]\)/;
 const publicSubmissionOrigin =
   /readonly submissionOrigin: PlaceSubmissionOrigin/;
-const activeOwnerships = /ownerships:[\s\S]*?where: \{ revokedAt: null \}/;
-const ownerOrigin =
-  /ownerOrigin = input\.submissionOrigin === "OWNER" && !isPitchSuggestion/;
-const verifiedSuggester = /ownership\.userId === place\.suggestedByUserId/;
-const ownerApproval = /if \(status === "APPROVED" && ownerSubmissionClaim\)/;
+const ownerSubmissionEvidence =
+  /OWNER_SUBMISSION_EVIDENCE = "Ownership asserted during Place submission"/;
+const approvedPlaceClaimGuard =
+  /place: \{ moderationStatus: "APPROVED", archivedAt: null \}/;
 
 test("Spots expose only By Owner and FanHub source tabs", () => {
   assert.match(placesPage, />\s*By Owner\s*</);
@@ -40,6 +46,7 @@ test("Spots expose only By Owner and FanHub source tabs", () => {
 });
 
 test("Add Place defaults to FanHub and sends explicit source intent", () => {
+  assert.match(contracts, /placeSubmissionOriginSchema\.default\("FANHUB"\)/);
   assert.match(placesPage, /useState<PlaceSubmissionOrigin>\("FANHUB"\)/);
   assert.match(
     placesPage,
@@ -49,38 +56,54 @@ test("Add Place defaults to FanHub and sends explicit source intent", () => {
   assert.match(placesPage, /Suggesting it does not make you its owner/);
 });
 
-test("Spot source is derived from canonical suggester and ownership", () => {
+test("Spot source stays tied to original submission intent", () => {
   assert.match(contracts, submissionOriginEnum);
   assert.match(contracts, publicSubmissionOrigin);
-  assert.match(placeRepository, /suggestedByUserId: true/);
-  assert.match(placeRepository, activeOwnerships);
-  assert.match(placeRepository, verifiedSuggester);
+  assert.match(placeRepository, ownerSubmissionEvidence);
+  assert.match(capabilityRepository, ownerSubmissionEvidence);
+  assert.match(placeRepository, /ownershipClaims:/);
+  assert.match(capabilityRepository, /ownershipClaims:/);
   assert.match(
     placeRepository,
-    /submissionOrigin: suggestedByVerifiedOwner \? "OWNER" : "FANHUB"/,
+    /submissionOrigin: ownerSubmitted \? "OWNER" : "FANHUB"/,
   );
+  assert.match(
+    capabilityRepository,
+    /submissionOrigin: ownerSubmitted \? "OWNER" : "FANHUB"/,
+  );
+  assert.doesNotMatch(placeRepository, /suggestedByVerifiedOwner/);
+  assert.doesNotMatch(capabilityRepository, /suggestedByVerifiedOwner/);
 });
 
-test("FanHub and owner submissions keep separate ownership semantics", () => {
+test("Place moderation and ownership verification remain separate", () => {
   const suggest = placeRepository.slice(
     placeRepository.indexOf("async suggest("),
     placeRepository.indexOf("async getApproved("),
   );
-  assert.match(suggest, ownerOrigin);
-  assert.match(suggest, /ownerOrigin[\s\S]*?ownershipClaims/);
+  assert.match(
+    suggest,
+    /ownerOrigin[\s\S]*?ownershipClaims[\s\S]*?OWNER_SUBMISSION_EVIDENCE/,
+  );
 
   const reviewPlace = placeRepository.slice(
     placeRepository.indexOf("async reviewPlace("),
     placeRepository.indexOf("async reviewOwnershipClaim("),
   );
-  assert.match(reviewPlace, ownerApproval);
-  assert.match(reviewPlace, /placeOwnership\.upsert/);
-  assert.match(reviewPlace, /placeCapability\.updateMany/);
+  assert.doesNotMatch(reviewPlace, /placeOwnershipClaim\.(update|updateMany)/);
+  assert.doesNotMatch(reviewPlace, /placeOwnership\.upsert/);
 
-  const canManage = placeRepository.slice(
-    placeRepository.indexOf("async canManage("),
-    placeRepository.indexOf("async update("),
+  const reviewOwnershipClaim = placeRepository.slice(
+    placeRepository.indexOf("async reviewOwnershipClaim("),
   );
-  assert.match(canManage, /if \(place\.ownerships\.length\) return true/);
-  assert.match(canManage, /return place\.moderationStatus === "PENDING"/);
+  assert.match(reviewOwnershipClaim, approvedPlaceClaimGuard);
+  assert.match(reviewOwnershipClaim, /placeOwnership\.upsert/);
+});
+
+test("Owner submission marker survives later claim updates", () => {
+  const claimOwnership = placeRepository.slice(
+    placeRepository.indexOf("async claimOwnership("),
+    placeRepository.indexOf("async pendingPlaces("),
+  );
+  assert.match(claimOwnership, /existing\?\.evidence === OWNER_SUBMISSION_EVIDENCE/);
+  assert.match(claimOwnership, /\? OWNER_SUBMISSION_EVIDENCE/);
 });
