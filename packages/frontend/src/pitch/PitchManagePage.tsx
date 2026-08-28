@@ -6,7 +6,10 @@ import { PitchCapabilityOnboarding } from "./PitchCapabilityOnboarding";
 import { formatPitchHourlyRate } from "./pricing";
 
 function priceLabel(hourlyRateMinor: number | null, currency: string | null) {
-  if (hourlyRateMinor === null || (currency !== "TND" && currency !== "EUR" && currency !== "USD")) {
+  if (
+    hourlyRateMinor === null ||
+    (currency !== "TND" && currency !== "EUR" && currency !== "USD")
+  ) {
     return "Pricing unavailable in this historical submission";
   }
   return `${formatPitchHourlyRate(hourlyRateMinor, currency)} ${currency} / hour`;
@@ -72,7 +75,9 @@ export function PitchManagePage() {
               <p className="eyebrow">PENDING REVIEW</p>
               <strong>{priceLabel(pending.hourlyRateMinor, pending.currency)}</strong>
               <p>{pending.summary}</p>
-              <p className="muted">Current public Pitch details remain unchanged until approval.</p>
+              <p className="muted">
+                Current public Pitch details remain unchanged until approval.
+              </p>
             </section>
           ) : null}
 
