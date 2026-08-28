@@ -1,14 +1,14 @@
 import { useMemo, useState } from "react";
-import type { PublicPlaceCapability } from "@hooma/contracts/platform-management";
+import type { PublicPitch } from "@hooma/contracts/pitch";
 import { FitSingleLineText } from "../ui/FitSingleLineText";
 import { formatPitchHourlyRate } from "./pricing";
 
-function locationLabel(item: PublicPlaceCapability): string {
+function locationLabel(item: PublicPitch): string {
   const { place } = item;
   return [place.city, place.houma].filter(Boolean).join(" · ") || place.address;
 }
 
-function imageCandidates(item: PublicPlaceCapability): string[] {
+function imageCandidates(item: PublicPitch): string[] {
   const candidates = item.place.images.map((image) => image.imageUrl);
   if (item.place.imageUrl && !candidates.includes(item.place.imageUrl)) {
     candidates.push(item.place.imageUrl);
@@ -16,7 +16,7 @@ function imageCandidates(item: PublicPlaceCapability): string[] {
   return candidates;
 }
 
-export function PitchTicket({ item }: { readonly item: PublicPlaceCapability }) {
+export function PitchTicket({ item }: { readonly item: PublicPitch }) {
   const images = useMemo(() => imageCandidates(item), [item]);
   const [imageIndex, setImageIndex] = useState(0);
   const cover = images[imageIndex] ?? null;
