@@ -39,7 +39,6 @@ const placeSuggestionBaseSchema = z.object({
 
 export const placeSuggestionSchema = placeSuggestionBaseSchema
   .extend({
-    submissionOrigin: placeSubmissionOriginSchema.default("FANHUB"),
     suggestedCapabilities: z.array(placeCapabilityKindSchema).max(1).optional(),
     pitch: pitchSuggestionSchema.optional(),
   })
