@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type {
   PitchRentalCurrency,
   PlaceSubmissionOrigin,
+  PlaceSuggestionResult,
   PublicPlaceSummary,
 } from "@hooma/contracts/platform-management";
 import { useHoomaFrontend } from "../context";
@@ -39,6 +40,48 @@ function nextEventTime(event: PublicEvent): string {
   }
 }
 
+function PlaceDirectoryCard({
+  place,
+  nextEvent,
+}: {
+  readonly place: PublicPlaceSummary;
+  readonly nextEvent?: PublicEvent;
+}) {
+  return (
+    <a className="place-card place-card--directory" href={`/places/${place.id}`}>
+      <div className="place-card__copy">
+        {place.category ? <span className="eyebrow">{place.category}</span> : null}
+        <h2>{place.name}</h2>
+        <p>{locationLabel(place)}</p>
+        <small>{place.address}</small>
+        {nextEvent ? (
+          <div>
+            <p className="eyebrow">NEXT · {nextEventTime(nextEvent)}</p>
+            <strong>{nextEvent.title}</strong>
+          </div>
+        ) : null}
+      </div>
+      <div className="place-card__media">
+        {place.imageUrl ? <img src={place.imageUrl} alt="" /> : <span>HOOMA</span>}
+      </div>
+    </a>
+  );
+}
+
+function duplicateMatchLabel(result: PlaceSuggestionResult): string {
+  switch (result.matchedBy) {
+    case "PHONE":
+      return "the same canonical phone number";
+    case "WEBSITE":
+      return "the same canonical website";
+    case "NAME_COORDINATES":
+      return "the same name and coordinates";
+    case "NAME_ADDRESS":
+    default:
+      return "the same normalized name and address";
+  }
+}
+
 export function PlacesPage() {
   const { transport } = useHoomaFrontend();
   const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
@@ -66,6 +109,10 @@ export function PlacesPage() {
   const visiblePlaces = useMemo(
     () => places.filter((place) => place.submissionOrigin === spotOrigin),
     [places, spotOrigin],
+  );
+  const unclassifiedPlaces = useMemo(
+    () => places.filter((place) => place.submissionOrigin === null),
+    [places],
   );
 
   const nextEventByPlace = useMemo(() => {
@@ -140,38 +187,38 @@ export function PlacesPage() {
 
       {error ? <p className="error">{error}</p> : null}
       <div className="place-directory">
-        {visiblePlaces.map((place) => {
-          const nextEvent = nextEventByPlace.get(place.id);
-          return (
-            <a
-              className="place-card place-card--directory"
-              href={`/places/${place.id}`}
-              key={place.id}
-            >
-              <div className="place-card__copy">
-                {place.category ? <span className="eyebrow">{place.category}</span> : null}
-                <h2>{place.name}</h2>
-                <p>{locationLabel(place)}</p>
-                <small>{place.address}</small>
-                {nextEvent ? (
-                  <div>
-                    <p className="eyebrow">NEXT · {nextEventTime(nextEvent)}</p>
-                    <strong>{nextEvent.title}</strong>
-                  </div>
-                ) : null}
-              </div>
-              <div className="place-card__media">
-                {place.imageUrl ? <img src={place.imageUrl} alt="" /> : <span>HOOMA</span>}
-              </div>
-            </a>
-          );
-        })}
+        {visiblePlaces.map((place) => (
+          <PlaceDirectoryCard
+            key={place.id}
+            place={place}
+            nextEvent={nextEventByPlace.get(place.id)}
+          />
+        ))}
         {!visiblePlaces.length && !error ? (
           <p className="muted">
             {spotOrigin === "OWNER" ? "No owner-submitted Spots yet." : "No FanHub Spots yet."}
           </p>
         ) : null}
       </div>
+
+      {unclassifiedPlaces.length ? (
+        <section className="panel">
+          <p className="eyebrow">SOURCE PENDING VERIFICATION</p>
+          <p className="muted">
+            These existing Places predate durable source tracking. HOOMA keeps them visible without
+            inventing whether they were added by an owner or FanHub.
+          </p>
+          <div className="place-directory">
+            {unclassifiedPlaces.map((place) => (
+              <PlaceDirectoryCard
+                key={place.id}
+                place={place}
+                nextEvent={nextEventByPlace.get(place.id)}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
     </section>
   );
 }
@@ -184,27 +231,28 @@ export function AddPlacePage() {
   const [pitchHourlyRate, setPitchHourlyRate] = useState("");
   const [pitchCurrency, setPitchCurrency] = useState<PitchRentalCurrency>("TND");
   const [error, setError] = useState("");
-  const [submittedPlaceId, setSubmittedPlaceId] = useState<string | null>(null);
+  const [submissionResult, setSubmissionResult] = useState<PlaceSuggestionResult | null>(null);
   const [pending, setPending] = useState(false);
 
   async function submit(input: PlaceFormInput) {
     setPending(true);
     setError("");
     try {
-      const created = await api.places.suggest({
-        ...input,
-        submissionOrigin: isPitchSuggestion ? "FANHUB" : submissionOrigin,
-        ...(isPitchSuggestion
-          ? {
-              suggestedCapabilities: ["PITCH"],
-              pitch: {
-                hourlyRateMinor: pitchRateToMinor(Number(pitchHourlyRate), pitchCurrency),
-                currency: pitchCurrency,
-              },
-            }
-          : {}),
-      });
-      setSubmittedPlaceId(created.id);
+      setSubmissionResult(
+        await api.places.suggest({
+          ...input,
+          submissionOrigin: isPitchSuggestion ? "FANHUB" : submissionOrigin,
+          ...(isPitchSuggestion
+            ? {
+                suggestedCapabilities: ["PITCH"],
+                pitch: {
+                  hourlyRateMinor: pitchRateToMinor(Number(pitchHourlyRate), pitchCurrency),
+                  currency: pitchCurrency,
+                },
+              }
+            : {}),
+        }),
+      );
     } catch (reason) {
       setError(protectedError(reason, "Unable to submit Place"));
     } finally {
@@ -212,7 +260,45 @@ export function AddPlacePage() {
     }
   }
 
-  if (submittedPlaceId) {
+  if (submissionResult) {
+    const placeId = submissionResult.place.id;
+    if (submissionResult.outcome === "EXISTING") {
+      const activeApproved = submissionResult.status === "APPROVED" && !submissionResult.archivedAt;
+      return (
+        <section className="place-page">
+          <div className="place-submitted panel">
+            <p className="eyebrow">EXISTING PLACE FOUND</p>
+            <h1>No duplicate created</h1>
+            <p>
+              HOOMA found {duplicateMatchLabel(submissionResult)} for {submissionResult.place.name}.
+              The existing canonical Place was kept.
+            </p>
+            {submissionResult.archivedAt ? (
+              <p className="muted">
+                This Place is archived. A new physical Place was not created because that would
+                duplicate the canonical venue record.
+              </p>
+            ) : submissionResult.status === "PENDING" ? (
+              <p className="muted">This Place is already waiting for App Admin review.</p>
+            ) : null}
+            <div className="place-detail-actions">
+              {activeApproved ? (
+                <a className="place-primary-link" href={`/places/${placeId}`}>
+                  View existing Place
+                </a>
+              ) : null}
+              {activeApproved && !isPitchSuggestion && submissionOrigin === "OWNER" ? (
+                <a href={`/places/${placeId}?claim=1`}>Claim this Place</a>
+              ) : null}
+              <a href={isPitchSuggestion ? "/pitch" : "/places"}>
+                {isPitchSuggestion ? "Back to Pitch" : "Back to Spots"}
+              </a>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
     return (
       <section className="place-page">
         <div className="place-submitted panel">
@@ -227,7 +313,7 @@ export function AddPlacePage() {
           </p>
           <div className="place-detail-actions">
             {!isPitchSuggestion ? (
-              <a className="place-primary-link" href={`/places/${submittedPlaceId}/edit`}>
+              <a className="place-primary-link" href={`/places/${placeId}/edit`}>
                 Manage submitted Place
               </a>
             ) : null}
