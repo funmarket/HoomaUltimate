@@ -27,27 +27,48 @@ test("Spots expose only By Owner and FanHub source tabs", () => {
   assert.doesNotMatch(placesPage, /SpotService|SpotRepository|FanHubService|FanHubRepository/);
 });
 
+test("Add Place defaults to FanHub and sends explicit source intent", () => {
+  assert.match(
+    placesPage,
+    /useState<PlaceSubmissionOrigin>\("FANHUB"\)/,
+  );
+  assert.match(
+    placesPage,
+    /submissionOrigin: isPitchSuggestion \? "FANHUB" : submissionOrigin/,
+  );
+  assert.match(placesPage, /WHO IS ADDING THIS SPOT\?/);
+  assert.match(placesPage, /Suggesting it does not make you its owner/);
+});
+
 test("Spot source is derived from canonical suggester and verified ownership", () => {
   assert.match(contracts, /placeSubmissionOriginSchema = z\.enum\(\["OWNER", "FANHUB"\]\)/);
   assert.match(contracts, /readonly submissionOrigin: PlaceSubmissionOrigin/);
   assert.match(placeRepository, /suggestedByUserId: true/);
   assert.match(placeRepository, /ownerships:[\s\S]*?where: \{ revokedAt: null \}/);
-  assert.match(
-    placeRepository,
-    /ownership\.userId === place\.suggestedByUserId/,
-  );
+  assert.match(placeRepository, /ownership\.userId === place\.suggestedByUserId/);
   assert.match(
     placeRepository,
     /submissionOrigin: suggestedByVerifiedOwner \? "OWNER" : "FANHUB"/,
   );
 });
 
-test("approving a suggestion no longer grants ownership to the suggester", () => {
+test("FanHub does not create ownership while owner submissions reuse canonical ownership", () => {
+  const suggest = placeRepository.slice(
+    placeRepository.indexOf("async suggest("),
+    placeRepository.indexOf("async getApproved("),
+  );
+  assert.match(
+    suggest,
+    /ownerOrigin = input\.submissionOrigin === "OWNER" && !isPitchSuggestion/,
+  );
+  assert.match(suggest, /ownerOrigin[\s\S]*?ownershipClaims/);
+
   const reviewPlace = placeRepository.slice(
     placeRepository.indexOf("async reviewPlace("),
     placeRepository.indexOf("async reviewOwnershipClaim("),
   );
-  assert.doesNotMatch(reviewPlace, /placeOwnership\.(?:create|upsert)/);
+  assert.match(reviewPlace, /if \(status === "APPROVED" && ownerSubmissionClaim\)/);
+  assert.match(reviewPlace, /placeOwnership\.upsert/);
   assert.match(reviewPlace, /placeCapability\.updateMany/);
 
   const canManage = placeRepository.slice(
