@@ -1,8 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type {
-  PitchRentalCurrency,
-  PublicPlaceSummary,
-} from "@hooma/contracts/platform-management";
+import type { PitchRentalCurrency, PublicPlaceSummary } from "@hooma/contracts/platform-management";
 import { useHoomaFrontend } from "../context";
 import type { PublicEvent } from "../events/api";
 import { useEventApi } from "../events/useEventApi";
