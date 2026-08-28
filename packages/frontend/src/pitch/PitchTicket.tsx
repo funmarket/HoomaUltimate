@@ -20,7 +20,6 @@ export function PitchTicket({ item }: { readonly item: PublicPlaceCapability }) 
   const images = useMemo(() => imageCandidates(item), [item]);
   const [imageIndex, setImageIndex] = useState(0);
   const cover = images[imageIndex] ?? null;
-  const hasHourlyRate = item.hourlyRateMinor !== null && item.currency !== null;
   const rate = formatPitchHourlyRate(item.hourlyRateMinor, item.currency);
   const contact = item.place.phone || item.place.email || "Contact venue";
 
@@ -51,18 +50,12 @@ export function PitchTicket({ item }: { readonly item: PublicPlaceCapability }) 
                 <p className="pitch-ticket__location">{locationLabel(item)}</p>
               </div>
 
-              <div
-                className={`pitch-ticket__rate${hasHourlyRate ? "" : " pitch-ticket__rate--contact"}`}
-              >
+              <div className="pitch-ticket__rate">
                 <span className="pitch-ticket__rate-label">HOURLY RATE</span>
-                {hasHourlyRate ? (
-                  <div className="pitch-ticket__rate-value">
-                    <strong>{rate}</strong>
-                    <span>{item.currency}</span>
-                  </div>
-                ) : (
+                <div className="pitch-ticket__rate-value">
                   <strong>{rate}</strong>
-                )}
+                  <span>{item.currency}</span>
+                </div>
                 <span className="pitch-ticket__rate-period">/ hour</span>
                 <span className="pitch-ticket__offer">FULL PITCH RENTAL</span>
               </div>
