@@ -24,7 +24,7 @@ export interface PlaceRepository {
     placeId: string,
     input: PlaceOwnershipClaimInput,
   ): Promise<{ id: string; status: string }>;
-  pendingPlaces(): Promise<readonly PlaceReviewQueueItem[]>;
+  pendingPlaces(excludePlaceIds?: readonly string[]): Promise<readonly PlaceReviewQueueItem[]>;
   pendingOwnershipClaims(): Promise<readonly PlaceOwnershipReviewQueueItem[]>;
   reviewPlace(
     actorUserId: string,
