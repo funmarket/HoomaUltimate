@@ -1,8 +1,10 @@
-import type { ModerationDecisionInput } from "@hooma/contracts/moderation";
-import type { PitchReviewTarget } from "@hooma/contracts/pitch";
 import { AppError } from "../../../http/errors/app-error.js";
 import type { PlatformAdminAuthorizer } from "../../platform-admin/application/platform-admin.authorizer.js";
-import type { PitchRepository } from "./pitch.repository.js";
+import type {
+  PitchModerationDecision,
+  PitchRepository,
+  PitchReviewTarget,
+} from "./pitch.repository.js";
 
 export class PitchModerationService {
   constructor(
@@ -24,7 +26,7 @@ export class PitchModerationService {
     userId: string,
     target: PitchReviewTarget,
     reviewId: string,
-    input: ModerationDecisionInput,
+    input: PitchModerationDecision,
   ) {
     await this.platformAdmin.requireCapability(userId, "REVIEW_PITCH_APPLICATIONS");
     try {
