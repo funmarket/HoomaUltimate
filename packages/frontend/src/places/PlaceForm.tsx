@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import type {
   PlaceSuggestionInput,
   PublicPlaceSummary,
@@ -32,12 +32,14 @@ export function PlaceForm({
   submitLabel,
   pending,
   showMenu = true,
+  extraSection,
   onSubmit,
 }: {
   readonly initialPlace?: PublicPlaceSummary | null;
   readonly submitLabel: string;
   readonly pending: boolean;
   readonly showMenu?: boolean;
+  readonly extraSection?: ReactNode;
   readonly onSubmit: (input: PlaceSuggestionInput) => Promise<void>;
 }) {
   const [menu, setMenu] = useState<MenuDraft[]>(() => menuDrafts(initialPlace));
@@ -281,6 +283,8 @@ export function PlaceForm({
           />
         </label>
       </section>
+
+      {extraSection}
 
       {showMenu ? (
         <section className="hooma-form__section">

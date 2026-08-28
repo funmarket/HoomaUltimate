@@ -82,13 +82,15 @@ function placeSummary(place: PlaceRow, images: readonly PlaceImageRow[] = []): P
 function capabilitySummary(
   row: CapabilityRow,
   images: readonly PlaceImageRow[] = [],
-): PublicPlaceCapability {
+): PublicPlaceCapability | null {
+  const currency = pitchRentalCurrency(row.currency);
+  if (row.hourlyRateMinor === null || currency === null) return null;
   return {
     id: row.id,
     kind: row.kind,
     summary: row.summary,
     hourlyRateMinor: row.hourlyRateMinor,
-    currency: pitchRentalCurrency(row.currency),
+    currency,
     place: placeSummary(row.place, images),
   };
 }
@@ -123,7 +125,10 @@ export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepositor
         })
       : [];
     const byPlace = groupImages(images);
-    return rows.map((row) => capabilitySummary(row, byPlace.get(row.place.id) ?? []));
+    return rows.flatMap((row) => {
+      const summary = capabilitySummary(row, byPlace.get(row.place.id) ?? []);
+      return summary ? [summary] : [];
+    });
   }
 
   async getApprovedByPlace(
@@ -252,6 +257,13 @@ export class PrismaPlaceCapabilityRepository implements PlaceCapabilityRepositor
         },
       });
       if (!application) return false;
+      if (
+        status === "APPROVED" &&
+        (application.hourlyRateMinor === null || pitchRentalCurrency(application.currency) === null)
+      ) {
+        throw new Error("PITCH_PRICING_REQUIRED");
+      }
+
       const reviewedAt = new Date();
       const result = await tx.placeCapabilityApplication.updateMany({
         where: { id: applicationId, kind, status: "PENDING" },

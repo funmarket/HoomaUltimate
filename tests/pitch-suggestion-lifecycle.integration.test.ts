@@ -19,11 +19,18 @@ const allowAdmin: PlatformAdminAuthorizer = {
   async requireCapability() {},
 };
 
-test("an approved suggested Pitch stays public and claimable before rental ownership", async () => {
+test("an approved suggested Pitch publishes the reviewed creation price before ownership", async () => {
   const suffix = Date.now().toString(36);
   const suggester = await db.user.create({ data: {} });
   const claimant = await db.user.create({ data: {} });
   const admin = await db.user.create({ data: {} });
+  await db.userPresentation.create({
+    data: {
+      userId: suggester.id,
+      username: `pitch_suggester_${suffix}`,
+      displayName: "Pitch Suggester",
+    },
+  });
   const places = new PrismaPlaceRepository(db);
   const capabilityRepository = new PrismaPlaceCapabilityRepository(db);
   const pitch = new PlaceCapabilityService("PITCH", capabilityRepository, places, allowAdmin);
@@ -49,6 +56,7 @@ test("an approved suggested Pitch stays public and claimable before rental owner
       category: "Football pitch",
       menuItems: [],
       suggestedCapabilities: ["PITCH"],
+      pitch: { hourlyRateMinor: 45_000, currency: "TND" },
     });
     placeId = suggested.id;
     assert.equal(suggested.status, "PENDING");
@@ -57,13 +65,19 @@ test("an approved suggested Pitch stays public and claimable before rental owner
       where: { placeId_kind: { placeId, kind: "PITCH" } },
     });
     assert.equal(pendingCapability?.status, "PENDING");
-    assert.equal(pendingCapability?.summary, null);
-    assert.equal(pendingCapability?.hourlyRateMinor, null);
+    assert.equal(pendingCapability?.hourlyRateMinor, 45_000);
+    assert.equal(pendingCapability?.currency, "TND");
+
+    const queueItem = (await places.pendingPlaces()).find((item) => item.id === placeId);
+    assert.ok(queueItem);
+    assert.equal(queueItem.kind, "PITCH");
+    assert.equal(queueItem.hourlyRateMinor, 45_000);
+    assert.equal(queueItem.currency, "TND");
 
     assert.equal(
       await places.reviewPlace(admin.id, placeId, {
         decision: "APPROVE",
-        note: "Confirmed as a real football pitch",
+        note: "Confirmed as a real football pitch with reviewed rental pricing",
       }),
       true,
     );
@@ -83,9 +97,8 @@ test("an approved suggested Pitch stays public and claimable before rental owner
 
     const publicBeforeClaim = await pitch.getPublic(placeId);
     assert.equal(publicBeforeClaim.place.id, placeId);
-    assert.equal(publicBeforeClaim.summary, null);
-    assert.equal(publicBeforeClaim.hourlyRateMinor, null);
-    assert.equal(publicBeforeClaim.currency, null);
+    assert.equal(publicBeforeClaim.hourlyRateMinor, 45_000);
+    assert.equal(publicBeforeClaim.currency, "TND");
 
     const claim = await places.claimOwnership(claimant.id, placeId, {
       evidence: "Venue lease and management documents are available for App review.",
@@ -102,7 +115,7 @@ test("an approved suggested Pitch stays public and claimable before rental owner
 
     const application = await pitch.submit(claimant.id, placeId, {
       summary: "Floodlit five-a-side pitch with changing rooms.",
-      hourlyRateMinor: 45_000,
+      hourlyRateMinor: 50_000,
       currency: "TND",
       contactName: "Pitch Manager",
       contactPhone: "+21671000123",
@@ -112,22 +125,22 @@ test("an approved suggested Pitch stays public and claimable before rental owner
     assert.equal(application.status, "PENDING");
 
     const stillPublicWhilePending = await pitch.getPublic(placeId);
-    assert.equal(stillPublicWhilePending.summary, null);
-    assert.equal(stillPublicWhilePending.hourlyRateMinor, null);
+    assert.equal(stillPublicWhilePending.hourlyRateMinor, 45_000);
+    assert.equal(stillPublicWhilePending.currency, "TND");
 
     await pitch.review(admin.id, application.id, {
       decision: "APPROVE",
-      note: "Rental details verified",
+      note: "Updated rental details verified",
     });
 
     const approvedRental = await pitch.getPublic(placeId);
     assert.equal(approvedRental.summary, "Floodlit five-a-side pitch with changing rooms.");
-    assert.equal(approvedRental.hourlyRateMinor, 45_000);
+    assert.equal(approvedRental.hourlyRateMinor, 50_000);
     assert.equal(approvedRental.currency, "TND");
 
     const update = await pitch.submit(claimant.id, placeId, {
       summary: "Updated rental details awaiting review.",
-      hourlyRateMinor: 50_000,
+      hourlyRateMinor: 55_000,
       currency: "TND",
       contactName: "Pitch Manager",
       contactPhone: "+21671000123",
@@ -137,11 +150,7 @@ test("an approved suggested Pitch stays public and claimable before rental owner
     assert.equal(update.status, "PENDING");
 
     const previousApprovedProfile = await pitch.getPublic(placeId);
-    assert.equal(
-      previousApprovedProfile.summary,
-      "Floodlit five-a-side pitch with changing rooms.",
-    );
-    assert.equal(previousApprovedProfile.hourlyRateMinor, 45_000);
+    assert.equal(previousApprovedProfile.hourlyRateMinor, 50_000);
 
     await pitch.review(admin.id, update.id, {
       decision: "REJECT",
@@ -149,8 +158,8 @@ test("an approved suggested Pitch stays public and claimable before rental owner
     });
 
     const afterRejectedUpdate = await pitch.getPublic(placeId);
-    assert.equal(afterRejectedUpdate.summary, "Floodlit five-a-side pitch with changing rooms.");
-    assert.equal(afterRejectedUpdate.hourlyRateMinor, 45_000);
+    assert.equal(afterRejectedUpdate.hourlyRateMinor, 50_000);
+    assert.equal(afterRejectedUpdate.currency, "TND");
   } finally {
     if (applicationId) {
       await db.auditLog.deleteMany({ where: { entityId: applicationId } });

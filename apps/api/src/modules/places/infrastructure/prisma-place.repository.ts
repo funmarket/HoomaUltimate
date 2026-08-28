@@ -3,6 +3,7 @@ import type {
   AdminQueueItem,
   ManagedPlaceSummary,
   ModerationDecisionInput,
+  PitchRentalCurrency,
   PlaceOwnershipClaimInput,
   PlaceSuggestionInput,
   PlaceUpdateInput,
@@ -27,6 +28,22 @@ function slugBase(value: string): string {
 function duplicateKey(input: Pick<PlaceSuggestionInput, "name" | "address">): string {
   const normalize = (value: string) => value.trim().toLocaleLowerCase().replace(/\s+/g, " ");
   return `${normalize(input.name)}|${normalize(input.address)}`;
+}
+
+function pitchRentalCurrency(value: string | null): PitchRentalCurrency | null {
+  return value === "TND" || value === "EUR" || value === "USD" ? value : null;
+}
+
+function suggestedCapabilityCreate(input: PlaceSuggestionInput) {
+  if (!input.suggestedCapabilities?.includes("PITCH")) return [];
+  if (!input.pitch) throw new Error("PITCH_PRICING_REQUIRED");
+  return [
+    {
+      kind: "PITCH" as const,
+      hourlyRateMinor: input.pitch.hourlyRateMinor,
+      currency: input.pitch.currency,
+    },
+  ];
 }
 
 const placeSelect = Prisma.validator<Prisma.PlaceSelect>()({
@@ -148,7 +165,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
       if (existing) throw new Error("PLACE_ALREADY_EXISTS");
 
       const imageUrls = canonicalImageUrls(input);
-      const suggestedCapabilities = input.suggestedCapabilities ?? [];
+      const capabilityCreates = suggestedCapabilityCreate(input);
       const place = await tx.place.create({
         data: {
           slug: `${slugBase(input.name)}-${randomUUID().slice(0, 8)}`,
@@ -165,10 +182,10 @@ export class PrismaPlaceRepository implements PlaceRepository {
           email: input.email ?? null,
           suggestedByUserId: userId,
           menuItems: { create: menuCreate(input.menuItems) },
-          ...(suggestedCapabilities.length
+          ...(capabilityCreates.length
             ? {
                 capabilities: {
-                  create: suggestedCapabilities.map((kind) => ({ kind })),
+                  create: capabilityCreates,
                 },
               }
             : {}),
@@ -349,6 +366,11 @@ export class PrismaPlaceRepository implements PlaceRepository {
         createdAt: true,
         reviewedAt: true,
         reviewNote: true,
+        capabilities: {
+          where: { kind: "PITCH", status: "PENDING" },
+          select: { kind: true, hourlyRateMinor: true, currency: true },
+          take: 1,
+        },
         suggestedBy: {
           select: {
             id: true,
@@ -367,19 +389,29 @@ export class PrismaPlaceRepository implements PlaceRepository {
     const byPlace = groupImages(images);
     return rows
       .filter((row) => row.suggestedBy.presentation)
-      .map((row) => ({
-        id: row.id,
-        status: row.moderationStatus,
-        createdAt: row.createdAt.toISOString(),
-        reviewedAt: row.reviewedAt?.toISOString() ?? null,
-        reviewNote: row.reviewNote,
-        applicant: {
-          userId: row.suggestedBy.id,
-          username: row.suggestedBy.presentation!.username,
-          displayName: row.suggestedBy.presentation!.displayName,
-        },
-        place: placeSummary(row, byPlace.get(row.id) ?? []),
-      }));
+      .map((row) => {
+        const pitch = row.capabilities[0];
+        return {
+          id: row.id,
+          status: row.moderationStatus,
+          createdAt: row.createdAt.toISOString(),
+          reviewedAt: row.reviewedAt?.toISOString() ?? null,
+          reviewNote: row.reviewNote,
+          applicant: {
+            userId: row.suggestedBy.id,
+            username: row.suggestedBy.presentation!.username,
+            displayName: row.suggestedBy.presentation!.displayName,
+          },
+          place: placeSummary(row, byPlace.get(row.id) ?? []),
+          ...(pitch
+            ? {
+                kind: pitch.kind,
+                hourlyRateMinor: pitch.hourlyRateMinor,
+                currency: pitchRentalCurrency(pitch.currency),
+              }
+            : {}),
+        };
+      });
   }
 
   async pendingOwnershipClaims(): Promise<readonly AdminQueueItem[]> {
@@ -434,10 +466,22 @@ export class PrismaPlaceRepository implements PlaceRepository {
         where: { id: placeId, moderationStatus: "PENDING", archivedAt: null },
         select: {
           suggestedByUserId: true,
-          capabilities: { where: { status: "PENDING" }, select: { id: true, kind: true } },
+          capabilities: {
+            where: { status: "PENDING" },
+            select: { id: true, kind: true, hourlyRateMinor: true, currency: true },
+          },
         },
       });
       if (!place) return false;
+
+      const pitch = place.capabilities.find((capability) => capability.kind === "PITCH");
+      if (
+        status === "APPROVED" &&
+        pitch &&
+        (pitch.hourlyRateMinor === null || pitchRentalCurrency(pitch.currency) === null)
+      ) {
+        throw new Error("PITCH_PRICING_REQUIRED");
+      }
 
       const reviewedAt = new Date();
       const result = await tx.place.updateMany({
