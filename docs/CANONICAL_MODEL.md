@@ -887,12 +887,45 @@ G3 challenge rules:
 
 ---
 
-# 20. Frozen future concepts
+# 20. Pitch canonical Place capability
+
+Pitch is implemented and is not a frozen future concept.
+
+Canonical Pitch ownership is:
+
+```text
+Place
+  -> physical identity, location, contact, and PlaceImage[]
+  -> PlaceOwnership / PlaceOwnershipClaim
+  -> PlaceCapability(kind=PITCH)
+       = current approved/public Pitch profile and hourly pricing
+  -> PlaceCapabilityApplication(kind=PITCH)
+       = verified-owner proposed Pitch profile/pricing update
+```
+
+Rules:
+
+- `Place` is the only physical venue record;
+- `Place.phone`, `Place.email`, and `Place.websiteUrl` are the single contact authority for Pitch;
+- `PlaceImage[]` is the runtime image authority;
+- `PlaceCapability(kind=PITCH)` owns the current approved Pitch summary, hourly rate, and currency;
+- a Pitch suggestion creates pending Place + pending PITCH capability with submitted hourly rate/currency together;
+- approval of a community suggestion does not grant Place ownership to the suggester;
+- later Pitch application submission requires verified Place ownership;
+- `PlaceCapabilityApplication(kind=PITCH)` contains Pitch-owned summary/pricing proposal data only and must not duplicate Place contact;
+- pending/rejected owner applications never overwrite the last approved public Pitch profile;
+- public Pitch projection requires complete supported hourly pricing and never invents fallback pricing.
+
+The dedicated accepted decision is `docs/adr/ADR-042-pitch-suggestion-claim-lifecycle.md`.
+
+---
+
+# 21. Frozen future concepts
 
 The normalized initial schema must not add durable product tables for these until their vertical slice begins:
 
 ```text
-Place/Watch/Pitch capability system
+Place/Watch capability work outside the already-implemented Pitch model
 ULTRAS
 Requests
 Ride
@@ -903,13 +936,13 @@ Replay
 HOOMA NOW read models
 ```
 
-Whistle is explicitly unfrozen by ADR-039/ADR-040. Gamers is explicitly unfrozen by ADR-041 and is therefore no longer in this list.
+Whistle is explicitly unfrozen by ADR-039/ADR-040. Gamers is explicitly unfrozen by ADR-041. Pitch is explicitly implemented under ADR-042 and is therefore no longer in this list.
 
 Foundation interfaces/packages may exist, but a speculative schema is not implementation.
 
 ---
 
-# 21. Migration requirement
+# 22. Migration requirement
 
 Before first HOOMA ULTIMATE release, all pre-release current migrations are replaced with one reviewed initial migration generated from the reconciled schema and augmented with intentional PostgreSQL constraints where required.
 
@@ -917,7 +950,7 @@ After first release, migration history becomes forward-only.
 
 ---
 
-# 22. Completion rule
+# 23. Completion rule
 
 A model is not considered correct because this file exists.
 
