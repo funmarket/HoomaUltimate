@@ -1,11 +1,10 @@
 import type {
-  AdminQueueItem,
-  ModerationDecisionInput,
   PitchCapabilityManagementState,
   PlaceCapabilityApplicationInput,
   PlaceCapabilityKind,
   PublicPlaceCapability,
-} from "@hooma/contracts/platform-management";
+} from "@hooma/contracts/pitch";
+import type { AdminQueueItem, ModerationDecisionInput } from "@hooma/contracts/platform-admin";
 
 export interface PlaceCapabilityRepository {
   listApproved(kind: PlaceCapabilityKind): Promise<readonly PublicPlaceCapability[]>;
