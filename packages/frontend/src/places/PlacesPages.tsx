@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import type { PitchRentalCurrency, PublicPlaceSummary } from "@hooma/contracts/platform-management";
+import type {
+  PitchRentalCurrency,
+  PlaceSubmissionOrigin,
+  PublicPlaceSummary,
+} from "@hooma/contracts/platform-management";
 import { useHoomaFrontend } from "../context";
 import type { PublicEvent } from "../events/api";
 import { useEventApi } from "../events/useEventApi";
@@ -10,6 +14,7 @@ import { createPlatformManagementApi } from "./platform-management-api";
 export { PlaceDetailPage } from "./PlaceDetailPage";
 
 const PITCH_RENTAL_CURRENCIES: readonly PitchRentalCurrency[] = ["TND", "EUR", "USD"];
+type PlaceFormInput = Parameters<Parameters<typeof PlaceForm>[0]["onSubmit"]>[0];
 
 function locationLabel(place: PublicPlaceSummary): string {
   return [place.houma, place.city].filter(Boolean).join(" · ") || place.address;
@@ -39,6 +44,7 @@ export function PlacesPage() {
   const eventApi = useEventApi();
   const [places, setPlaces] = useState<PublicPlaceSummary[]>([]);
   const [watchEvents, setWatchEvents] = useState<PublicEvent[]>([]);
+  const [spotOrigin, setSpotOrigin] = useState<PlaceSubmissionOrigin>("OWNER");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -55,6 +61,11 @@ export function PlacesPage() {
       .then((page) => setWatchEvents(page.items))
       .catch(() => setWatchEvents([]));
   }, [api, eventApi]);
+
+  const visiblePlaces = useMemo(
+    () => places.filter((place) => place.submissionOrigin === spotOrigin),
+    [places, spotOrigin],
+  );
 
   const nextEventByPlace = useMemo(() => {
     const now = Date.now();
@@ -101,9 +112,30 @@ export function PlacesPage() {
         </a>
       </nav>
 
+      <div className="watch-kind-tabs" role="tablist" aria-label="Spot source">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={spotOrigin === "OWNER"}
+          className={spotOrigin === "OWNER" ? "watch-kind-tab is-active" : "watch-kind-tab"}
+          onClick={() => setSpotOrigin("OWNER")}
+        >
+          By Owner
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={spotOrigin === "FANHUB"}
+          className={spotOrigin === "FANHUB" ? "watch-kind-tab is-active" : "watch-kind-tab"}
+          onClick={() => setSpotOrigin("FANHUB")}
+        >
+          FanHub
+        </button>
+      </div>
+
       {error ? <p className="error">{error}</p> : null}
       <div className="place-directory">
-        {places.map((place) => {
+        {visiblePlaces.map((place) => {
           const nextEvent = nextEventByPlace.get(place.id);
           return (
             <a
@@ -129,7 +161,11 @@ export function PlacesPage() {
             </a>
           );
         })}
-        {!places.length && !error ? <p className="muted">No approved Spots yet.</p> : null}
+        {!visiblePlaces.length && !error ? (
+          <p className="muted">
+            {spotOrigin === "OWNER" ? "No owner-submitted Spots yet." : "No FanHub Spots yet."}
+          </p>
+        ) : null}
       </div>
     </section>
   );
@@ -139,18 +175,20 @@ export function AddPlacePage() {
   const { transport, protectedError } = useHoomaFrontend();
   const api = useMemo(() => createPlatformManagementApi(transport), [transport]);
   const isPitchSuggestion = new URLSearchParams(window.location.search).get("kind") === "PITCH";
+  const [submissionOrigin, setSubmissionOrigin] = useState<PlaceSubmissionOrigin>("FANHUB");
   const [pitchHourlyRate, setPitchHourlyRate] = useState("");
   const [pitchCurrency, setPitchCurrency] = useState<PitchRentalCurrency>("TND");
   const [error, setError] = useState("");
   const [submittedPlaceId, setSubmittedPlaceId] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  async function submit(input: Parameters<typeof api.places.suggest>[0]) {
+  async function submit(input: PlaceFormInput) {
     setPending(true);
     setError("");
     try {
       const created = await api.places.suggest({
         ...input,
+        submissionOrigin: isPitchSuggestion ? "FANHUB" : submissionOrigin,
         ...(isPitchSuggestion
           ? {
               suggestedCapabilities: ["PITCH"],
@@ -178,7 +216,9 @@ export function AddPlacePage() {
           <p>
             {isPitchSuggestion
               ? "The App Admin will review this football pitch and its hourly rental price. Once approved, it can appear in Pitch and the real owner can claim it."
-              : "The App Admin will review the Place. Once approved, it will appear in Spots and can be used for Watch events."}
+              : submissionOrigin === "OWNER"
+                ? "The App Admin will review this Spot first. Your ownership claim stays separate and can be verified after the Place itself is approved."
+                : "The App Admin will review this Spot. Community suggestions appear in FanHub. If the real owner claims it later, the same canonical Place is kept and the FanHub source remains unchanged."}
           </p>
           <div className="place-detail-actions">
             {!isPitchSuggestion ? (
@@ -242,14 +282,50 @@ export function AddPlacePage() {
       <header className="place-page__header place-form-page__header">
         <div>
           <p className="eyebrow">{isPitchSuggestion ? "SUGGEST A PITCH" : "ADD A PLACE"}</p>
-          <h1>{isPitchSuggestion ? "Suggest a football pitch" : "List your Place"}</h1>
+          <h1>{isPitchSuggestion ? "Suggest a football pitch" : "Add a Watch Spot"}</h1>
           <p>
             {isPitchSuggestion
               ? "Add the real venue details and hourly rental price. Suggesting a pitch does not make you its owner."
-              : "Build the full venue profile once. Coordinates are optional."}
+              : "Add a café, lounge, restaurant or other place where people can watch together."}
           </p>
         </div>
       </header>
+
+      {!isPitchSuggestion ? (
+        <section className="panel">
+          <p className="eyebrow">WHO IS ADDING THIS SPOT?</p>
+          <div className="watch-kind-tabs" role="tablist" aria-label="Place submission source">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={submissionOrigin === "OWNER"}
+              className={
+                submissionOrigin === "OWNER" ? "watch-kind-tab is-active" : "watch-kind-tab"
+              }
+              onClick={() => setSubmissionOrigin("OWNER")}
+            >
+              By Owner
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={submissionOrigin === "FANHUB"}
+              className={
+                submissionOrigin === "FANHUB" ? "watch-kind-tab is-active" : "watch-kind-tab"
+              }
+              onClick={() => setSubmissionOrigin("FANHUB")}
+            >
+              FanHub
+            </button>
+          </div>
+          <p className="muted">
+            {submissionOrigin === "OWNER"
+              ? "Choose By Owner only when you own or manage this business. This creates an ownership claim on the same Place; verification remains a separate Admin decision."
+              : "FanHub is for any registered HOOMA member suggesting a Spot for the community. Suggesting it does not make you its owner."}
+          </p>
+        </section>
+      ) : null}
+
       <PlaceForm
         submitLabel={isPitchSuggestion ? "Suggest Pitch" : "Submit Place"}
         pending={pending}

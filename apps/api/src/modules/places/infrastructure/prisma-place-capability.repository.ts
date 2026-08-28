@@ -11,6 +11,8 @@ import type {
 import { Prisma, type PrismaClient } from "@hooma/database";
 import type { PlaceCapabilityRepository } from "../application/place-capability.repository.js";
 
+const OWNER_SUBMISSION_EVIDENCE = "Ownership asserted during Place submission";
+
 const placeSelect = Prisma.validator<Prisma.PlaceSelect>()({
   id: true,
   slug: true,
@@ -25,6 +27,10 @@ const placeSelect = Prisma.validator<Prisma.PlaceSelect>()({
   description: true,
   category: true,
   email: true,
+  suggestedByUserId: true,
+  ownershipClaims: {
+    select: { claimantUserId: true, evidence: true },
+  },
   menuItems: {
     orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
     select: { id: true, name: true, price: true, currency: true },
@@ -54,6 +60,11 @@ function placeSummary(place: PlaceRow, images: readonly PlaceImageRow[] = []): P
     imageUrl: image.imageUrl,
     sortOrder: image.sortOrder,
   }));
+  const ownerSubmitted = place.ownershipClaims.some(
+    (claim) =>
+      claim.claimantUserId === place.suggestedByUserId &&
+      claim.evidence === OWNER_SUBMISSION_EVIDENCE,
+  );
   return {
     id: place.id,
     slug: place.slug,
@@ -76,6 +87,7 @@ function placeSummary(place: PlaceRow, images: readonly PlaceImageRow[] = []): P
       price: item.price.toNumber(),
       currency: item.currency,
     })),
+    submissionOrigin: ownerSubmitted ? "OWNER" : "FANHUB",
   };
 }
 
