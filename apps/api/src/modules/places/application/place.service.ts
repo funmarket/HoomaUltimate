@@ -42,6 +42,13 @@ export class PlaceService {
           "A Place with this name and address is already pending or approved",
         );
       }
+      if (error instanceof Error && error.message === "PITCH_PRICING_REQUIRED") {
+        throw new AppError(
+          400,
+          "PITCH_PRICING_REQUIRED",
+          "Pitch hourly rental price and currency are required",
+        );
+      }
       throw error;
     }
   }
@@ -100,8 +107,19 @@ export class PlaceService {
 
   async reviewPlace(userId: string, placeId: string, input: ModerationDecisionInput) {
     await this.platformAdmin.requirePlatformAdmin(userId);
-    if (!(await this.repository.reviewPlace(userId, placeId, input))) {
-      throw new AppError(409, "PLACE_REVIEW_NOT_PENDING", "This Place review is no longer pending");
+    try {
+      if (!(await this.repository.reviewPlace(userId, placeId, input))) {
+        throw new AppError(409, "PLACE_REVIEW_NOT_PENDING", "This Place review is no longer pending");
+      }
+    } catch (error) {
+      if (error instanceof Error && error.message === "PITCH_PRICING_REQUIRED") {
+        throw new AppError(
+          409,
+          "PITCH_PRICING_REQUIRED",
+          "This Pitch cannot be approved until its hourly rental price and currency are present",
+        );
+      }
+      throw error;
     }
     return { ok: true };
   }
