@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { PublicPlaceCapability } from "@hooma/contracts/platform-management";
+import type { PublicPlaceCapability } from "@hooma/contracts/pitch";
 import { FitSingleLineText } from "../ui/FitSingleLineText";
 import { formatPitchHourlyRate } from "./pricing";
 
