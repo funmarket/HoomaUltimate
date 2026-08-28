@@ -1,13 +1,36 @@
 import type {
-  AdminQueueItem,
   ManagedPlaceSummary,
-  ModerationDecisionInput,
   PlaceOwnershipClaimInput,
   PlaceSuggestionInput,
   PlaceSuggestionResult,
   PlaceUpdateInput,
   PublicPlaceSummary,
-} from "@hooma/contracts/platform-management";
+} from "@hooma/contracts/places";
+
+export interface PlaceModerationDecision {
+  readonly decision: "APPROVE" | "REJECT";
+  readonly note?: string | null;
+}
+
+export interface PlaceQueueApplicant {
+  readonly userId: string;
+  readonly username: string;
+  readonly displayName: string;
+}
+
+export interface PendingPlaceReview {
+  readonly id: string;
+  readonly status: "PENDING" | "APPROVED" | "REJECTED";
+  readonly createdAt: string;
+  readonly reviewedAt: string | null;
+  readonly reviewNote: string | null;
+  readonly applicant: PlaceQueueApplicant;
+  readonly place: PublicPlaceSummary;
+}
+
+export interface PendingPlaceOwnershipReview extends PendingPlaceReview {
+  readonly evidence: string;
+}
 
 export interface PlaceRepository {
   listPublic(): Promise<readonly PublicPlaceSummary[]>;
@@ -23,16 +46,16 @@ export interface PlaceRepository {
     placeId: string,
     input: PlaceOwnershipClaimInput,
   ): Promise<{ id: string; status: string }>;
-  pendingPlaces(): Promise<readonly AdminQueueItem[]>;
-  pendingOwnershipClaims(): Promise<readonly AdminQueueItem[]>;
+  pendingPlaces(): Promise<readonly PendingPlaceReview[]>;
+  pendingOwnershipClaims(): Promise<readonly PendingPlaceOwnershipReview[]>;
   reviewPlace(
     actorUserId: string,
     placeId: string,
-    input: ModerationDecisionInput,
+    input: PlaceModerationDecision,
   ): Promise<boolean>;
   reviewOwnershipClaim(
     actorUserId: string,
     claimId: string,
-    input: ModerationDecisionInput,
+    input: PlaceModerationDecision,
   ): Promise<boolean>;
 }
