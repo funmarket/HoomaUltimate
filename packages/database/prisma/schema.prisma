@@ -452,7 +452,6 @@ model PlaceCapabilityApplication {
   place            Place               @relation(fields: [placeId], references: [id], onDelete: Cascade)
   applicant        User                @relation("PlaceCapabilityApplicant", fields: [applicantUserId], references: [id], onDelete: Cascade)
 
-  @@unique([placeId, kind])
   @@index([kind, status, createdAt])
   @@index([applicantUserId, status])
 }
@@ -463,7 +462,7 @@ model Community {
   name            String
   description     String?
   city            String?
-  houma            String?
+  houma           String?
   logoUrl         String?
   bannerUrl       String?
   status          CommunityStatus             @default(ACTIVE)
