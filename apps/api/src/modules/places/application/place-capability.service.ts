@@ -36,7 +36,15 @@ export class PlaceCapabilityService {
         "Verified Place ownership is required before submitting a Pitch application",
       );
     }
-    return this.repository.submit(userId, placeId, this.kind, input);
+    const application = await this.repository.submit(userId, placeId, this.kind, input);
+    if (!application) {
+      throw new AppError(
+        409,
+        "PITCH_APPLICATION_ALREADY_PENDING",
+        "This Pitch already has an application pending review",
+      );
+    }
+    return application;
   }
 
   async pending(userId: string) {
