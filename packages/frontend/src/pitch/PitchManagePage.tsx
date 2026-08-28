@@ -75,9 +75,7 @@ export function PitchManagePage() {
               <p className="eyebrow">PENDING REVIEW</p>
               <strong>{priceLabel(pending.hourlyRateMinor, pending.currency)}</strong>
               <p>{pending.summary}</p>
-              <p className="muted">
-                Current public Pitch details remain unchanged until approval.
-              </p>
+              <p className="muted">Current public Pitch details remain unchanged until approval.</p>
             </section>
           ) : null}
 
