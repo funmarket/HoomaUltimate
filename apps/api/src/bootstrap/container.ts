@@ -1,20 +1,12 @@
 import type { ApiConfig } from "@hooma/config";
 import { getDatabaseClient } from "@hooma/database";
 import { S3ObjectStorage } from "@hooma/storage";
+import { PrismaPitchPlaceWorkflow } from "../infrastructure/pitch-place/prisma-pitch-place.workflow.js";
 import { RedisClient } from "../infrastructure/redis/redis-client.js";
-import { IdentityService } from "../modules/identity/application/identity.service.js";
-import { PrismaIdentityRepository } from "../modules/identity/infrastructure/prisma-identity.repository.js";
-import { PrismaPlatformAdminRepository } from "../modules/platform-admin/infrastructure/prisma-platform-admin.repository.js";
-import { PlatformAdminService } from "../modules/platform-admin/application/platform-admin.service.js";
-import { PlaceService } from "../modules/places/application/place.service.js";
-import { PlaceCapabilityService } from "../modules/places/application/place-capability.service.js";
-import { PrismaPlaceRepository } from "../modules/places/infrastructure/prisma-place.repository.js";
-import { PrismaPlaceCapabilityRepository } from "../modules/places/infrastructure/prisma-place-capability.repository.js";
 import { CommunityService } from "../modules/communities/application/community.service.js";
 import { PrismaCommunityRepository } from "../modules/communities/infrastructure/prisma-community.repository.js";
-import { TeamService } from "../modules/teams/application/team.service.js";
-import { PrismaTeamLifecycleRepository } from "../modules/teams/infrastructure/prisma-team-lifecycle.repository.js";
-import { PrismaTeamRepository } from "../modules/teams/infrastructure/prisma-team.repository.js";
+import { DiscoveryService } from "../modules/discovery/application/discovery.service.js";
+import { PrismaDiscoveryRepository } from "../modules/discovery/infrastructure/prisma-discovery.repository.js";
 import { EventService } from "../modules/events/application/event.service.js";
 import { PrismaEventRepository } from "../modules/events/infrastructure/prisma-event.repository.js";
 import { GamerMatchService } from "../modules/gamers/application/gamer-match.service.js";
@@ -24,16 +16,28 @@ import { PrismaGamerEligibilityRepository } from "../modules/gamers/infrastructu
 import { PrismaGamerGameRepository } from "../modules/gamers/infrastructure/prisma-gamer-game.repository.js";
 import { PrismaGamerMatchRepository } from "../modules/gamers/infrastructure/prisma-gamer-match.repository.js";
 import { PrismaGamerProfileRepository } from "../modules/gamers/infrastructure/prisma-gamer-profile.repository.js";
+import { IdentityService } from "../modules/identity/application/identity.service.js";
+import { PrismaIdentityRepository } from "../modules/identity/infrastructure/prisma-identity.repository.js";
+import { PitchModerationService } from "../modules/pitch/application/pitch-moderation.service.js";
+import { PitchOwnerService } from "../modules/pitch/application/pitch-owner.service.js";
+import { PitchSuggestionService } from "../modules/pitch/application/pitch-suggestion.service.js";
+import { ApprovedPitchReader } from "../modules/pitch/application/approved-pitch.reader.js";
+import { PrismaPitchRepository } from "../modules/pitch/infrastructure/prisma-pitch.repository.js";
+import { PlaceService } from "../modules/places/application/place.service.js";
+import { PrismaPlaceRepository } from "../modules/places/infrastructure/prisma-place.repository.js";
 import { PlayService } from "../modules/play/application/play.service.js";
 import { PrismaPlayPlayerListingRepository } from "../modules/play/infrastructure/prisma-play.repository.js";
-import { WhistleService } from "../modules/whistle/application/whistle.service.js";
-import { PrismaWhistleRepository } from "../modules/whistle/infrastructure/prisma-whistle.repository.js";
-import { RedisWhistleStore } from "../modules/whistle/infrastructure/redis-whistle-store.js";
-import { DiscoveryService } from "../modules/discovery/application/discovery.service.js";
-import { PrismaDiscoveryRepository } from "../modules/discovery/infrastructure/prisma-discovery.repository.js";
+import { PlatformAdminService } from "../modules/platform-admin/application/platform-admin.service.js";
+import { PrismaPlatformAdminRepository } from "../modules/platform-admin/infrastructure/prisma-platform-admin.repository.js";
 import { ReadinessService } from "../modules/system/application/readiness.service.js";
 import { PrismaReadinessProbe } from "../modules/system/infrastructure/prisma-readiness.probe.js";
 import { RedisReadinessProbe } from "../modules/system/infrastructure/redis-readiness.probe.js";
+import { TeamService } from "../modules/teams/application/team.service.js";
+import { PrismaTeamLifecycleRepository } from "../modules/teams/infrastructure/prisma-team-lifecycle.repository.js";
+import { PrismaTeamRepository } from "../modules/teams/infrastructure/prisma-team.repository.js";
+import { WhistleService } from "../modules/whistle/application/whistle.service.js";
+import { PrismaWhistleRepository } from "../modules/whistle/infrastructure/prisma-whistle.repository.js";
+import { RedisWhistleStore } from "../modules/whistle/infrastructure/redis-whistle-store.js";
 
 function matchProofStorage(config: ApiConfig) {
   if (
@@ -67,13 +71,20 @@ export function createContainer(config: ApiConfig) {
   const identityService = new IdentityService(identityRepository, config, platformAdminService);
 
   const placeRepository = new PrismaPlaceRepository(database);
-  const placeCapabilityRepository = new PrismaPlaceCapabilityRepository(database);
   const placeService = new PlaceService(placeRepository, platformAdminService);
-  const pitchService = new PlaceCapabilityService(
-    "PITCH",
-    placeCapabilityRepository,
+  const pitchRepository = new PrismaPitchRepository(database);
+  const pitchPlaceWorkflow = new PrismaPitchPlaceWorkflow(database);
+  const approvedPitchReader = new ApprovedPitchReader(pitchRepository);
+  const pitchSuggestionService = new PitchSuggestionService(pitchPlaceWorkflow);
+  const pitchOwnerService = new PitchOwnerService(
+    pitchRepository,
     placeRepository,
     platformAdminService,
+  );
+  const pitchModerationService = new PitchModerationService(
+    pitchRepository,
+    platformAdminService,
+    pitchPlaceWorkflow,
   );
 
   const communityRepository = new PrismaCommunityRepository(database);
@@ -85,14 +96,14 @@ export function createContainer(config: ApiConfig) {
     communityService,
     teamLifecycleRepository,
     platformAdminService,
-    pitchService,
+    approvedPitchReader,
   );
   const eventRepository = new PrismaEventRepository(database);
   const eventService = new EventService(
     eventRepository,
     communityService,
     placeService,
-    pitchService,
+    approvedPitchReader,
   );
   const gamerGameRepository = new PrismaGamerGameRepository(database);
   const gamerProfileRepository = new PrismaGamerProfileRepository(database);
@@ -133,7 +144,10 @@ export function createContainer(config: ApiConfig) {
     identityService,
     platformAdminService,
     placeService,
-    pitchService,
+    approvedPitchReader,
+    pitchSuggestionService,
+    pitchOwnerService,
+    pitchModerationService,
     communityService,
     teamService,
     eventService,
