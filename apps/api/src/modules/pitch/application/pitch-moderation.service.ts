@@ -1,5 +1,5 @@
+import type { PlatformAdminAccessPort } from "../../../application/platform-admin-access.port.js";
 import { AppError } from "../../../http/errors/app-error.js";
-import type { PlatformAdminAuthorizer } from "../../platform-admin/application/platform-admin.authorizer.js";
 import type {
   PitchModerationDecision,
   PitchRepository,
@@ -9,7 +9,7 @@ import type {
 export class PitchModerationService {
   constructor(
     private readonly repository: PitchRepository,
-    private readonly platformAdmin: PlatformAdminAuthorizer,
+    private readonly platformAdmin: PlatformAdminAccessPort,
   ) {}
 
   async pending(userId: string) {
