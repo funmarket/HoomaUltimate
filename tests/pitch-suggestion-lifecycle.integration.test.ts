@@ -33,12 +33,7 @@ test("an approved suggested Pitch preserves immutable owner moderation history",
   });
   const places = new PrismaPlaceRepository(db);
   const capabilityRepository = new PrismaPlaceCapabilityRepository(db);
-  const pitch = new PlaceCapabilityService(
-    "PITCH",
-    capabilityRepository,
-    places,
-    allowAdmin,
-  );
+  const pitch = new PlaceCapabilityService("PITCH", capabilityRepository, places, allowAdmin);
 
   let placeId: string | null = null;
   const applicationIds: string[] = [];
@@ -144,10 +139,7 @@ test("an approved suggested Pitch preserves immutable owner moderation history",
     assert.equal(approvedFirstRevision?.currency, "TND");
 
     const approvedRental = await pitch.getPublic(placeId);
-    assert.equal(
-      approvedRental.summary,
-      "Floodlit five-a-side pitch with changing rooms.",
-    );
+    assert.equal(approvedRental.summary, "Floodlit five-a-side pitch with changing rooms.");
     assert.equal(approvedRental.hourlyRateMinor, 50_000);
     assert.equal(approvedRental.currency, "TND");
     assert.equal(approvedRental.place.phone, "+21671000123");
@@ -183,10 +175,7 @@ test("an approved suggested Pitch preserves immutable owner moderation history",
     assert.equal(preservedFirstRevision?.hourlyRateMinor, 50_000);
     assert.equal(rejectedSecondRevision?.status, "REJECTED");
     assert.equal(rejectedSecondRevision?.hourlyRateMinor, 55_000);
-    assert.equal(
-      rejectedSecondRevision?.reviewNote,
-      "Updated price could not be verified",
-    );
+    assert.equal(rejectedSecondRevision?.reviewNote, "Updated price could not be verified");
 
     const thirdRevision = await pitch.submit(claimant.id, placeId, {
       summary: "Verified new rental details.",
@@ -217,18 +206,9 @@ test("an approved suggested Pitch preserves immutable owner moderation history",
     assert.deepEqual(
       new Map(preservedHistory.map((revision) => [revision.id, revision])),
       new Map([
-        [
-          firstRevision.id,
-          { id: firstRevision.id, status: "APPROVED", hourlyRateMinor: 50_000 },
-        ],
-        [
-          secondRevision.id,
-          { id: secondRevision.id, status: "REJECTED", hourlyRateMinor: 55_000 },
-        ],
-        [
-          thirdRevision.id,
-          { id: thirdRevision.id, status: "APPROVED", hourlyRateMinor: 60_000 },
-        ],
+        [firstRevision.id, { id: firstRevision.id, status: "APPROVED", hourlyRateMinor: 50_000 }],
+        [secondRevision.id, { id: secondRevision.id, status: "REJECTED", hourlyRateMinor: 55_000 }],
+        [thirdRevision.id, { id: thirdRevision.id, status: "APPROVED", hourlyRateMinor: 60_000 }],
       ]),
     );
   } finally {
