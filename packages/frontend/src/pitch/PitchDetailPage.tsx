@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import type { PublicPlaceCapability, PublicPlaceSummary } from "@hooma/contracts/platform-management";
+import type {
+  PublicPlaceCapability,
+  PublicPlaceSummary,
+} from "@hooma/contracts/platform-management";
 import { useHoomaFrontend } from "../context";
 import { HoomaApiError } from "../http";
 import { PlaceGallery } from "../places/PlaceGallery";
@@ -83,7 +86,8 @@ export function PitchDetailPage({ placeId }: { readonly placeId: string }) {
 
   const place = item.place;
   const rate = formatPitchHourlyRate(item.hourlyRateMinor, item.currency);
-  const description = item.summary ?? place.description ?? "Rent this football pitch through HOOMA.";
+  const description =
+    item.summary ?? place.description ?? "Rent this football pitch through HOOMA.";
   const hasContact = Boolean(place.phone || place.email || place.websiteUrl);
 
   return (
@@ -184,7 +188,10 @@ export function PitchDetailPage({ placeId }: { readonly placeId: string }) {
 
       <div className="pitch-detail-actions">
         {place.phone ? (
-          <a className="pitch-detail-action pitch-detail-action--primary" href={`tel:${place.phone}`}>
+          <a
+            className="pitch-detail-action pitch-detail-action--primary"
+            href={`tel:${place.phone}`}
+          >
             <PhoneIcon size={18} />
             Contact venue
           </a>
