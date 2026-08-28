@@ -14,6 +14,7 @@ import { createPlatformManagementApi } from "./platform-management-api";
 export { PlaceDetailPage } from "./PlaceDetailPage";
 
 const PITCH_RENTAL_CURRENCIES: readonly PitchRentalCurrency[] = ["TND", "EUR", "USD"];
+type PlaceFormInput = Parameters<Parameters<typeof PlaceForm>[0]["onSubmit"]>[0];
 
 function locationLabel(place: PublicPlaceSummary): string {
   return [place.houma, place.city].filter(Boolean).join(" · ") || place.address;
@@ -181,7 +182,7 @@ export function AddPlacePage() {
   const [submittedPlaceId, setSubmittedPlaceId] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  async function submit(input: Parameters<typeof api.places.suggest>[0]) {
+  async function submit(input: PlaceFormInput) {
     setPending(true);
     setError("");
     try {
