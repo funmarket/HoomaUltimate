@@ -11,8 +11,10 @@ test("Watch event detail is an informative card instead of form-like fact boxes"
   assert.match(page, /className="watch-event-detail__venue"/);
   assert.match(page, /event\.place\.imageUrl/);
   assert.match(page, /watchAuthority/);
-  assert.match(page, /Official venue/);
-  assert.match(page, /Suggested by community/);
+  assert.match(page, /event\.publisherAuthority === "VERIFIED_PLACE_OWNER"/);
+  assert.match(page, /Published by venue/);
+  assert.match(page, /Community-published/);
+  assert.doesNotMatch(page, /Official venue|Suggested by community/);
   assert.doesNotMatch(
     page,
     /isWatch \? \([\s\S]*?<div className="play-event-card__facts">[\s\S]*?<span>Place<\/span>/,
