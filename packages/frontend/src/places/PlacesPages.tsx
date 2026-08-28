@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import type { PitchRentalCurrency, PublicPlaceSummary } from "@hooma/contracts/platform-management";
+import type {
+  PitchRentalCurrency,
+  PlaceSubmissionOrigin,
+  PublicPlaceSummary,
+} from "@hooma/contracts/platform-management";
 import { useHoomaFrontend } from "../context";
 import type { PublicEvent } from "../events/api";
 import { useEventApi } from "../events/useEventApi";
@@ -39,6 +43,7 @@ export function PlacesPage() {
   const eventApi = useEventApi();
   const [places, setPlaces] = useState<PublicPlaceSummary[]>([]);
   const [watchEvents, setWatchEvents] = useState<PublicEvent[]>([]);
+  const [spotOrigin, setSpotOrigin] = useState<PlaceSubmissionOrigin>("OWNER");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -55,6 +60,11 @@ export function PlacesPage() {
       .then((page) => setWatchEvents(page.items))
       .catch(() => setWatchEvents([]));
   }, [api, eventApi]);
+
+  const visiblePlaces = useMemo(
+    () => places.filter((place) => place.submissionOrigin === spotOrigin),
+    [places, spotOrigin],
+  );
 
   const nextEventByPlace = useMemo(() => {
     const now = Date.now();
@@ -101,9 +111,30 @@ export function PlacesPage() {
         </a>
       </nav>
 
+      <div className="spot-origin-tabs" role="tablist" aria-label="Spot source">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={spotOrigin === "OWNER"}
+          className={spotOrigin === "OWNER" ? "spot-origin-tab is-active" : "spot-origin-tab"}
+          onClick={() => setSpotOrigin("OWNER")}
+        >
+          By Owner
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={spotOrigin === "FANHUB"}
+          className={spotOrigin === "FANHUB" ? "spot-origin-tab is-active" : "spot-origin-tab"}
+          onClick={() => setSpotOrigin("FANHUB")}
+        >
+          FanHub
+        </button>
+      </div>
+
       {error ? <p className="error">{error}</p> : null}
       <div className="place-directory">
-        {places.map((place) => {
+        {visiblePlaces.map((place) => {
           const nextEvent = nextEventByPlace.get(place.id);
           return (
             <a
@@ -129,7 +160,11 @@ export function PlacesPage() {
             </a>
           );
         })}
-        {!places.length && !error ? <p className="muted">No approved Spots yet.</p> : null}
+        {!visiblePlaces.length && !error ? (
+          <p className="muted">
+            {spotOrigin === "OWNER" ? "No owner-suggested Spots yet." : "No FanHub Spots yet."}
+          </p>
+        ) : null}
       </div>
     </section>
   );
@@ -178,7 +213,7 @@ export function AddPlacePage() {
           <p>
             {isPitchSuggestion
               ? "The App Admin will review this football pitch and its hourly rental price. Once approved, it can appear in Pitch and the real owner can claim it."
-              : "The App Admin will review the Place. Once approved, it will appear in Spots and can be used for Watch events."}
+              : "The App Admin will review this Spot. Community suggestions appear in FanHub. If you are the real owner, claim the same Place after approval; no duplicate listing is created."}
           </p>
           <div className="place-detail-actions">
             {!isPitchSuggestion ? (
@@ -246,7 +281,7 @@ export function AddPlacePage() {
           <p>
             {isPitchSuggestion
               ? "Add the real venue details and hourly rental price. Suggesting a pitch does not make you its owner."
-              : "Build the full venue profile once. Coordinates are optional."}
+              : "Suggest a café, lounge, restaurant or other Watch Spot. Suggesting it does not make you its owner."}
           </p>
         </div>
       </header>
