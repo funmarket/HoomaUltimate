@@ -4,29 +4,35 @@ Status: **Accepted**
 
 ## Context
 
-Pitch is a dedicated product over canonical `Place`. A community user may know that a real football pitch exists without owning or managing it. HOOMA must be able to publish that Admin-reviewed pitch for discovery and later let the actual operator claim it, without treating the suggester as the owner and without creating a second physical venue record.
+Pitch is a dedicated product over canonical `Place`. A community user may know that a real football pitch exists without owning or managing it. HOOMA must be able to submit that Pitch for App Admin review and later let the actual operator claim it, without treating the suggester as the owner and without creating a second physical venue record.
 
-`PlaceCapabilityApplication` is an owner submission/review workflow. Using an approved application itself as the public Pitch identity incorrectly requires ownership before discovery and makes an already-approved Pitch disappear whenever an owner submits an update for review.
+A public Pitch is a rental listing. Its hourly rental price is part of the Pitch data being reviewed for publication, not optional presentation that may be invented or deferred until ownership is claimed.
+
+`PlaceCapabilityApplication` remains the verified-owner workflow for later proposed Pitch rental/profile updates. Using an application itself as the public Pitch identity would incorrectly require ownership before discovery and would make an already-approved Pitch disappear whenever an owner submits an update for review.
 
 ## Decision
 
 `Place` remains the only physical-location source of truth.
 
-A durable `PlaceCapability` row represents that an approved Place participates in a capability product such as `PITCH`. For Pitch it may exist with no rental summary, price or currency yet. Public Pitch discovery reads approved `PlaceCapability + Place` data.
+A Pitch suggestion creates the canonical `Place` and its pending `PITCH` `PlaceCapability` together. The Pitch suggestion must include `hourlyRateMinor` and a supported rental `currency`. App Admin reviews the Place and that submitted Pitch price before approval. An approved public Pitch must therefore have complete reviewed hourly pricing.
 
-`PlaceCapabilityApplication` remains the verified-owner workflow for proposed Pitch rental/profile details. Approving an application copies the reviewed profile fields into the durable `PlaceCapability`. Pending or rejected updates never erase the last approved public capability profile.
+A durable `PlaceCapability` represents that an approved Place participates in the `PITCH` product. Public Pitch discovery reads approved `PlaceCapability + Place` data only when the Pitch capability contains complete supported hourly pricing. An incomplete historical capability is not a valid public Pitch rental listing and must not be represented by guessed values or a fallback such as "Contact for price".
 
-A user can explicitly suggest a Place as a Pitch. The Place and pending Pitch capability are created together and reviewed by App Admin together. Approval publishes the Pitch designation but does **not** create `PlaceOwnership` for the suggester. Once that Pitch suggestion is approved, the unverified suggester no longer has Place-management authority merely because they suggested it.
+`PlaceCapabilityApplication` remains the verified-owner workflow for subsequent Pitch rental/profile changes. Approving an application copies the reviewed profile fields and price into the durable `PlaceCapability`. Pending or rejected updates never erase or replace the last approved public capability profile.
 
-The actual operator uses the existing canonical Place ownership-claim workflow. Pitch management and Pitch application submission require verified `PlaceOwnership`. The UI determines `Own this pitch?` versus `Manage pitch` from a protected verified-ownership status boundary, not from generic Place-management access.
+A user can explicitly suggest a Place as a Pitch. The Place and pending Pitch capability are reviewed by App Admin together. Approval publishes the Pitch designation and reviewed hourly price but does **not** create `PlaceOwnership` for the suggester. Once that Pitch suggestion is approved, the unverified suggester no longer has Place-management authority merely because they suggested it.
 
-Generic Place suggestions that are not explicitly community Pitch suggestions retain their existing ownership behavior in this slice.
+The actual operator uses the existing canonical Place ownership-claim workflow. Pitch management and later Pitch application submission require verified `PlaceOwnership`. The UI determines `Own this pitch?` versus `Manage pitch` from a protected verified-ownership status boundary, not from generic Place-management access.
+
+Generic Place suggestions that are not explicitly Pitch suggestions retain their existing ownership behavior in this slice.
 
 ## Consequences
 
 - no duplicate Pitch venue table;
 - no copied Place name/address/media/contact truth;
-- Pitch may be discoverable before rental pricing exists;
+- every newly submitted Pitch carries its hourly rental price and currency from creation;
+- App Admin reviews the price before that Pitch can become public;
+- incomplete historical Pitch capabilities are not exposed as valid public rental listings and are never assigned fabricated pricing;
 - suggestion does not imply ownership;
-- owner profile updates can be moderated without temporarily unpublishing the previous approved profile;
+- owner profile/rate updates can be moderated without temporarily unpublishing the previous approved profile;
 - Play and Teams may continue tagging the same approved Pitch through canonical `Place.id`.
