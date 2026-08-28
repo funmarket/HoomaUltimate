@@ -24,32 +24,36 @@ jobs:
       - name: Pin repository npm version
         run: npm install --global npm@10.9.2
       - run: npm ci
-      - name: Fix PR 153 typecheck sources
+      - name: Align stale PR 153 unit expectations
         run: |
           node --input-type=module <<'NODE'
           import { readFile, writeFile } from "node:fs/promises";
 
-          const placesPath = "packages/frontend/src/places/PlacesPages.tsx";
-          let places = await readFile(placesPath, "utf8");
-          const oldProp = "  readonly nextEvent?: PublicEvent;";
-          const newProp = "  readonly nextEvent?: PublicEvent | undefined;";
-          if (!places.includes(oldProp)) throw new Error("Places nextEvent prop source not found");
-          places = places.replace(oldProp, newProp);
-          await writeFile(placesPath, places);
+          const placeTestPath = "tests/place-detail-watch-experience.test.mjs";
+          let placeTest = await readFile(placeTestPath, "utf8");
+          const oldQueryAssertion = '  assert.match(detail, /new URLSearchParams\\(window\\.location\\.search\\)\\.get\\("eventId"\\)/);';
+          const newQueryAssertions = '  assert.match(detail, /const query = new URLSearchParams\\(window\\.location\\.search\\)/);\n  assert.match(detail, /const selectedEventId = query\\.get\\("eventId"\\)/);';
+          if (!placeTest.includes(oldQueryAssertion)) throw new Error("stale Place query assertion not found");
+          placeTest = placeTest.replace(oldQueryAssertion, newQueryAssertions);
+          const oldAuthorityAssertion = '  assert.match(detail, /selectedEvent\\.venueAuthority === "OFFICIAL_VENUE"/);';
+          const newAuthorityAssertion = '  assert.match(detail, /selectedEvent\\.publisherAuthority === "VERIFIED_PLACE_OWNER"/);';
+          if (!placeTest.includes(oldAuthorityAssertion)) throw new Error("stale Place authority assertion not found");
+          placeTest = placeTest.replace(oldAuthorityAssertion, newAuthorityAssertion);
+          await writeFile(placeTestPath, placeTest);
 
-          const ticketPath = "packages/frontend/src/watch/WatchTicket.tsx";
-          let ticket = await readFile(ticketPath, "utf8");
-          const oldStatus = `  const status =\n    event.venueAuthority === "OFFICIAL_VENUE" ? "OFFICIAL VENUE" : "SUGGESTED BY COMMUNITY";`;
-          const newStatus = `  const status =\n    event.publisherAuthority === "VERIFIED_PLACE_OWNER"\n      ? "PUBLISHED BY VENUE"\n      : "COMMUNITY-PUBLISHED";`;
-          if (!ticket.includes(oldStatus)) throw new Error("WatchTicket old authority source not found");
-          ticket = ticket.replace(oldStatus, newStatus);
-          await writeFile(ticketPath, ticket);
+          const eventTestPath = "tests/watch-event-detail-presentation.test.mjs";
+          let eventTest = await readFile(eventTestPath, "utf8");
+          const oldLabels = '  assert.match(page, /Official venue/);\n  assert.match(page, /Suggested by community/);';
+          const newLabels = '  assert.match(page, /event\\.publisherAuthority === "VERIFIED_PLACE_OWNER"/);\n  assert.match(page, /Published by venue/);\n  assert.match(page, /Community-published/);\n  assert.doesNotMatch(page, /Official venue|Suggested by community/);';
+          if (!eventTest.includes(oldLabels)) throw new Error("stale Watch publisher labels not found");
+          eventTest = eventTest.replace(oldLabels, newLabels);
+          await writeFile(eventTestPath, eventTest);
           NODE
-          npm exec -- prettier --write packages/frontend/src/places/PlacesPages.tsx packages/frontend/src/watch/WatchTicket.tsx
+          npm exec -- prettier --write tests/place-detail-watch-experience.test.mjs tests/watch-event-detail-presentation.test.mjs
           git diff --check
           git diff --exit-code --quiet && exit 0
           git config user.name "Out Of Sight"
           git config user.email "33332777+funmarket@users.noreply.github.com"
-          git add packages/frontend/src/places/PlacesPages.tsx packages/frontend/src/watch/WatchTicket.tsx
-          git commit -m "fix(places): align frontend with publisher contract"
+          git add tests/place-detail-watch-experience.test.mjs tests/watch-event-detail-presentation.test.mjs
+          git commit -m "test(watch): align publisher authority expectations"
           git push origin HEAD:fix/place-provenance-canonical-identity-v2
