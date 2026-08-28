@@ -1,12 +1,21 @@
 import { z } from "zod";
 import type { ModerationStatus } from "./moderation.js";
-import type { PublicPlaceSummary } from "./places.js";
+import {
+  placeSuggestionSchema,
+  type PlaceSuggestionResult,
+  type PublicPlaceSummary,
+} from "./places.js";
 
 export const pitchRentalCurrencySchema = z.enum(["TND", "EUR", "USD"]);
 
 export const pitchSuggestionSchema = z.object({
   hourlyRateMinor: z.number().int().min(0).max(100_000_000),
   currency: pitchRentalCurrencySchema,
+});
+
+export const pitchPlaceSuggestionSchema = z.object({
+  place: placeSuggestionSchema.omit({ submissionOrigin: true }),
+  pitch: pitchSuggestionSchema,
 });
 
 export const pitchApplicationSchema = z.object({
@@ -17,6 +26,8 @@ export const pitchApplicationSchema = z.object({
 
 export type PitchRentalCurrency = z.infer<typeof pitchRentalCurrencySchema>;
 export type PitchSuggestionInput = z.infer<typeof pitchSuggestionSchema>;
+export type PitchPlaceSuggestionInput = z.infer<typeof pitchPlaceSuggestionSchema>;
+export type PitchPlaceSuggestionResult = PlaceSuggestionResult;
 export type PitchApplicationInput = z.infer<typeof pitchApplicationSchema>;
 
 export interface PublicPitch {
