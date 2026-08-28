@@ -41,12 +41,15 @@ export function PitchCapabilityOnboarding({
   }
 
   return (
-    <form className="panel place-business-form pitch-owner-form" onSubmit={(event) => void apply(event)}>
+    <form
+      className="panel place-business-form pitch-owner-form"
+      onSubmit={(event) => void apply(event)}
+    >
       <div className="place-business-form__heading">
         <p className="eyebrow">MANAGE PITCH</p>
         <h2>{place.name}</h2>
         <p className="muted">
-          Update the rental offer shown after App review. Contact details come from the canonical Place.
+          Update the rental offer after App review. Contact details come from the Place.
         </p>
       </div>
 
