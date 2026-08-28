@@ -571,7 +571,7 @@ function serializePublicEvent(
   cultural?: CulturalDetails,
   canonicalPlaceImageUrl: string | null = null,
 ) {
-  const officialVenue = Boolean(
+  const publishedByVerifiedPlaceOwner = Boolean(
     event.place?.ownerships.some((ownership) => ownership.userId === event.createdByUserId),
   );
   const place = event.place
@@ -597,8 +597,12 @@ function serializePublicEvent(
     ...event,
     place,
     watchDetails,
-    venueAuthority:
-      event.place === null ? null : officialVenue ? "OFFICIAL_VENUE" : "SUGGESTED_BY_COMMUNITY",
+    publisherAuthority:
+      event.place === null
+        ? null
+        : publishedByVerifiedPlaceOwner
+          ? "VERIFIED_PLACE_OWNER"
+          : "COMMUNITY_PUBLISHER",
   };
   delete (output as { createdByUserId?: string }).createdByUserId;
   return JSON.parse(
