@@ -11,6 +11,7 @@ import { PrismaPlaceRepository } from "../modules/places/infrastructure/prisma-p
 import { ApprovedPitchReader } from "../modules/pitch/application/approved-pitch.reader.js";
 import { PitchOwnerService } from "../modules/pitch/application/pitch-owner.service.js";
 import { PitchModerationService } from "../modules/pitch/application/pitch-moderation.service.js";
+import { PitchSuggestionService } from "../modules/pitch/application/pitch-suggestion.service.js";
 import { PrismaPitchRepository } from "../modules/pitch/infrastructure/prisma-pitch.repository.js";
 import { CommunityService } from "../modules/communities/application/community.service.js";
 import { PrismaCommunityRepository } from "../modules/communities/infrastructure/prisma-community.repository.js";
@@ -72,6 +73,7 @@ export function createContainer(config: ApiConfig) {
   const placeService = new PlaceService(placeRepository, platformAdminService);
   const pitchRepository = new PrismaPitchRepository(database);
   const approvedPitchReader = new ApprovedPitchReader(pitchRepository);
+  const pitchSuggestionService = new PitchSuggestionService(pitchRepository);
   const pitchOwnerService = new PitchOwnerService(
     pitchRepository,
     placeRepository,
@@ -140,6 +142,7 @@ export function createContainer(config: ApiConfig) {
     platformAdminService,
     placeService,
     approvedPitchReader,
+    pitchSuggestionService,
     pitchOwnerService,
     pitchModerationService,
     communityService,
