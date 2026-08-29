@@ -220,179 +220,183 @@ export function PlayPage() {
         </button>
       </div>
 
-      {activeView === "players" ? (
-        <section className="play-section" aria-labelledby="players-looking-title">
-          <div className="play-section-heading">
-            <div>
-              <p className="eyebrow">Players</p>
-              <h2 id="players-looking-title">Looking to play</h2>
-            </div>
-            {!accountLoading && !me && signInHref ? (
-              <a className="play-player-publish" href={signInHref}>
-                Publish availability
-              </a>
-            ) : null}
+      <section
+        className="play-section"
+        aria-labelledby="players-looking-title"
+        hidden={activeView !== "players"}
+      >
+        <div className="play-section-heading">
+          <div>
+            <p className="eyebrow">Players</p>
+            <h2 id="players-looking-title">Looking to play</h2>
           </div>
-
-          {memberError ? <div className="play-state panel error">{memberError}</div> : null}
-          {notice ? <div className="play-state panel success">{notice}</div> : null}
-
-          {!accountLoading && me ? (
-            <form className="play-player-editor panel" onSubmit={saveListing}>
-              <div>
-                <strong>{myListing ? "Your availability" : "Want to play?"}</strong>
-                <span>Publish only when you want other HOOMA users to see that you are looking.</span>
-              </div>
-              <div className="play-looking-options" role="group" aria-label="Looking for">
-                <button
-                  type="button"
-                  aria-pressed={lookingFor === "GAME"}
-                  onClick={() => setLookingFor("GAME")}
-                >
-                  A game
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={lookingFor === "TEAM"}
-                  onClick={() => setLookingFor("TEAM")}
-                >
-                  A team
-                </button>
-              </div>
-              <div className="play-player-editor-actions">
-                <button className="button" type="submit" disabled={saving}>
-                  {saving ? "Saving…" : myListing ? "Update" : "Publish"}
-                </button>
-                {myListing ? (
-                  <button
-                    className="button secondary"
-                    type="button"
-                    disabled={saving}
-                    onClick={() => void removeListing()}
-                  >
-                    Remove
-                  </button>
-                ) : null}
-              </div>
-            </form>
+          {!accountLoading && !me && signInHref ? (
+            <a className="play-player-publish" href={signInHref}>
+              Publish availability
+            </a>
           ) : null}
+        </div>
 
-          {offerListing ? (
-            <form className="play-team-offer panel" onSubmit={sendOffer}>
-              <div>
-                <p className="eyebrow">TEAM OFFER</p>
-                <h3>Offer {offerListing.presentation?.displayName ?? "this player"} a spot</h3>
-                <p>Pick your Team and add a short message if you want.</p>
-              </div>
-              <label>
-                Team
-                <select
-                  value={offerTeamId}
-                  onChange={(event) => setOfferTeamId(event.target.value)}
-                  disabled={offerLoading}
-                >
-                  {recruitingTeams.map((team) => (
-                    <option value={team.id} key={team.id}>
-                      {team.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Message (optional)
-                <textarea
-                  value={offerMessage}
-                  onChange={(event) => setOfferMessage(event.target.value)}
-                  maxLength={240}
-                  rows={3}
-                  placeholder="Come train with us this week."
-                  disabled={offerLoading}
-                />
-              </label>
-              <div className="play-player-editor-actions">
-                <button className="button" type="submit" disabled={offerLoading || !offerTeamId}>
-                  {offerLoading ? "Sending…" : "Send Offer"}
-                </button>
+        {memberError ? <div className="play-state panel error">{memberError}</div> : null}
+        {notice ? <div className="play-state panel success">{notice}</div> : null}
+
+        {!accountLoading && me ? (
+          <form className="play-player-editor panel" onSubmit={saveListing}>
+            <div>
+              <strong>{myListing ? "Your availability" : "Want to play?"}</strong>
+              <span>Publish only when you want other HOOMA users to see that you are looking.</span>
+            </div>
+            <div className="play-looking-options" role="group" aria-label="Looking for">
+              <button
+                type="button"
+                aria-pressed={lookingFor === "GAME"}
+                onClick={() => setLookingFor("GAME")}
+              >
+                A game
+              </button>
+              <button
+                type="button"
+                aria-pressed={lookingFor === "TEAM"}
+                onClick={() => setLookingFor("TEAM")}
+              >
+                A team
+              </button>
+            </div>
+            <div className="play-player-editor-actions">
+              <button className="button" type="submit" disabled={saving}>
+                {saving ? "Saving…" : myListing ? "Update" : "Publish"}
+              </button>
+              {myListing ? (
                 <button
                   className="button secondary"
                   type="button"
-                  disabled={offerLoading}
-                  onClick={() => setOfferListing(null)}
+                  disabled={saving}
+                  onClick={() => void removeListing()}
                 >
-                  Cancel
+                  Remove
                 </button>
-              </div>
-            </form>
-          ) : null}
-
-          {playersLoading ? <div className="play-state panel">Loading players…</div> : null}
-          {!playersLoading && playersError ? (
-            <div className="play-state panel error">{playersError}</div>
-          ) : null}
-          {!playersLoading && !playersError && listings.length ? (
-            <div className="play-player-list">
-              {listings.map((listing) => (
-                <PlayPlayerCard
-                  listing={listing}
-                  key={listing.id}
-                  onHire={(candidate) => void startHire(candidate)}
-                  offerSent={sentOfferListingIds.includes(listing.id)}
-                />
-              ))}
+              ) : null}
             </div>
-          ) : null}
-          {!playersLoading && !playersError && !listings.length ? (
-            <div className="play-player-empty panel">
-              <strong>No players are looking right now.</strong>
-              <span>
-                Published availability will appear here without requiring visitors to sign in.
-              </span>
-            </div>
-          ) : null}
-        </section>
-      ) : null}
+          </form>
+        ) : null}
 
-      {activeView === "open-matches" ? (
-        <section className="play-section" aria-labelledby="open-matches-title">
-          <div className="play-section-heading">
+        {offerListing ? (
+          <form className="play-team-offer panel" onSubmit={sendOffer}>
             <div>
-              <p className="eyebrow">Open matches</p>
-              <h2 id="open-matches-title">Pickup games</h2>
+              <p className="eyebrow">TEAM OFFER</p>
+              <h3>Offer {offerListing.presentation?.displayName ?? "this player"} a spot</h3>
+              <p>Pick your Team and add a short message if you want.</p>
             </div>
-          </div>
+            <label>
+              Team
+              <select
+                value={offerTeamId}
+                onChange={(event) => setOfferTeamId(event.target.value)}
+                disabled={offerLoading}
+              >
+                {recruitingTeams.map((team) => (
+                  <option value={team.id} key={team.id}>
+                    {team.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Message (optional)
+              <textarea
+                value={offerMessage}
+                onChange={(event) => setOfferMessage(event.target.value)}
+                maxLength={240}
+                rows={3}
+                placeholder="Come train with us this week."
+                disabled={offerLoading}
+              />
+            </label>
+            <div className="play-player-editor-actions">
+              <button className="button" type="submit" disabled={offerLoading || !offerTeamId}>
+                {offerLoading ? "Sending…" : "Send Offer"}
+              </button>
+              <button
+                className="button secondary"
+                type="button"
+                disabled={offerLoading}
+                onClick={() => setOfferListing(null)}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        ) : null}
 
-          {eventsLoading ? <div className="play-state panel">Loading matches…</div> : null}
-          {!eventsLoading && eventsError ? (
-            <div className="play-state panel error">Matches could not be loaded: {eventsError}</div>
-          ) : null}
-          {!eventsLoading && !eventsError && events.length ? (
-            <div className="play-match-list">
-              {events.map((event) => {
-                if (!event.community) return null;
-                return (
-                  <PickupMatchCard
-                    key={event.id}
-                    title={event.title}
-                    dateLabel={formatDate(event.startsAt)}
-                    venueName={event.place?.name || event.venueName || event.address}
-                    communityName={event.community.name}
-                    goingCount={event._count.rsvps}
-                    capacity={event.capacity}
-                    format={event.playDetails?.format ?? null}
-                    href={`/events/${event.id}`}
-                  />
-                );
-              })}
-            </div>
-          ) : null}
-          {!eventsLoading && !eventsError && !events.length ? (
-            <div className="play-state panel">
-              <strong>No open matches yet.</strong>
-              <span>Create the first pickup match for your HOOMA community.</span>
-            </div>
-          ) : null}
-        </section>
-      ) : null}
+        {playersLoading ? <div className="play-state panel">Loading players…</div> : null}
+        {!playersLoading && playersError ? (
+          <div className="play-state panel error">{playersError}</div>
+        ) : null}
+        {!playersLoading && !playersError && listings.length ? (
+          <div className="play-player-list">
+            {listings.map((listing) => (
+              <PlayPlayerCard
+                listing={listing}
+                key={listing.id}
+                onHire={(candidate) => void startHire(candidate)}
+                offerSent={sentOfferListingIds.includes(listing.id)}
+              />
+            ))}
+          </div>
+        ) : null}
+        {!playersLoading && !playersError && !listings.length ? (
+          <div className="play-player-empty panel">
+            <strong>No players are looking right now.</strong>
+            <span>
+              Published availability will appear here without requiring visitors to sign in.
+            </span>
+          </div>
+        ) : null}
+      </section>
+
+      <section
+        className="play-section"
+        aria-labelledby="open-matches-title"
+        hidden={activeView !== "open-matches"}
+      >
+        <div className="play-section-heading">
+          <div>
+            <p className="eyebrow">Open matches</p>
+            <h2 id="open-matches-title">Pickup games</h2>
+          </div>
+        </div>
+
+        {eventsLoading ? <div className="play-state panel">Loading matches…</div> : null}
+        {!eventsLoading && eventsError ? (
+          <div className="play-state panel error">Matches could not be loaded: {eventsError}</div>
+        ) : null}
+        {!eventsLoading && !eventsError && events.length ? (
+          <div className="play-match-list">
+            {events.map((event) => {
+              if (!event.community) return null;
+              return (
+                <PickupMatchCard
+                  key={event.id}
+                  title={event.title}
+                  dateLabel={formatDate(event.startsAt)}
+                  venueName={event.place?.name || event.venueName || event.address}
+                  communityName={event.community.name}
+                  goingCount={event._count.rsvps}
+                  capacity={event.capacity}
+                  format={event.playDetails?.format ?? null}
+                  href={`/events/${event.id}`}
+                />
+              );
+            })}
+          </div>
+        ) : null}
+        {!eventsLoading && !eventsError && !events.length ? (
+          <div className="play-state panel">
+            <strong>No open matches yet.</strong>
+            <span>Create the first pickup match for your HOOMA community.</span>
+          </div>
+        ) : null}
+      </section>
     </section>
   );
 }
