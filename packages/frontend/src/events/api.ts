@@ -10,6 +10,21 @@ export type PublicWatchQuery = {
 };
 export type EventRsvpState = "CONFIRMED" | "WAITLISTED" | "CANCELLED" | "ATTENDED" | "NO_SHOW";
 export type MyEventRsvp = { rsvp: { status: EventRsvpState } | null };
+export type EventPlayerInvite = {
+  id: string;
+  eventId: string;
+  status: "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED";
+  createdAt: string;
+  respondedAt: string | null;
+  event: {
+    id: string;
+    title: string;
+    startsAt: string;
+    timezone: string;
+    venueName: string | null;
+    address: string | null;
+  };
+};
 export type FormationRosterPlayer = {
   userId: string;
   status: "CONFIRMED" | "ATTENDED";
@@ -56,6 +71,20 @@ export function createEventApi(transport: HoomaTransport) {
       request<PublicEvent>(transport, `/api/public/v1/events/${encodeURIComponent(id)}`),
     manage: (id: string) =>
       request<PublicEvent>(transport, `/api/v1/events/${encodeURIComponent(id)}/manage`),
+    incomingInvites: () =>
+      request<EventPlayerInvite[]>(transport, "/api/v1/events/invitations/incoming"),
+    acceptInvite: (inviteId: string) =>
+      request<{ invite: EventPlayerInvite; rsvp: { status: "CONFIRMED" | "WAITLISTED" } }>(
+        transport,
+        `/api/v1/events/invitations/${encodeURIComponent(inviteId)}/accept`,
+        { method: "POST" },
+      ),
+    declineInvite: (inviteId: string) =>
+      request<{ invite: EventPlayerInvite }>(
+        transport,
+        `/api/v1/events/invitations/${encodeURIComponent(inviteId)}/decline`,
+        { method: "POST" },
+      ),
     myRsvp: (id: string) =>
       request<MyEventRsvp>(transport, `/api/v1/events/${encodeURIComponent(id)}/rsvp`),
     formationRoster: (id: string) =>
