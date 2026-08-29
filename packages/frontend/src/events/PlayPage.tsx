@@ -1,15 +1,32 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import type { MeResponse } from "@hooma/contracts";
 import type { PlayLookingFor } from "@hooma/contracts/play";
 import { PickupMatchCard, PlayHero } from "@hooma/ui";
 import { useHoomaFrontend } from "../context";
+import { TeamOffersPanel } from "../teams/TeamOffersPanel";
 import { createTeamOfferApi, type RecruitingTeam } from "../teams/team-offer-api";
 import type { PublicEvent } from "./api";
-import { createPlayApi, type MyPlayPlayerListing, type PublicPlayPlayerListing } from "./play-api";
+import { EventInvitesPanel } from "./EventInvitesPanel";
+import {
+  createPlayApi,
+  type ManagedPlayEvent,
+  type MyPlayPlayerListing,
+  type PlayActionState,
+  type PublicPlayPlayerListing,
+} from "./play-api";
 import { PlayPlayerCard } from "./PlayPlayerCard";
 import { useEventApi } from "./useEventApi";
 
 type PlayView = "players" | "open-matches";
+
+const emptyActionState: PlayActionState = { teamOffers: [], eventInvites: [] };
 
 function errorMessage(reason: unknown, fallback: string) {
   return reason instanceof Error ? reason.message : fallback;
@@ -20,12 +37,15 @@ export function PlayPage() {
   const { api, transport, authenticationHref, protectedError } = useHoomaFrontend();
   const playApi = useMemo(() => createPlayApi(transport), [transport]);
   const teamOfferApi = useMemo(() => createTeamOfferApi(transport), [transport]);
+  const offerFormRef = useRef<HTMLFormElement>(null);
+  const inviteFormRef = useRef<HTMLFormElement>(null);
   const [activeView, setActiveView] = useState<PlayView>("players");
   const [events, setEvents] = useState<PublicEvent[]>([]);
   const [listings, setListings] = useState<PublicPlayPlayerListing[]>([]);
   const [me, setMe] = useState<MeResponse | null>(null);
   const [myListing, setMyListing] = useState<MyPlayPlayerListing | null>(null);
   const [lookingFor, setLookingFor] = useState<PlayLookingFor>("GAME");
+  const [actionState, setActionState] = useState<PlayActionState>(emptyActionState);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [playersLoading, setPlayersLoading] = useState(true);
   const [accountLoading, setAccountLoading] = useState(true);
@@ -39,11 +59,18 @@ export function PlayPage() {
   const [offerTeamId, setOfferTeamId] = useState("");
   const [offerMessage, setOfferMessage] = useState("");
   const [offerLoading, setOfferLoading] = useState(false);
-  const [sentOfferListingIds, setSentOfferListingIds] = useState<string[]>([]);
+  const [inviteListing, setInviteListing] = useState<PublicPlayPlayerListing | null>(null);
+  const [managedEvents, setManagedEvents] = useState<ManagedPlayEvent[]>([]);
+  const [inviteEventId, setInviteEventId] = useState("");
+  const [inviteLoading, setInviteLoading] = useState(false);
 
   const loadListings = useCallback(async () => {
     const page = await playApi.publicPlayerListings();
     setListings(page.items);
+  }, [playApi]);
+
+  const loadActionState = useCallback(async () => {
+    setActionState(await playApi.actionState());
   }, [playApi]);
 
   useEffect(() => {
@@ -88,24 +115,37 @@ export function PlayPage() {
   useEffect(() => {
     if (!me) {
       setMyListing(null);
+      setActionState(emptyActionState);
       return;
     }
     let active = true;
     setMemberError("");
-    void playApi
-      .myPlayerListing()
-      .then((listing) => {
+    void Promise.all([playApi.myPlayerListing(), playApi.actionState()])
+      .then(([listing, currentActions]) => {
         if (!active) return;
         setMyListing(listing);
+        setActionState(currentActions);
         if (listing) setLookingFor(listing.lookingFor);
       })
       .catch((reason) => {
-        if (active) setMemberError(protectedError(reason, "Unable to load your player listing"));
+        if (active) setMemberError(protectedError(reason, "Unable to load your Play account state"));
       });
     return () => {
       active = false;
     };
   }, [me, playApi, protectedError]);
+
+  useEffect(() => {
+    if (!offerListing) return;
+    offerFormRef.current?.scrollIntoView({ block: "nearest" });
+    offerFormRef.current?.focus({ preventScroll: true });
+  }, [offerListing]);
+
+  useEffect(() => {
+    if (!inviteListing) return;
+    inviteFormRef.current?.scrollIntoView({ block: "nearest" });
+    inviteFormRef.current?.focus({ preventScroll: true });
+  }, [inviteListing]);
 
   async function saveListing(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -142,6 +182,7 @@ export function PlayPage() {
   }
 
   async function startHire(listing: PublicPlayPlayerListing) {
+    if (accountLoading || offerLoading || inviteLoading) return;
     if (!me) {
       const href = authenticationHref("/play");
       if (href) window.location.href = href;
@@ -150,6 +191,7 @@ export function PlayPage() {
     setMemberError("");
     setNotice("");
     setOfferLoading(true);
+    setInviteListing(null);
     try {
       const teams = await teamOfferApi.recruitingTeams();
       if (!teams.length) {
@@ -167,20 +209,49 @@ export function PlayPage() {
     }
   }
 
+  async function startInvite(listing: PublicPlayPlayerListing) {
+    if (accountLoading || offerLoading || inviteLoading) return;
+    if (!me) {
+      const href = authenticationHref("/play");
+      if (href) window.location.href = href;
+      return;
+    }
+    setMemberError("");
+    setNotice("");
+    setInviteLoading(true);
+    setOfferListing(null);
+    try {
+      const availableEvents = await playApi.managedEvents();
+      if (!availableEvents.length) {
+        setMemberError("You need an active Play event you can manage before inviting a player.");
+        return;
+      }
+      setManagedEvents(availableEvents);
+      setInviteEventId(availableEvents[0]?.id ?? "");
+      setInviteListing(listing);
+    } catch (reason) {
+      setMemberError(protectedError(reason, "Unable to prepare game invitation"));
+    } finally {
+      setInviteLoading(false);
+    }
+  }
+
   async function sendOffer(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!offerListing || !offerTeamId || offerLoading) return;
+    const alreadyPending = actionState.teamOffers.some(
+      (offer) => offer.listingId === offerListing.id && offer.teamId === offerTeamId,
+    );
+    if (alreadyPending) return;
     setOfferLoading(true);
     setMemberError("");
     setNotice("");
     try {
-      await teamOfferApi.send(offerTeamId, {
-        listingId: offerListing.id,
+      await playApi.sendTeamOffer(offerListing.id, {
+        teamId: offerTeamId,
         message: offerMessage.trim() || null,
       });
-      setSentOfferListingIds((current) =>
-        current.includes(offerListing.id) ? current : [...current, offerListing.id],
-      );
+      await loadActionState();
       setNotice(`Team offer sent to ${offerListing.presentation?.displayName ?? "player"}.`);
       setOfferListing(null);
       setRecruitingTeams([]);
@@ -193,7 +264,46 @@ export function PlayPage() {
     }
   }
 
+  async function sendInvite(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!inviteListing || !inviteEventId || inviteLoading) return;
+    const alreadyPending = actionState.eventInvites.some(
+      (invite) => invite.listingId === inviteListing.id && invite.eventId === inviteEventId,
+    );
+    if (alreadyPending) return;
+    setInviteLoading(true);
+    setMemberError("");
+    setNotice("");
+    try {
+      await playApi.sendEventInvite(inviteListing.id, { eventId: inviteEventId });
+      await loadActionState();
+      setNotice(`Game invitation sent to ${inviteListing.presentation?.displayName ?? "player"}.`);
+      setInviteListing(null);
+      setManagedEvents([]);
+      setInviteEventId("");
+    } catch (reason) {
+      setMemberError(protectedError(reason, "Unable to send game invitation"));
+    } finally {
+      setInviteLoading(false);
+    }
+  }
+
   const signInHref = authenticationHref("/play");
+  const selectedOfferPending = Boolean(
+    offerListing &&
+      offerTeamId &&
+      actionState.teamOffers.some(
+        (offer) => offer.listingId === offerListing.id && offer.teamId === offerTeamId,
+      ),
+  );
+  const selectedInvitePending = Boolean(
+    inviteListing &&
+      inviteEventId &&
+      actionState.eventInvites.some(
+        (invite) => invite.listingId === inviteListing.id && invite.eventId === inviteEventId,
+      ),
+  );
+  const actionBusy = accountLoading || offerLoading || inviteLoading;
 
   return (
     <section className="play-page">
@@ -238,49 +348,58 @@ export function PlayPage() {
           {notice ? <div className="play-state panel success">{notice}</div> : null}
 
           {!accountLoading && me ? (
-            <form className="play-player-editor panel" onSubmit={saveListing}>
-              <div>
-                <strong>{myListing ? "Your availability" : "Want to play?"}</strong>
-                <span>
-                  Publish only when you want other HOOMA users to see that you are looking.
-                </span>
-              </div>
-              <div className="play-looking-options" role="group" aria-label="Looking for">
-                <button
-                  type="button"
-                  aria-pressed={lookingFor === "GAME"}
-                  onClick={() => setLookingFor("GAME")}
-                >
-                  A game
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={lookingFor === "TEAM"}
-                  onClick={() => setLookingFor("TEAM")}
-                >
-                  A team
-                </button>
-              </div>
-              <div className="play-player-editor-actions">
-                <button className="button" type="submit" disabled={saving}>
-                  {saving ? "Saving…" : myListing ? "Update" : "Publish"}
-                </button>
-                {myListing ? (
+            <>
+              <EventInvitesPanel />
+              <TeamOffersPanel />
+              <form className="play-player-editor panel" onSubmit={saveListing}>
+                <div>
+                  <strong>{myListing ? "Your availability" : "Want to play?"}</strong>
+                  <span>
+                    Publish only when you want other HOOMA users to see that you are looking.
+                  </span>
+                </div>
+                <div className="play-looking-options" role="group" aria-label="Looking for">
                   <button
-                    className="button secondary"
                     type="button"
-                    disabled={saving}
-                    onClick={() => void removeListing()}
+                    aria-pressed={lookingFor === "GAME"}
+                    onClick={() => setLookingFor("GAME")}
                   >
-                    Remove
+                    A game
                   </button>
-                ) : null}
-              </div>
-            </form>
+                  <button
+                    type="button"
+                    aria-pressed={lookingFor === "TEAM"}
+                    onClick={() => setLookingFor("TEAM")}
+                  >
+                    A team
+                  </button>
+                </div>
+                <div className="play-player-editor-actions">
+                  <button className="button" type="submit" disabled={saving}>
+                    {saving ? "Saving…" : myListing ? "Update" : "Publish"}
+                  </button>
+                  {myListing ? (
+                    <button
+                      className="button secondary"
+                      type="button"
+                      disabled={saving}
+                      onClick={() => void removeListing()}
+                    >
+                      Remove
+                    </button>
+                  ) : null}
+                </div>
+              </form>
+            </>
           ) : null}
 
           {offerListing ? (
-            <form className="play-team-offer panel" onSubmit={sendOffer}>
+            <form
+              ref={offerFormRef}
+              className="play-team-offer panel"
+              onSubmit={sendOffer}
+              tabIndex={-1}
+            >
               <div>
                 <p className="eyebrow">TEAM OFFER</p>
                 <h3>Offer {offerListing.presentation?.displayName ?? "this player"} a spot</h3>
@@ -311,15 +430,71 @@ export function PlayPage() {
                   disabled={offerLoading}
                 />
               </label>
+              {selectedOfferPending ? <p>This Team already has a pending offer for this player.</p> : null}
               <div className="play-player-editor-actions">
-                <button className="button" type="submit" disabled={offerLoading || !offerTeamId}>
-                  {offerLoading ? "Sending…" : "Send Offer"}
+                <button
+                  className="button"
+                  type="submit"
+                  disabled={offerLoading || !offerTeamId || selectedOfferPending}
+                >
+                  {offerLoading ? "Sending…" : selectedOfferPending ? "Offer Pending" : "Send Offer"}
                 </button>
                 <button
                   className="button secondary"
                   type="button"
                   disabled={offerLoading}
                   onClick={() => setOfferListing(null)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : null}
+
+          {inviteListing ? (
+            <form
+              ref={inviteFormRef}
+              className="play-team-offer panel"
+              onSubmit={sendInvite}
+              tabIndex={-1}
+            >
+              <div>
+                <p className="eyebrow">GAME INVITATION</p>
+                <h3>Invite {inviteListing.presentation?.displayName ?? "this player"}</h3>
+                <p>Choose an active Play event that you can manage.</p>
+              </div>
+              <label>
+                Game
+                <select
+                  value={inviteEventId}
+                  onChange={(event) => setInviteEventId(event.target.value)}
+                  disabled={inviteLoading}
+                >
+                  {managedEvents.map((managedEvent) => (
+                    <option value={managedEvent.id} key={managedEvent.id}>
+                      {managedEvent.title} · {formatDate(managedEvent.startsAt)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {selectedInvitePending ? <p>This game already has a pending invite for this player.</p> : null}
+              <div className="play-player-editor-actions">
+                <button
+                  className="button"
+                  type="submit"
+                  disabled={inviteLoading || !inviteEventId || selectedInvitePending}
+                >
+                  {inviteLoading
+                    ? "Sending…"
+                    : selectedInvitePending
+                      ? "Invite Pending"
+                      : "Send Invite"}
+                </button>
+                <button
+                  className="button secondary"
+                  type="button"
+                  disabled={inviteLoading}
+                  onClick={() => setInviteListing(null)}
                 >
                   Cancel
                 </button>
@@ -337,8 +512,9 @@ export function PlayPage() {
                 <PlayPlayerCard
                   listing={listing}
                   key={listing.id}
+                  onInvite={(candidate) => void startInvite(candidate)}
                   onHire={(candidate) => void startHire(candidate)}
-                  offerSent={sentOfferListingIds.includes(listing.id)}
+                  actionDisabled={actionBusy}
                 />
               ))}
             </div>
