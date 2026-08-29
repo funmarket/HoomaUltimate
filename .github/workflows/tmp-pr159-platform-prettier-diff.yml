@@ -1,0 +1,29 @@
+name: PR159 platform prettier diff
+
+on:
+  push:
+    branches: [tmp/pr159-platform-prettier-diff]
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/post-157-source-recovery
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - name: Print exact Prettier diff
+        run: |
+          npm exec -- prettier --write tests/platform-owner-places.integration.test.ts
+          git diff --check
+          git diff -- tests/platform-owner-places.integration.test.ts
