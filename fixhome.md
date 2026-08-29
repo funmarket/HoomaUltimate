@@ -47,7 +47,7 @@ Boundary rules:
 
 ## Live Execution State
 
-Last updated: 2026-08-29T12:23:00+01:00
+Last updated: 2026-08-29T12:34:43+01:00
 
 Repository: `funmarket/HoomaUltimate`
 
@@ -90,6 +90,12 @@ Pull request:
 
 ```text
 https://github.com/funmarket/HoomaUltimate/pull/160
+```
+
+Latest audited PR head before this evidence-only ledger update:
+
+```text
+575d7eecbbbe5166f0f15442d76e930dafc52d52
 ```
 
 Working tree status:
@@ -337,6 +343,35 @@ NOT VERIFIED:
 - No live deployment was created.
 - No browser/UI smoke test was run against a local or deployed server.
 - Integration tests were not run because this IA-only task does not add database/backend behavior and no disposable integration infrastructure was required for the changed slice.
+
+FINAL AUDIT - 2026-08-29T12:34:43+01:00:
+
+- Branch: `product/home-ia-simplify`.
+- PR: `#160`, `OPEN`, not draft.
+- PR mergeability: `MERGEABLE`.
+- PR head audited before this evidence-only ledger update: `575d7eecbbbe5166f0f15442d76e930dafc52d52`.
+- Base branch: `phase-0-foundation`.
+- Base HEAD: `b32863ea6b60b24821c1286aaf995756f4f17e65`.
+- GitHub Actions run: `https://github.com/funmarket/HoomaUltimate/actions/runs/33250044543`.
+- GitHub Actions workflow: `CI`.
+- GitHub Actions job: `verify`.
+- GitHub Actions conclusion for audited head `575d7eecbbbe5166f0f15442d76e930dafc52d52`: `success`.
+- CI steps passed individually: set up job, initialize containers, checkout, set up Node, pin repository npm version, `npm ci`, `npm run db:generate`, `npm run db:validate`, `npm run db:migrate:deploy`, `npm run architecture:check`, changed-file formatting, changed-source lint, `npm run typecheck`, `npm run build:packages`, `npm test`, `npm run build`, `npm run test:integration`, `npm run deploy:preflight`, `npm run security:check`, `npm run db:migrate:status`.
+- PR comments: none.
+- PR reviews: none.
+- PR review threads: none.
+- Current open PR list: only PR #160.
+- Final source audit confirmed six Home gateways in order: `HOOMA`, `Teams`, `Spots`, `Pitch`, `Ride`, `Requests`.
+- Final source audit confirmed gateway destinations: `/hooma`, `/teams`, `/places`, `/pitch`, `/rides`, `/requests`.
+- Final source audit confirmed bottom navigation remains `Home | Play | Watch | HOOMA | Pitch`.
+- Final source audit confirmed HOOMA create chooser is `HOOMA | TEAM | ULTRAS`.
+- Final source audit confirmed `/requests`, `/requests/fundme`, `/fundme -> /requests/fundme` with replace, and `/rides`.
+- Final source audit confirmed `/gamers` and `/gamers/games/:gameSlug` remain routed.
+- Final source audit confirmed no `/ultras` route, `CommunityType`, or `Community.type` was added.
+- Final changed-file audit confirmed no PR diff under `packages/database/**`, `packages/contracts/**`, `apps/api/src/modules/**`, or `docs/CANONICAL_MODEL.md`.
+- Remote branch name audit found historical non-PR branches with matching Home/Requests names. Most Home gateway branches are contained in the current base. Three non-contained or unresolved branch heads were inspected by changed-file diff: `feat/community-privacy-membership-requests`, `feat/gamers-home-discovery-onboarding`, and `tmp-home-banner-gateway-perf`. They are not open PRs. The only active open PR remains #160.
+- Merge-readiness at audited head `575d7eecbbbe5166f0f15442d76e930dafc52d52`: `MERGE-SAFE`.
+- Next exact action after this evidence-only ledger update: commit and push this `fixhome.md` update, wait for CI on the new PR head, and report the final post-ledger-update PR head/result without merging.
 
 ## Final Pre-Commit Checklist
 
