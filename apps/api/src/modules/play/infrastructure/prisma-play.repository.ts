@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@hooma/database";
-import type { PlayPlayerListingInput } from "@hooma/contracts/play";
+import type { PlayLookingFor, PlayPlayerListingInput } from "@hooma/contracts/play";
 import type { PlayPlayerListingRepository } from "../application/play.repository.js";
 
 const publicProjection = {
@@ -58,5 +58,23 @@ export class PrismaPlayPlayerListingRepository implements PlayPlayerListingRepos
   async removeMine(userId: string): Promise<boolean> {
     const result = await this.db.playPlayerListing.deleteMany({ where: { userId } });
     return result.count > 0;
+  }
+
+  resolveTarget(listingId: string, lookingFor: PlayLookingFor) {
+    return this.db.playPlayerListing.findFirst({
+      where: { id: listingId, lookingFor },
+      select: { id: true, userId: true },
+    }).then((listing) =>
+      listing ? { listingId: listing.id, userId: listing.userId } : null,
+    );
+  }
+
+  async listByUserIds(userIds: string[], lookingFor: PlayLookingFor) {
+    if (!userIds.length) return [];
+    const listings = await this.db.playPlayerListing.findMany({
+      where: { userId: { in: userIds }, lookingFor },
+      select: { id: true, userId: true },
+    });
+    return listings.map((listing) => ({ listingId: listing.id, userId: listing.userId }));
   }
 }
