@@ -101,11 +101,7 @@ test("Play game invitations stay Events-owned and accept through canonical RSVP 
       return (await response.json()) as { id: string };
     }
 
-    async function sendInvite(
-      actor: { cookie: string },
-      listingId: string,
-      eventId: string,
-    ) {
+    async function sendInvite(actor: { cookie: string }, listingId: string, eventId: string) {
       return fetch(`${base}/api/v1/play/player-listings/${listingId}/event-invite`, {
         method: "POST",
         headers: headers(actor.cookie),
@@ -199,10 +195,10 @@ test("Play game invitations stay Events-owned and accept through canonical RSVP 
     const fullInviteResponse = await sendInvite(founder, fullListing.id, fullEvent.id);
     assert.equal(fullInviteResponse.status, 201);
     const fullInvite = (await fullInviteResponse.json()) as { id: string };
-    const fullAccept = await fetch(
-      `${base}/api/v1/events/invitations/${fullInvite.id}/accept`,
-      { method: "POST", headers: headers(fullTarget.cookie) },
-    );
+    const fullAccept = await fetch(`${base}/api/v1/events/invitations/${fullInvite.id}/accept`, {
+      method: "POST",
+      headers: headers(fullTarget.cookie),
+    });
     assert.equal(fullAccept.status, 409);
     assert.equal(
       (await db.eventPlayerInvite.findUniqueOrThrow({ where: { id: fullInvite.id } })).status,

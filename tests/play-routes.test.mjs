@@ -20,7 +20,10 @@ test("Play owns listing-based action orchestration without taking lifecycle pers
     readFile("packages/frontend/src/events/play-api.ts", "utf8"),
     readFile("apps/api/src/modules/play/http/play.routes.ts", "utf8"),
     readFile("apps/api/src/modules/teams/http/team.routes.ts", "utf8"),
-    readFile("apps/api/src/modules/teams/infrastructure/prisma-team-lifecycle.repository.ts", "utf8"),
+    readFile(
+      "apps/api/src/modules/teams/infrastructure/prisma-team-lifecycle.repository.ts",
+      "utf8",
+    ),
   ]);
 
   assert.match(playClient, /\/api\/public\/v1\/play\/player-listings/);

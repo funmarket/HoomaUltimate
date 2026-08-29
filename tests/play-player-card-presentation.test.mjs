@@ -27,10 +27,7 @@ test("Play player cards route to the canonical profile and use real React-owned 
     css,
     /\.play-player-card__profile-link\s*\{[^}]*position:\s*absolute[^}]*inset:\s*0/s,
   );
-  assert.doesNotMatch(
-    css,
-    /\.play-player-card__action-zone\s*\{[^}]*pointer-events:\s*none/s,
-  );
+  assert.doesNotMatch(css, /\.play-player-card__action-zone\s*\{[^}]*pointer-events:\s*none/s);
   assert.match(page, /onInvite=\{\(candidate\) => void startInvite\(candidate\)\}/);
   assert.match(page, /onHire=\{\(candidate\) => void startHire\(candidate\)\}/);
   assert.match(page, /actionDisabled=\{actionBusy\}/);

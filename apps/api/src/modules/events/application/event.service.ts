@@ -173,10 +173,7 @@ export class EventService {
       throw new EventError("EVENT_INVITE_SELF", "You cannot invite yourself to your own event");
     }
     const existingRsvp = await this.repository.getRsvp(eventId, targetUserId);
-    if (
-      existingRsvp &&
-      ["CONFIRMED", "WAITLISTED", "ATTENDED"].includes(existingRsvp.status)
-    ) {
+    if (existingRsvp && ["CONFIRMED", "WAITLISTED", "ATTENDED"].includes(existingRsvp.status)) {
       throw new EventError("EVENT_INVITE_ALREADY_JOINED", "This player is already in the event");
     }
     return this.repository.upsertPlayerInvite(eventId, targetUserId, userId);

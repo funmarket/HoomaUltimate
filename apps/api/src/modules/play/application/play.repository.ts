@@ -14,8 +14,5 @@ export interface PlayPlayerListingRepository {
     listingId: string,
     lookingFor: PlayLookingFor,
   ): Promise<PlayPlayerListingTarget | null>;
-  listByUserIds(
-    userIds: string[],
-    lookingFor: PlayLookingFor,
-  ): Promise<PlayPlayerListingTarget[]>;
+  listByUserIds(userIds: string[], lookingFor: PlayLookingFor): Promise<PlayPlayerListingTarget[]>;
 }

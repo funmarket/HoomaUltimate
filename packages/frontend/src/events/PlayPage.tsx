@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type FormEvent,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type { MeResponse } from "@hooma/contracts";
 import type { PlayLookingFor } from "@hooma/contracts/play";
 import { PickupMatchCard, PlayHero } from "@hooma/ui";
@@ -128,7 +121,8 @@ export function PlayPage() {
         if (listing) setLookingFor(listing.lookingFor);
       })
       .catch((reason) => {
-        if (active) setMemberError(protectedError(reason, "Unable to load your Play account state"));
+        if (active)
+          setMemberError(protectedError(reason, "Unable to load your Play account state"));
       });
     return () => {
       active = false;
@@ -291,17 +285,17 @@ export function PlayPage() {
   const signInHref = authenticationHref("/play");
   const selectedOfferPending = Boolean(
     offerListing &&
-      offerTeamId &&
-      actionState.teamOffers.some(
-        (offer) => offer.listingId === offerListing.id && offer.teamId === offerTeamId,
-      ),
+    offerTeamId &&
+    actionState.teamOffers.some(
+      (offer) => offer.listingId === offerListing.id && offer.teamId === offerTeamId,
+    ),
   );
   const selectedInvitePending = Boolean(
     inviteListing &&
-      inviteEventId &&
-      actionState.eventInvites.some(
-        (invite) => invite.listingId === inviteListing.id && invite.eventId === inviteEventId,
-      ),
+    inviteEventId &&
+    actionState.eventInvites.some(
+      (invite) => invite.listingId === inviteListing.id && invite.eventId === inviteEventId,
+    ),
   );
   const actionBusy = accountLoading || offerLoading || inviteLoading;
 
@@ -430,14 +424,20 @@ export function PlayPage() {
                   disabled={offerLoading}
                 />
               </label>
-              {selectedOfferPending ? <p>This Team already has a pending offer for this player.</p> : null}
+              {selectedOfferPending ? (
+                <p>This Team already has a pending offer for this player.</p>
+              ) : null}
               <div className="play-player-editor-actions">
                 <button
                   className="button"
                   type="submit"
                   disabled={offerLoading || !offerTeamId || selectedOfferPending}
                 >
-                  {offerLoading ? "Sending…" : selectedOfferPending ? "Offer Pending" : "Send Offer"}
+                  {offerLoading
+                    ? "Sending…"
+                    : selectedOfferPending
+                      ? "Offer Pending"
+                      : "Send Offer"}
                 </button>
                 <button
                   className="button secondary"
@@ -477,7 +477,9 @@ export function PlayPage() {
                   ))}
                 </select>
               </label>
-              {selectedInvitePending ? <p>This game already has a pending invite for this player.</p> : null}
+              {selectedInvitePending ? (
+                <p>This game already has a pending invite for this player.</p>
+              ) : null}
               <div className="play-player-editor-actions">
                 <button
                   className="button"
