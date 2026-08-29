@@ -164,13 +164,19 @@ export class EventService {
   async invitePlayer(userId: string, eventId: string, targetUserId: string) {
     const access = await this.requireManage(userId, eventId);
     if (access.type !== "PLAY" || access.status !== "PUBLISHED") {
-      throw new EventError("EVENT_INVITE_NOT_AVAILABLE", "Only an active Play event can invite players");
+      throw new EventError(
+        "EVENT_INVITE_NOT_AVAILABLE",
+        "Only an active Play event can invite players",
+      );
     }
     if (targetUserId === userId) {
       throw new EventError("EVENT_INVITE_SELF", "You cannot invite yourself to your own event");
     }
     const existingRsvp = await this.repository.getRsvp(eventId, targetUserId);
-    if (existingRsvp && ["CONFIRMED", "WAITLISTED", "ATTENDED"].includes(existingRsvp.status)) {
+    if (
+      existingRsvp &&
+      ["CONFIRMED", "WAITLISTED", "ATTENDED"].includes(existingRsvp.status)
+    ) {
       throw new EventError("EVENT_INVITE_ALREADY_JOINED", "This player is already in the event");
     }
     return this.repository.upsertPlayerInvite(eventId, targetUserId, userId);
