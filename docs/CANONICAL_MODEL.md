@@ -559,6 +559,58 @@ Rules:
 - updating reuses the same canonical listing rather than creating parallel posts;
 - PlayPlayerListing does not create Event, Team, Community, GamerProfile, or shadow membership records.
 
+## TeamPlayerOffer recruitment handoff
+
+`TeamPlayerOffer` remains a Teams-owned durable lifecycle even when the action begins on the Play Players feed.
+
+```text
+TeamPlayerOffer
+  id
+  teamId
+  targetUserId
+  offeredByUserId
+  message?
+  status             PENDING | ACCEPTED | DECLINED
+  createdAt
+  respondedAt?
+  updatedAt
+```
+
+Rules:
+
+- Play resolves a current `TEAM` PlayPlayerListing to its canonical target User and passes that target through a narrow application boundary; Teams infrastructure must not query Play-owned persistence directly;
+- Teams authorizes the actor with its canonical `MANAGE_ROSTER` policy and owns offer persistence;
+- one canonical offer identity exists per Team/target User and resend reuses that identity according to Team lifecycle policy;
+- acceptance creates or reactivates the canonical TeamPlayer through Teams; decline does not create roster membership;
+- Play persists no duplicate offer state and public Play discovery never exposes target User IDs for this workflow.
+
+## EventPlayerInvite
+
+Game invitations are Events-owned durable state reached through Play discovery orchestration.
+
+```text
+EventPlayerInvite
+  id
+  eventId
+  targetUserId
+  invitedByUserId
+  status             PENDING | ACCEPTED | DECLINED | CANCELLED
+  createdAt
+  respondedAt?
+  updatedAt
+```
+
+Rules:
+
+- one canonical invitation identity exists per Event/target User;
+- Play resolves only a current `GAME` PlayPlayerListing and passes the canonical target User to Events through a narrow application boundary;
+- only a manager authorized by the existing Event management policy may invite, and only to a `PUBLISHED` `PLAY` Event;
+- sending an invitation never creates an RSVP;
+- only the target User may accept or decline;
+- acceptance and RSVP allocation occur in one transaction using the same row-locked capacity/waitlist policy as ordinary Event Join;
+- Event cancellation or completion closes pending invitations as `CANCELLED`;
+- Play persists no duplicate invitation state and maps owning-domain pending records back to current listing IDs only for authenticated action readback.
+
 ---
 
 # 12. PlayEventDetails

@@ -598,6 +598,16 @@ Requirements:
 - creating, editing or removing the listing is authenticated and owner-authorized;
 - absence of Team/Community membership must never block this Play discovery action.
 
+Direct player actions from this feed preserve owning-domain authority:
+
+- for a `TEAM` listing, Play resolves the current listing owner and hands the canonical target User to Teams; the selected Team must be one the actor can manage for roster actions, and Teams alone authorizes and persists the canonical `TeamPlayerOffer`;
+- for a `GAME` listing, Play resolves the current listing owner and hands the canonical target User to Events; the selected Event must be a `PUBLISHED` `PLAY` Event the actor can manage under the existing Event organizer policy;
+- sending a Game invitation never creates or changes an RSVP; Events owns the durable `EventPlayerInvite`;
+- only the invited User may accept or decline an Event invitation; acceptance uses the same canonical, row-locked Event RSVP capacity/waitlist transaction as ordinary Join;
+- cancelling or completing an Event closes its pending player invitations;
+- pending Team offers and Event invitations are read back from their owning domains and mapped to Play listing IDs server-side; browser-local “sent” flags are not lifecycle authority;
+- public Play listing projections do not expose canonical target User IDs merely to support these actions.
+
 ## 9.2 Community and group recruitment cards
 
 Play also supports recruitment discovery for canonical entities that are looking for members.
