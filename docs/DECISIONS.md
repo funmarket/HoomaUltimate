@@ -292,7 +292,7 @@ expired metadata is cleanup data, not permanent Whistle history
 
 At the UTC reset, prior-day bodies are no longer readable and the new day starts with all 11 sends available. Redis expires bodies at the session boundary. PostgreSQL metadata may be physically removed by the next Whistle cleanup execution, but expired rows cannot remain visible or count against the new day's quota.
 
-The current enabled context remains private `COMMUNITY` for active HOOMA Community members. Other Whistle contexts remain disabled until their owning domains provide explicit authorization.
+Current enabled contexts are private `COMMUNITY`, authorized `EVENT`, dedicated server-derived `GAMER_DIRECT`, and dedicated server-derived `USER_DIRECT`. `TEAM`, `RIDE`, `ULTRAS`, and `GAMER_SQUAD` remain disabled until their owning domains provide explicit authorization.
 
 **Reason:** Whistle is intended to be a visible, ephemeral daily signal board. A single UTC boundary makes quota and retention deterministic, prevents unused quota from accumulating, and removes the obsolete reveal mechanic without weakening the no-durable-body invariant.
 
@@ -329,3 +329,13 @@ This supersedes only the Home/create-flow portions of ADR-036. It narrowly overr
 The dedicated decision record is `docs/adr/ADR-048-home-create-flow-ia.md`.
 
 **Reason:** The simplification changes discovery and routing without collapsing durable domain ownership or inventing fake future features.
+
+## ADR-049 — Canonical User direct Whistle
+
+**Decision:** Direct profile Whistle uses the existing shared Whistle engine with context `USER_DIRECT`. The caller is the authenticated canonical HOOMA User, the target is supplied by public username and resolved server-side through an Identity-owned reader, self-Whistle is forbidden, and the context identity is the deterministic unordered pair of the two canonical User IDs.
+
+User Direct is exposed only through dedicated authenticated `/api/v1/whistles/users/:username` routes. The generic raw Whistle context route never accepts `USER_DIRECT`, and clients never construct or submit sender IDs, target IDs, direct context IDs, pair keys, or context types. Public profile DTOs continue to omit canonical User IDs.
+
+No new DirectMessage, Conversation, inbox, direct-pair, Whistle-preference, or Whistle-body table is created by this slice. Existing `WhistleMetadata`, the existing Redis body store, the shared 33-grapheme validation, global 11-per-UTC-day quota, and next-UTC-midnight expiry remain authoritative. Existing Community, Event, and Gamer Direct behavior is not refactored by this decision.
+
+**Reason:** This is the smallest complete User-to-User Whistle slice: it preserves one canonical User and one Whistle engine, avoids a new messaging/privacy subsystem, prevents client-forged direct contexts, and keeps current working Whistle contexts isolated from unrelated refactoring.
