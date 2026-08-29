@@ -68,11 +68,7 @@ export function createContainer(config: ApiConfig) {
   const platformAdminRepository = new PrismaPlatformAdminRepository(database);
   const platformAdminService = new PlatformAdminService(platformAdminRepository);
   const identityRepository = new PrismaIdentityRepository(database);
-  const identityService = new IdentityService(
-    identityRepository,
-    config,
-    platformAdminService,
-  );
+  const identityService = new IdentityService(identityRepository, config, platformAdminService);
   const canonicalUserReader = new PrismaCanonicalUserReader(database);
 
   const placeRepository = new PrismaPlaceRepository(database);
@@ -85,16 +81,10 @@ export function createContainer(config: ApiConfig) {
     placeRepository,
     platformAdminService,
   );
-  const pitchModerationService = new PitchModerationService(
-    pitchRepository,
-    platformAdminService,
-  );
+  const pitchModerationService = new PitchModerationService(pitchRepository, platformAdminService);
 
   const communityRepository = new PrismaCommunityRepository(database);
-  const communityService = new CommunityService(
-    communityRepository,
-    platformAdminService,
-  );
+  const communityService = new CommunityService(communityRepository, platformAdminService);
   const teamRepository = new PrismaTeamRepository(database);
   const teamLifecycleRepository = new PrismaTeamLifecycleRepository(database);
   const teamService = new TeamService(
