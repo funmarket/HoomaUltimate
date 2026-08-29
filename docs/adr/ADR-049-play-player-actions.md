@@ -12,7 +12,7 @@ Direct actions from Play must not turn Play into a second owner of Team recruitm
 
 ## Decision
 
-Play owns discovery, current listing-target resolution, and orchestration only.
+Play owns discovery, current listing-target resolution, and orchestration only. This decision does not change the existing Play information architecture or the `Players | Open matches` sibling navigation.
 
 For a `TEAM` listing, Play resolves the canonical target User and invokes a narrow Teams operation. Teams alone authorizes `MANAGE_ROSTER`, persists the canonical `TeamPlayerOffer`, exposes incoming/outgoing offer state, and creates or reactivates `TeamPlayer` on acceptance. Teams infrastructure must not query Play-owned persistence.
 
