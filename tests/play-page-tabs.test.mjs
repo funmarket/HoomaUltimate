@@ -18,8 +18,15 @@ test("Play presents Players and Open matches as sibling local views", async () =
   assert.match(page, />\s*Open matches\s*<\/button>/);
   assert.match(page, /aria-selected=\{activeView === "players"\}/);
   assert.match(page, /aria-selected=\{activeView === "open-matches"\}/);
-  assert.match(page, /hidden=\{activeView !== "players"\}/);
-  assert.match(page, /hidden=\{activeView !== "open-matches"\}/);
+  assert.match(
+    page,
+    /\{activeView === "players" \? \(\s*<section className="play-section" aria-labelledby="players-looking-title">/s,
+  );
+  assert.match(
+    page,
+    /\{activeView === "open-matches" \? \(\s*<section className="play-section" aria-labelledby="open-matches-title">/s,
+  );
+  assert.doesNotMatch(page, /hidden=\{activeView/);
   assert.match(
     css,
     /\.play-view-tabs\s*\{[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/s,
