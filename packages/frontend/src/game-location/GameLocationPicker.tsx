@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { PublicPlaceCapability } from "@hooma/contracts/platform-management";
+import type { PublicPitch } from "@hooma/contracts/pitch";
 
 type LocationMode = "none" | "pitch" | "manual";
 
@@ -7,7 +7,7 @@ export function GameLocationPicker({
   pitches,
   disabled = false,
 }: {
-  readonly pitches: readonly PublicPlaceCapability[];
+  readonly pitches: readonly PublicPitch[];
   readonly disabled?: boolean;
 }) {
   const fieldsetRef = useRef<HTMLFieldSetElement>(null);
