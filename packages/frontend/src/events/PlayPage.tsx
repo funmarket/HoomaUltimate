@@ -241,7 +241,9 @@ export function PlayPage() {
             <form className="play-player-editor panel" onSubmit={saveListing}>
               <div>
                 <strong>{myListing ? "Your availability" : "Want to play?"}</strong>
-                <span>Publish only when you want other HOOMA users to see that you are looking.</span>
+                <span>
+                  Publish only when you want other HOOMA users to see that you are looking.
+                </span>
               </div>
               <div className="play-looking-options" role="group" aria-label="Looking for">
                 <button
