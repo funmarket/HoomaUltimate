@@ -5,7 +5,7 @@ import type { CommunityService } from "../apps/api/src/modules/communities/appli
 import type { EventRepository } from "../apps/api/src/modules/events/application/event.repository.js";
 import { EventService } from "../apps/api/src/modules/events/application/event.service.js";
 import { EventError } from "../apps/api/src/modules/events/domain/event-error.js";
-import type { PlaceCapabilityService } from "../apps/api/src/modules/places/application/place-capability.service.js";
+import type { ApprovedPitchReader } from "../apps/api/src/modules/pitch/application/approved-pitch.reader.js";
 import type { PlaceService } from "../apps/api/src/modules/places/application/place.service.js";
 
 function repositoryStub(onCreate: () => void): EventRepository {
@@ -74,13 +74,13 @@ function approvedPlaces(onGet?: (placeId: string) => void): PlaceService {
   } as unknown as PlaceService;
 }
 
-function approvedPitch(onGet?: (placeId: string) => void): PlaceCapabilityService {
+function approvedPitch(onGet?: (placeId: string) => void): ApprovedPitchReader {
   return {
-    getPublic: async (placeId: string) => {
+    getApproved: async (placeId: string) => {
       onGet?.(placeId);
       return { id: "pitch-1", place: { id: placeId } };
     },
-  } as unknown as PlaceCapabilityService;
+  } as unknown as ApprovedPitchReader;
 }
 
 test("EventService creates WATCH events through an approved canonical Place", async () => {
