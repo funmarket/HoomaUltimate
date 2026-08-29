@@ -122,7 +122,7 @@ test("Place detail keeps owner management contextual instead of a dominant dange
   assert.doesNotMatch(places, /function PlaceDetailPage/);
   assert.match(detail, /<details className="place-owner-tools">/);
   assert.match(detail, /href=\{`\/places\/\$\{place\.id\}\/edit`\}/);
-  assert.match(detail, /management\.places\.archive\(placeId\)/);
+  assert.match(detail, /placesApi\.archive\(placeId\)/);
   assert.doesNotMatch(detail, /className="entity-danger-zone place-danger-zone"/);
 });
 
