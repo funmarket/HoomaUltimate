@@ -14,6 +14,12 @@ export interface PlayTeamOfferGateway {
   pendingPlayerOffersForRecruiter(actorUserId: string): Promise<PlayTeamOfferRecord[]>;
 }
 
+export interface PlayManagedEventRecord {
+  readonly id: string;
+  readonly title: string;
+  readonly startsAt: string;
+}
+
 export interface PlayEventInviteRecord {
   readonly id: string;
   readonly eventId: string;
@@ -23,4 +29,5 @@ export interface PlayEventInviteRecord {
 export interface PlayEventInviteGateway {
   invitePlayer(actorUserId: string, eventId: string, targetUserId: string): Promise<unknown>;
   pendingPlayerInvitesForManager(actorUserId: string): Promise<PlayEventInviteRecord[]>;
+  managedPlayEvents(actorUserId: string): Promise<PlayManagedEventRecord[]>;
 }
