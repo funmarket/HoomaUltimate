@@ -41,19 +41,15 @@ export function createProfileApi(transport: HoomaTransport) {
         `/api/public/v1/profiles/${encodeURIComponent(username)}`,
       ),
     directWhistles: (username: string) =>
-      request<WhistleList>(
-        transport,
-        `/api/v1/whistles/users/${encodeURIComponent(username)}`,
-      ),
+      request<WhistleList>(transport, `/api/v1/whistles/users/${encodeURIComponent(username)}`),
     sendDirectWhistle: (username: string, body: string) =>
       request<{
         whistle: WhistleListItem;
         remainingToday: number;
         resetsAt: string;
-      }>(
-        transport,
-        `/api/v1/whistles/users/${encodeURIComponent(username)}`,
-        { method: "POST", body: JSON.stringify({ body }) },
-      ),
+      }>(transport, `/api/v1/whistles/users/${encodeURIComponent(username)}`, {
+        method: "POST",
+        body: JSON.stringify({ body }),
+      }),
   };
 }
