@@ -13,6 +13,11 @@ const HOME_HERO_STYLES = `
   box-shadow:
     0 16px 34px rgba(0, 0, 0, 0.34),
     inset 0 0 0 1px rgba(255, 238, 192, 0.055);
+  text-decoration: none;
+}
+.home-hero:focus-visible {
+  outline: 2px solid #d6ab54;
+  outline-offset: 3px;
 }
 .home-hero__image {
   display: block;
@@ -31,7 +36,7 @@ export function HomeHero() {
   return (
     <>
       <style>{HOME_HERO_STYLES}</style>
-      <div className="home-hero" aria-label="HOOMA Match Day">
+      <a className="home-hero" href="/play" aria-label="Match Day — open Play">
         <img
           className="home-hero__image"
           src="/home-hero/matchday.webp"
@@ -42,7 +47,7 @@ export function HomeHero() {
           decoding="sync"
           fetchPriority="high"
         />
-      </div>
+      </a>
     </>
   );
 }
