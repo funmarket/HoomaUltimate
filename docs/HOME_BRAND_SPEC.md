@@ -1,4 +1,4 @@
-# HOOMA ULTIMATE — HOME & BRAND ACCEPTANCE SPEC
+# HOOMA — HOME & BRAND ACCEPTANCE SPEC
 
 Status: **ACTIVE SUBORDINATE PRODUCT SPEC**  
 Authority: `structure.md` → `requirements.md` → this spec for Home/brand implementation details  
@@ -36,7 +36,7 @@ The primary HOOMA wordmark is a governed graphic asset, not plain text used as a
 ```text
 HOOMA product header
 ↓
-MATCH DAY / Create a Match hero
+MATCH DAY hero
 ↓
 6 primary Home gateway cards in a 3 × 2 grid
 ↓
@@ -143,26 +143,26 @@ Gamers remains a separate implemented product and direct route family, but it is
 
 ---
 
-## 5. Match Day / Create a Match hero
+## 5. Match Day hero
 
-The top Home hero is the real Create a Match interaction:
+The top Home hero is a direct entry into the Play product:
 
 ```text
 HomePage
-→ MatchDayHero
+→ HomeHero
 → entire hero is interactive
-→ /events/new
+→ /play
 ```
 
 Requirements:
 
 - full-width Match Day hero near the top of Home;
 - the entire hero is one accessible action;
-- creation uses the canonical Events/Play API and persistence;
-- Web uses the normal protected-action auth boundary with validated return destination;
-- Telegram uses Telegram identity/action-boundary behavior;
-- no fake success state or client-only match persistence;
-- preserve the approved football/stadium artwork and responsive crop.
+- activation navigates to the canonical internal `/play` route on the current Web or Telegram deployment origin;
+- do not hard-code the Railway production hostname into shared UI;
+- the hero does not create an Event directly; event creation remains owned by the Play/Events flow;
+- preserve the approved football/stadium artwork and responsive crop;
+- keyboard focus must be visible on Web.
 
 ---
 
@@ -217,7 +217,7 @@ Home presentation belongs to the shared UI layer while platform shells own platf
 packages/ui/src/
   brand/
   home/
-    MatchDayHero.tsx
+    HomeHero.tsx
     HomeGatewayGrid.tsx
     HomeGatewayCard.tsx
     HoomaNowFeed.tsx
@@ -289,8 +289,8 @@ Web asset present
 Telegram asset present
 HOOMA NOW remains a read model
 Whistle/Replay remain outside the gateway grid
-Match Day hero still activates real event creation
-auth boundaries preserved
+Match Day hero opens canonical /play
+Match Day hero remains one accessible full-card action
 architecture check
 format
 lint
