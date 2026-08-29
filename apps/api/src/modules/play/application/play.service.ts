@@ -30,6 +30,10 @@ export class PlayService {
     return { removed: await this.repository.removeMine(userId) };
   }
 
+  managedPlayEvents(userId: string) {
+    return this.events.listManagedPlayEvents(userId);
+  }
+
   async sendTeamOffer(userId: string, listingId: string, input: PlayTeamOfferInput) {
     const target = await this.repository.resolveTarget(listingId, "TEAM");
     if (!target) {
@@ -74,8 +78,12 @@ export class PlayService {
         "GAME",
       ),
     ]);
-    const teamListingByUser = new Map(teamListings.map((listing) => [listing.userId, listing.listingId]));
-    const gameListingByUser = new Map(gameListings.map((listing) => [listing.userId, listing.listingId]));
+    const teamListingByUser = new Map(
+      teamListings.map((listing) => [listing.userId, listing.listingId]),
+    );
+    const gameListingByUser = new Map(
+      gameListings.map((listing) => [listing.userId, listing.listingId]),
+    );
 
     return {
       teamOffers: offers.flatMap((offer) => {
