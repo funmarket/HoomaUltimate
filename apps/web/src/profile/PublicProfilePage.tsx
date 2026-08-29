@@ -1,10 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ProfileIdentity } from "@hooma/contracts/profile";
-import {
-  createProfileApi,
-  useHoomaFrontend,
-  type CanonicalPublicProfile,
-} from "@hooma/frontend";
+import { createProfileApi, useHoomaFrontend, type CanonicalPublicProfile } from "@hooma/frontend";
 import { UserWhistlePanel } from "./UserWhistlePanel";
 
 export function PublicProfilePage({ username }: { username: string }) {
