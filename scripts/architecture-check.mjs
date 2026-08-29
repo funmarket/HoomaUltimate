@@ -121,6 +121,15 @@ for (const file of await walk(root)) {
     );
   }
 
+  if (rel.startsWith("packages/frontend/src/")) {
+    forbid(
+      file,
+      source,
+      /@hooma\/contracts\/platform-management|places\/platform-management-api/,
+      "frontend must not depend on the removed platform-management contract or client",
+    );
+  }
+
   if (rel.startsWith("packages/frontend/src/pitch/")) {
     forbid(
       file,
