@@ -22,8 +22,12 @@ jobs:
           cache: npm
       - run: npm install --global npm@10.9.2
       - run: npm ci
-      - name: Print exact Prettier diff
+      - name: Print exact Prettier output
         run: |
           npm exec -- prettier --write apps/api/src/bootstrap/container.ts apps/web/src/profile/UserWhistlePanel.tsx packages/frontend/src/profile-api.ts tests/user-direct-whistle.integration.test.ts
           git diff --check
-          git diff -- apps/api/src/bootstrap/container.ts apps/web/src/profile/UserWhistlePanel.tsx packages/frontend/src/profile-api.ts tests/user-direct-whistle.integration.test.ts
+          for file in apps/api/src/bootstrap/container.ts apps/web/src/profile/UserWhistlePanel.tsx packages/frontend/src/profile-api.ts tests/user-direct-whistle.integration.test.ts; do
+            echo "===== BEGIN $file ====="
+            cat "$file"
+            echo "===== END $file ====="
+          done
