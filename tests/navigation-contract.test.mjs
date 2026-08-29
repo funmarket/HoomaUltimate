@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-test("locked bottom navigation and nine-card Home gateway cannot drift", async () => {
+test("locked bottom navigation and six-card Home gateway cannot drift", async () => {
   const navSource = await readFile("packages/ui/src/navigation/HoomaBottomNav.tsx", "utf8");
   const gatewaySource = await readFile("packages/ui/src/home/home-gateways.ts", "utf8");
   const nav = navSource.slice(
@@ -15,26 +15,26 @@ test("locked bottom navigation and nine-card Home gateway cannot drift", async (
   );
   assert.deepEqual(
     [...gatewaySource.matchAll(/label: "([^"]+)"/g)].map((match) => match[1]),
-    ["HOOMA", "Teams", "Ultras", "Spots", "Pitch", "Gamers", "Ride", "Requests", "FundMe"],
+    ["HOOMA", "Teams", "Spots", "Pitch", "Ride", "Requests"],
   );
   assert.deepEqual(
     [...gatewaySource.matchAll(/subtitle: "([^"]+)"/g)].map((match) => match[1]),
     [
       "Community",
       "Manage squads",
-      "Coming soon",
       "Cafés & lounges",
       "Find a pitch",
-      "Find opponents",
-      "Coming soon",
-      "Coming soon",
-      "Coming soon",
+      "To the match",
+      "Gear and support",
     ],
   );
   assert.deepEqual(
     [...gatewaySource.matchAll(/href: ("[^"]+"|null)/g)].map((match) => match[1]),
-    ['"/hooma"', '"/teams"', "null", '"/places"', '"/pitch"', '"/gamers"', "null", "null", "null"],
+    ['"/hooma"', '"/teams"', '"/places"', '"/pitch"', '"/rides"', '"/requests"'],
   );
+  assert.doesNotMatch(gatewaySource, /label: "Gamers"/);
+  assert.doesNotMatch(gatewaySource, /label: "Ultras"/);
+  assert.doesNotMatch(gatewaySource, /label: "FundMe"/);
 });
 
 test("Home gateway cards expose visible labels and disable unavailable destinations", async () => {

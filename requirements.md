@@ -124,21 +124,22 @@ Home | Play | Watch | HOOMA | Pitch
 
 ## 2.2 Home gateway
 
-Home contains these eight primary product gateways:
+Home contains these six primary product gateways:
 
 ```text
-HOOMA | Teams | ULTRAS | Gamers
-Places | Requests | Ride | FundMe
+HOOMA | Teams | Spots | Pitch | Ride | Requests
 ```
 
-A gateway may truthfully show unavailable/coming-soon state until its real vertical slice exists. It must not fake backend completion.
+`Spots` is the Home label for canonical Places discovery at `/places`. Gamers, ULTRAS and FundMe are not Home discovery gateways in the current IA, but this does not delete those product concepts or their independent ownership.
+
+Ride and Requests may expose honest frontend shells when explicitly authorized. They must not fake backend completion, listings, matching, claims, payments or persistence.
 
 ## 2.3 HOOMA creation gateway
 
 Creation begins from the HOOMA product and offers:
 
 ```text
-HOOMA | TEAM | ULTRAS | GAMERS
+HOOMA | TEAM | ULTRAS
 ```
 
 This is a **shared entry/gateway only**.
@@ -147,17 +148,16 @@ It must not be implemented as one generic database `CommunityType`. Each selecti
 
 - HOOMA -> neighborhood/local Community domain;
 - TEAM -> football Team domain;
-- ULTRAS -> supporter-community domain;
-- GAMERS -> gaming community/squad domain.
+- ULTRAS -> future supporter-community domain, unavailable until its independent domain ships.
 
 After successful creation, the canonical entity is discoverable in its own product feed:
 
 - HOOMA -> `/hooma` HOOMA feed;
-- TEAM -> `/teams` Teams feed;
-- ULTRAS -> `/ultras` ULTRAS feed;
-- GAMERS -> `/gamers` Gamers feed.
+- TEAM -> `/teams` Teams feed.
 
 The shared gateway never duplicates one created entity into another domain merely to make it appear in a feed.
+
+Gamers remains an existing independent product and route family, but it is not offered from the current Home gateway or HOOMA create chooser. FundMe is presented under Requests as a page tab until Fundraising/Payments are separately authorized.
 
 ## 2.4 Places tabs
 
@@ -183,7 +183,6 @@ At minimum, the product routing contract supports:
 /pitch
 /places
 /teams
-/ultras
 /gamers
 /requests
 /rides

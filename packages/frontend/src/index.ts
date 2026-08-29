@@ -9,6 +9,8 @@ import "./places/places.css";
 import "./places/place-source-tabs.css";
 import "./pitch/pitch.css";
 import "./pitch/pitch-detail.css";
+import "./requests/requests.css";
+import "./rides/rides.css";
 import "./watch/watch.css";
 import "./watch/watch-section-actions.css";
 
@@ -47,4 +49,6 @@ export * from "./pitch/PitchDetailPage";
 export * from "./pitch/PitchManagePage";
 export * from "./pitch/PitchPage";
 export * from "./pitch/pricing";
+export * from "./requests/RequestsPage";
+export * from "./rides/RidesPage";
 export * from "./watch/WatchPage";

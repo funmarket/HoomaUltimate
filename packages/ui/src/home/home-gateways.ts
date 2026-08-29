@@ -1,5 +1,4 @@
-export type HomeGatewayId =
-  "hooma" | "teams" | "ultras" | "spots" | "pitch" | "gamers" | "ride" | "requests" | "fundme";
+export type HomeGatewayId = "hooma" | "teams" | "spots" | "pitch" | "ride" | "requests";
 
 export type HomeGatewayAvailability = "available" | "coming-soon";
 
@@ -30,14 +29,6 @@ export const HOME_GATEWAYS: readonly HomeGatewayItem[] = [
     availability: "available",
   },
   {
-    id: "ultras",
-    label: "Ultras",
-    subtitle: "Coming soon",
-    href: null,
-    artwork: "/home-gateways/ultras.png",
-    availability: "coming-soon",
-  },
-  {
     id: "spots",
     label: "Spots",
     subtitle: "Cafés & lounges",
@@ -54,35 +45,19 @@ export const HOME_GATEWAYS: readonly HomeGatewayItem[] = [
     availability: "available",
   },
   {
-    id: "gamers",
-    label: "Gamers",
-    subtitle: "Find opponents",
-    href: "/gamers",
-    artwork: "/home-gateways/gamers.png",
-    availability: "available",
-  },
-  {
     id: "ride",
     label: "Ride",
-    subtitle: "Coming soon",
-    href: null,
+    subtitle: "To the match",
+    href: "/rides",
     artwork: "/home-gateways/ride.png",
-    availability: "coming-soon",
+    availability: "available",
   },
   {
     id: "requests",
     label: "Requests",
-    subtitle: "Coming soon",
-    href: null,
+    subtitle: "Gear and support",
+    href: "/requests",
     artwork: "/home-gateways/requests.png",
-    availability: "coming-soon",
-  },
-  {
-    id: "fundme",
-    label: "FundMe",
-    subtitle: "Coming soon",
-    href: null,
-    artwork: "/home-gateways/fundme.png",
-    availability: "coming-soon",
+    availability: "available",
   },
 ] as const;

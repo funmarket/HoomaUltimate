@@ -318,12 +318,14 @@ Permanent bottom navigation is exactly:
 Home | Play | Watch | HOOMA | Pitch
 ```
 
-Main Home grid is exactly eight containers in a clean 4 x 2 layout:
+Main Home grid is exactly six containers in a clean 3 x 2 layout:
 
 ```text
-HOOMA | Teams | Ultras | Gamers
-Places | Requests | Ride | FundMe
+HOOMA | Teams | Spots
+Pitch | Ride  | Requests
 ```
+
+Gamers remains a real independent product and route family, but it is not an active Home gateway or HOOMA create option. ULTRAS remains a future independent domain and appears only as an unavailable HOOMA create option. FundMe is grouped under Requests as `/requests/fundme`; `/fundme` redirects there as compatibility navigation only.
 
 The approved attached original gateway artwork is authoritative. Do not regenerate or replace it without explicit instruction.
 
@@ -1311,6 +1313,107 @@ New future domains: NOT STARTED in this clean app unless explicitly recorded oth
 # 38. CHANGE EVIDENCE LEDGER
 
 This section grows continuously. Never delete failed attempts merely to make progress look cleaner; supersede them with a later verified entry.
+
+## 2026-08-29 — Home/create-flow IA simplification source-verified
+
+**Task**
+Implement the `fixhome.md` Home/create-flow IA simplification on branch `product/home-ia-simplify`.
+
+**Reason/root cause**
+Home and create-flow contracts drifted across requirements, structure, brand/asset docs, tests and source. The new product-owner direction reduces Home discovery to six gateways, removes Gamers/ULTRAS/FundMe from Home, moves FundMe under Requests as presentation/navigation only, adds honest Requests/Ride shells, and keeps durable domain ownership unchanged.
+
+**Authoritative docs/source inspected**
+
+- `AGENTS.md`
+- `docs/LIVING_BUILD_PLAN.md`
+- `requirements.md`
+- `structure.md`
+- `docs/DECISIONS.md`
+- `docs/CANONICAL_MODEL.md`
+- `docs/HOME_BRAND_SPEC.md`
+- `docs/ASSET_MANIFEST.md`
+- `progress.md`
+- `packages/ui/src/home/home-gateways.ts`
+- `packages/frontend/src/communities/HoomaPage.tsx`
+- `apps/web/src/app/router/HoomaRouter.tsx`
+- focused navigation/Home/router tests
+
+**Files changed**
+
+- `apps/web/src/app/router/HoomaRouter.tsx`
+- `docs/ASSET_MANIFEST.md`
+- `docs/DECISIONS.md`
+- `docs/HOME_BRAND_SPEC.md`
+- `docs/adr/ADR-048-home-create-flow-ia.md`
+- `packages/frontend/src/communities/HoomaPage.tsx`
+- `packages/frontend/src/index.ts`
+- `packages/frontend/src/requests/RequestsPage.tsx`
+- `packages/frontend/src/requests/requests.css`
+- `packages/frontend/src/rides/RidesPage.tsx`
+- `packages/frontend/src/rides/rides.css`
+- `packages/ui/src/home/home-gateways.ts`
+- `progress.md`
+- `requirements.md`
+- `structure.md`
+- `tests/frontend-router.test.mjs`
+- `tests/home-gateway-image-loading.test.mjs`
+- `tests/hooma-create-chooser.test.mjs`
+- `tests/navigation-contract.test.mjs`
+- `tests/requests-rides-shell.test.mjs`
+
+**Commit(s)**
+
+- not committed yet.
+
+**Database/migration changes**
+
+- none; `git diff --name-only -- packages/database packages/contracts apps/api/src/modules` returned no changed files.
+- `npm run db:generate` generated the local Prisma client only after approved network access to download the Prisma engine; no schema, migration, contract or backend source was changed.
+
+**Tests/commands actually run**
+
+- `git fetch origin phase-0-foundation`
+- `gh pr list --repo funmarket/HoomaUltimate --state open --json number,title,headRefName,baseRefName,headRefOid,url`
+- `gh pr view 159 --repo funmarket/HoomaUltimate --json number,title,state,baseRefName,headRefName,headRefOid,files,url`
+- `rg -n "FundMe|Gamers|nine-card|nine card|3 × 3|3x3|HOME_GATEWAYS|ULTRAS|eight product containers|Home gateway" requirements.md structure.md docs progress.md tests packages apps`
+- `node --test tests/navigation-contract.test.mjs tests/home-gateway-image-loading.test.mjs tests/frontend-router.test.mjs tests/hooma-create-chooser.test.mjs tests/requests-rides-shell.test.mjs` — passed 11/11.
+- `npx prettier --write` on the touched source/docs/tests — passed.
+- `git diff --check` — passed with line-ending warnings only.
+- `npm run format:check` — failed on 370 pre-existing formatted files outside this slice; not mass-formatted.
+- `npm exec -- prettier --check` on the exact touched file list — passed.
+- `npm exec -- eslint --max-warnings=0` on the exact touched TS/TSX file list — passed.
+- `npm run architecture:check` — passed.
+- `npm run db:generate` — first failed due restricted network; approved retry passed.
+- `DATABASE_URL=postgresql://user:pass@localhost:5432/hooma_validation npm run db:validate` — passed.
+- `npm run typecheck` — first failed before Prisma client generation; retry after `db:generate` passed.
+- `npm test` — failed before test execution with Windows `spawn EINVAL` in `scripts/run-tests.mjs`.
+- chunked equivalent unit run using `npx tsx --test` over the unit test file set — passed 160/160.
+- `npm run build` — passed with the existing Vite large-chunk warning.
+- `npm run lint` — failed on an unrelated existing platform-admin file not touched by this slice: `apps/api/src/modules/platform-admin/application/platform-admin.authorizer.ts`.
+- `npm run deploy:preflight` — passed.
+- `git diff --name-only -- packages/database packages/contracts apps/api/src/modules` — passed empty.
+- `rg -n "All nine|9 primary|3 × 3|3x3|nine-card|nine card|exactly nine|eight containers|eight primary" docs/ASSET_MANIFEST.md docs/HOME_BRAND_SPEC.md requirements.md structure.md progress.md tests` — returned only this ledger's recorded command text.
+
+**Deployment/runtime proof**
+
+- production build passed locally.
+- deploy preflight passed locally.
+- no live deployment or browser smoke test was performed in this slice.
+
+**Known failures/unverified areas**
+
+- source branch created in a separate clean worktree because the main checkout had mass deleted files and was behind `origin/phase-0-foundation`.
+- full `npm run format:check` is blocked by pre-existing repo-wide formatting drift and was replaced by exact touched-file Prettier verification for this slice.
+- full `npm run lint` is blocked by the unrelated platform-admin no-empty-object-type error and was replaced by exact touched-file ESLint verification for this slice.
+- `npm test` wrapper is blocked by Windows `spawn EINVAL`; the same unit test file set passed when run in smaller chunks.
+- no live deployment or UI browser smoke test has been run.
+
+**Score: 8/10**
+**Status: VERIFIED SOURCE SLICE, NOT LIVE-DONE**
+
+**Next action**
+
+- review the diff, resolve unrelated baseline formatter/lint/test-wrapper issues separately if desired, then commit or open a PR for `product/home-ia-simplify`.
 
 ## 2026-08-22 — Connect active development branch to Railway
 

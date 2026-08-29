@@ -13,7 +13,7 @@ import { HoomaWhistleBoard } from "../whistle/HoomaWhistleBoard";
 import { CommunityLogo, CommunityMediaSurface } from "./CommunityMedia";
 import { HoomaMembershipRequests } from "./HoomaMembershipRequests";
 
-type CreationType = "HOOMA" | "TEAM" | "ULTRAS" | "GAMERS";
+type CreationType = "HOOMA" | "TEAM" | "ULTRAS";
 
 type CreationOption = {
   readonly value: CreationType;
@@ -22,11 +22,9 @@ type CreationOption = {
   readonly roles: string;
   readonly available: boolean;
   readonly href: string | null;
-  readonly feedHref: string;
-  readonly feedLabel: string;
 };
 
-const CREATION_ORDER: readonly CreationType[] = ["HOOMA", "TEAM", "ULTRAS", "GAMERS"];
+const CREATION_ORDER: readonly CreationType[] = ["HOOMA", "TEAM", "ULTRAS"];
 const CREATION_OPTIONS: Record<CreationType, CreationOption> = {
   HOOMA: {
     value: "HOOMA",
@@ -35,8 +33,6 @@ const CREATION_OPTIONS: Record<CreationType, CreationOption> = {
     roles: "Founder · Coach · Member",
     available: true,
     href: "/hooma/new",
-    feedHref: "/hooma",
-    feedLabel: "HOOMA",
   },
   TEAM: {
     value: "TEAM",
@@ -45,8 +41,6 @@ const CREATION_OPTIONS: Record<CreationType, CreationOption> = {
     roles: "Coach · Assistant · Player",
     available: true,
     href: "/teams",
-    feedHref: "/teams",
-    feedLabel: "Teams",
   },
   ULTRAS: {
     value: "ULTRAS",
@@ -55,18 +49,6 @@ const CREATION_OPTIONS: Record<CreationType, CreationOption> = {
     roles: "Coming with the canonical ULTRAS domain",
     available: false,
     href: null,
-    feedHref: "/ultras",
-    feedLabel: "ULTRAS",
-  },
-  GAMERS: {
-    value: "GAMERS",
-    title: "GAMERS",
-    description: "Build a gaming squad",
-    roles: "Coming with the canonical Gamers domain",
-    available: false,
-    href: null,
-    feedHref: "/gamers",
-    feedLabel: "Gamers",
   },
 };
 
@@ -176,8 +158,8 @@ export function HoomaPage() {
         <span className="eyebrow">YOUR FOOTBALL NEIGHBORHOOD</span>
         <h1>HOOMA</h1>
         <p>
-          Find your people, build your neighborhood, start a Team, or branch into supporter and
-          gaming communities.
+          Find your people, build your neighborhood, start a Team, or prepare for future supporter
+          groups.
         </p>
       </section>
 
@@ -187,7 +169,7 @@ export function HoomaPage() {
             <span className="eyebrow">CREATE</span>
             <h2>What are you starting?</h2>
           </div>
-          <p className="muted">One gateway. Four distinct community domains.</p>
+          <p className="muted">One gateway. Separate owning domains.</p>
         </div>
         <div className="panel hooma-create-picker">
           <label className="hooma-create-select">
@@ -213,7 +195,9 @@ export function HoomaPage() {
             <strong>{selectedCreation.title}</strong>
             <span>{selectedCreation.description}</span>
             <small>{selectedCreation.roles}</small>
-            <small>Discovery home: {selectedCreation.feedLabel} feed</small>
+            {selectedCreation.available ? null : (
+              <small>This will open only when the independent domain ships.</small>
+            )}
           </div>
           <button
             className="button hooma-create-continue"
@@ -356,7 +340,7 @@ export function CreateHoomaPage() {
         bannerUrl: bannerUrl.trim() || null,
         visibility,
       });
-      navigate(CREATION_OPTIONS.HOOMA.feedHref);
+      navigate("/hooma");
     } catch (reason) {
       setError(protectedError(reason, "Could not create HOOMA"));
     } finally {

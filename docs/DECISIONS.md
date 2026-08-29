@@ -233,6 +233,8 @@ MANAGE_TEAM_EVENTS
 
 **Reason:** These are explicit product acceptance rules.
 
+**Superseded in part by ADR-048:** The bottom navigation decision remains active. The Home gateway and HOOMA create-flow portions are replaced by the six-gateway Home IA and three-option create chooser recorded in ADR-048.
+
 ## ADR-037 — Donor data import is separate from application migrations
 
 **Decision:** HOOMA ULTIMATE starts clean. If historical data is ever imported, it uses an explicit ETL/reconciliation process rather than redefining application migrations.
@@ -244,6 +246,8 @@ MANAGE_TEAM_EVENTS
 **Decision:** While `docs/NORMALIZATION_PLAN.md` is active, new Places/Watch/Pitch/ULTRAS/Gamers/Requests/Ride/FundMe/Payments/Media/Replay/HOOMA NOW implementation remains frozen unless explicitly unfrozen by a newer product-owner decision.
 
 **Reason:** Existing foundation inconsistencies must be corrected before dependency-heavy domains build on them.
+
+**Superseded in part by ADR-048:** Requests/Ride route registration and honest frontend shells are narrowly authorized. Requests, Ride, Fundraising, FundMe, Payments and ULTRAS backend/domain/persistence work remains frozen until separately authorized.
 
 ## ADR-039 — Whistle vertical slice is explicitly unfrozen
 
@@ -311,3 +315,17 @@ The dedicated decision record is `docs/adr/ADR-041-gamers-human-match-system.md`
 The dedicated decision record is `docs/adr/ADR-042-pitch-suggestion-claim-lifecycle.md`.
 
 **Reason:** Preserve one physical venue/contact/media truth while allowing Pitch discovery, moderation, ownership claims, and reviewed rental-profile updates without duplicate venue data or fabricated pricing.
+
+## ADR-048 — Home and create-flow IA simplification
+
+**Decision:** Home is six gateways only: HOOMA, Teams, Spots, Pitch, Ride and Requests. The permanent bottom navigation remains Home/Play/Watch/HOOMA/Pitch.
+
+Gamers is removed from Home discovery and the HOOMA create chooser, while the existing independent Gamers domain/module/routes remain intact. FundMe is presented as a Requests page tab, with `/fundme` redirecting to `/requests/fundme` as compatibility navigation only. Ride remains a Home gateway and receives an honest frontend shell at `/rides`.
+
+The HOOMA create chooser is HOOMA/TEAM/ULTRAS only. ULTRAS remains unavailable and independent; it must not create a Community row or use a generic `CommunityType`.
+
+This supersedes only the Home/create-flow portions of ADR-036. It narrowly overrides ADR-038 only enough to permit Requests/Rides frontend shells and route registration; backend persistence, Payments and durable Fundraising remain frozen until separately authorized.
+
+The dedicated decision record is `docs/adr/ADR-048-home-create-flow-ia.md`.
+
+**Reason:** The simplification changes discovery and routing without collapsing durable domain ownership or inventing fake future features.

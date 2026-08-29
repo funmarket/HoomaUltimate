@@ -38,7 +38,7 @@ HOOMA product header
 ↓
 MATCH DAY / Create a Match hero
 ↓
-9 primary Home gateway cards in a 3 × 3 grid
+6 primary Home gateway cards in a 3 × 2 grid
 ↓
 HOOMA NOW heading + actual activity feed
 ↓
@@ -52,9 +52,8 @@ locked bottom navigation
 The exact gateway order is:
 
 ```text
-Row 1: HOOMA | Teams | Ultras
-Row 2: Spots | Pitch | Gamers
-Row 3: Ride  | Requests | FundMe
+Row 1: HOOMA | Teams | Spots
+Row 2: Pitch | Ride  | Requests
 ```
 
 The permanent bottom navigation remains:
@@ -67,12 +66,11 @@ Home | Play | Watch | HOOMA | Pitch
 
 ## 3. Main Home gateway grid — locked requirement
 
-The primary Home grid contains exactly nine cards and exactly three columns, including on phone viewports:
+The primary Home grid contains exactly six cards and exactly three columns, including on phone viewports:
 
 ```text
-HOOMA     | Teams     | Ultras
-Spots     | Pitch     | Gamers
-Ride      | Requests  | FundMe
+HOOMA     | Teams     | Spots
+Pitch     | Ride      | Requests
 ```
 
 Required layout behavior:
@@ -141,7 +139,7 @@ The Home Pitch card uses the exact user-approved black/gold football-pitch artwo
 
 ### 4.3 Gamers
 
-Gamers remains a separate product gateway and may use supporting copy such as `Find opponents`. It must not be merged with Play or built on top of Play domain behavior.
+Gamers remains a separate implemented product and direct route family, but it is not an active Home gateway under the current simplified IA. It must not be merged with Play or built on top of Play domain behavior.
 
 ---
 
@@ -274,8 +272,8 @@ Required:
 The Home/Spots/Pitch slice is not complete until applicable checks pass:
 
 ```text
-exact 9-card Home gateway set verified
-exact 3 × 3 order verified
+exact 6-card Home gateway set verified
+exact 3 × 2 order verified
 3-column phone layout verified
 no horizontal gateway overflow
 Spots routes to canonical /places

@@ -97,30 +97,39 @@ Worker must not become a second business-policy service.
 ## 4. Shared package ownership
 
 ### `packages/auth`
+
 Authentication primitives only. No product authorization policy.
 
 ### `packages/config`
+
 Environment/config validation and production preflight. No feature policy.
 
 ### `packages/contracts`
+
 Wire schemas/types split by owning domain. `index.ts` may be a re-export surface; it must not become a hidden cross-domain implementation monolith. Prisma model types do not leak through API contracts.
 
 ### `packages/database`
+
 Prisma schema/client, committed migrations, and database helpers.
 
 ### `packages/domain`
+
 Only genuinely cross-domain value primitives. It is not a dumping ground for feature business logic.
 
 ### `packages/frontend`
+
 Shared Web/Telegram product feature UI and domain API integration.
 
 ### `packages/storage`
+
 Object-storage abstraction/adapters. No feature authorization.
 
 ### `packages/testing`
+
 Typed fixtures/builders and disposable infrastructure helpers for real tests.
 
 ### `packages/ui`
+
 Platform-neutral components, tokens, and governed shared assets. No feature business state.
 
 ---
@@ -177,35 +186,35 @@ This rule exists for scalability and user experience as well as code cleanliness
 
 ## 6. Canonical domain ownership
 
-| Concept | Canonical owner |
-| --- | --- |
-| Login identity/session | Identity/Auth |
-| User presentation/profile | Identity |
-| Global App Admin authority | Platform Admin |
-| Sensitive-operation history | Audit |
-| HOOMA neighborhood community + membership | Communities |
-| Football Team, roster, responsibilities/capabilities | Teams |
-| Team lineup | Teams |
-| Team challenge + accepted TeamGame coordination | Teams |
-| Event lifecycle, RSVP/waitlist, formation, check-in | Events |
-| Play discovery/use case | Play over Events |
-| Shared transient Whistle engine | Whistle |
-| Physical venue | Places |
-| Place ownership/claim lifecycle | Places |
-| Pitch capability/application/pricing | Pitch over canonical Place |
-| Watch activity/event use of venue | Watch/Events using canonical Place directly |
-| FanHub discovery classification | Places/Watch projection, never a role |
-| ULTRAS supporter community | ULTRAS |
-| Gamer profile/squad/challenge | Gamers |
-| Help/request + claims | Requests |
-| Ride coordination/location privacy | Rides |
-| Fundraiser/contribution | Fundraising |
-| Payment rails/intents/settlement | Payments |
-| Media metadata | Media |
-| Media bytes | Object storage |
-| Async work | Outbox + Worker |
-| Post-activity Replay | Replay |
-| Aggregated Home/Now views | Discovery/read models only |
+| Concept                                              | Canonical owner                             |
+| ---------------------------------------------------- | ------------------------------------------- |
+| Login identity/session                               | Identity/Auth                               |
+| User presentation/profile                            | Identity                                    |
+| Global App Admin authority                           | Platform Admin                              |
+| Sensitive-operation history                          | Audit                                       |
+| HOOMA neighborhood community + membership            | Communities                                 |
+| Football Team, roster, responsibilities/capabilities | Teams                                       |
+| Team lineup                                          | Teams                                       |
+| Team challenge + accepted TeamGame coordination      | Teams                                       |
+| Event lifecycle, RSVP/waitlist, formation, check-in  | Events                                      |
+| Play discovery/use case                              | Play over Events                            |
+| Shared transient Whistle engine                      | Whistle                                     |
+| Physical venue                                       | Places                                      |
+| Place ownership/claim lifecycle                      | Places                                      |
+| Pitch capability/application/pricing                 | Pitch over canonical Place                  |
+| Watch activity/event use of venue                    | Watch/Events using canonical Place directly |
+| FanHub discovery classification                      | Places/Watch projection, never a role       |
+| ULTRAS supporter community                           | ULTRAS                                      |
+| Gamer profile/squad/challenge                        | Gamers                                      |
+| Help/request + claims                                | Requests                                    |
+| Ride coordination/location privacy                   | Rides                                       |
+| Fundraiser/contribution                              | Fundraising                                 |
+| Payment rails/intents/settlement                     | Payments                                    |
+| Media metadata                                       | Media                                       |
+| Media bytes                                          | Object storage                              |
+| Async work                                           | Outbox + Worker                             |
+| Post-activity Replay                                 | Replay                                      |
+| Aggregated Home/Now views                            | Discovery/read models only                  |
 
 Physical `Place` is the venue source of truth. Pitch extends Place through Pitch-owned capability/application behavior. Watch references canonical Place; it does not require a duplicate Watch venue entity or a generic capability model merely for symmetry.
 
@@ -309,29 +318,35 @@ Permanent bottom navigation:
 Home | Play | Watch | HOOMA | Pitch
 ```
 
-Current Home gateway is the shipped 3 x 3 source-backed layout:
+Current Home gateway is the shipped 3 x 2 source-backed layout:
 
 ```text
-HOOMA | Teams | Ultras
-Spots | Pitch | Gamers
-Ride  | Requests | FundMe
+HOOMA | Teams | Spots
+Pitch | Ride  | Requests
 ```
 
 Current availability on `phase-0-foundation`:
 
 - HOOMA -> `/hooma`
 - Teams -> `/teams`
-- Ultras -> coming soon
 - Spots -> `/places`
 - Pitch -> `/pitch`
-- Gamers -> `/gamers`
-- Ride -> coming soon
-- Requests -> coming soon
-- FundMe -> coming soon
+- Ride -> `/rides` honest frontend shell
+- Requests -> `/requests` honest frontend shell
+
+Gamers remains an independent implemented route family at `/gamers`, but it is no longer listed from the Home gateway. ULTRAS remains an independent future domain and is not routed from Home. FundMe is grouped under Requests as `/requests/fundme`; `/fundme` redirects there as a compatibility navigation route only.
 
 This section records current application state. Product-owner changes update both the source and this contract in the same task.
 
 HOOMA creation gateway remains a chooser into separate owning domains, not a generic database `CommunityType`.
+
+The current chooser is:
+
+```text
+HOOMA | TEAM | ULTRAS
+```
+
+ULTRAS is unavailable until its independent domain ships. Gamers remains independent but is no longer part of the HOOMA create chooser.
 
 Core routes include:
 
@@ -345,9 +360,9 @@ Core routes include:
 /pitch
 /places
 /teams
-/ultras
 /gamers
 /requests
+/requests/fundme
 /rides
 /fundme
 /profile
