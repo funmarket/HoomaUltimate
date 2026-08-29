@@ -13,6 +13,18 @@ import type { PitchModerationService } from "../../pitch/application/pitch-moder
 import type { PlaceService } from "../../places/application/place.service.js";
 import type { PlatformAdminService } from "../application/platform-admin.service.js";
 
+type ModerationDecision = {
+  readonly decision: "APPROVE" | "REJECT";
+  readonly note?: string | null;
+};
+
+function parseModerationDecision(body: unknown): ModerationDecision {
+  const input = moderationDecisionSchema.parse(body);
+  return input.note === undefined
+    ? { decision: input.decision }
+    : { decision: input.decision, note: input.note };
+}
+
 export function createPlatformAdminRouter(
   service: PlatformAdminService,
   places: PlaceService,
@@ -92,7 +104,7 @@ export function createPlatformAdminRouter(
         );
       }
       response.json(
-        await places.reviewPlace(userId, placeId, moderationDecisionSchema.parse(request.body)),
+        await places.reviewPlace(userId, placeId, parseModerationDecision(request.body)),
       );
     }),
   );
@@ -110,7 +122,7 @@ export function createPlatformAdminRouter(
         await places.reviewOwnershipClaim(
           getAuth(request).userId,
           String(request.params.claimId),
-          moderationDecisionSchema.parse(request.body),
+          parseModerationDecision(request.body),
         ),
       );
     }),
@@ -130,7 +142,7 @@ export function createPlatformAdminRouter(
           getAuth(request).userId,
           adminPitchReviewTargetSchema.parse(String(request.params.target)),
           String(request.params.reviewId),
-          moderationDecisionSchema.parse(request.body),
+          parseModerationDecision(request.body),
         ),
       );
     }),

@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { MeResponse } from "@hooma/contracts";
-import { createPlatformManagementApi, useHoomaFrontend, type ManagedTeam } from "@hooma/frontend";
+import { createPlatformAdminApi, useHoomaFrontend, type ManagedTeam } from "@hooma/frontend";
 
 type AccountState = {
   readonly me: MeResponse | null;
@@ -15,7 +15,7 @@ const AccountContext = createContext<AccountState | null>(null);
 
 export function AccountProvider({ children }: { readonly children: ReactNode }) {
   const { api, transport } = useHoomaFrontend();
-  const platformManagement = useMemo(() => createPlatformManagementApi(transport), [transport]);
+  const platformAdmin = useMemo(() => createPlatformAdminApi(transport), [transport]);
   const [me, setMe] = useState<MeResponse | null>(null);
   const [managedTeams, setManagedTeams] = useState<ManagedTeam[]>([]);
   const [hasPlatformControlAccess, setHasPlatformControlAccess] = useState(false);
@@ -36,7 +36,7 @@ export function AccountProvider({ children }: { readonly children: ReactNode }) 
       try {
         const [teams, platformAccess] = await Promise.all([
           api.teams.managed(),
-          platformManagement.admin.access(),
+          platformAdmin.access(),
         ]);
         setManagedTeams(teams);
         setHasPlatformControlAccess(
@@ -61,7 +61,7 @@ export function AccountProvider({ children }: { readonly children: ReactNode }) 
 
   useEffect(() => {
     void refresh();
-  }, [api, platformManagement]);
+  }, [api, platformAdmin]);
 
   const value = useMemo<AccountState>(
     () => ({ me, managedTeams, hasPlatformControlAccess, loading, error, refresh }),

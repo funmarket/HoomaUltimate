@@ -18,10 +18,10 @@ test("Pitch detail owns the contextual claim and verified-owner management entry
   const detail = source("packages/frontend/src/pitch/PitchDetailPage.tsx");
   const css = source("packages/frontend/src/pitch/pitch.css");
 
-  assert.match(detail, /api\.places\.claimOwnership\(placeId/);
+  assert.match(detail, /placesApi\.claimOwnership\(placeId/);
   assert.match(detail, />\s*Own this pitch\?\s*</);
-  assert.match(detail, /api\.places\s*\.ownershipStatus\(placeId\)/);
-  assert.doesNotMatch(detail, /api\.places\s*\.manage\(placeId\)/);
+  assert.match(detail, /placesApi\s*\.ownershipStatus\(placeId\)/);
+  assert.doesNotMatch(detail, /placesApi\s*\.manage\(placeId\)/);
   assert.match(detail, /status\.verified/);
   assert.match(detail, /Manage pitch/);
   assert.match(detail, /\/pitch\/manage\?placeId=/);
@@ -34,13 +34,11 @@ test("Pitch management is contextual and does not contain a second ownership sys
   const onboarding = source("packages/frontend/src/pitch/PitchCapabilityOnboarding.tsx");
 
   assert.match(manage, /new URLSearchParams\(window\.location\.search\)\.get\("placeId"\)/);
-  assert.match(manage, /api\.capability\.manage\("PITCH", placeId\)/);
-  assert.doesNotMatch(manage, /api\.places\.get\(placeId\)/);
-  assert.doesNotMatch(manage, /api\.places\.ownershipStatus\(placeId\)/);
-  assert.doesNotMatch(manage, /api\.places\.manage\(placeId\)/);
+  assert.match(manage, /api\.manage\(placeId\)/);
+  assert.doesNotMatch(manage, /createPlacesApi|claimOwnership|ownershipStatus/);
   assert.match(manage, /<PitchCapabilityOnboarding/);
   assert.match(manage, /management=\{management\}/);
   assert.doesNotMatch(onboarding, /claimOwnership|Verify Place ownership|STEP 1|STEP 2/);
   assert.match(onboarding, /management\.verifiedOwnership/);
-  assert.match(onboarding, /api\.capability\.submit\("PITCH", management\.place\.id/);
+  assert.match(onboarding, /api\.submitRevision\(management\.place\.id/);
 });
