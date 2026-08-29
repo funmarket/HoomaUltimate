@@ -32,9 +32,7 @@ function encodeRedis(parts: readonly string[]): string {
     .join("")}`;
 }
 
-async function redisCommand(
-  parts: readonly string[],
-): Promise<string | number | null> {
+async function redisCommand(parts: readonly string[]): Promise<string | number | null> {
   const url = new URL(redisUrl!);
   return new Promise((resolve, reject) => {
     const socket = net.createConnection({
@@ -128,172 +126,130 @@ function postDirect(base: string, cookie: string, username: string, body: string
   });
 }
 
-test(
-  "direct User Whistle derives one protected canonical User pair through the shared engine",
-  async () => {
-    await redisCommand(["FLUSHDB"]);
-    const app = createApp(config, createContainer(config));
-    const server = app.listen(0, "127.0.0.1");
-    await new Promise<void>((resolve) => server.once("listening", resolve));
-    const address = server.address();
-    assert.ok(address && typeof address === "object");
-    const base = `http://127.0.0.1:${address.port}`;
-    const suffix = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    const createdUserIds: string[] = [];
+test("direct User Whistle derives one protected canonical User pair through the shared engine", async () => {
+  await redisCommand(["FLUSHDB"]);
+  const app = createApp(config, createContainer(config));
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise<void>((resolve) => server.once("listening", resolve));
+  const address = server.address();
+  assert.ok(address && typeof address === "object");
+  const base = `http://127.0.0.1:${address.port}`;
+  const suffix = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const createdUserIds: string[] = [];
 
-    try {
-      const anonymousList = await fetch(directUrl(base, "no_user"), {
-        headers: { origin: config.WEB_ORIGIN },
-      });
-      assert.equal(anonymousList.status, 401);
+  try {
+    const anonymousList = await fetch(directUrl(base, "no_user"), {
+      headers: { origin: config.WEB_ORIGIN },
+    });
+    assert.equal(anonymousList.status, 401);
 
-      const anonymousSend = await fetch(directUrl(base, "no_user"), {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          origin: config.WEB_ORIGIN,
-        },
-        body: JSON.stringify({ body: "anonymous" }),
-      });
-      assert.equal(anonymousSend.status, 401);
+    const anonymousSend = await fetch(directUrl(base, "no_user"), {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        origin: config.WEB_ORIGIN,
+      },
+      body: JSON.stringify({ body: "anonymous" }),
+    });
+    assert.equal(anonymousSend.status, 401);
 
-      const sender = await register(base, `user_whistle_sender_${suffix}`);
-      const target = await register(base, `user_whistle_target_${suffix}`);
-      const outsider = await register(base, `user_whistle_outsider_${suffix}`);
-      createdUserIds.push(sender.userId, target.userId, outsider.userId);
+    const sender = await register(base, `user_whistle_sender_${suffix}`);
+    const target = await register(base, `user_whistle_target_${suffix}`);
+    const outsider = await register(base, `user_whistle_outsider_${suffix}`);
+    createdUserIds.push(sender.userId, target.userId, outsider.userId);
 
-      const body = "meet at the pitch?";
-      const sent = await postDirect(
-        base,
-        sender.cookie,
-        target.username.toUpperCase(),
-        body,
-      );
-      assert.equal(sent.status, 201);
-      const sentPayload = (await sent.json()) as {
-        whistle: {
-          id: string;
-          body: string;
-          createdAt: string;
-          expiresAt: string;
-        };
-        remainingToday: number;
-        resetsAt: string;
+    const body = "meet at the pitch?";
+    const sent = await postDirect(base, sender.cookie, target.username.toUpperCase(), body);
+    assert.equal(sent.status, 201);
+    const sentPayload = (await sent.json()) as {
+      whistle: {
+        id: string;
+        body: string;
+        createdAt: string;
+        expiresAt: string;
       };
-      assert.equal(sentPayload.whistle.body, body);
-      assert.equal(sentPayload.remainingToday, 10);
-      assert.equal(
-        sentPayload.whistle.expiresAt,
-        nextUtcMidnight(sentPayload.whistle.createdAt),
-      );
-      assert.equal(sentPayload.resetsAt, sentPayload.whistle.expiresAt);
+      remainingToday: number;
+      resetsAt: string;
+    };
+    assert.equal(sentPayload.whistle.body, body);
+    assert.equal(sentPayload.remainingToday, 10);
+    assert.equal(sentPayload.whistle.expiresAt, nextUtcMidnight(sentPayload.whistle.createdAt));
+    assert.equal(sentPayload.resetsAt, sentPayload.whistle.expiresAt);
 
-      const metadata = await db.whistleMetadata.findUniqueOrThrow({
-        where: { id: sentPayload.whistle.id },
-      });
-      assert.equal(metadata.contextType, "USER_DIRECT");
-      assert.equal(
-        metadata.contextId,
-        [sender.userId, target.userId].sort().join(":"),
-      );
-      assert.equal(Object.hasOwn(metadata, "body"), false);
+    const metadata = await db.whistleMetadata.findUniqueOrThrow({
+      where: { id: sentPayload.whistle.id },
+    });
+    assert.equal(metadata.contextType, "USER_DIRECT");
+    assert.equal(metadata.contextId, [sender.userId, target.userId].sort().join(":"));
+    assert.equal(Object.hasOwn(metadata, "body"), false);
 
-      const redisBody = await redisCommand([
-        "GET",
-        `whistle:body:${sentPayload.whistle.id}`,
-      ]);
-      assert.equal(redisBody, body);
+    const redisBody = await redisCommand(["GET", `whistle:body:${sentPayload.whistle.id}`]);
+    assert.equal(redisBody, body);
 
-      const reciprocal = await fetch(directUrl(base, sender.username), {
-        headers: headers(target.cookie),
-      });
-      assert.equal(reciprocal.status, 200);
-      const reciprocalPayload = (await reciprocal.json()) as {
-        items: Array<{ id: string; body: string }>;
-      };
-      assert.equal(reciprocalPayload.items[0]?.id, sentPayload.whistle.id);
-      assert.equal(reciprocalPayload.items[0]?.body, body);
+    const reciprocal = await fetch(directUrl(base, sender.username), {
+      headers: headers(target.cookie),
+    });
+    assert.equal(reciprocal.status, 200);
+    const reciprocalPayload = (await reciprocal.json()) as {
+      items: Array<{ id: string; body: string }>;
+    };
+    assert.equal(reciprocalPayload.items[0]?.id, sentPayload.whistle.id);
+    assert.equal(reciprocalPayload.items[0]?.body, body);
 
-      const outsiderList = await fetch(directUrl(base, sender.username), {
-        headers: headers(outsider.cookie),
-      });
-      assert.equal(outsiderList.status, 200);
-      const outsiderPayload = (await outsiderList.json()) as {
-        items: Array<{ id: string }>;
-      };
-      assert.equal(
-        outsiderPayload.items.some((item) => item.id === sentPayload.whistle.id),
-        false,
-      );
+    const outsiderList = await fetch(directUrl(base, sender.username), {
+      headers: headers(outsider.cookie),
+    });
+    assert.equal(outsiderList.status, 200);
+    const outsiderPayload = (await outsiderList.json()) as {
+      items: Array<{ id: string }>;
+    };
+    assert.equal(
+      outsiderPayload.items.some((item) => item.id === sentPayload.whistle.id),
+      false,
+    );
 
-      const selfWhistle = await postDirect(
-        base,
-        sender.cookie,
-        sender.username,
-        "self",
-      );
-      assert.equal(selfWhistle.status, 400);
+    const selfWhistle = await postDirect(base, sender.cookie, sender.username, "self");
+    assert.equal(selfWhistle.status, 400);
 
-      const unknownWhistle = await postDirect(
-        base,
-        sender.cookie,
-        `not_a_real_${suffix}`,
-        "unknown",
-      );
-      assert.equal(unknownWhistle.status, 404);
+    const unknownWhistle = await postDirect(base, sender.cookie, `not_a_real_${suffix}`, "unknown");
+    assert.equal(unknownWhistle.status, 404);
 
-      const rawContextAttempt = await fetch(
-        `${base}/api/v1/whistles/contexts/USER_DIRECT/${encodeURIComponent(metadata.contextId)}`,
-        { headers: headers(sender.cookie) },
-      );
-      assert.equal(rawContextAttempt.status, 400);
+    const rawContextAttempt = await fetch(
+      `${base}/api/v1/whistles/contexts/USER_DIRECT/${encodeURIComponent(metadata.contextId)}`,
+      { headers: headers(sender.cookie) },
+    );
+    assert.equal(rawContextAttempt.status, 400);
 
-      const tooLong = await postDirect(
-        base,
-        sender.cookie,
-        target.username,
-        "⚽".repeat(34),
-      );
-      assert.equal(tooLong.status, 400);
+    const tooLong = await postDirect(base, sender.cookie, target.username, "⚽".repeat(34));
+    assert.equal(tooLong.status, 400);
 
-      for (let index = 0; index < 10; index += 1) {
-        const response = await postDirect(
-          base,
-          sender.cookie,
-          target.username,
-          `direct-${index}`,
-        );
-        assert.equal(response.status, 201);
-      }
-      const twelfth = await postDirect(
-        base,
-        sender.cookie,
-        target.username,
-        "quota-denied",
-      );
-      assert.equal(twelfth.status, 429);
-    } finally {
-      if (createdUserIds.length) {
-        await db.whistleMetadata.deleteMany({
-          where: { authorUserId: { in: createdUserIds } },
-        });
-        await db.webSession.deleteMany({
-          where: { userId: { in: createdUserIds } },
-        });
-        await db.webCredential.deleteMany({
-          where: { userId: { in: createdUserIds } },
-        });
-        await db.userPresentation.deleteMany({
-          where: { userId: { in: createdUserIds } },
-        });
-        await db.user.deleteMany({
-          where: { id: { in: createdUserIds } },
-        });
-      }
-      await redisCommand(["FLUSHDB"]);
-      await new Promise<void>((resolve, reject) =>
-        server.close((error) => (error ? reject(error) : resolve())),
-      );
+    for (let index = 0; index < 10; index += 1) {
+      const response = await postDirect(base, sender.cookie, target.username, `direct-${index}`);
+      assert.equal(response.status, 201);
     }
-  },
-);
+    const twelfth = await postDirect(base, sender.cookie, target.username, "quota-denied");
+    assert.equal(twelfth.status, 429);
+  } finally {
+    if (createdUserIds.length) {
+      await db.whistleMetadata.deleteMany({
+        where: { authorUserId: { in: createdUserIds } },
+      });
+      await db.webSession.deleteMany({
+        where: { userId: { in: createdUserIds } },
+      });
+      await db.webCredential.deleteMany({
+        where: { userId: { in: createdUserIds } },
+      });
+      await db.userPresentation.deleteMany({
+        where: { userId: { in: createdUserIds } },
+      });
+      await db.user.deleteMany({
+        where: { id: { in: createdUserIds } },
+      });
+    }
+    await redisCommand(["FLUSHDB"]);
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve())),
+    );
+  }
+});
