@@ -52,8 +52,7 @@ export function createEventPublicRouter(
         typeof request.query.communityId === "string" ? request.query.communityId : undefined;
       const placeId = typeof request.query.placeId === "string" ? request.query.placeId : undefined;
       const cursor = typeof request.query.cursor === "string" ? request.query.cursor : undefined;
-      const from =
-        typeof request.query.from === "string" ? new Date(request.query.from) : undefined;
+      const from = typeof request.query.from === "string" ? new Date(request.query.from) : undefined;
       const auth = await resolveAuthentication(request, identity, config);
       response.json(
         await service.listPublic({
@@ -94,6 +93,34 @@ export function createEventMemberRouter(service: EventService): Router {
       response
         .status(201)
         .json(await service.create(getAuth(request).userId, eventCreateSchema.parse(request.body))),
+    ),
+  );
+  router.get(
+    "/managed/play",
+    asyncHandler(async (request, response) =>
+      response.json(await service.listManagedPlayEvents(getAuth(request).userId)),
+    ),
+  );
+  router.get(
+    "/invitations/incoming",
+    asyncHandler(async (request, response) =>
+      response.json(await service.incomingPlayerInvites(getAuth(request).userId)),
+    ),
+  );
+  router.post(
+    "/invitations/:inviteId/accept",
+    asyncHandler(async (request, response) =>
+      response.json(
+        await service.acceptPlayerInvite(getAuth(request).userId, String(request.params.inviteId)),
+      ),
+    ),
+  );
+  router.post(
+    "/invitations/:inviteId/decline",
+    asyncHandler(async (request, response) =>
+      response.json(
+        await service.declinePlayerInvite(getAuth(request).userId, String(request.params.inviteId)),
+      ),
     ),
   );
   router.get(
