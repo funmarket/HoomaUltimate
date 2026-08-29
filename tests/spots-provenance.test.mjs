@@ -25,7 +25,10 @@ const canonicalPlacePersistence = await readFile(
   "utf8",
 );
 const pitchRepository = await readFile(
-  new URL("../apps/api/src/modules/pitch/infrastructure/prisma-pitch.repository.ts", import.meta.url),
+  new URL(
+    "../apps/api/src/modules/pitch/infrastructure/prisma-pitch.repository.ts",
+    import.meta.url,
+  ),
   "utf8",
 );
 const eventRepository = await readFile(
@@ -35,7 +38,10 @@ const eventRepository = await readFile(
   ),
   "utf8",
 );
-const contracts = await readFile(new URL("../packages/contracts/src/places.ts", import.meta.url), "utf8");
+const contracts = await readFile(
+  new URL("../packages/contracts/src/places.ts", import.meta.url),
+  "utf8",
+);
 const eventContracts = await readFile(
   new URL("../packages/contracts/src/events.ts", import.meta.url),
   "utf8",
@@ -116,7 +122,9 @@ test("Owner submission persists provenance and creates its pending ownership cla
   assert.ok(suggest.includes("ownershipClaims"));
   assert.ok(suggest.includes("OWNER_SUBMISSION_CLAIM_EVIDENCE"));
   assert.ok(placeRepository.includes("return this.db.$transaction"));
-  assert.ok(placeRepository.includes("suggestCanonicalPlace(tx, userId, input, input.submissionOrigin)"));
+  assert.ok(
+    placeRepository.includes("suggestCanonicalPlace(tx, userId, input, input.submissionOrigin)"),
+  );
 
   const reviewPlace = section(placeRepository, "async reviewPlace(", "async reviewOwnershipClaim(");
   assert.ok(!reviewPlace.includes("placeOwnershipClaim.update"));
@@ -139,8 +147,12 @@ test("Canonical duplicate identity uses strong source fields and transactional a
       "regexp_replace(btrim(\"name\"), '[[:space:]]+', ' ', 'g')",
     ),
   );
-  assert.ok(canonicalPlacePersistence.includes("regexp_replace(\"phone\", '[^0-9]', '', 'g')"));
-  assert.ok(canonicalPlacePersistence.includes("input.latitude != null && input.longitude != null"));
+  assert.ok(
+    canonicalPlacePersistence.includes("regexp_replace(\"phone\", '[^0-9]', '', 'g')"),
+  );
+  assert.ok(
+    canonicalPlacePersistence.includes("input.latitude != null && input.longitude != null"),
+  );
   assert.ok(!canonicalPlacePersistence.includes('matchedBy: "COORDINATES"'));
 
   assert.ok(provenanceMigration.includes("Place_normalized_name_address_idx"));

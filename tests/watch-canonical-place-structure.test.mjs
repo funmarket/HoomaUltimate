@@ -234,17 +234,24 @@ test("archived Places stay off public Place and Watch discovery", () => {
 });
 
 test("PlaceImage is the only runtime Place image authority", () => {
-  const canonicalPlace = source("apps/api/src/modules/places/boundary/canonical-place.persistence.ts");
+  const canonicalPlace = source(
+    "apps/api/src/modules/places/boundary/canonical-place.persistence.ts",
+  );
   const placeRepository = source(
     "apps/api/src/modules/places/infrastructure/prisma-place.repository.ts",
   );
-  const pitchRepository = source("apps/api/src/modules/pitch/infrastructure/prisma-pitch.repository.ts");
+  const pitchRepository = source(
+    "apps/api/src/modules/pitch/infrastructure/prisma-pitch.repository.ts",
+  );
 
   assert.match(canonicalPlace, /type CanonicalPlaceImageRow/);
   assert.match(canonicalPlace, /function canonicalPlaceSummary/);
   assert.match(canonicalPlace, /function groupCanonicalPlaceImages/);
   assert.match(canonicalPlace, /imageUrl: publicImages\[0\]\?\.imageUrl \?\? null/);
-  assert.doesNotMatch(canonicalPlace, /publicImages\[0\]\?\.imageUrl \?\? place\.imageUrl/);
+  assert.doesNotMatch(
+    canonicalPlace,
+    /publicImages\[0\]\?\.imageUrl \?\? place\.imageUrl/,
+  );
   for (const repository of [placeRepository, pitchRepository]) {
     assert.match(repository, /this\.db\.placeImage\.findMany/);
     assert.match(repository, /canonicalPlaceSummary/);
@@ -257,7 +264,9 @@ test("PlaceImage is the only runtime Place image authority", () => {
 test("Pitch rental pricing is canonical from contract through Prisma and repository", () => {
   const contracts = source("packages/contracts/src/pitch.ts");
   const schema = source("packages/database/prisma/schema.prisma");
-  const repository = source("apps/api/src/modules/pitch/infrastructure/prisma-pitch.repository.ts");
+  const repository = source(
+    "apps/api/src/modules/pitch/infrastructure/prisma-pitch.repository.ts",
+  );
   const migration = source(
     "packages/database/prisma/migrations/20260827112000_pitch_hourly_rental_pricing/migration.sql",
   );
