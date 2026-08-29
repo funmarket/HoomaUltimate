@@ -120,7 +120,7 @@ export function createContainer(config: ApiConfig) {
     platformAdminService,
   );
   const playRepository = new PrismaPlayPlayerListingRepository(database);
-  const playService = new PlayService(playRepository);
+  const playService = new PlayService(playRepository, teamService, eventService);
   const whistleRepository = new PrismaWhistleRepository(database);
   const whistleStore = new RedisWhistleStore(redis);
   const whistleService = new WhistleService(
