@@ -29,6 +29,8 @@ test("greenfield workspace owns the locked app/package topology", async () => {
 test("foundation documentation rejects donor-repository inheritance", async () => {
   const structure = await readFile(path.join(root, "structure.md"), "utf8");
   assert.match(structure, /read-only donors/i);
-  assert.match(structure, /never become runtime dependencies/i);
-  assert.match(structure, /schema authority/i);
+  assert.match(
+    structure,
+    /never become runtime, schema, migration, authentication, or architecture authority/i,
+  );
 });
