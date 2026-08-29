@@ -96,12 +96,6 @@ export function createEventMemberRouter(service: EventService): Router {
     ),
   );
   router.get(
-    "/managed/play",
-    asyncHandler(async (request, response) =>
-      response.json(await service.listManagedPlayEvents(getAuth(request).userId)),
-    ),
-  );
-  router.get(
     "/invitations/incoming",
     asyncHandler(async (request, response) =>
       response.json(await service.incomingPlayerInvites(getAuth(request).userId)),
