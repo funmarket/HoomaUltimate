@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   createProfileApi,
   useHoomaFrontend,
@@ -28,8 +28,9 @@ export function UserWhistlePanel({
   readonly username: string;
   readonly recipientName: string;
 }) {
-  const { transport, protectedError } = useHoomaFrontend();
+  const { api, transport, protectedError } = useHoomaFrontend();
   const profileApi = useMemo(() => createProfileApi(transport), [transport]);
+  const [isSelf, setIsSelf] = useState<boolean | null>(null);
   const [open, setOpen] = useState(false);
   const [feed, setFeed] = useState<WhistleList>({ items: [], remainingToday: 11, resetsAt: "" });
   const [body, setBody] = useState("");
@@ -37,6 +38,21 @@ export function UserWhistlePanel({
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const count = graphemeCount(body);
+
+  useEffect(() => {
+    let active = true;
+    void api.identity
+      .meOptional()
+      .then((me) => {
+        if (active) setIsSelf(me?.presentation.username === username);
+      })
+      .catch(() => {
+        if (active) setIsSelf(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [api, username]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -70,6 +86,8 @@ export function UserWhistlePanel({
       setSending(false);
     }
   }
+
+  if (isSelf !== false) return null;
 
   if (!open) {
     return (
