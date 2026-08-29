@@ -3,6 +3,7 @@ import type {
   ProfileResponse,
   ProfileUpdateInput,
 } from "@hooma/contracts/profile";
+import type { WhistleList, WhistleListItem } from "./api";
 import { request, type HoomaTransport } from "./http";
 
 export type CanonicalPublicProfile = {
@@ -38,6 +39,17 @@ export function createProfileApi(transport: HoomaTransport) {
       request<CanonicalPublicProfile>(
         transport,
         `/api/public/v1/profiles/${encodeURIComponent(username)}`,
+      ),
+    directWhistles: (username: string) =>
+      request<WhistleList>(
+        transport,
+        `/api/v1/whistles/users/${encodeURIComponent(username)}`,
+      ),
+    sendDirectWhistle: (username: string, body: string) =>
+      request<{ whistle: WhistleListItem; remainingToday: number; resetsAt: string }>(
+        transport,
+        `/api/v1/whistles/users/${encodeURIComponent(username)}`,
+        { method: "POST", body: JSON.stringify({ body }) },
       ),
   };
 }
