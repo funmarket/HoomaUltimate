@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ProfileIdentity } from "@hooma/contracts/profile";
 import { createProfileApi, useHoomaFrontend, type CanonicalPublicProfile } from "@hooma/frontend";
+import { UserWhistlePanel } from "./UserWhistlePanel";
 
 export function PublicProfilePage({ username }: { username: string }) {
   const { transport } = useHoomaFrontend();
@@ -114,10 +115,10 @@ export function PublicProfilePage({ username }: { username: string }) {
       <section className="panel public-profile-contact">
         <p className="eyebrow">CONTACT</p>
         <h2>Whistle</h2>
-        <p className="muted">
-          Direct profile Whistle is not enabled yet. HOOMA will use the shared Whistle engine when
-          its direct-user authorization contract is implemented.
-        </p>
+        <UserWhistlePanel
+          username={presentation.username}
+          recipientName={presentation.displayName}
+        />
       </section>
     </section>
   );

@@ -708,7 +708,7 @@ Whistle is one shared transient signal engine. PostgreSQL owns metadata only:
 WhistleMetadata
   id
   authorUserId
-  contextType        COMMUNITY | EVENT | TEAM | RIDE | ULTRAS | GAMER_SQUAD
+  contextType        COMMUNITY | EVENT | TEAM | RIDE | ULTRAS | GAMER_SQUAD | GAMER_DIRECT | USER_DIRECT
   contextId
   createdAt
   expiresAt
@@ -729,9 +729,16 @@ Current rules:
 - Redis body TTL is the remaining lifetime until the next UTC midnight;
 - expired PostgreSQL metadata is deleted by the Whistle cleanup path and is not permanent Whistle history;
 - product visibility and quota reset take effect at UTC midnight even when physical PostgreSQL cleanup is triggered by a later list/send operation;
-- active Community membership is required for the current `COMMUNITY` context;
-- current enabled context is `COMMUNITY` only;
-- `EVENT`, `TEAM`, `RIDE`, `ULTRAS`, and `GAMER_SQUAD` remain disabled until their context-specific authorization slices are deliberately implemented;
+- `COMMUNITY` requires active Community membership;
+- `EVENT` uses the existing Event member-content authorization boundary;
+- `GAMER_DIRECT` uses its dedicated Gamer-specific server-derived direct-pair authorization and is never accepted through the generic raw-context route;
+- `USER_DIRECT` is available only between two distinct authenticated canonical HOOMA Users through dedicated username-targeted routes;
+- for `USER_DIRECT`, Identity owns username normalization and canonical User resolution, while Whistle receives only the resolved User identity through a narrow reader port;
+- the `USER_DIRECT` context identity is the deterministic unordered pair of the two canonical User IDs, so reciprocal callers resolve to the same pair and username changes do not redefine that pair;
+- clients never supply `senderUserId`, `targetUserId`, raw `contextId`, `pairKey`, or `contextType` for `USER_DIRECT` construction;
+- `USER_DIRECT` is not accepted through `/api/v1/whistles/contexts/:contextType/:contextId`;
+- no pair table, DirectMessage, Conversation, inbox, or second Whistle-body store exists for User Direct;
+- `TEAM`, `RIDE`, `ULTRAS`, and `GAMER_SQUAD` remain disabled until their context-specific authorization slices are deliberately implemented;
 - Whistle body content must never be copied into PostgreSQL, AuditLog metadata, OutboxEvent payloads, durable notifications, analytics, URLs, query strings, or server logs;
 - Redis is disposable transient infrastructure; PostgreSQL metadata remains the durable source for quota/context indexes and expiry projections.
 
@@ -764,7 +771,7 @@ Rules:
 - public Team DTO never includes unpublished lineup;
 - public Game DTO never includes leader coordination messages;
 - member management DTO may expose only data the authenticated principal is authorized to manage;
-- Whistle Community reads and sends are authenticated member-private operations;
+- Whistle Community, Event, Gamer Direct, and User Direct reads/sends are authenticated and server-authorized operations;
 - UI hiding is not authorization.
 
 ---

@@ -162,6 +162,7 @@ enum WhistleContextType {
   ULTRAS
   GAMER_SQUAD
   GAMER_DIRECT
+  USER_DIRECT
 }
 
 enum GamerGameStatus {

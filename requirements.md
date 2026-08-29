@@ -646,7 +646,7 @@ Legacy Temporary Event Chat may remain in source while it is deliberately remove
 - it must not be used as Whistle storage;
 - new Play communication work should extend the shared Whistle engine through an explicit Event authorization slice rather than deepen conventional chat architecture.
 
-Event Whistle context remains disabled until its Event-specific authorization/lifecycle slice is deliberately implemented and verified.
+Event Whistle Board is enabled only through the existing Event member-content authorization boundary. Public visitors and callers without authorized Event participation cannot use the Event Whistle context.
 
 ---
 
@@ -822,6 +822,7 @@ Approved product direction includes:
 - a GamerSquad belongs to one game, supports optional logo/banner URLs, has a privacy-safe public page and a member-private HQ;
 - Squad membership references GamerProfile and uses scoped roles such as `LEADER | MEMBER`, never Gamer-scoped `ADMIN`;
 - the shared Whistle engine may enable `GAMER_SQUAD` only after explicit active Squad-membership authorization exists;
+- direct Gamer Whistle uses the shared Whistle engine only through the dedicated server-derived `GAMER_DIRECT` pair authorization contract; clients do not supply raw direct context identifiers;
 - there is no global Gamers Whistle feed and no parallel Gamer chat/message system;
 - Profile may later project real Gamer identities/Squad memberships from the Gamers domain rather than storing shadow copies in Identity.
 
@@ -982,27 +983,37 @@ Requirements:
 
 ## 21.5 Context authorization
 
-A Whistle is accessible only through an approved owning-domain relationship.
+A Whistle is accessible only through its approved server-side authorization contract.
 
 Context identifiers may include:
 
 ```text
-COMMUNITY | EVENT | TEAM | RIDE | ULTRAS | GAMER_SQUAD
+COMMUNITY | EVENT | TEAM | RIDE | ULTRAS | GAMER_SQUAD | GAMER_DIRECT | USER_DIRECT
 ```
 
 The existence of an enum/context name does **not** mean the context is enabled.
 
-Each context becomes usable only when its owning domain provides explicit authorization/lifecycle rules.
+Each context becomes usable only when its owning domain or direct-pair contract provides explicit authorization/lifecycle rules.
 
-Current enabled context:
+Current enabled contexts are:
 
-```text
-COMMUNITY
-```
+- `COMMUNITY` for active HOOMA Community members;
+- `EVENT` through the existing Event member-content authorization boundary;
+- `GAMER_DIRECT` through the dedicated Gamer-specific server-derived pair contract;
+- `USER_DIRECT` between two distinct authenticated canonical HOOMA Users through dedicated `/api/v1/whistles/users/:username` routes.
 
-for active HOOMA Community members.
+For `USER_DIRECT`:
 
-Event, Team, Ride, ULTRAS and Gamer Squad Whistle contexts remain closed until their own authorization slices are deliberately implemented.
+- the caller is always the authenticated canonical User from the request auth context;
+- the target username is normalized and resolved server-side to the target canonical User;
+- self-Whistle is forbidden;
+- the durable pair identity is the deterministic unordered pair of the two canonical User IDs;
+- the client never supplies `senderUserId`, `targetUserId`, `contextId`, `pairKey`, or `contextType` for pair construction;
+- `USER_DIRECT` is not accepted by the generic `/contexts/:contextType/:contextId` route;
+- changing a public username does not change an already-derived canonical User pair identity;
+- no DirectMessage, Conversation, inbox, pair, or parallel Whistle-body table is created for this capability.
+
+Team, Ride, ULTRAS and Gamer Squad Whistle contexts remain closed until their own authorization slices are deliberately implemented.
 
 ## 21.6 Notifications
 
@@ -1023,7 +1034,10 @@ Real PostgreSQL + Redis integration coverage must prove, as applicable:
 - previous-day Whistles are unavailable after reset;
 - expired metadata cleanup;
 - context authorization;
-- outsider denial;
+- outsider denial or direct-pair isolation as applicable;
+- direct contexts cannot be forged through the generic raw-context route;
+- reciprocal direct participants resolve to the same server-derived pair;
+- self direct-Whistle is denied;
 - complex Unicode 33/34-grapheme boundaries;
 - body absent from PostgreSQL;
 - body absent from durable notification/outbox data.

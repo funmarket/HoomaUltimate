@@ -4,6 +4,7 @@ import { S3ObjectStorage } from "@hooma/storage";
 import { RedisClient } from "../infrastructure/redis/redis-client.js";
 import { IdentityService } from "../modules/identity/application/identity.service.js";
 import { PrismaIdentityRepository } from "../modules/identity/infrastructure/prisma-identity.repository.js";
+import { PrismaCanonicalUserReader } from "../modules/identity/infrastructure/prisma-canonical-user.reader.js";
 import { PrismaPlatformAdminRepository } from "../modules/platform-admin/infrastructure/prisma-platform-admin.repository.js";
 import { PlatformAdminService } from "../modules/platform-admin/application/platform-admin.service.js";
 import { PlaceService } from "../modules/places/application/place.service.js";
@@ -68,6 +69,7 @@ export function createContainer(config: ApiConfig) {
   const platformAdminService = new PlatformAdminService(platformAdminRepository);
   const identityRepository = new PrismaIdentityRepository(database);
   const identityService = new IdentityService(identityRepository, config, platformAdminService);
+  const canonicalUserReader = new PrismaCanonicalUserReader(database);
 
   const placeRepository = new PrismaPlaceRepository(database);
   const placeService = new PlaceService(placeRepository, platformAdminService);
@@ -79,10 +81,7 @@ export function createContainer(config: ApiConfig) {
     placeRepository,
     platformAdminService,
   );
-  const pitchModerationService = new PitchModerationService(
-    pitchRepository,
-    platformAdminService,
-  );
+  const pitchModerationService = new PitchModerationService(pitchRepository, platformAdminService);
 
   const communityRepository = new PrismaCommunityRepository(database);
   const communityService = new CommunityService(communityRepository, platformAdminService);
@@ -130,6 +129,7 @@ export function createContainer(config: ApiConfig) {
     communityService,
     eventService,
     gamerService,
+    canonicalUserReader,
   );
   const discoveryRepository = new PrismaDiscoveryRepository(database);
   const discoveryService = new DiscoveryService(discoveryRepository);

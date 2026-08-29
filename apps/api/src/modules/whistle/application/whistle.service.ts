@@ -3,6 +3,7 @@ import { AppError } from "../../../http/errors/app-error.js";
 import type { CommunityService } from "../../communities/application/community.service.js";
 import type { EventService } from "../../events/application/event.service.js";
 import type { GamerService } from "../../gamers/application/gamer.service.js";
+import type { CanonicalUserReader } from "../../identity/application/canonical-user.reader.js";
 import type {
   WhistleContextType,
   WhistleMetadataRecord,
@@ -41,6 +42,7 @@ export class WhistleService {
     private readonly communities: CommunityService,
     private readonly events: EventService,
     private readonly gamers: GamerService,
+    private readonly users: CanonicalUserReader,
   ) {}
 
   private async authorizeContext(
@@ -90,6 +92,27 @@ export class WhistleService {
   async createDirectGamer(userId: string, otherProfileId: string, rawBody: string) {
     const contextId = await this.gamers.resolveDirectWhistleContext(userId, otherProfileId);
     return this.createAuthorized(userId, "GAMER_DIRECT", contextId, rawBody);
+  }
+
+  async listDirectUser(userId: string, targetUsername: string) {
+    const contextId = await this.resolveDirectUserContext(userId, targetUsername);
+    return this.listAuthorized(userId, "USER_DIRECT", contextId);
+  }
+
+  async createDirectUser(userId: string, targetUsername: string, rawBody: string) {
+    const contextId = await this.resolveDirectUserContext(userId, targetUsername);
+    return this.createAuthorized(userId, "USER_DIRECT", contextId, rawBody);
+  }
+
+  private async resolveDirectUserContext(userId: string, targetUsername: string): Promise<string> {
+    const targetUserId = await this.users.findUserIdByUsername(targetUsername);
+    if (!targetUserId) {
+      throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    }
+    if (targetUserId === userId) {
+      throw new AppError(400, "USER_WHISTLE_SELF_FORBIDDEN", "You cannot Whistle yourself");
+    }
+    return [userId, targetUserId].sort().join(":");
   }
 
   private async listAuthorized(
