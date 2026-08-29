@@ -1,0 +1,42 @@
+name: PR166 prettier diff
+
+on:
+  push:
+    branches: [tmp/pr166-prettier-diff]
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp/pr166-prettier-diff
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - name: Print exact Prettier output
+        run: |
+          files=(
+            apps/api/src/modules/events/application/event.service.ts
+            apps/api/src/modules/events/http/event.routes.ts
+            apps/api/src/modules/play/application/play.repository.ts
+            packages/frontend/src/events/PlayPage.tsx
+            tests/event-player-invites.integration.test.ts
+            tests/play-player-card-presentation.test.mjs
+            tests/play-routes.test.mjs
+          )
+          npm exec -- prettier --write "${files[@]}"
+          git diff --check
+          for file in "${files[@]}"; do
+            echo "===== BEGIN $file ====="
+            cat "$file"
+            echo "===== END $file ====="
+          done
