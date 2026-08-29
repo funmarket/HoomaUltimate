@@ -12,6 +12,29 @@ export function createWhistleRouter(service: WhistleService): Router {
   const router = Router();
 
   router.get(
+    "/users/:username",
+    asyncHandler(async (req, res) => {
+      res.json(await service.listDirectUser(getAuth(req).userId, String(req.params.username)));
+    }),
+  );
+
+  router.post(
+    "/users/:username",
+    asyncHandler(async (req, res) => {
+      const input = createSchema.parse(req.body);
+      res
+        .status(201)
+        .json(
+          await service.createDirectUser(
+            getAuth(req).userId,
+            String(req.params.username),
+            input.body,
+          ),
+        );
+    }),
+  );
+
+  router.get(
     "/gamers/:profileId",
     asyncHandler(async (req, res) => {
       res.json(await service.listDirectGamer(getAuth(req).userId, String(req.params.profileId)));
