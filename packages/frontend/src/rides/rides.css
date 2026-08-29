@@ -1,0 +1,22 @@
+.rides-page {
+  display: grid;
+  gap: 18px;
+  padding-bottom: 32px;
+}
+
+.rides-page__header,
+.rides-empty {
+  display: grid;
+  gap: 10px;
+}
+
+.rides-page__header h1,
+.rides-page__header p,
+.rides-empty h2,
+.rides-empty p {
+  margin: 0;
+}
+
+.rides-page__header h1 {
+  color: var(--app-text-strong);
+}

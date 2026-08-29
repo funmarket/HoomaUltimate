@@ -12,7 +12,14 @@ test("Web routing is owned by the shared HoomaRouter instead of pathname switche
   assert.doesNotMatch(main, /path\.match/);
   assert.match(main, /<HoomaRouter \/>/);
   assert.match(router, /BrowserRouter/);
+  assert.match(router, /Navigate/);
   assert.match(router, /lazy\(/);
+  assert.match(router, /path="\/requests"/);
+  assert.match(router, /path="\/requests\/fundme"/);
+  assert.match(router, /path="\/fundme" element=\{<Navigate to="\/requests\/fundme" replace \/>}/);
+  assert.match(router, /path="\/rides"/);
+  assert.match(router, /path="\/gamers"/);
+  assert.match(router, /path="\/gamers\/games\/:gameSlug"/);
   assert.match(router, /path="\/events\/:eventId\/chat"/);
   assert.match(router, /path="\/teams\/:teamId\/lineup"/);
   assert.match(router, /path="\/teams\/:teamId"/);

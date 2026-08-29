@@ -1,5 +1,5 @@
 import { lazy, Suspense, useMemo } from "react";
-import { BrowserRouter, Route, Routes, useParams } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 import {
   AddPlacePage,
   CheckInPage,
@@ -24,6 +24,8 @@ import {
   PlaceEditPage,
   PlacesPage,
   PlayPage,
+  RequestsPage,
+  RidesPage,
   TeamDetailPage,
   TeamEditPage,
   TeamLineupPage,
@@ -192,6 +194,10 @@ function HoomaRoutes() {
               <Route path="/pitch" element={<PitchPage />} />
               <Route path="/pitch/manage" element={<PitchManagePage />} />
               <Route path="/pitch/:placeId" element={<PitchDetailRoute />} />
+              <Route path="/requests" element={<RequestsPage tab="requests" />} />
+              <Route path="/requests/fundme" element={<RequestsPage tab="fundme" />} />
+              <Route path="/fundme" element={<Navigate to="/requests/fundme" replace />} />
+              <Route path="/rides" element={<RidesPage />} />
               <Route path="/places" element={<PlacesPage />} />
               <Route path="/places/new" element={<AddPlacePage />} />
               <Route path="/places/:placeId/edit" element={<PlaceEditRoute />} />
