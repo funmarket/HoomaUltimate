@@ -29,6 +29,14 @@ test("homepage gateway artwork does not compete with the critical hero image", (
   assert.match(homeHero, /fetchPriority="high"/);
 });
 
+test("Match Day hero opens the canonical Play route", () => {
+  assert.match(homeHero, /<a className="home-hero" href="\/play"/);
+  assert.match(homeHero, /aria-label="Match Day — open Play"/);
+  assert.match(homeHero, /\.home-hero:focus-visible/);
+  assert.doesNotMatch(homeHero, /href="\/events\/new"/);
+  assert.doesNotMatch(homeHero, /hooma-web-production\.up\.railway\.app/);
+});
+
 test("homepage gateway contract is a phone-first three by two grid", () => {
   assert.match(gatewayGrid, /grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
   assert.doesNotMatch(gatewayGrid, /repeat\(4, minmax\(0, 1fr\)\)/);
