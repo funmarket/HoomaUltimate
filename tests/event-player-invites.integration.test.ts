@@ -228,17 +228,16 @@ test("Play game invitations stay Events-owned and accept through canonical RSVP 
     );
 
     const completeEvent = await createEvent(`Completed Match ${suffix}`, 5, true);
-    const pendingCompleteResponse = await sendInvite(
-      founder,
-      completeListing.id,
-      completeEvent.id,
-    );
+    const pendingCompleteResponse = await sendInvite(founder, completeListing.id, completeEvent.id);
     assert.equal(pendingCompleteResponse.status, 201);
     const pendingComplete = (await pendingCompleteResponse.json()) as { id: string };
-    const completeEventResponse = await fetch(`${base}/api/v1/events/${completeEvent.id}/complete`, {
-      method: "POST",
-      headers: headers(founder.cookie),
-    });
+    const completeEventResponse = await fetch(
+      `${base}/api/v1/events/${completeEvent.id}/complete`,
+      {
+        method: "POST",
+        headers: headers(founder.cookie),
+      },
+    );
     assert.equal(completeEventResponse.status, 200);
     assert.equal(
       (await db.eventPlayerInvite.findUniqueOrThrow({ where: { id: pendingComplete.id } })).status,
