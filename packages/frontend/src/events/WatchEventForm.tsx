@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import type { WatchEventDetailsInput, WatchEventKind } from "@hooma/contracts";
-import type { PublicPlaceSummary } from "@hooma/contracts/platform-management";
+import type { PublicPlaceSummary } from "@hooma/contracts/places";
 import type { PublicEvent } from "./api";
 
 export type WatchEventFormValue = {
@@ -62,7 +62,14 @@ export function WatchEventForm({
         : {
             kind: "CULTURAL",
             culturalCategory: String(data.get("culturalCategory")) as
-              "MUSIC" | "CONCERT" | "COMEDY" | "ART" | "SCREENING" | "FOOD" | "COMMUNITY" | "OTHER",
+              | "MUSIC"
+              | "CONCERT"
+              | "COMEDY"
+              | "ART"
+              | "SCREENING"
+              | "FOOD"
+              | "COMMUNITY"
+              | "OTHER",
             imageUrl: optionalText("culturalImageUrl"),
           };
     const title =
