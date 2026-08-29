@@ -22,6 +22,15 @@ export interface EventAccessRecord {
 }
 
 export type EventRsvpState = "CONFIRMED" | "WAITLISTED" | "CANCELLED" | "ATTENDED" | "NO_SHOW";
+export type EventPlayerInviteState = "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED";
+
+export interface EventPlayerInviteRecord {
+  readonly id: string;
+  readonly eventId: string;
+  readonly targetUserId: string;
+  readonly invitedByUserId: string;
+  readonly status: EventPlayerInviteState;
+}
 
 export interface FormationRosterPlayer {
   readonly userId: string;
@@ -51,6 +60,23 @@ export interface EventRepository {
     eventId: string,
     userId: string,
   ): Promise<{ cancelled: boolean; promotedUserId: string | null }>;
+  listManagedPlayEvents(userId: string): Promise<PublicEvent[]>;
+  upsertPlayerInvite(
+    eventId: string,
+    targetUserId: string,
+    invitedByUserId: string,
+  ): Promise<unknown>;
+  listIncomingPlayerInvites(targetUserId: string): Promise<unknown[]>;
+  listPendingPlayerInvitesForManager(userId: string): Promise<EventPlayerInviteRecord[]>;
+  getPlayerInviteForTarget(
+    inviteId: string,
+    targetUserId: string,
+  ): Promise<EventPlayerInviteRecord | null>;
+  acceptPlayerInvite(
+    inviteId: string,
+    targetUserId: string,
+  ): Promise<{ invite: unknown; rsvp: { status: "CONFIRMED" | "WAITLISTED" } } | null>;
+  declinePlayerInvite(inviteId: string, targetUserId: string): Promise<unknown | null>;
   createFormation(userId: string, eventId: string, input: EventFormationInput): Promise<unknown>;
   canViewMemberContent(eventId: string, userId: string): Promise<boolean>;
   listFormations(eventId: string): Promise<unknown>;
