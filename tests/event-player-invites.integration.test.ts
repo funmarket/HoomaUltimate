@@ -59,6 +59,7 @@ test("Play game invitations stay Events-owned and accept through canonical RSVP 
     const declinedTarget = await register(base, `invite_decline_${suffix}`);
     const fullTarget = await register(base, `invite_full_${suffix}`);
     const cancelTarget = await register(base, `invite_cancel_${suffix}`);
+    const completeTarget = await register(base, `invite_complete_${suffix}`);
     const occupant = await register(base, `invite_occupant_${suffix}`);
     const outsider = await register(base, `invite_outsider_${suffix}`);
 
@@ -114,6 +115,7 @@ test("Play game invitations stay Events-owned and accept through canonical RSVP 
     const declineListing = await publishGameListing(declinedTarget);
     const fullListing = await publishGameListing(fullTarget);
     const cancelListing = await publishGameListing(cancelTarget);
+    const completeListing = await publishGameListing(completeTarget);
 
     const outsiderInvite = await sendInvite(outsider, targetListing.id, event.id);
     assert.equal(outsiderInvite.status, 403);
@@ -222,6 +224,24 @@ test("Play game invitations stay Events-owned and accept through canonical RSVP 
     assert.equal(cancelEventResponse.status, 200);
     assert.equal(
       (await db.eventPlayerInvite.findUniqueOrThrow({ where: { id: pendingCancel.id } })).status,
+      "CANCELLED",
+    );
+
+    const completeEvent = await createEvent(`Completed Match ${suffix}`, 5, true);
+    const pendingCompleteResponse = await sendInvite(
+      founder,
+      completeListing.id,
+      completeEvent.id,
+    );
+    assert.equal(pendingCompleteResponse.status, 201);
+    const pendingComplete = (await pendingCompleteResponse.json()) as { id: string };
+    const completeEventResponse = await fetch(`${base}/api/v1/events/${completeEvent.id}/complete`, {
+      method: "POST",
+      headers: headers(founder.cookie),
+    });
+    assert.equal(completeEventResponse.status, 200);
+    assert.equal(
+      (await db.eventPlayerInvite.findUniqueOrThrow({ where: { id: pendingComplete.id } })).status,
       "CANCELLED",
     );
 
