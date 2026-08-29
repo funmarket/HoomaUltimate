@@ -61,12 +61,12 @@ export class PrismaPlayPlayerListingRepository implements PlayPlayerListingRepos
   }
 
   resolveTarget(listingId: string, lookingFor: PlayLookingFor) {
-    return this.db.playPlayerListing.findFirst({
-      where: { id: listingId, lookingFor },
-      select: { id: true, userId: true },
-    }).then((listing) =>
-      listing ? { listingId: listing.id, userId: listing.userId } : null,
-    );
+    return this.db.playPlayerListing
+      .findFirst({
+        where: { id: listingId, lookingFor },
+        select: { id: true, userId: true },
+      })
+      .then((listing) => (listing ? { listingId: listing.id, userId: listing.userId } : null));
   }
 
   async listByUserIds(userIds: string[], lookingFor: PlayLookingFor) {
@@ -75,6 +75,9 @@ export class PrismaPlayPlayerListingRepository implements PlayPlayerListingRepos
       where: { userId: { in: userIds }, lookingFor },
       select: { id: true, userId: true },
     });
-    return listings.map((listing) => ({ listingId: listing.id, userId: listing.userId }));
+    return listings.map((listing) => ({
+      listingId: listing.id,
+      userId: listing.userId,
+    }));
   }
 }
