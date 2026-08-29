@@ -38,8 +38,8 @@ test("homepage gateway contract is a phone-first three by two grid", () => {
   const expectedOrder = [
     'id: "hooma"',
     'id: "teams"',
-    'id: "spots"',
     'id: "pitch"',
+    'id: "spots"',
     'id: "ride"',
     'id: "requests"',
   ];
@@ -50,8 +50,8 @@ test("homepage gateway contract is a phone-first three by two grid", () => {
     cursor = next;
   }
 
-  assert.match(gateways, /label: "Spots"[\s\S]*?href: "\/places"/);
   assert.match(gateways, /label: "Pitch"[\s\S]*?href: "\/pitch"/);
+  assert.match(gateways, /label: "Places"[\s\S]*?href: "\/places"/);
   assert.match(gateways, /label: "Ride"[\s\S]*?href: "\/rides"/);
   assert.match(gateways, /label: "Requests"[\s\S]*?href: "\/requests"/);
   assert.match(gateways, /artwork: "\/home-gateways\/pitch\.webp"/);

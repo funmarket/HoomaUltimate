@@ -15,22 +15,22 @@ test("locked bottom navigation and six-card Home gateway cannot drift", async ()
   );
   assert.deepEqual(
     [...gatewaySource.matchAll(/label: "([^"]+)"/g)].map((match) => match[1]),
-    ["HOOMA", "Teams", "Spots", "Pitch", "Ride", "Requests"],
+    ["HOOMA", "Teams", "Pitch", "Places", "Ride", "Requests"],
   );
   assert.deepEqual(
     [...gatewaySource.matchAll(/subtitle: "([^"]+)"/g)].map((match) => match[1]),
     [
       "Community",
       "Manage squads",
-      "Cafés & lounges",
       "Find a pitch",
+      "Cafés & lounges",
       "To the match",
       "Gear and support",
     ],
   );
   assert.deepEqual(
     [...gatewaySource.matchAll(/href: ("[^"]+"|null)/g)].map((match) => match[1]),
-    ['"/hooma"', '"/teams"', '"/places"', '"/pitch"', '"/rides"', '"/requests"'],
+    ['"/hooma"', '"/teams"', '"/pitch"', '"/places"', '"/rides"', '"/requests"'],
   );
   assert.doesNotMatch(gatewaySource, /label: "Gamers"/);
   assert.doesNotMatch(gatewaySource, /label: "Ultras"/);

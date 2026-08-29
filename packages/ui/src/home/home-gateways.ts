@@ -29,19 +29,19 @@ export const HOME_GATEWAYS: readonly HomeGatewayItem[] = [
     availability: "available",
   },
   {
-    id: "spots",
-    label: "Spots",
-    subtitle: "Cafés & lounges",
-    href: "/places",
-    artwork: "/home-gateways/places.png",
-    availability: "available",
-  },
-  {
     id: "pitch",
     label: "Pitch",
     subtitle: "Find a pitch",
     href: "/pitch",
     artwork: "/home-gateways/pitch.webp",
+    availability: "available",
+  },
+  {
+    id: "spots",
+    label: "Places",
+    subtitle: "Cafés & lounges",
+    href: "/places",
+    artwork: "/home-gateways/places.png",
     availability: "available",
   },
   {
