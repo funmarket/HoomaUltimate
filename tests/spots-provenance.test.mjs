@@ -116,7 +116,10 @@ test("Provenance migration does not invent historical OWNER or FANHUB data", () 
 });
 
 test("Owner submission persists provenance and creates its pending ownership claim atomically", () => {
-  const suggest = section(canonicalPlacePersistence, "export async function suggestCanonicalPlace(");
+  const suggest = section(
+    canonicalPlacePersistence,
+    "export async function suggestCanonicalPlace(",
+  );
   assert.ok(suggest.includes("submissionOrigin,"));
   assert.ok(suggest.includes('submissionOrigin === "OWNER"'));
   assert.ok(suggest.includes("ownershipClaims"));
@@ -143,13 +146,9 @@ test("Canonical duplicate identity uses strong source fields and transactional a
   assert.ok(canonicalPlacePersistence.includes('matchedBy: "WEBSITE"'));
   assert.ok(canonicalPlacePersistence.includes('matchedBy: "NAME_COORDINATES"'));
   assert.ok(
-    canonicalPlacePersistence.includes(
-      "regexp_replace(btrim(\"name\"), '[[:space:]]+', ' ', 'g')",
-    ),
+    canonicalPlacePersistence.includes("regexp_replace(btrim(\"name\"), '[[:space:]]+', ' ', 'g')"),
   );
-  assert.ok(
-    canonicalPlacePersistence.includes("regexp_replace(\"phone\", '[^0-9]', '', 'g')"),
-  );
+  assert.ok(canonicalPlacePersistence.includes("regexp_replace(\"phone\", '[^0-9]', '', 'g')"));
   assert.ok(
     canonicalPlacePersistence.includes("input.latitude != null && input.longitude != null"),
   );
@@ -162,7 +161,10 @@ test("Canonical duplicate identity uses strong source fields and transactional a
 });
 
 test("Duplicate Add Place returns the canonical Place instead of creating a second venue", () => {
-  const suggest = section(canonicalPlacePersistence, "export async function suggestCanonicalPlace(");
+  const suggest = section(
+    canonicalPlacePersistence,
+    "export async function suggestCanonicalPlace(",
+  );
   const duplicateBranch = section(suggest, "if (duplicate) {", "const imageUrls");
   assert.ok(duplicateBranch.includes('outcome: "EXISTING"'));
   assert.ok(duplicateBranch.includes("canonicalPlaceSummary(existing, images)"));
