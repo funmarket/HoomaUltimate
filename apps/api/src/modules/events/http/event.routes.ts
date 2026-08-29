@@ -105,7 +105,10 @@ export function createEventMemberRouter(service: EventService): Router {
     "/invitations/:inviteId/accept",
     asyncHandler(async (request, response) =>
       response.json(
-        await service.acceptPlayerInvite(getAuth(request).userId, String(request.params.inviteId)),
+        await service.acceptPlayerInvite(
+          getAuth(request).userId,
+          String(request.params.inviteId),
+        ),
       ),
     ),
   );
@@ -113,7 +116,10 @@ export function createEventMemberRouter(service: EventService): Router {
     "/invitations/:inviteId/decline",
     asyncHandler(async (request, response) =>
       response.json(
-        await service.declinePlayerInvite(getAuth(request).userId, String(request.params.inviteId)),
+        await service.declinePlayerInvite(
+          getAuth(request).userId,
+          String(request.params.inviteId),
+        ),
       ),
     ),
   );
