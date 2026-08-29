@@ -49,6 +49,14 @@ const publicEventSelect = Prisma.validator<Prisma.EventSelect>()({
   },
 });
 
+const playerInviteSelect = Prisma.validator<Prisma.EventPlayerInviteSelect>()({
+  id: true,
+  eventId: true,
+  targetUserId: true,
+  invitedByUserId: true,
+  status: true,
+});
+
 type PublicEventRow = Prisma.EventGetPayload<{ select: typeof publicEventSelect }>;
 type CulturalDetails = {
   eventId: string;
@@ -377,55 +385,31 @@ export class PrismaEventRepository implements EventRepository {
   }
 
   async cancel(eventId: string) {
-    await this.db.event.update({ where: { id: eventId }, data: { status: "CANCELLED" } });
+    const now = new Date();
+    await this.db.$transaction([
+      this.db.event.update({ where: { id: eventId }, data: { status: "CANCELLED" } }),
+      this.db.eventPlayerInvite.updateMany({
+        where: { eventId, status: "PENDING" },
+        data: { status: "CANCELLED", respondedAt: now },
+      }),
+    ]);
     return { cancelled: true };
   }
 
   async complete(eventId: string) {
-    await this.db.event.update({ where: { id: eventId }, data: { status: "COMPLETED" } });
+    const now = new Date();
+    await this.db.$transaction([
+      this.db.event.update({ where: { id: eventId }, data: { status: "COMPLETED" } }),
+      this.db.eventPlayerInvite.updateMany({
+        where: { eventId, status: "PENDING" },
+        data: { status: "CANCELLED", respondedAt: now },
+      }),
+    ]);
     return this.getPublic(eventId);
   }
 
-  async join(eventId: string, userId: string) {
-    return this.db.$transaction(async (tx) => {
-      await lockEvent(tx, eventId);
-      const event = await tx.event.findUniqueOrThrow({
-        where: { id: eventId },
-        select: { status: true, capacity: true, waitlistEnabled: true },
-      });
-      if (event.status !== "PUBLISHED") throw new Error("EVENT_NOT_ACTIVE");
-      const existing = await tx.eventRsvp.findUnique({
-        where: { eventId_userId: { eventId, userId } },
-        select: { status: true },
-      });
-      if (existing?.status === "CONFIRMED" || existing?.status === "ATTENDED")
-        return { status: "CONFIRMED" as const };
-      if (existing?.status === "WAITLISTED") return { status: "WAITLISTED" as const };
-      const confirmed = await tx.eventRsvp.count({
-        where: { eventId, status: { in: ["CONFIRMED", "ATTENDED"] } },
-      });
-      const hasSeat = event.capacity === null || confirmed < event.capacity;
-      if (!hasSeat && !event.waitlistEnabled) throw new Error("EVENT_FULL");
-      if (hasSeat) {
-        await tx.eventRsvp.upsert({
-          where: { eventId_userId: { eventId, userId } },
-          create: { eventId, userId, status: "CONFIRMED" },
-          update: { status: "CONFIRMED", waitlistSequence: null, checkedInAt: null },
-        });
-        return { status: "CONFIRMED" as const };
-      }
-      const aggregate = await tx.eventRsvp.aggregate({
-        where: { eventId, status: "WAITLISTED" },
-        _max: { waitlistSequence: true },
-      });
-      const waitlistSequence = (aggregate._max.waitlistSequence ?? 0n) + 1n;
-      await tx.eventRsvp.upsert({
-        where: { eventId_userId: { eventId, userId } },
-        create: { eventId, userId, status: "WAITLISTED", waitlistSequence },
-        update: { status: "WAITLISTED", waitlistSequence, checkedInAt: null },
-      });
-      return { status: "WAITLISTED" as const };
-    });
+  join(eventId: string, userId: string) {
+    return this.db.$transaction((tx) => joinEvent(tx, eventId, userId));
   }
 
   async cancelRsvp(eventId: string, userId: string) {
@@ -456,6 +440,168 @@ export class PrismaEventRepository implements EventRepository {
         }
       }
       return { cancelled: true, promotedUserId };
+    });
+  }
+
+  async listManagedPlayEvents(userId: string) {
+    const rows = await this.db.event.findMany({
+      where: {
+        type: "PLAY",
+        status: "PUBLISHED",
+        OR: [
+          { createdByUserId: userId },
+          {
+            community: {
+              is: {
+                memberships: {
+                  some: { userId, leftAt: null, role: { in: ["FOUNDER", "COACH"] } },
+                },
+              },
+            },
+          },
+        ],
+      },
+      orderBy: [{ startsAt: "asc" }, { id: "asc" }],
+      select: publicEventSelect,
+    });
+    return rows.map((event) => serializePublicEvent(event));
+  }
+
+  upsertPlayerInvite(eventId: string, targetUserId: string, invitedByUserId: string) {
+    return this.db.eventPlayerInvite.upsert({
+      where: { eventId_targetUserId: { eventId, targetUserId } },
+      create: { eventId, targetUserId, invitedByUserId },
+      update: {
+        invitedByUserId,
+        status: "PENDING",
+        respondedAt: null,
+        createdAt: new Date(),
+      },
+      include: {
+        event: {
+          select: {
+            id: true,
+            title: true,
+            startsAt: true,
+            timezone: true,
+            venueName: true,
+            address: true,
+          },
+        },
+      },
+    });
+  }
+
+  listIncomingPlayerInvites(targetUserId: string) {
+    return this.db.eventPlayerInvite.findMany({
+      where: {
+        targetUserId,
+        status: "PENDING",
+        event: { type: "PLAY", status: "PUBLISHED" },
+      },
+      include: {
+        event: {
+          select: {
+            id: true,
+            title: true,
+            startsAt: true,
+            timezone: true,
+            venueName: true,
+            address: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  listPendingPlayerInvitesForManager(userId: string) {
+    return this.db.eventPlayerInvite.findMany({
+      where: {
+        status: "PENDING",
+        event: {
+          type: "PLAY",
+          status: "PUBLISHED",
+          OR: [
+            { createdByUserId: userId },
+            {
+              community: {
+                is: {
+                  memberships: {
+                    some: { userId, leftAt: null, role: { in: ["FOUNDER", "COACH"] } },
+                  },
+                },
+              },
+            },
+          ],
+        },
+      },
+      select: playerInviteSelect,
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  getPlayerInviteForTarget(inviteId: string, targetUserId: string) {
+    return this.db.eventPlayerInvite.findFirst({
+      where: { id: inviteId, targetUserId },
+      select: playerInviteSelect,
+    });
+  }
+
+  acceptPlayerInvite(inviteId: string, targetUserId: string) {
+    return this.db.$transaction(async (tx) => {
+      const invite = await tx.eventPlayerInvite.findFirst({
+        where: { id: inviteId, targetUserId, status: "PENDING" },
+        select: { eventId: true },
+      });
+      if (!invite) return null;
+      const rsvp = await joinEvent(tx, invite.eventId, targetUserId);
+      const changed = await tx.eventPlayerInvite.updateMany({
+        where: { id: inviteId, targetUserId, status: "PENDING" },
+        data: { status: "ACCEPTED", respondedAt: new Date() },
+      });
+      if (changed.count !== 1) throw new Error("EVENT_INVITE_STATE_CHANGED");
+      const accepted = await tx.eventPlayerInvite.findUniqueOrThrow({
+        where: { id: inviteId },
+        include: {
+          event: {
+            select: {
+              id: true,
+              title: true,
+              startsAt: true,
+              timezone: true,
+              venueName: true,
+              address: true,
+            },
+          },
+        },
+      });
+      return { invite: accepted, rsvp };
+    });
+  }
+
+  async declinePlayerInvite(inviteId: string, targetUserId: string) {
+    return this.db.$transaction(async (tx) => {
+      const changed = await tx.eventPlayerInvite.updateMany({
+        where: { id: inviteId, targetUserId, status: "PENDING" },
+        data: { status: "DECLINED", respondedAt: new Date() },
+      });
+      if (changed.count !== 1) return null;
+      return tx.eventPlayerInvite.findUnique({
+        where: { id: inviteId },
+        include: {
+          event: {
+            select: {
+              id: true,
+              title: true,
+              startsAt: true,
+              timezone: true,
+              venueName: true,
+              address: true,
+            },
+          },
+        },
+      });
     });
   }
 
@@ -557,6 +703,51 @@ export class PrismaEventRepository implements EventRepository {
       data: { roomId: room.id, userId, body, expiresAt: room.closesAt },
     });
   }
+}
+
+async function joinEvent(
+  tx: Prisma.TransactionClient,
+  eventId: string,
+  userId: string,
+): Promise<{ status: "CONFIRMED" | "WAITLISTED" }> {
+  await lockEvent(tx, eventId);
+  const event = await tx.event.findUniqueOrThrow({
+    where: { id: eventId },
+    select: { status: true, capacity: true, waitlistEnabled: true },
+  });
+  if (event.status !== "PUBLISHED") throw new Error("EVENT_NOT_ACTIVE");
+  const existing = await tx.eventRsvp.findUnique({
+    where: { eventId_userId: { eventId, userId } },
+    select: { status: true },
+  });
+  if (existing?.status === "CONFIRMED" || existing?.status === "ATTENDED") {
+    return { status: "CONFIRMED" };
+  }
+  if (existing?.status === "WAITLISTED") return { status: "WAITLISTED" };
+  const confirmed = await tx.eventRsvp.count({
+    where: { eventId, status: { in: ["CONFIRMED", "ATTENDED"] } },
+  });
+  const hasSeat = event.capacity === null || confirmed < event.capacity;
+  if (!hasSeat && !event.waitlistEnabled) throw new Error("EVENT_FULL");
+  if (hasSeat) {
+    await tx.eventRsvp.upsert({
+      where: { eventId_userId: { eventId, userId } },
+      create: { eventId, userId, status: "CONFIRMED" },
+      update: { status: "CONFIRMED", waitlistSequence: null, checkedInAt: null },
+    });
+    return { status: "CONFIRMED" };
+  }
+  const aggregate = await tx.eventRsvp.aggregate({
+    where: { eventId, status: "WAITLISTED" },
+    _max: { waitlistSequence: true },
+  });
+  const waitlistSequence = (aggregate._max.waitlistSequence ?? 0n) + 1n;
+  await tx.eventRsvp.upsert({
+    where: { eventId_userId: { eventId, userId } },
+    create: { eventId, userId, status: "WAITLISTED", waitlistSequence },
+    update: { status: "WAITLISTED", waitlistSequence, checkedInAt: null },
+  });
+  return { status: "WAITLISTED" };
 }
 
 async function lockEvent(tx: Prisma.TransactionClient, eventId: string): Promise<void> {
