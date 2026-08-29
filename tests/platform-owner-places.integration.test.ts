@@ -529,18 +529,15 @@ test("App Admin preserves canonical Place identity while ownership and Watch lif
     });
     assert.equal(removedWatchApplication.status, 404);
 
-    const pitchResponse = await fetch(
-      `${base}/api/v1/pitch/${place.id}/applications`,
-      {
-        method: "POST",
-        headers: headers(business.cookie),
-        body: JSON.stringify({
-          summary: "Bookable football pitch with changing rooms and floodlights",
-          hourlyRateMinor: 12_000,
-          currency: "TND",
-        }),
-      },
-    );
+    const pitchResponse = await fetch(`${base}/api/v1/pitch/${place.id}/applications`, {
+      method: "POST",
+      headers: headers(business.cookie),
+      body: JSON.stringify({
+        summary: "Bookable football pitch with changing rooms and floodlights",
+        hourlyRateMinor: 12_000,
+        currency: "TND",
+      }),
+    });
     assert.equal(pitchResponse.status, 201);
     const pitchApplication = (await pitchResponse.json()) as { id: string };
 
