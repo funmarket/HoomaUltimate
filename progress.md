@@ -1671,7 +1671,7 @@ The GAME card was intentionally non-interactive, while the TEAM card used a page
 - `packages/frontend/src/teams/team-offer-api.ts`
 - `requirements.md`
 - `docs/CANONICAL_MODEL.md`
-- `docs/adr/ADR-050-play-player-actions.md`
+- `docs/adr/ADR-049-play-player-actions.md`
 - focused Play/Team/Event tests
 
 **Verification evidence**
