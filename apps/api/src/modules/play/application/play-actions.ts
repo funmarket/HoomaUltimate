@@ -29,5 +29,5 @@ export interface PlayEventInviteRecord {
 export interface PlayEventInviteGateway {
   invitePlayer(actorUserId: string, eventId: string, targetUserId: string): Promise<unknown>;
   pendingPlayerInvitesForManager(actorUserId: string): Promise<PlayEventInviteRecord[]>;
-  managedPlayEvents(actorUserId: string): Promise<PlayManagedEventRecord[]>;
+  listManagedPlayEvents(actorUserId: string): Promise<PlayManagedEventRecord[]>;
 }
