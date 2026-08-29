@@ -9,6 +9,8 @@ import { createPlayApi, type MyPlayPlayerListing, type PublicPlayPlayerListing }
 import { PlayPlayerCard } from "./PlayPlayerCard";
 import { useEventApi } from "./useEventApi";
 
+type PlayView = "players" | "open-matches";
+
 function errorMessage(reason: unknown, fallback: string) {
   return reason instanceof Error ? reason.message : fallback;
 }
@@ -18,6 +20,7 @@ export function PlayPage() {
   const { api, transport, authenticationHref, protectedError } = useHoomaFrontend();
   const playApi = useMemo(() => createPlayApi(transport), [transport]);
   const teamOfferApi = useMemo(() => createTeamOfferApi(transport), [transport]);
+  const [activeView, setActiveView] = useState<PlayView>("players");
   const [events, setEvents] = useState<PublicEvent[]>([]);
   const [listings, setListings] = useState<PublicPlayPlayerListing[]>([]);
   const [me, setMe] = useState<MeResponse | null>(null);
@@ -196,7 +199,32 @@ export function PlayPage() {
     <section className="play-page">
       <PlayHero />
 
-      <section className="play-section" aria-labelledby="players-looking-title">
+      <div className="play-view-tabs" role="tablist" aria-label="Play sections">
+        <button
+          className={`play-view-tab${activeView === "players" ? " is-active" : ""}`}
+          type="button"
+          role="tab"
+          aria-selected={activeView === "players"}
+          onClick={() => setActiveView("players")}
+        >
+          Players
+        </button>
+        <button
+          className={`play-view-tab${activeView === "open-matches" ? " is-active" : ""}`}
+          type="button"
+          role="tab"
+          aria-selected={activeView === "open-matches"}
+          onClick={() => setActiveView("open-matches")}
+        >
+          Open matches
+        </button>
+      </div>
+
+      <section
+        className="play-section"
+        aria-labelledby="players-looking-title"
+        hidden={activeView !== "players"}
+      >
         <div className="play-section-heading">
           <div>
             <p className="eyebrow">Players</p>
@@ -326,7 +354,11 @@ export function PlayPage() {
         ) : null}
       </section>
 
-      <section className="play-section" aria-labelledby="open-matches-title">
+      <section
+        className="play-section"
+        aria-labelledby="open-matches-title"
+        hidden={activeView !== "open-matches"}
+      >
         <div className="play-section-heading">
           <div>
             <p className="eyebrow">Open matches</p>

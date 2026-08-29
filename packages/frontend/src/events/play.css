@@ -4,6 +4,39 @@
   display: grid;
   gap: 28px;
 }
+.play-view-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid rgba(199, 154, 43, 0.35);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #0b0c09;
+}
+.play-view-tab {
+  min-width: 0;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 0;
+  border-right: 1px solid rgba(199, 154, 43, 0.22);
+  background: transparent;
+  color: var(--app-text-secondary);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+.play-view-tab:last-child {
+  border-right: 0;
+}
+.play-view-tab.is-active {
+  background: rgba(196, 220, 67, 0.1);
+  color: #c4dc43;
+}
+.play-view-tab:focus-visible {
+  outline: 2px solid #c4dc43;
+  outline-offset: -2px;
+}
 .play-hero-pro {
   display: flex;
   align-items: flex-end;
