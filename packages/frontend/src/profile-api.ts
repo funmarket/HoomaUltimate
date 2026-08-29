@@ -46,7 +46,11 @@ export function createProfileApi(transport: HoomaTransport) {
         `/api/v1/whistles/users/${encodeURIComponent(username)}`,
       ),
     sendDirectWhistle: (username: string, body: string) =>
-      request<{ whistle: WhistleListItem; remainingToday: number; resetsAt: string }>(
+      request<{
+        whistle: WhistleListItem;
+        remainingToday: number;
+        resetsAt: string;
+      }>(
         transport,
         `/api/v1/whistles/users/${encodeURIComponent(username)}`,
         { method: "POST", body: JSON.stringify({ body }) },
