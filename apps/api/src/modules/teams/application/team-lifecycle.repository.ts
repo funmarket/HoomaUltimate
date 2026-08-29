@@ -21,7 +21,7 @@ export interface TeamLifecycleRepository {
   isActive(teamId: string): Promise<boolean>;
   archive(teamId: string): Promise<void>;
   listRecruitingTeams(userId: string): Promise<unknown>;
-  resolvePlayerOfferTarget(listingId: string): Promise<string | null>;
+  listPendingPlayerOffersForRecruiter(userId: string): Promise<TeamPlayerOfferRecord[]>;
   isActivePlayer(teamId: string, targetUserId: string): Promise<boolean>;
   upsertPlayerOffer(
     teamId: string,
