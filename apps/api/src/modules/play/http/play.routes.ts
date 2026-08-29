@@ -1,5 +1,9 @@
 import { Router } from "express";
-import { playPlayerListingInputSchema } from "@hooma/contracts/play";
+import {
+  playEventInviteInputSchema,
+  playPlayerListingInputSchema,
+  playTeamOfferInputSchema,
+} from "@hooma/contracts/play";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import { getAuth } from "../../identity/http/auth-request.js";
 import type { PlayService } from "../application/play.service.js";
@@ -43,6 +47,46 @@ export function createPlayMemberRouter(service: PlayService): Router {
     "/player-listing",
     asyncHandler(async (request, response) => {
       response.json(await service.removeMine(getAuth(request).userId));
+    }),
+  );
+  router.get(
+    "/player-actions",
+    asyncHandler(async (request, response) => {
+      response.json(await service.actionState(getAuth(request).userId));
+    }),
+  );
+  router.get(
+    "/managed-events",
+    asyncHandler(async (request, response) => {
+      response.json(await service.managedPlayEvents(getAuth(request).userId));
+    }),
+  );
+  router.post(
+    "/player-listings/:listingId/team-offer",
+    asyncHandler(async (request, response) => {
+      response
+        .status(201)
+        .json(
+          await service.sendTeamOffer(
+            getAuth(request).userId,
+            String(request.params.listingId),
+            playTeamOfferInputSchema.parse(request.body),
+          ),
+        );
+    }),
+  );
+  router.post(
+    "/player-listings/:listingId/event-invite",
+    asyncHandler(async (request, response) => {
+      response
+        .status(201)
+        .json(
+          await service.sendEventInvite(
+            getAuth(request).userId,
+            String(request.params.listingId),
+            playEventInviteInputSchema.parse(request.body),
+          ),
+        );
     }),
   );
   return router;

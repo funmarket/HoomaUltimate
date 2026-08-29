@@ -2,11 +2,17 @@ import type { PublicPlayPlayerListing } from "./play-api";
 
 type PlayPlayerCardProps = {
   listing: PublicPlayPlayerListing;
+  onInvite?: (listing: PublicPlayPlayerListing) => void;
   onHire?: (listing: PublicPlayPlayerListing) => void;
-  offerSent?: boolean;
+  actionDisabled?: boolean;
 };
 
-export function PlayPlayerCard({ listing, onHire, offerSent = false }: PlayPlayerCardProps) {
+export function PlayPlayerCard({
+  listing,
+  onInvite,
+  onHire,
+  actionDisabled = false,
+}: PlayPlayerCardProps) {
   const presentation = listing.presentation;
   if (!presentation) return null;
 
@@ -71,36 +77,25 @@ export function PlayPlayerCard({ listing, onHire, offerSent = false }: PlayPlaye
 
       <div className="play-player-card__action-zone">
         <span>ORGANIZER ACTION</span>
-        {lookingForGame ? (
-          <div className="play-player-card__action" aria-disabled="true">
-            <span className="play-player-card__action-icon" aria-hidden="true">
-              ↗
-            </span>
-            <span>
-              <strong>INVITE</strong>
-              <small>Game invitations are handled separately by Events</small>
-            </span>
-            <b aria-hidden="true">›</b>
-          </div>
-        ) : (
-          <button
-            className="play-player-card__action play-player-card__action--button"
-            type="button"
-            disabled={offerSent}
-            onClick={() => onHire?.(listing)}
-          >
-            <span className="play-player-card__action-icon" aria-hidden="true">
-              {offerSent ? "✓" : "+"}
-            </span>
-            <span>
-              <strong>{offerSent ? "OFFER SENT" : "HIRE PLAYER"}</strong>
-              <small>
-                {offerSent ? "Waiting for the player" : "Offer this player a spot on your Team"}
-              </small>
-            </span>
-            <b aria-hidden="true">›</b>
-          </button>
-        )}
+        <button
+          className="play-player-card__action play-player-card__action--button"
+          type="button"
+          disabled={actionDisabled}
+          onClick={() => (lookingForGame ? onInvite?.(listing) : onHire?.(listing))}
+        >
+          <span className="play-player-card__action-icon" aria-hidden="true">
+            {lookingForGame ? "↗" : "+"}
+          </span>
+          <span>
+            <strong>{lookingForGame ? "INVITE" : "HIRE PLAYER"}</strong>
+            <small>
+              {lookingForGame
+                ? "Invite this player to a game you manage"
+                : "Offer this player a spot on your Team"}
+            </small>
+          </span>
+          <b aria-hidden="true">›</b>
+        </button>
       </div>
 
       <div className="play-player-card__footer">

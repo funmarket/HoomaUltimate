@@ -6,7 +6,6 @@ import {
   type TeamLineupInput,
   type TeamUpdateInput,
 } from "@hooma/contracts";
-import type { TeamPlayerOfferCreateInput } from "@hooma/contracts/team-offers";
 import { AppError } from "../../../http/errors/app-error.js";
 import type { CommunityService } from "../../communities/application/community.service.js";
 import type { ApprovedPitchReader } from "../../pitch/application/approved-pitch.reader.js";
@@ -50,23 +49,24 @@ export class TeamService {
     return this.lifecycle.listIncomingPlayerOffers(userId);
   }
 
-  async sendPlayerOffer(userId: string, teamId: string, input: TeamPlayerOfferCreateInput) {
+  pendingPlayerOffersForRecruiter(userId: string) {
+    return this.lifecycle.listPendingPlayerOffersForRecruiter(userId);
+  }
+
+  async sendPlayerOfferToUser(
+    userId: string,
+    teamId: string,
+    targetUserId: string,
+    message: string | null,
+  ) {
     await this.requireCapability(userId, teamId, "MANAGE_ROSTER");
-    const targetUserId = await this.lifecycle.resolvePlayerOfferTarget(input.listingId);
-    if (!targetUserId) {
-      throw new AppError(
-        404,
-        "TEAM_OFFER_TARGET_NOT_AVAILABLE",
-        "This player is no longer looking for a Team",
-      );
-    }
     if (targetUserId === userId) {
       throw new AppError(409, "TEAM_OFFER_SELF", "You cannot offer yourself a Team spot");
     }
     if (await this.lifecycle.isActivePlayer(teamId, targetUserId)) {
       throw new AppError(409, "TEAM_PLAYER_ALREADY_ACTIVE", "This player is already on the Team");
     }
-    return this.lifecycle.upsertPlayerOffer(teamId, targetUserId, userId, input.message ?? null);
+    return this.lifecycle.upsertPlayerOffer(teamId, targetUserId, userId, message);
   }
 
   async acceptPlayerOffer(userId: string, offerId: string) {

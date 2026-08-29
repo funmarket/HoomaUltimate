@@ -1633,3 +1633,53 @@ Immediate next task after this file exists:
 8. repeat until the shared HOOMA API is healthy;
 9. then obtain and verify the Web App URL;
 10. then obtain and verify the Telegram Mini App URL and bot link.
+
+## 2026-08-29 — Play Invite Player / Hire Player lifecycle source-corrected
+
+**Task**
+Complete the Play Players `INVITE` and `HIRE PLAYER` actions without changing the locked Play IA or creating duplicate lifecycle ownership.
+
+**Reason/root cause**
+The GAME card was intentionally non-interactive, while the TEAM card used a page-local sent flag and a Teams route that accepted a Play listing ID. Teams infrastructure resolved that ID by reading Play-owned Prisma persistence directly. There was no durable Event-owned player invitation lifecycle. The frontend could also treat `me === null` as guest while account loading was still in progress.
+
+**Authoritative ownership implemented**
+
+- Play owns player-listing discovery, listing-target resolution and cross-domain orchestration only.
+- Teams owns `TeamPlayerOffer`, roster authorization and `TeamPlayer` creation on acceptance.
+- Events owns `EventPlayerInvite` and canonical RSVP/waitlist acceptance.
+- Teams no longer queries `PlayPlayerListing` persistence.
+- Event invitation send never auto-creates an RSVP.
+- Event invitation acceptance reuses the same row-locked RSVP capacity/waitlist transaction as ordinary Join.
+- Event cancellation/completion closes pending invitations.
+- Pending action UI state is read back from Teams/Events and mapped to current Play listing IDs server-side rather than persisted as browser-local authority.
+
+**Primary files changed**
+
+- `apps/api/src/bootstrap/container.ts`
+- `apps/api/src/modules/play/**`
+- `apps/api/src/modules/teams/**`
+- `apps/api/src/modules/events/**`
+- `packages/contracts/src/play.ts`
+- `packages/contracts/src/team-offers.ts`
+- `packages/database/prisma/schema.prisma`
+- `packages/database/prisma/migrations/20260829214500_event_player_invites/migration.sql`
+- `packages/frontend/src/events/PlayPage.tsx`
+- `packages/frontend/src/events/PlayPlayerCard.tsx`
+- `packages/frontend/src/events/EventInvitesPanel.tsx`
+- `packages/frontend/src/events/play-api.ts`
+- `packages/frontend/src/events/api.ts`
+- `packages/frontend/src/teams/team-offer-api.ts`
+- `requirements.md`
+- `docs/CANONICAL_MODEL.md`
+- `docs/adr/ADR-049-play-player-actions.md`
+- focused Play/Team/Event tests
+
+**Verification evidence**
+
+- PR: `#166` (`fix/play-player-actions-lifecycle` -> `phase-0-foundation`).
+- Implementation/documentation head `ef7d7471297774c5f597658fdd3e7df9e1f91cf5` passed CI run `33278161057` end-to-end.
+- Passed clean install, Prisma generate/validate, clean migration deploy including `20260829214500_event_player_invites`, architecture check, changed-file Prettier, changed-source lint, TypeScript, package build, unit tests, full build, PostgreSQL integration tests, deploy preflight, security check and migration status.
+- Final PR head is re-run through the same CI after this evidence-only ledger update before readiness is claimed.
+
+**Remaining uncertainty**
+Automated CI and database integration are proven. A real browser/Telegram Mini App click-through is still a separate runtime proof because this execution environment does not expose browser automation.

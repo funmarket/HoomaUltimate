@@ -97,6 +97,28 @@ export function createEventMemberRouter(service: EventService): Router {
     ),
   );
   router.get(
+    "/invitations/incoming",
+    asyncHandler(async (request, response) =>
+      response.json(await service.incomingPlayerInvites(getAuth(request).userId)),
+    ),
+  );
+  router.post(
+    "/invitations/:inviteId/accept",
+    asyncHandler(async (request, response) =>
+      response.json(
+        await service.acceptPlayerInvite(getAuth(request).userId, String(request.params.inviteId)),
+      ),
+    ),
+  );
+  router.post(
+    "/invitations/:inviteId/decline",
+    asyncHandler(async (request, response) =>
+      response.json(
+        await service.declinePlayerInvite(getAuth(request).userId, String(request.params.inviteId)),
+      ),
+    ),
+  );
+  router.get(
     "/:eventId/manage",
     asyncHandler(async (request, response) =>
       response.json(

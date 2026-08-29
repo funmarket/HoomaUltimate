@@ -49,12 +49,18 @@ export class PrismaTeamLifecycleRepository implements TeamLifecycleRepository {
     });
   }
 
-  async resolvePlayerOfferTarget(listingId: string): Promise<string | null> {
-    const listing = await this.db.playPlayerListing.findFirst({
-      where: { id: listingId, lookingFor: "TEAM" },
-      select: { userId: true },
+  listPendingPlayerOffersForRecruiter(userId: string) {
+    return this.db.teamPlayerOffer.findMany({
+      where: {
+        status: "PENDING",
+        team: {
+          status: "ACTIVE",
+          OR: this.capabilityTeamFilters(userId, "MANAGE_ROSTER"),
+        },
+      },
+      select: offerSelect,
+      orderBy: { createdAt: "desc" },
     });
-    return listing?.userId ?? null;
   }
 
   async isActivePlayer(teamId: string, targetUserId: string): Promise<boolean> {

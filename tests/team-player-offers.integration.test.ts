@@ -44,7 +44,7 @@ function headers(cookie: string) {
   return { cookie, origin: config.WEB_ORIGIN, "content-type": "application/json" };
 }
 
-test("Team spot offer stays simple: authorized offer, target accept/decline, one canonical row", async () => {
+test("Play recruits through Teams ownership: authorized offer, target response, one canonical row", async () => {
   const app = createApp(config, createContainer(config));
   const server = app.listen(0, "127.0.0.1");
   await new Promise<void>((resolve) => server.once("listening", resolve));
@@ -99,19 +99,22 @@ test("Team spot offer stays simple: authorized offer, target accept/decline, one
     assert.equal(declineListingResponse.status, 200);
     const declineListing = (await declineListingResponse.json()) as { id: string };
 
-    const outsiderOffer = await fetch(`${base}/api/v1/teams/${team.id}/offers`, {
-      method: "POST",
-      headers: headers(outsider.cookie),
-      body: JSON.stringify({ listingId: targetListing.id }),
-    });
+    const outsiderOffer = await fetch(
+      `${base}/api/v1/play/player-listings/${targetListing.id}/team-offer`,
+      {
+        method: "POST",
+        headers: headers(outsider.cookie),
+        body: JSON.stringify({ teamId: team.id }),
+      },
+    );
     assert.equal(outsiderOffer.status, 403);
 
     const sendOffer = () =>
-      fetch(`${base}/api/v1/teams/${team.id}/offers`, {
+      fetch(`${base}/api/v1/play/player-listings/${targetListing.id}/team-offer`, {
         method: "POST",
         headers: headers(assistant.cookie),
         body: JSON.stringify({
-          listingId: targetListing.id,
+          teamId: team.id,
           message: "Come train with us this week.",
         }),
       });
@@ -165,11 +168,14 @@ test("Team spot offer stays simple: authorized offer, target accept/decline, one
       "ACCEPTED",
     );
 
-    const declineOfferResponse = await fetch(`${base}/api/v1/teams/${team.id}/offers`, {
-      method: "POST",
-      headers: headers(coach.cookie),
-      body: JSON.stringify({ listingId: declineListing.id }),
-    });
+    const declineOfferResponse = await fetch(
+      `${base}/api/v1/play/player-listings/${declineListing.id}/team-offer`,
+      {
+        method: "POST",
+        headers: headers(coach.cookie),
+        body: JSON.stringify({ teamId: team.id }),
+      },
+    );
     assert.equal(declineOfferResponse.status, 201);
     const declineOffer = (await declineOfferResponse.json()) as { id: string };
 

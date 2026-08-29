@@ -32,6 +32,10 @@ export class EventService {
     return this.getPublic(eventId);
   }
 
+  listManagedPlayEvents(userId: string) {
+    return this.repository.listManagedPlayEvents(userId);
+  }
+
   async getMyRsvp(userId: string, eventId: string) {
     const access = await this.repository.access(eventId);
     if (!access) throw new EventError("EVENT_NOT_FOUND", "Event not found");
@@ -155,6 +159,72 @@ export class EventService {
         throw new EventError("RSVP_ALREADY_ATTENDED", "An attended RSVP cannot be cancelled");
       throw error;
     }
+  }
+
+  async invitePlayer(userId: string, eventId: string, targetUserId: string) {
+    const access = await this.requireManage(userId, eventId);
+    if (access.type !== "PLAY" || access.status !== "PUBLISHED") {
+      throw new EventError(
+        "EVENT_INVITE_NOT_AVAILABLE",
+        "Only an active Play event can invite players",
+      );
+    }
+    if (targetUserId === userId) {
+      throw new EventError("EVENT_INVITE_SELF", "You cannot invite yourself to your own event");
+    }
+    const existingRsvp = await this.repository.getRsvp(eventId, targetUserId);
+    if (existingRsvp && ["CONFIRMED", "WAITLISTED", "ATTENDED"].includes(existingRsvp.status)) {
+      throw new EventError("EVENT_INVITE_ALREADY_JOINED", "This player is already in the event");
+    }
+    return this.repository.upsertPlayerInvite(eventId, targetUserId, userId);
+  }
+
+  incomingPlayerInvites(userId: string) {
+    return this.repository.listIncomingPlayerInvites(userId);
+  }
+
+  pendingPlayerInvitesForManager(userId: string) {
+    return this.repository.listPendingPlayerInvitesForManager(userId);
+  }
+
+  async acceptPlayerInvite(userId: string, inviteId: string) {
+    const invite = await this.repository.getPlayerInviteForTarget(inviteId, userId);
+    if (!invite) throw new EventError("EVENT_INVITE_NOT_FOUND", "Event invitation not found");
+    if (invite.status !== "PENDING") {
+      throw new EventError("EVENT_INVITE_CLOSED", "This event invitation is already closed");
+    }
+    try {
+      const accepted = await this.repository.acceptPlayerInvite(inviteId, userId);
+      if (!accepted) {
+        throw new EventError("EVENT_INVITE_CLOSED", "This event invitation is already closed");
+      }
+      return accepted;
+    } catch (error) {
+      if (error instanceof EventError) throw error;
+      if (error instanceof Error && error.message === "EVENT_FULL") {
+        throw new EventError("EVENT_FULL", "Event is full and waitlist is disabled");
+      }
+      if (error instanceof Error && error.message === "EVENT_NOT_ACTIVE") {
+        throw new EventError("EVENT_INVITE_CLOSED", "This event invitation is no longer active");
+      }
+      if (error instanceof Error && error.message === "EVENT_INVITE_STATE_CHANGED") {
+        throw new EventError("EVENT_INVITE_CLOSED", "This event invitation is already closed");
+      }
+      throw error;
+    }
+  }
+
+  async declinePlayerInvite(userId: string, inviteId: string) {
+    const invite = await this.repository.getPlayerInviteForTarget(inviteId, userId);
+    if (!invite) throw new EventError("EVENT_INVITE_NOT_FOUND", "Event invitation not found");
+    if (invite.status !== "PENDING") {
+      throw new EventError("EVENT_INVITE_CLOSED", "This event invitation is already closed");
+    }
+    const declined = await this.repository.declinePlayerInvite(inviteId, userId);
+    if (!declined) {
+      throw new EventError("EVENT_INVITE_CLOSED", "This event invitation is already closed");
+    }
+    return { invite: declined };
   }
 
   async createFormation(userId: string, eventId: string, input: EventFormationInput) {
