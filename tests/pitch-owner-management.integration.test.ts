@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { getDatabaseClient } from "@hooma/database";
+import type { PlatformAdminAccessPort } from "../apps/api/src/application/platform-admin-access.port.js";
 import { AppError } from "../apps/api/src/http/errors/app-error.js";
-import { PlaceCapabilityService } from "../apps/api/src/modules/places/application/place-capability.service.js";
-import { PrismaPlaceCapabilityRepository } from "../apps/api/src/modules/places/infrastructure/prisma-place-capability.repository.js";
 import { PrismaPlaceRepository } from "../apps/api/src/modules/places/infrastructure/prisma-place.repository.js";
-import type { PlatformAdminAuthorizer } from "../apps/api/src/modules/platform-admin/application/platform-admin.authorizer.js";
+import { PitchOwnerService } from "../apps/api/src/modules/pitch/application/pitch-owner.service.js";
+import { PrismaPitchRepository } from "../apps/api/src/modules/pitch/infrastructure/prisma-pitch.repository.js";
 
 const db = getDatabaseClient();
 
@@ -72,7 +72,7 @@ test("Pitch owner management reads approved pending and latest rejected state", 
     },
   });
 
-  const authorizer: PlatformAdminAuthorizer = {
+  const authorizer: PlatformAdminAccessPort = {
     async isPlatformAdmin(userId) {
       return userId === admin.id;
     },
@@ -83,12 +83,7 @@ test("Pitch owner management reads approved pending and latest rejected state", 
     async requireCapability() {},
   };
   const places = new PrismaPlaceRepository(db);
-  const pitch = new PlaceCapabilityService(
-    "PITCH",
-    new PrismaPlaceCapabilityRepository(db),
-    places,
-    authorizer,
-  );
+  const pitch = new PitchOwnerService(new PrismaPitchRepository(db), places, authorizer);
 
   try {
     const management = await pitch.getManagementState(owner.id, place.id);
