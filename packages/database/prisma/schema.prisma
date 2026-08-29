@@ -133,6 +133,13 @@ enum EventRsvpStatus {
   NO_SHOW
 }
 
+enum EventPlayerInviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+}
+
 enum SkillLevel {
   BEGINNER
   INTERMEDIATE
@@ -209,7 +216,7 @@ model User {
   teamsCreated                  Team[]                         @relation("TeamCreator")
   teamPlayers                   TeamPlayer[]
   teamOffersReceived            TeamPlayerOffer[]              @relation("TeamOfferTarget")
-  teamOffersSent                TeamPlayerOffer[]               @relation("TeamOfferSender")
+  teamOffersSent                TeamPlayerOffer[]              @relation("TeamOfferSender")
   teamResponsibilities          TeamResponsibilityAssignment[]
   teamCapabilityGrants          TeamCapabilityGrant[]          @relation("CapabilityRecipient")
   teamCapabilityGrantsGiven     TeamCapabilityGrant[]          @relation("CapabilityGrantor")
@@ -218,6 +225,8 @@ model User {
   teamChallengeMessages         TeamChallengeMessage[]
   eventsCreated                 Event[]                        @relation("EventCreator")
   eventRsvps                    EventRsvp[]
+  eventInvitesReceived          EventPlayerInvite[]            @relation("EventInviteTarget")
+  eventInvitesSent              EventPlayerInvite[]            @relation("EventInviteSender")
   eventFormationsCreated        Formation[]                    @relation("FormationCreator")
   formationSlots                FormationSlot[]
   eventCheckIns                 EventCheckIn[]
@@ -329,7 +338,7 @@ model Place {
   name                String
   address             String
   city                String?
-  houma               String?
+  houma                String?
   latitude            Decimal?                     @db.Decimal(10, 7)
   longitude           Decimal?                     @db.Decimal(10, 7)
   phone               String?
@@ -743,6 +752,7 @@ model Event {
   playDetails     PlayEventDetails?
   watchDetails    WatchEventDetails?
   rsvps           EventRsvp[]
+  playerInvites   EventPlayerInvite[]
   formations      Formation[]
   checkIns        EventCheckIn[]
   chatRoom        EventChatRoom?
@@ -785,6 +795,25 @@ model EventRsvp {
   @@unique([eventId, userId])
   @@index([eventId, status, waitlistSequence])
   @@index([userId, status])
+}
+
+model EventPlayerInvite {
+  id              String                  @id @default(cuid())
+  eventId         String
+  targetUserId    String
+  invitedByUserId String
+  status          EventPlayerInviteStatus @default(PENDING)
+  createdAt       DateTime                @default(now())
+  respondedAt     DateTime?
+  updatedAt       DateTime                @updatedAt
+  event           Event                   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  targetUser      User                    @relation("EventInviteTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+  invitedBy       User                    @relation("EventInviteSender", fields: [invitedByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([eventId, targetUserId])
+  @@index([targetUserId, status, createdAt])
+  @@index([eventId, status, createdAt])
+  @@index([invitedByUserId, status, createdAt])
 }
 
 model Formation {
