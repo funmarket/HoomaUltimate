@@ -8,7 +8,6 @@ import {
   teamPlayerSchema,
   teamUpdateSchema,
 } from "@hooma/contracts";
-import { teamPlayerOfferCreateSchema } from "@hooma/contracts/team-offers";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import { getAuth } from "../../identity/http/auth-request.js";
 import type { TeamService } from "../application/team.service.js";
@@ -157,20 +156,6 @@ export function createTeamMemberRouter(service: TeamService): Router {
     "/games",
     asyncHandler(async (req, res) =>
       res.json(await service.games(getAuth(req).userId, numberQuery(req.query.limit, 30))),
-    ),
-  );
-  router.post(
-    "/:teamId/offers",
-    asyncHandler(async (req, res) =>
-      res
-        .status(201)
-        .json(
-          await service.sendPlayerOffer(
-            getAuth(req).userId,
-            String(req.params.teamId),
-            teamPlayerOfferCreateSchema.parse(req.body),
-          ),
-        ),
     ),
   );
   router.post(
