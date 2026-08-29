@@ -1,6 +1,6 @@
 # HOOMA Home/Create-Flow IA Simplification
 
-Status: source verified; commit/PR preparation in progress.
+Status: source verified; PR opened.
 
 This file is the task-specific live execution and handoff ledger for the Home/create-flow information architecture simplification. It records evidence for this branch only. It does not outrank the product owner's latest instruction, `requirements.md`, `structure.md`, `docs/DECISIONS.md`, or `docs/CANONICAL_MODEL.md`.
 
@@ -47,7 +47,7 @@ Boundary rules:
 
 ## Live Execution State
 
-Last updated: 2026-08-29T12:15:00+01:00
+Last updated: 2026-08-29T12:23:00+01:00
 
 Repository: `funmarket/HoomaUltimate`
 
@@ -61,10 +61,10 @@ Dirty main checkout: deliberately untouched.
 
 Branch: `product/home-ia-simplify`
 
-Implementation HEAD before commit:
+Implementation commit:
 
 ```text
-b32863ea6b60b24821c1286aaf995756f4f17e65
+513c7fef3576c9978c886f13529f34e845f4c67d
 ```
 
 Current `origin/phase-0-foundation` HEAD:
@@ -84,6 +84,12 @@ Open PR overlap:
 
 ```text
 No open PRs returned by gh pr list at the latest concurrency check.
+```
+
+Pull request:
+
+```text
+https://github.com/funmarket/HoomaUltimate/pull/160
 ```
 
 Working tree status:
@@ -299,7 +305,7 @@ Evidence:
 
 ### Slice 8 - Verification and final concurrency review
 
-Status: `[~]` final pre-commit review in progress.
+Status: `[x]` source verified and PR opened.
 
 PASS:
 
@@ -352,12 +358,8 @@ NOT VERIFIED:
 
 ## Remaining Work
 
-- Re-read the complete final diff.
-- Run final `git diff --check`.
-- Commit the focused branch if the final review remains safe.
-- Push `product/home-ia-simplify`.
-- Open one PR targeting `phase-0-foundation`.
-- Update this file with commit SHA and PR URL after those steps.
+- Review PR #160.
+- Do not merge until the product owner explicitly approves merge.
 
 ## Implementation Score
 
