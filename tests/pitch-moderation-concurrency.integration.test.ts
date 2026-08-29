@@ -1,15 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { getDatabaseClient } from "@hooma/database";
+import type { PlatformAdminAccessPort } from "../apps/api/src/application/platform-admin-access.port.js";
 import { AppError } from "../apps/api/src/http/errors/app-error.js";
-import { PlaceCapabilityService } from "../apps/api/src/modules/places/application/place-capability.service.js";
-import { PrismaPlaceCapabilityRepository } from "../apps/api/src/modules/places/infrastructure/prisma-place-capability.repository.js";
 import { PrismaPlaceRepository } from "../apps/api/src/modules/places/infrastructure/prisma-place.repository.js";
-import type { PlatformAdminAuthorizer } from "../apps/api/src/modules/platform-admin/application/platform-admin.authorizer.js";
+import { ApprovedPitchReader } from "../apps/api/src/modules/pitch/application/approved-pitch.reader.js";
+import { PitchModerationService } from "../apps/api/src/modules/pitch/application/pitch-moderation.service.js";
+import { PitchOwnerService } from "../apps/api/src/modules/pitch/application/pitch-owner.service.js";
+import { PrismaPitchRepository } from "../apps/api/src/modules/pitch/infrastructure/prisma-pitch.repository.js";
 
 const db = getDatabaseClient();
 
-const allowAdmin: PlatformAdminAuthorizer = {
+const allowAdmin: PlatformAdminAccessPort = {
   async isPlatformAdmin() {
     return true;
   },
@@ -69,18 +71,20 @@ test("Pitch moderation concurrency is database-enforced", async () => {
   });
 
   const places = new PrismaPlaceRepository(db);
-  const capabilityRepository = new PrismaPlaceCapabilityRepository(db);
-  const pitch = new PlaceCapabilityService("PITCH", capabilityRepository, places, allowAdmin);
+  const pitchRepository = new PrismaPitchRepository(db);
+  const pitchReader = new ApprovedPitchReader(pitchRepository);
+  const pitchOwner = new PitchOwnerService(pitchRepository, places, allowAdmin);
+  const pitchModeration = new PitchModerationService(pitchRepository, allowAdmin);
   let applicationId: string | null = null;
 
   try {
     const submissions = await Promise.allSettled([
-      pitch.submit(owner.id, place.id, {
+      pitchOwner.submitRevision(owner.id, place.id, {
         summary: "Concurrent rental update A.",
         hourlyRateMinor: 70_000,
         currency: "TND",
       }),
-      pitch.submit(owner.id, place.id, {
+      pitchOwner.submitRevision(owner.id, place.id, {
         summary: "Concurrent rental update B.",
         hourlyRateMinor: 71_000,
         currency: "TND",
@@ -105,15 +109,15 @@ test("Pitch moderation concurrency is database-enforced", async () => {
     assert.equal(pendingRevisions.length, 1);
     assert.equal(pendingRevisions[0]!.id, applicationId);
 
-    const publicBeforeReview = await pitch.getPublic(place.id);
+    const publicBeforeReview = await pitchReader.getApproved(place.id);
     assert.equal(publicBeforeReview.hourlyRateMinor, 65_000);
 
     const reviews = await Promise.allSettled([
-      pitch.review(adminA.id, applicationId, {
+      pitchModeration.review(adminA.id, "OWNER_REVISION", applicationId, {
         decision: "APPROVE",
         note: "Admin A review",
       }),
-      pitch.review(adminB.id, applicationId, {
+      pitchModeration.review(adminB.id, "OWNER_REVISION", applicationId, {
         decision: "APPROVE",
         note: "Admin B review",
       }),
@@ -126,8 +130,7 @@ test("Pitch moderation concurrency is database-enforced", async () => {
 
     const failedReview = failedReviews[0];
     assert.ok(failedReview?.status === "rejected");
-    const reviewConflictCode = "PITCH_APPLICATION_REVIEW_NOT_PENDING";
-    assert.ok(isAppErrorCode(failedReview.reason, reviewConflictCode));
+    assert.ok(isAppErrorCode(failedReview.reason, "PITCH_REVIEW_NOT_PENDING"));
 
     const reviewedRevision = await db.placeCapabilityApplication.findUnique({
       where: { id: applicationId },
@@ -137,7 +140,7 @@ test("Pitch moderation concurrency is database-enforced", async () => {
     assert.ok(reviewerId === adminA.id || reviewerId === adminB.id);
     assert.ok(reviewedRevision?.reviewedAt);
 
-    const publicAfterReview = await pitch.getPublic(place.id);
+    const publicAfterReview = await pitchReader.getApproved(place.id);
     assert.equal(publicAfterReview.hourlyRateMinor, reviewedRevision?.hourlyRateMinor);
     assert.equal(publicAfterReview.summary, reviewedRevision?.summary);
 
