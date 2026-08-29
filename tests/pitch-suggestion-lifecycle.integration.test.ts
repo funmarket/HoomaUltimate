@@ -1,14 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { getDatabaseClient } from "@hooma/database";
-import { PlaceCapabilityService } from "../apps/api/src/modules/places/application/place-capability.service.js";
-import { PrismaPlaceCapabilityRepository } from "../apps/api/src/modules/places/infrastructure/prisma-place-capability.repository.js";
+import type { PlatformAdminAccessPort } from "../apps/api/src/application/platform-admin-access.port.js";
 import { PrismaPlaceRepository } from "../apps/api/src/modules/places/infrastructure/prisma-place.repository.js";
-import type { PlatformAdminAuthorizer } from "../apps/api/src/modules/platform-admin/application/platform-admin.authorizer.js";
+import { ApprovedPitchReader } from "../apps/api/src/modules/pitch/application/approved-pitch.reader.js";
+import { PitchModerationService } from "../apps/api/src/modules/pitch/application/pitch-moderation.service.js";
+import { PitchOwnerService } from "../apps/api/src/modules/pitch/application/pitch-owner.service.js";
+import { PitchSuggestionService } from "../apps/api/src/modules/pitch/application/pitch-suggestion.service.js";
+import { PrismaPitchRepository } from "../apps/api/src/modules/pitch/infrastructure/prisma-pitch.repository.js";
 
 const db = getDatabaseClient();
 
-const allowAdmin: PlatformAdminAuthorizer = {
+const allowAdmin: PlatformAdminAccessPort = {
   async isPlatformAdmin() {
     return true;
   },
@@ -32,30 +35,34 @@ test("an approved suggested Pitch preserves immutable owner moderation history",
     },
   });
   const places = new PrismaPlaceRepository(db);
-  const capabilityRepository = new PrismaPlaceCapabilityRepository(db);
-  const pitch = new PlaceCapabilityService("PITCH", capabilityRepository, places, allowAdmin);
+  const pitchRepository = new PrismaPitchRepository(db);
+  const pitchReader = new ApprovedPitchReader(pitchRepository);
+  const pitchSuggestions = new PitchSuggestionService(pitchRepository);
+  const pitchOwner = new PitchOwnerService(pitchRepository, places, allowAdmin);
+  const pitchModeration = new PitchModerationService(pitchRepository, allowAdmin);
 
   let placeId: string | null = null;
   const applicationIds: string[] = [];
   let claimId: string | null = null;
 
   try {
-    const suggested = await places.suggest(suggester.id, {
-      name: `Community Pitch ${suffix}`,
-      address: "18 Football Road",
-      city: "Tunis",
-      houma: "El Menzah",
-      latitude: null,
-      longitude: null,
-      phone: "+21671000123",
-      email: null,
-      websiteUrl: null,
-      imageUrl: null,
-      imageUrls: [],
-      description: "A real local football ground suggested by the community.",
-      category: "Football pitch",
-      menuItems: [],
-      suggestedCapabilities: ["PITCH"],
+    const suggested = await pitchSuggestions.suggest(suggester.id, {
+      place: {
+        name: `Community Pitch ${suffix}`,
+        address: "18 Football Road",
+        city: "Tunis",
+        houma: "El Menzah",
+        latitude: null,
+        longitude: null,
+        phone: "+21671000123",
+        email: null,
+        websiteUrl: null,
+        imageUrl: null,
+        imageUrls: [],
+        description: "A real local football ground suggested by the community.",
+        category: "Football pitch",
+        menuItems: [],
+      },
       pitch: { hourlyRateMinor: 45_000, currency: "TND" },
     });
     assert.equal(suggested.outcome, "CREATED");
@@ -65,22 +72,24 @@ test("an approved suggested Pitch preserves immutable owner moderation history",
     const pendingCapability = await db.placeCapability.findUnique({
       where: { placeId_kind: { placeId, kind: "PITCH" } },
     });
-    assert.equal(pendingCapability?.status, "PENDING");
-    assert.equal(pendingCapability?.hourlyRateMinor, 45_000);
-    assert.equal(pendingCapability?.currency, "TND");
+    assert.ok(pendingCapability);
+    assert.equal(pendingCapability.status, "PENDING");
+    assert.equal(pendingCapability.hourlyRateMinor, 45_000);
+    assert.equal(pendingCapability.currency, "TND");
 
-    const queueItem = (await places.pendingPlaces()).find((item) => item.id === placeId);
+    const queueItem = (await pitchModeration.pending(admin.id)).find(
+      (item) => item.target === "INITIAL_SUGGESTION" && item.place.id === placeId,
+    );
     assert.ok(queueItem);
-    assert.equal(queueItem.kind, "PITCH");
     assert.equal(queueItem.hourlyRateMinor, 45_000);
     assert.equal(queueItem.currency, "TND");
 
-    assert.equal(
-      await places.reviewPlace(admin.id, placeId, {
+    assert.deepEqual(
+      await pitchModeration.review(admin.id, "INITIAL_SUGGESTION", pendingCapability.id, {
         decision: "APPROVE",
         note: "Confirmed as a real football pitch with reviewed rental pricing",
       }),
-      true,
+      { ok: true },
     );
 
     assert.equal(
@@ -96,7 +105,7 @@ test("an approved suggested Pitch preserves immutable owner moderation history",
       "an approved Pitch suggestion must stop being editable by an unverified suggester",
     );
 
-    const publicBeforeClaim = await pitch.getPublic(placeId);
+    const publicBeforeClaim = await pitchReader.getApproved(placeId);
     assert.equal(publicBeforeClaim.place.id, placeId);
     assert.equal(publicBeforeClaim.hourlyRateMinor, 45_000);
     assert.equal(publicBeforeClaim.currency, "TND");
@@ -114,7 +123,7 @@ test("an approved suggested Pitch preserves immutable owner moderation history",
     );
     assert.equal(await places.hasVerifiedOwnership(placeId, claimant.id), true);
 
-    const firstRevision = await pitch.submit(claimant.id, placeId, {
+    const firstRevision = await pitchOwner.submitRevision(claimant.id, placeId, {
       summary: "Floodlit five-a-side pitch with changing rooms.",
       hourlyRateMinor: 50_000,
       currency: "TND",
@@ -122,12 +131,12 @@ test("an approved suggested Pitch preserves immutable owner moderation history",
     applicationIds.push(firstRevision.id);
     assert.equal(firstRevision.status, "PENDING");
 
-    const stillPublicWhilePending = await pitch.getPublic(placeId);
+    const stillPublicWhilePending = await pitchReader.getApproved(placeId);
     assert.equal(stillPublicWhilePending.hourlyRateMinor, 45_000);
     assert.equal(stillPublicWhilePending.currency, "TND");
     assert.equal(stillPublicWhilePending.place.phone, "+21671000123");
 
-    await pitch.review(admin.id, firstRevision.id, {
+    await pitchModeration.review(admin.id, "OWNER_REVISION", firstRevision.id, {
       decision: "APPROVE",
       note: "Updated rental details verified",
     });
@@ -139,13 +148,13 @@ test("an approved suggested Pitch preserves immutable owner moderation history",
     assert.equal(approvedFirstRevision?.hourlyRateMinor, 50_000);
     assert.equal(approvedFirstRevision?.currency, "TND");
 
-    const approvedRental = await pitch.getPublic(placeId);
+    const approvedRental = await pitchReader.getApproved(placeId);
     assert.equal(approvedRental.summary, "Floodlit five-a-side pitch with changing rooms.");
     assert.equal(approvedRental.hourlyRateMinor, 50_000);
     assert.equal(approvedRental.currency, "TND");
     assert.equal(approvedRental.place.phone, "+21671000123");
 
-    const secondRevision = await pitch.submit(claimant.id, placeId, {
+    const secondRevision = await pitchOwner.submitRevision(claimant.id, placeId, {
       summary: "Updated rental details awaiting review.",
       hourlyRateMinor: 55_000,
       currency: "TND",
@@ -154,15 +163,15 @@ test("an approved suggested Pitch preserves immutable owner moderation history",
     assert.notEqual(secondRevision.id, firstRevision.id);
     assert.equal(secondRevision.status, "PENDING");
 
-    const previousApprovedProfile = await pitch.getPublic(placeId);
+    const previousApprovedProfile = await pitchReader.getApproved(placeId);
     assert.equal(previousApprovedProfile.hourlyRateMinor, 50_000);
 
-    await pitch.review(admin.id, secondRevision.id, {
+    await pitchModeration.review(admin.id, "OWNER_REVISION", secondRevision.id, {
       decision: "REJECT",
       note: "Updated price could not be verified",
     });
 
-    const afterRejectedUpdate = await pitch.getPublic(placeId);
+    const afterRejectedUpdate = await pitchReader.getApproved(placeId);
     assert.equal(afterRejectedUpdate.hourlyRateMinor, 50_000);
     assert.equal(afterRejectedUpdate.currency, "TND");
 
@@ -178,7 +187,7 @@ test("an approved suggested Pitch preserves immutable owner moderation history",
     assert.equal(rejectedSecondRevision?.hourlyRateMinor, 55_000);
     assert.equal(rejectedSecondRevision?.reviewNote, "Updated price could not be verified");
 
-    const thirdRevision = await pitch.submit(claimant.id, placeId, {
+    const thirdRevision = await pitchOwner.submitRevision(claimant.id, placeId, {
       summary: "Verified new rental details.",
       hourlyRateMinor: 60_000,
       currency: "TND",
@@ -187,15 +196,15 @@ test("an approved suggested Pitch preserves immutable owner moderation history",
     assert.notEqual(thirdRevision.id, firstRevision.id);
     assert.notEqual(thirdRevision.id, secondRevision.id);
 
-    const stillPublicBeforeThirdApproval = await pitch.getPublic(placeId);
+    const stillPublicBeforeThirdApproval = await pitchReader.getApproved(placeId);
     assert.equal(stillPublicBeforeThirdApproval.hourlyRateMinor, 50_000);
 
-    await pitch.review(admin.id, thirdRevision.id, {
+    await pitchModeration.review(admin.id, "OWNER_REVISION", thirdRevision.id, {
       decision: "APPROVE",
       note: "New rental price verified",
     });
 
-    const finalPublicProfile = await pitch.getPublic(placeId);
+    const finalPublicProfile = await pitchReader.getApproved(placeId);
     assert.equal(finalPublicProfile.hourlyRateMinor, 60_000);
     assert.equal(finalPublicProfile.currency, "TND");
 
