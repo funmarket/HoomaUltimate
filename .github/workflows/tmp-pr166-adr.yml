@@ -1,0 +1,70 @@
+name: PR 166 Final ADR
+
+on:
+  push:
+    branches:
+      - fix/play-player-actions-lifecycle
+
+permissions:
+  contents: write
+
+jobs:
+  adr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/play-player-actions-lifecycle
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - name: Add canonical ADR and correct ledger reference
+        run: |
+          cat > docs/adr/ADR-049-play-player-actions.md <<'EOF'
+          # ADR-049 — Play player actions preserve Team and Event ownership
+
+          ## Status
+
+          Accepted.
+
+          ## Context
+
+          The Play Players feed exposes people who deliberately publish that they are looking for a `GAME` or a `TEAM`. The existing Team recruitment action crossed the ownership boundary by allowing Teams infrastructure to resolve a Play listing directly from Play-owned persistence. The GAME action had no implemented invitation lifecycle.
+
+          Direct actions from Play must not turn Play into a second owner of Team recruitment, Event participation, or generic invitations. They must also preserve canonical authorization, persistence, and concurrency behavior in the owning domains.
+
+          ## Decision
+
+          Play owns discovery, current listing-target resolution, and orchestration only.
+
+          For a `TEAM` listing, Play resolves the canonical target User and invokes a narrow Teams operation. Teams alone authorizes `MANAGE_ROSTER`, persists the canonical `TeamPlayerOffer`, exposes incoming/outgoing offer state, and creates or reactivates `TeamPlayer` on acceptance. Teams infrastructure must not query Play-owned persistence.
+
+          For a `GAME` listing, Play resolves the canonical target User and invokes a narrow Events operation for a selected `PUBLISHED` `PLAY` Event that the actor may manage under the existing Event authority policy. Events owns the durable `EventPlayerInvite` lifecycle.
+
+          Sending an Event invitation never creates an RSVP. Only the target User may accept or decline. Acceptance and RSVP allocation happen in one Events transaction using the same row-locked capacity/waitlist policy as ordinary Event Join. Cancelling or completing an Event closes its pending invitations.
+
+          Pending Team offers and Event invitations remain authoritative in Teams and Events. Play may map those records back to current Play listing IDs for authenticated UI readback, but it persists no duplicate sender state and public Play listing projections do not expose canonical target User IDs for this workflow.
+
+          ## Consequences
+
+          There is one sender path for each action from Play and no parallel Team sender route that accepts a Play listing ID.
+
+          `TeamPlayerOffer` remains the only Team recruitment offer record. `EventPlayerInvite` is the only durable direct player invitation record for scheduled Play Events. No generic invitation domain is introduced.
+
+          Play frontend state must reflect owning-domain readback rather than browser-local “sent” flags. Recipient response remains in the owning Team/Event APIs.
+
+          Tests must cover cross-domain boundaries, authorization, canonical row reuse, Event RSVP capacity/waitlist concurrency, cancellation/completion closure, stale listing rejection, and the absence of Teams infrastructure references to Play persistence.
+          EOF
+          sed -i 's#docs/adr/ADR-050-play-player-actions.md#docs/adr/ADR-049-play-player-actions.md#g' progress.md
+          npx prettier --write docs/adr/ADR-049-play-player-actions.md progress.md
+          git rm .github/workflows/tmp-pr166-adr.yml
+      - name: Commit final governance correction
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/adr/ADR-049-play-player-actions.md progress.md
+          git commit -m "docs(play): record player action architecture decision"
+          git push origin HEAD:fix/play-player-actions-lifecycle
