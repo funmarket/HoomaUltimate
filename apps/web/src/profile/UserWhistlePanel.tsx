@@ -32,7 +32,11 @@ export function UserWhistlePanel({
   const profileApi = useMemo(() => createProfileApi(transport), [transport]);
   const [isSelf, setIsSelf] = useState<boolean | null>(null);
   const [open, setOpen] = useState(false);
-  const [feed, setFeed] = useState<WhistleList>({ items: [], remainingToday: 11, resetsAt: "" });
+  const [feed, setFeed] = useState<WhistleList>({
+    items: [],
+    remainingToday: 11,
+    resetsAt: "",
+  });
   const [body, setBody] = useState("");
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
@@ -91,9 +95,11 @@ export function UserWhistlePanel({
 
   if (!open) {
     return (
-      <div className="profile-inline-state">
-        <span className="muted">Send a short private signal that disappears at the UTC reset.</span>
-        <button className="button" type="button" onClick={() => void openPanel()}>
+      <div className="profile-edit-form profile-inline-state">
+        <span className="muted">
+          Send a short private signal that disappears at the UTC reset.
+        </span>
+        <button type="button" onClick={() => void openPanel()}>
           Open Whistle
         </button>
       </div>
@@ -130,13 +136,15 @@ export function UserWhistlePanel({
         </small>
         <button
           type="submit"
-          disabled={!body.trim() || count > MAX_GRAPHEMES || sending || feed.remainingToday <= 0}
+          disabled={
+            !body.trim() || count > MAX_GRAPHEMES || sending || feed.remainingToday <= 0
+          }
         >
           {sending ? "Sending…" : "Whistle"}
         </button>
       </form>
 
-      {error ? <div className="error-box">{error}</div> : null}
+      {error ? <p role="alert">{error}</p> : null}
     </div>
   );
 }
