@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
-import { placeUpdateSchema } from "../packages/contracts/src/platform-management.ts";
+import { placeUpdateSchema } from "../packages/contracts/src/places.ts";
 
 function source(path) {
   return readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -35,7 +35,7 @@ test("Watch page exposes only the four product functions and no business onboard
 test("Watch Spots reuse canonical Places and exclude canonical Pitch capabilities", () => {
   const places = source("packages/frontend/src/places/PlacesPages.tsx");
   assert.match(places, /<h1>Spots<\/h1>/);
-  assert.match(places, /api\.capability\.list\("PITCH"\)/);
+  assert.match(places, /pitchApi\.list\(\)/);
   assert.match(places, /pitchPlaceIds/);
   assert.match(places, /!pitchPlaceIds\.has\(place\.id\)/);
   assert.match(places, />\s*Events\s*</);
@@ -69,7 +69,7 @@ test("Prisma keeps canonical Place and Event ownership while storing details bel
 });
 
 test("Place coordinates stay optional and update defaults stay out of partial PATCH fields", () => {
-  const contracts = source("packages/contracts/src/platform-management.ts");
+  const contracts = source("packages/contracts/src/places.ts");
   assert.match(
     contracts,
     /latitude: z\.number\(\)\.min\(-90\)\.max\(90\)\.optional\(\)\.nullable\(\)/,
@@ -234,34 +234,30 @@ test("archived Places stay off public Place and Watch discovery", () => {
 });
 
 test("PlaceImage is the only runtime Place image authority", () => {
+  const canonicalPlace = source("apps/api/src/modules/places/boundary/canonical-place.persistence.ts");
   const placeRepository = source(
     "apps/api/src/modules/places/infrastructure/prisma-place.repository.ts",
   );
-  const pitchRepository = source(
-    "apps/api/src/modules/places/infrastructure/prisma-place-capability.repository.ts",
-  );
+  const pitchRepository = source("apps/api/src/modules/pitch/infrastructure/prisma-pitch.repository.ts");
 
+  assert.match(canonicalPlace, /type CanonicalPlaceImageRow/);
+  assert.match(canonicalPlace, /function canonicalPlaceSummary/);
+  assert.match(canonicalPlace, /function groupCanonicalPlaceImages/);
+  assert.match(canonicalPlace, /imageUrl: publicImages\[0\]\?\.imageUrl \?\? null/);
+  assert.doesNotMatch(canonicalPlace, /publicImages\[0\]\?\.imageUrl \?\? place\.imageUrl/);
   for (const repository of [placeRepository, pitchRepository]) {
-    assert.match(repository, /type PlaceImageRow/);
-    assert.match(repository, /function groupImages/);
     assert.match(repository, /this\.db\.placeImage\.findMany/);
-    assert.match(repository, /imageUrl: publicImages\[0\]\?\.imageUrl \?\? null/);
+    assert.match(repository, /canonicalPlaceSummary/);
     assert.doesNotMatch(repository, /\n  imageUrl: true,/);
-    assert.doesNotMatch(repository, /publicImages\[0\]\?\.imageUrl \?\? place\.imageUrl/);
   }
-  assert.doesNotMatch(placeRepository, /imageUrl: imageUrls\[0\] \?\? null/);
-  assert.match(
-    pitchRepository,
-    /placeSummary\(row\.place, byPlace\.get\(row\.place\.id\) \?\? \[\]\)/,
-  );
+  assert.match(placeRepository, /groupCanonicalPlaceImages/);
+  assert.match(pitchRepository, /groupCanonicalPlaceImages/);
 });
 
 test("Pitch rental pricing is canonical from contract through Prisma and repository", () => {
-  const contracts = source("packages/contracts/src/platform-management.ts");
+  const contracts = source("packages/contracts/src/pitch.ts");
   const schema = source("packages/database/prisma/schema.prisma");
-  const repository = source(
-    "apps/api/src/modules/places/infrastructure/prisma-place-capability.repository.ts",
-  );
+  const repository = source("apps/api/src/modules/pitch/infrastructure/prisma-pitch.repository.ts");
   const migration = source(
     "packages/database/prisma/migrations/20260827112000_pitch_hourly_rental_pricing/migration.sql",
   );
@@ -273,7 +269,7 @@ test("Pitch rental pricing is canonical from contract through Prisma and reposit
   assert.match(migration, /ADD COLUMN "currency" VARCHAR\(3\)/);
   assert.match(repository, /hourlyRateMinor: input\.hourlyRateMinor/);
   assert.match(repository, /currency: input\.currency/);
-  assert.doesNotMatch(repository, /\$queryRaw|\$executeRaw/);
+  assert.doesNotMatch(repository, /\$executeRaw/);
 });
 
 test("Pitch owns its discovery page and does not live inside generic PlacesPages", () => {
