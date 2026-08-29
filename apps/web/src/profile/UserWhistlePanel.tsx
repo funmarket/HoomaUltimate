@@ -1,10 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type FormEvent,
-} from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   createProfileApi,
   useHoomaFrontend,
@@ -83,13 +77,7 @@ export function UserWhistlePanel({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (
-      !body.trim() ||
-      count > MAX_GRAPHEMES ||
-      sending ||
-      feed.remainingToday <= 0
-    )
-      return;
+    if (!body.trim() || count > MAX_GRAPHEMES || sending || feed.remainingToday <= 0) return;
     setSending(true);
     setError("");
     try {
@@ -108,9 +96,7 @@ export function UserWhistlePanel({
   if (!open) {
     return (
       <div className="profile-edit-form profile-inline-state">
-        <span className="muted">
-          Send a short private signal that disappears at the UTC reset.
-        </span>
+        <span className="muted">Send a short private signal that disappears at the UTC reset.</span>
         <button type="button" onClick={() => void openPanel()}>
           Open Whistle
         </button>
@@ -119,10 +105,7 @@ export function UserWhistlePanel({
   }
 
   return (
-    <div
-      className="profile-edit-form"
-      aria-label={`Direct Whistle with ${recipientName}`}
-    >
+    <div className="profile-edit-form" aria-label={`Direct Whistle with ${recipientName}`}>
       <div className="profile-inline-state" aria-live="polite">
         {loading ? <span className="muted">Listening for Whistles…</span> : null}
         {!loading && !feed.items.length ? (
@@ -146,17 +129,12 @@ export function UserWhistlePanel({
             aria-describedby="user-whistle-count"
           />
         </label>
-        <small
-          id="user-whistle-count"
-          className={count > MAX_GRAPHEMES ? "is-over" : ""}
-        >
+        <small id="user-whistle-count" className={count > MAX_GRAPHEMES ? "is-over" : ""}>
           {count}/{MAX_GRAPHEMES} graphemes · {feed.remainingToday}/11 left today
         </small>
         <button
           type="submit"
-          disabled={
-            !body.trim() || count > MAX_GRAPHEMES || sending || feed.remainingToday <= 0
-          }
+          disabled={!body.trim() || count > MAX_GRAPHEMES || sending || feed.remainingToday <= 0}
         >
           {sending ? "Sending…" : "Whistle"}
         </button>
