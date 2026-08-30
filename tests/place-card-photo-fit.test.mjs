@@ -3,7 +3,10 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("Spot card photos stay fully visible and centered", async () => {
-  const css = await readFile(new URL("../packages/frontend/src/places/places.css", import.meta.url), "utf8");
+  const css = await readFile(
+    new URL("../packages/frontend/src/places/places.css", import.meta.url),
+    "utf8",
+  );
   const rule = css.match(/\.place-card__media img \{([\s\S]*?)\}/)?.[1] ?? "";
 
   assert.match(rule, /object-fit:\s*contain;/);
