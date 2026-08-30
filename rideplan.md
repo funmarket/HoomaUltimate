@@ -1347,7 +1347,7 @@ Evidence
 
 ## RIDE-003 — Ride Prisma repository + concurrency-safe capacity lifecycle
 
-Status: **[~] IN PROGRESS**
+Status: **[x] DONE**
 
 Dependencies: `RIDE-002`
 
@@ -1384,17 +1384,17 @@ Evidence
 
 - Branch: `ride/ride-003-prisma-repository`
 - PR: #180 (`https://github.com/funmarket/HoomaUltimate/pull/180`)
-- Base foundation HEAD at task start: `8411b26d435d48f6e2fc0a090ce38315617e25c4`
-- Source trace: `AGENTS.md`, `docs/LIVING_BUILD_PLAN.md`, governing docs, full `rideplan.md`, RIDE-001 ports/policy, RIDE-002 Prisma schema, and existing repository/test patterns were read before implementation. Latest `phase-0-foundation` was fetched and no open PR overlap was found before the first RIDE-003 ledger update.
-- Changed files so far: `apps/api/src/modules/rides/infrastructure/prisma-ride.repository.ts`, `tests/rides.repository.integration.test.ts`, `rideplan.md`.
-- Documentation updated: this RIDE-003 in-progress ledger entry.
-- Tests so far: direct unit suite passed with 184/184 tests using `npx.cmd tsx --test` and the unit-only file list; after the first CI failure, the unit-only suite was rerun and passed 184/184 again. The repo `npm test` wrapper is still not usable on this Windows shell because it fails before running tests with `spawn EINVAL`.
-- Static/build checks so far: `db:generate` passed; `db:validate` passed with a safe validation-only `DATABASE_URL`; full workspace `typecheck` passed; API typecheck passed after formatting and again after the duplicate-participation fix; `architecture:check` passed; `build:packages` passed; Prettier was run on the RIDE-003 source/test/doc files.
-- PostgreSQL migration/integration proof: pending. Docker is not installed on this host, so no local disposable PostgreSQL was started. GitHub CI on PR head `f646b60107bea7667e495ca78e7a3b40ecfc2cbe` reached `npm run test:integration` and failed the duplicate-passenger idempotency test, proving the first implementation was below the bar. The repository was corrected so `requestParticipation` locks the `RideOffer` row before checking/creating the unique passenger participation; a new CI run must pass before this task can be marked DONE.
+- Merged commit / current foundation HEAD: PR #180 merged as `ef1636e54cde79c414476f0f11fbc632f4dd5645`; `origin/phase-0-foundation` read-back after merge was `ef1636e54cde79c414476f0f11fbc632f4dd5645`.
+- Source trace: `AGENTS.md`, `docs/LIVING_BUILD_PLAN.md`, governing docs, full `rideplan.md`, RIDE-001 ports/policy, RIDE-002 Prisma schema, and existing repository/test patterns were read before implementation. Latest `phase-0-foundation` was fetched before implementation and immediately before merge.
+- Changed files: `apps/api/src/modules/rides/infrastructure/prisma-ride.repository.ts`, `tests/rides.repository.integration.test.ts`, `rideplan.md`.
+- Documentation updated: RIDE-003 implementation evidence was recorded while in progress; this docs-only closeout records merged foundation truth after GitHub read-back.
+- Tests: direct local unit suite passed with 184/184 tests using `npx.cmd tsx --test` and the unit-only file list; after the first CI failure, the unit-only suite was rerun and passed 184/184 again. GitHub CI on exact final PR head `579aac0d822010e188e4ebd428b5dc45a34a9833` passed `npm test` and `npm run test:integration`.
+- Static/build checks: local `db:generate`, `db:validate`, full workspace `typecheck`, API typecheck after formatting/fix, `architecture:check`, `build:packages`, Prettier check for RIDE-003 files, and `git diff --check` passed. GitHub CI on exact final PR head `579aac0d822010e188e4ebd428b5dc45a34a9833` passed `npm ci`, `db:generate`, `db:validate`, `db:migrate:deploy`, `architecture:check`, changed-file formatting, changed-source lint, `typecheck`, `build:packages`, `npm test`, `build`, integration tests, `deploy:preflight`, `security:check`, and `db:migrate:status`.
+- PostgreSQL migration/integration proof: GitHub CI used disposable PostgreSQL and passed `tests/rides.repository.integration.test.ts` on exact final PR head `579aac0d822010e188e4ebd428b5dc45a34a9833`. The test suite proved final-seat acceptance cannot overbook, duplicate passenger requests do not create duplicate rows, cancellation releases capacity, terminal rewrites are rejected, exact meeting points are visible only to the driver/accepted passenger, and public Ride request projections do not expose requester identity. The first CI head `f646b60107bea7667e495ca78e7a3b40ecfc2cbe` failed duplicate-passenger idempotency; the repository was corrected by locking the `RideOffer` row before checking/creating the unique passenger participation, then final CI passed.
 - Object-storage/Redis/Worker proof if applicable: not applicable; RIDE-003 does not include media/storage/Redis/worker work.
 - Deployment/live proof if applicable: not applicable; RIDE-003 has no HTTP/frontend route.
-- Remaining risk: real PostgreSQL integration proof and CI gates are still pending; RIDE-003 must remain in progress until those pass on the exact PR head.
-- Implementation score: local static/unit confidence 9/10; overall RIDE-003 remains below DONE until disposable PostgreSQL proof passes.
+- Remaining risk: PR #181 is open and touches `apps/api/src/bootstrap/container.ts`, which may overlap later RIDE-005 bootstrap wiring but does not overlap RIDE-003. Browser/Telegram Ride runtime remains unchanged and unverified because UI/API work belongs to later tasks.
+- Implementation score: 10/10 for RIDE-003 scope after CI PostgreSQL proof and merge/read-back.
 - Next task: `RIDE-004` — not started.
 
 ---
