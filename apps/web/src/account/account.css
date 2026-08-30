@@ -8,11 +8,11 @@
   --hooma-gold: var(--app-gold);
   --hooma-accent: var(--app-lime);
   --hooma-chrome-bg: #070808;
-  --hooma-chrome-surface: #11120f;
-  --hooma-chrome-text: #f2ead7;
-  --hooma-chrome-muted: #bfb59a;
-  --hooma-chrome-border: #5c4b25;
-  --hooma-chrome-gold: #b59b57;
+  --hooma-chrome-surface: #121212;
+  --hooma-chrome-text: #f4f1ea;
+  --hooma-chrome-muted: #c8c3b8;
+  --hooma-chrome-border: #b8953a;
+  --hooma-chrome-gold: #e8c36a;
 }
 
 .hooma-topbar {
@@ -181,7 +181,7 @@
 .hooma-account-menu__row-copy small,
 .hooma-account-menu__row-copy span {
   color: var(--hooma-chrome-muted);
-  font-size: 12px;
+  font-size: 16px;
 }
 .hooma-account-menu__chevron {
   display: grid;
