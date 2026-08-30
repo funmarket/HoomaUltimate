@@ -10,7 +10,7 @@ if (!databaseUrl) throw new Error("DATABASE_URL is required for platform owner i
 
 const suffix = Date.now().toString(36);
 const ownerTelegramId = BigInt(`9${Date.now()}${Math.floor(Math.random() * 1000)}`);
-const canonicalPlaceCover = "https://images.example.com/venue/photo?id=123&size=large";
+const canonicalPlaceCover = "https://images.example.com/venue/photo.jpg?id=123&size=large";
 const staleLegacyCover = "https://images.example.com/legacy-stale-cover";
 const config = loadApiConfig({
   ...process.env,
