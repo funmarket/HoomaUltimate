@@ -9,6 +9,7 @@ test("Spot card photos stay fully visible and centered", async () => {
   );
   const rule = css.match(/\.place-card__media img \{([\s\S]*?)\}/)?.[1] ?? "";
 
+  assert.ok(rule, "Place card image rule must exist");
   assert.match(rule, /object-fit:\s*contain;/);
   assert.match(rule, /object-position:\s*center;/);
   assert.doesNotMatch(rule, /object-fit:\s*cover;/);
