@@ -1,3 +1,4 @@
+import { ContainedImage } from "@hooma/ui";
 import { Link } from "react-router-dom";
 import type { PublicEvent } from "../events/api";
 import { FitSingleLineText } from "../ui/FitSingleLineText";
@@ -183,7 +184,7 @@ export function WatchTicket({
           aria-label={`Open ${place.name}`}
         >
           {place.imageUrl ? (
-            <img src={place.imageUrl} alt={place.name} />
+            <ContainedImage src={place.imageUrl} alt={place.name} />
           ) : (
             <span>{place.name}</span>
           )}
