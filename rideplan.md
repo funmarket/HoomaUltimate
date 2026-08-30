@@ -1283,7 +1283,7 @@ Evidence
 
 ## RIDE-002 — Ride core Prisma schema + committed migration
 
-Status: **[~] IN PROGRESS**
+Status: **[x] DONE**
 
 Dependencies: `RIDE-001`
 
@@ -1330,17 +1330,17 @@ Evidence
 
 - Branch: `ride/ride-002-prisma-schema`.
 - PR: [#178](https://github.com/funmarket/HoomaUltimate/pull/178).
-- Merged commit / current foundation HEAD: in-flight from `8dc514214d1c092b5b8f48fc76e1e974563512fa`.
+- Merged commit / current foundation HEAD: PR #178 merged at `a0fa23b5b6a15b990953886808ad0a757ebd755c`; read-back confirmed `origin/phase-0-foundation` is `a0fa23b5b6a15b990953886808ad0a757ebd755c`, with parents `8dc514214d1c092b5b8f48fc76e1e974563512fa` and PR head `6cd8acbe83a7763d6e485ec3936748048e7a80eb`.
 - Source trace: `AGENTS.md`, `docs/LIVING_BUILD_PLAN.md`, full `rideplan.md`, Ride sections in `requirements.md`, `structure.md`, `docs/CANONICAL_MODEL.md`, `docs/DECISIONS.md`, `docs/adr/ADR-050-ride-requests-unfreeze.md`, existing Prisma schema, and recent migrations.
 - Changed files: `packages/database/prisma/schema.prisma`, `packages/database/prisma/migrations/20260830185000_ride_core_persistence/migration.sql`, `tests/ride-prisma-schema.test.mjs`, `docs/CANONICAL_MODEL.md`, and this ledger only.
-- Documentation updated: `docs/CANONICAL_MODEL.md` now records the current core Ride persistence and keeps vehicle-photo metadata deferred; this ledger records in-flight RIDE-002 evidence.
+- Documentation updated: `docs/CANONICAL_MODEL.md` records the current core Ride persistence and keeps vehicle-photo metadata deferred; this ledger was kept live during implementation and closed after GitHub merge/read-back evidence.
 - Tests: `npm exec -- tsx --test tests\ride-prisma-schema.test.mjs` passed (3 tests); direct full unit suite via `.\node_modules\.bin\tsx.cmd --test <50 unit files>` passed (184 tests).
-- Static/build checks: `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/hooma_ultimate_test npm run db:validate` passed; `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/hooma_ultimate_test npm run db:generate` passed; `npm run architecture:check` passed; `npm -w @hooma/database run typecheck` passed; `npm -w @hooma/database run build` passed; `npm exec -- prettier --check docs\CANONICAL_MODEL.md rideplan.md` passed; `git diff --check` passed; `npm run build:packages` passed.
-- PostgreSQL migration/integration proof: pending GitHub CI disposable PostgreSQL; local port `5432` was detected but not proven disposable, so no local migration was run against it.
+- Static/build checks: `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/hooma_ultimate_test npm run db:validate` passed; `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/hooma_ultimate_test npm run db:generate` passed; `npm run architecture:check` passed; `npm -w @hooma/database run typecheck` passed; `npm -w @hooma/database run build` passed; `npm exec -- prettier --check docs\CANONICAL_MODEL.md rideplan.md` passed; `git diff --check` passed; `npm run build:packages` passed. GitHub CI run `33327194163`, job `99299319142`, passed on exact PR head `6cd8acbe83a7763d6e485ec3936748048e7a80eb`, including `npm ci`, `db:generate`, `db:validate`, `db:migrate:deploy`, `architecture:check`, changed-file formatting, changed-source lint, `typecheck`, `build:packages`, `npm test`, `build`, integration tests, `deploy:preflight`, `security:check`, and `db:migrate:status`.
+- PostgreSQL migration/integration proof: GitHub CI disposable PostgreSQL `db:migrate:deploy` and `db:migrate:status` passed on exact PR head `6cd8acbe83a7763d6e485ec3936748048e7a80eb`; local port `5432` was detected but not proven disposable, so no local migration was run against it.
 - Object-storage/Redis/Worker proof if applicable: not applicable; RIDE-002 has no media/storage/Redis/worker scope.
-- Deployment/live proof if applicable: not applicable before merge; RIDE-002 adds schema/migration only and no runtime UI/API route.
-- Remaining risk: in-flight until schema validation, migration deployment/read-back, PR CI, merge, and final DONE ledger update complete.
-- Implementation score: pending.
+- Deployment/live proof if applicable: not applicable; RIDE-002 adds schema/migration only and no runtime UI/API route.
+- Remaining risk: RIDE-003 is not started and still owns Prisma repository plus concurrency-safe capacity lifecycle; browser/Telegram runtime smoke is not applicable to this schema-only slice.
+- Implementation score: complete for RIDE-002; post-merge read-back complete.
 - Next task: `RIDE-003` — not started.
 
 ---
