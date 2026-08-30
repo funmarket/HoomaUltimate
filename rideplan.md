@@ -1615,7 +1615,7 @@ Evidence
 
 ## RIDE-005 — Ride public/member HTTP APIs + bootstrap wiring
 
-Status: **[~] IN PROGRESS**
+Status: **[x] DONE**
 
 Dependencies: `ARCH-RIDE-001`
 
@@ -1648,19 +1648,19 @@ DONE gate:
 
 Evidence
 
-- Branch: `ride/ride-005-http-api-fresh`.
-- PR: in progress.
-- Merged commit / current foundation HEAD: started from `origin/phase-0-foundation` at `4b8f542a36031941d0f2c2eec1861584bc82b1bb` after `ARCH-RIDE-001` was read back as DONE.
+- Branch: `ride/ride-005-http-api-fresh`; docs-only closeout branch `ride/ride-005-closeout`.
+- PR: #191 (`https://github.com/funmarket/HoomaUltimate/pull/191`) merged the Ride public/member HTTP API slice.
+- Merged commit / current foundation HEAD: PR #191 head `f711c7fd74d32b19b5abb242ad0dc75e6623e61a` merged as `7496265201efbd5600a940a08d422171ebee181e`; `origin/phase-0-foundation` read-back after merge was `7496265201efbd5600a940a08d422171ebee181e`.
 - Source trace: `AGENTS.md`, `docs/LIVING_BUILD_PLAN.md`, full `rideplan.md`, Ride sections in `requirements.md`, `structure.md`, `docs/CANONICAL_MODEL.md`, `docs/DECISIONS.md`, existing Ride contracts, Ride service, Ride repository ports, Prisma Ride repositories, shared public/member routers, shared auth middleware, container wiring, and existing HTTP integration test patterns.
 - Changed files: `apps/api/src/modules/rides/http/ride.routes.ts`, `apps/api/src/http/public-v1/router.ts`, `apps/api/src/http/v1/router.ts`, `apps/api/src/bootstrap/container.ts`, `tests/rides.http.integration.test.ts`, and `rideplan.md`.
-- Documentation updated: this ledger marks RIDE-005 in progress only; do not mark DONE until route tests, API read-back, CI, merge, and post-merge read-back are complete.
-- Tests: focused Ride/domain/error/guard unit tests passed 19/19 with `npx.cmd tsx --test tests/ride-service.test.ts tests/ride-error-boundary.test.ts tests/ride-contract-policy.test.ts tests/architecture-http-boundary.test.mjs`; direct full unit suite passed 199/199 with the unit-only file selection. Local focused HTTP integration test attempted with CI-style `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/hooma_ultimate_test` but local PostgreSQL rejected those credentials with Prisma `P1000`, so disposable PostgreSQL proof is pending GitHub CI.
-- Static/build checks: `npm run architecture:check` passed; `npm -w @hooma/api run typecheck` passed; full `npm run typecheck` passed; full `npm run build` passed; touched-file Prettier check passed; touched-file ESLint passed. Local `npm test` still fails before running tests with Windows `spawn EINVAL`, so the direct unit suite is recorded separately.
-- PostgreSQL migration/integration proof: no new migration expected; HTTP integration read-back is covered by `tests/rides.http.integration.test.ts` and is pending GitHub CI disposable PostgreSQL proof because the local Postgres credentials are unavailable.
+- Documentation updated: this ledger was kept in progress during the source PR and is closed only after GitHub CI, merge, and foundation read-back.
+- Tests: focused Ride/domain/error/guard unit tests passed 19/19 with `npx.cmd tsx --test tests/ride-service.test.ts tests/ride-error-boundary.test.ts tests/ride-contract-policy.test.ts tests/architecture-http-boundary.test.mjs`; direct full unit suite passed 199/199 with the unit-only file selection. GitHub CI for exact PR #191 head `f711c7fd74d32b19b5abb242ad0dc75e6623e61a` passed `npm test` and `npm run test:integration`.
+- Static/build checks: `npm run architecture:check` passed; `npm -w @hooma/api run typecheck` passed; full `npm run typecheck` passed; full `npm run build` passed; touched-file Prettier check passed; touched-file ESLint passed. GitHub CI run `33339959861`, job `99333685294`, passed `npm ci`, `db:generate`, `db:validate`, `db:migrate:deploy`, `architecture:check`, changed-file formatting, changed-source lint, `typecheck`, `build:packages`, `npm test`, `build`, integration tests, `deploy:preflight`, `security:check`, and `db:migrate:status`. Local `npm test` still fails before running tests with Windows `spawn EINVAL`, so the direct unit suite is recorded separately.
+- PostgreSQL migration/integration proof: no new migration in RIDE-005. GitHub CI disposable PostgreSQL `npm run test:integration` passed `tests/rides.http.integration.test.ts`, proving public/member Ride routes create persisted Ride offers/requests, enforce auth/authz, return privacy-safe public DTOs, preserve meeting-point privacy, and read back database state through the HTTP API.
 - Object-storage/Redis/Worker proof if applicable: not applicable to RIDE-005; Ride vehicle photos remain RIDE-006.
 - Deployment/live proof if applicable: not applicable unless explicitly deployed.
-- Remaining risk: RIDE-005 is not complete until GitHub CI proves the HTTP integration test against disposable PostgreSQL and the PR is merged/read back. Browser/Telegram runtime smoke remains separate from this backend HTTP/API slice.
-- Implementation score: not scored until completion.
+- Remaining risk: Browser/Telegram runtime smoke is not part of this backend HTTP/API slice and remains for the frontend/runtime task; Ride vehicle-photo API/media remains RIDE-006.
+- Implementation score: 10/10 for RIDE-005 scope after route-level HTTP tests, disposable PostgreSQL read-back, CI, merge, and foundation read-back.
 - Next task: `RIDE-006` — not started.
 
 ---
