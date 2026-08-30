@@ -129,6 +129,7 @@ Claiming must preserve concurrency-safe database invariants/locking behavior.
 
 - `RideOffer`
 - `RideRequest`
+- `RideOfferVehiclePhoto`
 - `RideMatch`
 - `RideLocationPing` where fully implemented
 - `RideRating` where retained and fully implemented

@@ -1,3 +1,5 @@
+import type { ObjectStorage, StoredObject } from "@hooma/storage";
+import { randomUUID } from "node:crypto";
 import type {
   RideMeetingPointInput,
   RideOfferCreateInput,
@@ -21,13 +23,23 @@ import type {
   RideEventReferenceReader,
   RidePlaceReferenceReader,
 } from "./ride-reference.readers.js";
+import type {
+  RideVehiclePhotoMetadata,
+  RideVehiclePhotoRepository,
+} from "./ride-vehicle-photo.repository.js";
 import type { RideRequestListInput, RideRequestRepository } from "./ride-request.repository.js";
 
 type PublicRideOfferListInput = Omit<RideOfferListInput, "limit"> & { readonly limit?: number };
 type PublicRideRequestListInput = Omit<RideRequestListInput, "limit"> & { readonly limit?: number };
+export interface RideVehiclePhotoUploadInput {
+  readonly contentType: string;
+  readonly body: Uint8Array;
+}
 
 const DEFAULT_LIST_LIMIT = 20;
 const MAX_LIST_LIMIT = 100;
+const RIDE_VEHICLE_PHOTO_MAX_BYTES = 5 * 1024 * 1024;
+const RIDE_VEHICLE_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 export class RideService {
   constructor(
@@ -37,6 +49,8 @@ export class RideService {
     private readonly meetingPoints: RideMeetingPointRepository,
     private readonly events: RideEventReferenceReader,
     private readonly places: RidePlaceReferenceReader,
+    private readonly vehiclePhotos: RideVehiclePhotoRepository,
+    private readonly storage: ObjectStorage | null,
   ) {}
 
   listPublicOffers(input: PublicRideOfferListInput = {}) {
@@ -240,6 +254,106 @@ export class RideService {
     return meetingPoint;
   }
 
+  async replaceOfferVehiclePhoto(
+    driverUserId: string,
+    rideOfferId: string,
+    input: RideVehiclePhotoUploadInput,
+  ): Promise<RideVehiclePhotoMetadata> {
+    await this.requireOfferOwner(driverUserId, rideOfferId);
+    const contentType = normalizeVehiclePhotoContentType(input.contentType);
+    if (!RIDE_VEHICLE_PHOTO_TYPES.has(contentType)) {
+      throw new RideError(
+        "RIDE_VEHICLE_PHOTO_TYPE_INVALID",
+        "Ride vehicle photo must be JPEG, PNG, or WebP",
+      );
+    }
+    if (!input.body.byteLength) {
+      throw new RideError("RIDE_VEHICLE_PHOTO_REQUIRED", "Ride vehicle photo bytes are required");
+    }
+    if (input.body.byteLength > RIDE_VEHICLE_PHOTO_MAX_BYTES) {
+      throw new RideError(
+        "RIDE_VEHICLE_PHOTO_TOO_LARGE",
+        "Ride vehicle photo must be 5 MB or smaller",
+      );
+    }
+    if (!this.storage) {
+      throw new RideError(
+        "RIDE_VEHICLE_PHOTO_STORAGE_NOT_CONFIGURED",
+        "Ride vehicle photo storage is not configured",
+      );
+    }
+
+    const photoId = randomUUID();
+    const objectKey = rideVehiclePhotoObjectKey(rideOfferId, photoId);
+    let uploadedKey: string | null = null;
+
+    try {
+      const stored = await this.storage.put(objectKey, input.body, contentType);
+      uploadedKey = stored.key;
+      const result = await this.vehiclePhotos.replaceForOwner({
+        rideOfferId,
+        driverUserId,
+        photo: {
+          id: photoId,
+          objectKey: stored.key,
+          contentType: stored.contentType,
+          sizeBytes: stored.sizeBytes,
+        },
+      });
+      if (!result) {
+        throw new RideError("RIDE_OFFER_MANAGE_FORBIDDEN", "Ride offer owner access required");
+      }
+      uploadedKey = null;
+      if (result.previousObjectKey && result.previousObjectKey !== result.current.objectKey) {
+        await this.removeOrScheduleVehiclePhotoObject(result.previousObjectKey, "REPLACED");
+      }
+      return publicVehiclePhotoMetadata(result.current);
+    } catch (error) {
+      if (uploadedKey) {
+        await this.removeOrScheduleVehiclePhotoObject(
+          uploadedKey,
+          "ORPHANED_AFTER_METADATA_FAILURE",
+        );
+      }
+      if (error instanceof RideError) throw error;
+      throw new RideError(
+        "RIDE_VEHICLE_PHOTO_UPLOAD_FAILED",
+        "Ride vehicle photo could not be saved",
+      );
+    }
+  }
+
+  async deleteOfferVehiclePhoto(driverUserId: string, rideOfferId: string): Promise<void> {
+    await this.requireOfferOwner(driverUserId, rideOfferId);
+    const deleted = await this.vehiclePhotos.deleteForOwner(rideOfferId, driverUserId);
+    if (!deleted) {
+      throw new RideError("RIDE_VEHICLE_PHOTO_NOT_FOUND", "Ride vehicle photo not found");
+    }
+    await this.removeOrScheduleVehiclePhotoObject(deleted.objectKey, "DELETED");
+  }
+
+  async getPublicOfferVehiclePhoto(rideOfferId: string): Promise<StoredObject> {
+    await this.getPublicOffer(rideOfferId);
+    const metadata = await this.vehiclePhotos.getForOffer(rideOfferId);
+    if (!metadata) {
+      throw new RideError("RIDE_VEHICLE_PHOTO_NOT_FOUND", "Ride vehicle photo not found");
+    }
+    if (!this.storage) {
+      throw new RideError(
+        "RIDE_VEHICLE_PHOTO_STORAGE_NOT_CONFIGURED",
+        "Ride vehicle photo storage is not configured",
+      );
+    }
+    try {
+      return await this.storage.get(metadata.objectKey);
+    } catch {
+      throw new RideError(
+        "RIDE_VEHICLE_PHOTO_UNAVAILABLE",
+        "Ride vehicle photo is temporarily unavailable",
+      );
+    }
+  }
+
   private async setOfferStatus(driverUserId: string, rideOfferId: string, status: RideOfferStatus) {
     await this.requireOfferOwner(driverUserId, rideOfferId);
 
@@ -350,6 +464,18 @@ export class RideService {
       throw error;
     }
   }
+
+  private async removeOrScheduleVehiclePhotoObject(
+    objectKey: string,
+    reason: "REPLACED" | "DELETED" | "ORPHANED_AFTER_METADATA_FAILURE",
+  ): Promise<void> {
+    if (!this.storage) return this.vehiclePhotos.scheduleObjectDeletion({ objectKey, reason });
+    try {
+      await this.storage.remove(objectKey);
+    } catch {
+      await this.vehiclePhotos.scheduleObjectDeletion({ objectKey, reason });
+    }
+  }
 }
 
 function normalizeOfferListInput(input: PublicRideOfferListInput): RideOfferListInput {
@@ -363,4 +489,23 @@ function normalizeRequestListInput(input: PublicRideRequestListInput): RideReque
 function normalizeLimit(limit: number | undefined): number {
   if (limit === undefined) return DEFAULT_LIST_LIMIT;
   return Math.min(Math.max(Math.trunc(limit), 1), MAX_LIST_LIMIT);
+}
+
+function normalizeVehiclePhotoContentType(contentType: string): string {
+  return contentType.split(";")[0]?.trim().toLowerCase() ?? "";
+}
+
+function rideVehiclePhotoObjectKey(rideOfferId: string, photoId: string): string {
+  return `ride-offer-vehicles/${rideOfferId}/${photoId}`;
+}
+
+function publicVehiclePhotoMetadata(photo: RideVehiclePhotoMetadata): RideVehiclePhotoMetadata {
+  return {
+    id: photo.id,
+    rideOfferId: photo.rideOfferId,
+    contentType: photo.contentType,
+    sizeBytes: photo.sizeBytes,
+    createdAt: photo.createdAt,
+    updatedAt: photo.updatedAt,
+  };
 }

@@ -47,6 +47,13 @@ const RIDE_STATUS: Record<RideErrorCode, number> = {
   RIDE_PARTICIPATION_CANCEL_FORBIDDEN: 403,
   RIDE_MEETING_POINT_NOT_AVAILABLE: 409,
   RIDE_MEETING_POINT_FORBIDDEN: 403,
+  RIDE_VEHICLE_PHOTO_NOT_FOUND: 404,
+  RIDE_VEHICLE_PHOTO_REQUIRED: 400,
+  RIDE_VEHICLE_PHOTO_TYPE_INVALID: 415,
+  RIDE_VEHICLE_PHOTO_TOO_LARGE: 413,
+  RIDE_VEHICLE_PHOTO_STORAGE_NOT_CONFIGURED: 503,
+  RIDE_VEHICLE_PHOTO_UPLOAD_FAILED: 503,
+  RIDE_VEHICLE_PHOTO_UNAVAILABLE: 503,
   RIDE_OFFER_STATUS_NOT_CHANGED: 409,
   RIDE_REQUEST_STATUS_NOT_CHANGED: 409,
   RIDE_PARTICIPATION_STATUS_NOT_CHANGED: 409,
@@ -85,8 +92,28 @@ export const errorHandler: ErrorRequestHandler = (error, _request, response, _ne
     });
     return;
   }
+  if (isRequestBodyError(error)) {
+    const status = error.statusCode ?? error.status ?? 400;
+    response.status(status).json({
+      error: {
+        code: status === 413 ? "PAYLOAD_TOO_LARGE" : "REQUEST_BODY_INVALID",
+        message: status === 413 ? "Request body is too large" : "Request body is invalid",
+      },
+    });
+    return;
+  }
   console.error(error);
   response
     .status(500)
     .json({ error: { code: "INTERNAL_ERROR", message: "Unexpected server error" } });
 };
+
+function isRequestBodyError(
+  error: unknown,
+): error is { readonly status?: number; readonly statusCode?: number } {
+  if (!error || typeof error !== "object") return false;
+  const status = (error as { readonly status?: unknown; readonly statusCode?: unknown }).status;
+  const statusCode = (error as { readonly status?: unknown; readonly statusCode?: unknown })
+    .statusCode;
+  return status === 400 || status === 413 || statusCode === 400 || statusCode === 413;
+}

@@ -1,6 +1,6 @@
 import type { ApiConfig } from "@hooma/config";
 import { getDatabaseClient } from "@hooma/database";
-import { S3ObjectStorage } from "@hooma/storage";
+import { S3ObjectStorage, type ObjectStorage } from "@hooma/storage";
 import { RedisClient } from "../infrastructure/redis/redis-client.js";
 import { IdentityService } from "../modules/identity/application/identity.service.js";
 import { PrismaIdentityRepository } from "../modules/identity/infrastructure/prisma-identity.repository.js";
@@ -37,6 +37,7 @@ import {
   PrismaRideRequestRepository,
 } from "../modules/rides/infrastructure/prisma-ride.repository.js";
 import { PrismaRideReferenceReader } from "../modules/rides/infrastructure/prisma-ride-reference.readers.js";
+import { PrismaRideVehiclePhotoRepository } from "../modules/rides/infrastructure/prisma-ride-vehicle-photo.repository.js";
 import { WhistleService } from "../modules/whistle/application/whistle.service.js";
 import { PrismaWhistleRepository } from "../modules/whistle/infrastructure/prisma-whistle.repository.js";
 import { RedisWhistleStore } from "../modules/whistle/infrastructure/redis-whistle-store.js";
@@ -46,7 +47,15 @@ import { ReadinessService } from "../modules/system/application/readiness.servic
 import { PrismaReadinessProbe } from "../modules/system/infrastructure/prisma-readiness.probe.js";
 import { RedisReadinessProbe } from "../modules/system/infrastructure/redis-readiness.probe.js";
 
-function matchProofStorage(config: ApiConfig) {
+interface ContainerOverrides {
+  readonly objectStorage?: ObjectStorage | null;
+}
+
+function objectStorage(
+  config: ApiConfig,
+  overrides: ContainerOverrides = {},
+): ObjectStorage | null {
+  if ("objectStorage" in overrides) return overrides.objectStorage ?? null;
   if (
     !config.OBJECT_STORAGE_ENDPOINT ||
     !config.OBJECT_STORAGE_REGION ||
@@ -65,9 +74,10 @@ function matchProofStorage(config: ApiConfig) {
   });
 }
 
-export function createContainer(config: ApiConfig) {
+export function createContainer(config: ApiConfig, overrides: ContainerOverrides = {}) {
   const database = getDatabaseClient();
   const redis = new RedisClient(config.REDIS_URL ?? "redis://localhost:6379");
+  const storage = objectStorage(config, overrides);
   const readinessService = new ReadinessService(
     new PrismaReadinessProbe(database),
     new RedisReadinessProbe(redis),
@@ -124,7 +134,7 @@ export function createContainer(config: ApiConfig) {
     gamerGameRepository,
     gamerChallengeRepository,
     gamerMatchRepository,
-    matchProofStorage(config),
+    storage,
     platformAdminService,
   );
   const playRepository = new PrismaPlayPlayerListingRepository(database);
@@ -132,6 +142,7 @@ export function createContainer(config: ApiConfig) {
   const rideOfferRepository = new PrismaRideOfferRepository(database);
   const rideRequestRepository = new PrismaRideRequestRepository(database);
   const rideReferenceReader = new PrismaRideReferenceReader(database);
+  const rideVehiclePhotoRepository = new PrismaRideVehiclePhotoRepository(database);
   const rideService = new RideService(
     rideOfferRepository,
     rideRequestRepository,
@@ -139,6 +150,8 @@ export function createContainer(config: ApiConfig) {
     rideOfferRepository,
     rideReferenceReader,
     rideReferenceReader,
+    rideVehiclePhotoRepository,
+    storage,
   );
   const whistleRepository = new PrismaWhistleRepository(database);
   const whistleStore = new RedisWhistleStore(redis);

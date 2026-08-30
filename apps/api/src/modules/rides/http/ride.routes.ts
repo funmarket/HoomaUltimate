@@ -1,4 +1,5 @@
-import { Router } from "express";
+import { Buffer } from "node:buffer";
+import { Router, raw } from "express";
 import {
   rideMeetingPointInputSchema,
   rideOfferCreateSchema,
@@ -61,6 +62,17 @@ export function createRidePublicRouter(service: RideService): Router {
     "/offers",
     asyncHandler(async (request, response) => {
       response.json(await service.listPublicOffers(listQuery(request.query)));
+    }),
+  );
+
+  router.get(
+    "/offers/:offerId/photo",
+    asyncHandler(async (request, response) => {
+      const photo = await service.getPublicOfferVehiclePhoto(String(request.params.offerId));
+      response
+        .type(photo.contentType)
+        .set("content-length", String(photo.sizeBytes))
+        .send(Buffer.from(photo.body));
     }),
   );
 
@@ -133,6 +145,35 @@ export function createRideMemberRouter(service: RideService): Router {
       response.json(
         await service.cancelOffer(getAuth(request).userId, String(request.params.offerId)),
       );
+    }),
+  );
+
+  router.put(
+    "/offers/:offerId/photo",
+    raw({ type: "*/*", limit: "5mb" }),
+    asyncHandler(async (request, response) => {
+      const body = Buffer.isBuffer(request.body) ? new Uint8Array(request.body) : new Uint8Array();
+      response.json(
+        await service.replaceOfferVehiclePhoto(
+          getAuth(request).userId,
+          String(request.params.offerId),
+          {
+            contentType: request.header("content-type") ?? "application/octet-stream",
+            body,
+          },
+        ),
+      );
+    }),
+  );
+
+  router.delete(
+    "/offers/:offerId/photo",
+    asyncHandler(async (request, response) => {
+      await service.deleteOfferVehiclePhoto(
+        getAuth(request).userId,
+        String(request.params.offerId),
+      );
+      response.status(204).end();
     }),
   );
 
