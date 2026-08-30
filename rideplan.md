@@ -1383,7 +1383,7 @@ DONE gate:
 Evidence
 
 - Branch: `ride/ride-003-prisma-repository`
-- PR: not opened yet
+- PR: #180 (`https://github.com/funmarket/HoomaUltimate/pull/180`)
 - Base foundation HEAD at task start: `8411b26d435d48f6e2fc0a090ce38315617e25c4`
 - Source trace: `AGENTS.md`, `docs/LIVING_BUILD_PLAN.md`, governing docs, full `rideplan.md`, RIDE-001 ports/policy, RIDE-002 Prisma schema, and existing repository/test patterns were read before implementation. Latest `phase-0-foundation` was fetched and no open PR overlap was found before the first RIDE-003 ledger update.
 - Changed files so far: `apps/api/src/modules/rides/infrastructure/prisma-ride.repository.ts`, `tests/rides.repository.integration.test.ts`, `rideplan.md`.
