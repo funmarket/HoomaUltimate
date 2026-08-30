@@ -1,0 +1,61 @@
+name: Spot photo contain fix
+
+on:
+  push:
+    branches:
+      - fix/spot-photo-full-contain
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/spot-photo-full-contain
+      - name: Apply canonical Spot photo fit
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          css_path = Path('packages/frontend/src/places/places.css')
+          css = css_path.read_text()
+          old_base = '''.place-card__media img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+
+          .place-card.place-card--directory .place-card__media img {
+            display: block;
+            object-fit: contain;
+            object-position: center;
+          }
+          '''
+          new_base = '''.place-card__media img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: contain;
+            object-position: center;
+          }
+          '''
+          if old_base not in css:
+              raise SystemExit('Expected Place card image rules not found; refusing to guess')
+          css_path.write_text(css.replace(old_base, new_base, 1))
+
+          test_path = Path('tests/place-card-photo-fit.test.mjs')
+          test_path.write_text('''import assert from "node:assert/strict";\nimport { readFile } from "node:fs/promises";\nimport test from "node:test";\n\ntest("Spot card photos stay fully visible and centered", async () => {\n  const css = await readFile(new URL("../packages/frontend/src/places/places.css", import.meta.url), "utf8");\n  const rule = css.match(/\\.place-card__media img \\{([\\s\\S]*?)\\}/)?.[1] ?? "";\n\n  assert.match(rule, /object-fit:\\s*contain;/);\n  assert.match(rule, /object-position:\\s*center;/);\n  assert.doesNotMatch(rule, /object-fit:\\s*cover;/);\n});\n''')
+          PY
+      - name: Remove temporary workflow
+        run: rm .github/workflows/spot-photo-contain-fix.yml
+      - name: Commit fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/frontend/src/places/places.css tests/place-card-photo-fit.test.mjs .github/workflows/spot-photo-contain-fix.yml
+          git commit -m "fix(places): keep Spot photos fully visible"
+          git push origin HEAD:fix/spot-photo-full-contain
