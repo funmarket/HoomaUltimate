@@ -134,7 +134,10 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
       setEvents((current) => {
         if (!cursor) return page.items;
         const existingIds = new Set(current.map((event) => event.id));
-        return [...current, ...page.items.filter((event) => !existingIds.has(event.id))];
+        return [
+          ...current,
+          ...page.items.filter((event) => !existingIds.has(event.id)),
+        ];
       });
       setEventsNextCursor(page.nextCursor);
     } catch (reason) {
@@ -287,7 +290,11 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
   }
 
   if (!place)
-    return placeError ? <p className="error">{placeError}</p> : <p className="status">Loading Place…</p>;
+    return placeError ? (
+      <p className="error">{placeError}</p>
+    ) : (
+      <p className="status">Loading Place…</p>
+    );
 
   const selectedDate = selectedEvent ? eventDateParts(selectedEvent) : null;
   const visibleMenuItems = menuExpanded ? place.menuItems : place.menuItems.slice(0, 5);
