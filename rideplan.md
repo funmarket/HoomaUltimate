@@ -1667,7 +1667,7 @@ Evidence
 
 ## RIDE-006 — Ride vehicle-photo persistence + object storage
 
-Status: **[ ] TODO**
+Status: **[~] IN PROGRESS**
 
 Dependencies: `RIDE-005`
 
@@ -1705,7 +1705,16 @@ DONE gate:
 - object inspection proves bytes exist in storage;
 - remaining orphan-cleanup risk explicitly zero or recorded for `RIDE-009`.
 
-Evidence: _fill when complete_
+Evidence
+
+- Branch: `ride/ride-006-vehicle-photo` from `origin/phase-0-foundation` at `3fb04650e78f6f81e44268da728d78ece05c30ad`.
+- Start gate: `ARCH-RIDE-001` and `RIDE-005` are `[x] DONE`; `Safe to begin RIDE-005: YES`; no open PRs against `phase-0-foundation` at RIDE-006 start.
+- Source trace: `AGENTS.md`, `docs/LIVING_BUILD_PLAN.md`, full `rideplan.md`, Ride media sections in `requirements.md`, `structure.md`, `docs/CANONICAL_MODEL.md`, `docs/DECISIONS.md`, `docs/DATABASE.md`, existing `@hooma/storage` abstraction, existing Gamer proof-upload route/storage pattern, Ride contracts, Ride service, Ride Prisma repositories, public/member Ride HTTP routers, API container wiring, Worker Outbox runner, and existing Ride HTTP/schema/integration tests.
+- In-flight changed files: `packages/database/prisma/schema.prisma`, `packages/database/prisma/migrations/20260831010000_ride_offer_vehicle_photo/migration.sql`, `apps/api/src/modules/rides/application/ride-vehicle-photo.repository.ts`, `apps/api/src/modules/rides/infrastructure/prisma-ride-vehicle-photo.repository.ts`, `apps/api/src/modules/rides/application/ride.service.ts`, `apps/api/src/modules/rides/domain/ride-error.ts`, `apps/api/src/modules/rides/infrastructure/prisma-ride.repository.ts`, `apps/api/src/modules/rides/http/ride.routes.ts`, `apps/api/src/bootstrap/container.ts`, `apps/api/src/http/errors/error-handler.ts`, `apps/worker/src/rides/ride-vehicle-photo-cleanup.ts`, `apps/worker/src/main.ts`, `tests/ride-prisma-schema.test.mjs`, `tests/ride-vehicle-photo.integration.test.ts`, `docs/CANONICAL_MODEL.md`, `docs/DATABASE.md`, and `rideplan.md`.
+- Current implementation direction: single-purpose `RideOfferVehiclePhoto` metadata, Ride-owned object keys under `ride-offer-vehicles/<rideOfferId>/<photoId>`, raw bytes through `ObjectStorage`, public photo delivery through the Ride API, and stale-object cleanup through the existing Outbox runner when synchronous deletion fails.
+- Local verification so far: `npm run db:generate` passed through `C:\Program Files\nodejs\npm.cmd`; `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/hooma_ultimate_test npm run db:validate` passed; changed-file Prettier check passed for touched TS/MD files; changed-source ESLint passed; focused Ride/schema/architecture tests passed 23/23 with `node --import tsx --test`; full direct unit suite passed 201/201 with `node --import tsx --test`; `npm run architecture:check` passed; full `npm run typecheck` passed; full `npm run build` passed.
+- Local PostgreSQL proof blocked: `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/hooma_ultimate_test npm run db:migrate:deploy` failed locally with a Prisma schema-engine/database authentication failure, and `tests/ride-vehicle-photo.integration.test.ts` failed locally with Prisma `P1000` authentication before exercising source behavior. Disposable PostgreSQL migration/integration proof is still required from GitHub CI before this can be marked DONE.
+- Verification still pending: PR CI, merge, and foundation read-back. This task remains open until migration, storage/API integration, architecture, tests, build, CI, merge, and foundation read-back pass.
 
 ---
 

@@ -941,11 +941,25 @@ model RideOffer {
   destinationPlace       Place?                  @relation("RideOfferDestinationPlace", fields: [destinationPlaceId], references: [id], onDelete: Restrict)
   participations         RideParticipation[]
   waypoints              RideOfferWaypoint[]
+  vehiclePhoto           RideOfferVehiclePhoto?
 
   @@index([status, departureAt, id])
   @@index([driverUserId, status, departureAt])
   @@index([eventId, status, departureAt])
   @@index([destinationPlaceId, status, departureAt])
+}
+
+model RideOfferVehiclePhoto {
+  id          String    @id
+  rideOfferId String    @unique
+  objectKey   String    @unique
+  contentType String
+  sizeBytes   Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  rideOffer   RideOffer @relation(fields: [rideOfferId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
 }
 
 model RideRequest {

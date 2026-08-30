@@ -59,6 +59,7 @@ const publicRideOfferSelect = Prisma.validator<Prisma.RideOfferSelect>()({
     orderBy: [{ sequence: "asc" }, { id: "asc" }],
     select: { id: true, sequence: true, placeId: true, areaLabel: true },
   },
+  vehiclePhoto: { select: { id: true } },
   participations: {
     where: { status: "ACCEPTED" },
     select: { seatCount: true },
@@ -585,7 +586,7 @@ function serializePublicRideOffer(row: PublicRideOfferRow): PublicRideOffer {
     vehicleModel: row.vehicleModel,
     vehicleColor: row.vehicleColor,
     note: row.note,
-    hasVehiclePhoto: false,
+    hasVehiclePhoto: row.vehiclePhoto !== null,
     waypoints: row.waypoints.map(serializeRideWaypoint),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
