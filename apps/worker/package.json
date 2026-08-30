@@ -10,6 +10,8 @@
     "start": "node dist/main.js"
   },
   "dependencies": {
+    "@hooma/config": "0.1.0",
+    "@hooma/storage": "0.1.0",
     "@hooma/database": "0.1.0"
   },
   "devDependencies": {

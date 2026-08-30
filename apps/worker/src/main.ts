@@ -1,4 +1,4 @@
-import { loadApiConfig, type ApiConfig } from "@hooma/config";
+import { loadObjectStorageConfig, type ObjectStorageConfig } from "@hooma/config";
 import { disconnectDatabase, getDatabaseClient } from "@hooma/database";
 import { S3ObjectStorage, type ObjectStorage } from "@hooma/storage";
 import { cleanupExpiredEventChat } from "./events/event-chat-cleanup.js";
@@ -13,10 +13,10 @@ import {
 const EVENT_CHAT_CLEANUP_INTERVAL_MS = 60_000;
 const GAMER_MATCH_RECONCILIATION_INTERVAL_MS = 15_000;
 const OUTBOX_POLL_INTERVAL_MS = 5_000;
-const config = loadApiConfig(process.env);
+const objectStorageConfig = loadObjectStorageConfig(process.env);
 const database = getDatabaseClient();
 const outboxHandlers = new Map<string, OutboxHandler>();
-const storage = objectStorage(config);
+const storage = objectStorage(objectStorageConfig);
 if (storage) {
   outboxHandlers.set(
     RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC,
@@ -117,7 +117,7 @@ async function shutdown(signal: NodeJS.Signals): Promise<void> {
 process.once("SIGTERM", () => void shutdown("SIGTERM"));
 process.once("SIGINT", () => void shutdown("SIGINT"));
 
-function objectStorage(config: ApiConfig): ObjectStorage | null {
+function objectStorage(config: ObjectStorageConfig): ObjectStorage | null {
   if (
     !config.OBJECT_STORAGE_ENDPOINT ||
     !config.OBJECT_STORAGE_REGION ||

@@ -112,8 +112,15 @@ function isRequestBodyError(
   error: unknown,
 ): error is { readonly status?: number; readonly statusCode?: number } {
   if (!error || typeof error !== "object") return false;
-  const status = (error as { readonly status?: unknown; readonly statusCode?: unknown }).status;
-  const statusCode = (error as { readonly status?: unknown; readonly statusCode?: unknown })
-    .statusCode;
+  const candidate = error as {
+    readonly status?: unknown;
+    readonly statusCode?: unknown;
+    readonly type?: unknown;
+  };
+  const status = candidate.status;
+  const statusCode = candidate.statusCode;
+  if (candidate.type !== "entity.parse.failed" && candidate.type !== "entity.too.large") {
+    return false;
+  }
   return status === 400 || status === 413 || statusCode === 400 || statusCode === 413;
 }

@@ -46,11 +46,8 @@ export class PrismaRideVehiclePhotoRepository implements RideVehiclePhotoReposit
     readonly previousObjectKey: string | null;
   } | null> {
     return this.db.$transaction(async (tx) => {
-      const offer = await tx.rideOffer.findFirst({
-        where: { id: input.rideOfferId, driverUserId: input.driverUserId },
-        select: { id: true },
-      });
-      if (!offer) return null;
+      const offer = await lockRideOfferForVehiclePhotoMutation(tx, input.rideOfferId);
+      if (!offer || offer.driverUserId !== input.driverUserId) return null;
 
       const existing = await tx.rideOfferVehiclePhoto.findUnique({
         where: { rideOfferId: input.rideOfferId },
@@ -86,14 +83,14 @@ export class PrismaRideVehiclePhotoRepository implements RideVehiclePhotoReposit
     driverUserId: string,
   ): Promise<RideVehiclePhotoRecord | null> {
     return this.db.$transaction(async (tx) => {
+      const offer = await lockRideOfferForVehiclePhotoMutation(tx, rideOfferId);
+      if (!offer || offer.driverUserId !== driverUserId) return null;
+
       const existing = await tx.rideOfferVehiclePhoto.findUnique({
         where: { rideOfferId },
-        select: {
-          ...rideVehiclePhotoSelect,
-          rideOffer: { select: { driverUserId: true } },
-        },
+        select: rideVehiclePhotoSelect,
       });
-      if (!existing || existing.rideOffer.driverUserId !== driverUserId) return null;
+      if (!existing) return null;
 
       await tx.rideOfferVehiclePhoto.delete({ where: { rideOfferId } });
       return serializeRideVehiclePhoto(existing);
@@ -116,6 +113,17 @@ export class PrismaRideVehiclePhotoRepository implements RideVehiclePhotoReposit
       },
     });
   }
+}
+
+async function lockRideOfferForVehiclePhotoMutation(
+  tx: Prisma.TransactionClient,
+  rideOfferId: string,
+): Promise<{ readonly id: string; readonly driverUserId: string } | null> {
+  const rows = await tx.$queryRaw<Array<{ id: string; driverUserId: string }>>(
+    Prisma.sql`SELECT id, "driverUserId" AS "driverUserId" FROM "RideOffer" WHERE id = ${rideOfferId} FOR UPDATE`,
+  );
+
+  return rows[0] ?? null;
 }
 
 function serializeRideVehiclePhoto(row: RideVehiclePhotoRow): RideVehiclePhotoRecord {

@@ -15,6 +15,7 @@ import type {
   RideRequestForOwner,
   RideRequestStatus,
 } from "@hooma/contracts/rides";
+import type { ObjectStorage, StoredObject, StoredObjectDescriptor } from "@hooma/storage";
 import type {
   RideMeetingPointRepository,
   RideOfferListInput,
@@ -31,6 +32,10 @@ import type {
   RideRequestListInput,
   RideRequestRepository,
 } from "../apps/api/src/modules/rides/application/ride-request.repository.js";
+import type {
+  RideVehiclePhotoRecord,
+  RideVehiclePhotoRepository,
+} from "../apps/api/src/modules/rides/application/ride-vehicle-photo.repository.js";
 import { RideService } from "../apps/api/src/modules/rides/application/ride.service.js";
 import { RideError, type RideErrorCode } from "../apps/api/src/modules/rides/domain/ride-error.js";
 import { RidePolicyError } from "../apps/api/src/modules/rides/domain/ride-policy.js";
@@ -235,6 +240,51 @@ test("RideService normalizes public list limits without hiding repository owners
   assert.equal(fixture.requests.lastListInput?.limit, 1);
 });
 
+test("RideService cleans up uploaded vehicle photos when metadata persistence fails", async () => {
+  const fixture = createServiceFixture();
+  fixture.vehiclePhotos.replaceError = new Error("database unavailable after upload");
+
+  await assertRideError(
+    () =>
+      fixture.service.replaceOfferVehiclePhoto("driver-1", "offer-1", {
+        contentType: "image/png",
+        body: Uint8Array.of(1, 2, 3),
+      }),
+    503,
+    "RIDE_VEHICLE_PHOTO_UPLOAD_FAILED",
+  );
+
+  assert.equal(fixture.storage.putKeys.length, 1);
+  assert.match(fixture.storage.putKeys[0] ?? "", /^ride-offer-vehicles\/offer-1\//);
+  assert.deepEqual(fixture.storage.removedKeys, fixture.storage.putKeys);
+  assert.deepEqual(fixture.vehiclePhotos.scheduledDeletions, []);
+
+  const scheduledFixture = createServiceFixture();
+  scheduledFixture.vehiclePhotos.replaceError = new Error("database unavailable after upload");
+  scheduledFixture.storage.failRemove = true;
+
+  await assertRideError(
+    () =>
+      scheduledFixture.service.replaceOfferVehiclePhoto("driver-1", "offer-1", {
+        contentType: "image/webp",
+        body: Uint8Array.of(4, 5, 6),
+      }),
+    503,
+    "RIDE_VEHICLE_PHOTO_UPLOAD_FAILED",
+  );
+
+  assert.deepEqual(scheduledFixture.storage.removedKeys, []);
+  assert.equal(scheduledFixture.vehiclePhotos.scheduledDeletions.length, 1);
+  assert.equal(
+    scheduledFixture.vehiclePhotos.scheduledDeletions[0]?.objectKey,
+    scheduledFixture.storage.putKeys[0],
+  );
+  assert.equal(
+    scheduledFixture.vehiclePhotos.scheduledDeletions[0]?.reason,
+    "ORPHANED_AFTER_METADATA_FAILURE",
+  );
+});
+
 function createServiceFixture() {
   const offers = new FakeRideOfferRepository();
   const requests = new FakeRideRequestRepository();
@@ -242,8 +292,29 @@ function createServiceFixture() {
   const meetingPoints = new FakeRideMeetingPointRepository();
   const events = new FakeRideEventReferenceReader();
   const places = new FakeRidePlaceReferenceReader();
-  const service = new RideService(offers, requests, participations, meetingPoints, events, places);
-  return { service, offers, requests, participations, meetingPoints, events, places };
+  const vehiclePhotos = new FakeRideVehiclePhotoRepository();
+  const storage = new FakeObjectStorage();
+  const service = new RideService(
+    offers,
+    requests,
+    participations,
+    meetingPoints,
+    events,
+    places,
+    vehiclePhotos,
+    storage,
+  );
+  return {
+    service,
+    offers,
+    requests,
+    participations,
+    meetingPoints,
+    events,
+    places,
+    vehiclePhotos,
+    storage,
+  };
 }
 
 class FakeRideOfferRepository implements RideOfferRepository {
@@ -374,6 +445,73 @@ class FakeRideMeetingPointRepository implements RideMeetingPointRepository {
   }
 }
 
+class FakeRideVehiclePhotoRepository implements RideVehiclePhotoRepository {
+  public replaceError: Error | null = null;
+  public scheduledDeletions: Array<{
+    readonly objectKey: string;
+    readonly reason: "REPLACED" | "DELETED" | "ORPHANED_AFTER_METADATA_FAILURE";
+  }> = [];
+
+  async getForOffer(): Promise<RideVehiclePhotoRecord | null> {
+    return null;
+  }
+
+  async replaceForOwner(input: {
+    readonly rideOfferId: string;
+    readonly photo: {
+      readonly id: string;
+      readonly objectKey: string;
+      readonly contentType: string;
+      readonly sizeBytes: number;
+    };
+  }) {
+    if (this.replaceError) throw this.replaceError;
+    return {
+      current: {
+        id: input.photo.id,
+        rideOfferId: input.rideOfferId,
+        objectKey: input.photo.objectKey,
+        contentType: input.photo.contentType,
+        sizeBytes: input.photo.sizeBytes,
+        createdAt: now,
+        updatedAt: now,
+      },
+      previousObjectKey: null,
+    };
+  }
+
+  async deleteForOwner(): Promise<RideVehiclePhotoRecord | null> {
+    return null;
+  }
+
+  async scheduleObjectDeletion(input: {
+    readonly objectKey: string;
+    readonly reason: "REPLACED" | "DELETED" | "ORPHANED_AFTER_METADATA_FAILURE";
+  }): Promise<void> {
+    this.scheduledDeletions.push(input);
+  }
+}
+
+class FakeObjectStorage implements ObjectStorage {
+  public putKeys: string[] = [];
+  public removedKeys: string[] = [];
+  public failRemove = false;
+
+  async put(key: string, body: Uint8Array, contentType: string): Promise<StoredObjectDescriptor> {
+    this.putKeys.push(key);
+    return { key, contentType, sizeBytes: body.byteLength };
+  }
+
+  async get(key: string): Promise<StoredObject> {
+    return { key, contentType: "image/png", sizeBytes: 1, body: Uint8Array.of(1) };
+  }
+
+  async remove(key: string): Promise<void> {
+    if (this.failRemove) throw new Error("expected cleanup failure");
+    this.removedKeys.push(key);
+  }
+}
+
 class FakeRideEventReferenceReader implements RideEventReferenceReader {
   public event: RideDestinationEventReference | null = null;
   public resolvedEventIds: string[] = [];
@@ -411,17 +549,27 @@ function rideStatus(code: RideErrorCode): number {
   switch (code) {
     case "RIDE_DESTINATION_REQUIRED":
     case "RIDE_DESTINATION_STRATEGY_CONFLICT":
+    case "RIDE_VEHICLE_PHOTO_REQUIRED":
       return 400;
+    case "RIDE_VEHICLE_PHOTO_TOO_LARGE":
+      return 413;
+    case "RIDE_VEHICLE_PHOTO_TYPE_INVALID":
+      return 415;
     case "RIDE_OFFER_NOT_FOUND":
     case "RIDE_REQUEST_NOT_FOUND":
     case "RIDE_DESTINATION_EVENT_NOT_FOUND":
     case "RIDE_DESTINATION_PLACE_NOT_FOUND":
+    case "RIDE_VEHICLE_PHOTO_NOT_FOUND":
       return 404;
     case "RIDE_PARTICIPATION_CANCEL_FORBIDDEN":
     case "RIDE_MEETING_POINT_FORBIDDEN":
     case "RIDE_OFFER_MANAGE_FORBIDDEN":
     case "RIDE_REQUEST_MANAGE_FORBIDDEN":
       return 403;
+    case "RIDE_VEHICLE_PHOTO_STORAGE_NOT_CONFIGURED":
+    case "RIDE_VEHICLE_PHOTO_UPLOAD_FAILED":
+    case "RIDE_VEHICLE_PHOTO_UNAVAILABLE":
+      return 503;
     default:
       return 409;
   }
