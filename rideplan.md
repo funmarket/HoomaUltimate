@@ -1329,7 +1329,7 @@ DONE gate:
 Evidence
 
 - Branch: `ride/ride-002-prisma-schema`.
-- PR: _not opened yet_.
+- PR: [#178](https://github.com/funmarket/HoomaUltimate/pull/178).
 - Merged commit / current foundation HEAD: in-flight from `8dc514214d1c092b5b8f48fc76e1e974563512fa`.
 - Source trace: `AGENTS.md`, `docs/LIVING_BUILD_PLAN.md`, full `rideplan.md`, Ride sections in `requirements.md`, `structure.md`, `docs/CANONICAL_MODEL.md`, `docs/DECISIONS.md`, `docs/adr/ADR-050-ride-requests-unfreeze.md`, existing Prisma schema, and recent migrations.
 - Changed files: `packages/database/prisma/schema.prisma`, `packages/database/prisma/migrations/20260830185000_ride_core_persistence/migration.sql`, `tests/ride-prisma-schema.test.mjs`, `docs/CANONICAL_MODEL.md`, and this ledger only.
