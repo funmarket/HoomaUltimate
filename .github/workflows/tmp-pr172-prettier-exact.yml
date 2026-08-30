@@ -1,0 +1,20 @@
+name: tmp-pr172-prettier-exact
+on:
+  push:
+    branches:
+      - tmp/pr172-prettier-exact
+jobs:
+  prettier:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - name: Print exact Prettier diff
+        run: |
+          npx prettier --write packages/frontend/src/places/PlaceDetailPage.tsx tests/place-detail-watch-experience.test.mjs
+          git diff -- packages/frontend/src/places/PlaceDetailPage.tsx tests/place-detail-watch-experience.test.mjs
