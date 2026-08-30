@@ -1428,7 +1428,7 @@ DONE gate:
 Evidence
 
 - Branch: `ride/ride-004-service-authz`
-- PR: not opened yet
+- PR: #183 (`https://github.com/funmarket/HoomaUltimate/pull/183`)
 - Base foundation HEAD at task start: `2adf66b293a110d545584a3bc656751fcb5d687c`
 - Source trace: `AGENTS.md`, `docs/LIVING_BUILD_PLAN.md`, relevant `requirements.md`, `structure.md`, `docs/CANONICAL_MODEL.md`, `docs/DECISIONS.md`, full `rideplan.md`, existing Ride contracts/policy/repository ports, RIDE-003 Prisma repository, and existing Event/Place service patterns were inspected before implementation.
 - Changed files so far: `apps/api/src/modules/rides/application/ride.service.ts`, `apps/api/src/modules/rides/infrastructure/prisma-ride-reference.readers.ts`, `tests/ride-service.test.ts`, `rideplan.md`.
