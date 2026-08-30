@@ -184,7 +184,7 @@ export async function findCanonicalPlaceDuplicate(
           AND lower(regexp_replace(btrim("name"), '[[:space:]]+', ' ', 'g')) = ${normalizedName}
         ORDER BY "createdAt" ASC, "id" ASC
         LIMIT 1
-    `,
+      `,
     );
     if (coordinateMatch[0]) {
       return { id: coordinateMatch[0].id, matchedBy: "NAME_COORDINATES" };
