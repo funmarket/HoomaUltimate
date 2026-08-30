@@ -29,10 +29,13 @@ test("homepage gateway artwork does not compete with the critical hero image", (
   assert.match(homeHero, /fetchPriority="high"/);
 });
 
-test("Match Day hero opens the canonical Play route", () => {
+test("Match Day hero opens the canonical Play route without cropping its artwork", () => {
   assert.match(homeHero, /<a className="home-hero" href="\/play"/);
   assert.match(homeHero, /aria-label="Match Day — open Play"/);
   assert.match(homeHero, /\.home-hero:focus-visible/);
+  assert.match(homeHero, /object-fit:\s*contain/);
+  assert.match(homeHero, /object-position:\s*center/);
+  assert.doesNotMatch(homeHero, /object-fit:\s*cover/);
   assert.doesNotMatch(homeHero, /href="\/events\/new"/);
   assert.doesNotMatch(homeHero, /hooma-web-production\.up\.railway\.app/);
 });
