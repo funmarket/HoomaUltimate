@@ -848,11 +848,13 @@ Approved requirements include:
 
 - privacy-safe public discovery where appropriate;
 - create request;
-- claim request;
-- concurrency-safe exclusive claims;
-- release/complete lifecycle as defined by the final product slice;
+- claim request quantities until the requested quantity is fulfilled;
+- concurrency-safe partial claims that prevent over-claiming while allowing more than one claimer when quantity remains;
+- release/complete lifecycle that restores uncompleted released quantity and records completed claim quantity without transferring ownership to another domain;
 - server-side authorization;
 - clear requester/claimer identity boundaries.
+
+Requests are explicitly authorized for a durable Requests-owned domain, persistence, API and frontend vertical slice. Requests does not own Ride, Fundraising, Payment or generic action state. If a request has a quantity of one, the partial-claim rule naturally behaves as a single active claim; this replaces the older exclusive-claim wording without creating a separate exclusive-only model.
 
 ---
 
@@ -873,6 +875,14 @@ Approved requirements include:
 - ratings only when implemented as a complete lifecycle;
 - shared Payments where applicable;
 - shared Whistle only through a valid Ride relationship/context.
+
+Ride is explicitly authorized for a durable Rides-owned domain, persistence, API and frontend vertical slice. A Ride destination must use exactly one destination strategy: an owning Event reference, a canonical Place reference, or a Ride-owned custom destination label. Event and Place presentation must be read from their owning domains through narrow reference readers and must not be duplicated into Ride as canonical Event or Place truth.
+
+Ride participation starts as a passenger request for seats on a Ride Offer. The Ride Offer driver/owner accepts or rejects participation requests, accepted seats count against offer capacity, and the driver cannot join their own offer as a passenger. Drivers may cancel their own offers, requesters may cancel their own Ride Requests, passengers may cancel their own non-terminal participation, and terminal completed/cancelled/rejected records must not be mutated into a different lifecycle state merely for convenience.
+
+Ride exact pickup/meeting location is private by server policy and visible only to authorized Ride parties. Public Ride projections may expose privacy-safe area labels, destination summaries and availability, but never exact private meeting coordinates or addresses.
+
+Ride vehicle media is Ride-owned metadata plus object-storage bytes. Binary photo bytes, base64 data and object-storage credentials must not be stored in PostgreSQL, logs, outbox payloads or generic JSON blobs. Until a separately authorized generic Media domain exists, Ride vehicle-photo metadata belongs to a single-purpose Rides-owned model and object keys use a Ride-owned namespace.
 
 ---
 

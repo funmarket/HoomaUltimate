@@ -249,6 +249,8 @@ MANAGE_TEAM_EVENTS
 
 **Superseded in part by ADR-048:** Requests/Ride route registration and honest frontend shells are narrowly authorized. Requests, Ride, Fundraising, FundMe, Payments and ULTRAS backend/domain/persistence work remains frozen until separately authorized.
 
+**Superseded in part by ADR-050:** Ride and Requests backend/domain/persistence/API/frontend vertical slices are explicitly unfrozen for their own bounded implementation tasks. Fundraising, FundMe durable state, Payments, ULTRAS, generic Media and unrelated domains remain frozen unless separately authorized.
+
 ## ADR-039 — Whistle vertical slice is explicitly unfrozen
 
 **Decision:** The product owner explicitly authorized Whistle setup on 2026-08-23. Whistle is therefore removed from ADR-038's freeze and becomes a current vertical slice. The shared Whistle engine is implemented once and reused by approved contexts. The first enabled context is private HOOMA Community Whistle Board access for active Community members. Event, Team, Ride, ULTRAS and Gamer Squad Whistle contexts remain disabled until their own context-specific authorization slices are implemented.
@@ -326,6 +328,8 @@ The HOOMA create chooser is HOOMA/TEAM/ULTRAS only. ULTRAS remains unavailable a
 
 This supersedes only the Home/create-flow portions of ADR-036. It narrowly overrides ADR-038 only enough to permit Requests/Rides frontend shells and route registration; backend persistence, Payments and durable Fundraising remain frozen until separately authorized.
 
+**Superseded in part by ADR-050:** The shell-only restriction for Ride and Requests is lifted for their domain-owned vertical slices. ADR-048 remains authoritative for Home, bottom navigation, HOOMA create chooser, Gamers independence, ULTRAS unavailability and FundMe grouping under Requests.
+
 The dedicated decision record is `docs/adr/ADR-048-home-create-flow-ia.md`.
 
 **Reason:** The simplification changes discovery and routing without collapsing durable domain ownership or inventing fake future features.
@@ -339,3 +343,19 @@ User Direct is exposed only through dedicated authenticated `/api/v1/whistles/us
 No new DirectMessage, Conversation, inbox, direct-pair, Whistle-preference, or Whistle-body table is created by this slice. Existing `WhistleMetadata`, the existing Redis body store, the shared 33-grapheme validation, global 11-per-UTC-day quota, and next-UTC-midnight expiry remain authoritative. Existing Community, Event, and Gamer Direct behavior is not refactored by this decision.
 
 **Reason:** This is the smallest complete User-to-User Whistle slice: it preserves one canonical User and one Whistle engine, avoids a new messaging/privacy subsystem, prevents client-forged direct contexts, and keeps current working Whistle contexts isolated from unrelated refactoring.
+
+## ADR-050 — Ride and Requests vertical slices are explicitly unfrozen
+
+**Decision:** The product owner explicitly authorized durable Ride and Requests implementation through `rideplan.md`. Ride and Requests are therefore removed from ADR-038's freeze for their bounded, domain-owned vertical slices: contracts, persistence, APIs, application services and frontend may be implemented only in the numbered plan order and only inside their owning boundaries.
+
+Ride owns ride offers, ride requests, participation, meeting-point privacy, waypoints and Ride vehicle-photo metadata. A Ride destination must use exactly one strategy: owning Event reference, canonical Place reference or Ride-owned custom destination label. Event and Place facts remain owned by those domains and are read through narrow reference ports. Ride participation requests require driver/owner acceptance before accepted capacity is consumed; drivers cannot join their own offers as passengers; cancellation rules must preserve terminal lifecycle history. Public Ride projections must never expose exact private pickup or meeting coordinates.
+
+Ride vehicle-photo bytes belong in object storage. Until a separate generic Media domain is authorized, Ride vehicle-photo metadata belongs to a single-purpose Ride-owned model; PostgreSQL must not store binary photos, base64 payloads, storage credentials, outbox photo bytes or polymorphic generic media ownership for this work.
+
+Requests owns help/resource requests and quantity-based partial claims. Active/accepted claim quantities must be concurrency-safe and must not exceed the requested quantity. More than one claimer is allowed while quantity remains; quantity-one requests naturally behave as single-claim requests through the same partial-claim rule. The older exclusive-claim wording is replaced by this governed quantity rule.
+
+FundMe remains a Requests-page tab only. Durable Fundraising and Payments remain separately owned and are not authorized by this Ride/Requests unfreeze. This decision does not change Home, bottom navigation, the HOOMA create chooser, Gamers, Teams, Communities, ULTRAS or generic Media.
+
+The dedicated decision record is `docs/adr/ADR-050-ride-requests-unfreeze.md`.
+
+**Reason:** The product is ready to replace honest Ride/Requests shells with real bounded functionality, but adjacent UI placement must not collapse Ride, Requests, Fundraising, Payments and Media into one generic implementation.

@@ -69,21 +69,21 @@ Do not mark a task DONE in an open PR as if it were merged foundation truth. Whi
 
 The implementation must preserve these canonical owners:
 
-| Concept | Canonical owner |
-| --- | --- |
-| Canonical user identity | Identity |
-| HOOMA community + membership | Communities |
-| Football Event / Match-Day activity | Events / Watch / Play as already defined |
-| Physical venue identity | Places |
-| Ride offers, ride requests, ride participation, ride-private meeting/location data | **Rides** |
-| Help/resource requests and request claims | **Requests** |
-| Fundraising campaigns and contributions | **Fundraising** |
-| Payment intents, provider state, settlement | **Payments** |
-| Binary photo/media bytes | **S3-compatible object storage through `@hooma/storage`** |
-| Ride photo metadata/reference | **Rides**, until a separately authorized generic Media domain exists |
-| Aggregated Home/Now/Match-Day projection | Discovery/read models only |
-| Async side effects/retries | Outbox + Worker |
-| Transient Whistle body | Redis through the existing Whistle domain only |
+| Concept                                                                            | Canonical owner                                                      |
+| ---------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Canonical user identity                                                            | Identity                                                             |
+| HOOMA community + membership                                                       | Communities                                                          |
+| Football Event / Match-Day activity                                                | Events / Watch / Play as already defined                             |
+| Physical venue identity                                                            | Places                                                               |
+| Ride offers, ride requests, ride participation, ride-private meeting/location data | **Rides**                                                            |
+| Help/resource requests and request claims                                          | **Requests**                                                         |
+| Fundraising campaigns and contributions                                            | **Fundraising**                                                      |
+| Payment intents, provider state, settlement                                        | **Payments**                                                         |
+| Binary photo/media bytes                                                           | **S3-compatible object storage through `@hooma/storage`**            |
+| Ride photo metadata/reference                                                      | **Rides**, until a separately authorized generic Media domain exists |
+| Aggregated Home/Now/Match-Day projection                                           | Discovery/read models only                                           |
+| Async side effects/retries                                                         | Outbox + Worker                                                      |
+| Transient Whistle body                                                             | Redis through the existing Whistle domain only                       |
 
 ## Required backend boundaries
 
@@ -1171,7 +1171,7 @@ Remaining risk: branch may move after plan creation; every agent must re-run the
 
 ## GOV-001 — Explicitly unfreeze Ride + Requests backend work and reconcile product rules
 
-Status: **[ ] TODO**
+Status: **[~] IN PROGRESS**
 
 Dependencies: `PLAN-000`
 
@@ -1211,7 +1211,15 @@ DONE gate:
 - docs are internally consistent;
 - no source feature implementation claimed.
 
-Evidence: _fill when complete_
+Evidence:
+
+- Branch/worktree: `ride/gov-001-unfreeze-rides-requests` at foundation `8e28b8c23dc4a48574aaa3af52801a6172ea3a80`.
+- Traced ADR-038 and ADR-048 in `docs/DECISIONS.md` plus `docs/adr/ADR-048-home-create-flow-ia.md`.
+- Open PR overlap checked before edits: PR #173 touches `requirements.md` only for external Place photo-link behavior, not Ride/Requests/FundMe policy.
+- Current source checked before edits: API has no canonical Rides/Requests/Fundraising/Payments modules; frontend has honest `packages/frontend/src/rides` and `packages/frontend/src/requests` shells only.
+- Added `docs/adr/ADR-050-ride-requests-unfreeze.md` and updated `docs/DECISIONS.md` to explicitly unfreeze bounded Ride and Requests vertical slices while keeping Fundraising, Payments, ULTRAS and generic Media separately governed.
+- Updated `requirements.md` to replace older exclusive Requests claim wording with quantity-based partial claims and to lock Ride destination, participation, cancellation, privacy and media rules.
+- Updated `structure.md` and `docs/CANONICAL_MODEL.md` so governance no longer lists Ride/Requests as frozen and does not claim source feature implementation.
 
 ---
 
