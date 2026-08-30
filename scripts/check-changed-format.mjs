@@ -24,13 +24,7 @@ if (files.length === 0) {
 }
 
 console.log(`Checking formatting for ${files.length} changed file(s).`);
-const prettier = spawnSync("npm", ["exec", "--", "prettier", "--write", ...files], {
+const prettier = spawnSync("npm", ["exec", "--", "prettier", "--check", ...files], {
   stdio: "inherit",
 });
-if ((prettier.status ?? 1) !== 0) process.exit(prettier.status ?? 1);
-
-const diff = spawnSync("git", ["diff", "--", "tests/external-image-resolver.test.ts"], {
-  encoding: "utf-8",
-});
-console.log(diff.stdout);
-process.exit(diff.stdout ? 1 : 0);
+process.exit(prettier.status ?? 1);
