@@ -5,6 +5,20 @@ const root = process.cwd();
 const ignored = new Set(["node_modules", "dist", "coverage", ".git"]);
 const sourceExtensions = new Set([".ts", ".tsx", ".js", ".mjs"]);
 const violations = [];
+const legacyApplicationHttpImports = new Set([
+  "apps/api/src/modules/communities/application/community.service.ts",
+  "apps/api/src/modules/gamers/application/gamer-match.service.ts",
+  "apps/api/src/modules/gamers/application/gamer.service.ts",
+  "apps/api/src/modules/identity/application/identity.service.ts",
+  "apps/api/src/modules/pitch/application/approved-pitch.reader.ts",
+  "apps/api/src/modules/pitch/application/pitch-moderation.service.ts",
+  "apps/api/src/modules/pitch/application/pitch-owner.service.ts",
+  "apps/api/src/modules/places/application/place.service.ts",
+  "apps/api/src/modules/platform-admin/application/platform-admin.service.ts",
+  "apps/api/src/modules/play/application/play.service.ts",
+  "apps/api/src/modules/teams/application/team.service.ts",
+  "apps/api/src/modules/whistle/application/whistle.service.ts",
+]);
 
 async function walk(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -70,6 +84,14 @@ for (const file of await walk(root)) {
   }
   if (/^apps\/api\/src\/modules\/[^/]+\/application\//.test(rel)) {
     forbid(file, source, /from ["']express["']/, "application layer must not depend on Express");
+  }
+  if (/^apps\/api\/src\/modules\/[^/]+\/(application|domain)\//.test(rel)) {
+    const importsHttpTransport =
+      /from\s+["'](?:\.\.\/){3}http\//.test(source) ||
+      /from\s+["'][^"']*apps\/api\/src\/http\//.test(source);
+    if (importsHttpTransport && !legacyApplicationHttpImports.has(rel)) {
+      violations.push(`${rel}: application/domain layer must not import API HTTP transport`);
+    }
   }
   if (/^apps\/api\/src\/modules\/[^/]+\/http\//.test(rel)) {
     forbid(

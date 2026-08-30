@@ -1,6 +1,7 @@
 import type { ErrorRequestHandler } from "express";
 import { ZodError } from "zod";
 import { EventError, type EventErrorCode } from "../../modules/events/domain/event-error.js";
+import { RideError, type RideErrorCode } from "../../modules/rides/domain/ride-error.js";
 import { AppError } from "./app-error.js";
 
 const EVENT_STATUS: Record<EventErrorCode, number> = {
@@ -31,12 +32,42 @@ const EVENT_STATUS: Record<EventErrorCode, number> = {
   EVENT_CHAT_INACTIVE: 409,
 };
 
+const RIDE_STATUS: Record<RideErrorCode, number> = {
+  RIDE_DESTINATION_REQUIRED: 400,
+  RIDE_DESTINATION_STRATEGY_CONFLICT: 400,
+  RIDE_DRIVER_CANNOT_PARTICIPATE: 409,
+  RIDE_OFFER_STATUS_TRANSITION_INVALID: 409,
+  RIDE_REQUEST_STATUS_TRANSITION_INVALID: 409,
+  RIDE_PARTICIPATION_STATUS_TRANSITION_INVALID: 409,
+  RIDE_OFFER_NOT_FOUND: 404,
+  RIDE_OFFER_NOT_MUTABLE: 409,
+  RIDE_REQUEST_NOT_FOUND: 404,
+  RIDE_REQUEST_NOT_MUTABLE: 409,
+  RIDE_PARTICIPATION_NOT_AVAILABLE: 409,
+  RIDE_PARTICIPATION_CANCEL_FORBIDDEN: 403,
+  RIDE_MEETING_POINT_NOT_AVAILABLE: 409,
+  RIDE_MEETING_POINT_FORBIDDEN: 403,
+  RIDE_OFFER_STATUS_NOT_CHANGED: 409,
+  RIDE_REQUEST_STATUS_NOT_CHANGED: 409,
+  RIDE_PARTICIPATION_STATUS_NOT_CHANGED: 409,
+  RIDE_OFFER_MANAGE_FORBIDDEN: 403,
+  RIDE_REQUEST_MANAGE_FORBIDDEN: 403,
+  RIDE_DESTINATION_EVENT_NOT_FOUND: 404,
+  RIDE_DESTINATION_PLACE_NOT_FOUND: 404,
+};
+
 export const errorHandler: ErrorRequestHandler = (error, _request, response, _next) => {
   void _next;
 
   if (error instanceof EventError) {
     response
       .status(EVENT_STATUS[error.code])
+      .json({ error: { code: error.code, message: error.message } });
+    return;
+  }
+  if (error instanceof RideError) {
+    response
+      .status(RIDE_STATUS[error.code])
       .json({ error: { code: error.code, message: error.message } });
     return;
   }

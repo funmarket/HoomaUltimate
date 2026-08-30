@@ -9,7 +9,7 @@ import type {
   RideRequestStatus,
   RideRequestUpdateInput,
 } from "@hooma/contracts/rides";
-import { AppError } from "../../../http/errors/app-error.js";
+import { RideError } from "../domain/ride-error.js";
 import { RidePolicyError } from "../domain/ride-policy.js";
 import type {
   RideMeetingPointRepository,
@@ -45,7 +45,7 @@ export class RideService {
 
   async getPublicOffer(rideOfferId: string) {
     const offer = await this.offers.getPublic(rideOfferId);
-    if (!offer) throw new AppError(404, "RIDE_OFFER_NOT_FOUND", "Ride offer not found");
+    if (!offer) throw new RideError("RIDE_OFFER_NOT_FOUND", "Ride offer not found");
     return offer;
   }
 
@@ -65,8 +65,7 @@ export class RideService {
     return this.withRidePolicy(async () => {
       const updated = await this.offers.update(rideOfferId, driverUserId, input);
       if (!updated) {
-        throw new AppError(
-          409,
+        throw new RideError(
           "RIDE_OFFER_NOT_MUTABLE",
           "Ride offer cannot be changed in its current state",
         );
@@ -93,7 +92,7 @@ export class RideService {
 
   async getPublicRequest(rideRequestId: string) {
     const request = await this.requests.getPublic(rideRequestId);
-    if (!request) throw new AppError(404, "RIDE_REQUEST_NOT_FOUND", "Ride request not found");
+    if (!request) throw new RideError("RIDE_REQUEST_NOT_FOUND", "Ride request not found");
     return request;
   }
 
@@ -117,8 +116,7 @@ export class RideService {
     return this.withRidePolicy(async () => {
       const updated = await this.requests.update(rideRequestId, requesterUserId, input);
       if (!updated) {
-        throw new AppError(
-          409,
+        throw new RideError(
           "RIDE_REQUEST_NOT_MUTABLE",
           "Ride request cannot be changed in its current state",
         );
@@ -151,8 +149,7 @@ export class RideService {
         input,
       );
       if (!participation) {
-        throw new AppError(
-          409,
+        throw new RideError(
           "RIDE_PARTICIPATION_NOT_AVAILABLE",
           "Ride offer is not open for participation",
         );
@@ -197,8 +194,7 @@ export class RideService {
         status: "CANCELLED",
       });
       if (!participation) {
-        throw new AppError(
-          403,
+        throw new RideError(
           "RIDE_PARTICIPATION_CANCEL_FORBIDDEN",
           "Only the driver or passenger can cancel this participation",
         );
@@ -222,8 +218,7 @@ export class RideService {
       meetingPoint,
     });
     if (!saved) {
-      throw new AppError(
-        409,
+      throw new RideError(
         "RIDE_MEETING_POINT_NOT_AVAILABLE",
         "Meeting point requires an accepted participation",
       );
@@ -237,8 +232,7 @@ export class RideService {
       viewerUserId,
     });
     if (!meetingPoint) {
-      throw new AppError(
-        403,
+      throw new RideError(
         "RIDE_MEETING_POINT_FORBIDDEN",
         "Ride meeting point is visible only to the driver and accepted passenger",
       );
@@ -252,8 +246,7 @@ export class RideService {
     return this.withRidePolicy(async () => {
       const updated = await this.offers.updateStatus(rideOfferId, driverUserId, status);
       if (!updated) {
-        throw new AppError(
-          409,
+        throw new RideError(
           "RIDE_OFFER_STATUS_NOT_CHANGED",
           "Ride offer status could not be changed",
         );
@@ -272,8 +265,7 @@ export class RideService {
     return this.withRidePolicy(async () => {
       const updated = await this.requests.updateStatus(rideRequestId, requesterUserId, status);
       if (!updated) {
-        throw new AppError(
-          409,
+        throw new RideError(
           "RIDE_REQUEST_STATUS_NOT_CHANGED",
           "Ride request status could not be changed",
         );
@@ -298,8 +290,7 @@ export class RideService {
         status,
       });
       if (!participation) {
-        throw new AppError(
-          409,
+        throw new RideError(
           "RIDE_PARTICIPATION_STATUS_NOT_CHANGED",
           "Ride participation status could not be changed",
         );
@@ -311,7 +302,7 @@ export class RideService {
   private async requireOfferOwner(driverUserId: string, rideOfferId: string) {
     const offer = await this.offers.getForOwner(rideOfferId, driverUserId);
     if (!offer) {
-      throw new AppError(403, "RIDE_OFFER_MANAGE_FORBIDDEN", "Ride offer owner access required");
+      throw new RideError("RIDE_OFFER_MANAGE_FORBIDDEN", "Ride offer owner access required");
     }
     return offer;
   }
@@ -319,11 +310,7 @@ export class RideService {
   private async requireRequestOwner(requesterUserId: string, rideRequestId: string) {
     const request = await this.requests.getForRequester(rideRequestId, requesterUserId);
     if (!request) {
-      throw new AppError(
-        403,
-        "RIDE_REQUEST_MANAGE_FORBIDDEN",
-        "Ride request owner access required",
-      );
+      throw new RideError("RIDE_REQUEST_MANAGE_FORBIDDEN", "Ride request owner access required");
     }
     return request;
   }
@@ -334,8 +321,7 @@ export class RideService {
     if (destination.type === "EVENT") {
       const event = await this.events.resolveRideDestinationEvent(destination.eventId);
       if (!event || event.status !== "PUBLISHED") {
-        throw new AppError(
-          404,
+        throw new RideError(
           "RIDE_DESTINATION_EVENT_NOT_FOUND",
           "Published Ride destination Event not found",
         );
@@ -346,8 +332,7 @@ export class RideService {
     if (destination.type === "PLACE") {
       const place = await this.places.resolveRideDestinationPlace(destination.placeId);
       if (!place) {
-        throw new AppError(
-          404,
+        throw new RideError(
           "RIDE_DESTINATION_PLACE_NOT_FOUND",
           "Approved Ride destination Place not found",
         );
@@ -360,7 +345,7 @@ export class RideService {
       return await operation();
     } catch (error) {
       if (error instanceof RidePolicyError) {
-        throw new AppError(409, error.code, error.message);
+        throw new RideError(error.code, error.message);
       }
       throw error;
     }
