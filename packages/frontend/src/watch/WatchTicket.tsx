@@ -177,7 +177,11 @@ export function WatchTicket({
       </section>
 
       {feedVariant ? (
-        <Link className="watch-ticket__photo-panel" to={placeHref} aria-label={`Open ${place.name}`}>
+        <Link
+          className="watch-ticket__photo-panel"
+          to={placeHref}
+          aria-label={`Open ${place.name}`}
+        >
           {place.imageUrl ? (
             <img src={place.imageUrl} alt={place.name} />
           ) : (
