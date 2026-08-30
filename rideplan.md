@@ -1401,7 +1401,7 @@ Evidence
 
 ## RIDE-004 — Ride application service + authorization + Event/Place reference adapters
 
-Status: **[ ] TODO**
+Status: **[~] IN PROGRESS**
 
 Dependencies: `RIDE-003`
 
@@ -1425,7 +1425,22 @@ DONE gate:
 - Rides never writes another domain's tables;
 - error/state semantics are stable enough for HTTP/frontend.
 
-Evidence: _fill when complete_
+Evidence
+
+- Branch: `ride/ride-004-service-authz`
+- PR: #183 (`https://github.com/funmarket/HoomaUltimate/pull/183`)
+- Base foundation HEAD at task start: `2adf66b293a110d545584a3bc656751fcb5d687c`
+- Source trace: `AGENTS.md`, `docs/LIVING_BUILD_PLAN.md`, relevant `requirements.md`, `structure.md`, `docs/CANONICAL_MODEL.md`, `docs/DECISIONS.md`, full `rideplan.md`, existing Ride contracts/policy/repository ports, RIDE-003 Prisma repository, and existing Event/Place service patterns were inspected before implementation.
+- Changed files so far: `apps/api/src/modules/rides/application/ride.service.ts`, `apps/api/src/modules/rides/infrastructure/prisma-ride-reference.readers.ts`, `tests/ride-service.test.ts`, `rideplan.md`.
+- Documentation updated: this RIDE-004 in-progress ledger entry.
+- Tests so far: focused Ride contract/service tests passed 15/15 with `npx.cmd tsx --test tests/ride-service.test.ts tests/ride-contract-policy.test.ts`; direct unit-only suite passed 193/193 after adding the Ride service tests.
+- Static/build checks so far: API typecheck passed after formatting; full workspace typecheck passed; `architecture:check` passed; API build passed; Prettier check passed for RIDE-004 source/test/doc files; boundary scans found no Express/router code in Ride application/infrastructure, no cross-domain infrastructure imports, no direct Event/Place/Community writes, and no monolith/media/payment/fake-data patterns.
+- PostgreSQL migration/integration proof: not applicable; RIDE-004 adds application service policy and read-only reference adapters, not schema/migration changes. RIDE-005 will own HTTP/API persistence read-back.
+- Object-storage/Redis/Worker proof if applicable: not applicable.
+- Deployment/live proof if applicable: not applicable; RIDE-004 has no HTTP/frontend route.
+- Remaining risk: GitHub CI is pending; PR #181 remains open and touches future RIDE-005 bootstrap/container wiring, so RIDE-005 must not start until that overlap is resolved or explicitly sequenced.
+- Implementation score: local source/static/unit confidence 9/10; cannot mark DONE or move forward until exact-head CI passes and the PR is merged/read back.
+- Next task: `RIDE-005` — not started.
 
 ---
 
