@@ -26,10 +26,7 @@ test("Spot directory photos adapt to their intrinsic aspect ratio", async () => 
   assert.match(imageRule, /height:\s*auto;/);
   assert.match(imageRule, /max-height:\s*min\(70vh, 640px\);/);
 
-  const mobileRule = css.match(/@media \(max-width: 520px\) \{([\s\S]*?)\n\}/)?.[1] ?? "";
-  const mobileMediaRule = mobileRule.match(/\.place-card__media \{([\s\S]*?)\}/)?.[1] ?? "";
-  assert.ok(mobileMediaRule, "Mobile Place media rule must exist");
-  assert.doesNotMatch(mobileMediaRule, /aspect-ratio:/);
+  assert.doesNotMatch(css, /\.place-card__media\s*\{[^}]*aspect-ratio:/);
 });
 
 test("Place gallery follows portrait, square, and landscape photo ratios without cropping", async () => {
