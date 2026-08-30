@@ -31,6 +31,12 @@ import { PrismaGamerMatchRepository } from "../modules/gamers/infrastructure/pri
 import { PrismaGamerProfileRepository } from "../modules/gamers/infrastructure/prisma-gamer-profile.repository.js";
 import { PlayService } from "../modules/play/application/play.service.js";
 import { PrismaPlayPlayerListingRepository } from "../modules/play/infrastructure/prisma-play.repository.js";
+import { RideService } from "../modules/rides/application/ride.service.js";
+import {
+  PrismaRideOfferRepository,
+  PrismaRideRequestRepository,
+} from "../modules/rides/infrastructure/prisma-ride.repository.js";
+import { PrismaRideReferenceReader } from "../modules/rides/infrastructure/prisma-ride-reference.readers.js";
 import { WhistleService } from "../modules/whistle/application/whistle.service.js";
 import { PrismaWhistleRepository } from "../modules/whistle/infrastructure/prisma-whistle.repository.js";
 import { RedisWhistleStore } from "../modules/whistle/infrastructure/redis-whistle-store.js";
@@ -123,6 +129,17 @@ export function createContainer(config: ApiConfig) {
   );
   const playRepository = new PrismaPlayPlayerListingRepository(database);
   const playService = new PlayService(playRepository, teamService, eventService);
+  const rideOfferRepository = new PrismaRideOfferRepository(database);
+  const rideRequestRepository = new PrismaRideRequestRepository(database);
+  const rideReferenceReader = new PrismaRideReferenceReader(database);
+  const rideService = new RideService(
+    rideOfferRepository,
+    rideRequestRepository,
+    rideOfferRepository,
+    rideOfferRepository,
+    rideReferenceReader,
+    rideReferenceReader,
+  );
   const whistleRepository = new PrismaWhistleRepository(database);
   const whistleStore = new RedisWhistleStore(redis);
   const whistleService = new WhistleService(
@@ -153,6 +170,7 @@ export function createContainer(config: ApiConfig) {
     gamerService,
     gamerMatchService,
     playService,
+    rideService,
     whistleService,
     discoveryService,
   };
