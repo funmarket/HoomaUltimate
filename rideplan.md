@@ -1232,7 +1232,7 @@ Evidence:
 
 ## RIDE-001 — Ride contracts and domain policy skeleton
 
-Status: **[~] IN PROGRESS**
+Status: **[x] DONE**
 
 Dependencies: `GOV-001`
 
@@ -1266,17 +1266,17 @@ Evidence
 
 - Branch: `ride/ride-001-contracts-policy`.
 - PR: [#176](https://github.com/funmarket/HoomaUltimate/pull/176).
-- Merged commit / current foundation HEAD: in-flight from `eda4ed9ba5f88188e8a7425213bb1b650b188689`.
+- Merged commit / current foundation HEAD: PR #176 merged at `f292d29fa1cd3e7cfb554a43b58f4073348df7e4`; read-back confirmed `origin/phase-0-foundation` is `f292d29fa1cd3e7cfb554a43b58f4073348df7e4`, with parents `eda4ed9ba5f88188e8a7425213bb1b650b188689` and PR head `36b709661cc0d29e3e8146e9d58062ec46ff7924`.
 - Source trace: `AGENTS.md`, `docs/LIVING_BUILD_PLAN.md`, full `rideplan.md`, Ride sections in `requirements.md`, `structure.md`, `docs/CANONICAL_MODEL.md`, `docs/DECISIONS.md`, and `docs/adr/ADR-050-ride-requests-unfreeze.md`.
 - Changed files: `packages/contracts/src/rides.ts`, `packages/contracts/package.json`, `packages/contracts/src/index.ts`, `apps/api/src/modules/rides/domain/ride-policy.ts`, `apps/api/src/modules/rides/application/ride-reference.readers.ts`, `apps/api/src/modules/rides/application/ride-offer.repository.ts`, `apps/api/src/modules/rides/application/ride-request.repository.ts`, `tests/ride-contract-policy.test.ts`, and this ledger only.
-- Documentation updated: this in-flight RIDE-001 ledger entry with local implementation evidence; PR/CI/merge/read-back evidence still pending.
+- Documentation updated: this RIDE-001 ledger entry was kept live during implementation and closed after GitHub merge/read-back evidence.
 - Tests: `npm exec -- tsx --test tests\ride-contract-policy.test.ts` passed (6 tests); direct full unit suite via `.\node_modules\.bin\tsx.cmd --test <49 unit files>` passed (181 tests). `npm test` did not execute tests locally because `scripts/run-tests.mjs` hit Windows `spawn EINVAL` while spawning `npx.cmd`; this is recorded as runner/environment evidence, not a Ride source failure.
-- Static/build checks: `npm run db:generate` passed after network-enabled Prisma engine download; `npm -w @hooma/contracts run typecheck` passed; `npm -w @hooma/api run typecheck` passed; `npm run architecture:check` passed; `npm exec -- prettier --check <touched files>` passed; `git diff --check` passed; `npm run build:packages` passed; changed-file boundary guard passed with no forbidden RIDE-001 files changed.
+- Static/build checks: `npm run db:generate` passed after network-enabled Prisma engine download; `npm -w @hooma/contracts run typecheck` passed; `npm -w @hooma/api run typecheck` passed; `npm run architecture:check` passed; `npm exec -- prettier --check <touched files>` passed; `git diff --check` passed; `npm run build:packages` passed; changed-file boundary guard passed with no forbidden RIDE-001 files changed. GitHub CI run `33325767161`, job `99295490282`, passed on exact PR head `36b709661cc0d29e3e8146e9d58062ec46ff7924`, including `npm ci`, `db:generate`, `db:validate`, `db:migrate:deploy`, `architecture:check`, changed-file formatting, changed-source lint, `typecheck`, `build:packages`, `npm test`, `build`, integration tests, `deploy:preflight`, `security:check`, and `db:migrate:status`.
 - PostgreSQL migration/integration proof: not applicable; RIDE-001 has no Prisma/schema/migration scope.
 - Object-storage/Redis/Worker proof if applicable: not applicable; RIDE-001 has no media/storage/worker scope.
-- Deployment/live proof if applicable: not applicable before merge; no runtime UI/API change in this slice.
-- Remaining risk: in-flight until PR opens, GitHub CI passes on the exact PR head, merge/read-back evidence is recorded, and the final DONE ledger update is merged.
-- Implementation score: local gate complete; PR/CI/merge gate pending.
+- Deployment/live proof if applicable: not applicable; RIDE-001 adds contracts, domain policy, and application ports only, with no runtime UI/API route.
+- Remaining risk: browser/Telegram runtime smoke is not applicable to this non-runtime slice; RIDE-002 is not started and still owns Prisma schema/migration work.
+- Implementation score: complete for RIDE-001; post-merge read-back complete.
 - Next task: `RIDE-002` — not started.
 
 ---
