@@ -1615,7 +1615,7 @@ Evidence
 
 ## RIDE-005 — Ride public/member HTTP APIs + bootstrap wiring
 
-Status: **[ ] TODO**
+Status: **[~] IN PROGRESS**
 
 Dependencies: `ARCH-RIDE-001`
 
@@ -1646,7 +1646,22 @@ DONE gate:
 - current existing API domains remain unaffected;
 - typecheck/lint/architecture/build relevant checks pass.
 
-Evidence: _fill when complete_
+Evidence
+
+- Branch: `ride/ride-005-http-api-fresh`.
+- PR: in progress.
+- Merged commit / current foundation HEAD: started from `origin/phase-0-foundation` at `4b8f542a36031941d0f2c2eec1861584bc82b1bb` after `ARCH-RIDE-001` was read back as DONE.
+- Source trace: `AGENTS.md`, `docs/LIVING_BUILD_PLAN.md`, full `rideplan.md`, Ride sections in `requirements.md`, `structure.md`, `docs/CANONICAL_MODEL.md`, `docs/DECISIONS.md`, existing Ride contracts, Ride service, Ride repository ports, Prisma Ride repositories, shared public/member routers, shared auth middleware, container wiring, and existing HTTP integration test patterns.
+- Changed files: `apps/api/src/modules/rides/http/ride.routes.ts`, `apps/api/src/http/public-v1/router.ts`, `apps/api/src/http/v1/router.ts`, `apps/api/src/bootstrap/container.ts`, `tests/rides.http.integration.test.ts`, and `rideplan.md`.
+- Documentation updated: this ledger marks RIDE-005 in progress only; do not mark DONE until route tests, API read-back, CI, merge, and post-merge read-back are complete.
+- Tests: focused Ride/domain/error/guard unit tests passed 19/19 with `npx.cmd tsx --test tests/ride-service.test.ts tests/ride-error-boundary.test.ts tests/ride-contract-policy.test.ts tests/architecture-http-boundary.test.mjs`; direct full unit suite passed 199/199 with the unit-only file selection. Local focused HTTP integration test attempted with CI-style `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/hooma_ultimate_test` but local PostgreSQL rejected those credentials with Prisma `P1000`, so disposable PostgreSQL proof is pending GitHub CI.
+- Static/build checks: `npm run architecture:check` passed; `npm -w @hooma/api run typecheck` passed; full `npm run typecheck` passed; full `npm run build` passed; touched-file Prettier check passed; touched-file ESLint passed. Local `npm test` still fails before running tests with Windows `spawn EINVAL`, so the direct unit suite is recorded separately.
+- PostgreSQL migration/integration proof: no new migration expected; HTTP integration read-back is covered by `tests/rides.http.integration.test.ts` and is pending GitHub CI disposable PostgreSQL proof because the local Postgres credentials are unavailable.
+- Object-storage/Redis/Worker proof if applicable: not applicable to RIDE-005; Ride vehicle photos remain RIDE-006.
+- Deployment/live proof if applicable: not applicable unless explicitly deployed.
+- Remaining risk: RIDE-005 is not complete until GitHub CI proves the HTTP integration test against disposable PostgreSQL and the PR is merged/read back. Browser/Telegram runtime smoke remains separate from this backend HTTP/API slice.
+- Implementation score: not scored until completion.
+- Next task: `RIDE-006` — not started.
 
 ---
 
