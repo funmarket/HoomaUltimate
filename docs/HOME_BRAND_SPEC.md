@@ -161,7 +161,8 @@ Requirements:
 - activation navigates to the canonical internal `/play` route on the current Web or Telegram deployment origin;
 - do not hard-code the Railway production hostname into shared UI;
 - the hero does not create an Event directly; event creation remains owned by the Play/Events flow;
-- preserve the approved football/stadium artwork and responsive crop;
+- preserve the approved football/stadium artwork in full: it must be centered in its designated banner area and must not be cropped or cut at any viewport size;
+- the banner may expose its black container background when aspect ratios differ rather than cropping the approved image;
 - keyboard focus must be visible on Web.
 
 ---
@@ -263,7 +264,8 @@ Required:
 - meaningful accessible action names;
 - reduced-motion preference respected;
 - lazy/async loading for non-critical gateway artwork;
-- Match Day critical artwork may retain eager/high-priority loading.
+- Match Day critical artwork may retain eager/high-priority loading;
+- Match Day artwork remains fully visible and centered without `cover` cropping.
 
 ---
 
@@ -291,6 +293,7 @@ HOOMA NOW remains a read model
 Whistle/Replay remain outside the gateway grid
 Match Day hero opens canonical /play
 Match Day hero remains one accessible full-card action
+Match Day artwork is fully visible, centered, and uncropped
 architecture check
 format
 lint
