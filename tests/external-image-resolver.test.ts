@@ -23,8 +23,10 @@ function resolverFor(
   requested: string[] = [],
 ) {
   const fetcher = (async (input: string | URL | Request) => {
-    const value = typeof input === "string" ? input : input.url;
-    const url = input instanceof URL ? input : new URL(value);
+    const url =
+      input instanceof URL
+        ? input
+        : new URL(typeof input === "string" ? input : input.url);
     requested.push(url.toString());
     return handler(url);
   }) as ExternalImageFetcher;
@@ -145,10 +147,7 @@ test("private hosts are rejected before fetch", async () => {
     fetched = true;
     return imageResponse("image/png");
   }) as ExternalImageFetcher;
-  const resolver = new HttpExternalImageResolver(
-    fetcher,
-    publicLookup,
-  );
+  const resolver = new HttpExternalImageResolver(fetcher, publicLookup);
 
   await assert.rejects(
     resolver.resolve("http://127.0.0.1/private.png"),
