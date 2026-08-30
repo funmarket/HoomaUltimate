@@ -285,22 +285,23 @@ export class PrismaRideOfferRepository
     input: RideParticipationRequestInput,
   ): Promise<RideParticipation | null> {
     return this.db.$transaction(async (tx) => {
-      const offer = await tx.rideOffer.findUnique({
-        where: { id: rideOfferId },
-        select: { driverUserId: true, status: true },
-      });
+      const offer = await lockRideOffer(tx, rideOfferId);
       if (!offer || offer.status !== "OPEN") return null;
 
       assertDriverCanReceivePassenger(offer.driverUserId, passengerUserId);
 
-      const participation = await tx.rideParticipation.upsert({
+      const existing = await tx.rideParticipation.findUnique({
         where: { rideOfferId_passengerUserId: { rideOfferId, passengerUserId } },
-        create: {
+        select: rideParticipationSelect,
+      });
+      if (existing) return serializeRideParticipation(existing);
+
+      const participation = await tx.rideParticipation.create({
+        data: {
           rideOfferId,
           passengerUserId,
           seatCount: input.seatCount,
         },
-        update: {},
         select: rideParticipationSelect,
       });
 
