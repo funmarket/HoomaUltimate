@@ -1446,7 +1446,7 @@ Evidence
 
 ## ARCH-RIDE-001 — Verify Ride application/HTTP error dependency before HTTP implementation
 
-Status: **[ ] TODO**
+Status: **[~] IN PROGRESS**
 
 Dependencies: `RIDE-004`
 
@@ -1590,7 +1590,24 @@ Safe to begin RIDE-005: YES / NO
 
 `Safe to begin RIDE-005: YES` is mandatory before `RIDE-005` begins. If it is `NO`, this checkpoint remains BLOCKED/not DONE and RIDE-005 must not proceed.
 
-Evidence: _fill when complete_
+Evidence
+
+- Branch: `ride/arch-ride-001-error-boundary`
+- Current foundation HEAD: `90a3b3e5b0eff5c1b8ed130cb973cbf6bc7b6fdd`
+- Open overlapping PRs: none against `phase-0-foundation` at checkpoint start.
+- Concern: `apps/api/src/modules/rides/application/ride.service.ts` imported `AppError` from `apps/api/src/http/errors/app-error.ts`, creating a potential Ride application -> HTTP transport dependency before Ride HTTP routes were added.
+- Confirmed violation: YES, for Ride. `structure.md` requires `http -> application -> domain`, and `ARCH-RIDE-001` explicitly forbids cementing `Ride application service -> HTTP transport/errors`.
+- Why: `AppError` carries HTTP status and lives under `apps/api/src/http/errors`; Ride application policy should expose Ride-owned errors and let HTTP map them to transport responses.
+- Files inspected: `AGENTS.md`, `docs/LIVING_BUILD_PLAN.md`, full `rideplan.md`, `structure.md`, `requirements.md`, `docs/DECISIONS.md`, `docs/CANONICAL_MODEL.md`, `apps/api/src/http/errors/app-error.ts`, `apps/api/src/http/errors/error-handler.ts`, `apps/api/src/modules/events/domain/event-error.ts`, `apps/api/src/modules/rides/application/ride.service.ts`, `tests/ride-service.test.ts`, and `scripts/architecture-check.mjs`.
+- All application/domain -> HTTP imports found: existing legacy application imports remain in Communities, Gamers, Identity, Pitch, Places, Platform Admin, Play, Teams, and Whistle; Ride was removed from this set in the checkpoint change. Domain-layer HTTP imports were not found.
+- Existing canonical error pattern: Events uses a domain-owned `EventError` with HTTP status mapping in `apps/api/src/http/errors/error-handler.ts`.
+- Change required: YES.
+- Changed files if any: `apps/api/src/modules/rides/domain/ride-error.ts`, `apps/api/src/modules/rides/application/ride.service.ts`, `apps/api/src/http/errors/error-handler.ts`, `scripts/architecture-check.mjs`, `tests/ride-service.test.ts`, `tests/ride-error-boundary.test.ts`, and `rideplan.md`.
+- Architecture guard gap found/fixed: gap found; `scripts/architecture-check.mjs` only blocked application -> Express and did not block application/domain -> API HTTP transport. A focused guard was added with an explicit legacy allowlist so new Ride/application HTTP imports fail without forcing a repository-wide unrelated migration.
+- Tests/checks run: focused Ride/error-boundary tests with `npx.cmd tsx --test tests/ride-service.test.ts tests/ride-error-boundary.test.ts`; full direct unit suite with the same file selection as `scripts/run-tests.mjs`; `npm run architecture:check` through the installed Node npm path; `npm -w @hooma/api run typecheck`; full `npm run typecheck`; full `npm run build`; touched-file Prettier check; touched-file ESLint check; Ride source HTTP/AppError scan; application legacy `AppError` scan.
+- Results: focused Ride/error-boundary tests passed 10/10; full direct unit suite passed 196/196; `architecture:check` passed and now rejects new application/domain -> API HTTP imports outside the explicit legacy allowlist; API typecheck passed; full workspace typecheck passed; full build passed; touched-file Prettier and ESLint passed; Ride source scan found no `AppError` or API HTTP transport import under `apps/api/src/modules/rides`. Local `npm test` still fails before running tests with Windows `spawn EINVAL`, so the equivalent direct `npx.cmd tsx --test` unit selection was used. Local repo-wide `npm run format:check` fails on 402 pre-existing files and local repo-wide `npm run lint` fails on unrelated `apps/api/src/modules/platform-admin/application/platform-admin.authorizer.ts`; CI uses changed-file formatting and changed-source lint for PRs.
+- Remaining risks: existing non-Ride legacy application services still import `AppError`; this checkpoint intentionally does not migrate unrelated domains. Final completion still requires PR CI and merge/read-back before foundation can treat `ARCH-RIDE-001` as DONE.
+- Safe to begin RIDE-005: NO until verification passes and this checkpoint is closed.
 
 ---
 

@@ -9,16 +9,12 @@ import type {
   RideOfferCreateInput,
   RideOfferForOwner,
   RideOfferStatus,
-  RideOfferUpdateInput,
   RideParticipation,
-  RideParticipationRequestInput,
   RideParticipationStatus,
   RideRequestCreateInput,
   RideRequestForOwner,
   RideRequestStatus,
-  RideRequestUpdateInput,
 } from "@hooma/contracts/rides";
-import { AppError } from "../apps/api/src/http/errors/app-error.js";
 import type {
   RideMeetingPointRepository,
   RideOfferListInput,
@@ -36,6 +32,7 @@ import type {
   RideRequestRepository,
 } from "../apps/api/src/modules/rides/application/ride-request.repository.js";
 import { RideService } from "../apps/api/src/modules/rides/application/ride.service.js";
+import { RideError, type RideErrorCode } from "../apps/api/src/modules/rides/domain/ride-error.js";
 import { RidePolicyError } from "../apps/api/src/modules/rides/domain/ride-policy.js";
 
 const now = new Date("2026-08-30T12:00:00.000Z").toISOString();
@@ -61,7 +58,7 @@ test("RideService derives driver identity and validates Event destination before
 
 test("RideService rejects unavailable Event and Place destinations before repository writes", async () => {
   const fixture = createServiceFixture();
-  await assertAppError(
+  await assertRideError(
     () =>
       fixture.service.createOffer("driver-1", {
         ...offerCreateInput(),
@@ -78,7 +75,7 @@ test("RideService rejects unavailable Event and Place destinations before reposi
     startsAt: new Date(now),
     status: "CANCELLED",
   };
-  await assertAppError(
+  await assertRideError(
     () =>
       fixture.service.createOffer("driver-1", {
         ...offerCreateInput(),
@@ -89,7 +86,7 @@ test("RideService rejects unavailable Event and Place destinations before reposi
   );
   assert.equal(fixture.offers.createCalls, 0);
 
-  await assertAppError(
+  await assertRideError(
     () =>
       fixture.service.createRequest("requester-1", {
         ...requestCreateInput(),
@@ -121,7 +118,7 @@ test("RideService derives requester identity and exposes request owner/public bo
   assert.deepEqual(fixture.places.resolvedPlaceIds, ["place-1"]);
 
   fixture.requests.ownerRequest = null;
-  await assertAppError(
+  await assertRideError(
     () => fixture.service.updateRequest("other-user", "request-1", { pickupAreaLabel: "Lac" }),
     403,
     "RIDE_REQUEST_MANAGE_FORBIDDEN",
@@ -133,14 +130,14 @@ test("RideService enforces offer owner authorization before mutation and status 
   const fixture = createServiceFixture();
   fixture.offers.ownerOffer = null;
 
-  await assertAppError(
+  await assertRideError(
     () => fixture.service.updateOffer("intruder", "offer-1", { originAreaLabel: "Marsa" }),
     403,
     "RIDE_OFFER_MANAGE_FORBIDDEN",
   );
   assert.equal(fixture.offers.updateCalls, 0);
 
-  await assertAppError(
+  await assertRideError(
     () => fixture.service.cancelOffer("intruder", "offer-1"),
     403,
     "RIDE_OFFER_MANAGE_FORBIDDEN",
@@ -148,14 +145,14 @@ test("RideService enforces offer owner authorization before mutation and status 
   assert.equal(fixture.offers.updateStatusCalls, 0);
 });
 
-test("RideService maps Ride policy failures to stable AppError codes", async () => {
+test("RideService maps Ride policy failures to stable RideError codes", async () => {
   const fixture = createServiceFixture();
   fixture.participations.requestError = new RidePolicyError(
     "RIDE_DRIVER_CANNOT_PARTICIPATE",
     "Ride driver cannot join their own offer as a passenger",
   );
 
-  await assertAppError(
+  await assertRideError(
     () => fixture.service.requestParticipation("driver-1", "offer-1", { seatCount: 1 }),
     409,
     "RIDE_DRIVER_CANNOT_PARTICIPATE",
@@ -175,7 +172,7 @@ test("RideService sends driver participation responses through owner authorizati
   });
 
   fixture.participations.updateResult = null;
-  await assertAppError(
+  await assertRideError(
     () => fixture.service.acceptParticipation("driver-1", "offer-1", "part-1"),
     409,
     "RIDE_PARTICIPATION_STATUS_NOT_CHANGED",
@@ -195,7 +192,7 @@ test("RideService allows driver/passenger cancellation only through repository a
   });
 
   fixture.participations.updateResult = null;
-  await assertAppError(
+  await assertRideError(
     () => fixture.service.cancelParticipation("outsider", "offer-1", "part-1"),
     403,
     "RIDE_PARTICIPATION_CANCEL_FORBIDDEN",
@@ -221,7 +218,7 @@ test("RideService keeps meeting points private to authorized Ride parties", asyn
   assert.equal(visible.label, "Gate 4");
 
   fixture.meetingPoints.authorizedResult = null;
-  await assertAppError(
+  await assertRideError(
     () => fixture.service.getMeetingPoint("outsider", "part-1"),
     403,
     "RIDE_MEETING_POINT_FORBIDDEN",
@@ -336,11 +333,7 @@ class FakeRideParticipationRepository implements RideParticipationRepository {
     readonly status: RideParticipationStatus;
   } | null = null;
 
-  async requestParticipation(
-    _rideOfferId: string,
-    _passengerUserId: string,
-    _input: RideParticipationRequestInput,
-  ) {
+  async requestParticipation() {
     if (this.requestError) throw this.requestError;
     return this.requestResult;
   }
@@ -401,17 +394,37 @@ class FakeRidePlaceReferenceReader implements RidePlaceReferenceReader {
   }
 }
 
-async function assertAppError(
+async function assertRideError(
   operation: () => Promise<unknown>,
   statusCode: number,
   code: string,
 ): Promise<void> {
   await assert.rejects(operation, (error) => {
-    assert.ok(error instanceof AppError);
-    assert.equal(error.statusCode, statusCode);
+    assert.ok(error instanceof RideError);
+    assert.equal(rideStatus(error.code), statusCode);
     assert.equal(error.code, code);
     return true;
   });
+}
+
+function rideStatus(code: RideErrorCode): number {
+  switch (code) {
+    case "RIDE_DESTINATION_REQUIRED":
+    case "RIDE_DESTINATION_STRATEGY_CONFLICT":
+      return 400;
+    case "RIDE_OFFER_NOT_FOUND":
+    case "RIDE_REQUEST_NOT_FOUND":
+    case "RIDE_DESTINATION_EVENT_NOT_FOUND":
+    case "RIDE_DESTINATION_PLACE_NOT_FOUND":
+      return 404;
+    case "RIDE_PARTICIPATION_CANCEL_FORBIDDEN":
+    case "RIDE_MEETING_POINT_FORBIDDEN":
+    case "RIDE_OFFER_MANAGE_FORBIDDEN":
+    case "RIDE_REQUEST_MANAGE_FORBIDDEN":
+      return 403;
+    default:
+      return 409;
+  }
 }
 
 function offerCreateInput(): RideOfferCreateInput {
