@@ -1,5 +1,6 @@
 import { useRef, useState, type TouchEvent } from "react";
 import type { PublicPlaceSummary } from "@hooma/contracts/places";
+import { ContainedImage } from "@hooma/ui";
 import "./place-gallery.css";
 
 export function PlaceGallery({ place }: { readonly place: PublicPlaceSummary }) {
@@ -41,7 +42,7 @@ export function PlaceGallery({ place }: { readonly place: PublicPlaceSummary }) 
   return (
     <section className="place-gallery" aria-label={`${place.name} photos`}>
       <div className="place-gallery__frame" onTouchStart={startSwipe} onTouchEnd={endSwipe}>
-        <img src={source[active]} alt={`${place.name} photo ${active + 1}`} />
+        <ContainedImage src={source[active]} alt={`${place.name} photo ${active + 1}`} />
         {showControls ? (
           <>
             <button
