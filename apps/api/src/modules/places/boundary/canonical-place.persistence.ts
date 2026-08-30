@@ -8,6 +8,7 @@ import type {
   PublicPlaceSummary,
 } from "@hooma/contracts/places";
 import { Prisma } from "@hooma/database";
+import { normalizeExternalPlaceImageUrl } from "./external-place-image-url.js";
 
 const OWNER_SUBMISSION_CLAIM_EVIDENCE = "Ownership asserted during Place submission";
 
@@ -183,7 +184,7 @@ export async function findCanonicalPlaceDuplicate(
           AND lower(regexp_replace(btrim("name"), '[[:space:]]+', ' ', 'g')) = ${normalizedName}
         ORDER BY "createdAt" ASC, "id" ASC
         LIMIT 1
-      `,
+    `,
     );
     if (coordinateMatch[0]) {
       return { id: coordinateMatch[0].id, matchedBy: "NAME_COORDINATES" };
@@ -199,7 +200,7 @@ export function canonicalPlaceSummary(
 ): PublicPlaceSummary {
   const publicImages: PublicPlaceImage[] = images.map((image) => ({
     id: image.id,
-    imageUrl: image.imageUrl,
+    imageUrl: normalizeExternalPlaceImageUrl(image.imageUrl),
     sortOrder: image.sortOrder,
   }));
   return {
@@ -255,7 +256,10 @@ function canonicalImageUrls(input: Pick<PlaceCreateInput, "imageUrl" | "imageUrl
 }
 
 export function canonicalPlaceImageCreate(imageUrls: readonly string[]) {
-  return imageUrls.slice(0, 4).map((imageUrl, sortOrder) => ({ imageUrl, sortOrder }));
+  return imageUrls.slice(0, 4).map((imageUrl, sortOrder) => ({
+    imageUrl: normalizeExternalPlaceImageUrl(imageUrl),
+    sortOrder,
+  }));
 }
 
 export async function suggestCanonicalPlace(
