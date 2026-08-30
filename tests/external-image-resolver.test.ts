@@ -18,23 +18,21 @@ function imageResponse(type = "image/jpeg") {
   });
 }
 
+function requestUrl(input: string | URL | Request): URL {
+  if (input instanceof URL) return input;
+  return new URL(typeof input === "string" ? input : input.url);
+}
+
 function resolverFor(
   handler: (url: URL) => Response | Promise<Response>,
   requested: string[] = [],
 ) {
   const fetcher = (async (input: string | URL | Request) => {
-    const url =
-      input instanceof URL
-        ? input
-        : new URL(typeof input === "string" ? input : input.url);
+    const url = requestUrl(input);
     requested.push(url.toString());
     return handler(url);
   }) as ExternalImageFetcher;
-  return new HttpExternalImageResolver(
-    fetcher,
-    publicLookup,
-    "HOOMA-Test/1.0",
-  );
+  return new HttpExternalImageResolver(fetcher, publicLookup, "HOOMA-Test/1.0");
 }
 
 test("direct image keeps a long query URL", async () => {
