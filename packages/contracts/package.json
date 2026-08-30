@@ -60,6 +60,10 @@
       "types": "./src/profile.ts",
       "default": "./dist/profile.js"
     },
+    "./rides": {
+      "types": "./src/rides.ts",
+      "default": "./dist/rides.js"
+    },
     "./team-offers": {
       "types": "./src/team-offers.ts",
       "default": "./dist/team-offers.js"

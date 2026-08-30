@@ -1232,7 +1232,7 @@ Evidence:
 
 ## RIDE-001 — Ride contracts and domain policy skeleton
 
-Status: **[ ] TODO**
+Status: **[~] IN PROGRESS**
 
 Dependencies: `GOV-001`
 
@@ -1262,7 +1262,22 @@ DONE gate:
 - architecture check remains clean;
 - permanent focused policy/contract tests pass where applicable.
 
-Evidence: _fill when complete_
+Evidence
+
+- Branch: `ride/ride-001-contracts-policy`.
+- PR: _not opened yet_.
+- Merged commit / current foundation HEAD: in-flight from `eda4ed9ba5f88188e8a7425213bb1b650b188689`.
+- Source trace: `AGENTS.md`, `docs/LIVING_BUILD_PLAN.md`, full `rideplan.md`, Ride sections in `requirements.md`, `structure.md`, `docs/CANONICAL_MODEL.md`, `docs/DECISIONS.md`, and `docs/adr/ADR-050-ride-requests-unfreeze.md`.
+- Changed files: `packages/contracts/src/rides.ts`, `packages/contracts/package.json`, `packages/contracts/src/index.ts`, `apps/api/src/modules/rides/domain/ride-policy.ts`, `apps/api/src/modules/rides/application/ride-reference.readers.ts`, `apps/api/src/modules/rides/application/ride-offer.repository.ts`, `apps/api/src/modules/rides/application/ride-request.repository.ts`, `tests/ride-contract-policy.test.ts`, and this ledger only.
+- Documentation updated: this in-flight RIDE-001 ledger entry with local implementation evidence; PR/CI/merge/read-back evidence still pending.
+- Tests: `npm exec -- tsx --test tests\ride-contract-policy.test.ts` passed (6 tests); direct full unit suite via `.\node_modules\.bin\tsx.cmd --test <49 unit files>` passed (181 tests). `npm test` did not execute tests locally because `scripts/run-tests.mjs` hit Windows `spawn EINVAL` while spawning `npx.cmd`; this is recorded as runner/environment evidence, not a Ride source failure.
+- Static/build checks: `npm run db:generate` passed after network-enabled Prisma engine download; `npm -w @hooma/contracts run typecheck` passed; `npm -w @hooma/api run typecheck` passed; `npm run architecture:check` passed; `npm exec -- prettier --check <touched files>` passed; `git diff --check` passed; `npm run build:packages` passed; changed-file boundary guard passed with no forbidden RIDE-001 files changed.
+- PostgreSQL migration/integration proof: not applicable; RIDE-001 has no Prisma/schema/migration scope.
+- Object-storage/Redis/Worker proof if applicable: not applicable; RIDE-001 has no media/storage/worker scope.
+- Deployment/live proof if applicable: not applicable before merge; no runtime UI/API change in this slice.
+- Remaining risk: in-flight until PR opens, GitHub CI passes on the exact PR head, merge/read-back evidence is recorded, and the final DONE ledger update is merged.
+- Implementation score: local gate complete; PR/CI/merge gate pending.
+- Next task: `RIDE-002` — not started.
 
 ---
 
