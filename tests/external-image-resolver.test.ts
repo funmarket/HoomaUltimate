@@ -54,20 +54,17 @@ test("direct image keeps a long query URL", async () => {
 
 test("HTML metadata resolves and validates an image", async () => {
   const requested: string[] = [];
-  const resolver = resolverFor(
-    (url) => {
-      if (url.pathname === "/place") {
-        const html = "<meta property=\"og:image\" content=\"/full.webp\">";
-        return new Response(html, {
-          status: 200,
-          headers: { "content-type": "text/html" },
-        });
-      }
-      if (url.pathname === "/full.webp") return imageResponse("image/webp");
-      return new Response(null, { status: 404 });
-    },
-    requested,
-  );
+  const resolver = resolverFor((url) => {
+    if (url.pathname === "/place") {
+      const html = '<meta property="og:image" content="/full.webp">';
+      return new Response(html, {
+        status: 200,
+        headers: { "content-type": "text/html" },
+      });
+    }
+    if (url.pathname === "/full.webp") return imageResponse("image/webp");
+    return new Response(null, { status: 404 });
+  }, requested);
 
   const page = "https://spots.example/place";
   const image = "https://spots.example/full.webp";
@@ -77,26 +74,23 @@ test("HTML metadata resolves and validates an image", async () => {
 
 test("metadata image redirects are revalidated", async () => {
   const requested: string[] = [];
-  const resolver = resolverFor(
-    (url) => {
-      if (url.pathname === "/share") {
-        const html = "<meta name=\"twitter:image\" content=\"https://cdn.example/preview\">";
-        return new Response(html, {
-          status: 200,
-          headers: { "content-type": "text/html" },
-        });
-      }
-      if (url.pathname === "/preview") {
-        return new Response(null, {
-          status: 302,
-          headers: { location: "https://cdn.example/full.png" },
-        });
-      }
-      if (url.pathname === "/full.png") return imageResponse("image/png");
-      return new Response(null, { status: 404 });
-    },
-    requested,
-  );
+  const resolver = resolverFor((url) => {
+    if (url.pathname === "/share") {
+      const html = '<meta name="twitter:image" content="https://cdn.example/preview">';
+      return new Response(html, {
+        status: 200,
+        headers: { "content-type": "text/html" },
+      });
+    }
+    if (url.pathname === "/preview") {
+      return new Response(null, {
+        status: 302,
+        headers: { location: "https://cdn.example/full.png" },
+      });
+    }
+    if (url.pathname === "/full.png") return imageResponse("image/png");
+    return new Response(null, { status: 404 });
+  }, requested);
 
   const page = "https://events.example/share";
   const preview = "https://cdn.example/preview";
@@ -108,7 +102,7 @@ test("metadata image redirects are revalidated", async () => {
 test("HTML metadata candidate is rejected as an image", async () => {
   const resolver = resolverFor((url) => {
     if (url.pathname === "/share") {
-      const html = "<meta property=\"og:image\" content=\"https://cdn.example/not-image\">";
+      const html = '<meta property="og:image" content="https://cdn.example/not-image">';
       return new Response(html, {
         status: 200,
         headers: { "content-type": "text/html" },
@@ -120,9 +114,8 @@ test("HTML metadata candidate is rejected as an image", async () => {
     });
   });
 
-  await assert.rejects(
-    resolver.resolve("https://events.example/share"),
-    (error: unknown) => isResolutionError(error, NOT_IMAGE_ERROR),
+  await assert.rejects(resolver.resolve("https://events.example/share"), (error: unknown) =>
+    isResolutionError(error, NOT_IMAGE_ERROR),
   );
 });
 
@@ -148,28 +141,23 @@ test("private hosts are rejected before fetch", async () => {
   }) as ExternalImageFetcher;
   const resolver = new HttpExternalImageResolver(fetcher, publicLookup);
 
-  await assert.rejects(
-    resolver.resolve("http://127.0.0.1/private.png"),
-    (error: unknown) => isResolutionError(error, PRIVATE_ERROR),
+  await assert.rejects(resolver.resolve("http://127.0.0.1/private.png"), (error: unknown) =>
+    isResolutionError(error, PRIVATE_ERROR),
   );
   assert.equal(fetched, false);
 });
 
 test("public redirect cannot pivot to a private host", async () => {
   const requested: string[] = [];
-  const resolver = resolverFor(
-    () => {
-      return new Response(null, {
-        status: 302,
-        headers: { location: "http://localhost/private.png" },
-      });
-    },
-    requested,
-  );
+  const resolver = resolverFor(() => {
+    return new Response(null, {
+      status: 302,
+      headers: { location: "http://localhost/private.png" },
+    });
+  }, requested);
 
-  await assert.rejects(
-    resolver.resolve("https://public.example/start"),
-    (error: unknown) => isResolutionError(error, PRIVATE_ERROR),
+  await assert.rejects(resolver.resolve("https://public.example/start"), (error: unknown) =>
+    isResolutionError(error, PRIVATE_ERROR),
   );
   assert.deepEqual(requested, ["https://public.example/start"]);
 });
