@@ -150,10 +150,7 @@ test("Place detail first paint is independent from bounded Watch event paginatio
   assert.match(watch, /eventApi\.publicWatch\(\{ cursor: nextCursor \}\)/);
   assert.match(watch, /Load more events/);
   assert.match(detail, /const PLACE_EVENT_PAGE_SIZE = 20/);
-  assert.match(
-    detail,
-    /placesApi\s*\.get\(placeId\)[\s\S]*?\.then\(\(row\) => setPlace\(row\)\)/,
-  );
+  assert.match(detail, /placesApi\s*\.get\(placeId\)[\s\S]*?\.then\(\(row\) => setPlace\(row\)\)/);
   assert.match(
     detail,
     /eventsApi\.publicWatch\(\{[\s\S]*?placeId,[\s\S]*?limit: PLACE_EVENT_PAGE_SIZE/,
@@ -171,10 +168,7 @@ test("Place detail first paint is independent from bounded Watch event paginatio
     detail,
     /Promise\.all\(\[placesApi\.get\(placeId\),\s*loadPlaceEvents\(\)\]\)/,
   );
-  assert.doesNotMatch(
-    detail,
-    /events\.find\(\(event\) => event\.id === selectedEventId\)/,
-  );
+  assert.doesNotMatch(detail, /events\.find\(\(event\) => event\.id === selectedEventId\)/);
   assert.match(routes, /request\.query\.placeId/);
   assert.match(repository, /input\.placeId \? \{ placeId: input\.placeId \} : \{\}/);
 });
@@ -189,7 +183,10 @@ test("Watch and Place use BrowserRouter links for the internal place-event path"
     ticket,
     /<Link[\s\S]*?className="watch-ticket__detail watch-ticket__venue"[\s\S]*?to=\{placeHref\}/,
   );
-  assert.match(ticket, /<Link[\s\S]*?className="watch-ticket__photo-panel"[\s\S]*?to=\{placeHref\}/);
+  assert.match(
+    ticket,
+    /<Link[\s\S]*?className="watch-ticket__photo-panel"[\s\S]*?to=\{placeHref\}/,
+  );
   assert.doesNotMatch(ticket, /<a[^>]+href=\{placeHref\}/);
 
   assert.match(eventDetail, /import \{ Link \} from "react-router-dom"/);
