@@ -26,11 +26,15 @@ test("external Place image resolver keeps a direct image URL without fetching it
 
 test("external Place image resolver extracts og:image from ordinary pages", async () => {
   const resolver = new HttpExternalPlaceImageResolver(
-    fetcher(() =>
-      new Response('<html><head><meta property="og:image" content="/media/venue.webp"></head></html>', {
-        status: 200,
-        headers: { "content-type": "text/html; charset=utf-8" },
-      }),
+    fetcher(
+      () =>
+        new Response(
+          '<html><head><meta property="og:image" content="/media/venue.webp"></head></html>',
+          {
+            status: 200,
+            headers: { "content-type": "text/html; charset=utf-8" },
+          },
+        ),
     ),
     publicLookup,
   );
@@ -48,10 +52,13 @@ test("external Place image resolver follows public redirects before resolving me
           headers: { location: "https://page.example.com/place" },
         });
       }
-      return new Response('<meta name="twitter:image" content="https://cdn.example.com/place.png">', {
-        status: 200,
-        headers: { "content-type": "text/html" },
-      });
+      return new Response(
+        '<meta name="twitter:image" content="https://cdn.example.com/place.png">',
+        {
+          status: 200,
+          headers: { "content-type": "text/html" },
+        },
+      );
     }),
     publicLookup,
   );
@@ -62,11 +69,12 @@ test("external Place image resolver follows public redirects before resolving me
 
 test("external Place image resolver extracts a selected image from Google result HTML", async () => {
   const resolver = new HttpExternalPlaceImageResolver(
-    fetcher(() =>
-      new Response(
-        '<a href="/imgres?imgurl=https%3A%2F%2Fcdn.example.com%2Fcafe.jpg&amp;imgrefurl=https%3A%2F%2Fexample.com">result</a>',
-        { status: 200, headers: { "content-type": "text/html" } },
-      ),
+    fetcher(
+      () =>
+        new Response(
+          '<a href="/imgres?imgurl=https%3A%2F%2Fcdn.example.com%2Fcafe.jpg&amp;imgrefurl=https%3A%2F%2Fexample.com">result</a>',
+          { status: 200, headers: { "content-type": "text/html" } },
+        ),
     ),
     publicLookup,
   );
@@ -97,7 +105,9 @@ test("external Place image resolver rejects private-network destinations before 
 
 test("external Place image resolver revalidates redirect destinations against SSRF", async () => {
   const resolver = new HttpExternalPlaceImageResolver(
-    fetcher(() => new Response(null, { status: 302, headers: { location: "http://127.0.0.1/photo" } })),
+    fetcher(
+      () => new Response(null, { status: 302, headers: { location: "http://127.0.0.1/photo" } }),
+    ),
     publicLookup,
   );
 

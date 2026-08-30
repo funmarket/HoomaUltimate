@@ -20,7 +20,10 @@ function imageError(message: string): AppError {
 
 function isPrivateIpv4(address: string): boolean {
   const parts = address.split(".").map(Number);
-  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) {
+  if (
+    parts.length !== 4 ||
+    parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)
+  ) {
     return true;
   }
   const [a = 0, b = 0] = parts;
@@ -99,7 +102,9 @@ function decodeHtml(value: string): string {
     .replace(/&lt;/gi, "<")
     .replace(/&gt;/gi, ">")
     .replace(/&#(\d+);/g, (_, code: string) => String.fromCodePoint(Number(code)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, code: string) => String.fromCodePoint(Number.parseInt(code, 16)));
+    .replace(/&#x([0-9a-f]+);/gi, (_, code: string) =>
+      String.fromCodePoint(Number.parseInt(code, 16)),
+    );
 }
 
 function tagAttributes(tag: string): Map<string, string> {
@@ -137,7 +142,9 @@ function googleResultImage(html: string): string | null {
     .replace(/\\u003d/gi, "=")
     .replace(/\\\//g, "/");
 
-  for (const match of decoded.matchAll(/(?:[?&]|\b)(?:imgurl|mediaurl|image_url)=([^&"'<>\s]+)/gi)) {
+  for (const match of decoded.matchAll(
+    /(?:[?&]|\b)(?:imgurl|mediaurl|image_url)=([^&"'<>\s]+)/gi,
+  )) {
     const raw = match[1];
     if (!raw) continue;
     try {
@@ -149,7 +156,9 @@ function googleResultImage(html: string): string | null {
     }
   }
 
-  for (const match of decoded.matchAll(/https?:\/\/[^\s"'<>\\]+\.(?:avif|gif|jpe?g|png|webp)(?:\?[^\s"'<>\\]*)?/gi)) {
+  for (const match of decoded.matchAll(
+    /https?:\/\/[^\s"'<>\\]+\.(?:avif|gif|jpe?g|png|webp)(?:\?[^\s"'<>\\]*)?/gi,
+  )) {
     const candidate = match[0];
     try {
       const url = parseHttpUrl(candidate);
@@ -223,7 +232,9 @@ export class HttpExternalPlaceImageResolver implements ExternalPlaceImageResolve
       }
 
       const html = await readHtml(response);
-      const candidate = metadataImage(html, current) ?? (GOOGLE_HOST.test(current.hostname) ? googleResultImage(html) : null);
+      const candidate =
+        metadataImage(html, current) ??
+        (GOOGLE_HOST.test(current.hostname) ? googleResultImage(html) : null);
       if (!candidate) {
         throw imageError("No displayable photo was found at this link");
       }
@@ -258,9 +269,11 @@ export class HttpExternalPlaceImageResolver implements ExternalPlaceImageResolve
   }
 
   private async assertPublicUrl(url: URL): Promise<void> {
-    if (blockedHostname(url.hostname)) throw imageError("Private or internal photo hosts are not allowed");
+    if (blockedHostname(url.hostname))
+      throw imageError("Private or internal photo hosts are not allowed");
     if (isIP(url.hostname)) {
-      if (isPrivateAddress(url.hostname)) throw imageError("Private or internal photo hosts are not allowed");
+      if (isPrivateAddress(url.hostname))
+        throw imageError("Private or internal photo hosts are not allowed");
       return;
     }
 

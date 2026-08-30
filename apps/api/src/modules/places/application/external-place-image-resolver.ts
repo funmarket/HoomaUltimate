@@ -20,8 +20,11 @@ export async function resolvePlaceImageFields<T extends PlaceImageFields>(
     return pending;
   };
 
-  const imageUrl = typeof input.imageUrl === "string" ? await resolve(input.imageUrl) : input.imageUrl;
-  const imageUrls = input.imageUrls ? await Promise.all(input.imageUrls.map(resolve)) : input.imageUrls;
+  const imageUrl =
+    typeof input.imageUrl === "string" ? await resolve(input.imageUrl) : input.imageUrl;
+  const imageUrls = input.imageUrls
+    ? await Promise.all(input.imageUrls.map(resolve))
+    : input.imageUrls;
 
   return {
     ...input,

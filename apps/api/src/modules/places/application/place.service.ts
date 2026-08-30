@@ -96,11 +96,7 @@ export class PlaceService {
   async reviewPlace(userId: string, placeId: string, input: PlaceModerationDecision) {
     await this.platformAdmin.requirePlatformAdmin(userId);
     if (!(await this.repository.reviewPlace(userId, placeId, input))) {
-      throw new AppError(
-        409,
-        "PLACE_REVIEW_NOT_PENDING",
-        "This Place review is no longer pending",
-      );
+      throw new AppError(409, "PLACE_REVIEW_NOT_PENDING", "This Place review is no longer pending");
     }
     return { ok: true };
   }
