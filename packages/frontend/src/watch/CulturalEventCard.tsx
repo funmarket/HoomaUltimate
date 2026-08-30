@@ -1,3 +1,4 @@
+import { ContainedImage } from "@hooma/ui";
 import type { PublicEvent } from "../events/api";
 import { PinIcon, UsersIcon } from "../ui/HoomaIcons";
 import "./cultural.css";
@@ -47,7 +48,7 @@ export function CulturalEventCard({ event }: { readonly event: PublicEvent }) {
     <article className="watch-cultural-card">
       <a className="watch-cultural-card__media" href={`/events/${event.id}`}>
         {imageUrl ? (
-          <img src={imageUrl} alt="" />
+          <ContainedImage src={imageUrl} alt="" />
         ) : (
           <span>{categoryLabel(details.culturalCategory)}</span>
         )}
