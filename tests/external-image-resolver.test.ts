@@ -57,7 +57,7 @@ test("HTML metadata resolves and validates an image", async () => {
   const resolver = resolverFor(
     (url) => {
       if (url.pathname === "/place") {
-        const html = '<meta property="og:image" content="/full.webp">';
+        const html = "<meta property=\"og:image\" content=\"/full.webp\">";
         return new Response(html, {
           status: 200,
           headers: { "content-type": "text/html" },
@@ -80,7 +80,7 @@ test("metadata image redirects are revalidated", async () => {
   const resolver = resolverFor(
     (url) => {
       if (url.pathname === "/share") {
-        const html = '<meta name="twitter:image" content="https://cdn.example/preview">';
+        const html = "<meta name=\"twitter:image\" content=\"https://cdn.example/preview\">";
         return new Response(html, {
           status: 200,
           headers: { "content-type": "text/html" },
@@ -108,7 +108,7 @@ test("metadata image redirects are revalidated", async () => {
 test("HTML metadata candidate is rejected as an image", async () => {
   const resolver = resolverFor((url) => {
     if (url.pathname === "/share") {
-      const html = '<meta property="og:image" content="https://cdn.example/not-image">';
+      const html = "<meta property=\"og:image\" content=\"https://cdn.example/not-image\">";
       return new Response(html, {
         status: 200,
         headers: { "content-type": "text/html" },
