@@ -11,12 +11,12 @@ export function ContainedImage({ style, ...props }: ContainedImageProps) {
     <img
       {...props}
       style={{
+        ...style,
         width: "100%",
         height: "100%",
         display: "block",
         objectFit: "contain",
         objectPosition: "center",
-        ...style,
       }}
     />
   );
