@@ -11,38 +11,33 @@ const galleryCssUrl = new URL(
   import.meta.url,
 );
 
+function ruleBody(css, selector) {
+  const start = css.indexOf(`${selector} {`);
+  assert.notEqual(start, -1, `${selector} rule must exist`);
+  const bodyStart = css.indexOf("{", start) + 1;
+  const end = css.indexOf("}", bodyStart);
+  return css.slice(bodyStart, end);
+}
+
 test("Spot directory photos adapt to their intrinsic aspect ratio", async () => {
   const css = await readFile(placesCssUrl, "utf8");
-  const mediaRule =
-    css.match(
-      /\.place-card\.place-card--directory \.place-card__media \{([\s\S]*?)\}/,
-    )?.[1] ?? "";
-  const imageRule =
-    css.match(
-      /\.place-card\.place-card--directory \.place-card__media img \{([\s\S]*?)\}/,
-    )?.[1] ?? "";
+  const mediaRule = ruleBody(css, ".place-card.place-card--directory .place-card__media");
+  const imageRule = ruleBody(css, ".place-card.place-card--directory .place-card__media img");
 
-  assert.ok(mediaRule, "Spot directory media rule must exist");
   assert.doesNotMatch(mediaRule, /aspect-ratio:/);
   assert.match(mediaRule, /max-height:\s*min\(70vh, 640px\);/);
-
-  assert.ok(imageRule, "Spot directory image rule must exist");
   assert.match(imageRule, /height:\s*auto;/);
   assert.match(imageRule, /max-height:\s*min\(70vh, 640px\);/);
-
   assert.doesNotMatch(css, /\.place-card__media\s*\{[^}]*aspect-ratio:/);
 });
 
-test("Place gallery follows portrait, square, and landscape photo ratios without cropping", async () => {
+test("Place gallery adapts to photo aspect ratios without cropping", async () => {
   const css = await readFile(galleryCssUrl, "utf8");
-  const frameRule = css.match(/\.place-gallery__frame \{([\s\S]*?)\}/)?.[1] ?? "";
-  const imageRule = css.match(/\.place-gallery__frame img \{([\s\S]*?)\}/)?.[1] ?? "";
+  const frameRule = ruleBody(css, ".place-gallery__frame");
+  const imageRule = ruleBody(css, ".place-gallery__frame img");
 
-  assert.ok(frameRule, "Place gallery frame rule must exist");
   assert.doesNotMatch(frameRule, /aspect-ratio:/);
   assert.match(frameRule, /max-height:\s*min\(85vh, 960px\);/);
-
-  assert.ok(imageRule, "Place gallery image rule must exist");
   assert.match(imageRule, /width:\s*100%;/);
   assert.match(imageRule, /height:\s*auto;/);
   assert.match(imageRule, /max-height:\s*min\(85vh, 960px\);/);
