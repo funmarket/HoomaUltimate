@@ -218,6 +218,8 @@ This rule exists for scalability and user experience as well as code cleanliness
 
 Physical `Place` is the venue source of truth. Pitch extends Place through Pitch-owned capability/application behavior. Watch references canonical Place; it does not require a duplicate Watch venue entity or a generic capability model merely for symmetry.
 
+ADR-050 explicitly unfreezes durable Ride and Requests vertical slices. Rides owns ride offers, ride requests, participation, private meeting-point policy and Ride vehicle-photo metadata. Requests owns help/resource requests and quantity-based partial claims. Fundraising, Payments and generic Media remain separate owners and are not implemented merely because Ride or Requests begins.
+
 ---
 
 ## 7. Persistence architecture
@@ -339,6 +341,8 @@ Gamers remains an independent implemented route family at `/gamers`, but it is n
 This section records current application state. Product-owner changes update both the source and this contract in the same task.
 
 HOOMA creation gateway remains a chooser into separate owning domains, not a generic database `CommunityType`.
+
+Ride and Requests may now grow from their honest shells into their own domain-owned vertical slices under ADR-050. That authorization does not change the Home gateway, bottom navigation, FundMe tab grouping, Gamers independence, ULTRAS unavailability, or the rule that Fundraising and Payments require separate authorization.
 
 The current chooser is:
 

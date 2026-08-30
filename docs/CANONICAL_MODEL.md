@@ -979,15 +979,47 @@ The dedicated accepted decision is `docs/adr/ADR-042-pitch-suggestion-claim-life
 
 ---
 
-# 21. Frozen future concepts
+# 21. Authorized Ride and Requests concepts
+
+ADR-050 begins the durable Ride and Requests vertical slices. Canonical schema work is authorized for these domains in their numbered implementation tasks, subject to the policies below; this section does not itself add tables, APIs or contracts.
+
+Ride-owned canonical concepts may include:
+
+```text
+RideOffer
+RideRequest
+RideParticipation
+RideMeetingPoint
+RideOfferWaypoint
+RideOfferVehiclePhoto
+```
+
+Ride destination uses exactly one strategy: owning Event reference, canonical Place reference, or Ride-owned custom destination label. Event and Place display data remains owned by those domains and is read through narrow reference ports. Ride public projections must omit exact private pickup or meeting location.
+
+Ride participation uses a separate participation record rather than passenger arrays. Passenger requests require driver/owner acceptance before they consume accepted capacity. Drivers cannot join their own Ride Offer as passengers. Offer, request and participation cancellation rules are owned by Rides and must preserve terminal lifecycle history.
+
+Ride vehicle-photo bytes belong in object storage. `RideOfferVehiclePhoto` is single-purpose Ride-owned metadata for the managed object key, content type, size and lifecycle fields until a separately authorized generic Media domain exists. PostgreSQL must not store photo bytes, base64 payloads, storage credentials or polymorphic generic media ownership for this slice.
+
+Requests-owned canonical concepts may include:
+
+```text
+Request
+RequestClaim
+```
+
+Requests use quantity-based partial claims. More than one active claimer is allowed while unclaimed quantity remains, and persistence must enforce that accepted/active claim quantities cannot exceed the requested quantity. Quantity-one requests behave as single-claim requests through the same rule, not through a second exclusive-only model.
+
+Requests do not own Ride, Fundraising, Payment or generic action state. FundMe remains grouped under Requests in navigation, but durable Fundraising and Payments state stays separately governed.
+
+---
+
+# 22. Frozen future concepts
 
 The normalized initial schema must not add durable product tables for these until their vertical slice begins:
 
 ```text
 Place/Watch capability work outside the already-implemented Pitch model
 ULTRAS
-Requests
-Ride
 FundMe
 Payments
 MediaAsset beyond any truly required current foundation
@@ -995,13 +1027,13 @@ Replay
 HOOMA NOW read models
 ```
 
-Whistle is explicitly unfrozen by ADR-039/ADR-040. Gamers is explicitly unfrozen by ADR-041. Pitch is explicitly implemented under ADR-042 and is therefore no longer in this list.
+Whistle is explicitly unfrozen by ADR-039/ADR-040. Gamers is explicitly unfrozen by ADR-041. Pitch is explicitly implemented under ADR-042 and is therefore no longer in this list. Ride and Requests are explicitly unfrozen by ADR-050 and are therefore no longer in this frozen list.
 
 Foundation interfaces/packages may exist, but a speculative schema is not implementation.
 
 ---
 
-# 22. Migration requirement
+# 23. Migration requirement
 
 Before first HOOMA ULTIMATE release, all pre-release current migrations are replaced with one reviewed initial migration generated from the reconciled schema and augmented with intentional PostgreSQL constraints where required.
 
