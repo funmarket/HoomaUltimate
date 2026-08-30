@@ -981,9 +981,9 @@ The dedicated accepted decision is `docs/adr/ADR-042-pitch-suggestion-claim-life
 
 # 21. Authorized Ride and Requests concepts
 
-ADR-050 begins the durable Ride and Requests vertical slices. Canonical schema work is authorized for these domains in their numbered implementation tasks, subject to the policies below; this section does not itself add tables, APIs or contracts.
+ADR-050 begins the durable Ride and Requests vertical slices. Canonical schema work is authorized for these domains in their numbered implementation tasks, subject to the policies below. RIDE-002 adds core Ride persistence only; Requests, Fundraising, Payments and Ride media persistence remain separately ordered.
 
-Ride-owned canonical concepts may include:
+RIDE-002 establishes the core Ride-owned canonical persistence:
 
 ```text
 RideOffer
@@ -991,14 +991,15 @@ RideRequest
 RideParticipation
 RideMeetingPoint
 RideOfferWaypoint
-RideOfferVehiclePhoto
 ```
 
-Ride destination uses exactly one strategy: owning Event reference, canonical Place reference, or Ride-owned custom destination label. Event and Place display data remains owned by those domains and is read through narrow reference ports. Ride public projections must omit exact private pickup or meeting location.
+Ride destination uses exactly one strategy: owning Event reference, canonical Place reference, or Ride-owned custom destination label. The database enforces this for `RideOffer` and `RideRequest`. Event and Place display data remains owned by those domains and is read through narrow reference ports. Ride public projections must omit exact private pickup or meeting location.
 
-Ride participation uses a separate participation record rather than passenger arrays. Passenger requests require driver/owner acceptance before they consume accepted capacity. Drivers cannot join their own Ride Offer as passengers. Offer, request and participation cancellation rules are owned by Rides and must preserve terminal lifecycle history.
+Ride participation uses a separate `RideParticipation` record rather than passenger arrays. Persistence enforces one participation identity per `RideOffer`/passenger User, while passenger requests still require driver/owner acceptance before they consume accepted capacity. Drivers cannot join their own Ride Offer as passengers. Offer, request and participation cancellation rules are owned by Rides and must preserve terminal lifecycle history.
 
-Ride vehicle-photo bytes belong in object storage. `RideOfferVehiclePhoto` is single-purpose Ride-owned metadata for the managed object key, content type, size and lifecycle fields until a separately authorized generic Media domain exists. PostgreSQL must not store photo bytes, base64 payloads, storage credentials or polymorphic generic media ownership for this slice.
+Ride waypoints are ordered `RideOfferWaypoint` records with optional canonical Place references and Ride-owned area labels; no JSON route blob or geospatial-route provider dependency is part of the current core persistence.
+
+Ride vehicle-photo bytes belong in object storage. `RideOfferVehiclePhoto` remains deferred until the separately ordered Ride media slice; when implemented, it must be single-purpose Ride-owned metadata for the managed object key, content type, size and lifecycle fields until a separately authorized generic Media domain exists. PostgreSQL must not store photo bytes, base64 payloads, storage credentials or polymorphic generic media ownership for this slice.
 
 Requests-owned canonical concepts may include:
 
