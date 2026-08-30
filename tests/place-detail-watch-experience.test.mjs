@@ -9,6 +9,8 @@ test("Place detail uses canonical Watch event context for ticket, RSVP and share
 
   assert.match(detail, /const query = new URLSearchParams\(window\.location\.search\)/);
   assert.match(detail, /const selectedEventId = query\.get\("eventId"\)/);
+  assert.match(detail, /eventsApi\.publicDetail\(eventId\)/);
+  assert.match(detail, /row\.type === "WATCH" && row\.placeId === placeId/);
   assert.match(detail, /<WatchTicket event=\{selectedEvent\} variant="place-detail" \/>/);
   assert.match(detail, /eventsApi\.myRsvp\(eventId\)/);
   assert.match(detail, /eventsApi\.join\(selectedEventId\)/);
@@ -134,7 +136,7 @@ test("Place detail map action keeps coordinates optional", () => {
   assert.match(detail, /google\.com\/maps\/search/);
 });
 
-test("Watch discovery paginates while Place detail filters before pagination", () => {
+test("Place detail first paint is independent from bounded Watch event pagination", () => {
   const api = source("packages/frontend/src/events/api.ts");
   const watch = source("packages/frontend/src/watch/WatchPage.tsx");
   const detail = source("packages/frontend/src/places/PlaceDetailPage.tsx");
@@ -147,10 +149,42 @@ test("Watch discovery paginates while Place detail filters before pagination", (
   assert.match(api, /params\.set\("placeId", query\.placeId\)/);
   assert.match(watch, /eventApi\.publicWatch\(\{ cursor: nextCursor \}\)/);
   assert.match(watch, /Load more events/);
-  assert.match(detail, /eventsApi\.publicWatch\(\{ placeId, cursor, limit: 100 \}\)/);
-  assert.doesNotMatch(detail, /eventPage\.items\.filter/);
+  assert.match(detail, /const PLACE_EVENT_PAGE_SIZE = 20/);
+  assert.match(detail, /placesApi\s*\.get\(placeId\)[\s\S]*?\.then\(\(row\) => setPlace\(row\)\)/);
+  assert.match(detail, /eventsApi\.publicWatch\(\{[\s\S]*?placeId,[\s\S]*?limit: PLACE_EVENT_PAGE_SIZE/);
+  assert.match(detail, /eventsApi\.publicDetail\(eventId\)/);
+  assert.match(detail, /row\.type === "WATCH" && row\.placeId === placeId/);
+  assert.match(detail, /setEventsNextCursor\(page\.nextCursor\)/);
+  assert.match(detail, /loadPlaceEvents\(eventsNextCursor\)/);
+  assert.match(detail, /Load more events/);
+  assert.doesNotMatch(detail, /do\s*\{[\s\S]*?eventsApi\.publicWatch[\s\S]*?\}\s*while\s*\(cursor\)/);
+  assert.doesNotMatch(
+    detail,
+    /Promise\.all\(\[placesApi\.get\(placeId\),\s*loadPlaceEvents\(\)\]\)/,
+  );
+  assert.doesNotMatch(detail, /events\.find\(\(event\) => event\.id === selectedEventId\)/);
   assert.match(routes, /request\.query\.placeId/);
   assert.match(repository, /input\.placeId \? \{ placeId: input\.placeId \} : \{\}/);
+});
+
+test("Watch and Place use BrowserRouter links for the internal place-event path", () => {
+  const ticket = source("packages/frontend/src/watch/WatchTicket.tsx");
+  const eventDetail = source("packages/frontend/src/events/EventDetailPage.tsx");
+  const placeDetail = source("packages/frontend/src/places/PlaceDetailPage.tsx");
+
+  assert.match(ticket, /import \{ Link \} from "react-router-dom"/);
+  assert.match(ticket, /<Link[\s\S]*?className="watch-ticket__detail watch-ticket__venue"[\s\S]*?to=\{placeHref\}/);
+  assert.match(ticket, /<Link className="watch-ticket__photo-panel" to=\{placeHref\}/);
+  assert.doesNotMatch(ticket, /<a[^>]+href=\{placeHref\}/);
+
+  assert.match(eventDetail, /import \{ Link \} from "react-router-dom"/);
+  assert.match(
+    eventDetail,
+    /<Link[\s\S]*?className="watch-event-detail__action watch-event-detail__action--place"[\s\S]*?to=\{`\/places\/\$\{event\.place\.id\}\?eventId=/,
+  );
+
+  assert.match(placeDetail, /<Link className="place-back-link" to="\/watch"/);
+  assert.match(placeDetail, /<Link className="place-event-row" key=\{event\.id\} to=\{`\/events\/\$\{event\.id\}`\}/);
 });
 
 test("temporary Place formatter does not remain in the final source tree", () => {
