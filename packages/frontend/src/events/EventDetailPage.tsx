@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useHoomaFrontend } from "../context";
 import { HoomaApiError } from "../http";
 import { EventWhistleBoard } from "../whistle/HoomaWhistleBoard";
@@ -257,13 +258,13 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
               </button>
             ) : null}
             {event.place ? (
-              <a
+              <Link
                 className="watch-event-detail__action watch-event-detail__action--place"
-                href={`/places/${event.place.id}?eventId=${encodeURIComponent(event.id)}`}
+                to={`/places/${event.place.id}?eventId=${encodeURIComponent(event.id)}`}
               >
                 <PinIcon />
                 View place
-              </a>
+              </Link>
             ) : null}
             {canManage ? (
               <a
