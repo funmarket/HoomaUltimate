@@ -1283,7 +1283,7 @@ Evidence
 
 ## RIDE-002 — Ride core Prisma schema + committed migration
 
-Status: **[ ] TODO**
+Status: **[~] IN PROGRESS**
 
 Dependencies: `RIDE-001`
 
@@ -1326,7 +1326,22 @@ DONE gate:
 - schema and migration SQL agree;
 - canonical model docs updated.
 
-Evidence: _fill when complete_
+Evidence
+
+- Branch: `ride/ride-002-prisma-schema`.
+- PR: [#178](https://github.com/funmarket/HoomaUltimate/pull/178).
+- Merged commit / current foundation HEAD: in-flight from `8dc514214d1c092b5b8f48fc76e1e974563512fa`.
+- Source trace: `AGENTS.md`, `docs/LIVING_BUILD_PLAN.md`, full `rideplan.md`, Ride sections in `requirements.md`, `structure.md`, `docs/CANONICAL_MODEL.md`, `docs/DECISIONS.md`, `docs/adr/ADR-050-ride-requests-unfreeze.md`, existing Prisma schema, and recent migrations.
+- Changed files: `packages/database/prisma/schema.prisma`, `packages/database/prisma/migrations/20260830185000_ride_core_persistence/migration.sql`, `tests/ride-prisma-schema.test.mjs`, `docs/CANONICAL_MODEL.md`, and this ledger only.
+- Documentation updated: `docs/CANONICAL_MODEL.md` now records the current core Ride persistence and keeps vehicle-photo metadata deferred; this ledger records in-flight RIDE-002 evidence.
+- Tests: `npm exec -- tsx --test tests\ride-prisma-schema.test.mjs` passed (3 tests); direct full unit suite via `.\node_modules\.bin\tsx.cmd --test <50 unit files>` passed (184 tests).
+- Static/build checks: `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/hooma_ultimate_test npm run db:validate` passed; `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/hooma_ultimate_test npm run db:generate` passed; `npm run architecture:check` passed; `npm -w @hooma/database run typecheck` passed; `npm -w @hooma/database run build` passed; `npm exec -- prettier --check docs\CANONICAL_MODEL.md rideplan.md` passed; `git diff --check` passed; `npm run build:packages` passed.
+- PostgreSQL migration/integration proof: pending GitHub CI disposable PostgreSQL; local port `5432` was detected but not proven disposable, so no local migration was run against it.
+- Object-storage/Redis/Worker proof if applicable: not applicable; RIDE-002 has no media/storage/Redis/worker scope.
+- Deployment/live proof if applicable: not applicable before merge; RIDE-002 adds schema/migration only and no runtime UI/API route.
+- Remaining risk: in-flight until schema validation, migration deployment/read-back, PR CI, merge, and final DONE ledger update complete.
+- Implementation score: pending.
+- Next task: `RIDE-003` — not started.
 
 ---
 

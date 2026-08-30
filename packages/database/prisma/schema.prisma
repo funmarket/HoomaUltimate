@@ -172,6 +172,30 @@ enum WhistleContextType {
   USER_DIRECT
 }
 
+enum RideOfferStatus {
+  OPEN
+  FULL
+  DEPARTED
+  CANCELLED
+  COMPLETED
+}
+
+enum RideRequestStatus {
+  OPEN
+  MATCHED
+  CANCELLED
+  EXPIRED
+  COMPLETED
+}
+
+enum RideParticipationStatus {
+  REQUESTED
+  ACCEPTED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
 enum GamerGameStatus {
   ACTIVE
   INACTIVE
@@ -231,6 +255,9 @@ model User {
   formationSlots                FormationSlot[]
   eventCheckIns                 EventCheckIn[]
   eventChatMessages             EventChatMessage[]
+  rideOffersDriven              RideOffer[]                    @relation("RideOfferDriver")
+  rideRequestsCreated           RideRequest[]                  @relation("RideRequestRequester")
+  rideParticipations            RideParticipation[]            @relation("RideParticipationPassenger")
   whistlesAuthored              WhistleMetadata[]
   gamerGamesCreated             GamerGame[]                    @relation("GamerGameCreator")
   gamerProfiles                 GamerProfile[]
@@ -366,6 +393,9 @@ model Place {
   events              Event[]
   teamChallengeVenues TeamChallenge[]              @relation("TeamChallengePlace")
   teamGameVenues      TeamGame[]                   @relation("TeamGamePlace")
+  rideOfferDestinations RideOffer[]                @relation("RideOfferDestinationPlace")
+  rideRequestDestinations RideRequest[]            @relation("RideRequestDestinationPlace")
+  rideOfferWaypoints  RideOfferWaypoint[]          @relation("RideOfferWaypointPlace")
 
   @@index([moderationStatus, archivedAt, createdAt])
   @@index([submissionOrigin, moderationStatus, archivedAt])
@@ -756,6 +786,8 @@ model Event {
   formations      Formation[]
   checkIns        EventCheckIn[]
   chatRoom        EventChatRoom?
+  rideOffers      RideOffer[]      @relation("RideOfferDestinationEvent")
+  rideRequests    RideRequest[]    @relation("RideRequestDestinationEvent")
 
   @@index([type, status, startsAt, id])
   @@index([communityId, type, status, startsAt])
@@ -886,6 +918,103 @@ model EventChatMessage {
 
   @@index([roomId, createdAt, id])
   @@index([expiresAt])
+}
+
+model RideOffer {
+  id                     String                  @id @default(cuid())
+  driverUserId           String
+  eventId                String?
+  destinationPlaceId     String?
+  customDestinationLabel String?
+  originAreaLabel        String
+  departureAt            DateTime
+  totalSeats             Int
+  vehicleMake            String?
+  vehicleModel           String?
+  vehicleColor           String?
+  note                   String?
+  status                 RideOfferStatus         @default(OPEN)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  driver                 User                    @relation("RideOfferDriver", fields: [driverUserId], references: [id], onDelete: Cascade)
+  destinationEvent       Event?                  @relation("RideOfferDestinationEvent", fields: [eventId], references: [id], onDelete: Restrict)
+  destinationPlace       Place?                  @relation("RideOfferDestinationPlace", fields: [destinationPlaceId], references: [id], onDelete: Restrict)
+  participations         RideParticipation[]
+  waypoints              RideOfferWaypoint[]
+
+  @@index([status, departureAt, id])
+  @@index([driverUserId, status, departureAt])
+  @@index([eventId, status, departureAt])
+  @@index([destinationPlaceId, status, departureAt])
+}
+
+model RideRequest {
+  id                     String            @id @default(cuid())
+  requesterUserId        String
+  eventId                String?
+  destinationPlaceId     String?
+  customDestinationLabel String?
+  pickupAreaLabel        String
+  desiredDepartureAt     DateTime
+  passengerCount         Int
+  note                   String?
+  expiresAt              DateTime
+  status                 RideRequestStatus @default(OPEN)
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+  requester              User              @relation("RideRequestRequester", fields: [requesterUserId], references: [id], onDelete: Cascade)
+  destinationEvent       Event?            @relation("RideRequestDestinationEvent", fields: [eventId], references: [id], onDelete: Restrict)
+  destinationPlace       Place?            @relation("RideRequestDestinationPlace", fields: [destinationPlaceId], references: [id], onDelete: Restrict)
+
+  @@index([status, desiredDepartureAt, id])
+  @@index([requesterUserId, status, createdAt])
+  @@index([eventId, status, desiredDepartureAt])
+  @@index([destinationPlaceId, status, desiredDepartureAt])
+  @@index([expiresAt, status])
+}
+
+model RideParticipation {
+  id              String                  @id @default(cuid())
+  rideOfferId     String
+  passengerUserId String
+  seatCount       Int
+  status          RideParticipationStatus @default(REQUESTED)
+  requestedAt     DateTime                @default(now())
+  respondedAt     DateTime?
+  cancelledAt     DateTime?
+  completedAt     DateTime?
+  rideOffer       RideOffer               @relation(fields: [rideOfferId], references: [id], onDelete: Cascade)
+  passenger       User                    @relation("RideParticipationPassenger", fields: [passengerUserId], references: [id], onDelete: Cascade)
+  meetingPoint    RideMeetingPoint?
+
+  @@unique([rideOfferId, passengerUserId])
+  @@index([rideOfferId, status, requestedAt])
+  @@index([passengerUserId, status, requestedAt])
+}
+
+model RideMeetingPoint {
+  id              String            @id @default(cuid())
+  participationId String            @unique
+  label           String
+  latitude        Decimal?          @db.Decimal(10, 7)
+  longitude       Decimal?          @db.Decimal(10, 7)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  participation   RideParticipation @relation(fields: [participationId], references: [id], onDelete: Cascade)
+}
+
+model RideOfferWaypoint {
+  id          String    @id @default(cuid())
+  rideOfferId String
+  sequence    Int
+  placeId     String?
+  areaLabel   String
+  rideOffer   RideOffer @relation(fields: [rideOfferId], references: [id], onDelete: Cascade)
+  place       Place?    @relation("RideOfferWaypointPlace", fields: [placeId], references: [id], onDelete: Restrict)
+
+  @@unique([rideOfferId, sequence])
+  @@index([rideOfferId, sequence])
+  @@index([placeId])
 }
 
 model WhistleMetadata {
