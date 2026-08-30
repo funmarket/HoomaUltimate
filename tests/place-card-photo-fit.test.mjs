@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const placesCssUrl = new URL("../packages/frontend/src/places/places.css", import.meta.url);
+const placesCssUrl = new URL(
+  "../packages/frontend/src/places/places.css",
+  import.meta.url,
+);
 const galleryCssUrl = new URL(
   "../packages/frontend/src/places/place-gallery.css",
   import.meta.url,
@@ -11,8 +14,9 @@ const galleryCssUrl = new URL(
 test("Spot directory photos adapt to their intrinsic aspect ratio", async () => {
   const css = await readFile(placesCssUrl, "utf8");
   const mediaRule =
-    css.match(/\.place-card\.place-card--directory \.place-card__media \{([\s\S]*?)\}/)?.[1] ??
-    "";
+    css.match(
+      /\.place-card\.place-card--directory \.place-card__media \{([\s\S]*?)\}/,
+    )?.[1] ?? "";
   const imageRule =
     css.match(
       /\.place-card\.place-card--directory \.place-card__media img \{([\s\S]*?)\}/,
