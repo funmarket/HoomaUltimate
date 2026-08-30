@@ -7,9 +7,10 @@ import {
   type ExternalImageHostLookup,
 } from "../apps/api/src/infrastructure/media/http-external-image-resolver.js";
 
-const publicLookup: ExternalImageHostLookup = async () => [
-  { address: "8.8.8.8", family: 4 },
-];
+const PUBLIC_ADDRESS = { address: "8.8.8.8", family: 4 };
+const PRIVATE_ERROR = "Private or internal image hosts are not allowed";
+const NOT_IMAGE_ERROR = "Resolved image link does not return an image";
+const publicLookup: ExternalImageHostLookup = async () => [PUBLIC_ADDRESS];
 
 function imageResponse(type = "image/jpeg") {
   return new Response(null, {
@@ -20,7 +21,12 @@ function imageResponse(type = "image/jpeg") {
 
 function requestUrl(input: string | URL | Request): URL {
   if (input instanceof URL) return input;
-  return new URL(typeof input === "string" ? input : input.url);
+  const value = typeof input === "string" ? input : input.url;
+  return new URL(value);
+}
+
+function isResolutionError(error: unknown, message: string): boolean {
+  return error instanceof ExternalImageResolutionError && error.message === message;
 }
 
 function resolverFor(
@@ -32,13 +38,14 @@ function resolverFor(
     requested.push(url.toString());
     return handler(url);
   }) as ExternalImageFetcher;
-  return new HttpExternalImageResolver(fetcher, publicLookup, "HOOMA-Test/1.0");
+  const agent = "HOOMA-Test/1.0";
+  return new HttpExternalImageResolver(fetcher, publicLookup, agent);
 }
 
 test("direct image keeps a long query URL", async () => {
   const requested: string[] = [];
-  const longValue = "x".repeat(2500);
-  const url = `https://img.example/photo.jpg?token=${longValue}`;
+  const token = "x".repeat(2500);
+  const url = `https://img.example/photo.jpg?token=${token}`;
   const resolver = resolverFor(() => imageResponse(), requested);
 
   assert.equal(await resolver.resolve(url), url);
@@ -55,9 +62,7 @@ test("HTML metadata resolves and validates an image", async () => {
         headers: { "content-type": "text/html" },
       });
     }
-    if (url.pathname === "/full.webp") {
-      return imageResponse("image/webp");
-    }
+    if (url.pathname === "/full.webp") return imageResponse("image/webp");
     return new Response(null, { status: 404 });
   }, requested);
 
@@ -71,10 +76,7 @@ test("metadata image redirects are revalidated", async () => {
   const requested: string[] = [];
   const resolver = resolverFor((url) => {
     if (url.pathname === "/share") {
-      const html = [
-        '<meta name="twitter:image"',
-        'content="https://cdn.example/preview">',
-      ].join(" ");
+      const html = '<meta name="twitter:image" content="https://cdn.example/preview">';
       return new Response(html, {
         status: 200,
         headers: { "content-type": "text/html" },
@@ -86,9 +88,7 @@ test("metadata image redirects are revalidated", async () => {
         headers: { location: "https://cdn.example/full.png" },
       });
     }
-    if (url.pathname === "/full.png") {
-      return imageResponse("image/png");
-    }
+    if (url.pathname === "/full.png") return imageResponse("image/png");
     return new Response(null, { status: 404 });
   }, requested);
 
@@ -102,10 +102,7 @@ test("metadata image redirects are revalidated", async () => {
 test("HTML metadata candidate is rejected as an image", async () => {
   const resolver = resolverFor((url) => {
     if (url.pathname === "/share") {
-      const html = [
-        '<meta property="og:image"',
-        'content="https://cdn.example/not-image">',
-      ].join(" ");
+      const html = '<meta property="og:image" content="https://cdn.example/not-image">';
       return new Response(html, {
         status: 200,
         headers: { "content-type": "text/html" },
@@ -119,9 +116,7 @@ test("HTML metadata candidate is rejected as an image", async () => {
 
   await assert.rejects(
     resolver.resolve("https://events.example/share"),
-    (error: unknown) =>
-      error instanceof ExternalImageResolutionError &&
-      error.message === "Resolved image link does not return an image",
+    (error: unknown) => isResolutionError(error, NOT_IMAGE_ERROR),
   );
 });
 
@@ -149,9 +144,7 @@ test("private hosts are rejected before fetch", async () => {
 
   await assert.rejects(
     resolver.resolve("http://127.0.0.1/private.png"),
-    (error: unknown) =>
-      error instanceof ExternalImageResolutionError &&
-      error.message === "Private or internal image hosts are not allowed",
+    (error: unknown) => isResolutionError(error, PRIVATE_ERROR),
   );
   assert.equal(fetched, false);
 });
@@ -167,9 +160,7 @@ test("public redirect cannot pivot to a private host", async () => {
 
   await assert.rejects(
     resolver.resolve("https://public.example/start"),
-    (error: unknown) =>
-      error instanceof ExternalImageResolutionError &&
-      error.message === "Private or internal image hosts are not allowed",
+    (error: unknown) => isResolutionError(error, PRIVATE_ERROR),
   );
   assert.deepEqual(requested, ["https://public.example/start"]);
 });
