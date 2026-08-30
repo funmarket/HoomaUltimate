@@ -4,8 +4,8 @@ import { HOME_GATEWAYS } from "./home-gateways.js";
 const HOME_GATEWAY_STYLES = `
 .home-gateway-section-label {
   margin: 24px 0 0;
-  color: var(--hooma-accent, #c8e63a);
-  font-size: 13px;
+  color: var(--app-gold, #e8c36a);
+  font-size: var(--type-caption, 13px);
   font-weight: 700;
   letter-spacing: .14em;
   text-transform: uppercase;
@@ -62,16 +62,16 @@ const HOME_GATEWAY_STYLES = `
 }
 .home-gateway-card__title {
   top: 58.5%;
-  color: #fff;
-  font-size: clamp(12px, 3.2vw, 19px);
+  color: #f4f1ea;
+  font-size: clamp(15px, 3.2vw, 19px);
   font-weight: 800;
   line-height: 1.05;
   text-shadow: 0 2px 8px rgba(0, 0, 0, .8);
 }
 .home-gateway-card__subtitle {
   top: 80.5%;
-  color: var(--hooma-accent, #c8e63a);
-  font-size: clamp(9px, 2.45vw, 15px);
+  color: var(--app-gold, #e8c36a);
+  font-size: clamp(12px, 2.6vw, 14px);
   font-weight: 700;
   line-height: 1.1;
   text-shadow: 0 2px 8px rgba(0, 0, 0, .85);

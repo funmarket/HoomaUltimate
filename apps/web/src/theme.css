@@ -1,21 +1,22 @@
 :root {
   --type-title: clamp(1.5rem, calc(1.1rem + 2vw), 2.125rem);
   --type-section: 1.375rem;
-  --type-body: 1.0625rem;
-  --type-subtitle: 0.9375rem;
+  --type-body: 1rem;
+  --type-subtitle: 1rem;
   --type-caption: 0.8125rem;
 
   --app-bg: #070808;
-  --app-bg-raised: #11120f;
-  --app-surface: #151510;
-  --app-text-strong: #f5f1e7;
-  --app-text: #f2ead7;
-  --app-text-secondary: #bfb59a;
-  --app-text-caption: #9f967f;
-  --app-gold: #b59b57;
-  --app-lime: #c4dc43;
-  --app-line: rgba(181, 155, 87, 0.22);
-  --app-line-strong: rgba(181, 155, 87, 0.42);
+  --app-bg-raised: #121212;
+  --app-surface: #121212;
+  --app-text-strong: #f4f1ea;
+  --app-text: #f4f1ea;
+  --app-text-secondary: #c8c3b8;
+  --app-text-caption: #c8c3b8;
+  --app-gold: #e8c36a;
+  --app-gold-dim: #b8953a;
+  --app-lime: #c6f25a;
+  --app-line: rgba(232, 195, 106, 0.28);
+  --app-line-strong: rgba(232, 195, 106, 0.42);
 }
 
 :root[data-theme="light"] {
@@ -27,6 +28,7 @@
   --app-text-secondary: #5f6259;
   --app-text-caption: #70736a;
   --app-gold: #8d7436;
+  --app-gold-dim: #8d7436;
   --app-lime: #718415;
   --app-line: rgba(24, 25, 21, 0.22);
   --app-line-strong: rgba(24, 25, 21, 0.34);
@@ -35,13 +37,16 @@
 :root[data-appearance="system"][data-theme="dark"] {
   --app-bg: #000000;
   --app-bg-raised: #0a0a0a;
-  --app-surface: #0f0f0f;
-  --app-text-strong: #ffffff;
-  --app-text: #f5f5f2;
-  --app-text-secondary: #bdbdb7;
-  --app-text-caption: #96968f;
-  --app-line: rgba(255, 255, 255, 0.12);
-  --app-line-strong: rgba(255, 255, 255, 0.22);
+  --app-surface: #121212;
+  --app-text-strong: #f4f1ea;
+  --app-text: #f4f1ea;
+  --app-text-secondary: #c8c3b8;
+  --app-text-caption: #c8c3b8;
+  --app-gold: #e8c36a;
+  --app-gold-dim: #b8953a;
+  --app-lime: #c6f25a;
+  --app-line: rgba(232, 195, 106, 0.28);
+  --app-line-strong: rgba(232, 195, 106, 0.42);
 }
 
 html {
@@ -87,22 +92,26 @@ body {
 h1,
 .type-title {
   font-size: var(--type-title);
+  color: var(--app-text-strong);
 }
 
 h2,
 h3,
 .type-section {
   font-size: var(--type-section);
+  color: var(--app-text-strong);
 }
 
 p,
 .type-body {
   font-size: var(--type-body);
+  color: var(--app-text);
 }
 
 .muted,
 .type-subtitle {
   font-size: var(--type-subtitle);
+  color: var(--app-text-secondary);
 }
 
 small,
@@ -110,4 +119,8 @@ small,
 .hooma-bottom-nav__label,
 .type-caption {
   font-size: var(--type-caption);
+}
+
+.eyebrow {
+  color: var(--app-gold);
 }
