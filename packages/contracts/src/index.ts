@@ -443,3 +443,5 @@ export type WatchEventDetailsInput = z.infer<typeof watchEventDetailsSchema>;
 export type EventCreateInput = z.infer<typeof eventCreateSchema>;
 export type EventUpdateInput = z.infer<typeof eventUpdateSchema>;
 export type EventFormationInput = z.infer<typeof eventFormationSchema>;
+
+export * from "./rides.js";
