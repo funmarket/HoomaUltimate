@@ -1265,7 +1265,7 @@ DONE gate:
 Evidence
 
 - Branch: `ride/ride-001-contracts-policy`.
-- PR: _not opened yet_.
+- PR: [#176](https://github.com/funmarket/HoomaUltimate/pull/176).
 - Merged commit / current foundation HEAD: in-flight from `eda4ed9ba5f88188e8a7425213bb1b650b188689`.
 - Source trace: `AGENTS.md`, `docs/LIVING_BUILD_PLAN.md`, full `rideplan.md`, Ride sections in `requirements.md`, `structure.md`, `docs/CANONICAL_MODEL.md`, `docs/DECISIONS.md`, and `docs/adr/ADR-050-ride-requests-unfreeze.md`.
 - Changed files: `packages/contracts/src/rides.ts`, `packages/contracts/package.json`, `packages/contracts/src/index.ts`, `apps/api/src/modules/rides/domain/ride-policy.ts`, `apps/api/src/modules/rides/application/ride-reference.readers.ts`, `apps/api/src/modules/rides/application/ride-offer.repository.ts`, `apps/api/src/modules/rides/application/ride-request.repository.ts`, `tests/ride-contract-policy.test.ts`, and this ledger only.
