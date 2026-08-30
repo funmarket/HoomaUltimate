@@ -8,6 +8,7 @@ import { PrismaCanonicalUserReader } from "../modules/identity/infrastructure/pr
 import { PrismaPlatformAdminRepository } from "../modules/platform-admin/infrastructure/prisma-platform-admin.repository.js";
 import { PlatformAdminService } from "../modules/platform-admin/application/platform-admin.service.js";
 import { PlaceService } from "../modules/places/application/place.service.js";
+import { HttpExternalPlaceImageResolver } from "../modules/places/infrastructure/http-external-place-image-resolver.js";
 import { PrismaPlaceRepository } from "../modules/places/infrastructure/prisma-place.repository.js";
 import { ApprovedPitchReader } from "../modules/pitch/application/approved-pitch.reader.js";
 import { PitchOwnerService } from "../modules/pitch/application/pitch-owner.service.js";
@@ -72,10 +73,11 @@ export function createContainer(config: ApiConfig) {
   const canonicalUserReader = new PrismaCanonicalUserReader(database);
 
   const placeRepository = new PrismaPlaceRepository(database);
-  const placeService = new PlaceService(placeRepository, platformAdminService);
+  const placeImageResolver = new HttpExternalPlaceImageResolver();
+  const placeService = new PlaceService(placeRepository, platformAdminService, placeImageResolver);
   const pitchRepository = new PrismaPitchRepository(database);
   const approvedPitchReader = new ApprovedPitchReader(pitchRepository);
-  const pitchSuggestionService = new PitchSuggestionService(pitchRepository);
+  const pitchSuggestionService = new PitchSuggestionService(pitchRepository, placeImageResolver);
   const pitchOwnerService = new PitchOwnerService(
     pitchRepository,
     placeRepository,

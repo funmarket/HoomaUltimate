@@ -696,6 +696,12 @@ Approved Place data includes as needed:
 - moderation status;
 - ownership records.
 
+## 11.0.1 External Place photo links
+
+Place photo inputs may be direct image URLs or public web/share/result URLs that resolve to a specific image. HOOMA resolves supported public redirects and page image metadata into the existing canonical `PlaceImage` URL before persistence. Google image-result/search links may resolve to an explicit result image when one is present in the returned result document. Unresolvable links must fail clearly rather than persist an HTML page as an image URL.
+
+External resolution must reject private/internal network targets and revalidate redirects so Place media cannot become an SSRF path. Spot, Watch and Pitch continue to read the same canonical Place media rather than owning parallel photo stores.
+
 ## 11.1 Place suggestion
 
 Authenticated users may suggest a Place. Suggestion alone does not make the suggester an owner.

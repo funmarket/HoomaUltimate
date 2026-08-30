@@ -5,12 +5,17 @@ import type {
 } from "@hooma/contracts/places";
 import type { PlatformAdminAccessPort } from "../../../application/platform-admin-access.port.js";
 import { AppError } from "../../../http/errors/app-error.js";
+import {
+  resolvePlaceImageFields,
+  type ExternalPlaceImageResolver,
+} from "./external-place-image-resolver.js";
 import type { PlaceModerationDecision, PlaceRepository } from "./place.repository.js";
 
 export class PlaceService {
   constructor(
     private readonly repository: PlaceRepository,
     private readonly platformAdmin: PlatformAdminAccessPort,
+    private readonly imageResolver: ExternalPlaceImageResolver,
   ) {}
 
   listPublic() {
@@ -30,14 +35,16 @@ export class PlaceService {
     return place;
   }
 
-  suggest(userId: string, input: PlaceSuggestionInput) {
-    return this.repository.suggest(userId, input);
+  async suggest(userId: string, input: PlaceSuggestionInput) {
+    const resolvedInput = await resolvePlaceImageFields(input, this.imageResolver);
+    return this.repository.suggest(userId, resolvedInput);
   }
 
   async update(userId: string, placeId: string, input: PlaceUpdateInput) {
     await this.requireManage(userId, placeId);
+    const resolvedInput = await resolvePlaceImageFields(input, this.imageResolver);
     try {
-      return await this.repository.update(placeId, input);
+      return await this.repository.update(placeId, resolvedInput);
     } catch (error) {
       if (error instanceof Error && error.message === "PLACE_ALREADY_EXISTS") {
         throw new AppError(
@@ -89,11 +96,7 @@ export class PlaceService {
   async reviewPlace(userId: string, placeId: string, input: PlaceModerationDecision) {
     await this.platformAdmin.requirePlatformAdmin(userId);
     if (!(await this.repository.reviewPlace(userId, placeId, input))) {
-      throw new AppError(
-        409,
-        "PLACE_REVIEW_NOT_PENDING",
-        "This Place review is no longer pending",
-      );
+      throw new AppError(409, "PLACE_REVIEW_NOT_PENDING", "This Place review is no longer pending");
     }
     return { ok: true };
   }
