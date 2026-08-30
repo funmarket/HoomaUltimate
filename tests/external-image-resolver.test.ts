@@ -7,14 +7,17 @@ import {
   type ExternalImageHostLookup,
 } from "../apps/api/src/infrastructure/media/http-external-image-resolver.js";
 
-const publicLookup: ExternalImageHostLookup = async () => [{ address: "8.8.8.8", family: 4 }];
+const publicLookup: ExternalImageHostLookup = async () => [
+  { address: "8.8.8.8", family: 4 },
+];
 
 function resolverFor(
   handler: (url: URL) => Response | Promise<Response>,
   requested: string[] = [],
 ) {
   const fetcher = (async (input: string | URL | Request) => {
-    const url = input instanceof URL ? input : new URL(typeof input === "string" ? input : input.url);
+    const url =
+      input instanceof URL ? input : new URL(typeof input === "string" ? input : input.url);
     requested.push(url.toString());
     return handler(url);
   }) as ExternalImageFetcher;
@@ -38,13 +41,19 @@ test("HTML metadata is resolved relative to the page and the candidate is valida
   const requested: string[] = [];
   const resolver = resolverFor((url) => {
     if (url.pathname === "/place") {
-      return new Response('<html><head><meta property="og:image" content="/media/full.webp"></head></html>', {
-        status: 200,
-        headers: { "content-type": "text/html; charset=utf-8" },
-      });
+      return new Response(
+        '<html><head><meta property="og:image" content="/media/full.webp"></head></html>',
+        {
+          status: 200,
+          headers: { "content-type": "text/html; charset=utf-8" },
+        },
+      );
     }
     if (url.pathname === "/media/full.webp") {
-      return new Response(null, { status: 200, headers: { "content-type": "image/webp" } });
+      return new Response(null, {
+        status: 200,
+        headers: { "content-type": "image/webp" },
+      });
     }
     return new Response(null, { status: 404 });
   }, requested);
@@ -63,10 +72,13 @@ test("metadata image redirects are revalidated and return the final concrete ima
   const requested: string[] = [];
   const resolver = resolverFor((url) => {
     if (url.pathname === "/share") {
-      return new Response('<meta name="twitter:image" content="https://cdn.example.com/preview">', {
-        status: 200,
-        headers: { "content-type": "text/html" },
-      });
+      return new Response(
+        '<meta name="twitter:image" content="https://cdn.example.com/preview">',
+        {
+          status: 200,
+          headers: { "content-type": "text/html" },
+        },
+      );
     }
     if (url.hostname === "cdn.example.com" && url.pathname === "/preview") {
       return new Response(null, {
@@ -75,7 +87,10 @@ test("metadata image redirects are revalidated and return the final concrete ima
       });
     }
     if (url.hostname === "cdn.example.com" && url.pathname === "/full.png") {
-      return new Response(null, { status: 200, headers: { "content-type": "image/png" } });
+      return new Response(null, {
+        status: 200,
+        headers: { "content-type": "image/png" },
+      });
     }
     return new Response(null, { status: 404 });
   }, requested);
@@ -94,10 +109,13 @@ test("metadata image redirects are revalidated and return the final concrete ima
 test("a metadata candidate that is HTML is rejected instead of being persisted as an image", async () => {
   const resolver = resolverFor((url) => {
     if (url.pathname === "/share") {
-      return new Response('<meta property="og:image" content="https://cdn.example.com/not-an-image">', {
-        status: 200,
-        headers: { "content-type": "text/html" },
-      });
+      return new Response(
+        '<meta property="og:image" content="https://cdn.example.com/not-an-image">',
+        {
+          status: 200,
+          headers: { "content-type": "text/html" },
+        },
+      );
     }
     return new Response("<html>not an image</html>", {
       status: 200,
@@ -130,7 +148,10 @@ test("private hosts are rejected before any fetch", async () => {
   let fetched = false;
   const fetcher = (async () => {
     fetched = true;
-    return new Response(null, { status: 200, headers: { "content-type": "image/png" } });
+    return new Response(null, {
+      status: 200,
+      headers: { "content-type": "image/png" },
+    });
   }) as ExternalImageFetcher;
   const resolver = new HttpExternalImageResolver(fetcher, publicLookup);
 
@@ -146,7 +167,11 @@ test("private hosts are rejected before any fetch", async () => {
 test("a public redirect cannot pivot to a private host", async () => {
   const requested: string[] = [];
   const resolver = resolverFor(
-    () => new Response(null, { status: 302, headers: { location: "http://localhost/private.png" } }),
+    () =>
+      new Response(null, {
+        status: 302,
+        headers: { location: "http://localhost/private.png" },
+      }),
     requested,
   );
 
