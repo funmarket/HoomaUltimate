@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import type { PublicPlaceSummary } from "@hooma/contracts/places";
 import { useHoomaFrontend } from "../context";
 import { createEventApi, type EventRsvpState, type PublicEvent } from "../events/api";
@@ -22,6 +23,8 @@ import { createPlacesApi } from "./api";
 import { PlaceGallery } from "./PlaceGallery";
 
 type ActiveRsvpState = "CONFIRMED" | "WAITLISTED" | "ATTENDED" | null;
+
+const PLACE_EVENT_PAGE_SIZE = 20;
 
 function activeRsvp(status: EventRsvpState | undefined): ActiveRsvpState {
   return status === "CONFIRMED" || status === "WAITLISTED" || status === "ATTENDED" ? status : null;
@@ -101,7 +104,12 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
   const eventsApi = useMemo(() => createEventApi(transport), [transport]);
   const query = new URLSearchParams(window.location.search);
   const [place, setPlace] = useState<PublicPlaceSummary | null>(null);
+  const [placeError, setPlaceError] = useState("");
   const [events, setEvents] = useState<PublicEvent[]>([]);
+  const [eventsNextCursor, setEventsNextCursor] = useState<string | null>(null);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [eventsError, setEventsError] = useState("");
+  const [selectedEvent, setSelectedEvent] = useState<PublicEvent | null>(null);
   const [canManage, setCanManage] = useState(false);
   const [claimOpen, setClaimOpen] = useState(query.get("claim") === "1");
   const [menuExpanded, setMenuExpanded] = useState(false);
@@ -114,21 +122,36 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
   const [deleting, setDeleting] = useState(false);
   const selectedEventId = query.get("eventId");
 
-  async function loadPlaceEvents(): Promise<PublicEvent[]> {
-    const items: PublicEvent[] = [];
-    let cursor: string | undefined;
-    do {
-      const page = await eventsApi.publicWatch({ placeId, cursor, limit: 100 });
-      items.push(...page.items);
-      cursor = page.nextCursor ?? undefined;
-    } while (cursor);
-    return items;
+  async function loadPlaceEvents(cursor?: string) {
+    setEventsLoading(true);
+    setEventsError("");
+    try {
+      const page = await eventsApi.publicWatch({
+        placeId,
+        ...(cursor ? { cursor } : {}),
+        limit: PLACE_EVENT_PAGE_SIZE,
+      });
+      setEvents((current) => {
+        if (!cursor) return page.items;
+        const existingIds = new Set(current.map((event) => event.id));
+        return [...current, ...page.items.filter((event) => !existingIds.has(event.id))];
+      });
+      setEventsNextCursor(page.nextCursor);
+    } catch (reason) {
+      setEventsError(reason instanceof Error ? reason.message : "Unable to load Watch events");
+    } finally {
+      setEventsLoading(false);
+    }
   }
 
-  async function loadPlaceAndEvents() {
-    const [row, placeEvents] = await Promise.all([placesApi.get(placeId), loadPlaceEvents()]);
-    setPlace(row);
-    setEvents(placeEvents);
+  async function loadSelectedEvent(eventId: string) {
+    try {
+      const row = await eventsApi.publicDetail(eventId);
+      setSelectedEvent(row.type === "WATCH" && row.placeId === placeId ? row : null);
+    } catch (reason) {
+      setSelectedEvent(null);
+      setError(reason instanceof Error ? reason.message : "Unable to load Watch event");
+    }
   }
 
   async function loadParticipation(eventId: string) {
@@ -145,21 +168,38 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
   }
 
   useEffect(() => {
-    void loadPlaceAndEvents().catch((reason) =>
-      setError(reason instanceof Error ? reason.message : "Unable to load Place"),
-    );
+    setPlace(null);
+    setPlaceError("");
+    setEvents([]);
+    setEventsNextCursor(null);
+    setSelectedEvent(null);
+    setCanManage(false);
+
+    void placesApi
+      .get(placeId)
+      .then((row) => setPlace(row))
+      .catch((reason) =>
+        setPlaceError(reason instanceof Error ? reason.message : "Unable to load Place"),
+      );
+    void loadPlaceEvents();
+    if (selectedEventId) void loadSelectedEvent(selectedEventId);
     void placesApi
       .manage(placeId)
       .then(() => setCanManage(true))
       .catch((reason) => {
         if (reason instanceof HoomaApiError && [401, 403].includes(reason.status)) return;
       });
-  }, [eventsApi, placesApi, placeId]);
+  }, [eventsApi, placesApi, placeId, selectedEventId]);
 
   useEffect(() => {
     if (selectedEventId) void loadParticipation(selectedEventId);
     else setRsvp(null);
   }, [selectedEventId]);
+
+  async function refreshSelectedWatchContext() {
+    if (!selectedEventId) return;
+    await Promise.all([loadSelectedEvent(selectedEventId), loadPlaceEvents()]);
+  }
 
   async function joinSelectedEvent() {
     if (!selectedEventId || actionPending) return;
@@ -170,7 +210,7 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
       const result = await eventsApi.join(selectedEventId);
       setRsvp(result.status);
       setMessage(result.status === "WAITLISTED" ? "Added to the waitlist." : "You are going.");
-      await loadPlaceAndEvents();
+      await refreshSelectedWatchContext();
     } catch (reason) {
       setError(protectedError(reason, "Unable to join event"));
     } finally {
@@ -187,7 +227,7 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
       await eventsApi.cancelRsvp(selectedEventId);
       setRsvp(null);
       setMessage("RSVP cancelled.");
-      await loadPlaceAndEvents();
+      await refreshSelectedWatchContext();
     } catch (reason) {
       setError(protectedError(reason, "Unable to leave event"));
     } finally {
@@ -198,10 +238,9 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
   async function shareSelectedEvent() {
     if (!selectedEventId) return;
     const url = new URL(`/events/${selectedEventId}`, window.location.origin).toString();
-    const selected = events.find((event) => event.id === selectedEventId);
     try {
       if (navigator.share) {
-        await navigator.share({ title: selected?.title ?? "HOOMA Watch event", url });
+        await navigator.share({ title: selectedEvent?.title ?? "HOOMA Watch event", url });
       } else {
         await navigator.clipboard.writeText(url);
         setMessage("Event link copied.");
@@ -248,11 +287,12 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
   }
 
   if (!place)
-    return error ? <p className="error">{error}</p> : <p className="status">Loading Place…</p>;
+    return placeError ? (
+      <p className="error">{placeError}</p>
+    ) : (
+      <p className="status">Loading Place…</p>
+    );
 
-  const selectedEvent = selectedEventId
-    ? (events.find((event) => event.id === selectedEventId) ?? null)
-    : null;
   const selectedDate = selectedEvent ? eventDateParts(selectedEvent) : null;
   const visibleMenuItems = menuExpanded ? place.menuItems : place.menuItems.slice(0, 5);
   const visibleEvents = eventsExpanded ? events : events.slice(0, 2);
@@ -263,9 +303,9 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
   return (
     <section className="place-detail-page">
       <div className="place-detail-toolbar">
-        <a className="place-back-link" href="/watch" aria-label="Back to Watch">
+        <Link className="place-back-link" to="/watch" aria-label="Back to Watch">
           ← Watch
-        </a>
+        </Link>
         {canManage ? (
           <a className="place-owner-edit" href={`/places/${place.id}/edit`}>
             <EditIcon size={17} />
@@ -454,10 +494,19 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
           <h2>
             <CalendarIcon /> Upcoming Watch events at this place
           </h2>
-          {events.length > 2 ? (
+          {events.length > 2 || eventsNextCursor ? (
             <button type="button" onClick={() => setEventsExpanded((value) => !value)}>
               {eventsExpanded ? "Show less" : "View all"}
               <ChevronRightIcon size={18} />
+            </button>
+          ) : null}
+          {eventsExpanded && eventsNextCursor ? (
+            <button
+              type="button"
+              disabled={eventsLoading}
+              onClick={() => void loadPlaceEvents(eventsNextCursor)}
+            >
+              {eventsLoading ? "Loading…" : "Load more events"}
             </button>
           ) : null}
         </div>
@@ -467,7 +516,7 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
             const details = event.watchDetails;
             const match = details?.kind === "MATCH" ? details : null;
             return (
-              <a className="place-event-row" key={event.id} href={`/events/${event.id}`}>
+              <Link className="place-event-row" key={event.id} to={`/events/${event.id}`}>
                 <span className="place-event-row__date">
                   <small>{date.month}</small>
                   <strong>{date.day}</strong>
@@ -505,10 +554,13 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
                 </span>
                 <span className="place-event-row__time">{date.time}</span>
                 <ChevronRightIcon className="place-event-row__chevron" />
-              </a>
+              </Link>
             );
           })}
-          {!events.length ? <p className="muted">No upcoming Watch events yet.</p> : null}
+          {!events.length && !eventsLoading && !eventsError ? (
+            <p className="muted">No upcoming Watch events yet.</p>
+          ) : null}
+          {eventsError ? <p className="error">{eventsError}</p> : null}
         </div>
       </section>
 

@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import type { PublicEvent } from "../events/api";
 import { FitSingleLineText } from "../ui/FitSingleLineText";
 import { PinIcon, UsersIcon } from "../ui/HoomaIcons";
@@ -94,7 +95,7 @@ export function WatchTicket({
             <span aria-hidden="true">★ ★</span>
           </header>
 
-          <a className="watch-ticket__matchup" href={`/events/${event.id}`} title={event.title}>
+          <Link className="watch-ticket__matchup" to={`/events/${event.id}`} title={event.title}>
             {matchup ? (
               <>
                 <TeamMark name={matchup.teamOneName} logoUrl={matchup.teamOneLogoUrl} />
@@ -125,14 +126,14 @@ export function WatchTicket({
                 />
               </span>
             )}
-          </a>
+          </Link>
 
           <div className="watch-ticket__divider" aria-hidden="true" />
 
           <div className="watch-ticket__details">
-            <a
+            <Link
               className="watch-ticket__detail watch-ticket__venue"
-              href={placeHref}
+              to={placeHref}
               title={place.name}
             >
               <PinIcon className="watch-ticket__detail-icon" />
@@ -140,7 +141,7 @@ export function WatchTicket({
                 <strong>{place.name}</strong>
                 <span>{location}</span>
               </span>
-            </a>
+            </Link>
 
             <div className="watch-ticket__detail watch-ticket__date">
               <span className="watch-ticket__detail-copy">
@@ -166,23 +167,27 @@ export function WatchTicket({
           </div>
         </div>
 
-        <a
+        <Link
           className="watch-ticket__stub"
-          href={`/events/${event.id}`}
+          to={`/events/${event.id}`}
           aria-label={`Open ${event.title}, ${date} at ${time}`}
         >
           <img className="watch-ticket__stub-logo" src="/brand/hooma-watch-stub.webp" alt="" />
-        </a>
+        </Link>
       </section>
 
       {feedVariant ? (
-        <a className="watch-ticket__photo-panel" href={placeHref} aria-label={`Open ${place.name}`}>
+        <Link
+          className="watch-ticket__photo-panel"
+          to={placeHref}
+          aria-label={`Open ${place.name}`}
+        >
           {place.imageUrl ? (
             <img src={place.imageUrl} alt={place.name} />
           ) : (
             <span>{place.name}</span>
           )}
-        </a>
+        </Link>
       ) : null}
     </article>
   );
