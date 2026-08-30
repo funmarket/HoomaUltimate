@@ -3,6 +3,7 @@ import type { CommunityService } from "../../communities/application/community.s
 import type { ApprovedPitchReader } from "../../pitch/application/approved-pitch.reader.js";
 import type { PlaceService } from "../../places/application/place.service.js";
 import { EventError } from "../domain/event-error.js";
+import type { EventImageResolver } from "./event-image-resolver.js";
 import type { EventPublicListInput, EventRepository } from "./event.repository.js";
 
 export class EventService {
@@ -10,6 +11,7 @@ export class EventService {
     private readonly repository: EventRepository,
     private readonly communities: CommunityService,
     private readonly places: PlaceService,
+    private readonly imageResolver: EventImageResolver,
     private readonly pitch?: ApprovedPitchReader,
   ) {}
 
@@ -85,7 +87,7 @@ export class EventService {
         "Paid RSVP will be enabled by the Payments slice",
       );
     }
-    return this.repository.create(userId, input);
+    return this.repository.create(userId, await this.resolveCreateArtwork(input));
   }
 
   async update(userId: string, eventId: string, input: EventUpdateInput) {
@@ -104,7 +106,7 @@ export class EventService {
       );
     }
     try {
-      return await this.repository.update(eventId, input);
+      return await this.repository.update(eventId, await this.resolveUpdateArtwork(input));
     } catch (error) {
       if (error instanceof Error && error.message === "EVENT_TIME_INVALID")
         throw new EventError("EVENT_TIME_INVALID", "Event end time must be after start time");
@@ -287,6 +289,22 @@ export class EventService {
     if (!message)
       throw new EventError("EVENT_CHAT_FORBIDDEN", "Active RSVP and open chat window required");
     return message;
+  }
+
+  private async resolveCreateArtwork(input: EventCreateInput): Promise<EventCreateInput> {
+    if (input.watch?.kind !== "CULTURAL" || !input.watch.imageUrl) return input;
+    return {
+      ...input,
+      watch: { ...input.watch, imageUrl: await this.imageResolver.resolve(input.watch.imageUrl) },
+    };
+  }
+
+  private async resolveUpdateArtwork(input: EventUpdateInput): Promise<EventUpdateInput> {
+    if (input.watch?.kind !== "CULTURAL" || !input.watch.imageUrl) return input;
+    return {
+      ...input,
+      watch: { ...input.watch, imageUrl: await this.imageResolver.resolve(input.watch.imageUrl) },
+    };
   }
 
   private async requireManage(userId: string, eventId: string) {
