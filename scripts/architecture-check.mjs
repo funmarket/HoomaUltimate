@@ -5,20 +5,23 @@ const root = process.cwd();
 const ignored = new Set(["node_modules", "dist", "coverage", ".git"]);
 const sourceExtensions = new Set([".ts", ".tsx", ".js", ".mjs"]);
 const violations = [];
-const legacyApplicationHttpImports = new Set([
-  "apps/api/src/modules/communities/application/community.service.ts",
-  "apps/api/src/modules/gamers/application/gamer-match.service.ts",
-  "apps/api/src/modules/gamers/application/gamer.service.ts",
-  "apps/api/src/modules/identity/application/identity.service.ts",
-  "apps/api/src/modules/pitch/application/approved-pitch.reader.ts",
-  "apps/api/src/modules/pitch/application/pitch-moderation.service.ts",
-  "apps/api/src/modules/pitch/application/pitch-owner.service.ts",
-  "apps/api/src/modules/places/application/place.service.ts",
-  "apps/api/src/modules/platform-admin/application/platform-admin.service.ts",
-  "apps/api/src/modules/play/application/play.service.ts",
-  "apps/api/src/modules/teams/application/team.service.ts",
-  "apps/api/src/modules/whistle/application/whistle.service.ts",
-]);
+const legacyApplicationHttpImports = new Map(
+  [
+    "apps/api/src/modules/communities/application/community.service.ts",
+    "apps/api/src/modules/gamers/application/gamer-match.service.ts",
+    "apps/api/src/modules/gamers/application/gamer.service.ts",
+    "apps/api/src/modules/identity/application/identity.service.ts",
+    "apps/api/src/modules/pitch/application/approved-pitch.reader.ts",
+    "apps/api/src/modules/pitch/application/pitch-moderation.service.ts",
+    "apps/api/src/modules/pitch/application/pitch-owner.service.ts",
+    "apps/api/src/modules/places/application/place.service.ts",
+    "apps/api/src/modules/platform-admin/application/platform-admin.service.ts",
+    "apps/api/src/modules/play/application/play.service.ts",
+    "apps/api/src/modules/teams/application/team.service.ts",
+    "apps/api/src/modules/whistle/application/whistle.service.ts",
+  ].map((file) => [file, new Set(["../../../http/errors/app-error.js"])]),
+);
+const importSpecifierPattern = /\bimport\b(?:[\s\S]*?\bfrom\s*)?["']([^"']+)["']/g;
 
 async function walk(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -37,6 +40,12 @@ function relative(file) {
 }
 function forbid(file, source, pattern, reason) {
   if (pattern.test(source)) violations.push(`${relative(file)}: ${reason}`);
+}
+function getImportSpecifiers(source) {
+  return [...source.matchAll(importSpecifierPattern)].map((match) => match[1]);
+}
+function isHttpTransportImport(specifier) {
+  return /^(?:\.\.\/)+http\//.test(specifier) || specifier.includes("apps/api/src/http/");
 }
 
 for (const file of await walk(root)) {
@@ -86,10 +95,11 @@ for (const file of await walk(root)) {
     forbid(file, source, /from ["']express["']/, "application layer must not depend on Express");
   }
   if (/^apps\/api\/src\/modules\/[^/]+\/(application|domain)\//.test(rel)) {
-    const importsHttpTransport =
-      /from\s+["'](?:\.\.\/){3}http\//.test(source) ||
-      /from\s+["'][^"']*apps\/api\/src\/http\//.test(source);
-    if (importsHttpTransport && !legacyApplicationHttpImports.has(rel)) {
+    const allowedLegacyImports = legacyApplicationHttpImports.get(rel);
+    const forbiddenHttpImports = getImportSpecifiers(source).filter(
+      (specifier) => isHttpTransportImport(specifier) && !allowedLegacyImports?.has(specifier),
+    );
+    if (forbiddenHttpImports.length > 0) {
       violations.push(`${rel}: application/domain layer must not import API HTTP transport`);
     }
   }
