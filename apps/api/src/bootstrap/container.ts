@@ -21,6 +21,7 @@ import { TeamService } from "../modules/teams/application/team.service.js";
 import { PrismaTeamLifecycleRepository } from "../modules/teams/infrastructure/prisma-team-lifecycle.repository.js";
 import { PrismaTeamRepository } from "../modules/teams/infrastructure/prisma-team.repository.js";
 import { EventService } from "../modules/events/application/event.service.js";
+import { HttpEventImageResolver } from "../modules/events/infrastructure/http-event-image-resolver.js";
 import { PrismaEventRepository } from "../modules/events/infrastructure/prisma-event.repository.js";
 import { GamerMatchService } from "../modules/gamers/application/gamer-match.service.js";
 import { GamerService } from "../modules/gamers/application/gamer.service.js";
@@ -97,10 +98,12 @@ export function createContainer(config: ApiConfig) {
     approvedPitchReader,
   );
   const eventRepository = new PrismaEventRepository(database);
+  const eventImageResolver = new HttpEventImageResolver();
   const eventService = new EventService(
     eventRepository,
     communityService,
     placeService,
+    eventImageResolver,
     approvedPitchReader,
   );
   const gamerGameRepository = new PrismaGamerGameRepository(database);
