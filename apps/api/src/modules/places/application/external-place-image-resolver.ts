@@ -3,8 +3,8 @@ export interface ExternalPlaceImageResolver {
 }
 
 type PlaceImageFields = {
-  readonly imageUrl?: string | null;
-  readonly imageUrls?: string[];
+  readonly imageUrl?: string | null | undefined;
+  readonly imageUrls?: string[] | undefined;
 };
 
 export async function resolvePlaceImageFields<T extends PlaceImageFields>(
