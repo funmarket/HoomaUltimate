@@ -28,7 +28,7 @@ test("legacy eyebrow presentation is consolidated without changing its final non
   const blocks = [...legacy.matchAll(/\.eyebrow\s*\{([^}]*)\}/gs)];
 
   assert.equal(blocks.length, 1);
-  assert.match(blocks[0][1], /color:\s*#c4dc43/);
+  assert.match(blocks[0][1], /color:\s*var\(--app-gold\)/);
   assert.match(blocks[0][1], /text-transform:\s*uppercase/);
   assert.match(blocks[0][1], /letter-spacing:\s*0\.14em/);
 });
@@ -37,10 +37,10 @@ test("explicit dark inherits the identical root app palette instead of redeclari
   const theme = await readFile(themeStyles, "utf8");
 
   assert.match(theme, /:root\s*\{[\s\S]*--app-bg:\s*#070808/);
-  assert.match(theme, /:root\s*\{[\s\S]*--app-bg-raised:\s*#11120f/);
-  assert.match(theme, /:root\s*\{[\s\S]*--app-text:\s*#f2ead7/);
-  assert.match(theme, /:root\s*\{[\s\S]*--app-gold:\s*#b59b57/);
-  assert.match(theme, /:root\s*\{[\s\S]*--app-lime:\s*#c4dc43/);
+  assert.match(theme, /:root\s*\{[\s\S]*--app-bg-raised:\s*#121212/);
+  assert.match(theme, /:root\s*\{[\s\S]*--app-text:\s*#f4f1ea/);
+  assert.match(theme, /:root\s*\{[\s\S]*--app-gold:\s*#e8c36a/);
+  assert.match(theme, /:root\s*\{[\s\S]*--app-lime:\s*#c6f25a/);
   assert.doesNotMatch(theme, /:root\[data-appearance="dark"\]\s*\{/);
 });
 
