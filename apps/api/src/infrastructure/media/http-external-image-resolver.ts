@@ -173,7 +173,9 @@ function metadataImage(html: string, pageUrl: URL): string | null {
   for (const match of html.matchAll(/<meta\b[^>]*>/gi)) {
     const attributes = tagAttributes(match[0]);
     const key = (attributes.get("property") ?? attributes.get("name") ?? "").toLowerCase();
-    if (!["og:image", "og:image:url", "twitter:image", "twitter:image:src"].includes(key)) continue;
+    if (!["og:image", "og:image:url", "twitter:image", "twitter:image:src"].includes(key)) {
+      continue;
+    }
     const content = attributes.get("content")?.trim();
     if (content) return new URL(content, pageUrl).toString();
   }
@@ -271,7 +273,9 @@ export class HttpExternalImageResolver {
       (GOOGLE_HOST.test(page.url.hostname) ? googleResultImage(html) : null);
     if (!candidate) throw imageError("No displayable image was found at this link");
 
-    const image = await this.fetchFollowingRedirects(parseHttpUrl(unwrapGoogleImageTarget(candidate)));
+    const image = await this.fetchFollowingRedirects(
+      parseHttpUrl(unwrapGoogleImageTarget(candidate)),
+    );
     const candidateType = (image.response.headers.get("content-type") ?? "").toLowerCase();
     await image.response.body?.cancel();
     if (!candidateType.startsWith("image/")) {
