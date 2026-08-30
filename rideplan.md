@@ -1171,7 +1171,7 @@ Remaining risk: branch may move after plan creation; every agent must re-run the
 
 ## GOV-001 — Explicitly unfreeze Ride + Requests backend work and reconcile product rules
 
-Status: **[~] IN PROGRESS**
+Status: **[x] DONE**
 
 Dependencies: `PLAN-000`
 
@@ -1220,6 +1220,13 @@ Evidence:
 - Added `docs/adr/ADR-050-ride-requests-unfreeze.md` and updated `docs/DECISIONS.md` to explicitly unfreeze bounded Ride and Requests vertical slices while keeping Fundraising, Payments, ULTRAS and generic Media separately governed.
 - Updated `requirements.md` to replace older exclusive Requests claim wording with quantity-based partial claims and to lock Ride destination, participation, cancellation, privacy and media rules.
 - Updated `structure.md` and `docs/CANONICAL_MODEL.md` so governance no longer lists Ride/Requests as frozen and does not claim source feature implementation.
+- PR #174 merged into `phase-0-foundation` on 2026-08-30.
+- Merged foundation commit: `dd96e56dc766fb0e5fbc22c2809c91effc7215d7`.
+- Final PR #174 head verified from GitHub: `99cc0f3f909b2a6aa501a26dafccfdcf9d9ae939`.
+- GitHub CI for PR #174 exact head: `verify` completed successfully.
+- Post-merge read-back verified `origin/phase-0-foundation` contains merge commit `dd96e56dc766fb0e5fbc22c2809c91effc7215d7` and no source/db/contracts/API files were part of GOV-001.
+- Remaining risk: PR #173 remains open with a same-file `requirements.md` change limited to external Place photo-link behavior; it does not overlap Ride/Requests/FundMe policy. Browser/Telegram runtime smoke is not applicable to this docs-only governance slice.
+- Next task: `RIDE-001 — Ride contracts and domain policy skeleton`; do not start it automatically.
 
 ---
 
