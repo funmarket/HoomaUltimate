@@ -75,7 +75,7 @@
 .place-card.place-card--directory .place-card__media {
   width: 100%;
   min-height: 0;
-  aspect-ratio: 16 / 9;
+  max-height: min(70vh, 640px);
   border-top: 1px solid var(--app-line);
 }
 
@@ -85,6 +85,12 @@
   display: block;
   object-fit: contain;
   object-position: center;
+}
+
+.place-card.place-card--directory .place-card__media img {
+  width: 100%;
+  height: auto;
+  max-height: min(70vh, 640px);
 }
 
 .place-card__copy {
@@ -937,7 +943,6 @@
   }
 
   .place-card__media {
-    aspect-ratio: 16 / 9;
     min-height: 0;
   }
 
