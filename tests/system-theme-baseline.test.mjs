@@ -36,7 +36,17 @@ test("canonical typography scale matches the approved readable sizes", async () 
   const css = await readFile(themeCss, "utf8");
   assert.match(css, /--type-title:\s*clamp\(1\.5rem,[^;]*2\.125rem\)/);
   assert.match(css, /--type-section:\s*1\.375rem/);
-  assert.match(css, /--type-body:\s*1\.0625rem/);
-  assert.match(css, /--type-subtitle:\s*0\.9375rem/);
+  assert.match(css, /--type-body:\s*1rem/);
+  assert.match(css, /--type-subtitle:\s*1rem/);
   assert.match(css, /--type-caption:\s*0\.8125rem/);
+});
+
+test("dark gold is bright metal instead of muted brass", async () => {
+  const css = await readFile(themeCss, "utf8");
+  assert.match(css, /:root\s*\{[\s\S]*--app-gold:\s*#e8c36a/);
+  assert.match(css, /:root\s*\{[\s\S]*--app-text:\s*#f4f1ea/);
+  assert.match(
+    css,
+    /:root\[data-appearance="system"\]\[data-theme="dark"\][\s\S]*--app-gold:\s*#e8c36a/,
+  );
 });
