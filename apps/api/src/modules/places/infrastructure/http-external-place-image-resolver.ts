@@ -12,7 +12,11 @@ export class HttpExternalPlaceImageResolver implements ExternalPlaceImageResolve
   private readonly resolver: HttpExternalImageResolver;
 
   constructor(fetcher?: ExternalImageFetcher, hostLookup?: ExternalImageHostLookup) {
-    this.resolver = new HttpExternalImageResolver(fetcher, hostLookup, "HOOMA-PlaceImageResolver/2.0");
+    this.resolver = new HttpExternalImageResolver(
+      fetcher,
+      hostLookup,
+      "HOOMA-PlaceImageResolver/2.0",
+    );
   }
 
   async resolve(value: string): Promise<string> {
@@ -20,7 +24,11 @@ export class HttpExternalPlaceImageResolver implements ExternalPlaceImageResolve
       return await this.resolver.resolve(normalizeExternalPlaceImageUrl(value));
     } catch (error) {
       if (error instanceof ExternalImageResolutionError) {
-        throw new AppError(422, "PLACE_IMAGE_URL_UNRESOLVABLE", error.message.replace(/^Image /, "Place photo "));
+        throw new AppError(
+          422,
+          "PLACE_IMAGE_URL_UNRESOLVABLE",
+          error.message.replace(/^Image /, "Place photo "),
+        );
       }
       throw error;
     }
