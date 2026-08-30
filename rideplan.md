@@ -1440,7 +1440,157 @@ Evidence
 - Deployment/live proof if applicable: not applicable; RIDE-004 has no HTTP/frontend route.
 - Remaining risk: PR #181 remains open and touches future RIDE-005 bootstrap/container wiring, so RIDE-005 must not start until that overlap is resolved or explicitly sequenced. Browser/Telegram Ride runtime remains unchanged and unverified because HTTP/frontend work belongs to later tasks.
 - Implementation score: 10/10 for RIDE-004 scope after service tests, CI, and merge/read-back.
-- Next task: `RIDE-005` — not started.
+- Next task: `ARCH-RIDE-001` — mandatory architecture checkpoint before RIDE-005; not started.
+
+---
+
+## ARCH-RIDE-001 — Verify Ride application/HTTP error dependency before HTTP implementation
+
+Status: **[ ] TODO**
+
+Dependencies: `RIDE-004`
+
+**MANDATORY RESUME GATE:** This checkpoint must be completed before `RIDE-005` or any later Ride task proceeds. If an agent has already started RIDE-005 or later work on an unmerged branch, stop feature expansion, preserve the work without merging it, perform this checkpoint against the latest `phase-0-foundation`, and resume only after this task is `[x] DONE`. Do not bypass this gate because RIDE-004 was previously marked DONE or because existing CI is green.
+
+Goal: determine with repository evidence whether the RIDE-004 application service has an invalid reverse dependency on the HTTP transport layer, correct only the authoritative boundary if necessary, and prevent RIDE-005 from cementing an architectural inversion.
+
+Known concern to verify, not blindly assume:
+
+```text
+apps/api/src/modules/rides/application/ride.service.ts
+  -> imports AppError
+  -> apps/api/src/http/errors/app-error.ts
+```
+
+The governing architecture states:
+
+```text
+http -> application -> domain
+infrastructure -> application/domain ports
+```
+
+Therefore `application -> http` may be a reverse dependency. The agent must prove whether this is a real violation in the current repository before changing code.
+
+### Mandatory inspection before any edit
+
+1. Fetch latest `phase-0-foundation` and record exact HEAD.
+2. Inspect all open PRs and active/recent overlapping branches touching Ride, API errors, HTTP architecture, bootstrap/container, or RIDE-005.
+3. Read `AGENTS.md`, `docs/LIVING_BUILD_PLAN.md`, full `rideplan.md`, `structure.md`, `requirements.md`, `docs/DECISIONS.md`, and `docs/CANONICAL_MODEL.md`.
+4. Inspect `apps/api/src/http/errors/app-error.ts` and every current consumer/import of `AppError`.
+5. Search all `apps/api/src/modules/**/application/**` and `domain/**` code for imports from `apps/api/src/http/**` or equivalent HTTP transport paths.
+6. Inspect `scripts/architecture-check.mjs` and determine whether it currently guards `application -> HTTP` and `domain -> HTTP` dependency direction.
+7. Inspect existing transport-neutral/domain/application error patterns before proposing a new abstraction.
+
+### Questions that must be answered with source evidence
+
+- What is `AppError` actually intended to represent: HTTP-specific transport state, a transport-neutral application error historically located under `http/`, or an explicitly governed shared primitive?
+- Is the current Ride import a `VIOLATION` or `NOT A VIOLATION` under `structure.md` and existing ADRs?
+- Is the pattern isolated to Ride, existing legacy debt, or a deliberate widespread architecture convention?
+- If wrong, what existing canonical transport-neutral error pattern should Ride use?
+- If no correct existing primitive exists, what is the smallest bounded correction that restores dependency direction without creating a universal error framework?
+- Does the architecture checker have a real guard gap?
+
+Do not use vague conclusions such as `probably fine`, `likely intentional`, or `seems okay`.
+
+### If NOT A VIOLATION
+
+- Record the exact governing/source evidence proving why.
+- Do not refactor merely for naming or aesthetics.
+- If the path is misleading but intentionally allowed, record that debt/risk without broad cleanup.
+- Verify current tests/checks remain green.
+- Mark this checkpoint DONE with evidence, then RIDE-005 may proceed.
+
+### If VIOLATION
+
+Correct the smallest authoritative boundary **before** RIDE-005.
+
+The resulting dependency must remain conceptually:
+
+```text
+Ride HTTP adapter
+  -> Ride application service
+      -> Ride domain
+```
+
+not:
+
+```text
+Ride application service
+  -> HTTP transport/errors
+```
+
+Prefer an existing transport-neutral error primitive if one already exists. If Ride/application-owned errors are the correct repository pattern, the HTTP layer should map them to HTTP/AppError/status responses. Do not create a second parallel error authority while leaving the old one canonical.
+
+### Forbidden scope
+
+Do not turn this checkpoint into a repository-wide error migration. Do not:
+
+- refactor unrelated domains merely for consistency;
+- move every API error class;
+- create a giant `errors.ts` or universal error framework;
+- create compatibility wrappers/shims;
+- change public API response semantics unnecessarily;
+- touch Requests/FundMe/Payments/Whistle/Watch/Pitch/Gamers/Play/Places except the absolute minimum needed if a genuinely shared primitive is moved;
+- start RIDE-005 HTTP routes before this checkpoint is complete.
+
+If the correct fix would require a broad cross-repository migration that cannot be bounded safely, mark this task `[!] BLOCKED` and report the exact files/architecture conflict instead of improvising.
+
+### Architecture guard requirement
+
+If the dependency is forbidden by `structure.md` and `scripts/architecture-check.mjs` does not detect it, treat that as a guard gap. Add or adjust only a focused rule if it can be expressed cleanly without making the checker monolithic. Do not create another architecture-check script and do not add a brittle Ride-filename-only rule when a directory dependency rule is appropriate.
+
+### Required verification if source changes
+
+Run the strongest applicable checks, including at minimum:
+
+```text
+npm run architecture:check
+npm run format:check
+npm run lint
+npm run typecheck
+npm test
+npm run build
+```
+
+Also run focused Ride application/service tests and any API error tests affected by the correction.
+
+Verify explicitly that:
+
+- Ride application/domain no longer depends on HTTP transport if the dependency was ruled invalid;
+- existing HTTP error behavior remains correct;
+- Ride authorization and lifecycle behavior remains unchanged;
+- Ride policy/error mapping remains correct;
+- unrelated domains are not broken.
+
+### Plan-history rule
+
+Do not automatically revert `RIDE-004` from DONE to TODO. If its behavior remains valid and this is a bounded architecture follow-up, keep RIDE-004 historical completion intact and record this checkpoint separately. Only challenge the RIDE-004 DONE status if its original completion gate was materially false, and document why before altering history.
+
+### DONE gate
+
+This task may be marked `[x] DONE` only when the evidence block states all of the following:
+
+```text
+Current foundation HEAD:
+Open overlapping PRs:
+Concern:
+Confirmed violation: YES / NO
+Why:
+Files inspected:
+All application/domain -> HTTP imports found:
+Existing canonical error pattern:
+Change required: YES / NO
+Changed files if any:
+Architecture guard gap found/fixed:
+Tests/checks run:
+Results:
+Remaining risks:
+Safe to begin RIDE-005: YES / NO
+```
+
+`Safe to begin RIDE-005: YES` is mandatory before `RIDE-005` begins. If it is `NO`, this checkpoint remains BLOCKED/not DONE and RIDE-005 must not proceed.
+
+Evidence: _fill when complete_
 
 ---
 
@@ -1448,7 +1598,7 @@ Evidence
 
 Status: **[ ] TODO**
 
-Dependencies: `RIDE-004`
+Dependencies: `ARCH-RIDE-001`
 
 Goal: expose the real Ride slice through the canonical public/member API boundaries.
 
@@ -1924,6 +2074,8 @@ RIDE-003
    |
 RIDE-004
    |
+ARCH-RIDE-001 mandatory application/HTTP dependency checkpoint
+   |
 RIDE-005
    |
 RIDE-006
@@ -1955,7 +2107,7 @@ FUND-001
 WHISTLE-RIDE-001 when separately authorized
 ```
 
-The product owner may reorder independent later tasks, but agents must not infer authorization to run overlapping shared-file migrations simultaneously.
+The product owner may reorder independent later tasks, but agents must not infer authorization to run overlapping shared-file migrations simultaneously. `ARCH-RIDE-001` is not an optional later task and may not be reordered after RIDE-005; it is a mandatory pre-HTTP gate.
 
 ---
 
@@ -1989,6 +2141,7 @@ If a required proof cannot be run, state `NOT VERIFIED` and keep the task out of
 
 Stop and report instead of improvising if:
 
+- `ARCH-RIDE-001` is not DONE and an agent is about to start or resume RIDE-005 or any later Ride task;
 - another agent opens an overlapping Ride/Requests schema/API PR;
 - `phase-0-foundation` moves with overlapping changes after task ownership begins;
 - current requirements/ADR conflict with a task's locked behavior;
