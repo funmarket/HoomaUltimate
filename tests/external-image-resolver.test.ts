@@ -7,7 +7,9 @@ import {
   type ExternalImageHostLookup,
 } from "../apps/api/src/infrastructure/media/http-external-image-resolver.js";
 
-const publicLookup: ExternalImageHostLookup = async () => [{ address: "8.8.8.8", family: 4 }];
+const publicLookup: ExternalImageHostLookup = async () => [
+  { address: "8.8.8.8", family: 4 },
+];
 
 function imageResponse(type = "image/jpeg") {
   return new Response(null, {
