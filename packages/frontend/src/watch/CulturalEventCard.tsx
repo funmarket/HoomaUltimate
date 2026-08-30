@@ -40,14 +40,13 @@ export function CulturalEventCard({ event }: { readonly event: PublicEvent }) {
   const place = event.place;
   if (!details || !place) return null;
   const { date, time } = eventDate(event);
-  const imageUrl = details.imageUrl ?? place.imageUrl;
   const location = [place.houma, place.city].filter(Boolean).join(" · ") || place.address;
 
   return (
     <article className="watch-cultural-card">
       <a className="watch-cultural-card__media" href={`/events/${event.id}`}>
-        {imageUrl ? (
-          <img src={imageUrl} alt="" />
+        {details.imageUrl ? (
+          <img src={details.imageUrl} alt="" />
         ) : (
           <span>{categoryLabel(details.culturalCategory)}</span>
         )}
