@@ -77,10 +77,17 @@ test("Ride HTTP APIs expose public/member flows without leaking private Ride sta
       method: "POST",
       headers: headers(driver.cookie),
       body: JSON.stringify({
+        context: "GENERAL",
         destination: { type: "CUSTOM", customDestinationLabel: "Stade Olympique de Rades" },
         originAreaLabel: "Lac 2",
         departureAt: futureDate(90),
         totalSeats: 1,
+        compensationTerms: {
+          type: "CASH",
+          amountMinor: 10000,
+          currency: "TND",
+          basis: "PER_SEAT",
+        },
         vehicleMake: "Dacia",
         vehicleModel: "Sandero",
         vehicleColor: "White",
@@ -93,9 +100,18 @@ test("Ride HTTP APIs expose public/member flows without leaking private Ride sta
       id: string;
       driverUserId: string;
       participations: unknown[];
+      context: string;
+      compensationTerms: unknown;
     };
     rideOfferId = offer.id;
     assert.equal(offer.driverUserId, driver.userId);
+    assert.equal(offer.context, "GENERAL");
+    assert.deepEqual(offer.compensationTerms, {
+      type: "CASH",
+      amountMinor: 10000,
+      currency: "TND",
+      basis: "PER_SEAT",
+    });
     assert.deepEqual(offer.participations, []);
     assert.equal(
       (await db.rideOffer.findUniqueOrThrow({ where: { id: offer.id } })).driverUserId,
@@ -107,6 +123,13 @@ test("Ride HTTP APIs expose public/member flows without leaking private Ride sta
     const publicOffers = (await publicOfferList.json()) as { items: Record<string, unknown>[] };
     const publicOffer = publicOffers.items.find((item) => item.id === offer.id);
     assert.ok(publicOffer);
+    assert.equal(publicOffer.context, "GENERAL");
+    assert.deepEqual(publicOffer.compensationTerms, {
+      type: "CASH",
+      amountMinor: 10000,
+      currency: "TND",
+      basis: "PER_SEAT",
+    });
     assert.equal("driverUserId" in publicOffer, false);
     assert.equal("participations" in publicOffer, false);
     assert.equal("meetingPoint" in publicOffer, false);
@@ -115,6 +138,15 @@ test("Ride HTTP APIs expose public/member flows without leaking private Ride sta
     assert.equal(publicOfferDetail.status, 200);
     assert.equal(
       "driverUserId" in ((await publicOfferDetail.json()) as Record<string, unknown>),
+      false,
+    );
+
+    const matchdayOfferList = await fetch(`${base}/api/public/v1/rides/offers?context=MATCHDAY`);
+    assert.equal(matchdayOfferList.status, 200);
+    assert.equal(
+      ((await matchdayOfferList.json()) as { items: Record<string, unknown>[] }).items.some(
+        (item) => item.id === offer.id,
+      ),
       false,
     );
 
@@ -246,18 +278,31 @@ test("Ride HTTP APIs expose public/member flows without leaking private Ride sta
       method: "POST",
       headers: headers(requester.cookie),
       body: JSON.stringify({
+        context: "MATCHDAY",
         destination: { type: "CUSTOM", customDestinationLabel: "El Menzah Stadium" },
         pickupAreaLabel: "Ariana",
         desiredDepartureAt: futureDate(120),
         passengerCount: 2,
+        compensationTerms: { type: "CASH", amountMinor: 8000, currency: "TND" },
         expiresAt: futureDate(60),
         note: "Can leave from the main roundabout.",
       }),
     });
     assert.equal(createRequest.status, 201);
-    const rideRequest = (await createRequest.json()) as { id: string; requesterUserId: string };
+    const rideRequest = (await createRequest.json()) as {
+      id: string;
+      requesterUserId: string;
+      context: string;
+      compensationTerms: unknown;
+    };
     rideRequestId = rideRequest.id;
     assert.equal(rideRequest.requesterUserId, requester.userId);
+    assert.equal(rideRequest.context, "MATCHDAY");
+    assert.deepEqual(rideRequest.compensationTerms, {
+      type: "CASH",
+      amountMinor: 8000,
+      currency: "TND",
+    });
     assert.equal(
       (await db.rideRequest.findUniqueOrThrow({ where: { id: rideRequest.id } })).requesterUserId,
       requester.userId,
@@ -269,7 +314,22 @@ test("Ride HTTP APIs expose public/member flows without leaking private Ride sta
       (await publicRequests.json()) as { items: Record<string, unknown>[] }
     ).items.find((item) => item.id === rideRequest.id);
     assert.ok(requestItem);
+    assert.equal(requestItem.context, "MATCHDAY");
+    assert.deepEqual(requestItem.compensationTerms, {
+      type: "CASH",
+      amountMinor: 8000,
+      currency: "TND",
+    });
     assert.equal("requesterUserId" in requestItem, false);
+
+    const generalRequests = await fetch(`${base}/api/public/v1/rides/requests?context=GENERAL`);
+    assert.equal(generalRequests.status, 200);
+    assert.equal(
+      ((await generalRequests.json()) as { items: Record<string, unknown>[] }).items.some(
+        (item) => item.id === rideRequest.id,
+      ),
+      false,
+    );
 
     const nonOwnerRequestPatch = await fetch(`${base}/api/v1/rides/requests/${rideRequest.id}`, {
       method: "PATCH",

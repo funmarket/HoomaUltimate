@@ -171,12 +171,14 @@ export const rideWaypointSchema = z.object({
 
 export const publicRideOfferSchema = z.object({
   id: idSchema,
+  context: rideContextSchema,
   status: rideOfferStatusSchema,
   destination: rideDestinationSummarySchema,
   originAreaLabel: z.string().min(1),
   departureAt: z.string().datetime(),
   totalSeats: z.number().int().positive(),
   availableSeats: z.number().int().min(0),
+  compensationTerms: rideOfferCompensationTermsSchema,
   vehicleMake: z.string().nullable(),
   vehicleModel: z.string().nullable(),
   vehicleColor: z.string().nullable(),
@@ -226,11 +228,13 @@ export const rideOfferForOwnerSchema = publicRideOfferSchema.extend({
 
 export const publicRideRequestSchema = z.object({
   id: idSchema,
+  context: rideContextSchema,
   status: rideRequestStatusSchema,
   destination: rideDestinationSummarySchema,
   pickupAreaLabel: z.string().min(1),
   desiredDepartureAt: z.string().datetime(),
   passengerCount: z.number().int().positive(),
+  compensationTerms: rideRequestCompensationTermsSchema,
   note: z.string().nullable(),
   expiresAt: z.string().datetime(),
   createdAt: z.string().datetime(),

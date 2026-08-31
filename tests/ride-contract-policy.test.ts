@@ -219,11 +219,13 @@ test("Ride public projections exclude payment processing state", () => {
 
   const publicRequest = {
     id: "ride-request-1",
+    context: "GENERAL" as const,
     status: "OPEN" as const,
     destination: { type: "CUSTOM" as const, label: "Airport" },
     pickupAreaLabel: "La Marsa",
     desiredDepartureAt: now,
     passengerCount: 1,
+    compensationTerms: { type: "FREE" as const },
     note: null,
     expiresAt: now,
     createdAt: now,

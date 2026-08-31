@@ -1974,7 +1974,7 @@ Evidence:
 
 ## RIDE-007B — Ride context/compensation persistence + API
 
-Status: **[ ] TODO**
+Status: **[~] IN PROGRESS**
 
 Dependencies: `RIDE-007A`
 
