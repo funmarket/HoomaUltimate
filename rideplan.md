@@ -1726,7 +1726,7 @@ Evidence
 
 ## RIDE-007 — Ride frontend API client + real Ride UI vertical slice
 
-Status: **[ ] TODO**
+Status: **[~] IN PROGRESS**
 
 Dependencies: `RIDE-005`; `RIDE-006` required before vehicle photo is presented as complete
 
@@ -1754,7 +1754,19 @@ DONE gate:
 - mobile/Telegram route behavior checked;
 - no fake Ride data remains.
 
-Evidence: _fill when complete_
+Evidence:
+
+- 2026-08-31 branch start: `ride/ride-007-frontend` from `origin/phase-0-foundation`.
+- Source trace in progress: existing shell was `packages/frontend/src/rides/RidesPage.tsx`; shared export surface is `packages/frontend/src/index.ts`; web routes are `apps/web/src/app/router/HoomaRouter.tsx`; backend Ride routes already expose public offer/request reads and member offer/request/participation/photo/meeting-point actions under `/api/public/v1/rides/*` and `/api/v1/rides/*`.
+- In-flight implementation files: `packages/frontend/src/rides/api.ts`, `packages/frontend/src/rides/RidesPage.tsx`, `packages/frontend/src/rides/rides.css`, `packages/frontend/src/index.ts`, `apps/web/src/app/router/HoomaRouter.tsx`, `tests/requests-rides-shell.test.mjs`, `tests/frontend-router.test.mjs`.
+- Test guard note: `tests/requests-rides-shell.test.mjs` remains in place; its Requests/FundMe shell coverage is preserved while Ride assertions are being refactored to prove the old fake Ride shell is gone.
+- 2026-08-31 local proof: focused frontend/router/home tests passed with `npx.cmd tsx --test tests/requests-rides-shell.test.mjs tests/frontend-router.test.mjs tests/navigation-contract.test.mjs tests/home-gateway-image-loading.test.mjs` (10/10).
+- 2026-08-31 local proof: `npm run architecture:check` passed.
+- 2026-08-31 local proof: changed Ride/router TypeScript lint passed with `npx.cmd eslint apps/web/src/app/router/HoomaRouter.tsx packages/frontend/src/rides/api.ts packages/frontend/src/rides/RidesPage.tsx --max-warnings=0`.
+- 2026-08-31 local proof: all unit tests passed when invoked directly with the repo's unit file set through `C:\Program Files\nodejs\npx.cmd` (206/206). `npm test` itself still fails before tests on this Windows host because `scripts/run-tests.mjs` spawns bare `npx.cmd` and receives `spawn EINVAL`.
+- 2026-08-31 local proof: touched-file Prettier check passed; repository-wide `npm run format:check` is still blocked by pre-existing unrelated formatting drift outside this slice.
+- 2026-08-31 local proof: `npm run typecheck`, `npm run build`, `npm run db:generate`, `DATABASE_URL=postgresql://hooma:hooma@localhost:5432/hooma npm run db:validate`, `npm run deploy:preflight`, and `npm run security:check` passed.
+- Not complete yet: commit SHA, GitHub CI for the exact PR head, post-merge foundation read-back, and browser/Telegram route smoke evidence are still pending.
 
 ---
 

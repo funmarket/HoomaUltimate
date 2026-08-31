@@ -333,7 +333,7 @@ Current availability on `phase-0-foundation`:
 - Teams -> `/teams`
 - Spots -> `/places`
 - Pitch -> `/pitch`
-- Ride -> `/rides` honest frontend shell
+- Ride -> `/rides` Ride-owned gateway with `/rides/request` and `/rides/offers` child routes
 - Requests -> `/requests` honest frontend shell
 
 Gamers remains an independent implemented route family at `/gamers`, but it is no longer listed from the Home gateway. ULTRAS remains an independent future domain and is not routed from Home. FundMe is grouped under Requests as `/requests/fundme`; `/fundme` redirects there as a compatibility navigation route only.
@@ -342,7 +342,7 @@ This section records current application state. Product-owner changes update bot
 
 HOOMA creation gateway remains a chooser into separate owning domains, not a generic database `CommunityType`.
 
-Ride and Requests may now grow from their honest shells into their own domain-owned vertical slices under ADR-050. That authorization does not change the Home gateway, bottom navigation, FundMe tab grouping, Gamers independence, ULTRAS unavailability, or the rule that Fundraising and Payments require separate authorization.
+Ride may now grow from its honest shell into its own domain-owned vertical slice under ADR-050, including Ride-owned frontend routes and API client code. Requests may grow only through its own Requests-owned slices. That authorization does not change the Home gateway, bottom navigation, FundMe tab grouping, Gamers independence, ULTRAS unavailability, or the rule that Fundraising and Payments require separate authorization.
 
 The current chooser is:
 
