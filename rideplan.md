@@ -1667,7 +1667,7 @@ Evidence
 
 ## RIDE-006 — Ride vehicle-photo persistence + object storage
 
-Status: **[~] IN PROGRESS**
+Status: **[x] DONE**
 
 Dependencies: `RIDE-005`
 
@@ -1709,6 +1709,7 @@ Evidence
 
 - Branch: `ride/ride-006-vehicle-photo` from `origin/phase-0-foundation` at `3fb04650e78f6f81e44268da728d78ece05c30ad`.
 - Post-merge follow-up branch: `ride/ride-006-closeout` from `origin/phase-0-foundation` after PR #193 merged as `268eb5630796f5d5827a300feade4bee6c306364`.
+- Docs-only closeout branch: `ride/ride-006-final-closeout` from `origin/phase-0-foundation` after PR #194 merged as `24daab21a96281388b4b729aa701dce77a88d92d`.
 - Start gate: `ARCH-RIDE-001` and `RIDE-005` are `[x] DONE`; `Safe to begin RIDE-005: YES`; no open PRs against `phase-0-foundation` at RIDE-006 start.
 - Source trace: `AGENTS.md`, `docs/LIVING_BUILD_PLAN.md`, full `rideplan.md`, Ride media sections in `requirements.md`, `structure.md`, `docs/CANONICAL_MODEL.md`, `docs/DECISIONS.md`, `docs/DATABASE.md`, existing `@hooma/storage` abstraction, existing Gamer proof-upload route/storage pattern, Ride contracts, Ride service, Ride Prisma repositories, public/member Ride HTTP routers, API container wiring, Worker Outbox runner, and existing Ride HTTP/schema/integration tests.
 - In-flight changed files: `packages/database/prisma/schema.prisma`, `packages/database/prisma/migrations/20260831010000_ride_offer_vehicle_photo/migration.sql`, `apps/api/src/modules/rides/application/ride-vehicle-photo.repository.ts`, `apps/api/src/modules/rides/infrastructure/prisma-ride-vehicle-photo.repository.ts`, `apps/api/src/modules/rides/application/ride.service.ts`, `apps/api/src/modules/rides/domain/ride-error.ts`, `apps/api/src/modules/rides/infrastructure/prisma-ride.repository.ts`, `apps/api/src/modules/rides/http/ride.routes.ts`, `apps/api/src/bootstrap/container.ts`, `apps/api/src/http/errors/error-handler.ts`, `apps/worker/src/rides/ride-vehicle-photo-cleanup.ts`, `apps/worker/src/main.ts`, `tests/ride-prisma-schema.test.mjs`, `tests/ride-vehicle-photo.integration.test.ts`, `docs/CANONICAL_MODEL.md`, `docs/DATABASE.md`, and `rideplan.md`.
@@ -1717,8 +1718,9 @@ Evidence
 - Post-merge critique accepted before closeout: PR #193 fixed the main RIDE-006 shape but left three real closeout blockers: `replaceForOwner`/`deleteForOwner` did not serialize photo metadata mutations with a `RideOffer` row lock; shared body-parser error handling matched any unknown 400/413-like object instead of actual parser error types; Worker startup loaded full API config and could require API-only production env such as Telegram/Redis before storage cleanup could run.
 - Post-merge follow-up changes: `PrismaRideVehiclePhotoRepository` now locks the owning `RideOffer` row with `FOR UPDATE` before replace/delete metadata decisions; the HTTP error boundary only maps `entity.parse.failed` and `entity.too.large` parser errors to request-body responses; Worker storage setup now uses a narrow `loadObjectStorageConfig` that validates only complete object-storage credentials; `@hooma/worker` declares its direct `@hooma/config` and `@hooma/storage` dependencies; service/error/config regression tests cover metadata-failure orphan cleanup, parser-shape narrowing, and production storage config without API-only env.
 - Post-merge follow-up local verification: focused tests passed 22/22 with `C:\Program Files\nodejs\npx.cmd tsx --test tests/ride-service.test.ts tests/ride-error-boundary.test.ts tests/object-storage-config.test.ts tests/architecture-http-boundary.test.mjs tests/ride-prisma-schema.test.mjs`; touched-file Prettier check passed for `package-lock.json`, `apps/worker/package.json`, `packages/config/src/index.ts`, `apps/worker/src/main.ts`, `apps/api/src/modules/rides/infrastructure/prisma-ride-vehicle-photo.repository.ts`, `apps/api/src/http/errors/error-handler.ts`, `tests/ride-error-boundary.test.ts`, `tests/ride-service.test.ts`, and `tests/object-storage-config.test.ts`; `npm run architecture:check` passed; `npm -w @hooma/config run typecheck`, `npm -w @hooma/api run typecheck`, and `npm -w @hooma/worker run typecheck` passed; full `npm run typecheck` passed; full `npm run build` passed; changed-file ESLint passed; direct full unit suite passed in Windows-safe batches, 206/206; `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/hooma_ultimate_test npm run db:validate` passed; `npm run deploy:preflight` passed; `npm run security:check` passed with 0 vulnerabilities; `git diff --check` passed.
-- Local PostgreSQL proof blocked: `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/hooma_ultimate_test npm run db:migrate:deploy` failed locally with a Prisma schema-engine/database authentication failure, and `tests/ride-vehicle-photo.integration.test.ts` failed locally with Prisma `P1000` authentication before exercising source behavior. Disposable PostgreSQL migration/integration proof is still required from GitHub CI before this can be marked DONE.
-- Verification still pending: follow-up PR CI, merge, and foundation read-back. This task remains open until migration, storage/API integration, architecture, tests, build, CI, merge, and foundation read-back pass. Railway Worker runtime env and browser/Telegram runtime smoke remain unverified until explicitly checked in the live environment.
+- Local PostgreSQL note: `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/hooma_ultimate_test npm run db:migrate:deploy` and local `tests/ride-vehicle-photo.integration.test.ts` remained blocked by local Prisma/PostgreSQL authentication before exercising source behavior, so disposable PostgreSQL proof came from GitHub CI.
+- GitHub CI / merge evidence: PR #193 head `7cb3cd31664b90e7477eac91fe7e87c267524c1a` merged as `268eb5630796f5d5827a300feade4bee6c306364`; CI run `33342021621`, job `99339262219`, passed `npm ci`, `db:generate`, `db:validate`, `db:migrate:deploy`, `architecture:check`, changed-file formatting, changed-source lint, `typecheck`, `build:packages`, `npm test`, `build`, integration tests, `deploy:preflight`, `security:check`, and `db:migrate:status`. PR #194 head `ecfc62306ac84ebb621961d4b554534d8db7bc61` merged with expected-head protection as `24daab21a96281388b4b729aa701dce77a88d92d`; CI run `33343010796`, job `99341917030`, passed the same required gates. `origin/phase-0-foundation` read-back after PR #194 was `24daab21a96281388b4b729aa701dce77a88d92d`; open PRs against `phase-0-foundation` at closeout: none.
+- RIDE-006 closeout result: upload/replace/delete/authz routes are permanent and tested; DB read-back shows only Ride-owned metadata/reference with no blob/base64 field; object-storage proof exists through the injected `ObjectStorage` contract and integration memory storage; public responses do not expose object keys; old objects are synchronously removed or scheduled through Outbox when removal fails; concurrent replace/delete metadata mutation now serializes on the owning `RideOffer` row. Remaining provider/reconciliation hardening risk is recorded under `RIDE-009`; Railway Worker runtime env and browser/Telegram runtime smoke remain unverified until explicitly checked in the live environment.
 
 ---
 
@@ -1958,7 +1960,10 @@ DONE gate:
 - storage credentials/keys remain protected;
 - permanent tests/integration proof exist.
 
-Evidence: _fill when complete_
+Evidence
+
+- Carried from RIDE-006 closeout: PR #194 fixed the uncontrolled concurrent replace/delete stale-object risk by serializing metadata mutation with a `RideOffer` `FOR UPDATE` lock before RIDE-006 was marked done.
+- Remaining hardening target: provider-level object deletion plus database/outbox scheduling failure, stale prefix reconciliation, retry observability, and live Worker/storage runtime proof still belong here before claiming complete media infrastructure confidence.
 
 ---
 
