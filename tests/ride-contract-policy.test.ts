@@ -2,12 +2,17 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   publicRideOfferSchema,
+  publicRideRequestSchema,
+  rideCompensationTermsSchema,
+  rideContextSchema,
   rideDestinationColumnsSchema,
   rideOfferCreateSchema,
+  rideRequestCreateSchema,
 } from "../packages/contracts/src/rides.js";
 import {
   RidePolicyError,
   assertDriverCanReceivePassenger,
+  assertRideCompensationTerms,
   assertSingleRideDestinationStrategy,
   canTransitionRideOfferStatus,
   canTransitionRideParticipationStatus,
@@ -21,6 +26,7 @@ function validPublicOffer() {
   return {
     id: "ride-offer-1",
     status: "OPEN" as const,
+    context: "MATCHDAY" as const,
     destination: {
       type: "EVENT" as const,
       eventId: "event-1",
@@ -31,6 +37,7 @@ function validPublicOffer() {
     departureAt: now,
     totalSeats: 3,
     availableSeats: 2,
+    compensationTerms: { type: "FREE" as const },
     vehicleMake: "Peugeot",
     vehicleModel: "208",
     vehicleColor: "Black",
@@ -45,20 +52,24 @@ function validPublicOffer() {
 test("Ride offer create contract accepts exactly one destination strategy", () => {
   assert.equal(
     rideOfferCreateSchema.safeParse({
+      context: "MATCHDAY",
       destination: { type: "EVENT", eventId: "event-1" },
       originAreaLabel: "Menzah",
       departureAt: now,
       totalSeats: 2,
+      compensationTerms: { type: "FREE" },
     }).success,
     true,
   );
 
   assert.equal(
     rideOfferCreateSchema.safeParse({
+      context: "GENERAL",
       destination: { type: "CUSTOM", customDestinationLabel: "Stadium Gate 4" },
       originAreaLabel: "Menzah",
       departureAt: now,
       totalSeats: 2,
+      compensationTerms: { type: "FREE" },
     }).success,
     true,
   );
@@ -70,6 +81,179 @@ test("Ride offer create contract accepts exactly one destination strategy", () =
       customDestinationLabel: null,
     }).success,
     false,
+  );
+});
+
+test("Ride context contract accepts Matchday and General without splitting Ride", () => {
+  assert.equal(rideContextSchema.safeParse("MATCHDAY").success, true);
+  assert.equal(rideContextSchema.safeParse("GENERAL").success, true);
+  assert.equal(rideContextSchema.safeParse("ANYWHERE").success, false);
+  assert.equal(rideContextSchema.safeParse("MATCHDAY_RIDE").success, false);
+});
+
+test("Ride offer contract requires advertised FREE or CASH compensation terms", () => {
+  assert.equal(
+    rideOfferCreateSchema.safeParse({
+      context: "GENERAL",
+      destination: { type: "PLACE", placeId: "place-1" },
+      originAreaLabel: "La Marsa",
+      departureAt: now,
+      totalSeats: 3,
+      compensationTerms: { type: "FREE" },
+    }).success,
+    true,
+  );
+
+  assert.equal(
+    rideOfferCreateSchema.safeParse({
+      context: "MATCHDAY",
+      destination: { type: "EVENT", eventId: "event-1" },
+      originAreaLabel: "Menzah",
+      departureAt: now,
+      totalSeats: 2,
+      compensationTerms: {
+        type: "CASH",
+        amountMinor: 10000,
+        currency: "TND",
+        basis: "PER_SEAT",
+      },
+    }).success,
+    true,
+  );
+
+  assert.equal(
+    rideOfferCreateSchema.safeParse({
+      context: "GENERAL",
+      destination: { type: "CUSTOM", customDestinationLabel: "Airport" },
+      originAreaLabel: "Marsa",
+      departureAt: now,
+      totalSeats: 1,
+      compensationTerms: {
+        type: "CASH",
+        amountMinor: 10000,
+        currency: "TND",
+      },
+    }).success,
+    false,
+  );
+
+  assert.equal(
+    rideOfferCreateSchema.safeParse({
+      context: "MATCHDAY",
+      destination: { type: "EVENT", eventId: "event-1" },
+      originAreaLabel: "Menzah",
+      departureAt: now,
+      totalSeats: 2,
+      compensationTerms: {
+        type: "CASH",
+        amountMinor: 10000,
+        currency: "TND",
+        basis: "PER_SEAT",
+        paymentIntentId: "pi_1",
+      },
+    }).success,
+    false,
+  );
+});
+
+test("Ride request contract supports no cash offer or advertised cash offer only", () => {
+  assert.equal(
+    rideRequestCreateSchema.safeParse({
+      context: "GENERAL",
+      destination: { type: "CUSTOM", customDestinationLabel: "Airport" },
+      pickupAreaLabel: "La Marsa",
+      desiredDepartureAt: now,
+      passengerCount: 1,
+      expiresAt: now,
+      compensationTerms: { type: "FREE" },
+    }).success,
+    true,
+  );
+
+  assert.equal(
+    rideRequestCreateSchema.safeParse({
+      context: "MATCHDAY",
+      destination: { type: "EVENT", eventId: "event-1" },
+      pickupAreaLabel: "Menzah",
+      desiredDepartureAt: now,
+      passengerCount: 2,
+      expiresAt: now,
+      compensationTerms: { type: "CASH", amountMinor: 8000, currency: "TND" },
+    }).success,
+    true,
+  );
+
+  assert.equal(
+    rideCompensationTermsSchema.safeParse({
+      type: "PAYMENT_INTENT",
+      amountMinor: 8000,
+      currency: "TND",
+    }).success,
+    false,
+  );
+
+  assert.equal(
+    rideRequestCreateSchema.safeParse({
+      context: "GENERAL",
+      destination: { type: "CUSTOM", customDestinationLabel: "Airport" },
+      pickupAreaLabel: "Menzah",
+      desiredDepartureAt: now,
+      passengerCount: 2,
+      expiresAt: now,
+      compensationTerms: {
+        type: "CASH",
+        amountMinor: 8000,
+        currency: "TND",
+        paymentIntentId: "pi_1",
+      },
+    }).success,
+    false,
+  );
+});
+
+test("Ride public projections exclude payment processing state", () => {
+  const publicOffer = validPublicOffer();
+  assert.equal(publicRideOfferSchema.safeParse(publicOffer).success, true);
+  assert.equal("paymentIntentId" in publicOffer, false);
+  assert.equal("paidStatus" in publicOffer, false);
+
+  const publicRequest = {
+    id: "ride-request-1",
+    status: "OPEN" as const,
+    destination: { type: "CUSTOM" as const, label: "Airport" },
+    pickupAreaLabel: "La Marsa",
+    desiredDepartureAt: now,
+    passengerCount: 1,
+    note: null,
+    expiresAt: now,
+    createdAt: now,
+    updatedAt: now,
+  };
+  assert.equal(publicRideRequestSchema.safeParse(publicRequest).success, true);
+  assert.equal("paymentIntentId" in publicRequest, false);
+  assert.equal("paidStatus" in publicRequest, false);
+});
+
+test("Ride compensation policy rejects processing and malformed cash terms", () => {
+  assert.doesNotThrow(() => assertRideCompensationTerms({ type: "FREE" }));
+  assert.doesNotThrow(() =>
+    assertRideCompensationTerms({ type: "CASH", amountMinor: 10000, currency: "TND" }),
+  );
+  assert.throws(
+    () => assertRideCompensationTerms({ type: "CASH", amountMinor: 0, currency: "TND" }),
+    (error: unknown) =>
+      error instanceof RidePolicyError && error.code === "RIDE_COMPENSATION_INVALID",
+  );
+  assert.throws(
+    () =>
+      assertRideCompensationTerms({
+        type: "CASH",
+        amountMinor: 10000,
+        currency: "TND",
+        paymentIntentId: "pi_1",
+      }),
+    (error: unknown) =>
+      error instanceof RidePolicyError && error.code === "RIDE_COMPENSATION_PAYMENT_FORBIDDEN",
   );
 });
 

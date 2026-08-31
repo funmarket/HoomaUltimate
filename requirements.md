@@ -873,16 +873,22 @@ Approved requirements include:
 - ride offer;
 - ride request;
 - matching;
+- Matchday Ride and Anywhere Ride contexts in one Ride domain;
+- advertised FREE/CASH Ride compensation terms;
 - privacy-safe public projection;
 - member/private detail;
 - exact location protected from random public browsing;
 - live tracking OFF by default;
 - tracking, if introduced, explicit and privacy-scoped;
 - ratings only when implemented as a complete lifecycle;
-- shared Payments where applicable;
+- future Payments integration only through explicit Payments-owned execution;
 - shared Whistle only through a valid Ride relationship/context.
 
-Ride is explicitly authorized for a durable Rides-owned domain, persistence, API and frontend vertical slice. A Ride destination must use exactly one destination strategy: an owning Event reference, a canonical Place reference, or a Ride-owned custom destination label. Event and Place presentation must be read from their owning domains through narrow reference readers and must not be duplicated into Ride as canonical Event or Place truth.
+Ride is explicitly authorized for a durable Rides-owned domain, persistence, API and frontend vertical slice. Ride has exactly one canonical domain: Matchday Ride and Anywhere Ride are user-facing contexts over the same Ride offers, requests, participation, meeting-point, waypoint and vehicle-photo model. The canonical context values are `MATCHDAY` and `GENERAL`; user-facing `GENERAL` wording is Anywhere Ride.
+
+Ride supports advertised compensation terms without processing money. A Ride can be advertised as `FREE` or `CASH`. Driver offers can advertise `FREE` or `CASH` with an integer minor-unit amount, ISO currency and basis such as per-seat or total. Passenger requests can advertise no cash offer (`FREE`) or a `CASH` offer with integer minor-unit amount and ISO currency. Ride compensation terms must not create payment intents, checkout, settlement, wallet, card, provider callback, paid-status or payment-received state. Actual payment execution remains owned by future PAY-001.
+
+A Ride destination must use exactly one destination strategy: an owning Event reference, a canonical Place reference, or a Ride-owned custom destination label. Event and Place presentation must be read from their owning domains through narrow reference readers and must not be duplicated into Ride as canonical Event or Place truth.
 
 Ride frontend starts at `/rides`, with Ride-owned child routes for creating Ride Requests and browsing/creating/detailing Ride Offers. Opening Ride must not load Requests, FundMe or Payments behavior, and Ride request/offer actions must use the Rides API rather than fake frontend-only matching or booking state.
 

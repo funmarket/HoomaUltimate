@@ -21,7 +21,27 @@ Ride owns:
 - ride participation;
 - Ride meeting-point privacy;
 - Ride waypoints;
-- Ride vehicle-photo metadata.
+- Ride vehicle-photo metadata;
+- Ride product context;
+- advertised Ride compensation terms.
+
+Ride contexts are:
+
+```text
+MATCHDAY
+GENERAL
+```
+
+`MATCHDAY` means football/event transportation. `GENERAL` is presented to users as Anywhere Ride and covers normal transport such as airport, work, school, home, shopping, another city, custom destination or canonical Place destination. These are contexts of the same Ride domain, not separate Matchday/Anywhere tables, APIs, repositories, services or frontend state owners.
+
+Ride compensation terms are advertised terms only:
+
+```text
+FREE
+CASH
+```
+
+Driver offers may advertise `FREE` or `CASH` with a positive integer minor-unit amount, ISO currency and basis such as per-seat or total. Passenger requests may advertise no cash offer (`FREE`) or a `CASH` offer with a positive integer minor-unit amount and ISO currency. Ride must not create or own payment intent, checkout, settlement, wallet, card processing, payment provider callback, paid status or payment received status. Future PAY-001 remains the owner of actual payment execution.
 
 A Ride destination must use exactly one destination strategy:
 

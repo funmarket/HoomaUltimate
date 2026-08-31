@@ -1927,7 +1927,7 @@ Evidence:
 
 ## RIDE-007A — Ride product-context + compensation governance/contracts
 
-Status: **[ ] TODO**
+Status: **[x] DONE**
 
 Dependencies: `RIDE-007` current source state and product-owner correction recorded above
 
@@ -1958,7 +1958,17 @@ DONE gate:
 - docs/plan explicitly preserve Payments as future execution owner;
 - no Ride -> Payments repository or frontend fake payment claim appears.
 
-Evidence: _fill when complete_
+Evidence:
+
+- 2026-08-31 branch start: `ride/ride-007a-governance-contracts` from `origin/phase-0-foundation` at `6fa81e0aa08295e575ed1ff42e6dcd9b00bd6d99` after PR #199 merged/read-back.
+- 2026-08-31 source trace: RIDE-007A was limited to authoritative product docs, Ride contracts, Ride domain policy, and tests. Prisma/schema/migration/repository/API persistence/frontend implementation remains deferred to `RIDE-007B`/`RIDE-007C`.
+- 2026-08-31 RED proof: targeted Ride contract/policy test first failed because `assertRideCompensationTerms` and Ride context/compensation schemas did not exist.
+- 2026-08-31 implementation: `requirements.md`, `docs/DECISIONS.md`, `docs/adr/ADR-050-ride-requests-unfreeze.md` and `docs/CANONICAL_MODEL.md` now define `MATCHDAY | GENERAL` contexts and `FREE | CASH` advertised compensation terms without Payments execution ownership.
+- 2026-08-31 implementation: `packages/contracts/src/rides.ts` defines Ride context and offer/request compensation schemas/types; `apps/api/src/modules/rides/domain/ride-policy.ts` rejects malformed CASH and payment-processing fields; HTTP error mapping handles those policy errors.
+- 2026-08-31 local proof: `npx tsx --test tests/ride-contract-policy.test.ts tests/ride-service.test.ts` passed (23/23).
+- 2026-08-31 local proof: `npm run build:packages` passed after `npm run db:generate`.
+- 2026-08-31 local proof: direct unit test invocation through `npx tsx --test` passed (213/213) after packages were built; bare `npm test` still hits the known Windows `spawn EINVAL` wrapper issue.
+- 2026-08-31 local proof: `npm -w @hooma/contracts run build`, `npm -w @hooma/api run typecheck`, `npm -w @hooma/frontend run typecheck`, `npm run architecture:check`, touched-file Prettier check and touched-source ESLint passed.
 
 ---
 
