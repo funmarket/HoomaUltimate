@@ -266,6 +266,7 @@ export const playPitchTypeSchema = z.enum([
   "STREET",
   "OTHER",
 ]);
+export const playEventVisibilitySchema = z.enum(["OPEN", "PRIVATE"]);
 export const watchEventKindSchema = z.enum(["MATCH", "CULTURAL"]);
 export const watchCulturalCategorySchema = z.enum([
   "MUSIC",
@@ -322,6 +323,7 @@ export const eventCreateSchema = z
         pitchType: playPitchTypeSchema,
         skillLevel: skillLevelSchema.default("MIXED"),
         format: footballFormatSchema,
+        visibility: playEventVisibilitySchema.default("OPEN"),
       })
       .optional()
       .nullable(),
@@ -413,6 +415,7 @@ export const eventUpdateSchema = z.object({
   address: z.string().trim().max(240).optional().nullable(),
   capacity: z.number().int().positive().max(1000).optional().nullable(),
   waitlistEnabled: z.boolean().optional(),
+  play: z.object({ visibility: playEventVisibilitySchema }).optional(),
   watch: watchEventDetailsSchema.optional(),
 });
 export const eventFormationSchema = z.object({
@@ -437,6 +440,7 @@ export const eventCheckInSchema = z.object({
   longitude: z.number().min(-180).max(180).optional().nullable(),
 });
 export const eventChatMessageSchema = z.object({ body: z.string().trim().min(1).max(1200) });
+export type PlayEventVisibility = z.infer<typeof playEventVisibilitySchema>;
 export type WatchEventKind = z.infer<typeof watchEventKindSchema>;
 export type WatchCulturalCategory = z.infer<typeof watchCulturalCategorySchema>;
 export type WatchEventDetailsInput = z.infer<typeof watchEventDetailsSchema>;
