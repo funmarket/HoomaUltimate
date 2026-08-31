@@ -142,6 +142,45 @@ test("Ride HTTP APIs expose public/member flows without leaking private Ride sta
     };
     assert.equal(participation.passengerUserId, passenger.userId);
     assert.equal(participation.status, "REQUESTED");
+    assert.equal("passenger" in (participation as Record<string, unknown>), false);
+
+    const driverManageAfterJoin = await fetch(`${base}/api/v1/rides/offers/${offer.id}/manage`, {
+      headers: headers(driver.cookie),
+    });
+    assert.equal(driverManageAfterJoin.status, 200);
+    const managedOffer = (await driverManageAfterJoin.json()) as {
+      participations: {
+        id: string;
+        passenger: { displayName: string; username: string; photoUrl: string | null } | null;
+      }[];
+    };
+    assert.deepEqual(managedOffer.participations[0]?.passenger, {
+      displayName: `ride_passenger_${suffix}`,
+      username: `ride_passenger_${suffix}`,
+      photoUrl: null,
+    });
+
+    const passengerReadbackBeforeAccept = await fetch(
+      `${base}/api/v1/rides/offers/${offer.id}/participations/me`,
+      { headers: headers(passenger.cookie) },
+    );
+    assert.equal(passengerReadbackBeforeAccept.status, 200);
+    const requestedReadback = (await passengerReadbackBeforeAccept.json()) as {
+      id: string;
+      status: string;
+    };
+    assert.equal(requestedReadback.id, participation.id);
+    assert.equal(requestedReadback.status, "REQUESTED");
+
+    const outsiderReadback = await fetch(
+      `${base}/api/v1/rides/offers/${offer.id}/participations/me`,
+      { headers: headers(outsider.cookie) },
+    );
+    assert.equal(outsiderReadback.status, 404);
+    assert.equal(
+      ((await outsiderReadback.json()) as { error: { code: string } }).error.code,
+      "RIDE_PARTICIPATION_NOT_FOUND",
+    );
 
     const accept = await fetch(
       `${base}/api/v1/rides/offers/${offer.id}/participations/${participation.id}/accept`,
@@ -149,6 +188,18 @@ test("Ride HTTP APIs expose public/member flows without leaking private Ride sta
     );
     assert.equal(accept.status, 200);
     assert.equal(((await accept.json()) as { status: string }).status, "ACCEPTED");
+
+    const passengerReadbackAfterAccept = await fetch(
+      `${base}/api/v1/rides/offers/${offer.id}/participations/me`,
+      { headers: headers(passenger.cookie) },
+    );
+    assert.equal(passengerReadbackAfterAccept.status, 200);
+    const acceptedReadback = (await passengerReadbackAfterAccept.json()) as {
+      id: string;
+      status: string;
+    };
+    assert.equal(acceptedReadback.id, participation.id);
+    assert.equal(acceptedReadback.status, "ACCEPTED");
 
     const meetingPoint = await fetch(
       `${base}/api/v1/rides/offers/${offer.id}/participations/${participation.id}/meeting-point`,
@@ -169,7 +220,7 @@ test("Ride HTTP APIs expose public/member flows without leaking private Ride sta
     );
 
     const passengerMeetingPoint = await fetch(
-      `${base}/api/v1/rides/participations/${participation.id}/meeting-point`,
+      `${base}/api/v1/rides/participations/${acceptedReadback.id}/meeting-point`,
       { headers: headers(passenger.cookie) },
     );
     assert.equal(passengerMeetingPoint.status, 200);

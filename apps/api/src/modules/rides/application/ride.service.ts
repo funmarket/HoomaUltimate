@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import type {
   RideMeetingPointInput,
   RideOfferCreateInput,
+  RideOfferForOwner,
   RideOfferStatus,
   RideOfferUpdateInput,
   RideParticipationRequestInput,
@@ -11,11 +12,13 @@ import type {
   RideRequestStatus,
   RideRequestUpdateInput,
 } from "@hooma/contracts/rides";
+import type { UserPresentationReader } from "../../identity/application/user-presentation.reader.js";
 import { RideError } from "../domain/ride-error.js";
 import { RidePolicyError } from "../domain/ride-policy.js";
 import type {
   RideMeetingPointRepository,
   RideOfferListInput,
+  RideOfferForOwnerRecord,
   RideOfferRepository,
   RideParticipationRepository,
 } from "./ride-offer.repository.js";
@@ -49,6 +52,7 @@ export class RideService {
     private readonly meetingPoints: RideMeetingPointRepository,
     private readonly events: RideEventReferenceReader,
     private readonly places: RidePlaceReferenceReader,
+    private readonly userPresentations: UserPresentationReader,
     private readonly vehiclePhotos: RideVehiclePhotoRepository,
     private readonly storage: ObjectStorage | null,
   ) {}
@@ -64,12 +68,13 @@ export class RideService {
   }
 
   async getMyOffer(driverUserId: string, rideOfferId: string) {
-    return this.requireOfferOwner(driverUserId, rideOfferId);
+    return this.withRideOfferPresentations(await this.requireOfferOwner(driverUserId, rideOfferId));
   }
 
   async createOffer(driverUserId: string, input: RideOfferCreateInput) {
     await this.validateDestination(input.destination);
-    return this.withRidePolicy(() => this.offers.create(driverUserId, input));
+    const offer = await this.withRidePolicy(() => this.offers.create(driverUserId, input));
+    return this.withRideOfferPresentations(offer);
   }
 
   async updateOffer(driverUserId: string, rideOfferId: string, input: RideOfferUpdateInput) {
@@ -84,7 +89,7 @@ export class RideService {
           "Ride offer cannot be changed in its current state",
         );
       }
-      return updated;
+      return this.withRideOfferPresentations(updated);
     });
   }
 
@@ -170,6 +175,14 @@ export class RideService {
       }
       return participation;
     });
+  }
+
+  async getMyParticipation(passengerUserId: string, rideOfferId: string) {
+    const participation = await this.participations.getForPassenger(rideOfferId, passengerUserId);
+    if (!participation) {
+      throw new RideError("RIDE_PARTICIPATION_NOT_FOUND", "Ride participation not found");
+    }
+    return participation;
   }
 
   acceptParticipation(driverUserId: string, rideOfferId: string, participationId: string) {
@@ -365,7 +378,7 @@ export class RideService {
           "Ride offer status could not be changed",
         );
       }
-      return updated;
+      return this.withRideOfferPresentations(updated);
     });
   }
 
@@ -427,6 +440,31 @@ export class RideService {
       throw new RideError("RIDE_REQUEST_MANAGE_FORBIDDEN", "Ride request owner access required");
     }
     return request;
+  }
+
+  private async withRideOfferPresentations(
+    offer: RideOfferForOwnerRecord,
+  ): Promise<RideOfferForOwner> {
+    const presentations = await this.userPresentations.findByUserIds(
+      offer.participations.map((participation) => participation.passengerUserId),
+    );
+    const presentationByUserId = new Map(
+      presentations.map((presentation) => [
+        presentation.userId,
+        {
+          displayName: presentation.displayName,
+          username: presentation.username,
+          photoUrl: presentation.photoUrl,
+        },
+      ]),
+    );
+    return {
+      ...offer,
+      participations: offer.participations.map((participation) => ({
+        ...participation,
+        passenger: presentationByUserId.get(participation.passengerUserId) ?? null,
+      })),
+    };
   }
 
   private async validateDestination(

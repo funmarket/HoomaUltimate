@@ -8,7 +8,6 @@ import type {
   RideMeetingPoint,
   RideMeetingPointInput,
   RideOfferCreateInput,
-  RideOfferForOwner,
   RideOfferStatus,
   RideOfferUpdateInput,
   RideParticipation,
@@ -23,6 +22,7 @@ import type {
 import type {
   RideMeetingPointRepository,
   RideOfferListInput,
+  RideOfferForOwnerRecord,
   RideOfferRepository,
   RideParticipationRepository,
 } from "../application/ride-offer.repository.js";
@@ -182,7 +182,10 @@ export class PrismaRideOfferRepository
     return row ? serializePublicRideOffer(row) : null;
   }
 
-  async getForOwner(rideOfferId: string, driverUserId: string): Promise<RideOfferForOwner | null> {
+  async getForOwner(
+    rideOfferId: string,
+    driverUserId: string,
+  ): Promise<RideOfferForOwnerRecord | null> {
     const row = await this.db.rideOffer.findFirst({
       where: { id: rideOfferId, driverUserId },
       select: ownerRideOfferSelect,
@@ -191,7 +194,10 @@ export class PrismaRideOfferRepository
     return row ? serializeOwnerRideOffer(row) : null;
   }
 
-  async create(driverUserId: string, input: RideOfferCreateInput): Promise<RideOfferForOwner> {
+  async create(
+    driverUserId: string,
+    input: RideOfferCreateInput,
+  ): Promise<RideOfferForOwnerRecord> {
     const created = await this.db.rideOffer.create({
       data: {
         driverUserId,
@@ -215,7 +221,7 @@ export class PrismaRideOfferRepository
     rideOfferId: string,
     driverUserId: string,
     input: RideOfferUpdateInput,
-  ): Promise<RideOfferForOwner | null> {
+  ): Promise<RideOfferForOwnerRecord | null> {
     return this.db.$transaction(async (tx) => {
       const existing = await lockRideOffer(tx, rideOfferId);
       if (!existing || existing.driverUserId !== driverUserId || isTerminalOffer(existing.status)) {
@@ -263,7 +269,7 @@ export class PrismaRideOfferRepository
     rideOfferId: string,
     driverUserId: string,
     status: RideOfferStatus,
-  ): Promise<RideOfferForOwner | null> {
+  ): Promise<RideOfferForOwnerRecord | null> {
     return this.db.$transaction(async (tx) => {
       const current = await lockRideOffer(tx, rideOfferId);
       if (!current || current.driverUserId !== driverUserId) return null;
@@ -308,6 +314,18 @@ export class PrismaRideOfferRepository
 
       return serializeRideParticipation(participation);
     });
+  }
+
+  async getForPassenger(
+    rideOfferId: string,
+    passengerUserId: string,
+  ): Promise<RideParticipation | null> {
+    const row = await this.db.rideParticipation.findUnique({
+      where: { rideOfferId_passengerUserId: { rideOfferId, passengerUserId } },
+      select: rideParticipationSelect,
+    });
+
+    return row ? serializeRideParticipation(row) : null;
   }
 
   async updateParticipationStatus(input: {
@@ -593,7 +611,7 @@ function serializePublicRideOffer(row: PublicRideOfferRow): PublicRideOffer {
   };
 }
 
-function serializeOwnerRideOffer(row: OwnerRideOfferRow): RideOfferForOwner {
+function serializeOwnerRideOffer(row: OwnerRideOfferRow): RideOfferForOwnerRecord {
   return {
     ...serializePublicRideOffer(row),
     driverUserId: row.driverUserId,

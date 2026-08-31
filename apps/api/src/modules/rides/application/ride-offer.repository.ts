@@ -4,7 +4,6 @@ import type {
   RideMeetingPoint,
   RideMeetingPointInput,
   RideOfferCreateInput,
-  RideOfferForOwner,
   RideOfferStatus,
   RideOfferUpdateInput,
   RideParticipation,
@@ -20,24 +19,30 @@ export interface RideOfferListInput {
   readonly from?: Date;
 }
 
+export type RideOfferForOwnerRecord = PublicRideOffer & {
+  readonly driverUserId: string;
+  readonly participations: readonly RideParticipation[];
+};
+
 export interface RideOfferRepository {
   listPublic(input: RideOfferListInput): Promise<PublicRideOfferList>;
   getPublic(rideOfferId: string): Promise<PublicRideOffer | null>;
-  getForOwner(rideOfferId: string, driverUserId: string): Promise<RideOfferForOwner | null>;
-  create(driverUserId: string, input: RideOfferCreateInput): Promise<RideOfferForOwner>;
+  getForOwner(rideOfferId: string, driverUserId: string): Promise<RideOfferForOwnerRecord | null>;
+  create(driverUserId: string, input: RideOfferCreateInput): Promise<RideOfferForOwnerRecord>;
   update(
     rideOfferId: string,
     driverUserId: string,
     input: RideOfferUpdateInput,
-  ): Promise<RideOfferForOwner | null>;
+  ): Promise<RideOfferForOwnerRecord | null>;
   updateStatus(
     rideOfferId: string,
     driverUserId: string,
     status: RideOfferStatus,
-  ): Promise<RideOfferForOwner | null>;
+  ): Promise<RideOfferForOwnerRecord | null>;
 }
 
 export interface RideParticipationRepository {
+  getForPassenger(rideOfferId: string, passengerUserId: string): Promise<RideParticipation | null>;
   requestParticipation(
     rideOfferId: string,
     passengerUserId: string,

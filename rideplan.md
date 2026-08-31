@@ -1146,7 +1146,7 @@ This is the authoritative scoped execution order for this plan. Agents must star
 
 ## PLAN-000 — Baseline architecture audit and live plan
 
-Status: **[x] DONE**
+Status: **[~] IN PROGRESS**
 
 Scope completed:
 
@@ -1726,7 +1726,7 @@ Evidence
 
 ## RIDE-007 — Ride frontend API client + real Ride UI vertical slice
 
-Status: **[x] DONE**
+Status: **[~] IN PROGRESS**
 
 Dependencies: `RIDE-005`; `RIDE-006` required before vehicle photo is presented as complete
 
@@ -1774,6 +1774,7 @@ Evidence:
 - 2026-08-31 regression proof: merged `tests/requests-rides-shell.test.mjs` still preserves the Requests/FundMe shell guard and now proves Ride uses real Ride APIs while the old fake shell text is absent.
 - 2026-08-31 runtime smoke proof: local Vite preview plus Chrome headless CDP route smoke rendered `/rides`, `/rides/request`, `/rides/offers`, and `/rides/offers/new` at a 390px mobile viewport with explicit API stubs for account/session and public Ride list reads. Expected Ride text rendered, bottom navigation remained `Home | Play | Watch | HOOMA | Pitch`, and CDP reported zero runtime exceptions for those smoke routes.
 - Remaining risk: full live Telegram WebApp runtime and authenticated form-submit/read-back smoke against the deployed environment were not executed in this local closeout; CI integration coverage and the headless browser route smoke are the closing evidence for this slice.
+- 2026-08-31 corrective finding: RIDE-007 closeout was premature. Remaining required work before final closeout: make `/rides` a broader Ride home rather than only two isolated gateway cards; provide durable authenticated passenger participation read-back and meeting-point retrieval after driver acceptance; stop cropping Ride vehicle photos; split the large Ride page into Ride-owned components; replace raw Event/Place ID fields with human-readable canonical selectors; add lifecycle regression tests for passenger request -> driver accept -> passenger read-back -> authorized meeting-point visibility.
 
 ---
 

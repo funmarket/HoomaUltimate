@@ -90,6 +90,11 @@ export function createRideApi(transport: HoomaTransport) {
           body: JSON.stringify(input),
         },
       ),
+    getMyParticipation: (offerId: string) =>
+      request<RideParticipation>(
+        transport,
+        ridePath(`/offers/${encodeURIComponent(offerId)}/participations/me`),
+      ),
     acceptParticipation: (offerId: string, participationId: string) =>
       request<RideParticipation>(
         transport,

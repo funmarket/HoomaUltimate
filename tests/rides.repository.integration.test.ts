@@ -90,6 +90,18 @@ test("Ride participation request is idempotent per offer/passenger identity", as
       }),
       1,
     );
+
+    const restored = await offerRepository.getForPassenger(
+      fixture.offer.id,
+      fixture.passengers[0]!.id,
+    );
+    assert.equal(restored?.rideOfferId, fixture.offer.id);
+    assert.equal(restored?.passengerUserId, fixture.passengers[0]!.id);
+    assert.equal("passenger" in (restored as Record<string, unknown>), false);
+    assert.equal("passengerPresentation" in (restored as Record<string, unknown>), false);
+
+    const outsider = await offerRepository.getForPassenger(fixture.offer.id, "missing-user");
+    assert.equal(outsider, null);
   } finally {
     await cleanupRideFixture(fixture);
   }

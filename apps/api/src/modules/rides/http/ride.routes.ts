@@ -192,6 +192,15 @@ export function createRideMemberRouter(service: RideService): Router {
     }),
   );
 
+  router.get(
+    "/offers/:offerId/participations/me",
+    asyncHandler(async (request, response) => {
+      response.json(
+        await service.getMyParticipation(getAuth(request).userId, String(request.params.offerId)),
+      );
+    }),
+  );
+
   router.post(
     "/offers/:offerId/participations/:participationId/accept",
     asyncHandler(async (request, response) => {

@@ -7,7 +7,6 @@ import type {
   RideMeetingPoint,
   RideMeetingPointInput,
   RideOfferCreateInput,
-  RideOfferForOwner,
   RideOfferStatus,
   RideParticipation,
   RideParticipationStatus,
@@ -19,6 +18,7 @@ import type { ObjectStorage, StoredObject, StoredObjectDescriptor } from "@hooma
 import type {
   RideMeetingPointRepository,
   RideOfferListInput,
+  RideOfferForOwnerRecord,
   RideOfferRepository,
   RideParticipationRepository,
 } from "../apps/api/src/modules/rides/application/ride-offer.repository.js";
@@ -36,6 +36,10 @@ import type {
   RideVehiclePhotoRecord,
   RideVehiclePhotoRepository,
 } from "../apps/api/src/modules/rides/application/ride-vehicle-photo.repository.js";
+import type {
+  UserPresentationReader,
+  UserPresentationSummary,
+} from "../apps/api/src/modules/identity/application/user-presentation.reader.js";
 import { RideService } from "../apps/api/src/modules/rides/application/ride.service.js";
 import { RideError, type RideErrorCode } from "../apps/api/src/modules/rides/domain/ride-error.js";
 import { RidePolicyError } from "../apps/api/src/modules/rides/domain/ride-policy.js";
@@ -184,6 +188,45 @@ test("RideService sends driver participation responses through owner authorizati
   );
 });
 
+test("RideService restores a passenger participation from actor identity without profile data", async () => {
+  const fixture = createServiceFixture();
+
+  const restored = await fixture.service.getMyParticipation("passenger-1", "offer-1");
+
+  assert.equal(restored.id, "part-1");
+  assert.equal(restored.status, "ACCEPTED");
+  assert.equal("passenger" in (restored as Record<string, unknown>), false);
+  assert.equal("passengerPresentation" in (restored as Record<string, unknown>), false);
+  assert.deepEqual(fixture.participations.lastPassengerLookup, {
+    rideOfferId: "offer-1",
+    passengerUserId: "passenger-1",
+  });
+
+  fixture.participations.passengerResult = null;
+  await assertRideError(
+    () => fixture.service.getMyParticipation("outsider", "offer-1"),
+    404,
+    "RIDE_PARTICIPATION_NOT_FOUND",
+  );
+});
+
+test("RideService enriches driver owner view through the injected identity reader", async () => {
+  const fixture = createServiceFixture();
+  fixture.offers.ownerOffer = {
+    ...ownerOffer(),
+    participations: [participation("REQUESTED")],
+  };
+
+  const ownerView = await fixture.service.getMyOffer("driver-1", "offer-1");
+
+  assert.deepEqual(ownerView.participations[0]?.passenger, {
+    displayName: "Passenger One",
+    username: "passenger_1",
+    photoUrl: null,
+  });
+  assert.deepEqual(fixture.userPresentations.lastUserIds, ["passenger-1"]);
+});
+
 test("RideService allows driver/passenger cancellation only through repository authorization", async () => {
   const fixture = createServiceFixture();
 
@@ -292,6 +335,7 @@ function createServiceFixture() {
   const meetingPoints = new FakeRideMeetingPointRepository();
   const events = new FakeRideEventReferenceReader();
   const places = new FakeRidePlaceReferenceReader();
+  const userPresentations = new FakeUserPresentationReader();
   const vehiclePhotos = new FakeRideVehiclePhotoRepository();
   const storage = new FakeObjectStorage();
   const service = new RideService(
@@ -301,6 +345,7 @@ function createServiceFixture() {
     meetingPoints,
     events,
     places,
+    userPresentations,
     vehiclePhotos,
     storage,
   );
@@ -312,13 +357,14 @@ function createServiceFixture() {
     meetingPoints,
     events,
     places,
+    userPresentations,
     vehiclePhotos,
     storage,
   };
 }
 
 class FakeRideOfferRepository implements RideOfferRepository {
-  public ownerOffer: RideOfferForOwner | null = ownerOffer();
+  public ownerOffer: RideOfferForOwnerRecord | null = ownerOffer();
   public publicOffer: PublicRideOffer | null = publicOffer();
   public createdDriverUserId: string | null = null;
   public createCalls = 0;
@@ -396,13 +442,23 @@ class FakeRideRequestRepository implements RideRequestRepository {
 class FakeRideParticipationRepository implements RideParticipationRepository {
   public requestResult: RideParticipation | null = participation("REQUESTED");
   public updateResult: RideParticipation | null = participation("ACCEPTED");
+  public passengerResult: RideParticipation | null = participation("ACCEPTED");
   public requestError: Error | null = null;
+  public lastPassengerLookup: {
+    readonly rideOfferId: string;
+    readonly passengerUserId: string;
+  } | null = null;
   public lastStatusInput: {
     readonly rideOfferId: string;
     readonly participationId: string;
     readonly actorUserId: string;
     readonly status: RideParticipationStatus;
   } | null = null;
+
+  async getForPassenger(rideOfferId: string, passengerUserId: string) {
+    this.lastPassengerLookup = { rideOfferId, passengerUserId };
+    return this.passengerResult;
+  }
 
   async requestParticipation() {
     if (this.requestError) throw this.requestError;
@@ -442,6 +498,29 @@ class FakeRideMeetingPointRepository implements RideMeetingPointRepository {
 
   async getForAuthorizedViewer() {
     return this.authorizedResult;
+  }
+}
+
+class FakeUserPresentationReader implements UserPresentationReader {
+  public presentations = new Map<string, UserPresentationSummary>([
+    [
+      "passenger-1",
+      {
+        userId: "passenger-1",
+        displayName: "Passenger One",
+        username: "passenger_1",
+        photoUrl: null,
+      },
+    ],
+  ]);
+  public lastUserIds: readonly string[] = [];
+
+  async findByUserIds(userIds: readonly string[]) {
+    this.lastUserIds = userIds;
+    return userIds.flatMap((userId) => {
+      const presentation = this.presentations.get(userId);
+      return presentation ? [presentation] : [];
+    });
   }
 }
 
@@ -557,6 +636,7 @@ function rideStatus(code: RideErrorCode): number {
       return 415;
     case "RIDE_OFFER_NOT_FOUND":
     case "RIDE_REQUEST_NOT_FOUND":
+    case "RIDE_PARTICIPATION_NOT_FOUND":
     case "RIDE_DESTINATION_EVENT_NOT_FOUND":
     case "RIDE_DESTINATION_PLACE_NOT_FOUND":
     case "RIDE_VEHICLE_PHOTO_NOT_FOUND":
@@ -624,7 +704,7 @@ function publicOffer(): PublicRideOffer {
   };
 }
 
-function ownerOffer(): RideOfferForOwner {
+function ownerOffer(): RideOfferForOwnerRecord {
   return { ...publicOffer(), driverUserId: "driver-1", participations: [] };
 }
 
