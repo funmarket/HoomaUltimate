@@ -132,7 +132,7 @@ HOOMA | Teams | Spots | Pitch | Ride | Requests
 
 `Spots` is the Home label for canonical Places discovery at `/places`. Gamers, ULTRAS and FundMe are not Home discovery gateways in the current IA, but this does not delete those product concepts or their independent ownership.
 
-Ride and Requests may expose honest frontend shells when explicitly authorized. They must not fake backend completion, listings, matching, claims, payments or persistence.
+Ride may expose a Ride-owned gateway and frontend routes when its numbered `rideplan.md` slices authorize them. Requests may expose its Requests/FundMe shell until its own numbered slices replace it. Neither surface may fake backend completion, listings, matching, claims, payments or persistence.
 
 ## 2.3 HOOMA creation gateway
 
@@ -883,6 +883,8 @@ Approved requirements include:
 - shared Whistle only through a valid Ride relationship/context.
 
 Ride is explicitly authorized for a durable Rides-owned domain, persistence, API and frontend vertical slice. A Ride destination must use exactly one destination strategy: an owning Event reference, a canonical Place reference, or a Ride-owned custom destination label. Event and Place presentation must be read from their owning domains through narrow reference readers and must not be duplicated into Ride as canonical Event or Place truth.
+
+Ride frontend starts at `/rides`, with Ride-owned child routes for creating Ride Requests and browsing/creating/detailing Ride Offers. Opening Ride must not load Requests, FundMe or Payments behavior, and Ride request/offer actions must use the Rides API rather than fake frontend-only matching or booking state.
 
 Ride participation starts as a passenger request for seats on a Ride Offer. The Ride Offer driver/owner accepts or rejects participation requests, accepted seats count against offer capacity, and the driver cannot join their own offer as a passenger. Drivers may cancel their own offers, requesters may cancel their own Ride Requests, passengers may cancel their own non-terminal participation, and terminal completed/cancelled/rejected records must not be mutated into a different lifecycle state merely for convenience.
 

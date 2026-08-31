@@ -25,6 +25,10 @@ import {
   PlacesPage,
   PlayPage,
   RequestsPage,
+  RideOfferCreatePage,
+  RideOfferDetailPage,
+  RideOffersPage,
+  RideRequestCreatePage,
   RidesPage,
   TeamDetailPage,
   TeamEditPage,
@@ -145,6 +149,11 @@ function GamerGameRoute() {
   return <GamerGamePage gameSlug={requiredParam("gameSlug", gameSlug)} />;
 }
 
+function RideOfferDetailRoute() {
+  const { offerId } = useParams();
+  return <RideOfferDetailPage offerId={requiredParam("offerId", offerId)} />;
+}
+
 function apiBaseUrl(): string {
   if (import.meta.env.DEV) {
     return import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
@@ -198,6 +207,10 @@ function HoomaRoutes() {
               <Route path="/requests/fundme" element={<RequestsPage tab="fundme" />} />
               <Route path="/fundme" element={<Navigate to="/requests/fundme" replace />} />
               <Route path="/rides" element={<RidesPage />} />
+              <Route path="/rides/request" element={<RideRequestCreatePage />} />
+              <Route path="/rides/offers" element={<RideOffersPage />} />
+              <Route path="/rides/offers/new" element={<RideOfferCreatePage />} />
+              <Route path="/rides/offers/:offerId" element={<RideOfferDetailRoute />} />
               <Route path="/places" element={<PlacesPage />} />
               <Route path="/places/new" element={<AddPlacePage />} />
               <Route path="/places/:placeId/edit" element={<PlaceEditRoute />} />
