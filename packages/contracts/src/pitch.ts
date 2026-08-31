@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { cashCurrencySchema } from "./money.js";
 import {
   placeSuggestionSchema,
   type PlaceSuggestionResult,
@@ -6,7 +7,7 @@ import {
 } from "./places.js";
 
 export const pitchCapabilityKindSchema = z.literal("PITCH");
-export const pitchRentalCurrencySchema = z.enum(["TND", "EUR", "USD"]);
+export const pitchRentalCurrencySchema = cashCurrencySchema;
 export const pitchReviewTargetSchema = z.enum(["INITIAL_SUGGESTION", "OWNER_REVISION"]);
 
 export const pitchSuggestionSchema = z.object({

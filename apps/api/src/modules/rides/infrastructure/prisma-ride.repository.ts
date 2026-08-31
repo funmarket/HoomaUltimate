@@ -1,4 +1,5 @@
 import { Prisma, type PrismaClient } from "@hooma/database";
+import { cashCurrencySchema } from "@hooma/contracts/money";
 import type {
   PublicRideOffer,
   PublicRideOfferList,
@@ -744,7 +745,7 @@ function serializeOfferCompensation(row: {
   return {
     type: "CASH",
     amountMinor: row.compensationAmountMinor,
-    currency: row.compensationCurrency,
+    currency: cashCurrencySchema.parse(row.compensationCurrency),
     basis: row.compensationBasis,
   };
 }
@@ -761,7 +762,7 @@ function serializeRequestCompensation(row: {
   return {
     type: "CASH",
     amountMinor: row.compensationAmountMinor,
-    currency: row.compensationCurrency,
+    currency: cashCurrencySchema.parse(row.compensationCurrency),
   };
 }
 

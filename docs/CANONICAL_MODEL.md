@@ -1010,7 +1010,7 @@ FREE
 CASH
 ```
 
-Driver offers may advertise `FREE` or `CASH` with positive integer minor-unit amount, ISO currency and basis. Passenger requests may advertise no cash offer (`FREE`) or a `CASH` offer with positive integer minor-unit amount and ISO currency. Ride contracts/domain policy must reject payment-processing state such as payment intents, checkout, settlement, wallet, card/provider callbacks, paid status or payment-received status; future PAY-001 owns payment execution.
+Driver offers may advertise `FREE` or `CASH` with positive integer minor-unit amount, ISO currency and basis. Passenger requests may advertise no cash offer (`FREE`) or a `CASH` offer with positive integer minor-unit amount and ISO currency. Human-entered cash amounts must convert through the shared supported cash-currency exponent source before becoming canonical minor units; current supported cash currencies are `TND`, `EUR` and `USD`, with `TND` using three decimal minor-unit precision. Ride contracts/domain policy must reject payment-processing state such as payment intents, checkout, settlement, wallet, card/provider callbacks, paid status or payment-received status; future PAY-001 owns payment execution.
 
 Ride destination uses exactly one strategy: owning Event reference, canonical Place reference, or Ride-owned custom destination label. The database enforces this for `RideOffer` and `RideRequest`. Event and Place display data remains owned by those domains and is read through narrow reference ports. Ride public projections must omit exact private pickup or meeting location.
 

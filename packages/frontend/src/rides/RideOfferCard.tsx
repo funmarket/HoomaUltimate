@@ -1,4 +1,5 @@
 import type { PublicRideOffer } from "@hooma/contracts/rides";
+import { RideCompensationBadge } from "./RideCompensationBadge";
 import { destinationLabel, formatRideTime } from "./ride-view-model";
 
 export function RideOfferCard({
@@ -20,6 +21,7 @@ export function RideOfferCard({
         <small>
           From {offer.originAreaLabel} - {offer.availableSeats}/{offer.totalSeats} seats open
         </small>
+        <RideCompensationBadge terms={offer.compensationTerms} />
       </div>
     </a>
   );

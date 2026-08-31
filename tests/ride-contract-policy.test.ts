@@ -4,9 +4,11 @@ import {
   publicRideOfferSchema,
   publicRideRequestSchema,
   rideCompensationTermsSchema,
+  rideOfferCompensationTermsSchema,
   rideContextSchema,
   rideDestinationColumnsSchema,
   rideOfferCreateSchema,
+  rideRequestCompensationTermsSchema,
   rideRequestCreateSchema,
 } from "../packages/contracts/src/rides.js";
 import {
@@ -154,6 +156,56 @@ test("Ride offer contract requires advertised FREE or CASH compensation terms", 
     }).success,
     false,
   );
+});
+
+test("Ride offer compensation contract accepts only supported cash currencies", () => {
+  for (const currency of ["TND", "EUR", "USD"] as const) {
+    assert.equal(
+      rideOfferCompensationTermsSchema.safeParse({
+        type: "CASH",
+        amountMinor: 1000,
+        currency,
+        basis: "PER_SEAT",
+      }).success,
+      true,
+    );
+  }
+
+  for (const currency of ["GBP", "JPY", "XYZ"] as const) {
+    assert.equal(
+      rideOfferCompensationTermsSchema.safeParse({
+        type: "CASH",
+        amountMinor: 1000,
+        currency,
+        basis: "TOTAL",
+      }).success,
+      false,
+    );
+  }
+});
+
+test("Ride request compensation contract accepts only supported cash currencies", () => {
+  for (const currency of ["TND", "EUR", "USD"] as const) {
+    assert.equal(
+      rideRequestCompensationTermsSchema.safeParse({
+        type: "CASH",
+        amountMinor: 1000,
+        currency,
+      }).success,
+      true,
+    );
+  }
+
+  for (const currency of ["GBP", "JPY", "XYZ"] as const) {
+    assert.equal(
+      rideRequestCompensationTermsSchema.safeParse({
+        type: "CASH",
+        amountMinor: 1000,
+        currency,
+      }).success,
+      false,
+    );
+  }
 });
 
 test("Ride request contract supports no cash offer or advertised cash offer only", () => {
