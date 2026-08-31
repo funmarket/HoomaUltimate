@@ -981,7 +981,7 @@ The dedicated accepted decision is `docs/adr/ADR-042-pitch-suggestion-claim-life
 
 # 21. Authorized Ride and Requests concepts
 
-ADR-050 begins the durable Ride and Requests vertical slices. Canonical schema work is authorized for these domains in their numbered implementation tasks, subject to the policies below. RIDE-002 adds core Ride persistence; RIDE-006 adds Ride-owned vehicle-photo metadata. Requests, Fundraising and Payments remain separately ordered.
+ADR-050 begins the durable Ride and Requests vertical slices. Canonical schema work is authorized for these domains in their numbered implementation tasks, subject to the policies below. RIDE-002 adds core Ride persistence; RIDE-006 adds Ride-owned vehicle-photo metadata. RIDE-007A adds governed Ride context and advertised compensation contracts before persistence changes. Requests, Fundraising and Payments remain separately ordered.
 
 RIDE-002 establishes the core Ride-owned canonical persistence:
 
@@ -993,6 +993,24 @@ RideMeetingPoint
 RideOfferWaypoint
 RideOfferVehiclePhoto
 ```
+
+Ride context values are:
+
+```text
+MATCHDAY
+GENERAL
+```
+
+`MATCHDAY` means football/event transportation. `GENERAL` is the canonical value behind user-facing Anywhere Ride. Matchday Ride and Anywhere Ride are contexts/views over the same Ride domain, not separate durable domains or duplicate backend systems.
+
+Ride compensation terms are advertised Ride terms only:
+
+```text
+FREE
+CASH
+```
+
+Driver offers may advertise `FREE` or `CASH` with positive integer minor-unit amount, ISO currency and basis. Passenger requests may advertise no cash offer (`FREE`) or a `CASH` offer with positive integer minor-unit amount and ISO currency. Ride contracts/domain policy must reject payment-processing state such as payment intents, checkout, settlement, wallet, card/provider callbacks, paid status or payment-received status; future PAY-001 owns payment execution.
 
 Ride destination uses exactly one strategy: owning Event reference, canonical Place reference, or Ride-owned custom destination label. The database enforces this for `RideOffer` and `RideRequest`. Event and Place display data remains owned by those domains and is read through narrow reference ports. Ride public projections must omit exact private pickup or meeting location.
 

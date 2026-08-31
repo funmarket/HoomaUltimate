@@ -1,4 +1,5 @@
 import type {
+  RideCompensationTerms,
   PublicRideOffer,
   RideDestinationColumns,
   RideOfferStatus,
@@ -10,6 +11,8 @@ export type RidePolicyErrorCode =
   | "RIDE_DESTINATION_REQUIRED"
   | "RIDE_DESTINATION_STRATEGY_CONFLICT"
   | "RIDE_DRIVER_CANNOT_PARTICIPATE"
+  | "RIDE_COMPENSATION_INVALID"
+  | "RIDE_COMPENSATION_PAYMENT_FORBIDDEN"
   | "RIDE_OFFER_STATUS_TRANSITION_INVALID"
   | "RIDE_REQUEST_STATUS_TRANSITION_INVALID"
   | "RIDE_PARTICIPATION_STATUS_TRANSITION_INVALID";
@@ -87,6 +90,33 @@ export function assertDriverCanReceivePassenger(
     throw new RidePolicyError(
       "RIDE_DRIVER_CANNOT_PARTICIPATE",
       "Ride driver cannot join their own offer as a passenger",
+    );
+  }
+}
+
+export function assertRideCompensationTerms(
+  input: RideCompensationTerms & Record<string, unknown>,
+): void {
+  const hasPaymentProcessingField = [
+    "paymentIntentId",
+    "checkoutSessionId",
+    "settlementId",
+    "walletTransactionId",
+    "cardPaymentId",
+    "telegramStarsChargeId",
+    "paidStatus",
+    "paymentReceivedStatus",
+  ].some((field) => field in input);
+  if (hasPaymentProcessingField) {
+    throw new RidePolicyError(
+      "RIDE_COMPENSATION_PAYMENT_FORBIDDEN",
+      "Ride compensation terms are advertised terms only; payment execution belongs to Payments",
+    );
+  }
+  if (input.type === "CASH" && (!Number.isInteger(input.amountMinor) || input.amountMinor <= 0)) {
+    throw new RidePolicyError(
+      "RIDE_COMPENSATION_INVALID",
+      "Ride CASH compensation terms require a positive integer minor-unit amount",
     );
   }
 }

@@ -4,6 +4,45 @@ const idSchema = z.string().trim().min(1);
 const areaLabelSchema = z.string().trim().min(1).max(160);
 const noteSchema = z.string().trim().max(1200).optional().nullable();
 const vehicleFieldSchema = z.string().trim().max(80).optional().nullable();
+const currencySchema = z
+  .string()
+  .trim()
+  .regex(/^[A-Z]{3}$/);
+
+export const rideContextSchema = z.enum(["MATCHDAY", "GENERAL"]);
+
+export const rideCompensationBasisSchema = z.enum(["PER_SEAT", "TOTAL"]);
+
+const rideFreeCompensationTermsSchema = z
+  .object({
+    type: z.literal("FREE"),
+  })
+  .strict();
+
+const rideCashCompensationTermsBaseSchema = z
+  .object({
+    type: z.literal("CASH"),
+    amountMinor: z.number().int().positive(),
+    currency: currencySchema,
+  })
+  .strict();
+
+export const rideOfferCompensationTermsSchema = z.discriminatedUnion("type", [
+  rideFreeCompensationTermsSchema,
+  rideCashCompensationTermsBaseSchema.extend({
+    basis: rideCompensationBasisSchema,
+  }),
+]);
+
+export const rideRequestCompensationTermsSchema = z.discriminatedUnion("type", [
+  rideFreeCompensationTermsSchema,
+  rideCashCompensationTermsBaseSchema,
+]);
+
+export const rideCompensationTermsSchema = z.union([
+  rideOfferCompensationTermsSchema,
+  rideRequestCompensationTermsSchema,
+]);
 
 export const rideOfferStatusSchema = z.enum(["OPEN", "FULL", "DEPARTED", "CANCELLED", "COMPLETED"]);
 
@@ -65,10 +104,12 @@ export const rideWaypointInputSchema = z.object({
 });
 
 export const rideOfferCreateSchema = z.object({
+  context: rideContextSchema.default("MATCHDAY"),
   destination: rideDestinationSchema,
   originAreaLabel: areaLabelSchema,
   departureAt: z.string().datetime(),
   totalSeats: z.number().int().positive(),
+  compensationTerms: rideOfferCompensationTermsSchema.default({ type: "FREE" }),
   vehicleMake: vehicleFieldSchema,
   vehicleModel: vehicleFieldSchema,
   vehicleColor: vehicleFieldSchema,
@@ -79,10 +120,12 @@ export const rideOfferCreateSchema = z.object({
 export const rideOfferUpdateSchema = rideOfferCreateSchema.partial();
 
 export const rideRequestCreateSchema = z.object({
+  context: rideContextSchema.default("MATCHDAY"),
   destination: rideDestinationSchema,
   pickupAreaLabel: areaLabelSchema,
   desiredDepartureAt: z.string().datetime(),
   passengerCount: z.number().int().positive(),
+  compensationTerms: rideRequestCompensationTermsSchema.default({ type: "FREE" }),
   note: noteSchema,
   expiresAt: z.string().datetime(),
 });
@@ -211,13 +254,18 @@ export const publicRideRequestListSchema = z.object({
 export type RideOfferStatus = z.infer<typeof rideOfferStatusSchema>;
 export type RideRequestStatus = z.infer<typeof rideRequestStatusSchema>;
 export type RideParticipationStatus = z.infer<typeof rideParticipationStatusSchema>;
+export type RideContext = z.infer<typeof rideContextSchema>;
+export type RideCompensationBasis = z.infer<typeof rideCompensationBasisSchema>;
+export type RideOfferCompensationTerms = z.infer<typeof rideOfferCompensationTermsSchema>;
+export type RideRequestCompensationTerms = z.infer<typeof rideRequestCompensationTermsSchema>;
+export type RideCompensationTerms = z.infer<typeof rideCompensationTermsSchema>;
 export type RideDestinationInput = z.infer<typeof rideDestinationSchema>;
 export type RideDestinationColumns = z.infer<typeof rideDestinationColumnsSchema>;
 export type RideWaypointInput = z.infer<typeof rideWaypointInputSchema>;
-export type RideOfferCreateInput = z.infer<typeof rideOfferCreateSchema>;
-export type RideOfferUpdateInput = z.infer<typeof rideOfferUpdateSchema>;
-export type RideRequestCreateInput = z.infer<typeof rideRequestCreateSchema>;
-export type RideRequestUpdateInput = z.infer<typeof rideRequestUpdateSchema>;
+export type RideOfferCreateInput = z.input<typeof rideOfferCreateSchema>;
+export type RideOfferUpdateInput = z.input<typeof rideOfferUpdateSchema>;
+export type RideRequestCreateInput = z.input<typeof rideRequestCreateSchema>;
+export type RideRequestUpdateInput = z.input<typeof rideRequestUpdateSchema>;
 export type RideParticipationRequestInput = z.infer<typeof rideParticipationRequestSchema>;
 export type RideMeetingPointInput = z.infer<typeof rideMeetingPointInputSchema>;
 export type RideDestinationSummary = z.infer<typeof rideDestinationSummarySchema>;
