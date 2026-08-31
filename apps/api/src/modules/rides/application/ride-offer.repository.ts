@@ -3,6 +3,7 @@ import type {
   PublicRideOfferList,
   RideMeetingPoint,
   RideMeetingPointInput,
+  RideContext,
   RideOfferCreateInput,
   RideOfferStatus,
   RideOfferUpdateInput,
@@ -14,6 +15,7 @@ import type {
 export interface RideOfferListInput {
   readonly limit: number;
   readonly cursor?: string;
+  readonly context?: RideContext;
   readonly eventId?: string;
   readonly destinationPlaceId?: string;
   readonly from?: Date;

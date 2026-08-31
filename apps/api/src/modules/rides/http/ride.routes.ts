@@ -2,6 +2,7 @@ import { Buffer } from "node:buffer";
 import { Router, raw } from "express";
 import {
   rideMeetingPointInputSchema,
+  rideContextSchema,
   rideOfferCreateSchema,
   rideOfferUpdateSchema,
   rideParticipationRequestSchema,
@@ -28,6 +29,7 @@ function dateQuery(value: unknown): Date | undefined {
 interface RideListQueryInput {
   readonly limit: number;
   readonly cursor?: string;
+  readonly context?: "MATCHDAY" | "GENERAL";
   readonly eventId?: string;
   readonly destinationPlaceId?: string;
   readonly from?: Date;
@@ -36,12 +38,14 @@ interface RideListQueryInput {
 function listQuery(query: {
   readonly limit?: unknown;
   readonly cursor?: unknown;
+  readonly context?: unknown;
   readonly eventId?: unknown;
   readonly destinationPlaceId?: unknown;
   readonly from?: unknown;
 }): RideListQueryInput {
   const input: RideListQueryInput = { limit: numberQuery(query.limit, 20) };
   const cursor = stringQuery(query.cursor);
+  const context = stringQuery(query.context);
   const eventId = stringQuery(query.eventId);
   const destinationPlaceId = stringQuery(query.destinationPlaceId);
   const from = dateQuery(query.from);
@@ -49,6 +53,7 @@ function listQuery(query: {
   return {
     ...input,
     ...(cursor !== undefined ? { cursor } : {}),
+    ...(context !== undefined ? { context: rideContextSchema.parse(context) } : {}),
     ...(eventId !== undefined ? { eventId } : {}),
     ...(destinationPlaceId !== undefined ? { destinationPlaceId } : {}),
     ...(from !== undefined ? { from } : {}),

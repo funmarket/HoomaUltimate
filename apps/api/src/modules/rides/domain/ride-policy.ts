@@ -182,12 +182,14 @@ export interface RidePublicOfferProjectionInput extends PublicRideOffer {
 export function toPublicRideOffer(input: RidePublicOfferProjectionInput): PublicRideOffer {
   return {
     id: input.id,
+    context: input.context,
     status: input.status,
     destination: input.destination,
     originAreaLabel: input.originAreaLabel,
     departureAt: input.departureAt,
     totalSeats: input.totalSeats,
     availableSeats: input.availableSeats,
+    compensationTerms: input.compensationTerms,
     vehicleMake: input.vehicleMake,
     vehicleModel: input.vehicleModel,
     vehicleColor: input.vehicleColor,

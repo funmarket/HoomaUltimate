@@ -196,6 +196,21 @@ enum RideParticipationStatus {
   COMPLETED
 }
 
+enum RideContext {
+  MATCHDAY
+  GENERAL
+}
+
+enum RideCompensationType {
+  FREE
+  CASH
+}
+
+enum RideCompensationBasis {
+  PER_SEAT
+  TOTAL
+}
+
 enum GamerGameStatus {
   ACTIVE
   INACTIVE
@@ -923,12 +938,17 @@ model EventChatMessage {
 model RideOffer {
   id                     String                  @id @default(cuid())
   driverUserId           String
+  context                RideContext             @default(MATCHDAY)
   eventId                String?
   destinationPlaceId     String?
   customDestinationLabel String?
   originAreaLabel        String
   departureAt            DateTime
   totalSeats             Int
+  compensationType       RideCompensationType     @default(FREE)
+  compensationAmountMinor Int?
+  compensationCurrency   String?                 @db.VarChar(3)
+  compensationBasis      RideCompensationBasis?
   vehicleMake            String?
   vehicleModel           String?
   vehicleColor           String?
@@ -944,6 +964,7 @@ model RideOffer {
   vehiclePhoto           RideOfferVehiclePhoto?
 
   @@index([status, departureAt, id])
+  @@index([context, status, departureAt, id])
   @@index([driverUserId, status, departureAt])
   @@index([eventId, status, departureAt])
   @@index([destinationPlaceId, status, departureAt])
@@ -965,12 +986,17 @@ model RideOfferVehiclePhoto {
 model RideRequest {
   id                     String            @id @default(cuid())
   requesterUserId        String
+  context                RideContext       @default(MATCHDAY)
   eventId                String?
   destinationPlaceId     String?
   customDestinationLabel String?
   pickupAreaLabel        String
   desiredDepartureAt     DateTime
   passengerCount         Int
+  compensationType       RideCompensationType @default(FREE)
+  compensationAmountMinor Int?
+  compensationCurrency   String?           @db.VarChar(3)
+  compensationBasis      RideCompensationBasis?
   note                   String?
   expiresAt              DateTime
   status                 RideRequestStatus @default(OPEN)
@@ -981,6 +1007,7 @@ model RideRequest {
   destinationPlace       Place?            @relation("RideRequestDestinationPlace", fields: [destinationPlaceId], references: [id], onDelete: Restrict)
 
   @@index([status, desiredDepartureAt, id])
+  @@index([context, status, desiredDepartureAt, id])
   @@index([requesterUserId, status, createdAt])
   @@index([eventId, status, desiredDepartureAt])
   @@index([destinationPlaceId, status, desiredDepartureAt])

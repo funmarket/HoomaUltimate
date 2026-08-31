@@ -299,6 +299,81 @@ test("Ride request repository persists owner/public state without exposing reque
   }
 });
 
+test("Ride repositories persist and expose context and advertised compensation", async () => {
+  const driver = await db.user.create({ data: {} });
+  const requester = await db.user.create({ data: {} });
+  const offer = await offerRepository.create(driver.id, {
+    context: "GENERAL",
+    destination: { type: "CUSTOM", customDestinationLabel: "Tunis-Carthage Airport" },
+    originAreaLabel: "Lac 2",
+    departureAt: futureDate(90).toISOString(),
+    totalSeats: 2,
+    compensationTerms: {
+      type: "CASH",
+      amountMinor: 10000,
+      currency: "TND",
+      basis: "PER_SEAT",
+    },
+    note: null,
+  });
+  const request = await requestRepository.create(requester.id, {
+    context: "MATCHDAY",
+    destination: { type: "CUSTOM", customDestinationLabel: "Stade Olympique de Rades" },
+    pickupAreaLabel: "Menzah",
+    desiredDepartureAt: futureDate(120).toISOString(),
+    passengerCount: 2,
+    expiresAt: futureDate(60).toISOString(),
+    compensationTerms: { type: "CASH", amountMinor: 8000, currency: "TND" },
+    note: null,
+  });
+
+  try {
+    const storedOffer = await db.rideOffer.findUniqueOrThrow({ where: { id: offer.id } });
+    assert.equal(storedOffer.context, "GENERAL");
+    assert.equal(storedOffer.compensationType, "CASH");
+    assert.equal(storedOffer.compensationAmountMinor, 10000);
+    assert.equal(storedOffer.compensationCurrency, "TND");
+    assert.equal(storedOffer.compensationBasis, "PER_SEAT");
+
+    const publicOffer = await offerRepository.getPublic(offer.id);
+    assert.equal(publicOffer?.context, "GENERAL");
+    assert.deepEqual(publicOffer?.compensationTerms, {
+      type: "CASH",
+      amountMinor: 10000,
+      currency: "TND",
+      basis: "PER_SEAT",
+    });
+
+    const generalOffers = await offerRepository.listPublic({ limit: 10, context: "GENERAL" });
+    assert.ok(generalOffers.items.some((item) => item.id === offer.id));
+    const matchdayOffers = await offerRepository.listPublic({ limit: 10, context: "MATCHDAY" });
+    assert.equal(
+      matchdayOffers.items.some((item) => item.id === offer.id),
+      false,
+    );
+
+    const storedRequest = await db.rideRequest.findUniqueOrThrow({ where: { id: request.id } });
+    assert.equal(storedRequest.context, "MATCHDAY");
+    assert.equal(storedRequest.compensationType, "CASH");
+    assert.equal(storedRequest.compensationAmountMinor, 8000);
+    assert.equal(storedRequest.compensationCurrency, "TND");
+    assert.equal(storedRequest.compensationBasis, null);
+
+    const publicRequest = await requestRepository.getPublic(request.id);
+    assert.equal(publicRequest?.context, "MATCHDAY");
+    assert.deepEqual(publicRequest?.compensationTerms, {
+      type: "CASH",
+      amountMinor: 8000,
+      currency: "TND",
+    });
+  } finally {
+    await db.rideOfferWaypoint.deleteMany({ where: { rideOfferId: offer.id } });
+    await db.rideOffer.deleteMany({ where: { id: offer.id } });
+    await db.rideRequest.deleteMany({ where: { id: request.id } });
+    await db.user.deleteMany({ where: { id: { in: [driver.id, requester.id] } } });
+  }
+});
+
 interface RideFixture {
   readonly driver: { readonly id: string };
   readonly passengers: ReadonlyArray<{ readonly id: string }>;

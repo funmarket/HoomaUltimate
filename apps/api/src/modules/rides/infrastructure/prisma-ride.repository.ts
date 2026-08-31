@@ -40,6 +40,7 @@ import {
 
 const publicRideOfferSelect = Prisma.validator<Prisma.RideOfferSelect>()({
   id: true,
+  context: true,
   status: true,
   eventId: true,
   destinationPlaceId: true,
@@ -47,6 +48,10 @@ const publicRideOfferSelect = Prisma.validator<Prisma.RideOfferSelect>()({
   originAreaLabel: true,
   departureAt: true,
   totalSeats: true,
+  compensationType: true,
+  compensationAmountMinor: true,
+  compensationCurrency: true,
+  compensationBasis: true,
   vehicleMake: true,
   vehicleModel: true,
   vehicleColor: true,
@@ -87,6 +92,7 @@ const ownerRideOfferSelect = Prisma.validator<Prisma.RideOfferSelect>()({
 
 const publicRideRequestSelect = Prisma.validator<Prisma.RideRequestSelect>()({
   id: true,
+  context: true,
   status: true,
   eventId: true,
   destinationPlaceId: true,
@@ -94,6 +100,10 @@ const publicRideRequestSelect = Prisma.validator<Prisma.RideRequestSelect>()({
   pickupAreaLabel: true,
   desiredDepartureAt: true,
   passengerCount: true,
+  compensationType: true,
+  compensationAmountMinor: true,
+  compensationCurrency: true,
+  compensationBasis: true,
   note: true,
   expiresAt: true,
   createdAt: true,
@@ -157,6 +167,7 @@ export class PrismaRideOfferRepository
     const rows = await this.db.rideOffer.findMany({
       where: {
         status: { in: ["OPEN", "FULL"] },
+        ...(input.context ? { context: input.context } : {}),
         ...(input.from ? { departureAt: { gte: input.from } } : {}),
         ...(input.eventId ? { eventId: input.eventId } : {}),
         ...(input.destinationPlaceId ? { destinationPlaceId: input.destinationPlaceId } : {}),
@@ -201,10 +212,12 @@ export class PrismaRideOfferRepository
     const created = await this.db.rideOffer.create({
       data: {
         driverUserId,
+        context: input.context ?? "MATCHDAY",
         ...rideDestinationData(input.destination),
         originAreaLabel: input.originAreaLabel,
         departureAt: new Date(input.departureAt),
         totalSeats: input.totalSeats,
+        ...offerCompensationData(input.compensationTerms ?? { type: "FREE" }),
         vehicleMake: input.vehicleMake ?? null,
         vehicleModel: input.vehicleModel ?? null,
         vehicleColor: input.vehicleColor ?? null,
@@ -246,6 +259,10 @@ export class PrismaRideOfferRepository
             : {}),
           ...(input.departureAt !== undefined ? { departureAt: new Date(input.departureAt) } : {}),
           ...(input.totalSeats !== undefined ? { totalSeats: input.totalSeats } : {}),
+          ...(input.context !== undefined ? { context: input.context } : {}),
+          ...(input.compensationTerms !== undefined
+            ? offerCompensationData(input.compensationTerms)
+            : {}),
           ...(input.vehicleMake !== undefined ? { vehicleMake: input.vehicleMake } : {}),
           ...(input.vehicleModel !== undefined ? { vehicleModel: input.vehicleModel } : {}),
           ...(input.vehicleColor !== undefined ? { vehicleColor: input.vehicleColor } : {}),
@@ -444,6 +461,7 @@ export class PrismaRideRequestRepository implements RideRequestRepository {
     const rows = await this.db.rideRequest.findMany({
       where: {
         status: "OPEN",
+        ...(input.context ? { context: input.context } : {}),
         expiresAt: { gt: new Date() },
         ...(input.from ? { desiredDepartureAt: { gte: input.from } } : {}),
         ...(input.eventId ? { eventId: input.eventId } : {}),
@@ -493,10 +511,12 @@ export class PrismaRideRequestRepository implements RideRequestRepository {
     const created = await this.db.rideRequest.create({
       data: {
         requesterUserId,
+        context: input.context ?? "MATCHDAY",
         ...rideDestinationData(input.destination),
         pickupAreaLabel: input.pickupAreaLabel,
         desiredDepartureAt: new Date(input.desiredDepartureAt),
         passengerCount: input.passengerCount,
+        ...requestCompensationData(input.compensationTerms ?? { type: "FREE" }),
         note: input.note ?? null,
         expiresAt: new Date(input.expiresAt),
       },
@@ -529,6 +549,10 @@ export class PrismaRideRequestRepository implements RideRequestRepository {
             ? { desiredDepartureAt: new Date(input.desiredDepartureAt) }
             : {}),
           ...(input.passengerCount !== undefined ? { passengerCount: input.passengerCount } : {}),
+          ...(input.context !== undefined ? { context: input.context } : {}),
+          ...(input.compensationTerms !== undefined
+            ? requestCompensationData(input.compensationTerms)
+            : {}),
           ...(input.note !== undefined ? { note: input.note } : {}),
           ...(input.expiresAt !== undefined ? { expiresAt: new Date(input.expiresAt) } : {}),
         },
@@ -579,6 +603,50 @@ function rideDestinationData(
   };
 }
 
+function offerCompensationData(input: NonNullable<RideOfferCreateInput["compensationTerms"]>): {
+  readonly compensationType: "FREE" | "CASH";
+  readonly compensationAmountMinor: number | null;
+  readonly compensationCurrency: string | null;
+  readonly compensationBasis: "PER_SEAT" | "TOTAL" | null;
+} {
+  if (input.type === "FREE") {
+    return {
+      compensationType: "FREE",
+      compensationAmountMinor: null,
+      compensationCurrency: null,
+      compensationBasis: null,
+    };
+  }
+  return {
+    compensationType: "CASH",
+    compensationAmountMinor: input.amountMinor,
+    compensationCurrency: input.currency,
+    compensationBasis: input.basis,
+  };
+}
+
+function requestCompensationData(input: NonNullable<RideRequestCreateInput["compensationTerms"]>): {
+  readonly compensationType: "FREE" | "CASH";
+  readonly compensationAmountMinor: number | null;
+  readonly compensationCurrency: string | null;
+  readonly compensationBasis: null;
+} {
+  if (input.type === "FREE") {
+    return {
+      compensationType: "FREE",
+      compensationAmountMinor: null,
+      compensationCurrency: null,
+      compensationBasis: null,
+    };
+  }
+  return {
+    compensationType: "CASH",
+    compensationAmountMinor: input.amountMinor,
+    compensationCurrency: input.currency,
+    compensationBasis: null,
+  };
+}
+
 function waypointCreateData(waypoints: NonNullable<RideOfferCreateInput["waypoints"]>): Array<{
   readonly sequence: number;
   readonly placeId: string | null;
@@ -594,12 +662,14 @@ function waypointCreateData(waypoints: NonNullable<RideOfferCreateInput["waypoin
 function serializePublicRideOffer(row: PublicRideOfferRow): PublicRideOffer {
   return {
     id: row.id,
+    context: row.context,
     status: row.status,
     destination: rideDestinationSummary(row),
     originAreaLabel: row.originAreaLabel,
     departureAt: row.departureAt.toISOString(),
     totalSeats: row.totalSeats,
     availableSeats: availableSeats(row.totalSeats, row.participations),
+    compensationTerms: serializeOfferCompensation(row),
     vehicleMake: row.vehicleMake,
     vehicleModel: row.vehicleModel,
     vehicleColor: row.vehicleColor,
@@ -622,11 +692,13 @@ function serializeOwnerRideOffer(row: OwnerRideOfferRow): RideOfferForOwnerRecor
 function serializePublicRideRequest(row: PublicRideRequestRow): PublicRideRequest {
   return {
     id: row.id,
+    context: row.context,
     status: row.status,
     destination: rideRequestDestinationSummary(row),
     pickupAreaLabel: row.pickupAreaLabel,
     desiredDepartureAt: row.desiredDepartureAt.toISOString(),
     passengerCount: row.passengerCount,
+    compensationTerms: serializeRequestCompensation(row),
     note: row.note,
     expiresAt: row.expiresAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
@@ -652,6 +724,44 @@ function serializeRideParticipation(row: RideParticipationRow): RideParticipatio
     respondedAt: row.respondedAt?.toISOString() ?? null,
     cancelledAt: row.cancelledAt?.toISOString() ?? null,
     completedAt: row.completedAt?.toISOString() ?? null,
+  };
+}
+
+function serializeOfferCompensation(row: {
+  readonly compensationType: "FREE" | "CASH";
+  readonly compensationAmountMinor: number | null;
+  readonly compensationCurrency: string | null;
+  readonly compensationBasis: "PER_SEAT" | "TOTAL" | null;
+}): PublicRideOffer["compensationTerms"] {
+  if (row.compensationType === "FREE") return { type: "FREE" };
+  if (
+    row.compensationAmountMinor === null ||
+    row.compensationCurrency === null ||
+    row.compensationBasis === null
+  ) {
+    throw new Error("RIDE_OFFER_COMPENSATION_MISSING");
+  }
+  return {
+    type: "CASH",
+    amountMinor: row.compensationAmountMinor,
+    currency: row.compensationCurrency,
+    basis: row.compensationBasis,
+  };
+}
+
+function serializeRequestCompensation(row: {
+  readonly compensationType: "FREE" | "CASH";
+  readonly compensationAmountMinor: number | null;
+  readonly compensationCurrency: string | null;
+}): PublicRideRequest["compensationTerms"] {
+  if (row.compensationType === "FREE") return { type: "FREE" };
+  if (row.compensationAmountMinor === null || row.compensationCurrency === null) {
+    throw new Error("RIDE_REQUEST_COMPENSATION_MISSING");
+  }
+  return {
+    type: "CASH",
+    amountMinor: row.compensationAmountMinor,
+    currency: row.compensationCurrency,
   };
 }
 

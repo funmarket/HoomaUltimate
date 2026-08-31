@@ -1,6 +1,7 @@
 import type {
   PublicRideRequest,
   PublicRideRequestList,
+  RideContext,
   RideRequestCreateInput,
   RideRequestForOwner,
   RideRequestStatus,
@@ -10,6 +11,7 @@ import type {
 export interface RideRequestListInput {
   readonly limit: number;
   readonly cursor?: string;
+  readonly context?: RideContext;
   readonly eventId?: string;
   readonly destinationPlaceId?: string;
   readonly from?: Date;
