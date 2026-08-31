@@ -70,7 +70,7 @@ const HOME_GATEWAY_STYLES = `
 }
 .home-gateway-card__subtitle {
   top: 80.5%;
-  color: var(--app-gold, #e8c36a);
+  color: #16c789;
   font-size: clamp(12px, 2.6vw, 14px);
   font-weight: 700;
   line-height: 1.1;
