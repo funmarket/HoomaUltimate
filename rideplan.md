@@ -1766,7 +1766,9 @@ Evidence:
 - 2026-08-31 local proof: all unit tests passed when invoked directly with the repo's unit file set through `C:\Program Files\nodejs\npx.cmd` (206/206). `npm test` itself still fails before tests on this Windows host because `scripts/run-tests.mjs` spawns bare `npx.cmd` and receives `spawn EINVAL`.
 - 2026-08-31 local proof: touched-file Prettier check passed; repository-wide `npm run format:check` is still blocked by pre-existing unrelated formatting drift outside this slice.
 - 2026-08-31 local proof: `npm run typecheck`, `npm run build`, `npm run db:generate`, `DATABASE_URL=postgresql://hooma:hooma@localhost:5432/hooma npm run db:validate`, `npm run deploy:preflight`, and `npm run security:check` passed.
-- Not complete yet: commit SHA, GitHub CI for the exact PR head, post-merge foundation read-back, and browser/Telegram route smoke evidence are still pending.
+- 2026-08-31 commit proof: source/docs/tests committed locally as `f5c1983cef6ec02a2cec394cc693cccdc3da689e` (`Implement Ride frontend vertical slice`).
+- 2026-08-31 post-commit local proof: direct changed-file Prettier and ESLint checks passed for the 10 committed files against base `1b50288733153807af8652ab813881d5328cf14c`. The repository helper scripts `scripts/check-changed-format.mjs` and `scripts/check-changed-lint.mjs` still fail locally at their bare `npm` spawn step before tool output on this Windows host.
+- Not complete yet: GitHub CI for the exact PR head, post-merge foundation read-back, and browser/Telegram route smoke evidence are still pending.
 
 ---
 
