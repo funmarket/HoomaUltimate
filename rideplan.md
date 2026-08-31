@@ -1726,7 +1726,7 @@ Evidence
 
 ## RIDE-007 — Ride frontend API client + real Ride UI vertical slice
 
-Status: **[~] IN PROGRESS**
+Status: **[x] DONE**
 
 Dependencies: `RIDE-005`; `RIDE-006` required before vehicle photo is presented as complete
 
@@ -1768,7 +1768,12 @@ Evidence:
 - 2026-08-31 local proof: `npm run typecheck`, `npm run build`, `npm run db:generate`, `DATABASE_URL=postgresql://hooma:hooma@localhost:5432/hooma npm run db:validate`, `npm run deploy:preflight`, and `npm run security:check` passed.
 - 2026-08-31 commit proof: source/docs/tests committed locally as `f5c1983cef6ec02a2cec394cc693cccdc3da689e` (`Implement Ride frontend vertical slice`).
 - 2026-08-31 post-commit local proof: direct changed-file Prettier and ESLint checks passed for the 10 committed files against base `1b50288733153807af8652ab813881d5328cf14c`. The repository helper scripts `scripts/check-changed-format.mjs` and `scripts/check-changed-lint.mjs` still fail locally at their bare `npm` spawn step before tool output on this Windows host.
-- Not complete yet: GitHub CI for the exact PR head, post-merge foundation read-back, and browser/Telegram route smoke evidence are still pending.
+- 2026-08-31 PR proof: PR #196 merged into `phase-0-foundation` with exact PR head `67ec700ac581f93c320a1ea4ce9531690c122679` and merge commit `aec3f836751397f042837f803d8bf16be654aae2`.
+- 2026-08-31 CI proof: GitHub Actions run `33346005467`, job `99350134182`, completed successfully for exact head `67ec700ac581f93c320a1ea4ce9531690c122679`. Successful steps included install, `db:generate`, `db:validate`, `db:migrate:deploy`, `architecture:check`, changed-file formatting, changed-source lint, `typecheck`, `build:packages`, `npm test`, `build`, integration tests, `deploy:preflight`, `security:check`, and `db:migrate:status`.
+- 2026-08-31 foundation read-back: `origin/phase-0-foundation` fetched at `aec3f836751397f042837f803d8bf16be654aae2`; merged source contains `/rides`, `/rides/request`, `/rides/offers`, `/rides/offers/new`, and `/rides/offers/:offerId`; Ride source contains `TAKE ME TO THE GAME`, `RIDE OFFERS`, `createRideApi(transport)`, `Request participation`, `Private meeting point`, and `Vehicle photo`.
+- 2026-08-31 regression proof: merged `tests/requests-rides-shell.test.mjs` still preserves the Requests/FundMe shell guard and now proves Ride uses real Ride APIs while the old fake shell text is absent.
+- 2026-08-31 runtime smoke proof: local Vite preview plus Chrome headless CDP route smoke rendered `/rides`, `/rides/request`, `/rides/offers`, and `/rides/offers/new` at a 390px mobile viewport with explicit API stubs for account/session and public Ride list reads. Expected Ride text rendered, bottom navigation remained `Home | Play | Watch | HOOMA | Pitch`, and CDP reported zero runtime exceptions for those smoke routes.
+- Remaining risk: full live Telegram WebApp runtime and authenticated form-submit/read-back smoke against the deployed environment were not executed in this local closeout; CI integration coverage and the headless browser route smoke are the closing evidence for this slice.
 
 ---
 
