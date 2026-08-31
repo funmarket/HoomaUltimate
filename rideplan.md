@@ -2014,6 +2014,7 @@ Required work:
 - Anywhere Ride means normal transport unrelated to football, including airport, work, school, home, shopping, another city, custom destination or canonical Place destination;
 - Request a Ride means the passenger wants transport;
 - My Rides means authenticated actor-owned Ride activity: offers, requests, participations and status;
+- My Rides must load authenticated actor-owned offers, requests and participations from Ride-owned server/API readback; localStorage, sessionStorage, remembered IDs or page-local React state must not become the durable source of truth.
 - required routes `/rides`, `/rides/matchday`, `/rides/anywhere`, `/rides/request`, `/rides/offers`, `/rides/offers/new`, `/rides/offers/:offerId` and `/rides/mine` backed by real routes, not fake frontend-only modes;
 - route views stay over the same Ride domain and must not create separate Matchday/Anywhere backend systems, APIs, repositories, tables or frontend state owners;
 - below the feature cards, `/rides` shows a small number of real Recent Ride Offers and Recent Ride Requests records with `View all` entry points into full lists, not a huge infinite feed;
@@ -2034,6 +2035,7 @@ Forbidden scope:
 DONE gate:
 
 - frontend route tests cover new hub/required child routes, feature-card destinations, FREE/CASH badge rendering and My Rides actor state;
+- refresh/revisit proof confirms My Rides reconstructs actor-owned Ride state from authenticated server readback rather than browser-persisted identifiers;
 - 390px mobile smoke covers `/rides`, `/rides/matchday`, `/rides/anywhere`, `/rides/request`, `/rides/offers`, `/rides/offers/new`, `/rides/offers/:offerId` and `/rides/mine`;
 - no horizontal overflow or runtime exceptions in the smoke;
 - bottom navigation remains `Home | Play | Watch | HOOMA | Pitch`.
