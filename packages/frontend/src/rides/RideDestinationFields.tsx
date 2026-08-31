@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { PublicEvent } from "@hooma/contracts/events";
-import type { RideDestinationInput } from "@hooma/contracts/rides";
+import type { RideContext, RideDestinationInput } from "@hooma/contracts/rides";
 import type { PublicPlaceSummary } from "@hooma/contracts/places";
 import { useHoomaFrontend } from "../context";
 import { createEventApi } from "../events/api";
@@ -8,9 +8,11 @@ import { createPlacesApi } from "../places/api";
 import type { DestinationFormState } from "./ride-view-model";
 
 export function RideDestinationFields({
+  context,
   destination,
   onChange,
 }: {
+  readonly context?: RideContext;
   readonly destination: DestinationFormState;
   readonly onChange: (destination: DestinationFormState) => void;
 }) {
@@ -21,9 +23,10 @@ export function RideDestinationFields({
   const [places, setPlaces] = useState<PublicPlaceSummary[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
   const [placesLoading, setPlacesLoading] = useState(false);
+  const eventDestinationEnabled = context !== "GENERAL";
 
   useEffect(() => {
-    if (destination.type !== "EVENT") {
+    if (destination.type !== "EVENT" || !eventDestinationEnabled) {
       setEventsLoading(false);
       return;
     }
@@ -44,7 +47,7 @@ export function RideDestinationFields({
     return () => {
       active = false;
     };
-  }, [destination.type, eventApi]);
+  }, [destination.type, eventApi, eventDestinationEnabled]);
 
   useEffect(() => {
     if (destination.type !== "PLACE") {
@@ -75,6 +78,12 @@ export function RideDestinationFields({
     onChange({ type, eventId: "", placeId: "", customDestinationLabel: "" });
   }
 
+  useEffect(() => {
+    if (destination.type === "EVENT" && !eventDestinationEnabled) {
+      setType("CUSTOM");
+    }
+  }, [destination.type, eventDestinationEnabled]);
+
   return (
     <div className="ride-form__destination">
       <label className="ride-field">
@@ -84,12 +93,12 @@ export function RideDestinationFields({
           onChange={(event) => setType(event.target.value as RideDestinationInput["type"])}
         >
           <option value="CUSTOM">Custom destination</option>
-          <option value="EVENT">Published event</option>
+          {eventDestinationEnabled ? <option value="EVENT">Published event</option> : null}
           <option value="PLACE">Approved place</option>
         </select>
       </label>
 
-      {destination.type === "EVENT" ? (
+      {destination.type === "EVENT" && eventDestinationEnabled ? (
         <label className="ride-field">
           <span>Published event</span>
           <select

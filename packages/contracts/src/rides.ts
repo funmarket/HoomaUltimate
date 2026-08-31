@@ -1,13 +1,10 @@
 import { z } from "zod";
+import { cashCurrencySchema } from "./money.js";
 
 const idSchema = z.string().trim().min(1);
 const areaLabelSchema = z.string().trim().min(1).max(160);
 const noteSchema = z.string().trim().max(1200).optional().nullable();
 const vehicleFieldSchema = z.string().trim().max(80).optional().nullable();
-const currencySchema = z
-  .string()
-  .trim()
-  .regex(/^[A-Z]{3}$/);
 
 export const rideContextSchema = z.enum(["MATCHDAY", "GENERAL"]);
 
@@ -23,7 +20,7 @@ const rideCashCompensationTermsBaseSchema = z
   .object({
     type: z.literal("CASH"),
     amountMinor: z.number().int().positive(),
-    currency: currencySchema,
+    currency: cashCurrencySchema,
   })
   .strict();
 

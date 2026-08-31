@@ -1,17 +1,12 @@
 import type { PitchRentalCurrency } from "@hooma/contracts/pitch";
-
-const MINOR_UNIT_SCALE: Record<PitchRentalCurrency, number> = {
-  TND: 1000,
-  EUR: 100,
-  USD: 100,
-};
+import { currencyMinorUnitExponent } from "@hooma/contracts/money";
 
 export function pitchRateToMinor(amount: number, currency: PitchRentalCurrency): number {
-  return Math.round(amount * MINOR_UNIT_SCALE[currency]);
+  return Math.round(amount * 10 ** currencyMinorUnitExponent[currency]);
 }
 
 export function pitchRateFromMinor(amount: number, currency: PitchRentalCurrency): number {
-  return amount / MINOR_UNIT_SCALE[currency];
+  return amount / 10 ** currencyMinorUnitExponent[currency];
 }
 
 export function formatPitchHourlyRate(amountMinor: number, currency: PitchRentalCurrency): string {

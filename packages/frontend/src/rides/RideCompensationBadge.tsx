@@ -2,16 +2,12 @@ import type {
   RideOfferCompensationTerms,
   RideRequestCompensationTerms,
 } from "@hooma/contracts/rides";
+import { minorUnitsToAmountLabel } from "./ride-money";
 
 type RideCompensationBadgeProps = {
   readonly terms: RideOfferCompensationTerms | RideRequestCompensationTerms;
   readonly mode?: "offer" | "request";
 };
-
-function money(amountMinor: number, currency: string): string {
-  const amount = amountMinor / 100;
-  return `${Number.isInteger(amount) ? amount.toFixed(0) : amount.toFixed(2)} ${currency}`;
-}
 
 export function RideCompensationBadge({ terms, mode = "offer" }: RideCompensationBadgeProps) {
   if (terms.type === "FREE") {
@@ -22,6 +18,8 @@ export function RideCompensationBadge({ terms, mode = "offer" }: RideCompensatio
   const prefix = mode === "request" ? "OFFERING " : "";
 
   return (
-    <span className="ride-compensation">{`${prefix}${money(terms.amountMinor, terms.currency)}${suffix}`}</span>
+    <span className="ride-compensation">
+      {`${prefix}${minorUnitsToAmountLabel(terms.amountMinor, terms.currency)}${suffix}`}
+    </span>
   );
 }

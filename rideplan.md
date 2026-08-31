@@ -2032,6 +2032,9 @@ Required work:
 - route views stay over the same Ride domain and must not create separate Matchday/Anywhere backend systems, APIs, repositories, tables or frontend state owners;
 - below the feature cards, `/rides` shows a small number of real Recent Ride Offers and Recent Ride Requests records with `View all` entry points into full lists, not a huge infinite feed;
 - previews use FREE/CASH badges and only production records/fields available from canonical Ride/public Identity/Event/Place projections;
+- Ride create forms expose explicit `MATCHDAY | GENERAL` context and explicit FREE/CASH advertised compensation choices instead of relying on contract defaults;
+- driver offers support FREE or CASH with amount, governed currency and `PER_SEAT | TOTAL` basis; passenger requests support FREE/no cash offer or CASH amount/currency without basis;
+- form money input accepts human currency amounts and converts to integer minor units through the shared supported-cash-currency exponent source before calling the Ride API;
 - vehicle-photo presentation keeps `object-fit: contain` and a neutral fallback;
 - visual acceptance preserves black/near-black surfaces, warm white/cream primary text, gold/olive borders, lime/gold action emphasis, subtle glow, football/community imagery where appropriate, large rounded cards, clear icons, strong contrast, compact vertical rhythm and approximately 44–48px minimum practical touch targets;
 - no accidental horizontal scrolling and no desktop-only hover dependence;
@@ -2060,6 +2063,8 @@ Evidence:
 - 2026-08-31 RIDE-007C uses local cropped assets from the supplied exact Ride icon sheet at `/rides/icons/*.png`; no Google Fonts icon runtime dependency or icon package is required.
 - 2026-08-31 `/rides/matchday` and `/rides/anywhere` are wired as context-filtered Ride hub routes. `/rides/mine` remains blocked from DONE because the backend still lacks an authenticated actor-owned aggregate/list readback for offers, requests and participations; this must not be faked with browser storage or remembered IDs.
 - 2026-08-31 visual refinement on PR #204 adds Ride-local blue-silver section chrome token `#afcfe6`, fluorescent lime feature titles, and self-hosted `@fontsource/pridi` CTA label loading at weights 500/600 while keeping the approved full-bleed banner unchanged.
+- 2026-08-31 form completeness branch `ride/ride-form-completeness-audit` starts from post-#204 foundation `935ae6bead17f1dddad3c967c931c2f295555fa0`; no overlapping open PRs were found for `phase-0-foundation` at branch creation.
+- 2026-08-31 form completion exposes shared `RideCompensationFields`, explicit `RideContextSelector`, context-scoped `/rides/matchday` and `/rides/anywhere` create links, GENERAL destination filtering that hides Event, and deterministic shared cash-currency exponent conversion from human amount to minor units. Waypoint entry remains intentionally deferred for this slice: `RideOfferCreateInput.waypoints` continues to submit `[]` until waypoint UX/policy is explicitly scheduled.
 
 ---
 

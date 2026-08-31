@@ -6,6 +6,13 @@ import type {
 } from "@hooma/contracts/rides";
 import { useHoomaFrontend } from "../context";
 import { createRideApi } from "./api";
+import { RideCompensationBadge } from "./RideCompensationBadge";
+import {
+  RideCompensationFields,
+  buildRideRequestCompensationTerms,
+  defaultRideCompensationState,
+} from "./RideCompensationFields";
+import { RideContextSelector, contextQuery, initialRideContext } from "./RideContextSelector";
 import { RideDestinationFields } from "./RideDestinationFields";
 import { RideSectionHeader } from "./RideSectionHeader";
 import {
@@ -19,11 +26,13 @@ import {
 export function RideRequestCreatePage() {
   const { transport, protectedError } = useHoomaFrontend();
   const api = useMemo(() => createRideApi(transport), [transport]);
+  const [rideContext, setRideContext] = useState(initialRideContext());
   const [destination, setDestination] = useState(emptyDestination);
   const [pickupAreaLabel, setPickupAreaLabel] = useState("");
   const [desiredDepartureAt, setDesiredDepartureAt] = useState(dateTimeInputValue(90));
   const [expiresAt, setExpiresAt] = useState(dateTimeInputValue(24 * 60));
   const [passengerCount, setPassengerCount] = useState("1");
+  const [compensation, setCompensation] = useState(defaultRideCompensationState);
   const [note, setNote] = useState("");
   const [savedRequest, setSavedRequest] = useState<RideRequestForOwner | null>(null);
   const [publicRequests, setPublicRequests] = useState<PublicRideRequest[]>([]);
@@ -35,7 +44,7 @@ export function RideRequestCreatePage() {
     let active = true;
     setLoadingRequests(true);
     void api
-      .listRequests({ limit: 10 })
+      .listRequests({ limit: 10, context: rideContext })
       .then((page) => {
         if (active) setPublicRequests(page.items);
       })
@@ -48,7 +57,7 @@ export function RideRequestCreatePage() {
     return () => {
       active = false;
     };
-  }, [api]);
+  }, [api, rideContext]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -56,10 +65,12 @@ export function RideRequestCreatePage() {
     setError("");
     try {
       const input: RideRequestCreateInput = {
+        context: rideContext,
         destination: destinationInput(destination),
         pickupAreaLabel: pickupAreaLabel.trim(),
         desiredDepartureAt: toIsoDateTime(desiredDepartureAt),
         passengerCount: Number(passengerCount),
+        compensationTerms: buildRideRequestCompensationTerms(compensation),
         note: note.trim() || null,
         expiresAt: toIsoDateTime(expiresAt),
       };
@@ -77,34 +88,44 @@ export function RideRequestCreatePage() {
         eyebrow="TAKE ME TO THE GAME"
         title="Request a Ride"
         body="Create a real RideRequest. This does not create fake matching, fare collection, drivers, or bookings."
-        actionHref="/rides/offers"
+        actionHref={`/rides/offers${contextQuery(rideContext)}`}
         actionLabel="Browse offers"
       />
       {savedRequest ? (
         <section className="ride-created panel">
           <p className="eyebrow">RIDE REQUEST CREATED</p>
           <h2>{destinationLabel(savedRequest.destination)}</h2>
+          <RideCompensationBadge terms={savedRequest.compensationTerms} mode="request" />
           <p>
             Your request is live from {savedRequest.pickupAreaLabel}. Matching remains a later
             Ride-owned capability.
           </p>
-          <a className="ride-button ride-button--primary" href="/rides">
+          <a
+            className="ride-button ride-button--primary"
+            href={`/rides${contextQuery(rideContext)}`}
+          >
             Back to Ride
           </a>
         </section>
       ) : (
         <form className="ride-form panel" onSubmit={submit}>
-          <RideDestinationFields destination={destination} onChange={setDestination} />
-          <label className="ride-field">
-            <span>Pickup area</span>
-            <input
-              value={pickupAreaLabel}
-              onChange={(event) => setPickupAreaLabel(event.target.value)}
-              placeholder="Public area only, not an exact private address"
-              required
+          <section className="ride-form-section">
+            <p className="eyebrow">TRIP</p>
+            <RideContextSelector value={rideContext} onChange={setRideContext} />
+            <RideDestinationFields
+              context={rideContext}
+              destination={destination}
+              onChange={setDestination}
             />
-          </label>
-          <div className="ride-form__grid">
+            <label className="ride-field">
+              <span>Pickup area</span>
+              <input
+                value={pickupAreaLabel}
+                onChange={(event) => setPickupAreaLabel(event.target.value)}
+                placeholder="Public area only, not an exact private address"
+                required
+              />
+            </label>
             <label className="ride-field">
               <span>Desired departure</span>
               <input
@@ -114,15 +135,9 @@ export function RideRequestCreatePage() {
                 required
               />
             </label>
-            <label className="ride-field">
-              <span>Request expires</span>
-              <input
-                type="datetime-local"
-                value={expiresAt}
-                onChange={(event) => setExpiresAt(event.target.value)}
-                required
-              />
-            </label>
+          </section>
+          <section className="ride-form-section">
+            <p className="eyebrow">SEATS</p>
             <label className="ride-field">
               <span>Passengers</span>
               <input
@@ -134,11 +149,24 @@ export function RideRequestCreatePage() {
                 required
               />
             </label>
-          </div>
-          <label className="ride-field">
-            <span>Note</span>
-            <textarea value={note} onChange={(event) => setNote(event.target.value)} rows={3} />
-          </label>
+          </section>
+          <RideCompensationFields mode="request" value={compensation} onChange={setCompensation} />
+          <section className="ride-form-section">
+            <p className="eyebrow">DETAILS</p>
+            <label className="ride-field">
+              <span>Request expires</span>
+              <input
+                type="datetime-local"
+                value={expiresAt}
+                onChange={(event) => setExpiresAt(event.target.value)}
+                required
+              />
+            </label>
+            <label className="ride-field">
+              <span>Note</span>
+              <textarea value={note} onChange={(event) => setNote(event.target.value)} rows={3} />
+            </label>
+          </section>
           {error ? <p className="error">{error}</p> : null}
           <button className="ride-button ride-button--primary" type="submit" disabled={saving}>
             {saving ? "Creating..." : "Create Ride request"}
@@ -159,6 +187,7 @@ export function RideRequestCreatePage() {
               {requestItem.pickupAreaLabel} - {requestItem.passengerCount} passenger
               {requestItem.passengerCount === 1 ? "" : "s"}
             </span>
+            <RideCompensationBadge terms={requestItem.compensationTerms} mode="request" />
           </article>
         ))}
       </section>

@@ -3,6 +3,7 @@ import type { PublicRideOffer, PublicRideRequest } from "@hooma/contracts/rides"
 import { useHoomaFrontend } from "../context";
 import { createRideApi } from "./api";
 import { RideCompensationBadge } from "./RideCompensationBadge";
+import { contextQuery } from "./RideContextSelector";
 import { RideFeatureGrid } from "./RideFeatureGrid";
 import {
   RideBrowseIcon,
@@ -58,13 +59,19 @@ export function RideGatewayPage({ context }: { readonly context?: "MATCHDAY" | "
         <p className="ride-state panel error">Ride activity unavailable. Try again shortly.</p>
       ) : null}
 
-      <RideRecentOffers offers={offers} loading={loading} photoUrl={api.offerPhotoUrl} />
-      <RideRecentRequests requests={requests} loading={loading} />
+      <RideRecentOffers
+        context={context}
+        offers={offers}
+        loading={loading}
+        photoUrl={api.offerPhotoUrl}
+      />
+      <RideRecentRequests context={context} requests={requests} loading={loading} />
     </section>
   );
 }
 
 function RideHero({ copy }: { readonly copy: ReturnType<typeof heroCopy> }) {
+  const scopedQuery = contextQuery(copy.context);
   return (
     <header className="ride-hero">
       <div className="ride-hero__media">
@@ -81,15 +88,15 @@ function RideHero({ copy }: { readonly copy: ReturnType<typeof heroCopy> }) {
         <p>{copy.support}</p>
       </div>
       <nav className="ride-hero__actions" aria-label="Ride actions">
-        <a className="ride-button ride-button--primary" href="/rides/request">
+        <a className="ride-button ride-button--primary" href={`/rides/request${scopedQuery}`}>
           <RideMapPinIcon />
           <span>Request a Ride</span>
         </a>
-        <a className="ride-button" href="/rides/offers">
+        <a className="ride-button" href={`/rides/offers${scopedQuery}`}>
           <RideBrowseIcon />
           <span>Browse Offers</span>
         </a>
-        <a className="ride-button" href="/rides/offers/new">
+        <a className="ride-button" href={`/rides/offers/new${scopedQuery}`}>
           <RideCarPlusIcon />
           <span>Offer Seats</span>
         </a>
@@ -103,17 +110,24 @@ function RideHero({ copy }: { readonly copy: ReturnType<typeof heroCopy> }) {
 }
 
 function RideRecentOffers({
+  context,
   offers,
   loading,
   photoUrl,
 }: {
+  readonly context: "MATCHDAY" | "GENERAL" | undefined;
   readonly offers: readonly PublicRideOffer[];
   readonly loading: boolean;
   readonly photoUrl: (offerId: string) => string;
 }) {
+  const scopedQuery = contextQuery(context);
   return (
     <section className="ride-home-panel panel">
-      <RidePanelHeading eyebrow="RIDE OFFERS" actionHref="/rides/offers" actionLabel="View all" />
+      <RidePanelHeading
+        eyebrow="RIDE OFFERS"
+        actionHref={`/rides/offers${scopedQuery}`}
+        actionLabel="View all"
+      />
       <div className="ride-recent-list">
         {offers.map((offer) => (
           <a className="ride-recent-card" href={`/rides/offers/${offer.id}`} key={offer.id}>
@@ -144,17 +158,20 @@ function RideRecentOffers({
 }
 
 function RideRecentRequests({
+  context,
   requests,
   loading,
 }: {
+  readonly context: "MATCHDAY" | "GENERAL" | undefined;
   readonly requests: readonly PublicRideRequest[];
   readonly loading: boolean;
 }) {
+  const scopedQuery = contextQuery(context);
   return (
     <section className="ride-home-panel panel">
       <RidePanelHeading
         eyebrow="RIDE REQUESTS"
-        actionHref="/rides/request"
+        actionHref={`/rides/request${scopedQuery}`}
         actionLabel="View all"
       />
       <div className="ride-recent-list">
@@ -209,16 +226,19 @@ function heroCopy(context: "MATCHDAY" | "GENERAL" | undefined) {
     return {
       subhead: "Going to the match solo? Why?",
       support: "See who's on your route — or if you've got a spare seat, bring someone along.",
+      context: "MATCHDAY" as const,
     };
   }
   if (context === "GENERAL") {
     return {
       subhead: "Heading somewhere? See who's going your way.",
       support: "Airport, work, school, home or another city — travel together.",
+      context: "GENERAL" as const,
     };
   }
   return {
     subhead: "Going somewhere solo? Why?",
     support: "See who's on your route — or if you've got a spare seat, bring someone along.",
+    context: undefined,
   };
 }

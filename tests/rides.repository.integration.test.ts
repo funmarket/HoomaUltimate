@@ -374,6 +374,74 @@ test("Ride repositories persist and expose context and advertised compensation",
   }
 });
 
+test("Ride cash compensation currency is enforced by PostgreSQL constraints", async () => {
+  const suffix = Date.now().toString(36);
+  const driver = await db.user.create({ data: {} });
+  const requester = await db.user.create({ data: {} });
+  const validOfferId = `ride_offer_currency_valid_${suffix}`;
+  const invalidOfferId = `ride_offer_currency_invalid_${suffix}`;
+  const validRequestId = `ride_request_currency_valid_${suffix}`;
+  const invalidRequestId = `ride_request_currency_invalid_${suffix}`;
+
+  try {
+    await db.$executeRaw`
+      INSERT INTO "RideOffer" (
+        "id", "driverUserId", "context", "customDestinationLabel", "originAreaLabel",
+        "departureAt", "totalSeats", "compensationType", "compensationAmountMinor",
+        "compensationCurrency", "compensationBasis", "status", "createdAt", "updatedAt"
+      ) VALUES (
+        ${validOfferId}, ${driver.id}, 'GENERAL'::"RideContext", 'Airport', 'Lac 2',
+        NOW() + INTERVAL '2 hours', 2, 'CASH'::"RideCompensationType", 10000,
+        'TND', 'PER_SEAT'::"RideCompensationBasis", 'OPEN'::"RideOfferStatus", NOW(), NOW()
+      )`;
+    assert.equal(await db.rideOffer.count({ where: { id: validOfferId } }), 1);
+
+    await assert.rejects(
+      () => db.$executeRaw`
+        INSERT INTO "RideOffer" (
+          "id", "driverUserId", "context", "customDestinationLabel", "originAreaLabel",
+          "departureAt", "totalSeats", "compensationType", "compensationAmountMinor",
+          "compensationCurrency", "compensationBasis", "status", "createdAt", "updatedAt"
+        ) VALUES (
+          ${invalidOfferId}, ${driver.id}, 'GENERAL'::"RideContext", 'Airport', 'Lac 2',
+          NOW() + INTERVAL '2 hours', 2, 'CASH'::"RideCompensationType", 10000,
+          'GBP', 'PER_SEAT'::"RideCompensationBasis", 'OPEN'::"RideOfferStatus", NOW(), NOW()
+        )`,
+      /RideOffer_compensation_terms_check|check constraint/i,
+    );
+
+    await db.$executeRaw`
+      INSERT INTO "RideRequest" (
+        "id", "requesterUserId", "context", "customDestinationLabel", "pickupAreaLabel",
+        "desiredDepartureAt", "passengerCount", "compensationType", "compensationAmountMinor",
+        "compensationCurrency", "compensationBasis", "expiresAt", "status", "createdAt", "updatedAt"
+      ) VALUES (
+        ${validRequestId}, ${requester.id}, 'MATCHDAY'::"RideContext", 'Rades', 'Menzah',
+        NOW() + INTERVAL '3 hours', 1, 'CASH'::"RideCompensationType", 8000,
+        'TND', NULL, NOW() + INTERVAL '1 hour', 'OPEN'::"RideRequestStatus", NOW(), NOW()
+      )`;
+    assert.equal(await db.rideRequest.count({ where: { id: validRequestId } }), 1);
+
+    await assert.rejects(
+      () => db.$executeRaw`
+        INSERT INTO "RideRequest" (
+          "id", "requesterUserId", "context", "customDestinationLabel", "pickupAreaLabel",
+          "desiredDepartureAt", "passengerCount", "compensationType", "compensationAmountMinor",
+          "compensationCurrency", "compensationBasis", "expiresAt", "status", "createdAt", "updatedAt"
+        ) VALUES (
+          ${invalidRequestId}, ${requester.id}, 'MATCHDAY'::"RideContext", 'Rades', 'Menzah',
+          NOW() + INTERVAL '3 hours', 1, 'CASH'::"RideCompensationType", 8000,
+          'GBP', NULL, NOW() + INTERVAL '1 hour', 'OPEN'::"RideRequestStatus", NOW(), NOW()
+        )`,
+      /RideRequest_compensation_terms_check|check constraint/i,
+    );
+  } finally {
+    await db.rideOffer.deleteMany({ where: { id: { in: [validOfferId, invalidOfferId] } } });
+    await db.rideRequest.deleteMany({ where: { id: { in: [validRequestId, invalidRequestId] } } });
+    await db.user.deleteMany({ where: { id: { in: [driver.id, requester.id] } } });
+  }
+});
+
 interface RideFixture {
   readonly driver: { readonly id: string };
   readonly passengers: ReadonlyArray<{ readonly id: string }>;
