@@ -154,6 +154,14 @@ function RideOfferDetailRoute() {
   return <RideOfferDetailPage offerId={requiredParam("offerId", offerId)} />;
 }
 
+function MatchdayRideRoute() {
+  return <RidesPage context="MATCHDAY" />;
+}
+
+function AnywhereRideRoute() {
+  return <RidesPage context="GENERAL" />;
+}
+
 function apiBaseUrl(): string {
   if (import.meta.env.DEV) {
     return import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
@@ -207,6 +215,8 @@ function HoomaRoutes() {
               <Route path="/requests/fundme" element={<RequestsPage tab="fundme" />} />
               <Route path="/fundme" element={<Navigate to="/requests/fundme" replace />} />
               <Route path="/rides" element={<RidesPage />} />
+              <Route path="/rides/matchday" element={<MatchdayRideRoute />} />
+              <Route path="/rides/anywhere" element={<AnywhereRideRoute />} />
               <Route path="/rides/request" element={<RideRequestCreatePage />} />
               <Route path="/rides/offers" element={<RideOffersPage />} />
               <Route path="/rides/offers/new" element={<RideOfferCreatePage />} />

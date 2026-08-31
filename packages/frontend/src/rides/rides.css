@@ -1,7 +1,20 @@
 .ride-page {
+  --ride-bg: var(--app-bg);
+  --ride-surface: var(--app-surface);
+  --ride-text: var(--app-text);
+  --ride-text-strong: var(--app-text-strong);
+  --ride-text-muted: var(--app-text-secondary);
+  --ride-gold: var(--app-gold);
+  --ride-gold-dim: var(--app-gold-dim);
+  --ride-lime: var(--app-lime);
+  --ride-sky-silver: #afcfe6;
+  --ride-pridi: "Pridi", Georgia, serif;
   display: grid;
-  gap: 18px;
-  padding-bottom: 32px;
+  gap: 16px;
+  max-width: 980px;
+  margin-inline: auto;
+  padding-bottom: calc(108px + env(safe-area-inset-bottom, 0px));
+  color: var(--ride-text);
 }
 
 .ride-hero,
@@ -17,24 +30,99 @@
 
 .ride-hero,
 .ride-section-header {
-  border: 1px solid color-mix(in srgb, var(--app-accent) 34%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ride-gold-dim) 58%, transparent);
   border-radius: 28px;
-  background:
-    radial-gradient(circle at 18% 12%, rgba(214, 255, 44, 0.22), transparent 30%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
-  padding: 22px;
+  background: #060606;
+  box-shadow:
+    inset 0 0 0 1px rgba(232, 195, 106, 0.08),
+    0 22px 52px rgba(0, 0, 0, 0.38);
+  padding: clamp(16px, 4.5vw, 28px);
 }
 
-.ride-hero h1,
-.ride-section-header h1,
-.ride-created h2,
-.ride-detail-card h1,
-.ride-offer-card h2,
-.ride-owner h2,
-.ride-owner h3,
-.ride-meeting-form h3 {
-  margin: 0;
-  color: var(--app-text-strong);
+.ride-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+  align-content: start;
+  gap: 0;
+  padding: 0;
+}
+
+.ride-hero::before {
+  content: none;
+}
+
+.ride-hero::after {
+  content: none;
+}
+
+.ride-hero__media {
+  overflow: hidden;
+  width: 100%;
+  aspect-ratio: 1672 / 941;
+  border-bottom: 1px solid color-mix(in srgb, var(--ride-gold-dim) 58%, transparent);
+  border-radius: 28px 28px 0 0;
+  background: #060606;
+}
+
+.ride-hero__banner {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.ride-hero__sr-copy {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.ride-hero__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 18px 12px 10px;
+}
+
+.ride-hero__actions .ride-button--primary {
+  grid-column: 1 / -1;
+}
+
+.ride-privacy-chip {
+  justify-self: center;
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 8px;
+  margin: 0 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--ride-gold-dim) 82%, transparent);
+  border-radius: 999px;
+  background: #070707;
+  color: var(--ride-text-strong);
+  padding: 10px 14px;
+  font-size: 0.94rem;
+  font-weight: 650;
+  text-align: center;
+}
+
+.ride-privacy-chip svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  color: var(--ride-gold);
+}
+
+.ride-privacy-chip img {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  object-fit: contain;
 }
 
 .ride-hero p,
@@ -48,14 +136,89 @@
   margin: 0;
 }
 
+.ride-section-header h1,
+.ride-created h2,
+.ride-detail-card h1,
+.ride-offer-card h2,
+.ride-owner h2,
+.ride-owner h3,
+.ride-meeting-form h3 {
+  margin: 0;
+  color: var(--ride-text-strong);
+}
+
 .ride-section-header {
   align-items: end;
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
+.ride-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ride-feature-card {
+  position: relative;
+  display: grid;
+  min-height: 136px;
+  align-content: space-between;
+  gap: 9px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--ride-gold-dim) 62%, transparent);
+  border-radius: 23px;
+  background: #080808;
+  color: inherit;
+  padding: 15px;
+  text-decoration: none;
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.ride-feature-card::after {
+  content: "";
+  position: absolute;
+  inset: auto 14px 14px auto;
+  width: 70px;
+  height: 1px;
+  background: var(--ride-gold-dim);
+  opacity: 0.48;
+}
+
+.ride-feature-card__icon {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+}
+
+.ride-feature-card__icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.ride-feature-card__title {
+  color: var(--ride-lime);
+  font-size: clamp(0.94rem, 3.6vw, 1.08rem);
+  font-weight: 850;
+  line-height: 1.03;
+}
+
+.ride-feature-card__copy {
+  color: var(--ride-text-muted);
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.26;
+}
+
 .ride-home-grid,
 .ride-home-panel__header,
-.ride-offer-list {
+.ride-offer-list,
+.ride-recent-list {
   display: grid;
   gap: 14px;
 }
@@ -70,15 +233,24 @@
 }
 
 .ride-gateway-card,
-.ride-offer-card {
+.ride-offer-card,
+.ride-recent-card {
   color: inherit;
   text-decoration: none;
 }
 
 .ride-link {
-  color: var(--app-accent);
+  color: var(--ride-sky-silver);
   font-weight: 800;
   text-decoration: none;
+}
+
+.ride-link:visited {
+  color: var(--ride-sky-silver);
+}
+
+.ride-home-panel .eyebrow {
+  color: var(--ride-sky-silver);
 }
 
 .ride-gateway-card {
@@ -88,11 +260,9 @@
   align-content: end;
   gap: 10px;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--app-accent) 34%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ride-gold-dim) 34%, transparent);
   border-radius: 30px;
-  background:
-    linear-gradient(150deg, rgba(214, 255, 44, 0.2), transparent 42%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.24));
+  background: #080808;
   padding: 22px;
 }
 
@@ -102,54 +272,96 @@
   inset: 18px 18px auto auto;
   width: 96px;
   height: 96px;
-  border: 1px solid color-mix(in srgb, var(--app-accent) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ride-gold) 55%, transparent);
   border-radius: 999px;
   opacity: 0.5;
-}
-
-.ride-gateway-card--primary {
-  background:
-    radial-gradient(circle at 82% 18%, rgba(255, 255, 255, 0.24), transparent 24%),
-    linear-gradient(145deg, rgba(214, 255, 44, 0.26), rgba(255, 176, 64, 0.12));
 }
 
 .ride-gateway-card span,
 .ride-offer-card small,
 .ride-participation span,
-.ride-request-row span {
-  color: var(--app-text-muted);
+.ride-request-row span,
+.ride-recent-card__body > span {
+  color: var(--ride-text-muted);
 }
 
 .ride-gateway-card strong {
   font-size: clamp(1.5rem, 7vw, 2.8rem);
   line-height: 0.95;
-  color: var(--app-text-strong);
+  color: var(--ride-text-strong);
 }
 
 .ride-gateway-card small {
   max-width: 26rem;
-  color: var(--app-text);
+  color: var(--ride-text);
 }
 
 .ride-button {
   display: inline-flex;
-  min-height: 42px;
+  min-height: 52px;
   align-items: center;
   justify-content: center;
-  border: 1px solid color-mix(in srgb, var(--app-text-strong) 24%, transparent);
+  gap: 11px;
+  border: 1px solid var(--ride-gold-dim);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--app-text-strong);
+  background: #070707;
+  color: var(--ride-gold);
   padding: 0 16px;
-  font: inherit;
+  font-family: var(--ride-pridi);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1;
+  text-align: center;
   text-decoration: none;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 120ms ease;
+}
+
+.ride-button svg,
+.ride-button img {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  color: var(--ride-gold);
+  object-fit: contain;
+}
+
+.ride-button:visited {
+  color: var(--ride-gold);
+}
+
+.ride-button:hover {
+  border-color: var(--ride-gold);
+  box-shadow: 0 0 16px rgba(232, 195, 106, 0.18);
+}
+
+.ride-button:focus-visible,
+.ride-feature-card:focus-visible,
+.ride-recent-card:focus-visible,
+.ride-link:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--ride-lime) 78%, transparent);
+  outline-offset: 3px;
+}
+
+.ride-button:active,
+.ride-feature-card:active,
+.ride-recent-card:active {
+  transform: translateY(1px) scale(0.99);
 }
 
 .ride-button--primary {
-  border-color: transparent;
-  background: var(--app-accent);
-  color: #111;
-  font-weight: 800;
+  border-color: var(--ride-gold);
+  background: #0a0907;
+  color: var(--ride-gold);
+  box-shadow:
+    inset 0 0 0 1px rgba(232, 195, 106, 0.08),
+    0 0 18px rgba(232, 195, 106, 0.14);
+}
+
+.ride-button--primary:visited {
+  color: var(--ride-gold);
 }
 
 .ride-button:disabled {
@@ -179,7 +391,7 @@
 }
 
 .ride-field span {
-  color: var(--app-text-muted);
+  color: var(--ride-text-muted);
   font-size: 0.82rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -190,10 +402,10 @@
 .ride-field select,
 .ride-field textarea {
   width: 100%;
-  border: 1px solid color-mix(in srgb, var(--app-text-strong) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ride-text-strong) 18%, transparent);
   border-radius: 16px;
-  background: color-mix(in srgb, var(--app-surface) 80%, black 20%);
-  color: var(--app-text-strong);
+  background: color-mix(in srgb, var(--ride-surface) 80%, black 20%);
+  color: var(--ride-text-strong);
   font: inherit;
   padding: 12px 14px;
 }
@@ -202,22 +414,55 @@
   resize: vertical;
 }
 
-.ride-offer-card {
+.ride-offer-card,
+.ride-recent-card {
   display: grid;
   grid-template-columns: 112px minmax(0, 1fr);
-  gap: 16px;
+  gap: 14px;
   align-items: center;
 }
 
+.ride-recent-card {
+  border: 1px solid color-mix(in srgb, var(--ride-gold-dim) 34%, transparent);
+  border-radius: 22px;
+  background: #090909;
+  padding: 10px;
+}
+
+.ride-recent-card__body {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.ride-recent-card__body strong {
+  overflow: hidden;
+  color: var(--ride-text-strong);
+  font-size: 1rem;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ride-recent-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding-top: 4px;
+}
+
 .ride-offer-card__media,
-.ride-detail-card__photo {
+.ride-detail-card__photo,
+.ride-recent-card__media,
+.ride-recent-card__avatar {
   display: grid;
   place-items: center;
   overflow: hidden;
-  border-radius: 22px;
-  background:
-    radial-gradient(circle, rgba(255, 255, 255, 0.16), transparent 62%), rgba(255, 255, 255, 0.06);
-  color: var(--app-accent);
+  border: 1px solid color-mix(in srgb, var(--ride-gold-dim) 34%, transparent);
+  border-radius: 20px;
+  background: #0d0d0d;
+  color: var(--ride-gold);
   font-weight: 900;
 }
 
@@ -225,15 +470,24 @@
   aspect-ratio: 1.2;
 }
 
+.ride-recent-card__media,
+.ride-recent-card__avatar {
+  aspect-ratio: 1;
+  min-width: 0;
+  font-size: 1.6rem;
+}
+
 .ride-detail-card__photo {
   min-height: 220px;
 }
 
 .ride-offer-card__media img,
-.ride-detail-card__photo img {
+.ride-detail-card__photo img,
+.ride-recent-card__media img {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  object-position: center;
 }
 
 .ride-detail-card {
@@ -241,6 +495,28 @@
   grid-template-columns: minmax(180px, 0.9fr) minmax(0, 1.1fr);
   gap: 18px;
   align-items: stretch;
+}
+
+.ride-compensation {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  width: max-content;
+  border: 1px solid color-mix(in srgb, var(--ride-gold) 64%, transparent);
+  border-radius: 999px;
+  background: #090807;
+  color: var(--ride-gold);
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.ride-compensation--free {
+  border-color: color-mix(in srgb, var(--ride-lime) 58%, transparent);
+  color: var(--ride-lime);
 }
 
 .ride-owner,
@@ -256,7 +532,7 @@
 .ride-request-row {
   display: grid;
   gap: 10px;
-  border-top: 1px solid color-mix(in srgb, var(--app-text-strong) 12%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--ride-text-strong) 12%, transparent);
   padding-top: 12px;
 }
 
@@ -265,11 +541,36 @@
   align-items: center;
 }
 
-.ride-state {
+.ride-state,
+.ride-empty-state {
   margin: 0;
 }
 
+.ride-empty-state {
+  border: 1px dashed color-mix(in srgb, var(--ride-sky-silver) 34%, transparent);
+  border-radius: 14px;
+  background: #070707;
+  color: var(--ride-text-muted);
+  padding: 8px 10px;
+  font-size: 0.86rem;
+  line-height: 1.2;
+}
+
+.ride-state.panel {
+  border-color: color-mix(in srgb, var(--ride-sky-silver) 28%, transparent);
+  border-radius: 14px;
+  background: #070707;
+  color: var(--ride-text-muted);
+  padding: 8px 10px;
+  font-size: 0.86rem;
+  line-height: 1.2;
+}
+
 @media (max-width: 720px) {
+  .ride-page {
+    gap: 14px;
+  }
+
   .ride-section-header,
   .ride-home-grid,
   .ride-home-panel__header,
@@ -284,6 +585,59 @@
   }
 
   .ride-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 430px) {
+  .ride-hero {
+    min-height: 0;
+    border-radius: 28px;
+  }
+
+  .ride-hero__media {
+    border-radius: 28px 28px 0 0;
+  }
+
+  .ride-feature-grid {
+    gap: 10px;
+  }
+
+  .ride-feature-card {
+    min-height: 122px;
+    border-radius: 22px;
+    padding: 13px;
+  }
+
+  .ride-feature-card__icon {
+    width: 52px;
+    height: 52px;
+  }
+
+  .ride-offer-card,
+  .ride-recent-card {
+    grid-template-columns: 78px minmax(0, 1fr);
+    gap: 10px;
+  }
+}
+
+@media (max-width: 360px) {
+  .ride-hero {
+    min-height: 0;
+  }
+
+  .ride-hero__actions {
+    gap: 10px;
+    padding-inline: 10px;
+  }
+
+  .ride-button {
+    gap: 8px;
+    padding-inline: 12px;
+    font-size: 0.84rem;
+  }
+
+  .ride-feature-grid {
     grid-template-columns: 1fr;
   }
 }

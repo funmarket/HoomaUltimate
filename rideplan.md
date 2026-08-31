@@ -1974,7 +1974,7 @@ Evidence:
 
 ## RIDE-007B — Ride context/compensation persistence + API
 
-Status: **[~] IN PROGRESS**
+Status: **[x] DONE**
 
 Dependencies: `RIDE-007A`
 
@@ -2001,13 +2001,16 @@ DONE gate:
 - API read-back proves Matchday/Anywhere filters and FREE/CASH projections;
 - no cross-domain monolith or payment-processing dependency is introduced.
 
-Evidence: _fill when complete_
+Evidence:
+
+- 2026-08-31 PR #201 merged into `phase-0-foundation` and read back before RIDE-007C began.
+- 2026-08-31 new RIDE-007C base after read-back: `60ffba2796ed4aa2bebfbc7eb03d29f94022a080`.
 
 ---
 
 ## RIDE-007C — Mobile Ride hub + general/matchday UX
 
-Status: **[ ] TODO**
+Status: **[~] IN PROGRESS**
 
 Dependencies: `RIDE-007B`
 
@@ -2050,7 +2053,13 @@ DONE gate:
 - no horizontal overflow or runtime exceptions in the smoke;
 - bottom navigation remains `Home | Play | Watch | HOOMA | Pitch`.
 
-Evidence: _fill when complete_
+Evidence:
+
+- 2026-08-31 local implementation branch: `ride/ride-007c-mobile-hub` from `60ffba2796ed4aa2bebfbc7eb03d29f94022a080`.
+- 2026-08-31 local visual smoke uses the exact supplied `ON MY WAY` banner photo at `/rides/on-my-way-banner.png` with real HTML Ride action pills underneath.
+- 2026-08-31 RIDE-007C uses local cropped assets from the supplied exact Ride icon sheet at `/rides/icons/*.png`; no Google Fonts icon runtime dependency or icon package is required.
+- 2026-08-31 `/rides/matchday` and `/rides/anywhere` are wired as context-filtered Ride hub routes. `/rides/mine` remains blocked from DONE because the backend still lacks an authenticated actor-owned aggregate/list readback for offers, requests and participations; this must not be faked with browser storage or remembered IDs.
+- 2026-08-31 visual refinement on PR #204 adds Ride-local blue-silver section chrome token `#afcfe6`, fluorescent lime feature titles, and self-hosted `@fontsource/pridi` CTA label loading at weights 500/600 while keeping the approved full-bleed banner unchanged.
 
 ---
 

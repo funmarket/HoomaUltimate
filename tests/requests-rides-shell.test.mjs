@@ -28,8 +28,12 @@ test("Requests shell owns page-local Requests and FundMe tabs without backend pr
 
 test("Ride surface uses real Ride APIs and no longer ships the old fake shell", () => {
   assert.match(ridesPage, /export \{ RideGatewayPage, RidesPage \}/);
-  assert.match(rideGatewayPage, /api\.listOffers\(\{ limit: 3 \}\)/);
-  assert.match(rideGatewayPage, /api\.listRequests\(\{ limit: 3 \}\)/);
+  assert.match(
+    rideGatewayPage,
+    /const query = \{ limit: 3, \.\.\.\(context \? \{ context \} : \{\}\) \}/,
+  );
+  assert.match(rideGatewayPage, /api\.listOffers\(query\)/);
+  assert.match(rideGatewayPage, /api\.listRequests\(query\)/);
   assert.match(rideGatewayPage, /RIDE OFFERS/);
   assert.match(rideGatewayPage, /RIDE REQUESTS/);
   assert.match(rideOfferDetailPage, /getMyParticipation/);
@@ -46,8 +50,8 @@ test("Ride surface uses real Ride APIs and no longer ships the old fake shell", 
     /Promise\.all\(\[eventApi\.publicPlay\(\), eventApi\.publicWatch\(\), placesApi\.list\(\)\]\)/,
   );
   assert.doesNotMatch(rideDestinationFields, /Event ID|Place ID/);
-  assert.match(rideCss, /object-fit:\s*contain/);
-  assert.doesNotMatch(rideCss, /object-fit:\s*cover/);
+  assert.match(rideCss, /\.ride-hero__banner \{[\s\S]*object-fit:\s*cover/);
+  assert.match(rideCss, /\.ride-recent-card__media img \{[\s\S]*object-fit:\s*contain/);
   assert.match(rideApi, /\/api\/public\/v1\/rides\/\$\{kind\}/);
   assert.match(rideApi, /listPath\("offers"/);
   assert.match(rideApi, /\/api\/v1\/rides/);
