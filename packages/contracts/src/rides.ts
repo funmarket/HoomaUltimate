@@ -156,6 +156,16 @@ export const rideParticipationSchema = z.object({
   completedAt: z.string().datetime().nullable(),
 });
 
+export const ridePassengerPresentationSchema = z.object({
+  displayName: z.string().min(1),
+  username: z.string().min(1),
+  photoUrl: z.string().nullable(),
+});
+
+export const rideParticipationForDriverSchema = rideParticipationSchema.extend({
+  passenger: ridePassengerPresentationSchema.nullable(),
+});
+
 export const rideMeetingPointSchema = z.object({
   id: idSchema,
   participationId: idSchema,
@@ -168,7 +178,7 @@ export const rideMeetingPointSchema = z.object({
 
 export const rideOfferForOwnerSchema = publicRideOfferSchema.extend({
   driverUserId: idSchema,
-  participations: z.array(rideParticipationSchema),
+  participations: z.array(rideParticipationForDriverSchema),
 });
 
 export const publicRideRequestSchema = z.object({
@@ -214,6 +224,8 @@ export type RideDestinationSummary = z.infer<typeof rideDestinationSummarySchema
 export type RideWaypoint = z.infer<typeof rideWaypointSchema>;
 export type PublicRideOffer = z.infer<typeof publicRideOfferSchema>;
 export type RideParticipation = z.infer<typeof rideParticipationSchema>;
+export type RidePassengerPresentation = z.infer<typeof ridePassengerPresentationSchema>;
+export type RideParticipationForDriver = z.infer<typeof rideParticipationForDriverSchema>;
 export type RideMeetingPoint = z.infer<typeof rideMeetingPointSchema>;
 export type RideOfferForOwner = z.infer<typeof rideOfferForOwnerSchema>;
 export type PublicRideRequest = z.infer<typeof publicRideRequestSchema>;

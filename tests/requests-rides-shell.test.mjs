@@ -4,7 +4,17 @@ import test from "node:test";
 
 const requestsPage = await readFile("packages/frontend/src/requests/RequestsPage.tsx", "utf8");
 const ridesPage = await readFile("packages/frontend/src/rides/RidesPage.tsx", "utf8");
+const rideGatewayPage = await readFile("packages/frontend/src/rides/RideGatewayPage.tsx", "utf8");
+const rideOfferDetailPage = await readFile(
+  "packages/frontend/src/rides/RideOfferDetailPage.tsx",
+  "utf8",
+);
+const rideDestinationFields = await readFile(
+  "packages/frontend/src/rides/RideDestinationFields.tsx",
+  "utf8",
+);
 const rideApi = await readFile("packages/frontend/src/rides/api.ts", "utf8");
+const rideCss = await readFile("packages/frontend/src/rides/rides.css", "utf8");
 
 test("Requests shell owns page-local Requests and FundMe tabs without backend pretence", () => {
   assert.match(requestsPage, /export type RequestsPageTab = "requests" \| "fundme"/);
@@ -17,22 +27,40 @@ test("Requests shell owns page-local Requests and FundMe tabs without backend pr
 });
 
 test("Ride surface uses real Ride APIs and no longer ships the old fake shell", () => {
-  assert.match(ridesPage, /createRideApi\(transport\)/);
-  assert.match(ridesPage, /TAKE ME TO THE GAME/);
-  assert.match(ridesPage, /RIDE OFFERS/);
-  assert.match(ridesPage, /Request participation/);
-  assert.match(ridesPage, /Vehicle photo/);
-  assert.match(ridesPage, /Private meeting point/);
-  assert.match(ridesPage, /No fake matching, no fare collection/);
+  assert.match(ridesPage, /export \{ RideGatewayPage, RidesPage \}/);
+  assert.match(rideGatewayPage, /api\.listOffers\(\{ limit: 3 \}\)/);
+  assert.match(rideGatewayPage, /api\.listRequests\(\{ limit: 3 \}\)/);
+  assert.match(rideGatewayPage, /RIDE OFFERS/);
+  assert.match(rideGatewayPage, /RIDE REQUESTS/);
+  assert.match(rideOfferDetailPage, /getMyParticipation/);
+  assert.match(rideOfferDetailPage, /getMeetingPoint/);
+  assert.match(rideOfferDetailPage, /Request participation/);
+  assert.match(rideOfferDetailPage, /Private meeting point/);
+  assert.match(rideDestinationFields, /publicPlay\(\)/);
+  assert.match(rideDestinationFields, /publicWatch\(\)/);
+  assert.match(rideDestinationFields, /placesApi\s*\.\s*list\(\)/);
+  assert.match(rideDestinationFields, /destination\.type !== "EVENT"/);
+  assert.match(rideDestinationFields, /destination\.type !== "PLACE"/);
+  assert.doesNotMatch(
+    rideDestinationFields,
+    /Promise\.all\(\[eventApi\.publicPlay\(\), eventApi\.publicWatch\(\), placesApi\.list\(\)\]\)/,
+  );
+  assert.doesNotMatch(rideDestinationFields, /Event ID|Place ID/);
+  assert.match(rideCss, /object-fit:\s*contain/);
+  assert.doesNotMatch(rideCss, /object-fit:\s*cover/);
   assert.match(rideApi, /\/api\/public\/v1\/rides\/\$\{kind\}/);
   assert.match(rideApi, /listPath\("offers"/);
   assert.match(rideApi, /\/api\/v1\/rides/);
   assert.match(rideApi, /replaceOfferVehiclePhoto/);
   assert.match(rideApi, /requestParticipation/);
-  assert.doesNotMatch(ridesPage, /Rides to matches and events will become available/);
-  assert.doesNotMatch(ridesPage, /does not list drivers/);
-  assert.doesNotMatch(ridesPage, /create bookings/);
-  assert.doesNotMatch(ridesPage, /navigator\.geolocation/);
-  assert.doesNotMatch(ridesPage, /fetch\(/);
-  assert.doesNotMatch(ridesPage, /FundMe|payment intent|checkout|invoice/i);
+  assert.match(rideApi, /participations\/me/);
+  assert.doesNotMatch(rideGatewayPage, /Rides to matches and events will become available/);
+  assert.doesNotMatch(rideGatewayPage, /does not list drivers/);
+  assert.doesNotMatch(rideOfferDetailPage, /create bookings/);
+  assert.doesNotMatch(rideOfferDetailPage, /navigator\.geolocation/);
+  assert.doesNotMatch(rideGatewayPage + rideOfferDetailPage, /fetch\(/);
+  assert.doesNotMatch(
+    rideGatewayPage + rideOfferDetailPage,
+    /FundMe|payment intent|checkout|invoice/i,
+  );
 });

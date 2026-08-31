@@ -7,6 +7,7 @@
 .ride-hero,
 .ride-section-header,
 .ride-created,
+.ride-home-panel,
 .ride-owner,
 .ride-form,
 .ride-request-preview {
@@ -39,6 +40,7 @@
 .ride-hero p,
 .ride-section-header p,
 .ride-created p,
+.ride-home-panel p,
 .ride-detail-card p,
 .ride-offer-card p,
 .ride-owner p,
@@ -51,19 +53,31 @@
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
-.ride-gateway__grid,
+.ride-home-grid,
+.ride-home-panel__header,
 .ride-offer-list {
   display: grid;
   gap: 14px;
 }
 
-.ride-gateway__grid {
+.ride-home-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ride-home-panel__header {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
 }
 
 .ride-gateway-card,
 .ride-offer-card {
   color: inherit;
+  text-decoration: none;
+}
+
+.ride-link {
+  color: var(--app-accent);
+  font-weight: 800;
   text-decoration: none;
 }
 
@@ -219,7 +233,7 @@
 .ride-detail-card__photo img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .ride-detail-card {
@@ -232,7 +246,8 @@
 .ride-owner,
 .ride-photo-panel,
 .ride-participations,
-.ride-meeting-form {
+.ride-meeting-form,
+.ride-meeting-point {
   display: grid;
   gap: 12px;
 }
@@ -256,7 +271,8 @@
 
 @media (max-width: 720px) {
   .ride-section-header,
-  .ride-gateway__grid,
+  .ride-home-grid,
+  .ride-home-panel__header,
   .ride-form__grid,
   .ride-detail-card,
   .ride-participation {
