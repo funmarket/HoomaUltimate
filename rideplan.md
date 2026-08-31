@@ -377,7 +377,7 @@ Rules:
 - `totalSeats` is a capacity invariant, not a frontend counter.
 - Public Ride state must never expose exact private pickup/meeting coordinates.
 
-## 5.2 RideRequest — “Take me to the game”
+## 5.2 RideRequest — passenger needs a ride
 
 Recommended durable shape:
 
@@ -828,7 +828,7 @@ The exact component split may be adjusted to avoid tiny artificial files, but on
 
 # 11. Ride route/UX target
 
-Recommended route tree:
+Required route tree for the corrected Ride IA:
 
 ```text
 /rides
@@ -841,26 +841,34 @@ Recommended route tree:
 /rides/mine
 ```
 
+These routes are required views over the same canonical Ride domain. `/rides/matchday`, `/rides/anywhere` and `/rides/mine` are not optional follow-ups, and they must not create separate Matchday/Anywhere backend systems.
+
 Main `/rides` gateway is now a mobile-first Ride hub, not a narrow desktop dashboard or architecture explainer.
 
 Required hierarchy:
 
 ```text
 compact hero
-large tappable feature containers
+primary feature-card grid
 recent Ride Offers preview
 recent Ride Requests preview
 bottom navigation
 ```
 
-Required product entries:
+Hero actions are required:
+
+- Request a Ride;
+- Browse Offers;
+- Offer Seats.
+
+Primary feature-card grid entries are required:
 
 - Matchday Ride — football/event transportation;
-- Anywhere Ride — normal non-football transport;
-- Request a Ride — passenger needs a lift;
-- Browse Offers — public offer discovery;
-- Offer Seats — driver creates an offer;
-- My Rides — authenticated actor-owned offers, requests and participations.
+- Anywhere Ride — normal transport unrelated to football, including airport, work, school, home, shopping, another city, custom destination or canonical Place destination;
+- Request a Ride — passenger wants transport;
+- My Rides — authenticated actor-owned offers, requests, participations and status.
+
+Secondary navigation and list entry points must still support Browse Offers and Offer Seats through the required routes above.
 
 Hero requirements:
 
@@ -1927,7 +1935,10 @@ Goal: add explicit RideContext and RideCompensationTerms to the governed Ride pr
 
 Required work:
 
-- update affected authoritative docs if the governing Ride model changes beyond this execution plan;
+- inspect and update authoritative product docs as required, especially `requirements.md`, `docs/DECISIONS.md` or a bounded Ride ADR, and `docs/CANONICAL_MODEL.md` only if the new durable shape needs canonical-model documentation;
+- treat `rideplan.md` as the execution ledger, not the primary product acceptance contract;
+- reconcile `requirements.md` with `RideContext = MATCHDAY | GENERAL` and Ride compensation advertised terms `FREE | CASH` where required;
+- update `packages/contracts/src/rides.ts` and Ride domain policy/tests for the approved product model;
 - add contract/domain policy for `MATCHDAY | GENERAL` Ride context;
 - add contract/domain policy for FREE/CASH compensation terms using integer minor units;
 - validate FREE/CASH invariants for offers and requests;
@@ -1937,6 +1948,7 @@ Required work:
 Forbidden scope:
 
 - no Stripe/cards/checkout/payment intents/wallets/settlement;
+- no Prisma/schema/migration/repository/API persistence work, which belongs to `RIDE-007B`;
 - no duplicate Matchday/Anywhere Ride domain, API, repository or table;
 - no floating money values.
 
@@ -1993,12 +2005,23 @@ Goal: redesign `/rides` into the approved phone-first Ride hub for Matchday and 
 
 Required work:
 
-- compact hero with readable governed CTA token/state pairing;
-- large tappable cards for Matchday Ride, Anywhere Ride, Request a Ride, Browse Offers, Offer Seats and/or My Rides according to phone ergonomics;
-- child routes `/rides/matchday`, `/rides/anywhere`, and `/rides/mine` if useful for the final IA;
-- compact real Ride Offers and Ride Requests previews with FREE/CASH badges;
+- compact phone hero with exactly these immediate Ride actions: Request a Ride, Browse Offers and Offer Seats;
+- hero uses strong HOOMA dark/gold/lime styling, readable governed CTA foreground/background token/state pairing, large thumb-friendly controls and Telegram/mobile ergonomics;
+- hero never repeats the current black-on-dark invisible CTA defect;
+- required primary feature-card grid with exactly these four large mobile feature containers: Matchday Ride, Anywhere Ride, Request a Ride and My Rides;
+- each primary feature container is a large rounded mobile card, clearly distinguishable from surrounding content, fully tappable across the whole card, readable at phone widths and suitable for Telegram Mini App touch interaction;
+- Matchday Ride means football/event transportation;
+- Anywhere Ride means normal transport unrelated to football, including airport, work, school, home, shopping, another city, custom destination or canonical Place destination;
+- Request a Ride means the passenger wants transport;
+- My Rides means authenticated actor-owned Ride activity: offers, requests, participations and status;
+- required routes `/rides`, `/rides/matchday`, `/rides/anywhere`, `/rides/request`, `/rides/offers`, `/rides/offers/new`, `/rides/offers/:offerId` and `/rides/mine` backed by real routes, not fake frontend-only modes;
+- route views stay over the same Ride domain and must not create separate Matchday/Anywhere backend systems, APIs, repositories, tables or frontend state owners;
+- below the feature cards, `/rides` shows a small number of real Recent Ride Offers and Recent Ride Requests records with `View all` entry points into full lists, not a huge infinite feed;
+- previews use FREE/CASH badges and only production records/fields available from canonical Ride/public Identity/Event/Place projections;
 - vehicle-photo presentation keeps `object-fit: contain` and a neutral fallback;
-- My Rides shows authenticated actor-owned offers, requests and participations without localStorage as source of truth;
+- visual acceptance preserves black/near-black surfaces, warm white/cream primary text, gold/olive borders, lime/gold action emphasis, subtle glow, football/community imagery where appropriate, large rounded cards, clear icons, strong contrast, compact vertical rhythm and approximately 44–48px minimum practical touch targets;
+- no accidental horizontal scrolling and no desktop-only hover dependence;
+- no tiny text link is the only tap target;
 - no single giant `RidesPage.tsx` absorbing API, business lifecycle, map, media and routing concerns.
 
 Forbidden scope:
@@ -2010,8 +2033,8 @@ Forbidden scope:
 
 DONE gate:
 
-- frontend route tests cover new hub/child routes, feature-card destinations, FREE/CASH badge rendering and My Rides actor state;
-- 390px mobile smoke covers `/rides`, `/rides/matchday`, `/rides/anywhere`, `/rides/request`, `/rides/offers`, `/rides/offers/new`, and `/rides/mine` as applicable;
+- frontend route tests cover new hub/required child routes, feature-card destinations, FREE/CASH badge rendering and My Rides actor state;
+- 390px mobile smoke covers `/rides`, `/rides/matchday`, `/rides/anywhere`, `/rides/request`, `/rides/offers`, `/rides/offers/new`, `/rides/offers/:offerId` and `/rides/mine`;
 - no horizontal overflow or runtime exceptions in the smoke;
 - bottom navigation remains `Home | Play | Watch | HOOMA | Pitch`.
 
