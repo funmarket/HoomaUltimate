@@ -496,6 +496,83 @@ Rules:
 - no JSON route blob;
 - no PostGIS/route-provider dependency unless separately justified and approved.
 
+## 5.6 RideContext — Matchday vs Anywhere
+
+Ride now needs an explicit product context. Do not infer user intent only from whether the destination is Event/Place/custom.
+
+Conceptual contract:
+
+```text
+RideContext = MATCHDAY | GENERAL
+```
+
+User-facing copy:
+
+```text
+MATCHDAY -> Matchday Ride
+GENERAL  -> Anywhere Ride
+```
+
+Rules:
+
+- both contexts remain in the same canonical Ride domain, contracts, repository, service and tables;
+- do not create `matchday-rides`, `general-rides`, duplicate APIs, duplicate tables or separate backend systems;
+- `MATCHDAY` may use Event, Place or custom destinations when necessary;
+- `GENERAL` may use Place or custom destinations; Event is normally not applicable unless a later governed exception proves the need;
+- Event and Place facts remain owned by their domains and are read through narrow Ride reference ports.
+
+## 5.7 RideCompensationTerms — FREE/CASH only, no payments
+
+Ride may advertise simple compensation terms. Ride does not execute payment.
+
+Conceptual contract:
+
+```text
+RideCompensationTerms
+  mode          FREE | CASH
+  amountMinor   BigInt? / integer minor units only
+  currency      ISO currency? (for example TND)
+  basis         PER_SEAT | TOTAL | null
+```
+
+Validation:
+
+```text
+FREE -> amountMinor null, currency null, basis null
+CASH -> amountMinor > 0, currency required, basis required where applicable
+```
+
+Rules:
+
+- never store floating money values;
+- inspect and follow existing money/minor-unit conventions before implementation;
+- allowed UI copy: `FREE`, `10 TND / seat`, `Cash requested`, `Offering 8 TND`;
+- forbidden UI copy unless Payments exists: `Paid`, `Payment secured`, `Payment received`, `Checkout complete`;
+- do not add Stripe, cards, invoices, checkout, settlement, wallet balances, payment intents or fake Telegram Stars processing;
+- `PAY-001` remains the future owner of actual payment rails.
+
+## 5.8 Privacy-safe static Ride maps
+
+Static maps are allowed only when their inputs are already privacy-safe or the viewer is authorized for the private location.
+
+Allowed public map inputs:
+
+- public Event/Place destination coordinates owned by their canonical domain;
+- privacy-safe approximate pickup/area coordinates if such approximations are deliberately stored or derived without exposing exact meeting points;
+- polished placeholder/location treatment when no approved coordinate exists.
+
+Private exact meeting-point maps are allowed only for the driver and the accepted passenger for that participation.
+
+Rules:
+
+- do not send private latitude/longitude to the browser to construct provider URLs;
+- do not “zoom out” exact coordinates and call them public;
+- public map request URLs, cache keys, logs and provider requests must not contain private exact coordinates;
+- prefer server-mediated image endpoints so authorization and provider credentials remain server-side;
+- provider logic belongs in an infrastructure adapter behind a small Ride map-preview boundary, not inside Ride domain policy or a React component;
+- provider selection must evaluate Geoapify Static Maps, Mapbox Static Images and OpenFreeMap/Protomaps-compatible options before choosing;
+- document attribution, caching and private-map cache policy before implementation.
+
 ---
 
 # 6. Target Requests domain model
@@ -645,7 +722,9 @@ Candidate routes:
 GET /api/public/v1/rides/offers
 GET /api/public/v1/rides/offers/:offerId
 GET /api/public/v1/rides/offers/:offerId/photo
+GET /api/public/v1/rides/offers/:offerId/map        # only if public-safe coordinates exist
 GET /api/public/v1/rides/requests
+GET /api/public/v1/rides/requests/:requestId/map    # only if public-safe coordinates exist
 ```
 
 Only privacy-safe data is public.
@@ -665,6 +744,7 @@ POST   /api/v1/rides/offers/:offerId/participations
 POST   /api/v1/rides/offers/:offerId/participations/:participationId/accept
 POST   /api/v1/rides/offers/:offerId/participations/:participationId/reject
 POST   /api/v1/rides/offers/:offerId/participations/:participationId/cancel
+GET    /api/v1/rides/participations/:participationId/meeting-point/map
 
 POST   /api/v1/rides/requests
 PATCH  /api/v1/rides/requests/:requestId
@@ -752,25 +832,72 @@ Recommended route tree:
 
 ```text
 /rides
+/rides/matchday
+/rides/anywhere
 /rides/request
 /rides/offers
 /rides/offers/new
 /rides/offers/:offerId
+/rides/mine
 ```
 
-Main `/rides` gateway presents the two core actions clearly:
+Main `/rides` gateway is now a mobile-first Ride hub, not a narrow desktop dashboard or architecture explainer.
+
+Required hierarchy:
 
 ```text
-TAKE ME TO THE GAME
-RIDE OFFERS
+compact hero
+large tappable feature containers
+recent Ride Offers preview
+recent Ride Requests preview
+bottom navigation
 ```
+
+Required product entries:
+
+- Matchday Ride — football/event transportation;
+- Anywhere Ride — normal non-football transport;
+- Request a Ride — passenger needs a lift;
+- Browse Offers — public offer discovery;
+- Offer Seats — driver creates an offer;
+- My Rides — authenticated actor-owned offers, requests and participations.
+
+Hero requirements:
+
+- strong HOOMA dark/gold/lime visual direction;
+- compact on 360–430 px phones;
+- primary CTA text readable in normal, hover, active, focus, visited and disabled states;
+- fix CTA color at the governed token/source level rather than with a one-off `!important` patch.
+
+Feature-card requirements:
+
+- entire card is the tap target;
+- large rounded cards with thin gold borders, readable white text, high contrast, obvious pressed/focus states and approximately 44–48px minimum interactive height;
+- no tiny text links masquerading as primary actions;
+- no horizontal overflow on phone or Telegram viewport sizes.
+
+Preview requirements:
+
+- show only a small number of real Ride offers and Ride requests on `/rides`;
+- use `View all` for full lists;
+- display only fields actually available from canonical Ride/public Identity/Event/Place projections;
+- no fake production rows, fake vehicle photos or fake user avatars;
+- preserve the bottom nav exactly: `Home | Play | Watch | HOOMA | Pitch`.
+
+Static map requirements:
+
+- static maps are optional previews when approved safe coordinates exist;
+- exact private meeting-point maps require authenticated server authorization before image generation;
+- no live tracking, ETA claims, route animation, turn-by-turn directions or background GPS in this plan.
 
 Ride Offer creation should support:
 
+- RideContext: `MATCHDAY` or `GENERAL`;
 - destination Event/Place/custom destination as governed;
 - origin area;
 - departure date/time;
 - seats;
+- compensation terms: FREE or CASH with minor-unit amount/currency/basis;
 - ordered passing-through waypoints where enabled;
 - optional vehicle make/model/color;
 - optional note;
@@ -778,10 +905,12 @@ Ride Offer creation should support:
 
 Ride Request creation should support:
 
+- RideContext: `MATCHDAY` or `GENERAL`;
 - destination;
 - approximate pickup area;
 - desired departure time;
 - passenger count;
+- compensation terms: no cash offer or offer cash with minor-unit amount/currency/basis;
 - optional note.
 
 Required UI states:
@@ -897,11 +1026,13 @@ Do not design the first schema around an AI/geospatial matching engine.
 
 Initial matching inputs may be:
 
+- RideContext (`MATCHDAY` or `GENERAL`);
 - same Event;
 - same destination Place;
 - compatible departure window;
 - matching origin/waypoint area;
-- sufficient seats for passenger count.
+- sufficient seats for passenger count;
+- compensation terms as optional ranking/filtering data, not payment execution state.
 
 Matching should return a read result/projection such as `RideMatchCandidate`. Do not create a durable generic `Match` table unless a later product requirement proves durable match identity is necessary.
 
@@ -1045,7 +1176,11 @@ Before Ride core can be called DONE, permanent tests must prove at least:
 11. expired/cancelled offers reject participation;
 12. Web + Telegram shared frontend transport still works through the existing universal frontend architecture;
 13. migration applies from a clean/disposable PostgreSQL database;
-14. read-back proves persisted state matches service assumptions.
+14. read-back proves persisted state matches service assumptions;
+15. RideContext validation and filtering preserve one canonical Ride system;
+16. FREE/CASH compensation validation uses integer minor units and never creates payment state;
+17. public static map responses cannot expose exact private meeting-point coordinates;
+18. protected meeting-point map responses apply the same driver/accepted-passenger authorization as textual meeting-point reads.
 
 Mocks cannot be used to claim PostgreSQL locking correctness.
 
@@ -1730,12 +1865,14 @@ Status: **[~] IN PROGRESS**
 
 Dependencies: `RIDE-005`; `RIDE-006` required before vehicle photo is presented as complete
 
-Goal: replace the honest Ride shell with the actual product flow using Ride-owned frontend state/API.
+Goal: replace the honest Ride shell with the actual product flow using Ride-owned frontend state/API. This task is intentionally not closed because product acceptance changed after the first merge.
+
+Corrective rule: RIDE-007 cannot be marked `[x] DONE` until `RIDE-007A`, `RIDE-007B`, `RIDE-007C` and `RIDE-007D` are implemented, merged, verified and read back on `phase-0-foundation`.
 
 Required work:
 
 - `packages/frontend/src/rides/api.ts` using shared `HoomaTransport`;
-- Ride gateway: `TAKE ME TO THE GAME | RIDE OFFERS`;
+- Ride hub routes and API client code for `/rides`, `/rides/request`, `/rides/offers`, `/rides/offers/new`, `/rides/offers/:offerId`, `/rides/matchday`, `/rides/anywhere`, and `/rides/mine` as their backend support lands;
 - Ride Offer list/detail/create flows;
 - Ride Request create flow;
 - participation request and owner response states per approved policy;
@@ -1752,7 +1889,8 @@ DONE gate:
 - photo upload/read-back proven when RIDE-006 is complete;
 - frontend has no direct database imports/API strings in app shell contrary to architecture rules;
 - mobile/Telegram route behavior checked;
-- no fake Ride data remains.
+- no fake Ride data remains;
+- corrective subtasks `RIDE-007A` through `RIDE-007D` are `[x] DONE` with evidence.
 
 Evidence:
 
@@ -1775,6 +1913,146 @@ Evidence:
 - 2026-08-31 runtime smoke proof: local Vite preview plus Chrome headless CDP route smoke rendered `/rides`, `/rides/request`, `/rides/offers`, and `/rides/offers/new` at a 390px mobile viewport with explicit API stubs for account/session and public Ride list reads. Expected Ride text rendered, bottom navigation remained `Home | Play | Watch | HOOMA | Pitch`, and CDP reported zero runtime exceptions for those smoke routes.
 - Remaining risk: full live Telegram WebApp runtime and authenticated form-submit/read-back smoke against the deployed environment were not executed in this local closeout; CI integration coverage and the headless browser route smoke are the closing evidence for this slice.
 - 2026-08-31 corrective finding: RIDE-007 closeout was premature. Remaining required work before final closeout: make `/rides` a broader Ride home rather than only two isolated gateway cards; provide durable authenticated passenger participation read-back and meeting-point retrieval after driver acceptance; stop cropping Ride vehicle photos; split the large Ride page into Ride-owned components; replace raw Event/Place ID fields with human-readable canonical selectors; add lifecycle regression tests for passenger request -> driver accept -> passenger read-back -> authorized meeting-point visibility.
+- 2026-08-31 product-owner correction at foundation `fb62f9ce69a76b06a54706914238c9ce36545203`: Ride must broaden into a mobile-first Matchday/Anywhere Ride hub with FREE/CASH compensation terms and privacy-safe static maps. This keeps RIDE-007 `[~] IN PROGRESS`; it does not close RIDE-007.
+
+---
+
+## RIDE-007A — Ride product-context + compensation governance/contracts
+
+Status: **[ ] TODO**
+
+Dependencies: `RIDE-007` current source state and product-owner correction recorded above
+
+Goal: add explicit RideContext and RideCompensationTerms to the governed Ride product model without splitting Ride or implementing Payments.
+
+Required work:
+
+- update affected authoritative docs if the governing Ride model changes beyond this execution plan;
+- add contract/domain policy for `MATCHDAY | GENERAL` Ride context;
+- add contract/domain policy for FREE/CASH compensation terms using integer minor units;
+- validate FREE/CASH invariants for offers and requests;
+- inspect existing money/minor-unit conventions before choosing field names/types;
+- keep actual payment execution under future `PAY-001`.
+
+Forbidden scope:
+
+- no Stripe/cards/checkout/payment intents/wallets/settlement;
+- no duplicate Matchday/Anywhere Ride domain, API, repository or table;
+- no floating money values.
+
+DONE gate:
+
+- contracts compile and tests prove context/compensation validation;
+- docs/plan explicitly preserve Payments as future execution owner;
+- no Ride -> Payments repository or frontend fake payment claim appears.
+
+Evidence: _fill when complete_
+
+---
+
+## RIDE-007B — Ride context/compensation persistence + API
+
+Status: **[ ] TODO**
+
+Dependencies: `RIDE-007A`
+
+Goal: persist and expose RideContext and RideCompensationTerms through Ride-owned schema, repository, service and HTTP API.
+
+Required work:
+
+- bounded Prisma migration for Ride context and compensation fields on Ride offers/requests as approved by RIDE-007A;
+- repository read/write/read-back for context and compensation;
+- public and member DTOs expose only advertised compensation terms, not payment state;
+- list filters support Matchday/Anywhere contexts without duplicating backend systems;
+- API tests cover create/list/detail/read-back for context and compensation.
+
+Forbidden scope:
+
+- no Requests/FundMe/Fundraising/Payments schema changes;
+- no Event/Place duplication into Ride;
+- no fake paid/settled states.
+
+DONE gate:
+
+- migration deploy/read-back proof exists;
+- PostgreSQL integration tests prove persisted context and compensation terms;
+- API read-back proves Matchday/Anywhere filters and FREE/CASH projections;
+- no cross-domain monolith or payment-processing dependency is introduced.
+
+Evidence: _fill when complete_
+
+---
+
+## RIDE-007C — Mobile Ride hub + general/matchday UX
+
+Status: **[ ] TODO**
+
+Dependencies: `RIDE-007B`
+
+Goal: redesign `/rides` into the approved phone-first Ride hub for Matchday and Anywhere rides while preserving the shared Web/Telegram frontend architecture.
+
+Required work:
+
+- compact hero with readable governed CTA token/state pairing;
+- large tappable cards for Matchday Ride, Anywhere Ride, Request a Ride, Browse Offers, Offer Seats and/or My Rides according to phone ergonomics;
+- child routes `/rides/matchday`, `/rides/anywhere`, and `/rides/mine` if useful for the final IA;
+- compact real Ride Offers and Ride Requests previews with FREE/CASH badges;
+- vehicle-photo presentation keeps `object-fit: contain` and a neutral fallback;
+- My Rides shows authenticated actor-owned offers, requests and participations without localStorage as source of truth;
+- no single giant `RidesPage.tsx` absorbing API, business lifecycle, map, media and routing concerns.
+
+Forbidden scope:
+
+- no fake production rows or fake avatars;
+- no desktop dashboard layout with tiny links as primary actions;
+- no separate Telegram Ride code tree;
+- no Requests/FundMe/Payments loading on Ride open.
+
+DONE gate:
+
+- frontend route tests cover new hub/child routes, feature-card destinations, FREE/CASH badge rendering and My Rides actor state;
+- 390px mobile smoke covers `/rides`, `/rides/matchday`, `/rides/anywhere`, `/rides/request`, `/rides/offers`, `/rides/offers/new`, and `/rides/mine` as applicable;
+- no horizontal overflow or runtime exceptions in the smoke;
+- bottom navigation remains `Home | Play | Watch | HOOMA | Pitch`.
+
+Evidence: _fill when complete_
+
+---
+
+## RIDE-007D — Privacy-safe static Ride maps
+
+Status: **[ ] TODO**
+
+Dependencies: `RIDE-007B`; may be implemented before or after `RIDE-007C` only if shared-file overlap is controlled
+
+Goal: add static Ride map previews only through a privacy-safe server-side boundary.
+
+Required work:
+
+- inspect whether HOOMA already has a map/provider abstraction before creating one;
+- define a small Ride map-preview provider interface in the correct application/infrastructure boundary if none exists;
+- evaluate Geoapify Static Maps, Mapbox Static Images and OpenFreeMap/Protomaps-compatible options for server-side static image delivery, attribution, caching, cost and Railway compatibility;
+- prefer server-mediated endpoints such as public Ride offer/request map previews and protected participation meeting-point map previews;
+- ensure public map inputs are public/approximate by construction;
+- require driver/accepted-passenger authorization before exact meeting-point map generation.
+
+Forbidden scope:
+
+- no client-side `RideStaticMap lat/lng` for private coordinates;
+- no public URL, HTML, analytics, cache key or provider request containing exact private meeting coordinates;
+- no live tracking, ETA, route animation, turn-by-turn navigation, background GPS, PostGIS route engine or full interactive SDK merely for decoration;
+- no provider API key in public Vite variables.
+
+DONE gate:
+
+- authorization tests prove public maps cannot expose private meeting points;
+- accepted passenger and driver can access exact meeting-point map only after acceptance;
+- outsider/rejected/unrelated users are denied;
+- provider credentials remain server-side;
+- caching/attribution/private-map policy is documented;
+- UI gracefully shows a polished placeholder when no approved coordinate exists.
+
+Evidence: _fill when complete_
 
 ---
 
@@ -1782,7 +2060,7 @@ Evidence:
 
 Status: **[ ] TODO**
 
-Dependencies: `GOV-001`; recommended after `RIDE-007` merge to avoid shared-file races
+Dependencies: `GOV-001`; recommended after `RIDE-007A` through `RIDE-007D` merge to avoid shared-file races while Ride correction is active
 
 Goal: confirm the Requests-specific contract implemented in GOV-001 and create domain-owned contracts/policies.
 
@@ -1927,16 +2205,18 @@ Evidence: _fill when complete_
 
 Status: **[ ] TODO**
 
-Dependencies: `RIDE-007`; may also use approved Event/Place references
+Dependencies: `RIDE-007`, `RIDE-007A`, `RIDE-007B`, `RIDE-007C`, `RIDE-007D`; may also use approved Event/Place references
 
 Goal: return useful Ride matches without creating a matching monolith or speculative geospatial stack.
 
 V1 inputs:
 
+- RideContext (`MATCHDAY` or `GENERAL`);
 - Event/destination compatibility;
 - departure time window;
 - pickup/origin/waypoint area compatibility;
 - required passenger seats;
+- compensation terms where useful for ranking/filtering, without payment execution;
 - only active/open records.
 
 Required work:
@@ -2154,6 +2434,14 @@ RIDE-006
    |
 RIDE-007
    |
+RIDE-007A product-context + compensation governance/contracts
+   |
+RIDE-007B context/compensation persistence + API
+   |
+RIDE-007C mobile Ride hub + general/matchday UX
+   |
+RIDE-007D privacy-safe static Ride maps
+   |
 REQ-001
    |
 REQ-002
@@ -2223,6 +2511,11 @@ Stop and report instead of improvising if:
 - exact Ride location would become publicly exposed;
 - seat/request quantity correctness can only be achieved with frontend counters instead of database-safe invariants;
 - a payment/fundraising dependency is required before those domains are authorized;
+- compensation terms force Ride to implement Payments instead of advertising FREE/CASH terms only;
+- Matchday and Anywhere rides require duplicate Ride systems instead of one canonical Ride domain;
+- static maps would expose exact private coordinates in client props, provider URLs, caches, logs or analytics;
+- a map provider requires public client-side secrets or caching that cannot protect private meeting points;
+- implementation starts growing back into a single giant `RidesPage.tsx`;
 - the only way to claim completion is to skip real migration/concurrency/storage proof.
 
 ---
