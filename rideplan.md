@@ -1146,7 +1146,7 @@ This is the authoritative scoped execution order for this plan. Agents must star
 
 ## PLAN-000 — Baseline architecture audit and live plan
 
-Status: **[~] IN PROGRESS**
+Status: **[x] DONE**
 
 Scope completed:
 

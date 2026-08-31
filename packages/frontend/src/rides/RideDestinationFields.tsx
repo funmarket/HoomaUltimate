@@ -19,29 +19,57 @@ export function RideDestinationFields({
   const placesApi = useMemo(() => createPlacesApi(transport), [transport]);
   const [events, setEvents] = useState<PublicEvent[]>([]);
   const [places, setPlaces] = useState<PublicPlaceSummary[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [placesLoading, setPlacesLoading] = useState(false);
 
   useEffect(() => {
+    if (destination.type !== "EVENT") {
+      setEventsLoading(false);
+      return;
+    }
     let active = true;
-    setLoading(true);
-    void Promise.all([eventApi.publicPlay(), eventApi.publicWatch(), placesApi.list()])
-      .then(([playEvents, watchEvents, placeItems]) => {
+    setEventsLoading(true);
+    void Promise.all([eventApi.publicPlay(), eventApi.publicWatch()])
+      .then(([playEvents, watchEvents]) => {
         if (!active) return;
         setEvents([...playEvents.items, ...watchEvents.items]);
-        setPlaces(placeItems);
       })
       .catch(() => {
         if (!active) return;
         setEvents([]);
-        setPlaces([]);
       })
       .finally(() => {
-        if (active) setLoading(false);
+        if (active) setEventsLoading(false);
       });
     return () => {
       active = false;
     };
-  }, [eventApi, placesApi]);
+  }, [destination.type, eventApi]);
+
+  useEffect(() => {
+    if (destination.type !== "PLACE") {
+      setPlacesLoading(false);
+      return;
+    }
+    let active = true;
+    setPlacesLoading(true);
+    void placesApi
+      .list()
+      .then((placeItems) => {
+        if (!active) return;
+        setPlaces(placeItems);
+      })
+      .catch(() => {
+        if (!active) return;
+        setPlaces([]);
+      })
+      .finally(() => {
+        if (active) setPlacesLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [destination.type, placesApi]);
 
   function setType(type: RideDestinationInput["type"]) {
     onChange({ type, eventId: "", placeId: "", customDestinationLabel: "" });
@@ -69,7 +97,9 @@ export function RideDestinationFields({
             onChange={(event) => onChange({ ...destination, eventId: event.target.value })}
             required
           >
-            <option value="">{loading ? "Loading events..." : "Choose a published event"}</option>
+            <option value="">
+              {eventsLoading ? "Loading events..." : "Choose a published event"}
+            </option>
             {events.map((eventItem) => (
               <option key={eventItem.id} value={eventItem.id}>
                 {eventLabel(eventItem)}
@@ -87,7 +117,9 @@ export function RideDestinationFields({
             onChange={(event) => onChange({ ...destination, placeId: event.target.value })}
             required
           >
-            <option value="">{loading ? "Loading places..." : "Choose an approved place"}</option>
+            <option value="">
+              {placesLoading ? "Loading places..." : "Choose an approved place"}
+            </option>
             {places.map((place) => (
               <option key={place.id} value={place.id}>
                 {placeLabel(place)}
