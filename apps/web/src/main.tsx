@@ -2,6 +2,8 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { HoomaRouter } from "./app/router/HoomaRouter";
 import { initializeWebAppearance } from "./settings/theme";
+import "@fontsource/pridi/500.css";
+import "@fontsource/pridi/600.css";
 import "@hooma/ui/bottom-nav.css";
 import "@hooma/frontend/communities.css";
 import "@hooma/frontend/teams.css";

@@ -11,6 +11,7 @@
     "start": "node ../../scripts/serve-static.mjs dist"
   },
   "dependencies": {
+    "@fontsource/pridi": "^5.3.0",
     "@hooma/contracts": "0.1.0",
     "@hooma/frontend": "0.1.0",
     "@hooma/ui": "0.1.0",

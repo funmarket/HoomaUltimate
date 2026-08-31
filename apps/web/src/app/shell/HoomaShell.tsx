@@ -36,6 +36,7 @@ export function HoomaShell({
     : null;
   const hasTelegramIdentity = Boolean(runtime.initData);
   const navPathname = location.pathname === "/telegram" ? "/" : location.pathname;
+  const shellError = error && !location.pathname.startsWith("/rides") ? error : null;
 
   return (
     <main className="foundation-shell">
@@ -58,7 +59,7 @@ export function HoomaShell({
         {...(hasPlatformControlAccess ? { onAdmin: () => navigate("/admin") } : {})}
         {...(!hasTelegramIdentity ? { onSignOut: () => void signOut() } : {})}
       />
-      {error ? <p className="status">{error}</p> : null}
+      {shellError ? <p className="status">{shellError}</p> : null}
       <section className="shell-content">{children}</section>
       <HoomaBottomNav pathname={navPathname} onNavigate={(href) => navigate(href)} />
     </main>

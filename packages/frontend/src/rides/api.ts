@@ -5,6 +5,7 @@ import type {
   PublicRideRequestList,
   RideMeetingPoint,
   RideMeetingPointInput,
+  RideContext,
   RideOfferCreateInput,
   RideOfferForOwner,
   RideParticipation,
@@ -27,6 +28,7 @@ export type {
 
 export type RideListQuery = {
   readonly cursor?: string;
+  readonly context?: RideContext;
   readonly eventId?: string;
   readonly destinationPlaceId?: string;
   readonly from?: string;
@@ -45,6 +47,7 @@ export type RideVehiclePhotoMetadata = {
 function listPath(kind: "offers" | "requests", query: RideListQuery = {}): string {
   const params = new URLSearchParams({ limit: String(query.limit ?? 20) });
   if (query.cursor) params.set("cursor", query.cursor);
+  if (query.context) params.set("context", query.context);
   if (query.eventId) params.set("eventId", query.eventId);
   if (query.destinationPlaceId) params.set("destinationPlaceId", query.destinationPlaceId);
   if (query.from) params.set("from", query.from);
