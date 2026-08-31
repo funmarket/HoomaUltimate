@@ -5,7 +5,6 @@ import type {
   PublicRideRequest,
   PublicRideRequestList,
   RideDestinationSummary,
-  RideContext,
   RideMeetingPoint,
   RideMeetingPointInput,
   RideOfferCreateInput,
