@@ -11,6 +11,7 @@ import { createTeamMemberRouter } from "../../modules/teams/http/team.routes.js"
 import { createEventMemberRouter } from "../../modules/events/http/event.routes.js";
 import { createGamerMemberRouter } from "../../modules/gamers/http/gamer.routes.js";
 import { createPlayMemberRouter } from "../../modules/play/http/play.routes.js";
+import { createRideCommunityInteractionRouter } from "../../modules/rides/http/ride-community-interaction.routes.js";
 import { createRideMemberRouter } from "../../modules/rides/http/ride.routes.js";
 import { createWhistleRouter } from "../../modules/whistle/http/whistle.routes.js";
 
@@ -41,6 +42,10 @@ export function createMemberV1Router(container: AppContainer, config: ApiConfig)
   );
   router.use("/play", createPlayMemberRouter(container.playService));
   router.use("/rides", createRideMemberRouter(container.rideService));
+  router.use(
+    "/rides",
+    createRideCommunityInteractionRouter(container.rideCommunityInteractionService),
+  );
   router.use("/whistles", createWhistleRouter(container.whistleService));
   return router;
 }
