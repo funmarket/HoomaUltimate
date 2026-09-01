@@ -147,12 +147,19 @@ export function HoomaNowFeed({ items }: HoomaNowFeedProps) {
         }
 
         return (
-          <a className="hooma-now-card" data-tone={presentation.tone} href={item.href} key={item.id}>
+          <a
+            className="hooma-now-card"
+            data-tone={presentation.tone}
+            href={item.href}
+            key={item.id}
+          >
             <span className="hooma-now-card__rail" aria-hidden="true" />
             <FeedCardBody
               item={item}
               action={
-                <span className="hooma-now-card__cta">{item.actionLabel ?? "Open activity ↗"}</span>
+                <span className="hooma-now-card__cta">
+                  {item.actionLabel ?? "Open activity ↗"}
+                </span>
               }
             />
           </a>
