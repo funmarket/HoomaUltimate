@@ -3,14 +3,14 @@ import { RideHistoryIcon, RideMapPinPlusIcon, RideRouteIcon, RideStadiumIcon } f
 const features = [
   {
     className: "ride-feature-card--matchday",
-    href: "/rides/matchday",
+    href: "/rides/request?context=MATCHDAY",
     icon: <RideStadiumIcon />,
     title: "MATCHDAY RIDE",
     copy: "Head to the match together.",
   },
   {
     className: "ride-feature-card--anywhere",
-    href: "/rides/anywhere",
+    href: "/rides/request?context=GENERAL",
     icon: <RideRouteIcon />,
     title: "ANYWHERE RIDE",
     copy: "Airport, work, home or another city.",
