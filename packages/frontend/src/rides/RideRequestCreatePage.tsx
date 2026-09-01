@@ -48,7 +48,9 @@ function buildRideRequestAudience(
   return { scope: "GLOBAL" };
 }
 
-function writableAudienceChoice(choice: RideRequestAudienceChoice): WritableRideRequestAudienceChoice {
+function writableAudienceChoice(
+  choice: RideRequestAudienceChoice,
+): WritableRideRequestAudienceChoice {
   if (choice === "SAVED") {
     throw new Error("Choose a new Ride request audience before replacing the saved audience");
   }
@@ -368,8 +370,8 @@ export function RideRequestCreatePage({ requestId }: { readonly requestId?: stri
               <legend>Who should see this Ride request?</legend>
               {editing && audienceChoice === "SAVED" && existingRequest ? (
                 <p className="ride-audience-current">
-                  Current saved audience: <strong>{savedAudienceLabel(existingRequest)}</strong>.
-                  It stays unchanged unless you choose a new option below.
+                  Current saved audience: <strong>{savedAudienceLabel(existingRequest)}</strong>. It
+                  stays unchanged unless you choose a new option below.
                 </p>
               ) : null}
               <label className={audienceChoice === "GLOBAL" ? "is-selected" : ""}>

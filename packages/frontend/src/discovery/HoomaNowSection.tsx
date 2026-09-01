@@ -69,7 +69,8 @@ function graphemeCount(value: string): number {
 }
 
 function requesterInitials(interaction: RideRequestCommunityInteraction): string {
-  const label = interaction.requester?.displayName || interaction.requester?.username || "Ride requester";
+  const label =
+    interaction.requester?.displayName || interaction.requester?.username || "Ride requester";
   return (
     label
       .split(/\s+/)
@@ -136,7 +137,8 @@ function CommunityRideRequestExpansion({
   }
 
   if (loading) return <p className="hooma-now-ride-detail__state">Loading requester…</p>;
-  if (error && !interaction) return <p className="hooma-now-ride-detail__state is-error">{error}</p>;
+  if (error && !interaction)
+    return <p className="hooma-now-ride-detail__state is-error">{error}</p>;
 
   const requester = interaction?.requester ?? null;
 
@@ -155,7 +157,9 @@ function CommunityRideRequestExpansion({
           {requester ? (
             <>
               <strong>{requester.displayName}</strong>
-              <a href={`/profile/${encodeURIComponent(requester.username)}`}>@{requester.username}</a>
+              <a href={`/profile/${encodeURIComponent(requester.username)}`}>
+                @{requester.username}
+              </a>
             </>
           ) : (
             <strong>Requester profile unavailable</strong>
@@ -218,7 +222,9 @@ function CommunityRideRequestExpansion({
       ) : null}
 
       {notice ? <p className="hooma-now-ride-detail__state is-success">{notice}</p> : null}
-      {error && interaction ? <p className="hooma-now-ride-detail__state is-error">{error}</p> : null}
+      {error && interaction ? (
+        <p className="hooma-now-ride-detail__state is-error">{error}</p>
+      ) : null}
     </div>
   );
 }

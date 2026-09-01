@@ -79,8 +79,7 @@ export function RideOfferCreatePage({ offerId }: { readonly offerId?: string }) 
     };
   }, [api, offerId, protectedError]);
 
-  const readOnly =
-    existingOffer?.status === "CANCELLED" || existingOffer?.status === "COMPLETED";
+  const readOnly = existingOffer?.status === "CANCELLED" || existingOffer?.status === "COMPLETED";
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -148,7 +147,10 @@ export function RideOfferCreatePage({ offerId }: { readonly offerId?: string }) 
           <h2>{destinationLabel(existingOffer.destination)}</h2>
           <RideCompensationBadge terms={existingOffer.compensationTerms} />
           <p>This Ride offer is read-only.</p>
-          <a className="ride-button ride-button--primary" href={`/rides/offers/${existingOffer.id}`}>
+          <a
+            className="ride-button ride-button--primary"
+            href={`/rides/offers/${existingOffer.id}`}
+          >
             View offer
           </a>
         </section>
@@ -190,9 +192,7 @@ export function RideOfferCreatePage({ offerId }: { readonly offerId?: string }) 
             </a>
             <a
               className="ride-button"
-              href={
-                editing ? "/rides/mine" : `/rides/offers/new${contextQuery(rideContext)}`
-              }
+              href={editing ? "/rides/mine" : `/rides/offers/new${contextQuery(rideContext)}`}
             >
               {editing ? "Back to My Rides" : "Create another"}
             </a>

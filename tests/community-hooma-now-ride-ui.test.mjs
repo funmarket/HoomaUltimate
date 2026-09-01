@@ -13,10 +13,7 @@ const interactionApi = await readFile(
   "packages/frontend/src/rides/community-interaction-api.ts",
   "utf8",
 );
-const directWhistleApi = await readFile(
-  "packages/frontend/src/whistle/direct-user-api.ts",
-  "utf8",
-);
+const directWhistleApi = await readFile("packages/frontend/src/whistle/direct-user-api.ts", "utf8");
 
 test("Community detail composes Ride requests into the canonical HOOMA NOW surface", () => {
   assert.match(hoomaPage, /CommunityHoomaNowSection/);
@@ -40,7 +37,10 @@ test("Community HOOMA NOW Ride cards expand the exact request instead of routing
 
 test("Community Ride expansion loads requester identity through an authorized Ride endpoint", () => {
   assert.match(hoomaNowSection, /getRideRequestCommunityInteraction/);
-  assert.match(interactionApi, /\/api\/v1\/rides\/communities\/\$\{encodeURIComponent\(communityId\)\}\/requests/);
+  assert.match(
+    interactionApi,
+    /\/api\/v1\/rides\/communities\/\$\{encodeURIComponent\(communityId\)\}\/requests/,
+  );
   assert.match(interactionApi, /interaction/);
   assert.match(hoomaNowSection, /REQUESTED BY/);
   assert.match(hoomaNowSection, /requester\.displayName/);

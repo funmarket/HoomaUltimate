@@ -28,6 +28,7 @@ const contextSelector = await readFile(
 );
 const rideApi = await readFile("packages/frontend/src/rides/api.ts", "utf8");
 const rideMinePage = await readFile("packages/frontend/src/rides/RideMinePage.tsx", "utf8");
+const ridesCss = await readFile("packages/frontend/src/rides/rides.css", "utf8");
 const rideMobileCss = await readFile("packages/frontend/src/rides/rides-mobile.css", "utf8");
 const webRouter = await readFile("apps/web/src/app/router/HoomaRouter.tsx", "utf8");
 
@@ -60,15 +61,16 @@ test("Ride request Share With UI exposes exactly three audience choices and one 
   );
 });
 
-test("Ride audience selector is one column on phones and expands only on wider screens", () => {
-  assert.match(rideMobileCss, /\.ride-audience-choice\s*\{[^}]*grid-template-columns:\s*1fr/s);
-  assert.match(rideMobileCss, /@media \(min-width: 721px\)/);
-  assert.match(
+test("Ride audience selector is phone-first in authoritative Ride CSS and expands only on wider screens", () => {
+  assert.match(ridesCss, /\.ride-audience-choice\s*\{[^}]*grid-template-columns:\s*1fr/s);
+  assert.match(ridesCss, /@media \(min-width: 721px\)/);
+  assert.match(ridesCss, /grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/);
+  assert.match(ridesCss, /overflow-wrap:\s*anywhere/);
+  assert.doesNotMatch(
     rideMobileCss,
-    /grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/,
+    /grid-template-columns:\s*repeat\(3|grid-template-columns:\s*1fr/,
   );
-  assert.match(rideMobileCss, /overflow-wrap:\s*anywhere/);
-  assert.doesNotMatch(rideMobileCss, /!important/);
+  assert.doesNotMatch(`${ridesCss}\n${rideMobileCss}`, /!important/);
 });
 
 test("Ride request success copy keeps one canonical request across audience choices", () => {
@@ -86,9 +88,9 @@ test("Ride owners can edit the same Offer and Request from My Rides", () => {
   assert.match(rideApi, /updateOffer:/);
   assert.match(rideApi, /method:\s*"PATCH"/);
   assert.match(rideApi, /updateRequest:/);
-  assert.match(offerCreatePage, /api\.manageOffer\(offerId\)/);
+  assert.match(offerCreatePage, /\.manageOffer\(offerId\)/);
   assert.match(offerCreatePage, /api\.updateOffer\(offerId/);
-  assert.match(requestCreatePage, /api\.manageRequest\(requestId\)/);
+  assert.match(requestCreatePage, /\.manageRequest\(requestId\)/);
   assert.match(requestCreatePage, /api\.updateRequest\(requestId/);
   assert.match(webRouter, /\/rides\/offers\/:offerId\/edit/);
   assert.match(webRouter, /\/rides\/requests\/:requestId\/edit/);

@@ -157,9 +157,7 @@ export function HoomaNowFeed({ items }: HoomaNowFeedProps) {
             <FeedCardBody
               item={item}
               action={
-                <span className="hooma-now-card__cta">
-                  {item.actionLabel ?? "Open activity ↗"}
-                </span>
+                <span className="hooma-now-card__cta">{item.actionLabel ?? "Open activity ↗"}</span>
               }
             />
           </a>
