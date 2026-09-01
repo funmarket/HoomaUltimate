@@ -195,9 +195,8 @@ test("Open Matches are account-only and independent from Community privacy", asy
     });
     assert.equal(participantDetail.status, 200);
 
-    const communityMembers = await fetch(`${base}/api/v1/communities/${community.id}/members`, {
-      headers: { cookie: viewer.cookie },
-    });
+    const membersUrl = `${base}/api/v1/communities/${community.id}/members`;
+    const communityMembers = await fetch(membersUrl, { headers: { cookie: viewer.cookie } });
     assert.equal(communityMembers.status, 403);
   } finally {
     await new Promise<void>((resolve, reject) =>
