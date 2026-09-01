@@ -77,7 +77,10 @@ export function AthletesPage() {
               Create community
             </button>
             {signInHref ? (
-              <a className="button secondary athletes-action athletes-action--secondary" href={signInHref}>
+              <a
+                className="button secondary athletes-action athletes-action--secondary"
+                href={signInHref}
+              >
                 Sign in to create
               </a>
             ) : null}
@@ -117,7 +120,9 @@ export function AthletesPage() {
       {error ? <div className="error-box">{error}</div> : null}
       {loading ? <div className="state-card">Loading Athletes communities…</div> : null}
       {!loading && !items.length && !error ? (
-        <div className="state-card">No Athletes communities yet. Start the first real training circle.</div>
+        <div className="state-card">
+          No Athletes communities yet. Start the first real training circle.
+        </div>
       ) : null}
       {items.length ? (
         <section className="athletes-grid" aria-label="Athletes communities">
@@ -206,7 +211,11 @@ export function CreateAthletesPage() {
           <div className="athletes-sport-picker__grid">
             {sports.map((option) => (
               <label
-                className={sport === option.value ? "athletes-sport-option is-selected" : "athletes-sport-option"}
+                className={
+                  sport === option.value
+                    ? "athletes-sport-option is-selected"
+                    : "athletes-sport-option"
+                }
                 data-sport={option.value}
                 key={option.value}
               >
@@ -227,7 +236,13 @@ export function CreateAthletesPage() {
         <div className="hooma-form-grid athletes-form-grid">
           <label className="field">
             <span>Name</span>
-            <input name="name" required minLength={2} maxLength={100} placeholder="Community name" />
+            <input
+              name="name"
+              required
+              minLength={2}
+              maxLength={100}
+              placeholder="Community name"
+            />
           </label>
           <label className="field">
             <span>City</span>
@@ -312,7 +327,10 @@ export function CreateAthletesPage() {
           </label>
         </fieldset>
         <div className="hooma-form-actions athletes-form-actions">
-          <a className="button secondary athletes-action athletes-action--secondary" href="/athletes">
+          <a
+            className="button secondary athletes-action athletes-action--secondary"
+            href="/athletes"
+          >
             Cancel
           </a>
           <button className="button athletes-action athletes-action--primary" disabled={creating}>
@@ -417,7 +435,10 @@ export function AthletesDetailPage({
       <a className="team-management-back athletes-back" href="/athletes">
         ← Athletes
       </a>
-      <section className="athletes-surface athletes-hero athletes-hero--detail" data-sport={detail.sport}>
+      <section
+        className="athletes-surface athletes-hero athletes-hero--detail"
+        data-sport={detail.sport}
+      >
         <span className="athletes-card__motif" aria-hidden="true" />
         <div className="athletes-hero__content">
           <span className="eyebrow">{sportLabel(detail.sport)}</span>

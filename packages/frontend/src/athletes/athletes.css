@@ -602,8 +602,11 @@
 
 .athletes-create-page .athletes-choice-grid > label.is-selected {
   border-color: rgba(243, 207, 98, 0.58) !important;
-  background:
-    linear-gradient(180deg, rgba(243, 207, 98, 0.055), rgba(255, 145, 61, 0.018)) !important;
+  background: linear-gradient(
+    180deg,
+    rgba(243, 207, 98, 0.055),
+    rgba(255, 145, 61, 0.018)
+  ) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.045),
     0 2px 0 rgba(243, 207, 98, 0.09) !important;
@@ -751,44 +754,84 @@
 .athletes-page [data-sport="CYCLING"],
 .athletes-page[data-sport="CYCLING"] {
   --athletes-motif:
-    radial-gradient(circle at 84% 22%, transparent 0 1.75rem, rgba(243, 207, 98, 0.16) 1.8rem 1.9rem, transparent 1.95rem),
-    radial-gradient(circle at 64% 76%, transparent 0 1.15rem, rgba(255, 145, 61, 0.12) 1.2rem 1.28rem, transparent 1.34rem),
+    radial-gradient(
+      circle at 84% 22%,
+      transparent 0 1.75rem,
+      rgba(243, 207, 98, 0.16) 1.8rem 1.9rem,
+      transparent 1.95rem
+    ),
+    radial-gradient(
+      circle at 64% 76%,
+      transparent 0 1.15rem,
+      rgba(255, 145, 61, 0.12) 1.2rem 1.28rem,
+      transparent 1.34rem
+    ),
     linear-gradient(145deg, transparent 44%, rgba(243, 207, 98, 0.07) 44.5% 45.5%, transparent 46%);
 }
 
 .athletes-page [data-sport="RUNNING"],
 .athletes-page[data-sport="RUNNING"] {
   --athletes-motif:
-    repeating-linear-gradient(164deg, transparent 0 1.3rem, rgba(243, 207, 98, 0.07) 1.35rem 1.42rem, transparent 1.47rem 2.75rem),
+    repeating-linear-gradient(
+      164deg,
+      transparent 0 1.3rem,
+      rgba(243, 207, 98, 0.07) 1.35rem 1.42rem,
+      transparent 1.47rem 2.75rem
+    ),
     linear-gradient(140deg, rgba(255, 145, 61, 0.055), transparent 48%);
 }
 
 .athletes-page [data-sport="SWIMMING"],
 .athletes-page[data-sport="SWIMMING"] {
   --athletes-motif:
-    repeating-radial-gradient(ellipse at 105% 115%, transparent 0 1.35rem, rgba(243, 207, 98, 0.075) 1.4rem 1.48rem, transparent 1.54rem 2.75rem),
+    repeating-radial-gradient(
+      ellipse at 105% 115%,
+      transparent 0 1.35rem,
+      rgba(243, 207, 98, 0.075) 1.4rem 1.48rem,
+      transparent 1.54rem 2.75rem
+    ),
     linear-gradient(155deg, rgba(255, 145, 61, 0.045), transparent 50%);
 }
 
 .athletes-page [data-sport="FOOTBALL"],
 .athletes-page[data-sport="FOOTBALL"] {
   --athletes-motif:
-    linear-gradient(90deg, transparent 49.5%, rgba(243, 207, 98, 0.08) 49.8% 50.2%, transparent 50.5%),
-    radial-gradient(circle at 50% 50%, transparent 0 2.4rem, rgba(243, 207, 98, 0.075) 2.45rem 2.52rem, transparent 2.57rem),
+    linear-gradient(
+      90deg,
+      transparent 49.5%,
+      rgba(243, 207, 98, 0.08) 49.8% 50.2%,
+      transparent 50.5%
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      transparent 0 2.4rem,
+      rgba(243, 207, 98, 0.075) 2.45rem 2.52rem,
+      transparent 2.57rem
+    ),
     linear-gradient(150deg, rgba(255, 145, 61, 0.045), transparent 55%);
 }
 
 .athletes-page [data-sport="BASKETBALL"],
 .athletes-page[data-sport="BASKETBALL"] {
   --athletes-motif:
-    radial-gradient(circle at 92% 48%, transparent 0 3.3rem, rgba(255, 145, 61, 0.12) 3.35rem 3.45rem, transparent 3.5rem),
+    radial-gradient(
+      circle at 92% 48%,
+      transparent 0 3.3rem,
+      rgba(255, 145, 61, 0.12) 3.35rem 3.45rem,
+      transparent 3.5rem
+    ),
     linear-gradient(90deg, transparent 68%, rgba(243, 207, 98, 0.07) 68.3% 68.8%, transparent 69.1%);
 }
 
 .athletes-page [data-sport="TENNIS"],
 .athletes-page[data-sport="TENNIS"] {
   --athletes-motif:
-    linear-gradient(90deg, transparent 49.5%, rgba(243, 207, 98, 0.08) 49.8% 50.2%, transparent 50.5%),
+    linear-gradient(
+      90deg,
+      transparent 49.5%,
+      rgba(243, 207, 98, 0.08) 49.8% 50.2%,
+      transparent 50.5%
+    ),
     linear-gradient(0deg, transparent 64%, rgba(255, 145, 61, 0.07) 64.3% 64.8%, transparent 65.1%),
     linear-gradient(150deg, rgba(243, 207, 98, 0.04), transparent 55%);
 }
@@ -796,8 +839,18 @@
 .athletes-page [data-sport="PADEL"],
 .athletes-page[data-sport="PADEL"] {
   --athletes-motif:
-    repeating-linear-gradient(90deg, transparent 0 1.5rem, rgba(243, 207, 98, 0.05) 1.55rem 1.62rem, transparent 1.67rem 3rem),
-    repeating-linear-gradient(0deg, transparent 0 1.2rem, rgba(255, 145, 61, 0.045) 1.25rem 1.32rem, transparent 1.37rem 2.5rem);
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 1.5rem,
+      rgba(243, 207, 98, 0.05) 1.55rem 1.62rem,
+      transparent 1.67rem 3rem
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 1.2rem,
+      rgba(255, 145, 61, 0.045) 1.25rem 1.32rem,
+      transparent 1.37rem 2.5rem
+    );
 }
 
 .athletes-page [data-sport="GYM_FITNESS"],
