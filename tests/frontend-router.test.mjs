@@ -26,6 +26,8 @@ test("Web routing is owned by the shared HoomaRouter instead of pathname switche
   assert.match(router, /path="\/rides\/offers"/);
   assert.match(router, /path="\/rides\/offers\/new"/);
   assert.match(router, /path="\/rides\/offers\/:offerId"/);
+  assert.match(router, /path="\/rides\/mine"/);
+  assert.match(router, /<RideMinePage \/>/);
   assert.match(router, /path="\/gamers"/);
   assert.match(router, /path="\/gamers\/games\/:gameSlug"/);
   assert.match(router, /path="\/events\/:eventId\/chat"/);

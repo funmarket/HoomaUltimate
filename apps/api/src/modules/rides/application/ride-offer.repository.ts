@@ -4,10 +4,13 @@ import type {
   RideMeetingPoint,
   RideMeetingPointInput,
   RideContext,
+  RideMineListQuery,
+  RideMineOfferList,
   RideOfferCreateInput,
   RideOfferStatus,
   RideOfferUpdateInput,
   RideParticipation,
+  RideParticipationForPassengerList,
   RideParticipationRequestInput,
   RideParticipationStatus,
 } from "@hooma/contracts/rides";
@@ -28,6 +31,7 @@ export type RideOfferForOwnerRecord = PublicRideOffer & {
 
 export interface RideOfferRepository {
   listPublic(input: RideOfferListInput): Promise<PublicRideOfferList>;
+  listForDriver(driverUserId: string, input: RideMineListQuery): Promise<RideMineOfferList>;
   getPublic(rideOfferId: string): Promise<PublicRideOffer | null>;
   getForOwner(rideOfferId: string, driverUserId: string): Promise<RideOfferForOwnerRecord | null>;
   create(driverUserId: string, input: RideOfferCreateInput): Promise<RideOfferForOwnerRecord>;
@@ -44,6 +48,10 @@ export interface RideOfferRepository {
 }
 
 export interface RideParticipationRepository {
+  listForPassenger(
+    passengerUserId: string,
+    input: RideMineListQuery,
+  ): Promise<RideParticipationForPassengerList>;
   getForPassenger(rideOfferId: string, passengerUserId: string): Promise<RideParticipation | null>;
   requestParticipation(
     rideOfferId: string,

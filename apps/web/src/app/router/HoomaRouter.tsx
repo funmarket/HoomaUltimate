@@ -25,6 +25,7 @@ import {
   PlacesPage,
   PlayPage,
   RequestsPage,
+  RideMinePage,
   RideOfferCreatePage,
   RideOfferDetailPage,
   RideOffersPage,
@@ -221,6 +222,7 @@ function HoomaRoutes() {
               <Route path="/rides/offers" element={<RideOffersPage />} />
               <Route path="/rides/offers/new" element={<RideOfferCreatePage />} />
               <Route path="/rides/offers/:offerId" element={<RideOfferDetailRoute />} />
+              <Route path="/rides/mine" element={<RideMinePage />} />
               <Route path="/places" element={<PlacesPage />} />
               <Route path="/places/new" element={<AddPlacePage />} />
               <Route path="/places/:placeId/edit" element={<PlaceEditRoute />} />

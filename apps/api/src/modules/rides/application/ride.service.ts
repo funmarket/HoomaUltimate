@@ -1,7 +1,11 @@
 import type { ObjectStorage, StoredObject } from "@hooma/storage";
 import { randomUUID } from "node:crypto";
+import { rideMineQuerySchema } from "@hooma/contracts/rides";
 import type {
   RideMeetingPointInput,
+  RideMine,
+  RideMineListQuery,
+  RideMineQuery,
   RideOfferCreateInput,
   RideOfferForOwner,
   RideOfferStatus,
@@ -267,6 +271,21 @@ export class RideService {
     return meetingPoint;
   }
 
+  async getMyRides(actorUserId: string, input: RideMineQuery = {}): Promise<RideMine> {
+    const query = normalizeMineQuery(input);
+    const [offers, requests, participations] = await Promise.all([
+      this.offers.listForDriver(actorUserId, query),
+      this.requests.listForRequester(actorUserId, query),
+      this.participations.listForPassenger(actorUserId, query),
+    ]);
+
+    return {
+      offers,
+      requests,
+      participations,
+    };
+  }
+
   async replaceOfferVehiclePhoto(
     driverUserId: string,
     rideOfferId: string,
@@ -522,6 +541,10 @@ function normalizeOfferListInput(input: PublicRideOfferListInput): RideOfferList
 
 function normalizeRequestListInput(input: PublicRideRequestListInput): RideRequestListInput {
   return { ...input, limit: normalizeLimit(input.limit) };
+}
+
+function normalizeMineQuery(input: RideMineQuery): RideMineListQuery {
+  return rideMineQuerySchema.parse(input);
 }
 
 function normalizeLimit(limit: number | undefined): number {

@@ -374,3 +374,332 @@ test("Ride HTTP APIs expose public/member flows without leaking private Ride sta
     }
   }
 });
+
+test("Ride My Rides reconstructs authenticated actor activity without leaking private meeting points", async () => {
+  const container = createContainer(config);
+  const app = createApp(config, container);
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise<void>((resolve) => server.once("listening", resolve));
+  const address = server.address();
+  assert.ok(address && typeof address === "object");
+  const base = `http://127.0.0.1:${address.port}`;
+  const createdUserIds: string[] = [];
+  const rideOfferIds: string[] = [];
+  const rideRequestIds: string[] = [];
+
+  async function createOffer(
+    cookie: string,
+    label: string,
+    context: "MATCHDAY" | "GENERAL",
+    compensationTerms: unknown,
+  ) {
+    const response = await fetch(`${base}/api/v1/rides/offers`, {
+      method: "POST",
+      headers: headers(cookie),
+      body: JSON.stringify({
+        context,
+        destination: { type: "CUSTOM", customDestinationLabel: label },
+        originAreaLabel: `${label} origin`,
+        departureAt: futureDate(90 + rideOfferIds.length),
+        totalSeats: 3,
+        compensationTerms,
+        vehicleMake: null,
+        vehicleModel: null,
+        vehicleColor: null,
+        note: null,
+        waypoints: [],
+      }),
+    });
+    assert.equal(response.status, 201);
+    const payload = (await response.json()) as { id: string };
+    rideOfferIds.push(payload.id);
+    return payload;
+  }
+
+  async function createRequest(
+    cookie: string,
+    label: string,
+    context: "MATCHDAY" | "GENERAL",
+    compensationTerms: unknown,
+  ) {
+    const response = await fetch(`${base}/api/v1/rides/requests`, {
+      method: "POST",
+      headers: headers(cookie),
+      body: JSON.stringify({
+        context,
+        destination: { type: "CUSTOM", customDestinationLabel: label },
+        pickupAreaLabel: `${label} pickup`,
+        desiredDepartureAt: futureDate(180 + rideRequestIds.length),
+        passengerCount: 1,
+        compensationTerms,
+        expiresAt: futureDate(60),
+        note: null,
+      }),
+    });
+    assert.equal(response.status, 201);
+    const payload = (await response.json()) as { id: string };
+    rideRequestIds.push(payload.id);
+    return payload;
+  }
+
+  try {
+    const protectedMine = await fetch(`${base}/api/v1/rides/mine`, {
+      headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
+    });
+    assert.equal(protectedMine.status, 401);
+
+    const suffix = `mine_${Date.now().toString(36)}`;
+    const driverA = await register(base, `ride_driver_a_${suffix}`);
+    const driverB = await register(base, `ride_driver_b_${suffix}`);
+    const requesterA = await register(base, `ride_requester_a_${suffix}`);
+    const requesterB = await register(base, `ride_requester_b_${suffix}`);
+    const passengerA = await register(base, `ride_passenger_a_${suffix}`);
+    const passengerB = await register(base, `ride_passenger_b_${suffix}`);
+    const passengerC = await register(base, `ride_passenger_c_${suffix}`);
+    const passengerD = await register(base, `ride_passenger_d_${suffix}`);
+    const outsider = await register(base, `ride_outsider_${suffix}`);
+    createdUserIds.push(
+      driverA.userId,
+      driverB.userId,
+      requesterA.userId,
+      requesterB.userId,
+      passengerA.userId,
+      passengerB.userId,
+      passengerC.userId,
+      passengerD.userId,
+      outsider.userId,
+    );
+
+    const driverAOffer = await createOffer(driverA.cookie, "Driver A matchday offer", "MATCHDAY", {
+      type: "CASH",
+      amountMinor: 12000,
+      currency: "TND",
+      basis: "PER_SEAT",
+    });
+    const driverASecondOffer = await createOffer(
+      driverA.cookie,
+      "Driver A general offer",
+      "GENERAL",
+      {
+        type: "FREE",
+      },
+    );
+    const driverBOffer = await createOffer(
+      driverB.cookie,
+      "Driver B private destination",
+      "GENERAL",
+      {
+        type: "FREE",
+      },
+    );
+    const requesterARequest = await createRequest(
+      requesterA.cookie,
+      "Requester A matchday",
+      "MATCHDAY",
+      {
+        type: "CASH",
+        amountMinor: 8000,
+        currency: "TND",
+      },
+    );
+    const requesterBRequest = await createRequest(
+      requesterB.cookie,
+      "Requester B general",
+      "GENERAL",
+      {
+        type: "FREE",
+      },
+    );
+
+    async function requestParticipation(cookie: string, offerId: string) {
+      const response = await fetch(`${base}/api/v1/rides/offers/${offerId}/participations`, {
+        method: "POST",
+        headers: headers(cookie),
+        body: JSON.stringify({ seatCount: 1 }),
+      });
+      assert.equal(response.status, 201);
+      return (await response.json()) as { id: string };
+    }
+
+    const driverAOfferParticipations = await Promise.all([
+      requestParticipation(passengerB.cookie, driverAOffer.id),
+      requestParticipation(passengerC.cookie, driverAOffer.id),
+      requestParticipation(passengerD.cookie, driverAOffer.id),
+    ]);
+
+    const participationResponse = await fetch(
+      `${base}/api/v1/rides/offers/${driverBOffer.id}/participations`,
+      {
+        method: "POST",
+        headers: headers(passengerA.cookie),
+        body: JSON.stringify({ seatCount: 1 }),
+      },
+    );
+    assert.equal(participationResponse.status, 201);
+    const participation = (await participationResponse.json()) as { id: string };
+
+    const acceptParticipation = await fetch(
+      `${base}/api/v1/rides/offers/${driverBOffer.id}/participations/${participation.id}/accept`,
+      { method: "POST", headers: headers(driverB.cookie) },
+    );
+    assert.equal(acceptParticipation.status, 200);
+
+    const privateMeetingPoint = await fetch(
+      `${base}/api/v1/rides/offers/${driverBOffer.id}/participations/${participation.id}/meeting-point`,
+      {
+        method: "PUT",
+        headers: headers(driverB.cookie),
+        body: JSON.stringify({ label: "Secret Gate 9", latitude: 36.8065, longitude: 10.1815 }),
+      },
+    );
+    assert.equal(privateMeetingPoint.status, 200);
+
+    const driverMine = await fetch(`${base}/api/v1/rides/mine`, {
+      headers: headers(driverA.cookie),
+    });
+    assert.equal(driverMine.status, 200);
+    const driverMinePayload = (await driverMine.json()) as {
+      offers: {
+        items: Array<{
+          id: string;
+          context: string;
+          compensationTerms: unknown;
+          participationCount: number;
+        }>;
+      };
+      requests: { items: Array<{ id: string }> };
+      participations: { items: Array<{ id: string }> };
+    };
+    assert.deepEqual(
+      driverMinePayload.offers.items.map((offer) => offer.id).sort(),
+      [driverAOffer.id, driverASecondOffer.id].sort(),
+    );
+    assert.equal(
+      driverMinePayload.offers.items.some((offer) => offer.id === driverBOffer.id),
+      false,
+    );
+    assert.equal(driverMinePayload.requests.items.length, 0);
+    assert.equal(driverMinePayload.participations.items.length, 0);
+    assert.equal(
+      driverMinePayload.offers.items.some(
+        (offer) =>
+          offer.context === "MATCHDAY" &&
+          JSON.stringify(offer.compensationTerms) ===
+            JSON.stringify({
+              type: "CASH",
+              amountMinor: 12000,
+              currency: "TND",
+              basis: "PER_SEAT",
+            }),
+      ),
+      true,
+    );
+
+    const driverAOfferSummary = driverMinePayload.offers.items.find(
+      (offer) => offer.id === driverAOffer.id,
+    );
+    assert.ok(driverAOfferSummary);
+    assert.equal(driverAOfferSummary.participationCount, driverAOfferParticipations.length);
+    assert.equal("participations" in driverAOfferSummary, false);
+    assert.equal("passengerUserId" in driverAOfferSummary, false);
+    assert.equal("passenger" in driverAOfferSummary, false);
+
+    const driverAManage = await fetch(`${base}/api/v1/rides/offers/${driverAOffer.id}/manage`, {
+      headers: headers(driverA.cookie),
+    });
+    assert.equal(driverAManage.status, 200);
+    const driverAManagePayload = (await driverAManage.json()) as {
+      participations: Array<{ id: string; passengerUserId: string; passenger?: unknown }>;
+    };
+    assert.deepEqual(
+      driverAManagePayload.participations.map((item) => item.id).sort(),
+      driverAOfferParticipations.map((item) => item.id).sort(),
+    );
+    assert.equal("passengerUserId" in driverAManagePayload.participations[0], true);
+
+    const limitedDriverMine = await fetch(`${base}/api/v1/rides/mine?limit=1`, {
+      headers: headers(driverA.cookie),
+    });
+    assert.equal(limitedDriverMine.status, 200);
+    const limitedPayload = (await limitedDriverMine.json()) as {
+      offers: { items: unknown[]; nextCursor: string | null };
+    };
+    assert.equal(limitedPayload.offers.items.length, 1);
+    assert.ok(limitedPayload.offers.nextCursor);
+
+    const requesterMine = await fetch(`${base}/api/v1/rides/mine`, {
+      headers: headers(requesterA.cookie),
+    });
+    assert.equal(requesterMine.status, 200);
+    const requesterMinePayload = (await requesterMine.json()) as {
+      requests: { items: Array<{ id: string; context: string; compensationTerms: unknown }> };
+    };
+    assert.deepEqual(
+      requesterMinePayload.requests.items.map((request) => request.id),
+      [requesterARequest.id],
+    );
+    assert.equal(
+      requesterMinePayload.requests.items.some((request) => request.id === requesterBRequest.id),
+      false,
+    );
+    assert.equal(requesterMinePayload.requests.items[0]?.context, "MATCHDAY");
+    assert.deepEqual(requesterMinePayload.requests.items[0]?.compensationTerms, {
+      type: "CASH",
+      amountMinor: 8000,
+      currency: "TND",
+    });
+
+    const passengerMine = await fetch(`${base}/api/v1/rides/mine`, {
+      headers: headers(passengerA.cookie),
+    });
+    assert.equal(passengerMine.status, 200);
+    const passengerMinePayload = (await passengerMine.json()) as {
+      participations: {
+        items: Array<{ id: string; status: string; offer: { id: string; context: string } }>;
+      };
+    };
+    assert.deepEqual(
+      passengerMinePayload.participations.items.map((item) => item.id),
+      [participation.id],
+    );
+    assert.equal(passengerMinePayload.participations.items[0]?.status, "ACCEPTED");
+    assert.equal(passengerMinePayload.participations.items[0]?.offer.id, driverBOffer.id);
+    assert.equal(passengerMinePayload.participations.items[0]?.offer.context, "GENERAL");
+    assert.equal(JSON.stringify(passengerMinePayload).includes("Secret Gate 9"), false);
+    assert.equal(JSON.stringify(passengerMinePayload).includes("latitude"), false);
+    assert.equal(JSON.stringify(passengerMinePayload).includes("longitude"), false);
+
+    const outsiderMine = await fetch(`${base}/api/v1/rides/mine`, {
+      headers: headers(outsider.cookie),
+    });
+    assert.equal(outsiderMine.status, 200);
+    assert.deepEqual(await outsiderMine.json(), {
+      offers: { items: [], nextCursor: null },
+      requests: { items: [], nextCursor: null },
+      participations: { items: [], nextCursor: null },
+    });
+  } finally {
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve())),
+    );
+    container.redis.close();
+    for (const rideOfferId of rideOfferIds) {
+      await db.rideMeetingPoint.deleteMany({
+        where: { participation: { rideOfferId } },
+      });
+      await db.rideParticipation.deleteMany({ where: { rideOfferId } });
+      await db.rideOfferWaypoint.deleteMany({ where: { rideOfferId } });
+      await db.rideOffer.deleteMany({ where: { id: rideOfferId } });
+    }
+    for (const rideRequestId of rideRequestIds) {
+      await db.rideRequest.deleteMany({ where: { id: rideRequestId } });
+    }
+    if (createdUserIds.length > 0) {
+      await db.webSession.deleteMany({ where: { userId: { in: createdUserIds } } });
+      await db.webCredential.deleteMany({ where: { userId: { in: createdUserIds } } });
+      await db.telegramIdentity.deleteMany({ where: { userId: { in: createdUserIds } } });
+      await db.userPresentation.deleteMany({ where: { userId: { in: createdUserIds } } });
+      await db.user.deleteMany({ where: { id: { in: createdUserIds } } });
+    }
+  }
+});

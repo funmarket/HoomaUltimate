@@ -6,6 +6,7 @@ import type {
   RideDestinationInput,
   RideMeetingPoint,
   RideMeetingPointInput,
+  RideMineOffer,
   RideOfferCreateInput,
   RideOfferStatus,
   RideParticipation,
@@ -377,6 +378,13 @@ class FakeRideOfferRepository implements RideOfferRepository {
     return { items: this.publicOffer ? [this.publicOffer] : [], nextCursor: null };
   }
 
+  async listForDriver() {
+    const offer: RideMineOffer | null = this.ownerOffer
+      ? { ...this.ownerOffer, participationCount: this.ownerOffer.participations.length }
+      : null;
+    return { items: offer ? [offer] : [], nextCursor: null };
+  }
+
   async getPublic() {
     return this.publicOffer;
   }
@@ -413,6 +421,10 @@ class FakeRideRequestRepository implements RideRequestRepository {
   async listPublic(input: RideRequestListInput) {
     this.lastListInput = input;
     return { items: this.publicRequest ? [this.publicRequest] : [], nextCursor: null };
+  }
+
+  async listForRequester() {
+    return { items: this.ownerRequest ? [this.ownerRequest] : [], nextCursor: null };
   }
 
   async getPublic() {
@@ -454,6 +466,10 @@ class FakeRideParticipationRepository implements RideParticipationRepository {
     readonly actorUserId: string;
     readonly status: RideParticipationStatus;
   } | null = null;
+
+  async listForPassenger() {
+    return { items: [], nextCursor: null };
+  }
 
   async getForPassenger(rideOfferId: string, passengerUserId: string) {
     this.lastPassengerLookup = { rideOfferId, passengerUserId };

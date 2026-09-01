@@ -6,16 +6,22 @@ import type {
   PublicRideRequest,
   PublicRideRequestList,
   RideDestinationSummary,
+  RideMineListQuery,
+  RideMineOffer,
+  RideMineOfferList,
   RideMeetingPoint,
   RideMeetingPointInput,
   RideOfferCreateInput,
   RideOfferStatus,
   RideOfferUpdateInput,
   RideParticipation,
+  RideParticipationForPassenger,
+  RideParticipationForPassengerList,
   RideParticipationRequestInput,
   RideParticipationStatus,
   RideRequestCreateInput,
   RideRequestForOwner,
+  RideRequestForOwnerList,
   RideRequestStatus,
   RideRequestUpdateInput,
   RideWaypoint,
@@ -70,6 +76,36 @@ const publicRideOfferSelect = Prisma.validator<Prisma.RideOfferSelect>()({
     where: { status: "ACCEPTED" },
     select: { seatCount: true },
   },
+});
+
+const mineRideOfferSelect = Prisma.validator<Prisma.RideOfferSelect>()({
+  id: true,
+  context: true,
+  status: true,
+  eventId: true,
+  destinationPlaceId: true,
+  customDestinationLabel: true,
+  originAreaLabel: true,
+  departureAt: true,
+  totalSeats: true,
+  compensationType: true,
+  compensationAmountMinor: true,
+  compensationCurrency: true,
+  compensationBasis: true,
+  vehicleMake: true,
+  vehicleModel: true,
+  vehicleColor: true,
+  note: true,
+  createdAt: true,
+  updatedAt: true,
+  destinationEvent: { select: { id: true, title: true, startsAt: true } },
+  destinationPlace: { select: { id: true, name: true, city: true, houma: true } },
+  waypoints: {
+    orderBy: [{ sequence: "asc" }, { id: "asc" }],
+    select: { id: true, sequence: true, placeId: true, areaLabel: true },
+  },
+  vehiclePhoto: { select: { id: true } },
+  _count: { select: { participations: true } },
 });
 
 const ownerRideOfferSelect = Prisma.validator<Prisma.RideOfferSelect>()({
@@ -130,6 +166,11 @@ const rideParticipationSelect = Prisma.validator<Prisma.RideParticipationSelect>
   completedAt: true,
 });
 
+const rideParticipationWithOfferSelect = Prisma.validator<Prisma.RideParticipationSelect>()({
+  ...rideParticipationSelect,
+  rideOffer: { select: publicRideOfferSelect },
+});
+
 const rideMeetingPointSelect = Prisma.validator<Prisma.RideMeetingPointSelect>()({
   id: true,
   participationId: true,
@@ -143,6 +184,9 @@ const rideMeetingPointSelect = Prisma.validator<Prisma.RideMeetingPointSelect>()
 type PublicRideOfferRow = Prisma.RideOfferGetPayload<{
   select: typeof publicRideOfferSelect;
 }>;
+type MineRideOfferRow = Prisma.RideOfferGetPayload<{
+  select: typeof mineRideOfferSelect;
+}>;
 type OwnerRideOfferRow = Prisma.RideOfferGetPayload<{
   select: typeof ownerRideOfferSelect;
 }>;
@@ -154,6 +198,9 @@ type OwnerRideRequestRow = Prisma.RideRequestGetPayload<{
 }>;
 type RideParticipationRow = Prisma.RideParticipationGetPayload<{
   select: typeof rideParticipationSelect;
+}>;
+type RideParticipationForPassengerRow = Prisma.RideParticipationGetPayload<{
+  select: typeof rideParticipationWithOfferSelect;
 }>;
 type RideMeetingPointRow = Prisma.RideMeetingPointGetPayload<{
   select: typeof rideMeetingPointSelect;
@@ -181,6 +228,32 @@ export class PrismaRideOfferRepository
 
     return {
       items: rows.slice(0, input.limit).map(serializePublicRideOffer),
+      nextCursor: rows.length > input.limit ? (rows[input.limit - 1]?.id ?? null) : null,
+    };
+  }
+
+  async listForDriver(driverUserId: string, input: RideMineListQuery): Promise<RideMineOfferList> {
+    const rows = await this.db.rideOffer.findMany({
+      where: { driverUserId },
+      orderBy: [{ departureAt: "desc" }, { id: "asc" }],
+      take: input.limit + 1,
+      ...(input.offerCursor ? { cursor: { id: input.offerCursor }, skip: 1 } : {}),
+      select: mineRideOfferSelect,
+    });
+    const pageRows = rows.slice(0, input.limit);
+    const acceptedSeatCounts = await this.db.rideParticipation.groupBy({
+      by: ["rideOfferId"],
+      where: { rideOfferId: { in: pageRows.map((row) => row.id) }, status: "ACCEPTED" },
+      _sum: { seatCount: true },
+    });
+    const acceptedSeatsByOfferId = new Map(
+      acceptedSeatCounts.map((entry) => [entry.rideOfferId, entry._sum.seatCount ?? 0]),
+    );
+
+    return {
+      items: pageRows.map((row) =>
+        serializeMineRideOffer(row, acceptedSeatsByOfferId.get(row.id) ?? 0),
+      ),
       nextCursor: rows.length > input.limit ? (rows[input.limit - 1]?.id ?? null) : null,
     };
   }
@@ -334,6 +407,24 @@ export class PrismaRideOfferRepository
     });
   }
 
+  async listForPassenger(
+    passengerUserId: string,
+    input: RideMineListQuery,
+  ): Promise<RideParticipationForPassengerList> {
+    const rows = await this.db.rideParticipation.findMany({
+      where: { passengerUserId },
+      orderBy: [{ requestedAt: "desc" }, { id: "asc" }],
+      take: input.limit + 1,
+      ...(input.participationCursor ? { cursor: { id: input.participationCursor }, skip: 1 } : {}),
+      select: rideParticipationWithOfferSelect,
+    });
+
+    return {
+      items: rows.slice(0, input.limit).map(serializeRideParticipationForPassenger),
+      nextCursor: rows.length > input.limit ? (rows[input.limit - 1]?.id ?? null) : null,
+    };
+  }
+
   async getForPassenger(
     rideOfferId: string,
     passengerUserId: string,
@@ -476,6 +567,24 @@ export class PrismaRideRequestRepository implements RideRequestRepository {
 
     return {
       items: rows.slice(0, input.limit).map(serializePublicRideRequest),
+      nextCursor: rows.length > input.limit ? (rows[input.limit - 1]?.id ?? null) : null,
+    };
+  }
+
+  async listForRequester(
+    requesterUserId: string,
+    input: RideMineListQuery,
+  ): Promise<RideRequestForOwnerList> {
+    const rows = await this.db.rideRequest.findMany({
+      where: { requesterUserId },
+      orderBy: [{ desiredDepartureAt: "desc" }, { id: "asc" }],
+      take: input.limit + 1,
+      ...(input.requestCursor ? { cursor: { id: input.requestCursor }, skip: 1 } : {}),
+      select: ownerRideRequestSelect,
+    });
+
+    return {
+      items: rows.slice(0, input.limit).map(serializeOwnerRideRequest),
       nextCursor: rows.length > input.limit ? (rows[input.limit - 1]?.id ?? null) : null,
     };
   }
@@ -682,6 +791,29 @@ function serializePublicRideOffer(row: PublicRideOfferRow): PublicRideOffer {
   };
 }
 
+function serializeMineRideOffer(row: MineRideOfferRow, acceptedSeats: number): RideMineOffer {
+  return {
+    id: row.id,
+    context: row.context,
+    status: row.status,
+    destination: rideDestinationSummary(row),
+    originAreaLabel: row.originAreaLabel,
+    departureAt: row.departureAt.toISOString(),
+    totalSeats: row.totalSeats,
+    availableSeats: Math.max(row.totalSeats - acceptedSeats, 0),
+    compensationTerms: serializeOfferCompensation(row),
+    vehicleMake: row.vehicleMake,
+    vehicleModel: row.vehicleModel,
+    vehicleColor: row.vehicleColor,
+    note: row.note,
+    hasVehiclePhoto: row.vehiclePhoto !== null,
+    waypoints: row.waypoints.map(serializeRideWaypoint),
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+    participationCount: row._count.participations,
+  };
+}
+
 function serializeOwnerRideOffer(row: OwnerRideOfferRow): RideOfferForOwnerRecord {
   return {
     ...serializePublicRideOffer(row),
@@ -725,6 +857,15 @@ function serializeRideParticipation(row: RideParticipationRow): RideParticipatio
     respondedAt: row.respondedAt?.toISOString() ?? null,
     cancelledAt: row.cancelledAt?.toISOString() ?? null,
     completedAt: row.completedAt?.toISOString() ?? null,
+  };
+}
+
+function serializeRideParticipationForPassenger(
+  row: RideParticipationForPassengerRow,
+): RideParticipationForPassenger {
+  return {
+    ...serializeRideParticipation(row),
+    offer: serializePublicRideOffer(row.rideOffer),
   };
 }
 
@@ -787,7 +928,9 @@ function serializeRideWaypoint(row: RideWaypoint): RideWaypoint {
   };
 }
 
-function rideDestinationSummary(row: PublicRideOfferRow): RideDestinationSummary {
+function rideDestinationSummary(
+  row: PublicRideOfferRow | MineRideOfferRow,
+): RideDestinationSummary {
   if (row.eventId) {
     if (!row.destinationEvent) throw new Error("RIDE_DESTINATION_EVENT_MISSING");
 

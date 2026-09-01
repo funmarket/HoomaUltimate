@@ -5,6 +5,7 @@ import type {
   PublicRideRequestList,
   RideMeetingPoint,
   RideMeetingPointInput,
+  RideMine,
   RideContext,
   RideOfferCreateInput,
   RideOfferForOwner,
@@ -19,6 +20,7 @@ export type {
   PublicRideOffer,
   PublicRideRequest,
   RideMeetingPoint,
+  RideMine,
   RideOfferCreateInput,
   RideOfferForOwner,
   RideParticipation,
@@ -33,6 +35,13 @@ export type RideListQuery = {
   readonly destinationPlaceId?: string;
   readonly from?: string;
   readonly limit?: number;
+};
+
+export type RideMineQuery = {
+  readonly limit?: number;
+  readonly offerCursor?: string;
+  readonly requestCursor?: string;
+  readonly participationCursor?: string;
 };
 
 export type RideVehiclePhotoMetadata = {
@@ -54,6 +63,14 @@ function listPath(kind: "offers" | "requests", query: RideListQuery = {}): strin
   return `/api/public/v1/rides/${kind}?${params.toString()}`;
 }
 
+function minePath(query: RideMineQuery = {}): string {
+  const params = new URLSearchParams({ limit: String(query.limit ?? 20) });
+  if (query.offerCursor) params.set("offerCursor", query.offerCursor);
+  if (query.requestCursor) params.set("requestCursor", query.requestCursor);
+  if (query.participationCursor) params.set("participationCursor", query.participationCursor);
+  return ridePath(`/mine?${params.toString()}`);
+}
+
 function ridePath(path: string): string {
   return `/api/v1/rides${path}`;
 }
@@ -68,6 +85,7 @@ export function createRideApi(transport: HoomaTransport) {
       request<PublicRideOfferList>(transport, listPath("offers", query)),
     getOffer: (offerId: string) =>
       request<PublicRideOffer>(transport, publicRidePath(`/offers/${encodeURIComponent(offerId)}`)),
+    getMyRides: (query?: RideMineQuery) => request<RideMine>(transport, minePath(query)),
     manageOffer: (offerId: string) =>
       request<RideOfferForOwner>(
         transport,
