@@ -24,6 +24,12 @@ export function dateTimeInputValue(minutesFromNow: number): string {
   return new Date(date.getTime() - offset * 60_000).toISOString().slice(0, 16);
 }
 
+export function dateTimeInputValueFromIso(value: string): string {
+  const date = new Date(value);
+  const offset = date.getTimezoneOffset();
+  return new Date(date.getTime() - offset * 60_000).toISOString().slice(0, 16);
+}
+
 export function toIsoDateTime(value: string): string {
   return new Date(value).toISOString();
 }
@@ -32,6 +38,31 @@ export function destinationInput(state: DestinationFormState): RideDestinationIn
   if (state.type === "EVENT") return { type: "EVENT", eventId: state.eventId.trim() };
   if (state.type === "PLACE") return { type: "PLACE", placeId: state.placeId.trim() };
   return { type: "CUSTOM", customDestinationLabel: state.customDestinationLabel.trim() };
+}
+
+export function destinationFormState(destination: RideDestinationSummary): DestinationFormState {
+  if (destination.type === "EVENT") {
+    return {
+      type: "EVENT",
+      eventId: destination.eventId,
+      placeId: "",
+      customDestinationLabel: "",
+    };
+  }
+  if (destination.type === "PLACE") {
+    return {
+      type: "PLACE",
+      eventId: "",
+      placeId: destination.placeId,
+      customDestinationLabel: "",
+    };
+  }
+  return {
+    type: "CUSTOM",
+    eventId: "",
+    placeId: "",
+    customDestinationLabel: destination.label,
+  };
 }
 
 export function destinationLabel(destination: RideDestinationSummary): string {
