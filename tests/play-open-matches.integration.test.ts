@@ -125,7 +125,9 @@ test("Open Matches are account-only and independent from Community privacy", asy
     };
     assert.equal(event.playDetails.visibility, "OPEN");
 
-    const persisted = await db.playEventDetails.findUniqueOrThrow({ where: { eventId: event.id } });
+    const persisted = await db.playEventDetails.findUniqueOrThrow({
+      where: { eventId: event.id },
+    });
     assert.equal(persisted.visibility, "OPEN");
 
     const publicPlay = await fetch(`${base}/api/public/v1/events?type=PLAY&limit=50`);
@@ -165,7 +167,9 @@ test("Open Matches are account-only and independent from Community privacy", asy
       body: JSON.stringify({ play: { visibility: "PRIVATE" } }),
     });
     assert.equal(makePrivate.status, 200);
-    const privateEvent = (await makePrivate.json()) as { playDetails: { visibility: string } };
+    const privateEvent = (await makePrivate.json()) as {
+      playDetails: { visibility: string };
+    };
     assert.equal(privateEvent.playDetails.visibility, "PRIVATE");
 
     const privateOpenMatches = await fetch(`${base}/api/v1/play/open-matches?limit=50`, {
@@ -191,9 +195,10 @@ test("Open Matches are account-only and independent from Community privacy", asy
     });
     assert.equal(participantDetail.status, 200);
 
-    const communityPrivateContent = await fetch(`${base}/api/v1/communities/${community.id}`, {
-      headers: { cookie: viewer.cookie },
-    });
+    const communityPrivateContent = await fetch(
+      `${base}/api/v1/communities/${community.id}`,
+      { headers: { cookie: viewer.cookie } },
+    );
     assert.notEqual(communityPrivateContent.status, 200);
   } finally {
     await new Promise<void>((resolve, reject) =>
