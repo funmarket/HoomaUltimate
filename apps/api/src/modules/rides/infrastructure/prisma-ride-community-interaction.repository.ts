@@ -4,9 +4,7 @@ import type {
   RideCommunityInteractionRepository,
 } from "../application/ride-community-interaction.repository.js";
 
-export class PrismaRideCommunityInteractionRepository
-  implements RideCommunityInteractionRepository
-{
+export class PrismaRideCommunityInteractionRepository implements RideCommunityInteractionRepository {
   constructor(private readonly db: PrismaClient) {}
 
   async getActiveCommunityRequest(input: {
