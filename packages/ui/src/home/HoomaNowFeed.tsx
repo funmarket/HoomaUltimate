@@ -1,3 +1,5 @@
+import { useState, type ReactNode } from "react";
+
 export type HoomaNowUrgency =
   | "LIVE_NOW"
   | "JUST_STARTED"
@@ -9,7 +11,7 @@ export type HoomaNowUrgency =
 
 export interface HoomaNowFeedItem {
   readonly id: string;
-  readonly href: string;
+  readonly href?: string;
   readonly title: string;
   readonly summary: string | null;
   readonly sourceLabel: string;
@@ -23,6 +25,8 @@ export interface HoomaNowFeedItem {
     readonly houma: string | null;
   };
   readonly detailRows?: readonly string[];
+  readonly actionLabel?: string;
+  readonly expansion?: ReactNode;
 }
 
 export interface HoomaNowFeedProps {
@@ -57,47 +61,100 @@ function timeLabel(item: HoomaNowFeedItem): string | null {
   }).format(date);
 }
 
+function FeedCardBody({
+  item,
+  action,
+}: {
+  readonly item: HoomaNowFeedItem;
+  readonly action: ReactNode;
+}) {
+  const presentation = urgencyPresentation[item.urgency];
+  const place = contextLabel(item);
+  const time = timeLabel(item);
+
+  return (
+    <span className="hooma-now-card__body">
+      <span className="hooma-now-card__top">
+        <span className="hooma-now-card__source">
+          {place ? `${place} · ${item.sourceLabel}` : item.sourceLabel}
+        </span>
+        <span className="hooma-now-card__status">
+          <span className="hooma-now-card__dot" aria-hidden="true" />
+          {presentation.label}
+        </span>
+      </span>
+      <h3 className="hooma-now-card__title">{item.title}</h3>
+      {item.summary ? <p className="hooma-now-card__summary">{item.summary}</p> : null}
+      {time ? (
+        <span className="hooma-now-card__meta">
+          <span>{time}</span>
+        </span>
+      ) : null}
+      {item.detailRows?.length ? (
+        <span className="hooma-now-card__ride-meta">
+          {item.detailRows.map((row) => (
+            <span key={row}>{row}</span>
+          ))}
+        </span>
+      ) : null}
+      {action}
+    </span>
+  );
+}
+
 export function HoomaNowFeed({ items }: HoomaNowFeedProps) {
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+
   return (
     <div className="hooma-now-list">
       {items.map((item) => {
         const presentation = urgencyPresentation[item.urgency];
-        const place = contextLabel(item);
-        const time = timeLabel(item);
-        return (
-          <a
-            className="hooma-now-card"
-            data-tone={presentation.tone}
-            href={item.href}
-            key={item.id}
-          >
-            <span className="hooma-now-card__rail" aria-hidden="true" />
-            <span className="hooma-now-card__body">
-              <span className="hooma-now-card__top">
-                <span className="hooma-now-card__source">
-                  {place ? `${place} · ${item.sourceLabel}` : item.sourceLabel}
-                </span>
-                <span className="hooma-now-card__status">
-                  <span className="hooma-now-card__dot" aria-hidden="true" />
-                  {presentation.label}
-                </span>
+        const expanded = expandedItemId === item.id;
+
+        if (item.expansion) {
+          return (
+            <article className="hooma-now-card" data-tone={presentation.tone} key={item.id}>
+              <span className="hooma-now-card__rail" aria-hidden="true" />
+              <span className="hooma-now-card__interactive">
+                <FeedCardBody
+                  item={item}
+                  action={
+                    <button
+                      className="hooma-now-card__cta hooma-now-card__cta-button"
+                      type="button"
+                      aria-expanded={expanded}
+                      onClick={() => setExpandedItemId(expanded ? null : item.id)}
+                    >
+                      {expanded ? "Close ride request" : (item.actionLabel ?? "View activity")}
+                    </button>
+                  }
+                />
+                {expanded ? (
+                  <div className="hooma-now-card__expansion">{item.expansion}</div>
+                ) : null}
               </span>
-              <h3 className="hooma-now-card__title">{item.title}</h3>
-              {item.summary ? <p className="hooma-now-card__summary">{item.summary}</p> : null}
-              {time ? (
-                <span className="hooma-now-card__meta">
-                  <span>{time}</span>
-                </span>
-              ) : null}
-              {item.detailRows?.length ? (
-                <span className="hooma-now-card__ride-meta">
-                  {item.detailRows.map((row) => (
-                    <span key={row}>{row}</span>
-                  ))}
-                </span>
-              ) : null}
-              <span className="hooma-now-card__cta">Open activity ↗</span>
-            </span>
+            </article>
+          );
+        }
+
+        if (!item.href) {
+          return (
+            <article className="hooma-now-card" data-tone={presentation.tone} key={item.id}>
+              <span className="hooma-now-card__rail" aria-hidden="true" />
+              <FeedCardBody item={item} action={null} />
+            </article>
+          );
+        }
+
+        return (
+          <a className="hooma-now-card" data-tone={presentation.tone} href={item.href} key={item.id}>
+            <span className="hooma-now-card__rail" aria-hidden="true" />
+            <FeedCardBody
+              item={item}
+              action={
+                <span className="hooma-now-card__cta">{item.actionLabel ?? "Open activity ↗"}</span>
+              }
+            />
           </a>
         );
       })}
