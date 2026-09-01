@@ -1,0 +1,36 @@
+name: Athletes format fix
+
+on:
+  push:
+    branches:
+      - feat/athletes-mobile-visual-system
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/athletes-mobile-visual-system
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Format Athletes files
+        run: npx prettier --write packages/frontend/src/athletes/AthletesPages.tsx packages/frontend/src/athletes/athletes.css
+      - name: Commit formatted files and remove helper workflow
+        run: |
+          rm .github/workflows/athletes-format-fix.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/frontend/src/athletes/AthletesPages.tsx packages/frontend/src/athletes/athletes.css .github/workflows/athletes-format-fix.yml
+          if git diff --cached --quiet; then
+            exit 1
+          fi
+          git commit -m "style(athletes): format visual system"
+          git push origin HEAD:feat/athletes-mobile-visual-system
