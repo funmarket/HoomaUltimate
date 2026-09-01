@@ -7,11 +7,7 @@ export type DirectWhistleCreateResult = {
   readonly resetsAt: string;
 };
 
-export function sendDirectUserWhistle(
-  transport: HoomaTransport,
-  username: string,
-  body: string,
-) {
+export function sendDirectUserWhistle(transport: HoomaTransport, username: string, body: string) {
   return request<DirectWhistleCreateResult>(
     transport,
     `/api/v1/whistles/users/${encodeURIComponent(username)}`,
