@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import type { PlayEventVisibility } from "@hooma/contracts";
 import { useHoomaFrontend } from "../context";
 import { createEventApi, type PublicEvent } from "./api";
 import { WatchEventForm, type WatchEventFormValue } from "./WatchEventForm";
@@ -15,18 +16,12 @@ export function EditEventPage({ eventId }: { readonly eventId: string }) {
   useEffect(() => {
     void api
       .manage(eventId)
-      .then((row) => {
-        if (row.type !== "WATCH") {
-          setError("This editor is for Watch events.");
-          return;
-        }
-        setEvent(row);
-      })
+      .then(setEvent)
       .catch((reason) => setError(protectedError(reason, "Unable to open Event settings")));
   }, [api, eventId, protectedError]);
 
-  async function save(value: WatchEventFormValue) {
-    if (!event) return;
+  async function saveWatch(value: WatchEventFormValue) {
+    if (!event || event.type !== "WATCH") return;
     setPending(true);
     setNotice("");
     setError("");
@@ -48,11 +43,31 @@ export function EditEventPage({ eventId }: { readonly eventId: string }) {
     }
   }
 
+  async function savePlay(eventForm: FormEvent<HTMLFormElement>) {
+    eventForm.preventDefault();
+    if (!event || event.type !== "PLAY") return;
+    const data = new FormData(eventForm.currentTarget);
+    const visibility = String(data.get("visibility")) as PlayEventVisibility;
+    setPending(true);
+    setNotice("");
+    setError("");
+    try {
+      const updated = await api.update(event.id, { play: { visibility } });
+      setEvent(updated);
+      setNotice("Match visibility saved.");
+    } catch (reason) {
+      setError(protectedError(reason, "Unable to save match visibility"));
+    } finally {
+      setPending(false);
+    }
+  }
+
   async function deleteEvent() {
     if (!event || deleting) return;
+    const surface = event.type === "WATCH" ? "Watch" : "Play";
     if (
       !window.confirm(
-        `Delete ${event.title}? It will leave active Watch surfaces while participation history is preserved.`,
+        `Delete ${event.title}? It will leave active ${surface} surfaces while participation history is preserved.`,
       )
     )
       return;
@@ -60,9 +75,9 @@ export function EditEventPage({ eventId }: { readonly eventId: string }) {
     setError("");
     try {
       await api.cancel(event.id);
-      window.location.href = "/watch";
+      window.location.href = event.type === "WATCH" ? "/watch" : "/play";
     } catch (reason) {
-      setError(protectedError(reason, "Unable to delete Watch event"));
+      setError(protectedError(reason, `Unable to delete ${surface} event`));
       setDeleting(false);
     }
   }
@@ -73,6 +88,47 @@ export function EditEventPage({ eventId }: { readonly eventId: string }) {
     ) : (
       <p className="status">Loading Event settings…</p>
     );
+
+  if (event.type === "PLAY") {
+    return (
+      <section className="watch-event-form-page">
+        <a className="place-back-link" href={`/events/${event.id}`}>
+          ← Match
+        </a>
+        <header className="watch-event-form-page__header">
+          <p className="eyebrow">PLAY MATCH SETTINGS</p>
+          <h1>Edit Match</h1>
+          <p>Control who can discover this match without changing community privacy.</p>
+        </header>
+        <form className="event-form panel" onSubmit={savePlay}>
+          <label>
+            Match visibility
+            <select name="visibility" defaultValue={event.playDetails?.visibility ?? "OPEN"}>
+              <option value="OPEN">Open match</option>
+              <option value="PRIVATE">Private match</option>
+            </select>
+            <span className="muted">
+              Open matches are visible to every signed-in HOOMA account. Private matches are limited
+              to managers, participants, and invited players.
+            </span>
+          </label>
+          <button type="submit" disabled={pending || deleting}>
+            {pending ? "Saving…" : "Save Match"}
+          </button>
+        </form>
+        {notice ? <p className="success">{notice}</p> : null}
+        {error ? <p className="error">{error}</p> : null}
+        <section className="entity-danger-zone event-danger-zone">
+          <p className="eyebrow">EVENT MANAGEMENT</p>
+          <h3>Delete Match</h3>
+          <p>Remove this match from active Play surfaces while keeping its historical records.</p>
+          <button type="button" disabled={deleting || pending} onClick={() => void deleteEvent()}>
+            {deleting ? "Deleting…" : "Delete Match"}
+          </button>
+        </section>
+      </section>
+    );
+  }
 
   return (
     <section className="watch-event-form-page">
@@ -90,7 +146,7 @@ export function EditEventPage({ eventId }: { readonly eventId: string }) {
         lockPlace
         submitLabel="Save Event"
         pending={pending}
-        onSubmit={save}
+        onSubmit={saveWatch}
       />
       {notice ? <p className="success">{notice}</p> : null}
       {error ? <p className="error">{error}</p> : null}
