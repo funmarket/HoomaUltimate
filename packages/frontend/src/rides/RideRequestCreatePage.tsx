@@ -5,6 +5,7 @@ import type {
   RideRequestAudienceCommand,
   RideRequestCreateInput,
   RideRequestForOwner,
+  RideRequestUpdateInput,
 } from "@hooma/contracts/rides";
 import { useHoomaFrontend } from "../context";
 import { createRideApi } from "./api";
@@ -12,6 +13,7 @@ import { RideCompensationBadge } from "./RideCompensationBadge";
 import {
   RideCompensationFields,
   buildRideRequestCompensationTerms,
+  compensationFormStateFromTerms,
   defaultRideCompensationState,
 } from "./RideCompensationFields";
 import { RideContextSelector, contextQuery, initialRideContext } from "./RideContextSelector";
@@ -19,19 +21,22 @@ import { RideDestinationFields } from "./RideDestinationFields";
 import { RideSectionHeader } from "./RideSectionHeader";
 import {
   dateTimeInputValue,
+  dateTimeInputValueFromIso,
+  destinationFormState,
   destinationInput,
   destinationLabel,
   emptyDestination,
   toIsoDateTime,
 } from "./ride-view-model";
 
-type RideRequestAudienceChoice = "GLOBAL" | "ONE" | "ALL_CURRENT";
+type RideRequestAudienceChoice = "GLOBAL" | "ONE" | "ALL_CURRENT" | "SAVED";
+type WritableRideRequestAudienceChoice = Exclude<RideRequestAudienceChoice, "SAVED">;
 type HoomaMembership = MeResponse["communities"][number];
 
 const communityAudienceCopy = "Join or create a HOOMA to share this Ride request with a community.";
 
 function buildRideRequestAudience(
-  choice: RideRequestAudienceChoice,
+  choice: WritableRideRequestAudienceChoice,
   selectedCommunityId: string,
 ): RideRequestAudienceCommand {
   if (choice === "ONE") {
@@ -43,18 +48,34 @@ function buildRideRequestAudience(
   return { scope: "GLOBAL" };
 }
 
-function audienceSuccessMessage(request: RideRequestForOwner): string {
-  if (request.audience.scope === "GLOBAL") return "Your Ride request is live in Ride.";
-  const count = request.audience.communities.length;
-  if (count === 1) {
-    return `Your Ride request is live in HOOMA NOW for ${request.audience.communities[0]?.name}.`;
+function writableAudienceChoice(
+  choice: RideRequestAudienceChoice,
+): WritableRideRequestAudienceChoice {
+  if (choice === "SAVED") {
+    throw new Error("Choose a new Ride request audience before replacing the saved audience");
   }
-  return `Your Ride request is live in HOOMA NOW for ${count} HOOMAs.`;
+  return choice;
 }
 
-export function RideRequestCreatePage() {
+function audienceSuccessMessage(request: RideRequestForOwner, editing: boolean): string {
+  const prefix = editing ? "Your Ride request is updated" : "Your Ride request is live";
+  if (request.audience.scope === "GLOBAL") return `${prefix} in Ride.`;
+  const count = request.audience.communities.length;
+  if (count === 1) {
+    return `${prefix} in HOOMA NOW for ${request.audience.communities[0]?.name}.`;
+  }
+  return `${prefix} in HOOMA NOW for ${count} HOOMAs.`;
+}
+
+function savedAudienceLabel(request: RideRequestForOwner): string {
+  if (request.audience.scope === "GLOBAL") return "Everyone";
+  return request.audience.communities.map((community) => community.name).join(", ");
+}
+
+export function RideRequestCreatePage({ requestId }: { readonly requestId?: string }) {
   const { api: hoomaApi, transport, protectedError } = useHoomaFrontend();
   const api = useMemo(() => createRideApi(transport), [transport]);
+  const editing = Boolean(requestId);
   const [rideContext, setRideContext] = useState(initialRideContext());
   const [destination, setDestination] = useState(emptyDestination);
   const [pickupAreaLabel, setPickupAreaLabel] = useState("");
@@ -64,21 +85,68 @@ export function RideRequestCreatePage() {
   const [compensation, setCompensation] = useState(defaultRideCompensationState);
   const [note, setNote] = useState("");
   const [audienceChoice, setAudienceChoice] = useState<RideRequestAudienceChoice>("GLOBAL");
+  const [audienceDirty, setAudienceDirty] = useState(false);
   const [selectedCommunityId, setSelectedCommunityId] = useState("");
   const [memberships, setMemberships] = useState<HoomaMembership[]>([]);
+  const [existingRequest, setExistingRequest] = useState<RideRequestForOwner | null>(null);
   const [savedRequest, setSavedRequest] = useState<RideRequestForOwner | null>(null);
   const [publicRequests, setPublicRequests] = useState<PublicRideRequest[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(true);
   const [loadingMemberships, setLoadingMemberships] = useState(true);
+  const [loadingExisting, setLoadingExisting] = useState(editing);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   const hasCommunityMemberships = memberships.length > 0;
   const communityAudienceInvalid =
-    (audienceChoice === "ONE" && !selectedCommunityId) ||
-    ((audienceChoice === "ONE" || audienceChoice === "ALL_CURRENT") && !hasCommunityMemberships);
+    editing && !audienceDirty
+      ? false
+      : audienceChoice === "SAVED" ||
+        (audienceChoice === "ONE" && !selectedCommunityId) ||
+        ((audienceChoice === "ONE" || audienceChoice === "ALL_CURRENT") &&
+          !hasCommunityMemberships);
 
   useEffect(() => {
+    if (!requestId) return;
+    let active = true;
+    setLoadingExisting(true);
+    setError("");
+    void api
+      .manageRequest(requestId)
+      .then((request) => {
+        if (!active) return;
+        setExistingRequest(request);
+        setRideContext(request.context);
+        setDestination(destinationFormState(request.destination));
+        setPickupAreaLabel(request.pickupAreaLabel);
+        setDesiredDepartureAt(dateTimeInputValueFromIso(request.desiredDepartureAt));
+        setExpiresAt(dateTimeInputValueFromIso(request.expiresAt));
+        setPassengerCount(String(request.passengerCount));
+        setCompensation(compensationFormStateFromTerms(request.compensationTerms));
+        setNote(request.note ?? "");
+        setAudienceChoice(request.audience.scope === "GLOBAL" ? "GLOBAL" : "SAVED");
+        setAudienceDirty(false);
+        if (request.audience.scope === "COMMUNITY") {
+          setSelectedCommunityId(request.audience.communities[0]?.id ?? "");
+        }
+      })
+      .catch((reason) => {
+        if (active) setError(protectedError(reason, "Unable to load this Ride request"));
+      })
+      .finally(() => {
+        if (active) setLoadingExisting(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [api, protectedError, requestId]);
+
+  useEffect(() => {
+    if (editing) {
+      setLoadingRequests(false);
+      setPublicRequests([]);
+      return;
+    }
     let active = true;
     setLoadingRequests(true);
     void api
@@ -95,7 +163,7 @@ export function RideRequestCreatePage() {
     return () => {
       active = false;
     };
-  }, [api, rideContext]);
+  }, [api, editing, rideContext]);
 
   useEffect(() => {
     let active = true;
@@ -106,14 +174,20 @@ export function RideRequestCreatePage() {
         if (!active) return;
         const rows = me?.communities ?? [];
         setMemberships(rows);
-        setSelectedCommunityId((current) => current || rows[0]?.id || "");
-        if (!rows.length) setAudienceChoice("GLOBAL");
+        setSelectedCommunityId((current) =>
+          current && rows.some((community) => community.id === current)
+            ? current
+            : (rows[0]?.id ?? ""),
+        );
+        if (!rows.length && !editing) setAudienceChoice("GLOBAL");
       })
       .catch(() => {
         if (!active) return;
         setMemberships([]);
-        setSelectedCommunityId("");
-        setAudienceChoice("GLOBAL");
+        if (!editing) {
+          setSelectedCommunityId("");
+          setAudienceChoice("GLOBAL");
+        }
       })
       .finally(() => {
         if (active) setLoadingMemberships(false);
@@ -121,10 +195,27 @@ export function RideRequestCreatePage() {
     return () => {
       active = false;
     };
-  }, [hoomaApi]);
+  }, [editing, hoomaApi]);
+
+  const readOnly =
+    existingRequest?.status === "CANCELLED" ||
+    existingRequest?.status === "EXPIRED" ||
+    existingRequest?.status === "COMPLETED";
+
+  function chooseAudience(choice: WritableRideRequestAudienceChoice) {
+    setAudienceChoice(choice);
+    setAudienceDirty(true);
+    if (
+      choice === "ONE" &&
+      !memberships.some((community) => community.id === selectedCommunityId)
+    ) {
+      setSelectedCommunityId(memberships[0]?.id ?? "");
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (readOnly) return;
     if (communityAudienceInvalid) {
       setError(communityAudienceCopy);
       return;
@@ -132,7 +223,7 @@ export function RideRequestCreatePage() {
     setSaving(true);
     setError("");
     try {
-      const input: RideRequestCreateInput = {
+      const baseInput = {
         context: rideContext,
         destination: destinationInput(destination),
         pickupAreaLabel: pickupAreaLabel.trim(),
@@ -141,43 +232,93 @@ export function RideRequestCreatePage() {
         compensationTerms: buildRideRequestCompensationTerms(compensation),
         note: note.trim() || null,
         expiresAt: toIsoDateTime(expiresAt),
-        audience: buildRideRequestAudience(audienceChoice, selectedCommunityId),
       };
-      setSavedRequest(await api.createRequest(input));
+
+      const saved = requestId
+        ? await api.updateRequest(requestId, {
+            ...baseInput,
+            ...(audienceDirty
+              ? {
+                  audience: buildRideRequestAudience(
+                    writableAudienceChoice(audienceChoice),
+                    selectedCommunityId,
+                  ),
+                }
+              : {}),
+          } satisfies RideRequestUpdateInput)
+        : await api.createRequest({
+            ...baseInput,
+            audience: buildRideRequestAudience(
+              writableAudienceChoice(audienceChoice),
+              selectedCommunityId,
+            ),
+          } satisfies RideRequestCreateInput);
+      setExistingRequest(saved);
+      setSavedRequest(saved);
+      setAudienceDirty(false);
     } catch (reason) {
-      setError(protectedError(reason, "Unable to create Ride request"));
+      setError(
+        protectedError(
+          reason,
+          editing ? "Unable to update Ride request" : "Unable to create Ride request",
+        ),
+      );
     } finally {
       setSaving(false);
     }
   }
 
+  if (editing && loadingExisting) {
+    return <p className="ride-state panel">Loading your Ride request...</p>;
+  }
+
+  if (editing && !existingRequest && error) {
+    return <p className="ride-state panel error">{error}</p>;
+  }
+
   return (
     <section className="ride-page ride-form-page">
       <RideSectionHeader
-        eyebrow="TAKE ME TO THE GAME"
-        title="Request a Ride"
-        body="Create a real RideRequest. This does not create fake matching, fare collection, drivers, or bookings."
-        actionHref={`/rides/offers${contextQuery(rideContext)}`}
-        actionLabel="Browse offers"
+        eyebrow={editing ? "MY REQUESTS" : "TAKE ME TO THE GAME"}
+        title={editing ? "Edit Ride request" : "Request a Ride"}
+        body={
+          editing
+            ? "Update the same canonical RideRequest. Its My Rides ownership and HOOMA NOW projections follow the saved Ride state."
+            : "Create a real RideRequest. This does not create fake matching, fare collection, drivers, or bookings."
+        }
+        actionHref={editing ? "/rides/mine" : `/rides/offers${contextQuery(rideContext)}`}
+        actionLabel={editing ? "Back to My Rides" : "Browse offers"}
       />
+
+      {readOnly ? (
+        <p className="ride-state panel">
+          This Ride request is {existingRequest?.status.toLowerCase()} and is read-only.
+        </p>
+      ) : null}
+
       {savedRequest ? (
         <section className="ride-created panel">
-          <p className="eyebrow">RIDE REQUEST CREATED</p>
+          <p className="eyebrow">{editing ? "RIDE REQUEST UPDATED" : "RIDE REQUEST CREATED"}</p>
           <h2>{destinationLabel(savedRequest.destination)}</h2>
           <RideCompensationBadge terms={savedRequest.compensationTerms} mode="request" />
-          <p>{audienceSuccessMessage(savedRequest)}</p>
+          <p>{audienceSuccessMessage(savedRequest, editing)}</p>
           <p>
-            One canonical RideRequest is live from {savedRequest.pickupAreaLabel}. Matching remains
-            a later Ride-owned capability.
+            {editing
+              ? "This is still the same RideRequest. Discovery and HOOMA NOW read the updated canonical record."
+              : `One canonical RideRequest is live from ${savedRequest.pickupAreaLabel}. Matching remains a later Ride-owned capability.`}
           </p>
-          <a
-            className="ride-button ride-button--primary"
-            href={`/rides${contextQuery(rideContext)}`}
-          >
-            Back to Ride
-          </a>
+          <div className="ride-actions">
+            <a className="ride-button ride-button--primary" href="/rides/mine">
+              Back to My Rides
+            </a>
+            {!editing ? (
+              <a className="ride-button" href={`/rides/request${contextQuery(rideContext)}`}>
+                Create another
+              </a>
+            ) : null}
+          </div>
         </section>
-      ) : (
+      ) : readOnly ? null : (
         <form className="ride-form panel" onSubmit={submit}>
           <section className="ride-form-section">
             <p className="eyebrow">TRIP</p>
@@ -224,17 +365,22 @@ export function RideRequestCreatePage() {
           <section className="ride-form-section ride-share-with">
             <div className="ride-form-section__header">
               <p className="eyebrow">SHARE WITH</p>
-              <p>Who should see this Ride request?</p>
             </div>
             <fieldset className="ride-audience-choice" aria-describedby="ride-audience-help">
               <legend>Who should see this Ride request?</legend>
+              {editing && audienceChoice === "SAVED" && existingRequest ? (
+                <p className="ride-audience-current">
+                  Current saved audience: <strong>{savedAudienceLabel(existingRequest)}</strong>. It
+                  stays unchanged unless you choose a new option below.
+                </p>
+              ) : null}
               <label className={audienceChoice === "GLOBAL" ? "is-selected" : ""}>
                 <input
                   type="radio"
                   name="ride-request-audience"
                   value="GLOBAL"
                   checked={audienceChoice === "GLOBAL"}
-                  onChange={() => setAudienceChoice("GLOBAL")}
+                  onChange={() => chooseAudience("GLOBAL")}
                 />
                 <span>
                   <strong>Everyone</strong>
@@ -251,7 +397,7 @@ export function RideRequestCreatePage() {
                   value="ONE"
                   checked={audienceChoice === "ONE"}
                   disabled={!hasCommunityMemberships}
-                  onChange={() => setAudienceChoice("ONE")}
+                  onChange={() => chooseAudience("ONE")}
                 />
                 <span>
                   <strong>One of my HOOMAs</strong>
@@ -268,7 +414,7 @@ export function RideRequestCreatePage() {
                   value="ALL_CURRENT"
                   checked={audienceChoice === "ALL_CURRENT"}
                   disabled={!hasCommunityMemberships}
-                  onChange={() => setAudienceChoice("ALL_CURRENT")}
+                  onChange={() => chooseAudience("ALL_CURRENT")}
                 />
                 <span>
                   <strong>All my HOOMAs</strong>
@@ -281,7 +427,10 @@ export function RideRequestCreatePage() {
                 <span>Choose one HOOMA</span>
                 <select
                   value={selectedCommunityId}
-                  onChange={(event) => setSelectedCommunityId(event.target.value)}
+                  onChange={(event) => {
+                    setSelectedCommunityId(event.target.value);
+                    setAudienceDirty(true);
+                  }}
                   required
                 >
                   {memberships.map((community) => (
@@ -324,28 +473,36 @@ export function RideRequestCreatePage() {
             type="submit"
             disabled={saving || communityAudienceInvalid}
           >
-            {saving ? "Creating..." : "Create Ride request"}
+            {saving
+              ? editing
+                ? "Saving..."
+                : "Creating..."
+              : editing
+                ? "Save Ride request"
+                : "Create Ride request"}
           </button>
         </form>
       )}
 
-      <section className="ride-request-preview panel">
-        <p className="eyebrow">PUBLIC RIDE REQUESTS</p>
-        {loadingRequests ? <p className="muted">Loading recent Ride requests...</p> : null}
-        {!loadingRequests && !publicRequests.length ? (
-          <p className="muted">No public Ride requests yet.</p>
-        ) : null}
-        {publicRequests.map((requestItem) => (
-          <article className="ride-request-row" key={requestItem.id}>
-            <strong>{destinationLabel(requestItem.destination)}</strong>
-            <span>
-              {requestItem.pickupAreaLabel} - {requestItem.passengerCount} passenger
-              {requestItem.passengerCount === 1 ? "" : "s"}
-            </span>
-            <RideCompensationBadge terms={requestItem.compensationTerms} mode="request" />
-          </article>
-        ))}
-      </section>
+      {!editing ? (
+        <section className="ride-request-preview panel">
+          <p className="eyebrow">PUBLIC RIDE REQUESTS</p>
+          {loadingRequests ? <p className="muted">Loading recent Ride requests...</p> : null}
+          {!loadingRequests && !publicRequests.length ? (
+            <p className="muted">No public Ride requests yet.</p>
+          ) : null}
+          {publicRequests.map((requestItem) => (
+            <article className="ride-request-row" key={requestItem.id}>
+              <strong>{destinationLabel(requestItem.destination)}</strong>
+              <span>
+                {requestItem.pickupAreaLabel} - {requestItem.passengerCount} passenger
+                {requestItem.passengerCount === 1 ? "" : "s"}
+              </span>
+              <RideCompensationBadge terms={requestItem.compensationTerms} mode="request" />
+            </article>
+          ))}
+        </section>
+      ) : null}
     </section>
   );
 }

@@ -4,7 +4,11 @@ import type {
   RideRequestCompensationTerms,
 } from "@hooma/contracts/rides";
 import type { CashCurrency } from "./ride-money";
-import { SUPPORTED_CASH_CURRENCIES, amountToMinorUnits } from "./ride-money";
+import {
+  SUPPORTED_CASH_CURRENCIES,
+  amountToMinorUnits,
+  minorUnitsToAmountInput,
+} from "./ride-money";
 
 export type RideCompensationFormState = {
   readonly type: "FREE" | "CASH";
@@ -19,6 +23,18 @@ export const defaultRideCompensationState: RideCompensationFormState = {
   currency: "TND",
   basis: "PER_SEAT",
 };
+
+export function compensationFormStateFromTerms(
+  terms: RideOfferCompensationTerms | RideRequestCompensationTerms,
+): RideCompensationFormState {
+  if (terms.type === "FREE") return defaultRideCompensationState;
+  return {
+    type: "CASH",
+    amount: minorUnitsToAmountInput(terms.amountMinor, terms.currency),
+    currency: terms.currency,
+    basis: "basis" in terms ? terms.basis : "PER_SEAT",
+  };
+}
 
 export function buildRideOfferCompensationTerms(
   state: RideCompensationFormState,

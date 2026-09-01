@@ -9,11 +9,13 @@ import type {
   RideContext,
   RideOfferCreateInput,
   RideOfferForOwner,
+  RideOfferUpdateInput,
   RideParticipation,
   RideParticipationRequestInput,
   RideRequestCommunityFeed,
   RideRequestCreateInput,
   RideRequestForOwner,
+  RideRequestUpdateInput,
 } from "@hooma/contracts/rides";
 import { request, type HoomaTransport } from "../http";
 
@@ -24,10 +26,12 @@ export type {
   RideMine,
   RideOfferCreateInput,
   RideOfferForOwner,
+  RideOfferUpdateInput,
   RideParticipation,
   RideRequestCommunityFeed,
   RideRequestCreateInput,
   RideRequestForOwner,
+  RideRequestUpdateInput,
 };
 
 export type RideListQuery = {
@@ -96,6 +100,11 @@ export function createRideApi(transport: HoomaTransport) {
     createOffer: (input: RideOfferCreateInput) =>
       request<RideOfferForOwner>(transport, ridePath("/offers"), {
         method: "POST",
+        body: JSON.stringify(input),
+      }),
+    updateOffer: (offerId: string, input: RideOfferUpdateInput) =>
+      request<RideOfferForOwner>(transport, ridePath(`/offers/${encodeURIComponent(offerId)}`), {
+        method: "PATCH",
         body: JSON.stringify(input),
       }),
     cancelOffer: (offerId: string) =>
@@ -211,6 +220,12 @@ export function createRideApi(transport: HoomaTransport) {
         method: "POST",
         body: JSON.stringify(input),
       }),
+    updateRequest: (requestId: string, input: RideRequestUpdateInput) =>
+      request<RideRequestForOwner>(
+        transport,
+        ridePath(`/requests/${encodeURIComponent(requestId)}`),
+        { method: "PATCH", body: JSON.stringify(input) },
+      ),
     cancelRequest: (requestId: string) =>
       request<RideRequestForOwner>(
         transport,

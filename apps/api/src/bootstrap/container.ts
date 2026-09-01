@@ -32,7 +32,9 @@ import { PrismaGamerMatchRepository } from "../modules/gamers/infrastructure/pri
 import { PrismaGamerProfileRepository } from "../modules/gamers/infrastructure/prisma-gamer-profile.repository.js";
 import { PlayService } from "../modules/play/application/play.service.js";
 import { PrismaPlayPlayerListingRepository } from "../modules/play/infrastructure/prisma-play.repository.js";
+import { RideCommunityInteractionService } from "../modules/rides/application/ride-community-interaction.service.js";
 import { RideService } from "../modules/rides/application/ride.service.js";
+import { PrismaRideCommunityInteractionRepository } from "../modules/rides/infrastructure/prisma-ride-community-interaction.repository.js";
 import {
   PrismaRideOfferRepository,
   PrismaRideRequestRepository,
@@ -145,6 +147,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
   const rideRequestRepository = new PrismaRideRequestRepository(database);
   const rideReferenceReader = new PrismaRideReferenceReader(database);
   const rideVehiclePhotoRepository = new PrismaRideVehiclePhotoRepository(database);
+  const rideCommunityInteractionRepository = new PrismaRideCommunityInteractionRepository(database);
   const rideService = new RideService(
     rideOfferRepository,
     rideRequestRepository,
@@ -156,6 +159,11 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     userPresentationReader,
     rideVehiclePhotoRepository,
     storage,
+  );
+  const rideCommunityInteractionService = new RideCommunityInteractionService(
+    rideCommunityInteractionRepository,
+    rideReferenceReader,
+    userPresentationReader,
   );
   const whistleRepository = new PrismaWhistleRepository(database);
   const whistleStore = new RedisWhistleStore(redis);
@@ -188,6 +196,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     gamerMatchService,
     playService,
     rideService,
+    rideCommunityInteractionService,
     whistleService,
     discoveryService,
   };

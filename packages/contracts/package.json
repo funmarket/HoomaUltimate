@@ -64,6 +64,10 @@
       "types": "./src/profile.ts",
       "default": "./dist/profile.js"
     },
+    "./ride-community-interaction": {
+      "types": "./src/ride-community-interaction.ts",
+      "default": "./dist/ride-community-interaction.js"
+    },
     "./rides": {
       "types": "./src/rides.ts",
       "default": "./dist/rides.js"

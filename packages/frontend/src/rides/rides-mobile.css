@@ -1,0 +1,38 @@
+.ride-recent-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding-top: 6px;
+}
+
+.ride-recent-card__actions .ride-link {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+}
+
+@media (max-width: 430px) {
+  .ride-audience-choice {
+    gap: 8px;
+  }
+
+  .ride-audience-choice label {
+    min-height: 0;
+    padding: 12px 13px;
+  }
+
+  .ride-audience-choice strong {
+    font-size: 0.92rem;
+    line-height: 1.2;
+  }
+
+  .ride-audience-choice small {
+    font-size: 0.82rem;
+    line-height: 1.4;
+  }
+
+  .ride-recent-card__actions {
+    gap: 6px 12px;
+  }
+}
