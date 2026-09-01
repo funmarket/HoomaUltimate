@@ -9,6 +9,7 @@ import type {
   PublicCommunitySummary,
 } from "../api";
 import { useHoomaFrontend } from "../context";
+import { CommunityHoomaNowSection } from "../discovery/HoomaNowSection";
 import { HoomaWhistleBoard } from "../whistle/HoomaWhistleBoard";
 import { CommunityLogo, CommunityMediaSurface } from "./CommunityMedia";
 import { HoomaMembershipRequests } from "./HoomaMembershipRequests";
@@ -678,6 +679,31 @@ export function HoomaDetailPage({ communityId }: { readonly communityId: string 
       </CommunityMediaSurface>
 
       {error ? <div className="error-box">{error}</div> : null}
+
+      {membership ? (
+        <CommunityHoomaNowSection communityId={community.id} />
+      ) : (
+        <section
+          className="hooma-now hooma-now--community is-locked"
+          aria-labelledby="community-hooma-now-title"
+        >
+          <header className="hooma-now__header">
+            <div>
+              <p className="hooma-now__eyebrow">MEMBERS LIVE FEED</p>
+              <h2 id="community-hooma-now-title" className="hooma-now__title">
+                HOOMA NOW
+              </h2>
+              <p className="hooma-now__intro">
+                Join this HOOMA to see member-only live Ride requests and activity.
+              </p>
+            </div>
+            <span className="hooma-now__live" aria-label="Locked community live feed">
+              <span aria-hidden="true" /> MEMBERS
+            </span>
+          </header>
+          <p className="hooma-now__state">HOOMA NOW Ride requests are private to members.</p>
+        </section>
+      )}
 
       <section className="hooma-hq-grid">
         <article className="panel hooma-hq-module">

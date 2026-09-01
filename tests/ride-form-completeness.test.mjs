@@ -27,13 +27,40 @@ const contextSelector = await readFile(
   "utf8",
 );
 
-test("Ride create forms build explicit context and compensation contract input", () => {
+test("Ride create forms build explicit context compensation and audience contract input", () => {
   assert.match(offerCreatePage, /context:\s*rideContext/);
   assert.match(offerCreatePage, /compensationTerms:\s*buildRideOfferCompensationTerms/);
   assert.match(requestCreatePage, /context:\s*rideContext/);
   assert.match(requestCreatePage, /compensationTerms:\s*buildRideRequestCompensationTerms/);
+  assert.match(requestCreatePage, /audience:\s*buildRideRequestAudience\(/);
+  assert.match(requestCreatePage, /scope:\s*"GLOBAL"/);
+  assert.match(requestCreatePage, /selection:\s*"ONE"/);
+  assert.match(requestCreatePage, /selection:\s*"ALL_CURRENT"/);
+  assert.doesNotMatch(requestCreatePage, /communityIds/);
   assert.doesNotMatch(offerCreatePage, /compensationTerms:\s*\{\s*type:\s*"FREE"\s*\}/);
   assert.doesNotMatch(requestCreatePage, /compensationTerms:\s*\{\s*type:\s*"FREE"\s*\}/);
+});
+
+test("Ride request Share With UI exposes exactly three audience choices and zero-community copy", () => {
+  assert.match(requestCreatePage, />SHARE WITH</);
+  assert.match(requestCreatePage, /Who should see this Ride request\?/);
+  assert.match(requestCreatePage, />Everyone</);
+  assert.match(requestCreatePage, /Visible in normal Ride request discovery\./);
+  assert.match(requestCreatePage, />One of my HOOMAs</);
+  assert.match(requestCreatePage, /Only members of the HOOMA you choose can see it\./);
+  assert.match(requestCreatePage, />All my HOOMAs</);
+  assert.match(requestCreatePage, /Share with every HOOMA where you are currently a member\./);
+  assert.match(
+    requestCreatePage,
+    /Join or create a HOOMA to share this Ride request with a community\./,
+  );
+});
+
+test("Ride request success copy keeps one canonical request across audience choices", () => {
+  assert.match(requestCreatePage, /Your Ride request is live in Ride\./);
+  assert.match(requestCreatePage, /Your Ride request is live in HOOMA NOW for/);
+  assert.match(requestCreatePage, /HOOMAs\./);
+  assert.doesNotMatch(requestCreatePage, /requests created/i);
 });
 
 test("Ride compensation fields are shared, mode-aware, and prevent stale cash submission", () => {

@@ -369,3 +369,15 @@ Public Event detail remains public for Watch/non-Play content only. The public E
 The dedicated decision record is `docs/adr/ADR-051-play-match-visibility.md`.
 
 **Reason:** Play match recruitment privacy and Community content privacy are distinct product concepts. Keeping match visibility on PlayEventDetails preserves Watch behavior, avoids Community-driven Play discovery bugs, and prevents a second Event-wide visibility model.
+
+## ADR-052 — Community-scoped RideRequests project into HOOMA NOW
+
+**Decision:** A Community-scoped RideRequest is one Ride-owned canonical request whose current active state is projected into HOOMA NOW for explicitly authorized HOOMA Communities; Community and HOOMA NOW never copy, own, or independently manage that RideRequest.
+
+RideRequest audiences are `GLOBAL` or `COMMUNITY`. User-facing `Everyone` creates a global RideRequest with zero Community targets. User-facing `One of my HOOMAs` creates a Community-scoped RideRequest for exactly one active requester membership. User-facing `All my HOOMAs` is a write-time command that resolves the requester's current active Community memberships into exact persisted Community audience rows; there is no persistent `ALL_MY_HOOMAS` flag and future joins do not expand old requests.
+
+Community-scoped RideRequests are excluded from public Ride request discovery and public exact-ID Ride request detail. They appear only in the selected Community page's HOOMA NOW surface for active members, while the canonical RideRequest is `OPEN`, unexpired, targets that Community, the requester still belongs to that Community, and the Community remains active. Whistle remains separate and does not store RideRequests.
+
+The dedicated decision record is `docs/adr/ADR-052-community-ride-requests-hooma-now.md`.
+
+**Reason:** HOOMA NOW needs live Community Ride coordination without creating a second Ride owner, lifecycle or feed table. Persisting exact targets keeps `All my HOOMAs` deterministic at write time while preserving one canonical RideRequest ID across every selected HOOMA.

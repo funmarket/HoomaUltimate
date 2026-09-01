@@ -24,6 +24,10 @@ import type {
   RideParticipationRepository,
 } from "../apps/api/src/modules/rides/application/ride-offer.repository.js";
 import type {
+  RideCommunityMembershipReader,
+  RideCommunitySummary,
+} from "../apps/api/src/modules/rides/application/ride-community-membership.reader.js";
+import type {
   RideDestinationEventReference,
   RideDestinationPlaceReference,
   RideEventReferenceReader,
@@ -106,6 +110,68 @@ test("RideService rejects unavailable Event and Place destinations before reposi
     "RIDE_DESTINATION_PLACE_NOT_FOUND",
   );
   assert.equal(fixture.requests.createCalls, 0);
+});
+
+test("RideService validates Community Ride request audiences before repository writes", async () => {
+  const fixture = createServiceFixture();
+
+  await assertRideError(
+    () =>
+      fixture.service.createRequest("requester-1", {
+        ...requestCreateInput(),
+        audience: { scope: "COMMUNITY", selection: "ONE", communityId: "community-a" },
+      }),
+    403,
+    "RIDE_REQUEST_COMMUNITY_TARGET_FORBIDDEN",
+  );
+  assert.equal(fixture.requests.createCalls, 0);
+
+  fixture.communityMemberships.activeCommunityIds.add("community-a");
+  await fixture.service.createRequest("requester-1", {
+    ...requestCreateInput(),
+    audience: { scope: "COMMUNITY", selection: "ONE", communityId: "community-a" },
+  });
+  assert.equal(fixture.requests.createCalls, 1);
+});
+
+test("RideService rejects ALL_CURRENT when the requester has no active HOOMAs", async () => {
+  const fixture = createServiceFixture();
+
+  await assertRideError(
+    () =>
+      fixture.service.createRequest("requester-1", {
+        ...requestCreateInput(),
+        audience: { scope: "COMMUNITY", selection: "ALL_CURRENT" },
+      }),
+    409,
+    "RIDE_REQUEST_COMMUNITY_AUDIENCE_EMPTY",
+  );
+  assert.equal(fixture.requests.createCalls, 0);
+
+  fixture.communityMemberships.communities = [
+    { id: "community-a", name: "La Marsa HOOMA", slug: "la-marsa" },
+  ];
+  await fixture.service.createRequest("requester-1", {
+    ...requestCreateInput(),
+    audience: { scope: "COMMUNITY", selection: "ALL_CURRENT" },
+  });
+  assert.equal(fixture.requests.createCalls, 1);
+});
+
+test("RideService authorizes Community Ride feed viewers through Community membership", async () => {
+  const fixture = createServiceFixture();
+
+  await assertRideError(
+    () => fixture.service.listCommunityRequests("viewer-1", "community-a", { limit: 10 }),
+    403,
+    "RIDE_REQUEST_COMMUNITY_FEED_FORBIDDEN",
+  );
+
+  fixture.communityMemberships.activeCommunityIds.add("community-a");
+  const page = await fixture.service.listCommunityRequests("viewer-1", "community-a", {
+    limit: 10,
+  });
+  assert.equal(page.items[0]?.id, "request-1");
 });
 
 test("RideService derives requester identity and exposes request owner/public boundaries", async () => {
@@ -336,6 +402,7 @@ function createServiceFixture() {
   const meetingPoints = new FakeRideMeetingPointRepository();
   const events = new FakeRideEventReferenceReader();
   const places = new FakeRidePlaceReferenceReader();
+  const communityMemberships = new FakeRideCommunityMembershipReader();
   const userPresentations = new FakeUserPresentationReader();
   const vehiclePhotos = new FakeRideVehiclePhotoRepository();
   const storage = new FakeObjectStorage();
@@ -346,6 +413,7 @@ function createServiceFixture() {
     meetingPoints,
     events,
     places,
+    communityMemberships,
     userPresentations,
     vehiclePhotos,
     storage,
@@ -358,6 +426,7 @@ function createServiceFixture() {
     meetingPoints,
     events,
     places,
+    communityMemberships,
     userPresentations,
     vehiclePhotos,
     storage,
@@ -425,6 +494,15 @@ class FakeRideRequestRepository implements RideRequestRepository {
 
   async listForRequester() {
     return { items: this.ownerRequest ? [this.ownerRequest] : [], nextCursor: null };
+  }
+
+  async listForCommunity() {
+    return {
+      items: this.publicRequest
+        ? [{ ...this.publicRequest, href: `/rides/requests/${this.publicRequest.id}/manage` }]
+        : [],
+      nextCursor: null,
+    };
   }
 
   async getPublic() {
@@ -514,6 +592,19 @@ class FakeRideMeetingPointRepository implements RideMeetingPointRepository {
 
   async getForAuthorizedViewer() {
     return this.authorizedResult;
+  }
+}
+
+class FakeRideCommunityMembershipReader implements RideCommunityMembershipReader {
+  public communities: RideCommunitySummary[] = [];
+  public activeCommunityIds = new Set<string>();
+
+  async listActiveMembershipCommunities() {
+    return this.communities;
+  }
+
+  async isActiveMemberOfCommunity(_userId: string, communityId: string) {
+    return this.activeCommunityIds.has(communityId);
   }
 }
 
@@ -661,6 +752,8 @@ function rideStatus(code: RideErrorCode): number {
     case "RIDE_MEETING_POINT_FORBIDDEN":
     case "RIDE_OFFER_MANAGE_FORBIDDEN":
     case "RIDE_REQUEST_MANAGE_FORBIDDEN":
+    case "RIDE_REQUEST_COMMUNITY_TARGET_FORBIDDEN":
+    case "RIDE_REQUEST_COMMUNITY_FEED_FORBIDDEN":
       return 403;
     case "RIDE_VEHICLE_PHOTO_STORAGE_NOT_CONFIGURED":
     case "RIDE_VEHICLE_PHOTO_UPLOAD_FAILED":

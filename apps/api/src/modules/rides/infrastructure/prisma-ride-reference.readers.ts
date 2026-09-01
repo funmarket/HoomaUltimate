@@ -1,4 +1,8 @@
-import { type PrismaClient } from "@hooma/database";
+import { type Prisma, type PrismaClient } from "@hooma/database";
+import type {
+  RideCommunityMembershipReader,
+  RideCommunitySummary,
+} from "../application/ride-community-membership.reader.js";
 import type {
   RideDestinationEventReference,
   RideDestinationPlaceReference,
@@ -7,7 +11,7 @@ import type {
 } from "../application/ride-reference.readers.js";
 
 export class PrismaRideReferenceReader
-  implements RideEventReferenceReader, RidePlaceReferenceReader
+  implements RideEventReferenceReader, RidePlaceReferenceReader, RideCommunityMembershipReader
 {
   constructor(private readonly db: PrismaClient) {}
 
@@ -33,4 +37,40 @@ export class PrismaRideReferenceReader
 
     return { ...place, status: "APPROVED" };
   }
+
+  async listActiveMembershipCommunities(userId: string): Promise<RideCommunitySummary[]> {
+    return activeMembershipCommunities(this.db, userId);
+  }
+
+  async isActiveMemberOfCommunity(userId: string, communityId: string): Promise<boolean> {
+    const membership = await this.db.communityMembership.findFirst({
+      where: { userId, communityId, leftAt: null, community: { status: "ACTIVE" } },
+      select: { communityId: true },
+    });
+    return membership !== null;
+  }
+}
+
+export async function activeMembershipCommunities(
+  db: Prisma.TransactionClient | PrismaClient,
+  userId: string,
+): Promise<RideCommunitySummary[]> {
+  const rows = await db.communityMembership.findMany({
+    where: { userId, leftAt: null, community: { status: "ACTIVE" } },
+    orderBy: [{ joinedAt: "asc" }, { communityId: "asc" }],
+    select: { community: { select: { id: true, name: true, slug: true } } },
+  });
+  return rows.map((row) => row.community);
+}
+
+export async function isActiveCommunityMember(
+  db: Prisma.TransactionClient | PrismaClient,
+  userId: string,
+  communityId: string,
+): Promise<boolean> {
+  const membership = await db.communityMembership.findFirst({
+    where: { userId, communityId, leftAt: null, community: { status: "ACTIVE" } },
+    select: { communityId: true },
+  });
+  return membership !== null;
 }

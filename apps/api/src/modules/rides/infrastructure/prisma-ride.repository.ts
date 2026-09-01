@@ -19,6 +19,8 @@ import type {
   RideParticipationForPassengerList,
   RideParticipationRequestInput,
   RideParticipationStatus,
+  RideRequestCommunityFeed,
+  RideRequestCommunityFeedItem,
   RideRequestCreateInput,
   RideRequestForOwner,
   RideRequestForOwnerList,
@@ -34,9 +36,14 @@ import type {
   RideParticipationRepository,
 } from "../application/ride-offer.repository.js";
 import type {
+  RideCommunityRequestListInput,
   RideRequestListInput,
   RideRequestRepository,
 } from "../application/ride-request.repository.js";
+import {
+  activeMembershipCommunities,
+  isActiveCommunityMember,
+} from "./prisma-ride-reference.readers.js";
 import {
   assertDriverCanReceivePassenger,
   assertRideOfferStatusTransition,
@@ -44,6 +51,7 @@ import {
   assertRideRequestStatusTransition,
   canViewRideMeetingPoint,
 } from "../domain/ride-policy.js";
+import { RideError } from "../domain/ride-error.js";
 
 const publicRideOfferSelect = Prisma.validator<Prisma.RideOfferSelect>()({
   id: true,
@@ -145,6 +153,7 @@ const publicRideRequestSelect = Prisma.validator<Prisma.RideRequestSelect>()({
   expiresAt: true,
   createdAt: true,
   updatedAt: true,
+  audienceScope: true,
   destinationEvent: { select: { id: true, title: true, startsAt: true } },
   destinationPlace: { select: { id: true, name: true, city: true, houma: true } },
 });
@@ -152,6 +161,10 @@ const publicRideRequestSelect = Prisma.validator<Prisma.RideRequestSelect>()({
 const ownerRideRequestSelect = Prisma.validator<Prisma.RideRequestSelect>()({
   ...publicRideRequestSelect,
   requesterUserId: true,
+  communityAudiences: {
+    orderBy: [{ createdAt: "asc" }, { communityId: "asc" }],
+    select: { community: { select: { id: true, name: true, slug: true, status: true } } },
+  },
 });
 
 const rideParticipationSelect = Prisma.validator<Prisma.RideParticipationSelect>()({
@@ -552,6 +565,7 @@ export class PrismaRideRequestRepository implements RideRequestRepository {
   async listPublic(input: RideRequestListInput): Promise<PublicRideRequestList> {
     const rows = await this.db.rideRequest.findMany({
       where: {
+        audienceScope: "GLOBAL",
         status: "OPEN",
         ...(input.context ? { context: input.context } : {}),
         expiresAt: { gt: new Date() },
@@ -567,6 +581,38 @@ export class PrismaRideRequestRepository implements RideRequestRepository {
 
     return {
       items: rows.slice(0, input.limit).map(serializePublicRideRequest),
+      nextCursor: rows.length > input.limit ? (rows[input.limit - 1]?.id ?? null) : null,
+    };
+  }
+
+  async listForCommunity(input: RideCommunityRequestListInput): Promise<RideRequestCommunityFeed> {
+    const viewerCanRead = await isActiveCommunityMember(
+      this.db,
+      input.viewerUserId,
+      input.communityId,
+    );
+    if (!viewerCanRead) return { items: [], nextCursor: null };
+
+    const rows = await this.db.rideRequest.findMany({
+      where: {
+        audienceScope: "COMMUNITY",
+        status: "OPEN",
+        expiresAt: { gt: new Date() },
+        communityAudiences: { some: { communityId: input.communityId } },
+        requester: {
+          communityMemberships: {
+            some: { communityId: input.communityId, leftAt: null, community: { status: "ACTIVE" } },
+          },
+        },
+      },
+      orderBy: [{ createdAt: "desc" }, { id: "asc" }],
+      take: input.limit + 1,
+      ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
+      select: publicRideRequestSelect,
+    });
+
+    return {
+      items: rows.slice(0, input.limit).map(serializeCommunityRideRequest),
       nextCursor: rows.length > input.limit ? (rows[input.limit - 1]?.id ?? null) : null,
     };
   }
@@ -593,6 +639,7 @@ export class PrismaRideRequestRepository implements RideRequestRepository {
     const row = await this.db.rideRequest.findFirst({
       where: {
         id: rideRequestId,
+        audienceScope: "GLOBAL",
         status: { in: ["OPEN", "MATCHED"] },
         expiresAt: { gt: new Date() },
       },
@@ -618,22 +665,29 @@ export class PrismaRideRequestRepository implements RideRequestRepository {
     requesterUserId: string,
     input: RideRequestCreateInput,
   ): Promise<RideRequestForOwner> {
-    const created = await this.db.rideRequest.create({
-      data: {
-        requesterUserId,
-        context: input.context ?? "MATCHDAY",
-        ...rideDestinationData(input.destination),
-        pickupAreaLabel: input.pickupAreaLabel,
-        desiredDepartureAt: new Date(input.desiredDepartureAt),
-        passengerCount: input.passengerCount,
-        ...requestCompensationData(input.compensationTerms ?? { type: "FREE" }),
-        note: input.note ?? null,
-        expiresAt: new Date(input.expiresAt),
-      },
-      select: ownerRideRequestSelect,
-    });
+    return this.db.$transaction(async (tx) => {
+      const audience = await resolveAudienceForWrite(tx, requesterUserId, input.audience);
+      const created = await tx.rideRequest.create({
+        data: {
+          requesterUserId,
+          context: input.context ?? "MATCHDAY",
+          ...rideDestinationData(input.destination),
+          pickupAreaLabel: input.pickupAreaLabel,
+          desiredDepartureAt: new Date(input.desiredDepartureAt),
+          passengerCount: input.passengerCount,
+          ...requestCompensationData(input.compensationTerms ?? { type: "FREE" }),
+          note: input.note ?? null,
+          expiresAt: new Date(input.expiresAt),
+          audienceScope: audience.scope,
+          communityAudiences: {
+            create: audience.communityIds.map((communityId) => ({ communityId })),
+          },
+        },
+        select: ownerRideRequestSelect,
+      });
 
-    return serializeOwnerRideRequest(created);
+      return serializeOwnerRideRequest(created);
+    });
   }
 
   async update(
@@ -647,6 +701,13 @@ export class PrismaRideRequestRepository implements RideRequestRepository {
         select: { id: true, status: true },
       });
       if (!existing || isTerminalRequest(existing.status)) return null;
+
+      const audience = input.audience
+        ? await resolveAudienceForWrite(tx, requesterUserId, input.audience)
+        : null;
+      if (audience) {
+        await tx.rideRequestCommunityAudience.deleteMany({ where: { rideRequestId } });
+      }
 
       const updated = await tx.rideRequest.update({
         where: { id: rideRequestId },
@@ -665,6 +726,14 @@ export class PrismaRideRequestRepository implements RideRequestRepository {
             : {}),
           ...(input.note !== undefined ? { note: input.note } : {}),
           ...(input.expiresAt !== undefined ? { expiresAt: new Date(input.expiresAt) } : {}),
+          ...(audience
+            ? {
+                audienceScope: audience.scope,
+                communityAudiences: {
+                  create: audience.communityIds.map((communityId) => ({ communityId })),
+                },
+              }
+            : {}),
         },
         select: ownerRideRequestSelect,
       });
@@ -843,6 +912,26 @@ function serializeOwnerRideRequest(row: OwnerRideRequestRow): RideRequestForOwne
   return {
     ...serializePublicRideRequest(row),
     requesterUserId: row.requesterUserId,
+    audience:
+      row.audienceScope === "GLOBAL"
+        ? { scope: "GLOBAL" }
+        : {
+            scope: "COMMUNITY",
+            communities: row.communityAudiences
+              .filter((audience) => audience.community.status === "ACTIVE")
+              .map((audience) => ({
+                id: audience.community.id,
+                name: audience.community.name,
+                slug: audience.community.slug,
+              })),
+          },
+  };
+}
+
+function serializeCommunityRideRequest(row: PublicRideRequestRow): RideRequestCommunityFeedItem {
+  return {
+    ...serializePublicRideRequest(row),
+    href: `/rides?context=${encodeURIComponent(row.context)}`,
   };
 }
 
@@ -1083,4 +1172,38 @@ function isTerminalOffer(status: RideOfferStatus): boolean {
 
 function isTerminalRequest(status: RideRequestStatus): boolean {
   return status === "CANCELLED" || status === "EXPIRED" || status === "COMPLETED";
+}
+
+type ResolvedRideRequestAudience = {
+  readonly scope: "GLOBAL" | "COMMUNITY";
+  readonly communityIds: readonly string[];
+};
+
+async function resolveAudienceForWrite(
+  tx: Prisma.TransactionClient,
+  requesterUserId: string,
+  command: RideRequestCreateInput["audience"],
+): Promise<ResolvedRideRequestAudience> {
+  const audience = command ?? { scope: "GLOBAL" as const };
+  if (audience.scope === "GLOBAL") return { scope: "GLOBAL", communityIds: [] };
+
+  const memberships = await activeMembershipCommunities(tx, requesterUserId);
+  if (audience.selection === "ALL_CURRENT") {
+    if (memberships.length === 0) {
+      throw new RideError(
+        "RIDE_REQUEST_COMMUNITY_AUDIENCE_EMPTY",
+        "Join or create a HOOMA to share this Ride request with a community",
+      );
+    }
+    return { scope: "COMMUNITY", communityIds: memberships.map((membership) => membership.id) };
+  }
+
+  const selected = memberships.find((membership) => membership.id === audience.communityId);
+  if (!selected) {
+    throw new RideError(
+      "RIDE_REQUEST_COMMUNITY_TARGET_FORBIDDEN",
+      "Community target is not available for this Ride request",
+    );
+  }
+  return { scope: "COMMUNITY", communityIds: [selected.id] };
 }

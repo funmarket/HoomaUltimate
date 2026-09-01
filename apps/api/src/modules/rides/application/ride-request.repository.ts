@@ -3,6 +3,7 @@ import type {
   PublicRideRequestList,
   RideContext,
   RideMineListQuery,
+  RideRequestCommunityFeed,
   RideRequestCreateInput,
   RideRequestForOwner,
   RideRequestForOwnerList,
@@ -19,8 +20,16 @@ export interface RideRequestListInput {
   readonly from?: Date;
 }
 
+export interface RideCommunityRequestListInput {
+  readonly communityId: string;
+  readonly viewerUserId: string;
+  readonly limit: number;
+  readonly cursor?: string;
+}
+
 export interface RideRequestRepository {
   listPublic(input: RideRequestListInput): Promise<PublicRideRequestList>;
+  listForCommunity(input: RideCommunityRequestListInput): Promise<RideRequestCommunityFeed>;
   listForRequester(
     requesterUserId: string,
     input: RideMineListQuery,

@@ -11,6 +11,7 @@ import type {
   RideOfferForOwner,
   RideParticipation,
   RideParticipationRequestInput,
+  RideRequestCommunityFeed,
   RideRequestCreateInput,
   RideRequestForOwner,
 } from "@hooma/contracts/rides";
@@ -24,6 +25,7 @@ export type {
   RideOfferCreateInput,
   RideOfferForOwner,
   RideParticipation,
+  RideRequestCommunityFeed,
   RideRequestCreateInput,
   RideRequestForOwner,
 };
@@ -184,6 +186,16 @@ export function createRideApi(transport: HoomaTransport) {
       `${transport.baseUrl}${publicRidePath(`/offers/${encodeURIComponent(offerId)}/photo`)}`,
     listRequests: (query?: RideListQuery) =>
       request<PublicRideRequestList>(transport, listPath("requests", query)),
+    listCommunityRequests: (communityId: string, query?: RideListQuery) =>
+      request<RideRequestCommunityFeed>(
+        transport,
+        ridePath(
+          `/communities/${encodeURIComponent(communityId)}/requests?${new URLSearchParams({
+            limit: String(query?.limit ?? 20),
+            ...(query?.cursor ? { cursor: query.cursor } : {}),
+          }).toString()}`,
+        ),
+      ),
     getRequest: (requestId: string) =>
       request<PublicRideRequest>(
         transport,

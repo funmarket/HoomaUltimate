@@ -22,6 +22,7 @@ export interface HoomaNowFeedItem {
     readonly city: string | null;
     readonly houma: string | null;
   };
+  readonly detailRows?: readonly string[];
 }
 
 export interface HoomaNowFeedProps {
@@ -86,6 +87,13 @@ export function HoomaNowFeed({ items }: HoomaNowFeedProps) {
               {time ? (
                 <span className="hooma-now-card__meta">
                   <span>{time}</span>
+                </span>
+              ) : null}
+              {item.detailRows?.length ? (
+                <span className="hooma-now-card__ride-meta">
+                  {item.detailRows.map((row) => (
+                    <span key={row}>{row}</span>
+                  ))}
                 </span>
               ) : null}
               <span className="hooma-now-card__cta">Open activity ↗</span>
