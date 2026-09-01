@@ -207,7 +207,9 @@ export function CreateEventPage() {
                 <option value="OPEN">Open match</option>
                 <option value="PRIVATE">Private match</option>
               </select>
-              <span className="muted">Open matches are visible to every signed-in HOOMA account.</span>
+              <span className="muted">
+                Open matches are visible to every signed-in HOOMA account.
+              </span>
             </label>
           </div>
           <div className="form-grid">
