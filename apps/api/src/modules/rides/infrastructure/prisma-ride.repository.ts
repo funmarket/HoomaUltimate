@@ -931,7 +931,7 @@ function serializeOwnerRideRequest(row: OwnerRideRequestRow): RideRequestForOwne
 function serializeCommunityRideRequest(row: PublicRideRequestRow): RideRequestCommunityFeedItem {
   return {
     ...serializePublicRideRequest(row),
-    href: `/rides/requests/${encodeURIComponent(row.id)}/manage`,
+    href: `/rides?context=${encodeURIComponent(row.context)}`,
   };
 }
 

@@ -196,10 +196,28 @@
   font-size: 13px;
 }
 
-.hooma-now-card__meta span::before {
+.hooma-now-card__meta span::before,
+.hooma-now-card__ride-meta span::before {
   margin-right: 6px;
   color: var(--now-accent);
   content: "•";
+}
+
+.hooma-now-card__ride-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-top: 10px;
+  color: #d9cfba;
+  font-size: 12px;
+}
+
+.hooma-now-card__ride-expiry {
+  display: inline-flex;
+  margin-top: 8px;
+  color: #b9aa87;
+  font-size: 12px;
+  font-weight: 760;
 }
 
 .hooma-now-card__cta {

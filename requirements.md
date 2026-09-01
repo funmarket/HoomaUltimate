@@ -899,6 +899,8 @@ Ride participation starts as a passenger request for seats on a Ride Offer. The 
 
 Ride exact pickup/meeting location is private by server policy and visible only to authorized Ride parties. Public Ride projections may expose privacy-safe area labels, destination summaries and availability, but never exact private meeting coordinates or addresses.
 
+RideRequest audience choices are exactly `Everyone`, `One of my HOOMAs`, and `All my HOOMAs`. `Everyone` is globally discoverable through normal Ride request discovery and has no Community targets. `One of my HOOMAs` requires the requester to choose exactly one active Community membership. `All my HOOMAs` is resolved by the server at create/update time into the requester's current active Community memberships; it is never persisted as an `ALL_MY_HOOMAS` flag and future joins do not expand existing requests. Community-scoped RideRequests are private to active members, excluded from public Ride discovery and public exact-ID detail, and appear in the selected Community page's HOOMA NOW only while the canonical request is `OPEN`, unexpired, explicitly targeted, and the requester remains an active member of that Community. My Rides remains the owner management surface.
+
 Ride vehicle media is Ride-owned metadata plus object-storage bytes. Binary photo bytes, base64 data and object-storage credentials must not be stored in PostgreSQL, logs, outbox payloads or generic JSON blobs. Until a separately authorized generic Media domain exists, Ride vehicle-photo metadata belongs to a single-purpose Rides-owned model and object keys use a Ride-owned namespace.
 
 ---
