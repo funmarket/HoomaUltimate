@@ -3,6 +3,7 @@ import { Router, raw } from "express";
 import {
   rideMeetingPointInputSchema,
   rideContextSchema,
+  rideMineQuerySchema,
   rideOfferCreateSchema,
   rideOfferUpdateSchema,
   rideParticipationRequestSchema,
@@ -107,6 +108,15 @@ export function createRidePublicRouter(service: RideService): Router {
 
 export function createRideMemberRouter(service: RideService): Router {
   const router = Router();
+
+  router.get(
+    "/mine",
+    asyncHandler(async (request, response) => {
+      response.json(
+        await service.getMyRides(getAuth(request).userId, rideMineQuerySchema.parse(request.query)),
+      );
+    }),
+  );
 
   router.post(
     "/offers",

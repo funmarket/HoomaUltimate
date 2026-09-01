@@ -2,8 +2,10 @@ import type {
   PublicRideRequest,
   PublicRideRequestList,
   RideContext,
+  RideMineListQuery,
   RideRequestCreateInput,
   RideRequestForOwner,
+  RideRequestForOwnerList,
   RideRequestStatus,
   RideRequestUpdateInput,
 } from "@hooma/contracts/rides";
@@ -19,6 +21,10 @@ export interface RideRequestListInput {
 
 export interface RideRequestRepository {
   listPublic(input: RideRequestListInput): Promise<PublicRideRequestList>;
+  listForRequester(
+    requesterUserId: string,
+    input: RideMineListQuery,
+  ): Promise<RideRequestForOwnerList>;
   getPublic(rideRequestId: string): Promise<PublicRideRequest | null>;
   getForRequester(
     rideRequestId: string,

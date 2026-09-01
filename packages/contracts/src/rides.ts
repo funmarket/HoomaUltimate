@@ -252,6 +252,47 @@ export const publicRideRequestListSchema = z.object({
   nextCursor: z.string().min(1).nullable(),
 });
 
+export const rideMineQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+  offerCursor: idSchema.optional(),
+  requestCursor: idSchema.optional(),
+  participationCursor: idSchema.optional(),
+});
+
+export const rideMineOfferSchema = publicRideOfferSchema.extend({
+  participationCount: z.number().int().nonnegative(),
+});
+
+export const rideMineOfferListSchema = z.object({
+  items: z.array(rideMineOfferSchema),
+  nextCursor: z.string().min(1).nullable(),
+});
+
+export const rideOfferForOwnerListSchema = z.object({
+  items: z.array(rideOfferForOwnerSchema),
+  nextCursor: z.string().min(1).nullable(),
+});
+
+export const rideRequestForOwnerListSchema = z.object({
+  items: z.array(rideRequestForOwnerSchema),
+  nextCursor: z.string().min(1).nullable(),
+});
+
+export const rideParticipationForPassengerSchema = rideParticipationSchema.extend({
+  offer: publicRideOfferSchema,
+});
+
+export const rideParticipationForPassengerListSchema = z.object({
+  items: z.array(rideParticipationForPassengerSchema),
+  nextCursor: z.string().min(1).nullable(),
+});
+
+export const rideMineSchema = z.object({
+  offers: rideMineOfferListSchema,
+  requests: rideRequestForOwnerListSchema,
+  participations: rideParticipationForPassengerListSchema,
+});
+
 export type RideOfferStatus = z.infer<typeof rideOfferStatusSchema>;
 export type RideRequestStatus = z.infer<typeof rideRequestStatusSchema>;
 export type RideParticipationStatus = z.infer<typeof rideParticipationStatusSchema>;
@@ -281,3 +322,14 @@ export type PublicRideRequest = z.infer<typeof publicRideRequestSchema>;
 export type RideRequestForOwner = z.infer<typeof rideRequestForOwnerSchema>;
 export type PublicRideOfferList = z.infer<typeof publicRideOfferListSchema>;
 export type PublicRideRequestList = z.infer<typeof publicRideRequestListSchema>;
+export type RideMineQuery = z.input<typeof rideMineQuerySchema>;
+export type RideMineListQuery = z.infer<typeof rideMineQuerySchema>;
+export type RideMineOffer = z.infer<typeof rideMineOfferSchema>;
+export type RideMineOfferList = z.infer<typeof rideMineOfferListSchema>;
+export type RideOfferForOwnerList = z.infer<typeof rideOfferForOwnerListSchema>;
+export type RideRequestForOwnerList = z.infer<typeof rideRequestForOwnerListSchema>;
+export type RideParticipationForPassenger = z.infer<typeof rideParticipationForPassengerSchema>;
+export type RideParticipationForPassengerList = z.infer<
+  typeof rideParticipationForPassengerListSchema
+>;
+export type RideMine = z.infer<typeof rideMineSchema>;
