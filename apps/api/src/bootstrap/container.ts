@@ -152,6 +152,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     rideOfferRepository,
     rideReferenceReader,
     rideReferenceReader,
+    rideReferenceReader,
     userPresentationReader,
     rideVehiclePhotoRepository,
     storage,

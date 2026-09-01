@@ -8,8 +8,11 @@ import {
   rideContextSchema,
   rideDestinationColumnsSchema,
   rideOfferCreateSchema,
+  rideRequestAudienceCommandSchema,
+  rideRequestCommunityFeedSchema,
   rideRequestCompensationTermsSchema,
   rideRequestCreateSchema,
+  rideRequestForOwnerSchema,
 } from "../packages/contracts/src/rides.js";
 import {
   RidePolicyError,
@@ -46,6 +49,23 @@ function validPublicOffer() {
     note: null,
     hasVehiclePhoto: false,
     waypoints: [],
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+function validPublicRequest() {
+  return {
+    id: "ride-request-1",
+    context: "GENERAL" as const,
+    status: "OPEN" as const,
+    destination: { type: "CUSTOM" as const, label: "Airport" },
+    pickupAreaLabel: "La Marsa",
+    desiredDepartureAt: now,
+    passengerCount: 1,
+    compensationTerms: { type: "FREE" as const },
+    note: null,
+    expiresAt: now,
     createdAt: now,
     updatedAt: now,
   };
@@ -218,6 +238,7 @@ test("Ride request contract supports no cash offer or advertised cash offer only
       passengerCount: 1,
       expiresAt: now,
       compensationTerms: { type: "FREE" },
+      audience: { scope: "GLOBAL" },
     }).success,
     true,
   );
@@ -231,6 +252,7 @@ test("Ride request contract supports no cash offer or advertised cash offer only
       passengerCount: 2,
       expiresAt: now,
       compensationTerms: { type: "CASH", amountMinor: 8000, currency: "TND" },
+      audience: { scope: "GLOBAL" },
     }).success,
     true,
   );
@@ -261,6 +283,76 @@ test("Ride request contract supports no cash offer or advertised cash offer only
     }).success,
     false,
   );
+});
+
+test("Ride request audience contract accepts explicit global one-HOOMA and server-resolved all-current commands", () => {
+  assert.equal(rideRequestAudienceCommandSchema.safeParse({ scope: "GLOBAL" }).success, true);
+  assert.equal(
+    rideRequestAudienceCommandSchema.safeParse({
+      scope: "COMMUNITY",
+      selection: "ONE",
+      communityId: "community-a",
+    }).success,
+    true,
+  );
+  assert.equal(
+    rideRequestAudienceCommandSchema.safeParse({ scope: "COMMUNITY", selection: "ALL_CURRENT" })
+      .success,
+    true,
+  );
+});
+
+test("Ride request audience contract rejects impossible command combinations", () => {
+  assert.equal(
+    rideRequestAudienceCommandSchema.safeParse({ scope: "GLOBAL", communityId: "community-a" })
+      .success,
+    false,
+  );
+  assert.equal(
+    rideRequestAudienceCommandSchema.safeParse({
+      scope: "COMMUNITY",
+      selection: "ONE",
+      communityId: "",
+    }).success,
+    false,
+  );
+  assert.equal(
+    rideRequestAudienceCommandSchema.safeParse({
+      scope: "COMMUNITY",
+      selection: "ALL_CURRENT",
+      communityIds: ["community-a"],
+    }).success,
+    false,
+  );
+  assert.equal(
+    rideRequestAudienceCommandSchema.safeParse({ scope: "COMMUNITY", selection: "EVERYONE" })
+      .success,
+    false,
+  );
+  assert.equal(rideRequestAudienceCommandSchema.safeParse({ scope: "PUBLIC" }).success, false);
+});
+
+test("Ride request owner and Community feed contracts expose truthful audience projections", () => {
+  const ownerRequest = {
+    ...validPublicRequest(),
+    requesterUserId: "requester-1",
+    audience: {
+      scope: "COMMUNITY" as const,
+      communities: [{ id: "community-a", name: "La Marsa HOOMA", slug: "la-marsa" }],
+    },
+  };
+  assert.equal(rideRequestForOwnerSchema.safeParse(ownerRequest).success, true);
+
+  const communityFeed = {
+    items: [
+      {
+        ...validPublicRequest(),
+        href: "/rides/requests/request-1/manage",
+      },
+    ],
+    nextCursor: null,
+  };
+  assert.equal(rideRequestCommunityFeedSchema.safeParse(communityFeed).success, true);
 });
 
 test("Ride public projections exclude payment processing state", () => {

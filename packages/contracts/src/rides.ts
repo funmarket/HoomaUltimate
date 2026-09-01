@@ -116,6 +116,31 @@ export const rideOfferCreateSchema = z.object({
 
 export const rideOfferUpdateSchema = rideOfferCreateSchema.partial();
 
+export const rideRequestAudienceScopeSchema = z.enum(["GLOBAL", "COMMUNITY"]);
+
+export const rideRequestAudienceCommandSchema = z.discriminatedUnion("scope", [
+  z
+    .object({
+      scope: z.literal("GLOBAL"),
+    })
+    .strict(),
+  z.discriminatedUnion("selection", [
+    z
+      .object({
+        scope: z.literal("COMMUNITY"),
+        selection: z.literal("ONE"),
+        communityId: idSchema,
+      })
+      .strict(),
+    z
+      .object({
+        scope: z.literal("COMMUNITY"),
+        selection: z.literal("ALL_CURRENT"),
+      })
+      .strict(),
+  ]),
+]);
+
 export const rideRequestCreateSchema = z.object({
   context: rideContextSchema.default("MATCHDAY"),
   destination: rideDestinationSchema,
@@ -125,6 +150,7 @@ export const rideRequestCreateSchema = z.object({
   compensationTerms: rideRequestCompensationTermsSchema.default({ type: "FREE" }),
   note: noteSchema,
   expiresAt: z.string().datetime(),
+  audience: rideRequestAudienceCommandSchema.default({ scope: "GLOBAL" }),
 });
 
 export const rideRequestUpdateSchema = rideRequestCreateSchema.partial();
@@ -238,8 +264,25 @@ export const publicRideRequestSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 
+export const rideRequestAudienceCommunitySchema = z.object({
+  id: idSchema,
+  name: z.string().min(1),
+  slug: z.string().min(1),
+});
+
+export const rideRequestOwnerAudienceSchema = z.discriminatedUnion("scope", [
+  z.object({ scope: z.literal("GLOBAL") }).strict(),
+  z
+    .object({
+      scope: z.literal("COMMUNITY"),
+      communities: z.array(rideRequestAudienceCommunitySchema),
+    })
+    .strict(),
+]);
+
 export const rideRequestForOwnerSchema = publicRideRequestSchema.extend({
   requesterUserId: idSchema,
+  audience: rideRequestOwnerAudienceSchema,
 });
 
 export const publicRideOfferListSchema = z.object({
@@ -249,6 +292,15 @@ export const publicRideOfferListSchema = z.object({
 
 export const publicRideRequestListSchema = z.object({
   items: z.array(publicRideRequestSchema),
+  nextCursor: z.string().min(1).nullable(),
+});
+
+export const rideRequestCommunityFeedItemSchema = publicRideRequestSchema.extend({
+  href: z.string().min(1),
+});
+
+export const rideRequestCommunityFeedSchema = z.object({
+  items: z.array(rideRequestCommunityFeedItemSchema),
   nextCursor: z.string().min(1).nullable(),
 });
 
@@ -295,6 +347,10 @@ export const rideMineSchema = z.object({
 
 export type RideOfferStatus = z.infer<typeof rideOfferStatusSchema>;
 export type RideRequestStatus = z.infer<typeof rideRequestStatusSchema>;
+export type RideRequestAudienceScope = z.infer<typeof rideRequestAudienceScopeSchema>;
+export type RideRequestAudienceCommand = z.infer<typeof rideRequestAudienceCommandSchema>;
+export type RideRequestAudienceCommunity = z.infer<typeof rideRequestAudienceCommunitySchema>;
+export type RideRequestOwnerAudience = z.infer<typeof rideRequestOwnerAudienceSchema>;
 export type RideParticipationStatus = z.infer<typeof rideParticipationStatusSchema>;
 export type RideContext = z.infer<typeof rideContextSchema>;
 export type RideCompensationBasis = z.infer<typeof rideCompensationBasisSchema>;
@@ -322,6 +378,8 @@ export type PublicRideRequest = z.infer<typeof publicRideRequestSchema>;
 export type RideRequestForOwner = z.infer<typeof rideRequestForOwnerSchema>;
 export type PublicRideOfferList = z.infer<typeof publicRideOfferListSchema>;
 export type PublicRideRequestList = z.infer<typeof publicRideRequestListSchema>;
+export type RideRequestCommunityFeedItem = z.infer<typeof rideRequestCommunityFeedItemSchema>;
+export type RideRequestCommunityFeed = z.infer<typeof rideRequestCommunityFeedSchema>;
 export type RideMineQuery = z.input<typeof rideMineQuerySchema>;
 export type RideMineListQuery = z.infer<typeof rideMineQuerySchema>;
 export type RideMineOffer = z.infer<typeof rideMineOfferSchema>;

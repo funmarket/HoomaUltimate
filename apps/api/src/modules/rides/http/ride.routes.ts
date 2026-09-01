@@ -296,6 +296,19 @@ export function createRideMemberRouter(service: RideService): Router {
   );
 
   router.get(
+    "/communities/:communityId/requests",
+    asyncHandler(async (request, response) => {
+      response.json(
+        await service.listCommunityRequests(
+          getAuth(request).userId,
+          String(request.params.communityId),
+          listQuery(request.query),
+        ),
+      );
+    }),
+  );
+
+  router.get(
     "/requests/:requestId/manage",
     asyncHandler(async (request, response) => {
       response.json(

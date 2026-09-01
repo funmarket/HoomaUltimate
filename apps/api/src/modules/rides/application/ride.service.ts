@@ -17,6 +17,7 @@ import type {
   RideRequestUpdateInput,
 } from "@hooma/contracts/rides";
 import type { UserPresentationReader } from "../../identity/application/user-presentation.reader.js";
+import type { RideCommunityMembershipReader } from "./ride-community-membership.reader.js";
 import { RideError } from "../domain/ride-error.js";
 import { RidePolicyError } from "../domain/ride-policy.js";
 import type {
@@ -56,6 +57,7 @@ export class RideService {
     private readonly meetingPoints: RideMeetingPointRepository,
     private readonly events: RideEventReferenceReader,
     private readonly places: RidePlaceReferenceReader,
+    private readonly communityMemberships: RideCommunityMembershipReader,
     private readonly userPresentations: UserPresentationReader,
     private readonly vehiclePhotos: RideVehiclePhotoRepository,
     private readonly storage: ObjectStorage | null,
@@ -125,6 +127,7 @@ export class RideService {
 
   async createRequest(requesterUserId: string, input: RideRequestCreateInput) {
     await this.validateDestination(input.destination);
+    await this.validateAudienceCommand(requesterUserId, input.audience);
     return this.withRidePolicy(() => this.requests.create(requesterUserId, input));
   }
 
@@ -135,6 +138,7 @@ export class RideService {
   ) {
     await this.requireRequestOwner(requesterUserId, rideRequestId);
     if (input.destination) await this.validateDestination(input.destination);
+    if (input.audience) await this.validateAudienceCommand(requesterUserId, input.audience);
 
     return this.withRidePolicy(async () => {
       const updated = await this.requests.update(rideRequestId, requesterUserId, input);
@@ -284,6 +288,33 @@ export class RideService {
       requests,
       participations,
     };
+  }
+
+  async listCommunityRequests(
+    viewerUserId: string,
+    communityId: string,
+    input: PublicRideRequestListInput = {},
+  ) {
+    const canView = await this.communityMemberships.isActiveMemberOfCommunity(
+      viewerUserId,
+      communityId,
+    );
+    if (!canView) {
+      throw new RideError(
+        "RIDE_REQUEST_COMMUNITY_FEED_FORBIDDEN",
+        "Community Ride requests are visible only to active HOOMA members",
+      );
+    }
+    return this.requests.listForCommunity({
+      communityId,
+      viewerUserId,
+      limit: normalizeLimit(input.limit),
+      ...(input.cursor ? { cursor: input.cursor } : {}),
+    });
+  }
+
+  async listMyRideRequestAudienceCommunities(actorUserId: string) {
+    return this.communityMemberships.listActiveMembershipCommunities(actorUserId);
   }
 
   async replaceOfferVehiclePhoto(
@@ -508,6 +539,34 @@ export class RideService {
           "Approved Ride destination Place not found",
         );
       }
+    }
+  }
+
+  private async validateAudienceCommand(
+    requesterUserId: string,
+    audience: RideRequestCreateInput["audience"],
+  ): Promise<void> {
+    if (!audience || audience.scope === "GLOBAL") return;
+    if (audience.selection === "ALL_CURRENT") {
+      const communities =
+        await this.communityMemberships.listActiveMembershipCommunities(requesterUserId);
+      if (communities.length === 0) {
+        throw new RideError(
+          "RIDE_REQUEST_COMMUNITY_AUDIENCE_EMPTY",
+          "Join or create a HOOMA to share this Ride request with a community",
+        );
+      }
+      return;
+    }
+    const isMember = await this.communityMemberships.isActiveMemberOfCommunity(
+      requesterUserId,
+      audience.communityId,
+    );
+    if (!isMember) {
+      throw new RideError(
+        "RIDE_REQUEST_COMMUNITY_TARGET_FORBIDDEN",
+        "Community target is not available for this Ride request",
+      );
     }
   }
 
