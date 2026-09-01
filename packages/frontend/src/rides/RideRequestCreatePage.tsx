@@ -29,13 +29,14 @@ import {
   toIsoDateTime,
 } from "./ride-view-model";
 
-type RideRequestAudienceChoice = "GLOBAL" | "ONE" | "ALL_CURRENT";
+type RideRequestAudienceChoice = "GLOBAL" | "ONE" | "ALL_CURRENT" | "SAVED";
+type WritableRideRequestAudienceChoice = Exclude<RideRequestAudienceChoice, "SAVED">;
 type HoomaMembership = MeResponse["communities"][number];
 
 const communityAudienceCopy = "Join or create a HOOMA to share this Ride request with a community.";
 
 function buildRideRequestAudience(
-  choice: RideRequestAudienceChoice,
+  choice: WritableRideRequestAudienceChoice,
   selectedCommunityId: string,
 ): RideRequestAudienceCommand {
   if (choice === "ONE") {
@@ -47,9 +48,11 @@ function buildRideRequestAudience(
   return { scope: "GLOBAL" };
 }
 
-function audienceChoiceFromOwner(request: RideRequestForOwner): RideRequestAudienceChoice {
-  if (request.audience.scope === "GLOBAL") return "GLOBAL";
-  return request.audience.communities.length === 1 ? "ONE" : "ALL_CURRENT";
+function writableAudienceChoice(choice: RideRequestAudienceChoice): WritableRideRequestAudienceChoice {
+  if (choice === "SAVED") {
+    throw new Error("Choose a new Ride request audience before replacing the saved audience");
+  }
+  return choice;
 }
 
 function audienceSuccessMessage(request: RideRequestForOwner, editing: boolean): string {
@@ -60,6 +63,11 @@ function audienceSuccessMessage(request: RideRequestForOwner, editing: boolean):
     return `${prefix} in HOOMA NOW for ${request.audience.communities[0]?.name}.`;
   }
   return `${prefix} in HOOMA NOW for ${count} HOOMAs.`;
+}
+
+function savedAudienceLabel(request: RideRequestForOwner): string {
+  if (request.audience.scope === "GLOBAL") return "Everyone";
+  return request.audience.communities.map((community) => community.name).join(", ");
 }
 
 export function RideRequestCreatePage({ requestId }: { readonly requestId?: string }) {
@@ -91,7 +99,8 @@ export function RideRequestCreatePage({ requestId }: { readonly requestId?: stri
   const communityAudienceInvalid =
     editing && !audienceDirty
       ? false
-      : (audienceChoice === "ONE" && !selectedCommunityId) ||
+      : audienceChoice === "SAVED" ||
+        (audienceChoice === "ONE" && !selectedCommunityId) ||
         ((audienceChoice === "ONE" || audienceChoice === "ALL_CURRENT") &&
           !hasCommunityMemberships);
 
@@ -113,8 +122,7 @@ export function RideRequestCreatePage({ requestId }: { readonly requestId?: stri
         setPassengerCount(String(request.passengerCount));
         setCompensation(compensationFormStateFromTerms(request.compensationTerms));
         setNote(request.note ?? "");
-        const choice = audienceChoiceFromOwner(request);
-        setAudienceChoice(choice);
+        setAudienceChoice(request.audience.scope === "GLOBAL" ? "GLOBAL" : "SAVED");
         setAudienceDirty(false);
         if (request.audience.scope === "COMMUNITY") {
           setSelectedCommunityId(request.audience.communities[0]?.id ?? "");
@@ -165,7 +173,9 @@ export function RideRequestCreatePage({ requestId }: { readonly requestId?: stri
         const rows = me?.communities ?? [];
         setMemberships(rows);
         setSelectedCommunityId((current) =>
-          current && rows.some((community) => community.id === current) ? current : (rows[0]?.id ?? ""),
+          current && rows.some((community) => community.id === current)
+            ? current
+            : (rows[0]?.id ?? ""),
         );
         if (!rows.length && !editing) setAudienceChoice("GLOBAL");
       })
@@ -190,10 +200,13 @@ export function RideRequestCreatePage({ requestId }: { readonly requestId?: stri
     existingRequest?.status === "EXPIRED" ||
     existingRequest?.status === "COMPLETED";
 
-  function chooseAudience(choice: RideRequestAudienceChoice) {
+  function chooseAudience(choice: WritableRideRequestAudienceChoice) {
     setAudienceChoice(choice);
     setAudienceDirty(true);
-    if (choice === "ONE" && !memberships.some((community) => community.id === selectedCommunityId)) {
+    if (
+      choice === "ONE" &&
+      !memberships.some((community) => community.id === selectedCommunityId)
+    ) {
       setSelectedCommunityId(memberships[0]?.id ?? "");
     }
   }
@@ -223,12 +236,20 @@ export function RideRequestCreatePage({ requestId }: { readonly requestId?: stri
         ? await api.updateRequest(requestId, {
             ...baseInput,
             ...(audienceDirty
-              ? { audience: buildRideRequestAudience(audienceChoice, selectedCommunityId) }
+              ? {
+                  audience: buildRideRequestAudience(
+                    writableAudienceChoice(audienceChoice),
+                    selectedCommunityId,
+                  ),
+                }
               : {}),
           } satisfies RideRequestUpdateInput)
         : await api.createRequest({
             ...baseInput,
-            audience: buildRideRequestAudience(audienceChoice, selectedCommunityId),
+            audience: buildRideRequestAudience(
+              writableAudienceChoice(audienceChoice),
+              selectedCommunityId,
+            ),
           } satisfies RideRequestCreateInput);
       setExistingRequest(saved);
       setSavedRequest(saved);
@@ -345,6 +366,12 @@ export function RideRequestCreatePage({ requestId }: { readonly requestId?: stri
             </div>
             <fieldset className="ride-audience-choice" aria-describedby="ride-audience-help">
               <legend>Who should see this Ride request?</legend>
+              {editing && audienceChoice === "SAVED" && existingRequest ? (
+                <p className="ride-audience-current">
+                  Current saved audience: <strong>{savedAudienceLabel(existingRequest)}</strong>.
+                  It stays unchanged unless you choose a new option below.
+                </p>
+              ) : null}
               <label className={audienceChoice === "GLOBAL" ? "is-selected" : ""}>
                 <input
                   type="radio"
