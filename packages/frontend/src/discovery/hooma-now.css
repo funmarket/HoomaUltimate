@@ -212,14 +212,6 @@
   font-size: 12px;
 }
 
-.hooma-now-card__ride-expiry {
-  display: inline-flex;
-  margin-top: 8px;
-  color: #b9aa87;
-  font-size: 12px;
-  font-weight: 760;
-}
-
 .hooma-now-card__cta {
   display: inline-flex;
   margin-top: 13px;

@@ -7,6 +7,7 @@ const hoomaNowSection = await readFile(
   "packages/frontend/src/discovery/HoomaNowSection.tsx",
   "utf8",
 );
+const hoomaNowFeed = await readFile("packages/ui/src/home/HoomaNowFeed.tsx", "utf8");
 const hoomaNowCss = await readFile("packages/frontend/src/discovery/hooma-now.css", "utf8");
 
 test("Community detail composes Ride requests into the canonical HOOMA NOW surface", () => {
@@ -28,8 +29,15 @@ test("Community HOOMA NOW Ride cards preserve canonical request IDs and live exp
   assert.match(hoomaNowSection, /window\.setTimeout/);
 });
 
+test("shared HOOMA NOW feed does not infer Ride-only expiry UI from generic endsAt", () => {
+  assert.doesNotMatch(hoomaNowFeed, /Live until expiry/);
+  assert.doesNotMatch(hoomaNowFeed, /hooma-now-card__ride-expiry/);
+  assert.match(hoomaNowFeed, /detailRows/);
+  assert.match(hoomaNowSection, /rideTimeRemaining\(item\)/);
+});
+
 test("Community HOOMA NOW Ride card styling stays inside canonical feed classes", () => {
   assert.match(hoomaNowCss, /\.hooma-now-card__ride-meta/);
-  assert.match(hoomaNowCss, /\.hooma-now-card__ride-expiry/);
+  assert.doesNotMatch(hoomaNowCss, /\.hooma-now-card__ride-expiry/);
   assert.doesNotMatch(hoomaNowCss, /!important/);
 });

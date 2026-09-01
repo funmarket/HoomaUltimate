@@ -96,9 +96,6 @@ export function HoomaNowFeed({ items }: HoomaNowFeedProps) {
                   ))}
                 </span>
               ) : null}
-              {item.endsAt ? (
-                <span className="hooma-now-card__ride-expiry">Live until expiry</span>
-              ) : null}
               <span className="hooma-now-card__cta">Open activity ↗</span>
             </span>
           </a>
