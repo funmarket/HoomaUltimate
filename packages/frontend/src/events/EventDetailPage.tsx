@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useHoomaFrontend } from "../context";
 import { HoomaApiError } from "../http";
 import { EventWhistleBoard } from "../whistle/HoomaWhistleBoard";
 import type { EventRsvpState, PublicEvent } from "./api";
 import { useEventApi } from "./useEventApi";
+import { createPlayApi } from "./play-api";
 
 type ActiveRsvpState = "CONFIRMED" | "WAITLISTED" | "ATTENDED" | null;
 
@@ -77,7 +78,8 @@ function BallIcon() {
 
 export function EventDetailPage({ eventId }: { readonly eventId: string }) {
   const eventApi = useEventApi();
-  const { protectedError } = useHoomaFrontend();
+  const { transport, protectedError } = useHoomaFrontend();
+  const playApi = useMemo(() => createPlayApi(transport), [transport]);
   const [event, setEvent] = useState<PublicEvent | null>(null);
   const [rsvp, setRsvp] = useState<ActiveRsvpState>(null);
   const [canManage, setCanManage] = useState(false);
@@ -95,12 +97,26 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
       .catch((reason) => {
         if (reason instanceof HoomaApiError && [401, 403].includes(reason.status)) return;
       });
-  }, [eventApi, eventId]);
+  }, [eventApi, eventId, playApi, protectedError]);
 
   async function reloadEvent() {
     try {
       setEvent(await eventApi.publicDetail(eventId));
+      return;
     } catch (reason) {
+      if (!(reason instanceof HoomaApiError) || reason.status !== 404) {
+        setError(reason instanceof Error ? reason.message : "Unable to load event");
+        return;
+      }
+    }
+
+    try {
+      setEvent(await playApi.matchDetail(eventId));
+    } catch (reason) {
+      if (reason instanceof HoomaApiError && reason.status === 401) {
+        setError(protectedError(reason, "Sign in to view this Play match"));
+        return;
+      }
       setError(reason instanceof Error ? reason.message : "Unable to load event");
     }
   }

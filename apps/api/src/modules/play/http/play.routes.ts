@@ -34,6 +34,14 @@ export function createPlayMemberRouter(service: PlayService): Router {
     }),
   );
   router.get(
+    "/matches/:eventId",
+    asyncHandler(async (request, response) => {
+      response.json(
+        await service.matchDetail(getAuth(request).userId, String(request.params.eventId)),
+      );
+    }),
+  );
+  router.get(
     "/player-listing",
     asyncHandler(async (request, response) => {
       response.json(await service.getMine(getAuth(request).userId));

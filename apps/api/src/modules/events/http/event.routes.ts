@@ -54,8 +54,7 @@ export function createEventPublicRouter(
   router.get(
     "/:eventId",
     asyncHandler(async (request, response) => {
-      const auth = await resolveAuthentication(request, identity, config);
-      response.json(await service.getVisible(String(request.params.eventId), auth?.userId));
+      response.json(await service.getPublicEvent(String(request.params.eventId)));
     }),
   );
   return router;

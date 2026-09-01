@@ -40,9 +40,10 @@ test("Ride surface uses real Ride APIs and no longer ships the old fake shell", 
   assert.match(rideOfferDetailPage, /getMeetingPoint/);
   assert.match(rideOfferDetailPage, /Request participation/);
   assert.match(rideOfferDetailPage, /Private meeting point/);
-  assert.match(rideDestinationFields, /publicPlay\(\)/);
+  assert.match(rideDestinationFields, /playApi\.openMatches\(\)/);
   assert.match(rideDestinationFields, /publicWatch\(\)/);
   assert.match(rideDestinationFields, /placesApi\s*\.\s*list\(\)/);
+  assert.doesNotMatch(rideDestinationFields, /publicPlay\(\)/);
   assert.match(rideDestinationFields, /destination\.type !== "EVENT"/);
   assert.match(rideDestinationFields, /destination\.type !== "PLACE"/);
   assert.doesNotMatch(

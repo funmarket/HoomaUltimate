@@ -262,6 +262,30 @@ test("EventService allows authorized users to open an OPEN PLAY event", async ()
   assert.equal(event.id, "event-1");
 });
 
+test("EventService keeps public Event detail non-Play and routes Play through authenticated access", async () => {
+  const repository = repositoryStub(() => {});
+  const service = new EventService(repository, {} as CommunityService, approvedPlaces());
+
+  repository.getPublic = async (eventId) => ({ id: eventId, type: "WATCH" }) as never;
+  assert.equal((await service.getPublicEvent("watch-1")).id, "watch-1");
+
+  repository.getPublic = async (eventId) => ({ id: eventId, type: "PLAY" }) as never;
+  await assert.rejects(
+    () => service.getPublicEvent("play-1"),
+    (error: unknown) => error instanceof EventError && error.code === "EVENT_NOT_FOUND",
+  );
+
+  repository.access = async () => playAccess({ playVisibility: "OPEN" });
+  repository.canAccessPlay = async (eventId, userId) => eventId === "play-1" && userId === "viewer";
+  const play = await service.getVisiblePlay("play-1", "viewer");
+  assert.equal(play.id, "play-1");
+
+  await assert.rejects(
+    () => service.getVisiblePlay("play-1", "outsider"),
+    (error: unknown) => error instanceof EventError && error.code === "EVENT_NOT_FOUND",
+  );
+});
+
 test("EventService rejects formation players outside the confirmed event roster", async () => {
   const repository = repositoryStub(() => {});
   repository.access = async () => playAccess({ createdByUserId: "user-1" });

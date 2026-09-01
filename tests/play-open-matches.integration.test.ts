@@ -40,6 +40,9 @@ async function resetDatabase() {
   await db.communityJoinRequest.deleteMany();
   await db.communityMembership.deleteMany();
   await db.community.deleteMany();
+  await db.placeImage.deleteMany();
+  await db.placeOwnership.deleteMany();
+  await db.place.deleteMany();
   await db.webSession.deleteMany();
   await db.webCredential.deleteMany();
   await db.telegramIdentity.deleteMany();
@@ -85,6 +88,8 @@ test("Open Matches are account-only and independent from Community privacy", asy
   try {
     const founder = await register(base, "open_match_founder");
     const viewer = await register(base, "open_match_viewer");
+    const manager = await register(base, "open_match_manager");
+    const invitee = await register(base, "private_match_invitee");
     const outsider = await register(base, "private_match_outsider");
 
     const communityResponse = await fetch(`${base}/api/v1/communities`, {
@@ -97,6 +102,26 @@ test("Open Matches are account-only and independent from Community privacy", asy
     await db.community.update({
       where: { id: community.id },
       data: { visibility: "PRIVATE" },
+    });
+    await db.communityMembership.create({
+      data: { communityId: community.id, userId: manager.userId, role: "COACH" },
+    });
+
+    const publicCommunityResponse = await fetch(`${base}/api/v1/communities`, {
+      method: "POST",
+      headers: memberHeaders(founder.cookie),
+      body: JSON.stringify({ name: "Public Medina Club" }),
+    });
+    assert.equal(publicCommunityResponse.status, 201);
+    const publicCommunity = (await publicCommunityResponse.json()) as { id: string };
+    const approvedPlace = await db.place.create({
+      data: {
+        slug: `open-match-watch-place-${Date.now().toString(36)}`,
+        name: "Open Match Watch Place",
+        address: "20 Avenue Habib Bourguiba",
+        moderationStatus: "APPROVED",
+        suggestedByUserId: founder.userId,
+      },
     });
 
     const startsAt = new Date(Date.now() + 60 * 60_000).toISOString();
@@ -130,6 +155,63 @@ test("Open Matches are account-only and independent from Community privacy", asy
     });
     assert.equal(persisted.visibility, "OPEN");
 
+    const publicCommunityEventResponse = await fetch(`${base}/api/v1/events`, {
+      method: "POST",
+      headers: memberHeaders(founder.cookie),
+      body: JSON.stringify({
+        communityId: publicCommunity.id,
+        type: "PLAY",
+        title: "Public community pickup",
+        startsAt: new Date(Date.now() + 90 * 60_000).toISOString(),
+        capacity: 10,
+        waitlistEnabled: true,
+        entryFeeMinor: 0,
+        play: {
+          pitchType: "FIVE_A_SIDE",
+          skillLevel: "MIXED",
+          format: "FIVE_V_FIVE",
+          visibility: "OPEN",
+        },
+      }),
+    });
+    assert.equal(publicCommunityEventResponse.status, 201);
+    const publicCommunityEvent = (await publicCommunityEventResponse.json()) as { id: string };
+
+    const watchEventResponse = await fetch(`${base}/api/v1/events`, {
+      method: "POST",
+      headers: memberHeaders(founder.cookie),
+      body: JSON.stringify({
+        communityId: null,
+        placeId: approvedPlace.id,
+        type: "WATCH",
+        title: "Public derby watch",
+        startsAt: new Date(Date.now() + 120 * 60_000).toISOString(),
+        capacity: 20,
+        waitlistEnabled: true,
+        entryFeeMinor: 0,
+        watch: {
+          kind: "MATCH",
+          teamOneName: "Club A",
+          teamTwoName: "Club B",
+        },
+      }),
+    });
+    assert.equal(watchEventResponse.status, 201);
+    const watchEvent = (await watchEventResponse.json()) as { id: string };
+
+    const publicWatchDetail = await fetch(`${base}/api/public/v1/events/${watchEvent.id}`);
+    assert.equal(publicWatchDetail.status, 200);
+    assert.equal(((await publicWatchDetail.json()) as { type: string }).type, "WATCH");
+
+    const publicCommunityOpenMatches = await fetch(`${base}/api/v1/play/open-matches?limit=50`, {
+      headers: { cookie: viewer.cookie },
+    });
+    assert.equal(publicCommunityOpenMatches.status, 200);
+    const publicCommunityOpenPage = (await publicCommunityOpenMatches.json()) as {
+      items: { id: string; communityId: string | null; playDetails: { visibility: string } }[];
+    };
+    assert.ok(publicCommunityOpenPage.items.some((row) => row.id === publicCommunityEvent.id));
+
     const publicPlay = await fetch(`${base}/api/public/v1/events?type=PLAY&limit=50`);
     assert.equal(publicPlay.status, 200);
     const publicPage = (await publicPlay.json()) as { items: unknown[] };
@@ -153,7 +235,31 @@ test("Open Matches are account-only and independent from Community privacy", asy
     assert.equal(visible.communityId, community.id);
     assert.equal(visible.playDetails.visibility, "OPEN");
 
-    const viewerDetail = await fetch(`${base}/api/public/v1/events/${event.id}`, {
+    const firstOpenPageResponse = await fetch(`${base}/api/v1/play/open-matches?limit=1`, {
+      headers: { cookie: viewer.cookie },
+    });
+    assert.equal(firstOpenPageResponse.status, 200);
+    const firstOpenPage = (await firstOpenPageResponse.json()) as {
+      items: { id: string }[];
+      nextCursor: string | null;
+    };
+    assert.equal(firstOpenPage.items.length, 1);
+    assert.ok(firstOpenPage.nextCursor);
+    const secondOpenPageResponse = await fetch(
+      `${base}/api/v1/play/open-matches?limit=1&cursor=${firstOpenPage.nextCursor}`,
+      { headers: { cookie: viewer.cookie } },
+    );
+    assert.equal(secondOpenPageResponse.status, 200);
+    const secondOpenPage = (await secondOpenPageResponse.json()) as { items: { id: string }[] };
+    assert.equal(secondOpenPage.items.length, 1);
+    assert.notEqual(secondOpenPage.items[0]?.id, firstOpenPage.items[0]?.id);
+
+    const authenticatedPublicDetail = await fetch(`${base}/api/public/v1/events/${event.id}`, {
+      headers: { cookie: viewer.cookie },
+    });
+    assert.equal(authenticatedPublicDetail.status, 404);
+
+    const viewerDetail = await fetch(`${base}/api/v1/play/matches/${event.id}`, {
       headers: { cookie: viewer.cookie },
     });
     assert.equal(viewerDetail.status, 200);
@@ -180,12 +286,20 @@ test("Open Matches are account-only and independent from Community privacy", asy
     });
     assert.equal(privateOpenMatches.status, 200);
     const privatePage = (await privateOpenMatches.json()) as { items: { id: string }[] };
-    assert.equal(privatePage.items.some((row) => row.id === event.id), false);
+    assert.equal(
+      privatePage.items.some((row) => row.id === event.id),
+      false,
+    );
 
     const outsiderDetail = await fetch(`${base}/api/public/v1/events/${event.id}`, {
       headers: { cookie: outsider.cookie },
     });
     assert.equal(outsiderDetail.status, 404);
+
+    const outsiderPlayDetail = await fetch(`${base}/api/v1/play/matches/${event.id}`, {
+      headers: { cookie: outsider.cookie },
+    });
+    assert.equal(outsiderPlayDetail.status, 404);
 
     const outsiderJoin = await fetch(`${base}/api/v1/events/${event.id}/join`, {
       method: "POST",
@@ -193,16 +307,74 @@ test("Open Matches are account-only and independent from Community privacy", asy
     });
     assert.equal(outsiderJoin.status, 404);
 
-    const participantDetail = await fetch(`${base}/api/public/v1/events/${event.id}`, {
+    const participantPublicDetail = await fetch(`${base}/api/public/v1/events/${event.id}`, {
       headers: { cookie: viewer.cookie },
     });
-    assert.equal(participantDetail.status, 200);
+    assert.equal(participantPublicDetail.status, 404);
+
+    const participantPlayDetail = await fetch(`${base}/api/v1/play/matches/${event.id}`, {
+      headers: { cookie: viewer.cookie },
+    });
+    assert.equal(participantPlayDetail.status, 200);
+
+    const cancelRsvp = await fetch(`${base}/api/v1/events/${event.id}/rsvp`, {
+      method: "DELETE",
+      headers: memberHeaders(viewer.cookie),
+    });
+    assert.equal(cancelRsvp.status, 200);
+
+    const formerParticipantDetail = await fetch(`${base}/api/v1/play/matches/${event.id}`, {
+      headers: { cookie: viewer.cookie },
+    });
+    assert.equal(formerParticipantDetail.status, 404);
+
+    const managerDetail = await fetch(`${base}/api/v1/play/matches/${event.id}`, {
+      headers: { cookie: manager.cookie },
+    });
+    assert.equal(managerDetail.status, 200);
+
+    const inviteeListingResponse = await fetch(`${base}/api/v1/play/player-listing`, {
+      method: "PUT",
+      headers: memberHeaders(invitee.cookie),
+      body: JSON.stringify({ lookingFor: "GAME" }),
+    });
+    assert.equal(inviteeListingResponse.status, 200);
+    const inviteeListing = (await inviteeListingResponse.json()) as { id: string };
+    const inviteResponse = await fetch(
+      `${base}/api/v1/play/player-listings/${inviteeListing.id}/event-invite`,
+      {
+        method: "POST",
+        headers: memberHeaders(founder.cookie),
+        body: JSON.stringify({ eventId: event.id }),
+      },
+    );
+    assert.equal(inviteResponse.status, 201);
+    const inviteeDetail = await fetch(`${base}/api/v1/play/matches/${event.id}`, {
+      headers: { cookie: invitee.cookie },
+    });
+    assert.equal(inviteeDetail.status, 200);
 
     const membersUrl = `${base}/api/v1/communities/${community.id}/members`;
     const communityMembers = await fetch(membersUrl, {
       headers: { cookie: viewer.cookie },
     });
     assert.equal(communityMembers.status, 403);
+
+    const makeOpen = await fetch(`${base}/api/v1/events/${event.id}`, {
+      method: "PATCH",
+      headers: memberHeaders(founder.cookie),
+      body: JSON.stringify({ play: { visibility: "OPEN" } }),
+    });
+    assert.equal(makeOpen.status, 200);
+    const reopenedEvent = (await makeOpen.json()) as { playDetails: { visibility: string } };
+    assert.equal(reopenedEvent.playDetails.visibility, "OPEN");
+
+    const reopenedOpenMatches = await fetch(`${base}/api/v1/play/open-matches?limit=50`, {
+      headers: { cookie: outsider.cookie },
+    });
+    assert.equal(reopenedOpenMatches.status, 200);
+    const reopenedPage = (await reopenedOpenMatches.json()) as { items: { id: string }[] };
+    assert.ok(reopenedPage.items.some((row) => row.id === event.id));
   } finally {
     await new Promise<void>((resolve, reject) =>
       server.close((error) => (error ? reject(error) : resolve())),

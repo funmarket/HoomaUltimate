@@ -1,4 +1,4 @@
-import type { PublicEventPage } from "@hooma/contracts/events";
+import type { PublicEvent, PublicEventPage } from "@hooma/contracts/events";
 import type {
   PlayEventInviteInput,
   PlayLookingFor,
@@ -37,6 +37,17 @@ export type ManagedPlayEvent = {
   startsAt: string;
 };
 
+export type OpenPlayMatchQuery = {
+  cursor?: string;
+  limit?: number;
+};
+
+function openMatchesPath(query: OpenPlayMatchQuery = {}): string {
+  const params = new URLSearchParams({ limit: String(query.limit ?? 50) });
+  if (query.cursor) params.set("cursor", query.cursor);
+  return `/api/v1/play/open-matches?${params.toString()}`;
+}
+
 export function createPlayApi(transport: HoomaTransport) {
   return {
     publicPlayerListings: () =>
@@ -44,7 +55,10 @@ export function createPlayApi(transport: HoomaTransport) {
         transport,
         "/api/public/v1/play/player-listings?limit=30",
       ),
-    openMatches: () => request<PublicEventPage>(transport, "/api/v1/play/open-matches?limit=50"),
+    openMatches: (query: OpenPlayMatchQuery = {}) =>
+      request<PublicEventPage>(transport, openMatchesPath(query)),
+    matchDetail: (eventId: string) =>
+      request<PublicEvent>(transport, `/api/v1/play/matches/${encodeURIComponent(eventId)}`),
     myPlayerListing: () =>
       request<MyPlayPlayerListing | null>(transport, "/api/v1/play/player-listing"),
     savePlayerListing: (input: PlayPlayerListingInput) =>

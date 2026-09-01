@@ -25,6 +25,10 @@ export class PlayService {
     });
   }
 
+  matchDetail(userId: string, eventId: string) {
+    return this.events.getVisiblePlay(eventId, userId);
+  }
+
   getMine(userId: string) {
     return this.repository.getMine(userId);
   }

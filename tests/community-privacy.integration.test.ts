@@ -218,7 +218,7 @@ test("PRIVATE HOOMA uses pending requests while PUBLIC HOOMA remains open", asyn
       1,
     );
 
-    const memberEvents = await fetch(`${base}/api/public/v1/events?type=PLAY&limit=50`, {
+    const memberEvents = await fetch(`${base}/api/v1/play/open-matches?limit=50`, {
       headers: headers(requester.cookie),
     });
     assert.equal(memberEvents.status, 200);
@@ -231,6 +231,14 @@ test("PRIVATE HOOMA uses pending requests while PUBLIC HOOMA remains open", asyn
     assert.equal(
       (
         await fetch(`${base}/api/public/v1/events/${privateEvent.id}`, {
+          headers: headers(requester.cookie),
+        })
+      ).status,
+      404,
+    );
+    assert.equal(
+      (
+        await fetch(`${base}/api/v1/play/matches/${privateEvent.id}`, {
           headers: headers(requester.cookie),
         })
       ).status,

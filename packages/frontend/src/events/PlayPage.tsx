@@ -32,6 +32,7 @@ export function PlayPage() {
   const inviteFormRef = useRef<HTMLFormElement>(null);
   const [activeView, setActiveView] = useState<PlayView>("players");
   const [events, setEvents] = useState<PublicEvent[]>([]);
+  const [eventsNextCursor, setEventsNextCursor] = useState<string | null>(null);
   const [listings, setListings] = useState<PublicPlayPlayerListing[]>([]);
   const [me, setMe] = useState<MeResponse | null>(null);
   const [myListing, setMyListing] = useState<MyPlayPlayerListing | null>(null);
@@ -97,6 +98,7 @@ export function PlayPage() {
     if (accountLoading) return;
     if (!me) {
       setEvents([]);
+      setEventsNextCursor(null);
       setEventsError("");
       setEventsLoading(false);
       return;
@@ -105,9 +107,11 @@ export function PlayPage() {
     setEventsLoading(true);
     setEventsError("");
     void playApi
-      .openMatches()
+      .openMatches({ limit: 50 })
       .then((page) => {
-        if (active) setEvents(page.items);
+        if (!active) return;
+        setEvents(page.items);
+        setEventsNextCursor(page.nextCursor);
       })
       .catch((reason) => {
         if (active) setEventsError(protectedError(reason, "Matches could not be loaded"));
@@ -155,6 +159,21 @@ export function PlayPage() {
     inviteFormRef.current?.scrollIntoView({ block: "nearest" });
     inviteFormRef.current?.focus({ preventScroll: true });
   }, [inviteListing]);
+
+  async function loadMoreMatches() {
+    if (!eventsNextCursor || eventsLoading) return;
+    setEventsLoading(true);
+    setEventsError("");
+    try {
+      const page = await playApi.openMatches({ limit: 50, cursor: eventsNextCursor });
+      setEvents((current) => [...current, ...page.items]);
+      setEventsNextCursor(page.nextCursor);
+    } catch (reason) {
+      setEventsError(protectedError(reason, "Matches could not be loaded"));
+    } finally {
+      setEventsLoading(false);
+    }
+  }
 
   async function saveListing(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -571,22 +590,34 @@ export function PlayPage() {
           {!eventsLoading && eventsError ? (
             <div className="play-state panel error">Matches could not be loaded: {eventsError}</div>
           ) : null}
-          {!eventsLoading && !eventsError && me && events.length ? (
-            <div className="play-match-list">
-              {events.map((event) => (
-                <PickupMatchCard
-                  key={event.id}
-                  title={event.title}
-                  dateLabel={formatDate(event.startsAt)}
-                  venueName={event.place?.name || event.venueName || event.address}
-                  communityName={event.community?.name ?? "HOOMA match"}
-                  goingCount={event._count.rsvps}
-                  capacity={event.capacity}
-                  format={event.playDetails?.format ?? null}
-                  href={`/events/${event.id}`}
-                />
-              ))}
-            </div>
+          {!eventsError && me && events.length ? (
+            <>
+              <div className="play-match-list">
+                {events.map((event) => (
+                  <PickupMatchCard
+                    key={event.id}
+                    title={event.title}
+                    dateLabel={formatDate(event.startsAt)}
+                    venueName={event.place?.name || event.venueName || event.address}
+                    communityName={event.community?.name ?? "HOOMA match"}
+                    goingCount={event._count.rsvps}
+                    capacity={event.capacity}
+                    format={event.playDetails?.format ?? null}
+                    href={`/events/${event.id}`}
+                  />
+                ))}
+              </div>
+              {eventsNextCursor ? (
+                <button
+                  className="button secondary play-load-more"
+                  type="button"
+                  onClick={() => void loadMoreMatches()}
+                  disabled={eventsLoading}
+                >
+                  {eventsLoading ? "Loading…" : "Load more matches"}
+                </button>
+              ) : null}
+            </>
           ) : null}
           {!eventsLoading && !eventsError && me && !events.length ? (
             <div className="play-state panel">

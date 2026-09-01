@@ -35,3 +35,29 @@ test("Play presents Players and Open matches as sibling local views", async () =
   assert.match(router, /path="\/play" element=\{<PlayPage \/>\}/);
   assert.doesNotMatch(router, /path="\/play\/(?:players|open-matches)"/);
 });
+
+test("Play detail and Open Matches use the authenticated Play API authority", async () => {
+  const [detailPage, eventApi, playApi, rideDestinationFields] = await Promise.all([
+    read("packages/frontend/src/events/EventDetailPage.tsx"),
+    read("packages/frontend/src/events/api.ts"),
+    read("packages/frontend/src/events/play-api.ts"),
+    read("packages/frontend/src/rides/RideDestinationFields.tsx"),
+  ]);
+
+  assert.match(
+    detailPage,
+    /setEvent\(await eventApi\.publicDetail\(eventId\)\);[\s\S]*setEvent\(await playApi\.matchDetail\(eventId\)\);/,
+  );
+  assert.match(detailPage, /reason instanceof HoomaApiError && reason\.status === 401/);
+  assert.doesNotMatch(eventApi, /publicPlay/);
+  assert.match(playApi, /openMatches: \(query: OpenPlayMatchQuery = \{\}\)/);
+  assert.match(playApi, /\/api\/v1\/play\/open-matches/);
+  assert.match(playApi, /cursor/);
+  assert.match(playApi, /matchDetail: \(eventId: string\)/);
+  assert.match(playApi, /\/api\/v1\/play\/matches\/\$\{encodeURIComponent\(eventId\)\}/);
+  assert.match(
+    rideDestinationFields,
+    /Promise\.all\(\[playApi\.openMatches\(\), eventApi\.publicWatch\(\)\]\)/,
+  );
+  assert.doesNotMatch(rideDestinationFields, /eventApi\.publicPlay/);
+});

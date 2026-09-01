@@ -359,3 +359,13 @@ FundMe remains a Requests-page tab only. Durable Fundraising and Payments remain
 The dedicated decision record is `docs/adr/ADR-050-ride-requests-unfreeze.md`.
 
 **Reason:** The product is ready to replace honest Ride/Requests shells with real bounded functionality, but adjacent UI placement must not collapse Ride, Requests, Fundraising, Payments and Media into one generic implementation.
+
+## ADR-051 — Play match visibility is match-owned
+
+**Decision:** Play match discoverability is owned by `PlayEventDetails.visibility`, not by Community visibility and not by a generic Event visibility field. `OPEN` matches are discoverable through authenticated `/api/v1/play/open-matches` and viewable through authenticated `/api/v1/play/matches/:eventId`; `PRIVATE` matches are hidden from unrelated accounts and direct IDs cannot bypass the same Play access policy used for join, RSVP, cancellation, manager and invite lifecycle access.
+
+Public Event detail remains public for Watch/non-Play content only. The public Event detail endpoint must not expose Play match detail. Seeing or joining an OPEN Play match in a PRIVATE Community does not grant Community membership, member lists, admin controls, Whistle boards or other private Community resources.
+
+The dedicated decision record is `docs/adr/ADR-051-play-match-visibility.md`.
+
+**Reason:** Play match recruitment privacy and Community content privacy are distinct product concepts. Keeping match visibility on PlayEventDetails preserves Watch behavior, avoids Community-driven Play discovery bugs, and prevents a second Event-wide visibility model.

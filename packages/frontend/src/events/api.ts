@@ -63,8 +63,6 @@ function publicWatchPath(query: PublicWatchQuery = {}): string {
 
 export function createEventApi(transport: HoomaTransport) {
   return {
-    publicPlay: () =>
-      request<PublicEventPage>(transport, "/api/public/v1/events?type=PLAY&limit=50"),
     publicWatch: (query: PublicWatchQuery = {}) =>
       request<PublicEventPage>(transport, publicWatchPath(query)),
     publicDetail: (id: string) =>

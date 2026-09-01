@@ -39,6 +39,24 @@ export class EventService {
     return event;
   }
 
+  async getPublicEvent(eventId: string) {
+    const event = await this.getPublic(eventId);
+    if (event.type === "PLAY") throw new EventError("EVENT_NOT_FOUND", "Event not found");
+    return event;
+  }
+
+  async getVisiblePlay(eventId: string, viewerUserId: string) {
+    const access = await this.repository.access(eventId);
+    if (
+      !access ||
+      access.type !== "PLAY" ||
+      !(await this.repository.canAccessPlay(eventId, viewerUserId))
+    ) {
+      throw new EventError("EVENT_NOT_FOUND", "Event not found");
+    }
+    return this.getPublic(eventId);
+  }
+
   async getVisible(eventId: string, viewerUserId?: string) {
     const access = await this.repository.access(eventId);
     if (!access) throw new EventError("EVENT_NOT_FOUND", "Event not found");
