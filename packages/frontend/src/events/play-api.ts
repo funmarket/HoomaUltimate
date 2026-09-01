@@ -44,8 +44,7 @@ export function createPlayApi(transport: HoomaTransport) {
         transport,
         "/api/public/v1/play/player-listings?limit=30",
       ),
-    openMatches: () =>
-      request<PublicEventPage>(transport, "/api/v1/play/open-matches?limit=50"),
+    openMatches: () => request<PublicEventPage>(transport, "/api/v1/play/open-matches?limit=50"),
     myPlayerListing: () =>
       request<MyPlayPlayerListing | null>(transport, "/api/v1/play/player-listing"),
     savePlayerListing: (input: PlayPlayerListingInput) =>
