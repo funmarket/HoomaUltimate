@@ -13,6 +13,23 @@
   overflow-wrap: anywhere;
 }
 
+.ride-audience-current {
+  grid-column: 1 / -1;
+  margin: 0;
+  border: 1px solid color-mix(in srgb, var(--ride-gold) 30%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ride-gold) 5%, var(--ride-surface) 95%);
+  color: var(--ride-text-muted);
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.ride-audience-current strong {
+  color: var(--ride-text-strong);
+}
+
 .ride-recent-card__actions {
   display: flex;
   flex-wrap: wrap;
@@ -22,8 +39,8 @@
 }
 
 .ride-recent-card__actions .ride-link {
-  min-height: 40px;
   display: inline-flex;
+  min-height: 40px;
   align-items: center;
 }
 
