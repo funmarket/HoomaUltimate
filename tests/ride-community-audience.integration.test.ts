@@ -294,8 +294,8 @@ test("ALL_CURRENT resolves exact current HOOMAs and lifecycle removes the same r
       false,
     );
 
-    const leaveB = await fetch(`${base}/api/v1/communities/${communityB.id}/leave`, {
-      method: "POST",
+    const leaveB = await fetch(`${base}/api/v1/communities/${communityB.id}/membership`, {
+      method: "DELETE",
       headers: headers(requester.cookie),
     });
     assert.equal(leaveB.status, 200);
