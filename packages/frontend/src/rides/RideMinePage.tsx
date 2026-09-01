@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import type { RideMine, RideParticipationForPassenger } from "@hooma/contracts/rides";
+import type {
+  RideMine,
+  RideParticipationForPassenger,
+  RideRequestForOwner,
+} from "@hooma/contracts/rides";
 import { useHoomaFrontend } from "../context";
 import { createRideApi } from "./api";
 import { RideCompensationBadge } from "./RideCompensationBadge";
@@ -14,6 +18,22 @@ const EMPTY_MINE: RideMine = {
 
 function rideContextLabel(context: "MATCHDAY" | "GENERAL"): string {
   return context === "MATCHDAY" ? "Matchday" : "Anywhere";
+}
+
+function requestAudienceLabel(request: RideRequestForOwner): string {
+  if (request.audience.scope === "GLOBAL") return "Everyone";
+  if (request.audience.communities.length === 1) {
+    return request.audience.communities[0]?.name ?? "One HOOMA";
+  }
+  return `${request.audience.communities.length} HOOMAs`;
+}
+
+function canEditOffer(status: string): boolean {
+  return status !== "CANCELLED" && status !== "COMPLETED";
+}
+
+function canEditRequest(status: string): boolean {
+  return status !== "CANCELLED" && status !== "EXPIRED" && status !== "COMPLETED";
 }
 
 export function RideMinePage() {
@@ -61,7 +81,7 @@ export function RideMinePage() {
             <RideMineHeading title="My Offers" count={mine.offers.items.length} />
             <div className="ride-recent-list">
               {mine.offers.items.map((offer) => (
-                <a className="ride-recent-card" href={`/rides/offers/${offer.id}`} key={offer.id}>
+                <article className="ride-recent-card ride-recent-card--owned" key={offer.id}>
                   <span className="ride-recent-card__avatar" aria-hidden="true">
                     <RideHistoryIcon />
                   </span>
@@ -79,8 +99,20 @@ export function RideMinePage() {
                       <RideCompensationBadge terms={offer.compensationTerms} />
                       <span>{offer.participationCount} passenger updates</span>
                     </span>
+                    <span className="ride-recent-card__actions">
+                      <a className="ride-link" href={`/rides/offers/${offer.id}`}>
+                        Manage offer
+                      </a>
+                      {canEditOffer(offer.status) ? (
+                        <a className="ride-link" href={`/rides/offers/${offer.id}/edit`}>
+                          Edit offer
+                        </a>
+                      ) : (
+                        <span className="muted">Read-only</span>
+                      )}
+                    </span>
                   </span>
-                </a>
+                </article>
               ))}
             </div>
             <RideMineEmpty show={!mine.offers.items.length} label="No Ride offers yet." />
@@ -105,8 +137,18 @@ export function RideMinePage() {
                       {request.passengerCount} passenger{request.passengerCount === 1 ? "" : "s"}{" "}
                       from {request.pickupAreaLabel}
                     </span>
+                    <span>Shared with: {requestAudienceLabel(request)}</span>
                     <span className="ride-recent-card__meta">
                       <RideCompensationBadge terms={request.compensationTerms} mode="request" />
+                    </span>
+                    <span className="ride-recent-card__actions">
+                      {canEditRequest(request.status) ? (
+                        <a className="ride-link" href={`/rides/requests/${request.id}/edit`}>
+                          Edit request
+                        </a>
+                      ) : (
+                        <span className="muted">Read-only</span>
+                      )}
                     </span>
                   </span>
                 </article>
