@@ -10,20 +10,29 @@ import type { PlaceService } from "../apps/api/src/modules/places/application/pl
 
 function repositoryStub(onCreate: () => void): EventRepository {
   return {
-    listPublic: async () => [],
+    listPublic: async () => ({ items: [], nextCursor: null }),
+    listOpenPlay: async () => ({ items: [], nextCursor: null }),
     getPublic: async () => null,
     access: async () => null,
+    canAccessPlay: async () => false,
     getRsvp: async () => null,
     formationRoster: async () => [],
     create: async () => {
       onCreate();
-      return { id: "event-1" };
+      return { id: "event-1" } as never;
     },
-    update: async () => ({}),
+    update: async () => ({}) as never,
     cancel: async () => ({}),
-    complete: async () => ({}),
+    complete: async () => null,
     join: async () => ({ status: "CONFIRMED" }),
     cancelRsvp: async () => ({ cancelled: true, promotedUserId: null }),
+    listManagedPlayEvents: async () => [],
+    upsertPlayerInvite: async () => ({}),
+    listIncomingPlayerInvites: async () => [],
+    listPendingPlayerInvitesForManager: async () => [],
+    getPlayerInviteForTarget: async () => null,
+    acceptPlayerInvite: async () => null,
+    declinePlayerInvite: async () => null,
     createFormation: async () => ({}),
     canViewMemberContent: async () => false,
     listFormations: async () => [],
@@ -45,6 +54,7 @@ const watchInput: EventCreateInput = {
   currency: "TND",
   play: null,
   watch: {
+    kind: "MATCH",
     teamOneName: "Esperance",
     teamOneLogoUrl: "https://images.example.com/esperance",
     teamTwoName: "Club Africain",
@@ -61,7 +71,12 @@ const playInput: EventCreateInput = {
   waitlistEnabled: true,
   entryFeeMinor: 0,
   currency: "TND",
-  play: { pitchType: "FIVE_A_SIDE", skillLevel: "MIXED", format: "FIVE_V_FIVE" },
+  play: {
+    pitchType: "FIVE_A_SIDE",
+    skillLevel: "MIXED",
+    format: "FIVE_V_FIVE",
+    visibility: "OPEN",
+  },
   watch: null,
 };
 
@@ -81,6 +96,20 @@ function approvedPitch(onGet?: (placeId: string) => void): ApprovedPitchReader {
       return { id: "pitch-1", place: { id: placeId } };
     },
   } as unknown as ApprovedPitchReader;
+}
+
+function playAccess(overrides: Partial<Awaited<ReturnType<EventRepository["access"]>>> = {}) {
+  return {
+    communityId: "community-1",
+    placeId: null,
+    type: "PLAY" as const,
+    playVisibility: "OPEN" as const,
+    watchKind: null,
+    createdByUserId: "founder",
+    status: "PUBLISHED" as const,
+    entryFeeMinor: 0n,
+    ...overrides,
+  };
 }
 
 test("EventService creates WATCH events through an approved canonical Place", async () => {
@@ -160,6 +189,7 @@ test("EventService checks persisted Cultural subtype on partial updates", async 
     communityId: null,
     placeId: "place-1",
     type: "WATCH",
+    playVisibility: null,
     watchKind: "CULTURAL",
     createdByUserId: "user-1",
     status: "PUBLISHED",
@@ -167,7 +197,7 @@ test("EventService checks persisted Cultural subtype on partial updates", async 
   });
   repository.update = async () => {
     updateCalled = true;
-    return {};
+    return {} as never;
   };
   const places = {
     isVerifiedOwner: async (placeId: string, userId: string) => {
@@ -188,15 +218,8 @@ test("EventService checks persisted Cultural subtype on partial updates", async 
 
 test("EventService returns only the authenticated user's RSVP state", async () => {
   const repository = repositoryStub(() => {});
-  repository.access = async () => ({
-    communityId: "community-1",
-    placeId: null,
-    type: "PLAY",
-    watchKind: null,
-    createdByUserId: "founder",
-    status: "PUBLISHED",
-    entryFeeMinor: 0n,
-  });
+  repository.access = async () => playAccess();
+  repository.canAccessPlay = async () => true;
   repository.getRsvp = async (eventId, userId) => {
     assert.equal(eventId, "event-1");
     assert.equal(userId, "user-1");
@@ -208,17 +231,37 @@ test("EventService returns only the authenticated user's RSVP state", async () =
   });
 });
 
+test("EventService hides a private PLAY event from an unauthorized viewer and joiner", async () => {
+  const repository = repositoryStub(() => {});
+  repository.access = async () => playAccess({ playVisibility: "PRIVATE" });
+  repository.canAccessPlay = async () => false;
+  repository.getPublic = async () => ({ id: "event-1" }) as never;
+  const service = new EventService(repository, {} as CommunityService, approvedPlaces());
+
+  await assert.rejects(
+    () => service.getVisible("event-1", "outsider"),
+    (error: unknown) => error instanceof EventError && error.code === "EVENT_NOT_FOUND",
+  );
+  await assert.rejects(
+    () => service.join("outsider", "event-1"),
+    (error: unknown) => error instanceof EventError && error.code === "EVENT_NOT_FOUND",
+  );
+});
+
+test("EventService allows authorized users to open an OPEN PLAY event", async () => {
+  const repository = repositoryStub(() => {});
+  repository.access = async () => playAccess();
+  repository.canAccessPlay = async () => true;
+  repository.getPublic = async () => ({ id: "event-1", type: "PLAY" }) as never;
+  const service = new EventService(repository, {} as CommunityService, approvedPlaces());
+
+  const event = await service.getVisible("event-1", "viewer");
+  assert.equal(event.id, "event-1");
+});
+
 test("EventService rejects formation players outside the confirmed event roster", async () => {
   const repository = repositoryStub(() => {});
-  repository.access = async () => ({
-    communityId: "community-1",
-    placeId: null,
-    type: "PLAY",
-    watchKind: null,
-    createdByUserId: "user-1",
-    status: "PUBLISHED",
-    entryFeeMinor: 0n,
-  });
+  repository.access = async () => playAccess({ createdByUserId: "user-1" });
   repository.formationRoster = async () => [
     { userId: "player-1", status: "CONFIRMED", presentation: null },
   ];
