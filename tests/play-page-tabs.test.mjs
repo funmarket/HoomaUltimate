@@ -103,10 +103,7 @@ test("Play match forms keep visibility explicit and nested actions softly styled
     locationCss,
     /\.game-location-picker__choices button\.is-active\s*\{[^}]*background: color-mix\([^;]*11%, transparent\);/s,
   );
-  assert.doesNotMatch(
-    locationCss,
-    /button\.is-active\s*\{[^}]*background:\s*var\(/s,
-  );
+  assert.doesNotMatch(locationCss, /button\.is-active\s*\{[^}]*background:\s*var\(/s);
   assert.doesNotMatch(webCss, /\.event-form button,/);
   assert.match(webCss, /\.event-form__primary-action,/);
   assert.match(
