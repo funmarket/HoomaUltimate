@@ -1,4 +1,5 @@
 import type { PlayEventVisibility } from "@hooma/contracts";
+import "./play-visibility.css";
 
 export function PlayVisibilityField({
   defaultValue = "OPEN",
