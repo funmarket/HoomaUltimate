@@ -2,6 +2,7 @@ import { Router } from "express";
 import type { ApiConfig } from "@hooma/config";
 import type { AppContainer } from "../../bootstrap/container.js";
 import { createCommunityPublicRouter } from "../../modules/communities/http/community.routes.js";
+import { createAthletesPublicRouter } from "../../modules/athletes/http/athletes.routes.js";
 import { createDiscoveryPublicRouter } from "../../modules/discovery/http/discovery.routes.js";
 import { createEventPublicRouter } from "../../modules/events/http/event.routes.js";
 import { createGamerPublicRouter } from "../../modules/gamers/http/gamer.routes.js";
@@ -22,6 +23,7 @@ export function createPublicV1Router(container: AppContainer, config: ApiConfig)
   router.use("/places", createPlacesPublicRouter(container.placeService));
   router.use("/pitch", createPitchPublicRouter(container.approvedPitchReader));
   router.use("/communities", createCommunityPublicRouter(container.communityService));
+  router.use("/athletes", createAthletesPublicRouter(container.athletesService));
   router.use("/teams", createTeamPublicRouter(container.teamService));
   router.use(
     "/events",

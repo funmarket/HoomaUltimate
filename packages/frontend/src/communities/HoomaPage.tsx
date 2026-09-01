@@ -190,6 +190,18 @@ export function HoomaPage() {
         </section>
       )}
 
+      <section className="panel hooma-domain-links" aria-label="More in HOOMA">
+        <span className="eyebrow">MORE IN HOOMA</span>
+        <button className="hooma-domain-card" type="button" onClick={() => navigate("/teams")}>
+          <strong>Teams</strong>
+          <span>Football teams connected to HOOMA.</span>
+        </button>
+        <button className="hooma-domain-card" type="button" onClick={() => navigate("/athletes")}>
+          <strong>Athletes</strong>
+          <span>Sports communities for cycling, running, swimming and more.</span>
+        </button>
+      </section>
+
       <section className="hooma-discovery">
         <div className="hooma-section-heading">
           <div>

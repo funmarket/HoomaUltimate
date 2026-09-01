@@ -10,6 +10,17 @@ import type {
   TeamUpdateInput,
 } from "@hooma/contracts";
 import type {
+  AthletesCommunityCreateInput,
+  AthletesCommunityUpdateInput,
+  AthletesJoinRequest,
+  AthletesJoinRequestForManager,
+  AthletesJoinResult,
+  AthletesMember,
+  AthletesPublicDetail,
+  AthletesPublicSummary,
+  AthletesSport,
+} from "@hooma/contracts/athletes";
+import type {
   CommunityCreateInput,
   CommunityJoinRequest,
   CommunityJoinRequestForFounder,
@@ -22,6 +33,7 @@ import type {
 } from "@hooma/contracts/communities";
 import { request, type HoomaTransport } from "./http";
 
+import { HoomaApiError } from "./http";
 export { HoomaApiError, request } from "./http";
 export type { HoomaTransport } from "./http";
 export type {
@@ -51,6 +63,9 @@ export type PublicProfile = {
 export type PublicCommunitySummary = CommunityPublicSummary;
 export type PublicCommunityDetail = CommunityPublicDetail;
 export type PublicCommunityList = { items: PublicCommunitySummary[]; nextCursor: string | null };
+export type PublicAthletesSummary = AthletesPublicSummary;
+export type PublicAthletesDetail = AthletesPublicDetail;
+export type PublicAthletesList = { items: PublicAthletesSummary[]; nextCursor: string | null };
 export type CreatedCommunity = {
   id: string;
   slug: string;
@@ -203,6 +218,16 @@ export type PlatformAdminOverview = {
   auditEntries: number;
 };
 
+function athletesPublicListPath(
+  filters: { sport?: AthletesSport; cursor?: string; limit?: number } = {},
+): string {
+  const params = new URLSearchParams();
+  if (filters.sport) params.set("sport", filters.sport);
+  if (filters.cursor) params.set("cursor", filters.cursor);
+  params.set("limit", String(filters.limit ?? 30));
+  return `/api/public/v1/athletes?${params.toString()}`;
+}
+
 function publicListPath(filters: TeamListFilters = {}): string {
   const params = new URLSearchParams();
   const search = filters.search?.trim();
@@ -346,6 +371,84 @@ export function createHoomaApi(transport: HoomaTransport) {
         { method: "POST", body: JSON.stringify({ body }) },
       ),
   };
+
+  const athletes = {
+    publicList: (filters?: { sport?: AthletesSport; cursor?: string; limit?: number }) =>
+      request<PublicAthletesList>(transport, athletesPublicListPath(filters)),
+    publicDetail: (id: string) =>
+      request<PublicAthletesDetail>(transport, `/api/public/v1/athletes/${encodeURIComponent(id)}`),
+    detail: async (id: string) => {
+      try {
+        return await request<PublicAthletesDetail>(
+          transport,
+          `/api/v1/athletes/${encodeURIComponent(id)}`,
+        );
+      } catch (error) {
+        if (error instanceof HoomaApiError && error.status === 401) {
+          return request<PublicAthletesDetail>(
+            transport,
+            `/api/public/v1/athletes/${encodeURIComponent(id)}`,
+          );
+        }
+        throw error;
+      }
+    },
+    create: (input: AthletesCommunityCreateInput) =>
+      request<PublicAthletesDetail>(transport, "/api/v1/athletes", {
+        method: "POST",
+        body: JSON.stringify(input),
+      }),
+    update: (id: string, input: AthletesCommunityUpdateInput) =>
+      request<PublicAthletesDetail>(transport, `/api/v1/athletes/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      }),
+    join: (id: string) =>
+      request<AthletesJoinResult>(transport, `/api/v1/athletes/${encodeURIComponent(id)}/join`, {
+        method: "POST",
+      }),
+    myJoinRequest: (id: string) =>
+      request<{ request: AthletesJoinRequest | null }>(
+        transport,
+        `/api/v1/athletes/${encodeURIComponent(id)}/join-request`,
+      ),
+    cancelJoinRequest: (id: string) =>
+      request<{ ok: true }>(transport, `/api/v1/athletes/${encodeURIComponent(id)}/join-request`, {
+        method: "DELETE",
+      }),
+    joinRequests: (id: string) =>
+      request<{ requests: AthletesJoinRequestForManager[] }>(
+        transport,
+        `/api/v1/athletes/${encodeURIComponent(id)}/join-requests`,
+      ),
+    approveJoinRequest: (id: string, userId: string) =>
+      request<{ ok: true }>(
+        transport,
+        `/api/v1/athletes/${encodeURIComponent(id)}/join-requests/${encodeURIComponent(userId)}/approve`,
+        { method: "POST" },
+      ),
+    declineJoinRequest: (id: string, userId: string) =>
+      request<{ ok: true }>(
+        transport,
+        `/api/v1/athletes/${encodeURIComponent(id)}/join-requests/${encodeURIComponent(userId)}/decline`,
+        { method: "POST" },
+      ),
+    members: (id: string) =>
+      request<AthletesMember[]>(transport, `/api/v1/athletes/${encodeURIComponent(id)}/members`),
+    addMember: (id: string, username: string) =>
+      request<{ member: { userId: string; username: string } }>(
+        transport,
+        `/api/v1/athletes/${encodeURIComponent(id)}/members`,
+        { method: "POST", body: JSON.stringify({ username }) },
+      ),
+    removeMember: (id: string, userId: string) =>
+      request<{ ok: true }>(
+        transport,
+        `/api/v1/athletes/${encodeURIComponent(id)}/members/${encodeURIComponent(userId)}`,
+        { method: "DELETE" },
+      ),
+  };
+
   const teams = {
     publicList: (filters?: TeamListFilters) =>
       request<PublicTeamList>(transport, publicListPath(filters)),
@@ -427,7 +530,7 @@ export function createHoomaApi(transport: HoomaTransport) {
         method: "POST",
       }),
   };
-  return { identity, platformAdmin, communities, whistles, teams };
+  return { identity, platformAdmin, communities, athletes, whistles, teams };
 }
 
 export type HoomaApi = ReturnType<typeof createHoomaApi>;

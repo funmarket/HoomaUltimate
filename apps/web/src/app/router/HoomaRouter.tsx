@@ -2,6 +2,9 @@ import { lazy, Suspense, useMemo } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 import {
   AddPlacePage,
+  AthletesDetailPage,
+  AthletesPage,
+  CreateAthletesPage,
   CheckInPage,
   CoachControlRoomPage,
   CreateEventPage,
@@ -78,6 +81,15 @@ function requiredParam(name: string, value: string | undefined): string {
 function PublicProfileRoute() {
   const { username } = useParams();
   return <PublicProfilePage username={requiredParam("username", username)} />;
+}
+
+function AthletesDetailRoute() {
+  const { athletesCommunityId } = useParams();
+  return (
+    <AthletesDetailPage
+      athletesCommunityId={requiredParam("athletesCommunityId", athletesCommunityId)}
+    />
+  );
 }
 
 function TeamDetailRoute() {
@@ -249,6 +261,9 @@ function HoomaRoutes() {
               <Route path="/hooma/new" element={<CreateHoomaPage />} />
               <Route path="/hooma/:communityId/edit" element={<HoomaEditRoute />} />
               <Route path="/hooma/:communityId" element={<HoomaDetailRoute />} />
+              <Route path="/athletes" element={<AthletesPage />} />
+              <Route path="/athletes/new" element={<CreateAthletesPage />} />
+              <Route path="/athletes/:athletesCommunityId" element={<AthletesDetailRoute />} />
               <Route path="/teams" element={<TeamsPage />} />
               <Route path="/teams/new" element={<CreateTeamPage />} />
               <Route path="/teams/control" element={<CoachControlRoomPage />} />

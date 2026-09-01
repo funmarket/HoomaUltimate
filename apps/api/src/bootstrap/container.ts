@@ -18,6 +18,8 @@ import { PitchSuggestionService } from "../modules/pitch/application/pitch-sugge
 import { PrismaPitchRepository } from "../modules/pitch/infrastructure/prisma-pitch.repository.js";
 import { CommunityService } from "../modules/communities/application/community.service.js";
 import { PrismaCommunityRepository } from "../modules/communities/infrastructure/prisma-community.repository.js";
+import { AthletesService } from "../modules/athletes/application/athletes.service.js";
+import { PrismaAthletesRepository } from "../modules/athletes/infrastructure/prisma-athletes.repository.js";
 import { TeamService } from "../modules/teams/application/team.service.js";
 import { PrismaTeamLifecycleRepository } from "../modules/teams/infrastructure/prisma-team-lifecycle.repository.js";
 import { PrismaTeamRepository } from "../modules/teams/infrastructure/prisma-team.repository.js";
@@ -107,6 +109,8 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
 
   const communityRepository = new PrismaCommunityRepository(database);
   const communityService = new CommunityService(communityRepository, platformAdminService);
+  const athletesRepository = new PrismaAthletesRepository(database);
+  const athletesService = new AthletesService(athletesRepository);
   const teamRepository = new PrismaTeamRepository(database);
   const teamLifecycleRepository = new PrismaTeamLifecycleRepository(database);
   const teamService = new TeamService(
@@ -190,6 +194,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     pitchOwnerService,
     pitchModerationService,
     communityService,
+    athletesService,
     teamService,
     eventService,
     gamerService,

@@ -71,6 +71,46 @@ enum TeamStatus {
   ARCHIVED
 }
 
+enum AthletesSport {
+  CYCLING
+  RUNNING
+  SWIMMING
+  FOOTBALL
+  BASKETBALL
+  TENNIS
+  PADEL
+  GYM_FITNESS
+  OTHER
+}
+
+enum AthletesCommunityStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum AthletesVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum AthletesJoinPolicy {
+  OPEN
+  APPROVAL_REQUIRED
+}
+
+enum AthletesRole {
+  FOUNDER
+  MODERATOR
+  MEMBER
+}
+
+enum AthletesJoinRequestStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  CANCELLED
+}
+
 enum TeamResponsibilityRole {
   COACH
   ASSISTANT
@@ -262,6 +302,10 @@ model User {
   communityMemberships          CommunityMembership[]
   communityJoinRequests         CommunityJoinRequest[]         @relation("CommunityJoinRequester")
   communityJoinRequestsResolved CommunityJoinRequest[]         @relation("CommunityJoinResolver")
+  athletesCommunitiesCreated    AthletesCommunity[]            @relation("AthletesCommunityCreator")
+  athletesMemberships           AthletesMembership[]
+  athletesJoinRequests          AthletesJoinRequest[]           @relation("AthletesJoinRequester")
+  athletesJoinRequestsResolved  AthletesJoinRequest[]           @relation("AthletesJoinResolver")
   teamsCreated                  Team[]                         @relation("TeamCreator")
   teamPlayers                   TeamPlayer[]
   teamOffersReceived            TeamPlayerOffer[]              @relation("TeamOfferTarget")
@@ -583,6 +627,64 @@ model CommunityJoinRequest {
 
   @@unique([communityId, userId])
   @@index([communityId, status, requestedAt])
+  @@index([userId, status, requestedAt])
+}
+
+
+model AthletesCommunity {
+  id              String                   @id @default(cuid())
+  slug            String                   @unique
+  name            String
+  sport           AthletesSport
+  description     String?
+  city            String?
+  houma           String?
+  logoUrl         String?
+  bannerUrl       String?
+  visibility      AthletesVisibility       @default(PUBLIC)
+  joinPolicy      AthletesJoinPolicy       @default(OPEN)
+  status          AthletesCommunityStatus  @default(ACTIVE)
+  createdByUserId String
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  createdBy       User                     @relation("AthletesCommunityCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  memberships     AthletesMembership[]
+  joinRequests    AthletesJoinRequest[]
+
+  @@index([status, sport, createdAt, id])
+  @@index([city, houma])
+  @@index([createdByUserId, status])
+}
+
+model AthletesMembership {
+  id                   String             @id @default(cuid())
+  athletesCommunityId  String
+  userId               String
+  role                 AthletesRole       @default(MEMBER)
+  joinedAt             DateTime           @default(now())
+  leftAt               DateTime?
+  athletesCommunity    AthletesCommunity  @relation(fields: [athletesCommunityId], references: [id], onDelete: Cascade)
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([athletesCommunityId, userId, leftAt])
+  @@index([userId, role, leftAt])
+  @@index([athletesCommunityId, role, leftAt])
+}
+
+model AthletesJoinRequest {
+  id                   String                     @id @default(cuid())
+  athletesCommunityId  String
+  userId               String
+  status               AthletesJoinRequestStatus  @default(PENDING)
+  requestedAt          DateTime                   @default(now())
+  resolvedAt           DateTime?
+  resolvedByUserId     String?
+  updatedAt            DateTime                   @updatedAt
+  athletesCommunity    AthletesCommunity          @relation(fields: [athletesCommunityId], references: [id], onDelete: Cascade)
+  requester            User                       @relation("AthletesJoinRequester", fields: [userId], references: [id], onDelete: Cascade)
+  resolvedBy           User?                      @relation("AthletesJoinResolver", fields: [resolvedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([athletesCommunityId, status, requestedAt])
   @@index([userId, status, requestedAt])
 }
 

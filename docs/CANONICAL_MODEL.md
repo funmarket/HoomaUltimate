@@ -197,6 +197,69 @@ Rules:
 
 ---
 
+# 3A. Athletes
+
+Athletes is a separate HOOMA-connected sports-community domain that reuses canonical `User` identity and owns its own lifecycle.
+
+## AthletesCommunity
+
+```text
+AthletesCommunity
+  id
+  slug                         unique
+  name
+  sport                        CYCLING | RUNNING | SWIMMING | FOOTBALL | BASKETBALL | TENNIS | PADEL | GYM_FITNESS | OTHER
+  description?
+  city?
+  houma?
+  logoUrl?
+  bannerUrl?
+  visibility                   PUBLIC | PRIVATE
+  joinPolicy                   OPEN | APPROVAL_REQUIRED
+  status                       ACTIVE | ARCHIVED
+  createdByUserId              canonical User
+  createdAt
+  updatedAt
+```
+
+## AthletesMembership
+
+```text
+AthletesMembership
+  id
+  athletesCommunityId
+  userId                       canonical User
+  role                         FOUNDER | MODERATOR | MEMBER
+  joinedAt
+  leftAt?
+```
+
+## AthletesJoinRequest
+
+```text
+AthletesJoinRequest
+  id
+  athletesCommunityId
+  userId                       canonical User
+  status                       PENDING | APPROVED | DECLINED | CANCELLED
+  requestedAt
+  resolvedAt?
+  resolvedByUserId?
+```
+
+Rules:
+
+- Athletes records never live in `Community`, `CommunityMembership`, Team, or generic membership tables;
+- creation atomically creates the AthletesCommunity and active FOUNDER membership;
+- active membership means `leftAt == null`;
+- active FOUNDER can manage settings, join requests, direct-adds, member removals, and moderator role changes in this foundation;
+- MODERATOR authority is intentionally minimum-safe in this foundation: it may review join requests, direct-add users, and remove MEMBER records, but it may not manage settings, archive, manage founders, or manage moderators;
+- MEMBER has no management authority;
+- public discovery/detail is privacy-safe and independent from authenticated membership actions;
+- Whistle, equipment, Events, marketplace, Ride/Requests/FundMe integration, ULTRAS and generic community abstractions are not part of this foundation.
+
+---
+
 # 4. Team
 
 ## Team

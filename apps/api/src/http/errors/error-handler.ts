@@ -1,6 +1,10 @@
 import type { ErrorRequestHandler } from "express";
 import { ZodError } from "zod";
 import { EventError, type EventErrorCode } from "../../modules/events/domain/event-error.js";
+import {
+  AthletesError,
+  type AthletesErrorCode,
+} from "../../modules/athletes/domain/athletes-error.js";
 import { RideError, type RideErrorCode } from "../../modules/rides/domain/ride-error.js";
 import { AppError } from "./app-error.js";
 
@@ -30,6 +34,20 @@ const EVENT_STATUS: Record<EventErrorCode, number> = {
   EVENT_CHECK_IN_REQUIRES_CONFIRMED_RSVP: 403,
   EVENT_CHAT_FORBIDDEN: 403,
   EVENT_CHAT_INACTIVE: 409,
+};
+
+const ATHLETES_STATUS: Record<AthletesErrorCode, number> = {
+  ATHLETES_NOT_FOUND: 404,
+  ATHLETES_JOIN_REQUEST_NOT_FOUND: 404,
+  ATHLETES_MEMBER_REQUIRED: 403,
+  ATHLETES_FOUNDER_REQUIRED: 403,
+  ATHLETES_MANAGER_REQUIRED: 403,
+  ATHLETES_USER_NOT_FOUND: 404,
+  ATHLETES_MEMBER_NOT_FOUND: 404,
+  ATHLETES_FOUNDER_REMOVE_FORBIDDEN: 409,
+  ATHLETES_MODERATOR_SCOPE: 403,
+  ATHLETES_FOUNDER_ROLE_FORBIDDEN: 409,
+  ATHLETES_CONFLICT: 409,
 };
 
 const RIDE_STATUS: Record<RideErrorCode, number> = {
@@ -75,6 +93,12 @@ export const errorHandler: ErrorRequestHandler = (error, _request, response, _ne
   if (error instanceof EventError) {
     response
       .status(EVENT_STATUS[error.code])
+      .json({ error: { code: error.code, message: error.message } });
+    return;
+  }
+  if (error instanceof AthletesError) {
+    response
+      .status(ATHLETES_STATUS[error.code])
       .json({ error: { code: error.code, message: error.message } });
     return;
   }
