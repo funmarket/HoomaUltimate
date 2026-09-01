@@ -57,6 +57,11 @@ test("Ride context journey is explicit and generic routes expose a selector", ()
   assert.match(gatewayPage, /actionHref=\{`\/rides\/offers\$\{scopedQuery\}`\}/);
   assert.match(offerCreatePage, /RideContextSelector/);
   assert.match(requestCreatePage, /RideContextSelector/);
+  assert.match(
+    contextSelector,
+    /return value === "GENERAL" \|\| value === "MATCHDAY" \? value : undefined/,
+  );
+  assert.match(contextSelector, /return rideContextFromQuery\(\) \?\? "MATCHDAY"/);
   assert.match(offerCreatePage, /initialRideContext\(\)/);
   assert.match(requestCreatePage, /initialRideContext\(\)/);
   assert.match(offerCreatePage, /href=\{`\/rides\/offers\/new\$\{contextQuery\(rideContext\)\}`\}/);

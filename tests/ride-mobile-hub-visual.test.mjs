@@ -103,6 +103,10 @@ test("Ride hub has the required four distinctive feature cards and compact real-
   assert.match(gateway, /Airport, work, home or another city\./);
   assert.match(gateway, /Need a lift\? Post your trip\./);
   assert.match(gateway, /Your offers, requests and Ride status\./);
+  assert.match(gateway, /href: "\/rides\/request\?context=MATCHDAY"/);
+  assert.match(gateway, /href: "\/rides\/request\?context=GENERAL"/);
+  assert.doesNotMatch(gateway, /href: "\/rides\/matchday"/);
+  assert.doesNotMatch(gateway, /href: "\/rides\/anywhere"/);
   assert.match(gateway, /href: "\/rides\/mine"/);
   assert.match(gateway, /RideStadiumIcon/);
   assert.match(gateway, /RideRouteIcon/);
