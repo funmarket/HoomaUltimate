@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type { PlayEventVisibility } from "@hooma/contracts";
 import { useHoomaFrontend } from "../context";
 import { createEventApi, type PublicEvent } from "./api";
+import { PlayVisibilityField } from "./PlayVisibilityField";
 import { WatchEventForm, type WatchEventFormValue } from "./WatchEventForm";
 
 export function EditEventPage({ eventId }: { readonly eventId: string }) {
@@ -101,18 +102,15 @@ export function EditEventPage({ eventId }: { readonly eventId: string }) {
           <p>Control who can discover this match without changing community privacy.</p>
         </header>
         <form className="event-form panel" onSubmit={savePlay}>
-          <label>
-            Match visibility
-            <select name="visibility" defaultValue={event.playDetails?.visibility ?? "OPEN"}>
-              <option value="OPEN">Open match</option>
-              <option value="PRIVATE">Private match</option>
-            </select>
-            <span className="muted">
-              Open matches are visible to every signed-in HOOMA account. Private matches are limited
-              to managers, participants, and invited players.
-            </span>
-          </label>
-          <button type="submit" disabled={pending || deleting}>
+          <PlayVisibilityField
+            defaultValue={event.playDetails?.visibility ?? "OPEN"}
+            disabled={pending || deleting}
+          />
+          <button
+            className="event-form__primary-action"
+            type="submit"
+            disabled={pending || deleting}
+          >
             {pending ? "Saving…" : "Save Match"}
           </button>
         </form>
