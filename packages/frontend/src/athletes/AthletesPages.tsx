@@ -60,28 +60,45 @@ export function AthletesPage() {
 
   return (
     <div className="page athletes-page">
-      <section className="panel athletes-hero">
-        <span className="eyebrow">ATHLETES</span>
-        <h1>Find people who train, ride, run, swim and compete together.</h1>
-        <p>Sports communities connected to HOOMA identity, not a HOOMA Community subtype.</p>
-        <div className="athletes-actions">
-          <button className="button" type="button" onClick={() => navigate("/athletes/new")}>
-            Create Athletes community
-          </button>
-          {signInHref ? (
-            <a className="button secondary" href={signInHref}>
-              Sign in to create
-            </a>
-          ) : null}
+      <section className="athletes-surface athletes-hero athletes-hero--hub">
+        <div className="athletes-hero__content">
+          <span className="eyebrow">ATHLETES</span>
+          <h1>Move together. Train together.</h1>
+          <p>Find local sports communities built around the way you move.</p>
+          <div className="athletes-actions">
+            <button
+              className="button athletes-action athletes-action--primary"
+              type="button"
+              onClick={() => navigate("/athletes/new")}
+            >
+              <span className="athletes-action__icon" aria-hidden="true">
+                +
+              </span>
+              Create community
+            </button>
+            {signInHref ? (
+              <a
+                className="button secondary athletes-action athletes-action--secondary"
+                href={signInHref}
+              >
+                Sign in to create
+              </a>
+            ) : null}
+          </div>
         </div>
+        <span className="athletes-hero__motion" aria-hidden="true" />
       </section>
 
-      <section className="athletes-filter panel" aria-label="Filter Athletes by sport">
-        <span className="eyebrow">SPORT</span>
+      <section className="athletes-surface athletes-filter" aria-label="Filter Athletes by sport">
+        <div className="athletes-section-heading">
+          <span className="eyebrow">SPORT</span>
+          <span className="athletes-section-heading__hint">Find your pace</span>
+        </div>
         <div className="athletes-sport-chips">
           <button
             className={sport === "ALL" ? "is-active" : ""}
             type="button"
+            aria-pressed={sport === "ALL"}
             onClick={() => setSport("ALL")}
           >
             All
@@ -91,6 +108,7 @@ export function AthletesPage() {
               key={option.value}
               className={sport === option.value ? "is-active" : ""}
               type="button"
+              aria-pressed={sport === option.value}
               onClick={() => setSport(option.value)}
             >
               {option.label}
@@ -111,22 +129,26 @@ export function AthletesPage() {
           {items.map((item) => (
             <button
               className="athletes-card"
+              data-sport={item.sport}
               type="button"
               key={item.id}
               onClick={() => navigate(`/athletes/${item.id}`)}
             >
+              <span className="athletes-card__motif" aria-hidden="true" />
               <span className="athletes-sport">{sportLabel(item.sport)}</span>
               <h2>{item.name}</h2>
               <p>{item.description || "Train and compete with people nearby."}</p>
-              <small>{locationLabel(item)}</small>
-              <span>
-                {item.visibility === "PRIVATE"
-                  ? "Approval required"
-                  : item.joinPolicy === "OPEN"
-                    ? "Open to join"
-                    : "Request to join"}{" "}
-                · {item.memberCount} members
-              </span>
+              <div className="athletes-card__footer">
+                <small>{locationLabel(item)}</small>
+                <span>
+                  {item.visibility === "PRIVATE"
+                    ? "Approval required"
+                    : item.joinPolicy === "OPEN"
+                      ? "Open to join"
+                      : "Request to join"}{" "}
+                  · {item.memberCount} members
+                </span>
+              </div>
             </button>
           ))}
         </section>
@@ -170,57 +192,86 @@ export function CreateAthletesPage() {
   }
 
   return (
-    <div className="page athletes-page athletes-create-page">
-      <a className="team-management-back" href="/athletes">
+    <div className="page athletes-page athletes-create-page" data-sport={sport}>
+      <a className="team-management-back athletes-back" href="/athletes">
         ← Athletes
       </a>
-      <section className="panel athletes-hero compact">
-        <span className="eyebrow">CREATE ATHLETES</span>
-        <h1>Start a real sports community.</h1>
-        <p>Create an Athletes-owned record with its own membership lifecycle.</p>
+      <section className="athletes-surface athletes-hero athletes-hero--create" data-sport={sport}>
+        <span className="athletes-card__motif" aria-hidden="true" />
+        <div className="athletes-hero__content">
+          <span className="eyebrow">CREATE ATHLETES</span>
+          <h1>Build your {sportLabel(sport)} circle.</h1>
+          <p>Choose the sport first. The community carries that identity from creation onward.</p>
+        </div>
       </section>
       {error ? <div className="error-box">{error}</div> : null}
-      <form className="panel hooma-create-form" onSubmit={submit}>
-        <div className="hooma-form-grid">
+      <form className="athletes-surface athletes-create-form hooma-create-form" onSubmit={submit}>
+        <fieldset className="athletes-sport-picker">
+          <legend>Choose a sport</legend>
+          <div className="athletes-sport-picker__grid">
+            {sports.map((option) => (
+              <label
+                className={
+                  sport === option.value
+                    ? "athletes-sport-option is-selected"
+                    : "athletes-sport-option"
+                }
+                data-sport={option.value}
+                key={option.value}
+              >
+                <input
+                  type="radio"
+                  name="sportChoice"
+                  value={option.value}
+                  checked={sport === option.value}
+                  onChange={() => setSport(option.value)}
+                />
+                <span className="athletes-sport-option__motif" aria-hidden="true" />
+                <span>{option.label}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <div className="hooma-form-grid athletes-form-grid">
           <label className="field">
             <span>Name</span>
-            <input name="name" required minLength={2} maxLength={100} />
-          </label>
-          <label className="field">
-            <span>Sport</span>
-            <select
-              value={sport}
-              onChange={(event) => setSport(event.currentTarget.value as AthletesSport)}
-            >
-              {sports.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <input
+              name="name"
+              required
+              minLength={2}
+              maxLength={100}
+              placeholder="Community name"
+            />
           </label>
           <label className="field">
             <span>City</span>
-            <input name="city" maxLength={100} />
+            <input name="city" maxLength={100} placeholder="City" />
           </label>
           <label className="field">
-            <span>Houma / neighborhood</span>
-            <input name="houma" maxLength={100} />
+            <span>HOUMA / neighborhood</span>
+            <input name="houma" maxLength={100} placeholder="Area or neighborhood" />
           </label>
           <label className="field">
             <span>Logo URL</span>
-            <input name="logoUrl" type="url" maxLength={2000} />
+            <input name="logoUrl" type="url" maxLength={2000} placeholder="https://…" />
           </label>
-          <label className="field">
+          <label className="field hooma-span-2">
             <span>Banner image URL</span>
-            <input name="bannerUrl" type="url" maxLength={2000} />
+            <input name="bannerUrl" type="url" maxLength={2000} placeholder="https://…" />
           </label>
           <label className="field hooma-span-2">
             <span>Description</span>
-            <textarea name="description" maxLength={600} rows={4} />
+            <textarea
+              name="description"
+              maxLength={600}
+              rows={4}
+              placeholder="What brings this community together?"
+            />
           </label>
         </div>
-        <fieldset className="hooma-privacy-choice">
+
+        <fieldset className="hooma-privacy-choice athletes-choice-grid">
           <legend>Discovery and joining</legend>
           <label className={visibility === "PUBLIC" ? "is-selected" : ""}>
             <input
@@ -275,12 +326,18 @@ export function CreateAthletesPage() {
             </span>
           </label>
         </fieldset>
-        <div className="hooma-form-actions">
-          <a className="button secondary" href="/athletes">
+        <div className="hooma-form-actions athletes-form-actions">
+          <a
+            className="button secondary athletes-action athletes-action--secondary"
+            href="/athletes"
+          >
             Cancel
           </a>
-          <button className="button" disabled={creating}>
-            {creating ? "Creating…" : "Create Athletes community"}
+          <button className="button athletes-action athletes-action--primary" disabled={creating}>
+            <span className="athletes-action__icon" aria-hidden="true">
+              +
+            </span>
+            {creating ? "Creating…" : "Create community"}
           </button>
         </div>
       </form>
@@ -374,35 +431,56 @@ export function AthletesDetailPage({
     );
 
   return (
-    <div className="page athletes-page athletes-detail-page">
-      <a className="team-management-back" href="/athletes">
+    <div className="page athletes-page athletes-detail-page" data-sport={detail.sport}>
+      <a className="team-management-back athletes-back" href="/athletes">
         ← Athletes
       </a>
-      <section className="panel athletes-hero compact">
-        <span className="eyebrow">{sportLabel(detail.sport)}</span>
-        <h1>{detail.name}</h1>
-        <p>{detail.description || "Train and compete with this Athletes community."}</p>
-        <small>{locationLabel(detail)}</small>
+      <section
+        className="athletes-surface athletes-hero athletes-hero--detail"
+        data-sport={detail.sport}
+      >
+        <span className="athletes-card__motif" aria-hidden="true" />
+        <div className="athletes-hero__content">
+          <span className="eyebrow">{sportLabel(detail.sport)}</span>
+          <h1>{detail.name}</h1>
+          <p>{detail.description || "Train and compete with this Athletes community."}</p>
+          <div className="athletes-hero__meta">
+            <span>{locationLabel(detail)}</span>
+            <span>{detail.memberCount} athletes</span>
+          </div>
+        </div>
       </section>
       {notice ? <div className="success-box">{notice}</div> : null}
       {error ? <div className="error-box">{error}</div> : null}
-      <section className="panel athletes-join-panel">
-        <span>
-          {detail.visibility === "PRIVATE" ? "Private" : "Public"} ·{" "}
-          {detail.joinPolicy === "OPEN" ? "Open join" : "Approval required"}
-        </span>
+      <section className="athletes-surface athletes-join-panel">
+        <div className="athletes-join-panel__status">
+          <span>{detail.visibility === "PRIVATE" ? "Private" : "Public"}</span>
+          <span>{detail.joinPolicy === "OPEN" ? "Open join" : "Approval required"}</span>
+        </div>
         {detail.viewerRole ? (
-          <strong>You are {detail.viewerRole}</strong>
+          <strong className="athletes-role">{detail.viewerRole}</strong>
         ) : (
-          <button className="button" type="button" onClick={() => void join()}>
+          <button
+            className="button athletes-action athletes-action--primary athletes-action--compact"
+            type="button"
+            onClick={() => void join()}
+          >
+            <span className="athletes-action__icon" aria-hidden="true">
+              +
+            </span>
             {detail.joinPolicy === "OPEN" ? "Join" : "Request to join"}
           </button>
         )}
       </section>
       {members.length ? (
-        <section className="panel">
-          <span className="eyebrow">MEMBERS</span>
-          <h2>Active Athletes</h2>
+        <section className="athletes-surface athletes-section">
+          <div className="athletes-section-heading">
+            <div>
+              <span className="eyebrow">MEMBERS</span>
+              <h2>Active Athletes</h2>
+            </div>
+            <span className="athletes-section-count">{members.length}</span>
+          </div>
           <div className="athletes-member-list">
             {members.map((member) => {
               const row = member as {
@@ -416,7 +494,7 @@ export function AthletesDetailPage({
                     <strong>{row.presentation?.displayName ?? row.userId}</strong>
                     <small>{row.presentation ? `@${row.presentation.username}` : row.userId}</small>
                   </span>
-                  <b>{row.role}</b>
+                  <b className="athletes-member-role">{row.role}</b>
                 </div>
               );
             })}
@@ -424,26 +502,28 @@ export function AthletesDetailPage({
         </section>
       ) : null}
       {canManage ? (
-        <section className="panel">
+        <section className="athletes-surface athletes-section athletes-manage-section">
           <span className="eyebrow">MANAGE MEMBERS</span>
           <form className="athletes-inline-form" onSubmit={addMember}>
             <input
               value={username}
               onChange={(event) => setUsername(event.currentTarget.value)}
               placeholder="username"
+              aria-label="Username to add"
               required
             />
-            <button className="button" type="submit">
+            <button className="button athletes-action athletes-action--secondary" type="submit">
               Add member
             </button>
           </form>
           {requests.length ? (
-            <div className="athletes-member-list">
+            <div className="athletes-member-list athletes-request-list">
               {requests.map((request) => (
-                <div className="athletes-member-row" key={request.userId}>
+                <div className="athletes-member-row athletes-request-row" key={request.userId}>
                   <span>{request.userId}</span>
-                  <span>
+                  <span className="athletes-request-actions">
                     <button
+                      className="athletes-mini-action athletes-mini-action--approve"
                       type="button"
                       onClick={() =>
                         void api.athletes
@@ -454,6 +534,7 @@ export function AthletesDetailPage({
                       Approve
                     </button>
                     <button
+                      className="athletes-mini-action athletes-mini-action--decline"
                       type="button"
                       onClick={() =>
                         void api.athletes
