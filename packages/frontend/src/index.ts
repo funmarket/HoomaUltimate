@@ -11,6 +11,7 @@ import "./pitch/pitch.css";
 import "./pitch/pitch-detail.css";
 import "./requests/requests.css";
 import "./rides/rides.css";
+import "./rides/rides-mobile.css";
 import "./watch/watch.css";
 import "./watch/watch-section-actions.css";
 
