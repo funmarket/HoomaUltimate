@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { EventCreateInput } from "@hooma/contracts";
 import type { CommunityService } from "../apps/api/src/modules/communities/application/community.service.js";
-import type { EventRepository } from "../apps/api/src/modules/events/application/event.repository.js";
+import type {
+  EventAccessRecord,
+  EventRepository,
+} from "../apps/api/src/modules/events/application/event.repository.js";
 import { EventService } from "../apps/api/src/modules/events/application/event.service.js";
 import { EventError } from "../apps/api/src/modules/events/domain/event-error.js";
 import type { ApprovedPitchReader } from "../apps/api/src/modules/pitch/application/approved-pitch.reader.js";
@@ -98,15 +101,15 @@ function approvedPitch(onGet?: (placeId: string) => void): ApprovedPitchReader {
   } as unknown as ApprovedPitchReader;
 }
 
-function playAccess(overrides: Partial<Awaited<ReturnType<EventRepository["access"]>>> = {}) {
+function playAccess(overrides: Partial<EventAccessRecord> = {}): EventAccessRecord {
   return {
     communityId: "community-1",
     placeId: null,
-    type: "PLAY" as const,
-    playVisibility: "OPEN" as const,
+    type: "PLAY",
+    playVisibility: "OPEN",
     watchKind: null,
     createdByUserId: "founder",
-    status: "PUBLISHED" as const,
+    status: "PUBLISHED",
     entryFeeMinor: 0n,
     ...overrides,
   };
