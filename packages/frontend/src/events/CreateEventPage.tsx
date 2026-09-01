@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import type { MeResponse, WatchEventKind } from "@hooma/contracts";
+import type { MeResponse, PlayEventVisibility, WatchEventKind } from "@hooma/contracts";
 import type { PublicPlaceSummary } from "@hooma/contracts/places";
 import type { PublicPitch } from "@hooma/contracts/pitch";
 import { useHoomaFrontend } from "../context";
@@ -111,6 +111,7 @@ export function CreateEventPage() {
           pitchType: String(data.get("pitchType")) as "FIVE_A_SIDE",
           skillLevel: String(data.get("skillLevel")) as "MIXED",
           format: String(data.get("format")) as "FIVE_V_FIVE",
+          visibility: String(data.get("visibility")) as PlayEventVisibility,
         },
         watch: null,
       })
@@ -201,6 +202,16 @@ export function CreateEventPage() {
               <input name="capacity" type="number" min="1" max="1000" />
             </label>
             <label>
+              Match visibility
+              <select name="visibility" defaultValue="OPEN">
+                <option value="OPEN">Open match</option>
+                <option value="PRIVATE">Private match</option>
+              </select>
+              <span className="muted">Open matches are visible to every signed-in HOOMA account.</span>
+            </label>
+          </div>
+          <div className="form-grid">
+            <label>
               Format
               <select name="format" defaultValue="FIVE_V_FIVE">
                 <option value="FIVE_V_FIVE">5 v 5</option>
@@ -208,8 +219,6 @@ export function CreateEventPage() {
                 <option value="ELEVEN_V_ELEVEN">11 v 11</option>
               </select>
             </label>
-          </div>
-          <div className="form-grid">
             <label>
               Pitch type
               <select name="pitchType" defaultValue="FIVE_A_SIDE">
@@ -221,16 +230,16 @@ export function CreateEventPage() {
                 <option value="OTHER">Other</option>
               </select>
             </label>
-            <label>
-              Skill level
-              <select name="skillLevel" defaultValue="MIXED">
-                <option value="MIXED">Mixed</option>
-                <option value="BEGINNER">Beginner</option>
-                <option value="INTERMEDIATE">Intermediate</option>
-                <option value="ADVANCED">Advanced</option>
-              </select>
-            </label>
           </div>
+          <label>
+            Skill level
+            <select name="skillLevel" defaultValue="MIXED">
+              <option value="MIXED">Mixed</option>
+              <option value="BEGINNER">Beginner</option>
+              <option value="INTERMEDIATE">Intermediate</option>
+              <option value="ADVANCED">Advanced</option>
+            </select>
+          </label>
           <GameLocationPicker pitches={pitches} />
           <p className="muted">
             Paid game entry is intentionally disabled until Cash and Telegram Stars are wired into
