@@ -107,14 +107,18 @@ export function RideOfferCreatePage({ offerId }: { readonly offerId?: string }) 
           })) ?? [],
       };
 
+      const updateInput: RideOfferUpdateInput = baseInput;
       const saved = offerId
-        ? await api.updateOffer(offerId, baseInput satisfies RideOfferUpdateInput)
+        ? await api.updateOffer(offerId, updateInput)
         : await api.createOffer(baseInput);
       setExistingOffer(saved);
       setSavedOffer(saved);
     } catch (reason) {
       setError(
-        protectedError(reason, editing ? "Unable to update Ride offer" : "Unable to create Ride offer"),
+        protectedError(
+          reason,
+          editing ? "Unable to update Ride offer" : "Unable to create Ride offer",
+        ),
       );
     } finally {
       setSaving(false);
@@ -123,6 +127,33 @@ export function RideOfferCreatePage({ offerId }: { readonly offerId?: string }) 
 
   if (editing && loadingExisting) {
     return <p className="ride-state panel">Loading your Ride offer...</p>;
+  }
+
+  if (editing && !existingOffer && error) {
+    return <p className="ride-state panel error">{error}</p>;
+  }
+
+  if (editing && existingOffer && readOnly) {
+    return (
+      <section className="ride-page ride-form-page">
+        <RideSectionHeader
+          eyebrow="MY OFFERS"
+          title="Ride offer"
+          body="Completed and cancelled Ride offers remain visible in My Rides but cannot be edited."
+          actionHref="/rides/mine"
+          actionLabel="Back to My Rides"
+        />
+        <section className="ride-created panel">
+          <p className="eyebrow">{existingOffer.status}</p>
+          <h2>{destinationLabel(existingOffer.destination)}</h2>
+          <RideCompensationBadge terms={existingOffer.compensationTerms} />
+          <p>This Ride offer is read-only.</p>
+          <a className="ride-button ride-button--primary" href={`/rides/offers/${existingOffer.id}`}>
+            View offer
+          </a>
+        </section>
+      </section>
+    );
   }
 
   return (
@@ -138,12 +169,6 @@ export function RideOfferCreatePage({ offerId }: { readonly offerId?: string }) 
         actionHref={editing ? "/rides/mine" : `/rides/offers${contextQuery(rideContext)}`}
         actionLabel={editing ? "Back to My Rides" : "View offers"}
       />
-
-      {readOnly ? (
-        <p className="ride-state panel">
-          This Ride offer is {existingOffer?.status.toLowerCase()} and is read-only.
-        </p>
-      ) : null}
 
       {savedOffer ? (
         <section className="ride-created panel">
@@ -163,7 +188,12 @@ export function RideOfferCreatePage({ offerId }: { readonly offerId?: string }) 
             <a className="ride-button ride-button--primary" href={`/rides/offers/${savedOffer.id}`}>
               Manage offer
             </a>
-            <a className="ride-button" href={editing ? "/rides/mine" : `/rides/offers/new${contextQuery(rideContext)}`}>
+            <a
+              className="ride-button"
+              href={
+                editing ? "/rides/mine" : `/rides/offers/new${contextQuery(rideContext)}`
+              }
+            >
               {editing ? "Back to My Rides" : "Create another"}
             </a>
           </div>
@@ -185,7 +215,6 @@ export function RideOfferCreatePage({ offerId }: { readonly offerId?: string }) 
                 onChange={(event) => setOriginAreaLabel(event.target.value)}
                 placeholder="Lac 2, downtown, north gate..."
                 required
-                disabled={readOnly}
               />
             </label>
             <label className="ride-field">
@@ -195,7 +224,6 @@ export function RideOfferCreatePage({ offerId }: { readonly offerId?: string }) 
                 value={departureAt}
                 onChange={(event) => setDepartureAt(event.target.value)}
                 required
-                disabled={readOnly}
               />
             </label>
           </section>
@@ -210,7 +238,6 @@ export function RideOfferCreatePage({ offerId }: { readonly offerId?: string }) 
                 value={totalSeats}
                 onChange={(event) => setTotalSeats(event.target.value)}
                 required
-                disabled={readOnly}
               />
             </label>
           </section>
@@ -223,7 +250,6 @@ export function RideOfferCreatePage({ offerId }: { readonly offerId?: string }) 
                 <input
                   value={vehicleMake}
                   onChange={(event) => setVehicleMake(event.target.value)}
-                  disabled={readOnly}
                 />
               </label>
               <label className="ride-field">
@@ -231,7 +257,6 @@ export function RideOfferCreatePage({ offerId }: { readonly offerId?: string }) 
                 <input
                   value={vehicleModel}
                   onChange={(event) => setVehicleModel(event.target.value)}
-                  disabled={readOnly}
                 />
               </label>
               <label className="ride-field">
@@ -239,7 +264,6 @@ export function RideOfferCreatePage({ offerId }: { readonly offerId?: string }) 
                 <input
                   value={vehicleColor}
                   onChange={(event) => setVehicleColor(event.target.value)}
-                  disabled={readOnly}
                 />
               </label>
             </div>
@@ -248,20 +272,11 @@ export function RideOfferCreatePage({ offerId }: { readonly offerId?: string }) 
             <p className="eyebrow">DETAILS</p>
             <label className="ride-field">
               <span>Note</span>
-              <textarea
-                value={note}
-                onChange={(event) => setNote(event.target.value)}
-                rows={3}
-                disabled={readOnly}
-              />
+              <textarea value={note} onChange={(event) => setNote(event.target.value)} rows={3} />
             </label>
           </section>
           {error ? <p className="error">{error}</p> : null}
-          <button
-            className="ride-button ride-button--primary"
-            type="submit"
-            disabled={saving || readOnly}
-          >
+          <button className="ride-button ride-button--primary" type="submit" disabled={saving}>
             {saving
               ? editing
                 ? "Saving..."
