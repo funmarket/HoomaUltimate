@@ -24,12 +24,16 @@ export function amountToMinorUnits(rawAmount: string, currency: CashCurrency): n
   return Number(minorUnits);
 }
 
-export function minorUnitsToAmountLabel(amountMinor: number, currency: CashCurrency): string {
+export function minorUnitsToAmountInput(amountMinor: number, currency: CashCurrency): string {
   const exponent = currencyMinorUnitExponent[currency];
   const scale = 10n ** BigInt(exponent);
   const amount = BigInt(amountMinor);
   const whole = amount / scale;
   const fractional = amount % scale;
   const fractionalLabel = fractional.toString().padStart(exponent, "0").replace(/0+$/, "");
-  return `${whole.toString()}${fractionalLabel ? `.${fractionalLabel}` : ""} ${currency}`;
+  return `${whole.toString()}${fractionalLabel ? `.${fractionalLabel}` : ""}`;
+}
+
+export function minorUnitsToAmountLabel(amountMinor: number, currency: CashCurrency): string {
+  return `${minorUnitsToAmountInput(amountMinor, currency)} ${currency}`;
 }
