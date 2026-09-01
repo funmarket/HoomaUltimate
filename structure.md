@@ -197,7 +197,7 @@ This rule exists for scalability and user experience as well as code cleanliness
 | Team lineup                                          | Teams                                       |
 | Team challenge + accepted TeamGame coordination      | Teams                                       |
 | Event lifecycle, RSVP/waitlist, formation, check-in  | Events                                      |
-| Play discovery/use case                              | Play over Events                            |
+| Play Open Matches, player listings, match visibility | Play over Events                            |
 | Shared transient Whistle engine                      | Whistle                                     |
 | Physical venue                                       | Places                                      |
 | Place ownership/claim lifecycle                      | Places                                      |

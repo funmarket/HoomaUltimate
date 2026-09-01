@@ -3,6 +3,7 @@ import { Prisma, type PrismaClient } from "@hooma/database";
 import { eventChatWindow } from "../domain/event-policy.js";
 import type {
   EventAccessRecord,
+  EventOpenPlayListInput,
   EventPublicListInput,
   EventRepository,
 } from "../application/event.repository.js";
@@ -68,33 +69,11 @@ export class PrismaEventRepository implements EventRepository {
   constructor(private readonly db: PrismaClient) {}
 
   async listPublic(input: EventPublicListInput) {
-    const playVisibility: Prisma.EventWhereInput = input.viewerUserId
-      ? {
-          type: "PLAY",
-          OR: [
-            { community: { is: { visibility: "PUBLIC" } } },
-            {
-              community: {
-                is: { memberships: { some: { userId: input.viewerUserId, leftAt: null } } },
-              },
-            },
-          ],
-        }
-      : { type: "PLAY", community: { is: { visibility: "PUBLIC" } } };
-    const watchVisibility: Prisma.EventWhereInput = {
-      type: "WATCH",
-      place: { is: { moderationStatus: "APPROVED", archivedAt: null } },
-    };
-    const visibility =
-      input.type === "PLAY"
-        ? playVisibility
-        : input.type === "WATCH"
-          ? watchVisibility
-          : { OR: [playVisibility, watchVisibility] };
-
+    if (input.type === "PLAY") return { items: [], nextCursor: null };
     const rows = await this.db.event.findMany({
       where: {
-        ...visibility,
+        type: "WATCH",
+        place: { is: { moderationStatus: "APPROVED", archivedAt: null } },
         status: "PUBLISHED",
         startsAt: { gte: input.from },
         ...(input.communityId ? { communityId: input.communityId } : {}),
@@ -105,37 +84,23 @@ export class PrismaEventRepository implements EventRepository {
       ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
       select: publicEventSelect,
     });
-    const pageRows = rows.slice(0, input.limit);
-    const culturalRows = pageRows.length
-      ? await this.db.watchCulturalEventDetails.findMany({
-          where: { eventId: { in: pageRows.map((event) => event.id) } },
-        })
-      : [];
-    const placeIds = [
-      ...new Set(pageRows.map((event) => event.placeId).filter((id): id is string => Boolean(id))),
-    ];
-    const placeImages = placeIds.length
-      ? await this.db.placeImage.findMany({
-          where: { placeId: { in: placeIds } },
-          orderBy: [{ placeId: "asc" }, { sortOrder: "asc" }, { id: "asc" }],
-          select: { placeId: true, imageUrl: true },
-        })
-      : [];
-    const coverByPlace = new Map<string, string>();
-    for (const image of placeImages) {
-      if (!coverByPlace.has(image.placeId)) coverByPlace.set(image.placeId, image.imageUrl);
-    }
-    const culturalByEvent = new Map(culturalRows.map((details) => [details.eventId, details]));
-    return {
-      items: pageRows.map((event) =>
-        serializePublicEvent(
-          event,
-          culturalByEvent.get(event.id),
-          event.placeId ? (coverByPlace.get(event.placeId) ?? null) : null,
-        ),
-      ),
-      nextCursor: rows.length > input.limit ? (rows[input.limit - 1]?.id ?? null) : null,
-    };
+    return this.serializePage(rows, input.limit, true);
+  }
+
+  async listOpenPlay(input: EventOpenPlayListInput) {
+    const rows = await this.db.event.findMany({
+      where: {
+        type: "PLAY",
+        playDetails: { is: { visibility: "OPEN" } },
+        status: "PUBLISHED",
+        startsAt: { gte: input.from },
+      },
+      orderBy: [{ startsAt: "asc" }, { id: "asc" }],
+      take: input.limit + 1,
+      ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
+      select: publicEventSelect,
+    });
+    return this.serializePage(rows, input.limit, false);
   }
 
   async getPublic(eventId: string) {
@@ -179,15 +144,59 @@ export class PrismaEventRepository implements EventRepository {
         createdByUserId: true,
         status: true,
         entryFeeMinor: true,
+        playDetails: { select: { visibility: true } },
       },
     });
     if (!event) return null;
-    if (event.type !== "WATCH") return { ...event, watchKind: null };
+    const base = {
+      communityId: event.communityId,
+      placeId: event.placeId,
+      type: event.type,
+      createdByUserId: event.createdByUserId,
+      status: event.status,
+      entryFeeMinor: event.entryFeeMinor,
+      playVisibility: event.playDetails?.visibility ?? null,
+    };
+    if (event.type !== "WATCH") return { ...base, watchKind: null };
     const cultural = await this.db.watchCulturalEventDetails.findUnique({
       where: { eventId },
       select: { eventId: true },
     });
-    return { ...event, watchKind: cultural ? "CULTURAL" : "MATCH" };
+    return { ...base, watchKind: cultural ? "CULTURAL" : "MATCH" };
+  }
+
+  async canAccessPlay(eventId: string, userId: string): Promise<boolean> {
+    return Boolean(
+      await this.db.event.findFirst({
+        where: {
+          id: eventId,
+          type: "PLAY",
+          status: { in: ["PUBLISHED", "COMPLETED"] },
+          OR: [
+            { playDetails: { is: { visibility: "OPEN" } } },
+            { createdByUserId: userId },
+            {
+              community: {
+                is: {
+                  memberships: {
+                    some: { userId, leftAt: null, role: { in: ["FOUNDER", "COACH"] } },
+                  },
+                },
+              },
+            },
+            {
+              rsvps: { some: { userId, status: { in: ["CONFIRMED", "WAITLISTED", "ATTENDED"] } } },
+            },
+            {
+              playerInvites: {
+                some: { targetUserId: userId, status: { in: ["PENDING", "ACCEPTED"] } },
+              },
+            },
+          ],
+        },
+        select: { id: true },
+      }),
+    );
   }
 
   getRsvp(eventId: string, userId: string) {
@@ -253,6 +262,7 @@ export class PrismaEventRepository implements EventRepository {
             pitchType: input.play.pitchType,
             skillLevel: input.play.skillLevel,
             format: input.play.format,
+            visibility: input.play.visibility,
           },
         });
       }
@@ -333,6 +343,12 @@ export class PrismaEventRepository implements EventRepository {
         ...(input.waitlistEnabled !== undefined ? { waitlistEnabled: input.waitlistEnabled } : {}),
       };
       await tx.event.update({ where: { id: eventId }, data });
+      if (current.type === "PLAY" && input.play) {
+        await tx.playEventDetails.update({
+          where: { eventId },
+          data: { visibility: input.play.visibility },
+        });
+      }
       if (current.type === "WATCH" && input.watch?.kind === "MATCH") {
         await tx.watchEventDetails.upsert({
           where: { eventId },
@@ -702,6 +718,41 @@ export class PrismaEventRepository implements EventRepository {
     return this.db.eventChatMessage.create({
       data: { roomId: room.id, userId, body, expiresAt: room.closesAt },
     });
+  }
+
+  private async serializePage(rows: PublicEventRow[], limit: number, includeCultural: boolean) {
+    const pageRows = rows.slice(0, limit);
+    const culturalRows =
+      includeCultural && pageRows.length
+        ? await this.db.watchCulturalEventDetails.findMany({
+            where: { eventId: { in: pageRows.map((event) => event.id) } },
+          })
+        : [];
+    const placeIds = [
+      ...new Set(pageRows.map((event) => event.placeId).filter((id): id is string => Boolean(id))),
+    ];
+    const placeImages = placeIds.length
+      ? await this.db.placeImage.findMany({
+          where: { placeId: { in: placeIds } },
+          orderBy: [{ placeId: "asc" }, { sortOrder: "asc" }, { id: "asc" }],
+          select: { placeId: true, imageUrl: true },
+        })
+      : [];
+    const coverByPlace = new Map<string, string>();
+    for (const image of placeImages) {
+      if (!coverByPlace.has(image.placeId)) coverByPlace.set(image.placeId, image.imageUrl);
+    }
+    const culturalByEvent = new Map(culturalRows.map((details) => [details.eventId, details]));
+    return {
+      items: pageRows.map((event) =>
+        serializePublicEvent(
+          event,
+          culturalByEvent.get(event.id),
+          event.placeId ? (coverByPlace.get(event.placeId) ?? null) : null,
+        ),
+      ),
+      nextCursor: rows.length > limit ? (rows[limit - 1]?.id ?? null) : null,
+    };
   }
 }
 

@@ -426,18 +426,31 @@ nav a {
   padding: 10px 11px;
   font-size: var(--type-body);
 }
-.event-form button,
+.event-form__primary-action,
 .event-actions button,
 .chat-compose button,
 .panel > button {
-  border: 1px solid var(--app-gold-dim);
-  border-radius: 999px;
-  background: var(--app-lime);
-  color: #12120f;
+  border: 1px solid color-mix(in srgb, var(--app-lime) 34%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--app-lime) 8%, transparent);
+  color: var(--app-lime);
   font-weight: 800;
   padding: 10px 14px;
   cursor: pointer;
   font-size: var(--type-body);
+}
+.event-form__primary-action:hover,
+.event-actions button:hover,
+.chat-compose button:hover,
+.panel > button:hover {
+  background: color-mix(in srgb, var(--app-lime) 13%, transparent);
+}
+.event-form__primary-action:disabled,
+.event-actions button:disabled,
+.chat-compose button:disabled,
+.panel > button:disabled {
+  cursor: default;
+  opacity: 0.58;
 }
 .form-grid {
   display: grid;

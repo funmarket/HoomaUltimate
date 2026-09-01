@@ -64,7 +64,7 @@ export function GameLocationPicker({
           aria-pressed={mode === "pitch"}
           onClick={() => chooseMode("pitch")}
         >
-          Choose HOOMA Pitch
+          HOOMA Pitch
         </button>
         <button
           className={mode === "manual" ? "is-active" : ""}
@@ -72,7 +72,7 @@ export function GameLocationPicker({
           aria-pressed={mode === "manual"}
           onClick={() => chooseMode("manual")}
         >
-          Add game location
+          Other location
         </button>
         {mode !== "none" ? (
           <button

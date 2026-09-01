@@ -621,9 +621,10 @@ PlayEventDetails
   pitchType
   skillLevel
   format
+  visibility: OPEN | PRIVATE
 ```
 
-Play-specific fields belong here or in the canonical Play/Event contract rather than contaminating unrelated future Watch details.
+Play-specific fields belong here or in the canonical Play/Event contract rather than contaminating unrelated future Watch details. `visibility` is match-owned Play policy: `OPEN` is visible through authenticated Play Open Matches, while `PRIVATE` is hidden from unrelated accounts and direct IDs. Community privacy remains Community-owned and does not decide Play match discovery or grant private Community access to match viewers.
 
 ---
 

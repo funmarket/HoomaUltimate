@@ -4,18 +4,29 @@ import type {
   PlayTeamOfferInput,
 } from "@hooma/contracts/play";
 import { AppError } from "../../../http/errors/app-error.js";
-import type { PlayEventInviteGateway, PlayTeamOfferGateway } from "./play-actions.js";
+import type { PlayEventGateway, PlayTeamOfferGateway } from "./play-actions.js";
 import type { PlayPlayerListingRepository } from "./play.repository.js";
 
 export class PlayService {
   constructor(
     private readonly repository: PlayPlayerListingRepository,
     private readonly teams: PlayTeamOfferGateway,
-    private readonly events: PlayEventInviteGateway,
+    private readonly events: PlayEventGateway,
   ) {}
 
   listPublic(limit = 30) {
     return this.repository.listPublic(Math.min(Math.max(limit, 1), 100));
+  }
+
+  openMatches(limit = 50, cursor?: string) {
+    return this.events.listOpenPlay({
+      limit: Math.min(Math.max(limit, 1), 100),
+      ...(cursor ? { cursor } : {}),
+    });
+  }
+
+  matchDetail(userId: string, eventId: string) {
+    return this.events.getVisiblePlay(eventId, userId);
   }
 
   getMine(userId: string) {

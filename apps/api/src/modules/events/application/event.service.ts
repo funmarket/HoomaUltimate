@@ -3,7 +3,11 @@ import type { CommunityService } from "../../communities/application/community.s
 import type { ApprovedPitchReader } from "../../pitch/application/approved-pitch.reader.js";
 import type { PlaceService } from "../../places/application/place.service.js";
 import { EventError } from "../domain/event-error.js";
-import type { EventPublicListInput, EventRepository } from "./event.repository.js";
+import type {
+  EventOpenPlayListInput,
+  EventPublicListInput,
+  EventRepository,
+} from "./event.repository.js";
 
 export class EventService {
   constructor(
@@ -21,10 +25,48 @@ export class EventService {
     });
   }
 
+  listOpenPlay(input: Omit<EventOpenPlayListInput, "from"> & { from?: Date }) {
+    return this.repository.listOpenPlay({
+      ...input,
+      from: input.from ?? new Date(Date.now() - 6 * 60 * 60_000),
+      limit: Math.min(Math.max(input.limit, 1), 100),
+    });
+  }
+
   async getPublic(eventId: string) {
     const event = await this.repository.getPublic(eventId);
     if (!event) throw new EventError("EVENT_NOT_FOUND", "Event not found");
     return event;
+  }
+
+  async getPublicEvent(eventId: string) {
+    const event = await this.getPublic(eventId);
+    if (event.type === "PLAY") throw new EventError("EVENT_NOT_FOUND", "Event not found");
+    return event;
+  }
+
+  async getVisiblePlay(eventId: string, viewerUserId: string) {
+    const access = await this.repository.access(eventId);
+    if (
+      !access ||
+      access.type !== "PLAY" ||
+      !(await this.repository.canAccessPlay(eventId, viewerUserId))
+    ) {
+      throw new EventError("EVENT_NOT_FOUND", "Event not found");
+    }
+    return this.getPublic(eventId);
+  }
+
+  async getVisible(eventId: string, viewerUserId?: string) {
+    const access = await this.repository.access(eventId);
+    if (!access) throw new EventError("EVENT_NOT_FOUND", "Event not found");
+    if (
+      access.type === "PLAY" &&
+      (!viewerUserId || !(await this.repository.canAccessPlay(eventId, viewerUserId)))
+    ) {
+      throw new EventError("EVENT_NOT_FOUND", "Event not found");
+    }
+    return this.getPublic(eventId);
   }
 
   async getManaged(userId: string, eventId: string) {
@@ -39,6 +81,9 @@ export class EventService {
   async getMyRsvp(userId: string, eventId: string) {
     const access = await this.repository.access(eventId);
     if (!access) throw new EventError("EVENT_NOT_FOUND", "Event not found");
+    if (access.type === "PLAY" && !(await this.repository.canAccessPlay(eventId, userId))) {
+      throw new EventError("EVENT_NOT_FOUND", "Event not found");
+    }
     return { rsvp: await this.repository.getRsvp(eventId, userId) };
   }
 
@@ -92,6 +137,12 @@ export class EventService {
     const access = await this.requireManage(userId, eventId);
     if (access.status !== "PUBLISHED")
       throw new EventError("EVENT_NOT_EDITABLE", "Only published events can be edited");
+    if (access.type === "PLAY" && input.watch) {
+      throw new EventError("EVENT_NOT_EDITABLE", "Watch settings are not valid for a Play event");
+    }
+    if (access.type === "WATCH" && input.play) {
+      throw new EventError("EVENT_NOT_EDITABLE", "Play settings are not valid for a Watch event");
+    }
     if (
       access.type === "WATCH" &&
       access.placeId &&
@@ -135,6 +186,9 @@ export class EventService {
     const access = await this.repository.access(eventId);
     if (!access || access.status !== "PUBLISHED")
       throw new EventError("EVENT_NOT_FOUND", "Active event not found");
+    if (access.type === "PLAY" && !(await this.repository.canAccessPlay(eventId, userId))) {
+      throw new EventError("EVENT_NOT_FOUND", "Active event not found");
+    }
     if (access.entryFeeMinor > 0n)
       throw new EventError(
         "EVENT_PAYMENTS_NOT_ENABLED",
@@ -152,6 +206,11 @@ export class EventService {
   }
 
   async cancelRsvp(userId: string, eventId: string) {
+    const access = await this.repository.access(eventId);
+    if (!access) throw new EventError("EVENT_NOT_FOUND", "Event not found");
+    if (access.type === "PLAY" && !(await this.repository.canAccessPlay(eventId, userId))) {
+      throw new EventError("EVENT_NOT_FOUND", "Event not found");
+    }
     try {
       return await this.repository.cancelRsvp(eventId, userId);
     } catch (error) {

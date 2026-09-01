@@ -11,10 +11,17 @@ export interface EventPublicListInput {
   readonly viewerUserId?: string;
 }
 
+export interface EventOpenPlayListInput {
+  readonly from: Date;
+  readonly limit: number;
+  readonly cursor?: string;
+}
+
 export interface EventAccessRecord {
   readonly communityId: string | null;
   readonly placeId: string | null;
   readonly type: "PLAY" | "WATCH";
+  readonly playVisibility: "OPEN" | "PRIVATE" | null;
   readonly watchKind: "MATCH" | "CULTURAL" | null;
   readonly createdByUserId: string;
   readonly status: "PUBLISHED" | "CANCELLED" | "COMPLETED";
@@ -44,8 +51,10 @@ export interface FormationRosterPlayer {
 
 export interface EventRepository {
   listPublic(input: EventPublicListInput): Promise<PublicEventPage>;
+  listOpenPlay(input: EventOpenPlayListInput): Promise<PublicEventPage>;
   getPublic(eventId: string): Promise<PublicEvent | null>;
   access(eventId: string): Promise<EventAccessRecord | null>;
+  canAccessPlay(eventId: string, userId: string): Promise<boolean>;
   getRsvp(eventId: string, userId: string): Promise<{ status: EventRsvpState } | null>;
   formationRoster(eventId: string): Promise<FormationRosterPlayer[]>;
   create(userId: string, input: EventCreateInput): Promise<PublicEvent>;

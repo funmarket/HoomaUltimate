@@ -25,12 +25,7 @@ export function createPublicV1Router(container: AppContainer, config: ApiConfig)
   router.use("/teams", createTeamPublicRouter(container.teamService));
   router.use(
     "/events",
-    createEventPublicRouter(
-      container.eventService,
-      container.communityService,
-      container.identityService,
-      config,
-    ),
+    createEventPublicRouter(container.eventService, container.identityService, config),
   );
   router.use("/gamers", createGamerPublicRouter(container.gamerService));
   router.use("/play", createPlayPublicRouter(container.playService));

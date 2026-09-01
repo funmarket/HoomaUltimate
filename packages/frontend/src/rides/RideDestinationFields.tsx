@@ -4,6 +4,7 @@ import type { RideContext, RideDestinationInput } from "@hooma/contracts/rides";
 import type { PublicPlaceSummary } from "@hooma/contracts/places";
 import { useHoomaFrontend } from "../context";
 import { createEventApi } from "../events/api";
+import { createPlayApi } from "../events/play-api";
 import { createPlacesApi } from "../places/api";
 import type { DestinationFormState } from "./ride-view-model";
 
@@ -18,6 +19,7 @@ export function RideDestinationFields({
 }) {
   const { transport } = useHoomaFrontend();
   const eventApi = useMemo(() => createEventApi(transport), [transport]);
+  const playApi = useMemo(() => createPlayApi(transport), [transport]);
   const placesApi = useMemo(() => createPlacesApi(transport), [transport]);
   const [events, setEvents] = useState<PublicEvent[]>([]);
   const [places, setPlaces] = useState<PublicPlaceSummary[]>([]);
@@ -32,7 +34,7 @@ export function RideDestinationFields({
     }
     let active = true;
     setEventsLoading(true);
-    void Promise.all([eventApi.publicPlay(), eventApi.publicWatch()])
+    void Promise.all([playApi.openMatches(), eventApi.publicWatch()])
       .then(([playEvents, watchEvents]) => {
         if (!active) return;
         setEvents([...playEvents.items, ...watchEvents.items]);
@@ -47,7 +49,7 @@ export function RideDestinationFields({
     return () => {
       active = false;
     };
-  }, [destination.type, eventApi, eventDestinationEnabled]);
+  }, [destination.type, eventApi, eventDestinationEnabled, playApi]);
 
   useEffect(() => {
     if (destination.type !== "PLACE") {

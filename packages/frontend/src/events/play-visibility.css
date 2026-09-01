@@ -1,0 +1,104 @@
+.play-visibility {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.play-visibility legend {
+  margin-bottom: 2px;
+  color: var(--app-text);
+  font-size: var(--type-body);
+  font-weight: 700;
+}
+
+.play-visibility__options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.play-visibility__option {
+  position: relative;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.play-visibility__option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.play-visibility__card {
+  display: grid;
+  gap: 3px;
+  min-height: 60px;
+  padding: 10px 12px;
+  border: 1px solid var(--app-line-strong);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--app-surface) 94%, transparent);
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.play-visibility__card strong {
+  color: var(--app-text-strong);
+  font-size: 0.88rem;
+}
+
+.play-visibility__card small {
+  color: var(--app-text-secondary);
+  font-size: 0.72rem;
+  line-height: 1.3;
+}
+
+.play-visibility__option--public input:checked + .play-visibility__card {
+  border-color: color-mix(in srgb, var(--app-lime) 42%, transparent);
+  background: color-mix(in srgb, var(--app-lime) 9%, transparent);
+}
+
+.play-visibility__option--public input:checked + .play-visibility__card strong {
+  color: var(--app-lime);
+}
+
+.play-visibility__option--private input:checked + .play-visibility__card {
+  border-color: color-mix(in srgb, var(--app-gold) 42%, transparent);
+  background: color-mix(in srgb, var(--app-gold) 8%, transparent);
+}
+
+.play-visibility__option--private input:checked + .play-visibility__card strong {
+  color: var(--app-gold);
+}
+
+.play-visibility__option input:focus-visible + .play-visibility__card {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--app-gold) 24%, transparent);
+}
+
+.play-visibility:disabled {
+  opacity: 0.62;
+}
+
+@media (max-width: 420px) {
+  .play-visibility__card {
+    min-height: 56px;
+    padding: 9px 10px;
+  }
+
+  .play-visibility__card strong {
+    font-size: 0.82rem;
+  }
+
+  .play-visibility__card small {
+    font-size: 0.68rem;
+  }
+}

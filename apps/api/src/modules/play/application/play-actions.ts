@@ -1,3 +1,5 @@
+import type { PublicEvent, PublicEventPage } from "@hooma/contracts/events";
+
 export interface PlayTeamOfferRecord {
   readonly id: string;
   readonly teamId: string;
@@ -26,7 +28,9 @@ export interface PlayEventInviteRecord {
   readonly targetUserId: string;
 }
 
-export interface PlayEventInviteGateway {
+export interface PlayEventGateway {
+  listOpenPlay(input: { limit: number; cursor?: string }): Promise<PublicEventPage>;
+  getVisiblePlay(eventId: string, viewerUserId: string): Promise<PublicEvent>;
   invitePlayer(actorUserId: string, eventId: string, targetUserId: string): Promise<unknown>;
   pendingPlayerInvitesForManager(actorUserId: string): Promise<PlayEventInviteRecord[]>;
   listManagedPlayEvents(actorUserId: string): Promise<PlayManagedEventRecord[]>;

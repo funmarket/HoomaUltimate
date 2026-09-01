@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import type { MeResponse, WatchEventKind } from "@hooma/contracts";
+import type { MeResponse, PlayEventVisibility, WatchEventKind } from "@hooma/contracts";
 import type { PublicPlaceSummary } from "@hooma/contracts/places";
 import type { PublicPitch } from "@hooma/contracts/pitch";
 import { useHoomaFrontend } from "../context";
 import { GameLocationPicker } from "../game-location/GameLocationPicker";
 import { createPlacesApi } from "../places/api";
 import { createPitchApi } from "../pitch/api";
+import { PlayVisibilityField } from "./PlayVisibilityField";
 import { useEventApi } from "./useEventApi";
 import { WatchEventForm, type WatchEventFormValue } from "./WatchEventForm";
 
@@ -111,6 +112,7 @@ export function CreateEventPage() {
           pitchType: String(data.get("pitchType")) as "FIVE_A_SIDE",
           skillLevel: String(data.get("skillLevel")) as "MIXED",
           format: String(data.get("format")) as "FIVE_V_FIVE",
+          visibility: String(data.get("visibility")) as PlayEventVisibility,
         },
         watch: null,
       })
@@ -231,12 +233,15 @@ export function CreateEventPage() {
               </select>
             </label>
           </div>
+          <PlayVisibilityField />
           <GameLocationPicker pitches={pitches} />
           <p className="muted">
             Paid game entry is intentionally disabled until Cash and Telegram Stars are wired into
             Payments.
           </p>
-          <button type="submit">Publish game</button>
+          <button className="event-form__primary-action" type="submit">
+            Publish game
+          </button>
           {error ? <p className="error">{error}</p> : null}
         </form>
       )}

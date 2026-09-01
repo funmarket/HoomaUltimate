@@ -156,6 +156,11 @@ enum PlayPitchType {
   OTHER
 }
 
+enum PlayEventVisibility {
+  OPEN
+  PRIVATE
+}
+
 enum EventTeamSide {
   A
   B
@@ -719,7 +724,7 @@ model TeamChallenge {
   proposedEndsAt   DateTime?
   placeId          String?
   venueName        String?
-  address          String?
+  address           String?
   message          String?
   status           TeamChallengeStatus @default(PENDING)
   createdAt        DateTime             @default(now())
@@ -811,11 +816,12 @@ model Event {
 }
 
 model PlayEventDetails {
-  eventId    String         @id
+  eventId    String              @id
   pitchType  PlayPitchType
-  skillLevel SkillLevel     @default(MIXED)
+  skillLevel SkillLevel          @default(MIXED)
   format     FootballFormat
-  event      Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  visibility PlayEventVisibility @default(OPEN)
+  event      Event               @relation(fields: [eventId], references: [id], onDelete: Cascade)
 }
 
 model WatchEventDetails {

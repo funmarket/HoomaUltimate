@@ -15,7 +15,6 @@ import {
   type PublicPlayPlayerListing,
 } from "./play-api";
 import { PlayPlayerCard } from "./PlayPlayerCard";
-import { useEventApi } from "./useEventApi";
 
 type PlayView = "players" | "open-matches";
 
@@ -26,7 +25,6 @@ function errorMessage(reason: unknown, fallback: string) {
 }
 
 export function PlayPage() {
-  const eventApi = useEventApi();
   const { api, transport, authenticationHref, protectedError } = useHoomaFrontend();
   const playApi = useMemo(() => createPlayApi(transport), [transport]);
   const teamOfferApi = useMemo(() => createTeamOfferApi(transport), [transport]);
@@ -34,6 +32,7 @@ export function PlayPage() {
   const inviteFormRef = useRef<HTMLFormElement>(null);
   const [activeView, setActiveView] = useState<PlayView>("players");
   const [events, setEvents] = useState<PublicEvent[]>([]);
+  const [eventsNextCursor, setEventsNextCursor] = useState<string | null>(null);
   const [listings, setListings] = useState<PublicPlayPlayerListing[]>([]);
   const [me, setMe] = useState<MeResponse | null>(null);
   const [myListing, setMyListing] = useState<MyPlayPlayerListing | null>(null);
@@ -67,16 +66,6 @@ export function PlayPage() {
   }, [playApi]);
 
   useEffect(() => {
-    setEventsLoading(true);
-    setEventsError("");
-    void eventApi
-      .publicPlay()
-      .then((page) => setEvents(page.items))
-      .catch((reason) => setEventsError(errorMessage(reason, "Matches could not be loaded")))
-      .finally(() => setEventsLoading(false));
-  }, [eventApi]);
-
-  useEffect(() => {
     setPlayersLoading(true);
     setPlayersError("");
     void loadListings()
@@ -104,6 +93,36 @@ export function PlayPage() {
       active = false;
     };
   }, [api]);
+
+  useEffect(() => {
+    if (accountLoading) return;
+    if (!me) {
+      setEvents([]);
+      setEventsNextCursor(null);
+      setEventsError("");
+      setEventsLoading(false);
+      return;
+    }
+    let active = true;
+    setEventsLoading(true);
+    setEventsError("");
+    void playApi
+      .openMatches({ limit: 50 })
+      .then((page) => {
+        if (!active) return;
+        setEvents(page.items);
+        setEventsNextCursor(page.nextCursor);
+      })
+      .catch((reason) => {
+        if (active) setEventsError(protectedError(reason, "Matches could not be loaded"));
+      })
+      .finally(() => {
+        if (active) setEventsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [accountLoading, me, playApi, protectedError]);
 
   useEffect(() => {
     if (!me) {
@@ -140,6 +159,21 @@ export function PlayPage() {
     inviteFormRef.current?.scrollIntoView({ block: "nearest" });
     inviteFormRef.current?.focus({ preventScroll: true });
   }, [inviteListing]);
+
+  async function loadMoreMatches() {
+    if (!eventsNextCursor || eventsLoading) return;
+    setEventsLoading(true);
+    setEventsError("");
+    try {
+      const page = await playApi.openMatches({ limit: 50, cursor: eventsNextCursor });
+      setEvents((current) => [...current, ...page.items]);
+      setEventsNextCursor(page.nextCursor);
+    } catch (reason) {
+      setEventsError(protectedError(reason, "Matches could not be loaded"));
+    } finally {
+      setEventsLoading(false);
+    }
+  }
 
   async function saveListing(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -541,31 +575,51 @@ export function PlayPage() {
             </div>
           </div>
 
+          {!accountLoading && !me ? (
+            <div className="play-state panel">
+              <strong>Sign in to see Open Matches.</strong>
+              <span>Open Matches are available to HOOMA accounts.</span>
+              {signInHref ? (
+                <a className="button" href={signInHref}>
+                  Sign in
+                </a>
+              ) : null}
+            </div>
+          ) : null}
           {eventsLoading ? <div className="play-state panel">Loading matches…</div> : null}
           {!eventsLoading && eventsError ? (
             <div className="play-state panel error">Matches could not be loaded: {eventsError}</div>
           ) : null}
-          {!eventsLoading && !eventsError && events.length ? (
-            <div className="play-match-list">
-              {events.map((event) => {
-                if (!event.community) return null;
-                return (
+          {!eventsError && me && events.length ? (
+            <>
+              <div className="play-match-list">
+                {events.map((event) => (
                   <PickupMatchCard
                     key={event.id}
                     title={event.title}
                     dateLabel={formatDate(event.startsAt)}
                     venueName={event.place?.name || event.venueName || event.address}
-                    communityName={event.community.name}
+                    communityName={event.community?.name ?? "HOOMA match"}
                     goingCount={event._count.rsvps}
                     capacity={event.capacity}
                     format={event.playDetails?.format ?? null}
                     href={`/events/${event.id}`}
                   />
-                );
-              })}
-            </div>
+                ))}
+              </div>
+              {eventsNextCursor ? (
+                <button
+                  className="button secondary play-load-more"
+                  type="button"
+                  onClick={() => void loadMoreMatches()}
+                  disabled={eventsLoading}
+                >
+                  {eventsLoading ? "Loading…" : "Load more matches"}
+                </button>
+              ) : null}
+            </>
           ) : null}
-          {!eventsLoading && !eventsError && !events.length ? (
+          {!eventsLoading && !eventsError && me && !events.length ? (
             <div className="play-state panel">
               <strong>No open matches yet.</strong>
               <span>Create the first pickup match for your HOOMA community.</span>

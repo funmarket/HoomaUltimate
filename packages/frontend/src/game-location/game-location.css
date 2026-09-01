@@ -1,19 +1,19 @@
 .game-location-picker {
   display: grid;
-  gap: 14px;
+  gap: 12px;
   min-width: 0;
   margin: 0;
-  padding: 16px;
-  border: 1px solid color-mix(in srgb, var(--color-accent, #d8e95b) 32%, transparent);
-  border-radius: 20px;
-  background: color-mix(in srgb, var(--color-surface, #11120d) 96%, #d8e95b 4%);
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--color-accent, #d8e95b) 24%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--color-surface, #11120d) 97%, #d8e95b 3%);
 }
 
 .game-location-picker legend {
   display: flex;
   align-items: baseline;
   gap: 9px;
-  padding: 0 6px;
+  padding: 0 5px;
   font-weight: 900;
 }
 
@@ -28,8 +28,8 @@
 .game-location-picker__empty {
   margin: 0;
   color: var(--color-muted, #bdbdad);
-  font-size: 0.82rem;
-  line-height: 1.45;
+  font-size: 0.78rem;
+  line-height: 1.4;
 }
 
 .game-location-picker__choices {
@@ -41,32 +41,38 @@
 .game-location-picker__choices button,
 .game-location-picker__selected button {
   min-height: 42px;
-  border: 1px solid color-mix(in srgb, #d9a928 68%, transparent);
-  border-radius: 999px;
-  background: transparent;
-  color: #f2c246;
-  padding: 8px 13px;
+  border: 1px solid color-mix(in srgb, var(--app-gold, #e8c36a) 30%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--app-gold, #e8c36a) 6%, transparent);
+  color: var(--app-gold, #e8c36a);
+  padding: 8px 12px;
   font: inherit;
   font-size: 0.76rem;
-  font-weight: 900;
+  font-weight: 850;
   cursor: pointer;
 }
 
+.game-location-picker__choices button:hover,
+.game-location-picker__selected button:hover {
+  background: color-mix(in srgb, var(--app-gold, #e8c36a) 10%, transparent);
+}
+
 .game-location-picker__choices button.is-active {
-  border-color: var(--color-accent, #d8e95b);
-  background: var(--color-accent, #d8e95b);
-  color: #10120c;
+  border-color: color-mix(in srgb, var(--app-lime, #c6f25a) 46%, transparent);
+  background: color-mix(in srgb, var(--app-lime, #c6f25a) 11%, transparent);
+  color: var(--app-lime, #c6f25a);
 }
 
 .game-location-picker__choices .game-location-picker__clear {
   border-color: transparent;
+  background: transparent;
   color: var(--color-muted, #bdbdad);
 }
 
 .game-location-picker__pitch-mode,
 .game-location-picker__manual {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .game-location-picker__search,
@@ -99,27 +105,32 @@
 
 .game-location-picker__result {
   display: grid;
-  grid-template-columns: 46px minmax(0, 1fr);
-  gap: 11px;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 10px;
   align-items: center;
   width: 100%;
-  min-height: 58px;
+  min-height: 56px;
   padding: 6px 10px 6px 6px;
-  border: 1px solid color-mix(in srgb, var(--color-muted, #bdbdad) 20%, transparent);
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--color-surface, #11120d) 88%, #ffffff 2%);
-  color: inherit;
+  border: 1px solid color-mix(in srgb, var(--color-muted, #bdbdad) 18%, transparent);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--color-surface, #11120d) 94%, transparent);
+  color: var(--app-text, #f4f1ea);
   text-align: left;
   cursor: pointer;
+}
+
+.game-location-picker__result:hover {
+  border-color: color-mix(in srgb, var(--app-gold, #e8c36a) 28%, transparent);
+  background: color-mix(in srgb, var(--app-gold, #e8c36a) 5%, var(--color-surface, #11120d));
 }
 
 .game-location-picker__result img,
 .game-location-picker__result > span:first-child,
 .game-location-picker__selected img,
 .game-location-picker__image-placeholder {
-  width: 46px;
-  height: 46px;
-  border-radius: 11px;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
   object-fit: cover;
 }
 
@@ -133,13 +144,14 @@
 .game-location-picker__result > span:last-child,
 .game-location-picker__selected > div {
   display: grid;
-  gap: 3px;
+  gap: 2px;
   min-width: 0;
 }
 
 .game-location-picker__result strong,
 .game-location-picker__selected strong {
   overflow: hidden;
+  color: var(--app-text-strong, #fff);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -150,24 +162,24 @@
 .game-location-picker__manual > small {
   color: var(--color-muted, #bdbdad);
   font-size: 0.7rem;
-  line-height: 1.35;
+  line-height: 1.3;
 }
 
 .game-location-picker__selected {
   display: grid;
-  grid-template-columns: 52px minmax(0, 1fr) auto;
-  gap: 11px;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  gap: 10px;
   align-items: center;
-  padding: 9px;
-  border: 1px solid color-mix(in srgb, var(--color-accent, #d8e95b) 55%, transparent);
-  border-radius: 15px;
-  background: color-mix(in srgb, var(--color-accent, #d8e95b) 8%, transparent);
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--app-lime, #c6f25a) 34%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--app-lime, #c6f25a) 7%, transparent);
 }
 
 .game-location-picker__selected img,
 .game-location-picker__image-placeholder {
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
 }
 
 .game-location-picker:disabled {
@@ -236,7 +248,7 @@
 
 @media (max-width: 420px) {
   .game-location-picker {
-    padding: 14px 12px;
+    padding: 12px 10px;
   }
 
   .game-location-picker__choices {
@@ -244,13 +256,20 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .game-location-picker__choices button {
+    width: 100%;
+    min-height: 44px;
+    padding-inline: 10px;
+  }
+
   .game-location-picker__choices .game-location-picker__clear {
     grid-column: 1 / -1;
     justify-self: start;
+    width: auto;
   }
 
   .game-location-picker__selected {
-    grid-template-columns: 46px minmax(0, 1fr);
+    grid-template-columns: 44px minmax(0, 1fr);
   }
 
   .game-location-picker__selected button {

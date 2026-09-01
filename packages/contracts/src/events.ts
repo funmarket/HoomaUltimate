@@ -1,6 +1,7 @@
 export type PublicEventStatus = "PUBLISHED" | "CANCELLED" | "COMPLETED";
 
 export type PublicEventPublisherAuthority = "VERIFIED_PLACE_OWNER" | "COMMUNITY_PUBLISHER" | null;
+export type PublicPlayEventVisibility = "OPEN" | "PRIVATE";
 
 export type PublicEventPlace = {
   readonly id: string;
@@ -18,6 +19,7 @@ export type PublicEventPlayDetails = {
   readonly pitchType: string;
   readonly skillLevel: string;
   readonly format: string;
+  readonly visibility: PublicPlayEventVisibility;
 };
 
 export type PublicWatchMatchDetails = {

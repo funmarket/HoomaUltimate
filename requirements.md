@@ -568,9 +568,10 @@ Play is HOOMA's football-activity, discovery and participation product. Schedule
 
 Core Play/Event requirements include:
 
-- public discovery;
+- public Watch discovery/detail;
+- authenticated Play Open Matches discovery;
+- authenticated Play match detail;
 - event creation;
-- event detail;
 - date/time/timezone;
 - location/venue information;
 - capacity;
@@ -582,6 +583,8 @@ Core Play/Event requirements include:
 - check-in;
 - completion/cancellation lifecycle;
 - eventual Replay integration when Replay is implemented.
+
+Play match visibility is owned by `PlayEventDetails.visibility`, not by the parent Community. `OPEN` Play matches are discoverable and viewable by authenticated HOOMA accounts, including when linked to a `PRIVATE` Community. `PRIVATE` Play matches are hidden from unrelated accounts and direct IDs must not bypass that policy. Creator, authorized manager, active participant and pending/accepted invitee access remains valid for Play lifecycle actions where the Play/Event policy grants it. Seeing or joining an OPEN Play match does not grant Community membership or private Community content access.
 
 Preferred-position data, when collected for balancing/formation logic, must actually influence that logic rather than being accepted and ignored.
 
