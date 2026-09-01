@@ -58,7 +58,7 @@ CREATE INDEX "AthletesJoinRequest_athletesCommunityId_status_requestedAt_idx" ON
 CREATE INDEX "AthletesJoinRequest_userId_status_requestedAt_idx" ON "AthletesJoinRequest"("userId", "status", "requestedAt");
 CREATE UNIQUE INDEX "AthletesJoinRequest_one_pending_per_user_community" ON "AthletesJoinRequest"("athletesCommunityId", "userId") WHERE "status" = 'PENDING';
 
-ALTER TABLE "AthletesCommunity" ADD CONSTRAINT "AthletesCommunity_createdByUserId_fkey" FOREIGN KEY ("createdByUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "AthletesCommunity" ADD CONSTRAINT "AthletesCommunity_createdByUserId_fkey" FOREIGN KEY ("createdByUserId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "AthletesMembership" ADD CONSTRAINT "AthletesMembership_athletesCommunityId_fkey" FOREIGN KEY ("athletesCommunityId") REFERENCES "AthletesCommunity"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "AthletesMembership" ADD CONSTRAINT "AthletesMembership_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "AthletesJoinRequest" ADD CONSTRAINT "AthletesJoinRequest_athletesCommunityId_fkey" FOREIGN KEY ("athletesCommunityId") REFERENCES "AthletesCommunity"("id") ON DELETE CASCADE ON UPDATE CASCADE;

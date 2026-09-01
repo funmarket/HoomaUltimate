@@ -103,23 +103,15 @@ async function reactivateMembership(
     orderBy: { joinedAt: "desc" },
     select: { id: true },
   });
-  try {
-    if (previous) {
-      return await tx.athletesMembership.update({
-        where: { id: previous.id },
-        data: { role, leftAt: null, joinedAt },
-      });
-    }
-    return await tx.athletesMembership.create({
-      data: { athletesCommunityId, userId, role, joinedAt },
+  if (previous) {
+    return tx.athletesMembership.update({
+      where: { id: previous.id },
+      data: { role, leftAt: null, joinedAt },
     });
-  } catch (error) {
-    if (isPrismaUniqueConflict(error)) {
-      const current = await active();
-      if (current) return current;
-    }
-    throw error;
   }
+  return tx.athletesMembership.create({
+    data: { athletesCommunityId, userId, role, joinedAt },
+  });
 }
 
 function isPrismaUniqueConflict(error: unknown): error is Prisma.PrismaClientKnownRequestError {
@@ -218,49 +210,64 @@ export class PrismaAthletesRepository implements AthletesRepository {
   }
 
   async joinOpen(id: string, userId: string) {
-    return this.db.$transaction(async (tx) => {
-      const now = new Date();
-      const membership = await reactivateMembership(tx, id, userId, "MEMBER", now);
-      await tx.athletesJoinRequest.updateMany({
-        where: { athletesCommunityId: id, userId, status: "PENDING" },
-        data: { status: "APPROVED", resolvedAt: now, resolvedByUserId: userId },
+    try {
+      return await this.db.$transaction(async (tx) => {
+        const now = new Date();
+        const membership = await reactivateMembership(tx, id, userId, "MEMBER", now);
+        await tx.athletesJoinRequest.updateMany({
+          where: { athletesCommunityId: id, userId, status: "PENDING" },
+          data: { status: "APPROVED", resolvedAt: now, resolvedByUserId: userId },
+        });
+        return membership;
       });
-      return membership;
-    });
+    } catch (error) {
+      if (isPrismaUniqueConflict(error)) {
+        const membership = await this.db.athletesMembership.findFirst({
+          where: { athletesCommunityId: id, userId, leftAt: null },
+          orderBy: { joinedAt: "desc" },
+        });
+        if (membership) return membership;
+      }
+      throw error;
+    }
   }
 
   async requestJoin(id: string, userId: string) {
-    return this.db.$transaction(async (tx) => {
-      const existing = await tx.athletesMembership.findFirst({
-        where: { athletesCommunityId: id, userId, leftAt: null },
-        select: { role: true },
-      });
-      if (existing) return { kind: "MEMBERSHIP" as const, role: existing.role };
-      const existingRequest = await tx.athletesJoinRequest.findFirst({
-        where: { athletesCommunityId: id, userId, status: "PENDING" },
-        select: joinRequestSelect,
-      });
-      if (existingRequest) return { kind: "REQUEST" as const, request: existingRequest };
-      try {
+    try {
+      return await this.db.$transaction(async (tx) => {
+        const existing = await tx.athletesMembership.findFirst({
+          where: { athletesCommunityId: id, userId, leftAt: null },
+          select: { role: true },
+        });
+        if (existing) return { kind: "MEMBERSHIP" as const, role: existing.role };
+        const existingRequest = await tx.athletesJoinRequest.findFirst({
+          where: { athletesCommunityId: id, userId, status: "PENDING" },
+          select: joinRequestSelect,
+        });
+        if (existingRequest) return { kind: "REQUEST" as const, request: existingRequest };
         const request = await tx.athletesJoinRequest.create({
           data: { athletesCommunityId: id, userId },
           select: joinRequestSelect,
         });
         return { kind: "REQUEST" as const, request };
-      } catch (error) {
-        if (
-          error instanceof Prisma.PrismaClientKnownRequestError &&
-          isPrismaUniqueConflict(error)
-        ) {
-          const request = await tx.athletesJoinRequest.findFirst({
+      });
+    } catch (error) {
+      if (isPrismaUniqueConflict(error)) {
+        const [membership, request] = await Promise.all([
+          this.db.athletesMembership.findFirst({
+            where: { athletesCommunityId: id, userId, leftAt: null },
+            select: { role: true },
+          }),
+          this.db.athletesJoinRequest.findFirst({
             where: { athletesCommunityId: id, userId, status: "PENDING" },
             select: joinRequestSelect,
-          });
-          if (request) return { kind: "REQUEST" as const, request };
-        }
-        throw error;
+          }),
+        ]);
+        if (membership) return { kind: "MEMBERSHIP" as const, role: membership.role };
+        if (request) return { kind: "REQUEST" as const, request };
       }
-    });
+      throw error;
+    }
   }
 
   getJoinRequest(id: string, userId: string) {
@@ -300,20 +307,37 @@ export class PrismaAthletesRepository implements AthletesRepository {
     resolverUserId: string,
     decision: "APPROVE" | "DECLINE",
   ) {
-    return this.db.$transaction(async (tx) => {
-      const now = new Date();
-      const changed = await tx.athletesJoinRequest.updateMany({
-        where: { athletesCommunityId: id, userId: targetUserId, status: "PENDING" },
-        data: {
-          status: decision === "APPROVE" ? "APPROVED" : "DECLINED",
-          resolvedAt: now,
-          resolvedByUserId: resolverUserId,
-        },
+    try {
+      return await this.db.$transaction(async (tx) => {
+        const now = new Date();
+        const changed = await tx.athletesJoinRequest.updateMany({
+          where: { athletesCommunityId: id, userId: targetUserId, status: "PENDING" },
+          data: {
+            status: decision === "APPROVE" ? "APPROVED" : "DECLINED",
+            resolvedAt: now,
+            resolvedByUserId: resolverUserId,
+          },
+        });
+        if (!changed.count) return false;
+        if (decision === "APPROVE") await reactivateMembership(tx, id, targetUserId, "MEMBER", now);
+        return true;
       });
-      if (!changed.count) return false;
-      if (decision === "APPROVE") await reactivateMembership(tx, id, targetUserId, "MEMBER", now);
-      return true;
-    });
+    } catch (error) {
+      if (decision === "APPROVE" && isPrismaUniqueConflict(error)) {
+        const membership = await this.db.athletesMembership.findFirst({
+          where: { athletesCommunityId: id, userId: targetUserId, leftAt: null },
+          select: { id: true },
+        });
+        if (membership) {
+          await this.db.athletesJoinRequest.updateMany({
+            where: { athletesCommunityId: id, userId: targetUserId, status: "PENDING" },
+            data: { status: "APPROVED", resolvedAt: new Date(), resolvedByUserId: resolverUserId },
+          });
+          return true;
+        }
+      }
+      throw error;
+    }
   }
 
   async listMembers(id: string) {
@@ -340,25 +364,42 @@ export class PrismaAthletesRepository implements AthletesRepository {
   }
 
   async addMemberByUsername(id: string, username: string, resolverUserId: string) {
-    return this.db.$transaction(async (tx) => {
-      const community = await tx.athletesCommunity.findFirst({
-        where: { id, status: "ACTIVE" },
-        select: { id: true },
-      });
-      if (!community) return null;
-      const presentation = await tx.userPresentation.findUnique({
-        where: { username },
-        select: { userId: true, username: true },
-      });
-      if (!presentation) return null;
-      const now = new Date();
-      await reactivateMembership(tx, id, presentation.userId, "MEMBER", now);
-      await tx.athletesJoinRequest.updateMany({
-        where: { athletesCommunityId: id, userId: presentation.userId, status: "PENDING" },
-        data: { status: "APPROVED", resolvedAt: now, resolvedByUserId: resolverUserId },
-      });
-      return presentation;
+    const presentation = await this.db.userPresentation.findUnique({
+      where: { username },
+      select: { userId: true, username: true },
     });
+    if (!presentation) return null;
+    try {
+      return await this.db.$transaction(async (tx) => {
+        const community = await tx.athletesCommunity.findFirst({
+          where: { id, status: "ACTIVE" },
+          select: { id: true },
+        });
+        if (!community) return null;
+        const now = new Date();
+        await reactivateMembership(tx, id, presentation.userId, "MEMBER", now);
+        await tx.athletesJoinRequest.updateMany({
+          where: { athletesCommunityId: id, userId: presentation.userId, status: "PENDING" },
+          data: { status: "APPROVED", resolvedAt: now, resolvedByUserId: resolverUserId },
+        });
+        return presentation;
+      });
+    } catch (error) {
+      if (isPrismaUniqueConflict(error)) {
+        const membership = await this.db.athletesMembership.findFirst({
+          where: { athletesCommunityId: id, userId: presentation.userId, leftAt: null },
+          select: { id: true },
+        });
+        if (membership) {
+          await this.db.athletesJoinRequest.updateMany({
+            where: { athletesCommunityId: id, userId: presentation.userId, status: "PENDING" },
+            data: { status: "APPROVED", resolvedAt: new Date(), resolvedByUserId: resolverUserId },
+          });
+          return presentation;
+        }
+      }
+      throw error;
+    }
   }
 
   async removeMember(id: string, targetUserId: string) {

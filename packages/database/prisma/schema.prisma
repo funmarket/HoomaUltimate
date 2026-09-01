@@ -647,7 +647,7 @@ model AthletesCommunity {
   createdByUserId String
   createdAt       DateTime                 @default(now())
   updatedAt       DateTime                 @updatedAt
-  createdBy       User                     @relation("AthletesCommunityCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  createdBy       User                     @relation("AthletesCommunityCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
   memberships     AthletesMembership[]
   joinRequests    AthletesJoinRequest[]
 
