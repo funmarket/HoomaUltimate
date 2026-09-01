@@ -135,6 +135,9 @@ test("Open Matches are account-only and independent from Community privacy", asy
     const publicPage = (await publicPlay.json()) as { items: unknown[] };
     assert.equal(publicPage.items.length, 0);
 
+    const anonymousOpenMatches = await fetch(`${base}/api/v1/play/open-matches?limit=50`);
+    assert.equal(anonymousOpenMatches.status, 401);
+
     const anonymousDetail = await fetch(`${base}/api/public/v1/events/${event.id}`);
     assert.equal(anonymousDetail.status, 404);
 
@@ -196,7 +199,9 @@ test("Open Matches are account-only and independent from Community privacy", asy
     assert.equal(participantDetail.status, 200);
 
     const membersUrl = `${base}/api/v1/communities/${community.id}/members`;
-    const communityMembers = await fetch(membersUrl, { headers: { cookie: viewer.cookie } });
+    const communityMembers = await fetch(membersUrl, {
+      headers: { cookie: viewer.cookie },
+    });
     assert.equal(communityMembers.status, 403);
   } finally {
     await new Promise<void>((resolve, reject) =>
