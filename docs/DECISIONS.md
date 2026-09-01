@@ -393,3 +393,13 @@ Community-scoped RideRequests are excluded from public Ride request discovery an
 The dedicated decision record is `docs/adr/ADR-052-community-ride-requests-hooma-now.md`.
 
 **Reason:** HOOMA NOW needs live Community Ride coordination without creating a second Ride owner, lifecycle or feed table. Persisting exact targets keeps `All my HOOMAs` deterministic at write time while preserving one canonical RideRequest ID across every selected HOOMA.
+
+## ADR-054 — Athletes is an independent HOOMA-connected domain
+
+**Decision:** Athletes is implemented as a separate HOOMA-connected domain inside the existing HOOMA application. Athletes reuses canonical `User` identity and owns its own `AthletesCommunity`, `AthletesMembership`, and `AthletesJoinRequest` persistence, contracts, API routes, application service, repository, authorization, and frontend routes.
+
+Athletes is not a HOOMA Community subtype, not a Team subtype, and not a generic creator/category abstraction. HOOMA Communities remain Communities-owned; Teams remain Teams-owned; ADR-053's Communities-only HOOMA creation rule remains unchanged. ULTRAS remains frozen. Whistle, equipment, marketplace, Events, Ride, Requests, FundMe and Payments integrations are future slices.
+
+The dedicated decision record is `docs/adr/ADR-054-athletes-independent-domain.md`.
+
+**Reason:** Athletes shares canonical HOOMA identity but has different sports-community lifecycle, authorization, and future product roadmap from neighborhood HOOMA Communities and football Teams. Independent ownership prevents recreating the Community-type hierarchy bug fixed by ADR-053.

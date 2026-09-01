@@ -24,6 +24,10 @@
       "types": "./src/auth-linking.ts",
       "default": "./dist/auth-linking.js"
     },
+    "./athletes": {
+      "types": "./src/athletes.ts",
+      "default": "./dist/athletes.js"
+    },
     "./communities": {
       "types": "./src/communities.ts",
       "default": "./dist/communities.js"

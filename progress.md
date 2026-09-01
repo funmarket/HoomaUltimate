@@ -1,10 +1,10 @@
 # HOOMA — LIVING PROGRESS PLAN
 
-Status: **ACTIVE — living execution and evidence ledger**  
-Product: **HOOMA**  
-Repository/workspace only: `funmarket/HoomaUltimate`  
-Active development branch: `phase-0-foundation`  
-Stable/release branch: `main`  
+Status: **ACTIVE — living execution and evidence ledger**
+Product: **HOOMA**
+Repository/workspace only: `funmarket/HoomaUltimate`
+Active development branch: `phase-0-foundation`
+Stable/release branch: `main`
 Created: **2026-08-22**
 
 ---
@@ -1417,10 +1417,10 @@ Home and create-flow contracts drifted across requirements, structure, brand/ass
 
 ## 2026-08-22 — Connect active development branch to Railway
 
-**Task**  
+**Task**
 Connect `phase-0-foundation` to Railway so real source changes trigger builds.
 
-**Reason/root cause**  
+**Reason/root cause**
 Existing Railway service was following stale `main`, while active application work was on `phase-0-foundation`.
 
 **Authoritative docs/source inspected**
@@ -1456,7 +1456,7 @@ Existing Railway service was following stale `main`, while active application wo
 - API build still fails on source/schema normalization errors;
 - no healthy public API URL yet.
 
-**Score: 7/10**  
+**Score: 7/10**
 **Status: VERIFIED, NOT DONE**
 
 **Next action**
@@ -1467,10 +1467,10 @@ Existing Railway service was following stale `main`, while active application wo
 
 ## 2026-08-22 — Correct Argon2 password verification API usage
 
-**Task**  
+**Task**
 Fix `argon2.verify` compile failure.
 
-**Reason/root cause**  
+**Reason/root cause**
 The code passed a `type` option to `argon2.verify`, but the installed Argon2 API determines the algorithm from the encoded PHC hash; `type` is a hash-generation option, not a valid verification option.
 
 **Files changed**
@@ -1498,7 +1498,7 @@ The code passed a `type` option to `argon2.verify`, but the installed Argon2 API
 - focused auth tests were not yet recorded as passing;
 - whole API still failed later on unrelated errors.
 
-**Score: 7/10**  
+**Score: 7/10**
 **Status: VERIFIED, NOT DONE**
 
 **Next action**
@@ -1509,10 +1509,10 @@ The code passed a `type` option to `argon2.verify`, but the installed Argon2 API
 
 ## 2026-08-22 — Correct shared async Express handler typing
 
-**Task**  
+**Task**
 Remove repeated `Promise<Response> is not assignable to Promise<void>` route compiler failures at the shared wrapper owner.
 
-**Reason/root cause**  
+**Reason/root cause**
 The shared wrapper accepted only handlers returning `Promise<void>`, while normal Express async handlers may return the `Response` produced by `res.json()`/similar calls.
 
 **Files changed**
@@ -1535,7 +1535,7 @@ The shared wrapper accepted only handlers returning `Promise<void>`, while norma
 
 - no dedicated middleware test recorded yet.
 
-**Score: 6/10**  
+**Score: 6/10**
 **Status: IN_PROGRESS, NOT DONE**
 
 **Next action**
@@ -1546,10 +1546,10 @@ The shared wrapper accepted only handlers returning `Promise<void>`, while norma
 
 ## 2026-08-22 — Correct absent Audit metadata Prisma write
 
-**Task**  
+**Task**
 Fix `exactOptionalPropertyTypes` / Prisma incompatibility when Audit metadata is absent.
 
-**Reason/root cause**  
+**Reason/root cause**
 Audit writer explicitly sent `metadata: undefined`; Prisma input expects the property to be omitted when absent rather than receiving `undefined`.
 
 **Files changed**
@@ -1573,7 +1573,7 @@ Audit writer explicitly sent `metadata: undefined`; Prisma input expects the pro
 - whole API build remains blocked by other domain/schema errors;
 - focused Audit integration test not yet recorded.
 
-**Score: 6/10**  
+**Score: 6/10**
 **Status: IN_PROGRESS, NOT DONE**
 
 **Next action**
@@ -1584,10 +1584,10 @@ Audit writer explicitly sent `metadata: undefined`; Prisma input expects the pro
 
 ## 2026-08-22 — Create living HOOMA progress plan
 
-**Task**  
+**Task**
 Create this root `progress.md` as the mandatory execution/evidence ledger.
 
-**Reason/root cause**  
+**Reason/root cause**
 Planning documents were becoming stale relative to active decisions and runtime discoveries. The project needs one visible living record of rules, phases, proof, scores and real completion state.
 
 **Files changed**
@@ -1610,7 +1610,7 @@ Planning documents were becoming stale relative to active decisions and runtime 
 
 - active planning documents still need reconciliation with current HOOMA naming and updated Whistle rules.
 
-**Score: 8/10**  
+**Score: 8/10**
 **Status: VERIFIED, NOT DONE**
 
 **Next action**
@@ -1683,3 +1683,24 @@ The GAME card was intentionally non-interactive, while the TEAM card used a page
 
 **Remaining uncertainty**
 Automated CI and database integration are proven. A real browser/Telegram Mini App click-through is still a separate runtime proof because this execution environment does not expose browser automation.
+
+---
+
+## 2026-09-01 — Start Athletes foundation PR 2
+
+**Task**
+Start PR 2 for the Athletes foundation domain after PR #212 merged the HOOMA/Teams IA correction.
+
+**Foundation**
+
+- PR #212 head: `0d6d8f6761c0bb21d5620257539066c40cd8b8c5`
+- merged/read-back foundation: `3f72b3e97e6d6147a39610ecaab082bf727851c6`
+- branch: `feat/athletes-foundation`
+
+**Decision**
+
+Athletes is a separate HOOMA-connected domain using canonical `User`, independent Athletes persistence, and independent Athletes membership/join-request lifecycle. It is not a Community subtype, not a Team subtype, not ULTRAS, and not a generic creator abstraction.
+
+**Status**
+
+Documentation/ADR foundation started. Implementation, migration, PostgreSQL proof, frontend routes, mobile proof, PR, and CI remain pending.

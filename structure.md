@@ -194,6 +194,7 @@ This rule exists for scalability and user experience as well as code cleanliness
 | Sensitive-operation history                          | Audit                                       |
 | HOOMA neighborhood community + membership            | Communities                                 |
 | Football Team, roster, responsibilities/capabilities | Teams                                       |
+| Athletes sports community, membership, join requests | Athletes                                    |
 | Team lineup                                          | Teams                                       |
 | Team challenge + accepted TeamGame coordination      | Teams                                       |
 | Event lifecycle, RSVP/waitlist, formation, check-in  | Events                                      |
@@ -221,6 +222,8 @@ Physical `Place` is the venue source of truth. Pitch extends Place through Pitch
 ADR-050 explicitly unfreezes durable Ride and Requests vertical slices. Rides owns ride offers, ride requests, participation, private meeting-point policy and Ride vehicle-photo metadata. Requests owns help/resource requests and quantity-based partial claims. Fundraising, Payments and generic Media remain separate owners and are not implemented merely because Ride or Requests begins.
 
 ADR-052 authorizes Community-scoped RideRequest audience projection into HOOMA NOW without changing ownership. Ride owns the canonical request, audience scope and exact `RideRequestCommunityAudience` target rows. Community owns membership facts used for requester and viewer authorization. HOOMA NOW is presentation/composition only and must not create copied RideRequest payloads, a second lifecycle, a second status field, or a Community-owned Ride request table.
+
+ADR-054 authorizes the Athletes foundation as its own HOOMA-connected domain inside the existing API/frontend/database architecture. Athletes owns `AthletesCommunity`, `AthletesMembership`, and `AthletesJoinRequest`; it reuses canonical `User` and must not extend or store lifecycle records in the Communities or Teams tables.
 
 ---
 

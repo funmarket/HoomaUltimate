@@ -7,6 +7,7 @@ import { createPlatformAdminRouter } from "../../modules/platform-admin/http/pla
 import { createPlacesMemberRouter } from "../../modules/places/http/place.routes.js";
 import { createPitchMemberRouter } from "../../modules/pitch/http/pitch.routes.js";
 import { createCommunityMemberRouter } from "../../modules/communities/http/community.routes.js";
+import { createAthletesMemberRouter } from "../../modules/athletes/http/athletes.routes.js";
 import { createTeamMemberRouter } from "../../modules/teams/http/team.routes.js";
 import { createEventMemberRouter } from "../../modules/events/http/event.routes.js";
 import { createGamerMemberRouter } from "../../modules/gamers/http/gamer.routes.js";
@@ -34,6 +35,7 @@ export function createMemberV1Router(container: AppContainer, config: ApiConfig)
     createPitchMemberRouter(container.pitchSuggestionService, container.pitchOwnerService),
   );
   router.use("/communities", createCommunityMemberRouter(container.communityService));
+  router.use("/athletes", createAthletesMemberRouter(container.athletesService));
   router.use("/teams", createTeamMemberRouter(container.teamService));
   router.use("/events", createEventMemberRouter(container.eventService));
   router.use(

@@ -151,7 +151,17 @@ No flow may duplicate one created entity into another domain merely to make it a
 
 Gamers remains an existing independent product and route family, but it is not offered from the current Home gateway or HOOMA creation surface. FundMe is presented under Requests as a page tab until Fundraising/Payments are separately authorized.
 
-## 2.4 Places tabs
+## 2.4 Athletes foundation
+
+Athletes is a separate HOOMA-connected sports-community domain inside the existing HOOMA application. It uses canonical `User` identity, its own `AthletesCommunity`, `AthletesMembership` and `AthletesJoinRequest` lifecycle, and its own `/athletes` product routes.
+
+Athletes is not a HOOMA Community subtype, not a Team subtype, not a generic creator option, and not an authorization to create `CommunityKind.ATHLETES`, `CommunityType`, `Community.type`, `GenericMembership`, `GenericCommunity`, `CreateAnythingPage`, `CreationService`, or `createEntity`.
+
+Athletes foundation may expose public discovery/detail, create, update/archive, join/request/cancel, manager request approval/decline, member list, direct-add by canonical username, and bounded member removal. Whistle, equipment, events, marketplace, payments, Ride integration, Requests integration, FundMe and ULTRAS remain separate future slices.
+
+Athletes may appear from `/hooma` only as a separate domain navigation entry after its real `/athletes` routes and APIs exist. It must not appear inside the HOOMA Community create section, and Home gateway and bottom navigation remain unchanged.
+
+## 2.5 Places tabs
 
 The Places directory exposes:
 
@@ -161,7 +171,7 @@ LOUNGES/CAFES | PITCH | FANHUB
 
 Default: `LOUNGES/CAFES`.
 
-## 2.5 Core routes
+## 2.6 Core routes
 
 At minimum, the product routing contract supports:
 
