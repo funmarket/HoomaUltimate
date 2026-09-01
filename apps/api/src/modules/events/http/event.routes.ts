@@ -8,35 +8,18 @@ import {
   eventUpdateSchema,
 } from "@hooma/contracts";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
-import type { CommunityService } from "../../communities/application/community.service.js";
 import type { IdentityService } from "../../identity/application/identity.service.js";
 import { getAuth } from "../../identity/http/auth-request.js";
 import { resolveAuthentication } from "../../identity/http/auth.middleware.js";
 import type { EventService } from "../application/event.service.js";
-import { EventError } from "../domain/event-error.js";
 
 function numberQuery(value: unknown, fallback: number) {
   const parsed = Number(value ?? fallback);
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function eventScope(event: unknown): { type: "PLAY" | "WATCH"; communityId: string | null } {
-  if (
-    typeof event === "object" &&
-    event !== null &&
-    "type" in event &&
-    (event.type === "PLAY" || event.type === "WATCH") &&
-    "communityId" in event &&
-    (typeof event.communityId === "string" || event.communityId === null)
-  ) {
-    return { type: event.type, communityId: event.communityId };
-  }
-  throw new EventError("EVENT_NOT_FOUND", "Event not found");
-}
-
 export function createEventPublicRouter(
   service: EventService,
-  communities: CommunityService,
   identity: IdentityService,
   config: ApiConfig,
 ): Router {
@@ -71,16 +54,10 @@ export function createEventPublicRouter(
   router.get(
     "/:eventId",
     asyncHandler(async (request, response) => {
-      const event = await service.getPublic(String(request.params.eventId));
-      const scope = eventScope(event);
-      if (scope.type === "PLAY") {
-        if (!scope.communityId) throw new EventError("EVENT_NOT_FOUND", "Event not found");
-        const auth = await resolveAuthentication(request, identity, config);
-        if (!(await communities.canViewPrivateContent(scope.communityId, auth?.userId ?? null))) {
-          throw new EventError("EVENT_NOT_FOUND", "Event not found");
-        }
-      }
-      response.json(event);
+      const auth = await resolveAuthentication(request, identity, config);
+      response.json(
+        await service.getVisible(String(request.params.eventId), auth?.userId),
+      );
     }),
   );
   return router;
