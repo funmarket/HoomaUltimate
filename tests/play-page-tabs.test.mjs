@@ -63,16 +63,23 @@ test("Play detail and Open Matches use the authenticated Play API authority", as
 });
 
 test("Play match forms keep visibility explicit and nested actions softly styled", async () => {
-  const [createPage, editPage, visibilityField, visibilityCss, locationPicker, locationCss, webCss] =
-    await Promise.all([
-      read("packages/frontend/src/events/CreateEventPage.tsx"),
-      read("packages/frontend/src/events/EditEventPage.tsx"),
-      read("packages/frontend/src/events/PlayVisibilityField.tsx"),
-      read("packages/frontend/src/events/play-visibility.css"),
-      read("packages/frontend/src/game-location/GameLocationPicker.tsx"),
-      read("packages/frontend/src/game-location/game-location.css"),
-      read("apps/web/src/styles.css"),
-    ]);
+  const [
+    createPage,
+    editPage,
+    visibilityField,
+    visibilityCss,
+    locationPicker,
+    locationCss,
+    webCss,
+  ] = await Promise.all([
+    read("packages/frontend/src/events/CreateEventPage.tsx"),
+    read("packages/frontend/src/events/EditEventPage.tsx"),
+    read("packages/frontend/src/events/PlayVisibilityField.tsx"),
+    read("packages/frontend/src/events/play-visibility.css"),
+    read("packages/frontend/src/game-location/GameLocationPicker.tsx"),
+    read("packages/frontend/src/game-location/game-location.css"),
+    read("apps/web/src/styles.css"),
+  ]);
 
   assert.match(createPage, /<PlayVisibilityField \/>/);
   assert.match(editPage, /<PlayVisibilityField/);
@@ -96,7 +103,10 @@ test("Play match forms keep visibility explicit and nested actions softly styled
     locationCss,
     /\.game-location-picker__choices button\.is-active\s*\{[^}]*background: color-mix\([^;]*11%, transparent\);/s,
   );
-  assert.doesNotMatch(locationCss, /button\.is-active\s*\{[^}]*background:\s*var\(/s);
+  assert.doesNotMatch(
+    locationCss,
+    /button\.is-active\s*\{[^}]*background:\s*var\(/s,
+  );
   assert.doesNotMatch(webCss, /\.event-form button,/);
   assert.match(webCss, /\.event-form__primary-action,/);
   assert.match(
