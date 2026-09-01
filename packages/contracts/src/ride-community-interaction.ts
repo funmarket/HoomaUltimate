@@ -17,6 +17,4 @@ export const rideRequestCommunityInteractionSchema = z.object({
 export type RideCommunityRequesterPresentation = z.infer<
   typeof rideCommunityRequesterPresentationSchema
 >;
-export type RideRequestCommunityInteraction = z.infer<
-  typeof rideRequestCommunityInteractionSchema
->;
+export type RideRequestCommunityInteraction = z.infer<typeof rideRequestCommunityInteractionSchema>;
