@@ -110,8 +110,7 @@ export function PlayPage() {
         if (active) setEvents(page.items);
       })
       .catch((reason) => {
-        if (active)
-          setEventsError(protectedError(reason, "Matches could not be loaded"));
+        if (active) setEventsError(protectedError(reason, "Matches could not be loaded"));
       })
       .finally(() => {
         if (active) setEventsLoading(false);
