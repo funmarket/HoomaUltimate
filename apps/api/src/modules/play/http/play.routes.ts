@@ -27,6 +27,18 @@ export function createPlayPublicRouter(service: PlayService): Router {
 export function createPlayMemberRouter(service: PlayService): Router {
   const router = Router();
   router.get(
+    "/open-matches",
+    asyncHandler(async (request, response) => {
+      const cursor = typeof request.query.cursor === "string" ? request.query.cursor : undefined;
+      response.json(
+        await service.openMatches(
+          numberQuery(request.query.limit, 50),
+          cursor,
+        ),
+      );
+    }),
+  );
+  router.get(
     "/player-listing",
     asyncHandler(async (request, response) => {
       response.json(await service.getMine(getAuth(request).userId));
