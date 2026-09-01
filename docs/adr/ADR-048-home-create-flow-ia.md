@@ -24,13 +24,7 @@ The permanent bottom navigation remains:
 Home | Play | Watch | HOOMA | Pitch
 ```
 
-The HOOMA create chooser has three options only:
-
-```text
-HOOMA | TEAM | ULTRAS
-```
-
-HOOMA creation continues through the Communities-owned path. Team creation continues through the Teams-owned path. ULTRAS remains unavailable until its independent domain is implemented and must not create a Community row or require `CommunityType`.
+The original three-option HOOMA create chooser portion is superseded by ADR-053. HOOMA creation now creates only canonical HOOMA Communities through the Communities-owned `/hooma/new` path. Team creation continues through the Teams-owned `/teams/new` path and selects eligible HOOMA context there, including the bounded `/hooma/new?after=team-create` continuation back to `/teams/new?communityId=<created-id>`. ULTRAS remains unavailable until its independent domain is implemented and must not create a Community row or require `CommunityType`.
 
 Gamers remains an implemented independent domain and route family, but it is removed from Home discovery and from the HOOMA create chooser.
 
@@ -60,6 +54,10 @@ The Home gateway source must expose exactly the six current gateways and retain 
 
 Governing product, structure, brand, asset and progress documents must stop describing the old eight/nine-card Home as current truth.
 
-Tests should prove the six-gateway Home contract, unchanged bottom navigation, three-option create chooser, Requests/FundMe tab shell, Ride shell, `/fundme` redirect, and retained direct Gamers routes.
+Tests should prove the six-gateway Home contract, unchanged bottom navigation, Communities-only HOOMA creation, Teams-owned Team creation, Requests/FundMe tab shell, Ride shell, `/fundme` redirect, and retained direct Gamers routes.
+
+## Superseded in part
+
+ADR-053 supersedes only the HOOMA create chooser portion of this decision. The six-gateway Home contract, permanent bottom navigation, Gamers independence, FundMe grouping and shell-scope constraints remain governed here except where later ADRs explicitly supersede them.
 
 Database, migrations, backend APIs, shared contracts, Gamers domain, Teams backend, Communities backend and bottom navigation are out of scope for this decision.

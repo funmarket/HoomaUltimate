@@ -28,7 +28,13 @@ export function CreateTeamPage() {
         const firstEligible = response?.communities.find(
           (community) => community.role === "FOUNDER" || community.role === "COACH",
         );
-        setCommunityId(firstEligible?.id ?? "");
+        const requestedCommunityId = new URLSearchParams(window.location.search).get("communityId");
+        const requestedEligible = response?.communities.find(
+          (community) =>
+            community.id === requestedCommunityId &&
+            (community.role === "FOUNDER" || community.role === "COACH"),
+        );
+        setCommunityId(requestedEligible?.id ?? firstEligible?.id ?? "");
       })
       .catch((reason) => {
         if (active)
@@ -109,14 +115,14 @@ export function CreateTeamPage() {
         <span className="eyebrow">CREATE TEAM</span>
         <h1>Create A Team</h1>
         <p className="muted">
-          Build your football side without taking space from the Teams discovery page.
+          Build your football side from Teams, then attach it to one eligible HOOMA community.
         </p>
       </section>
 
       {eligibleCommunities.length ? (
         <form className="inline-form panel" onSubmit={submit}>
           <label className="field">
-            <span>Community</span>
+            <span>HOOMA community</span>
             <select
               value={communityId}
               onChange={(event) => setCommunityId(event.target.value)}
@@ -178,12 +184,15 @@ export function CreateTeamPage() {
         </form>
       ) : (
         <div className="state-card">
-          <strong>Team creation needs a Community.</strong>
+          <strong>Team creation needs a HOOMA community.</strong>
           <p className="muted">
-            You must be a Community Founder or Coach before creating its Team.
+            You must be a HOOMA Community Founder or Coach before creating its Team.
           </p>
+          <a className="button" href="/hooma/new?after=team-create">
+            Create a HOOMA community
+          </a>{" "}
           <a className="button secondary" href="/hooma">
-            Go to HOOMA
+            Browse HOOMA
           </a>
         </div>
       )}

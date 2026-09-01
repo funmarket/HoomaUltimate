@@ -14,45 +14,6 @@ import { HoomaWhistleBoard } from "../whistle/HoomaWhistleBoard";
 import { CommunityLogo, CommunityMediaSurface } from "./CommunityMedia";
 import { HoomaMembershipRequests } from "./HoomaMembershipRequests";
 
-type CreationType = "HOOMA" | "TEAM" | "ULTRAS";
-
-type CreationOption = {
-  readonly value: CreationType;
-  readonly title: string;
-  readonly description: string;
-  readonly roles: string;
-  readonly available: boolean;
-  readonly href: string | null;
-};
-
-const CREATION_ORDER: readonly CreationType[] = ["HOOMA", "TEAM", "ULTRAS"];
-const CREATION_OPTIONS: Record<CreationType, CreationOption> = {
-  HOOMA: {
-    value: "HOOMA",
-    title: "HOOMA",
-    description: "Start a neighborhood community",
-    roles: "Founder · Coach · Member",
-    available: true,
-    href: "/hooma/new",
-  },
-  TEAM: {
-    value: "TEAM",
-    title: "TEAM",
-    description: "Build a football side",
-    roles: "Coach · Assistant · Player",
-    available: true,
-    href: "/teams",
-  },
-  ULTRAS: {
-    value: "ULTRAS",
-    title: "ULTRAS",
-    description: "Build an official-club supporter group",
-    roles: "Coming with the canonical ULTRAS domain",
-    available: false,
-    href: null,
-  },
-};
-
 function report(reason: unknown): string {
   return reason instanceof Error ? reason.message : "Unexpected HOOMA error";
 }
@@ -124,8 +85,6 @@ export function HoomaPage() {
   const [me, setMe] = useState<MeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [creationType, setCreationType] = useState<CreationType>("HOOMA");
-  const selectedCreation = CREATION_OPTIONS[creationType];
 
   useEffect(() => {
     let active = true;
@@ -149,66 +108,37 @@ export function HoomaPage() {
   }, [api]);
 
   const signInHref = authenticationHref("/hooma");
-  function continueCreation() {
-    if (selectedCreation.available && selectedCreation.href) navigate(selectedCreation.href);
-  }
 
   return (
     <div className="page hooma-page">
       <section className="hooma-hero panel">
         <span className="eyebrow">YOUR FOOTBALL NEIGHBORHOOD</span>
         <h1>HOOMA</h1>
-        <p>
-          Find your people, build your neighborhood, start a Team, or prepare for future supporter
-          groups.
-        </p>
+        <p>Find your people, build your neighborhood, and connect through sport and community.</p>
       </section>
 
       <section className="hooma-create-section">
         <div className="hooma-section-heading">
           <div>
             <span className="eyebrow">CREATE</span>
-            <h2>What are you starting?</h2>
+            <h2>Create a HOOMA Community</h2>
           </div>
-          <p className="muted">One gateway. Separate owning domains.</p>
+          <p className="muted">Start one neighborhood community from the Communities domain.</p>
         </div>
-        <div className="panel hooma-create-picker">
-          <label className="hooma-create-select">
-            <span>Community type</span>
-            <select
-              value={creationType}
-              onChange={(event) => setCreationType(event.target.value as CreationType)}
-            >
-              {CREATION_ORDER.map((value) => {
-                const option = CREATION_OPTIONS[value];
-                return (
-                  <option key={option.value} value={option.value}>
-                    {option.title}
-                  </option>
-                );
-              })}
-            </select>
-          </label>
-          <div
-            className={`hooma-create-selection ${selectedCreation.available ? "" : "is-future"}`}
-            aria-live="polite"
-          >
-            <strong>{selectedCreation.title}</strong>
-            <span>{selectedCreation.description}</span>
-            <small>{selectedCreation.roles}</small>
-            {selectedCreation.available ? null : (
-              <small>This will open only when the independent domain ships.</small>
-            )}
+        <div className="panel hooma-create-callout">
+          <div>
+            <strong>Build your neighborhood HOOMA</strong>
+            <span>
+              Create the canonical HOOMA record for membership, local identity and community tools.
+            </span>
+            <small>Teams and future supporter groups keep their own creation flows.</small>
           </div>
           <button
-            className="button hooma-create-continue"
+            className="button hooma-create-action"
             type="button"
-            disabled={!selectedCreation.available}
-            onClick={continueCreation}
+            onClick={() => navigate("/hooma/new")}
           >
-            {selectedCreation.available
-              ? `Continue with ${selectedCreation.title}`
-              : `${selectedCreation.title} coming soon`}
+            Create a HOOMA Community
           </button>
         </div>
       </section>
@@ -332,7 +262,7 @@ export function CreateHoomaPage() {
     setCreating(true);
     setError("");
     try {
-      await api.communities.create({
+      const created = await api.communities.create({
         name,
         description: description.trim() || null,
         city: city.trim() || null,
@@ -341,6 +271,11 @@ export function CreateHoomaPage() {
         bannerUrl: bannerUrl.trim() || null,
         visibility,
       });
+      const after = new URLSearchParams(window.location.search).get("after");
+      if (after === "team-create") {
+        navigate(`/teams/new?communityId=${encodeURIComponent(created.id)}`);
+        return;
+      }
       navigate("/hooma");
     } catch (reason) {
       setError(protectedError(reason, "Could not create HOOMA"));

@@ -342,17 +342,17 @@ Gamers remains an independent implemented route family at `/gamers`, but it is n
 
 This section records current application state. Product-owner changes update both the source and this contract in the same task.
 
-HOOMA creation gateway remains a chooser into separate owning domains, not a generic database `CommunityType`.
+HOOMA creation is Communities-owned and creates only canonical HOOMA neighborhood/local Communities. Teams and future supporter-community domains keep their own creation surfaces and select any required HOOMA context inside their own flows. The only current cross-flow continuation is the literal Team handoff from `/hooma/new?after=team-create` back to `/teams/new?communityId=<created-id>` after successful HOOMA creation.
 
 Ride may now grow from its honest shell into its own domain-owned vertical slice under ADR-050, including Ride-owned frontend routes and API client code. Requests may grow only through its own Requests-owned slices. That authorization does not change the Home gateway, bottom navigation, FundMe tab grouping, Gamers independence, ULTRAS unavailability, or the rule that Fundraising and Payments require separate authorization.
 
-The current chooser is:
+The current HOOMA creation action is:
 
 ```text
-HOOMA | TEAM | ULTRAS
+Create a HOOMA Community -> /hooma/new
 ```
 
-ULTRAS is unavailable until its independent domain ships. Gamers remains independent but is no longer part of the HOOMA create chooser.
+There is no HOOMA-owned Team or ULTRAS selector. ULTRAS is unavailable until its independent domain ships. Gamers remains independent and is not part of HOOMA creation.
 
 Core routes include:
 

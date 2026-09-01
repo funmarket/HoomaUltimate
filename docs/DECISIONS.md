@@ -233,7 +233,7 @@ MANAGE_TEAM_EVENTS
 
 **Reason:** These are explicit product acceptance rules.
 
-**Superseded in part by ADR-048:** The bottom navigation decision remains active. The Home gateway and HOOMA create-flow portions are replaced by the six-gateway Home IA and three-option create chooser recorded in ADR-048.
+**Superseded in part by ADR-048 and ADR-053:** The bottom navigation decision remains active. The Home gateway is replaced by the six-gateway Home IA recorded in ADR-048. The HOOMA create-flow portion is replaced by the Communities-only HOOMA creation rule recorded in ADR-053.
 
 ## ADR-037 — Donor data import is separate from application migrations
 
@@ -324,15 +324,27 @@ The dedicated decision record is `docs/adr/ADR-042-pitch-suggestion-claim-lifecy
 
 Gamers is removed from Home discovery and the HOOMA create chooser, while the existing independent Gamers domain/module/routes remain intact. FundMe is presented as a Requests page tab, with `/fundme` redirecting to `/requests/fundme` as compatibility navigation only. Ride remains a Home gateway and receives an honest frontend shell at `/rides`.
 
-The HOOMA create chooser is HOOMA/TEAM/ULTRAS only. ULTRAS remains unavailable and independent; it must not create a Community row or use a generic `CommunityType`.
+The original HOOMA/TEAM/ULTRAS create chooser portion is superseded by ADR-053. HOOMA creation is now Communities-only. Team creation remains Teams-owned at `/teams/new`, where eligible HOOMA context is selected. ULTRAS remains unavailable and independent; it must not create a Community row or use a generic `CommunityType`.
 
 This supersedes only the Home/create-flow portions of ADR-036. It narrowly overrides ADR-038 only enough to permit Requests/Rides frontend shells and route registration; backend persistence, Payments and durable Fundraising remain frozen until separately authorized.
 
-**Superseded in part by ADR-050:** The shell-only restriction for Ride and Requests is lifted for their domain-owned vertical slices. ADR-048 remains authoritative for Home, bottom navigation, HOOMA create chooser, Gamers independence, ULTRAS unavailability and FundMe grouping under Requests.
+**Superseded in part by ADR-050 and ADR-053:** The shell-only restriction for Ride and Requests is lifted for their domain-owned vertical slices. ADR-048 remains authoritative for Home, bottom navigation, Gamers independence, ULTRAS unavailability and FundMe grouping under Requests. ADR-053 replaces ADR-048's HOOMA create chooser with Communities-only HOOMA creation.
 
 The dedicated decision record is `docs/adr/ADR-048-home-create-flow-ia.md`.
 
 **Reason:** The simplification changes discovery and routing without collapsing durable domain ownership or inventing fake future features.
+
+## ADR-053 — HOOMA creates only HOOMA Communities
+
+**Decision:** `/hooma` is the Communities-owned HOOMA surface and creates only canonical HOOMA neighborhood/local Communities through `/hooma/new`. It must not present Team or ULTRAS as “Community type” choices, and it must not act as a generic create-anything gateway.
+
+Team creation remains owned by Teams at `/teams/new`. A Team creation flow selects one eligible HOOMA community context inside Teams before calling the Teams create API. When a Team creator lacks an eligible HOOMA, the only bounded continuation is `/hooma/new?after=team-create`; a successful HOOMA creation returns to `/teams/new?communityId=<created-id>`. Future ULTRAS creation remains unavailable until its independent domain ships and must not be implemented through Communities or a generic `CommunityType`.
+
+Home may continue to link to independent product gateways such as Teams, but those links are navigation, not HOOMA-owned creation.
+
+The dedicated decision record is `docs/adr/ADR-053-hooma-communities-only-creation.md`.
+
+**Reason:** HOOMA is the product/community umbrella, but durable concepts still need one owning domain. Keeping HOOMA Community creation, Team creation and future supporter-community creation in their own domains prevents duplicate flows, generic creation abstractions and hidden orphan states.
 
 ## ADR-049 — Canonical User direct Whistle
 
