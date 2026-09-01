@@ -155,6 +155,16 @@ function RideOfferDetailRoute() {
   return <RideOfferDetailPage offerId={requiredParam("offerId", offerId)} />;
 }
 
+function RideOfferEditRoute() {
+  const { offerId } = useParams();
+  return <RideOfferCreatePage offerId={requiredParam("offerId", offerId)} />;
+}
+
+function RideRequestEditRoute() {
+  const { requestId } = useParams();
+  return <RideRequestCreatePage requestId={requiredParam("requestId", requestId)} />;
+}
+
 function MatchdayRideRoute() {
   return <RidesPage context="MATCHDAY" />;
 }
@@ -219,8 +229,10 @@ function HoomaRoutes() {
               <Route path="/rides/matchday" element={<MatchdayRideRoute />} />
               <Route path="/rides/anywhere" element={<AnywhereRideRoute />} />
               <Route path="/rides/request" element={<RideRequestCreatePage />} />
+              <Route path="/rides/requests/:requestId/edit" element={<RideRequestEditRoute />} />
               <Route path="/rides/offers" element={<RideOffersPage />} />
               <Route path="/rides/offers/new" element={<RideOfferCreatePage />} />
+              <Route path="/rides/offers/:offerId/edit" element={<RideOfferEditRoute />} />
               <Route path="/rides/offers/:offerId" element={<RideOfferDetailRoute />} />
               <Route path="/rides/mine" element={<RideMinePage />} />
               <Route path="/places" element={<PlacesPage />} />
