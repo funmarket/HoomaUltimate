@@ -134,30 +134,22 @@ HOOMA | Teams | Spots | Pitch | Ride | Requests
 
 Ride may expose a Ride-owned gateway and frontend routes when its numbered `rideplan.md` slices authorize them. Requests may expose its Requests/FundMe shell until its own numbered slices replace it. Neither surface may fake backend completion, listings, matching, claims, payments or persistence.
 
-## 2.3 HOOMA creation gateway
+## 2.3 HOOMA creation
 
-Creation begins from the HOOMA product and offers:
+`/hooma` is the Communities-owned product surface. It creates only canonical HOOMA neighborhood/local Communities through `/hooma/new`.
 
-```text
-HOOMA | TEAM | ULTRAS
-```
+Teams and future supporter-community domains keep their own creation surfaces. A Team is created from `/teams/new`, where the user selects one eligible HOOMA community context before the Teams-owned create request is submitted. If the user must create that HOOMA first, Teams may send only the bounded `/hooma/new?after=team-create` continuation; successful HOOMA creation returns to `/teams/new?communityId=<created-id>`. Future supporter-community work must ship through its own domain route when authorized.
 
-This is a **shared entry/gateway only**.
-
-It must not be implemented as one generic database `CommunityType`. Each selection enters its own domain-specific creation flow:
-
-- HOOMA -> neighborhood/local Community domain;
-- TEAM -> football Team domain;
-- ULTRAS -> future supporter-community domain, unavailable until its independent domain ships.
+Do not implement this as one generic database `CommunityType`, one generic creator, or a selector that calls Team or future supporter domains “Community type” options inside the HOOMA page.
 
 After successful creation, the canonical entity is discoverable in its own product feed:
 
-- HOOMA -> `/hooma` HOOMA feed;
-- TEAM -> `/teams` Teams feed.
+- HOOMA Community -> `/hooma` HOOMA feed;
+- Team -> `/teams` Teams feed.
 
-The shared gateway never duplicates one created entity into another domain merely to make it appear in a feed.
+No flow may duplicate one created entity into another domain merely to make it appear in a feed.
 
-Gamers remains an existing independent product and route family, but it is not offered from the current Home gateway or HOOMA create chooser. FundMe is presented under Requests as a page tab until Fundraising/Payments are separately authorized.
+Gamers remains an existing independent product and route family, but it is not offered from the current Home gateway or HOOMA creation surface. FundMe is presented under Requests as a page tab until Fundraising/Payments are separately authorized.
 
 ## 2.4 Places tabs
 

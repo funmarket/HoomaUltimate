@@ -1,8 +1,10 @@
 # HOOMA Home/Create-Flow IA Simplification
 
-Status: source verified; PR opened.
+Status: source verified; PR opened; HOOMA create-chooser portion superseded by ADR-053.
 
 This file is the task-specific live execution and handoff ledger for the Home/create-flow information architecture simplification. It records evidence for this branch only. It does not outrank the product owner's latest instruction, `requirements.md`, `structure.md`, `docs/DECISIONS.md`, or `docs/CANONICAL_MODEL.md`.
+
+Supersession note: ADR-053 replaces only this file's old `/hooma` create-chooser rule. The current rule is: `/hooma` creates only HOOMA Communities through `/hooma/new`; Team creation remains Teams-owned at `/teams/new`; future ULTRAS creation remains unavailable until its independent domain ships.
 
 ## Locked Product Contract
 
@@ -29,17 +31,17 @@ Bottom navigation remains exactly:
 Home | Play | Watch | HOOMA | Pitch
 ```
 
-The `/hooma` create chooser is exactly:
+The former `/hooma` create chooser was superseded by ADR-053. Current HOOMA creation is exactly:
 
 ```text
-HOOMA | TEAM | ULTRAS
+Create a HOOMA Community -> /hooma/new
 ```
 
 Boundary rules:
 
-- Gamers is removed from the Home gateway grid and HOOMA create chooser only.
+- Gamers is removed from the Home gateway grid and is not part of HOOMA creation.
 - Gamers source, API, contracts, schema, tests and routes remain intact.
-- ULTRAS remains unavailable in the create chooser and must not route into Communities or create a `Community.type`.
+- ULTRAS remains unavailable and must not route into Communities or create a `Community.type`.
 - Requests is a frontend-only shell in this task.
 - FundMe is a Requests page tab at `/requests/fundme`; `/fundme` redirects there.
 - Ride is a frontend-only shell at `/rides`.

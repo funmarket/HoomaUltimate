@@ -102,23 +102,21 @@
   color: var(--app-text-secondary);
 }
 
-.hooma-create-picker {
+.hooma-create-callout {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 14px;
-  align-items: end;
+  align-items: center;
 }
-.hooma-create-select {
+.hooma-create-callout > div {
   display: grid;
-  gap: 7px;
+  gap: 4px;
 }
-.hooma-create-select > span,
 .hooma-create-form .field span {
   color: #d8d0c1;
   font-size: 13px;
   font-weight: 800;
 }
-.hooma-create-select select,
 .hooma-create-form input,
 .hooma-create-form textarea {
   width: 100%;
@@ -130,40 +128,24 @@
   outline: none;
   font: inherit;
 }
-.hooma-create-select select {
-  min-height: 46px;
-  padding-right: 40px;
-  font-weight: 850;
-}
-.hooma-create-select select:focus,
 .hooma-create-form input:focus,
 .hooma-create-form textarea:focus {
   border-color: var(--hooma-gold);
   box-shadow: 0 0 0 3px rgba(181, 155, 87, 0.08);
 }
-.hooma-create-selection {
-  min-width: 0;
-  display: grid;
-  gap: 3px;
-  padding: 2px 0;
-}
-.hooma-create-selection strong {
+.hooma-create-callout strong {
   color: var(--hooma-cream);
   font-size: 20px;
-  letter-spacing: 0.05em;
 }
-.hooma-create-selection span {
+.hooma-create-callout span {
   color: #e2dac8;
   font-weight: 700;
 }
-.hooma-create-selection small {
+.hooma-create-callout small {
   color: var(--hooma-muted);
   line-height: 1.35;
 }
-.hooma-create-selection.is-future {
-  opacity: 0.65;
-}
-.hooma-create-continue {
+.hooma-create-action {
   white-space: nowrap;
   min-height: 46px;
 }
@@ -467,22 +449,19 @@
 }
 
 @media (max-width: 760px) {
-  .hooma-create-picker,
+  .hooma-create-callout,
   .hooma-form-grid,
   .hooma-hq-grid {
     grid-template-columns: 1fr;
   }
-  .hooma-create-picker {
+  .hooma-create-callout {
     align-items: stretch;
     gap: 10px;
   }
-  .hooma-create-selection {
-    padding: 3px 1px 1px;
-  }
-  .hooma-create-selection strong {
+  .hooma-create-callout strong {
     font-size: 18px;
   }
-  .hooma-create-continue {
+  .hooma-create-action {
     width: 100%;
   }
   .hooma-span-2 {
@@ -503,7 +482,7 @@
   .hooma-detail-page .panel {
     padding: 16px;
   }
-  .hooma-create-picker {
+  .hooma-create-callout {
     border-radius: 16px;
   }
   .hooma-form-actions {

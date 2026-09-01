@@ -63,7 +63,9 @@ test("Team creation uses a dedicated page instead of an inline discovery form", 
   assert.ok(!teamsPage.includes("team-create-panel"));
   assert.ok(!teamsPage.includes("async function createTeam"));
   assert.ok(createTeamPage.includes("api.teams.create"));
-  assert.ok(createTeamPage.includes("Community"));
+  assert.ok(createTeamPage.includes("HOOMA community"));
+  assert.ok(createTeamPage.includes('href="/hooma/new?after=team-create"'));
+  assert.ok(createTeamPage.includes('get("communityId")'));
   assert.ok(createTeamPage.includes("Team logo / crest URL"));
   assert.ok(createTeamPage.includes("Banner image URL"));
   assert.ok(router.includes('path="/teams/new" element={<CreateTeamPage />}'));
