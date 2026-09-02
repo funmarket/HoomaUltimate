@@ -36,12 +36,12 @@ export const PRIMARY_NAV_ITEMS = [
     },
   },
   {
-    label: "Pitch",
-    href: "/pitch",
+    label: "Athletes",
+    href: "/athletes",
     visual: {
       kind: "image",
-      src: "/navigation/pitch.svg",
-      className: "hooma-bottom-nav__artwork--pitch",
+      src: "/navigation/athletes.svg",
+      className: "hooma-bottom-nav__artwork--athletes",
     },
   },
 ] as const;
