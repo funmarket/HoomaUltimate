@@ -19,10 +19,10 @@ test("Play player cards route to the canonical profile and use real React-owned 
     /profileHref = `\/profile\/\$\{encodeURIComponent\(presentation\.username\)\}`/,
   );
   assert.match(card, /lookingForGame \? onInvite\?\.\(listing\) : onHire\?\.\(listing\)/);
-  assert.match(card, /lookingForGame \? "INVITE" : "HIRE PLAYER"/);
+  assert.match(card, /lookingForGame \? "Invite" : "Offer a spot"/);
   assert.doesNotMatch(card, /aria-disabled="true"/);
   assert.match(card, /disabled=\{actionDisabled\}/);
-  assert.match(card, /<\/a>\s+<div className="play-player-card__action-zone">/);
+  assert.match(card, /<\/a>\s+<button[\s\S]*className=\{`play-player-card__action/);
   assert.doesNotMatch(
     css,
     /\.play-player-card__profile-link\s*\{[^}]*position:\s*absolute[^}]*inset:\s*0/s,
@@ -40,7 +40,7 @@ test("Play player cards route to the canonical profile and use real React-owned 
   assert.match(api, /\/team-offer`/);
   assert.match(api, /\/event-invite`/);
   assert.match(css, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
-  assert.match(css, /@media \(max-width: 720px\)/);
+  assert.match(css, /@media \(max-width: 520px\)/);
   assert.match(router, /path="\/profile\/:username"/);
   assert.match(identityRoutes, /router\.use\("\/profiles", createIdentityProfilePublicRouter/);
 });
