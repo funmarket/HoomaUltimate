@@ -1703,4 +1703,95 @@ Athletes is a separate HOOMA-connected domain using canonical `User`, independen
 
 **Status**
 
-Documentation/ADR foundation started. Implementation, migration, PostgreSQL proof, frontend routes, mobile proof, PR, and CI remain pending.
+PR #213 merged into `phase-0-foundation` as the canonical Athletes domain foundation at merge commit `984f0ce4eb216f50ec3ae7a12a7ea5802481fb45`. Its database, API, contracts, service, repository, authorization, migration, integration tests, and frontend route foundation are no longer pending work.
+
+---
+
+## 2026-09-02 — Athletes mobile visual system merged
+
+**Task**
+Record the post-foundation Athletes mobile-first visual-system pass.
+
+**Foundation**
+
+- Prior Athletes domain foundation merge: `984f0ce4eb216f50ec3ae7a12a7ea5802481fb45`
+- PR: #214 `feat(athletes): introduce mobile-first sport visual system`
+- PR #214 head merged: `523c167f382ae5e282a154ca6aa82286ca91e707`
+- PR #214 merge commit: `7fa8cce1b93705b2c47c33c7510b3fc9bbc1fdc3`
+
+**Status**
+PR #214 is merged and is the canonical first Athletes mobile/sport visual-system pass. The PR changed only `packages/frontend/src/athletes/AthletesPages.tsx` and `packages/frontend/src/athletes/athletes.css`; it did not reopen Athletes API, contracts, auth, repository, Prisma, migrations, routes, or domain architecture.
+
+---
+
+## 2026-09-02 — Athletes mobile runtime presentation hardening
+
+**Task**
+Post-merge runtime/mobile validation and corrective hardening for the merged Athletes UI after PR #214.
+
+**Foundation**
+
+- Starting foundation from PR #214 read-back: `7fa8cce1b93705b2c47c33c7510b3fc9bbc1fdc3`
+- Earlier rechecked `origin/phase-0-foundation`: `dce9ff915c12cc130ee3c6352d9c6514d6d00e06`
+- Current rechecked `origin/phase-0-foundation`: `f864554dd65cd1c9c9c9655fe0bde0c25ca92909`
+- Current foundation includes the semantic positive-token test correction `f864554dd65cd1c9c9c9655fe0bde0c25ca92909` and the Athletes semantic color cascade via `packages/frontend/src/athletes/athletes-semantic.css`, loaded after `athletes.css`. PR #215 was rebased onto this foundation without conflict; the existing Athletes hardening commits were preserved.
+- Branch: `fix/athletes-mobile-runtime-hardening`
+
+**Finding**
+Runtime/source inspection found Athletes create presentation still coupled to Community-owned `.hooma-*` form presentation classes. Athletes compensated with `!important` overrides in its own CSS, creating unnecessary cross-domain CSS ownership coupling and specificity fragility.
+
+**Correction**
+
+- Removed Athletes dependence on Community-owned form presentation/layout classes: `.hooma-create-form`, `.hooma-form-grid`, `.hooma-privacy-choice`, `.hooma-form-actions`, and `.hooma-span-2`.
+- Added Athletes-owned field/layout/choice/action classes for the create surface and scoped the new presentation selectors under `.athletes-page`.
+- Removed the unnecessary Athletes `!important` overrides created by the prior cascade conflict, including the current semantic selected-state overrides that no longer need `!important` because `athletes-semantic.css` loads after `athletes.css`.
+- Preserved native radio controls for sport, visibility, and join-policy choices.
+- Updated the stale permanent bottom-navigation contract expectation from `Pitch` to `Athletes` while leaving Home gateway Pitch expectations unchanged.
+- Kept sport typed as canonical `AthletesSport` and left `visibility`, `joinPolicy`, create payload, routes, authorization, API, contracts, Prisma, migrations, service, and repository unchanged.
+
+**Runtime evidence obtained**
+
+- Rebuilt packages with `npm run build:packages` so the web runtime consumed the changed `@hooma/frontend` dist output.
+- Install-free temporary Playwright runtime outside product dependencies validated the final cascade for `/athletes` and `/athletes/new` at `360px`, `390px`, `430px`, and `1024px`.
+- `/athletes/new` showed no document horizontal scroll at all tested widths; all nine canonical sports rendered; 13 native radios were visible across sport, visibility, and join-policy controls. Selected sport and selected choice computed to green `rgb(163, 230, 53)` from the semantic cascade.
+- Sport switching was verified for `CYCLING`, `RUNNING`, `SWIMMING`, `FOOTBALL`, `BASKETBALL`, `TENNIS`, `PADEL`, `GYM_FITNESS`, and `OTHER`: exactly one sport radio checked, labels activated radios, selected class applied, selected state computed green, hero text updated to the selected sport label, and an unrelated name input stayed preserved while switching.
+- Private visibility selection was verified to force approval-required joining and disable open join.
+- Focus proof showed the focused sport radio's label received a visible lime outline through `:focus-within`.
+- `/athletes` rendered at all tested widths without document-level horizontal scroll or non-scroller overflow; the sport chip rail intentionally scrolls horizontally inside the viewport. The active chip computed to green `rgb(163, 230, 53)`.
+
+**Runtime evidence still unavailable**
+
+- `/athletes` populated-list, long-record, member/join metadata, and read-back create states were not locally proven because no real local API/PostgreSQL environment was running; the observed runtime API calls failed with local connection-refused errors.
+- `/athletes/:athletesCommunityId` real detail states, member/moderator/founder role states, join-request lifecycle, create success/read-back, and API-backed keyboard/state paths remain not locally proven and rely on #213 domain/integration coverage plus CI until a disposable PostgreSQL/API runtime is available.
+- Telegram Mini App runtime was not proven in this environment.
+
+**Files changed**
+
+- `packages/frontend/src/athletes/AthletesPages.tsx`
+- `packages/frontend/src/athletes/athletes.css`
+- `packages/frontend/src/athletes/athletes-semantic.css`
+- `tests/navigation-contract.test.mjs`
+- `progress.md`
+
+**Verification status**
+
+- `npm ci`: passed.
+- `npm run db:generate`: passed.
+- `npm run db:validate`: passed with a local dummy-format `DATABASE_URL`; the first run without `DATABASE_URL` failed at Prisma config resolution, not source validation.
+- `npm run architecture:check`: passed.
+- Changed-file Prettier check for `AthletesPages.tsx`, `athletes.css`, `athletes-semantic.css`, `tests/navigation-contract.test.mjs`, and `progress.md`: passed.
+- Changed-source ESLint for `packages/frontend/src/athletes/AthletesPages.tsx`: passed.
+- `npm run typecheck`: passed.
+- `npm run build:packages`: passed.
+- `npm test`: passed after rebasing onto foundation `f864554dd65cd1c9c9c9655fe0bde0c25ca92909`, where the stale semantic-token zero-drift assertion was corrected.
+- `npm run build`: passed.
+- `npm run deploy:preflight`: passed.
+- `npm run security:check`: passed, 0 production high vulnerabilities.
+- `npm run test:integration`: NOT LOCALLY PROVEN — requires disposable PostgreSQL CI.
+- `npm run db:migrate:status`: NOT LOCALLY PROVEN — requires disposable PostgreSQL CI.
+- PR #215 remains open from `fix/athletes-mobile-runtime-hardening` to `phase-0-foundation`. Local rebase-validation passed through `npm test`, app build, deploy preflight, and security after the foundation semantic-token test correction; exact-head CI is pending after push of the rebased branch.
+
+Mobile/TMA runtime validation must not be marked complete until the missing API-backed and Telegram evidence is actually obtained.
+
+**Next recommended Athletes slice**
+After this corrective PR is reviewed and merged, run a disposable PostgreSQL/API-backed Athletes runtime validation slice for populated hub, create/read-back, detail, role-specific states, and Telegram Mini App viewport proof before starting any new Athletes feature surface.

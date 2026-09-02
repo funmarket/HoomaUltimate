@@ -22,22 +22,22 @@
 }
 
 .athletes-page .athletes-sport-option.is-selected,
-.athletes-create-page .athletes-choice-grid > label.is-selected {
-  border-color: color-mix(in srgb, var(--athletes-positive) 64%, transparent) !important;
+.athletes-page .athletes-choice-option.is-selected {
+  border-color: color-mix(in srgb, var(--athletes-positive) 64%, transparent);
   background:
     linear-gradient(
       180deg,
       color-mix(in srgb, var(--athletes-positive) 8%, transparent),
       color-mix(in srgb, var(--athletes-positive) 2%, transparent)
     ),
-    rgba(8, 9, 10, 0.9) !important;
+    rgba(8, 9, 10, 0.9);
   color: var(--athletes-positive);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.055),
-    0 2px 0 color-mix(in srgb, var(--athletes-positive) 14%, transparent) !important;
+    0 2px 0 color-mix(in srgb, var(--athletes-positive) 14%, transparent);
 }
 
-.athletes-create-page .athletes-choice-grid > label.is-selected strong {
+.athletes-page .athletes-choice-option.is-selected strong {
   color: var(--athletes-positive);
 }
 

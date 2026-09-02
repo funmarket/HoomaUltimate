@@ -217,7 +217,8 @@
 .athletes-sport-option:focus-within,
 .athletes-mini-action:focus-visible,
 .athletes-page input:focus-visible,
-.athletes-page textarea:focus-visible {
+.athletes-page textarea:focus-visible,
+.athletes-page .athletes-choice-option:focus-within {
   outline: 2px solid var(--athletes-lime);
   outline-offset: 3px;
 }
@@ -467,23 +468,30 @@
   padding: 1rem;
 }
 
-.athletes-form-grid {
-  grid-template-columns: minmax(0, 1fr) !important;
-  gap: 0.85rem !important;
+.athletes-page .athletes-form-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.85rem;
 }
 
-.athletes-create-page .field {
+.athletes-page .athletes-span-2 {
+  grid-column: 1 / -1;
+}
+
+.athletes-page .athletes-field {
+  display: grid;
   min-width: 0;
+  gap: 0.45rem;
 }
 
-.athletes-create-page .field > span {
+.athletes-page .athletes-field > span {
   color: rgba(255, 255, 255, 0.75);
   font-size: 0.82rem;
   font-weight: 760;
 }
 
-.athletes-create-page .field input,
-.athletes-create-page .field textarea,
+.athletes-page .athletes-field input,
+.athletes-page .athletes-field textarea,
 .athletes-inline-form input {
   width: 100%;
   min-height: 3rem;
@@ -494,26 +502,26 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
 }
 
-.athletes-create-page .field textarea {
+.athletes-page .athletes-field textarea {
   min-height: 7rem;
   resize: vertical;
 }
 
-.athletes-create-page .field input::placeholder,
-.athletes-create-page .field textarea::placeholder,
+.athletes-page .athletes-field input::placeholder,
+.athletes-page .athletes-field textarea::placeholder,
 .athletes-inline-form input::placeholder {
   color: rgba(255, 255, 255, 0.34);
 }
 
-.athletes-create-page .field input:focus,
-.athletes-create-page .field textarea:focus,
+.athletes-page .athletes-field input:focus,
+.athletes-page .athletes-field textarea:focus,
 .athletes-inline-form input:focus {
   border-color: rgba(163, 230, 53, 0.62);
   background: rgba(163, 230, 53, 0.025);
 }
 
 .athletes-sport-picker,
-.athletes-choice-grid {
+.athletes-page .athletes-choice-grid {
   min-width: 0;
   margin: 0;
   padding: 0;
@@ -559,11 +567,12 @@
 }
 
 .athletes-sport-option input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
+  position: relative;
+  z-index: 2;
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--athletes-lime);
 }
 
 .athletes-sport-option__motif {
@@ -585,31 +594,49 @@
     0 2px 0 rgba(243, 207, 98, 0.12);
 }
 
-.athletes-choice-grid {
+.athletes-page .athletes-choice-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) !important;
-  gap: 0.6rem !important;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.6rem;
 }
 
-.athletes-create-page .athletes-choice-grid > label {
+.athletes-page .athletes-choice-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.7rem;
   min-width: 0;
   min-height: 4.25rem;
-  border: 1px solid var(--athletes-border) !important;
-  border-radius: 1rem !important;
-  background: rgba(255, 255, 255, 0.018) !important;
-  box-shadow: none !important;
+  padding: 0.8rem;
+  color: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  border: 1px solid var(--athletes-border);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.018);
+  box-shadow: none;
 }
 
-.athletes-create-page .athletes-choice-grid > label.is-selected {
-  border-color: rgba(243, 207, 98, 0.58) !important;
-  background: linear-gradient(
-    180deg,
-    rgba(243, 207, 98, 0.055),
-    rgba(255, 145, 61, 0.018)
-  ) !important;
+.athletes-page .athletes-choice-option:has(input:disabled) {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.athletes-page .athletes-choice-option input {
+  accent-color: var(--athletes-lime);
+}
+
+.athletes-page .athletes-choice-option span {
+  display: grid;
+  min-width: 0;
+  gap: 0.15rem;
+}
+
+.athletes-page .athletes-choice-option.is-selected {
+  border-color: rgba(243, 207, 98, 0.58);
+  background: linear-gradient(180deg, rgba(243, 207, 98, 0.055), rgba(255, 145, 61, 0.018));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.045),
-    0 2px 0 rgba(243, 207, 98, 0.09) !important;
+    0 2px 0 rgba(243, 207, 98, 0.09);
 }
 
 .athletes-create-page .athletes-choice-grid strong {
@@ -620,10 +647,10 @@
   color: rgba(255, 255, 255, 0.48);
 }
 
-.athletes-form-actions {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) !important;
-  gap: 0.7rem !important;
+.athletes-page .athletes-form-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.7rem;
 }
 
 .athletes-join-panel {
@@ -723,7 +750,7 @@
 
 .athletes-request-actions {
   width: 100%;
-  display: grid !important;
+  display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.55rem;
 }
@@ -935,20 +962,20 @@
     padding: 1.25rem;
   }
 
-  .athletes-form-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  .athletes-page .athletes-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .athletes-sport-picker__grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .athletes-choice-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  .athletes-page .athletes-choice-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .athletes-form-actions {
-    grid-template-columns: auto auto !important;
+  .athletes-page .athletes-form-actions {
+    grid-template-columns: auto auto;
     justify-content: end;
   }
 
@@ -963,7 +990,7 @@
 
   .athletes-request-actions {
     width: auto;
-    display: flex !important;
+    display: flex;
   }
 }
 
