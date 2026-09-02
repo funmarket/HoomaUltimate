@@ -14,7 +14,22 @@
   --app-text-caption: #c8c3b8;
   --app-gold: #e8c36a;
   --app-gold-dim: #b8953a;
-  --app-lime: #c6f25a;
+
+  /*
+   * HOOMA semantic color contract.
+   * Positive / active / success / healthy counts -> green.
+   * People identity / usernames / member and role states -> people blue.
+   * Warning / caution / attention -> orange.
+   * Destructive / error -> red.
+   * Gold remains a brand/title accent and must not communicate state.
+   */
+  --app-positive: #a3e635;
+  --app-people-blue: #58bfff;
+  --app-warning: #ff913d;
+  --app-danger: #ff6b61;
+
+  /* Backward-compatible alias while older surfaces migrate to semantic tokens. */
+  --app-lime: var(--app-positive);
   --app-line: rgba(232, 195, 106, 0.28);
   --app-line-strong: rgba(232, 195, 106, 0.42);
 }
@@ -29,7 +44,11 @@
   --app-text-caption: #70736a;
   --app-gold: #8d7436;
   --app-gold-dim: #8d7436;
-  --app-lime: #718415;
+  --app-positive: #557300;
+  --app-people-blue: #006f9e;
+  --app-warning: #b94b00;
+  --app-danger: #b42318;
+  --app-lime: var(--app-positive);
   --app-line: rgba(24, 25, 21, 0.22);
   --app-line-strong: rgba(24, 25, 21, 0.34);
 }
@@ -44,7 +63,11 @@
   --app-text-caption: #c8c3b8;
   --app-gold: #e8c36a;
   --app-gold-dim: #b8953a;
-  --app-lime: #c6f25a;
+  --app-positive: #a3e635;
+  --app-people-blue: #58bfff;
+  --app-warning: #ff913d;
+  --app-danger: #ff6b61;
+  --app-lime: var(--app-positive);
   --app-line: rgba(232, 195, 106, 0.28);
   --app-line-strong: rgba(232, 195, 106, 0.42);
 }
@@ -123,4 +146,27 @@ small,
 
 .eyebrow {
   color: var(--app-gold);
+}
+
+/* Shared semantic state utilities for every product surface. */
+.semantic-positive {
+  color: var(--app-positive);
+}
+
+.semantic-person {
+  color: var(--app-people-blue);
+}
+
+.semantic-warning {
+  color: var(--app-warning);
+}
+
+.semantic-danger {
+  color: var(--app-danger);
+}
+
+.success-box {
+  border-color: color-mix(in srgb, var(--app-positive) 42%, transparent);
+  background: color-mix(in srgb, var(--app-positive) 7%, var(--app-surface));
+  color: var(--app-positive);
 }
