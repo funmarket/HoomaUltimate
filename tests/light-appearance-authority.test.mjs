@@ -21,8 +21,8 @@ test("legacy global CSS no longer owns the application color scheme", async () =
   const css = await readFile(legacyCss, "utf8");
   const root = css.match(/:root\s*\{([\s\S]*?)\}/)?.[1] ?? "";
 
-  assert.doesNotMatch(root, /\bcolor\s*:/);
-  assert.doesNotMatch(root, /\bbackground\s*:/);
+  assert.doesNotMatch(root, /color\s*:/);
+  assert.doesNotMatch(root, /background\s*:/);
   assert.match(root, /--shell-inline:\s*clamp\(12px, 6vw, 24px\)/);
   assert.match(css, /\.panel\s*\{[\s\S]*border:\s*1px solid var\(--app-line-strong\)/);
   assert.match(css, /\.panel\s*\{[\s\S]*background:\s*var\(--app-surface\)/);
@@ -57,15 +57,14 @@ test("top account chrome stays dark and owns safe-area spacing", async () => {
   assert.match(css, /\.hooma-account-menu\s*\{[\s\S]*color:\s*var\(--hooma-chrome-text\)/);
 });
 
-test("light profile sections use page text while the branded profile hero remains dark", async () => {
+test("light profile sections preserve the current dark HOOMA Passport architecture", async () => {
   const css = await readFile(profileCss, "utf8");
 
-  assert.match(
-    css,
-    /\.public-profile-hero\s*\{[\s\S]*linear-gradient\(145deg, #0a1117, #040709 68%\)/,
-  );
-  assert.match(
-    css,
-    /:root\[data-theme="light"\] \.public-profile-teams h2,[\s\S]*color:\s*var\(--app-text-strong\)/,
-  );
+  assert.doesNotMatch(css, /\.public-profile-hero/);
+  assert.match(css, /\.hooma-passport-card\s*\{[\s\S]*background:\s*#070808/);
+  assert.match(css, /\.hooma-passport-card h1\s*\{[\s\S]*color:\s*#fff/);
+  assert.match(css, /\.hooma-passport-card__handle\s*\{[\s\S]*color:\s*#5ce1ff/);
+  assert.match(css, /\.hooma-passport-card__ovr\s*\{[\s\S]*color:\s*#ffd200/);
+  assert.match(css, /\.hooma-passport-stats\s*\{[\s\S]*background:\s*#0b0b0b/);
+  assert.match(css, /\.public-profile-contact button\s*\{[\s\S]*color:\s*#b8ff2a/);
 });
