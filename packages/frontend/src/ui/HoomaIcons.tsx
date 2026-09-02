@@ -31,6 +31,20 @@ export function CalendarIcon(props: IconProps) {
   );
 }
 
+export function CalendarPlusIcon(props: IconProps) {
+  return (
+    <SvgIcon {...props}>
+      <rect x="4" y="5.5" width="16" height="14" rx="2" stroke="currentColor" strokeWidth="1.7" />
+      <path
+        d="M7.5 3.5v4M16.5 3.5v4M4 9h16M12 11.8v4.6M9.7 14.1h4.6"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </SvgIcon>
+  );
+}
+
 export function PinIcon(props: IconProps) {
   return (
     <SvgIcon {...props}>
