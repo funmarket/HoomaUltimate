@@ -19,6 +19,7 @@ import "./rides/rides-mobile.css";
 import "./rides/ride-hero-actions-google.css";
 import "./watch/watch.css";
 import "./watch/watch-section-actions.css";
+import "./events/play-game-card.css";
 
 export * from "./api";
 export * from "./auth-login-methods";
