@@ -39,9 +39,9 @@ export const PRIMARY_NAV_ITEMS = [
     label: "Athletes",
     href: "/athletes",
     visual: {
-      kind: "image",
+      kind: "mask",
       src: "/navigation/athletes.svg",
-      className: "hooma-bottom-nav__artwork--athletes",
+      className: "hooma-bottom-nav__mask--athletes",
     },
   },
 ] as const;
