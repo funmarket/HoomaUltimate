@@ -103,6 +103,11 @@
   height: 30px;
 }
 
+.hooma-bottom-nav__mask--athletes {
+  width: 33px;
+  height: 29px;
+}
+
 .hooma-bottom-nav__artwork {
   display: block;
   max-width: 100%;
@@ -115,11 +120,6 @@
 .hooma-bottom-nav__artwork--hooma {
   width: 40px;
   height: 40px;
-}
-
-.hooma-bottom-nav__artwork--athletes {
-  width: 33px;
-  height: 29px;
 }
 
 .hooma-bottom-nav__item--hooma .hooma-bottom-nav__icon-shell {
