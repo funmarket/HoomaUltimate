@@ -74,7 +74,9 @@ export function PickupMatchCard(props: PickupMatchCardProps) {
           {props.capacity ? ` / ${props.capacity}` : ""} going
         </span>
       </div>
-      <div className="pickup-match-card-cta">View match →</div>
+      <div className="pickup-match-card-cta" hidden>
+        View match
+      </div>
     </a>
   );
 }
