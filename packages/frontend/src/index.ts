@@ -1,6 +1,7 @@
 import "./communities/community-media.css";
 import "./communities/community-membership.css";
 import "./communities/hooma-domain-links.css";
+import "./communities/hooma-page-semantic.css";
 import "./teams/team-media.css";
 import "./teams/coach-control-room.css";
 import "./teams/team-offers.css";
