@@ -52,30 +52,33 @@ function UsersIcon() {
 export function PickupMatchCard(props: PickupMatchCardProps) {
   return (
     <a className="pickup-match-card-pro" href={props.href}>
+      <span className="pickup-match-card-pro__pitch-mark" aria-hidden="true" />
       <div className="pickup-match-card-top">
-        <span>{props.format?.replaceAll("_", " ") || "Pickup"}</span>
+        <span className="pickup-match-card-format">
+          {props.format?.replaceAll("_", " ") || "Pickup"}
+        </span>
         <strong>{props.title}</strong>
         <small>{props.communityName}</small>
       </div>
-      <div className="pickup-match-card-meta">
-        <span>
+      <div className="pickup-match-card-meta" aria-label="Match essentials">
+        <span className="pickup-match-card-meta__date">
           <CalendarIcon />
           {props.dateLabel}
         </span>
         {props.venueName ? (
-          <span>
+          <span className="pickup-match-card-meta__venue">
             <PinIcon />
             {props.venueName}
           </span>
         ) : null}
-        <span>
+        <span className="pickup-match-card-meta__going">
           <UsersIcon />
           {props.goingCount}
           {props.capacity ? ` / ${props.capacity}` : ""} going
         </span>
       </div>
-      <div className="pickup-match-card-cta" hidden>
-        View match
+      <div className="pickup-match-card-cta">
+        <span>Match page</span>
       </div>
     </a>
   );
