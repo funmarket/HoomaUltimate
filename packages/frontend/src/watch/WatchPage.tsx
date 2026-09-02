@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { WatchEventKind } from "@hooma/contracts";
 import type { PublicEvent } from "../events/api";
 import { useEventApi } from "../events/useEventApi";
-import { CalendarIcon, PinIcon } from "../ui/HoomaIcons";
+import { CalendarIcon, CalendarPlusIcon, PinIcon } from "../ui/HoomaIcons";
 import { CulturalEventCard } from "./CulturalEventCard";
 import { WatchTicket } from "./WatchTicket";
 
@@ -178,7 +178,7 @@ export function WatchPage() {
           <span>Spots</span>
         </a>
         <a className="watch-section-action" href={`/events/new?type=WATCH&kind=${kind}`}>
-          <CalendarIcon size={28} className="watch-section-action__icon" />
+          <CalendarPlusIcon size={28} className="watch-section-action__icon" />
           <span>Create Event</span>
         </a>
         <a className="watch-section-action" href="/places/new">
