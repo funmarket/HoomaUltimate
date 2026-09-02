@@ -8,7 +8,7 @@
   gap: 6px;
   color: var(--hooma-text, #f2ead7);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .profile-edit-form input,
@@ -29,11 +29,12 @@
 
 .profile-edit-form button {
   width: fit-content;
-  border: 1px solid #8c7b4f;
+  border: 1px solid #b8ff2a;
   border-radius: 999px;
-  background: #b8ff2a;
-  color: #070808;
-  font-weight: 800;
+  background: transparent;
+  color: #b8ff2a;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-weight: 500;
   padding: 10px 14px;
   cursor: pointer;
 }
@@ -57,7 +58,7 @@
 .profile-player-fields legend {
   padding: 0 6px;
   color: var(--hooma-text, #f2ead7);
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .profile-identity-options,
@@ -92,20 +93,24 @@
 .public-profile-identities span {
   display: inline-flex;
   align-items: center;
-  min-height: 28px;
-  padding: 5px 10px;
+  min-height: 26px;
+  padding: 4px 10px;
   border: 1px solid #22e35a;
   border-radius: 999px;
   background: transparent;
   color: #22e35a;
-  font-size: 12px;
-  font-weight: 800;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
-.public-profile-identities span[data-identity="PLAYER"] {
-  background: #22e35a;
+.public-profile-identities span[data-identity="PLAYER"],
+.profile-identity-badges span[data-identity="PLAYER"] {
+  background: transparent;
   border-color: #22e35a;
-  color: #06110a;
+  color: #22e35a;
 }
 
 .public-profile-identities span[data-identity="FAN"] {
@@ -131,80 +136,83 @@
 .profile-gamer-note a {
   width: fit-content;
   color: #b8ff2a;
-  font-weight: 800;
+  font-weight: 500;
 }
 
 .public-profile-page,
 .profile-page {
   display: grid;
-  gap: 16px;
+  gap: 12px;
 }
 
 .hooma-passport-card {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(140px, 46%);
-  min-height: 280px;
+  grid-template-columns: minmax(0, 1fr) 42%;
+  min-height: 210px;
+  max-height: 260px;
   overflow: hidden;
-  border: 1px solid #1c1c1c;
+  border: 1px solid #222;
   border-radius: 16px;
   background: #070808;
 }
 
 .hooma-passport-card__copy {
-  padding: 20px 18px 18px;
-  align-self: end;
+  min-width: 0;
+  padding: 14px 12px 12px 14px;
+  align-self: center;
 }
 
 .hooma-passport-card__kicker {
-  margin: 0;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.16em;
+  display: none;
 }
 
 .hooma-passport-card h1 {
-  margin: 8px 0 0;
+  margin: 0;
   color: #fff;
-  font-size: clamp(48px, 16vw, 84px);
-  line-height: 0.82;
-  letter-spacing: -0.06em;
+  font-size: 44px;
+  line-height: 0.86;
+  letter-spacing: -0.05em;
   text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .hooma-passport-card__handle {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   color: #5ce1ff;
-  font-size: 18px;
-  font-weight: 800;
+  font-size: 15px;
+  font-weight: 500;
 }
 
 .hooma-passport-card__ovr {
-  margin: 14px 0 0;
+  margin: 10px 0 0;
   color: #ffd200;
-  font-size: clamp(56px, 18vw, 92px);
-  font-weight: 900;
-  line-height: 0.8;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 0.9;
 }
 
 .hooma-passport-card__pos {
-  margin: 8px 0 12px;
+  margin: 4px 0 8px;
   color: #ff6a00;
-  font-size: 18px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .hooma-passport-card__photo {
-  min-height: 280px;
+  min-width: 0;
+  min-height: 210px;
+  max-height: 260px;
   display: grid;
   place-items: center;
   overflow: hidden;
   background: #101010;
   color: #fff;
-  font-size: 84px;
-  font-weight: 900;
+  font-size: 56px;
+  font-weight: 700;
 }
 
 .hooma-passport-card__photo img {
@@ -217,28 +225,44 @@
 .hooma-passport-stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid #2a2a2a;
+  border-radius: 14px;
+  background: #0b0b0b;
 }
 
 .hooma-passport-stats > div {
   display: grid;
   gap: 4px;
-  padding: 12px 10px;
-  border: 1px solid #222;
-  border-radius: 12px;
-  background: #0b0b0b;
+  min-width: 0;
+  padding: 10px 8px;
+  border: 0;
+  border-right: 1px solid #2a2a2a;
+  border-radius: 0;
+  background: transparent;
+}
+
+.hooma-passport-stats > div:last-child {
+  border-right: 0;
 }
 
 .hooma-passport-stats span {
   color: #9a9a9a;
-  font-size: 10px;
-  font-weight: 800;
+  font-size: 9px;
+  font-weight: 500;
   letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .hooma-passport-stats strong {
-  font-size: 15px;
-  font-weight: 900;
+  min-width: 0;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .hooma-passport-stats .is-yellow {
@@ -256,13 +280,15 @@
 .public-profile-bio {
   margin: 0;
   color: #e8e8e8;
-  line-height: 1.55;
+  line-height: 1.5;
 }
 
+.public-profile-teams .eyebrow,
 .public-profile-teams h2,
-.public-profile-contact h2 {
-  margin: 4px 0 0;
-  color: #fff;
+.public-profile-contact .eyebrow,
+.public-profile-contact h2,
+.public-profile-contact .muted {
+  display: none;
 }
 
 .public-profile-team-list {
@@ -276,19 +302,23 @@
   grid-template-columns: 42px minmax(0, 1fr) auto;
   column-gap: 10px;
   align-items: center;
-  padding: 12px;
-  border: 1px solid #222;
-  border-radius: 12px;
+  padding: 10px 12px;
+  border: 1px solid #2a2a2a;
+  border-radius: 14px;
   background: #0b0b0b;
   color: #fff;
   text-decoration: none;
 }
 
 .public-profile-team-list a > span:last-child {
+  border: 1px solid #22e35a;
+  border-radius: 999px;
   color: #22e35a;
+  font-family: system-ui, -apple-system, sans-serif;
   font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  padding: 5px 10px;
 }
 
 .public-profile-team-badge {
@@ -299,7 +329,7 @@
   overflow: hidden;
   border-radius: 50%;
   background: #111;
-  font-weight: 900;
+  font-weight: 600;
 }
 
 .public-profile-team-badge img {
@@ -309,7 +339,22 @@
 }
 
 .public-profile-contact {
-  border-color: rgba(184, 255, 42, 0.24);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.public-profile-contact button {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid #b8ff2a;
+  border-radius: 999px;
+  background: transparent;
+  color: #b8ff2a;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  font-weight: 500;
 }
 
 .public-profile-state {
@@ -322,17 +367,17 @@
   color: #5ce1ff;
 }
 
-@media (max-width: 760px) {
+@media (min-width: 760px) {
   .hooma-passport-card {
-    grid-template-columns: 1fr;
+    min-height: 280px;
+    max-height: none;
   }
 
-  .hooma-passport-card__photo {
-    min-height: 240px;
-    order: -1;
+  .hooma-passport-card h1 {
+    font-size: 64px;
   }
 
-  .hooma-passport-stats {
-    grid-template-columns: 1fr;
+  .hooma-passport-card__ovr {
+    font-size: 56px;
   }
 }
