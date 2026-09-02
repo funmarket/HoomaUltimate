@@ -40,7 +40,8 @@ test("explicit dark inherits the identical root app palette instead of redeclari
   assert.match(theme, /:root\s*\{[\s\S]*--app-bg-raised:\s*#121212/);
   assert.match(theme, /:root\s*\{[\s\S]*--app-text:\s*#f4f1ea/);
   assert.match(theme, /:root\s*\{[\s\S]*--app-gold:\s*#e8c36a/);
-  assert.match(theme, /:root\s*\{[\s\S]*--app-lime:\s*#c6f25a/);
+  assert.match(theme, /:root\s*\{[\s\S]*--app-positive:\s*#a3e635/);
+  assert.match(theme, /:root\s*\{[\s\S]*--app-lime:\s*var\(--app-positive\)/);
   assert.doesNotMatch(theme, /:root\[data-appearance="dark"\]\s*\{/);
 });
 
