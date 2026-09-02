@@ -1,0 +1,80 @@
+.athletes-page {
+  --athletes-positive: var(--app-positive, #a3e635);
+  --athletes-people: var(--app-people-blue, #58bfff);
+  --athletes-warning: var(--app-warning, #ff913d);
+  --athletes-danger-semantic: var(--app-danger, #ff6b61);
+}
+
+/* Active/selected state is always positive green. */
+.athletes-page .athletes-sport-chips button.is-active {
+  border-color: color-mix(in srgb, var(--athletes-positive) 72%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--athletes-positive) 9%, transparent),
+      color-mix(in srgb, var(--athletes-positive) 3%, transparent)
+    ),
+    rgba(255, 255, 255, 0.025);
+  color: var(--athletes-positive);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.055),
+    0 2px 0 color-mix(in srgb, var(--athletes-positive) 16%, transparent);
+}
+
+.athletes-page .athletes-sport-option.is-selected,
+.athletes-create-page .athletes-choice-grid > label.is-selected {
+  border-color: color-mix(in srgb, var(--athletes-positive) 64%, transparent) !important;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--athletes-positive) 8%, transparent),
+      color-mix(in srgb, var(--athletes-positive) 2%, transparent)
+    ),
+    rgba(8, 9, 10, 0.9) !important;
+  color: var(--athletes-positive);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.055),
+    0 2px 0 color-mix(in srgb, var(--athletes-positive) 14%, transparent) !important;
+}
+
+.athletes-create-page .athletes-choice-grid > label.is-selected strong {
+  color: var(--athletes-positive);
+}
+
+/* Positive counts and active-section language use green, never warning orange. */
+.athletes-detail-page .athletes-section-heading h2 {
+  color: var(--athletes-positive);
+}
+
+.athletes-page .athletes-section-count {
+  border-color: color-mix(in srgb, var(--athletes-positive) 44%, transparent);
+  background: color-mix(in srgb, var(--athletes-positive) 8%, transparent);
+  color: var(--athletes-positive);
+}
+
+/* People identity and membership/role states use the people-blue family. */
+.athletes-page .athletes-role,
+.athletes-page .athletes-member-role {
+  border-color: color-mix(in srgb, var(--athletes-people) 42%, transparent);
+  background: color-mix(in srgb, var(--athletes-people) 8%, transparent);
+  color: var(--athletes-people);
+}
+
+.athletes-page .athletes-member-row strong,
+.athletes-page .athletes-member-row small {
+  color: var(--athletes-people);
+}
+
+.athletes-page .athletes-member-row small {
+  opacity: 0.72;
+}
+
+/* Orange is reserved for warning/attention, not healthy or active state. */
+.athletes-page .athletes-action--attention {
+  --athletes-action-accent: var(--athletes-warning);
+}
+
+.athletes-page .athletes-mini-action--decline {
+  border-color: color-mix(in srgb, var(--athletes-danger-semantic) 42%, transparent);
+  color: var(--athletes-danger-semantic);
+}
