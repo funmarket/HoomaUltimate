@@ -40,7 +40,7 @@ export const PRIMARY_NAV_ITEMS = [
     href: "/athletes",
     visual: {
       kind: "mask",
-      src: "/navigation/athletes.svg",
+      src: "/navigation/athletes-jumping-man.svg",
       className: "hooma-bottom-nav__mask--athletes",
     },
   },
