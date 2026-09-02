@@ -87,7 +87,11 @@ export function PickupMatchCard(props: PickupMatchCardProps) {
         <strong>{props.title}</strong>
         <small>{props.communityName}</small>
       </div>
-      <div className="pickup-match-card-meta" aria-label="Match essentials" style={{ fontSize: "16px" }}>
+      <div
+        className="pickup-match-card-meta"
+        aria-label="Match essentials"
+        style={{ fontSize: "16px" }}
+      >
         <span className="pickup-match-card-meta__date">
           <CalendarIcon color={playYellow} />
           {props.dateLabel}
@@ -98,7 +102,10 @@ export function PickupMatchCard(props: PickupMatchCardProps) {
             {props.venueName}
           </span>
         ) : null}
-        <span className="pickup-match-card-meta__going" style={{ color: "rgba(246, 243, 232, 0.84)" }}>
+        <span
+          className="pickup-match-card-meta__going"
+          style={{ color: "rgba(246, 243, 232, 0.84)" }}
+        >
           <UsersIcon color={playYellow} />
           <strong style={{ color: goingCurrent }}>{props.goingCount}</strong>
           {props.capacity ? (
