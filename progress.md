@@ -1099,7 +1099,7 @@ Current implementation status after foundation update `dfda56bc80009059680cd7723
 
 - Preserved the uncommitted Athletes Whistle work with a stash/reapply workflow and rebased `feat/athletes-whistle` onto current `origin/phase-0-foundation` at `dfda56bc80009059680cd77237478cc8c197951b` (Ride presentation-only foundation commit).
 - Open PR list at rebase time remained empty; incoming foundation file was `packages/frontend/src/rides/RideGatewayPage.tsx`, with no overlap against Athletes Whistle files.
-- Added `ATHLETES` to canonical `WhistleContextType` and kept the migration minimal: `ALTER TYPE "WhistleContextType" ADD VALUE IF NOT EXISTS ATHLETES;`.
+- Added `ATHLETES` to canonical `WhistleContextType` and kept the migration minimal: `ALTER TYPE "WhistleContextType" ADD VALUE IF NOT EXISTS 'ATHLETES';`.
 - No CSS/styling files are changed by Athletes Whistle.
 - Rebase validation passed: `npm run db:generate`, `npm run db:validate`, `npm run architecture:check`, `npm run typecheck`, `npm run build:packages`, focused Whistle/Athletes unit tests, changed-file Prettier, changed-source ESLint, `git diff --check`, `npm run build`, `npm run deploy:preflight`, and `npm run security:check`.
 - `npm test` now fails only on two Ride mobile hub visual assertions introduced by the unrelated Ride foundation commit; the same focused Ride visual test fails on a detached clean current foundation worktree at `dfda56bc80009059680cd77237478cc8c197951b`, so it is recorded as a separate foundation issue and not an Athletes Whistle blocker.
