@@ -31,8 +31,8 @@
   width: fit-content;
   border: 1px solid #8c7b4f;
   border-radius: 999px;
-  background: var(--hooma-accent, #c4dc43);
-  color: #12120f;
+  background: #b8ff2a;
+  color: #070808;
   font-weight: 800;
   padding: 10px 14px;
   cursor: pointer;
@@ -93,13 +93,29 @@
   display: inline-flex;
   align-items: center;
   min-height: 28px;
-  padding: 5px 9px;
-  border: 1px solid var(--hooma-border, #6d624a);
+  padding: 5px 10px;
+  border: 1px solid #22e35a;
   border-radius: 999px;
-  background: var(--hooma-surface-strong, #0e0e0c);
-  color: var(--hooma-text, #f2ead7);
+  background: transparent;
+  color: #22e35a;
   font-size: 12px;
   font-weight: 800;
+}
+
+.public-profile-identities span[data-identity="PLAYER"] {
+  background: #22e35a;
+  border-color: #22e35a;
+  color: #06110a;
+}
+
+.public-profile-identities span[data-identity="FAN"] {
+  border-color: #5ce1ff;
+  color: #5ce1ff;
+}
+
+.public-profile-identities span[data-identity="GAMER"] {
+  border-color: #ff6a00;
+  color: #ff6a00;
 }
 
 .profile-gamer-note,
@@ -114,163 +130,175 @@
 
 .profile-gamer-note a {
   width: fit-content;
-  color: var(--hooma-accent, #c4dc43);
+  color: #b8ff2a;
   font-weight: 800;
 }
 
-.public-profile-page {
+.public-profile-page,
+.profile-page {
   display: grid;
-  gap: 18px;
+  gap: 16px;
 }
 
-.public-profile-hero {
-  position: relative;
+.hooma-passport-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(140px, 46%);
+  min-height: 280px;
   overflow: hidden;
-  display: grid;
-  grid-template-columns: minmax(180px, 32%) 1fr;
-  min-height: 360px;
-  border: 1px solid rgba(203, 159, 57, 0.55);
-  border-radius: 18px;
-  background:
-    linear-gradient(115deg, rgba(31, 189, 230, 0.09), transparent 35%),
-    linear-gradient(145deg, #0a1117, #040709 68%);
-  box-shadow: inset 0 0 0 1px rgba(54, 183, 221, 0.08);
+  border: 1px solid #1c1c1c;
+  border-radius: 16px;
+  background: #070808;
 }
 
-.public-profile-hero::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 8%;
-  width: 34%;
-  height: 6px;
-  background: linear-gradient(90deg, #1ec8e8, #8a73ff, #c79a2b);
-  opacity: 0.75;
-  transform: skewX(-28deg);
+.hooma-passport-card__copy {
+  padding: 20px 18px 18px;
+  align-self: end;
 }
 
-.public-profile-photo {
-  min-height: 360px;
+.hooma-passport-card__kicker {
+  margin: 0;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.hooma-passport-card h1 {
+  margin: 8px 0 0;
+  color: #fff;
+  font-size: clamp(48px, 16vw, 84px);
+  line-height: 0.82;
+  letter-spacing: -0.06em;
+  text-transform: uppercase;
+}
+
+.hooma-passport-card__handle {
+  margin: 8px 0 0;
+  color: #5ce1ff;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.hooma-passport-card__ovr {
+  margin: 14px 0 0;
+  color: #ffd200;
+  font-size: clamp(56px, 18vw, 92px);
+  font-weight: 900;
+  line-height: 0.8;
+}
+
+.hooma-passport-card__pos {
+  margin: 8px 0 12px;
+  color: #ff6a00;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hooma-passport-card__photo {
+  min-height: 280px;
   display: grid;
   place-items: center;
   overflow: hidden;
-  border-right: 1px solid rgba(54, 183, 221, 0.18);
-  background: radial-gradient(circle at 50% 42%, rgba(54, 183, 221, 0.19), transparent 52%);
-  color: #dff8ff;
-  font-size: clamp(80px, 14vw, 160px);
-  font-weight: 950;
+  background: #101010;
+  color: #fff;
+  font-size: 84px;
+  font-weight: 900;
 }
 
-.public-profile-photo img {
+.hooma-passport-card__photo img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center top;
 }
 
-.public-profile-copy {
-  align-self: end;
-  padding: clamp(28px, 5vw, 58px);
+.hooma-passport-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
 }
 
-.public-profile-copy h1 {
-  margin: 7px 0 4px;
-  color: #f5f2ea;
-  font-size: clamp(38px, 7vw, 72px);
-  line-height: 0.9;
-  letter-spacing: -0.045em;
+.hooma-passport-stats > div {
+  display: grid;
+  gap: 4px;
+  padding: 12px 10px;
+  border: 1px solid #222;
+  border-radius: 12px;
+  background: #0b0b0b;
 }
 
-.public-profile-username {
-  margin: 0;
-  color: #9fb3c3;
-  font-size: 18px;
+.hooma-passport-stats span {
+  color: #9a9a9a;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
 }
 
-.public-profile-identities {
-  margin-top: 14px;
+.hooma-passport-stats strong {
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.hooma-passport-stats .is-yellow {
+  color: #ffd200;
+}
+
+.hooma-passport-stats .is-orange {
+  color: #ff6a00;
+}
+
+.hooma-passport-stats .is-green {
+  color: #22e35a;
 }
 
 .public-profile-bio {
-  max-width: 62ch;
-  margin: 20px 0 0;
-  color: #d6d0c3;
-  line-height: 1.65;
+  margin: 0;
+  color: #e8e8e8;
+  line-height: 1.55;
 }
 
-.public-profile-player,
-.public-profile-teams,
-.public-profile-contact,
-.public-profile-state {
-  display: grid;
-  gap: 14px;
-}
-
-.public-profile-player h2,
 .public-profile-teams h2,
 .public-profile-contact h2 {
   margin: 4px 0 0;
-  color: #f2ead7;
-}
-
-.public-profile-player-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.public-profile-player-grid > div {
-  display: grid;
-  gap: 5px;
-  padding: 12px;
-  border: 1px solid var(--hooma-border, #403927);
-  border-radius: 12px;
-  background: var(--hooma-surface-strong, #0b0e0e);
-}
-
-.public-profile-player-grid span {
-  color: var(--hooma-text-muted, #bfb59a);
-  font-size: 12px;
+  color: #fff;
 }
 
 .public-profile-team-list {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
 
 .public-profile-team-list a {
   min-width: 0;
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
+  grid-template-columns: 42px minmax(0, 1fr) auto;
   column-gap: 10px;
   align-items: center;
   padding: 12px;
-  border: 1px solid #403927;
+  border: 1px solid #222;
   border-radius: 12px;
-  background: #0b0e0e;
-  color: #f2ead7;
+  background: #0b0b0b;
+  color: #fff;
   text-decoration: none;
 }
 
 .public-profile-team-list a > span:last-child {
-  grid-column: 2;
-  color: #35c8e9;
+  color: #22e35a;
   font-size: 11px;
   font-weight: 900;
-  text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
 .public-profile-team-badge {
-  grid-row: 1 / span 2;
   width: 42px;
   height: 42px;
   display: grid;
   place-items: center;
   overflow: hidden;
-  border: 1px solid rgba(196, 220, 67, 0.35);
   border-radius: 50%;
-  background: #101310;
+  background: #111;
   font-weight: 900;
 }
 
@@ -281,45 +309,30 @@
 }
 
 .public-profile-contact {
-  border-color: rgba(53, 200, 233, 0.24);
+  border-color: rgba(184, 255, 42, 0.24);
 }
 
-.public-profile-state span {
-  color: #bfb59a;
+.public-profile-state {
+  display: grid;
+  gap: 14px;
 }
 
 .public-profile-state a {
   width: fit-content;
-  color: #35c8e9;
-}
-
-:root[data-theme="light"] .public-profile-player h2,
-:root[data-theme="light"] .public-profile-teams h2,
-:root[data-theme="light"] .public-profile-contact h2 {
-  color: var(--app-text-strong);
-}
-
-:root[data-theme="light"] .public-profile-state span {
-  color: var(--app-text-secondary);
+  color: #5ce1ff;
 }
 
 @media (max-width: 760px) {
-  .public-profile-hero {
+  .hooma-passport-card {
     grid-template-columns: 1fr;
   }
 
-  .public-profile-photo {
-    min-height: 280px;
-    border-right: 0;
-    border-bottom: 1px solid rgba(54, 183, 221, 0.18);
+  .hooma-passport-card__photo {
+    min-height: 240px;
+    order: -1;
   }
 
-  .public-profile-copy {
-    padding: 24px;
-  }
-
-  .public-profile-player-grid,
-  .public-profile-team-list {
+  .hooma-passport-stats {
     grid-template-columns: 1fr;
   }
 }
