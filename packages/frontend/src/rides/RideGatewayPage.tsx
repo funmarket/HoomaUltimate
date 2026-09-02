@@ -9,7 +9,6 @@ import {
   RideBrowseIcon,
   RideCarPlusIcon,
   RideHistoryIcon,
-  RideLockIcon,
   RideMapPinIcon,
 } from "./RideIcons";
 import { destinationLabel, errorMessage, formatRideTime } from "./ride-view-model";
@@ -101,10 +100,6 @@ function RideHero({ copy }: { readonly copy: ReturnType<typeof heroCopy> }) {
           <span>Offer Seats</span>
         </a>
       </nav>
-      <p className="ride-privacy-chip">
-        <RideLockIcon />
-        <span>Where you meet stays between you.</span>
-      </p>
     </header>
   );
 }
