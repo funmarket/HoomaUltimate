@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DiscoveryNowItem } from "@hooma/contracts/discovery";
 import type { RideRequestCommunityFeedItem } from "@hooma/contracts/rides";
 import type { RideRequestCommunityInteraction } from "@hooma/contracts/ride-community-interaction";
@@ -8,10 +8,8 @@ import { createRideApi } from "../rides/api";
 import { getRideRequestCommunityInteraction } from "../rides/community-interaction-api";
 import { destinationLabel } from "../rides/ride-view-model";
 import { minorUnitsToAmountLabel } from "../rides/ride-money";
-import { sendDirectUserWhistle } from "../whistle/direct-user-api";
+import { RideWhistleBoard } from "../whistle/HoomaWhistleBoard";
 import { createDiscoveryApi } from "./api";
-
-const WHISTLE_MAX_GRAPHEMES = 33;
 
 function messageFrom(reason: unknown): string {
   return reason instanceof Error ? reason.message : "Unable to load live activity";
@@ -63,11 +61,6 @@ function rideTimeRemaining(item: RideRequestCommunityFeedItem, now = new Date())
   return `${hours} hr remaining`;
 }
 
-function graphemeCount(value: string): number {
-  const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
-  return Array.from(segmenter.segment(value)).length;
-}
-
 function requesterInitials(interaction: RideRequestCommunityInteraction): string {
   const label =
     interaction.requester?.displayName || interaction.requester?.username || "Ride requester";
@@ -92,10 +85,6 @@ function CommunityRideRequestExpansion({
   const [interaction, setInteraction] = useState<RideRequestCommunityInteraction | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [body, setBody] = useState("");
-  const [sending, setSending] = useState(false);
-  const [notice, setNotice] = useState("");
-  const count = graphemeCount(body);
 
   useEffect(() => {
     let active = true;
@@ -115,26 +104,6 @@ function CommunityRideRequestExpansion({
       active = false;
     };
   }, [communityId, item.id, protectedError, transport]);
-
-  async function submitWhistle(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const requester = interaction?.requester;
-    if (!requester || !interaction.canWhistle || !body.trim() || count > WHISTLE_MAX_GRAPHEMES) {
-      return;
-    }
-    setSending(true);
-    setError("");
-    setNotice("");
-    try {
-      await sendDirectUserWhistle(transport, requester.username, body.trim());
-      setBody("");
-      setNotice(`Whistle sent to ${requester.displayName}.`);
-    } catch (reason) {
-      setError(protectedError(reason, "Could not send Whistle"));
-    } finally {
-      setSending(false);
-    }
-  }
 
   if (loading) return <p className="hooma-now-ride-detail__state">Loading requester…</p>;
   if (error && !interaction)
@@ -192,36 +161,10 @@ function CommunityRideRequestExpansion({
         <p className="hooma-now-ride-detail__state">This is your Ride request.</p>
       ) : null}
 
-      {interaction?.canWhistle && requester ? (
-        <form className="hooma-now-ride-detail__whistle" onSubmit={submitWhistle}>
-          <label>
-            <span>Whistle {requester.displayName}</span>
-            <div className="hooma-now-ride-detail__whistle-row">
-              <input
-                value={body}
-                onChange={(event) => setBody(event.target.value)}
-                placeholder="I can help with this ride"
-                aria-describedby={`ride-whistle-count-${item.id}`}
-              />
-              <button
-                className="button"
-                type="submit"
-                disabled={!body.trim() || count > WHISTLE_MAX_GRAPHEMES || sending}
-              >
-                {sending ? "Sending…" : "Whistle"}
-              </button>
-            </div>
-          </label>
-          <small
-            id={`ride-whistle-count-${item.id}`}
-            className={count > WHISTLE_MAX_GRAPHEMES ? "is-over" : ""}
-          >
-            {count}/{WHISTLE_MAX_GRAPHEMES} graphemes
-          </small>
-        </form>
+      {interaction ? (
+        <RideWhistleBoard rideRequestId={item.id} canCompose={interaction.canWhistle} />
       ) : null}
 
-      {notice ? <p className="hooma-now-ride-detail__state is-success">{notice}</p> : null}
       {error && interaction ? (
         <p className="hooma-now-ride-detail__state is-error">{error}</p>
       ) : null}

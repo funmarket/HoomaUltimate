@@ -1834,3 +1834,84 @@ Mobile/TMA runtime validation must not be marked complete until the missing API-
 
 **Next recommended Athletes slice**
 After this corrective PR is reviewed and merged, run a disposable PostgreSQL/API-backed Athletes runtime validation slice for populated hub, create/read-back, detail, role-specific states, and Telegram Mini App viewport proof before starting any new Athletes feature surface.
+
+---
+
+## 2026-09-02 — Whistle context/delivery repair source audit before implementation
+
+Branch: `fix/whistle-context-delivery` from `origin/phase-0-foundation` at `f60bd57dc1f70f6bea406a2fbb57e98358379ad7`.
+
+Starting audit findings before code:
+
+A. Canonical Whistle files:
+
+- `apps/api/src/modules/whistle/application/whistle.service.ts` owns the 33-grapheme rule, shared 11/day quota, UTC-midnight expiry, Redis body write/delete/read orchestration, and context authorization dispatch.
+- `apps/api/src/modules/whistle/application/whistle.repository.ts` defines the application `WhistleContextType` union, including `RIDE`, `ATHLETES`, and `USER_DIRECT`.
+- `apps/api/src/modules/whistle/http/whistle.routes.ts` exposes `/api/v1/whistles/contexts/:contextType/:contextId` and direct-user `/api/v1/whistles/users/:username`; its context schema includes `RIDE` while the service currently rejects it.
+- `apps/api/src/modules/whistle/infrastructure/prisma-whistle.repository.ts` persists metadata only in `WhistleMetadata`, including `contextType`, `contextId`, author/timestamps/expiry; it does not persist body.
+- `apps/api/src/modules/whistle/infrastructure/redis-whistle-store.ts` stores body at `whistle:body:<id>` with PX TTL and `NX`.
+
+B. Ride-specific Whistle bridge files:
+
+- `packages/frontend/src/discovery/HoomaNowSection.tsx` currently maps a Ride request expansion to `sendDirectUserWhistle(transport, requester.username, body.trim())`, losing the Ride request identity before persistence.
+- `packages/frontend/src/rides/community-interaction-api.ts` only fetches requester/canWhistle metadata; it does not carry a Whistle context endpoint.
+- `apps/api/src/modules/rides/application/ride-community-interaction.service.ts` authorizes active community visibility and returns requester/canWhistle for a community Ride request.
+- `apps/api/src/modules/rides/infrastructure/prisma-ride-community-interaction.repository.ts` proves the current Ride card is a `RideRequest`, scoped to an active/open/unexpired community-audience request.
+
+C. Direct-user files:
+
+- `apps/api/src/modules/whistle/application/whistle.service.ts` derives `USER_DIRECT` context IDs from the sorted canonical user IDs of sender and target.
+- `apps/api/src/modules/whistle/http/whistle.routes.ts` owns `/whistles/users/:username` for genuine direct-user Whistles.
+- `packages/frontend/src/profile-api.ts` and `packages/frontend/src/whistle/direct-user-api.ts` call the direct-user route.
+
+D. Notification infrastructure found:
+
+- No dedicated user-facing notification/inbox model, contracts, API route, or frontend notification API was found by repository search.
+- Existing durable side-effect stores are `AuditLog` and `OutboxEvent`; neither is a user notification inbox, and neither should store Whistle bodies.
+- Therefore the repair requires a small reusable user-notification/discovery foundation for Whistle delivery metadata only.
+
+E. Contradictory/obsolete paths found:
+
+- `RIDE` exists in Prisma enum, application union, and HTTP context schema.
+- `WhistleService.authorizeContext` still throws `WHISTLE_CONTEXT_NOT_ENABLED` for `RIDE`.
+- `HoomaNowSection` explicitly routes Ride Whistles through direct-user username delivery.
+- `tests/community-hooma-now-ride-ui.test.mjs` currently asserts the obsolete direct-user Ride behavior.
+
+F. Database impact:
+
+- `WhistleContextType.RIDE` and `WhistleMetadata` already exist, so no Whistle schema/migration change is needed for Ride context storage.
+- A notification persistence change is needed only because no canonical notification model exists. It must be one generic metadata-only user notification model, indexed by recipient, with no body column.
+
+G. Implementation plan:
+
+1. Add failing tests that prove `RIDE` cannot be rejected by canonical Whistle service, Ride request Whistles use `RIDE/<RideRequest.id>` and not `USER_DIRECT`, direct-user Whistles remain `USER_DIRECT`, and notification rows contain no body.
+2. Add a minimal metadata-only user notification contract/repository/service/route and migration.
+3. Add Ride domain authorization methods on the existing Ride service/repository boundary for community Ride requests; Whistle service delegates `RIDE` auth there and receives the Ride owner/requester for notification.
+4. Have Whistle service emit body-free notification metadata after successful direct-user or Ride Whistle creation, suppressing self-notification.
+5. Replace the Ride frontend direct-user bypass with canonical `RIDE` context API/board wiring and update the obsolete static test.
+6. Validate focused tests, full local gates possible without local Postgres, push one PR, and use CI for PostgreSQL migration/integration proof.
+
+### Foundation recheck after source audit implementation
+
+- `origin/phase-0-foundation` moved from `f60bd57dc1f70f6bea406a2fbb57e98358379ad7` to `25bc97592b3502f132a535de879771165a49a7ed` while the branch was dirty.
+- Incoming foundation files were Play presentation only: `packages/frontend/src/events/PlayPlayerCard.tsx`, `packages/frontend/src/events/play-player-listing.css`, `packages/ui/src/play/PickupMatchCard.tsx`.
+- Overlap with Whistle/Ride/notification/schema/API files: none.
+- Preserved the local Whistle repair diff in `.hermes-tmp/whistle-context-delivery-before-rebase.*`, stashed only intended touched paths, rebased `fix/whistle-context-delivery` onto `25bc97592b3502f132a535de879771165a49a7ed`, and reapplied cleanly.
+
+### Continuation rebase to current foundation 992adc3427ddef57527f54cb3b7f84a2d2466cdd
+
+- Preserved uncommitted Whistle context/delivery repair diff before moving foundation.
+- Fetched `origin/phase-0-foundation`; live foundation was `992adc3427ddef57527f54cb3b7f84a2d2466cdd`.
+- Incoming foundation commits since `25bc97592b3502f132a535de879771165a49a7ed` were Play-only: `54ff44da`, `06625547`, `992adc34`.
+- Incoming changed files: `packages/frontend/src/events/PlayPage.tsx`, `packages/frontend/src/events/play-player-listing.css`.
+- No source overlap with Whistle/Ride/notification/schema repair files.
+- Rebased `fix/whistle-context-delivery` onto current foundation and reapplied preserved work without conflicts.
+- `npm test` currently fails two Play presentation tests on both this branch and a clean foundation worktree at `992adc3427ddef57527f54cb3b7f84a2d2466cdd`; this is not caused by the Whistle repair diff.
+
+### Final pre-commit foundation recheck to 2dce346882f78c313bcf741ad1dad311630a54ed
+
+- `origin/phase-0-foundation` moved again from `992adc3427ddef57527f54cb3b7f84a2d2466cdd` to `2dce346882f78c313bcf741ad1dad311630a54ed` before commit.
+- Incoming commits were profile/Play presentation only: `b2fc235a`, `5812fd00`, `00a9fb70`, `4c7ca302`, `998a30da`, `11903dc8`, `2dce3468`.
+- Incoming files were `apps/web/src/profile/ProfilePage.tsx`, `apps/web/src/profile/PublicProfilePage.tsx`, `apps/web/src/profile/profile.css`, `packages/frontend/src/events/play-event-ticket.css`, and `packages/frontend/src/events/play.css`.
+- No source overlap with Whistle/Ride/notification/schema repair files.
+- Preserved and rebased `fix/whistle-context-delivery` to `2dce346882f78c313bcf741ad1dad311630a54ed`; preserved work reapplied cleanly.
