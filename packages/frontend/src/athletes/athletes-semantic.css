@@ -52,7 +52,7 @@
   color: var(--athletes-positive);
 }
 
-/* People identity and membership/role states use the people-blue family. */
+/* People roles use people blue. Display names remain white; handles use people blue. */
 .athletes-page .athletes-role,
 .athletes-page .athletes-member-role {
   border-color: color-mix(in srgb, var(--athletes-people) 42%, transparent);
@@ -60,13 +60,13 @@
   color: var(--athletes-people);
 }
 
-.athletes-page .athletes-member-row strong,
-.athletes-page .athletes-member-row small {
-  color: var(--athletes-people);
+.athletes-page .athletes-member-row strong {
+  color: var(--app-text-strong, #f4f1ea);
 }
 
 .athletes-page .athletes-member-row small {
-  opacity: 0.72;
+  color: var(--athletes-people);
+  opacity: 0.78;
 }
 
 /* Orange is reserved for warning/attention, not healthy or active state. */
