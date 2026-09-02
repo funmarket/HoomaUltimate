@@ -316,8 +316,12 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
           {error ? <p className="error">{error}</p> : null}
         </section>
       ) : (
-        <section className="play-event-card">
-          <div className="play-event-card__kicker">Pickup match</div>
+        <section className="play-event-card play-event-card--matchday">
+          <span className="play-event-card__pitch-grid" aria-hidden="true" />
+          <div className="play-event-card__kicker-row">
+            <div className="play-event-card__kicker">Pickup match</div>
+            <span className="play-event-card__ticket-mark">Matchday</span>
+          </div>
           <div className="play-event-card__title-row">
             <span className="play-event-card__ball">
               <BallIcon />
@@ -327,7 +331,7 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
               {event.description ? <p>{event.description}</p> : null}
             </div>
           </div>
-          <div className="play-event-card__meta">
+          <div className="play-event-card__meta" aria-label="Match essentials">
             <span>
               <CalendarIcon />
               {new Date(event.startsAt).toLocaleString()}
@@ -345,8 +349,11 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
 
           {event.place ? (
             <div className="play-event-card__tagged-pitch">
+              <span className="play-event-card__tagged-pitch-icon" aria-hidden="true">
+                <PinIcon />
+              </span>
               <div>
-                <small>HOOMA PITCH</small>
+                <small>HOOMA Pitch</small>
                 <strong>{event.place.name}</strong>
                 <span>{[event.place.city, event.place.houma].filter(Boolean).join(" · ")}</span>
               </div>
@@ -354,7 +361,7 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
             </div>
           ) : null}
 
-          <div className="play-event-card__facts">
+          <div className="play-event-card__facts" aria-label="Match facts">
             <div>
               <span>Format</span>
               <strong>{pretty(play?.format)}</strong>

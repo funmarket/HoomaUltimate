@@ -116,185 +116,385 @@
   gap: 12px;
 }
 .pickup-match-card-pro {
+  position: relative;
+  isolation: isolate;
   width: 100%;
-  padding: 1rem;
-  border: 1px solid #6f613c;
-  border-radius: 11px;
-  background: linear-gradient(145deg, #0d0e0b, #080907);
-  color: #fff;
+  min-height: 168px;
+  padding: 15px;
+  display: grid;
+  gap: 13px;
+  overflow: hidden;
+  border: 1px solid rgba(34, 227, 90, 0.42);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 86% 18%, rgba(34, 227, 90, 0.22), transparent 28%),
+    linear-gradient(135deg, rgba(9, 58, 31, 0.92), rgba(5, 8, 7, 0.98) 48%, #030504 100%);
+  color: #f6f3e8;
   text-align: left;
   text-decoration: none;
+  box-shadow:
+    0 18px 36px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
-.pickup-match-card-top > span {
-  color: #c4dc43;
-  font-size: 0.63rem;
-  font-weight: 950;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+.pickup-match-card-pro::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  z-index: -1;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 17px;
+  background:
+    linear-gradient(
+      90deg,
+      transparent calc(50% - 0.5px),
+      rgba(255, 255, 255, 0.08) 50%,
+      transparent calc(50% + 0.5px)
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      transparent 0 34px,
+      rgba(255, 255, 255, 0.08) 35px 36px,
+      transparent 37px
+    );
+  pointer-events: none;
 }
-.pickup-match-card-top strong {
-  display: block;
-  margin-top: 0.35rem;
-  color: #f2ead7;
-  font-size: 1.1rem;
+.pickup-match-card-pro::after {
+  content: "";
+  position: absolute;
+  right: -36px;
+  bottom: -42px;
+  width: 132px;
+  height: 132px;
+  border: 1px solid rgba(216, 180, 97, 0.22);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(34, 227, 90, 0.12), transparent 62%);
+  pointer-events: none;
 }
-.pickup-match-card-top small {
-  display: block;
-  margin-top: 0.25rem;
-  color: #bfb59a;
+.pickup-match-card-pro__pitch-mark {
+  position: absolute;
+  right: 16px;
+  top: 14px;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(216, 180, 97, 0.44);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, #f6f3e8 0 3px, transparent 4px),
+    linear-gradient(45deg, transparent 43%, rgba(246, 243, 232, 0.3) 44% 56%, transparent 57%),
+    #06130c;
+  box-shadow: 0 0 0 6px rgba(34, 227, 90, 0.05);
 }
-.pickup-match-card-meta {
+.pickup-match-card-top {
   display: grid;
-  gap: 0.45rem;
-  margin-top: 0.8rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid rgba(232, 221, 196, 0.12);
-  color: #bfb59a;
-  font-size: 0.74rem;
+  gap: 5px;
+  padding-right: 52px;
 }
-.pickup-match-card-meta span {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-.pickup-match-card-meta svg {
-  color: #fff;
-  flex: 0 0 auto;
-}
-.pickup-match-card-cta {
-  margin-top: 0.8rem;
-  color: #c4dc43;
-  font-size: 0.72rem;
-  font-weight: 500;
-}
-.play-event-page {
-  display: grid;
-  gap: 28px;
-}
-.play-event-card {
-  overflow: hidden;
-  padding: 20px;
-  border: 1px solid #403927;
-  border-radius: 16px;
-  background: linear-gradient(145deg, #171812, #0d0e0b);
-}
-.play-event-card__kicker {
-  color: #c4dc43;
-  font-size: 11px;
+.pickup-match-card-format {
+  width: fit-content;
+  padding: 5px 9px;
+  border: 1px solid rgba(34, 227, 90, 0.42);
+  border-radius: 999px;
+  background: rgba(34, 227, 90, 0.12);
+  color: #22e35a;
+  font-size: 0.66rem;
   font-weight: 950;
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
-.play-event-card__title-row {
+.pickup-match-card-top strong {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  color: #fff8e8;
+  font-family: Georgia, serif;
+  font-size: clamp(1.35rem, 7vw, 2rem);
+  line-height: 0.96;
+  letter-spacing: -0.045em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+}
+.pickup-match-card-top small {
+  display: block;
+  overflow: hidden;
+  color: #d8b461;
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.pickup-match-card-meta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: stretch;
+  color: rgba(246, 243, 232, 0.84);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+.pickup-match-card-meta span {
+  min-width: 0;
+  min-height: 36px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(2, 5, 4, 0.52);
+  backdrop-filter: blur(10px);
+}
+.pickup-match-card-meta__date,
+.pickup-match-card-meta__venue {
+  grid-column: 1 / -1;
+}
+.pickup-match-card-meta__going {
+  width: fit-content;
+  justify-self: end;
+  color: #22e35a;
+}
+.pickup-match-card-meta svg {
+  color: #22e35a;
+  flex: 0 0 auto;
+}
+.pickup-match-card-cta {
+  display: flex;
+  justify-content: flex-end;
+}
+.pickup-match-card-cta span {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border: 1px solid rgba(216, 180, 97, 0.48);
+  border-radius: 999px;
+  background: rgba(216, 180, 97, 0.08);
+  color: #fff8e8;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.play-event-page {
+  display: grid;
+  gap: 22px;
+}
+.play-event-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 20px;
+  border: 1px solid rgba(34, 227, 90, 0.35);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 78% 0%, rgba(34, 227, 90, 0.18), transparent 28%),
+    linear-gradient(145deg, #07140d, #050706 46%, #030403 100%);
+  color: #f6f3e8;
+  box-shadow:
+    0 22px 48px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+.play-event-card--matchday::before {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  z-index: -1;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  background:
+    linear-gradient(
+      90deg,
+      transparent calc(50% - 0.5px),
+      rgba(255, 255, 255, 0.075) 50%,
+      transparent calc(50% + 0.5px)
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      transparent 0 44px,
+      rgba(255, 255, 255, 0.075) 45px 46px,
+      transparent 47px
+    );
+  pointer-events: none;
+}
+.play-event-card__pitch-grid {
+  position: absolute;
+  inset: auto -10% -18% -10%;
+  z-index: -1;
+  height: 180px;
+  opacity: 0.28;
+  background:
+    repeating-linear-gradient(90deg, rgba(34, 227, 90, 0.15) 0 1px, transparent 1px 36px),
+    linear-gradient(180deg, transparent, rgba(34, 227, 90, 0.16));
+  transform: perspective(220px) rotateX(55deg);
+  transform-origin: bottom;
+}
+.play-event-card__kicker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.play-event-card__kicker,
+.play-event-card__ticket-mark {
+  width: fit-content;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.play-event-card__kicker {
+  border: 1px solid rgba(34, 227, 90, 0.48);
+  background: rgba(34, 227, 90, 0.12);
+  color: #22e35a;
+}
+.play-event-card__ticket-mark {
+  border: 1px solid rgba(216, 180, 97, 0.38);
+  color: #d8b461;
+}
+.play-event-card__title-row {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  align-items: start;
   gap: 14px;
-  margin-top: 12px;
+  margin-top: 18px;
 }
 .play-event-card__ball {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  border: 1px solid #6f613c;
-  border-radius: 12px;
-  color: #f2ead7;
-  background: #10110e;
+  border: 1px solid rgba(216, 180, 97, 0.5);
+  border-radius: 16px;
+  color: #fff8e8;
+  background: radial-gradient(circle at 50% 50%, rgba(34, 227, 90, 0.16), #07100b 70%);
+  box-shadow: 0 0 0 6px rgba(34, 227, 90, 0.04);
 }
 .play-event-card h1 {
   margin: 0;
-  color: #fff;
+  color: #fff8e8;
   font-family: Georgia, serif;
-  font-size: clamp(30px, 6vw, 46px);
-  line-height: 0.95;
-  letter-spacing: -0.035em;
+  font-size: clamp(36px, 12vw, 56px);
+  line-height: 0.88;
+  letter-spacing: -0.055em;
+  text-shadow: 0 3px 14px rgba(0, 0, 0, 0.55);
 }
 .play-event-card__title-row p {
   margin: 10px 0 0;
-  color: #bfb59a;
-  line-height: 1.55;
+  color: rgba(246, 243, 232, 0.78);
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
 .play-event-card__meta {
   display: grid;
-  gap: 9px;
+  gap: 8px;
   margin-top: 20px;
-  color: #d8d4cb;
+  color: rgba(246, 243, 232, 0.88);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 750;
 }
 .play-event-card__meta span {
+  min-width: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
 }
 .play-event-card__meta svg {
-  color: #f2ead7;
+  color: #22e35a;
   flex: 0 0 auto;
 }
 .play-event-card__facts {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 1px;
   margin-top: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(216, 180, 97, 0.22);
+  border-radius: 18px;
+  background: rgba(216, 180, 97, 0.2);
 }
 .play-event-card__facts div {
   display: grid;
-  gap: 4px;
+  gap: 6px;
+  min-height: 78px;
   padding: 12px;
-  border: 1px solid #403927;
-  border-radius: 12px;
-  background: #10110e;
+  background: rgba(4, 7, 5, 0.78);
 }
 .play-event-card__facts span {
-  color: #bfb59a;
-  font-size: 11px;
+  color: #22e35a;
+  font-size: 10px;
+  font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.14em;
 }
 .play-event-card__facts strong {
-  color: #f2ead7;
-  font-size: 13px;
-  font-weight: 500;
+  align-self: end;
+  color: #fff8e8;
+  font-size: 1rem;
+  font-weight: 850;
+  line-height: 1.15;
 }
 .play-event-card__tagged-pitch {
-  display: flex;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
-  margin-top: 16px;
-  padding: 12px 14px;
-  border: 1px solid #403927;
-  border-radius: 12px;
-  background: #10110e;
+  margin-top: 18px;
+  padding: 13px;
+  border: 1px solid rgba(34, 227, 90, 0.32);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(34, 227, 90, 0.13), rgba(3, 5, 4, 0.76)), rgba(3, 5, 4, 0.72);
+}
+.play-event-card__tagged-pitch-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: rgba(34, 227, 90, 0.12);
+  color: #22e35a;
 }
 .play-event-card__tagged-pitch small {
   display: block;
-  color: #c4dc43;
+  color: #22e35a;
   font-size: 10px;
-  letter-spacing: 0.12em;
+  font-weight: 950;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 .play-event-card__tagged-pitch strong {
   display: block;
+  margin-top: 3px;
+  overflow: hidden;
   color: #fff;
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 1rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .play-event-card__tagged-pitch span {
   display: block;
-  color: #bfb59a;
+  margin-top: 2px;
+  color: rgba(246, 243, 232, 0.68);
   font-size: 12px;
 }
 .play-event-card__tagged-pitch a {
+  min-height: 40px;
   flex: 0 0 auto;
-  border: 1px solid #b8ff2a;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #22e35a;
   border-radius: 999px;
-  color: #b8ff2a;
+  color: #22e35a;
   font-family: system-ui, sans-serif;
   font-size: 13px;
-  font-weight: 500;
-  padding: 8px 12px;
+  font-weight: 850;
+  padding: 0 12px;
   text-decoration: none;
   white-space: nowrap;
 }
@@ -329,38 +529,44 @@
   text-decoration: none;
 }
 .play-event-rsvp-state {
-  margin-top: 16px;
-  padding: 11px 13px;
-  border: 1px solid rgba(196, 220, 67, 0.3);
+  margin-top: 18px;
+  padding: 12px 14px;
+  border: 1px solid rgba(34, 227, 90, 0.42);
   border-radius: 999px;
-  background: rgba(196, 220, 67, 0.08);
-  color: #c4dc43;
+  background: rgba(34, 227, 90, 0.12);
+  color: #22e35a;
   font-family: system-ui, sans-serif;
   font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0.06em;
+  font-weight: 950;
+  letter-spacing: 0.08em;
   text-align: center;
 }
 .play-event-primary-action {
   width: 100%;
-  margin-top: 18px;
-  border: 1px solid #b8ff2a;
+  min-height: 50px;
+  margin-top: 14px;
+  border: 1px solid #22e35a;
   border-radius: 999px;
-  background: transparent;
-  color: #b8ff2a;
+  background: linear-gradient(135deg, #22e35a, #0db348);
+  color: #031207;
   font-family: system-ui, sans-serif;
-  font-weight: 500;
+  font-weight: 950;
+  letter-spacing: 0.04em;
   padding: 12px 16px;
   cursor: pointer;
+  box-shadow: 0 12px 26px rgba(34, 227, 90, 0.22);
 }
 .play-event-primary-action:disabled {
   opacity: 0.65;
   cursor: default;
 }
 .play-event-primary-action--static {
+  display: grid;
+  place-items: center;
   text-align: center;
-  background: #1b1d16;
-  color: #c4dc43;
+  background: rgba(34, 227, 90, 0.12);
+  color: #22e35a;
+  box-shadow: none;
 }
 .play-matchday-hub {
   display: grid;
@@ -368,34 +574,128 @@
 }
 .play-matchday-hub .eyebrow {
   margin: 0 0 5px;
+  color: #22e35a;
 }
 .play-matchday-hub h2 {
   margin: 0;
   color: var(--app-text-strong);
   font-family: Georgia, serif;
-  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  font-size: clamp(1.8rem, 7vw, 2.6rem);
+  line-height: 0.95;
 }
 .play-matchday-actions {
   display: grid;
   gap: 10px;
 }
 .play-matchday-actions a {
+  position: relative;
   display: grid;
   gap: 5px;
-  padding: 15px 16px;
-  border: 1px solid #403927;
-  border-radius: 14px;
-  background: #151510;
+  padding: 15px 16px 15px 48px;
+  overflow: hidden;
+  border: 1px solid rgba(34, 227, 90, 0.25);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(8, 34, 20, 0.84), rgba(8, 9, 7, 0.95));
   text-decoration: none;
 }
+.play-matchday-actions a::before {
+  content: "";
+  position: absolute;
+  left: 16px;
+  top: 18px;
+  width: 18px;
+  height: 18px;
+  border: 1px solid #22e35a;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 5px rgba(34, 227, 90, 0.14);
+}
+.play-matchday-actions a::after {
+  content: "›";
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  color: #d8b461;
+  font-size: 28px;
+  transform: translateY(-50%);
+}
 .play-matchday-actions strong {
-  color: #f2ead7;
-  font-weight: 500;
+  color: #fff8e8;
+  font-weight: 900;
 }
 .play-matchday-actions span {
-  color: #bfb59a;
+  max-width: calc(100% - 28px);
+  color: rgba(246, 243, 232, 0.68);
   font-size: 13px;
   line-height: 1.45;
+}
+.hooma-whistle-board--event {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(34, 227, 90, 0.32);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(34, 227, 90, 0.14), transparent 28%),
+    linear-gradient(145deg, rgba(7, 20, 13, 0.94), rgba(5, 6, 5, 0.98));
+}
+.hooma-whistle-board--event .whistle-heading .eyebrow,
+.hooma-whistle-board--event .whistle-quota strong {
+  color: #22e35a;
+}
+.hooma-whistle-board--event .whistle-composer,
+.hooma-whistle-board--event .whistle-card {
+  border-color: rgba(34, 227, 90, 0.22);
+  border-radius: 18px;
+  background: rgba(3, 5, 4, 0.72);
+}
+.hooma-whistle-board--event .whistle-input-row input {
+  border-color: rgba(255, 255, 255, 0.13);
+  background: #030504;
+}
+.hooma-whistle-board--event .whistle-input-row .button {
+  border-color: #22e35a;
+  background: #22e35a;
+  color: #031207;
+}
+.hooma-whistle-board--event .whistle-card.is-revealed {
+  box-shadow: inset 3px 0 0 rgba(34, 227, 90, 0.65);
+}
+@media (max-width: 520px) {
+  .pickup-match-card-pro {
+    min-height: 156px;
+    padding: 13px;
+  }
+  .pickup-match-card-meta {
+    grid-template-columns: 1fr;
+  }
+  .pickup-match-card-meta__going {
+    justify-self: stretch;
+  }
+  .play-event-card {
+    padding: 18px 16px;
+    border-radius: 22px;
+  }
+  .play-event-card__title-row {
+    grid-template-columns: 46px minmax(0, 1fr);
+  }
+  .play-event-card__ball {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+  }
+  .play-event-card__tagged-pitch {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+  .play-event-card__tagged-pitch a {
+    grid-column: 1 / -1;
+    justify-content: center;
+  }
+  .play-event-card__facts {
+    grid-template-columns: 1fr 1fr;
+  }
+  .play-event-card__facts div {
+    min-height: 70px;
+    padding: 11px;
+  }
 }
 .formation-builder {
   display: grid;

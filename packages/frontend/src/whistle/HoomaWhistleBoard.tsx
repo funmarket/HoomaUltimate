@@ -151,7 +151,9 @@ function WhistleBoard({
     return null;
 
   return (
-    <article className="panel hooma-hq-module whistle-module hooma-whistle-board">
+    <article
+      className={`panel hooma-hq-module whistle-module hooma-whistle-board hooma-whistle-board--${contextType.toLowerCase()}`}
+    >
       <div className="whistle-heading">
         <div>
           <span className="eyebrow">{eyebrow}</span>
