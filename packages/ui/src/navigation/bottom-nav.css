@@ -117,10 +117,9 @@
   height: 40px;
 }
 
-.hooma-bottom-nav__artwork--pitch {
+.hooma-bottom-nav__artwork--athletes {
   width: 33px;
   height: 29px;
-  filter: brightness(1.28) contrast(1.08);
 }
 
 .hooma-bottom-nav__item--hooma .hooma-bottom-nav__icon-shell {
