@@ -5,3 +5,130 @@
   display: grid;
   gap: 28px;
 }
+.play-view-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid rgba(199, 154, 43, 0.35);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #0b0c09;
+}
+.play-view-tab {
+  min-width: 0;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 0;
+  border-right: 1px solid rgba(199, 154, 43, 0.22);
+  background: transparent;
+  color: var(--app-text-secondary);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+.play-view-tab:last-child {
+  border-right: 0;
+}
+.play-view-tab.is-active {
+  background: rgba(196, 220, 67, 0.1);
+  color: #c4dc43;
+}
+.play-hero-pro {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0 1.2rem;
+  border-bottom: 1px solid rgba(199, 154, 43, 0.18);
+}
+.play-hero-pro h1 {
+  margin: 0.25rem 0 0;
+  color: var(--app-text-strong);
+  font-family: Georgia, serif;
+  font-size: clamp(3.7rem, 15vw, 6rem);
+  line-height: 0.84;
+}
+.play-hero-pro__action {
+  min-height: 3rem;
+  padding: 0 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid #c4dc43;
+  border-radius: 999px;
+  background: #070806;
+  color: #fff;
+  font-weight: 900;
+  text-decoration: none;
+}
+.play-section {
+  display: grid;
+  gap: 14px;
+}
+.play-match-list {
+  display: grid;
+  gap: 12px;
+}
+.pickup-match-card-pro {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid #6f613c;
+  border-radius: 11px;
+  background: linear-gradient(145deg, #0d0e0b, #080907);
+  color: #fff;
+  text-decoration: none;
+}
+.play-event-page {
+  display: grid;
+  gap: 28px;
+}
+.play-matchday-hub {
+  display: grid;
+  gap: 14px;
+}
+.play-matchday-actions {
+  display: grid;
+  gap: 10px;
+}
+.play-matchday-actions a {
+  display: grid;
+  gap: 5px;
+  padding: 15px 16px;
+  border: 1px solid #403927;
+  border-radius: 14px;
+  background: #151510;
+  text-decoration: none;
+}
+.formation-builder {
+  display: grid;
+  gap: 18px;
+}
+.formation-pitches {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.formation-pitch {
+  position: relative;
+  aspect-ratio: 0.72;
+  border: 2px solid rgba(242, 234, 215, 0.42);
+  border-radius: 24px;
+  background: #123d27;
+}
+.formation-save {
+  width: 100%;
+  border-radius: 999px;
+  background: #c4dc43;
+  color: #12120f;
+  font-weight: 900;
+  padding: 12px 16px;
+}
+@media (max-width: 620px) {
+  .play-hero-pro,
+  .formation-builder__header,
+  .formation-pitches {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}
