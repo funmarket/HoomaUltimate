@@ -285,6 +285,57 @@
   font: inherit;
 }
 
+.play-page .play-view-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 6px;
+  border: 1px solid var(--app-line, rgba(232, 195, 106, 0.28));
+  border-radius: 999px;
+  overflow: visible;
+  background: #0b0c09;
+}
+
+.play-page .play-view-tab {
+  min-height: 44px;
+  border: 0;
+  border-right: 0;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.play-page .play-view-tab.is-active {
+  background: var(--app-positive, #b8ff2a);
+  color: #10110f;
+}
+
+.play-page .play-hero-pro__action {
+  border: 2px solid var(--app-positive, #b8ff2a);
+  background: #070808;
+  color: var(--app-positive, #b8ff2a);
+  font-weight: 800;
+}
+
+.play-page .play-hero-pro__action svg {
+  color: currentColor;
+}
+
+.play-page .pickup-match-card-pro {
+  border: 1px solid var(--app-line, rgba(232, 195, 106, 0.28));
+  border-radius: 18px;
+  background: var(--app-surface, #121212);
+}
+
+.play-page .pickup-match-card-top > span {
+  color: var(--app-positive, #b8ff2a);
+}
+
+.play-page .pickup-match-card-cta {
+  display: none;
+}
+
 @media (max-width: 520px) {
   .play-player-card {
     align-items: start;
