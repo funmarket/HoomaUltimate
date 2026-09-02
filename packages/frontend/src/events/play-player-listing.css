@@ -82,8 +82,13 @@
   cursor: default;
 }
 
+.play-action--block {
+  width: 100%;
+}
+
 .play-action--commit,
-.play-player-editor-actions .button:not(.secondary) {
+.play-player-editor-actions .button:not(.secondary),
+.play-mine .team-offer-request__actions .button:not(.secondary) {
   border: 0;
   background: var(--app-positive, #b8ff2a);
   color: #10110f;
@@ -102,7 +107,8 @@
   color: var(--app-text, #f4f1ea);
 }
 
-.play-action--danger {
+.play-action--danger,
+.play-mine .team-offer-request__actions .button.secondary {
   border: 1.5px solid var(--app-danger, #ff6b61);
   background: transparent;
   color: var(--app-danger, #ff6b61);
@@ -118,6 +124,12 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 10px;
+}
+
+.play-list-title {
+  margin: 8px 0 0;
+  color: var(--app-text-strong, #f4f1ea);
+  font-size: 1.15rem;
 }
 
 .play-player-card {
@@ -148,7 +160,8 @@
   outline-offset: 2px;
 }
 
-.play-player-card__portrait {
+.play-player-card__portrait,
+.play-sheet__avatar {
   width: 52px;
   height: 52px;
   overflow: hidden;
@@ -161,7 +174,8 @@
   font-weight: 800;
 }
 
-.play-player-card__portrait img {
+.play-player-card__portrait img,
+.play-sheet__avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -255,6 +269,7 @@
   cursor: default;
 }
 
+.play-sheet,
 .play-team-offer {
   display: grid;
   gap: 12px;
@@ -264,15 +279,19 @@
   background: var(--app-surface, #121212);
 }
 
+.play-sheet h3,
 .play-team-offer h3 {
   margin: 4px 0 0;
 }
 
+.play-sheet p,
+.play-sheet label,
 .play-team-offer p,
 .play-team-offer label {
   color: var(--app-text-secondary, #c8c3b8);
 }
 
+.play-sheet textarea,
 .play-team-offer select,
 .play-team-offer textarea {
   width: 100%;
@@ -285,10 +304,51 @@
   font: inherit;
 }
 
-.play-page .play-view-tabs {
+.play-sheet__person {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.play-sheet__person small {
+  display: block;
+  color: var(--app-people-blue, #58bfff);
+}
+
+.play-sheet__choices {
+  display: grid;
   gap: 8px;
+}
+
+.play-sheet__choice {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--app-line, rgba(232, 195, 106, 0.28));
+  border-radius: 14px;
+  background: #070808;
+  color: var(--app-text, #f4f1ea);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.play-sheet__choice span {
+  color: var(--app-text-secondary, #c8c3b8);
+  font-size: 13px;
+}
+
+.play-sheet__choice.is-selected {
+  border-color: var(--app-positive, #b8ff2a);
+  box-shadow: inset 0 0 0 1px var(--app-positive, #b8ff2a);
+}
+
+.play-page .play-view-tabs,
+.play-page .play-view-tabs--three {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
   padding: 6px;
   border: 1px solid var(--app-line, rgba(232, 195, 106, 0.28));
   border-radius: 999px;
@@ -334,6 +394,62 @@
 
 .play-page .pickup-match-card-cta {
   display: none;
+}
+
+.play-mine-listing {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--app-line, rgba(232, 195, 106, 0.28));
+  border-radius: 18px;
+  background: var(--app-surface, #121212);
+}
+
+.play-mine-heading {
+  margin: 8px 0 0;
+  color: var(--app-gold, #e8c36a);
+  font-size: 0.95rem;
+}
+
+.play-mine-games {
+  display: grid;
+  gap: 8px;
+}
+
+.play-mine-game {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--app-line, rgba(232, 195, 106, 0.28));
+  border-radius: 14px;
+  background: var(--app-surface, #121212);
+  color: inherit;
+  text-decoration: none;
+}
+
+.play-mine-game span,
+.play-mine-empty {
+  color: var(--app-text-secondary, #c8c3b8);
+  font-size: 13px;
+}
+
+.play-mine .team-offers-panel,
+.play-mine .team-offers-list,
+.play-mine .team-offer-request {
+  display: grid;
+  gap: 10px;
+}
+
+.play-mine .team-offer-request {
+  padding: 12px;
+  border: 1px solid var(--app-line, rgba(232, 195, 106, 0.28));
+  border-radius: 14px;
+}
+
+.play-mine .team-offer-request__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 @media (max-width: 520px) {
