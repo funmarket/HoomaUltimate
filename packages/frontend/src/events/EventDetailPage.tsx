@@ -76,6 +76,9 @@ function BallIcon() {
   );
 }
 
+const playYellow = "#f2c94c";
+const confirmedPistachio = "#d7ff8a";
+
 export function EventDetailPage({ eventId }: { readonly eventId: string }) {
   const eventApi = useEventApi();
   const { transport, protectedError } = useHoomaFrontend();
@@ -323,7 +326,18 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
             <span className="play-event-card__ticket-mark">Matchday</span>
           </div>
           <div className="play-event-card__title-row">
-            <span className="play-event-card__ball">
+            <span
+              className="play-event-card__ball"
+              style={{
+                width: "auto",
+                height: "auto",
+                border: 0,
+                borderRadius: 0,
+                background: "transparent",
+                boxShadow: "none",
+                color: "#fff8e8",
+              }}
+            >
               <BallIcon />
             </span>
             <div>
@@ -333,15 +347,21 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
           </div>
           <div className="play-event-card__meta" aria-label="Match essentials">
             <span>
-              <CalendarIcon />
+              <span style={{ color: playYellow, display: "inline-flex" }}>
+                <CalendarIcon />
+              </span>
               {new Date(event.startsAt).toLocaleString()}
             </span>
             <span>
-              <PinIcon />
+              <span style={{ color: playYellow, display: "inline-flex" }}>
+                <PinIcon />
+              </span>
               {location}
             </span>
             <span>
-              <UsersIcon />
+              <span style={{ color: playYellow, display: "inline-flex" }}>
+                <UsersIcon />
+              </span>
               {event._count.rsvps}
               {event.capacity ? ` / ${event.capacity}` : ""} going
             </span>
@@ -349,7 +369,17 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
 
           {event.place ? (
             <div className="play-event-card__tagged-pitch">
-              <span className="play-event-card__tagged-pitch-icon" aria-hidden="true">
+              <span
+                className="play-event-card__tagged-pitch-icon"
+                aria-hidden="true"
+                style={{
+                  width: "auto",
+                  height: "auto",
+                  borderRadius: 0,
+                  background: "transparent",
+                  color: playYellow,
+                }}
+              >
                 <PinIcon />
               </span>
               <div>
@@ -380,7 +410,24 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
             </div>
           </div>
 
-          {rsvpLabel ? <div className="play-event-rsvp-state">{rsvpLabel}</div> : null}
+          {rsvpLabel ? (
+            <div
+              className="play-event-rsvp-state"
+              style={
+                rsvp === "CONFIRMED"
+                  ? {
+                      borderColor: "rgba(34, 227, 90, 0.32)",
+                      background: "rgba(8, 54, 30, 0.72)",
+                      color: confirmedPistachio,
+                      fontSize: "15px",
+                    }
+                  : undefined
+              }
+            >
+              {rsvp === "CONFIRMED" ? "✓ " : ""}
+              {rsvpLabel}
+            </div>
+          ) : null}
           {rsvp === "ATTENDED" ? (
             <div className="play-event-primary-action play-event-primary-action--static">
               Checked in
@@ -391,6 +438,17 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
               type="button"
               disabled={actionPending}
               onClick={() => void leave()}
+              style={
+                rsvp === "CONFIRMED"
+                  ? {
+                      borderColor: "rgba(190, 92, 23, 0.45)",
+                      background: "rgba(255, 145, 61, 0.11)",
+                      color: "#c65a16",
+                      fontSize: "14px",
+                      boxShadow: "none",
+                    }
+                  : undefined
+              }
             >
               {actionPending
                 ? "Updating…"
