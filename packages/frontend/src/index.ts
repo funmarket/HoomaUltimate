@@ -45,6 +45,7 @@ export * from "./events/EventChatPage";
 export * from "./events/CheckInPage";
 export * from "./gamers/api";
 export * from "./gamers/GamersPage";
+export * from "./gamers/GamerGamePage";
 export * from "./discovery/api";
 export * from "./discovery/HoomaNowSection";
 export * from "./places/PlacesPages";
