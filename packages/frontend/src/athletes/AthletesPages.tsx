@@ -205,10 +205,14 @@ export function CreateAthletesPage() {
         </div>
       </section>
       {error ? <div className="error-box">{error}</div> : null}
-      <form className="athletes-surface athletes-create-form hooma-create-form" onSubmit={submit}>
+      <form className="athletes-surface athletes-create-form" onSubmit={submit}>
         <fieldset className="athletes-sport-picker">
           <legend>Choose a sport</legend>
-          <div className="athletes-sport-picker__grid">
+          <div
+            className="athletes-sport-picker__grid"
+            role="radiogroup"
+            aria-label="Choose a sport"
+          >
             {sports.map((option) => (
               <label
                 className={
@@ -223,6 +227,7 @@ export function CreateAthletesPage() {
                   type="radio"
                   name="sportChoice"
                   value={option.value}
+                  aria-label={option.label}
                   checked={sport === option.value}
                   onChange={() => setSport(option.value)}
                 />
@@ -233,8 +238,8 @@ export function CreateAthletesPage() {
           </div>
         </fieldset>
 
-        <div className="hooma-form-grid athletes-form-grid">
-          <label className="field">
+        <div className="athletes-form-grid">
+          <label className="athletes-field">
             <span>Name</span>
             <input
               name="name"
@@ -244,23 +249,23 @@ export function CreateAthletesPage() {
               placeholder="Community name"
             />
           </label>
-          <label className="field">
+          <label className="athletes-field">
             <span>City</span>
             <input name="city" maxLength={100} placeholder="City" />
           </label>
-          <label className="field">
+          <label className="athletes-field">
             <span>HOUMA / neighborhood</span>
             <input name="houma" maxLength={100} placeholder="Area or neighborhood" />
           </label>
-          <label className="field">
+          <label className="athletes-field">
             <span>Logo URL</span>
             <input name="logoUrl" type="url" maxLength={2000} placeholder="https://…" />
           </label>
-          <label className="field hooma-span-2">
+          <label className="athletes-field athletes-span-2">
             <span>Banner image URL</span>
             <input name="bannerUrl" type="url" maxLength={2000} placeholder="https://…" />
           </label>
-          <label className="field hooma-span-2">
+          <label className="athletes-field athletes-span-2">
             <span>Description</span>
             <textarea
               name="description"
@@ -271,12 +276,19 @@ export function CreateAthletesPage() {
           </label>
         </div>
 
-        <fieldset className="hooma-privacy-choice athletes-choice-grid">
+        <fieldset className="athletes-choice-grid">
           <legend>Discovery and joining</legend>
-          <label className={visibility === "PUBLIC" ? "is-selected" : ""}>
+          <label
+            className={
+              visibility === "PUBLIC"
+                ? "athletes-choice-option is-selected"
+                : "athletes-choice-option"
+            }
+          >
             <input
               type="radio"
               name="visibility"
+              aria-label="Public"
               checked={visibility === "PUBLIC"}
               onChange={() => setVisibility("PUBLIC")}
             />
@@ -285,10 +297,17 @@ export function CreateAthletesPage() {
               <small>People can discover this Athletes community.</small>
             </span>
           </label>
-          <label className={visibility === "PRIVATE" ? "is-selected" : ""}>
+          <label
+            className={
+              visibility === "PRIVATE"
+                ? "athletes-choice-option is-selected"
+                : "athletes-choice-option"
+            }
+          >
             <input
               type="radio"
               name="visibility"
+              aria-label="Private"
               checked={visibility === "PRIVATE"}
               onChange={() => {
                 setVisibility("PRIVATE");
@@ -300,10 +319,17 @@ export function CreateAthletesPage() {
               <small>Discovery stays privacy-safe and joining requires approval.</small>
             </span>
           </label>
-          <label className={joinPolicy === "OPEN" && visibility === "PUBLIC" ? "is-selected" : ""}>
+          <label
+            className={
+              joinPolicy === "OPEN" && visibility === "PUBLIC"
+                ? "athletes-choice-option is-selected"
+                : "athletes-choice-option"
+            }
+          >
             <input
               type="radio"
               name="joinPolicy"
+              aria-label="Open join"
               checked={joinPolicy === "OPEN" && visibility === "PUBLIC"}
               disabled={visibility === "PRIVATE"}
               onChange={() => setJoinPolicy("OPEN")}
@@ -313,10 +339,17 @@ export function CreateAthletesPage() {
               <small>Authenticated users can join immediately.</small>
             </span>
           </label>
-          <label className={joinPolicy === "APPROVAL_REQUIRED" ? "is-selected" : ""}>
+          <label
+            className={
+              joinPolicy === "APPROVAL_REQUIRED"
+                ? "athletes-choice-option is-selected"
+                : "athletes-choice-option"
+            }
+          >
             <input
               type="radio"
               name="joinPolicy"
+              aria-label="Approval required"
               checked={joinPolicy === "APPROVAL_REQUIRED"}
               onChange={() => setJoinPolicy("APPROVAL_REQUIRED")}
             />
@@ -326,7 +359,7 @@ export function CreateAthletesPage() {
             </span>
           </label>
         </fieldset>
-        <div className="hooma-form-actions athletes-form-actions">
+        <div className="athletes-form-actions">
           <a
             className="button secondary athletes-action athletes-action--secondary"
             href="/athletes"
