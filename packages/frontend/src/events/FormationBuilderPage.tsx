@@ -271,7 +271,12 @@ function PlayerPortrait({
         onError={(event) => {
           event.currentTarget.style.display = "none";
         }}
-        style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          borderRadius: "50%",
+        }}
       />
     );
   }
@@ -430,8 +435,19 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
         >
           ‹
         </a>
-        <div style={{ minWidth: 0, textAlign: "center" }}>
-          <h1 style={{ margin: 0, fontSize: "clamp(24px, 6vw, 34px)", lineHeight: 1 }}>
+        <div
+          style={{
+            minWidth: 0,
+            textAlign: "center",
+          }}
+        >
+          <h1
+            style={{
+              margin: 0,
+              fontSize: "clamp(24px, 6vw, 34px)",
+              lineHeight: 1,
+            }}
+          >
             Formation Builder
           </h1>
           <p
@@ -464,23 +480,21 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
         </button>
       </header>
 
-      <section
-        aria-label="Formation settings"
+      <div
+        className="formation-format-picker"
+        aria-label="Match format"
         style={{
           display: "grid",
-          gap: "12px",
-          padding: "12px",
-          border: "1px solid rgba(216, 180, 97, 0.28)",
-          borderRadius: "18px",
-          background: "linear-gradient(145deg, rgba(20, 21, 18, 0.96), rgba(7, 8, 7, 0.98))",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: "6px",
+          padding: "5px",
+          border: "1px solid rgba(255, 255, 255, 0.06)",
+          borderRadius: "12px",
+          background: "#111210",
         }}
       >
-        <div
-          className="formation-format-picker"
-          aria-label="Match format"
-          style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "6px" }}
-        >
-          {(["FIVE_V_FIVE", "SEVEN_V_SEVEN", "ELEVEN_V_ELEVEN"] as const).map((candidate) => (
+        {(["FIVE_V_FIVE", "SEVEN_V_SEVEN", "ELEVEN_V_ELEVEN"] as const).map(
+          (candidate) => (
             <button
               type="button"
               key={candidate}
@@ -488,58 +502,19 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
               onClick={() => changeFormat(candidate)}
               style={{
                 minHeight: "48px",
-                borderRadius: "10px",
                 border: format === candidate ? "1px solid #31f56f" : "1px solid transparent",
-                background: format === candidate ? "#31f56f" : "rgba(255,255,255,0.035)",
-                color: format === candidate ? "#061109" : "rgba(255,255,255,0.72)",
+                borderRadius: "9px",
+                background: format === candidate ? "#31f56f" : "transparent",
+                color: format === candidate ? "#061109" : "rgba(255, 255, 255, 0.72)",
                 fontSize: "16px",
                 fontWeight: 800,
               }}
             >
               {formatLabel(candidate)}
             </button>
-          ))}
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "10px" }}>
-          <label style={{ display: "grid", gap: "5px", color: "rgba(255,255,255,0.64)" }}>
-            <span style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-              Formation name
-            </span>
-            <input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              maxLength={80}
-              style={{
-                minWidth: 0,
-                border: "1px solid rgba(255,255,255,0.12)",
-                borderRadius: "10px",
-                background: "#080a08",
-                color: "#fff",
-                padding: "10px 11px",
-              }}
-            />
-          </label>
-          <label
-            style={{
-              alignSelf: "end",
-              minHeight: "42px",
-              display: "flex",
-              alignItems: "center",
-              gap: "7px",
-              color: "rgba(255,255,255,0.72)",
-              fontSize: "12px",
-              whiteSpace: "nowrap",
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={published}
-              onChange={(event) => setPublished(event.target.checked)}
-            />
-            Publish
-          </label>
-        </div>
-      </section>
+          ),
+        )}
+      </div>
 
       <div
         style={{
@@ -570,9 +545,9 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
             display: "inline-flex",
             gap: "4px",
             padding: "4px",
-            border: "1px solid rgba(255,255,255,0.09)",
+            border: "1px solid rgba(255, 255, 255, 0.09)",
             borderRadius: "999px",
-            background: "rgba(255,255,255,0.035)",
+            background: "rgba(255, 255, 255, 0.035)",
           }}
         >
           {(["A", "B"] as const).map((team) => {
@@ -592,7 +567,7 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
                   border: 0,
                   borderRadius: "999px",
                   background: selected ? "rgba(49, 245, 111, 0.12)" : "transparent",
-                  color: selected ? "#31f56f" : "rgba(255,255,255,0.62)",
+                  color: selected ? "#31f56f" : "rgba(255, 255, 255, 0.62)",
                   font: "inherit",
                   fontSize: "13px",
                   fontWeight: 800,
@@ -613,8 +588,8 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
           border: "1px solid rgba(216, 180, 97, 0.24)",
           borderRadius: "22px",
           background:
-            "radial-gradient(ellipse at 50% 1%, rgba(255,255,255,0.15), transparent 22%), radial-gradient(ellipse at 50% 9%, rgba(49,245,111,0.10), transparent 32%), linear-gradient(180deg, #111613 0 8%, #080a09 22%, #030403 100%)",
-          boxShadow: "0 24px 54px rgba(0,0,0,0.42)",
+            "radial-gradient(ellipse at 50% 1%, rgba(255, 255, 255, 0.15), transparent 22%), radial-gradient(ellipse at 50% 9%, rgba(49, 245, 111, 0.1), transparent 32%), linear-gradient(180deg, #111613 0 8%, #080a09 22%, #030403 100%)",
+          boxShadow: "0 24px 54px rgba(0, 0, 0, 0.42)",
         }}
       >
         <div
@@ -622,7 +597,7 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
           style={{
             height: "54px",
             background:
-              "radial-gradient(circle at 12% 65%, rgba(255,255,255,.22) 0 1px, transparent 2px), radial-gradient(circle at 28% 40%, rgba(255,255,255,.16) 0 1px, transparent 2px), radial-gradient(circle at 72% 42%, rgba(255,255,255,.18) 0 1px, transparent 2px), radial-gradient(circle at 88% 66%, rgba(255,255,255,.22) 0 1px, transparent 2px), linear-gradient(180deg, rgba(255,255,255,.06), transparent)",
+              "radial-gradient(circle at 12% 65%, rgba(255, 255, 255, 0.22) 0 1px, transparent 2px), radial-gradient(circle at 28% 40%, rgba(255, 255, 255, 0.16) 0 1px, transparent 2px), radial-gradient(circle at 72% 42%, rgba(255, 255, 255, 0.18) 0 1px, transparent 2px), radial-gradient(circle at 88% 66%, rgba(255, 255, 255, 0.22) 0 1px, transparent 2px), linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent)",
             opacity: 0.85,
           }}
         />
@@ -630,7 +605,7 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
           style={{
             position: "relative",
             margin: "-12px 10px 0",
-            filter: "drop-shadow(0 18px 24px rgba(0,0,0,.38))",
+            filter: "drop-shadow(0 18px 24px rgba(0, 0, 0, 0.38))",
           }}
         >
           <div
@@ -644,9 +619,9 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
               borderRadius: "14px 14px 8px 8px",
               clipPath: "polygon(12% 0, 88% 0, 100% 100%, 0 100%)",
               background:
-                "radial-gradient(ellipse at 50% 12%, rgba(255,255,255,.15), transparent 26%), repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 8.5%, rgba(0,0,0,.055) 8.5% 17%), linear-gradient(180deg, #215f34 0%, #184e2c 43%, #103922 100%)",
+                "radial-gradient(ellipse at 50% 12%, rgba(255, 255, 255, 0.15), transparent 26%), repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 8.5%, rgba(0, 0, 0, 0.055) 8.5% 17%), linear-gradient(180deg, #215f34 0%, #184e2c 43%, #103922 100%)",
               boxShadow:
-                "inset 0 0 56px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.13)",
+                "inset 0 0 56px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.13)",
             }}
           >
             <PitchMarkings />
@@ -660,7 +635,9 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
                   key={slot.id}
                   aria-label={`${player ? playerName(player) : slot.position}. Tap to change Team ${activeTeam} ${slot.position}`}
                   aria-pressed={selected}
-                  onClick={() => setEditingSlotId((current) => (current === slot.id ? null : slot.id))}
+                  onClick={() =>
+                    setEditingSlotId((current) => (current === slot.id ? null : slot.id))
+                  }
                   style={{
                     position: "absolute",
                     left: `${slot.x}%`,
@@ -694,8 +671,8 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
                       fontSize: "11px",
                       fontWeight: 900,
                       boxShadow: selected
-                        ? `0 0 0 5px ${accent}38, 0 8px 18px rgba(0,0,0,.55)`
-                        : `0 0 0 3px ${accent}1c, 0 7px 16px rgba(0,0,0,.48)`,
+                        ? `0 0 0 5px ${accent}38, 0 8px 18px rgba(0, 0, 0, 0.55)`
+                        : `0 0 0 3px ${accent}1c, 0 7px 16px rgba(0, 0, 0, 0.48)`,
                     }}
                   >
                     <PlayerPortrait player={player} fallback={slot.position} />
@@ -724,14 +701,14 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
                       overflow: "hidden",
                       padding: "3px 7px",
                       borderRadius: "999px",
-                      background: "rgba(2,6,4,.82)",
-                      color: player ? "#fff" : "rgba(255,255,255,.7)",
+                      background: "rgba(2, 6, 4, 0.82)",
+                      color: player ? "#fff" : "rgba(255, 255, 255, 0.7)",
                       fontSize: "9px",
                       fontWeight: 800,
                       lineHeight: 1.1,
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
-                      boxShadow: "0 3px 9px rgba(0,0,0,.34)",
+                      boxShadow: "0 3px 9px rgba(0, 0, 0, 0.34)",
                     }}
                   >
                     {player ? playerName(player) : slot.position}
@@ -747,8 +724,8 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
             display: "grid",
             gap: "10px",
             padding: "14px 12px 16px",
-            borderTop: "1px solid rgba(255,255,255,.08)",
-            background: "linear-gradient(180deg, rgba(3,5,4,.92), #020302)",
+            borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+            background: "linear-gradient(180deg, rgba(3, 5, 4, 0.92), #020302)",
           }}
         >
           <div
@@ -757,7 +734,7 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
               justifyContent: "space-between",
               alignItems: "center",
               gap: "10px",
-              color: "rgba(255,255,255,.76)",
+              color: "rgba(255, 255, 255, 0.76)",
               fontSize: "12px",
             }}
           >
@@ -775,7 +752,14 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
             }}
           >
             {benchPlayers.map((player) => (
-              <div key={player.userId} style={{ display: "grid", justifyItems: "center", gap: "4px" }}>
+              <div
+                key={player.userId}
+                style={{
+                  display: "grid",
+                  justifyItems: "center",
+                  gap: "4px",
+                }}
+              >
                 <span
                   style={{
                     width: "46px",
@@ -789,7 +773,7 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
                     color: "#fff",
                     fontSize: "10px",
                     fontWeight: 900,
-                    boxShadow: "0 5px 14px rgba(0,0,0,.38)",
+                    boxShadow: "0 5px 14px rgba(0, 0, 0, 0.38)",
                   }}
                 >
                   <PlayerPortrait player={player} fallback={playerInitials(player)} />
@@ -798,7 +782,7 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
                   style={{
                     width: "64px",
                     overflow: "hidden",
-                    color: "rgba(255,255,255,.86)",
+                    color: "rgba(255, 255, 255, 0.86)",
                     fontSize: "9px",
                     textAlign: "center",
                     textOverflow: "ellipsis",
@@ -810,10 +794,23 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
               </div>
             ))}
             {!benchPlayers.length ? (
-              <span style={{ color: "rgba(255,255,255,.52)", fontSize: "11px" }}>No bench players</span>
+              <span
+                style={{
+                  color: "rgba(255, 255, 255, 0.52)",
+                  fontSize: "11px",
+                }}
+              >
+                No bench players
+              </span>
             ) : null}
           </div>
-          <p style={{ margin: 0, color: "rgba(255,255,255,.52)", fontSize: "11px" }}>
+          <p
+            style={{
+              margin: 0,
+              color: "rgba(255, 255, 255, 0.52)",
+              fontSize: "11px",
+            }}
+          >
             Tap a player on the pitch to change the assignment.
           </p>
         </div>
@@ -829,17 +826,27 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
             border: `1px solid ${accent}66`,
             borderRadius: "18px",
             background: "linear-gradient(145deg, #0b100d, #050706)",
-            boxShadow: "0 18px 36px rgba(0,0,0,.32)",
+            boxShadow: "0 18px 36px rgba(0, 0, 0, 0.32)",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
             <strong style={{ color: "#fff" }}>
               Team {editingSlot.team} · {editingSlot.position}
             </strong>
             <button
               type="button"
               onClick={() => setEditingSlotId(null)}
-              style={{ border: 0, background: "transparent", color: "rgba(255,255,255,.7)" }}
+              style={{
+                border: 0,
+                background: "transparent",
+                color: "rgba(255, 255, 255, 0.7)",
+              }}
             >
               Close
             </button>
@@ -856,10 +863,10 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
               onClick={() => assign(editingSlot.id, "")}
               style={{
                 minHeight: "46px",
-                border: "1px solid rgba(255,255,255,.12)",
+                border: "1px solid rgba(255, 255, 255, 0.12)",
                 borderRadius: "12px",
-                background: "rgba(255,255,255,.035)",
-                color: "rgba(255,255,255,.7)",
+                background: "rgba(255, 255, 255, 0.035)",
+                color: "rgba(255, 255, 255, 0.7)",
               }}
             >
               Empty position
@@ -876,14 +883,16 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
                   style={{
                     minHeight: "46px",
                     display: "grid",
-                    gridTemplateColumns: "30px minmax(0,1fr)",
+                    gridTemplateColumns: "30px minmax(0, 1fr)",
                     alignItems: "center",
                     gap: "8px",
                     padding: "7px 9px",
-                    border: inThisSlot ? `1px solid ${accent}` : "1px solid rgba(255,255,255,.12)",
+                    border: inThisSlot
+                      ? `1px solid ${accent}`
+                      : "1px solid rgba(255, 255, 255, 0.12)",
                     borderRadius: "12px",
-                    background: inThisSlot ? `${accent}18` : "rgba(255,255,255,.035)",
-                    color: unavailable ? "rgba(255,255,255,.28)" : "#fff",
+                    background: inThisSlot ? `${accent}18` : "rgba(255, 255, 255, 0.035)",
+                    color: unavailable ? "rgba(255, 255, 255, 0.28)" : "#fff",
                     textAlign: "left",
                     opacity: unavailable ? 0.55 : 1,
                   }}
@@ -904,7 +913,13 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
                   >
                     <PlayerPortrait player={candidate} fallback={playerInitials(candidate)} />
                   </span>
-                  <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <span
+                    style={{
+                      minWidth: 0,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
                     {playerName(candidate)}
                   </span>
                 </button>
@@ -913,6 +928,77 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
           </div>
         </section>
       ) : null}
+
+      <details
+        style={{
+          border: "1px solid rgba(216, 180, 97, 0.22)",
+          borderRadius: "14px",
+          background: "#0a0b09",
+        }}
+      >
+        <summary
+          style={{
+            padding: "11px 13px",
+            color: "rgba(255, 255, 255, 0.78)",
+            fontSize: "12px",
+            fontWeight: 800,
+            cursor: "pointer",
+          }}
+        >
+          Formation settings
+        </summary>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "minmax(0, 1fr) auto",
+            gap: "10px",
+            padding: "0 12px 12px",
+          }}
+        >
+          <label
+            style={{
+              display: "grid",
+              gap: "5px",
+              color: "rgba(255, 255, 255, 0.64)",
+              fontSize: "11px",
+            }}
+          >
+            Formation name
+            <input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              maxLength={80}
+              style={{
+                minWidth: 0,
+                border: "1px solid rgba(255, 255, 255, 0.12)",
+                borderRadius: "10px",
+                background: "#080a08",
+                color: "#fff",
+                padding: "10px 11px",
+              }}
+            />
+          </label>
+          <label
+            style={{
+              alignSelf: "end",
+              minHeight: "42px",
+              display: "flex",
+              alignItems: "center",
+              gap: "7px",
+              color: "rgba(255, 255, 255, 0.72)",
+              fontSize: "12px",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={published}
+              onChange={(event) => setPublished(event.target.checked)}
+            />
+            Publish
+          </label>
+        </div>
+      </details>
 
       {success ? <p className="success">{success}</p> : null}
       {error ? <p className="error">{error}</p> : null}
