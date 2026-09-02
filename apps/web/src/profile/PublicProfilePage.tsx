@@ -46,51 +46,51 @@ export function PublicProfilePage({ username }: { username: string }) {
   }
 
   const { presentation } = profile;
+  const primaryPosition = profile.player?.preferredPositions[0] ?? null;
+  const openTeam = profile.teams[0]?.name ?? null;
+
   return (
     <section className="public-profile-page">
-      <header className="public-profile-hero">
-        <div className="public-profile-photo" aria-hidden={!presentation.photoUrl}>
+      <header className="hooma-passport-card">
+        <div className="hooma-passport-card__copy">
+          <p className="hooma-passport-card__kicker">HOOMA PASSPORT</p>
+          <h1>{presentation.displayName}</h1>
+          <p className="hooma-passport-card__handle">@{presentation.username}</p>
+          {profile.player ? (
+            <>
+              <p className="hooma-passport-card__ovr">{profile.player.overallRating}</p>
+              <p className="hooma-passport-card__pos">{primaryPosition || "PLAYER"}</p>
+            </>
+          ) : null}
+          <PublicIdentityBadges identities={profile.identities} />
+        </div>
+        <div className="hooma-passport-card__photo" aria-hidden={!presentation.photoUrl}>
           {presentation.photoUrl ? (
             <img src={presentation.photoUrl} alt="" />
           ) : (
             <span>{presentation.displayName.slice(0, 1).toUpperCase()}</span>
           )}
         </div>
-        <div className="public-profile-copy">
-          <p className="eyebrow">HOOMA PASSPORT</p>
-          <h1>{presentation.displayName}</h1>
-          <p className="public-profile-username">@{presentation.username}</p>
-          <PublicIdentityBadges identities={profile.identities} />
-          {presentation.bio ? <p className="public-profile-bio">{presentation.bio}</p> : null}
-        </div>
       </header>
 
       {profile.player ? (
-        <section className="panel public-profile-player">
+        <div className="hooma-passport-stats" aria-label="Football profile">
           <div>
-            <p className="eyebrow">PLAYER</p>
-            <h2>Football profile</h2>
+            <span>PLAY STYLE</span>
+            <strong className="is-yellow">{formatEnumLabel(profile.player.skillLevel)}</strong>
           </div>
-          <div className="public-profile-player-grid">
-            <div>
-              <span>Skill level</span>
-              <strong>{formatEnumLabel(profile.player.skillLevel)}</strong>
-            </div>
-            <div>
-              <span>Overall rating</span>
-              <strong>{profile.player.overallRating}</strong>
-            </div>
-            <div>
-              <span>Preferred positions</span>
-              <strong>
-                {profile.player.preferredPositions.length
-                  ? profile.player.preferredPositions.join(" · ")
-                  : "Not set"}
-              </strong>
-            </div>
+          <div>
+            <span>POSITION</span>
+            <strong className="is-orange">{primaryPosition || "—"}</strong>
           </div>
-        </section>
+          <div>
+            <span>TEAM STATUS</span>
+            <strong className="is-green">{openTeam ? "OPEN TEAM" : "FREE AGENT"}</strong>
+          </div>
+        </div>
       ) : null}
+
+      {presentation.bio ? <p className="public-profile-bio">{presentation.bio}</p> : null}
 
       {profile.teams.length ? (
         <section className="panel public-profile-teams">
@@ -105,7 +105,7 @@ export function PublicProfilePage({ username }: { username: string }) {
                   {team.badgeUrl ? <img src={team.badgeUrl} alt="" /> : team.name.slice(0, 1)}
                 </span>
                 <strong>{team.name}</strong>
-                <span>Open Team</span>
+                <span>OPEN</span>
               </a>
             ))}
           </div>
@@ -135,7 +135,9 @@ function PublicIdentityBadges({ identities }: { identities: readonly ProfileIden
   return (
     <div className="public-profile-identities" aria-label="HOOMA identities">
       {identities.map((identity) => (
-        <span key={identity}>{identityLabel(identity)}</span>
+        <span key={identity} data-identity={identity}>
+          {identityLabel(identity)}
+        </span>
       ))}
     </div>
   );
