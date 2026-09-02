@@ -493,27 +493,25 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
           background: "#111210",
         }}
       >
-        {(["FIVE_V_FIVE", "SEVEN_V_SEVEN", "ELEVEN_V_ELEVEN"] as const).map(
-          (candidate) => (
-            <button
-              type="button"
-              key={candidate}
-              aria-pressed={format === candidate}
-              onClick={() => changeFormat(candidate)}
-              style={{
-                minHeight: "48px",
-                border: format === candidate ? "1px solid #31f56f" : "1px solid transparent",
-                borderRadius: "9px",
-                background: format === candidate ? "#31f56f" : "transparent",
-                color: format === candidate ? "#061109" : "rgba(255, 255, 255, 0.72)",
-                fontSize: "16px",
-                fontWeight: 800,
-              }}
-            >
-              {formatLabel(candidate)}
-            </button>
-          ),
-        )}
+        {(["FIVE_V_FIVE", "SEVEN_V_SEVEN", "ELEVEN_V_ELEVEN"] as const).map((candidate) => (
+          <button
+            type="button"
+            key={candidate}
+            aria-pressed={format === candidate}
+            onClick={() => changeFormat(candidate)}
+            style={{
+              minHeight: "48px",
+              border: format === candidate ? "1px solid #31f56f" : "1px solid transparent",
+              borderRadius: "9px",
+              background: format === candidate ? "#31f56f" : "transparent",
+              color: format === candidate ? "#061109" : "rgba(255, 255, 255, 0.72)",
+              fontSize: "16px",
+              fontWeight: 800,
+            }}
+          >
+            {formatLabel(candidate)}
+          </button>
+        ))}
       </div>
 
       <div
