@@ -334,24 +334,54 @@ export function ProfileContent({
   me: MeResponse;
   profile?: ProfileResponse | null;
 }) {
+  const primaryPosition = profile?.player?.preferredPositions[0] ?? null;
+  const openTeam = me.teams[0]?.name ?? null;
+
   return (
     <>
-      <header className="profile-card">
+      <header className="hooma-passport-card">
+        <div className="hooma-passport-card__copy">
+          <p className="hooma-passport-card__kicker">HOOMA PASSPORT</p>
+          <h1>{me.presentation.displayName}</h1>
+          <p className="hooma-passport-card__handle">@{me.presentation.username}</p>
+          {profile?.player ? (
+            <>
+              <p className="hooma-passport-card__ovr">{profile.player.overallRating}</p>
+              <p className="hooma-passport-card__pos">{primaryPosition || "PLAYER"}</p>
+            </>
+          ) : null}
+          {profile ? <IdentityBadges identities={profile.identities} /> : null}
+        </div>
         {me.presentation.photoUrl ? (
-          <img src={me.presentation.photoUrl} alt="" />
+          <div className="hooma-passport-card__photo">
+            <img src={me.presentation.photoUrl} alt="" />
+          </div>
         ) : (
-          <div className="profile-avatar" aria-hidden="true">
-            {me.presentation.displayName.slice(0, 1).toUpperCase()}
+          <div className="hooma-passport-card__photo" aria-hidden="true">
+            <span>{me.presentation.displayName.slice(0, 1).toUpperCase()}</span>
           </div>
         )}
-        <div>
-          <p className="eyebrow">HOOMA PASSPORT</p>
-          <h2>{me.presentation.displayName}</h2>
-          <p>@{me.presentation.username}</p>
-          {profile ? <IdentityBadges identities={profile.identities} /> : null}
-          {me.presentation.bio ? <p>{me.presentation.bio}</p> : null}
-        </div>
       </header>
+
+      {profile?.player ? (
+        <div className="hooma-passport-stats" aria-label="Football profile">
+          <div>
+            <span>PLAY STYLE</span>
+            <strong className="is-yellow">{formatEnumLabel(profile.player.skillLevel)}</strong>
+          </div>
+          <div>
+            <span>POSITION</span>
+            <strong className="is-orange">{primaryPosition || "—"}</strong>
+          </div>
+          <div>
+            <span>TEAM STATUS</span>
+            <strong className="is-green">{openTeam ? "OPEN TEAM" : "FREE AGENT"}</strong>
+          </div>
+        </div>
+      ) : null}
+
+      {me.presentation.bio ? <p className="public-profile-bio">{me.presentation.bio}</p> : null}
+
       <section className="panel">
         <h3>My Teams</h3>
         {me.teams.length ? (
@@ -416,9 +446,9 @@ export function ProfileContent({
 function IdentityBadges({ identities }: { identities: readonly ProfileIdentity[] }) {
   const values = identities.length ? identities : (["GHOST_RIDER"] as const);
   return (
-    <div className="profile-identity-badges" aria-label="HOOMA identities">
+    <div className="profile-identity-badges public-profile-identities" aria-label="HOOMA identities">
       {values.map((identity) => (
-        <span key={identity}>
+        <span key={identity} data-identity={identity}>
           {identity === "GHOST_RIDER" ? "Ghost Rider" : identityLabel(identity)}
         </span>
       ))}
