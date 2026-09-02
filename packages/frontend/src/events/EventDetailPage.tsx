@@ -85,16 +85,9 @@ function UsersIcon({ color }: IconProps = {}) {
 }
 function BallIcon() {
   return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6" />
-      <path
-        d="m12 7 3 2.2-1.15 3.55h-3.7L9 9.2 12 7Zm-3 2.2-3.2.1M15 9.2l3.2.1M10.15 12.75l-2.2 3M13.85 12.75l2.2 3M7.95 15.75l.75 3.05M16.05 15.75l-.75 3.05"
-        stroke="currentColor"
-        strokeWidth="1.35"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    <span aria-hidden="true" style={{ fontSize: "44px", lineHeight: 1 }}>
+      ⚽
+    </span>
   );
 }
 
