@@ -5,6 +5,7 @@ import "./teams/team-media.css";
 import "./teams/coach-control-room.css";
 import "./teams/team-offers.css";
 import "./athletes/athletes.css";
+import "./athletes/athletes-semantic.css";
 import "./forms/hooma-form.css";
 import "./game-location/game-location.css";
 import "./places/places.css";
