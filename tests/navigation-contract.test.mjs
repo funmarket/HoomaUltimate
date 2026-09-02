@@ -11,7 +11,7 @@ test("locked bottom navigation and six-card Home gateway cannot drift", async ()
   );
   assert.deepEqual(
     [...nav.matchAll(/label: "([^"]+)"/g)].map((match) => match[1]),
-    ["Home", "Play", "Watch", "HOOMA", "Pitch"],
+    ["Home", "Play", "Watch", "HOOMA", "Athletes"],
   );
   assert.deepEqual(
     [...gatewaySource.matchAll(/label: "([^"]+)"/g)].map((match) => match[1]),
