@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useHoomaFrontend } from "../context";
 import type { FormationRecord, FormationRosterPlayer, PublicEvent } from "./api";
 import { useEventApi } from "./useEventApi";
@@ -47,6 +47,8 @@ const FORMATIONS: Record<Format, Array<{ position: string; x: number; y: number 
   ],
 };
 
+const markingLine = "rgba(247, 248, 241, 0.74)";
+
 function makeSlots(format: Format): Slot[] {
   return (["A", "B"] as const).flatMap((team) =>
     FORMATIONS[format].map((slot, index) => ({
@@ -63,6 +65,211 @@ function makeSlots(format: Format): Slot[] {
 
 function playerName(player: FormationRosterPlayer): string {
   return player.presentation?.displayName || player.presentation?.username || "HOOMA player";
+}
+
+function playerInitials(player: FormationRosterPlayer): string {
+  return playerName(player)
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function formatLabel(format: Format): string {
+  if (format === "FIVE_V_FIVE") return "5 v 5";
+  if (format === "SEVEN_V_SEVEN") return "7 v 7";
+  return "11 v 11";
+}
+
+function PitchMarkings() {
+  const absoluteLine: CSSProperties = {
+    position: "absolute",
+    pointerEvents: "none",
+    borderColor: markingLine,
+    boxSizing: "border-box",
+  };
+
+  return (
+    <>
+      <span
+        aria-hidden="true"
+        style={{
+          ...absoluteLine,
+          left: "27%",
+          top: "5%",
+          width: "46%",
+          height: "14%",
+          borderStyle: "solid",
+          borderWidth: "0 1px 1px",
+        }}
+      />
+      <span
+        aria-hidden="true"
+        style={{
+          ...absoluteLine,
+          left: "38%",
+          top: "5%",
+          width: "24%",
+          height: "6%",
+          borderStyle: "solid",
+          borderWidth: "0 1px 1px",
+        }}
+      />
+      <span
+        aria-hidden="true"
+        style={{
+          ...absoluteLine,
+          left: "27%",
+          bottom: "5%",
+          width: "46%",
+          height: "14%",
+          borderStyle: "solid",
+          borderWidth: "1px 1px 0",
+        }}
+      />
+      <span
+        aria-hidden="true"
+        style={{
+          ...absoluteLine,
+          left: "38%",
+          bottom: "5%",
+          width: "24%",
+          height: "6%",
+          borderStyle: "solid",
+          borderWidth: "1px 1px 0",
+        }}
+      />
+      <span
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "13.5%",
+          width: "4px",
+          height: "4px",
+          transform: "translate(-50%, -50%)",
+          borderRadius: "50%",
+          background: markingLine,
+          pointerEvents: "none",
+        }}
+      />
+      <span
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          left: "50%",
+          bottom: "13.5%",
+          width: "4px",
+          height: "4px",
+          transform: "translate(-50%, 50%)",
+          borderRadius: "50%",
+          background: markingLine,
+          pointerEvents: "none",
+        }}
+      />
+      <span
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "50%",
+          width: "5px",
+          height: "5px",
+          transform: "translate(-50%, -50%)",
+          borderRadius: "50%",
+          background: markingLine,
+          pointerEvents: "none",
+        }}
+      />
+      <span
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          left: "42%",
+          top: "2.1%",
+          width: "16%",
+          height: "3.2%",
+          border: `1px solid ${markingLine}`,
+          borderBottom: 0,
+          borderRadius: "4px 4px 0 0",
+          boxShadow: "0 -5px 12px rgba(255, 255, 255, 0.08)",
+          pointerEvents: "none",
+        }}
+      />
+      <span
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          left: "42%",
+          bottom: "2.1%",
+          width: "16%",
+          height: "3.2%",
+          border: `1px solid ${markingLine}`,
+          borderTop: 0,
+          borderRadius: "0 0 4px 4px",
+          boxShadow: "0 5px 12px rgba(255, 255, 255, 0.08)",
+          pointerEvents: "none",
+        }}
+      />
+      <span
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          left: "4.5%",
+          top: "4.5%",
+          width: "17px",
+          height: "17px",
+          borderTop: `1px solid ${markingLine}`,
+          borderLeft: `1px solid ${markingLine}`,
+          borderRadius: "17px 0 0",
+          pointerEvents: "none",
+        }}
+      />
+      <span
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          right: "4.5%",
+          top: "4.5%",
+          width: "17px",
+          height: "17px",
+          borderTop: `1px solid ${markingLine}`,
+          borderRight: `1px solid ${markingLine}`,
+          borderRadius: "0 17px 0 0",
+          pointerEvents: "none",
+        }}
+      />
+      <span
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          left: "4.5%",
+          bottom: "4.5%",
+          width: "17px",
+          height: "17px",
+          borderBottom: `1px solid ${markingLine}`,
+          borderLeft: `1px solid ${markingLine}`,
+          borderRadius: "0 0 0 17px",
+          pointerEvents: "none",
+        }}
+      />
+      <span
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          right: "4.5%",
+          bottom: "4.5%",
+          width: "17px",
+          height: "17px",
+          borderBottom: `1px solid ${markingLine}`,
+          borderRight: `1px solid ${markingLine}`,
+          borderRadius: "0 0 17px",
+          pointerEvents: "none",
+        }}
+      />
+    </>
+  );
 }
 
 export function FormationBuilderPage({ eventId }: { readonly eventId: string }) {
@@ -204,56 +411,154 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
       </div>
 
       <div className="formation-pitches">
-        {(["A", "B"] as const).map((team) => (
-          <section key={team} className="formation-team">
-            <h2>Team {team}</h2>
-            <div className="formation-pitch">
-              <span className="formation-pitch__half" aria-hidden="true" />
-              <span className="formation-pitch__circle" aria-hidden="true" />
-              {slots
-                .filter((slot) => slot.team === team)
-                .map((slot) => {
-                  const player = slot.userId ? byId.get(slot.userId) : undefined;
-                  return (
-                    <label
-                      className="formation-slot"
-                      key={slot.id}
-                      style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
-                    >
-                      <span className="formation-slot__marker">
-                        {player
-                          ? playerName(player)
-                              .split(/\s+/)
-                              .map((part) => part[0])
-                              .join("")
-                              .slice(0, 2)
-                              .toUpperCase()
-                          : slot.label}
-                      </span>
-                      <select
-                        aria-label={`Team ${team} ${slot.position}`}
-                        value={slot.userId || ""}
-                        onChange={(e) => assign(slot.id, e.target.value)}
+        {(["A", "B"] as const).map((team) => {
+          const accent = team === "A" ? "#31f56f" : "#f2c94c";
+          return (
+            <section key={team} className="formation-team">
+              <h2
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "10px",
+                }}
+              >
+                <span>Team {team}</span>
+                <span style={{ color: accent, fontSize: "11px" }}>{formatLabel(format)}</span>
+              </h2>
+              <div
+                className="formation-pitch"
+                style={{
+                  borderColor: `${accent}66`,
+                  background:
+                    "radial-gradient(circle at 50% 44%, rgba(255, 255, 255, 0.11), transparent 34%), repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0 9.5%, rgba(0, 0, 0, 0.05) 9.5% 19%), linear-gradient(180deg, #1c623a 0%, #154c30 46%, #113d28 100%)",
+                  boxShadow:
+                    "inset 0 0 52px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 24px 50px rgba(0, 0, 0, 0.32)",
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    background:
+                      "radial-gradient(ellipse at 50% -8%, rgba(255, 255, 255, 0.16), transparent 32%), radial-gradient(ellipse at 50% 108%, rgba(49, 245, 111, 0.08), transparent 34%), linear-gradient(90deg, rgba(0, 0, 0, 0.18), transparent 16%, transparent 84%, rgba(0, 0, 0, 0.18))",
+                    pointerEvents: "none",
+                  }}
+                />
+                <span className="formation-pitch__half" aria-hidden="true" />
+                <span className="formation-pitch__circle" aria-hidden="true" />
+                <PitchMarkings />
+                {slots
+                  .filter((slot) => slot.team === team)
+                  .map((slot) => {
+                    const player = slot.userId ? byId.get(slot.userId) : undefined;
+                    const photoUrl = player?.presentation?.photoUrl || null;
+                    return (
+                      <label
+                        className="formation-slot"
+                        key={slot.id}
+                        style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
                       >
-                        <option value="">{slot.position}</option>
-                        {players.map((candidate) => (
-                          <option
-                            value={candidate.userId}
-                            key={candidate.userId}
-                            disabled={
-                              assigned.has(candidate.userId) && candidate.userId !== slot.userId
-                            }
+                        <span
+                          className="formation-slot__marker"
+                          style={{
+                            width: "44px",
+                            height: "44px",
+                            position: "relative",
+                            overflow: "visible",
+                            borderColor: accent,
+                            background: "rgba(5, 12, 8, 0.94)",
+                            boxShadow: `0 0 0 4px ${accent}1f, 0 8px 18px rgba(0, 0, 0, 0.48)`,
+                          }}
+                        >
+                          {photoUrl ? (
+                            <img
+                              src={photoUrl}
+                              alt=""
+                              onError={(event) => {
+                                event.currentTarget.style.display = "none";
+                              }}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                                borderRadius: "50%",
+                              }}
+                            />
+                          ) : player ? (
+                            playerInitials(player)
+                          ) : (
+                            slot.label
+                          )}
+                          <span
+                            style={{
+                              position: "absolute",
+                              right: "-8px",
+                              bottom: "-5px",
+                              minWidth: "22px",
+                              padding: "2px 5px",
+                              border: `1px solid ${accent}`,
+                              borderRadius: "999px",
+                              background: "#07100b",
+                              color: accent,
+                              fontSize: "8px",
+                              fontWeight: 950,
+                              lineHeight: 1.15,
+                              textAlign: "center",
+                            }}
                           >
-                            {playerName(candidate)}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  );
-                })}
-            </div>
-          </section>
-        ))}
+                            {slot.position}
+                          </span>
+                        </span>
+                        <span
+                          style={{
+                            maxWidth: "84px",
+                            overflow: "hidden",
+                            padding: "2px 6px",
+                            borderRadius: "999px",
+                            background: "rgba(2, 6, 4, 0.74)",
+                            color: player ? "#fff" : "rgba(255, 255, 255, 0.7)",
+                            fontSize: "9px",
+                            fontWeight: 800,
+                            lineHeight: 1.2,
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            boxShadow: "0 3px 8px rgba(0, 0, 0, 0.32)",
+                          }}
+                        >
+                          {player ? playerName(player) : slot.position}
+                        </span>
+                        <select
+                          aria-label={`Team ${team} ${slot.position}`}
+                          value={slot.userId || ""}
+                          onChange={(e) => assign(slot.id, e.target.value)}
+                          style={{
+                            borderColor: `${accent}73`,
+                            background: "rgba(4, 9, 6, 0.93)",
+                            color: "#fff",
+                          }}
+                        >
+                          <option value="">{slot.position}</option>
+                          {players.map((candidate) => (
+                            <option
+                              value={candidate.userId}
+                              key={candidate.userId}
+                              disabled={
+                                assigned.has(candidate.userId) && candidate.userId !== slot.userId
+                              }
+                            >
+                              {playerName(candidate)}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    );
+                  })}
+              </div>
+            </section>
+          );
+        })}
       </div>
 
       <section className="formation-roster panel">
