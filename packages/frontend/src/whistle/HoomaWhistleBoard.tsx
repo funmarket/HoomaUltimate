@@ -6,7 +6,7 @@ import { listEventWhistles, sendEventWhistle } from "./event-api";
 const MAX_GRAPHEMES = 33;
 const REFRESH_INTERVAL_MS = 10_000;
 
-type BoardContext = "COMMUNITY" | "EVENT";
+type BoardContext = "COMMUNITY" | "EVENT" | "ATHLETES";
 
 type WhistleBoardProps = {
   readonly contextType: BoardContext;
@@ -73,7 +73,7 @@ function WhistleBoard({
   const [body, setBody] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [authorized, setAuthorized] = useState(contextType === "COMMUNITY");
+  const [authorized, setAuthorized] = useState(contextType !== "EVENT");
   const [error, setError] = useState("");
   const count = graphemeCount(body);
 
@@ -84,13 +84,15 @@ function WhistleBoard({
         const next =
           contextType === "COMMUNITY"
             ? await api.whistles.community(contextId)
-            : await listEventWhistles(transport, contextId);
+            : contextType === "ATHLETES"
+              ? await api.whistles.athletes(contextId)
+              : await listEventWhistles(transport, contextId);
         setFeed(next);
         setAuthorized(true);
         setError("");
       } catch (reason) {
         if (
-          contextType === "EVENT" &&
+          (contextType === "EVENT" || contextType === "ATHLETES") &&
           reason instanceof HoomaApiError &&
           (reason.status === 401 || reason.status === 403)
         ) {
@@ -120,6 +122,8 @@ function WhistleBoard({
     try {
       if (contextType === "COMMUNITY") {
         await api.whistles.sendToCommunity(contextId, body);
+      } else if (contextType === "ATHLETES") {
+        await api.whistles.sendToAthletes(contextId, body);
       } else {
         await sendEventWhistle(transport, contextId, body);
       }
@@ -132,7 +136,8 @@ function WhistleBoard({
     }
   }
 
-  if (contextType === "EVENT" && !loading && !authorized) return null;
+  if ((contextType === "EVENT" || contextType === "ATHLETES") && !loading && !authorized)
+    return null;
 
   return (
     <article className="panel hooma-hq-module whistle-module hooma-whistle-board">
@@ -240,6 +245,22 @@ export function EventWhistleBoard({ eventId }: { readonly eventId: string }) {
       eyebrow="EVENT · PARTICIPANTS"
       emptyTitle="Quiet before kickoff."
       emptyText="Be the first participant to send a short matchday signal."
+    />
+  );
+}
+
+export function AthletesWhistleBoard({
+  athletesCommunityId,
+}: {
+  readonly athletesCommunityId: string;
+}) {
+  return (
+    <WhistleBoard
+      contextType="ATHLETES"
+      contextId={athletesCommunityId}
+      eyebrow="ATHLETES · MEMBERS ONLY"
+      emptyTitle="Quiet in this Athletes community."
+      emptyText="Be the first active member to send a short signal today."
     />
   );
 }

@@ -1069,6 +1069,45 @@ Whistle cannot be `DONE` until these pass against real Redis/PostgreSQL infrastr
 
 ---
 
+# Athletes Whistle PR 3 implementation map
+
+Foundation: `812515554adb8a712a8d39cea751880880a124b2` (`phase-0-foundation` after PR #215 merge plus non-overlapping Ride styling commits). Open PRs at latest recheck: none. Branch was safely rebased from `b9d214745cb7e85121502e423fb36286b42dfa86`; incoming files were `packages/frontend/src/index.ts` and `packages/frontend/src/rides/ride-hero-actions-google.css`, with no overlap against Athletes Whistle functional files.
+
+Source trace:
+
+- Canonical Whistle context type is `WhistleContextType` in `apps/api/src/modules/whistle/application/whistle.repository.ts` and the matching PostgreSQL enum in `packages/database/prisma/schema.prisma`.
+- Whistle HTTP API is `apps/api/src/modules/whistle/http/whistle.routes.ts` at `/api/v1/whistles/contexts/:contextType/:contextId`; it currently allows only public context enum values, while direct user/gamer contexts use adapter routes.
+- Whistle service owner is `apps/api/src/modules/whistle/application/whistle.service.ts`; it owns `DAILY_LIMIT = 11`, `Intl.Segmenter` grapheme counting, UTC-day keying, next-UTC-midnight expiry, and context authorization dispatch.
+- Transient body storage is `apps/api/src/modules/whistle/infrastructure/redis-whistle-store.ts` using `whistle:body:<id>` Redis keys with PX expiry.
+- Durable metadata persistence is `apps/api/src/modules/whistle/infrastructure/prisma-whistle.repository.ts` in `WhistleMetadata` only: `id`, `authorUserId`, `contextType`, `contextId`, `createdAt`, `expiresAt`; no body column.
+- Quota counting is global per user/day in `PrismaWhistleRepository.createWithDailyQuota` and `quotaUsed`, backed by `WhistleMetadata` count plus PostgreSQL advisory transaction lock.
+- Existing context authorization dispatches to `CommunityService.requireMember` and `EventService.requireMemberContent`; direct Gamer/User contexts resolve through dedicated service adapters and never use the raw context route.
+- Athletes membership authority is `AthletesService` backed by `AthletesRepository.activeRole` / `managerRole`, which require `AthletesMembership.leftAt = null` and active `AthletesCommunity.status`.
+
+Implementation plan:
+
+1. Add `ATHLETES` to the canonical Whistle context type and PostgreSQL enum, with a forward migration only for the enum value.
+2. Add an Athletes service authorization method that requires an active member of the exact Athletes community and exposes no role-specific extra privilege.
+3. Inject `AthletesService` into `WhistleService`; route `ATHLETES` context authorization through the Athletes membership authority.
+4. Extend the existing Whistle context route schema to accept `ATHLETES`; keep body validation, quota, expiry, transient body storage, and metadata persistence unchanged.
+5. Add frontend API helpers and reuse `WhistleBoard` for `ATHLETES`; render it only when `detail.viewerRole` proves active membership on the Athletes detail/member view.
+6. Add focused tests for Athletes member/non-member/left/wrong-community/founder/moderator/unauthenticated access, shared 11/day quota, 33-grapheme behavior, Redis-only body storage, metadata body exclusion, expiry cleanup, and existing Whistle context regressions.
+
+Styling scope: none. Any frontend class additions must be functional wiring only.
+
+Current implementation status after foundation update `dfda56bc80009059680cd77237478cc8c197951b`:
+
+- Preserved the uncommitted Athletes Whistle work with a stash/reapply workflow and rebased `feat/athletes-whistle` onto current `origin/phase-0-foundation` at `dfda56bc80009059680cd77237478cc8c197951b` (Ride presentation-only foundation commit).
+- Open PR list at rebase time remained empty; incoming foundation file was `packages/frontend/src/rides/RideGatewayPage.tsx`, with no overlap against Athletes Whistle files.
+- Added `ATHLETES` to canonical `WhistleContextType` and kept the migration minimal: `ALTER TYPE "WhistleContextType" ADD VALUE IF NOT EXISTS ATHLETES;`.
+- No CSS/styling files are changed by Athletes Whistle.
+- Rebase validation passed: `npm run db:generate`, `npm run db:validate`, `npm run architecture:check`, `npm run typecheck`, `npm run build:packages`, focused Whistle/Athletes unit tests, changed-file Prettier, changed-source ESLint, `git diff --check`, `npm run build`, `npm run deploy:preflight`, and `npm run security:check`.
+- `npm test` now fails only on two Ride mobile hub visual assertions introduced by the unrelated Ride foundation commit; the same focused Ride visual test fails on a detached clean current foundation worktree at `dfda56bc80009059680cd77237478cc8c197951b`, so it is recorded as a separate foundation issue and not an Athletes Whistle blocker.
+- Repository-wide `npm run format:check` and `npm run lint` currently report unrelated foundation files outside this diff; changed-file formatting and changed-source lint are clean.
+- Local PostgreSQL-backed `tests/athletes-whistle.integration.test.ts`, `npm run test:integration`, and `npm run db:migrate:status` remain locally blocked because no PostgreSQL server is reachable at `localhost:5432`; Redis is reachable at `127.0.0.1:6379`. Exact-head CI must provide PostgreSQL integration/migration proof.
+
+---
+
 # 28. PHASE 10 — ULTRAS
 
 ULTRAS is a first-class supporter-community domain, not Team tables renamed.

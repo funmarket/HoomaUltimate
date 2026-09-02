@@ -165,6 +165,11 @@ export class AthletesService {
     return { ok: true };
   }
 
+  async requireMemberContent(userId: string, id: string) {
+    const role = await this.repository.activeRole(id, userId);
+    if (!role) throw new AthletesError("ATHLETES_MEMBER_REQUIRED", "Athletes membership required");
+  }
+
   private async requireActive(id: string) {
     const community = await this.repository.lifecycle(id);
     if (!community || community.status !== "ACTIVE")

@@ -209,6 +209,7 @@ enum EventTeamSide {
 enum WhistleContextType {
   COMMUNITY
   EVENT
+  ATHLETES
   TEAM
   RIDE
   ULTRAS

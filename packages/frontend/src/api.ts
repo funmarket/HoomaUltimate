@@ -370,6 +370,17 @@ export function createHoomaApi(transport: HoomaTransport) {
         `/api/v1/whistles/contexts/COMMUNITY/${encodeURIComponent(communityId)}`,
         { method: "POST", body: JSON.stringify({ body }) },
       ),
+    athletes: (athletesCommunityId: string) =>
+      request<WhistleList>(
+        transport,
+        `/api/v1/whistles/contexts/ATHLETES/${encodeURIComponent(athletesCommunityId)}`,
+      ),
+    sendToAthletes: (athletesCommunityId: string, body: string) =>
+      request<{ whistle: WhistleListItem; remainingToday: number; resetsAt: string }>(
+        transport,
+        `/api/v1/whistles/contexts/ATHLETES/${encodeURIComponent(athletesCommunityId)}`,
+        { method: "POST", body: JSON.stringify({ body }) },
+      ),
   };
 
   const athletes = {
