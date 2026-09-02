@@ -1,0 +1,312 @@
+.hooma-page {
+  --hooma-page-positive: var(--app-positive, #a3e635);
+  --hooma-page-people: var(--app-people-blue, #58bfff);
+  --hooma-page-warning: var(--app-warning, #ff913d);
+  --hooma-page-text: var(--app-text, #f4f1ea);
+  --hooma-page-text-strong: var(--app-text-strong, #f4f1ea);
+  --hooma-page-muted: var(--app-text-secondary, #a9b0a3);
+  --hooma-page-accent: var(--app-gold, #e8c36a);
+  --hooma-page-surface: #111510;
+  --hooma-page-surface-raised: #171d15;
+  --hooma-page-border: rgba(255, 255, 255, 0.105);
+  --hooma-page-border-strong: rgba(255, 255, 255, 0.17);
+
+  gap: 0.9rem;
+}
+
+/* Match Athletes: compact graphite surfaces, neutral borders, restrained depth. */
+.hooma-page .panel,
+.hooma-page .state-card,
+.hooma-page .member-gate,
+.hooma-page .hooma-discovery-card {
+  border: 1px solid var(--hooma-page-border);
+  border-radius: 1.35rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018)),
+    rgba(13, 14, 16, 0.92);
+  color: var(--hooma-page-text);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 16px 32px rgba(0, 0, 0, 0.22);
+}
+
+.hooma-page .panel {
+  padding: 1rem;
+}
+
+.hooma-page .state-card,
+.hooma-page .member-gate {
+  padding: 1rem;
+}
+
+.hooma-page .eyebrow {
+  color: var(--hooma-page-accent);
+}
+
+.hooma-page h1,
+.hooma-page h2,
+.hooma-page h3,
+.hooma-page strong {
+  color: var(--hooma-page-text-strong);
+}
+
+.hooma-page .muted,
+.hooma-page p,
+.hooma-page small {
+  color: var(--hooma-page-muted);
+}
+
+/* Hero uses the same restrained graphite treatment as Athletes. */
+.hooma-page .hooma-hero {
+  min-height: 13rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 1.25rem;
+  border-color: var(--hooma-page-border);
+}
+
+.hooma-page .hooma-hero::after {
+  inset: auto -3.5rem -4.5rem auto;
+  width: 11rem;
+  height: 11rem;
+  border-color: color-mix(in srgb, var(--hooma-page-accent) 20%, transparent);
+  opacity: 0.7;
+}
+
+.hooma-page .hooma-hero h1 {
+  margin: 0.35rem 0 0.7rem;
+  color: var(--hooma-page-text-strong);
+  font-size: clamp(2.25rem, 11vw, 4.5rem);
+  line-height: 0.93;
+  letter-spacing: -0.055em;
+}
+
+.hooma-page .hooma-hero p {
+  max-width: 34rem;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
+
+.hooma-page .hooma-section-heading {
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.hooma-page .hooma-section-heading h2,
+.hooma-page .hooma-memberships h2 {
+  color: var(--hooma-page-text-strong);
+}
+
+/* Creation callout: white identity text, neutral support copy, positive action green. */
+.hooma-page .hooma-create-callout {
+  gap: 0.85rem;
+  border-color: var(--hooma-page-border);
+}
+
+.hooma-page .hooma-create-callout > div {
+  gap: 0.28rem;
+}
+
+.hooma-page .hooma-create-callout strong {
+  color: var(--hooma-page-text-strong);
+  font-size: 1.05rem;
+}
+
+.hooma-page .hooma-create-callout span,
+.hooma-page .hooma-create-callout small {
+  color: var(--hooma-page-muted);
+}
+
+.hooma-page .button,
+.hooma-page .hooma-create-action {
+  border-color: color-mix(in srgb, var(--hooma-page-positive) 72%, transparent);
+  border-radius: 1.05rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.018)),
+    rgba(9, 10, 11, 0.94);
+  color: var(--hooma-page-text-strong);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 2px 0 color-mix(in srgb, var(--hooma-page-positive) 32%, transparent),
+    0 8px 18px rgba(0, 0, 0, 0.24);
+}
+
+.hooma-page .button:hover,
+.hooma-page .hooma-create-action:hover {
+  border-color: var(--hooma-page-positive);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.08),
+      color-mix(in srgb, var(--hooma-page-positive) 7%, transparent)
+    ),
+    rgba(9, 10, 11, 0.96);
+}
+
+.hooma-page .button:focus-visible,
+.hooma-page button:focus-visible {
+  outline: 2px solid var(--hooma-page-positive);
+  outline-offset: 3px;
+}
+
+/* Member identity: display/community name white, @handle and role blue. */
+.hooma-page .hooma-community-list {
+  gap: 0;
+  margin-top: 0.85rem;
+}
+
+.hooma-page .hooma-community-row {
+  min-height: 4rem;
+  padding: 0.8rem 0;
+  border-top-color: rgba(255, 255, 255, 0.075);
+}
+
+.hooma-page .hooma-community-row strong {
+  color: var(--hooma-page-text-strong);
+}
+
+.hooma-page .hooma-community-row div span {
+  color: var(--hooma-page-people);
+  opacity: 0.78;
+}
+
+.hooma-page .hooma-role-chip {
+  border-color: color-mix(in srgb, var(--hooma-page-people) 42%, transparent);
+  background: color-mix(in srgb, var(--hooma-page-people) 8%, transparent);
+  color: var(--hooma-page-people);
+  border-radius: 0.8rem;
+}
+
+/* Availability is positive; restricted/private visibility is caution. */
+.hooma-page .hooma-visibility-indicator.is-public {
+  border-color: color-mix(in srgb, var(--hooma-page-positive) 42%, transparent);
+  background: color-mix(in srgb, var(--hooma-page-positive) 8%, rgba(5, 6, 6, 0.84));
+  color: var(--hooma-page-positive);
+}
+
+.hooma-page .hooma-visibility-indicator.is-private {
+  border-color: color-mix(in srgb, var(--hooma-page-warning) 42%, transparent);
+  background: color-mix(in srgb, var(--hooma-page-warning) 7%, rgba(5, 6, 6, 0.84));
+  color: var(--hooma-page-warning);
+}
+
+/* Discovery cards mirror Athletes card typography and density. */
+.hooma-page .hooma-discovery-grid {
+  gap: 0.8rem;
+}
+
+.hooma-page .hooma-discovery-card {
+  border-color: var(--hooma-page-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.018)),
+    rgba(12, 13, 15, 0.94);
+}
+
+.hooma-page .hooma-discovery-card:hover {
+  border-color: var(--hooma-page-border-strong);
+}
+
+.hooma-page .hooma-card-media {
+  background:
+    radial-gradient(
+      circle at 18% 20%,
+      color-mix(in srgb, var(--hooma-page-positive) 8%, transparent),
+      transparent 28%
+    ),
+    linear-gradient(135deg, #151816, #090a0a);
+}
+
+.hooma-page .hooma-card-copy {
+  padding: 1rem;
+}
+
+.hooma-page .hooma-card-copy h3 {
+  margin: 0.3rem 0 0.45rem;
+  color: var(--hooma-page-text-strong);
+  font-size: clamp(1.3rem, 5.4vw, 1.75rem);
+  letter-spacing: -0.025em;
+}
+
+.hooma-page .hooma-card-copy p,
+.hooma-page .hooma-card-copy small {
+  color: var(--hooma-page-muted);
+}
+
+/* Bring the connected-domain menu into the same neutral semantic system. */
+.hooma-page .panel.hooma-domain-links {
+  --hooma-domain-surface: var(--hooma-page-surface);
+  --hooma-domain-surface-raised: var(--hooma-page-surface-raised);
+  --hooma-domain-border: var(--hooma-page-border);
+  --hooma-domain-border-strong: var(--hooma-page-border-strong);
+  --hooma-domain-title: var(--hooma-page-text-strong);
+  --hooma-domain-text: var(--hooma-page-text);
+  --hooma-domain-muted: var(--hooma-page-muted);
+  --hooma-domain-lime: var(--hooma-page-positive);
+  --hooma-domain-orange: var(--hooma-page-accent);
+
+  gap: 0.65rem;
+  padding: 1rem;
+  border-radius: 1.35rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018)),
+    rgba(13, 14, 16, 0.92);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 16px 32px rgba(0, 0, 0, 0.22);
+}
+
+.hooma-page .hooma-domain-links > .eyebrow {
+  color: var(--hooma-page-accent);
+}
+
+.hooma-page .hooma-domain-card {
+  min-height: 4.5rem;
+  border-color: var(--hooma-page-border);
+  border-radius: 1rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012)),
+    rgba(8, 9, 10, 0.78);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 5px 0 #050605;
+}
+
+.hooma-page .hooma-domain-card::before,
+.hooma-page .hooma-domain-card:first-of-type::before {
+  background: var(--hooma-page-accent);
+}
+
+.hooma-page .hooma-domain-card strong {
+  color: var(--hooma-page-text-strong);
+}
+
+.hooma-page .hooma-domain-card span {
+  color: var(--hooma-page-muted);
+}
+
+@media (max-width: 520px) {
+  .hooma-page {
+    gap: 0.8rem;
+  }
+
+  .hooma-page .panel,
+  .hooma-page .state-card,
+  .hooma-page .member-gate,
+  .hooma-page .panel.hooma-domain-links {
+    border-radius: 1.1rem;
+  }
+
+  .hooma-page .panel,
+  .hooma-page .state-card,
+  .hooma-page .member-gate,
+  .hooma-page .panel.hooma-domain-links {
+    padding: 0.9rem;
+  }
+
+  .hooma-page .hooma-hero {
+    min-height: 12rem;
+  }
+}
