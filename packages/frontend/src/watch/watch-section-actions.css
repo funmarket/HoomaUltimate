@@ -1,10 +1,6 @@
 .watch-section-actions {
   --watch-menu-gold: #efbf04;
-  --watch-menu-label: #f3f0e8;
-  --watch-menu-silver-bright: #f4f4f2;
-  --watch-menu-silver-light: #c8c9cb;
-  --watch-menu-silver-mid: #8f9296;
-  --watch-menu-silver-dark: #4e5155;
+  --watch-menu-silver: #c8c9cb;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
@@ -23,13 +19,12 @@
   padding: 14px 18px;
   border: 1px solid rgb(239 191 4 / 72%);
   border-radius: 18px;
-  color: var(--watch-menu-label);
+  color: var(--watch-menu-gold);
   background: linear-gradient(145deg, #18191b 0%, #111214 48%, #0c0d0f 100%);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 6%),
     inset 0 -1px 0 rgb(0 0 0 / 75%),
-    0 4px 12px rgb(0 0 0 / 35%),
-    0 0 0 1px rgb(239 191 4 / 5%);
+    0 4px 12px rgb(0 0 0 / 35%);
   font-size: clamp(1.05rem, 2.4vw, 1.4rem);
   font-weight: 600;
   line-height: 1.1;
@@ -45,13 +40,12 @@
 .watch-section-action:hover {
   transform: translateY(-1px);
   border-color: var(--watch-menu-gold);
-  color: var(--watch-menu-label);
+  color: var(--watch-menu-gold);
   background: linear-gradient(145deg, #1c1d20 0%, #131416 48%, #0d0e10 100%);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 8%),
     inset 0 -1px 0 rgb(0 0 0 / 75%),
-    0 5px 16px rgb(0 0 0 / 45%),
-    0 0 10px rgb(239 191 4 / 10%);
+    0 5px 16px rgb(0 0 0 / 45%);
 }
 
 .watch-section-action:focus-visible {
@@ -63,11 +57,7 @@
   width: 32px;
   height: 32px;
   flex: 0 0 32px;
-  color: var(--watch-menu-silver-light);
-  filter:
-    drop-shadow(-1px -1px 0 var(--watch-menu-silver-bright))
-    drop-shadow(1px 1px 0 var(--watch-menu-silver-dark))
-    drop-shadow(0 2px 2px rgb(0 0 0 / 65%));
+  color: var(--watch-menu-silver);
 }
 
 .watch-section-action__icon path,
@@ -80,8 +70,7 @@
 }
 
 .watch-section-action > span {
-  color: #f3f0e8;
-  text-shadow: 0 1px 0 rgb(0 0 0 / 65%);
+  color: #efbf04;
 }
 
 @media (prefers-reduced-motion: reduce) {
