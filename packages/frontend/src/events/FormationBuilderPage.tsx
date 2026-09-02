@@ -259,7 +259,7 @@ function PlayerPortrait({
   player,
   fallback,
 }: {
-  readonly player?: FormationRosterPlayer;
+  readonly player?: FormationRosterPlayer | undefined;
   readonly fallback: string;
 }) {
   const photoUrl = player?.presentation?.photoUrl || null;
