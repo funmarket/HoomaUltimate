@@ -51,40 +51,30 @@ function UsersIcon() {
 
 export function PickupMatchCard(props: PickupMatchCardProps) {
   return (
-    <a className="play-game-card" href={props.href}>
-      <div className="play-game-card__top">
-        <span className="play-game-card__format">
-          {props.format?.replaceAll("_", " ") || "Pickup"}
-        </span>
-        <strong className="play-game-card__title">{props.title}</strong>
-        <small className="play-game-card__community">{props.communityName}</small>
+    <a className="pickup-match-card-pro" href={props.href}>
+      <div className="pickup-match-card-top">
+        <span>{props.format?.replaceAll("_", " ") || "Pickup"}</span>
+        <strong>{props.title}</strong>
+        <small>{props.communityName}</small>
       </div>
-      <div className="play-game-card__meta">
-        <span className="play-game-card__meta-item">
-          <i className="play-game-card__icon" aria-hidden="true">
-            <CalendarIcon />
-          </i>
-          <span>{props.dateLabel}</span>
+      <div className="pickup-match-card-meta">
+        <span>
+          <CalendarIcon />
+          {props.dateLabel}
         </span>
         {props.venueName ? (
-          <span className="play-game-card__meta-item">
-            <i className="play-game-card__icon" aria-hidden="true">
-              <PinIcon />
-            </i>
-            <span>{props.venueName}</span>
+          <span>
+            <PinIcon />
+            {props.venueName}
           </span>
         ) : null}
-        <span className="play-game-card__meta-item play-game-card__meta-item--attendance">
-          <i className="play-game-card__icon" aria-hidden="true">
-            <UsersIcon />
-          </i>
-          <span>
-            {props.goingCount}
-            {props.capacity ? ` / ${props.capacity}` : ""} going
-          </span>
+        <span>
+          <UsersIcon />
+          {props.goingCount}
+          {props.capacity ? ` / ${props.capacity}` : ""} going
         </span>
       </div>
-      <div className="play-game-card__cta" hidden>
+      <div className="pickup-match-card-cta" hidden>
         View match
       </div>
     </a>
