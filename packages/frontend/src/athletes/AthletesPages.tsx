@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import type { PublicAthletesDetail, PublicAthletesSummary } from "../api";
 import { useHoomaFrontend } from "../context";
+import { AthletesWhistleBoard } from "../whistle/HoomaWhistleBoard";
 
 const sports: readonly { value: AthletesSport; label: string }[] = [
   { value: "CYCLING", label: "Cycling" },
@@ -505,6 +506,9 @@ export function AthletesDetailPage({
           </button>
         )}
       </section>
+      {detail.viewerRole ? (
+        <AthletesWhistleBoard athletesCommunityId={athletesCommunityId} />
+      ) : null}
       {members.length ? (
         <section className="athletes-surface athletes-section">
           <div className="athletes-section-heading">

@@ -178,6 +178,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     eventService,
     gamerService,
     canonicalUserReader,
+    athletesService,
   );
   const discoveryRepository = new PrismaDiscoveryRepository(database);
   const discoveryService = new DiscoveryService(discoveryRepository);

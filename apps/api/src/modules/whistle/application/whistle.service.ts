@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { AppError } from "../../../http/errors/app-error.js";
+import type { AthletesService } from "../../athletes/application/athletes.service.js";
 import type { CommunityService } from "../../communities/application/community.service.js";
 import type { EventService } from "../../events/application/event.service.js";
 import type { GamerService } from "../../gamers/application/gamer.service.js";
@@ -43,6 +44,7 @@ export class WhistleService {
     private readonly events: EventService,
     private readonly gamers: GamerService,
     private readonly users: CanonicalUserReader,
+    private readonly athletes: AthletesService,
   ) {}
 
   private async authorizeContext(
@@ -56,6 +58,10 @@ export class WhistleService {
     }
     if (contextType === "EVENT") {
       await this.events.requireMemberContent(userId, contextId);
+      return;
+    }
+    if (contextType === "ATHLETES") {
+      await this.athletes.requireMemberContent(userId, contextId);
       return;
     }
     throw new AppError(

@@ -1,6 +1,7 @@
 export type WhistleContextType =
   | "COMMUNITY"
   | "EVENT"
+  | "ATHLETES"
   | "TEAM"
   | "RIDE"
   | "ULTRAS"
