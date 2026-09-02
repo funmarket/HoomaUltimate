@@ -1733,8 +1733,8 @@ Post-merge runtime/mobile validation and corrective hardening for the merged Ath
 
 - Starting foundation from PR #214 read-back: `7fa8cce1b93705b2c47c33c7510b3fc9bbc1fdc3`
 - Earlier rechecked `origin/phase-0-foundation`: `dce9ff915c12cc130ee3c6352d9c6514d6d00e06`
-- Current rechecked `origin/phase-0-foundation`: `464f861484532211fab8de22a8583238b1d62e50`
-- Current foundation adds Athletes semantic color cascade via `packages/frontend/src/athletes/athletes-semantic.css`, loaded after `athletes.css`, and updates `packages/frontend/src/index.ts`. The prior uncommitted hardening diff was preserved, the branch was rebased onto the current foundation, and the diff was reapplied without conflict.
+- Current rechecked `origin/phase-0-foundation`: `f864554dd65cd1c9c9c9655fe0bde0c25ca92909`
+- Current foundation includes the semantic positive-token test correction `f864554dd65cd1c9c9c9655fe0bde0c25ca92909` and the Athletes semantic color cascade via `packages/frontend/src/athletes/athletes-semantic.css`, loaded after `athletes.css`. PR #215 was rebased onto this foundation without conflict; the existing Athletes hardening commits were preserved.
 - Branch: `fix/athletes-mobile-runtime-hardening`
 
 **Finding**
@@ -1783,16 +1783,13 @@ Runtime/source inspection found Athletes create presentation still coupled to Co
 - Changed-source ESLint for `packages/frontend/src/athletes/AthletesPages.tsx`: passed.
 - `npm run typecheck`: passed.
 - `npm run build:packages`: passed.
-- `npm test`: full repository test currently BLOCKED BY PRE-EXISTING FOUNDATION FAILURE. Athletes-focused tests passed 14/14, and the authorized navigation-contract correction passed 2/2. Full `npm test` still fails 1/277 at `tests/css-zero-drift-cleanup.test.mjs:36`, which expects old literal `--app-lime: #c6f25a` while current clean foundation has `--app-lime: var(--app-positive)`. This was separately proven with the hardening diff stashed, so it is a stale/background foundation assertion and does not affect the Athletes hardening diff.
+- `npm test`: passed after rebasing onto foundation `f864554dd65cd1c9c9c9655fe0bde0c25ca92909`, where the stale semantic-token zero-drift assertion was corrected.
 - `npm run build`: passed.
 - `npm run deploy:preflight`: passed.
 - `npm run security:check`: passed, 0 production high vulnerabilities.
 - `npm run test:integration`: NOT LOCALLY PROVEN — requires disposable PostgreSQL CI.
 - `npm run db:migrate:status`: NOT LOCALLY PROVEN — requires disposable PostgreSQL CI.
-- `npm run build`: passed after continuing despite the unrelated foundation test failure.
-- `npm run deploy:preflight`: passed after continuing despite the unrelated foundation test failure.
-- `npm run security:check`: passed after continuing despite the unrelated foundation test failure.
-- PR #215 opened from `fix/athletes-mobile-runtime-hardening` to `phase-0-foundation`. Exact-head CI run `33581136476` for head `9070a7351ccba0b75f61408bbbf960ec43ea72ae` failed only in the same pre-existing/stale foundation assertion at `tests/css-zero-drift-cleanup.test.mjs:36`; Athletes-related tests in that run passed.
+- PR #215 remains open from `fix/athletes-mobile-runtime-hardening` to `phase-0-foundation`. Local rebase-validation passed through `npm test`, app build, deploy preflight, and security after the foundation semantic-token test correction; exact-head CI is pending after push of the rebased branch.
 
 Mobile/TMA runtime validation must not be marked complete until the missing API-backed and Telegram evidence is actually obtained.
 
