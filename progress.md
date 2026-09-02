@@ -1792,7 +1792,7 @@ Runtime/source inspection found Athletes create presentation still coupled to Co
 - `npm run build`: passed after continuing despite the unrelated foundation test failure.
 - `npm run deploy:preflight`: passed after continuing despite the unrelated foundation test failure.
 - `npm run security:check`: passed after continuing despite the unrelated foundation test failure.
-- Exact-head CI: pending until the corrective PR is opened.
+- PR #215 opened from `fix/athletes-mobile-runtime-hardening` to `phase-0-foundation`. Exact-head CI run `33581136476` for head `9070a7351ccba0b75f61408bbbf960ec43ea72ae` failed only in the same pre-existing/stale foundation assertion at `tests/css-zero-drift-cleanup.test.mjs:36`; Athletes-related tests in that run passed.
 
 Mobile/TMA runtime validation must not be marked complete until the missing API-backed and Telegram evidence is actually obtained.
 
