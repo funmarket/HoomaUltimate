@@ -8,6 +8,7 @@ import { useEventApi } from "./useEventApi";
 import { createPlayApi } from "./play-api";
 
 type ActiveRsvpState = "CONFIRMED" | "WAITLISTED" | "ATTENDED" | null;
+type IconProps = { readonly color?: string };
 
 function activeRsvp(status: EventRsvpState | undefined): ActiveRsvpState {
   return status === "CONFIRMED" || status === "WAITLISTED" || status === "ATTENDED" ? status : null;
@@ -22,9 +23,16 @@ function pretty(value: string | null | undefined): string {
     : "—";
 }
 
-function CalendarIcon() {
+function CalendarIcon({ color }: IconProps = {}) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      style={color ? { color } : undefined}
+    >
       <rect x="4" y="5.5" width="16" height="14" rx="2" stroke="currentColor" strokeWidth="1.7" />
       <path
         d="M7.5 3.5v4M16.5 3.5v4M4 9h16"
@@ -35,9 +43,16 @@ function CalendarIcon() {
     </svg>
   );
 }
-function PinIcon() {
+function PinIcon({ color }: IconProps = {}) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      style={color ? { color } : undefined}
+    >
       <path
         d="M12 21s6.3-5.3 6.3-11A6.3 6.3 0 1 0 5.7 10C5.7 15.7 12 21 12 21Z"
         stroke="currentColor"
@@ -47,9 +62,16 @@ function PinIcon() {
     </svg>
   );
 }
-function UsersIcon() {
+function UsersIcon({ color }: IconProps = {}) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      style={color ? { color } : undefined}
+    >
       <circle cx="9" cy="8" r="3" stroke="currentColor" strokeWidth="1.65" />
       <circle cx="16.5" cy="9" r="2.2" stroke="currentColor" strokeWidth="1.45" />
       <path
@@ -75,6 +97,9 @@ function BallIcon() {
     </svg>
   );
 }
+
+const playYellow = "#f2c94c";
+const confirmedPistachio = "#d7ff8a";
 
 export function EventDetailPage({ eventId }: { readonly eventId: string }) {
   const eventApi = useEventApi();
@@ -323,7 +348,18 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
             <span className="play-event-card__ticket-mark">Matchday</span>
           </div>
           <div className="play-event-card__title-row">
-            <span className="play-event-card__ball">
+            <span
+              className="play-event-card__ball"
+              style={{
+                width: "auto",
+                height: "auto",
+                border: 0,
+                borderRadius: 0,
+                background: "transparent",
+                boxShadow: "none",
+                color: "#fff8e8",
+              }}
+            >
               <BallIcon />
             </span>
             <div>
@@ -333,15 +369,15 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
           </div>
           <div className="play-event-card__meta" aria-label="Match essentials">
             <span>
-              <CalendarIcon />
+              <CalendarIcon color={playYellow} />
               {new Date(event.startsAt).toLocaleString()}
             </span>
             <span>
-              <PinIcon />
+              <PinIcon color={playYellow} />
               {location}
             </span>
             <span>
-              <UsersIcon />
+              <UsersIcon color={playYellow} />
               {event._count.rsvps}
               {event.capacity ? ` / ${event.capacity}` : ""} going
             </span>
@@ -349,8 +385,18 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
 
           {event.place ? (
             <div className="play-event-card__tagged-pitch">
-              <span className="play-event-card__tagged-pitch-icon" aria-hidden="true">
-                <PinIcon />
+              <span
+                className="play-event-card__tagged-pitch-icon"
+                aria-hidden="true"
+                style={{
+                  width: "auto",
+                  height: "auto",
+                  borderRadius: 0,
+                  background: "transparent",
+                  color: playYellow,
+                }}
+              >
+                <PinIcon color={playYellow} />
               </span>
               <div>
                 <small>HOOMA Pitch</small>
@@ -380,7 +426,22 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
             </div>
           </div>
 
-          {rsvpLabel ? <div className="play-event-rsvp-state">{rsvpLabel}</div> : null}
+          {rsvpLabel ? (
+            <div
+              className="play-event-rsvp-state"
+              style={
+                rsvp === "CONFIRMED"
+                  ? {
+                      color: confirmedPistachio,
+                      fontSize: "15px",
+                    }
+                  : undefined
+              }
+            >
+              {rsvp === "CONFIRMED" ? "✓ " : ""}
+              {rsvpLabel}
+            </div>
+          ) : null}
           {rsvp === "ATTENDED" ? (
             <div className="play-event-primary-action play-event-primary-action--static">
               Checked in
@@ -391,6 +452,17 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
               type="button"
               disabled={actionPending}
               onClick={() => void leave()}
+              style={
+                rsvp === "CONFIRMED"
+                  ? {
+                      borderColor: "rgba(190, 92, 23, 0.45)",
+                      background: "rgba(255, 145, 61, 0.11)",
+                      color: "#c65a16",
+                      fontSize: "14px",
+                      boxShadow: "none",
+                    }
+                  : undefined
+              }
             >
               {actionPending
                 ? "Updating…"
