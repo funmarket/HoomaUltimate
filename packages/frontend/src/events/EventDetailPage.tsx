@@ -8,6 +8,7 @@ import { useEventApi } from "./useEventApi";
 import { createPlayApi } from "./play-api";
 
 type ActiveRsvpState = "CONFIRMED" | "WAITLISTED" | "ATTENDED" | null;
+type IconProps = { readonly color?: string };
 
 function activeRsvp(status: EventRsvpState | undefined): ActiveRsvpState {
   return status === "CONFIRMED" || status === "WAITLISTED" || status === "ATTENDED" ? status : null;
@@ -22,9 +23,16 @@ function pretty(value: string | null | undefined): string {
     : "—";
 }
 
-function CalendarIcon() {
+function CalendarIcon({ color }: IconProps = {}) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      style={color ? { color } : undefined}
+    >
       <rect x="4" y="5.5" width="16" height="14" rx="2" stroke="currentColor" strokeWidth="1.7" />
       <path
         d="M7.5 3.5v4M16.5 3.5v4M4 9h16"
@@ -35,9 +43,16 @@ function CalendarIcon() {
     </svg>
   );
 }
-function PinIcon() {
+function PinIcon({ color }: IconProps = {}) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      style={color ? { color } : undefined}
+    >
       <path
         d="M12 21s6.3-5.3 6.3-11A6.3 6.3 0 1 0 5.7 10C5.7 15.7 12 21 12 21Z"
         stroke="currentColor"
@@ -47,9 +62,16 @@ function PinIcon() {
     </svg>
   );
 }
-function UsersIcon() {
+function UsersIcon({ color }: IconProps = {}) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      style={color ? { color } : undefined}
+    >
       <circle cx="9" cy="8" r="3" stroke="currentColor" strokeWidth="1.65" />
       <circle cx="16.5" cy="9" r="2.2" stroke="currentColor" strokeWidth="1.45" />
       <path
@@ -347,21 +369,15 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
           </div>
           <div className="play-event-card__meta" aria-label="Match essentials">
             <span>
-              <span style={{ color: playYellow, display: "inline-flex" }}>
-                <CalendarIcon />
-              </span>
+              <CalendarIcon color={playYellow} />
               {new Date(event.startsAt).toLocaleString()}
             </span>
             <span>
-              <span style={{ color: playYellow, display: "inline-flex" }}>
-                <PinIcon />
-              </span>
+              <PinIcon color={playYellow} />
               {location}
             </span>
             <span>
-              <span style={{ color: playYellow, display: "inline-flex" }}>
-                <UsersIcon />
-              </span>
+              <UsersIcon color={playYellow} />
               {event._count.rsvps}
               {event.capacity ? ` / ${event.capacity}` : ""} going
             </span>
@@ -380,7 +396,7 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
                   color: playYellow,
                 }}
               >
-                <PinIcon />
+                <PinIcon color={playYellow} />
               </span>
               <div>
                 <small>HOOMA Pitch</small>
@@ -416,8 +432,6 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
               style={
                 rsvp === "CONFIRMED"
                   ? {
-                      borderColor: "rgba(34, 227, 90, 0.32)",
-                      background: "rgba(8, 54, 30, 0.72)",
                       color: confirmedPistachio,
                       fontSize: "15px",
                     }
