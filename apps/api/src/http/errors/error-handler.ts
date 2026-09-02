@@ -85,6 +85,8 @@ const RIDE_STATUS: Record<RideErrorCode, number> = {
   RIDE_REQUEST_COMMUNITY_TARGET_FORBIDDEN: 403,
   RIDE_REQUEST_COMMUNITY_AUDIENCE_EMPTY: 409,
   RIDE_REQUEST_COMMUNITY_FEED_FORBIDDEN: 403,
+  RIDE_WHISTLE_FORBIDDEN: 403,
+  RIDE_WHISTLE_SELF_FORBIDDEN: 409,
 };
 
 export const errorHandler: ErrorRequestHandler = (error, _request, response, _next) => {

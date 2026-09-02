@@ -15,6 +15,7 @@ import { createPlayMemberRouter } from "../../modules/play/http/play.routes.js";
 import { createRideCommunityInteractionRouter } from "../../modules/rides/http/ride-community-interaction.routes.js";
 import { createRideMemberRouter } from "../../modules/rides/http/ride.routes.js";
 import { createWhistleRouter } from "../../modules/whistle/http/whistle.routes.js";
+import { createUserNotificationRouter } from "../../modules/notifications/http/user-notification.routes.js";
 
 export function createMemberV1Router(container: AppContainer, config: ApiConfig): Router {
   const router = Router();
@@ -48,6 +49,7 @@ export function createMemberV1Router(container: AppContainer, config: ApiConfig)
     "/rides",
     createRideCommunityInteractionRouter(container.rideCommunityInteractionService),
   );
+  router.use("/notifications", createUserNotificationRouter(container.userNotificationService));
   router.use("/whistles", createWhistleRouter(container.whistleService));
   return router;
 }

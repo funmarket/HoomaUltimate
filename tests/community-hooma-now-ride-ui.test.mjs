@@ -13,7 +13,11 @@ const interactionApi = await readFile(
   "packages/frontend/src/rides/community-interaction-api.ts",
   "utf8",
 );
-const directWhistleApi = await readFile("packages/frontend/src/whistle/direct-user-api.ts", "utf8");
+const sharedWhistleBoard = await readFile(
+  "packages/frontend/src/whistle/HoomaWhistleBoard.tsx",
+  "utf8",
+);
+const frontendApi = await readFile("packages/frontend/src/api.ts", "utf8");
 
 test("Community detail composes Ride requests into the canonical HOOMA NOW surface", () => {
   assert.match(hoomaPage, /CommunityHoomaNowSection/);
@@ -47,12 +51,18 @@ test("Community Ride expansion loads requester identity through an authorized Ri
   assert.match(hoomaNowSection, /\/profile\//);
 });
 
-test("Community Ride expansion reuses the canonical direct-user Whistle endpoint", () => {
-  assert.match(hoomaNowSection, /sendDirectUserWhistle/);
-  assert.match(hoomaNowSection, /Whistle \{requester\.displayName\}/);
-  assert.match(hoomaNowSection, /33/);
-  assert.match(directWhistleApi, /\/api\/v1\/whistles\/users\//);
-  assert.match(directWhistleApi, /method:\s*"POST"/);
+test("Community Ride expansion uses the canonical exact Ride Whistle context", () => {
+  assert.match(hoomaNowSection, /RideWhistleBoard/);
+  assert.match(hoomaNowSection, /rideRequestId=\{item\.id\}/);
+  assert.doesNotMatch(hoomaNowSection, /sendDirectUserWhistle/);
+  assert.match(sharedWhistleBoard, /contextType="RIDE"/);
+  assert.match(sharedWhistleBoard, /api\.whistles\.ride\(contextId\)/);
+  assert.match(sharedWhistleBoard, /api\.whistles\.sendToRide\(contextId, body\)/);
+  assert.match(
+    frontendApi,
+    /\/api\/v1\/whistles\/contexts\/RIDE\/\$\{encodeURIComponent\(rideRequestId\)\}/,
+  );
+  assert.doesNotMatch(frontendApi, /sendToRide[\s\S]*\/api\/v1\/whistles\/users\//);
 });
 
 test("Community HOOMA NOW Ride cards preserve canonical request IDs and live expiry filtering", () => {

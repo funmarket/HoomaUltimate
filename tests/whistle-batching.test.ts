@@ -5,6 +5,8 @@ import type { CommunityService } from "../apps/api/src/modules/communities/appli
 import type { EventService } from "../apps/api/src/modules/events/application/event.service.js";
 import type { GamerService } from "../apps/api/src/modules/gamers/application/gamer.service.js";
 import type { CanonicalUserReader } from "../apps/api/src/modules/identity/application/canonical-user.reader.js";
+import type { RideService } from "../apps/api/src/modules/rides/application/ride.service.js";
+import type { UserNotificationService } from "../apps/api/src/modules/notifications/application/user-notification.service.js";
 import type {
   WhistleMetadataRecord,
   WhistleRepository,
@@ -60,6 +62,8 @@ function serviceWith(options: {
   gamers?: Partial<GamerService>;
   users?: Partial<CanonicalUserReader>;
   athletes?: Partial<AthletesService>;
+  rides?: Partial<RideService>;
+  notifications?: Partial<UserNotificationService>;
 }) {
   return new WhistleService(
     repositoryStub(options.repository),
@@ -72,6 +76,15 @@ function serviceWith(options: {
       requireMemberContent: async () => undefined,
       ...options.athletes,
     } as unknown as AthletesService,
+    {
+      requireWhistleRead: async () => ({ ownerUserId: "ride-owner-1" }),
+      requireWhistlePost: async () => ({ ownerUserId: "ride-owner-1" }),
+      ...options.rides,
+    } as unknown as RideService,
+    {
+      notifyWhistle: async () => undefined,
+      ...options.notifications,
+    } as unknown as UserNotificationService,
   );
 }
 
@@ -151,4 +164,104 @@ test("Athletes Whistle authorizes through active Athletes membership and uses sh
     { contextType: "ATHLETES", contextId: "athletes-community-1", dailyLimit: 11 },
   ]);
   assert.equal(result.remainingToday, 10);
+});
+
+test("Ride Whistle authorizes through Ride domain and notifies owner without body", async () => {
+  const rideCalls: Array<[string, string]> = [];
+  const created: Array<{ contextType: string; contextId: string; dailyLimit: number }> = [];
+  const notifications: Array<Record<string, unknown>> = [];
+  const service = serviceWith({
+    rides: {
+      async requireWhistlePost(userId: string, rideRequestId: string) {
+        rideCalls.push([userId, rideRequestId]);
+        return { ownerUserId: "ride-owner-1" };
+      },
+    },
+    repository: {
+      async createWithDailyQuota(input) {
+        created.push({
+          contextType: input.contextType,
+          contextId: input.contextId,
+          dailyLimit: input.dailyLimit,
+        });
+        return {
+          id: input.id,
+          authorUserId: input.authorUserId,
+          contextType: input.contextType,
+          contextId: input.contextId,
+          createdAt: input.createdAt,
+          expiresAt: input.expiresAt,
+        };
+      },
+      async quotaUsed() {
+        return 1;
+      },
+    },
+    notifications: {
+      async notifyWhistle(input: Record<string, unknown>) {
+        notifications.push(input);
+      },
+    },
+  });
+
+  await service.create("rider-1", "RIDE", "ride-request-1", "I can help");
+
+  assert.deepEqual(rideCalls, [["rider-1", "ride-request-1"]]);
+  assert.deepEqual(created, [{ contextType: "RIDE", contextId: "ride-request-1", dailyLimit: 11 }]);
+  assert.equal(notifications.length, 1);
+  assert.equal(notifications[0]?.recipientUserId, "ride-owner-1");
+  assert.equal(notifications[0]?.actorUserId, "rider-1");
+  assert.equal(notifications[0]?.contextType, "RIDE");
+  assert.equal(notifications[0]?.contextId, "ride-request-1");
+  assert.equal(Object.hasOwn(notifications[0] ?? {}, "body"), false);
+});
+
+test("direct User Whistle remains USER_DIRECT and notifies only recipient without body", async () => {
+  const created: Array<{ contextType: string; contextId: string; dailyLimit: number }> = [];
+  const notifications: Array<Record<string, unknown>> = [];
+  const service = serviceWith({
+    users: {
+      async findUserIdByUsername(username: string) {
+        assert.equal(username, "target-user");
+        return "target-user-id";
+      },
+    },
+    repository: {
+      async createWithDailyQuota(input) {
+        created.push({
+          contextType: input.contextType,
+          contextId: input.contextId,
+          dailyLimit: input.dailyLimit,
+        });
+        return {
+          id: input.id,
+          authorUserId: input.authorUserId,
+          contextType: input.contextType,
+          contextId: input.contextId,
+          createdAt: input.createdAt,
+          expiresAt: input.expiresAt,
+        };
+      },
+      async quotaUsed() {
+        return 1;
+      },
+    },
+    notifications: {
+      async notifyWhistle(input: Record<string, unknown>) {
+        notifications.push(input);
+      },
+    },
+  });
+
+  await service.createDirectUser("sender-user-id", "target-user", "hello");
+
+  assert.deepEqual(created, [
+    { contextType: "USER_DIRECT", contextId: "sender-user-id:target-user-id", dailyLimit: 11 },
+  ]);
+  assert.equal(notifications.length, 1);
+  assert.equal(notifications[0]?.recipientUserId, "target-user-id");
+  assert.equal(notifications[0]?.actorUserId, "sender-user-id");
+  assert.equal(notifications[0]?.contextType, "USER_DIRECT");
+  assert.equal(notifications[0]?.contextId, "sender-user-id:target-user-id");
+  assert.equal(Object.hasOwn(notifications[0] ?? {}, "body"), false);
 });

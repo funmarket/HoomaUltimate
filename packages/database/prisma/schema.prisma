@@ -262,6 +262,11 @@ enum RideCompensationBasis {
   TOTAL
 }
 
+enum UserNotificationType {
+  DIRECT_USER_WHISTLE
+  RIDE_WHISTLE
+}
+
 enum GamerGameStatus {
   ACTIVE
   INACTIVE
@@ -329,6 +334,8 @@ model User {
   rideRequestsCreated           RideRequest[]                  @relation("RideRequestRequester")
   rideParticipations            RideParticipation[]            @relation("RideParticipationPassenger")
   whistlesAuthored              WhistleMetadata[]
+  notificationsReceived         UserNotification[]            @relation("UserNotificationRecipient")
+  notificationsActed            UserNotification[]            @relation("UserNotificationActor")
   gamerGamesCreated             GamerGame[]                    @relation("GamerGameCreator")
   gamerProfiles                 GamerProfile[]
   playPlayerListings            PlayPlayerListing[]
@@ -1264,6 +1271,25 @@ model PlayPlayerListing {
   user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([lookingFor, updatedAt])
+}
+
+model UserNotification {
+  id              String               @id @default(cuid())
+  recipientUserId String
+  actorUserId     String
+  type            UserNotificationType
+  contextType     WhistleContextType
+  contextId       String
+  whistleId       String
+  createdAt       DateTime             @default(now())
+  readAt          DateTime?
+  recipient       User                 @relation("UserNotificationRecipient", fields: [recipientUserId], references: [id], onDelete: Cascade)
+  actor           User                 @relation("UserNotificationActor", fields: [actorUserId], references: [id], onDelete: Cascade)
+
+  @@unique([recipientUserId, type, whistleId])
+  @@index([recipientUserId, readAt, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([contextType, contextId, createdAt])
 }
 
 model AuditLog {

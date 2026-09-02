@@ -649,6 +649,43 @@ export class PrismaRideRequestRepository implements RideRequestRepository {
     return row ? serializePublicRideRequest(row) : null;
   }
 
+  async getCommunityWhistleContext(input: {
+    readonly viewerUserId: string;
+    readonly rideRequestId: string;
+  }) {
+    const row = await this.db.rideRequest.findFirst({
+      where: {
+        id: input.rideRequestId,
+        audienceScope: "COMMUNITY",
+        status: "OPEN",
+        expiresAt: { gt: new Date() },
+        communityAudiences: {
+          some: {
+            community: {
+              status: "ACTIVE",
+              memberships: {
+                some: { userId: input.viewerUserId, leftAt: null },
+              },
+            },
+          },
+        },
+        requester: {
+          communityMemberships: {
+            some: {
+              leftAt: null,
+              community: {
+                status: "ACTIVE",
+                rideRequestAudiences: { some: { rideRequestId: input.rideRequestId } },
+              },
+            },
+          },
+        },
+      },
+      select: { requesterUserId: true },
+    });
+    return row ? { requesterUserId: row.requesterUserId } : null;
+  }
+
   async getForRequester(
     rideRequestId: string,
     requesterUserId: string,

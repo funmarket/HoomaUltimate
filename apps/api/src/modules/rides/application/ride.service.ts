@@ -317,6 +317,28 @@ export class RideService {
     return this.communityMemberships.listActiveMembershipCommunities(actorUserId);
   }
 
+  async requireWhistleRead(viewerUserId: string, rideRequestId: string) {
+    const context = await this.requests.getCommunityWhistleContext({ viewerUserId, rideRequestId });
+    if (!context) {
+      throw new RideError(
+        "RIDE_WHISTLE_FORBIDDEN",
+        "Ride Whistle access requires an active Ride request audience",
+      );
+    }
+    return { ownerUserId: context.requesterUserId };
+  }
+
+  async requireWhistlePost(actorUserId: string, rideRequestId: string) {
+    const context = await this.requireWhistleRead(actorUserId, rideRequestId);
+    if (context.ownerUserId === actorUserId) {
+      throw new RideError(
+        "RIDE_WHISTLE_SELF_FORBIDDEN",
+        "You cannot Whistle your own Ride request",
+      );
+    }
+    return context;
+  }
+
   async replaceOfferVehiclePhoto(
     driverUserId: string,
     rideOfferId: string,

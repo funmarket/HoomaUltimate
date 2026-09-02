@@ -46,6 +46,8 @@ import { PrismaRideVehiclePhotoRepository } from "../modules/rides/infrastructur
 import { WhistleService } from "../modules/whistle/application/whistle.service.js";
 import { PrismaWhistleRepository } from "../modules/whistle/infrastructure/prisma-whistle.repository.js";
 import { RedisWhistleStore } from "../modules/whistle/infrastructure/redis-whistle-store.js";
+import { UserNotificationService } from "../modules/notifications/application/user-notification.service.js";
+import { PrismaUserNotificationRepository } from "../modules/notifications/infrastructure/prisma-user-notification.repository.js";
 import { DiscoveryService } from "../modules/discovery/application/discovery.service.js";
 import { PrismaDiscoveryRepository } from "../modules/discovery/infrastructure/prisma-discovery.repository.js";
 import { ReadinessService } from "../modules/system/application/readiness.service.js";
@@ -169,6 +171,8 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     rideReferenceReader,
     userPresentationReader,
   );
+  const userNotificationRepository = new PrismaUserNotificationRepository(database);
+  const userNotificationService = new UserNotificationService(userNotificationRepository);
   const whistleRepository = new PrismaWhistleRepository(database);
   const whistleStore = new RedisWhistleStore(redis);
   const whistleService = new WhistleService(
@@ -179,6 +183,8 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     gamerService,
     canonicalUserReader,
     athletesService,
+    rideService,
+    userNotificationService,
   );
   const discoveryRepository = new PrismaDiscoveryRepository(database);
   const discoveryService = new DiscoveryService(discoveryRepository);
@@ -203,6 +209,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     playService,
     rideService,
     rideCommunityInteractionService,
+    userNotificationService,
     whistleService,
     discoveryService,
   };

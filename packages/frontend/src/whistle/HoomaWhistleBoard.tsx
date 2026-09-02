@@ -6,7 +6,7 @@ import { listEventWhistles, sendEventWhistle } from "./event-api";
 const MAX_GRAPHEMES = 33;
 const REFRESH_INTERVAL_MS = 10_000;
 
-type BoardContext = "COMMUNITY" | "EVENT" | "ATHLETES";
+type BoardContext = "COMMUNITY" | "EVENT" | "ATHLETES" | "RIDE";
 
 type WhistleBoardProps = {
   readonly contextType: BoardContext;
@@ -14,6 +14,7 @@ type WhistleBoardProps = {
   readonly eyebrow: string;
   readonly emptyTitle: string;
   readonly emptyText: string;
+  readonly canCompose?: boolean;
 };
 
 function graphemeCount(value: string): number {
@@ -67,6 +68,7 @@ function WhistleBoard({
   eyebrow,
   emptyTitle,
   emptyText,
+  canCompose = true,
 }: WhistleBoardProps) {
   const { api, transport, protectedError } = useHoomaFrontend();
   const [feed, setFeed] = useState<WhistleList>({ items: [], remainingToday: 11, resetsAt: "" });
@@ -86,13 +88,15 @@ function WhistleBoard({
             ? await api.whistles.community(contextId)
             : contextType === "ATHLETES"
               ? await api.whistles.athletes(contextId)
-              : await listEventWhistles(transport, contextId);
+              : contextType === "RIDE"
+                ? await api.whistles.ride(contextId)
+                : await listEventWhistles(transport, contextId);
         setFeed(next);
         setAuthorized(true);
         setError("");
       } catch (reason) {
         if (
-          (contextType === "EVENT" || contextType === "ATHLETES") &&
+          (contextType === "EVENT" || contextType === "ATHLETES" || contextType === "RIDE") &&
           reason instanceof HoomaApiError &&
           (reason.status === 401 || reason.status === 403)
         ) {
@@ -116,7 +120,8 @@ function WhistleBoard({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!body.trim() || count > MAX_GRAPHEMES || sending || feed.remainingToday <= 0) return;
+    if (!canCompose || !body.trim() || count > MAX_GRAPHEMES || sending || feed.remainingToday <= 0)
+      return;
     setSending(true);
     setError("");
     try {
@@ -124,6 +129,8 @@ function WhistleBoard({
         await api.whistles.sendToCommunity(contextId, body);
       } else if (contextType === "ATHLETES") {
         await api.whistles.sendToAthletes(contextId, body);
+      } else if (contextType === "RIDE") {
+        await api.whistles.sendToRide(contextId, body);
       } else {
         await sendEventWhistle(transport, contextId, body);
       }
@@ -136,7 +143,11 @@ function WhistleBoard({
     }
   }
 
-  if ((contextType === "EVENT" || contextType === "ATHLETES") && !loading && !authorized)
+  if (
+    (contextType === "EVENT" || contextType === "ATHLETES" || contextType === "RIDE") &&
+    !loading &&
+    !authorized
+  )
     return null;
 
   return (
@@ -158,34 +169,36 @@ function WhistleBoard({
         <small className="muted">Next reset: {resetLabel(feed.resetsAt)}</small>
       ) : null}
 
-      <form className="whistle-composer" onSubmit={submit}>
-        <label>
-          <span>Send a signal</span>
-          <div className="whistle-input-row">
-            <input
-              value={body}
-              onChange={(event) => setBody(event.target.value)}
-              placeholder="Pitch at 7? ⚽"
-              aria-describedby={`whistle-count-${contextType}-${contextId}`}
-            />
-            <button
-              className="button"
-              type="submit"
-              disabled={
-                !body.trim() || count > MAX_GRAPHEMES || sending || feed.remainingToday <= 0
-              }
-            >
-              {sending ? "Sending…" : "Whistle"}
-            </button>
-          </div>
-        </label>
-        <small
-          id={`whistle-count-${contextType}-${contextId}`}
-          className={count > MAX_GRAPHEMES ? "is-over" : ""}
-        >
-          {count}/{MAX_GRAPHEMES} graphemes
-        </small>
-      </form>
+      {canCompose ? (
+        <form className="whistle-composer" onSubmit={submit}>
+          <label>
+            <span>Send a signal</span>
+            <div className="whistle-input-row">
+              <input
+                value={body}
+                onChange={(event) => setBody(event.target.value)}
+                placeholder="Pitch at 7? ⚽"
+                aria-describedby={`whistle-count-${contextType}-${contextId}`}
+              />
+              <button
+                className="button"
+                type="submit"
+                disabled={
+                  !body.trim() || count > MAX_GRAPHEMES || sending || feed.remainingToday <= 0
+                }
+              >
+                {sending ? "Sending…" : "Whistle"}
+              </button>
+            </div>
+          </label>
+          <small
+            id={`whistle-count-${contextType}-${contextId}`}
+            className={count > MAX_GRAPHEMES ? "is-over" : ""}
+          >
+            {count}/{MAX_GRAPHEMES} graphemes
+          </small>
+        </form>
+      ) : null}
 
       {error ? <div className="error-box">{error}</div> : null}
       {loading ? <div className="whistle-empty">Listening for Whistles…</div> : null}
@@ -261,6 +274,25 @@ export function AthletesWhistleBoard({
       eyebrow="ATHLETES · MEMBERS ONLY"
       emptyTitle="Quiet in this Athletes community."
       emptyText="Be the first active member to send a short signal today."
+    />
+  );
+}
+
+export function RideWhistleBoard({
+  rideRequestId,
+  canCompose = true,
+}: {
+  readonly rideRequestId: string;
+  readonly canCompose?: boolean;
+}) {
+  return (
+    <WhistleBoard
+      contextType="RIDE"
+      contextId={rideRequestId}
+      eyebrow="RIDE · REQUEST"
+      emptyTitle="Quiet on this Ride request."
+      emptyText="Whistles here stay attached to this exact Ride request."
+      canCompose={canCompose}
     />
   );
 }

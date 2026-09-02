@@ -5,6 +5,8 @@ import type { CommunityService } from "../../communities/application/community.s
 import type { EventService } from "../../events/application/event.service.js";
 import type { GamerService } from "../../gamers/application/gamer.service.js";
 import type { CanonicalUserReader } from "../../identity/application/canonical-user.reader.js";
+import type { RideService } from "../../rides/application/ride.service.js";
+import type { UserNotificationService } from "../../notifications/application/user-notification.service.js";
 import type {
   WhistleContextType,
   WhistleMetadataRecord,
@@ -27,6 +29,8 @@ export function nextUtcMidnight(now: Date): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
 }
 
+type ContextAuthorization = { readonly notificationRecipientUserId?: string };
+
 export type WhistleListItem = {
   id: string;
   authorUserId: string;
@@ -45,24 +49,41 @@ export class WhistleService {
     private readonly gamers: GamerService,
     private readonly users: CanonicalUserReader,
     private readonly athletes: AthletesService,
+    private readonly rides?: RideService,
+    private readonly notifications?: UserNotificationService,
   ) {}
 
   private async authorizeContext(
     userId: string,
     contextType: WhistleContextType,
     contextId: string,
-  ): Promise<void> {
+    action: "read" | "post",
+  ): Promise<ContextAuthorization> {
     if (contextType === "COMMUNITY") {
       await this.communities.requireMember(contextId, userId);
-      return;
+      return {};
     }
     if (contextType === "EVENT") {
       await this.events.requireMemberContent(userId, contextId);
-      return;
+      return {};
     }
     if (contextType === "ATHLETES") {
       await this.athletes.requireMemberContent(userId, contextId);
-      return;
+      return {};
+    }
+    if (contextType === "RIDE") {
+      if (!this.rides) {
+        throw new AppError(
+          409,
+          "WHISTLE_CONTEXT_NOT_ENABLED",
+          "RIDE Whistle context is not enabled yet",
+        );
+      }
+      const authorization =
+        action === "post"
+          ? await this.rides.requireWhistlePost(userId, contextId)
+          : await this.rides.requireWhistleRead(userId, contextId);
+      return { notificationRecipientUserId: authorization.ownerUserId };
     }
     throw new AppError(
       409,
@@ -76,7 +97,7 @@ export class WhistleService {
     contextType: WhistleContextType,
     contextId: string,
   ): Promise<{ items: WhistleListItem[]; remainingToday: number; resetsAt: string }> {
-    await this.authorizeContext(userId, contextType, contextId);
+    await this.authorizeContext(userId, contextType, contextId, "read");
     return this.listAuthorized(userId, contextType, contextId);
   }
 
@@ -86,8 +107,16 @@ export class WhistleService {
     contextId: string,
     rawBody: string,
   ) {
-    await this.authorizeContext(userId, contextType, contextId);
-    return this.createAuthorized(userId, contextType, contextId, rawBody);
+    const authorization = await this.authorizeContext(userId, contextType, contextId, "post");
+    return this.createAuthorized(
+      userId,
+      contextType,
+      contextId,
+      rawBody,
+      authorization.notificationRecipientUserId
+        ? { recipientUserId: authorization.notificationRecipientUserId }
+        : {},
+    );
   }
 
   async listDirectGamer(userId: string, otherProfileId: string) {
@@ -101,16 +130,21 @@ export class WhistleService {
   }
 
   async listDirectUser(userId: string, targetUsername: string) {
-    const contextId = await this.resolveDirectUserContext(userId, targetUsername);
-    return this.listAuthorized(userId, "USER_DIRECT", contextId);
+    const directContext = await this.resolveDirectUserContext(userId, targetUsername);
+    return this.listAuthorized(userId, "USER_DIRECT", directContext.contextId);
   }
 
   async createDirectUser(userId: string, targetUsername: string, rawBody: string) {
-    const contextId = await this.resolveDirectUserContext(userId, targetUsername);
-    return this.createAuthorized(userId, "USER_DIRECT", contextId, rawBody);
+    const directContext = await this.resolveDirectUserContext(userId, targetUsername);
+    return this.createAuthorized(userId, "USER_DIRECT", directContext.contextId, rawBody, {
+      recipientUserId: directContext.targetUserId,
+    });
   }
 
-  private async resolveDirectUserContext(userId: string, targetUsername: string): Promise<string> {
+  private async resolveDirectUserContext(
+    userId: string,
+    targetUsername: string,
+  ): Promise<{ contextId: string; targetUserId: string }> {
     const targetUserId = await this.users.findUserIdByUsername(targetUsername);
     if (!targetUserId) {
       throw new AppError(404, "USER_NOT_FOUND", "User not found");
@@ -118,7 +152,7 @@ export class WhistleService {
     if (targetUserId === userId) {
       throw new AppError(400, "USER_WHISTLE_SELF_FORBIDDEN", "You cannot Whistle yourself");
     }
-    return [userId, targetUserId].sort().join(":");
+    return { contextId: [userId, targetUserId].sort().join(":"), targetUserId };
   }
 
   private async listAuthorized(
@@ -160,6 +194,7 @@ export class WhistleService {
     contextType: WhistleContextType,
     contextId: string,
     rawBody: string,
+    notification: { readonly recipientUserId?: string } = {},
   ) {
     const body = rawBody.trim();
     const graphemes = graphemeCount(body);
@@ -190,7 +225,7 @@ export class WhistleService {
         throw new AppError(429, "WHISTLE_DAILY_LIMIT", "Daily Whistle limit reached");
       }
       const used = await this.repository.quotaUsed(userId, dayKey(now));
-      return {
+      const result = {
         whistle: {
           id: metadata.id,
           authorUserId: metadata.authorUserId,
@@ -202,6 +237,21 @@ export class WhistleService {
         remainingToday: Math.max(0, DAILY_LIMIT - used),
         resetsAt: expiresAt.toISOString(),
       };
+      if (
+        notification.recipientUserId &&
+        this.notifications &&
+        (contextType === "RIDE" || contextType === "USER_DIRECT")
+      ) {
+        await this.notifications.notifyWhistle({
+          recipientUserId: notification.recipientUserId,
+          actorUserId: userId,
+          contextType,
+          contextId,
+          whistleId: metadata.id,
+          createdAt: metadata.createdAt,
+        });
+      }
+      return result;
     } catch (error) {
       await this.transientStore.deleteBody(id).catch(() => undefined);
       throw error;

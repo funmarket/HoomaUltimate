@@ -20,6 +20,10 @@ export interface RideRequestListInput {
   readonly from?: Date;
 }
 
+export interface RideWhistleContextRecord {
+  readonly requesterUserId: string;
+}
+
 export interface RideCommunityRequestListInput {
   readonly communityId: string;
   readonly viewerUserId: string;
@@ -35,6 +39,10 @@ export interface RideRequestRepository {
     input: RideMineListQuery,
   ): Promise<RideRequestForOwnerList>;
   getPublic(rideRequestId: string): Promise<PublicRideRequest | null>;
+  getCommunityWhistleContext(input: {
+    readonly viewerUserId: string;
+    readonly rideRequestId: string;
+  }): Promise<RideWhistleContextRecord | null>;
   getForRequester(
     rideRequestId: string,
     requesterUserId: string,
