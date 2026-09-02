@@ -29,7 +29,7 @@ test("Ride hub uses the locked exact ON MY WAY banner image", () => {
   assert.match(gateway, /ON MY WAY/);
   assert.match(gateway, /Going somewhere solo\? Why\?/);
   assert.match(gateway, /See who's on your route/);
-  assert.match(gateway, /Where you meet stays between you\./);
+  assert.doesNotMatch(gateway, /Where you meet stays between you\./);
   assert.match(gateway, /src="\/rides\/on-my-way-banner\.png"/);
   assert.match(gateway, /ride-hero__sr-copy/);
 
@@ -66,7 +66,7 @@ test("Ride hero actions keep approved IA and phone-first button layout", () => {
   assert.match(gateway, /RideMapPinIcon/);
   assert.match(gateway, /RideBrowseIcon/);
   assert.match(gateway, /RideCarPlusIcon/);
-  assert.match(gateway, /RideLockIcon/);
+  assert.doesNotMatch(gateway, /RideLockIcon/);
   const icons = source("packages/frontend/src/rides/RideIcons.tsx");
   assert.match(icons, /requestAction: "\/rides\/icons\/request-action\.png"/);
   assert.match(icons, /browseOffers: "\/rides\/icons\/browse-offers\.png"/);
