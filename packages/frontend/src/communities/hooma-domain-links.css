@@ -1,0 +1,132 @@
+.hooma-page .panel.hooma-domain-links {
+  --hooma-domain-surface: #111510;
+  --hooma-domain-surface-raised: #171d15;
+  --hooma-domain-border: #313b2b;
+  --hooma-domain-border-strong: #4d5a43;
+  --hooma-domain-title: #ffe04b;
+  --hooma-domain-text: #d9ddd4;
+  --hooma-domain-muted: #a9b0a3;
+  --hooma-domain-lime: #b8ff39;
+  --hooma-domain-orange: #ff9a3d;
+
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--hooma-domain-border);
+  border-radius: 18px;
+  background: linear-gradient(
+    150deg,
+    var(--hooma-domain-surface-raised),
+    var(--hooma-domain-surface) 72%
+  );
+  box-shadow: 0 7px 0 #050605;
+}
+
+.hooma-page .hooma-domain-links > .eyebrow {
+  margin: 0 0 2px;
+  color: var(--hooma-domain-title);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.hooma-page .hooma-domain-card {
+  position: relative;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 72px;
+  overflow: hidden;
+  appearance: none;
+  padding: 13px 15px;
+  border: 1px solid var(--hooma-domain-border);
+  border-radius: 16px;
+  color: var(--hooma-domain-text);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 56%),
+    var(--hooma-domain-surface-raised);
+  box-shadow:
+    0 5px 0 #050605,
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.hooma-page .hooma-domain-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--hooma-domain-lime);
+}
+
+.hooma-page .hooma-domain-card:first-of-type::before {
+  background: var(--hooma-domain-orange);
+}
+
+.hooma-page .hooma-domain-card strong,
+.hooma-page .hooma-domain-card span {
+  display: block;
+  margin: 0;
+}
+
+.hooma-page .hooma-domain-card strong {
+  color: var(--hooma-domain-title);
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+.hooma-page .hooma-domain-card span {
+  color: var(--hooma-domain-muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.hooma-page .hooma-domain-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--hooma-domain-border-strong);
+}
+
+.hooma-page .hooma-domain-card:active {
+  transform: translateY(2px);
+  box-shadow:
+    0 2px 0 #050605,
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.hooma-page .hooma-domain-card:focus-visible {
+  outline: 2px solid var(--hooma-domain-lime);
+  outline-offset: 3px;
+}
+
+@media (max-width: 520px) {
+  .hooma-page .panel.hooma-domain-links {
+    gap: 9px;
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .hooma-page .hooma-domain-card {
+    min-height: 68px;
+    padding: 12px 14px;
+    border-radius: 14px;
+  }
+
+  .hooma-page .hooma-domain-card strong {
+    font-size: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hooma-page .hooma-domain-card {
+    transition: none;
+  }
+}
