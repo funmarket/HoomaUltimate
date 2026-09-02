@@ -19,7 +19,6 @@ import "./rides/rides-mobile.css";
 import "./rides/ride-hero-actions-google.css";
 import "./watch/watch.css";
 import "./watch/watch-section-actions.css";
-import "./events/play-game-card.css";
 
 export * from "./api";
 export * from "./auth-login-methods";
@@ -46,7 +45,6 @@ export * from "./events/EventChatPage";
 export * from "./events/CheckInPage";
 export * from "./gamers/api";
 export * from "./gamers/GamersPage";
-export * from "./gamers/GamerGamePage";
 export * from "./discovery/api";
 export * from "./discovery/HoomaNowSection";
 export * from "./places/PlacesPages";
