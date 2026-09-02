@@ -1,2 +1,7 @@
 @import "./watch-event-detail.css";
 @import "./play-event-ticket.css";
+
+.play-page {
+  display: grid;
+  gap: 28px;
+}
