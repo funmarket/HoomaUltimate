@@ -261,6 +261,27 @@ test("Ride HTTP APIs expose public/member flows without leaking private Ride sta
       "Gate 3 beside the blue kiosk",
     );
 
+    const publicMapPreview = await fetch(`${base}/api/public/v1/rides/offers/${offer.id}/map`);
+    assert.equal(publicMapPreview.status, 200);
+    assert.match(publicMapPreview.headers.get("content-type") ?? "", /image\/svg\+xml/);
+    const publicMapPreviewBody = await publicMapPreview.text();
+    assert.match(publicMapPreviewBody, /PUBLIC PREVIEW/);
+    assert.match(publicMapPreviewBody, /Stade Olympique de Rades/);
+    assert.equal(publicMapPreviewBody.includes("Gate 3 beside the blue kiosk"), false);
+    assert.equal(publicMapPreviewBody.includes("36.8065"), false);
+
+    const passengerMapPreview = await fetch(
+      `${base}/api/v1/rides/participations/${acceptedReadback.id}/meeting-point/map`,
+      { headers: headers(passenger.cookie) },
+    );
+    assert.equal(passengerMapPreview.status, 200);
+    assert.match(passengerMapPreview.headers.get("content-type") ?? "", /image\/svg\+xml/);
+    const passengerMapPreviewBody = await passengerMapPreview.text();
+    assert.match(passengerMapPreviewBody, /PRIVATE EXACT PREVIEW/);
+    assert.match(passengerMapPreviewBody, /Gate 3 beside the blue kiosk/);
+    assert.match(passengerMapPreviewBody, /36.80650/);
+    assert.match(passengerMapPreviewBody, /10.18150/);
+
     const outsiderMeetingPoint = await fetch(
       `${base}/api/v1/rides/participations/${participation.id}/meeting-point`,
       { headers: headers(outsider.cookie) },

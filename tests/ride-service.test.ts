@@ -395,6 +395,38 @@ test("RideService cleans up uploaded vehicle photos when metadata persistence fa
   );
 });
 
+test("RideService renders public and exact static Ride map previews through the server boundary", async () => {
+  const fixture = createServiceFixture();
+
+  const publicPreview = await fixture.service.getPublicOfferMapPreview("offer-1");
+  assert.match(publicPreview, /PUBLIC PREVIEW/);
+  assert.match(publicPreview, /Stade Olympique de Rades/);
+  assert.doesNotMatch(publicPreview, /36\.8/);
+  assert.doesNotMatch(publicPreview, /10\.18/);
+
+  fixture.meetingPoints.authorizedResult = {
+    id: "meeting-1",
+    participationId: "part-1",
+    label: "Gate 4",
+    latitude: 36.8,
+    longitude: 10.18,
+    createdAt: now,
+    updatedAt: now,
+  };
+  const exactPreview = await fixture.service.getMeetingPointMapPreview("passenger-1", "part-1");
+  assert.match(exactPreview, /PRIVATE EXACT PREVIEW/);
+  assert.match(exactPreview, /Gate 4/);
+  assert.match(exactPreview, /36\.80000/);
+  assert.match(exactPreview, /10\.18000/);
+
+  fixture.meetingPoints.authorizedResult = null;
+  await assertRideError(
+    () => fixture.service.getMeetingPointMapPreview("outsider", "part-1"),
+    403,
+    "RIDE_MEETING_POINT_FORBIDDEN",
+  );
+});
+
 function createServiceFixture() {
   const offers = new FakeRideOfferRepository();
   const requests = new FakeRideRequestRepository();

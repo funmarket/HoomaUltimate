@@ -1960,3 +1960,17 @@ Remaining current Ride order after closeout:
 1. `RIDE-007D` privacy-safe static maps.
 2. `RIDE-007` umbrella closeout.
 3. Requests slices only after Ride closeout/map scope is resolved or explicitly deferred.
+
+## 2026-09-03 — RIDE-007D static Ride map preview implementation started
+
+Branch: `fix/rides-static-maps` from `phase-0-foundation` at `599eed399a6c1e6c26743c65cd9715f7ab03b101`.
+
+Working scope:
+
+- add privacy-safe static Ride map previews through a server-side SVG boundary;
+- public preview stays approximate and label-only;
+- exact meeting-point preview stays behind authorization;
+- render the preview in Ride offer detail and accepted participation views;
+- verify with focused service and HTTP tests.
+- desktop overflow regression was corrected by reverting `.hooma-topbar` to auto width and preserving edge bleed with shell margins.
+- local PostgreSQL auth is not available in this workspace, so the HTTP integration test still needs the repo CI database environment to finish.
