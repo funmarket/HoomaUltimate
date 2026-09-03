@@ -1,0 +1,1 @@
+ALTER TYPE "FootballFormat" ADD VALUE IF NOT EXISTS 'TEN_V_TEN';

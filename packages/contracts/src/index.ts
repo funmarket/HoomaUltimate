@@ -118,6 +118,7 @@ export const footballFormatSchema = z.enum([
   "SEVEN_V_SEVEN",
   "EIGHT_V_EIGHT",
   "NINE_V_NINE",
+  "TEN_V_TEN",
   "ELEVEN_V_ELEVEN",
 ]);
 
@@ -129,6 +130,7 @@ export const FOOTBALL_FORMAT_PLAYER_COUNTS: Readonly<Record<FootballFormatInput,
   SEVEN_V_SEVEN: 7,
   EIGHT_V_EIGHT: 8,
   NINE_V_NINE: 9,
+  TEN_V_TEN: 10,
   ELEVEN_V_ELEVEN: 11,
 };
 

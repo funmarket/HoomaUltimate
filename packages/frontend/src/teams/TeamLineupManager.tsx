@@ -26,6 +26,7 @@ const MATCH_FORMATS: Array<{ value: FootballFormat; label: string }> = [
   { value: "SEVEN_V_SEVEN", label: "7v7" },
   { value: "EIGHT_V_EIGHT", label: "8v8" },
   { value: "NINE_V_NINE", label: "9v9" },
+  { value: "TEN_V_TEN", label: "10v10" },
   { value: "ELEVEN_V_ELEVEN", label: "11v11" },
 ];
 
@@ -35,6 +36,7 @@ const FORMATIONS: Record<FootballFormat, string[]> = {
   SEVEN_V_SEVEN: ["2-3-1", "3-2-1", "2-2-2", "CUSTOM"],
   EIGHT_V_EIGHT: ["3-3-1", "2-3-2", "3-2-2", "CUSTOM"],
   NINE_V_NINE: ["3-3-2", "4-3-1", "3-4-1", "CUSTOM"],
+  TEN_V_TEN: ["3-4-2", "4-3-2", "3-3-3", "CUSTOM"],
   ELEVEN_V_ELEVEN: ["4-3-3", "4-4-2", "4-2-3-1", "3-5-2", "3-4-3", "CUSTOM"],
 };
 

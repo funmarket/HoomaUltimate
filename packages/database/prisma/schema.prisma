@@ -151,6 +151,7 @@ enum FootballFormat {
   SEVEN_V_SEVEN
   EIGHT_V_EIGHT
   NINE_V_NINE
+  TEN_V_TEN
   ELEVEN_V_ELEVEN
 }
 
