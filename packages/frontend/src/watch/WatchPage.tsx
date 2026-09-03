@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { WatchEventKind } from "@hooma/contracts";
 import type { PublicEvent } from "../events/api";
 import { useEventApi } from "../events/useEventApi";
-import { WatchCalendarIcon, WatchCalendarPlusIcon, WatchPinIcon } from "../ui/HoomaIcons";
+import { CalendarIcon, CalendarPlusIcon, PinIcon } from "../ui/HoomaIcons";
 import { CulturalEventCard } from "./CulturalEventCard";
 import { WatchTicket } from "./WatchTicket";
 
@@ -170,19 +170,19 @@ export function WatchPage() {
 
       <nav className="watch-section-actions" aria-label="Watch sections">
         <a className="watch-section-action" href="/watch" aria-current="page">
-          <WatchCalendarIcon size={28} className="watch-section-action__icon" />
+          <CalendarIcon size={28} className="watch-section-action__icon" />
           <span>Events</span>
         </a>
         <a className="watch-section-action" href="/places">
-          <WatchPinIcon size={28} className="watch-section-action__icon" />
+          <PinIcon size={28} className="watch-section-action__icon" />
           <span>Spots</span>
         </a>
         <a className="watch-section-action" href={`/events/new?type=WATCH&kind=${kind}`}>
-          <WatchCalendarPlusIcon size={28} className="watch-section-action__icon" />
+          <CalendarPlusIcon size={28} className="watch-section-action__icon" />
           <span>Create Event</span>
         </a>
         <a className="watch-section-action" href="/places/new">
-          <WatchPinIcon size={28} className="watch-section-action__icon" />
+          <PinIcon size={28} className="watch-section-action__icon" />
           <span>Add a Place</span>
         </a>
       </nav>
