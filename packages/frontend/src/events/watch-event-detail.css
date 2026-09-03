@@ -128,7 +128,9 @@
 
 .watch-event-detail__venue-image {
   display: block;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
+  background: #0a0b09;
 }
 
 .watch-event-detail__venue-placeholder {
