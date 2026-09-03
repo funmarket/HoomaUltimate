@@ -3,6 +3,8 @@
 Status: **ACCEPTED**  
 Date: 2026-08-23
 
+> **Current-state note (2026-09-03):** Gamers remains an implemented independent direct route family at `/gamers`, but it is no longer an active Home gateway. ADR-055 governs current Home/navigation IA. This change does not alter Gamers domain ownership or its human-first match architecture.
+
 ## Decision
 
 The product owner explicitly authorized the Gamers vertical slice on 2026-08-23. Gamers is therefore current product work notwithstanding older freeze language that predates this owner decision.
@@ -36,13 +38,13 @@ There is no global Gamers Whistle feed. Gamer Squad members use the one shared W
 
 ## Consequences
 
-- `/gamers` becomes a real implemented route behind the already-existing Home gateway.
+- `/gamers` is a real implemented independent route family; it is not an active Home gateway under the current IA.
+- Current permanent bottom navigation is `Home | Play | Watch | HOOMA | Athletes`; Gamers does not add a sixth item.
 - Do not build a parallel Gamer chat/message system.
 - Do not build a separate Gamer Team and Gamer Community membership model; use GamerSquad.
 - Do not require EA/Ludo/external game APIs for V1 authenticity.
 - Do not claim external provider verification unless a future provider integration genuinely proves it.
 - Do not display fake online/presence state.
-- Do not add Gamers to permanent bottom navigation.
 - Public browsing remains public where privacy-safe; protected actions require authenticated server-side authorization.
 
 Detailed active product behavior and implementation slices are recorded in `docs/GAMERS_PRODUCT_CONTRACT.md`.
