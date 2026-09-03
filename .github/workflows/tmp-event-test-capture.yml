@@ -43,7 +43,11 @@ jobs:
       - run: npm install --global npm@10.9.2
       - run: npm ci
       - run: npm run db:generate
+      - run: npm run db:validate
       - run: npm run db:migrate:deploy
+      - run: npm run architecture:check
+      - run: npm run typecheck
+      - run: npm run build:packages
       - name: Capture test output into branch
         shell: bash
         run: |
@@ -51,11 +55,11 @@ jobs:
           npm test > EVENT_UNIT_FAILURE.txt 2>&1
           code=$?
           printf '\nEXIT_CODE=%s\n' "$code" >> EVENT_UNIT_FAILURE.txt
-          tail -n 320 EVENT_UNIT_FAILURE.txt > EVENT_UNIT_FAILURE.tail
+          tail -n 640 EVENT_UNIT_FAILURE.txt > EVENT_UNIT_FAILURE.tail
           mv EVENT_UNIT_FAILURE.tail EVENT_UNIT_FAILURE.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git pull --rebase origin phase-0-foundation
           git add EVENT_UNIT_FAILURE.txt
-          git commit -m "chore: capture remaining event unit failure"
+          git commit -m "chore: capture exact remaining event unit failure"
           git push origin HEAD:phase-0-foundation
