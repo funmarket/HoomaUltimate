@@ -36,7 +36,11 @@ test("locked bottom navigation and six-card Home gateway cannot drift", async ()
   assert.doesNotMatch(gatewaySource, /label: "Gamers"/);
   assert.doesNotMatch(gatewaySource, /label: "Ultras"/);
   assert.doesNotMatch(gatewaySource, /label: "FundMe"/);
-  assert.match(accountCss, /\.hooma-topbar\s*\{[\s\S]*inline-size:\s*100vw/);
+  assert.match(
+    accountCss,
+    /\.hooma-topbar\s*\{[\s\S]*margin-inline:\s*calc\(-1 \* var\(--shell-inline\)\)/,
+  );
+  assert.doesNotMatch(accountCss, /\.hooma-topbar\s*\{[\s\S]*inline-size:\s*100vw/);
 });
 
 test("Home gateway cards expose visible labels and disable unavailable destinations", async () => {

@@ -186,6 +186,18 @@ export function RideOfferDetailPage({ offerId }: { readonly offerId: string }) {
         </div>
       </article>
 
+      <figure className="ride-map-preview panel">
+        <img
+          className="ride-map-preview__image"
+          src={api.offerMapPreviewUrl(offer.id)}
+          alt={`Public Ride map preview for ${destinationLabel(offer.destination)}`}
+        />
+        <figcaption>
+          <p className="eyebrow">PUBLIC MAP PREVIEW</p>
+          <p className="muted">Approximate destination only. Exact meeting points stay private.</p>
+        </figcaption>
+      </figure>
+
       {notice ? <p className="ride-state panel success">{notice}</p> : null}
       {memberError ? <p className="ride-state panel error">{memberError}</p> : null}
 
@@ -292,7 +304,22 @@ export function RideOfferDetailPage({ offerId }: { readonly offerId: string }) {
               <button className="ride-button ride-button--primary" type="submit" disabled={busy}>
                 Save meeting point
               </button>
-              {meetingPoint ? <p className="success">Saved: {meetingPoint.label}</p> : null}
+              {meetingPoint ? (
+                <>
+                  <p className="success">Saved: {meetingPoint.label}</p>
+                  <figure className="ride-map-preview ride-map-preview--private">
+                    <img
+                      className="ride-map-preview__image"
+                      src={api.meetingPointMapPreviewUrl(meetingPoint.participationId)}
+                      alt={`Private meeting point preview for ${meetingPoint.label}`}
+                    />
+                    <figcaption>
+                      <p className="eyebrow">PRIVATE EXACT PREVIEW</p>
+                      <p className="muted">Visible only to the driver and accepted passenger.</p>
+                    </figcaption>
+                  </figure>
+                </>
+              ) : null}
             </form>
           ) : null}
         </section>

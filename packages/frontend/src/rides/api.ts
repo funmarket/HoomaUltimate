@@ -193,6 +193,10 @@ export function createRideApi(transport: HoomaTransport) {
       ),
     offerPhotoUrl: (offerId: string) =>
       `${transport.baseUrl}${publicRidePath(`/offers/${encodeURIComponent(offerId)}/photo`)}`,
+    offerMapPreviewUrl: (offerId: string) =>
+      `${transport.baseUrl}${publicRidePath(`/offers/${encodeURIComponent(offerId)}/map`)}`,
+    meetingPointMapPreviewUrl: (participationId: string) =>
+      `${transport.baseUrl}${ridePath(`/participations/${encodeURIComponent(participationId)}/meeting-point/map`)}`,
     listRequests: (query?: RideListQuery) =>
       request<PublicRideRequestList>(transport, listPath("requests", query)),
     listCommunityRequests: (communityId: string, query?: RideListQuery) =>

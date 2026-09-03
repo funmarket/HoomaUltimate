@@ -2,6 +2,8 @@ import type { ObjectStorage, StoredObject } from "@hooma/storage";
 import { randomUUID } from "node:crypto";
 import { rideMineQuerySchema } from "@hooma/contracts/rides";
 import type {
+  PublicRideOffer,
+  PublicRideRequest,
   RideMeetingPointInput,
   RideMine,
   RideMineListQuery,
@@ -36,6 +38,7 @@ import type {
   RideVehiclePhotoRepository,
 } from "./ride-vehicle-photo.repository.js";
 import type { RideRequestListInput, RideRequestRepository } from "./ride-request.repository.js";
+import { renderRideMapPreviewSvg } from "./ride-map-preview.js";
 
 type PublicRideOfferListInput = Omit<RideOfferListInput, "limit"> & { readonly limit?: number };
 type PublicRideRequestListInput = Omit<RideRequestListInput, "limit"> & { readonly limit?: number };
@@ -119,6 +122,35 @@ export class RideService {
     const request = await this.requests.getPublic(rideRequestId);
     if (!request) throw new RideError("RIDE_REQUEST_NOT_FOUND", "Ride request not found");
     return request;
+  }
+
+  async getPublicOfferMapPreview(rideOfferId: string) {
+    const offer = await this.getPublicOffer(rideOfferId);
+    return renderRideMapPreviewSvg({
+      badge: "PUBLIC PREVIEW",
+      title: destinationLabelForPreview(offer.destination),
+      subtitle: `${offer.originAreaLabel} → ${destinationLabelForPreview(offer.destination)}`,
+      callout: publicCalloutForDestination(offer.destination),
+      privacyNote: "Approximate public Ride preview. Exact meeting points stay private.",
+    });
+  }
+
+  async getMeetingPointMapPreview(viewerUserId: string, participationId: string) {
+    const meetingPoint = await this.getMeetingPoint(viewerUserId, participationId);
+    return renderRideMapPreviewSvg({
+      badge: "PRIVATE EXACT PREVIEW",
+      title: meetingPoint.label,
+      subtitle: "Visible only to the driver and accepted passenger",
+      callout: meetingPoint.label,
+      privacyNote:
+        meetingPoint.latitude !== null && meetingPoint.longitude !== null
+          ? "Server-rendered exact meeting point for authorized Ride parties."
+          : "Coordinates are unavailable; exact meeting point label only.",
+      coordinates:
+        meetingPoint.latitude !== null && meetingPoint.longitude !== null
+          ? { latitude: meetingPoint.latitude, longitude: meetingPoint.longitude }
+          : null,
+    });
   }
 
   async getMyRequest(requesterUserId: string, rideRequestId: string) {
@@ -613,6 +645,32 @@ export class RideService {
     } catch {
       await this.vehiclePhotos.scheduleObjectDeletion({ objectKey, reason });
     }
+  }
+}
+
+function destinationLabelForPreview(
+  destination: PublicRideOffer["destination"] | PublicRideRequest["destination"],
+): string {
+  switch (destination.type) {
+    case "EVENT":
+      return `Event ${destination.title}`;
+    case "PLACE":
+      return destination.name;
+    case "CUSTOM":
+      return destination.label;
+  }
+}
+
+function publicCalloutForDestination(
+  destination: PublicRideOffer["destination"] | PublicRideRequest["destination"],
+): string {
+  switch (destination.type) {
+    case "EVENT":
+      return "Published event destination";
+    case "PLACE":
+      return "Approved place destination";
+    case "CUSTOM":
+      return "Custom destination area";
   }
 }
 
