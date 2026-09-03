@@ -124,11 +124,14 @@ test("Play event preserves waitlist and separates check-in evidence from final a
       ),
     );
     joins.forEach((response) => assert.equal(response.status, 200));
-    const joinStatuses = await Promise.all(joins.map((response) => response.json() as Promise<{ status: string }>));
-    assert.deepEqual(
-      joinStatuses.map((result) => result.status).sort(),
-      ["CONFIRMED", "CONFIRMED", "WAITLISTED"],
+    const joinStatuses = await Promise.all(
+      joins.map((response) => response.json() as Promise<{ status: string }>),
     );
+    assert.deepEqual(joinStatuses.map((result) => result.status).sort(), [
+      "CONFIRMED",
+      "CONFIRMED",
+      "WAITLISTED",
+    ]);
 
     const waitlistedIndex = joinStatuses.findIndex((result) => result.status === "WAITLISTED");
     const confirmedIndexes = joinStatuses

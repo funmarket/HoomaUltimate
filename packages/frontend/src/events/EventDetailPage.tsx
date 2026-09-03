@@ -445,7 +445,11 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
                   : undefined
               }
             >
-              {rsvp === "CONFIRMED" ? "✓ RSVP · " : "Attendance · "}
+              {rsvp === "ATTENDED" || rsvp === "NO_SHOW"
+                ? "Attendance · "
+                : rsvp === "CONFIRMED"
+                  ? "✓ RSVP · "
+                  : "RSVP · "}
               {rsvpLabel}
             </div>
           ) : null}
@@ -454,7 +458,9 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
               Attendance finalized
             </div>
           ) : rsvp === "NO_SHOW" ? (
-            <div className="play-event-primary-action play-event-primary-action--static">No show</div>
+            <div className="play-event-primary-action play-event-primary-action--static">
+              No show
+            </div>
           ) : checkedIn ? (
             <div className="play-event-primary-action play-event-primary-action--static">
               Checked in

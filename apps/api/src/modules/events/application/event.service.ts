@@ -236,10 +236,7 @@ export class EventService {
     } catch (error) {
       if (error instanceof Error && error.message === "RSVP_ALREADY_ATTENDED")
         throw new EventError("RSVP_ALREADY_ATTENDED", "An attended RSVP cannot be cancelled");
-      if (
-        error instanceof Error &&
-        error.message === "RSVP_CHECKED_IN_CANCELLATION_FORBIDDEN"
-      ) {
+      if (error instanceof Error && error.message === "RSVP_CHECKED_IN_CANCELLATION_FORBIDDEN") {
         throw new EventError(
           "RSVP_CHECKED_IN_CANCELLATION_FORBIDDEN",
           "A checked-in RSVP cannot be cancelled",

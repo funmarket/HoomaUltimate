@@ -198,7 +198,12 @@ export class PrismaEventRepository implements EventRepository {
               },
             },
             {
-              rsvps: { some: { userId, status: { in: ["CONFIRMED", "WAITLISTED", "ATTENDED"] } } },
+              rsvps: {
+                some: {
+                  userId,
+                  status: { in: ["CONFIRMED", "WAITLISTED", "ATTENDED", "NO_SHOW"] },
+                },
+              },
             },
             {
               playerInvites: {
@@ -717,7 +722,12 @@ export class PrismaEventRepository implements EventRepository {
               },
             },
             {
-              rsvps: { some: { userId, status: { in: ["CONFIRMED", "WAITLISTED", "ATTENDED"] } } },
+              rsvps: {
+                some: {
+                  userId,
+                  status: { in: ["CONFIRMED", "WAITLISTED", "ATTENDED", "NO_SHOW"] },
+                },
+              },
             },
           ],
         },

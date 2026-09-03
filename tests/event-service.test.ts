@@ -40,7 +40,11 @@ function repositoryStub(onCreate: () => void): EventRepository {
     createFormation: async () => ({}),
     canViewMemberContent: async () => false,
     listFormations: async () => [],
-    checkIn: async () => ({ checkedInAt: new Date("2026-08-22T18:00:00.000Z"), latitude: null, longitude: null }),
+    checkIn: async () => ({
+      checkedInAt: new Date("2026-08-22T18:00:00.000Z"),
+      latitude: null,
+      longitude: null,
+    }),
     listChat: async () => [],
     postChat: async () => ({}),
   };
@@ -226,7 +230,8 @@ test("EventService checks persisted Cultural subtype on partial updates", async 
 
   await assert.rejects(
     () => service.update("user-1", "event-1", { title: "Updated Cultural title" }),
-    (error: unknown) => error instanceof EventError && error.code === "WATCH_CULTURAL_OWNER_REQUIRED",
+    (error: unknown) =>
+      error instanceof EventError && error.code === "WATCH_CULTURAL_OWNER_REQUIRED",
   );
   assert.equal(updateCalled, false);
 });
@@ -287,7 +292,8 @@ test("EventService rejects Watch check-in before persistence", async () => {
 
   await assert.rejects(
     () => service.checkIn("user-1", "watch-1"),
-    (error: unknown) => error instanceof EventError && error.code === "EVENT_CHECK_IN_NOT_AVAILABLE",
+    (error: unknown) =>
+      error instanceof EventError && error.code === "EVENT_CHECK_IN_NOT_AVAILABLE",
   );
   assert.equal(called, false);
 });
@@ -396,6 +402,7 @@ test("EventService rejects formation players outside the confirmed event roster"
         published: true,
         slots: [{ userId: "outsider", team: "A", position: "GK", label: "GK", x: 50, y: 90 }],
       }),
-    (error: unknown) => error instanceof Error && error.message.includes("confirmed or attended RSVP"),
+    (error: unknown) =>
+      error instanceof Error && error.message.includes("confirmed or attended RSVP"),
   );
 });
