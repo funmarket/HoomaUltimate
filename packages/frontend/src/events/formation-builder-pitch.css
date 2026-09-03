@@ -86,21 +86,29 @@
   border: 0;
   border-radius: 0;
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.12), transparent 19%),
-    radial-gradient(ellipse at 50% 18%, rgba(38, 150, 74, 0.12), transparent 37%),
-    linear-gradient(180deg, #080b09 0%, #020302 21%, #010201 100%);
+    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.16), transparent 18%),
+    linear-gradient(
+      180deg,
+      rgba(36, 39, 36, 0.98) 0 7%,
+      rgba(7, 9, 8, 0.98) 7% 15%,
+      transparent 15%
+    ),
+    radial-gradient(ellipse at 50% 16%, rgba(41, 170, 87, 0.16), transparent 38%),
+    linear-gradient(180deg, #0b0f0c 0%, #030503 24%, #010201 100%);
   box-shadow: none;
 }
 
 .formation-pitch--stadium::before {
   position: absolute;
   z-index: 0;
-  top: 2.5%;
+  top: 1.5%;
   left: 50%;
-  width: 94%;
-  height: 25%;
-  border-radius: 50% 50% 18% 18%;
+  width: 100%;
+  height: 28%;
+  border-radius: 0 0 28px 28px;
   background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0 2px, transparent 2px 10px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.16) 0 2px, rgba(8, 10, 9, 0.55) 2px 13px),
     radial-gradient(circle at 4% 26%, rgba(255, 255, 255, 0.64) 0 1px, transparent 2px),
     radial-gradient(circle at 10% 14%, rgba(255, 255, 255, 0.38) 0 1px, transparent 2px),
     radial-gradient(circle at 17% 30%, rgba(255, 255, 255, 0.42) 0 1px, transparent 2px),
@@ -115,7 +123,9 @@
     radial-gradient(circle at 87% 14%, rgba(255, 255, 255, 0.44) 0 1px, transparent 2px),
     radial-gradient(circle at 95% 27%, rgba(255, 255, 255, 0.62) 0 1px, transparent 2px),
     linear-gradient(180deg, rgba(28, 30, 27, 0.9), rgba(5, 6, 5, 0.22));
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.75);
+  box-shadow:
+    inset 0 -18px 26px rgba(0, 0, 0, 0.72),
+    0 16px 32px rgba(0, 0, 0, 0.75);
   content: "";
   transform: translateX(-50%);
 }
@@ -127,12 +137,13 @@
   background:
     linear-gradient(
       90deg,
-      rgba(0, 0, 0, 0.46),
-      transparent 15%,
-      transparent 85%,
-      rgba(0, 0, 0, 0.46)
+      rgba(0, 0, 0, 0.34),
+      transparent 12%,
+      transparent 88%,
+      rgba(0, 0, 0, 0.34)
     ),
-    linear-gradient(180deg, rgba(0, 0, 0, 0.1), transparent 34%, rgba(0, 0, 0, 0.2));
+    radial-gradient(ellipse at 50% 7%, rgba(255, 255, 245, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.08), transparent 34%, rgba(0, 0, 0, 0.22));
   content: "";
   pointer-events: none;
 }
@@ -156,29 +167,33 @@
 .formation-pitch__surface,
 .formation-pitch__players {
   position: absolute;
-  top: 11%;
-  right: 4.5%;
+  top: 13%;
+  right: 5%;
   bottom: 3.5%;
-  left: 4.5%;
+  left: 5%;
 }
 
 .formation-pitch__surface {
   z-index: 3;
   overflow: hidden;
-  clip-path: polygon(13% 0, 87% 0, 100% 100%, 0 100%);
+  border-radius: 6px;
   background:
-    radial-gradient(ellipse at 50% 3%, rgba(255, 255, 255, 0.12), transparent 28%),
+    radial-gradient(ellipse at 50% 2%, rgba(255, 255, 255, 0.14), transparent 25%),
     repeating-linear-gradient(
       0deg,
-      rgba(255, 255, 255, 0.035) 0,
-      rgba(255, 255, 255, 0.035) 9.5%,
-      rgba(0, 0, 0, 0.045) 9.5%,
-      rgba(0, 0, 0, 0.045) 19%
+      rgba(255, 255, 255, 0.038) 0,
+      rgba(255, 255, 255, 0.038) 9.5%,
+      rgba(0, 0, 0, 0.05) 9.5%,
+      rgba(0, 0, 0, 0.05) 19%
     ),
-    linear-gradient(180deg, #235f32 0%, #174f2b 42%, #0e3c24 100%);
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 5px),
+    radial-gradient(circle at 22% 18%, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 4px),
+    radial-gradient(circle at 68% 76%, rgba(0, 0, 0, 0.05) 0 1px, transparent 1px 5px),
+    linear-gradient(180deg, #2d752f 0%, #226c2d 35%, #185626 67%, #10431f 100%);
   box-shadow:
-    inset 0 0 70px rgba(0, 0, 0, 0.42),
-    0 0 0 1px rgba(239, 239, 220, 0.28),
+    inset 0 0 58px rgba(0, 0, 0, 0.34),
+    inset 0 2px 16px rgba(255, 255, 255, 0.08),
+    0 0 0 1px rgba(239, 239, 220, 0.38),
     0 18px 38px rgba(0, 0, 0, 0.45);
 }
 
@@ -527,8 +542,8 @@
 
   .formation-pitch__surface,
   .formation-pitch__players {
-    right: 2.5%;
-    left: 2.5%;
+    right: 4%;
+    left: 4%;
   }
 
   .formation-slot--game {
