@@ -697,6 +697,24 @@ model AthletesJoinRequest {
   @@index([userId, status, requestedAt])
 }
 
+model AthletesDashboardPhoto {
+  id                  String            @id @default(cuid())
+  athletesCommunityId String
+  postedByUserId      String
+  objectKey           String          // object-storage lookup
+  contentType         String          // HTTP/media content type
+  sizeBytes           Int             // validation/metadata
+  createdAt           DateTime        @default(now())
+
+  // Relations
+  athletesCommunity   AthletesCommunity  @relation(fields: [athletesCommunityId], references: [id], onDelete: SetNull)
+  postedBy            User             @relation(fields: [postedByUserId], references: [id], onDelete: SetNull)
+
+  // Indexes
+  @@index([athletesCommunityId, createdAt, id])
+}
+
+
 model Team {
   id                   String                         @id @default(cuid())
   communityId          String?
@@ -1183,16 +1201,8 @@ model RideMeetingPoint {
 model RideOfferWaypoint {
   id          String    @id @default(cuid())
   rideOfferId String
-  sequence    Int
-  placeId     String?
-  areaLabel   String
-  rideOffer   RideOffer @relation(fields: [rideOfferId], references: [id], onDelete: Cascade)
-  place       Place?    @relation("RideOfferWaypointPlace", fields: [placeId], references: [id], onDelete: Restrict)
+  sequence
 
-  @@unique([rideOfferId, sequence])
-  @@index([rideOfferId, sequence])
-  @@index([placeId])
-}
 
 model WhistleMetadata {
   id           String             @id

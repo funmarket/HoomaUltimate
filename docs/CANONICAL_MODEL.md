@@ -256,7 +256,7 @@ Rules:
 - MODERATOR authority is intentionally minimum-safe in this foundation: it may review join requests, direct-add users, and remove MEMBER records, but it may not manage settings, archive, manage founders, or manage moderators;
 - MEMBER has no management authority;
 - public discovery/detail is privacy-safe and independent from authenticated membership actions;
-- Whistle, equipment, Events, marketplace, Ride/Requests/FundMe integration, ULTRAS and generic community abstractions are not part of this foundation.
+- equipment, Events, marketplace, Ride/Requests/FundMe integration, ULTRAS and generic community abstractions are not part of this foundation.
 
 ---
 

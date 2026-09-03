@@ -1,4 +1,4 @@
-import type { AthletesSport } from "@hooma/contracts/athletes";
+import type { AthletesSport, AthletesMember } from "@hooma/contracts/athletes";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import type { PublicAthletesDetail, PublicAthletesSummary } from "../api";
@@ -386,7 +386,7 @@ export function AthletesDetailPage({
 }) {
   const { api, protectedError } = useHoomaFrontend();
   const [detail, setDetail] = useState<PublicAthletesDetail | null>(null);
-  const [members, setMembers] = useState<unknown[]>([]);
+  const [members, setMembers] = useState<AthletesMember[]>();
   const [requests, setRequests] = useState<{ userId: string }[]>([]);
   const [username, setUsername] = useState("");
   const [error, setError] = useState("");
@@ -404,14 +404,20 @@ export function AthletesDetailPage({
     try {
       const next = await api.athletes.detail(athletesCommunityId);
       setDetail(next);
-      try {
-        setMembers(await api.athletes.members(athletesCommunityId));
-      } catch {
-        setMembers([]);
-      }
-      try {
-        setRequests((await api.athletes.joinRequests(athletesCommunityId)).requests);
-      } catch {
+      const viewerRole = detail?.viewerRole;
+      if (viewerRole === "FOUNDER" || viewerRole === "MODERATOR") {
+        try {
+          setMembers(await api.athletes.members(athletesCommunityId));
+        } catch {
+          setMembers([]);
+        }
+        try {
+          setRequests((await api.athletes.joinRequests(athletesCommunityId)).requests);
+        } catch {
+          setRequests([]);
+        }
+      } else {
+        setMembers(viewerRole !== null ? [] : []);
         setRequests([]);
       }
     } catch (reason) {
@@ -448,6 +454,26 @@ export function AthletesDetailPage({
       await reload();
     } catch (reason) {
       setError(protectedError(reason, "Unable to add Athletes member"));
+    }
+  }
+
+  async function archiveCommunity() {
+    try {
+      await api.athletes.archive(athletesCommunityId);
+      setNotice("Athletes community archived.");
+      await reload();
+    } catch (reason) {
+      setError(protectedError(reason, "Unable to archive Athletes community"));
+    }
+  }
+
+  async function setMemberRole(userId: string, role: string) {
+    try {
+      await api.athletes.setMemberRole(athletesCommunityId, userId, role);
+      setNotice("Member role updated.");
+      await reload();
+    } catch (reason) {
+      setError(protectedError(reason, "Unable to update member role"));
     }
   }
 
