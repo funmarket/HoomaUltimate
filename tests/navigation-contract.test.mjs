@@ -5,6 +5,7 @@ import test from "node:test";
 test("locked bottom navigation and six-card Home gateway cannot drift", async () => {
   const navSource = await readFile("packages/ui/src/navigation/HoomaBottomNav.tsx", "utf8");
   const gatewaySource = await readFile("packages/ui/src/home/home-gateways.ts", "utf8");
+  const accountCss = await readFile("apps/web/src/account/account.css", "utf8");
   const nav = navSource.slice(
     navSource.indexOf("export const PRIMARY_NAV_ITEMS"),
     navSource.indexOf("export interface HoomaBottomNavProps"),
@@ -35,6 +36,7 @@ test("locked bottom navigation and six-card Home gateway cannot drift", async ()
   assert.doesNotMatch(gatewaySource, /label: "Gamers"/);
   assert.doesNotMatch(gatewaySource, /label: "Ultras"/);
   assert.doesNotMatch(gatewaySource, /label: "FundMe"/);
+  assert.match(accountCss, /\.hooma-topbar\s*\{[\s\S]*inline-size:\s*100vw/);
 });
 
 test("Home gateway cards expose visible labels and disable unavailable destinations", async () => {

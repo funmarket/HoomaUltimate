@@ -303,14 +303,15 @@ Merged persistence/API support includes Ride context filters and canonical FREE/
 
 ## RIDE-007C — Mobile Ride hub + Matchday/Anywhere/My Rides UX
 
-Status: **[~] IN PROGRESS — CLOSEOUT AUDIT, NOT REIMPLEMENTATION**
+Status: **[x] DONE — CLOSEOUT AUDIT PASSED**
 
 Merged work now includes:
 
 - PR #204 mobile Ride hub;
 - PR #205 explicit context/compensation form completion;
 - PR #207 authenticated actor-owned My Rides server readback;
-- PR #208 Ride context tiles routing to the Ride request form while preserving `/rides/matchday` and `/rides/anywhere` routes.
+- PR #208 Ride context tiles routing to the Ride request form while preserving `/rides/matchday` and `/rides/anywhere` routes;
+- this closeout proof and 360px shell overflow correction.
 
 PR #207:
 
@@ -328,16 +329,17 @@ merge: f53c6b2564637feab916a28b3099999e69d9bfa2
 
 The plan must no longer say `/rides/mine` is missing; that blocker was resolved by PR #207.
 
-Remaining RIDE-007C work is evidence/acceptance only unless a failing test or runtime defect proves a source correction is required:
+Closeout audit evidence:
 
-- now that PR #210 is merged, run phone-width smoke at minimum 360/390/430;
-- verify `/rides`, `/rides/matchday`, `/rides/anywhere`, `/rides/request`, `/rides/offers`, `/rides/offers/new`, offer detail/manage/edit, request edit, and `/rides/mine`;
-- prove no horizontal overflow/runtime exception;
-- prove My Rides reconstructs from authenticated server readback, not browser memory;
-- prove vehicle photos remain contained/uncropped according to current Ride styling;
-- preserve bottom nav `Home | Play | Watch | HOOMA | Pitch`.
+- source/test checks passed for Ride API readback, owner manage/edit routes, Community Ride interaction, SHARE WITH phone layout, My Rides authenticated server readback, and current bottom nav contract;
+- production web build passed;
+- rendered smoke covered `/rides`, `/rides/matchday`, `/rides/anywhere`, `/rides/request`, `/rides/requests/:requestId/edit`, `/rides/offers`, `/rides/offers/new`, `/rides/offers/:offerId`, `/rides/offers/:offerId/edit`, and `/rides/mine` at 360/390/430;
+- rendered smoke proved no horizontal overflow and no page runtime errors after correcting the shared account topbar to stay within 100vw at 360px;
+- My Rides was rendered from the authenticated `/api/v1/rides/mine` response, with offer/manage/edit, request/edit, and passenger participation sections visible;
+- Ride offer photos rendered inside current object-fit containers;
+- current bottom nav preserved as `Home | Play | Watch | HOOMA | Athletes`.
 
-If those gates pass after #210, mark RIDE-007C DONE without rebuilding it.
+RIDE-007C is closed; do not rebuild it unless fresh failing proof identifies a new defect.
 
 ---
 
