@@ -1915,3 +1915,29 @@ G. Implementation plan:
 - Incoming files were `apps/web/src/profile/ProfilePage.tsx`, `apps/web/src/profile/PublicProfilePage.tsx`, `apps/web/src/profile/profile.css`, `packages/frontend/src/events/play-event-ticket.css`, and `packages/frontend/src/events/play.css`.
 - No source overlap with Whistle/Ride/notification/schema repair files.
 - Preserved and rebased `fix/whistle-context-delivery` to `2dce346882f78c313bcf741ad1dad311630a54ed`; preserved work reapplied cleanly.
+
+## 2026-09-03 — Ride plan current-state reconciliation
+
+Branch: `docs/ride-plan-current-state` from `origin/phase-0-foundation` at `525b3b6b842bca5892c74cf213e982e3a0385fa0`.
+
+Read-back findings before docs update:
+
+- PR #210 is merged: final head `c0670bd10f35bacd315727d792e3a93c0458fdcd`, merge commit `43dde47b9ce4466a52e01faf3a1dc4f5a592e818`, exact-head `verify` check `SUCCESS`.
+- No open PRs currently target `phase-0-foundation`.
+- `rideplan.md` still described PR #210 / `RIDE-007F` as active and not merge-ready.
+- Current source contains the merged Ride owner-edit, My Rides, Community RideRequest HOOMA NOW, and mobile SHARE WITH anchors from PR #210.
+- `structure.md` under-described the current Ride route surface by listing only `/rides/request` and `/rides/offers`.
+- `docs/DATABASE.md` listed future Ride models (`RideMatch`, `RideLocationPing`, `RideRating`) beside current Ride models even though current Prisma foundation contains `RideOffer`, `RideRequest`, `RideRequestCommunityAudience`, `RideParticipation`, `RideMeetingPoint`, `RideOfferWaypoint`, and `RideOfferVehiclePhoto`.
+
+Docs changed in this reconciliation:
+
+- `rideplan.md` marks `RIDE-007F` done with PR #210 head/merge/CI evidence, removes the stale active-PR gate, and makes `RIDE-007C` closeout audit the next current Ride step.
+- `structure.md` now lists the current Ride child routes and Requests/FundMe routing state.
+- `docs/DATABASE.md` now distinguishes current Ride persistence from future matching/location/rating models.
+
+Remaining current Ride order after reconciliation:
+
+1. `RIDE-007C` closeout audit.
+2. `RIDE-007D` privacy-safe static maps.
+3. `RIDE-007` umbrella closeout.
+4. Requests slices only after Ride closeout/map scope is resolved or explicitly deferred.
