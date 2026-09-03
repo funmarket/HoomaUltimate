@@ -30,6 +30,15 @@ test("Watch event title has no decorative football icon", () => {
   assert.doesNotMatch(css, /\.watch-event-detail__title-row\s*\{[^}]*grid-template-columns/);
 });
 
+test("Watch venue photo stays fully visible and centered", () => {
+  const css = source("packages/frontend/src/events/watch-event-detail.css");
+  const imageRule = css.match(/\.watch-event-detail__venue-image\s*\{([^}]*)\}/)?.[1] ?? "";
+
+  assert.match(imageRule, /object-fit:\s*contain/);
+  assert.match(imageRule, /object-position:\s*center/);
+  assert.doesNotMatch(imageRule, /object-fit:\s*cover/);
+});
+
 test("Creator-only Event edit authority remains capability-driven", () => {
   const page = source("packages/frontend/src/events/EventDetailPage.tsx");
 
