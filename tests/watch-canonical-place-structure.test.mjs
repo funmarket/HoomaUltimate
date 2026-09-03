@@ -208,10 +208,16 @@ test("Watch collector ticket is shared, information-first and adaptively readabl
   assert.doesNotMatch(ticketCss, /\.watch-ticket__stub-date/);
 
   const photoRule = cssRule(ticketCss, ".watch-ticket__photo-panel");
+  const photoImageRule = cssRule(ticketCss, ".watch-ticket__photo-panel img");
   assert.match(photoRule, /width:\s*calc\(100% - clamp\(10px, 2cqw, 18px\)\)/);
-  assert.match(photoRule, /aspect-ratio:\s*2 \/ 1/);
+  assert.match(photoRule, /min-height:\s*0/);
+  assert.match(photoRule, /max-height:\s*min\(70vh, 640px\)/);
+  assert.doesNotMatch(photoRule, /aspect-ratio:/);
   assert.match(photoRule, /justify-self:\s*center/);
-  assert.match(ticketCss, /\.watch-ticket__photo-panel img \{[\s\S]*?object-fit:\s*contain/);
+  assert.match(photoImageRule, /height:\s*auto/);
+  assert.match(photoImageRule, /max-height:\s*min\(70vh, 640px\)/);
+  assert.match(photoImageRule, /object-fit:\s*contain/);
+  assert.match(photoImageRule, /object-position:\s*center/);
 
   assert.match(ticket, /\/places\/\$\{place\.id\}\?eventId=/);
   assert.match(placeDetail, /<WatchTicket event=\{selectedEvent\} variant="place-detail" \/>/);
