@@ -195,4 +195,22 @@ export class AthletesService {
       );
     return role;
   }
+
+
+  async requireFounderContent(userId: string, athletesCommunityId: string): Promise<void> {
+    const community = await this.repository.getPublic(athletesCommunityId);
+    if (!community) {
+      throw new AthletesError(
+        "ATHLETES_COMMUNITY_NOT_FOUND",
+        "Athletes community not found"
+      );
+    }
+    const founderRole = await this.repository.findFounderRole(athletesCommunityId, userId);
+    if (founderRole !== "FOUNDER") {
+      throw new AthletesError(
+        "ATHLETES_FOUNDER_REQUIRED",
+        "Only the Founder can perform this action"
+      );
+    }
+  }
 }

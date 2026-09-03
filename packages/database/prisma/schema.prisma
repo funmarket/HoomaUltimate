@@ -715,6 +715,8 @@ model AthletesDashboardPhoto {
 }
 
 
+
+
 model Team {
   id                   String                         @id @default(cuid())
   communityId          String?
