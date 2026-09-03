@@ -72,12 +72,18 @@ function makePreset(
   };
 }
 
+function explicitPreset(id: string, label: string, slots: SlotTemplate[]): FormationPreset {
+  return { id, label, slots };
+}
+
 const FORMATION_PRESETS: Record<Format, FormationPreset[]> = {
   FIVE_V_FIVE: [
-    makePreset("1-2-1", "1 - 2 - 1", [
-      { y: 68, positions: ["CB"] },
-      { y: 43, positions: ["W", "W"] },
-      { y: 17, positions: ["ST"] },
+    explicitPreset("classic-1-2-1", "Classic 1 - 2 - 1", [
+      { position: "GK", x: 50, y: 88 },
+      { position: "CB", x: 50, y: 66 },
+      { position: "W", x: 24, y: 40 },
+      { position: "W", x: 76, y: 40 },
+      { position: "ST", x: 50, y: 15 },
     ]),
     makePreset("2-1-1", "2 - 1 - 1", [
       { y: 68, positions: ["CB", "CB"] },
@@ -107,6 +113,15 @@ const FORMATION_PRESETS: Record<Format, FormationPreset[]> = {
     ]),
   ],
   SEVEN_V_SEVEN: [
+    explicitPreset("classic-3-1-2", "Classic 3 - 1 - 2", [
+      { position: "GK", x: 50, y: 90 },
+      { position: "CB", x: 50, y: 70 },
+      { position: "FB", x: 20, y: 60 },
+      { position: "FB", x: 80, y: 60 },
+      { position: "CM", x: 50, y: 42 },
+      { position: "W", x: 25, y: 20 },
+      { position: "W", x: 75, y: 20 },
+    ]),
     makePreset("2-3-1", "2 - 3 - 1", [
       { y: 70, positions: ["CB", "CB"] },
       { y: 45, positions: ["W", "CM", "W"] },
@@ -175,6 +190,19 @@ const FORMATION_PRESETS: Record<Format, FormationPreset[]> = {
     ]),
   ],
   ELEVEN_V_ELEVEN: [
+    explicitPreset("classic-4-1-2-3", "Classic 4 - 1 - 2 - 3", [
+      { position: "GK", x: 50, y: 92 },
+      { position: "FB", x: 14, y: 72 },
+      { position: "CB", x: 38, y: 78 },
+      { position: "CB", x: 62, y: 78 },
+      { position: "FB", x: 86, y: 72 },
+      { position: "DM", x: 50, y: 58 },
+      { position: "CM", x: 30, y: 43 },
+      { position: "CM", x: 70, y: 43 },
+      { position: "W", x: 18, y: 20 },
+      { position: "ST", x: 50, y: 12 },
+      { position: "W", x: 82, y: 20 },
+    ]),
     makePreset("4-3-3", "4 - 3 - 3", [
       { y: 74, positions: ["FB", "CB", "CB", "FB"] },
       { y: 49, positions: ["CM", "DM", "CM"] },
@@ -260,17 +288,10 @@ function PlayerPortrait({
   readonly player: FormationRosterPlayer | undefined;
   readonly fallback: string;
 }) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const photoUrl = player?.presentation?.photoUrl || null;
-  if (photoUrl) {
-    return (
-      <img
-        src={photoUrl}
-        alt=""
-        onError={(event) => {
-          event.currentTarget.style.display = "none";
-        }}
-      />
-    );
+  if (photoUrl && failedUrl !== photoUrl) {
+    return <img src={photoUrl} alt="" onError={() => setFailedUrl(photoUrl)} />;
   }
   return <>{player ? playerInitials(player) : fallback}</>;
 }
@@ -392,17 +413,6 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
     }
   }
 
-  function startBenchDrag(event: React.DragEvent<HTMLElement>, userId: string) {
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/hooma-player-id", userId);
-  }
-
-  function dropPlayer(event: React.DragEvent<HTMLElement>, slotId: string) {
-    event.preventDefault();
-    const userId = event.dataTransfer.getData("text/hooma-player-id");
-    if (userId && byId.has(userId)) assign(slotId, userId);
-  }
-
   async function save() {
     setSaving(true);
     setError("");
@@ -508,8 +518,6 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
                           data-assigned={Boolean(player)}
                           key={slot.id}
                           style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
-                          onDragOver={(event) => event.preventDefault()}
-                          onDrop={(event) => dropPlayer(event, slot.id)}
                         >
                           <button
                             className="formation-slot__tap-target"
@@ -552,7 +560,10 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
                 </div>
               </div>
 
-              <section className="formation-bench" aria-label={`Team ${team} bench`}>
+              <section
+                className="formation-bench"
+                aria-label={`Unassigned players available below Team ${team}`}
+              >
                 <div className="formation-bench__header">
                   <strong>⚽ Bench</strong>
                   <span>{benchPlayers.length} available</span>
@@ -563,9 +574,7 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
                       type="button"
                       className="formation-bench-player"
                       key={`${team}-${player.userId}`}
-                      draggable
-                      onDragStart={(event) => startBenchDrag(event, player.userId)}
-                      title={`Drag ${playerName(player)} onto a Team ${team} pitch slot`}
+                      title={`${playerName(player)} is currently unassigned`}
                     >
                       <span className="formation-bench-player__portrait">
                         <PlayerPortrait player={player} fallback={playerInitials(player)} />
@@ -576,8 +585,7 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
                   {!benchPlayers.length ? <p className="muted">No bench players</p> : null}
                 </div>
                 <p className="formation-bench__hint">
-                  Tap a player on the pitch to change the assignment · Drag a bench player onto a
-                  pitch slot
+                  Tap a player on the pitch to change the assignment. Bench players are unassigned.
                 </p>
               </section>
             </section>

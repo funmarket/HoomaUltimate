@@ -329,7 +329,6 @@
   color: inherit;
   background: transparent;
   font: inherit;
-  cursor: pointer;
 }
 
 .formation-slot__marker--game {
@@ -455,11 +454,6 @@
   color: #f7f5ef;
   background: transparent;
   font: inherit;
-  cursor: grab;
-}
-
-.formation-bench-player:active {
-  cursor: grabbing;
 }
 
 .formation-bench-player__portrait {
