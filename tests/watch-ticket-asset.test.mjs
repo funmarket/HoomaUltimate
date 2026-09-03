@@ -57,6 +57,9 @@ test("Watch venue photo uses the new inset stacked panel instead of the obsolete
 
   assert.doesNotMatch(ticket, /watch-ticket__place-photo/);
   assert.match(ticket, /watch-ticket__photo-panel/);
-  assert.match(css, /\.watch-ticket__photo-panel \{[\s\S]*?aspect-ratio:\s*2 \/ 1/);
+  assert.match(css, /\.watch-ticket__photo-panel \{[\s\S]*?max-height:\s*min\(70vh, 640px\)/);
+  assert.doesNotMatch(css, /\.watch-ticket__photo-panel \{[\s\S]*?aspect-ratio:\s*2 \/ 1/);
+  assert.match(css, /\.watch-ticket__photo-panel img \{[\s\S]*?height:\s*auto/);
   assert.match(css, /\.watch-ticket__photo-panel img \{[\s\S]*?object-fit:\s*contain/);
+  assert.match(css, /\.watch-ticket__photo-panel img \{[\s\S]*?object-position:\s*center/);
 });

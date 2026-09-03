@@ -24,8 +24,11 @@ test("Watch ticket removes the upper Place photo and stacks a taller framed phot
   assert.match(ticket, /watch-ticket__photo-panel/);
   assert.match(ticket, /feedVariant \? \(/);
   assert.match(photo, /width:\s*calc\(100% - clamp\(10px, 2cqw, 18px\)\)/);
-  assert.match(photo, /aspect-ratio:\s*2 \/ 1/);
+  assert.doesNotMatch(photo, /aspect-ratio:/);
+  assert.match(photo, /max-height:\s*min\(70vh, 640px\)/);
   assert.match(photo, /justify-self:\s*center/);
+  assert.match(photoImage, /height:\s*auto/);
+  assert.match(photoImage, /max-height:\s*min\(70vh, 640px\)/);
   assert.match(photoImage, /object-fit:\s*contain/);
   assert.match(photoImage, /object-position:\s*center/);
 });

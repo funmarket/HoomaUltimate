@@ -209,7 +209,8 @@ test("Watch collector ticket is shared, information-first and adaptively readabl
 
   const photoRule = cssRule(ticketCss, ".watch-ticket__photo-panel");
   assert.match(photoRule, /width:\s*calc\(100% - clamp\(10px, 2cqw, 18px\)\)/);
-  assert.match(photoRule, /aspect-ratio:\s*2 \/ 1/);
+  assert.match(photoRule, /max-height:\s*min\(70vh, 640px\)/);
+  assert.doesNotMatch(photoRule, /aspect-ratio:/);
   assert.match(photoRule, /justify-self:\s*center/);
   assert.match(ticketCss, /\.watch-ticket__photo-panel img \{[\s\S]*?object-fit:\s*contain/);
 

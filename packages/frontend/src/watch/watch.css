@@ -475,7 +475,8 @@
 
 .watch-ticket__photo-panel {
   width: calc(100% - clamp(10px, 2cqw, 18px));
-  aspect-ratio: 2 / 1;
+  min-height: 0;
+  max-height: min(70vh, 640px);
   justify-self: center;
   overflow: hidden;
   display: grid;
@@ -498,7 +499,8 @@
 
 .watch-ticket__photo-panel img {
   width: 100%;
-  height: 100%;
+  height: auto;
+  max-height: min(70vh, 640px);
   display: block;
   object-fit: contain;
   object-position: center;
@@ -644,6 +646,5 @@
 
   .watch-ticket__photo-panel {
     width: calc(100% - 10px);
-    aspect-ratio: 2 / 1;
   }
 }
