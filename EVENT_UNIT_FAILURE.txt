@@ -1,0 +1,320 @@
+#     at resolveDirectory (file:///home/runner/work/HoomaUltimate/HoomaUltimate/node_modules/tsx/dist/esm/index.mjs?1788448581280:2:4243)
+#     at resolveTsPaths (file:///home/runner/work/HoomaUltimate/HoomaUltimate/node_modules/tsx/dist/esm/index.mjs?1788448581280:2:4984)
+#     at resolve (file:///home/runner/work/HoomaUltimate/HoomaUltimate/node_modules/tsx/dist/esm/index.mjs?1788448581280:2:5361)
+#     at nextResolve (node:internal/modules/esm/hooks:748:28)
+#     at Hooks.resolve (node:internal/modules/esm/hooks:240:30) {
+#   code: 'ERR_MODULE_NOT_FOUND',
+#   url: 'file:///home/runner/work/HoomaUltimate/HoomaUltimate/node_modules/@hooma/contracts/dist/index.js'
+# }
+# Node.js v22.23.2
+# Subtest: tests/team-game-timing.test.ts
+not ok 55 - tests/team-game-timing.test.ts
+  ---
+  duration_ms: 297.628676
+  type: 'test'
+  location: '/home/runner/work/HoomaUltimate/HoomaUltimate/tests/team-game-timing.test.ts:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: Team media is rendered from the canonical badge and banner URLs
+ok 209 - Team media is rendered from the canonical badge and banner URLs
+  ---
+  duration_ms: 5.690414
+  type: 'test'
+  ...
+# Subtest: Communities and Teams are layered target modules
+ok 210 - Communities and Teams are layered target modules
+  ---
+  duration_ms: 9.873553
+  type: 'test'
+  ...
+# Subtest: scoped ADMIN role does not return in Community or Team schema
+ok 211 - scoped ADMIN role does not return in Community or Team schema
+  ---
+  duration_ms: 7.052972
+  type: 'test'
+  ...
+# Subtest: database enforces no self-challenge in addition to service policy
+ok 212 - database enforces no self-challenge in addition to service policy
+  ---
+  duration_ms: 3.344944
+  type: 'test'
+  ...
+# Subtest: Team lineup persistence follows canonical TeamPlayer and current-lineup ownership
+ok 213 - Team lineup persistence follows canonical TeamPlayer and current-lineup ownership
+  ---
+  duration_ms: 2.57866
+  type: 'test'
+  ...
+# Subtest: Team creation uses a dedicated page instead of an inline discovery form
+ok 214 - Team creation uses a dedicated page instead of an inline discovery form
+  ---
+  duration_ms: 1.425371
+  type: 'test'
+  ...
+# Subtest: Telegram runtime reacts to viewport and safe-area changes without overriding System black
+ok 215 - Telegram runtime reacts to viewport and safe-area changes without overriding System black
+  ---
+  duration_ms: 7.77433
+  type: 'test'
+  ...
+# Subtest: Watch page exposes only the four product functions and no business onboarding
+ok 216 - Watch page exposes only the four product functions and no business onboarding
+  ---
+  duration_ms: 2.021885
+  type: 'test'
+  ...
+# Subtest: Watch Spots reuse canonical Places and exclude canonical Pitch capabilities
+ok 217 - Watch Spots reuse canonical Places and exclude canonical Pitch capabilities
+  ---
+  duration_ms: 0.640289
+  type: 'test'
+  ...
+# Subtest: Watch capability application routes and service wiring are gone
+ok 218 - Watch capability application routes and service wiring are gone
+  ---
+  duration_ms: 0.619111
+  type: 'test'
+  ...
+# Subtest: Prisma keeps canonical Place and Event ownership while storing details below them
+ok 219 - Prisma keeps canonical Place and Event ownership while storing details below them
+  ---
+  duration_ms: 0.79281
+  type: 'test'
+  ...
+# Subtest: Place coordinates stay optional and update defaults stay out of partial PATCH fields
+ok 220 - Place coordinates stay optional and update defaults stay out of partial PATCH fields
+  ---
+  duration_ms: 0.296802
+  type: 'test'
+  ...
+# Subtest: Place partial updates preserve omitted images while explicit empty imageUrls clears them
+ok 221 - Place partial updates preserve omitted images while explicit empty imageUrls clears them
+  ---
+  duration_ms: 3.423233
+  type: 'test'
+  ...
+# Subtest: Place Add and Edit share one branded form and management stays on canonical Place routes
+ok 222 - Place Add and Edit share one branded form and management stays on canonical Place routes
+  ---
+  duration_ms: 0.618686
+  type: 'test'
+  ...
+# Subtest: Watch Create and Edit share structured two-team matchup fields
+ok 223 - Watch Create and Edit share structured two-team matchup fields
+  ---
+  duration_ms: 0.473629
+  type: 'test'
+  ...
+# Subtest: Watch Event errors use canonical Community, Place and manage boundaries
+ok 224 - Watch Event errors use canonical Community, Place and manage boundaries
+  ---
+  duration_ms: 0.451695
+  type: 'test'
+  ...
+# Subtest: Watch collector ticket is shared, information-first and adaptively readable
+ok 225 - Watch collector ticket is shared, information-first and adaptively readable
+  ---
+  duration_ms: 5.229794
+  type: 'test'
+  ...
+# Subtest: archived Places stay off public Place and Watch discovery
+ok 226 - archived Places stay off public Place and Watch discovery
+  ---
+  duration_ms: 0.298856
+  type: 'test'
+  ...
+# Subtest: PlaceImage is the only runtime Place image authority
+ok 227 - PlaceImage is the only runtime Place image authority
+  ---
+  duration_ms: 0.408457
+  type: 'test'
+  ...
+# Subtest: Pitch rental pricing is canonical from contract through Prisma and repository
+ok 228 - Pitch rental pricing is canonical from contract through Prisma and repository
+  ---
+  duration_ms: 0.539673
+  type: 'test'
+  ...
+# Subtest: Pitch owns its discovery page and does not live inside generic PlacesPages
+ok 229 - Pitch owns its discovery page and does not live inside generic PlacesPages
+  ---
+  duration_ms: 1.648153
+  type: 'test'
+  ...
+# Subtest: temporary formatting workflow is not left in the final source tree
+ok 230 - temporary formatting workflow is not left in the final source tree
+  ---
+  duration_ms: 0.181122
+  type: 'test'
+  ...
+# Subtest: Watch event detail is an informative card instead of form-like fact boxes
+ok 231 - Watch event detail is an informative card instead of form-like fact boxes
+  ---
+  duration_ms: 1.662168
+  type: 'test'
+  ...
+# Subtest: Watch event title has no decorative football icon
+ok 232 - Watch event title has no decorative football icon
+  ---
+  duration_ms: 0.45439
+  type: 'test'
+  ...
+# Subtest: Creator-only Event edit authority remains capability-driven
+ok 233 - Creator-only Event edit authority remains capability-driven
+  ---
+  duration_ms: 0.406289
+  type: 'test'
+  ...
+# Subtest: Watch detail remains compact and responsive on phone-width layouts
+ok 234 - Watch detail remains compact and responsive on phone-width layouts
+  ---
+  duration_ms: 0.563008
+  type: 'test'
+  ...
+# Subtest: Play event detail keeps its existing domain presentation
+ok 235 - Play event detail keeps its existing domain presentation
+  ---
+  duration_ms: 0.501591
+  type: 'test'
+  ...
+# Subtest: Event detail derives check-in from independent participation evidence
+ok 236 - Event detail derives check-in from independent participation evidence
+  ---
+  duration_ms: 0.492346
+  type: 'test'
+  ...
+# Subtest: Cultural card owns its image and does not fall back to Spot media
+ok 237 - Cultural card owns its image and does not fall back to Spot media
+  ---
+  duration_ms: 4.320071
+  type: 'test'
+  ...
+# Subtest: Cultural and Spot image containers independently preserve full images
+ok 238 - Cultural and Spot image containers independently preserve full images
+  ---
+  duration_ms: 2.845512
+  type: 'test'
+  ...
+# Subtest: Watch collector ticket master asset remains complete and uncorrupted
+ok 239 - Watch collector ticket master asset remains complete and uncorrupted
+  ---
+  duration_ms: 6.729897
+  type: 'test'
+  ...
+# Subtest: Watch collector stub uses the supplied optimized HOOMA logo asset
+ok 240 - Watch collector stub uses the supplied optimized HOOMA logo asset
+  ---
+  duration_ms: 4.169437
+  type: 'test'
+  ...
+# Subtest: Watch venue photo uses the new inset stacked panel instead of the obsolete master side slot
+ok 241 - Watch venue photo uses the new inset stacked panel instead of the obsolete master side slot
+  ---
+  duration_ms: 1.958721
+  type: 'test'
+  ...
+# Subtest: Watch ticket removes the upper Place photo and stacks a taller framed photo below
+ok 242 - Watch ticket removes the upper Place photo and stacks a taller framed photo below
+  ---
+  duration_ms: 1.609058
+  type: 'test'
+  ...
+# Subtest: Watch matchup uses one measured fitter so names expand or shrink without wrapping
+ok 243 - Watch matchup uses one measured fitter so names expand or shrink without wrapping
+  ---
+  duration_ms: 0.836715
+  type: 'test'
+  ...
+# Subtest: Watch date uses full width without a calendar icon
+ok 244 - Watch date uses full width without a calendar icon
+  ---
+  duration_ms: 0.811942
+  type: 'test'
+  ...
+# Subtest: Watch stub uses only the HOOMA logo at full upper-ticket height
+ok 245 - Watch stub uses only the HOOMA logo at full upper-ticket height
+  ---
+  duration_ms: 0.584045
+  type: 'test'
+  ...
+# Subtest: System is the default when no web appearance is saved
+ok 246 - System is the default when no web appearance is saved
+  ---
+  duration_ms: 1.076046
+  type: 'test'
+  ...
+# Subtest: removed or unknown saved appearances fall back to System
+ok 247 - removed or unknown saved appearances fall back to System
+  ---
+  duration_ms: 0.197234
+  type: 'test'
+  ...
+# Subtest: System stays dark even when the browser prefers light
+ok 248 - System stays dark even when the browser prefers light
+  ---
+  duration_ms: 0.213738
+  type: 'test'
+  ...
+# Subtest: Light remains an explicit opt-in appearance
+ok 249 - Light remains an explicit opt-in appearance
+  ---
+  duration_ms: 0.125936
+  type: 'test'
+  ...
+# Subtest: Settings exposes only System, dark, and light web appearances
+ok 250 - Settings exposes only System, dark, and light web appearances
+  ---
+  duration_ms: 10.092103
+  type: 'test'
+  ...
+# Subtest: System is dark before the app bundle without a white theme flash
+ok 251 - System is dark before the app bundle without a white theme flash
+  ---
+  duration_ms: 1.829336
+  type: 'test'
+  ...
+# Subtest: root System-dark stylesheet is true black
+ok 252 - root System-dark stylesheet is true black
+  ---
+  duration_ms: 1.305774
+  type: 'test'
+  ...
+# Subtest: Whistle list hydrates all transient bodies with one batch read
+ok 253 - Whistle list hydrates all transient bodies with one batch read
+  ---
+  duration_ms: 3.631291
+  type: 'test'
+  ...
+# Subtest: Athletes Whistle authorizes through active Athletes membership and uses shared quota
+ok 254 - Athletes Whistle authorizes through active Athletes membership and uses shared quota
+  ---
+  duration_ms: 17.584319
+  type: 'test'
+  ...
+# Subtest: Ride Whistle authorizes through Ride domain and notifies owner without body
+ok 255 - Ride Whistle authorizes through Ride domain and notifies owner without body
+  ---
+  duration_ms: 0.850252
+  type: 'test'
+  ...
+# Subtest: direct User Whistle remains USER_DIRECT and notifies only recipient without body
+ok 256 - direct User Whistle remains USER_DIRECT and notifies only recipient without body
+  ---
+  duration_ms: 0.608024
+  type: 'test'
+  ...
+1..256
+# tests 256
+# suites 0
+# pass 245
+# fail 11
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7272.228959
+
+EXIT_CODE=1
