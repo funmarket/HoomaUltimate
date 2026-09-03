@@ -1,7 +1,9 @@
-# ADR-043 — Gamers home discovery, Arena and canonical onboarding
+# ADR-043 — Gamers discovery, Arena and canonical onboarding
 
-Status: **Accepted**  
+Status: **Accepted; Home-placement portion superseded by ADR-055**  
 Date: **2026-08-26**
+
+> **Current-state note (2026-09-03):** `/gamers` remains the global Gamers discovery surface and the Gamers-domain discovery/Arena/onboarding decisions below remain valid. The original statement that Home consumes Gamers discovery as an active Home gateway is no longer current. Gamers is an independent direct route family at `/gamers`; current Home is `HOOMA | Teams | Pitch | Places | Ride | Requests`.
 
 ## Decision
 
@@ -13,7 +15,7 @@ GAMERS | CHALLENGERS | ARENA | GAME CATALOG
 
 `GAMERS` is the default view and displays the canonical Gamer HUD card across active games. `CHALLENGERS` is the subset whose game profiles explicitly have `openToChallenge = true`. `ARENA` is the public privacy-safe projection of accepted Gamer challenges across active games. `GAME CATALOG` owns the existing active-game browsing and add-game flow.
 
-The homepage consumes one Gamers-domain cross-game discovery query and one Gamers-domain global Arena query. It must not fetch the game catalog and fan out Challenger or Arena requests per game.
+Gamers discovery uses one Gamers-domain cross-game discovery query and one Gamers-domain global Arena query. It must not fetch the game catalog and fan out Challenger or Arena requests per game. These queries are consumed by Gamers-owned surfaces; current Home does not expose a Gamers gateway.
 
 The same `GamerHudCard` component is reused by global discovery and individual game hubs. A second Gamer-card implementation is not permitted. Challenge remains the primary HUD action; direct Whistle remains the secondary transient action on the same shared card.
 
@@ -71,3 +73,10 @@ The public cross-game projection exposes only:
 It does not expose `userId`, timestamps, bio, or private account data. Inactive games and Users without the active `GAMER` identity are excluded.
 
 The retired Gamer-specific public profile endpoint remains removed. Canonical HOOMA public profiles stay owned by Identity.
+
+## Current IA consequence
+
+- Gamers remains available at `/gamers` but is not an active Home gateway.
+- Current permanent bottom navigation is `Home | Play | Watch | HOOMA | Athletes`.
+- Pitch remains a standalone `/pitch` product and Home gateway.
+- ADR-055 governs Home and permanent navigation; this ADR continues to govern Gamers discovery/Arena/onboarding behavior.
