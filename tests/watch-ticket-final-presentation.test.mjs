@@ -13,37 +13,24 @@ function cssRule(css, selector) {
   return bodyEnd < 0 ? "" : css.slice(bodyStart, bodyEnd);
 }
 
-test("Watch ticket photo uses Spot directory natural sizing", () => {
+test("Watch ticket removes the upper Place photo and stacks a taller framed photo below", () => {
   const ticket = source("packages/frontend/src/watch/WatchTicket.tsx");
   const css = source("packages/frontend/src/watch/watch.css");
-  const placesCss = source("packages/frontend/src/places/places.css");
   const photo = cssRule(css, ".watch-ticket__photo-panel");
   const photoImage = cssRule(css, ".watch-ticket__photo-panel img");
-  const spotImage = cssRule(
-    placesCss,
-    ".place-card.place-card--directory .place-card__media img",
-  );
 
   assert.doesNotMatch(ticket, /WATCH_COLLECTOR_TICKET_MASTER/);
   assert.doesNotMatch(ticket, /watch-ticket__place-photo/);
   assert.match(ticket, /watch-ticket__photo-panel/);
   assert.match(ticket, /feedVariant \? \(/);
   assert.match(photo, /width:\s*calc\(100% - clamp\(10px, 2cqw, 18px\)\)/);
-  assert.match(photo, /min-height:\s*0/);
+  assert.doesNotMatch(photo, /aspect-ratio:/);
   assert.match(photo, /max-height:\s*min\(70vh, 640px\)/);
   assert.match(photo, /justify-self:\s*center/);
-  assert.doesNotMatch(
-    css,
-    /\.watch-ticket__photo-panel\s*\{[^}]*aspect-ratio:/s,
-  );
-  assert.match(spotImage, /height:\s*auto/);
-  assert.match(spotImage, /max-height:\s*min\(70vh, 640px\)/);
-  assert.match(photoImage, /width:\s*100%/);
   assert.match(photoImage, /height:\s*auto/);
   assert.match(photoImage, /max-height:\s*min\(70vh, 640px\)/);
   assert.match(photoImage, /object-fit:\s*contain/);
   assert.match(photoImage, /object-position:\s*center/);
-  assert.doesNotMatch(photoImage, /height:\s*100%/);
 });
 
 test("Watch matchup uses one measured fitter so names expand or shrink without wrapping", () => {
