@@ -7,16 +7,11 @@ import type { EventRsvpState, PublicEvent } from "./api";
 import { useEventApi } from "./useEventApi";
 import { createPlayApi } from "./play-api";
 
-type ActiveRsvpState = "CONFIRMED" | "WAITLISTED" | "ATTENDED" | "NO_SHOW" | null;
+type ActiveRsvpState = "CONFIRMED" | "WAITLISTED" | "ATTENDED" | null;
 type IconProps = { readonly color?: string };
 
 function activeRsvp(status: EventRsvpState | undefined): ActiveRsvpState {
-  return status === "CONFIRMED" ||
-    status === "WAITLISTED" ||
-    status === "ATTENDED" ||
-    status === "NO_SHOW"
-    ? status
-    : null;
+  return status === "CONFIRMED" || status === "WAITLISTED" || status === "ATTENDED" ? status : null;
 }
 
 function pretty(value: string | null | undefined): string {
@@ -105,7 +100,6 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
   const playApi = useMemo(() => createPlayApi(transport), [transport]);
   const [event, setEvent] = useState<PublicEvent | null>(null);
   const [rsvp, setRsvp] = useState<ActiveRsvpState>(null);
-  const [checkInAt, setCheckInAt] = useState<string | null>(null);
   const [canManage, setCanManage] = useState(false);
   const [participationLoading, setParticipationLoading] = useState(true);
   const [actionPending, setActionPending] = useState(false);
@@ -150,12 +144,9 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
     try {
       const result = await eventApi.myRsvp(eventId);
       setRsvp(activeRsvp(result.rsvp?.status));
-      setCheckInAt(result.checkIn?.checkedInAt ?? null);
     } catch (reason) {
-      if (reason instanceof HoomaApiError && reason.status === 401) {
-        setRsvp(null);
-        setCheckInAt(null);
-      } else setError(reason instanceof Error ? reason.message : "Unable to load RSVP state");
+      if (reason instanceof HoomaApiError && reason.status === 401) setRsvp(null);
+      else setError(reason instanceof Error ? reason.message : "Unable to load RSVP state");
     } finally {
       setParticipationLoading(false);
     }
@@ -168,7 +159,6 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
     try {
       const result = await eventApi.join(eventId);
       setRsvp(result.status);
-      setCheckInAt(null);
       setStatus(result.status === "WAITLISTED" ? "Added to the waitlist." : "You are going.");
       await reloadEvent();
     } catch (reason) {
@@ -185,7 +175,6 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
     try {
       await eventApi.cancelRsvp(eventId);
       setRsvp(null);
-      setCheckInAt(null);
       setStatus("RSVP cancelled.");
       await reloadEvent();
     } catch (reason) {
@@ -198,9 +187,8 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
   if (!event)
     return error ? <p className="error">{error}</p> : <p className="status">Loading event…</p>;
 
-  const eventOpen = event.status === "PUBLISHED";
+  const eventOpen = event.status !== "COMPLETED";
   const isWatch = event.type === "WATCH";
-  const checkedIn = checkInAt !== null;
   const location = isWatch
     ? event.place?.name || "Place to be confirmed"
     : event.place?.name || event.venueName || event.address || "Venue to be confirmed";
@@ -211,10 +199,8 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
       : rsvp === "CONFIRMED"
         ? "CONFIRMED"
         : rsvp === "ATTENDED"
-          ? "ATTENDED"
-          : rsvp === "NO_SHOW"
-            ? "NO SHOW"
-            : null;
+          ? "CHECKED IN"
+          : null;
   const startsAt = new Date(event.startsAt);
   const watchDate = startsAt.toLocaleDateString(undefined, {
     month: "short",
@@ -445,23 +431,11 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
                   : undefined
               }
             >
-              {rsvp === "ATTENDED" || rsvp === "NO_SHOW"
-                ? "Attendance · "
-                : rsvp === "CONFIRMED"
-                  ? "✓ RSVP · "
-                  : "RSVP · "}
+              {rsvp === "CONFIRMED" ? "✓ " : ""}
               {rsvpLabel}
             </div>
           ) : null}
           {rsvp === "ATTENDED" ? (
-            <div className="play-event-primary-action play-event-primary-action--static">
-              Attendance finalized
-            </div>
-          ) : rsvp === "NO_SHOW" ? (
-            <div className="play-event-primary-action play-event-primary-action--static">
-              No show
-            </div>
-          ) : checkedIn ? (
             <div className="play-event-primary-action play-event-primary-action--static">
               Checked in
             </div>
@@ -521,12 +495,10 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
               <strong>Temporary event chat</strong>
               <span>Available only to participants while the event chat window is open</span>
             </a>
-            {eventOpen && rsvp === "CONFIRMED" && !checkedIn ? (
-              <a href={`/events/${eventId}/check-in`}>
-                <strong>Check in</strong>
-                <span>Confirmed participants can record matchday check-in</span>
-              </a>
-            ) : null}
+            <a href={`/events/${eventId}/check-in`}>
+              <strong>Check in</strong>
+              <span>Confirmed participants can mark attendance on matchday</span>
+            </a>
           </div>
         </section>
       ) : null}

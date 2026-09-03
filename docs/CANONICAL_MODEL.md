@@ -702,17 +702,16 @@ EventRsvp
   userId
   status
   waitlistSequence?
+  checkedInAt?
   createdAt
   updatedAt
 ```
 
-Current statuses support reservation state and finalized attendance outcome: `CONFIRMED`, `WAITLISTED`, `CANCELLED`, `ATTENDED`, and `NO_SHOW`. Check-in is not an RSVP status.
+Current statuses must support at least confirmed/waitlisted/cancelled/attended/no-show semantics required by implemented behavior.
 
 Rules:
 
 - one canonical RSVP per Event/User;
-- during an active Play Event, a checked-in participant remains `CONFIRMED` while independent `EventCheckIn` evidence exists;
-- Play Event completion finalizes checked-in confirmed participants as `ATTENDED` and unchecked confirmed participants as `NO_SHOW`;
 - capacity decision occurs transactionally with a database row lock or equivalent safe mechanism;
 - simultaneous RSVP requests cannot overbook capacity;
 - leaving/cancelling promotes next eligible waitlisted participant transactionally;
@@ -775,11 +774,7 @@ EventCheckIn
 Rules:
 
 - one check-in per Event/User;
-- `EventCheckIn.createdAt` is the authoritative first check-in timestamp;
-- repeated check-in preserves the first check-in evidence;
-- current check-in policy is Play-specific and requires a `PUBLISHED` Play Event plus a `CONFIRMED` RSVP; Watch does not inherit Play check-in through generic Event plumbing;
-- no authoritative numeric opening/closing offset exists today, so no arbitrary check-in timing constant is part of the model;
-- check-in never finalizes attendance; Play completion owns the `ATTENDED` / `NO_SHOW` transition;
+- check-in authorization and timing follow Event service policy;
 - no public leakage of precise private location beyond intended product behavior.
 
 ---

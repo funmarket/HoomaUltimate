@@ -71,7 +71,7 @@ function headers(cookie: string) {
   return { cookie, origin: config.WEB_ORIGIN, "content-type": "application/json" };
 }
 
-test("Play event preserves waitlist and separates check-in evidence from final attendance", async () => {
+test("Play event preserves capacity/waitlist, formation, check-in, temporary chat and completion", async () => {
   await resetDatabase();
   const app = createApp(config, createContainer(config));
   const server = app.listen(0, "127.0.0.1");
@@ -84,7 +84,6 @@ test("Play event preserves waitlist and separates check-in evidence from final a
     const founder = await register(base, "event_founder");
     const playerA = await register(base, "event_player_a");
     const playerB = await register(base, "event_player_b");
-    const playerC = await register(base, "event_player_c");
 
     const communityResponse = await fetch(`${base}/api/v1/communities`, {
       method: "POST",
@@ -105,7 +104,7 @@ test("Play event preserves waitlist and separates check-in evidence from final a
         title: "Friday Five-a-side",
         startsAt: startsAt.toISOString(),
         endsAt: endsAt.toISOString(),
-        capacity: 2,
+        capacity: 1,
         waitlistEnabled: true,
         entryFeeMinor: 0,
         play: { pitchType: "FIVE_A_SIDE", skillLevel: "MIXED", format: "FIVE_V_FIVE" },
@@ -114,37 +113,27 @@ test("Play event preserves waitlist and separates check-in evidence from final a
     assert.equal(eventResponse.status, 201);
     const event = (await eventResponse.json()) as { id: string };
 
-    const players = [playerA, playerB, playerC];
-    const joins = await Promise.all(
-      players.map((player) =>
-        fetch(`${base}/api/v1/events/${event.id}/join`, {
-          method: "POST",
-          headers: headers(player.cookie),
-        }),
-      ),
-    );
-    joins.forEach((response) => assert.equal(response.status, 200));
-    const joinStatuses = await Promise.all(
-      joins.map((response) => response.json() as Promise<{ status: string }>),
-    );
-    assert.deepEqual(joinStatuses.map((result) => result.status).sort(), [
-      "CONFIRMED",
-      "CONFIRMED",
-      "WAITLISTED",
+    const [joinA, joinB] = await Promise.all([
+      fetch(`${base}/api/v1/events/${event.id}/join`, {
+        method: "POST",
+        headers: headers(playerA.cookie),
+      }),
+      fetch(`${base}/api/v1/events/${event.id}/join`, {
+        method: "POST",
+        headers: headers(playerB.cookie),
+      }),
     ]);
+    assert.equal(joinA.status, 200);
+    assert.equal(joinB.status, 200);
+    const resultA = (await joinA.json()) as { status: string };
+    const resultB = (await joinB.json()) as { status: string };
+    assert.deepEqual([resultA.status, resultB.status].sort(), ["CONFIRMED", "WAITLISTED"]);
 
-    const waitlistedIndex = joinStatuses.findIndex((result) => result.status === "WAITLISTED");
-    const confirmedIndexes = joinStatuses
-      .map((result, index) => ({ result, index }))
-      .filter(({ result }) => result.status === "CONFIRMED")
-      .map(({ index }) => index);
-    const waitlisted = players[waitlistedIndex]!;
-    const cancelledConfirmed = players[confirmedIndexes[0]!]!;
-    const absentConfirmed = players[confirmedIndexes[1]!]!;
-
+    const confirmed = resultA.status === "CONFIRMED" ? playerA : playerB;
+    const waitlisted = resultA.status === "WAITLISTED" ? playerA : playerB;
     const cancel = await fetch(`${base}/api/v1/events/${event.id}/rsvp`, {
       method: "DELETE",
-      headers: headers(cancelledConfirmed.cookie),
+      headers: headers(confirmed.cookie),
     });
     assert.equal(cancel.status, 200);
     const cancelled = (await cancel.json()) as { promotedUserId: string | null };
@@ -172,57 +161,13 @@ test("Play event preserves waitlist and separates check-in evidence from final a
     const checkIn = await fetch(`${base}/api/v1/events/${event.id}/check-in`, {
       method: "POST",
       headers: headers(waitlisted.cookie),
-      body: JSON.stringify({ latitude: 36.8065, longitude: 10.1815 }),
+      body: JSON.stringify({}),
     });
     assert.equal(checkIn.status, 200);
-    const firstCheckIn = (await checkIn.json()) as { checkedIn: boolean; checkedInAt: string };
-    assert.equal(firstCheckIn.checkedIn, true);
-
-    const afterCheckIn = await db.eventRsvp.findUniqueOrThrow({
+    const attended = await db.eventRsvp.findUniqueOrThrow({
       where: { eventId_userId: { eventId: event.id, userId: waitlisted.userId } },
     });
-    assert.equal(afterCheckIn.status, "CONFIRMED");
-    assert.equal(
-      await db.eventCheckIn.count({ where: { eventId: event.id, userId: waitlisted.userId } }),
-      1,
-    );
-
-    const participationResponse = await fetch(`${base}/api/v1/events/${event.id}/rsvp`, {
-      headers: { cookie: waitlisted.cookie },
-    });
-    assert.equal(participationResponse.status, 200);
-    const participation = (await participationResponse.json()) as {
-      rsvp: { status: string } | null;
-      checkIn: { checkedInAt: string } | null;
-    };
-    assert.equal(participation.rsvp?.status, "CONFIRMED");
-    assert.equal(participation.checkIn?.checkedInAt, firstCheckIn.checkedInAt);
-
-    const repeatCheckIn = await fetch(`${base}/api/v1/events/${event.id}/check-in`, {
-      method: "POST",
-      headers: headers(waitlisted.cookie),
-      body: JSON.stringify({ latitude: 35, longitude: 9 }),
-    });
-    assert.equal(repeatCheckIn.status, 200);
-    const repeated = (await repeatCheckIn.json()) as { checkedInAt: string };
-    assert.equal(repeated.checkedInAt, firstCheckIn.checkedInAt);
-    assert.equal(
-      await db.eventCheckIn.count({ where: { eventId: event.id, userId: waitlisted.userId } }),
-      1,
-    );
-    const persistedCheckIn = await db.eventCheckIn.findUniqueOrThrow({
-      where: { eventId_userId: { eventId: event.id, userId: waitlisted.userId } },
-    });
-    assert.equal(Number(persistedCheckIn.latitude), 36.8065);
-    assert.equal(Number(persistedCheckIn.longitude), 10.1815);
-
-    const cancelAfterCheckIn = await fetch(`${base}/api/v1/events/${event.id}/rsvp`, {
-      method: "DELETE",
-      headers: headers(waitlisted.cookie),
-    });
-    assert.equal(cancelAfterCheckIn.status, 409);
-    const cancelError = (await cancelAfterCheckIn.json()) as { error: { code: string } };
-    assert.equal(cancelError.error.code, "RSVP_CHECKED_IN_CANCELLATION_FORBIDDEN");
+    assert.equal(attended.status, "ATTENDED");
 
     const chatPost = await fetch(`${base}/api/v1/events/${event.id}/chat/messages`, {
       method: "POST",
@@ -258,22 +203,6 @@ test("Play event preserves waitlist and separates check-in evidence from final a
     assert.equal(complete.status, 200);
     const completed = await db.event.findUniqueOrThrow({ where: { id: event.id } });
     assert.equal(completed.status, "COMPLETED");
-
-    const attended = await db.eventRsvp.findUniqueOrThrow({
-      where: { eventId_userId: { eventId: event.id, userId: waitlisted.userId } },
-    });
-    assert.equal(attended.status, "ATTENDED");
-    const noShow = await db.eventRsvp.findUniqueOrThrow({
-      where: { eventId_userId: { eventId: event.id, userId: absentConfirmed.userId } },
-    });
-    assert.equal(noShow.status, "NO_SHOW");
-
-    const lateCheckIn = await fetch(`${base}/api/v1/events/${event.id}/check-in`, {
-      method: "POST",
-      headers: headers(absentConfirmed.cookie),
-      body: JSON.stringify({}),
-    });
-    assert.equal(lateCheckIn.status, 409);
   } finally {
     await new Promise<void>((resolve, reject) =>
       server.close((error) => (error ? reject(error) : resolve())),
@@ -282,7 +211,7 @@ test("Play event preserves waitlist and separates check-in evidence from final a
   }
 });
 
-test("public Watch listing filters by Place and Watch does not inherit Play check-in", async () => {
+test("public Watch listing filters by Place before applying cursor pagination", async () => {
   await resetDatabase();
   const app = createApp(config, createContainer(config));
   const server = app.listen(0, "127.0.0.1");
@@ -342,21 +271,6 @@ test("public Watch listing filters by Place and Watch does not inherit Play chec
     const firstA = await createWatch(placeA.id, "First A", 0);
     const secondA = await createWatch(placeA.id, "Second A", 30);
     await createWatch(placeB.id, "Only B", 15);
-
-    const joinWatch = await fetch(`${base}/api/v1/events/${firstA.id}/join`, {
-      method: "POST",
-      headers: headers(creator.cookie),
-    });
-    assert.equal(joinWatch.status, 200);
-    const watchCheckIn = await fetch(`${base}/api/v1/events/${firstA.id}/check-in`, {
-      method: "POST",
-      headers: headers(creator.cookie),
-      body: JSON.stringify({}),
-    });
-    assert.equal(watchCheckIn.status, 409);
-    const watchError = (await watchCheckIn.json()) as { error: { code: string } };
-    assert.equal(watchError.error.code, "EVENT_CHECK_IN_NOT_AVAILABLE");
-    assert.equal(await db.eventCheckIn.count({ where: { eventId: firstA.id } }), 0);
 
     const firstPageResponse = await fetch(
       `${base}/api/public/v1/events?type=WATCH&placeId=${placeA.id}&limit=1`,

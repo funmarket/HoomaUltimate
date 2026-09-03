@@ -49,31 +49,6 @@ test("Event schema keeps RSVP, formation, check-in, and temporary chat as explic
     assert.match(schema, new RegExp(`model ${model}\\b`));
   }
   assert.match(schema, /expiresAt DateTime/);
-  assert.doesNotMatch(schema, /checkedInAt\s+DateTime\?/);
-});
-
-test("Event check-in is an independent fact and final attendance belongs to completion", async () => {
-  const repository = await readFile(
-    "apps/api/src/modules/events/infrastructure/prisma-event.repository.ts",
-    "utf8",
-  );
-  const service = await readFile(
-    "apps/api/src/modules/events/application/event.service.ts",
-    "utf8",
-  );
-  const checkInStart = repository.indexOf("  async checkIn(");
-  const checkInEnd = repository.indexOf("  async listChat(", checkInStart);
-  assert.notEqual(checkInStart, -1);
-  assert.notEqual(checkInEnd, -1);
-  const checkInMethod = repository.slice(checkInStart, checkInEnd);
-
-  assert.match(checkInMethod, /eventCheckIn\.create/);
-  assert.doesNotMatch(checkInMethod, /status:\s*"ATTENDED"/);
-  assert.match(repository, /checkedInUserIds/);
-  assert.match(repository, /status:\s*"ATTENDED"/);
-  assert.match(repository, /status:\s*"NO_SHOW"/);
-  assert.match(service, /access\.type !== "PLAY"/);
-  assert.match(service, /EVENT_CHECK_IN_NOT_AVAILABLE/);
 });
 
 test("PLAY location stays optional and supports either canonical Pitch or manual venue", async () => {

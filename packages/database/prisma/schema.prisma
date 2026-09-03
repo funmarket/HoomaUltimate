@@ -639,6 +639,7 @@ model CommunityJoinRequest {
   @@index([userId, status, requestedAt])
 }
 
+
 model AthletesCommunity {
   id              String                   @id @default(cuid())
   slug            String                   @unique
@@ -646,7 +647,7 @@ model AthletesCommunity {
   sport           AthletesSport
   description     String?
   city            String?
-  houma            String?
+  houma           String?
   logoUrl         String?
   bannerUrl       String?
   visibility      AthletesVisibility       @default(PUBLIC)
@@ -955,6 +956,7 @@ model EventRsvp {
   userId           String
   status           EventRsvpStatus @default(CONFIRMED)
   waitlistSequence BigInt?
+  checkedInAt      DateTime?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
   event            Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
