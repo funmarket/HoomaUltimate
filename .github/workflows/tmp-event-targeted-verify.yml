@@ -1,0 +1,72 @@
+name: Temporary Event Lifecycle Verification
+
+on:
+  push:
+    branches: [phase-0-foundation]
+    paths:
+      - ".github/workflows/tmp-event-targeted-verify.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify-event-lifecycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hooma_ultimate_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hooma_ultimate_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hooma_ultimate_test
+      REDIS_URL: redis://localhost:6379
+      WEB_ORIGIN: http://localhost:5173
+      TELEGRAM_ORIGIN: http://localhost:5174
+      TELEGRAM_BOT_TOKEN: integration-test-token
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: phase-0-foundation
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npm run db:validate
+      - run: npm run db:migrate:deploy
+      - run: npm run architecture:check
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build:packages
+      - name: Event lifecycle unit and presentation tests
+        run: npx tsx --test tests/event-service.test.ts tests/event-policy.test.ts tests/events-structure.test.mjs tests/watch-event-detail-presentation.test.mjs
+      - name: Event lifecycle integration test
+        run: npx tsx --test --test-concurrency=1 tests/events.integration.test.ts
+      - run: npm run build
+      - run: npm run deploy:preflight
+      - run: npm run security:check
+      - run: npm run db:migrate:status
