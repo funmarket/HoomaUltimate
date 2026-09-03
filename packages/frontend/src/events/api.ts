@@ -9,7 +9,15 @@ export type PublicWatchQuery = {
   limit?: number;
 };
 export type EventRsvpState = "CONFIRMED" | "WAITLISTED" | "CANCELLED" | "ATTENDED" | "NO_SHOW";
-export type MyEventRsvp = { rsvp: { status: EventRsvpState } | null };
+export type EventCheckInState = {
+  checkedInAt: string;
+  latitude: number | null;
+  longitude: number | null;
+};
+export type MyEventRsvp = {
+  rsvp: { status: EventRsvpState } | null;
+  checkIn: EventCheckInState | null;
+};
 export type EventPlayerInvite = {
   id: string;
   eventId: string;
@@ -124,10 +132,14 @@ export function createEventApi(transport: HoomaTransport) {
         body: JSON.stringify(input),
       }),
     checkIn: (id: string, latitude?: number, longitude?: number) =>
-      request(transport, `/api/v1/events/${encodeURIComponent(id)}/check-in`, {
-        method: "POST",
-        body: JSON.stringify({ latitude: latitude ?? null, longitude: longitude ?? null }),
-      }),
+      request<{ checkedIn: true; checkedInAt: string }>(
+        transport,
+        `/api/v1/events/${encodeURIComponent(id)}/check-in`,
+        {
+          method: "POST",
+          body: JSON.stringify({ latitude: latitude ?? null, longitude: longitude ?? null }),
+        },
+      ),
     chat: (id: string) =>
       request<EventChatRecord[]>(transport, `/api/v1/events/${encodeURIComponent(id)}/chat`),
     postChat: (id: string, body: string) =>

@@ -19,6 +19,7 @@ function repositoryStub(onCreate: () => void): EventRepository {
     access: async () => null,
     canAccessPlay: async () => false,
     getRsvp: async () => null,
+    getCheckIn: async () => null,
     formationRoster: async () => [],
     create: async () => {
       onCreate();
@@ -39,7 +40,7 @@ function repositoryStub(onCreate: () => void): EventRepository {
     createFormation: async () => ({}),
     canViewMemberContent: async () => false,
     listFormations: async () => [],
-    checkIn: async () => ({}),
+    checkIn: async () => ({ checkedInAt: new Date("2026-08-22T18:00:00.000Z"), latitude: null, longitude: null }),
     listChat: async () => [],
     postChat: async () => ({}),
   };
@@ -115,6 +116,20 @@ function playAccess(overrides: Partial<EventAccessRecord> = {}): EventAccessReco
   };
 }
 
+function watchAccess(overrides: Partial<EventAccessRecord> = {}): EventAccessRecord {
+  return {
+    communityId: null,
+    placeId: "place-1",
+    type: "WATCH",
+    playVisibility: null,
+    watchKind: "MATCH",
+    createdByUserId: "user-1",
+    status: "PUBLISHED",
+    entryFeeMinor: 0n,
+    ...overrides,
+  };
+}
+
 test("EventService creates WATCH events through an approved canonical Place", async () => {
   let createCalled = false;
   let coachCheckCalled = false;
@@ -165,9 +180,7 @@ test("EventService still creates free PLAY events through community coach author
 test("EventService validates an optional PLAY placeId as an approved Pitch", async () => {
   let pitchCheckCalled = false;
   let createCalled = false;
-  const communities = {
-    requireCoach: async () => undefined,
-  } as unknown as CommunityService;
+  const communities = { requireCoach: async () => undefined } as unknown as CommunityService;
   const service = new EventService(
     repositoryStub(() => {
       createCalled = true;
@@ -213,25 +226,107 @@ test("EventService checks persisted Cultural subtype on partial updates", async 
 
   await assert.rejects(
     () => service.update("user-1", "event-1", { title: "Updated Cultural title" }),
-    (error: unknown) =>
-      error instanceof EventError && error.code === "WATCH_CULTURAL_OWNER_REQUIRED",
+    (error: unknown) => error instanceof EventError && error.code === "WATCH_CULTURAL_OWNER_REQUIRED",
   );
   assert.equal(updateCalled, false);
 });
 
-test("EventService returns only the authenticated user's RSVP state", async () => {
+test("EventService returns RSVP and independent check-in evidence for the authenticated user", async () => {
   const repository = repositoryStub(() => {});
   repository.access = async () => playAccess();
   repository.canAccessPlay = async () => true;
   repository.getRsvp = async (eventId, userId) => {
     assert.equal(eventId, "event-1");
     assert.equal(userId, "user-1");
-    return { status: "WAITLISTED" };
+    return { status: "CONFIRMED" };
   };
+  repository.getCheckIn = async () => ({
+    checkedInAt: new Date("2026-08-22T18:00:00.000Z"),
+    latitude: null,
+    longitude: null,
+  });
   const service = new EventService(repository, {} as CommunityService, approvedPlaces());
   assert.deepEqual(await service.getMyRsvp("user-1", "event-1"), {
-    rsvp: { status: "WAITLISTED" },
+    rsvp: { status: "CONFIRMED" },
+    checkIn: { checkedInAt: "2026-08-22T18:00:00.000Z", latitude: null, longitude: null },
   });
+});
+
+test("EventService accepts check-in only for an active Play event with confirmed RSVP", async () => {
+  const repository = repositoryStub(() => {});
+  repository.access = async () => playAccess();
+  repository.canAccessPlay = async () => true;
+  repository.getRsvp = async () => ({ status: "CONFIRMED" });
+  let called = 0;
+  repository.checkIn = async () => {
+    called += 1;
+    return {
+      checkedInAt: new Date("2026-08-22T18:00:00.000Z"),
+      latitude: null,
+      longitude: null,
+    };
+  };
+  const service = new EventService(repository, {} as CommunityService, approvedPlaces());
+
+  assert.deepEqual(await service.checkIn("user-1", "event-1"), {
+    checkedIn: true,
+    checkedInAt: "2026-08-22T18:00:00.000Z",
+  });
+  assert.equal(called, 1);
+});
+
+test("EventService rejects Watch check-in before persistence", async () => {
+  const repository = repositoryStub(() => {});
+  repository.access = async () => watchAccess();
+  let called = false;
+  repository.checkIn = async () => {
+    called = true;
+    return { checkedInAt: new Date(), latitude: null, longitude: null };
+  };
+  const service = new EventService(repository, {} as CommunityService, approvedPlaces());
+
+  await assert.rejects(
+    () => service.checkIn("user-1", "watch-1"),
+    (error: unknown) => error instanceof EventError && error.code === "EVENT_CHECK_IN_NOT_AVAILABLE",
+  );
+  assert.equal(called, false);
+});
+
+test("EventService rejects completed Play check-in before persistence", async () => {
+  const repository = repositoryStub(() => {});
+  repository.access = async () => playAccess({ status: "COMPLETED" });
+  const service = new EventService(repository, {} as CommunityService, approvedPlaces());
+
+  await assert.rejects(
+    () => service.checkIn("user-1", "event-1"),
+    (error: unknown) => error instanceof EventError && error.code === "EVENT_NOT_ACTIVE",
+  );
+});
+
+test("EventService passes Play attendance finalization ownership to repository completion", async () => {
+  const repository = repositoryStub(() => {});
+  repository.access = async () => playAccess({ createdByUserId: "user-1" });
+  let finalizeAttendance: boolean | null = null;
+  repository.complete = async (_eventId, finalize) => {
+    finalizeAttendance = finalize;
+    return null;
+  };
+  const service = new EventService(repository, {} as CommunityService, approvedPlaces());
+  await service.complete("user-1", "event-1");
+  assert.equal(finalizeAttendance, true);
+});
+
+test("EventService does not apply Play attendance finalization to Watch completion", async () => {
+  const repository = repositoryStub(() => {});
+  repository.access = async () => watchAccess({ createdByUserId: "user-1" });
+  let finalizeAttendance: boolean | null = null;
+  repository.complete = async (_eventId, finalize) => {
+    finalizeAttendance = finalize;
+    return null;
+  };
+  const service = new EventService(repository, {} as CommunityService, approvedPlaces());
+  await service.complete("user-1", "watch-1");
+  assert.equal(finalizeAttendance, false);
 });
 
 test("EventService hides a private PLAY event from an unauthorized viewer and joiner", async () => {
@@ -301,7 +396,6 @@ test("EventService rejects formation players outside the confirmed event roster"
         published: true,
         slots: [{ userId: "outsider", team: "A", position: "GK", label: "GK", x: 50, y: 90 }],
       }),
-    (error: unknown) =>
-      error instanceof Error && error.message.includes("confirmed or attended RSVP"),
+    (error: unknown) => error instanceof Error && error.message.includes("confirmed or attended RSVP"),
   );
 });

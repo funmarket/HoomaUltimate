@@ -84,7 +84,20 @@ export class EventService {
     if (access.type === "PLAY" && !(await this.repository.canAccessPlay(eventId, userId))) {
       throw new EventError("EVENT_NOT_FOUND", "Event not found");
     }
-    return { rsvp: await this.repository.getRsvp(eventId, userId) };
+    const [rsvp, checkIn] = await Promise.all([
+      this.repository.getRsvp(eventId, userId),
+      this.repository.getCheckIn(eventId, userId),
+    ]);
+    return {
+      rsvp,
+      checkIn: checkIn
+        ? {
+            checkedInAt: checkIn.checkedInAt.toISOString(),
+            latitude: checkIn.latitude,
+            longitude: checkIn.longitude,
+          }
+        : null,
+    };
   }
 
   async requireMemberContent(userId: string, eventId: string): Promise<void> {
@@ -179,7 +192,14 @@ export class EventService {
     const access = await this.requireManage(userId, eventId);
     if (access.status !== "PUBLISHED")
       throw new EventError("EVENT_NOT_COMPLETABLE", "Event is not active");
-    return this.repository.complete(eventId);
+    try {
+      return await this.repository.complete(eventId, access.type === "PLAY");
+    } catch (error) {
+      if (error instanceof Error && error.message === "EVENT_NOT_ACTIVE") {
+        throw new EventError("EVENT_NOT_COMPLETABLE", "Event is not active");
+      }
+      throw error;
+    }
   }
 
   async join(userId: string, eventId: string) {
@@ -216,6 +236,15 @@ export class EventService {
     } catch (error) {
       if (error instanceof Error && error.message === "RSVP_ALREADY_ATTENDED")
         throw new EventError("RSVP_ALREADY_ATTENDED", "An attended RSVP cannot be cancelled");
+      if (
+        error instanceof Error &&
+        error.message === "RSVP_CHECKED_IN_CANCELLATION_FORBIDDEN"
+      ) {
+        throw new EventError(
+          "RSVP_CHECKED_IN_CANCELLATION_FORBIDDEN",
+          "A checked-in RSVP cannot be cancelled",
+        );
+      }
       throw error;
     }
   }
@@ -321,14 +350,39 @@ export class EventService {
     latitude?: number | null,
     longitude?: number | null,
   ) {
+    const access = await this.repository.access(eventId);
+    if (!access) throw new EventError("EVENT_NOT_FOUND", "Event not found");
+    if (access.type !== "PLAY") {
+      throw new EventError(
+        "EVENT_CHECK_IN_NOT_AVAILABLE",
+        "Check-in is available only for Play events",
+      );
+    }
+    if (access.status !== "PUBLISHED") {
+      throw new EventError("EVENT_NOT_ACTIVE", "Event is no longer active for check-in");
+    }
+    if (!(await this.repository.canAccessPlay(eventId, userId))) {
+      throw new EventError("EVENT_NOT_FOUND", "Event not found");
+    }
+    const rsvp = await this.repository.getRsvp(eventId, userId);
+    if (!rsvp || rsvp.status !== "CONFIRMED") {
+      throw new EventError(
+        "EVENT_CHECK_IN_REQUIRES_CONFIRMED_RSVP",
+        "Confirmed RSVP required for check-in",
+      );
+    }
     try {
-      return await this.repository.checkIn(eventId, userId, latitude, longitude);
+      const checkIn = await this.repository.checkIn(eventId, userId, latitude, longitude);
+      return { checkedIn: true, checkedInAt: checkIn.checkedInAt.toISOString() };
     } catch (error) {
       if (error instanceof Error && error.message === "EVENT_CHECK_IN_REQUIRES_CONFIRMED_RSVP") {
         throw new EventError(
           "EVENT_CHECK_IN_REQUIRES_CONFIRMED_RSVP",
           "Confirmed RSVP required for check-in",
         );
+      }
+      if (error instanceof Error && error.message === "EVENT_NOT_ACTIVE") {
+        throw new EventError("EVENT_NOT_ACTIVE", "Event is no longer active for check-in");
       }
       throw error;
     }

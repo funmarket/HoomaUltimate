@@ -71,3 +71,15 @@ test("Play event detail keeps its existing domain presentation", () => {
   assert.match(page, /Temporary event chat/);
   assert.match(page, /Check in/);
 });
+
+test("Event detail derives check-in from independent participation evidence", () => {
+  const page = source("packages/frontend/src/events/EventDetailPage.tsx");
+  const api = source("packages/frontend/src/events/api.ts");
+
+  assert.match(api, /checkIn:\s*EventCheckInState \| null/);
+  assert.match(page, /setCheckInAt\(result\.checkIn\?\.checkedInAt \?\? null\)/);
+  assert.match(page, /rsvp === "ATTENDED"[\s\S]*?\? "ATTENDED"/);
+  assert.match(page, /checkedIn \? \([\s\S]*?Checked in/);
+  assert.doesNotMatch(page, /rsvp === "ATTENDED"[\s\S]{0,120}\? "CHECKED IN"/);
+  assert.match(page, /\{!isWatch \? \([\s\S]*?\/check-in/);
+});

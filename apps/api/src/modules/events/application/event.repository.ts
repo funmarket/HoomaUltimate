@@ -31,6 +31,12 @@ export interface EventAccessRecord {
 export type EventRsvpState = "CONFIRMED" | "WAITLISTED" | "CANCELLED" | "ATTENDED" | "NO_SHOW";
 export type EventPlayerInviteState = "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED";
 
+export interface EventCheckInRecord {
+  readonly checkedInAt: Date;
+  readonly latitude: number | null;
+  readonly longitude: number | null;
+}
+
 export interface EventPlayerInviteRecord {
   readonly id: string;
   readonly eventId: string;
@@ -56,11 +62,12 @@ export interface EventRepository {
   access(eventId: string): Promise<EventAccessRecord | null>;
   canAccessPlay(eventId: string, userId: string): Promise<boolean>;
   getRsvp(eventId: string, userId: string): Promise<{ status: EventRsvpState } | null>;
+  getCheckIn(eventId: string, userId: string): Promise<EventCheckInRecord | null>;
   formationRoster(eventId: string): Promise<FormationRosterPlayer[]>;
   create(userId: string, input: EventCreateInput): Promise<PublicEvent>;
   update(eventId: string, input: EventUpdateInput): Promise<PublicEvent>;
   cancel(eventId: string): Promise<unknown>;
-  complete(eventId: string): Promise<PublicEvent | null>;
+  complete(eventId: string, finalizeAttendance: boolean): Promise<PublicEvent | null>;
   join(
     eventId: string,
     userId: string,
@@ -94,7 +101,7 @@ export interface EventRepository {
     userId: string,
     latitude?: number | null,
     longitude?: number | null,
-  ): Promise<unknown>;
+  ): Promise<EventCheckInRecord>;
   listChat(eventId: string, userId: string): Promise<unknown | null>;
   postChat(eventId: string, userId: string, body: string): Promise<unknown | null>;
 }

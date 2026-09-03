@@ -3,6 +3,7 @@ import { Prisma, type PrismaClient } from "@hooma/database";
 import { eventChatWindow } from "../domain/event-policy.js";
 import type {
   EventAccessRecord,
+  EventCheckInRecord,
   EventOpenPlayListInput,
   EventPublicListInput,
   EventRepository,
@@ -64,6 +65,18 @@ type CulturalDetails = {
   culturalCategory: string;
   imageUrl: string | null;
 };
+
+function serializeCheckIn(row: {
+  createdAt: Date;
+  latitude: Prisma.Decimal | null;
+  longitude: Prisma.Decimal | null;
+}): EventCheckInRecord {
+  return {
+    checkedInAt: row.createdAt,
+    latitude: row.latitude === null ? null : Number(row.latitude),
+    longitude: row.longitude === null ? null : Number(row.longitude),
+  };
+}
 
 export class PrismaEventRepository implements EventRepository {
   constructor(private readonly db: PrismaClient) {}
@@ -204,6 +217,14 @@ export class PrismaEventRepository implements EventRepository {
       where: { eventId_userId: { eventId, userId } },
       select: { status: true },
     });
+  }
+
+  async getCheckIn(eventId: string, userId: string): Promise<EventCheckInRecord | null> {
+    const row = await this.db.eventCheckIn.findUnique({
+      where: { eventId_userId: { eventId, userId } },
+      select: { createdAt: true, latitude: true, longitude: true },
+    });
+    return row ? serializeCheckIn(row) : null;
   }
 
   async formationRoster(eventId: string) {
@@ -412,15 +433,54 @@ export class PrismaEventRepository implements EventRepository {
     return { cancelled: true };
   }
 
-  async complete(eventId: string) {
+  async complete(eventId: string, finalizeAttendance: boolean) {
     const now = new Date();
-    await this.db.$transaction([
-      this.db.event.update({ where: { id: eventId }, data: { status: "COMPLETED" } }),
-      this.db.eventPlayerInvite.updateMany({
+    await this.db.$transaction(async (tx) => {
+      await lockEvent(tx, eventId);
+      const event = await tx.event.findUniqueOrThrow({
+        where: { id: eventId },
+        select: { status: true },
+      });
+      if (event.status !== "PUBLISHED") throw new Error("EVENT_NOT_ACTIVE");
+
+      if (finalizeAttendance) {
+        const confirmed = await tx.eventRsvp.findMany({
+          where: { eventId, status: "CONFIRMED" },
+          select: { id: true, userId: true },
+        });
+        if (confirmed.length > 0) {
+          const checkIns = await tx.eventCheckIn.findMany({
+            where: { eventId, userId: { in: confirmed.map((rsvp) => rsvp.userId) } },
+            select: { userId: true },
+          });
+          const checkedInUserIds = new Set(checkIns.map((checkIn) => checkIn.userId));
+          const attendedIds = confirmed
+            .filter((rsvp) => checkedInUserIds.has(rsvp.userId))
+            .map((rsvp) => rsvp.id);
+          const noShowIds = confirmed
+            .filter((rsvp) => !checkedInUserIds.has(rsvp.userId))
+            .map((rsvp) => rsvp.id);
+          if (attendedIds.length > 0) {
+            await tx.eventRsvp.updateMany({
+              where: { id: { in: attendedIds }, status: "CONFIRMED" },
+              data: { status: "ATTENDED" },
+            });
+          }
+          if (noShowIds.length > 0) {
+            await tx.eventRsvp.updateMany({
+              where: { id: { in: noShowIds }, status: "CONFIRMED" },
+              data: { status: "NO_SHOW" },
+            });
+          }
+        }
+      }
+
+      await tx.eventPlayerInvite.updateMany({
         where: { eventId, status: "PENDING" },
         data: { status: "CANCELLED", respondedAt: now },
-      }),
-    ]);
+      });
+      await tx.event.update({ where: { id: eventId }, data: { status: "COMPLETED" } });
+    });
     return this.getPublic(eventId);
   }
 
@@ -437,6 +497,11 @@ export class PrismaEventRepository implements EventRepository {
       if (!existing || existing.status === "CANCELLED")
         return { cancelled: false, promotedUserId: null };
       if (existing.status === "ATTENDED") throw new Error("RSVP_ALREADY_ATTENDED");
+      const checkIn = await tx.eventCheckIn.findUnique({
+        where: { eventId_userId: { eventId, userId } },
+        select: { id: true },
+      });
+      if (checkIn) throw new Error("RSVP_CHECKED_IN_CANCELLATION_FORBIDDEN");
       await tx.eventRsvp.update({
         where: { id: existing.id },
         data: { status: "CANCELLED", waitlistSequence: null },
@@ -674,26 +739,31 @@ export class PrismaEventRepository implements EventRepository {
     userId: string,
     latitude?: number | null,
     longitude?: number | null,
-  ) {
-    const rsvp = await this.db.eventRsvp.findUnique({
-      where: { eventId_userId: { eventId, userId } },
-      select: { status: true },
+  ): Promise<EventCheckInRecord> {
+    return this.db.$transaction(async (tx) => {
+      await lockEvent(tx, eventId);
+      const event = await tx.event.findUniqueOrThrow({
+        where: { id: eventId },
+        select: { status: true },
+      });
+      if (event.status !== "PUBLISHED") throw new Error("EVENT_NOT_ACTIVE");
+      const rsvp = await tx.eventRsvp.findUnique({
+        where: { eventId_userId: { eventId, userId } },
+        select: { status: true },
+      });
+      if (!rsvp || rsvp.status !== "CONFIRMED")
+        throw new Error("EVENT_CHECK_IN_REQUIRES_CONFIRMED_RSVP");
+      const existing = await tx.eventCheckIn.findUnique({
+        where: { eventId_userId: { eventId, userId } },
+        select: { createdAt: true, latitude: true, longitude: true },
+      });
+      if (existing) return serializeCheckIn(existing);
+      const created = await tx.eventCheckIn.create({
+        data: { eventId, userId, latitude: latitude ?? null, longitude: longitude ?? null },
+        select: { createdAt: true, latitude: true, longitude: true },
+      });
+      return serializeCheckIn(created);
     });
-    if (!rsvp || !["CONFIRMED", "ATTENDED"].includes(rsvp.status))
-      throw new Error("EVENT_CHECK_IN_REQUIRES_CONFIRMED_RSVP");
-    const checkedInAt = new Date();
-    await this.db.$transaction([
-      this.db.eventCheckIn.upsert({
-        where: { eventId_userId: { eventId, userId } },
-        create: { eventId, userId, latitude: latitude ?? null, longitude: longitude ?? null },
-        update: { latitude: latitude ?? null, longitude: longitude ?? null },
-      }),
-      this.db.eventRsvp.update({
-        where: { eventId_userId: { eventId, userId } },
-        data: { status: "ATTENDED", checkedInAt },
-      }),
-    ]);
-    return { checkedIn: true, checkedInAt };
   }
 
   async listChat(eventId: string, userId: string) {
@@ -784,7 +854,7 @@ async function joinEvent(
     await tx.eventRsvp.upsert({
       where: { eventId_userId: { eventId, userId } },
       create: { eventId, userId, status: "CONFIRMED" },
-      update: { status: "CONFIRMED", waitlistSequence: null, checkedInAt: null },
+      update: { status: "CONFIRMED", waitlistSequence: null },
     });
     return { status: "CONFIRMED" };
   }
@@ -796,7 +866,7 @@ async function joinEvent(
   await tx.eventRsvp.upsert({
     where: { eventId_userId: { eventId, userId } },
     create: { eventId, userId, status: "WAITLISTED", waitlistSequence },
-    update: { status: "WAITLISTED", waitlistSequence, checkedInAt: null },
+    update: { status: "WAITLISTED", waitlistSequence },
   });
   return { status: "WAITLISTED" };
 }
