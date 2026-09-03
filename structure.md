@@ -211,7 +211,7 @@ This rule exists for scalability and user experience as well as code cleanliness
 | Ride coordination/location privacy                   | Rides                                       |
 | Fundraiser/contribution                              | Fundraising                                 |
 | Payment rails/intents/settlement                     | Payments                                    |
-| Media metadata                                       | Media                                       |
+| Domain-owned managed media metadata                  | Owning product domain until generic Media is explicitly authorized |
 | Media bytes                                          | Object storage                              |
 | Async work                                           | Outbox + Worker                             |
 | Post-activity Replay                                 | Replay                                      |
@@ -231,7 +231,7 @@ ADR-054 authorizes the Athletes foundation as its own HOOMA-connected domain ins
 
 - **PostgreSQL** = durable business truth and durable metadata.
 - **Redis/Valkey** = explicitly transient/disposable state.
-- **S3-compatible object storage** = media bytes when Media is implemented.
+- **S3-compatible object storage** = managed media bytes for domain-owned media flows such as Ride/Gamers and any future generic Media architecture.
 
 Rules:
 
@@ -322,32 +322,34 @@ Rules:
 Permanent bottom navigation:
 
 ```text
-Home | Play | Watch | HOOMA | Pitch
+Home | Play | Watch | HOOMA | Athletes
 ```
+
+`Athletes` owns the fifth permanent navigation slot and routes to `/athletes`. Pitch remains a real standalone product at `/pitch`; it was removed only from the permanent bottom navigation.
 
 Current Home gateway is the shipped 3 x 2 source-backed layout:
 
 ```text
-HOOMA | Teams | Spots
-Pitch | Ride  | Requests
+HOOMA | Teams | Pitch
+Places | Ride | Requests
 ```
 
 Current availability on `phase-0-foundation`:
 
 - HOOMA -> `/hooma`
 - Teams -> `/teams`
-- Spots -> `/places`
 - Pitch -> `/pitch`
+- Places -> `/places`
 - Ride -> `/rides` Ride-owned gateway with current child routes `/rides/matchday`, `/rides/anywhere`, `/rides/request`, `/rides/requests/:requestId/edit`, `/rides/offers`, `/rides/offers/new`, `/rides/offers/:offerId`, `/rides/offers/:offerId/edit`, and `/rides/mine`
 - Requests -> `/requests` honest frontend shell, with `/requests/fundme` tab and `/fundme` compatibility redirect
 
-Gamers remains an independent implemented route family at `/gamers`, but it is no longer listed from the Home gateway. ULTRAS remains an independent future domain and is not routed from Home. FundMe is grouped under Requests as `/requests/fundme`; `/fundme` redirects there as a compatibility navigation route only.
+Gamers remains an independent implemented route family at `/gamers`, but it is no longer listed from the Home gateway. Athletes is an independent implemented route family at `/athletes` and is reached from permanent navigation. ULTRAS remains an independent future domain and is not routed from Home. FundMe is grouped under Requests as `/requests/fundme`; `/fundme` redirects there as a compatibility navigation route only.
 
 This section records current application state. Product-owner changes update both the source and this contract in the same task.
 
 HOOMA creation is Communities-owned and creates only canonical HOOMA neighborhood/local Communities. Teams and future supporter-community domains keep their own creation surfaces and select any required HOOMA context inside their own flows. The only current cross-flow continuation is the literal Team handoff from `/hooma/new?after=team-create` back to `/teams/new?communityId=<created-id>` after successful HOOMA creation.
 
-Ride may now grow from its honest shell into its own domain-owned vertical slice under ADR-050, including Ride-owned frontend routes and API client code. Requests may grow only through its own Requests-owned slices. That authorization does not change the Home gateway, bottom navigation, FundMe tab grouping, Gamers independence, ULTRAS unavailability, or the rule that Fundraising and Payments require separate authorization.
+Ride may grow only through its own domain-owned vertical slices under ADR-050. Requests may grow only through its own Requests-owned slices. Those authorizations do not change the current Home gateway, permanent navigation, FundMe tab grouping, Gamers independence, ULTRAS unavailability, or the rule that Fundraising and Payments require separate authorization.
 
 The current HOOMA creation action is:
 
@@ -366,6 +368,7 @@ Core routes include:
 /play
 /watch
 /hooma
+/athletes
 /pitch
 /places
 /teams
