@@ -1,4 +1,4 @@
-# HOOMA ULTIMATE — ASSET MANIFEST
+# HOOMA — ASSET MANIFEST
 
 Status: **ACTIVE GOVERNED ASSET REGISTER**  
 Purpose: one source of truth for approved brand and Home artwork used by Web and Telegram.
@@ -22,7 +22,7 @@ Purpose: one source of truth for approved brand and Home artwork used by Web and
 | `home.gateway.hooma`    | HOOMA uploaded artwork                                   | `33c09b0aea14121a2e90fe86a1015ac7560775e4e6d2e017f6508af8e8eb4a49`                                                    | `83fb0343731987ddb00c0ee718350e55e1ac3f6ffd7ef1c3138768f2d298b562` | `/home-gateways/hooma.png`                                                                     | Web, Telegram | APPROVED_AND_IMPORTED                  |
 | `home.gateway.teams`    | Teams uploaded artwork                                   | `fcfbb15f911eafdc7ab1efa2eddb04de80ce8e72f79ba666fe0d7800a4967403`                                                    | `fdbdac00eca7c704b4812efbfec1032c8695ea616963fd9dd53a275edea77aa3` | `/home-gateways/teams.png`                                                                     | Web, Telegram | APPROVED_AND_IMPORTED                  |
 | `home.gateway.ultras`   | Ultras uploaded artwork                                  | `4dc1befa00ce147be369e986e4b4c8d0880755ce6c668d63d18a2fb7cfe949c8`                                                    | `1ed87cb3b04c800d9ba44ff57a302125f3057560b38e6e75b9325be4fb99cede` | `/home-gateways/ultras.png`                                                                    | Web, Telegram | APPROVED_AND_IMPORTED                  |
-| `home.gateway.spots`    | Existing Places artwork, relabeled for Watch Spots       | `8ee7ba7b676c3eb9cc427ce943d8ed3a7c4741a896a098a8bfe3b62ffdcff9a0`                                                    | `d1678d9e4b1abdd1bcb2cf303288c6f55c362e49d8c110ffa9030242ccc5cd79` | `/home-gateways/places.png`                                                                    | Web, Telegram | APPROVED_AND_IMPORTED                  |
+| `home.gateway.spots`    | Current Places Home artwork; internal legacy logical id retained | `8ee7ba7b676c3eb9cc427ce943d8ed3a7c4741a896a098a8bfe3b62ffdcff9a0`                                                    | `d1678d9e4b1abdd1bcb2cf303288c6f55c362e49d8c110ffa9030242ccc5cd79` | `/home-gateways/places.png`                                                                    | Web, Telegram | APPROVED_AND_IMPORTED                  |
 | `home.gateway.pitch`    | User-supplied black/gold football-pitch artwork, 500×650 | conversation upload `requests.png` (2026-08-28), exact source retained as the approval reference                      | `93b565258b8a360f3247eb00bbf815a78358cc1e4cb04c98dee46d7afde93e39` | `apps/web/public/home-gateways/pitch.webp` and `apps/telegram/public/home-gateways/pitch.webp` | Web, Telegram | APPROVED_AND_IMPORTED                  |
 | `home.gateway.gamers`   | Gamers uploaded artwork                                  | `07344b6664690664f06436fafdf4dc60681135b790b2576118d1e7f2a6e8e603`                                                    | `290b5d240a16de352592b2db86736eba0d024a834142dc9db2f0f7792efd286e` | `/home-gateways/gamers.png`                                                                    | Web, Telegram | APPROVED_AND_IMPORTED                  |
 | `home.gateway.ride`     | Ride uploaded artwork                                    | `9866f31e7aad673afe131e7674457de5544511df7f51b7c64cd75de03c58cb56`                                                    | `8fd3a9b947f92abaf90ffb03180b853d3f3eb9ac3e8d23abbcb703a5bad8c00c` | `/home-gateways/ride.png`                                                                      | Web, Telegram | APPROVED_AND_IMPORTED                  |
@@ -37,15 +37,17 @@ The Pitch delivery asset is a compressed WebP derivative of the approved 500×65
 
 ```text
 HomeGatewayGrid
-├── Row 1: HOOMA → /hooma | Teams → /teams | Spots → /places
-└── Row 2: Pitch → /pitch | Ride → /rides | Requests → /requests
+├── Row 1: HOOMA → /hooma | Teams → /teams | Pitch → /pitch
+└── Row 2: Places → /places | Ride → /rides | Requests → /requests
 ```
 
-`Spots` is only the Home/Watch discovery label for eligible non-Pitch canonical Places. `Pitch` is a separate gateway to the existing PITCH capability surface. Neither creates a second Place model or venue source of truth.
+`Places` is the current visible Home label for canonical Place discovery. The source may retain the internal gateway id `spots`; that implementation detail does not create a second Place model and does not authorize restoring `Spots` as the visible Home label. Watch may continue to use `Spots` as Watch-owned presentation language independently. `Pitch` remains a separate gateway over the existing PITCH capability surface.
 
 Each card is independently clickable when its product surface is available. Web and Telegram consume the same shared `HomeGatewayGrid`/`HomeGatewayCard` contract and resolve local assets from their public directories.
 
 Gamers, ULTRAS and FundMe artwork remains retained approved/future artwork. Those assets are not active Home gateway cards under the current six-gateway contract.
+
+The permanent bottom navigation is governed separately and is currently `Home | Play | Watch | HOOMA | Athletes`; no asset entry in this Home manifest should be used to infer that Pitch is still the fifth bottom-nav item.
 
 ## Home placement contract
 
