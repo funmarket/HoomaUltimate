@@ -137,7 +137,6 @@ jobs:
             apps/api/src/modules/events/domain/event-error.ts \
             apps/api/src/modules/events/infrastructure/prisma-event.repository.ts \
             docs/CANONICAL_MODEL.md \
-            packages/database/prisma/schema.prisma \
             packages/frontend/src/events/EventDetailPage.tsx \
             packages/frontend/src/events/api.ts \
             tests/event-service.test.ts \
@@ -164,7 +163,6 @@ jobs:
             apps/api/src/modules/events/domain/event-error.ts \
             apps/api/src/modules/events/infrastructure/prisma-event.repository.ts \
             docs/CANONICAL_MODEL.md \
-            packages/database/prisma/schema.prisma \
             packages/frontend/src/events/EventDetailPage.tsx \
             packages/frontend/src/events/api.ts \
             tests/event-service.test.ts \
