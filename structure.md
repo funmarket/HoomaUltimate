@@ -211,7 +211,7 @@ This rule exists for scalability and user experience as well as code cleanliness
 | Ride coordination/location privacy                   | Rides                                       |
 | Fundraiser/contribution                              | Fundraising                                 |
 | Payment rails/intents/settlement                     | Payments                                    |
-| Domain-owned managed media metadata                  | Owning product domain until generic Media is explicitly authorized |
+| Domain-owned managed media metadata                  | Owning domain; generic Media unshipped      |
 | Media bytes                                          | Object storage                              |
 | Async work                                           | Outbox + Worker                             |
 | Post-activity Replay                                 | Replay                                      |
