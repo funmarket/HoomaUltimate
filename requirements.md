@@ -22,7 +22,7 @@ HOOMA is a football/community activity platform delivered through:
 - one shared PostgreSQL database;
 - Redis/Valkey for explicitly transient state;
 - an asynchronous Worker where durable background work is required;
-- S3-compatible object storage for managed media when Media is implemented.
+- S3-compatible object storage for managed media bytes used by current domain-owned media flows and any future generic Media architecture.
 
 The older HOOMA repositories and uploaded historical implementations are read-only donors/reference material. They may inform behavior and visuals, but they do not define the new runtime, schema, migrations, auth architecture, or completion state.
 
@@ -117,22 +117,26 @@ Do not introduce permanent follower/feed/engagement mechanics merely to imitate 
 Exactly:
 
 ```text
-Home | Play | Watch | HOOMA | Pitch
+Home | Play | Watch | HOOMA | Athletes
 ```
 
-`Pitch` must not be replaced by `Places` in the permanent bottom navigation.
+`Athletes` is the fifth permanent bottom-navigation item and routes to `/athletes`.
+
+Pitch remains a real standalone product at `/pitch` and a Home gateway. Removing Pitch from permanent bottom navigation does not remove, merge, or deprecate the Pitch domain.
 
 ## 2.2 Home gateway
 
-Home contains these six primary product gateways:
+Home contains these six primary product gateways in this exact current order:
 
 ```text
-HOOMA | Teams | Spots | Pitch | Ride | Requests
+HOOMA | Teams | Pitch | Places | Ride | Requests
 ```
 
-`Spots` is the Home label for canonical Places discovery at `/places`. Gamers, ULTRAS and FundMe are not Home discovery gateways in the current IA, but this does not delete those product concepts or their independent ownership.
+The visible Home label is `Places` for canonical Places discovery at `/places`. The source may retain an internal `spots` identifier for that gateway; that internal id does not create a second venue domain and does not make `Spots` the current visible Home label. Watch may still use `Spots` as Watch-owned product language independently.
 
-Ride may expose a Ride-owned gateway and frontend routes when its numbered `rideplan.md` slices authorize them. Requests may expose its Requests/FundMe shell until its own numbered slices replace it. Neither surface may fake backend completion, listings, matching, claims, payments or persistence.
+Gamers, ULTRAS and FundMe are not Home discovery gateways in the current IA, but this does not delete those product concepts or their independent ownership.
+
+Ride exposes its Ride-owned gateway and real frontend routes through its current vertical slice. Requests may expose only behavior actually implemented by its Requests-owned slices. Neither surface may fake backend completion, listings, matching, claims, payments or persistence.
 
 ## 2.3 HOOMA creation
 
@@ -157,9 +161,9 @@ Athletes is a separate HOOMA-connected sports-community domain inside the existi
 
 Athletes is not a HOOMA Community subtype, not a Team subtype, not a generic creator option, and not an authorization to create `CommunityKind.ATHLETES`, `CommunityType`, `Community.type`, `GenericMembership`, `GenericCommunity`, `CreateAnythingPage`, `CreationService`, or `createEntity`.
 
-Athletes foundation may expose public discovery/detail, create, update/archive, join/request/cancel, manager request approval/decline, member list, direct-add by canonical username, and bounded member removal. Whistle, equipment, events, marketplace, payments, Ride integration, Requests integration, FundMe and ULTRAS remain separate future slices.
+Current Athletes behavior includes public discovery/detail, create, update/archive, join/request/cancel, manager request approval/decline, member list, direct-add by canonical username, bounded member removal, and an Athletes member Whistle Board through the shared Whistle engine. Equipment, marketplace, Payments, Ride integration, Requests integration, FundMe and ULTRAS remain separate slices unless explicitly implemented by their owning domains.
 
-Athletes may appear from `/hooma` only as a separate domain navigation entry after its real `/athletes` routes and APIs exist. It must not appear inside the HOOMA Community create section, and Home gateway and bottom navigation remain unchanged.
+Athletes is a permanent navigation destination at `/athletes`. It must not appear inside the HOOMA Community create section.
 
 ## 2.5 Places tabs
 
@@ -182,6 +186,7 @@ At minimum, the product routing contract supports:
 /play
 /watch
 /hooma
+/athletes
 /pitch
 /places
 /teams
@@ -682,7 +687,7 @@ Approved future/current product requirements include:
 - collector-ticket presentation where used;
 - real persisted business/application states rather than UI-only labels.
 
-Presence in this requirements file does not imply the Watch backend is already implemented.
+Presence in this requirements file does not imply every Watch backend slice is already implemented.
 
 ---
 
@@ -736,12 +741,11 @@ Do not duplicate the physical Place for each capability.
 
 # 12. Pitch
 
-Pitch is a permanent standalone route/product.
+Pitch is a permanent standalone route/product and a current Home gateway.
 
 Requirements include:
 
 - `/pitch` permanent route;
-- permanent bottom-nav item;
 - Pitch discovery;
 - canonical Place relationship;
 - Pitch capability/profile;
@@ -750,6 +754,8 @@ Requirements include:
 - approved/rejected/pending state;
 - Places `PITCH` tab reads the same underlying approved Pitch data;
 - no duplicate Pitch venue database.
+
+Pitch is **not** currently a permanent bottom-navigation item; Athletes owns that fifth navigation slot. This navigation change does not alter Pitch domain ownership or its route.
 
 ---
 
@@ -891,7 +897,7 @@ Approved requirements include:
 
 Ride is explicitly authorized for a durable Rides-owned domain, persistence, API and frontend vertical slice. Ride has exactly one canonical domain: Matchday Ride and Anywhere Ride are user-facing contexts over the same Ride offers, requests, participation, meeting-point, waypoint and vehicle-photo model. The canonical context values are `MATCHDAY` and `GENERAL`; user-facing `GENERAL` wording is Anywhere Ride.
 
-Ride supports advertised compensation terms without processing money. A Ride can be advertised as `FREE` or `CASH`. Driver offers can advertise `FREE` or `CASH` with an integer minor-unit amount, ISO currency and basis such as per-seat or total. Passenger requests can advertise no cash offer (`FREE`) or a `CASH` offer with integer minor-unit amount and ISO currency. Human-entered Ride cash amounts must convert to integer minor units through a shared supported-currency exponent source; the current supported cash currency list is `TND`, `EUR` and `USD`, and `TND` uses three decimal minor-unit precision. Ride compensation terms must not create payment intents, checkout, settlement, wallet, card, provider callback, paid-status or payment-received state. Actual payment execution remains owned by future PAY-001.
+Ride compensation terms are advertised Ride terms only. A Ride can be advertised as `FREE` or `CASH`. Driver offers can advertise `FREE` or `CASH` with an integer minor-unit amount, ISO currency and basis such as per-seat or total. Passenger requests can advertise no cash offer (`FREE`) or a `CASH` offer with integer minor-unit amount and ISO currency. Human-entered Ride cash amounts must convert to integer minor units through a shared supported-currency exponent source; the current supported cash currency list is `TND`, `EUR` and `USD`, and `TND` uses three decimal minor-unit precision. Ride compensation terms must not create payment intents, checkout, settlement, wallet, card, provider callback, paid-status or payment-received state. Actual payment execution remains owned by future PAY-001.
 
 A Ride destination must use exactly one destination strategy: an owning Event reference, a canonical Place reference, or a Ride-owned custom destination label. Event and Place presentation must be read from their owning domains through narrow reference readers and must not be duplicated into Ride as canonical Event or Place truth.
 
@@ -904,6 +910,8 @@ Ride exact pickup/meeting location is private by server policy and visible only 
 RideRequest audience choices are exactly `Everyone`, `One of my HOOMAs`, and `All my HOOMAs`. `Everyone` is globally discoverable through normal Ride request discovery and has no Community targets. `One of my HOOMAs` requires the requester to choose exactly one active Community membership. `All my HOOMAs` is resolved by the server at create/update time into the requester's current active Community memberships; it is never persisted as an `ALL_MY_HOOMAS` flag and future joins do not expand existing requests. Community-scoped RideRequests are private to active members, excluded from public Ride discovery and public exact-ID detail, and appear in the selected Community page's HOOMA NOW only while the canonical request is `OPEN`, unexpired, explicitly targeted, and the requester remains an active member of that Community. My Rides remains the owner management surface.
 
 Ride vehicle media is Ride-owned metadata plus object-storage bytes. Binary photo bytes, base64 data and object-storage credentials must not be stored in PostgreSQL, logs, outbox payloads or generic JSON blobs. Until a separately authorized generic Media domain exists, Ride vehicle-photo metadata belongs to a single-purpose Rides-owned model and object keys use a Ride-owned namespace.
+
+Current Ride Whistle authorization is implemented through the shared Whistle engine and the Ride domain's server-side read/post authorization. This does not create a Ride chat/message table or a second messaging system.
 
 ---
 
@@ -1029,7 +1037,7 @@ A Whistle is accessible only through its approved server-side authorization cont
 Context identifiers may include:
 
 ```text
-COMMUNITY | EVENT | TEAM | RIDE | ULTRAS | GAMER_SQUAD | GAMER_DIRECT | USER_DIRECT
+COMMUNITY | EVENT | ATHLETES | TEAM | RIDE | ULTRAS | GAMER_SQUAD | GAMER_DIRECT | USER_DIRECT
 ```
 
 The existence of an enum/context name does **not** mean the context is enabled.
@@ -1040,6 +1048,8 @@ Current enabled contexts are:
 
 - `COMMUNITY` for active HOOMA Community members;
 - `EVENT` through the existing Event member-content authorization boundary;
+- `ATHLETES` through active Athletes member-content authorization;
+- `RIDE` through Ride-owned server-side read/post authorization for the valid Ride relationship/context;
 - `GAMER_DIRECT` through the dedicated Gamer-specific server-derived pair contract;
 - `USER_DIRECT` between two distinct authenticated canonical HOOMA Users through dedicated `/api/v1/whistles/users/:username` routes.
 
@@ -1054,7 +1064,7 @@ For `USER_DIRECT`:
 - changing a public username does not change an already-derived canonical User pair identity;
 - no DirectMessage, Conversation, inbox, pair, or parallel Whistle-body table is created for this capability.
 
-Team, Ride, ULTRAS and Gamer Squad Whistle contexts remain closed until their own authorization slices are deliberately implemented.
+`TEAM`, `ULTRAS` and `GAMER_SQUAD` remain closed until their own authorization slices are deliberately implemented.
 
 ## 21.6 Notifications
 
@@ -1087,14 +1097,16 @@ Real PostgreSQL + Redis integration coverage must prove, as applicable:
 
 # 22. Media
 
-When managed Media is implemented:
+Managed media follows the existing storage boundary:
 
-- PostgreSQL stores metadata/status/ownership;
-- object storage stores bytes;
-- Worker performs transforms where required;
-- external image URLs may remain only as explicitly supported transitional/fallback fields, not as a substitute for a designed upload system.
+- PostgreSQL stores metadata/status/ownership owned by the relevant product domain unless a generic Media domain is separately authorized;
+- S3-compatible object storage stores bytes;
+- Worker performs transforms/cleanup where the implemented media lifecycle requires it;
+- external image URLs may remain only where explicitly supported by that owning domain, not as a substitute for a designed upload system when managed upload is required.
 
-Image processing may include validation, orientation, EXIF/GPS stripping, thumbnails/card/master variants, failure state and retry.
+Ride and Gamers already depend on shared object-storage infrastructure for their managed media paths. That infrastructure must be configured and deployed honestly; the absence of a separately authorized generic `MediaAsset` domain is not permission to create a second storage system.
+
+Image processing may include validation, orientation, EXIF/GPS stripping, thumbnails/card/master variants, failure state and retry where the owning media lifecycle requires those operations.
 
 Any required external binary/runtime dependency must be explicitly provisioned and verified in deployment/preflight.
 
@@ -1114,7 +1126,7 @@ Worker requirements:
 - logging without secrets/Whistle bodies;
 - health/startup verification.
 
-Approved future/current use cases may include media processing, Telegram notification delivery, Replay generation and cleanup jobs.
+Approved/current use cases may include media cleanup, Telegram notification delivery, Event cleanup, Gamer reconciliation, Replay generation and other explicitly implemented background jobs. A Worker package existing in source is not the same as a deployed Worker process; deployment/runtime status must be verified separately.
 
 ---
 
@@ -1125,7 +1137,7 @@ Replay is post-activity memory/content tied to an eligible completed canonical a
 Requirements when implemented:
 
 - generated from the real source activity;
-- media through shared Media architecture;
+- media through shared Media architecture or the then-current approved media ownership model;
 - privacy inherited from the originating context;
 - no permanent Whistle-body history;
 - public/private presentation based on source context.
@@ -1170,7 +1182,7 @@ Rules:
 - no production `prisma db push` replacement for migrations;
 - important uniqueness/concurrency invariants belong in the service/database boundary where appropriate;
 - speculative future-domain tables are not implementation;
-- before first public release, any migration-history consolidation is an explicit reviewed database task proven from a clean database, not a permanent blocker on product development;
+- before first public release, any migration-history consolidation is an explicit reviewed database task proven from a clean database, not an automatic assumption that may erase working migration history;
 - after release, shipped migration history is forward-only;
 - historical donor data, if ever imported, uses explicit ETL/reconciliation rather than redefining the app as a migration of the donor repository.
 
