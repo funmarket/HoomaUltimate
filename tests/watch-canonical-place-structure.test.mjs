@@ -208,7 +208,10 @@ test("Watch collector ticket is shared, information-first and adaptively readabl
   assert.doesNotMatch(ticketCss, /\.watch-ticket__stub-date/);
 
   const photoRule = cssRule(ticketCss, ".watch-ticket__photo-panel");
-  const photoImageRule = cssRule(ticketCss, ".watch-ticket__photo-panel img");
+  const photoImageRule = cssRule(
+    ticketCss,
+    ".watch-ticket__photo-panel img",
+  );
   assert.match(
     photoRule,
     /width:\s*calc\(100% - clamp\(10px, 2cqw, 18px\)\)/,
