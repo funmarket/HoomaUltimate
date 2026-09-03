@@ -1,630 +1,82 @@
-      '      transparent 30rem\n' +
-      '    ),\n' +
-      '    linear-gradient(\n' +
-      '      180deg,\n' +
-      '      color-mix(in srgb, var(--app-bg-raised) 54%, var(--app-bg)),\n' +
-      '      var(--app-bg) 42%\n' +
-      '    );\n' +
-      '  background-attachment: fixed;\n' +
-      '  font-size: var(--type-body);\n' +
-      '  line-height: 1.5;\n' +
-      '}\n' +
-      '\n' +
-      ':root[data-appearance="system"][data-theme="dark"] body {\n' +
-      '  background: #000000;\n' +
-      '}\n' +
-      '\n' +
-      ':root[data-theme="light"] body {\n' +
-      '  background:\n' +
-      '    radial-gradient(circle at 92% 4%, rgba(113, 132, 21, 0.06), transparent 26rem),\n' +
-      '    radial-gradient(circle at 4% 34%, rgba(141, 116, 54, 0.07), transparent 30rem),\n' +
-      '    linear-gradient(180deg, #ffffff, var(--app-bg) 45%);\n' +
-      '}\n' +
-      '\n' +
-      'h1,\n' +
-      '.type-title {\n' +
-      '  font-size: var(--type-title);\n' +
-      '  color: var(--app-text-strong);\n' +
-      '}\n' +
-      '\n' +
-      'h2,\n' +
-      'h3,\n' +
-      '.type-section {\n' +
-      '  font-size: var(--type-section);\n' +
-      '  color: var(--app-text-strong);\n' +
-      '}\n' +
-      '\n' +
-      'p,\n' +
-      '.type-body {\n' +
-      '  font-size: var(--type-body);\n' +
-      '  color: var(--app-text);\n' +
-      '}\n' +
-      '\n' +
-      '.muted,\n' +
-      '.type-subtitle {\n' +
-      '  font-size: var(--type-subtitle);\n' +
-      '  color: var(--app-text-secondary);\n' +
-      '}\n' +
-      '\n' +
-      'small,\n' +
-      '.eyebrow,\n' +
-      '.type-caption {\n' +
-      '  font-size: var(--type-caption);\n' +
-      '}\n' +
-      '\n' +
-      '.hooma-bottom-nav__label {\n' +
-      '  font-size: var(--type-nav);\n' +
-      '}\n' +
-      '\n' +
-      '.eyebrow {\n' +
-      '  color: var(--app-gold);\n' +
-      '}\n' +
-      '\n' +
-      '/* Shared semantic state utilities for every product surface. */\n' +
-      '.semantic-positive {\n' +
-      '  color: var(--app-positive);\n' +
-      '}\n' +
-      '\n' +
-      '.semantic-person {\n' +
-      '  color: var(--app-people-blue);\n' +
-      '}\n' +
-      '\n' +
-      '.semantic-warning {\n' +
-      '  color: var(--app-warning);\n' +
-      '}\n' +
-      '\n' +
-      '.semantic-danger {\n' +
-      '  color: var(--app-danger);\n' +
-      '}\n' +
-      '\n' +
-      '.success-box {\n' +
-      '  border-color: color-mix(in srgb, var(--app-positive) 42%, transparent);\n' +
-      '  background: color-mix(in srgb, var(--app-positive) 7%, var(--app-surface));\n' +
-      '  color: var(--app-positive);\n' +
-      '}\n'
-    
-  code: 'ERR_ASSERTION'
-  name: 'AssertionError'
-  expected:
-  actual: |-
-    :root {
-      --font-display: "Fraunces", Georgia, serif;
-      --font-ui: "Source Sans 3", system-ui, sans-serif;
-      --type-title: 24px;
-      --type-section: 22px;
-      --type-card: 16px;
-      --type-body: 14px;
-      --type-subtitle: 14px;
-      --type-caption: 12px;
-      --type-nav: 11px;
-    
-      --app-bg: #070808;
-      --app-bg-raised: #121212;
-      --app-surface: #121212;
-      --app-text-strong: #f4f1ea;
-      --app-text: #f4f1ea;
-      --app-text-secondary: #c8c3b8;
-      --app-text-caption: #c8c3b8;
-      --app-gold: #e8c36a;
-      --app-gold-dim: #b8953a;
-      --app-outline: color-mix(in srgb, var(--app-surface) 78%, #ffffff);
-      --app-outline-gold: color-mix(in srgb, var(--app-gold) 38%, transparent);
-      --app-elevate:
-        0 1px 0 color-mix(in srgb, #ffffff 10%, transparent),
-        0 8px 22px rgba(0, 0, 0, 0.38),
-        inset 0 1px 0 color-mix(in srgb, #ffffff 8%, transparent);
-    
-      /*
-       * HOOMA semantic color contract.
-       * Positive / active / success / healthy counts -> green.
-       * People identity / usernames / member and role states -> people blue.
-       * Warning / caution / attention -> orange.
-       * Destructive / error -> red.
-       * Gold remains a brand/title accent and must not communicate state.
-       */
-      --app-positive: #a3e635;
-      --app-people-blue: #58bfff;
-      --app-warning: #ff913d;
-      --app-danger: #ff6b61;
-    
-      /* Backward-compatible alias while older surfaces migrate to semantic tokens. */
-      --app-lime: var(--app-positive);
-      --app-line: rgba(232, 195, 106, 0.28);
-      --app-line-strong: rgba(232, 195, 106, 0.42);
-    }
-    
-    :root[data-theme="light"] {
-      --app-bg: #f6f4ee;
-      --app-bg-raised: #ffffff;
-      --app-surface: #fffdf8;
-      --app-text-strong: #10110f;
-      --app-text: #24251f;
-      --app-text-secondary: #5f6259;
-      --app-text-caption: #70736a;
-      --app-gold: #8d7436;
-      --app-gold-dim: #8d7436;
-      --app-positive: #557300;
-      --app-people-blue: #006f9e;
-      --app-warning: #b94b00;
-      --app-danger: #b42318;
-      --app-lime: var(--app-positive);
-      --app-line: rgba(24, 25, 21, 0.22);
-      --app-line-strong: rgba(24, 25, 21, 0.34);
-      --app-outline: color-mix(in srgb, var(--app-surface) 86%, #000000);
-      --app-outline-gold: color-mix(in srgb, var(--app-gold) 28%, transparent);
-      --app-elevate:
-        0 1px 0 color-mix(in srgb, #ffffff 80%, transparent),
-        0 8px 18px rgba(0, 0, 0, 0.08),
-        inset 0 1px 0 #ffffff;
-    }
-    
-    :root[data-appearance="system"][data-theme="dark"] {
-      --app-bg: #000000;
-      --app-bg-raised: #0a0a0a;
-      --app-surface: #121212;
-      --app-text-strong: #f4f1ea;
-      --app-text: #f4f1ea;
-      --app-text-secondary: #c8c3b8;
-      --app-text-caption: #c8c3b8;
-      --app-gold: #e8c36a;
-      --app-gold-dim: #b8953a;
-      --app-positive: #a3e635;
-      --app-people-blue: #58bfff;
-      --app-warning: #ff913d;
-      --app-danger: #ff6b61;
-      --app-lime: var(--app-positive);
-      --app-line: rgba(232, 195, 106, 0.28);
-      --app-line-strong: rgba(232, 195, 106, 0.42);
-    }
-    
-    html {
-      min-height: 100%;
-      background: var(--app-bg);
-    }
-    
-    body {
-      min-height: 100vh;
-      color: var(--app-text);
-      background:
-        radial-gradient(
-          circle at 92% 4%,
-          color-mix(in srgb, var(--app-lime) 8%, transparent),
-          transparent 26rem
-        ),
-        radial-gradient(
-          circle at 4% 34%,
-          color-mix(in srgb, var(--app-gold) 9%, transparent),
-          transparent 30rem
-        ),
-        linear-gradient(
-          180deg,
-          color-mix(in srgb, var(--app-bg-raised) 54%, var(--app-bg)),
-          var(--app-bg) 42%
-        );
-      background-attachment: fixed;
-      font-size: var(--type-body);
-      line-height: 1.5;
-    }
-    
-    :root[data-appearance="system"][data-theme="dark"] body {
-      background: #000000;
-    }
-    
-    :root[data-theme="light"] body {
-      background:
-        radial-gradient(circle at 92% 4%, rgba(113, 132, 21, 0.06), transparent 26rem),
-        radial-gradient(circle at 4% 34%, rgba(141, 116, 54, 0.07), transparent 30rem),
-        linear-gradient(180deg, #ffffff, var(--app-bg) 45%);
-    }
-    
-    h1,
-    .type-title {
-      font-size: var(--type-title);
-      color: var(--app-text-strong);
-    }
-    
-    h2,
-    h3,
-    .type-section {
-      font-size: var(--type-section);
-      color: var(--app-text-strong);
-    }
-    
-    p,
-    .type-body {
-      font-size: var(--type-body);
-      color: var(--app-text);
-    }
-    
-    .muted,
-    .type-subtitle {
-      font-size: var(--type-subtitle);
-      color: var(--app-text-secondary);
-    }
-    
-    small,
-    .eyebrow,
-    .type-caption {
-      font-size: var(--type-caption);
-    }
-    
-    .hooma-bottom-nav__label {
-      font-size: var(--type-nav);
-    }
-    
-    .eyebrow {
-      color: var(--app-gold);
-    }
-    
-    /* Shared semantic state utilities for every product surface. */
-    .semantic-positive {
-      color: var(--app-positive);
-    }
-    
-    .semantic-person {
-      color: var(--app-people-blue);
-    }
-    
-    .semantic-warning {
-      color: var(--app-warning);
-    }
-    
-    .semantic-danger {
-      color: var(--app-danger);
-    }
-    
-    .success-box {
-      border-color: color-mix(in srgb, var(--app-positive) 42%, transparent);
-      background: color-mix(in srgb, var(--app-positive) 7%, var(--app-surface));
-      color: var(--app-positive);
-    }
-    
-  operator: 'match'
-  stack: |-
-    TestContext.<anonymous> (file:///home/runner/work/HoomaUltimate/HoomaUltimate/tests/system-theme-baseline.test.mjs:37:10)
-    async Test.run (node:internal/test_runner/test:1054:7)
-    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
-  ...
-# Subtest: dark gold is bright metal instead of muted brass
-ok 232 - dark gold is bright metal instead of muted brass
-  ---
-  duration_ms: 5.686961
-  type: 'test'
-  ...
-# Subtest: Community Founder/Coach fallback keeps mature Team management authority
-ok 233 - Community Founder/Coach fallback keeps mature Team management authority
-  ---
-  duration_ms: 1.851972
-  type: 'test'
-  ...
-# Subtest: Assistant receives only explicitly granted capabilities
-ok 234 - Assistant receives only explicitly granted capabilities
-  ---
-  duration_ms: 0.596815
-  type: 'test'
-  ...
-# Subtest: Team cannot challenge itself before repository write
-ok 235 - Team cannot challenge itself before repository write
-  ---
-  duration_ms: 0.721008
-  type: 'test'
-  ...
-# Subtest: Assistant without RESPOND_TO_CHALLENGE cannot read accepted challenge coordination
-ok 236 - Assistant without RESPOND_TO_CHALLENGE cannot read accepted challenge coordination
-  ---
-  duration_ms: 2.596093
-  type: 'test'
-  ...
-# Subtest: Assistant with RESPOND_TO_CHALLENGE can read and write accepted coordination
-ok 237 - Assistant with RESPOND_TO_CHALLENGE can read and write accepted coordination
-  ---
-  duration_ms: 0.384569
-  type: 'test'
-  ...
-# Subtest: challenge coordination remains closed before acceptance even for authorized Coach
-ok 238 - challenge coordination remains closed before acceptance even for authorized Coach
-  ---
-  duration_ms: 10.398768
-  type: 'test'
-  ...
-# Subtest: Community Founder fallback can coordinate an accepted challenge
-ok 239 - Community Founder fallback can coordinate an accepted challenge
-  ---
-  duration_ms: 0.263522
-  type: 'test'
-  ...
-# Subtest: Team challenge timing requires an explicit valid end when one is proposed
-ok 240 - Team challenge timing requires an explicit valid end when one is proposed
-  ---
-  duration_ms: 4.166839
-  type: 'test'
-  ...
-# Subtest: Team media is rendered from the canonical badge and banner URLs
-ok 241 - Team media is rendered from the canonical badge and banner URLs
-  ---
-  duration_ms: 10.388462
-  type: 'test'
-  ...
-# Subtest: Communities and Teams are layered target modules
-ok 242 - Communities and Teams are layered target modules
-  ---
-  duration_ms: 6.319806
-  type: 'test'
-  ...
-# Subtest: scoped ADMIN role does not return in Community or Team schema
-ok 243 - scoped ADMIN role does not return in Community or Team schema
-  ---
-  duration_ms: 3.597555
-  type: 'test'
-  ...
-# Subtest: database enforces no self-challenge in addition to service policy
-ok 244 - database enforces no self-challenge in addition to service policy
-  ---
-  duration_ms: 2.078596
-  type: 'test'
-  ...
-# Subtest: Team lineup persistence follows canonical TeamPlayer and current-lineup ownership
-ok 245 - Team lineup persistence follows canonical TeamPlayer and current-lineup ownership
-  ---
-  duration_ms: 3.86778
-  type: 'test'
-  ...
-# Subtest: Team creation uses a dedicated page instead of an inline discovery form
-ok 246 - Team creation uses a dedicated page instead of an inline discovery form
-  ---
-  duration_ms: 2.847071
-  type: 'test'
-  ...
-# Subtest: Telegram runtime reacts to viewport and safe-area changes without overriding System black
-ok 247 - Telegram runtime reacts to viewport and safe-area changes without overriding System black
-  ---
-  duration_ms: 6.596811
-  type: 'test'
-  ...
-# Subtest: Watch page exposes only the four product functions and no business onboarding
-ok 248 - Watch page exposes only the four product functions and no business onboarding
-  ---
-  duration_ms: 5.528865
-  type: 'test'
-  ...
-# Subtest: Watch Spots reuse canonical Places and exclude canonical Pitch capabilities
-ok 249 - Watch Spots reuse canonical Places and exclude canonical Pitch capabilities
-  ---
-  duration_ms: 0.642521
-  type: 'test'
-  ...
-# Subtest: Watch capability application routes and service wiring are gone
-ok 250 - Watch capability application routes and service wiring are gone
-  ---
-  duration_ms: 1.435977
-  type: 'test'
-  ...
-# Subtest: Prisma keeps canonical Place and Event ownership while storing details below them
-ok 251 - Prisma keeps canonical Place and Event ownership while storing details below them
-  ---
-  duration_ms: 0.758908
-  type: 'test'
-  ...
-# Subtest: Place coordinates stay optional and update defaults stay out of partial PATCH fields
-ok 252 - Place coordinates stay optional and update defaults stay out of partial PATCH fields
-  ---
-  duration_ms: 0.343933
-  type: 'test'
-  ...
-# Subtest: Place partial updates preserve omitted images while explicit empty imageUrls clears them
-ok 253 - Place partial updates preserve omitted images while explicit empty imageUrls clears them
-  ---
-  duration_ms: 3.262909
-  type: 'test'
-  ...
-# Subtest: Place Add and Edit share one branded form and management stays on canonical Place routes
-ok 254 - Place Add and Edit share one branded form and management stays on canonical Place routes
-  ---
-  duration_ms: 0.505344
-  type: 'test'
-  ...
-# Subtest: Watch Create and Edit share structured two-team matchup fields
-ok 255 - Watch Create and Edit share structured two-team matchup fields
-  ---
-  duration_ms: 0.412672
-  type: 'test'
-  ...
-# Subtest: Watch Event errors use canonical Community, Place and manage boundaries
-ok 256 - Watch Event errors use canonical Community, Place and manage boundaries
-  ---
-  duration_ms: 0.435283
-  type: 'test'
-  ...
-# Subtest: Watch collector ticket is shared, information-first and adaptively readable
-ok 257 - Watch collector ticket is shared, information-first and adaptively readable
-  ---
-  duration_ms: 1.261518
-  type: 'test'
-  ...
-# Subtest: archived Places stay off public Place and Watch discovery
-ok 258 - archived Places stay off public Place and Watch discovery
-  ---
-  duration_ms: 0.248535
-  type: 'test'
-  ...
-# Subtest: PlaceImage is the only runtime Place image authority
-ok 259 - PlaceImage is the only runtime Place image authority
-  ---
-  duration_ms: 0.292497
-  type: 'test'
-  ...
-# Subtest: Pitch rental pricing is canonical from contract through Prisma and repository
-ok 260 - Pitch rental pricing is canonical from contract through Prisma and repository
-  ---
-  duration_ms: 0.349002
-  type: 'test'
-  ...
-# Subtest: Pitch owns its discovery page and does not live inside generic PlacesPages
-ok 261 - Pitch owns its discovery page and does not live inside generic PlacesPages
-  ---
-  duration_ms: 0.338473
-  type: 'test'
-  ...
-# Subtest: temporary formatting workflow is not left in the final source tree
-ok 262 - temporary formatting workflow is not left in the final source tree
-  ---
-  duration_ms: 0.141956
-  type: 'test'
-  ...
-# Subtest: Watch event detail is an informative card instead of form-like fact boxes
-ok 263 - Watch event detail is an informative card instead of form-like fact boxes
-  ---
-  duration_ms: 1.834139
-  type: 'test'
-  ...
-# Subtest: Watch event title has no decorative football icon
-ok 264 - Watch event title has no decorative football icon
-  ---
-  duration_ms: 0.507889
-  type: 'test'
-  ...
-# Subtest: Creator-only Event edit authority remains capability-driven
-ok 265 - Creator-only Event edit authority remains capability-driven
-  ---
-  duration_ms: 0.477362
-  type: 'test'
-  ...
-# Subtest: Watch detail remains compact and responsive on phone-width layouts
-ok 266 - Watch detail remains compact and responsive on phone-width layouts
-  ---
-  duration_ms: 0.574083
-  type: 'test'
-  ...
-# Subtest: Play event detail keeps its existing domain presentation
-ok 267 - Play event detail keeps its existing domain presentation
-  ---
-  duration_ms: 0.502549
-  type: 'test'
-  ...
-# Subtest: Event detail derives check-in from independent participation evidence
-ok 268 - Event detail derives check-in from independent participation evidence
-  ---
-  duration_ms: 0.514793
-  type: 'test'
-  ...
-# Subtest: Cultural card owns its image and does not fall back to Spot media
-ok 269 - Cultural card owns its image and does not fall back to Spot media
-  ---
-  duration_ms: 5.927159
-  type: 'test'
-  ...
-# Subtest: Cultural and Spot image containers independently preserve full images
-ok 270 - Cultural and Spot image containers independently preserve full images
-  ---
-  duration_ms: 4.268241
-  type: 'test'
-  ...
-# Subtest: Watch collector ticket master asset remains complete and uncorrupted
-ok 271 - Watch collector ticket master asset remains complete and uncorrupted
-  ---
-  duration_ms: 15.799119
-  type: 'test'
-  ...
-# Subtest: Watch collector stub uses the supplied optimized HOOMA logo asset
-ok 272 - Watch collector stub uses the supplied optimized HOOMA logo asset
-  ---
-  duration_ms: 15.547652
-  type: 'test'
-  ...
-# Subtest: Watch venue photo uses the new inset stacked panel instead of the obsolete master side slot
-ok 273 - Watch venue photo uses the new inset stacked panel instead of the obsolete master side slot
-  ---
-  duration_ms: 2.992754
-  type: 'test'
-  ...
-# Subtest: Watch ticket removes the upper Place photo and stacks a taller framed photo below
-ok 274 - Watch ticket removes the upper Place photo and stacks a taller framed photo below
-  ---
-  duration_ms: 1.668469
-  type: 'test'
-  ...
-# Subtest: Watch matchup uses one measured fitter so names expand or shrink without wrapping
-ok 275 - Watch matchup uses one measured fitter so names expand or shrink without wrapping
-  ---
-  duration_ms: 0.750032
-  type: 'test'
-  ...
-# Subtest: Watch date uses full width without a calendar icon
-ok 276 - Watch date uses full width without a calendar icon
-  ---
-  duration_ms: 0.856211
-  type: 'test'
-  ...
-# Subtest: Watch stub uses only the HOOMA logo at full upper-ticket height
-ok 277 - Watch stub uses only the HOOMA logo at full upper-ticket height
-  ---
-  duration_ms: 0.578691
-  type: 'test'
-  ...
-# Subtest: System is the default when no web appearance is saved
-ok 278 - System is the default when no web appearance is saved
-  ---
-  duration_ms: 1.31035
-  type: 'test'
-  ...
-# Subtest: removed or unknown saved appearances fall back to System
-ok 279 - removed or unknown saved appearances fall back to System
-  ---
-  duration_ms: 0.194834
-  type: 'test'
-  ...
-# Subtest: System stays dark even when the browser prefers light
-ok 280 - System stays dark even when the browser prefers light
-  ---
-  duration_ms: 0.283539
-  type: 'test'
-  ...
-# Subtest: Light remains an explicit opt-in appearance
-ok 281 - Light remains an explicit opt-in appearance
-  ---
-  duration_ms: 0.233566
-  type: 'test'
-  ...
-# Subtest: Settings exposes only System, dark, and light web appearances
-ok 282 - Settings exposes only System, dark, and light web appearances
-  ---
-  duration_ms: 12.945308
-  type: 'test'
-  ...
-# Subtest: System is dark before the app bundle without a white theme flash
-ok 283 - System is dark before the app bundle without a white theme flash
-  ---
-  duration_ms: 11.056017
-  type: 'test'
-  ...
-# Subtest: root System-dark stylesheet is true black
-ok 284 - root System-dark stylesheet is true black
-  ---
-  duration_ms: 3.65406
-  type: 'test'
-  ...
-# Subtest: Whistle list hydrates all transient bodies with one batch read
-ok 285 - Whistle list hydrates all transient bodies with one batch read
-  ---
-  duration_ms: 2.360262
-  type: 'test'
-  ...
-# Subtest: Athletes Whistle authorizes through active Athletes membership and uses shared quota
-ok 286 - Athletes Whistle authorizes through active Athletes membership and uses shared quota
-  ---
-  duration_ms: 12.069722
-  type: 'test'
-  ...
-# Subtest: Ride Whistle authorizes through Ride domain and notifies owner without body
+EXIT_CODE=1
+--- FAILING TAP BLOCKS ---
+297-  duration_ms: 5.527991
+298-  type: 'test'
+299-  ...
+300-# Subtest: legacy web stylesheet does not redefine canonical title or caption sizes
+301:not ok 50 - legacy web stylesheet does not redefine canonical title or caption sizes
+302-  ---
+303-  duration_ms: 7.361161
+304-  type: 'test'
+305-  location: '/home/runner/work/HoomaUltimate/HoomaUltimate/tests/css-zero-drift-cleanup.test.mjs:14:1'
+306-  failureType: 'testCodeFailure'
+307-  error: |-
+308-    The input was expected to not match the regular expression /h1\s*\{[^}]*font-size:/s. Input:
+309-    
+310-    ':root {\n' +
+311-      '  --shell-inline: clamp(12px, 6vw, 24px);\n' +
+312-      '  font-family: var(--font-ui);\n' +
+313-      '}\n' +
+314-      '\n' +
+315-      '* {\n' +
+316-      '  box-sizing: border-box;\n' +
+317-      '}\n' +
+318-      '\n' +
+319-      'html,\n' +
+320-      'body,\n' +
+321-      '#root {\n' +
+322-      '  width: 100%;\n' +
+323-      '  max-width: 100%;\n' +
+324-      '}\n' +
+325-      '\n' +
+326-      'html,\n' +
+327-      'body {\n' +
+328-      '  font-size: 16px;\n' +
+329-      '}\n' +
+--
+2473-  duration_ms: 4.230583
+2474-  type: 'test'
+2475-  ...
+2476-# Subtest: canonical typography scale matches the approved readable sizes
+2477:not ok 231 - canonical typography scale matches the approved readable sizes
+2478-  ---
+2479-  duration_ms: 15.816023
+2480-  type: 'test'
+2481-  location: '/home/runner/work/HoomaUltimate/HoomaUltimate/tests/system-theme-baseline.test.mjs:35:1'
+2482-  failureType: 'testCodeFailure'
+2483-  error: |-
+2484-    The input did not match the regular expression /--type-title:\s*clamp\(1\.5rem,[^;]*2\.125rem\)/. Input:
+2485-    
+2486-    ':root {\n' +
+2487-      '  --font-display: "Fraunces", Georgia, serif;\n' +
+2488-      '  --font-ui: "Source Sans 3", system-ui, sans-serif;\n' +
+2489-      '  --type-title: 24px;\n' +
+2490-      '  --type-section: 22px;\n' +
+2491-      '  --type-card: 16px;\n' +
+2492-      '  --type-body: 14px;\n' +
+2493-      '  --type-subtitle: 14px;\n' +
+2494-      '  --type-caption: 12px;\n' +
+2495-      '  --type-nav: 11px;\n' +
+2496-      '\n' +
+2497-      '  --app-bg: #070808;\n' +
+2498-      '  --app-bg-raised: #121212;\n' +
+2499-      '  --app-surface: #121212;\n' +
+2500-      '  --app-text-strong: #f4f1ea;\n' +
+2501-      '  --app-text: #f4f1ea;\n' +
+2502-      '  --app-text-secondary: #c8c3b8;\n' +
+2503-      '  --app-text-caption: #c8c3b8;\n' +
+2504-      '  --app-gold: #e8c36a;\n' +
+2505-      '  --app-gold-dim: #b8953a;\n' +
+--- SUMMARY ---
 ok 287 - Ride Whistle authorizes through Ride domain and notifies owner without body
   ---
-  duration_ms: 0.708184
+  duration_ms: 0.593225
   type: 'test'
   ...
 # Subtest: direct User Whistle remains USER_DIRECT and notifies only recipient without body
 ok 288 - direct User Whistle remains USER_DIRECT and notifies only recipient without body
   ---
-  duration_ms: 0.574213
+  duration_ms: 0.444541
   type: 'test'
   ...
 1..288
@@ -635,6 +87,4 @@ ok 288 - direct User Whistle remains USER_DIRECT and notifies only recipient wit
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 8742.460323
-
-EXIT_CODE=1
+# duration_ms 8239.480996
