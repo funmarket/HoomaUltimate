@@ -3,6 +3,8 @@
 Status: Accepted
 Date: 2026-09-01
 
+> **Current-state note (2026-09-03):** This ADR's domain-independence decision remains authoritative. Its original PR-scope statements that Whistle was future and bottom navigation remained unchanged are historical. Subsequent merged source enabled the Athletes member Whistle Board through the shared Whistle engine and placed `Athletes` in the fifth permanent bottom-navigation slot. ADR-055 governs current navigation.
+
 ## Context
 
 PR #212 restored the HOOMA/Teams creation hierarchy:
@@ -11,7 +13,7 @@ PR #212 restored the HOOMA/Teams creation hierarchy:
 - Team creation remains owned by Teams at `/teams/new`.
 - Teams may use only the bounded `/hooma/new?after=team-create` continuation when a user must create an eligible HOOMA context first.
 
-The Athletes foundation now begins as a separate product slice. Athletes needs sports-community discovery, creation, membership and join-request behavior, but it must not reopen the Community-type chooser bug fixed by ADR-053.
+The Athletes foundation began as a separate product slice. Athletes needs sports-community discovery, creation, membership and join-request behavior, but it must not reopen the Community-type chooser bug fixed by ADR-053.
 
 ## Decision
 
@@ -41,7 +43,7 @@ Athletes owns:
 - public and authenticated HTTP routes;
 - frontend API client;
 - real `/athletes`, `/athletes/new`, and `/athletes/:athletesCommunityId` routes;
-- separate HOOMA navigation entry after the Athletes routes are real.
+- the current fifth permanent HOOMA navigation entry at `/athletes`.
 
 Athletes must not create or use:
 
@@ -60,7 +62,7 @@ HOOMA Communities remain Communities-owned. Teams remain Teams-owned. ADR-053’
 
 ULTRAS remains frozen.
 
-Whistle, equipment posts, marketplace, Events, Ride integration, Requests integration, FundMe and Payments are separate future slices and are not part of this foundation.
+The current foundation also enables an Athletes member Whistle Board through the one shared Whistle engine and Athletes-owned membership authorization. Equipment posts, marketplace, Athletes-specific Events, Ride integration, Requests integration, FundMe and Payments remain separate slices unless their owning domains explicitly implement them.
 
 ## Authorization
 
@@ -70,7 +72,7 @@ Foundation roles:
 
 - `FOUNDER` manages Athletes community settings, archive, join requests, direct-add, member removal and moderator role changes. The foundation does not implement Founder transfer; the existing Founder cannot be removed or demoted, so an active Athletes community cannot be left with zero active Founder memberships.
 - `MODERATOR` uses minimum-safe authority in this foundation: review join requests, direct-add canonical users, and remove `MEMBER` records only. Moderators cannot remove other Moderators, remove Founders, promote themselves, archive communities, or change Founder-only settings.
-- `MEMBER` can read the member list and has no management authority.
+- `MEMBER` can read the member list and access member-authorized Athletes content such as the shared Athletes Whistle Board; it has no management authority.
 - Guests may access public discovery and privacy-safe public detail only.
 
 Visibility and join policy are separate:
@@ -87,4 +89,4 @@ This foundation keeps the invariant that `PRIVATE` Athletes communities require 
 - Direct-add resolves a username to canonical `User.id`; it never creates shadow users and never stores username as membership identity.
 - Frontend Athletes pages must use Athletes API routes, not `api.communities.create` or Team APIs.
 - `/hooma` may link to Athletes only as a separate domain navigation surface, never as a “Create HOOMA” option.
-- Home gateway and bottom navigation remain unchanged in this PR.
+- Current permanent bottom navigation is `Home | Play | Watch | HOOMA | Athletes`; see ADR-055.
