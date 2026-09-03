@@ -1,6 +1,6 @@
 :root {
   --shell-inline: clamp(12px, 6vw, 24px);
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-ui);
 }
 
 * {
@@ -12,6 +12,11 @@ body,
 #root {
   width: 100%;
   max-width: 100%;
+}
+
+html,
+body {
+  font-size: 16px;
 }
 
 body,
@@ -42,17 +47,30 @@ body {
   letter-spacing: 0.14em;
 }
 
+h1,
+h2,
+.gateway-card {
+  font-family: var(--font-display);
+}
+
 h1 {
   margin: 8px 0;
-  font-family: Georgia, serif;
+  font-size: var(--type-title);
+  font-weight: 600;
+}
+
+h2 {
+  font-size: var(--type-section);
+  font-weight: 600;
 }
 
 .status {
   padding: 16px;
-  border: 1px solid var(--app-line-strong);
+  border: 1px solid var(--app-outline);
   border-radius: 14px;
   background: var(--app-surface);
   color: var(--app-text);
+  box-shadow: var(--app-elevate), inset 0 0 0 1px var(--app-outline-gold);
 }
 
 nav {
@@ -61,17 +79,18 @@ nav {
   gap: 8px;
   padding-top: 24px;
   border-top: 1px solid var(--app-line);
-  font-size: var(--type-caption);
+  font-size: var(--type-nav);
   text-align: center;
 }
 .auth-card {
   width: min(100%, 430px);
   margin: 28px auto 0;
   padding: 20px;
-  border: 1px solid var(--app-line-strong);
+  border: 1px solid var(--app-outline);
   border-radius: 18px;
   background: var(--app-surface);
   color: var(--app-text);
+  box-shadow: var(--app-elevate), inset 0 0 0 1px var(--app-outline-gold);
 }
 .auth-card form {
   display: grid;
@@ -151,25 +170,27 @@ nav a {
 .gateway-card,
 .team-card,
 .profile-links a {
-  border: 1px solid var(--app-line-strong);
+  border: 1px solid var(--app-outline);
   border-radius: 14px;
   background: var(--app-surface);
   text-decoration: none;
   padding: 18px;
+  box-shadow: var(--app-elevate), inset 0 0 0 1px var(--app-outline-gold);
 }
 .gateway-card {
   min-height: 112px;
   display: grid;
   align-items: end;
-  font-family: Georgia, serif;
-  font-size: 20px;
+  font-size: var(--type-card);
+  font-weight: 600;
 }
 .panel {
   padding: 18px;
-  border: 1px solid var(--app-line-strong);
+  border: 1px solid var(--app-outline);
   border-radius: 16px;
   background: var(--app-surface);
   color: var(--app-text);
+  box-shadow: var(--app-elevate), inset 0 0 0 1px var(--app-outline-gold);
 }
 .profile-page {
   display: grid;
@@ -192,9 +213,9 @@ nav a {
   display: grid;
   place-items: center;
   background: var(--app-bg-raised);
-  font:
-    700 34px Georgia,
-    serif;
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 600;
 }
 .profile-links {
   display: grid;
@@ -384,11 +405,12 @@ nav a {
   display: flex;
   justify-content: space-between;
   gap: 18px;
-  border: 1px solid var(--app-line-strong);
+  border: 1px solid var(--app-outline);
   border-radius: 16px;
   background: var(--app-surface);
   padding: 16px;
   text-decoration: none;
+  box-shadow: var(--app-elevate), inset 0 0 0 1px var(--app-outline-gold);
 }
 .event-card > div {
   display: grid;

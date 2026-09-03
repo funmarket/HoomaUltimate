@@ -1,9 +1,13 @@
 :root {
-  --type-title: clamp(1.5rem, calc(1.1rem + 2vw), 2.125rem);
-  --type-section: 1.375rem;
-  --type-body: 1rem;
-  --type-subtitle: 1rem;
-  --type-caption: 0.8125rem;
+  --font-display: "Fraunces", Georgia, serif;
+  --font-ui: "Source Sans 3", system-ui, sans-serif;
+  --type-title: 24px;
+  --type-section: 22px;
+  --type-card: 16px;
+  --type-body: 14px;
+  --type-subtitle: 14px;
+  --type-caption: 12px;
+  --type-nav: 11px;
 
   --app-bg: #070808;
   --app-bg-raised: #121212;
@@ -14,6 +18,12 @@
   --app-text-caption: #c8c3b8;
   --app-gold: #e8c36a;
   --app-gold-dim: #b8953a;
+  --app-outline: color-mix(in srgb, var(--app-surface) 78%, #ffffff);
+  --app-outline-gold: color-mix(in srgb, var(--app-gold) 38%, transparent);
+  --app-elevate:
+    0 1px 0 color-mix(in srgb, #ffffff 10%, transparent),
+    0 8px 22px rgba(0, 0, 0, 0.38),
+    inset 0 1px 0 color-mix(in srgb, #ffffff 8%, transparent);
 
   /*
    * HOOMA semantic color contract.
@@ -51,6 +61,12 @@
   --app-lime: var(--app-positive);
   --app-line: rgba(24, 25, 21, 0.22);
   --app-line-strong: rgba(24, 25, 21, 0.34);
+  --app-outline: color-mix(in srgb, var(--app-surface) 86%, #000000);
+  --app-outline-gold: color-mix(in srgb, var(--app-gold) 28%, transparent);
+  --app-elevate:
+    0 1px 0 color-mix(in srgb, #ffffff 80%, transparent),
+    0 8px 18px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 #ffffff;
 }
 
 :root[data-appearance="system"][data-theme="dark"] {
@@ -139,9 +155,12 @@ p,
 
 small,
 .eyebrow,
-.hooma-bottom-nav__label,
 .type-caption {
   font-size: var(--type-caption);
+}
+
+.hooma-bottom-nav__label {
+  font-size: var(--type-nav);
 }
 
 .eyebrow {
