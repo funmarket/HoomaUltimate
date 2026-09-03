@@ -34,11 +34,13 @@ test("System dark uses a true black application background", async () => {
 
 test("canonical typography scale matches the approved readable sizes", async () => {
   const css = await readFile(themeCss, "utf8");
-  assert.match(css, /--type-title:\s*clamp\(1\.5rem,[^;]*2\.125rem\)/);
-  assert.match(css, /--type-section:\s*1\.375rem/);
-  assert.match(css, /--type-body:\s*1rem/);
-  assert.match(css, /--type-subtitle:\s*1rem/);
-  assert.match(css, /--type-caption:\s*0\.8125rem/);
+  assert.match(css, /--type-title:\s*24px/);
+  assert.match(css, /--type-section:\s*22px/);
+  assert.match(css, /--type-card:\s*16px/);
+  assert.match(css, /--type-body:\s*14px/);
+  assert.match(css, /--type-subtitle:\s*14px/);
+  assert.match(css, /--type-caption:\s*12px/);
+  assert.match(css, /--type-nav:\s*11px/);
 });
 
 test("dark gold is bright metal instead of muted brass", async () => {
