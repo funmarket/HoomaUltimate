@@ -61,8 +61,14 @@ test("Event check-in is an independent fact and final attendance belongs to comp
     "apps/api/src/modules/events/application/event.service.ts",
     "utf8",
   );
-  assert.match(repository, /eventCheckIn\.create/);
-  assert.doesNotMatch(repository, /checkIn[\s\S]{0,1800}status:\s*"ATTENDED"/);
+  const checkInStart = repository.indexOf("  async checkIn(");
+  const checkInEnd = repository.indexOf("  async listChat(", checkInStart);
+  assert.notEqual(checkInStart, -1);
+  assert.notEqual(checkInEnd, -1);
+  const checkInMethod = repository.slice(checkInStart, checkInEnd);
+
+  assert.match(checkInMethod, /eventCheckIn\.create/);
+  assert.doesNotMatch(checkInMethod, /status:\s*"ATTENDED"/);
   assert.match(repository, /checkedInUserIds/);
   assert.match(repository, /status:\s*"ATTENDED"/);
   assert.match(repository, /status:\s*"NO_SHOW"/);
