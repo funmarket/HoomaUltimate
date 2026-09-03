@@ -49,18 +49,20 @@ other approved Home read models, if any
 locked bottom navigation
 ```
 
-The exact gateway order is:
+The exact current gateway order is:
 
 ```text
-Row 1: HOOMA | Teams | Spots
-Row 2: Pitch | Ride  | Requests
+Row 1: HOOMA | Teams | Pitch
+Row 2: Places | Ride | Requests
 ```
 
-The permanent bottom navigation remains:
+The permanent bottom navigation is:
 
 ```text
-Home | Play | Watch | HOOMA | Pitch
+Home | Play | Watch | HOOMA | Athletes
 ```
+
+Pitch remains a standalone product and Home gateway at `/pitch`; Athletes owns the fifth permanent bottom-navigation slot at `/athletes`.
 
 ---
 
@@ -69,8 +71,8 @@ Home | Play | Watch | HOOMA | Pitch
 The primary Home grid contains exactly six cards and exactly three columns, including on phone viewports:
 
 ```text
-HOOMA     | Teams     | Spots
-Pitch     | Ride      | Requests
+HOOMA     | Teams     | Pitch
+Places    | Ride      | Requests
 ```
 
 Required layout behavior:
@@ -92,11 +94,11 @@ The shared Home UI owns card presentation. Individual product domains own their 
 
 ## 4. Gateway domain boundaries
 
-### 4.1 Spots
+### 4.1 Places on Home / Spots in Watch
 
-`Spots` replaces the old Home label `Places` for Watch-oriented venue discovery.
+The current Home gateway visible label is `Places` and routes to `/places`.
 
-A Spot is still the existing canonical `Place`. `Spot` is a product/discovery label only. Do not introduce:
+`Spots` remains valid Watch-oriented product language where the Watch UI uses it, but it is no longer the visible Home gateway label. Both labels refer to the existing canonical `Place`; neither authorizes a second venue domain. Do not introduce:
 
 ```text
 SpotService
@@ -105,9 +107,9 @@ SpotVenue
 Spot table/model
 ```
 
-Spots display eligible cafés, lounges, restaurants and similar Watch venues. A Place carrying the canonical `PITCH` capability must not appear in Spots.
+Watch Spots display eligible cafés, lounges, restaurants and similar Watch venues. A Place carrying the canonical `PITCH` capability must not be duplicated merely to participate in Watch or Pitch presentation.
 
-The Spots directory has exactly two source tabs:
+Where the Watch Spots directory exposes source tabs, the existing semantics remain:
 
 ```text
 By Owner | FanHub
@@ -118,26 +120,26 @@ Semantics:
 - **By Owner** — the original Place suggester is also a verified owner of that same canonical Place.
 - **FanHub** — the canonical Place was suggested by a registered HOOMA member without verified ownership by that original suggester.
 - FanHub is a label/classification only, not a service, model, ownership system, or venue copy.
-- A FanHub Place later claimed by a different real owner remains the same canonical Place and remains FanHub by original suggestion source.
-- Guests may browse approved Spots but may not suggest, claim, or mutate.
-- Registered HOOMA members may suggest a FanHub Spot.
+- A FanHub Place later claimed by a different real owner remains the same canonical Place and remains FanHub by original suggestion source where that classification remains part of Watch behavior.
+- Guests may browse approved Places/Spots but may not suggest, claim, or mutate.
+- Registered HOOMA members may suggest a Place through the current governed Place flow.
 - Owner-origin submission uses the existing ownership claim/ownership mechanics; it does not create a second Place.
 
-The canonical Watch navigation remains:
-
-```text
-Events | Spots | Create Event | Add a Place
-```
+The canonical Watch navigation remains independently owned by Watch. Home naming must not be used to rename Watch screens without a separate product decision.
 
 ### 4.2 Pitch
 
 Pitch is a separate Home gateway and routes to `/pitch`.
 
-Pitch continues to use the canonical Place + `PITCH` capability architecture. Pitch records must not be copied into Spots and Spots must not infer Pitch from names or category strings.
+Pitch continues to use the canonical Place + `PITCH` capability architecture. Pitch records must not be copied into another venue store and other Place views must not infer Pitch from names or category strings.
 
 The Home Pitch card uses the exact user-approved black/gold football-pitch artwork recorded in `docs/ASSET_MANIFEST.md`. Responsive compression is allowed; redesign or substitution is not.
 
-### 4.3 Gamers
+### 4.3 Athletes
+
+Athletes is a separate implemented HOOMA-connected product at `/athletes` and owns the fifth permanent bottom-navigation slot. Athletes remains independent from HOOMA Communities and Teams even though it reuses canonical HOOMA User identity.
+
+### 4.4 Gamers
 
 Gamers remains a separate implemented product and direct route family, but it is not an active Home gateway under the current simplified IA. It must not be merged with Play or built on top of Play domain behavior.
 
@@ -269,21 +271,18 @@ Required:
 
 ## 11. Verification gate
 
-The Home/Spots/Pitch slice is not complete until applicable checks pass:
+The Home/Places/Pitch slice is not complete until applicable checks pass:
 
 ```text
 exact 6-card Home gateway set verified
 exact 3 × 2 order verified
 3-column phone layout verified
 no horizontal gateway overflow
-Spots routes to canonical /places
+Places routes to canonical /places
 Pitch routes to canonical /pitch
-Spots exclude canonical PITCH capability records
-By Owner | FanHub tabs verified
-FanHub suggestion does not grant ownership
-owner-origin submission uses canonical ownership mechanics
-claiming keeps the same canonical Place
-no Spot/FanHub service or duplicate venue model
+Athletes permanent nav routes to canonical /athletes
+no duplicate Spot/Place venue model
+Watch Spot presentation preserves canonical Place ownership
 Pitch artwork provenance verified
 Web asset present
 Telegram asset present
