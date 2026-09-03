@@ -26,10 +26,16 @@ test("legacy web stylesheet does not redefine canonical title or caption sizes w
   // Note: .eyebrow may not have font-size at all (inherits from theme) - that's fine
   const eyebrowBlock = legacy.match(/\.eyebrow\s*\{[^}]*\}/s)?.[0] || "";
   const eyebrowHasFontSize = /font-size:/.test(eyebrowBlock);
-  const eyebrowUsesVar = eyebrowHasFontSize ? /font-size:\s*var\(--type-caption\)/.test(eyebrowBlock) : true;
+  const eyebrowUsesVar = eyebrowHasFontSize
+    ? /font-size:\s*var\(--type-caption\)/.test(eyebrowBlock)
+    : true;
 
   assert.equal(h1UsesVar, true, "legacy h1 must use var(--type-title) for font-size");
-  assert.equal(eyebrowUsesVar, true, "legacy .eyebrow must use var(--type-caption) for font-size if it declares one");
+  assert.equal(
+    eyebrowUsesVar,
+    true,
+    "legacy .eyebrow must use var(--type-caption) for font-size if it declares one",
+  );
 
   assert.match(theme, /h1,[^}]*\.type-title\s*\{\s*font-size:\s*var\(--type-title\)/);
   assert.match(theme, /\.eyebrow,[^}]*\.type-caption\s*\{\s*font-size:\s*var\(--type-caption\)/);
