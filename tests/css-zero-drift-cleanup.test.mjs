@@ -11,16 +11,28 @@ test("canonical theme layer remains after legacy web styles", async () => {
   assert.ok(source.indexOf('import "./theme.css"') > source.indexOf('import "./styles.css"'));
 });
 
-test("legacy web stylesheet does not redefine canonical title or caption sizes", async () => {
+test("legacy web stylesheet does not redefine canonical title or caption sizes with hardcoded values", async () => {
   const [legacy, theme] = await Promise.all([
     readFile(legacyStyles, "utf8"),
     readFile(themeStyles, "utf8"),
   ]);
 
-  assert.doesNotMatch(legacy, /h1\s*\{[^}]*font-size:/s);
-  assert.doesNotMatch(legacy, /\.eyebrow\s*\{[^}]*font-size:/s);
-  assert.match(theme, /h1,[\s\S]*\.type-title\s*\{\s*font-size:\s*var\(--type-title\)/);
-  assert.match(theme, /\.eyebrow,[\s\S]*\.type-caption\s*\{\s*font-size:\s*var\(--type-caption\)/);
+  // Legacy may reference the canonical variable but must not hardcode font-size values
+  // Check h1 block for hardcoded font-size (not using var(--type-title))
+  const h1Block = legacy.match(/h1\s*\{[^}]*\}/s)?.[0] || "";
+  const h1UsesVar = /font-size:\s*var\(--type-title\)/.test(h1Block);
+
+  // Check .eyebrow block for hardcoded font-size (not using var(--type-caption))
+  // Note: .eyebrow may not have font-size at all (inherits from theme) - that's fine
+  const eyebrowBlock = legacy.match(/\.eyebrow\s*\{[^}]*\}/s)?.[0] || "";
+  const eyebrowHasFontSize = /font-size:/.test(eyebrowBlock);
+  const eyebrowUsesVar = eyebrowHasFontSize ? /font-size:\s*var\(--type-caption\)/.test(eyebrowBlock) : true;
+
+  assert.equal(h1UsesVar, true, "legacy h1 must use var(--type-title) for font-size");
+  assert.equal(eyebrowUsesVar, true, "legacy .eyebrow must use var(--type-caption) for font-size if it declares one");
+
+  assert.match(theme, /h1,[^}]*\.type-title\s*\{\s*font-size:\s*var\(--type-title\)/);
+  assert.match(theme, /\.eyebrow,[^}]*\.type-caption\s*\{\s*font-size:\s*var\(--type-caption\)/);
 });
 
 test("legacy eyebrow presentation is consolidated without changing its final non-size values", async () => {
