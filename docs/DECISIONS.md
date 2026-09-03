@@ -1,4 +1,4 @@
-# HOOMA ULTIMATE — Architectural Decisions
+# HOOMA — Architectural Decisions
 
 Status: **Active ADR index**
 
@@ -6,7 +6,7 @@ Status: **Active ADR index**
 
 **Decision:** `funmarket/HoomaUltimate` is the only implementation destination. Older applications remain read-only reference material only.
 
-**Reason:** HOOMA ULTIMATE owns its own architecture, schema, migrations, runtime and release evidence.
+**Reason:** HOOMA owns its own architecture, schema, migrations, runtime and release evidence.
 
 ## ADR-002 — Target rules outrank historical implementation
 
@@ -50,11 +50,11 @@ Status: **Active ADR index**
 
 **Reason:** Authority must match product language and scope.
 
-## ADR-009 — HOOMA ULTIMATE owns a fresh migration history
+## ADR-009 — HOOMA owns a fresh migration history
 
-**Decision:** Before first release, the normalized current schema is represented by one reviewed initial migration. Once HOOMA ULTIMATE ships, migrations become forward-only.
+**Decision:** Before first release, migration-history consolidation is an explicit reviewed database task when chosen. Once HOOMA ships, migrations become forward-only. Existing working pre-release migration history must not be erased merely because an older planning document expected one initial migration.
 
-**Reason:** Pre-release inconsistencies should be removed rather than preserved as permanent corrective migration history.
+**Reason:** Pre-release database history must be reconciled deliberately, not rewritten by assumption.
 
 ## ADR-010 — Canonical Place is the physical-location source of truth
 
@@ -64,7 +64,9 @@ Status: **Active ADR index**
 
 ## ADR-011 — Pitch remains a dedicated product over canonical Place
 
-**Decision:** `/pitch` remains permanent and in bottom navigation. The Places Pitch tab and standalone Pitch product will read the same `Place + Pitch capability/profile` source rather than separate venue databases.
+**Decision:** `/pitch` remains a permanent standalone product route. The Places Pitch tab and standalone Pitch product read the same `Place + Pitch capability/profile` source rather than separate venue databases. Pitch is also a current Home gateway.
+
+**Current-state note:** The earlier statement that Pitch must occupy the fifth permanent bottom-navigation slot is superseded by ADR-055. Current permanent navigation ends in `Athletes`; Pitch remains fully intact as a product at `/pitch`.
 
 **Reason:** Preserve a dedicated user journey without duplicating physical places.
 
@@ -163,13 +165,15 @@ MANAGE_TEAM_EVENTS
 
 ## ADR-025 — One global Whistle engine
 
-**Decision:** One transient engine serves approved contexts. Body lives only in Redis, metadata only in PostgreSQL, with the exact 33-grapheme / 11-per-day / 24-hour unread / 60-second reveal rules.
+**Decision:** One transient engine serves approved contexts. Body lives only in Redis and metadata only in PostgreSQL. The 33-grapheme and global 11-per-UTC-day limits remain authoritative.
+
+**Superseded retention note:** ADR-040 replaced ADR-025's original rolling 24-hour unread and 60-second Reveal behavior. Whistles now expire at the next UTC midnight and authorized feeds show bodies directly with no Reveal state.
 
 **Reason:** Prevent duplicate messaging systems and permanent-body leaks.
 
 ## ADR-026 — PostgreSQL durable, Redis transient, object storage bytes
 
-**Decision:** Persistent business truth stays in PostgreSQL. Redis is disposable transient infrastructure. Media bytes live in S3-compatible storage.
+**Decision:** Persistent business truth stays in PostgreSQL. Redis is disposable transient infrastructure. Managed media bytes live in S3-compatible storage, including current domain-owned media flows where implemented.
 
 **Reason:** Clear failure and retention semantics.
 
@@ -229,15 +233,15 @@ MANAGE_TEAM_EVENTS
 
 ## ADR-036 — Locked navigation contracts
 
-**Decision:** Bottom nav = Home/Play/Watch/HOOMA/Pitch. Home gateway = HOOMA/Teams/ULTRAS/Gamers + Places/Requests/Ride/FundMe. Places tabs = Lounges/Cafes/Pitch/FanHub with Lounges/Cafes default.
+**Historical decision:** This ADR originally locked bottom nav as Home/Play/Watch/HOOMA/Pitch and an older Home gateway composition.
 
-**Reason:** These are explicit product acceptance rules.
+**Current authority:** The bottom-navigation and Home-IA portions are superseded by ADR-055. Current permanent navigation is `Home | Play | Watch | HOOMA | Athletes`; current Home gateway is `HOOMA | Teams | Pitch | Places | Ride | Requests`. Places tabs remain governed by their current product contract. The HOOMA create-flow portion is superseded by ADR-053.
 
-**Superseded in part by ADR-048 and ADR-053:** The bottom navigation decision remains active. The Home gateway is replaced by the six-gateway Home IA recorded in ADR-048. The HOOMA create-flow portion is replaced by the Communities-only HOOMA creation rule recorded in ADR-053.
+**Reason:** Preserve the decision history while preventing obsolete IA from overriding merged source.
 
 ## ADR-037 — Donor data import is separate from application migrations
 
-**Decision:** HOOMA ULTIMATE starts clean. If historical data is ever imported, it uses an explicit ETL/reconciliation process rather than redefining application migrations.
+**Decision:** HOOMA starts clean. If historical data is ever imported, it uses an explicit ETL/reconciliation process rather than redefining application migrations.
 
 **Reason:** Product architecture and migration history remain greenfield.
 
@@ -247,29 +251,19 @@ MANAGE_TEAM_EVENTS
 
 **Reason:** Existing foundation inconsistencies must be corrected before dependency-heavy domains build on them.
 
-**Superseded in part by ADR-048:** Requests/Ride route registration and honest frontend shells are narrowly authorized. Requests, Ride, Fundraising, FundMe, Payments and ULTRAS backend/domain/persistence work remains frozen until separately authorized.
+**Superseded in part by ADR-048:** Requests/Ride route registration and honest frontend shells were narrowly authorized.
 
-**Superseded in part by ADR-050:** Ride and Requests backend/domain/persistence/API/frontend vertical slices are explicitly unfrozen for their own bounded implementation tasks. Fundraising, FundMe durable state, Payments, ULTRAS, generic Media and unrelated domains remain frozen unless separately authorized.
+**Superseded in part by ADR-050:** Ride and Requests backend/domain/persistence/API/frontend vertical slices are explicitly unfrozen for their own bounded implementation tasks. Fundraising, FundMe durable state, Payments, ULTRAS and generic Media remain separately governed unless authorized.
 
 ## ADR-039 — Whistle vertical slice is explicitly unfrozen
 
-**Decision:** The product owner explicitly authorized Whistle setup on 2026-08-23. Whistle is therefore removed from ADR-038's freeze and becomes a current vertical slice. The shared Whistle engine is implemented once and reused by approved contexts. The first enabled context is private HOOMA Community Whistle Board access for active Community members. Event, Team, Ride, ULTRAS and Gamer Squad Whistle contexts remain disabled until their own context-specific authorization slices are implemented.
+**Decision:** The product owner explicitly authorized Whistle setup on 2026-08-23. Whistle is therefore removed from ADR-038's freeze and becomes a current vertical slice. The shared Whistle engine is implemented once and reused by approved contexts.
 
-Whistle invariants remain locked:
+**Superseded retention note:** The original ADR-039 text specified rolling 24-hour unread TTL and a 60-second Reveal window. ADR-040 supersedes those retention/visibility mechanics with UTC-day expiry and direct authorized visibility. Do not implement the older Reveal lifecycle.
 
-```text
-33 grapheme clusters maximum
-11 total sends per user per UTC calendar day across every context
-body in Redis only
-PostgreSQL metadata only
-24-hour unread body TTL
-60-second per-viewer reveal window after first reveal
-first reveal never extends on later reads
-```
+Temporary Event Chat remains separate from Whistle and must not be renamed or reused as Whistle storage.
 
-Temporary Event Chat remains a separate legacy Events mechanism for now and must not be renamed or reused as Whistle storage. The later Play communication direction is Event Whistle Board through the shared Whistle engine; Event Chat removal requires its own traced cleanup/migration slice.
-
-**Reason:** The product owner chose Whistle as a differentiating core mechanic and explicitly requested that it be set up now. Recording the override prevents normalization automation or later contributors from reverting valid Whistle work as frozen scope.
+**Reason:** The product owner chose Whistle as a differentiating core mechanic and explicitly requested that it be set up now.
 
 ## ADR-040 — Whistle uses UTC-day sessions and direct visibility
 
@@ -294,7 +288,7 @@ expired metadata is cleanup data, not permanent Whistle history
 
 At the UTC reset, prior-day bodies are no longer readable and the new day starts with all 11 sends available. Redis expires bodies at the session boundary. PostgreSQL metadata may be physically removed by the next Whistle cleanup execution, but expired rows cannot remain visible or count against the new day's quota.
 
-Current enabled contexts are private `COMMUNITY`, authorized `EVENT`, dedicated server-derived `GAMER_DIRECT`, and dedicated server-derived `USER_DIRECT`. `TEAM`, `RIDE`, `ULTRAS`, and `GAMER_SQUAD` remain disabled until their owning domains provide explicit authorization.
+Current enabled contexts include private `COMMUNITY`, authorized `EVENT`, authorized `ATHLETES`, authorized `RIDE`, dedicated server-derived `GAMER_DIRECT`, and dedicated server-derived `USER_DIRECT`. `TEAM`, `ULTRAS`, and `GAMER_SQUAD` remain disabled until their owning domains provide explicit authorization.
 
 **Reason:** Whistle is intended to be a visible, ephemeral daily signal board. A single UTC boundary makes quota and retention deterministic, prevents unused quota from accumulating, and removes the obsolete reveal mechanic without weakening the no-durable-body invariant.
 
@@ -320,19 +314,15 @@ The dedicated decision record is `docs/adr/ADR-042-pitch-suggestion-claim-lifecy
 
 ## ADR-048 — Home and create-flow IA simplification
 
-**Decision:** Home is six gateways only: HOOMA, Teams, Spots, Pitch, Ride and Requests. The permanent bottom navigation remains Home/Play/Watch/HOOMA/Pitch.
+**Historical decision:** ADR-048 reduced Home to six gateways and removed Gamers from Home discovery, grouped FundMe under Requests, and established the Teams/HOOMA creation separation that ADR-053 later refined.
 
-Gamers is removed from Home discovery and the HOOMA create chooser, while the existing independent Gamers domain/module/routes remain intact. FundMe is presented as a Requests page tab, with `/fundme` redirecting to `/requests/fundme` as compatibility navigation only. Ride remains a Home gateway and receives an honest frontend shell at `/rides`.
+**Current authority:** ADR-055 supersedes ADR-048's old Home visible label/order and old bottom-navigation claim. Current Home is `HOOMA | Teams | Pitch | Places | Ride | Requests`; current permanent bottom navigation is `Home | Play | Watch | HOOMA | Athletes`. ADR-053 remains authoritative for Communities-only HOOMA creation. ADR-050 governs Ride/Requests vertical slices.
 
-The original HOOMA/TEAM/ULTRAS create chooser portion is superseded by ADR-053. HOOMA creation is now Communities-only. Team creation remains Teams-owned at `/teams/new`, where eligible HOOMA context is selected. ULTRAS remains unavailable and independent; it must not create a Community row or use a generic `CommunityType`.
+Gamers remains independent and is not a Home gateway. ULTRAS remains unavailable and independent; it must not create a Community row or use a generic `CommunityType`.
 
-This supersedes only the Home/create-flow portions of ADR-036. It narrowly overrides ADR-038 only enough to permit Requests/Rides frontend shells and route registration; backend persistence, Payments and durable Fundraising remain frozen until separately authorized.
+The dedicated historical record is `docs/adr/ADR-048-home-create-flow-ia.md`.
 
-**Superseded in part by ADR-050 and ADR-053:** The shell-only restriction for Ride and Requests is lifted for their domain-owned vertical slices. ADR-048 remains authoritative for Home, bottom navigation, Gamers independence, ULTRAS unavailability and FundMe grouping under Requests. ADR-053 replaces ADR-048's HOOMA create chooser with Communities-only HOOMA creation.
-
-The dedicated decision record is `docs/adr/ADR-048-home-create-flow-ia.md`.
-
-**Reason:** The simplification changes discovery and routing without collapsing durable domain ownership or inventing fake future features.
+**Reason:** Preserve the valid simplification/domain-boundary decision without allowing obsolete IA labels to override current source.
 
 ## ADR-053 — HOOMA creates only HOOMA Communities
 
@@ -352,13 +342,13 @@ The dedicated decision record is `docs/adr/ADR-053-hooma-communities-only-creati
 
 User Direct is exposed only through dedicated authenticated `/api/v1/whistles/users/:username` routes. The generic raw Whistle context route never accepts `USER_DIRECT`, and clients never construct or submit sender IDs, target IDs, direct context IDs, pair keys, or context types. Public profile DTOs continue to omit canonical User IDs.
 
-No new DirectMessage, Conversation, inbox, direct-pair, Whistle-preference, or Whistle-body table is created by this slice. Existing `WhistleMetadata`, the existing Redis body store, the shared 33-grapheme validation, global 11-per-UTC-day quota, and next-UTC-midnight expiry remain authoritative. Existing Community, Event, and Gamer Direct behavior is not refactored by this decision.
+No new DirectMessage, Conversation, inbox, direct-pair, Whistle-preference, or Whistle-body table is created by this slice. Existing `WhistleMetadata`, the existing Redis body store, the shared 33-grapheme validation, global 11-per-UTC-day quota, and next-UTC-midnight expiry remain authoritative. Existing Community, Event, Gamer Direct, Athletes and Ride behavior is not refactored by this decision.
 
 **Reason:** This is the smallest complete User-to-User Whistle slice: it preserves one canonical User and one Whistle engine, avoids a new messaging/privacy subsystem, prevents client-forged direct contexts, and keeps current working Whistle contexts isolated from unrelated refactoring.
 
 ## ADR-050 — Ride and Requests vertical slices are explicitly unfrozen
 
-**Decision:** The product owner explicitly authorized durable Ride and Requests implementation through `rideplan.md`. Ride and Requests are therefore removed from ADR-038's freeze for their bounded, domain-owned vertical slices: contracts, persistence, APIs, application services and frontend may be implemented only in the numbered plan order and only inside their owning boundaries.
+**Decision:** The product owner explicitly authorized durable Ride and Requests implementation through `rideplan.md`. Ride and Requests are therefore removed from ADR-038's freeze for their bounded, domain-owned vertical slices: contracts, persistence, APIs, application services and frontend may be implemented only in their numbered plan order and only inside their owning boundaries.
 
 Ride owns ride offers, ride requests, participation, meeting-point privacy, waypoints and Ride vehicle-photo metadata. Ride also owns product context and advertised compensation terms for those records. `MATCHDAY` and `GENERAL` are contexts of the same Ride domain, not separate tables, APIs, repositories or services. User-facing `GENERAL` wording is Anywhere Ride. Ride may advertise `FREE` or `CASH` compensation terms, but Ride does not process money; payment intents, checkout, settlement, wallet/card/provider state and paid/payment-received statuses remain future Payments/PAY-001 ownership. A Ride destination must use exactly one strategy: owning Event reference, canonical Place reference or Ride-owned custom destination label. Event and Place facts remain owned by those domains and are read through narrow reference ports. Ride participation requests require driver/owner acceptance before accepted capacity is consumed; drivers cannot join their own offers as passengers; cancellation rules must preserve terminal lifecycle history. Public Ride projections must never expose exact private pickup or meeting coordinates.
 
@@ -366,7 +356,7 @@ Ride vehicle-photo bytes belong in object storage. Until a separate generic Medi
 
 Requests owns help/resource requests and quantity-based partial claims. Active/accepted claim quantities must be concurrency-safe and must not exceed the requested quantity. More than one claimer is allowed while quantity remains; quantity-one requests naturally behave as single-claim requests through the same partial-claim rule. The older exclusive-claim wording is replaced by this governed quantity rule.
 
-FundMe remains a Requests-page tab only. Durable Fundraising and Payments remain separately owned and are not authorized by this Ride/Requests unfreeze. This decision does not change Home, bottom navigation, the HOOMA create chooser, Gamers, Teams, Communities, ULTRAS or generic Media.
+FundMe remains a Requests-page tab only. Durable Fundraising and Payments remain separately owned and are not authorized by this Ride/Requests unfreeze.
 
 The dedicated decision record is `docs/adr/ADR-050-ride-requests-unfreeze.md`.
 
@@ -398,8 +388,22 @@ The dedicated decision record is `docs/adr/ADR-052-community-ride-requests-hooma
 
 **Decision:** Athletes is implemented as a separate HOOMA-connected domain inside the existing HOOMA application. Athletes reuses canonical `User` identity and owns its own `AthletesCommunity`, `AthletesMembership`, and `AthletesJoinRequest` persistence, contracts, API routes, application service, repository, authorization, and frontend routes.
 
-Athletes is not a HOOMA Community subtype, not a Team subtype, and not a generic creator/category abstraction. HOOMA Communities remain Communities-owned; Teams remain Teams-owned; ADR-053's Communities-only HOOMA creation rule remains unchanged. ULTRAS remains frozen. Whistle, equipment, marketplace, Events, Ride, Requests, FundMe and Payments integrations are future slices.
+Athletes is not a HOOMA Community subtype, not a Team subtype, and not a generic creator/category abstraction. HOOMA Communities remain Communities-owned; Teams remain Teams-owned; ADR-053's Communities-only HOOMA creation rule remains unchanged. ULTRAS remains frozen.
+
+**Current-state note:** Subsequent merged work added an Athletes member Whistle Board through the existing shared Whistle engine and moved Athletes into the fifth permanent bottom-navigation slot. Those changes extend Athletes without collapsing its independent domain. ADR-055 governs the current navigation state.
 
 The dedicated decision record is `docs/adr/ADR-054-athletes-independent-domain.md`.
 
 **Reason:** Athletes shares canonical HOOMA identity but has different sports-community lifecycle, authorization, and future product roadmap from neighborhood HOOMA Communities and football Teams. Independent ownership prevents recreating the Community-type hierarchy bug fixed by ADR-053.
+
+## ADR-055 — Current navigation and Home information architecture
+
+**Decision:** Current permanent bottom navigation is exactly `Home | Play | Watch | HOOMA | Athletes`. Pitch remains a standalone `/pitch` product and a Home gateway. Current Home gateway is exactly `HOOMA | Teams | Pitch | Places | Ride | Requests`.
+
+The internal Home gateway identifier may retain the legacy `spots` name while the visible current label is `Places`; that implementation detail does not create a second Place domain. Watch may continue to use `Spots` as Watch-owned product language independently.
+
+This supersedes only the old navigation/Home-IA portions of ADR-011, ADR-036 and ADR-048, and the “bottom navigation unchanged” scope statement in the original ADR-054 implementation. It does not alter Pitch ownership, Places ownership, ADR-053 creation hierarchy, or Athletes domain independence.
+
+The dedicated decision record is `docs/adr/ADR-055-current-navigation-home-ia.md`.
+
+**Reason:** Merged source and navigation contract tests intentionally changed the current IA. Documentation must not direct later agents to revert those source-backed product decisions.
