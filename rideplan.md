@@ -77,44 +77,50 @@ PR #209 exact-head CI passed before merge.
 
 ## Active overlapping work
 
-Exactly one open PR targets `phase-0-foundation` at refresh time:
+At this refresh there are no open PRs targeting `phase-0-foundation`.
+
+PR #210 has merged and is now foundation truth:
 
 ```text
 PR #210
 fix(rides): repair community interaction, mobile audience, and owner edits
 branch: fix/rides-community-interaction-mobile-manage
-current head at refresh: fb2520b214d047ba7ff7909c1265b525ece3d7ca
-state: OPEN / NOT MERGED
+final head: c0670bd10f35bacd315727d792e3a93c0458fdcd
+merge commit: 43dde47b9ce4466a52e01faf3a1dc4f5a592e818
+state: MERGED
+exact-head check: verify SUCCESS
 ```
 
-Current exact-head CI run at refresh:
+PR #231 has also merged and moved `phase-0-foundation` forward:
 
 ```text
-33520901332
-conclusion: failure
+PR #231
+feat(play): upgrade formation builder pitch without changing two-team flow
+final head: 05b9ad8869fb031dcae2dadf4b9c8559b86013bf
+merge commit: 525b3b6b842bca5892c74cf213e982e3a0385fa0
+state: MERGED
+exact-head check: verify SUCCESS
 ```
 
-Therefore PR #210 is **not merge-ready** at this checkpoint. Hermes is actively correcting it. Do not duplicate, replace, or race its Ride/HOOMA NOW/Whistle/mobile/manage work.
-
-PR #210 does not currently modify `rideplan.md`; this document refresh is intentionally isolated from Hermes's source branch.
+Do not reopen PR #210 or rebuild its Ride work. Current Ride work resumes from the merged foundation state.
 
 ---
 
 # 2. Locked domain ownership
 
-| Concept | Canonical owner |
-| --- | --- |
-| User identity / presentation | Identity |
-| HOOMA Community + membership | Communities |
-| Event / Match-Day activity | Events / Play / Watch according to existing boundaries |
-| Physical venue identity | Places |
-| RideOffer, RideRequest, RideParticipation, RideMeetingPoint, Ride vehicle-photo metadata | **Rides** |
-| Help/resource Request + RequestClaim | **Requests** |
-| FundraiserCampaign + FundraiserContribution | **Fundraising** |
-| Payment intent/provider/idempotency/settlement | **Payments** |
-| Managed binary Ride photo bytes | Object storage through `@hooma/storage` |
-| HOOMA NOW / Discovery composition | Presentation/read model only |
-| Whistle body/retention/quota | Existing **Whistle** domain |
+| Concept                                                                                  | Canonical owner                                        |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| User identity / presentation                                                             | Identity                                               |
+| HOOMA Community + membership                                                             | Communities                                            |
+| Event / Match-Day activity                                                               | Events / Play / Watch according to existing boundaries |
+| Physical venue identity                                                                  | Places                                                 |
+| RideOffer, RideRequest, RideParticipation, RideMeetingPoint, Ride vehicle-photo metadata | **Rides**                                              |
+| Help/resource Request + RequestClaim                                                     | **Requests**                                           |
+| FundraiserCampaign + FundraiserContribution                                              | **Fundraising**                                        |
+| Payment intent/provider/idempotency/settlement                                           | **Payments**                                           |
+| Managed binary Ride photo bytes                                                          | Object storage through `@hooma/storage`                |
+| HOOMA NOW / Discovery composition                                                        | Presentation/read model only                           |
+| Whistle body/retention/quota                                                             | Existing **Whistle** domain                            |
 
 Dependency rule:
 
@@ -274,7 +280,7 @@ RIDE-007 can close only after:
 1. `RIDE-007C` final acceptance audit passes;
 2. `RIDE-007D` is complete;
 3. `RIDE-007E` remains verified as merged foundation truth;
-4. `RIDE-007F` corrective PR #210 is merged/read back and its regressions are proven;
+4. `RIDE-007F` remains verified as merged foundation truth;
 5. final mobile/Web/Telegram-safe Ride smoke finds no unresolved defect in the assigned Ride scope.
 
 ---
@@ -324,7 +330,7 @@ The plan must no longer say `/rides/mine` is missing; that blocker was resolved 
 
 Remaining RIDE-007C work is evidence/acceptance only unless a failing test or runtime defect proves a source correction is required:
 
-- after PR #210 is stable/merged, run phone-width smoke at minimum 360/390/430;
+- now that PR #210 is merged, run phone-width smoke at minimum 360/390/430;
 - verify `/rides`, `/rides/matchday`, `/rides/anywhere`, `/rides/request`, `/rides/offers`, `/rides/offers/new`, offer detail/manage/edit, request edit, and `/rides/mine`;
 - prove no horizontal overflow/runtime exception;
 - prove My Rides reconstructs from authenticated server readback, not browser memory;
@@ -396,26 +402,26 @@ Merged behavior:
 - canonical RideRequest projected into existing HOOMA NOW;
 - no Community-owned copy/feed table/lifecycle.
 
-Known post-merge interaction/UI defects discovered after #209 are **not** a reason to revert this task to TODO. They are isolated under `RIDE-007F` / PR #210.
+The post-#209 interaction/UI defects were isolated under `RIDE-007F` / PR #210 and are now merged. Do not revert `RIDE-007E` to TODO or rebuild its source unless fresh failing proof identifies a new defect.
 
 ---
 
 ## RIDE-007F — Community Ride interaction + mobile SHARE WITH + owner edit correction
 
-Status: **[~] IN PROGRESS**
+Status: **[x] DONE**
 
-Active implementation:
+Merged implementation:
 
 ```text
 PR #210
 branch: fix/rides-community-interaction-mobile-manage
-head at plan refresh: fb2520b214d047ba7ff7909c1265b525ece3d7ca
-base: 6ca765128aa4576d02af787374684575d11d35ed
+final head: c0670bd10f35bacd315727d792e3a93c0458fdcd
+merge commit: 43dde47b9ce4466a52e01faf3a1dc4f5a592e818
+mergedAt: 2026-09-01T15:31:57Z
+exact-head check: verify SUCCESS
 ```
 
-Current exact-head CI at this refresh failed, so this task remains in progress.
-
-Required corrective outcomes, matching PR #210 scope:
+Verified foundation source now contains the corrective outcomes below:
 
 1. A HOOMA NOW Community Ride card must not send the member to a generic Ride landing page.
 2. The existing HOOMA NOW item expands the exact canonical RideRequest in place.
@@ -428,18 +434,15 @@ Required corrective outcomes, matching PR #210 scope:
 9. Request audience PATCH is omitted unless the owner explicitly changes SHARE WITH so exact persisted Community targets are preserved.
 10. Authorization remains server-side for Community interaction and owner management.
 
-Current PR #210 changed-file scope includes Ride application/infrastructure/http interaction code, Ride frontend form/mine/API code, HOOMA NOW presentation, direct Whistle client reuse, router/container wiring, contracts, UI, and focused tests.
+Merged PR #210 changed-file scope included Ride application/infrastructure/http interaction code, Ride frontend form/mine/API code, HOOMA NOW presentation, direct Whistle client reuse, router/container wiring, contracts, UI, and focused tests.
 
-Merge gate:
+Read-back anchors in current foundation:
 
-- Hermes finishes the current failures;
-- exact current PR head CI is green;
-- final diff review finds no second Ride message store, duplicate Ride record flow, Community-owned Ride persistence, or auth bypass;
-- re-fetch foundation immediately before merge;
-- if this documentation refresh has merged first, PR #210 must reconcile the new foundation head before merge even though `rideplan.md` is not currently in its changed-file set;
-- merge with expected-head protection;
-- read back merged foundation behavior;
-- then change this task to `[x] DONE` with final head/merge/CI evidence.
+- `apps/web/src/app/router/HoomaRouter.tsx` registers owner edit routes for `/rides/requests/:requestId/edit` and `/rides/offers/:offerId/edit`.
+- `packages/frontend/src/rides/RideRequestCreatePage.tsx` reuses the canonical request form for create/edit and omits audience PATCH unless SHARE WITH changes.
+- `packages/frontend/src/rides/RideMinePage.tsx` reads My Rides from `/api/v1/rides/mine` and exposes owner edit/manage links.
+- `packages/frontend/src/discovery/HoomaNowSection.tsx` expands Community RideRequest cards in-place and keeps HOOMA NOW as projection UI.
+- `apps/api/src/modules/rides/http/ride.routes.ts` exposes member-owned manage/update/cancel endpoints and Community request feed endpoints through Ride service authorization.
 
 ---
 
@@ -456,7 +459,7 @@ Current truth:
 - Request creation, claiming, quantity allocation, fulfillment, and persistence must not be faked in frontend state;
 - FundMe remains separate from Requests persistence.
 
-Requests should begin only after the active Ride corrective overlap is stabilized. Do not mix Requests implementation into PR #210.
+Requests should begin only after `RIDE-007C` closeout and `RIDE-007D` map work are resolved or explicitly deferred. Do not mix Requests implementation into remaining Ride closeout/map work.
 
 ---
 
@@ -698,42 +701,36 @@ Any future Ride-context Whistle bridge still requires explicit authorization and
 
 # 7. Current recommended execution order
 
-Do not start a second overlapping Ride correction while PR #210 is active.
+PR #210 is merged. Do not start a second overlapping correction for the same scope unless a new failing proof identifies a real source defect.
 
 Current order:
 
 ```text
-1. RIDE-007F / PR #210
-   - Hermes fixes current CI/source issues
-   - exact-head green
-   - final diff review
-   - merge/readback
-
-2. RIDE-007C closeout audit
+1. RIDE-007C closeout audit
    - no rewrite of already-merged My Rides/mobile work
    - run final 360/390/430 route/mobile acceptance after #210
    - mark DONE only if its existing gate passes
 
-3. RIDE-007D
+2. RIDE-007D
    - privacy-safe static maps
 
-4. RIDE-007 umbrella closeout
+3. RIDE-007 umbrella closeout
    - reconcile A/B/C/D/E/F
    - final Ride vertical-slice proof
 
-5. REQ-001
-6. REQ-002
-7. REQ-003
-8. REQ-004
-9. REQ-005
+4. REQ-001
+5. REQ-002
+6. REQ-003
+7. REQ-004
+8. REQ-005
 
-10. RIDE-008 matching
-11. RIDE-009 media hardening
-12. RIDE-010 reliability
-13. DISC-001
-14. PAY-001 when authorized
-15. FUND-001 when authorized
-16. WHISTLE-RIDE-001 when separately authorized
+9. RIDE-008 matching
+10. RIDE-009 media hardening
+11. RIDE-010 reliability
+12. DISC-001
+13. PAY-001 when authorized
+14. FUND-001 when authorized
+15. WHISTLE-RIDE-001 when separately authorized
 ```
 
 Independent later tasks may be reordered only after checking file/domain overlap and product-owner priority. Do not infer permission to run simultaneous schema/router/frontend changes against the same sources.
@@ -795,7 +792,7 @@ Stop and report instead of improvising if:
 
 - `phase-0-foundation` moves with overlapping changes after ownership begins;
 - another agent opens an overlapping Ride or Requests schema/API/UI PR;
-- PR #210 is still active and a proposed task touches the same Ride/HOOMA NOW/Whistle/mobile/manage sources;
+- a new open PR appears that touches the same Ride/HOOMA NOW/Whistle/mobile/manage sources;
 - Community Ride interaction would require a second RideRequest copy or Community-owned lifecycle;
 - Requests implementation starts depending on Ride/Fundraising/Payments persistence;
 - exact Ride meeting information would become public;
@@ -813,9 +810,9 @@ The authorized Ride/Requests program is not complete until:
 ```text
 Ride canonical lifecycle remains single-source and privacy-safe.
 Community-scoped RideRequests work through one canonical RideRequest and HOOMA NOW projection.
-PR #210 corrective interaction/mobile/manage behavior is merged and verified.
+PR #210 corrective interaction/mobile/manage behavior remains merged and verified.
 RIDE-007C acceptance is closed without stale-plan reimplementation.
-Privacy-safe Ride maps are complete if still in authorized scope.
+Privacy-safe Ride maps are complete or explicitly deferred by the product owner.
 Requests owns a real Request + RequestClaim vertical slice.
 Requests claims are concurrency-safe in PostgreSQL.
 Fundraising and Payments remain separately owned.

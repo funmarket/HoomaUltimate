@@ -127,14 +127,17 @@ Claiming must preserve concurrency-safe database invariants/locking behavior.
 
 ### Ride
 
+Current canonical Ride persistence is single-purpose and owned by Rides:
+
 - `RideOffer`
 - `RideRequest`
+- `RideRequestCommunityAudience`
+- `RideParticipation`
+- `RideMeetingPoint`
+- `RideOfferWaypoint`
 - `RideOfferVehiclePhoto`
-- `RideMatch`
-- `RideLocationPing` where fully implemented
-- `RideRating` where retained and fully implemented
 
-Public projections must not expose exact location data.
+Public projections must not expose exact private pickup or meeting-point data. Future matching, location-ping and rating concepts require their own explicit slices before models such as `RideMatch`, `RideLocationPing`, or `RideRating` are added or reported as implemented.
 
 ### FundMe
 

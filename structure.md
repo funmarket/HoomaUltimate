@@ -338,8 +338,8 @@ Current availability on `phase-0-foundation`:
 - Teams -> `/teams`
 - Spots -> `/places`
 - Pitch -> `/pitch`
-- Ride -> `/rides` Ride-owned gateway with `/rides/request` and `/rides/offers` child routes
-- Requests -> `/requests` honest frontend shell
+- Ride -> `/rides` Ride-owned gateway with current child routes `/rides/matchday`, `/rides/anywhere`, `/rides/request`, `/rides/requests/:requestId/edit`, `/rides/offers`, `/rides/offers/new`, `/rides/offers/:offerId`, `/rides/offers/:offerId/edit`, and `/rides/mine`
+- Requests -> `/requests` honest frontend shell, with `/requests/fundme` tab and `/fundme` compatibility redirect
 
 Gamers remains an independent implemented route family at `/gamers`, but it is no longer listed from the Home gateway. ULTRAS remains an independent future domain and is not routed from Home. FundMe is grouped under Requests as `/requests/fundme`; `/fundme` redirects there as a compatibility navigation route only.
 
