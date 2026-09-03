@@ -13,7 +13,7 @@ function cssRule(css, selector) {
   return bodyEnd < 0 ? "" : css.slice(bodyStart, bodyEnd);
 }
 
-test("Watch ticket photo follows the Spot directory natural image sizing behavior", () => {
+test("Watch ticket photo uses Spot directory natural sizing", () => {
   const ticket = source("packages/frontend/src/watch/WatchTicket.tsx");
   const css = source("packages/frontend/src/watch/watch.css");
   const placesCss = source("packages/frontend/src/places/places.css");
@@ -32,7 +32,10 @@ test("Watch ticket photo follows the Spot directory natural image sizing behavio
   assert.match(photo, /min-height:\s*0/);
   assert.match(photo, /max-height:\s*min\(70vh, 640px\)/);
   assert.match(photo, /justify-self:\s*center/);
-  assert.doesNotMatch(css, /\.watch-ticket__photo-panel\s*\{[^}]*aspect-ratio:/s);
+  assert.doesNotMatch(
+    css,
+    /\.watch-ticket__photo-panel\s*\{[^}]*aspect-ratio:/s,
+  );
   assert.match(spotImage, /height:\s*auto/);
   assert.match(spotImage, /max-height:\s*min\(70vh, 640px\)/);
   assert.match(photoImage, /width:\s*100%/);
