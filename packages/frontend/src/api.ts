@@ -425,6 +425,10 @@ export function createHoomaApi(transport: HoomaTransport) {
         method: "PATCH",
         body: JSON.stringify(input),
       }),
+    archive: (id: string) =>
+      request<{ ok: true }>(transport, `/api/v1/athletes/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      }),
     join: (id: string) =>
       request<AthletesJoinResult>(transport, `/api/v1/athletes/${encodeURIComponent(id)}/join`, {
         method: "POST",
@@ -468,6 +472,12 @@ export function createHoomaApi(transport: HoomaTransport) {
         transport,
         `/api/v1/athletes/${encodeURIComponent(id)}/members/${encodeURIComponent(userId)}`,
         { method: "DELETE" },
+      ),
+    setMemberRole: (id: string, userId: string, role: "MODERATOR" | "MEMBER") =>
+      request<{ ok: true }>(
+        transport,
+        `/api/v1/athletes/${encodeURIComponent(id)}/members/${encodeURIComponent(userId)}/role`,
+        { method: "PATCH", body: JSON.stringify({ role }) },
       ),
   };
 
