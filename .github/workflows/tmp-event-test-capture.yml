@@ -48,18 +48,22 @@ jobs:
       - run: npm run architecture:check
       - run: npm run typecheck
       - run: npm run build:packages
-      - name: Capture test output into branch
+      - name: Capture only failing unit tests
         shell: bash
         run: |
           set +e
-          npm test > EVENT_UNIT_FAILURE.txt 2>&1
+          npm test > /tmp/event-unit-full.txt 2>&1
           code=$?
-          printf '\nEXIT_CODE=%s\n' "$code" >> EVENT_UNIT_FAILURE.txt
-          tail -n 640 EVENT_UNIT_FAILURE.txt > EVENT_UNIT_FAILURE.tail
-          mv EVENT_UNIT_FAILURE.tail EVENT_UNIT_FAILURE.txt
+          {
+            echo "EXIT_CODE=$code"
+            echo "--- FAILING TAP BLOCKS ---"
+            grep -n -B 4 -A 28 '^not ok ' /tmp/event-unit-full.txt || true
+            echo "--- SUMMARY ---"
+            tail -n 20 /tmp/event-unit-full.txt
+          } > EVENT_UNIT_FAILURE.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git pull --rebase origin phase-0-foundation
           git add EVENT_UNIT_FAILURE.txt
-          git commit -m "chore: capture exact remaining event unit failure"
+          git commit -m "chore: capture compact event unit failures"
           git push origin HEAD:phase-0-foundation
