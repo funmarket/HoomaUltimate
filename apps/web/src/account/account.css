@@ -22,6 +22,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 18px;
+  inline-size: 100vw;
   min-height: 58px;
   margin-inline: calc(-1 * var(--shell-inline));
   padding: max(8px, env(safe-area-inset-top, 0px)) var(--shell-inline) 10px;

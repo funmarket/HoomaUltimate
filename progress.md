@@ -1941,3 +1941,22 @@ Remaining current Ride order after reconciliation:
 2. `RIDE-007D` privacy-safe static maps.
 3. `RIDE-007` umbrella closeout.
 4. Requests slices only after Ride closeout/map scope is resolved or explicitly deferred.
+
+## 2026-09-03 — RIDE-007C closeout audit
+
+Branch: `docs/ride-007c-closeout-audit` from `origin/phase-0-foundation` at `47694044a6872ec5043bc57595189a3dc3e4139b`.
+
+Closeout findings:
+
+- `RIDE-007C` source/readback audit passed for Ride routes, API readback, owner manage/edit wiring, Community Ride interaction, SHARE WITH phone layout, My Rides server readback, vehicle photo containment, and bottom nav contract.
+- Targeted Ride tests passed: 41 TypeScript service/contract tests and 31 MJS source-contract/navigation tests.
+- Production web build passed.
+- Temporary Playwright smoke rendered 30 route/width combinations: `/rides`, `/rides/matchday`, `/rides/anywhere`, `/rides/request`, `/rides/requests/request-007c/edit`, `/rides/offers`, `/rides/offers/new`, `/rides/offers/offer-007c`, `/rides/offers/offer-007c/edit`, and `/rides/mine` at 360, 390, and 430px.
+- First rendered smoke found a real 360px horizontal overflow caused by the shared account topbar extending to 368px. The source fix was scoped to `apps/web/src/account/account.css` by setting `.hooma-topbar` to `inline-size: 100vw`; rerendered smoke then passed with no overflow and no page runtime errors.
+- The current bottom nav readback is `Home | Play | Watch | HOOMA | Athletes`; `rideplan.md` no longer carries the stale `Pitch` nav label.
+
+Remaining current Ride order after closeout:
+
+1. `RIDE-007D` privacy-safe static maps.
+2. `RIDE-007` umbrella closeout.
+3. Requests slices only after Ride closeout/map scope is resolved or explicitly deferred.
