@@ -1,4 +1,4 @@
-import type { AthletesSport } from "@hooma/contracts/athletes";
+import type { AthletesMember, AthletesSport } from "@hooma/contracts/athletes";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import type { PublicAthletesDetail, PublicAthletesSummary } from "../api";
@@ -386,7 +386,7 @@ export function AthletesDetailPage({
 }) {
   const { api, protectedError } = useHoomaFrontend();
   const [detail, setDetail] = useState<PublicAthletesDetail | null>(null);
-  const [members, setMembers] = useState<unknown[]>([]);
+  const [members, setMembers] = useState<AthletesMember[]>([]);
   const [requests, setRequests] = useState<{ userId: string }[]>([]);
   const [username, setUsername] = useState("");
   const [error, setError] = useState("");
@@ -404,14 +404,22 @@ export function AthletesDetailPage({
     try {
       const next = await api.athletes.detail(athletesCommunityId);
       setDetail(next);
-      try {
-        setMembers(await api.athletes.members(athletesCommunityId));
-      } catch {
+      if (next.viewerRole) {
+        try {
+          setMembers(await api.athletes.members(athletesCommunityId));
+        } catch {
+          setMembers([]);
+        }
+      } else {
         setMembers([]);
       }
-      try {
-        setRequests((await api.athletes.joinRequests(athletesCommunityId)).requests);
-      } catch {
+      if (next.viewerRole === "FOUNDER" || next.viewerRole === "MODERATOR") {
+        try {
+          setRequests((await api.athletes.joinRequests(athletesCommunityId)).requests);
+        } catch {
+          setRequests([]);
+        }
+      } else {
         setRequests([]);
       }
     } catch (reason) {
@@ -519,22 +527,17 @@ export function AthletesDetailPage({
             <span className="athletes-section-count">{members.length}</span>
           </div>
           <div className="athletes-member-list">
-            {members.map((member) => {
-              const row = member as {
-                userId: string;
-                role: string;
-                presentation?: { displayName: string; username: string } | null;
-              };
-              return (
-                <div className="athletes-member-row" key={row.userId}>
-                  <span>
-                    <strong>{row.presentation?.displayName ?? row.userId}</strong>
-                    <small>{row.presentation ? `@${row.presentation.username}` : row.userId}</small>
-                  </span>
-                  <b className="athletes-member-role">{row.role}</b>
-                </div>
-              );
-            })}
+            {members.map((member) => (
+              <div className="athletes-member-row" key={member.userId}>
+                <span>
+                  <strong>{member.presentation?.displayName ?? member.userId}</strong>
+                  <small>
+                    {member.presentation ? `@${member.presentation.username}` : member.userId}
+                  </small>
+                </span>
+                <b className="athletes-member-role">{member.role}</b>
+              </div>
+            ))}
           </div>
         </section>
       ) : null}
