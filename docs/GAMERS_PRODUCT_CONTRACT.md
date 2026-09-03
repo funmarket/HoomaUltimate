@@ -12,8 +12,8 @@ Gamers is intentionally human-first: HOOMA introduces people, lets them challeng
 
 ## 1. Entry and navigation
 
-- The existing Home `Gamers` gateway remains the entry and links to `/gamers`.
-- Permanent bottom navigation remains exactly `Home | Play | Watch | HOOMA | Pitch`.
+- Gamers is an independent direct route family at `/gamers`; it is not an active Home gateway under the current simplified IA.
+- Permanent bottom navigation remains exactly `Home | Play | Watch | HOOMA | Athletes`.
 - Gamers must not add a sixth permanent bottom-navigation item.
 - `/gamers` is the Gamers landing route.
 - Its global top-level sections are exactly:
@@ -322,7 +322,7 @@ no Reveal endpoint
 no per-viewer reveal/seen state
 ```
 
-Community, Event, direct Gamer and future Gamer Squad Whistles consume the same global 11/day quota. The shared Whistle engine remains the only owner of quota, retention, body storage and expiry behavior.
+Community, Event, Athletes, Ride, direct Gamer and direct User Whistles consume the same global 11/day quota. The shared Whistle engine remains the only owner of quota, retention, body storage and expiry behavior.
 
 ---
 
