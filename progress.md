@@ -4,8 +4,9 @@ Status: **ACTIVE — living execution and evidence ledger**
 Product: **HOOMA**
 Repository/workspace only: `funmarket/HoomaUltimate`
 Active development branch: `phase-0-foundation`
-Stable/release branch: `main`
+Release target: `main` — intentionally not the current implementation authority; promote only after `phase-0-foundation` is clean and production-ready.
 Created: **2026-08-22**
+Last documentation reconciliation: **2026-09-03**
 
 ---
 
@@ -43,9 +44,9 @@ Before every meaningful implementation step, read:
 6. relevant current implementation source;
 7. relevant runtime/database/deployment state.
 
-`structure.md` and `requirements.md` were created during planning and remain important guides, but they are **not infallible**.
+`structure.md`, `requirements.md`, and this living ledger are important guides, but none is infallible when a newer explicit product-owner decision and verified merged source establish a later contract.
 
-If either document conflicts with:
+If a document conflicts with:
 
 - a newer explicit product-owner decision;
 - verified current source behavior;
@@ -133,18 +134,7 @@ Correct conceptual model:
 
 Web and Telegram must never become separate products with separate Users or separate business data.
 
-The same canonical HOOMA account must own the same:
-
-- Profile;
-- Teams;
-- Community memberships;
-- roles/permissions;
-- Events;
-- future ULTRAS memberships;
-- future Gamer identity/squads;
-- future Requests/Rides/FundMe activity;
-- future Whistle quota/authorization context;
-- future payment state.
+The same canonical HOOMA account must own the same current/future domain relationships according to whichever owning domains are actually implemented.
 
 ---
 
@@ -206,23 +196,12 @@ Examples:
 
 - HOOMA Community: Founder / Coach / Member
 - Team: Coach / Assistant / Player
+- Athletes: Founder / Moderator / Member
 - ULTRAS: Leader / Moderator / Member
-- Gamer Squad: Squad Leader / member roles as finally defined
+- Gamer Squad: Leader / Member
 - Place: verified Owner where applicable
 
 A Team Coach uses the **Coach Control Room**, never an Admin Dashboard.
-
-Future App Admin responsibilities include, as their domains are implemented:
-
-- users/platform operations;
-- audit visibility;
-- Place suggestion moderation;
-- Place ownership claims;
-- Watch business/application approvals;
-- Pitch business/application approvals;
-- official football catalog;
-- Gamer game catalog;
-- moderation/reporting.
 
 Authorization is always server-side. Hiding a button is not authorization.
 
@@ -299,1664 +278,433 @@ The score is evidence-based, not emotional.
 An item may be marked **`DONE` only at 10/10** and only when **all applicable testing and runtime verification pass**.
 
 A commit alone is never `DONE`.
-
 A successful TypeScript build alone is never `DONE`.
-
 A successful Railway deployment alone is never `DONE`.
-
 A screenshot alone is never `DONE`.
 
 If a later regression is discovered, change `DONE` back to the correct lower status and score.
 
 ---
 
-# 8. LOCKED TOP-LEVEL NAVIGATION AND HOME
+# 8. LOCKED TOP-LEVEL NAVIGATION AND HOME — CURRENT 2026-09-03
 
 Permanent bottom navigation is exactly:
 
 ```text
-Home | Play | Watch | HOOMA | Pitch
+Home | Play | Watch | HOOMA | Athletes
 ```
 
 Main Home grid is exactly six containers in a clean 3 x 2 layout:
 
 ```text
-HOOMA | Teams | Spots
-Pitch | Ride  | Requests
+HOOMA | Teams | Pitch
+Places | Ride  | Requests
 ```
 
-Gamers remains a real independent product and route family, but it is not an active Home gateway or HOOMA create option. ULTRAS remains a future independent domain and appears only as an unavailable HOOMA create option. FundMe is grouped under Requests as `/requests/fundme`; `/fundme` redirects there as compatibility navigation only.
+Pitch remains an independent product at `/pitch` and a Home gateway; it is no longer the fifth permanent navigation item. Athletes is an independent HOOMA-connected domain at `/athletes` and owns that fifth permanent navigation slot.
 
-The approved attached original gateway artwork is authoritative. Do not regenerate or replace it without explicit instruction.
+The current visible Home label is `Places`; the source may retain the internal gateway id `spots` without creating a second venue domain. Watch may continue using `Spots` as Watch-owned product language independently.
 
-The original HOOMA bottom-navigation artwork/behavior is approved as a donor reference. It should be traced and adapted into the clean shared UI ownership model rather than blindly copied with old architecture.
+Gamers remains a real independent product and route family, but it is not an active Home gateway or HOOMA create option. ULTRAS remains a future independent domain and is not a HOOMA Community type. FundMe remains grouped under Requests as `/requests/fundme`; `/fundme` redirects there as compatibility navigation only.
+
+The approved attached original gateway artwork is authoritative where still current. Do not regenerate or replace it without explicit instruction.
+
+ADR-055 is the current navigation/Home IA decision. Earlier references to permanent-nav `Pitch` or visible Home `Spots` are historical unless explicitly marked otherwise.
 
 ---
 
-# PART I — FIRST PRIORITY: GET HOOMA RUNNING
+# PART I — CURRENT FOUNDATION / RUNTIME
 
 # 9. RUNTIME MISSION
 
-Before expanding into major new product domains, HOOMA needs a real development/staging runtime so changes can be tested continuously.
-
-Required outcome:
-
-```text
-HOOMA shared API        -> healthy public HTTPS endpoint
-HOOMA Web frontend      -> valid public HTTPS Web App URL
-HOOMA Telegram frontend -> valid public HTTPS Mini App URL
-Telegram bot            -> valid bot link opening the HOOMA Mini App
-PostgreSQL              -> same canonical database used by the shared API
-```
-
-Web and Telegram must both use the **same backend and same database**.
-
-Current target working branch:
+During development, all implementation, auditing, fixes, tests and deployment verification target:
 
 ```text
 phase-0-foundation
 ```
 
-`main` remains the stable/release branch until the running branch passes the required gates.
+`main` is the release target only. It is intentionally not the current implementation authority and must not be used to judge current feature completeness. HOOMA moves to `main` only after `phase-0-foundation` is clean and production-ready.
+
+Required runtime model:
+
+```text
+HOOMA shared API        -> healthy public HTTPS endpoint
+HOOMA Web frontend      -> public HTTPS application
+HOOMA Telegram entry    -> canonical Web /telegram Mini App route
+Legacy Telegram host    -> redirect only where deployed
+PostgreSQL              -> same canonical database used by the shared API
+Redis                    -> transient shared infrastructure
+Worker                   -> deployed only when async responsibilities are expected to run
+Object storage           -> configured when storage-backed current features require it
+```
+
+Web and Telegram use the **same backend and same database**.
 
 ---
 
-# 10. RUNTIME GATE A — RECONCILE ACTIVE DOCUMENTS WITH CURRENT PRODUCT DECISIONS
+# 10. DOCUMENT RECONCILIATION GATE
 
-Current planning-era conflicts already known:
+Current documentation must agree with current owner decisions and merged source on the active slice. In particular:
 
-- documents still use `HOOMA ULTIMATE` branding even though the product is HOOMA;
-- some language may make technical processes sound like separate applications rather than one HOOMA app with two frontends;
-- existing Whistle requirements contain an older reveal/TTL lifecycle that is superseded by the current product-owner rule below;
-- planning-stage assumptions may need correction as the real running implementation exposes contradictions.
+- product branding is HOOMA, not HOOMA ULTIMATE;
+- current permanent nav is `Home | Play | Watch | HOOMA | Athletes`;
+- current Home is `HOOMA | Teams | Pitch | Places | Ride | Requests`;
+- current Whistle uses UTC-midnight expiry/direct visibility with no Reveal;
+- current enabled Whistle contexts include Community, Event, Athletes, Ride, Gamer Direct and User Direct through their actual authorization boundaries;
+- current domain-owned Ride/Gamer media uses shared object-storage infrastructure even though a generic Media domain is not required;
+- source existence, deployment and verified runtime remain distinct claims.
 
-Required document reconciliation where relevant:
-
-- `structure.md`
-- `requirements.md`
-- `docs/CANONICAL_MODEL.md`
-- `docs/DECISIONS.md`
-- `docs/NORMALIZATION_PLAN.md`
-- `docs/IMPLEMENTATION_STATUS.md`
-- `docs/AUTH.md`
-- `docs/AUTHORIZATION.md`
-- `docs/DATABASE.md`
-
-Do not pause all engineering just to perform cosmetic wording changes. Correct architecture-affecting contradictions before implementing the related area, then continue updating naming systematically.
-
-Gate passes when active implementation instructions no longer conflict on the slice being executed.
+Architecture-affecting contradictions must be corrected before later agents use the stale text as implementation authority.
 
 ---
 
-# 11. RUNTIME GATE B — MAKE THE SHARED API COMPILE CLEANLY
+# 11. API / SOURCE HEALTH GATE
 
-Do not disable strict TypeScript and do not bypass Prisma type errors.
+The shared API must compile cleanly and keep schema, migration, repository, service, contracts and frontend consumers aligned. Do not suppress strict TypeScript/Prisma errors or patch a downstream symptom when the canonical owner is wrong.
 
-Current Railway builds have already exposed real source inconsistencies.
-
-Known error categories include:
-
-- exact optional property handling at API/repository boundaries;
-- explicitly passing `undefined` into Prisma inputs instead of omitting absent fields;
-- Team repository fields/compound keys that disagree with `schema.prisma`;
-- Team lineup vocabulary mismatch including `formation` vs current `format` representation;
-- Team responsibility assignment field/timestamp mismatch;
-- Assistant capability-grant field/timestamp mismatch;
-- Community/Event/Team request DTO construction inconsistencies;
-- Event update Prisma input inconsistency.
-
-Already corrected during Railway connection work:
-
-- invalid Argon2 verification options;
-- overly narrow async Express wrapper typing;
-- Audit metadata explicitly passing `undefined` to Prisma.
-
-Repair workflow for each remaining error:
-
-1. read current canonical model;
-2. inspect schema;
-3. inspect migrations;
-4. inspect repository interface;
-5. inspect Prisma repository;
-6. inspect service/domain policy;
-7. inspect contracts/routes;
-8. inspect frontend consumers;
-9. consult original HOOMA only for useful behavior/history;
-10. decide canonical truth;
-11. fix all affected layers together;
-12. generate Prisma client;
-13. typecheck/build;
-14. run focused tests;
-15. record proof here.
-
-Gate passes only when relevant packages and the shared API build cleanly without suppression/compatibility hacks.
+Current runtime audits have proven the phase API can build/deploy and connect to Railway PostgreSQL; future source changes still require their own exact-head verification.
 
 ---
 
-# 12. RUNTIME GATE C — CLEAN PRE-RELEASE DATABASE BASELINE
+# 12. PRE-RELEASE DATABASE GATE
 
-Because this clean HOOMA application has not yet shipped, experimental pre-release migrations may be replaced only after the current canonical schema is reconciled.
+HOOMA owns the current Prisma schema and committed migration history.
+
+Rules:
+
+- no production `prisma db push` shortcut;
+- schema and committed migration chain must deploy cleanly;
+- any pre-release migration-history consolidation is an explicit reviewed task, never an automatic rewrite merely because an old plan expected one initial migration;
+- after public release, shipped migrations are forward-only;
+- migration status must be verified against the intended runtime before release claims.
+
+---
+
+# 13. DEPENDENCIES AND CI GATE
 
 Required:
 
-- one canonical fresh Prisma schema for currently implemented foundation domains;
-- one reviewed initial migration;
-- no speculative future-domain tables;
-- `prisma validate` passes;
-- `prisma migrate deploy` succeeds against an empty disposable PostgreSQL database;
-- repository integration tests pass against generated Prisma types;
-- PostgreSQL constraints/indexes are manually reviewed;
-- no `prisma db push` as the release path.
-
-Only after the exact migration is proven on disposable PostgreSQL should it be applied to the fresh Railway development/staging database.
-
-Never modify Railway DB structure merely to make deployment appear green.
-
----
-
-# 13. RUNTIME GATE D — DETERMINISTIC DEPENDENCIES AND CI
-
-Required:
-
-- real committed `package-lock.json` from the actual workspace manifests;
-- clean `npm ci` from untouched checkout;
-- Prisma generation deterministic;
+- committed `package-lock.json` consistent with workspace manifests;
+- clean `npm ci`;
+- deterministic Prisma generation;
 - CI read-only;
-- no CI lockfile generation/commit/push;
+- no CI lockfile/source repair commits;
 - explicit process build/start commands;
 - no uncontrolled `latest` dependency drift.
 
-Gate passes only when clean installation/build does not modify repository source.
+---
+
+# 14. ACTIVE RUNTIME FINDINGS — 2026-09-03
+
+Verified against the active `phase-0-foundation` Railway topology during the current audit sequence:
+
+- phase API deployment exists and has successfully started against Railway PostgreSQL;
+- current migration deploy reported no pending migrations at the inspected deployment;
+- Web deployment exists and uses the same-origin `/api` proxy toward the phase API;
+- canonical Telegram Mini App content is the Web `/telegram` route; the separate Telegram Railway host is a legacy redirect surface;
+- PostgreSQL and Redis are operational in the inspected topology;
+- the repository contains `@hooma/worker`, but no Worker Railway service was deployed at the inspected time;
+- the active phase API did not have the required `OBJECT_STORAGE_*` variable names configured at the inspected time, so storage-backed Ride/Gamer operations that require object storage cannot be considered runtime-complete;
+- Railway API healthcheck used `/health`, while `/health/ready` is the stronger dependency-aware readiness route; readiness itself currently checks PostgreSQL/Redis but not object storage.
+
+These are current audit findings, not permanent architecture rules. Re-verify before changing runtime or claiming they remain true.
 
 ---
 
-# 14. RUNTIME GATE E — DEPLOY AND VERIFY THE SHARED HOOMA API
+# PART II — CURRENT FOUNDATION PRODUCT OWNERSHIP
 
-Railway shared backend must:
+# 15. IDENTITY, PROFILE AND PLATFORM ADMIN
 
-- deploy current `phase-0-foundation` during development;
-- use the existing shared PostgreSQL database;
-- use environment-only secrets;
-- use explicit build/start commands;
-- expose a real health endpoint;
-- remain one business backend/source of truth.
+Keep one canonical User, independent Web/Telegram auth transports, server-authorized Profile responsibilities, and `PLATFORM_ADMIN` only for global App Admin authority.
 
-Verification requires:
-
-- Railway deployment `SUCCESS`;
-- process remains running;
-- `/health` returns healthy response;
-- database connection works;
-- auth configuration loads correctly;
-- required production Telegram config fails clearly when absent;
-- no secret leakage in logs.
-
-After verification record:
-
-```text
-API_URL=<verified URL>
-```
-
-Do not record a URL before it is confirmed working.
+Profile is the user's identity/responsibility hub and must project real canonical relationships rather than duplicate domain state.
 
 ---
 
-# 15. RUNTIME GATE F — DEPLOY AND VERIFY HOOMA WEB
-
-Required:
-
-- public HTTPS Web App domain;
-- Web frontend points to the same shared HOOMA API;
-- browser routing/reload works;
-- production cookie/origin behavior works against real domain;
-- current implemented routes load without production-only failures;
-- frozen/unimplemented routes are truthful, never fake-complete.
-
-Initial running-route smoke set:
-
-- `/`
-- `/login`
-- `/register`
-- `/profile`
-- `/admin`
-- `/teams`
-- `/teams/:teamId`
-- `/teams/control`
-- `/play`
-- current Event routes.
-
-After verification record:
-
-```text
-WEB_APP_URL=<verified URL>
-```
-
----
-
-# 16. RUNTIME GATE G — DEPLOY AND VERIFY HOOMA TELEGRAM MINI APP
-
-Required:
-
-- public HTTPS Telegram Mini App domain;
-- Telegram frontend uses the same HOOMA API/database;
-- initData resolves through the canonical User system;
-- Mini App lifecycle works;
-- safe-area/viewport/navigation behavior works;
-- currently implemented product routes are usable instead of Home cards leading blindly to unsupported destinations;
-- no duplicate Telegram persistence.
-
-After verification record:
-
-```text
-MINI_APP_URL=<verified URL>
-```
-
----
-
-# 17. RUNTIME GATE H — CONNECT AND VERIFY THE TELEGRAM BOT
-
-Bot configuration stays environment-only:
-
-```text
-TELEGRAM_BOT_TOKEN
-TELEGRAM_BOT_USERNAME
-TELEGRAM_BOT_ID
-MINI_APP_URL
-```
-
-Required:
-
-- configured bot opens deployed HOOMA Mini App;
-- bot/mini-app auth reaches the canonical User model;
-- changing bot credentials later requires environment changes, not source rewrites;
-- invalid initData fails closed.
-
-After verification record:
-
-```text
-TELEGRAM_BOT_LINK=https://t.me/<verified_bot_username>
-```
-
-Never write the bot token into this file.
-
----
-
-# 18. RUNTIME GATE I — FIRST REAL SMOKE TEST
-
-## Web
-
-Verify:
-
-- guest Home;
-- register;
-- login;
-- logout;
-- session navigation;
-- Profile;
-- normal user denied Platform Admin;
-- real Platform Admin allowed;
-- Teams discovery;
-- Team detail;
-- Coach Control Room authorization;
-- Play discovery;
-- create PLAY Event;
-- Event detail;
-- RSVP/waitlist where test data permits;
-- formation;
-- check-in;
-- temporary chat.
-
-## Telegram
-
-Verify:
-
-- bot opens Mini App;
-- initData validation;
-- same canonical account/data model;
-- Home;
-- Profile;
-- implemented product routes;
-- Telegram BackButton/navigation behavior;
-- safe-area/viewport behavior.
-
-This gate is what changes the application from "source exists" to "we can actually develop and test it properly."
-
----
-
-# PART II — COMPLETE THE CURRENT FOUNDATION
-
-# 19. PHASE 1 — IDENTITY, PROFILE, LOGIN AND PLATFORM ADMIN
-
-This phase directly addresses the area that made original HOOMA difficult to extend.
-
-## Identity/Auth completion
-
-- one canonical User;
-- complete Web register/login/logout;
-- Telegram identity resolution;
-- explicit future account-linking if needed;
-- session security;
-- rate limiting/lockout;
-- write-origin/CSRF protections;
-- clear user-facing error states;
-- no duplicate frontend auth state.
-
-## Profile completion
-
-Profile becomes the user's identity and responsibility hub.
-
-Required:
-
-- clear Edit Profile action;
-- persisted edit flow;
-- photo;
-- display name;
-- display username;
-- bio;
-- Houma/location where applicable;
-- favorite club;
-- Player/Fan/Gamer presentation;
-- My Teams + role;
-- My HOOMA communities + role;
-- later My ULTRAS groups + role;
-- later My Gamer Squads + role;
-- managed/owned Places where applicable;
-- Platform Admin entry only for real Platform Admin.
-
-Original HOOMA's richer profile presentation may be consulted, but the clean canonical identity model owns the implementation.
-
-## Platform Admin completion
-
-Foundation:
-
-- user overview;
-- explicit Platform Admin bootstrap/assignment;
-- audit visibility.
-
-Domain-specific moderation queues are added only when those domains become real.
-
----
-
-# 20. PHASE 2 — HOOMA COMMUNITIES, TEAMS, PLAY/EVENTS
+# 16. HOOMA COMMUNITIES, TEAMS, ATHLETES, PLAY/EVENTS
 
 ## HOOMA Communities
 
-Complete canonical Founder/Coach/Member behavior without scoped Admin naming.
+- `/hooma` creates only canonical HOOMA Communities;
+- Founder/Coach/Member remain Communities-owned;
+- no generic Community type selector.
 
 ## Teams
 
-Finish the mature Team experience already started; do not restart it from scratch.
+- Team creation remains Teams-owned at `/teams/new`;
+- required parent HOOMA context is selected inside the Team flow;
+- Coach Control Room and Team authorization remain Teams-owned;
+- Play and Gamers remain separate products.
 
-Required:
+## Athletes
 
-- public discovery/profile;
-- canonical TeamPlayer model;
-- Coach/Assistant responsibility model;
-- explicit Assistant capabilities;
-- player/member selection instead of exposing raw DB IDs;
-- final Coach Control Room UX;
-- real lineup editor using TeamPlayer;
-- proper tactical pitch/positions;
-- challenge creation;
-- no self-challenge;
-- incoming/outgoing lifecycle;
-- dedicated challenge detail;
-- accepted challenge coordination authorization;
-- TeamGame detail;
-- published/private lineup boundaries;
-- player profile navigation.
-
-Use recovered V3 Team presentation and mature original HOOMA behavior as donor evidence, but keep the clean HOOMA architecture.
+- Athletes is an independent HOOMA-connected domain at `/athletes`;
+- it owns its own community/membership/join-request lifecycle;
+- it is the fifth permanent navigation item;
+- current member-authorized Athletes Whistle uses the shared Whistle engine rather than a new messaging system.
 
 ## Play / Events
 
-Complete:
-
-- PLAY-only creation until Watch is implemented;
-- public discovery;
-- create/detail;
-- RSVP;
-- concurrency-safe capacity;
-- waitlist/promotion;
-- organizer controls;
-- formation;
-- preferred-position data actually affects balancing when collected;
-- check-in;
-- temporary Event chat;
-- cancellation/completion;
-- cleanup ownership;
-- later Replay integration.
+- Events owns canonical Event lifecycle;
+- Play owns its own discovery/recruitment concepts over Events where designed;
+- Play and Gamers must not be merged or built on each other.
 
 ---
 
-# PART III — PRODUCT SHELL AND VISUAL COHERENCE
+# PART III — HOME / BRAND / NAVIGATION
 
-# 21. PHASE 3 — HOOMA BRAND, HOME AND NAVIGATION
+# 17. CURRENT HOME AND NAVIGATION CONTRACT
 
-Goal: make the live application visually coherent before major new-domain expansion.
-
-Required:
-
-- HOOMA logo/wordmark consistently used;
-- approved original HOOMA bottom-nav artwork/interaction traced and adapted;
-- bottom nav stays exactly Home | Play | Watch | HOOMA | Pitch;
-- Home remains exactly 8 cards / 4 x 2;
-- approved attached Home gateway artwork used directly;
-- approved Match Day banner wired;
-- classy vintage-football language;
-- almost-black background;
-- warm cream typography;
-- muted aged-gold details;
-- lime action emphasis;
-- photography where appropriate;
-- modern mobile usability;
-- Web shell mobile-first;
-- Telegram shell truly Telegram-aware;
-- safe areas and keyboard-safe flows;
-- no generic dashboard/SaaS regression;
-- shared design primitives owned cleanly.
-
----
-
-# PART IV — RESTORE AND IMPROVE MATURE ORIGINAL-HOOMA PRODUCT DOMAINS
-
-# 22. PHASE 4 — CANONICAL PLACES + WATCH
-
-Build Places and Watch coherently because Watch depends on real venues.
-
-## Canonical Place
-
-One physical venue record, reusable across product contexts.
-
-Support as finalized:
-
-- name;
-- media;
-- address;
-- City;
-- Houma;
-- coordinates;
-- phone/email/website;
-- About;
-- menu;
-- moderation state;
-- ownership claims;
-- upcoming related Events;
-- no duplicate Place because it is also a Pitch/Watch/FanHub context.
-
-## Places directory
-
-Tabs remain exactly:
+Required current navigation:
 
 ```text
-LOUNGES/CAFES | PITCH | FANHUB
+Home | Play | Watch | HOOMA | Athletes
 ```
 
-## Watch
-
-Borrow the strongest original HOOMA ideas:
-
-- Watch discovery;
-- football-match/Event information;
-- canonical Place association;
-- going/RSVP;
-- official/suggested venue state;
-- empty collector-ticket master;
-- dynamic data placed into defined ticket zones;
-- expanded Watch Event page;
-- Place contact/menu/about/upcoming Events;
-- Requests/Ride/FundMe entry points once those domains exist.
-
-The collector ticket is presentation infrastructure, never business state.
-
-## Watch business approval
-
-- real persisted application;
-- pending state;
-- Platform Admin review;
-- approve/reject;
-- capability activated on canonical Place;
-- AuditLog entry.
-
----
-
-# 23. PHASE 5 — PITCH + PLATFORM ADMIN APPROVAL
-
-Use original HOOMA's useful Pitch lifecycle as a behavioral reference, but do not copy its unfinished localStorage-only frontend approach.
-
-Target lifecycle:
+Required current Home gateway:
 
 ```text
-DRAFT
-  -> PENDING_REVIEW
-  -> PUBLISHED
-  -> INACTIVE when valid
-
-or
-
-PENDING_REVIEW
-  -> REJECTED
-  -> edited/resubmitted
-  -> PENDING_REVIEW
+HOOMA | Teams | Pitch
+Places | Ride | Requests
 ```
 
-Required:
+Current source-backed changes are intentional:
 
-- canonical Place relationship;
-- persisted owner/business draft;
-- edit;
-- submit for review;
-- Platform Admin approve/reject;
-- public discovery/detail;
-- Places PITCH tab shows the same approved canonical data;
-- no duplicate Pitch venue database.
+- `f884c22417d9139111bbb1f40bcd8ebab6d8a237` — `feat(nav): replace Pitch with Athletes`;
+- `c44422a9391e7582765acb4e9bc0ccb893e6a3a6` — `fix(home): reorder Pitch and Places gateways`.
+
+Do not restore old Pitch-nav or visible Home-Spots contracts from older plans/ADRs.
 
 ---
 
-# 24. PHASE 6 — REQUESTS
+# PART IV — DOMAIN STATUS NOTES
 
-Required vertical slice:
+# 18. PLACES / WATCH / PITCH
 
-- create;
-- privacy-safe discovery;
-- detail;
-- claim;
-- concurrency-safe exclusive claiming;
-- release/cancel/complete where designed;
-- server authorization;
-- owner/claimer boundaries;
-- Profile/context integration;
-- Whistle only through a valid Request relationship after Whistle exists.
+One canonical physical Place remains the source of truth. Pitch is a dedicated product over canonical Place and remains at `/pitch`. Watch uses canonical Place directly and may use Watch-specific `Spots` language without changing the Home gateway label back from `Places`.
+
+Watch and Pitch remain separate product functions.
 
 ---
 
-# 25. PHASE 7 — RIDE
+# 19. REQUESTS
 
-Required:
-
-- ride offer;
-- ride request;
-- matching;
-- privacy-safe public projection;
-- protected exact location;
-- live tracking OFF by default;
-- tracking only if explicitly designed and privacy-scoped;
-- payments only through shared Payments;
-- Whistle only through valid Ride relationship.
+Requests owns its own help/resource lifecycle. Current product requirements use quantity-based partial claims with concurrency safety rather than the older “exclusive claim only” wording. FundMe remains grouped under Requests in presentation while durable Fundraising/Payments remain separate owners.
 
 ---
 
-# 26. PHASE 8 — FUNDME + PAYMENT FOUNDATIONS
+# 20. RIDE
 
-## FundMe
+Ride owns its own offer/request/participation/meeting-point/waypoint/vehicle-photo concepts. Matchday and Anywhere are contexts of one Ride domain. Exact pickup/meeting locations remain private by server policy.
 
-- create campaign;
-- public detail;
-- contribution;
-- accurate paid totals;
-- no double counting;
-- cancel/complete lifecycle;
-- reconciliation/audit where money is involved.
+Current Ride Whistle is authorized through the shared Whistle engine using Ride-owned authorization; do not route a Ride Whistle through a generic direct-user path merely because the requester has a username.
 
-## Initial supported payment rails
+Object-storage-backed Ride vehicle photos require the existing shared storage configuration and background cleanup responsibilities to be operational before the media lifecycle can be called runtime-complete.
 
-Only:
+---
+
+# 21. WHISTLE — CURRENT AUTHORITATIVE RULES
+
+There is exactly one shared Whistle engine.
 
 ```text
-CASH
-TELEGRAM_STARS
+33 grapheme clusters maximum
+11 total sends per User per UTC calendar day
+UTC day = 00:00 UTC to next 00:00 UTC
+unused sends never carry over
+every Whistle expires at the next UTC midnight
+body in Redis only
+PostgreSQL metadata only
+authorized feeds show body directly
+no Reveal endpoint
+no viewer-specific reveal/seen state
 ```
 
-No credit-card rail in initial scope.
+Current enabled contexts in merged source include:
 
-Crypto/Flouci remain separate future decisions and must not be invented into this phase.
+- COMMUNITY;
+- EVENT;
+- ATHLETES;
+- RIDE;
+- GAMER_DIRECT;
+- USER_DIRECT.
 
-Telegram Stars must include real invoice/pre-checkout/success/idempotency/retry/refund handling where supported.
+TEAM, ULTRAS and GAMER_SQUAD remain closed until their owning authorization slices explicitly enable them.
 
----
-
-# PART V — NEW/EXPANDED DOMAINS THAT REQUIRE EXTRA PRODUCT WORK
-
-# 27. PHASE 9 — WHISTLE CORE — UPDATED RULES
-
-There is exactly **one shared Whistle engine** across authorized HOOMA contexts.
-
-Whistle is transient communication. It is **not** a permanent social feed and is **not** a permanent generic chat history.
-
-The rules in this section supersede the older `requirements.md` reveal/TTL rules until `requirements.md` is reconciled.
-
-## 27.1 Content limit
-
-Current planned limit remains:
-
-```text
-33 grapheme clusters
-```
-
-This limit remains active unless the product owner explicitly changes it later.
-
-Validation must count grapheme clusters, not bytes or naive UTF-16 code units.
-
-## 27.2 Global daily quota
-
-Each User may send at most:
-
-```text
-11 total Whistles per UTC calendar day
-```
-
-The limit is global across all Whistle contexts.
-
-It is **not**:
-
-- 11 per Team;
-- 11 per ULTRAS group;
-- 11 per Event;
-- 11 per recipient;
-- a rolling 24-hour window.
-
-Quota window:
-
-```text
-00:00:00 UTC -> next 00:00:00 UTC
-```
-
-At UTC midnight the User's quota resets back to 11 available Whistles for the new UTC day.
-
-Quota enforcement must be concurrency-safe so simultaneous sends cannot exceed 11.
-
-## 27.3 Message visibility — UPDATED
-
-Whistle messages must **not be covered, blurred, hidden behind a reveal action, or treated as one-time reveal content**.
-
-An authorized recipient/context viewer sees the Whistle message normally while it is active.
-
-The previous planning rule:
-
-```text
-first authorized reveal -> 60 second expiry
-```
-
-is **retired/superseded**.
-
-Reading a Whistle does not shorten or extend its lifetime.
-
-## 27.4 Message lifetime — UPDATED
-
-A Whistle belongs to the sender's current UTC quota day.
-
-At the sender's next UTC-midnight quota reset:
-
-- the sender's daily usage counter resets;
-- all active Whistles sent by that User during the previous UTC day expire/delete;
-- those Whistles must disappear from every context where they were visible;
-- no permanent Whistle message history remains.
-
-Therefore a Whistle sent shortly after 00:00 UTC may live close to 24 hours, while one sent shortly before the next 00:00 UTC may live only a short period. This is intentional because lifetime is tied to the UTC-day reset, not a rolling 24-hour TTL from send time.
-
-Implementation should calculate expiry at the **next UTC midnight**.
-
-## 27.5 Storage/garbage rule
-
-Whistle is designed specifically to avoid building permanent message trash.
-
-Hard requirements:
-
-- message body is transient;
-- message body must not be stored permanently in PostgreSQL;
-- message body must never be written to AuditLog;
-- message body must never be written to analytics payloads;
-- message body must never be written to application logs;
-- message body must never appear in URL/query strings;
-- durable notification records must not contain the message body;
-- there must be no permanent Whistle history page.
-
-Preferred transient body storage remains Redis/Valkey or equivalent disposable state with expiry aligned to the next UTC midnight.
-
-Before implementation, inspect whether any PostgreSQL Whistle metadata is actually required for authorization/delivery/idempotency. If metadata is required, store only the minimum operational metadata and define cleanup/retention deliberately. Do **not** create permanent message-history metadata merely because the older plan did.
-
-## 27.6 Authorization
-
-Whistle requires a real approved relationship/context.
-
-Potential contexts as implemented include:
-
-- Event;
-- Team;
-- HOOMA Community;
-- Ride;
-- Request where explicitly approved;
-- ULTRAS;
-- Gamer Squad;
-- other future explicitly approved relationships.
-
-A random public profile visitor does not gain Whistle permission merely because a User is discoverable.
-
-## 27.7 Notifications
-
-A durable notification may say only something like:
-
-```text
-Youssef sent you a Whistle
-```
-
-It must never copy the Whistle body.
-
-Telegram notification delivery, where enabled, must be real and idempotent with retry behavior.
-
-## 27.8 Mandatory Whistle tests
-
-At minimum:
-
-- 11th Whistle allowed;
-- 12th Whistle denied;
-- concurrent sends cannot exceed 11;
-- quota resets exactly at UTC midnight;
-- Whistles expire/delete at the sender's UTC-midnight reset;
-- reading does not alter expiry;
-- message visible directly to authorized viewer;
-- no reveal/60-second behavior remains;
-- context authorization enforced;
-- ULTRAS private-board privacy;
-- no body in PostgreSQL;
-- no body in AuditLog;
-- no body in durable notification/outbox payload;
-- no body in logs;
-- no permanent Whistle history;
-- restart/retry behavior does not resurrect expired Whistles.
-
-Whistle cannot be `DONE` until these pass against real Redis/PostgreSQL infrastructure where applicable and Web/Telegram UI behavior is verified.
+Known current source defect discovered during audit: Whistle metadata/quota persistence commits before notification persistence, while the service catch path deletes the Redis body if notification creation throws. That can leave durable metadata/quota consumed without a body while the request fails. This is a current source failure-boundary defect to fix through the existing transactional/outbox pattern; it is not evidence that a production incident has already occurred.
 
 ---
 
-# Athletes Whistle PR 3 implementation map
+# 22. GAMERS
 
-Foundation: `812515554adb8a712a8d39cea751880880a124b2` (`phase-0-foundation` after PR #215 merge plus non-overlapping Ride styling commits). Open PRs at latest recheck: none. Branch was safely rebased from `b9d214745cb7e85121502e423fb36286b42dfa86`; incoming files were `packages/frontend/src/index.ts` and `packages/frontend/src/rides/ride-hero-actions-google.css`, with no overlap against Athletes Whistle functional files.
-
-Source trace:
-
-- Canonical Whistle context type is `WhistleContextType` in `apps/api/src/modules/whistle/application/whistle.repository.ts` and the matching PostgreSQL enum in `packages/database/prisma/schema.prisma`.
-- Whistle HTTP API is `apps/api/src/modules/whistle/http/whistle.routes.ts` at `/api/v1/whistles/contexts/:contextType/:contextId`; it currently allows only public context enum values, while direct user/gamer contexts use adapter routes.
-- Whistle service owner is `apps/api/src/modules/whistle/application/whistle.service.ts`; it owns `DAILY_LIMIT = 11`, `Intl.Segmenter` grapheme counting, UTC-day keying, next-UTC-midnight expiry, and context authorization dispatch.
-- Transient body storage is `apps/api/src/modules/whistle/infrastructure/redis-whistle-store.ts` using `whistle:body:<id>` Redis keys with PX expiry.
-- Durable metadata persistence is `apps/api/src/modules/whistle/infrastructure/prisma-whistle.repository.ts` in `WhistleMetadata` only: `id`, `authorUserId`, `contextType`, `contextId`, `createdAt`, `expiresAt`; no body column.
-- Quota counting is global per user/day in `PrismaWhistleRepository.createWithDailyQuota` and `quotaUsed`, backed by `WhistleMetadata` count plus PostgreSQL advisory transaction lock.
-- Existing context authorization dispatches to `CommunityService.requireMember` and `EventService.requireMemberContent`; direct Gamer/User contexts resolve through dedicated service adapters and never use the raw context route.
-- Athletes membership authority is `AthletesService` backed by `AthletesRepository.activeRole` / `managerRole`, which require `AthletesMembership.leftAt = null` and active `AthletesCommunity.status`.
-
-Implementation plan:
-
-1. Add `ATHLETES` to the canonical Whistle context type and PostgreSQL enum, with a forward migration only for the enum value.
-2. Add an Athletes service authorization method that requires an active member of the exact Athletes community and exposes no role-specific extra privilege.
-3. Inject `AthletesService` into `WhistleService`; route `ATHLETES` context authorization through the Athletes membership authority.
-4. Extend the existing Whistle context route schema to accept `ATHLETES`; keep body validation, quota, expiry, transient body storage, and metadata persistence unchanged.
-5. Add frontend API helpers and reuse `WhistleBoard` for `ATHLETES`; render it only when `detail.viewerRole` proves active membership on the Athletes detail/member view.
-6. Add focused tests for Athletes member/non-member/left/wrong-community/founder/moderator/unauthenticated access, shared 11/day quota, 33-grapheme behavior, Redis-only body storage, metadata body exclusion, expiry cleanup, and existing Whistle context regressions.
-
-Styling scope: none. Any frontend class additions must be functional wiring only.
-
-Current implementation status after foundation update `dfda56bc80009059680cd77237478cc8c197951b`:
-
-- Preserved the uncommitted Athletes Whistle work with a stash/reapply workflow and rebased `feat/athletes-whistle` onto current `origin/phase-0-foundation` at `dfda56bc80009059680cd77237478cc8c197951b` (Ride presentation-only foundation commit).
-- Open PR list at rebase time remained empty; incoming foundation file was `packages/frontend/src/rides/RideGatewayPage.tsx`, with no overlap against Athletes Whistle files.
-- Added `ATHLETES` to canonical `WhistleContextType` and kept the migration minimal: `ALTER TYPE "WhistleContextType" ADD VALUE IF NOT EXISTS 'ATHLETES';`.
-- No CSS/styling files are changed by Athletes Whistle.
-- Rebase validation passed: `npm run db:generate`, `npm run db:validate`, `npm run architecture:check`, `npm run typecheck`, `npm run build:packages`, focused Whistle/Athletes unit tests, changed-file Prettier, changed-source ESLint, `git diff --check`, `npm run build`, `npm run deploy:preflight`, and `npm run security:check`.
-- `npm test` now fails only on two Ride mobile hub visual assertions introduced by the unrelated Ride foundation commit; the same focused Ride visual test fails on a detached clean current foundation worktree at `dfda56bc80009059680cd77237478cc8c197951b`, so it is recorded as a separate foundation issue and not an Athletes Whistle blocker.
-- Repository-wide `npm run format:check` and `npm run lint` currently report unrelated foundation files outside this diff; changed-file formatting and changed-source lint are clean.
-- Local PostgreSQL-backed `tests/athletes-whistle.integration.test.ts`, `npm run test:integration`, and `npm run db:migrate:status` remain locally blocked because no PostgreSQL server is reachable at `localhost:5432`; Redis is reachable at `127.0.0.1:6379`. Exact-head CI must provide PostgreSQL integration/migration proof.
+Gamers is an independent implemented route family at `/gamers`. It is not a Home gateway and must not become a sixth permanent bottom-navigation item. Its human-first challenge/Match Card/result/ranking/Squad design remains Gamers-owned and separate from Play/football Teams.
 
 ---
 
-# 28. PHASE 10 — ULTRAS
+# 23. MEDIA / WORKER / NOTIFICATIONS — CURRENT GAPS
 
-ULTRAS is a first-class supporter-community domain, not Team tables renamed.
+Current audit findings:
 
-It requires deliberate product and UX design rather than copying a donor page.
-
-Direction:
-
-- controlled official football entity catalog;
-- each ULTRAS group linked to an approved official club/entity;
-- public supporter-community page;
-- crest/banner/motto/country/city;
-- join/request/invite lifecycle as finalized;
-- roles:
-  - Leader
-  - Moderator
-  - Member
-- private member HQ;
-- private ULTRAS Whistle Board using the shared Whistle engine;
-- GameDays/attendance where designed;
-- Ride/FundMe/Replay integration where useful;
-- strict public/private content separation;
-- strong mobile supporter experience rather than a generic forum.
-
-Before implementation, finalize domain model + main user journeys + permission matrix + visual acceptance references.
+- shared object-storage abstraction exists in `packages/storage`;
+- active phase API lacked required object-storage environment keys at the inspected time;
+- repository Worker exists and owns outbox/cleanup/reconciliation loops, but no Worker Railway service was deployed at the inspected time;
+- `UserNotification` backend persistence/listing exists for current Whistle notification producers, but mark-read/unread-count/frontend inbox lifecycle remains incomplete;
+- do not create duplicate storage, Worker, Whistle or notification systems to solve these gaps.
 
 ---
 
-# 29. PHASE 11 — GAMERS
+# 24. RELEASE GATE
 
-Gamers is independent from football Teams.
-
-It requires dedicated UX/domain design.
-
-Direction:
-
-- Platform Admin-controlled game catalog;
-- Gamer profile;
-- per-game handle/account data where appropriate;
-- Gamer Squads;
-- Squad Leader;
-- membership lifecycle;
-- squad challenges;
-- results;
-- disputes/moderation;
-- Gamer/Squad identity visible in Profile;
-- Whistle only through authorized Gamer relationships;
-- interaction patterns designed for gaming rather than blindly reusing Team UI.
-
-Before implementation, finalize game catalog ownership, Gamer Profile UX, Squad lifecycle, challenge/result/dispute flows and permission matrix.
-
----
-
-# PART VI — SHARED MEDIA, ASYNC AND MEMORY FEATURES
-
-# 30. PHASE 12 — MEDIA
-
-Final managed media direction:
-
-- PostgreSQL stores metadata;
-- object storage stores bytes;
-- image validation;
-- auto orientation;
-- EXIF/GPS stripping;
-- thumbnail/card/master variants;
-- ownership/auth linkage;
-- retries/failure state;
-- no scattered unmanaged upload implementations.
-
-External image URLs may remain only as an explicitly controlled transitional/fallback path where required.
-
----
-
-# 31. PHASE 13 — WORKER / OUTBOX HARDENING
-
-Worker is an internal HOOMA execution process, not another application/source of truth.
-
-Use cases may include:
-
-- media processing;
-- Telegram notification delivery;
-- Replay generation;
-- temporary Event-chat cleanup;
-- Whistle cleanup only if Redis TTL alone is insufficient for required metadata cleanup;
-- other approved durable async jobs.
-
-Requirements:
-
-- transactional outbox where appropriate;
-- safe concurrent claiming;
-- retry/backoff;
-- idempotency;
-- dead-letter/failure visibility;
-- no duplicated domain authorization policy;
-- safe logs with no secrets/Whistle bodies.
-
----
-
-# 32. PHASE 14 — REPLAY
-
-Replay is post-activity memory/content tied to eligible completed activity.
-
-Requirements:
-
-- tied to canonical completed Event/activity;
-- generated only when eligibility rules pass;
-- Media through the shared Media domain;
-- privacy inherited from source context;
-- no permanent Whistle history hidden inside Replay;
-- public/private presentation based on source activity.
-
----
-
-# 33. PHASE 15 — HOOMA NOW / DISCOVERY
-
-HOOMA NOW may aggregate useful current activity across domains as a read model.
-
-It must never become a second source of truth.
-
-Requirements:
-
-- deterministic inputs;
-- privacy-safe projections;
-- no fake engagement numbers;
-- no duplicate Team/Event/Place records;
-- no permanent follower/social graph invented accidentally.
-
----
-
-# PART VII — FINAL RELEASE HARDENING
-
-# 34. PHASE 16 — FULL SECURITY, ACCESSIBILITY, PERFORMANCE AND RELEASE GATE
-
-Before merging the development branch to `main` for release:
+Before promoting `phase-0-foundation` into `main`:
 
 - clean install;
 - Prisma generate/validate;
-- migration deploy from empty DB;
+- current migration chain deploy/status verified;
 - architecture check;
 - format/lint;
 - TypeScript;
-- unit tests;
-- real PostgreSQL integration tests;
-- real Redis integration tests where required;
-- API build;
-- Web build;
-- Telegram build;
-- Worker build where applicable;
-- security checks;
-- auth abuse/rate-limit checks;
-- permission matrix tests;
-- Web mobile viewport testing;
-- Telegram Mini App testing;
-- keyboard/safe-area checks;
-- accessibility basics;
-- performance sanity;
+- unit/integration tests;
+- real PostgreSQL/Redis tests where required;
+- API/Web/Telegram/Worker builds where applicable;
+- security/auth/permission checks;
+- mobile/Web/TMA smoke checks;
+- object-storage lifecycle verified for current features that require it;
+- Worker deployed and verified if current production behavior depends on it;
+- readiness health accurately reflects mandatory dependencies;
 - public/private data leakage checks;
 - production environment validation;
-- Railway deployment verification;
-- public Web link verification;
-- Telegram Mini App link verification;
-- Telegram bot link verification;
 - backup/rollback/recovery plan documented;
-- no real secrets committed;
-- current progress ledger reconciled.
+- no secrets committed;
+- current governing docs reconciled.
 
-Only then promote milestone work into stable `main`.
-
----
-
-# 35. DONOR USAGE RULE
-
-## Original `funmarket/HOOMA`
-
-Use it to learn from:
-
-- mature page ideas;
-- original bottom navigation;
-- Watch presentation;
-- collector-ticket concept;
-- Places directory/detail behavior;
-- useful Pitch backend lifecycle ideas;
-- mature Team/challenge/game ideas;
-- Matchday interaction patterns;
-- visual language;
-- proven assets.
-
-Do not automatically copy:
-
-- old schema;
-- old migrations;
-- old auth coupling;
-- Community Admin vs Team Coach confusion;
-- profile/user duplication;
-- unfinished localStorage-only flows;
-- stale technical debt.
-
-## V3
-
-Use it to learn from:
-
-- feature map;
-- clean shell ideas;
-- 8-card Home gateway;
-- improved login/profile/Admin planning;
-- approved presentation/assets;
-- recovered Teams presentation.
-
-Do not treat V3 as proof that a backend feature exists or is complete.
+Only then move the production-ready application into `main`.
 
 ---
 
-# 36. CURRENT VERIFIED LINKS
+# 25. DONOR USAGE RULE
 
-Fill only after actual verification.
-
-```text
-API_URL=NOT_VERIFIED_YET
-WEB_APP_URL=NOT_VERIFIED_YET
-MINI_APP_URL=NOT_VERIFIED_YET
-TELEGRAM_BOT_LINK=NOT_VERIFIED_YET
-```
+Original HOOMA and V3 remain donor/reference implementations only. Borrow proven behavior, visuals and mature flows where useful; do not let donor schema/auth/technical debt override current HOOMA ownership.
 
 ---
 
-# 37. CURRENT HIGH-LEVEL STATUS
+# 26. CHANGE EVIDENCE LEDGER
 
-```text
-Repository branch connected to Railway: VERIFIED
-Shared API successfully running: NOT YET
-Shared PostgreSQL reachable from final running API: NOT YET VERIFIED
-Web public development URL: NOT YET
-Telegram Mini App development URL: NOT YET
-Telegram bot opens new Mini App: NOT YET
-Foundation schema normalized: NOT YET
-Current implemented routes fully smoke-tested live: NOT YET
-New future domains: NOT STARTED in this clean app unless explicitly recorded otherwise
-```
-
----
-
-# 38. CHANGE EVIDENCE LEDGER
-
-This section grows continuously. Never delete failed attempts merely to make progress look cleaner; supersede them with a later verified entry.
+Historical evidence remains in Git history and in the entries below. Historical statements describe what was true at the recorded time and do not override newer current-state sections above.
 
 ## 2026-08-29 — Home/create-flow IA simplification source-verified
+
+**Historical note:** This entry correctly records the then-current six-gateway/Pitch-nav state. Its old visible `Spots` Home label and Pitch bottom-nav assumptions were later superseded by merged source and ADR-055.
 
 **Task**
 Implement the `fixhome.md` Home/create-flow IA simplification on branch `product/home-ia-simplify`.
 
 **Reason/root cause**
-Home and create-flow contracts drifted across requirements, structure, brand/asset docs, tests and source. The new product-owner direction reduces Home discovery to six gateways, removes Gamers/ULTRAS/FundMe from Home, moves FundMe under Requests as presentation/navigation only, adds honest Requests/Ride shells, and keeps durable domain ownership unchanged.
+Home and create-flow contracts drifted across requirements, structure, brand/asset docs, tests and source. The product-owner direction at that time reduced Home discovery to six gateways, removed Gamers/ULTRAS/FundMe from Home, grouped FundMe under Requests, added honest Requests/Ride shells, and kept durable domain ownership unchanged.
 
-**Authoritative docs/source inspected**
-
-- `AGENTS.md`
-- `docs/LIVING_BUILD_PLAN.md`
-- `requirements.md`
-- `structure.md`
-- `docs/DECISIONS.md`
-- `docs/CANONICAL_MODEL.md`
-- `docs/HOME_BRAND_SPEC.md`
-- `docs/ASSET_MANIFEST.md`
-- `progress.md`
-- `packages/ui/src/home/home-gateways.ts`
-- `packages/frontend/src/communities/HoomaPage.tsx`
-- `apps/web/src/app/router/HoomaRouter.tsx`
-- focused navigation/Home/router tests
-
-**Files changed**
-
-- `apps/web/src/app/router/HoomaRouter.tsx`
-- `docs/ASSET_MANIFEST.md`
-- `docs/DECISIONS.md`
-- `docs/HOME_BRAND_SPEC.md`
-- `docs/adr/ADR-048-home-create-flow-ia.md`
-- `packages/frontend/src/communities/HoomaPage.tsx`
-- `packages/frontend/src/index.ts`
-- `packages/frontend/src/requests/RequestsPage.tsx`
-- `packages/frontend/src/requests/requests.css`
-- `packages/frontend/src/rides/RidesPage.tsx`
-- `packages/frontend/src/rides/rides.css`
-- `packages/ui/src/home/home-gateways.ts`
-- `progress.md`
-- `requirements.md`
-- `structure.md`
-- `tests/frontend-router.test.mjs`
-- `tests/home-gateway-image-loading.test.mjs`
-- `tests/hooma-create-chooser.test.mjs`
-- `tests/navigation-contract.test.mjs`
-- `tests/requests-rides-shell.test.mjs`
-
-**Commit(s)**
-
-- not committed yet.
-
-**Database/migration changes**
-
-- none; `git diff --name-only -- packages/database packages/contracts apps/api/src/modules` returned no changed files.
-- `npm run db:generate` generated the local Prisma client only after approved network access to download the Prisma engine; no schema, migration, contract or backend source was changed.
-
-**Tests/commands actually run**
-
-- `git fetch origin phase-0-foundation`
-- `gh pr list --repo funmarket/HoomaUltimate --state open --json number,title,headRefName,baseRefName,headRefOid,url`
-- `gh pr view 159 --repo funmarket/HoomaUltimate --json number,title,state,baseRefName,headRefName,headRefOid,files,url`
-- `rg -n "FundMe|Gamers|nine-card|nine card|3 × 3|3x3|HOME_GATEWAYS|ULTRAS|eight product containers|Home gateway" requirements.md structure.md docs progress.md tests packages apps`
-- `node --test tests/navigation-contract.test.mjs tests/home-gateway-image-loading.test.mjs tests/frontend-router.test.mjs tests/hooma-create-chooser.test.mjs tests/requests-rides-shell.test.mjs` — passed 11/11.
-- `npx prettier --write` on the touched source/docs/tests — passed.
-- `git diff --check` — passed with line-ending warnings only.
-- `npm run format:check` — failed on 370 pre-existing formatted files outside this slice; not mass-formatted.
-- `npm exec -- prettier --check` on the exact touched file list — passed.
-- `npm exec -- eslint --max-warnings=0` on the exact touched TS/TSX file list — passed.
-- `npm run architecture:check` — passed.
-- `npm run db:generate` — first failed due restricted network; approved retry passed.
-- `DATABASE_URL=postgresql://user:pass@localhost:5432/hooma_validation npm run db:validate` — passed.
-- `npm run typecheck` — first failed before Prisma client generation; retry after `db:generate` passed.
-- `npm test` — failed before test execution with Windows `spawn EINVAL` in `scripts/run-tests.mjs`.
-- chunked equivalent unit run using `npx tsx --test` over the unit test file set — passed 160/160.
-- `npm run build` — passed with the existing Vite large-chunk warning.
-- `npm run lint` — failed on an unrelated existing platform-admin file not touched by this slice: `apps/api/src/modules/platform-admin/application/platform-admin.authorizer.ts`.
-- `npm run deploy:preflight` — passed.
-- `git diff --name-only -- packages/database packages/contracts apps/api/src/modules` — passed empty.
-- `rg -n "All nine|9 primary|3 × 3|3x3|nine-card|nine card|exactly nine|eight containers|eight primary" docs/ASSET_MANIFEST.md docs/HOME_BRAND_SPEC.md requirements.md structure.md progress.md tests` — returned only this ledger's recorded command text.
-
-**Deployment/runtime proof**
-
-- production build passed locally.
-- deploy preflight passed locally.
-- no live deployment or browser smoke test was performed in this slice.
-
-**Known failures/unverified areas**
-
-- source branch created in a separate clean worktree because the main checkout had mass deleted files and was behind `origin/phase-0-foundation`.
-- full `npm run format:check` is blocked by pre-existing repo-wide formatting drift and was replaced by exact touched-file Prettier verification for this slice.
-- full `npm run lint` is blocked by the unrelated platform-admin no-empty-object-type error and was replaced by exact touched-file ESLint verification for this slice.
-- `npm test` wrapper is blocked by Windows `spawn EINVAL`; the same unit test file set passed when run in smaller chunks.
-- no live deployment or UI browser smoke test has been run.
-
-**Score: 8/10**
-**Status: VERIFIED SOURCE SLICE, NOT LIVE-DONE**
-
-**Next action**
-
-- review the diff, resolve unrelated baseline formatter/lint/test-wrapper issues separately if desired, then commit or open a PR for `product/home-ia-simplify`.
-
-## 2026-08-22 — Connect active development branch to Railway
-
-**Task**
-Connect `phase-0-foundation` to Railway so real source changes trigger builds.
-
-**Reason/root cause**
-Existing Railway service was following stale `main`, while active application work was on `phase-0-foundation`.
-
-**Authoritative docs/source inspected**
-
-- `structure.md`
-- `requirements.md`
-- Railway current service source/deployment metadata
-- GitHub branch state
-
-**Files changed**
-
-- no product source file required for the branch-source connection itself;
-- an empty Git commit was used to trigger a fresh branch event after Railway initially replayed the stale snapshot.
-
-**Commit(s)**
-
-- `8291507...` — branch trigger commit (exact full SHA should be refreshed from Git history when this entry is next edited).
-
-**Database/migration changes**
-
-- none.
-
-**Tests/commands actually verified**
-
-- Railway deployment metadata showed branch `phase-0-foundation` and subsequent current branch commit hashes.
-
-**Deployment/runtime proof**
-
-- subsequent GitHub commits automatically triggered Railway builds from `phase-0-foundation`.
-
-**Known failures/unverified areas**
-
-- API build still fails on source/schema normalization errors;
-- no healthy public API URL yet.
-
-**Score: 7/10**
-**Status: VERIFIED, NOT DONE**
-
-**Next action**
-
-- repair root compiler/schema inconsistencies until shared API builds/runs.
+**Status at that time:** VERIFIED SOURCE SLICE, NOT LIVE-DONE.
 
 ---
 
-## 2026-08-22 — Correct Argon2 password verification API usage
+## 2026-08-22 — Runtime/foundation setup history
 
-**Task**
-Fix `argon2.verify` compile failure.
-
-**Reason/root cause**
-The code passed a `type` option to `argon2.verify`, but the installed Argon2 API determines the algorithm from the encoded PHC hash; `type` is a hash-generation option, not a valid verification option.
-
-**Files changed**
-
-- `packages/auth/src/index.ts`
-
-**Commit**
-
-- `7bf11b138f0b435b265441082c52f36b943e8bc3`
-
-**Database/migration changes**
-
-- none.
-
-**Tests/commands actually verified**
-
-- a later Railway build successfully compiled `@hooma/auth` and advanced to later API errors.
-
-**Deployment/runtime proof**
-
-- fix reached Railway automatically from `phase-0-foundation`.
-
-**Known failures/unverified areas**
-
-- focused auth tests were not yet recorded as passing;
-- whole API still failed later on unrelated errors.
-
-**Score: 7/10**
-**Status: VERIFIED, NOT DONE**
-
-**Next action**
-
-- run/record relevant auth tests during foundation verification.
+The original ledger recorded Railway branch connection, Argon2 verification correction, async Express handler typing correction, Audit metadata Prisma write correction and creation of this living progress plan. Those entries remain available in Git history before this 2026-09-03 reconciliation. They are implementation history, not current runtime status.
 
 ---
-
-## 2026-08-22 — Correct shared async Express handler typing
-
-**Task**
-Remove repeated `Promise<Response> is not assignable to Promise<void>` route compiler failures at the shared wrapper owner.
-
-**Reason/root cause**
-The shared wrapper accepted only handlers returning `Promise<void>`, while normal Express async handlers may return the `Response` produced by `res.json()`/similar calls.
-
-**Files changed**
-
-- `apps/api/src/http/middleware/async-handler.ts`
-
-**Commit**
-
-- `88b959c2c8b231f38aabc5890cca1a33ae357135`
-
-**Database/migration changes**
-
-- none.
-
-**Tests/commands actually verified**
-
-- Railway rebuild triggered; final whole-API verification remains pending because later errors still block compilation.
-
-**Known failures/unverified areas**
-
-- no dedicated middleware test recorded yet.
-
-**Score: 6/10**
-**Status: IN_PROGRESS, NOT DONE**
-
-**Next action**
-
-- confirm through clean API typecheck/build and route tests after remaining blockers are repaired.
-
----
-
-## 2026-08-22 — Correct absent Audit metadata Prisma write
-
-**Task**
-Fix `exactOptionalPropertyTypes` / Prisma incompatibility when Audit metadata is absent.
-
-**Reason/root cause**
-Audit writer explicitly sent `metadata: undefined`; Prisma input expects the property to be omitted when absent rather than receiving `undefined`.
-
-**Files changed**
-
-- `apps/api/src/modules/audit/infrastructure/prisma-audit-writer.ts`
-
-**Commit**
-
-- `db6e7e6f4ed38396411f1661bd24c9881d996447`
-
-**Database/migration changes**
-
-- none.
-
-**Tests/commands actually verified**
-
-- Railway rebuild triggered on this exact commit.
-
-**Known failures/unverified areas**
-
-- whole API build remains blocked by other domain/schema errors;
-- focused Audit integration test not yet recorded.
-
-**Score: 6/10**
-**Status: IN_PROGRESS, NOT DONE**
-
-**Next action**
-
-- verify in clean API build and Audit persistence integration tests.
-
----
-
-## 2026-08-22 — Create living HOOMA progress plan
-
-**Task**
-Create this root `progress.md` as the mandatory execution/evidence ledger.
-
-**Reason/root cause**
-Planning documents were becoming stale relative to active decisions and runtime discoveries. The project needs one visible living record of rules, phases, proof, scores and real completion state.
-
-**Files changed**
-
-- `progress.md`
-
-**Commit**
-
-- recorded by the GitHub create-file operation for this entry; replace this text with the exact commit SHA on the next update.
-
-**Database/migration changes**
-
-- none.
-
-**Tests/commands actually verified**
-
-- file creation through GitHub on `phase-0-foundation`.
-
-**Known failures/unverified areas**
-
-- active planning documents still need reconciliation with current HOOMA naming and updated Whistle rules.
-
-**Score: 8/10**
-**Status: VERIFIED, NOT DONE**
-
-**Next action**
-
-- update this entry with exact commit SHA, then reconcile `structure.md` / `requirements.md` architecture-affecting conflicts while continuing runtime repair.
-
----
-
-# 39. NEXT EXECUTION STEP
-
-Immediate next task after this file exists:
-
-1. fetch the latest Railway build result for the current `phase-0-foundation` head;
-2. identify the first remaining root compiler/schema contradiction;
-3. inspect the related canonical model + schema + repository + service + contracts + frontend consumer;
-4. correct the canonical owner rather than patching the compiler symptom;
-5. run the available verification;
-6. let Railway rebuild automatically;
-7. update this `progress.md` with exact changed files, commit, proof, score and status;
-8. repeat until the shared HOOMA API is healthy;
-9. then obtain and verify the Web App URL;
-10. then obtain and verify the Telegram Mini App URL and bot link.
 
 ## 2026-08-29 — Play Invite Player / Hire Player lifecycle source-corrected
 
+PR #166 (`fix/play-player-actions-lifecycle`) implemented the Play-to-Teams/Event recruitment/invite handoffs while preserving owning-domain persistence and authorization. CI/integration evidence at the recorded exact head remains historical proof for that slice; later changes require their own verification.
+
+---
+
+## 2026-09-01 — Athletes foundation
+
+PR #213 merged the canonical Athletes domain foundation at merge commit `984f0ce4eb216f50ec3ae7a12a7ea5802481fb45`.
+
+---
+
+## 2026-09-02 — Athletes mobile visual system and hardening
+
+PR #214 merged the first Athletes mobile/sport visual-system pass. Subsequent hardening removed Athletes dependence on Community-owned form presentation classes and updated the navigation contract expectation from Pitch to Athletes. These entries establish that Athletes nav was already intentionally recognized before this documentation reconciliation.
+
+---
+
+## 2026-09-02 — Whistle Ride context/delivery repair
+
+The source audit found the old Ride-to-direct-user Whistle bypass, reconciled Ride Whistle to the canonical `RIDE` context, and introduced metadata-only notification persistence. Current merged source should be re-read rather than relying on the old pre-repair TODO wording in earlier planning entries.
+
+---
+
+## 2026-09-03 — Ride plan reconciliation / RIDE-007C closeout audit
+
+The prior ledger verified current Ride route/readback/mobile closeout work and explicitly recorded the current bottom nav as:
+
+```text
+Home | Play | Watch | HOOMA | Athletes
+```
+
+This later evidence superseded the stale Pitch-nav statements that remained near the top of the old progress plan.
+
+---
+
+## 2026-09-03 — Documentation current-state reconciliation
+
 **Task**
-Complete the Play Players `INVITE` and `HIRE PLAYER` actions without changing the locked Play IA or creating duplicate lifecycle ownership.
+Reconcile current HOOMA documentation with merged `phase-0-foundation` navigation/Home IA and audit adjacent stale current-state claims.
 
 **Reason/root cause**
-The GAME card was intentionally non-interactive, while the TEAM card used a page-local sent flag and a Teams route that accepted a Play listing ID. Teams infrastructure resolved that ID by reading Play-owned Prisma persistence directly. There was no durable Event-owned player invitation lifecycle. The frontend could also treat `me === null` as guest while account loading was still in progress.
+Merged source intentionally replaced permanent-nav Pitch with Athletes and changed the Home visible ordering/label, but several governing documents still described the earlier IA. Additional stale statements still described Athletes/Ride Whistle and object storage as future-only.
 
-**Authoritative ownership implemented**
+**Authoritative evidence inspected**
 
-- Play owns player-listing discovery, listing-target resolution and cross-domain orchestration only.
-- Teams owns `TeamPlayerOffer`, roster authorization and `TeamPlayer` creation on acceptance.
-- Events owns `EventPlayerInvite` and canonical RSVP/waitlist acceptance.
-- Teams no longer queries `PlayPlayerListing` persistence.
-- Event invitation send never auto-creates an RSVP.
-- Event invitation acceptance reuses the same row-locked RSVP capacity/waitlist transaction as ordinary Join.
-- Event cancellation/completion closes pending invitations.
-- Pending action UI state is read back from Teams/Events and mapped to current Play listing IDs server-side rather than persisted as browser-local authority.
+- current `phase-0-foundation` HEAD at audit start: `6ffec7d035277f3a45cc585877f220cdc36a2874`;
+- no open PRs targeting `phase-0-foundation` at rechecks;
+- `packages/ui/src/navigation/HoomaBottomNav.tsx`;
+- `packages/ui/src/home/home-gateways.ts`;
+- navigation/Home contract tests;
+- commit `f884c22417d9139111bbb1f40bcd8ebab6d8a237` (`feat(nav): replace Pitch with Athletes`);
+- commit `c44422a9391e7582765acb4e9bc0ccb893e6a3a6` (`fix(home): reorder Pitch and Places gateways`);
+- current Whistle/Athletes/Ride source and previously verified phase runtime topology.
 
-**Primary files changed**
+**Current navigation truth**
 
-- `apps/api/src/bootstrap/container.ts`
-- `apps/api/src/modules/play/**`
-- `apps/api/src/modules/teams/**`
-- `apps/api/src/modules/events/**`
-- `packages/contracts/src/play.ts`
-- `packages/contracts/src/team-offers.ts`
-- `packages/database/prisma/schema.prisma`
-- `packages/database/prisma/migrations/20260829214500_event_player_invites/migration.sql`
-- `packages/frontend/src/events/PlayPage.tsx`
-- `packages/frontend/src/events/PlayPlayerCard.tsx`
-- `packages/frontend/src/events/EventInvitesPanel.tsx`
-- `packages/frontend/src/events/play-api.ts`
-- `packages/frontend/src/events/api.ts`
-- `packages/frontend/src/teams/team-offer-api.ts`
-- `requirements.md`
-- `docs/CANONICAL_MODEL.md`
-- `docs/adr/ADR-049-play-player-actions.md`
-- focused Play/Team/Event tests
+```text
+Permanent nav: Home | Play | Watch | HOOMA | Athletes
+Home:          HOOMA | Teams | Pitch
+               Places | Ride | Requests
+```
 
-**Verification evidence**
+**Documentation changes in the reconciliation branch**
 
-- PR: `#166` (`fix/play-player-actions-lifecycle` -> `phase-0-foundation`).
-- Implementation/documentation head `ef7d7471297774c5f597658fdd3e7df9e1f91cf5` passed CI run `33278161057` end-to-end.
-- Passed clean install, Prisma generate/validate, clean migration deploy including `20260829214500_event_player_invites`, architecture check, changed-file Prettier, changed-source lint, TypeScript, package build, unit tests, full build, PostgreSQL integration tests, deploy preflight, security check and migration status.
-- Final PR head is re-run through the same CI after this evidence-only ledger update before readiness is claimed.
+- `structure.md`;
+- `requirements.md`;
+- `docs/DECISIONS.md`;
+- `docs/adr/ADR-055-current-navigation-home-ia.md`;
+- `docs/adr/ADR-048-home-create-flow-ia.md`;
+- `docs/adr/ADR-054-athletes-independent-domain.md`;
+- `docs/HOME_BRAND_SPEC.md`;
+- `docs/ASSET_MANIFEST.md`;
+- `docs/GAMERS_PRODUCT_CONTRACT.md`;
+- `progress.md`.
 
-**Remaining uncertainty**
-Automated CI and database integration are proven. A real browser/Telegram Mini App click-through is still a separate runtime proof because this execution environment does not expose browser automation.
+**Database/migration changes**
 
----
+- none.
 
-## 2026-09-01 — Start Athletes foundation PR 2
+**Product-source changes**
 
-**Task**
-Start PR 2 for the Athletes foundation domain after PR #212 merged the HOOMA/Teams IA correction.
-
-**Foundation**
-
-- PR #212 head: `0d6d8f6761c0bb21d5620257539066c40cd8b8c5`
-- merged/read-back foundation: `3f72b3e97e6d6147a39610ecaab082bf727851c6`
-- branch: `feat/athletes-foundation`
-
-**Decision**
-
-Athletes is a separate HOOMA-connected domain using canonical `User`, independent Athletes persistence, and independent Athletes membership/join-request lifecycle. It is not a Community subtype, not a Team subtype, not ULTRAS, and not a generic creator abstraction.
+- none; documentation only.
 
 **Status**
-
-PR #213 merged into `phase-0-foundation` as the canonical Athletes domain foundation at merge commit `984f0ce4eb216f50ec3ae7a12a7ea5802481fb45`. Its database, API, contracts, service, repository, authorization, migration, integration tests, and frontend route foundation are no longer pending work.
-
----
-
-## 2026-09-02 — Athletes mobile visual system merged
-
-**Task**
-Record the post-foundation Athletes mobile-first visual-system pass.
-
-**Foundation**
-
-- Prior Athletes domain foundation merge: `984f0ce4eb216f50ec3ae7a12a7ea5802481fb45`
-- PR: #214 `feat(athletes): introduce mobile-first sport visual system`
-- PR #214 head merged: `523c167f382ae5e282a154ca6aa82286ca91e707`
-- PR #214 merge commit: `7fa8cce1b93705b2c47c33c7510b3fc9bbc1fdc3`
-
-**Status**
-PR #214 is merged and is the canonical first Athletes mobile/sport visual-system pass. The PR changed only `packages/frontend/src/athletes/AthletesPages.tsx` and `packages/frontend/src/athletes/athletes.css`; it did not reopen Athletes API, contracts, auth, repository, Prisma, migrations, routes, or domain architecture.
+Documentation current-state reconciliation in review branch; must be compared with current `phase-0-foundation` before merge.
 
 ---
 
-## 2026-09-02 — Athletes mobile runtime presentation hardening
+# 27. NEXT EXECUTION STEP
 
-**Task**
-Post-merge runtime/mobile validation and corrective hardening for the merged Athletes UI after PR #214.
+Before any new implementation:
 
-**Foundation**
-
-- Starting foundation from PR #214 read-back: `7fa8cce1b93705b2c47c33c7510b3fc9bbc1fdc3`
-- Earlier rechecked `origin/phase-0-foundation`: `dce9ff915c12cc130ee3c6352d9c6514d6d00e06`
-- Current rechecked `origin/phase-0-foundation`: `f864554dd65cd1c9c9c9655fe0bde0c25ca92909`
-- Current foundation includes the semantic positive-token test correction `f864554dd65cd1c9c9c9655fe0bde0c25ca92909` and the Athletes semantic color cascade via `packages/frontend/src/athletes/athletes-semantic.css`, loaded after `athletes.css`. PR #215 was rebased onto this foundation without conflict; the existing Athletes hardening commits were preserved.
-- Branch: `fix/athletes-mobile-runtime-hardening`
-
-**Finding**
-Runtime/source inspection found Athletes create presentation still coupled to Community-owned `.hooma-*` form presentation classes. Athletes compensated with `!important` overrides in its own CSS, creating unnecessary cross-domain CSS ownership coupling and specificity fragility.
-
-**Correction**
-
-- Removed Athletes dependence on Community-owned form presentation/layout classes: `.hooma-create-form`, `.hooma-form-grid`, `.hooma-privacy-choice`, `.hooma-form-actions`, and `.hooma-span-2`.
-- Added Athletes-owned field/layout/choice/action classes for the create surface and scoped the new presentation selectors under `.athletes-page`.
-- Removed the unnecessary Athletes `!important` overrides created by the prior cascade conflict, including the current semantic selected-state overrides that no longer need `!important` because `athletes-semantic.css` loads after `athletes.css`.
-- Preserved native radio controls for sport, visibility, and join-policy choices.
-- Updated the stale permanent bottom-navigation contract expectation from `Pitch` to `Athletes` while leaving Home gateway Pitch expectations unchanged.
-- Kept sport typed as canonical `AthletesSport` and left `visibility`, `joinPolicy`, create payload, routes, authorization, API, contracts, Prisma, migrations, service, and repository unchanged.
-
-**Runtime evidence obtained**
-
-- Rebuilt packages with `npm run build:packages` so the web runtime consumed the changed `@hooma/frontend` dist output.
-- Install-free temporary Playwright runtime outside product dependencies validated the final cascade for `/athletes` and `/athletes/new` at `360px`, `390px`, `430px`, and `1024px`.
-- `/athletes/new` showed no document horizontal scroll at all tested widths; all nine canonical sports rendered; 13 native radios were visible across sport, visibility, and join-policy controls. Selected sport and selected choice computed to green `rgb(163, 230, 53)` from the semantic cascade.
-- Sport switching was verified for `CYCLING`, `RUNNING`, `SWIMMING`, `FOOTBALL`, `BASKETBALL`, `TENNIS`, `PADEL`, `GYM_FITNESS`, and `OTHER`: exactly one sport radio checked, labels activated radios, selected class applied, selected state computed green, hero text updated to the selected sport label, and an unrelated name input stayed preserved while switching.
-- Private visibility selection was verified to force approval-required joining and disable open join.
-- Focus proof showed the focused sport radio's label received a visible lime outline through `:focus-within`.
-- `/athletes` rendered at all tested widths without document-level horizontal scroll or non-scroller overflow; the sport chip rail intentionally scrolls horizontally inside the viewport. The active chip computed to green `rgb(163, 230, 53)`.
-
-**Runtime evidence still unavailable**
-
-- `/athletes` populated-list, long-record, member/join metadata, and read-back create states were not locally proven because no real local API/PostgreSQL environment was running; the observed runtime API calls failed with local connection-refused errors.
-- `/athletes/:athletesCommunityId` real detail states, member/moderator/founder role states, join-request lifecycle, create success/read-back, and API-backed keyboard/state paths remain not locally proven and rely on #213 domain/integration coverage plus CI until a disposable PostgreSQL/API runtime is available.
-- Telegram Mini App runtime was not proven in this environment.
-
-**Files changed**
-
-- `packages/frontend/src/athletes/AthletesPages.tsx`
-- `packages/frontend/src/athletes/athletes.css`
-- `packages/frontend/src/athletes/athletes-semantic.css`
-- `tests/navigation-contract.test.mjs`
-- `progress.md`
-
-**Verification status**
-
-- `npm ci`: passed.
-- `npm run db:generate`: passed.
-- `npm run db:validate`: passed with a local dummy-format `DATABASE_URL`; the first run without `DATABASE_URL` failed at Prisma config resolution, not source validation.
-- `npm run architecture:check`: passed.
-- Changed-file Prettier check for `AthletesPages.tsx`, `athletes.css`, `athletes-semantic.css`, `tests/navigation-contract.test.mjs`, and `progress.md`: passed.
-- Changed-source ESLint for `packages/frontend/src/athletes/AthletesPages.tsx`: passed.
-- `npm run typecheck`: passed.
-- `npm run build:packages`: passed.
-- `npm test`: passed after rebasing onto foundation `f864554dd65cd1c9c9c9655fe0bde0c25ca92909`, where the stale semantic-token zero-drift assertion was corrected.
-- `npm run build`: passed.
-- `npm run deploy:preflight`: passed.
-- `npm run security:check`: passed, 0 production high vulnerabilities.
-- `npm run test:integration`: NOT LOCALLY PROVEN — requires disposable PostgreSQL CI.
-- `npm run db:migrate:status`: NOT LOCALLY PROVEN — requires disposable PostgreSQL CI.
-- PR #215 remains open from `fix/athletes-mobile-runtime-hardening` to `phase-0-foundation`. Local rebase-validation passed through `npm test`, app build, deploy preflight, and security after the foundation semantic-token test correction; exact-head CI is pending after push of the rebased branch.
-
-Mobile/TMA runtime validation must not be marked complete until the missing API-backed and Telegram evidence is actually obtained.
-
-**Next recommended Athletes slice**
-After this corrective PR is reviewed and merged, run a disposable PostgreSQL/API-backed Athletes runtime validation slice for populated hub, create/read-back, detail, role-specific states, and Telegram Mini App viewport proof before starting any new Athletes feature surface.
-
----
-
-## 2026-09-02 — Whistle context/delivery repair source audit before implementation
-
-Branch: `fix/whistle-context-delivery` from `origin/phase-0-foundation` at `f60bd57dc1f70f6bea406a2fbb57e98358379ad7`.
-
-Starting audit findings before code:
-
-A. Canonical Whistle files:
-
-- `apps/api/src/modules/whistle/application/whistle.service.ts` owns the 33-grapheme rule, shared 11/day quota, UTC-midnight expiry, Redis body write/delete/read orchestration, and context authorization dispatch.
-- `apps/api/src/modules/whistle/application/whistle.repository.ts` defines the application `WhistleContextType` union, including `RIDE`, `ATHLETES`, and `USER_DIRECT`.
-- `apps/api/src/modules/whistle/http/whistle.routes.ts` exposes `/api/v1/whistles/contexts/:contextType/:contextId` and direct-user `/api/v1/whistles/users/:username`; its context schema includes `RIDE` while the service currently rejects it.
-- `apps/api/src/modules/whistle/infrastructure/prisma-whistle.repository.ts` persists metadata only in `WhistleMetadata`, including `contextType`, `contextId`, author/timestamps/expiry; it does not persist body.
-- `apps/api/src/modules/whistle/infrastructure/redis-whistle-store.ts` stores body at `whistle:body:<id>` with PX TTL and `NX`.
-
-B. Ride-specific Whistle bridge files:
-
-- `packages/frontend/src/discovery/HoomaNowSection.tsx` currently maps a Ride request expansion to `sendDirectUserWhistle(transport, requester.username, body.trim())`, losing the Ride request identity before persistence.
-- `packages/frontend/src/rides/community-interaction-api.ts` only fetches requester/canWhistle metadata; it does not carry a Whistle context endpoint.
-- `apps/api/src/modules/rides/application/ride-community-interaction.service.ts` authorizes active community visibility and returns requester/canWhistle for a community Ride request.
-- `apps/api/src/modules/rides/infrastructure/prisma-ride-community-interaction.repository.ts` proves the current Ride card is a `RideRequest`, scoped to an active/open/unexpired community-audience request.
-
-C. Direct-user files:
-
-- `apps/api/src/modules/whistle/application/whistle.service.ts` derives `USER_DIRECT` context IDs from the sorted canonical user IDs of sender and target.
-- `apps/api/src/modules/whistle/http/whistle.routes.ts` owns `/whistles/users/:username` for genuine direct-user Whistles.
-- `packages/frontend/src/profile-api.ts` and `packages/frontend/src/whistle/direct-user-api.ts` call the direct-user route.
-
-D. Notification infrastructure found:
-
-- No dedicated user-facing notification/inbox model, contracts, API route, or frontend notification API was found by repository search.
-- Existing durable side-effect stores are `AuditLog` and `OutboxEvent`; neither is a user notification inbox, and neither should store Whistle bodies.
-- Therefore the repair requires a small reusable user-notification/discovery foundation for Whistle delivery metadata only.
-
-E. Contradictory/obsolete paths found:
-
-- `RIDE` exists in Prisma enum, application union, and HTTP context schema.
-- `WhistleService.authorizeContext` still throws `WHISTLE_CONTEXT_NOT_ENABLED` for `RIDE`.
-- `HoomaNowSection` explicitly routes Ride Whistles through direct-user username delivery.
-- `tests/community-hooma-now-ride-ui.test.mjs` currently asserts the obsolete direct-user Ride behavior.
-
-F. Database impact:
-
-- `WhistleContextType.RIDE` and `WhistleMetadata` already exist, so no Whistle schema/migration change is needed for Ride context storage.
-- A notification persistence change is needed only because no canonical notification model exists. It must be one generic metadata-only user notification model, indexed by recipient, with no body column.
-
-G. Implementation plan:
-
-1. Add failing tests that prove `RIDE` cannot be rejected by canonical Whistle service, Ride request Whistles use `RIDE/<RideRequest.id>` and not `USER_DIRECT`, direct-user Whistles remain `USER_DIRECT`, and notification rows contain no body.
-2. Add a minimal metadata-only user notification contract/repository/service/route and migration.
-3. Add Ride domain authorization methods on the existing Ride service/repository boundary for community Ride requests; Whistle service delegates `RIDE` auth there and receives the Ride owner/requester for notification.
-4. Have Whistle service emit body-free notification metadata after successful direct-user or Ride Whistle creation, suppressing self-notification.
-5. Replace the Ride frontend direct-user bypass with canonical `RIDE` context API/board wiring and update the obsolete static test.
-6. Validate focused tests, full local gates possible without local Postgres, push one PR, and use CI for PostgreSQL migration/integration proof.
-
-### Foundation recheck after source audit implementation
-
-- `origin/phase-0-foundation` moved from `f60bd57dc1f70f6bea406a2fbb57e98358379ad7` to `25bc97592b3502f132a535de879771165a49a7ed` while the branch was dirty.
-- Incoming foundation files were Play presentation only: `packages/frontend/src/events/PlayPlayerCard.tsx`, `packages/frontend/src/events/play-player-listing.css`, `packages/ui/src/play/PickupMatchCard.tsx`.
-- Overlap with Whistle/Ride/notification/schema/API files: none.
-- Preserved the local Whistle repair diff in `.hermes-tmp/whistle-context-delivery-before-rebase.*`, stashed only intended touched paths, rebased `fix/whistle-context-delivery` onto `25bc97592b3502f132a535de879771165a49a7ed`, and reapplied cleanly.
-
-### Continuation rebase to current foundation 992adc3427ddef57527f54cb3b7f84a2d2466cdd
-
-- Preserved uncommitted Whistle context/delivery repair diff before moving foundation.
-- Fetched `origin/phase-0-foundation`; live foundation was `992adc3427ddef57527f54cb3b7f84a2d2466cdd`.
-- Incoming foundation commits since `25bc97592b3502f132a535de879771165a49a7ed` were Play-only: `54ff44da`, `06625547`, `992adc34`.
-- Incoming changed files: `packages/frontend/src/events/PlayPage.tsx`, `packages/frontend/src/events/play-player-listing.css`.
-- No source overlap with Whistle/Ride/notification/schema repair files.
-- Rebased `fix/whistle-context-delivery` onto current foundation and reapplied preserved work without conflicts.
-- `npm test` currently fails two Play presentation tests on both this branch and a clean foundation worktree at `992adc3427ddef57527f54cb3b7f84a2d2466cdd`; this is not caused by the Whistle repair diff.
-
-### Final pre-commit foundation recheck to 2dce346882f78c313bcf741ad1dad311630a54ed
-
-- `origin/phase-0-foundation` moved again from `992adc3427ddef57527f54cb3b7f84a2d2466cdd` to `2dce346882f78c313bcf741ad1dad311630a54ed` before commit.
-- Incoming commits were profile/Play presentation only: `b2fc235a`, `5812fd00`, `00a9fb70`, `4c7ca302`, `998a30da`, `11903dc8`, `2dce3468`.
-- Incoming files were `apps/web/src/profile/ProfilePage.tsx`, `apps/web/src/profile/PublicProfilePage.tsx`, `apps/web/src/profile/profile.css`, `packages/frontend/src/events/play-event-ticket.css`, and `packages/frontend/src/events/play.css`.
-- No source overlap with Whistle/Ride/notification/schema repair files.
-- Preserved and rebased `fix/whistle-context-delivery` to `2dce346882f78c313bcf741ad1dad311630a54ed`; preserved work reapplied cleanly.
-
-## 2026-09-03 — Ride plan current-state reconciliation
-
-Branch: `docs/ride-plan-current-state` from `origin/phase-0-foundation` at `525b3b6b842bca5892c74cf213e982e3a0385fa0`.
-
-Read-back findings before docs update:
-
-- PR #210 is merged: final head `c0670bd10f35bacd315727d792e3a93c0458fdcd`, merge commit `43dde47b9ce4466a52e01faf3a1dc4f5a592e818`, exact-head `verify` check `SUCCESS`.
-- No open PRs currently target `phase-0-foundation`.
-- `rideplan.md` still described PR #210 / `RIDE-007F` as active and not merge-ready.
-- Current source contains the merged Ride owner-edit, My Rides, Community RideRequest HOOMA NOW, and mobile SHARE WITH anchors from PR #210.
-- `structure.md` under-described the current Ride route surface by listing only `/rides/request` and `/rides/offers`.
-- `docs/DATABASE.md` listed future Ride models (`RideMatch`, `RideLocationPing`, `RideRating`) beside current Ride models even though current Prisma foundation contains `RideOffer`, `RideRequest`, `RideRequestCommunityAudience`, `RideParticipation`, `RideMeetingPoint`, `RideOfferWaypoint`, and `RideOfferVehiclePhoto`.
-
-Docs changed in this reconciliation:
-
-- `rideplan.md` marks `RIDE-007F` done with PR #210 head/merge/CI evidence, removes the stale active-PR gate, and makes `RIDE-007C` closeout audit the next current Ride step.
-- `structure.md` now lists the current Ride child routes and Requests/FundMe routing state.
-- `docs/DATABASE.md` now distinguishes current Ride persistence from future matching/location/rating models.
-
-Remaining current Ride order after reconciliation:
-
-1. `RIDE-007C` closeout audit.
-2. `RIDE-007D` privacy-safe static maps.
-3. `RIDE-007` umbrella closeout.
-4. Requests slices only after Ride closeout/map scope is resolved or explicitly deferred.
-
-## 2026-09-03 — RIDE-007C closeout audit
-
-Branch: `docs/ride-007c-closeout-audit` from `origin/phase-0-foundation` at `47694044a6872ec5043bc57595189a3dc3e4139b`.
-
-Closeout findings:
-
-- `RIDE-007C` source/readback audit passed for Ride routes, API readback, owner manage/edit wiring, Community Ride interaction, SHARE WITH phone layout, My Rides server readback, vehicle photo containment, and bottom nav contract.
-- Targeted Ride tests passed: 41 TypeScript service/contract tests and 31 MJS source-contract/navigation tests.
-- Production web build passed.
-- Temporary Playwright smoke rendered 30 route/width combinations: `/rides`, `/rides/matchday`, `/rides/anywhere`, `/rides/request`, `/rides/requests/request-007c/edit`, `/rides/offers`, `/rides/offers/new`, `/rides/offers/offer-007c`, `/rides/offers/offer-007c/edit`, and `/rides/mine` at 360, 390, and 430px.
-- First rendered smoke found a real 360px horizontal overflow caused by the shared account topbar extending to 368px. The source fix was scoped to `apps/web/src/account/account.css` by setting `.hooma-topbar` to `inline-size: 100vw`; rerendered smoke then passed with no overflow and no page runtime errors.
-- The current bottom nav readback is `Home | Play | Watch | HOOMA | Athletes`; `rideplan.md` no longer carries the stale `Pitch` nav label.
-
-Remaining current Ride order after closeout:
-
-1. `RIDE-007D` privacy-safe static maps.
-2. `RIDE-007` umbrella closeout.
-3. Requests slices only after Ride closeout/map scope is resolved or explicitly deferred.
+1. finish/merge this documentation reconciliation only if its diff remains documentation-only and current `phase-0-foundation` has not introduced conflicting owner decisions;
+2. re-read the active phase HEAD and open PRs;
+3. continue production-readiness work from current source, not from `main` or historical ledgers;
+4. highest verified runtime blockers remain object-storage configuration, Worker deployment, Whistle notification failure-boundary consistency, notification lifecycle completion, and readiness/health alignment unless a newer inspection proves they changed.
