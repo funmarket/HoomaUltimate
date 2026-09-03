@@ -1,0 +1,195 @@
+name: Temporary Restore Event Check-in Semantics
+
+on:
+  push:
+    branches: [phase-0-foundation]
+    paths:
+      - ".github/workflows/tmp-restore-event-checkin-semantics.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  restore-and-verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hooma_ultimate_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hooma_ultimate_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hooma_ultimate_test
+      WEB_ORIGIN: http://localhost:5173
+      TELEGRAM_ORIGIN: http://localhost:5174
+      TELEGRAM_BOT_TOKEN: integration-test-token
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Refuse concurrent branch drift
+        shell: bash
+        run: |
+          git fetch origin phase-0-foundation
+          test "$(git rev-parse origin/phase-0-foundation)" = "$GITHUB_SHA"
+          git checkout -B phase-0-foundation "$GITHUB_SHA"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm install --global npm@10.9.2
+
+      - name: Restore only audited Event files
+        shell: bash
+        run: |
+          git restore --source=b27361fc6fa105cc05895a63c4c13306234f0725 -- \
+            apps/api/src/http/errors/error-handler.ts \
+            apps/api/src/modules/events/application/event.repository.ts \
+            apps/api/src/modules/events/application/event.service.ts \
+            apps/api/src/modules/events/domain/event-error.ts \
+            apps/api/src/modules/events/infrastructure/prisma-event.repository.ts \
+            docs/CANONICAL_MODEL.md \
+            packages/database/prisma/schema.prisma \
+            packages/frontend/src/events/EventDetailPage.tsx \
+            packages/frontend/src/events/api.ts \
+            tests/event-service.test.ts \
+            tests/events-structure.test.mjs \
+            tests/events.integration.test.ts \
+            tests/watch-event-detail-presentation.test.mjs
+
+          git rm -f docs/EVENT_ATTENDANCE_LIFECYCLE.md
+          git rm -f packages/database/prisma/maintenance/event-attendance-classification.sql
+
+          mkdir -p packages/database/prisma/migrations/20260903170000_restore_event_checkin_semantics
+          cat > packages/database/prisma/migrations/20260903170000_restore_event_checkin_semantics/migration.sql <<'SQL'
+          -- Restore the Event check-in contract that existed before the temporary
+          -- attendance-finalization redesign. The prior migration is already applied
+          -- in deployed environments, so it remains immutable migration history.
+          ALTER TABLE "EventRsvp"
+          ADD COLUMN IF NOT EXISTS "checkedInAt" TIMESTAMP(3);
+
+          -- In the original contract, check-in itself marks the RSVP ATTENDED and
+          -- EventRsvp.checkedInAt records the check-in time. EventCheckIn remains the
+          -- one-per-Event/User check-in record.
+          UPDATE "EventRsvp" AS r
+          SET
+            "checkedInAt" = COALESCE(r."checkedInAt", c."createdAt"),
+            "status" = CASE
+              WHEN r."status" = 'CONFIRMED' THEN 'ATTENDED'::"EventRsvpStatus"
+              ELSE r."status"
+            END,
+            "updatedAt" = CASE
+              WHEN r."status" = 'CONFIRMED' THEN NOW()
+              ELSE r."updatedAt"
+            END
+          FROM "EventCheckIn" AS c
+          WHERE c."eventId" = r."eventId"
+            AND c."userId" = r."userId"
+            AND r."status" IN ('CONFIRMED', 'ATTENDED');
+
+          -- The temporary redesign could write NO_SHOW only when completing an Event.
+          -- Restore only rows written after that redesign migration was applied, and
+          -- only when no check-in exists. Historical rows before that boundary remain
+          -- untouched.
+          WITH lifecycle_migration AS (
+            SELECT "finished_at"
+            FROM "_prisma_migrations"
+            WHERE "migration_name" = '20260903160000_event_attendance_lifecycle'
+              AND "rolled_back_at" IS NULL
+              AND "finished_at" IS NOT NULL
+            ORDER BY "finished_at" DESC
+            LIMIT 1
+          )
+          UPDATE "EventRsvp" AS r
+          SET "status" = 'CONFIRMED', "updatedAt" = NOW()
+          FROM "Event" AS e, lifecycle_migration AS m
+          WHERE r."eventId" = e."id"
+            AND r."status" = 'NO_SHOW'
+            AND e."status" = 'COMPLETED'
+            AND r."updatedAt" >= m."finished_at"
+            AND e."updatedAt" >= m."finished_at"
+            AND NOT EXISTS (
+              SELECT 1
+              FROM "EventCheckIn" AS c
+              WHERE c."eventId" = r."eventId"
+                AND c."userId" = r."userId"
+            );
+          SQL
+
+          git rm -f .github/workflows/tmp-restore-event-checkin-semantics.yml
+
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npm run db:validate
+      - run: npm run db:migrate:deploy
+      - run: npm run architecture:check
+      - run: npm run typecheck
+      - run: npm run build:packages
+
+      - name: Check formatting only for restored task files
+        shell: bash
+        run: |
+          npx prettier --check \
+            apps/api/src/http/errors/error-handler.ts \
+            apps/api/src/modules/events/application/event.repository.ts \
+            apps/api/src/modules/events/application/event.service.ts \
+            apps/api/src/modules/events/domain/event-error.ts \
+            apps/api/src/modules/events/infrastructure/prisma-event.repository.ts \
+            docs/CANONICAL_MODEL.md \
+            packages/database/prisma/schema.prisma \
+            packages/frontend/src/events/EventDetailPage.tsx \
+            packages/frontend/src/events/api.ts \
+            tests/event-service.test.ts \
+            tests/events-structure.test.mjs \
+            tests/events.integration.test.ts \
+            tests/watch-event-detail-presentation.test.mjs
+
+      - name: Lint only restored TypeScript source
+        shell: bash
+        run: |
+          npx eslint \
+            apps/api/src/http/errors/error-handler.ts \
+            apps/api/src/modules/events/application/event.repository.ts \
+            apps/api/src/modules/events/application/event.service.ts \
+            apps/api/src/modules/events/domain/event-error.ts \
+            apps/api/src/modules/events/infrastructure/prisma-event.repository.ts \
+            packages/frontend/src/events/EventDetailPage.tsx \
+            packages/frontend/src/events/api.ts \
+            tests/event-service.test.ts \
+            tests/events.integration.test.ts \
+            --max-warnings=0
+
+      - name: Event unit and presentation tests
+        run: node --import tsx --test tests/event-service.test.ts tests/events-structure.test.mjs tests/watch-event-detail-presentation.test.mjs
+
+      - name: Event PostgreSQL integration test
+        run: node --import tsx --test tests/events.integration.test.ts
+
+      - run: npm run build
+      - run: npm run deploy:preflight
+      - run: npm run security:check
+      - run: npm run db:migrate:status
+
+      - name: Commit audited restoration
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "fix(events): restore original check-in semantics"
+          test "$(git ls-remote origin refs/heads/phase-0-foundation | cut -f1)" = "$GITHUB_SHA"
+          git push origin HEAD:phase-0-foundation
