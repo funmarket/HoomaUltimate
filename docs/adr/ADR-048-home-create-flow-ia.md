@@ -2,27 +2,48 @@
 
 ## Status
 
-Accepted.
+Accepted historically; **current Home/navigation portions superseded by ADR-055**. The Communities-only creation refinement is governed by ADR-053.
+
+## Current-state reconciliation — 2026-09-03
+
+This ADR records the 2026-08-29 simplification decision and should not be read as the current navbar/Home ordering contract.
+
+Current permanent bottom navigation is:
+
+```text
+Home | Play | Watch | HOOMA | Athletes
+```
+
+Current Home gateway is:
+
+```text
+HOOMA | Teams | Pitch
+Places | Ride | Requests
+```
+
+Pitch remains an independent `/pitch` product and Home gateway even though Athletes now owns the fifth permanent navigation slot. The visible Home label is `Places`; Watch may continue using `Spots` as Watch-owned product language. See ADR-055 for the current IA.
 
 ## Context
 
-Home and the HOOMA create chooser had drifted across product documents, current source, and future-domain planning. The old Home gateway set exposed Gamers, ULTRAS and FundMe as primary Home cards even though the current product-owner direction is to simplify Home discovery and avoid implying unfinished domains are shipped.
+Home and the HOOMA create chooser had drifted across product documents, current source, and future-domain planning. The old Home gateway set exposed Gamers, ULTRAS and FundMe as primary Home cards even though the current product-owner direction was to simplify Home discovery and avoid implying unfinished domains were shipped.
 
 Requests, Ride, FundMe and ULTRAS also have durable-domain implications. A navigation simplification must not create tables, APIs, contracts, payment behavior, ride matching, request claims, or generic Community typing.
 
-## Decision
+## Historical decision
 
-Home has six gateways only:
+At the time of this ADR, Home was reduced to six gateways:
 
 ```text
 HOOMA | Teams | Spots | Pitch | Ride | Requests
 ```
 
-The permanent bottom navigation remains:
+and the then-current permanent bottom navigation was:
 
 ```text
 Home | Play | Watch | HOOMA | Pitch
 ```
+
+Those two IA lines are retained only as historical evidence and are superseded by ADR-055.
 
 The original three-option HOOMA create chooser portion is superseded by ADR-053. HOOMA creation now creates only canonical HOOMA Communities through the Communities-owned `/hooma/new` path. Team creation continues through the Teams-owned `/teams/new` path and selects eligible HOOMA context there, including the bounded `/hooma/new?after=team-create` continuation back to `/teams/new?communityId=<created-id>`. ULTRAS remains unavailable until its independent domain is implemented and must not create a Community row or require `CommunityType`.
 
@@ -38,26 +59,20 @@ FundMe is grouped under Requests as a page tab:
 
 This grouping is presentation/navigation only. Fundraising and Payments remain separate future durable owners.
 
-Ride is a Home gateway and may route to an honest frontend shell at `/rides`. The shell must not list fake drivers, create fake bookings, request live location, or imply a working Ride backend.
+Ride is a Home gateway and subsequently gained its own durable vertical slice under ADR-050; the old shell-only restriction in this ADR is historical.
 
-Requests may route to an honest frontend shell at `/requests`. The shell must not create fake listings, claim flows, services, repositories, contracts, tables or backend calls.
+Requests subsequently gained explicit authorization for its own durable Requests-owned slices under ADR-050; the old shell-only restriction in this ADR is historical.
 
 ## Supersession
 
-This supersedes only the Home gateway and HOOMA create-flow portions of ADR-036. ADR-036's permanent bottom navigation decision remains active.
+- ADR-053 supersedes the old HOOMA create-chooser portion.
+- ADR-050 supersedes the shell-only freeze for Ride/Requests domain work.
+- ADR-055 supersedes the old Home visible label/order and permanent bottom-navigation portions.
 
-This narrowly overrides ADR-038 only enough to permit Requests/Rides frontend shells and route registration. Requests, Ride, Fundraising, FundMe, Payments and ULTRAS backend/domain/persistence work remains frozen until separately authorized.
+Unrelated domain-separation reasoning in this ADR remains useful historical context.
 
 ## Consequences
 
-The Home gateway source must expose exactly the six current gateways and retain one shared UI contract.
+Current-facing product, structure, brand, asset, progress and test contracts must use ADR-055 for navigation/Home IA and ADR-053 for HOOMA creation hierarchy.
 
-Governing product, structure, brand, asset and progress documents must stop describing the old eight/nine-card Home as current truth.
-
-Tests should prove the six-gateway Home contract, unchanged bottom navigation, Communities-only HOOMA creation, Teams-owned Team creation, Requests/FundMe tab shell, Ride shell, `/fundme` redirect, and retained direct Gamers routes.
-
-## Superseded in part
-
-ADR-053 supersedes only the HOOMA create chooser portion of this decision. The six-gateway Home contract, permanent bottom navigation, Gamers independence, FundMe grouping and shell-scope constraints remain governed here except where later ADRs explicitly supersede them.
-
-Database, migrations, backend APIs, shared contracts, Gamers domain, Teams backend, Communities backend and bottom navigation are out of scope for this decision.
+Historical tests or task records that quote the old `Pitch` bottom-nav or visible Home `Spots` contract must be identified as historical rather than used to revert current source.
