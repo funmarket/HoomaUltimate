@@ -279,7 +279,7 @@ unused sends never carry into the next UTC day
 every Whistle expires at the next UTC midnight
 body in Redis only
 PostgreSQL metadata only
-authorized feeds show bodies directly
+authorized feeds show the body directly
 no Reveal endpoint
 no 60-second viewer window
 no reveal/seen keys
