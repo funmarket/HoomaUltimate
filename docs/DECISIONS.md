@@ -237,7 +237,7 @@ MANAGE_TEAM_EVENTS
 
 **Current authority:** The bottom-navigation and Home-IA portions are superseded by ADR-055. Current permanent navigation is `Home | Play | Watch | HOOMA | Athletes`; current Home gateway is `HOOMA | Teams | Pitch | Places | Ride | Requests`. Places tabs remain governed by their current product contract. The HOOMA create-flow portion is superseded by ADR-053.
 
-**Reason:** Preserve the decision history while preventing obsolete IA from overriding current source.
+**Reason:** Preserve the decision history while preventing obsolete IA from overriding merged source.
 
 ## ADR-037 — Donor data import is separate from application migrations
 
@@ -279,7 +279,7 @@ unused sends never carry into the next UTC day
 every Whistle expires at the next UTC midnight
 body in Redis only
 PostgreSQL metadata only
-authorized feeds show the body directly
+authorized feeds show bodies directly
 no Reveal endpoint
 no 60-second viewer window
 no reveal/seen keys
