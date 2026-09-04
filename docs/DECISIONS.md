@@ -237,7 +237,7 @@ MANAGE_TEAM_EVENTS
 
 **Current authority:** The bottom-navigation and Home-IA portions are superseded by ADR-055. Current permanent navigation is `Home | Play | Watch | HOOMA | Athletes`; current Home gateway is `HOOMA | Teams | Pitch | Places | Ride | Requests`. Places tabs remain governed by their current product contract. The HOOMA create-flow portion is superseded by ADR-053.
 
-**Reason:** Preserve the decision history while preventing obsolete IA from overriding merged source.
+**Reason:** Preserve the decision history while preventing obsolete IA from overriding current source.
 
 ## ADR-037 — Donor data import is separate from application migrations
 
@@ -407,3 +407,11 @@ This supersedes only the old navigation/Home-IA portions of ADR-011, ADR-036 and
 The dedicated decision record is `docs/adr/ADR-055-current-navigation-home-ia.md`.
 
 **Reason:** Merged source and navigation contract tests intentionally changed the current IA. Documentation must not direct later agents to revert those source-backed product decisions.
+
+## ADR-056 — Athletes Founder Photo Board
+
+**Decision:** Athletes owns a private durable Photo Board for each Athletes community. Only an active FOUNDER membership in the same active Athletes community may upload. Active MODERATOR and MEMBER memberships may view but may not upload; outsiders and public/anonymous viewers may not view. Photo Board metadata is durable Athletes-owned PostgreSQL state while photo bytes use the shared `ObjectStorage` abstraction. Photo Board remains separate from Whistle, and archiving a community closes normal Photo Board access without destructively deleting durable metadata or object bytes. The initial upload policy accepts JPEG, PNG and WebP up to 5 MiB, with route-scoped binary parsing. There is no initial user-facing delete, captions, reactions, comments, albums, manual ordering, public board, Moderator upload or Member upload.
+
+The dedicated decision record is `docs/adr/ADR-056-athletes-founder-photo-board.md`.
+
+**Reason:** Add the approved Founder-curated Athletes media capability without collapsing Athletes ownership into a generic Media domain, duplicating object-storage infrastructure, or turning the durable Photo Board into another Whistle/social-feed system.
