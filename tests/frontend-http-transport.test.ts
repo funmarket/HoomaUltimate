@@ -64,16 +64,13 @@ test("shared transport handles JSON and binary responses", async () => {
     assert.equal(downloaded.type, "image/png");
     assert.deepEqual(Array.from(new Uint8Array(downloadedBytes)), [1, 2, 3]);
 
-    await assert.rejects(
-      requestBlob(transport, "/private-blob"),
-      (error: unknown) => {
-        assert.ok(error instanceof HoomaApiError);
-        assert.equal(error.status, 401);
-        assert.equal(error.code, "AUTH_REQUIRED");
-        assert.equal(error.message, "Authentication required");
-        return true;
-      },
-    );
+    await assert.rejects(requestBlob(transport, "/private-blob"), (error: unknown) => {
+      assert.ok(error instanceof HoomaApiError);
+      assert.equal(error.status, 401);
+      assert.equal(error.code, "AUTH_REQUIRED");
+      assert.equal(error.message, "Authentication required");
+      return true;
+    });
 
     assert.equal(calls.length, 4);
     for (const call of calls) {
