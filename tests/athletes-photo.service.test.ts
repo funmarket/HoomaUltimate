@@ -18,9 +18,14 @@ import type {
 import { AthletesService } from "../apps/api/src/modules/athletes/application/athletes.service.js";
 import { AthletesError } from "../apps/api/src/modules/athletes/domain/athletes-error.js";
 
+const TEST_DATE = "2026-09-05T12:00:00.000Z";
+
+type CommunityStatus = "ACTIVE" | "ARCHIVED";
+type RoleMap = Record<string, AthletesRole | null>;
+
 function community(
   id = "ath-1",
-  status: "ACTIVE" | "ARCHIVED" = "ACTIVE",
+  status: CommunityStatus = "ACTIVE",
 ): AthletesCommunityRecord {
   return {
     id,
@@ -36,8 +41,8 @@ function community(
     joinPolicy: "APPROVAL_REQUIRED",
     status,
     createdByUserId: "founder",
-    createdAt: new Date("2026-09-01T10:00:00.000Z"),
-    updatedAt: new Date("2026-09-01T10:00:00.000Z"),
+    createdAt: new Date(TEST_DATE),
+    updatedAt: new Date(TEST_DATE),
   };
 }
 
@@ -51,7 +56,7 @@ function membership(
     athletesCommunityId,
     userId,
     role,
-    joinedAt: new Date("2026-09-01T10:00:00.000Z"),
+    joinedAt: new Date(TEST_DATE),
     leftAt: null,
   };
 }
@@ -62,20 +67,22 @@ function pending(userId = "member"): AthletesJoinRequestRecord {
     athletesCommunityId: "ath-1",
     userId,
     status: "PENDING",
-    requestedAt: new Date("2026-09-01T10:00:00.000Z"),
+    requestedAt: new Date(TEST_DATE),
     resolvedAt: null,
     resolvedByUserId: null,
   };
 }
 
 function athletesRepositoryStub(
-  roles: Record<string, AthletesRole | null> = {},
-  statusByCommunity: Record<string, "ACTIVE" | "ARCHIVED"> = {},
+  roles: RoleMap = {},
+  statuses: Record<string, CommunityStatus> = {},
 ): AthletesRepository {
-  const roleFor = (id: string, userId: string) => roles[`${id}:${userId}`] ?? null;
+  const roleFor = (id: string, userId: string) =>
+    roles[`${id}:${userId}`] ?? null;
+
   return {
     listPublic: async () => ({ items: [], nextCursor: null }),
-    getPublic: async (id) => community(id, statusByCommunity[id] ?? "ACTIVE"),
+    getPublic: async (id) => community(id, statuses[id] ?? "ACTIVE"),
     createWithFounder: async (userId, input) => ({
       ...community("created-athletes"),
       createdByUserId: userId,
@@ -83,25 +90,31 @@ function athletesRepositoryStub(
     }),
     update: async (id, input) => ({ ...community(id), ...input }),
     archive: async () => true,
-    lifecycle: async (id) => community(id, statusByCommunity[id] ?? "ACTIVE"),
+    lifecycle: async (id) => community(id, statuses[id] ?? "ACTIVE"),
     managerRole: async (id, userId) => roleFor(id, userId),
     activeRole: async (id, userId) =>
-      (statusByCommunity[id] ?? "ACTIVE") === "ACTIVE" ? roleFor(id, userId) : null,
+      (statuses[id] ?? "ACTIVE") === "ACTIVE" ? roleFor(id, userId) : null,
     joinOpen: async (id, userId) => membership(id, userId),
-    requestJoin: async (_id, userId) => ({ kind: "REQUEST", request: pending(userId) }),
+    requestJoin: async (_id, userId) => ({
+      kind: "REQUEST",
+      request: pending(userId),
+    }),
     getJoinRequest: async () => null,
     listJoinRequests: async () => [],
     resolveJoinRequest: async () => true,
     cancelJoinRequest: async () => true,
     listMembers: async () => [],
-    addMemberByUsername: async () => ({ userId: "target", username: "target" }),
+    addMemberByUsername: async () => ({
+      userId: "target",
+      username: "target",
+    }),
     removeMember: async () => true,
     setRole: async () => true,
   };
 }
 
 function photoRecord(
-  input: Partial<AthletesPhotoRecord> = {},
+  overrides: Partial<AthletesPhotoRecord> = {},
 ): AthletesPhotoRecord {
   return {
     id: "photo-1",
@@ -110,33 +123,34 @@ function photoRecord(
     contentType: "image/jpeg",
     sizeBytes: 3,
     uploadedByUserId: "founder",
-    createdAt: "2026-09-05T12:00:00.000Z",
-    updatedAt: "2026-09-05T12:00:00.000Z",
-    ...input,
+    createdAt: TEST_DATE,
+    updatedAt: TEST_DATE,
+    ...overrides,
   };
 }
 
 function photoRepositoryStub(records: AthletesPhotoRecord[] = []) {
   const created: AthletesPhotoCreateInput[] = [];
   let createFailure: Error | null = null;
+
   const repository: AthletesPhotoRepository = {
     create: async (input) => {
       created.push(input);
       if (createFailure) throw createFailure;
-      return photoRecord({
-        ...input,
-        createdAt: "2026-09-05T12:00:00.000Z",
-        updatedAt: "2026-09-05T12:00:00.000Z",
-      });
+      return photoRecord(input);
     },
     listForCommunity: async (athletesCommunityId) =>
-      records.filter((record) => record.athletesCommunityId === athletesCommunityId),
+      records.filter(
+        (record) => record.athletesCommunityId === athletesCommunityId,
+      ),
     getForCommunity: async (athletesCommunityId, photoId) =>
       records.find(
         (record) =>
-          record.athletesCommunityId === athletesCommunityId && record.id === photoId,
+          record.athletesCommunityId === athletesCommunityId &&
+          record.id === photoId,
       ) ?? null,
   };
+
   return {
     repository,
     created,
@@ -147,7 +161,11 @@ function photoRepositoryStub(records: AthletesPhotoRecord[] = []) {
 }
 
 function storageStub() {
-  const puts: Array<{ key: string; body: Uint8Array; contentType: string }> = [];
+  const puts: Array<{
+    key: string;
+    body: Uint8Array;
+    contentType: string;
+  }> = [];
   const gets: string[] = [];
   const removes: string[] = [];
   let putFailure: Error | null = null;
@@ -202,20 +220,27 @@ function storageStub() {
 }
 
 function photoService(
-  roles: Record<string, AthletesRole | null>,
+  roles: RoleMap,
   photos: AthletesPhotoRepository,
   storage: ObjectStorage | null,
-  statusByCommunity: Record<string, "ACTIVE" | "ARCHIVED"> = {},
+  statuses: Record<string, CommunityStatus> = {},
 ) {
   return new AthletesPhotoService(
-    new AthletesService(athletesRepositoryStub(roles, statusByCommunity)),
+    new AthletesService(athletesRepositoryStub(roles, statuses)),
     photos,
     storage,
   );
 }
 
-test("AthletesPhotoService lets the same-community Founder upload each allowed MIME and returns public metadata", async () => {
-  for (const contentType of ["image/jpeg", "image/png", "image/webp"] as const) {
+function expectAthletesCode(code: string) {
+  return (error: unknown) =>
+    error instanceof AthletesError && error.code === code;
+}
+
+test("Founder upload accepts every allowed MIME", async () => {
+  const contentTypes = ["image/jpeg", "image/png", "image/webp"] as const;
+
+  for (const contentType of contentTypes) {
     const photos = photoRepositoryStub();
     const objects = storageStub();
     const service = photoService(
@@ -223,9 +248,12 @@ test("AthletesPhotoService lets the same-community Founder upload each allowed M
       photos.repository,
       objects.storage,
     );
-
     const body = new Uint8Array([1, 2, 3]);
-    const result = await service.upload("founder", "ath-1", { contentType, body });
+
+    const result = await service.upload("founder", "ath-1", {
+      contentType,
+      body,
+    });
 
     assert.equal(objects.puts.length, 1);
     assert.match(objects.puts[0]!.key, /^athletes-photos\/ath-1\//);
@@ -239,15 +267,15 @@ test("AthletesPhotoService lets the same-community Founder upload each allowed M
       athletesCommunityId: "ath-1",
       contentType,
       sizeBytes: 3,
-      createdAt: "2026-09-05T12:00:00.000Z",
-      updatedAt: "2026-09-05T12:00:00.000Z",
+      createdAt: TEST_DATE,
+      updatedAt: TEST_DATE,
     });
     assert.equal("objectKey" in result, false);
     assert.equal("uploadedByUserId" in result, false);
   }
 });
 
-test("AthletesPhotoService persists the descriptor returned by ObjectStorage", async () => {
+test("Upload persists the descriptor returned by ObjectStorage", async () => {
   const photos = photoRepositoryStub();
   const objects = storageStub();
   objects.returnKey("stored/ath-1/provider-photo-key");
@@ -262,28 +290,35 @@ test("AthletesPhotoService persists the descriptor returned by ObjectStorage", a
     body: new Uint8Array([1, 2, 3]),
   });
 
-  assert.equal(photos.created[0]!.objectKey, "stored/ath-1/provider-photo-key");
+  assert.equal(
+    photos.created[0]!.objectKey,
+    "stored/ath-1/provider-photo-key",
+  );
 });
 
-test("AthletesPhotoService denies Moderator, Member, outsider, and Founder from another community uploads", async () => {
-  const roles = {
+test("Upload denies non-Founders and a Founder from another community", async () => {
+  const roles: RoleMap = {
     "ath-1:moderator": "MODERATOR",
     "ath-1:member": "MEMBER",
     "ath-2:other-founder": "FOUNDER",
-  } satisfies Record<string, AthletesRole>;
+  };
   const photos = photoRepositoryStub();
   const objects = storageStub();
   const service = photoService(roles, photos.repository, objects.storage);
 
-  for (const userId of ["moderator", "member", "outsider", "other-founder"]) {
+  for (const userId of [
+    "moderator",
+    "member",
+    "outsider",
+    "other-founder",
+  ]) {
     await assert.rejects(
       () =>
         service.upload(userId, "ath-1", {
           contentType: "image/jpeg",
           body: new Uint8Array([1]),
         }),
-      (error: unknown) =>
-        error instanceof AthletesError && error.code === "ATHLETES_FOUNDER_REQUIRED",
+      expectAthletesCode("ATHLETES_FOUNDER_REQUIRED"),
     );
   }
 
@@ -291,7 +326,7 @@ test("AthletesPhotoService denies Moderator, Member, outsider, and Founder from 
   assert.equal(photos.created.length, 0);
 });
 
-test("AthletesPhotoService denies upload when the Athletes community is archived", async () => {
+test("Upload denies archived Athletes communities", async () => {
   const photos = photoRepositoryStub();
   const objects = storageStub();
   const service = photoService(
@@ -307,12 +342,12 @@ test("AthletesPhotoService denies upload when the Athletes community is archived
         contentType: "image/jpeg",
         body: new Uint8Array([1]),
       }),
-    (error: unknown) => error instanceof AthletesError && error.code === "ATHLETES_NOT_FOUND",
+    expectAthletesCode("ATHLETES_NOT_FOUND"),
   );
   assert.equal(objects.puts.length, 0);
 });
 
-test("AthletesPhotoService rejects invalid MIME, empty bytes, and oversized bytes before storage", async () => {
+test("Upload validates MIME, non-empty bytes, and 5 MiB maximum", async () => {
   const photos = photoRepositoryStub();
   const objects = storageStub();
   const service = photoService(
@@ -350,7 +385,7 @@ test("AthletesPhotoService rejects invalid MIME, empty bytes, and oversized byte
   assert.equal(photos.created.length, 0);
 });
 
-test("AthletesPhotoService rejects upload when storage is unavailable", async () => {
+test("Upload rejects unavailable storage", async () => {
   const photos = photoRepositoryStub();
   const service = photoService(
     { "ath-1:founder": "FOUNDER" },
@@ -369,7 +404,7 @@ test("AthletesPhotoService rejects upload when storage is unavailable", async ()
   assert.equal(photos.created.length, 0);
 });
 
-test("AthletesPhotoService propagates object upload failure without attempting metadata or cleanup", async () => {
+test("Upload propagates storage failure before metadata persistence", async () => {
   const photos = photoRepositoryStub();
   const objects = storageStub();
   const storageFailure = new Error("object storage down");
@@ -392,11 +427,11 @@ test("AthletesPhotoService propagates object upload failure without attempting m
   assert.deepEqual(objects.removes, []);
 });
 
-test("AthletesPhotoService removes the uploaded object when metadata persistence fails", async () => {
+test("Metadata failure removes the exact uploaded object", async () => {
   const photos = photoRepositoryStub();
   const objects = storageStub();
-  objects.returnKey("stored/ath-1/orphan-key");
   const metadataFailure = new Error("database unavailable");
+  objects.returnKey("stored/ath-1/orphan-key");
   photos.failCreate(metadataFailure);
   const service = photoService(
     { "ath-1:founder": "FOUNDER" },
@@ -415,7 +450,7 @@ test("AthletesPhotoService removes the uploaded object when metadata persistence
   assert.deepEqual(objects.removes, ["stored/ath-1/orphan-key"]);
 });
 
-test("AthletesPhotoService surfaces unreconciled orphan cleanup failure", async () => {
+test("Cleanup failure surfaces an unreconciled orphan error", async () => {
   const photos = photoRepositoryStub();
   const objects = storageStub();
   photos.failCreate(new Error("database unavailable"));
@@ -440,9 +475,11 @@ test("AthletesPhotoService surfaces unreconciled orphan cleanup failure", async 
   assert.equal(objects.removes.length, 1);
 });
 
-test("AthletesPhotoService lets active same-community members list durable public metadata", async () => {
-  const record = photoRecord();
-  const photos = photoRepositoryStub([record, photoRecord({ id: "photo-2", athletesCommunityId: "ath-2" })]);
+test("Active same-community members list public metadata", async () => {
+  const photos = photoRepositoryStub([
+    photoRecord(),
+    photoRecord({ id: "photo-2", athletesCommunityId: "ath-2" }),
+  ]);
   const service = photoService(
     { "ath-1:member": "MEMBER" },
     photos.repository,
@@ -450,19 +487,20 @@ test("AthletesPhotoService lets active same-community members list durable publi
   );
 
   const result = await service.list("member", "ath-1");
+
   assert.deepEqual(result, [
     {
       id: "photo-1",
       athletesCommunityId: "ath-1",
       contentType: "image/jpeg",
       sizeBytes: 3,
-      createdAt: "2026-09-05T12:00:00.000Z",
-      updatedAt: "2026-09-05T12:00:00.000Z",
+      createdAt: TEST_DATE,
+      updatedAt: TEST_DATE,
     },
   ]);
 });
 
-test("AthletesPhotoService denies list/read to outsiders, wrong-community members, and archived communities", async () => {
+test("List and read enforce active same-community membership", async () => {
   const photos = photoRepositoryStub([photoRecord()]);
   const objects = storageStub();
   const activeService = photoService(
@@ -474,13 +512,11 @@ test("AthletesPhotoService denies list/read to outsiders, wrong-community member
   for (const userId of ["outsider", "other-member"]) {
     await assert.rejects(
       () => activeService.list(userId, "ath-1"),
-      (error: unknown) =>
-        error instanceof AthletesError && error.code === "ATHLETES_MEMBER_REQUIRED",
+      expectAthletesCode("ATHLETES_MEMBER_REQUIRED"),
     );
     await assert.rejects(
       () => activeService.read(userId, "ath-1", "photo-1"),
-      (error: unknown) =>
-        error instanceof AthletesError && error.code === "ATHLETES_MEMBER_REQUIRED",
+      expectAthletesCode("ATHLETES_MEMBER_REQUIRED"),
     );
   }
 
@@ -490,20 +526,19 @@ test("AthletesPhotoService denies list/read to outsiders, wrong-community member
     objects.storage,
     { "ath-1": "ARCHIVED" },
   );
+
   await assert.rejects(
     () => archivedService.list("member", "ath-1"),
-    (error: unknown) =>
-      error instanceof AthletesError && error.code === "ATHLETES_MEMBER_REQUIRED",
+    expectAthletesCode("ATHLETES_MEMBER_REQUIRED"),
   );
   await assert.rejects(
     () => archivedService.read("member", "ath-1", "photo-1"),
-    (error: unknown) =>
-      error instanceof AthletesError && error.code === "ATHLETES_MEMBER_REQUIRED",
+    expectAthletesCode("ATHLETES_MEMBER_REQUIRED"),
   );
   assert.deepEqual(objects.gets, []);
 });
 
-test("AthletesPhotoService resolves scoped metadata before returning stored body with canonical content type", async () => {
+test("Read resolves scoped metadata before stored bytes", async () => {
   const photos = photoRepositoryStub([photoRecord()]);
   const objects = storageStub();
   const service = photoService(
@@ -513,15 +548,19 @@ test("AthletesPhotoService resolves scoped metadata before returning stored body
   );
 
   const result = await service.read("member", "ath-1", "photo-1");
+
   assert.deepEqual(objects.gets, ["athletes-photos/ath-1/photo-1"]);
   assert.equal(result.contentType, "image/jpeg");
   assert.deepEqual(result.body, new Uint8Array([7, 8, 9]));
 
-  await assert.rejects(() => service.read("member", "ath-1", "missing-photo"), /not found/);
+  await assert.rejects(
+    () => service.read("member", "ath-1", "missing-photo"),
+    /not found/,
+  );
   assert.equal(objects.gets.length, 1);
 });
 
-test("AthletesPhotoService propagates object read failures for Phase 8 error mapping", async () => {
+test("Read propagates storage failure for Phase 8 mapping", async () => {
   const photos = photoRepositoryStub([photoRecord()]);
   const objects = storageStub();
   const readFailure = new Error("object unavailable");
