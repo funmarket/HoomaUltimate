@@ -16,6 +16,9 @@ import type {
   AthletesJoinRequestForManager,
   AthletesJoinResult,
   AthletesMember,
+  AthletesPhotoContentType,
+  AthletesPhotoList,
+  AthletesPhotoUploadResponse,
   AthletesPublicDetail,
   AthletesPublicSummary,
   AthletesSport,
@@ -31,7 +34,7 @@ import type {
   CommunityUpdateInput,
   CommunityVisibility,
 } from "@hooma/contracts/communities";
-import { request, type HoomaTransport } from "./http";
+import { request, requestBinary, requestBlob, type HoomaTransport } from "./http";
 
 import { HoomaApiError } from "./http";
 export { HoomaApiError, request, requestBinary, requestBlob } from "./http";
@@ -478,6 +481,24 @@ export function createHoomaApi(transport: HoomaTransport) {
         transport,
         `/api/v1/athletes/${encodeURIComponent(id)}/members/${encodeURIComponent(userId)}/role`,
         { method: "PATCH", body: JSON.stringify({ role }) },
+      ),
+    listPhotos: (id: string) =>
+      request<AthletesPhotoList>(
+        transport,
+        `/api/v1/athletes/${encodeURIComponent(id)}/photos`,
+      ),
+    uploadPhoto: (id: string, body: Blob, contentType: AthletesPhotoContentType) =>
+      requestBinary<AthletesPhotoUploadResponse>(
+        transport,
+        `/api/v1/athletes/${encodeURIComponent(id)}/photos`,
+        body,
+        contentType,
+        { method: "POST" },
+      ),
+    fetchPhotoContent: (id: string, photoId: string) =>
+      requestBlob(
+        transport,
+        `/api/v1/athletes/${encodeURIComponent(id)}/photos/${encodeURIComponent(photoId)}/content`,
       ),
   };
 
