@@ -56,27 +56,29 @@ export class AthletesPhotoService {
     }
 
     const photoId = randomUUID();
-    const objectKey = athletesPhotoObjectKey(athletesCommunityId, photoId);
-    let objectUploaded = false;
+    const requestedObjectKey = athletesPhotoObjectKey(athletesCommunityId, photoId);
+    let uploadedObjectKey: string | null = null;
 
     try {
-      await this.storage.put(objectKey, input.body, parsedContentType.data);
-      objectUploaded = true;
+      const stored = await this.storage.put(requestedObjectKey, input.body, parsedContentType.data);
+      uploadedObjectKey = stored.key;
+      const storedContentType = athletesPhotoContentTypeSchema.parse(stored.contentType);
 
       const metadata = await this.photos.create({
         id: photoId,
         athletesCommunityId,
-        objectKey,
-        contentType: parsedContentType.data,
-        sizeBytes: input.body.byteLength,
+        objectKey: stored.key,
+        contentType: storedContentType,
+        sizeBytes: stored.sizeBytes,
         uploadedByUserId: userId,
       });
 
+      uploadedObjectKey = null;
       return publicPhotoMetadata(metadata);
     } catch (error) {
-      if (objectUploaded) {
+      if (uploadedObjectKey) {
         try {
-          await this.storage.remove(objectKey);
+          await this.storage.remove(uploadedObjectKey);
         } catch (cleanupError) {
           throw new AggregateError(
             [error, cleanupError],
