@@ -1,0 +1,32 @@
+name: Temporary PR 256 Prettier Exact
+
+on:
+  push:
+    branches: [tmp/pr256-prettier-exact]
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - run: npm exec -- prettier --write tests/frontend-http-transport.test.ts
+      - name: Commit exact formatter output
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/frontend-http-transport.test.ts
+          if git diff --cached --quiet; then
+            echo "No formatter changes"
+            exit 0
+          fi
+          git commit -m "tmp: exact prettier output for PR 256"
+          git push
