@@ -8,6 +8,7 @@ import {
   type AthletesPhotoUploadResponse,
 } from "@hooma/contracts/athletes";
 import type { ObjectStorage } from "@hooma/storage";
+import { AthletesError } from "../domain/athletes-error.js";
 import type { AthletesPhotoRecord, AthletesPhotoRepository } from "./athletes-photo.repository.js";
 import type { AthletesService } from "./athletes.service.js";
 
@@ -43,16 +44,25 @@ export class AthletesPhotoService {
     const contentType = normalizeContentType(input.contentType);
     const parsedContentType = athletesPhotoContentTypeSchema.safeParse(contentType);
     if (!parsedContentType.success) {
-      throw new Error("Athletes photo must be JPEG, PNG, or WebP");
+      throw new AthletesError(
+        "ATHLETES_PHOTO_TYPE_INVALID",
+        "Athletes photo must be JPEG, PNG, or WebP",
+      );
     }
     if (!input.body.byteLength) {
-      throw new Error("Athletes photo bytes are required");
+      throw new AthletesError("ATHLETES_PHOTO_REQUIRED", "Athletes photo bytes are required");
     }
     if (input.body.byteLength > ATHLETES_PHOTO_MAX_BYTES) {
-      throw new Error("Athletes photo must be 5 MiB or smaller");
+      throw new AthletesError(
+        "ATHLETES_PHOTO_TOO_LARGE",
+        "Athletes photo must be 5 MiB or smaller",
+      );
     }
     if (!this.storage) {
-      throw new Error("Athletes photo storage is not configured");
+      throw new AthletesError(
+        "ATHLETES_PHOTO_STORAGE_NOT_CONFIGURED",
+        "Athletes photo storage is not configured",
+      );
     }
 
     const photoId = randomUUID();
@@ -85,8 +95,9 @@ export class AthletesPhotoService {
             "Athletes photo metadata persistence failed and uploaded object cleanup also failed",
           );
         }
+        throw error;
       }
-      throw error;
+      throw new AthletesError("ATHLETES_PHOTO_UPLOAD_FAILED", "Athletes photo upload failed");
     }
   }
 
@@ -102,14 +113,25 @@ export class AthletesPhotoService {
   ): Promise<AthletesPhotoBinary> {
     await this.athletes.requireMemberContent(userId, athletesCommunityId);
     const metadata = await this.photos.getForCommunity(athletesCommunityId, photoId);
-    if (!metadata) throw new Error("Athletes photo not found");
-    if (!this.storage) throw new Error("Athletes photo storage is not configured");
+    if (!metadata) {
+      throw new AthletesError("ATHLETES_PHOTO_NOT_FOUND", "Athletes photo not found");
+    }
+    if (!this.storage) {
+      throw new AthletesError(
+        "ATHLETES_PHOTO_STORAGE_NOT_CONFIGURED",
+        "Athletes photo storage is not configured",
+      );
+    }
 
-    const stored = await this.storage.get(metadata.objectKey);
-    return {
-      contentType: athletesPhotoContentTypeSchema.parse(metadata.contentType),
-      body: stored.body,
-    };
+    try {
+      const stored = await this.storage.get(metadata.objectKey);
+      return {
+        contentType: athletesPhotoContentTypeSchema.parse(metadata.contentType),
+        body: stored.body,
+      };
+    } catch {
+      throw new AthletesError("ATHLETES_PHOTO_UNAVAILABLE", "Athletes photo is unavailable");
+    }
   }
 }
 
