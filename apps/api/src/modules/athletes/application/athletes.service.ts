@@ -165,6 +165,10 @@ export class AthletesService {
     return { ok: true };
   }
 
+  async requireFounderContent(userId: string, id: string) {
+    await this.requireFounder(userId, id);
+  }
+
   async requireMemberContent(userId: string, id: string) {
     const role = await this.repository.activeRole(id, userId);
     if (!role) throw new AthletesError("ATHLETES_MEMBER_REQUIRED", "Athletes membership required");
