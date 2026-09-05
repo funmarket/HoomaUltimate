@@ -1,0 +1,86 @@
+.athletes-photo-board {
+  gap: 1rem;
+}
+
+.athletes-photo-board__heading {
+  align-items: flex-start;
+}
+
+.athletes-photo-board__heading p {
+  margin: 0.35rem 0 0;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.athletes-photo-board__upload {
+  position: relative;
+  overflow: hidden;
+}
+
+.athletes-photo-board__upload input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.athletes-photo-board__upload:focus-within {
+  outline: 2px solid var(--athletes-lime);
+  outline-offset: 3px;
+}
+
+.athletes-photo-board__state,
+.athletes-photo-board__empty {
+  display: grid;
+  gap: 0.25rem;
+  min-height: 5rem;
+  place-items: center;
+  padding: 1rem;
+  border: 1px dashed var(--athletes-border-strong);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.018);
+  color: rgba(255, 255, 255, 0.58);
+  text-align: center;
+}
+
+.athletes-photo-board__empty strong {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.athletes-photo-board__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.athletes-photo-board__photo {
+  min-width: 0;
+  aspect-ratio: 1 / 1;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--athletes-border);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.athletes-photo-board__photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (min-width: 42rem) {
+  .athletes-photo-board__upload {
+    width: fit-content;
+  }
+
+  .athletes-photo-board__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.7rem;
+  }
+}
