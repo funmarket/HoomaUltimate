@@ -258,11 +258,7 @@ test("Upload persists the descriptor returned by ObjectStorage", async () => {
   const photos = photoRepositoryStub();
   const objects = storageStub();
   objects.returnKey("stored/ath-1/provider-photo-key");
-  const service = photoService(
-    { "ath-1:founder": "FOUNDER" },
-    photos.repository,
-    objects.storage,
-  );
+  const service = photoService({ "ath-1:founder": "FOUNDER" }, photos.repository, objects.storage);
 
   await service.upload("founder", "ath-1", {
     contentType: "image/jpeg",
@@ -321,11 +317,7 @@ test("Upload denies archived Athletes communities", async () => {
 test("Upload validates MIME, non-empty bytes, and 5 MiB maximum", async () => {
   const photos = photoRepositoryStub();
   const objects = storageStub();
-  const service = photoService(
-    { "ath-1:founder": "FOUNDER" },
-    photos.repository,
-    objects.storage,
-  );
+  const service = photoService({ "ath-1:founder": "FOUNDER" }, photos.repository, objects.storage);
 
   await assert.rejects(
     () =>
@@ -376,11 +368,7 @@ test("Upload propagates storage failure before metadata persistence", async () =
   const objects = storageStub();
   const storageFailure = new Error("object storage down");
   objects.failPut(storageFailure);
-  const service = photoService(
-    { "ath-1:founder": "FOUNDER" },
-    photos.repository,
-    objects.storage,
-  );
+  const service = photoService({ "ath-1:founder": "FOUNDER" }, photos.repository, objects.storage);
 
   await assert.rejects(
     () =>
@@ -400,11 +388,7 @@ test("Metadata failure removes the exact uploaded object", async () => {
   const metadataFailure = new Error("database unavailable");
   objects.returnKey("stored/ath-1/orphan-key");
   photos.failCreate(metadataFailure);
-  const service = photoService(
-    { "ath-1:founder": "FOUNDER" },
-    photos.repository,
-    objects.storage,
-  );
+  const service = photoService({ "ath-1:founder": "FOUNDER" }, photos.repository, objects.storage);
 
   await assert.rejects(
     () =>
@@ -422,11 +406,7 @@ test("Cleanup failure surfaces an unreconciled orphan error", async () => {
   const objects = storageStub();
   photos.failCreate(new Error("database unavailable"));
   objects.failRemove(new Error("cleanup unavailable"));
-  const service = photoService(
-    { "ath-1:founder": "FOUNDER" },
-    photos.repository,
-    objects.storage,
-  );
+  const service = photoService({ "ath-1:founder": "FOUNDER" }, photos.repository, objects.storage);
 
   await assert.rejects(
     () =>
@@ -508,11 +488,7 @@ test("List and read enforce active same-community membership", async () => {
 test("Read resolves scoped metadata before stored bytes", async () => {
   const photos = photoRepositoryStub([photoRecord()]);
   const objects = storageStub();
-  const service = photoService(
-    { "ath-1:member": "MEMBER" },
-    photos.repository,
-    objects.storage,
-  );
+  const service = photoService({ "ath-1:member": "MEMBER" }, photos.repository, objects.storage);
 
   const result = await service.read("member", "ath-1", "photo-1");
 
@@ -529,11 +505,7 @@ test("Read propagates storage failure for Phase 8 mapping", async () => {
   const objects = storageStub();
   const readFailure = new Error("object unavailable");
   objects.failGet(readFailure);
-  const service = photoService(
-    { "ath-1:member": "MEMBER" },
-    photos.repository,
-    objects.storage,
-  );
+  const service = photoService({ "ath-1:member": "MEMBER" }, photos.repository, objects.storage);
 
   await assert.rejects(
     () => service.read("member", "ath-1", "photo-1"),
