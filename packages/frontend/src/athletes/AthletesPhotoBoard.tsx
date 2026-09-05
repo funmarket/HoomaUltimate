@@ -24,9 +24,7 @@ function isAthletesPhotoContentType(value: string): value is AthletesPhotoConten
   return ATHLETES_PHOTO_CONTENT_TYPES.includes(value as AthletesPhotoContentType);
 }
 
-export function validateAthletesPhotoUpload(
-  file: Pick<File, "size" | "type">,
-): string | null {
+export function validateAthletesPhotoUpload(file: Pick<File, "size" | "type">): string | null {
   if (!isAthletesPhotoContentType(file.type)) {
     return "Choose a JPEG, PNG, or WebP image.";
   }
@@ -143,7 +141,10 @@ export function AthletesPhotoBoard({
   const headingId = `athletes-photo-board-${athletesCommunityId}`;
 
   return (
-    <section className="athletes-surface athletes-section athletes-photo-board" aria-labelledby={headingId}>
+    <section
+      className="athletes-surface athletes-section athletes-photo-board"
+      aria-labelledby={headingId}
+    >
       <div className="athletes-section-heading athletes-photo-board__heading">
         <div>
           <span className="eyebrow">ATHLETES · MEMBERS ONLY</span>

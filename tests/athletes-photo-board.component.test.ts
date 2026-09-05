@@ -4,19 +4,10 @@ import test from "node:test";
 import { ATHLETES_PHOTO_MAX_BYTES } from "@hooma/contracts/athletes";
 import { validateAthletesPhotoUpload } from "../packages/frontend/src/athletes/AthletesPhotoBoard";
 
-const component = readFileSync(
-  "packages/frontend/src/athletes/AthletesPhotoBoard.tsx",
-  "utf8",
-);
-const css = readFileSync(
-  "packages/frontend/src/athletes/athletes-photo-board.css",
-  "utf8",
-);
+const component = readFileSync("packages/frontend/src/athletes/AthletesPhotoBoard.tsx", "utf8");
+const css = readFileSync("packages/frontend/src/athletes/athletes-photo-board.css", "utf8");
 const index = readFileSync("packages/frontend/src/index.ts", "utf8");
-const athletesPages = readFileSync(
-  "packages/frontend/src/athletes/AthletesPages.tsx",
-  "utf8",
-);
+const athletesPages = readFileSync("packages/frontend/src/athletes/AthletesPages.tsx", "utf8");
 
 test("Photo Board upload validation accepts only canonical non-empty images up to 5 MiB", () => {
   for (const type of ["image/jpeg", "image/png", "image/webp"]) {
@@ -55,14 +46,8 @@ test("Photo Board gates viewing to active Athletes members and uploading to Foun
 
 test("Photo Board uses the existing typed Photo API and authenticated Blob rendering path", () => {
   assert.match(component, /api\.athletes\.listPhotos\(athletesCommunityId\)/);
-  assert.match(
-    component,
-    /api\.athletes\.fetchPhotoContent\(athletesCommunityId, photo\.id\)/,
-  );
-  assert.match(
-    component,
-    /api\.athletes\.uploadPhoto\(athletesCommunityId, file, contentType\)/,
-  );
+  assert.match(component, /api\.athletes\.fetchPhotoContent\(athletesCommunityId, photo\.id\)/);
+  assert.match(component, /api\.athletes\.uploadPhoto\(athletesCommunityId, file, contentType\)/);
   assert.match(component, /URL\.createObjectURL\(blob\)/);
   assert.match(component, /URL\.revokeObjectURL/);
   assert.doesNotMatch(component, /objectKey|storageUrl|s3|presign/i);
