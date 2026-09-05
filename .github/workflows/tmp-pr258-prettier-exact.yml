@@ -1,0 +1,35 @@
+name: Temporary PR 258 Prettier Exact
+
+on:
+  push:
+    branches: [tmp/pr258-prettier-exact]
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - run: >-
+          npm exec -- prettier --write
+          packages/frontend/src/athletes/AthletesPhotoBoard.tsx
+          tests/athletes-photo-board.component.test.ts
+      - name: Commit exact formatter output
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/frontend/src/athletes/AthletesPhotoBoard.tsx tests/athletes-photo-board.component.test.ts
+          if git diff --cached --quiet; then
+            echo "No formatter changes"
+            exit 0
+          fi
+          git commit -m "tmp: exact prettier output for PR 258"
+          git push
