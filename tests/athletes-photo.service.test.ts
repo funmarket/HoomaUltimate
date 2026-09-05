@@ -296,12 +296,9 @@ test("Upload denies non-Founders and a Founder from another community", async ()
 test("Upload denies archived Athletes communities", async () => {
   const photos = photoRepositoryStub();
   const objects = storageStub();
-  const service = photoService(
-    { "ath-1:founder": "FOUNDER" },
-    photos.repository,
-    objects.storage,
-    { "ath-1": "ARCHIVED" },
-  );
+  const service = photoService({ "ath-1:founder": "FOUNDER" }, photos.repository, objects.storage, {
+    "ath-1": "ARCHIVED",
+  });
 
   await assert.rejects(
     () =>
