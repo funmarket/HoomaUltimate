@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import type { PublicAthletesDetail, PublicAthletesSummary } from "../api";
 import { useHoomaFrontend } from "../context";
 import { AthletesWhistleBoard } from "../whistle/HoomaWhistleBoard";
+import { AthletesPhotoBoard } from "./AthletesPhotoBoard";
 
 const sports: readonly { value: AthletesSport; label: string }[] = [
   { value: "CYCLING", label: "Cycling" },
@@ -515,7 +516,14 @@ export function AthletesDetailPage({
         )}
       </section>
       {detail.viewerRole ? (
-        <AthletesWhistleBoard athletesCommunityId={athletesCommunityId} />
+        <>
+          <AthletesWhistleBoard athletesCommunityId={athletesCommunityId} />
+          <AthletesPhotoBoard
+            athletesCommunityId={athletesCommunityId}
+            communityStatus={detail.status}
+            viewerRole={detail.viewerRole}
+          />
+        </>
       ) : null}
       {members.length ? (
         <section className="athletes-surface athletes-section">
