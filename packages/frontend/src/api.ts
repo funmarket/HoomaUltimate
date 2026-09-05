@@ -34,7 +34,7 @@ import type {
 import { request, type HoomaTransport } from "./http";
 
 import { HoomaApiError } from "./http";
-export { HoomaApiError, request } from "./http";
+export { HoomaApiError, request, requestBinary, requestBlob } from "./http";
 export type { HoomaTransport } from "./http";
 export type {
   CommunityCreateInput,
