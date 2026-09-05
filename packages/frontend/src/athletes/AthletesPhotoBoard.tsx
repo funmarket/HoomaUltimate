@@ -124,11 +124,12 @@ export function AthletesPhotoBoard({
       return;
     }
 
+    const contentType = file.type as AthletesPhotoContentType;
     setUploading(true);
     setValidationError("");
     setServerError("");
     try {
-      await api.athletes.uploadPhoto(athletesCommunityId, file, file.type);
+      await api.athletes.uploadPhoto(athletesCommunityId, file, contentType);
       await loadPhotos();
     } catch (reason) {
       setServerError(protectedError(reason, "Unable to upload photo"));
