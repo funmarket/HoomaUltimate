@@ -322,7 +322,7 @@ test("Upload validates MIME, non-empty bytes, and 5 MiB maximum", async () => {
         contentType: "image/gif",
         body: new Uint8Array([1]),
       }),
-    /JPEG, PNG, or WebP/,
+    expectAthletesCode("ATHLETES_PHOTO_TYPE_INVALID"),
   );
   await assert.rejects(
     () =>
@@ -330,7 +330,7 @@ test("Upload validates MIME, non-empty bytes, and 5 MiB maximum", async () => {
         contentType: "image/jpeg",
         body: new Uint8Array(),
       }),
-    /bytes are required/,
+    expectAthletesCode("ATHLETES_PHOTO_REQUIRED"),
   );
   await assert.rejects(
     () =>
@@ -338,7 +338,7 @@ test("Upload validates MIME, non-empty bytes, and 5 MiB maximum", async () => {
         contentType: "image/jpeg",
         body: new Uint8Array(ATHLETES_PHOTO_MAX_BYTES + 1),
       }),
-    /5 MiB or smaller/,
+    expectAthletesCode("ATHLETES_PHOTO_TOO_LARGE"),
   );
 
   assert.equal(objects.puts.length, 0);
@@ -355,16 +355,15 @@ test("Upload rejects unavailable storage", async () => {
         contentType: "image/jpeg",
         body: new Uint8Array([1]),
       }),
-    /storage is not configured/,
+    expectAthletesCode("ATHLETES_PHOTO_STORAGE_NOT_CONFIGURED"),
   );
   assert.equal(photos.created.length, 0);
 });
 
-test("Upload propagates storage failure before metadata persistence", async () => {
+test("Upload maps storage failure before metadata persistence", async () => {
   const photos = photoRepositoryStub();
   const objects = storageStub();
-  const storageFailure = new Error("object storage down");
-  objects.failPut(storageFailure);
+  objects.failPut(new Error("object storage down"));
   const service = photoService({ "ath-1:founder": "FOUNDER" }, photos.repository, objects.storage);
 
   await assert.rejects(
@@ -373,7 +372,7 @@ test("Upload propagates storage failure before metadata persistence", async () =
         contentType: "image/jpeg",
         body: new Uint8Array([1]),
       }),
-    (error: unknown) => error === storageFailure,
+    expectAthletesCode("ATHLETES_PHOTO_UPLOAD_FAILED"),
   );
   assert.equal(photos.created.length, 0);
   assert.deepEqual(objects.removes, []);
@@ -493,19 +492,21 @@ test("Read resolves scoped metadata before stored bytes", async () => {
   assert.equal(result.contentType, "image/jpeg");
   assert.deepEqual(result.body, new Uint8Array([7, 8, 9]));
 
-  await assert.rejects(() => service.read("member", "ath-1", "missing-photo"), /not found/);
+  await assert.rejects(
+    () => service.read("member", "ath-1", "missing-photo"),
+    expectAthletesCode("ATHLETES_PHOTO_NOT_FOUND"),
+  );
   assert.equal(objects.gets.length, 1);
 });
 
-test("Read propagates storage failure for Phase 8 mapping", async () => {
+test("Read maps storage failure for the Photo error surface", async () => {
   const photos = photoRepositoryStub([photoRecord()]);
   const objects = storageStub();
-  const readFailure = new Error("object unavailable");
-  objects.failGet(readFailure);
+  objects.failGet(new Error("object unavailable"));
   const service = photoService({ "ath-1:member": "MEMBER" }, photos.repository, objects.storage);
 
   await assert.rejects(
     () => service.read("member", "ath-1", "photo-1"),
-    (error: unknown) => error === readFailure,
+    expectAthletesCode("ATHLETES_PHOTO_UNAVAILABLE"),
   );
 });
