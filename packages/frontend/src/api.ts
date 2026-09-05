@@ -483,10 +483,7 @@ export function createHoomaApi(transport: HoomaTransport) {
         { method: "PATCH", body: JSON.stringify({ role }) },
       ),
     listPhotos: (id: string) =>
-      request<AthletesPhotoList>(
-        transport,
-        `/api/v1/athletes/${encodeURIComponent(id)}/photos`,
-      ),
+      request<AthletesPhotoList>(transport, `/api/v1/athletes/${encodeURIComponent(id)}/photos`),
     uploadPhoto: (id: string, body: Blob, contentType: AthletesPhotoContentType) =>
       requestBinary<AthletesPhotoUploadResponse>(
         transport,
