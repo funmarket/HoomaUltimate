@@ -1,3 +1,4 @@
+import { Buffer } from "node:buffer";
 import {
   athletesCommunityCreateSchema,
   athletesCommunityUpdateSchema,
@@ -5,9 +6,10 @@ import {
   athletesMemberAddSchema,
   athletesMemberRoleUpdateSchema,
 } from "@hooma/contracts/athletes";
-import { Router } from "express";
+import { Router, raw } from "express";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import { getAuth } from "../../identity/http/auth-request.js";
+import type { AthletesPhotoService } from "../application/athletes-photo.service.js";
 import type { AthletesService } from "../application/athletes.service.js";
 
 export function createAthletesPublicRouter(service: AthletesService): Router {
@@ -34,7 +36,10 @@ export function createAthletesPublicRouter(service: AthletesService): Router {
   return router;
 }
 
-export function createAthletesMemberRouter(service: AthletesService): Router {
+export function createAthletesMemberRouter(
+  service: AthletesService,
+  photoService: AthletesPhotoService,
+): Router {
   const router = Router();
   router.post(
     "/",
@@ -44,6 +49,39 @@ export function createAthletesMemberRouter(service: AthletesService): Router {
         .json(
           await service.create(getAuth(req).userId, athletesCommunityCreateSchema.parse(req.body)),
         );
+    }),
+  );
+  router.get(
+    "/:athletesCommunityId/photos",
+    asyncHandler(async (req, res) => {
+      res.json(
+        await photoService.list(getAuth(req).userId, String(req.params.athletesCommunityId)),
+      );
+    }),
+  );
+  router.post(
+    "/:athletesCommunityId/photos",
+    raw({ type: "*/*", limit: "5mb" }),
+    asyncHandler(async (req, res) => {
+      const body = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
+      res.status(201).json(
+        await photoService.upload(getAuth(req).userId, String(req.params.athletesCommunityId), {
+          contentType: req.get("content-type") ?? "",
+          body,
+        }),
+      );
+    }),
+  );
+  router.get(
+    "/:athletesCommunityId/photos/:photoId/content",
+    asyncHandler(async (req, res) => {
+      const photo = await photoService.read(
+        getAuth(req).userId,
+        String(req.params.athletesCommunityId),
+        String(req.params.photoId),
+      );
+      res.setHeader("content-type", photo.contentType);
+      res.send(Buffer.from(photo.body));
     }),
   );
   router.get(

@@ -18,7 +18,9 @@ import { PitchSuggestionService } from "../modules/pitch/application/pitch-sugge
 import { PrismaPitchRepository } from "../modules/pitch/infrastructure/prisma-pitch.repository.js";
 import { CommunityService } from "../modules/communities/application/community.service.js";
 import { PrismaCommunityRepository } from "../modules/communities/infrastructure/prisma-community.repository.js";
+import { AthletesPhotoService } from "../modules/athletes/application/athletes-photo.service.js";
 import { AthletesService } from "../modules/athletes/application/athletes.service.js";
+import { PrismaAthletesPhotoRepository } from "../modules/athletes/infrastructure/prisma-athletes-photo.repository.js";
 import { PrismaAthletesRepository } from "../modules/athletes/infrastructure/prisma-athletes.repository.js";
 import { TeamService } from "../modules/teams/application/team.service.js";
 import { PrismaTeamLifecycleRepository } from "../modules/teams/infrastructure/prisma-team-lifecycle.repository.js";
@@ -113,6 +115,12 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
   const communityService = new CommunityService(communityRepository, platformAdminService);
   const athletesRepository = new PrismaAthletesRepository(database);
   const athletesService = new AthletesService(athletesRepository);
+  const athletesPhotoRepository = new PrismaAthletesPhotoRepository(database);
+  const athletesPhotoService = new AthletesPhotoService(
+    athletesService,
+    athletesPhotoRepository,
+    storage,
+  );
   const teamRepository = new PrismaTeamRepository(database);
   const teamLifecycleRepository = new PrismaTeamLifecycleRepository(database);
   const teamService = new TeamService(
@@ -202,6 +210,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     pitchModerationService,
     communityService,
     athletesService,
+    athletesPhotoService,
     teamService,
     eventService,
     gamerService,
