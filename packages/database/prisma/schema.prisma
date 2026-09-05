@@ -313,6 +313,7 @@ model User {
   athletesMemberships           AthletesMembership[]
   athletesJoinRequests          AthletesJoinRequest[]           @relation("AthletesJoinRequester")
   athletesJoinRequestsResolved  AthletesJoinRequest[]           @relation("AthletesJoinResolver")
+  athletesPhotosUploaded        AthletesPhoto[]                 @relation("AthletesPhotoUploader")
   teamsCreated                  Team[]                         @relation("TeamCreator")
   teamPlayers                   TeamPlayer[]
   teamOffersReceived            TeamPlayerOffer[]              @relation("TeamOfferTarget")
@@ -659,6 +660,7 @@ model AthletesCommunity {
   createdBy       User                     @relation("AthletesCommunityCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
   memberships     AthletesMembership[]
   joinRequests    AthletesJoinRequest[]
+  photos          AthletesPhoto[]
 
   @@index([status, sport, createdAt, id])
   @@index([city, houma])
@@ -695,6 +697,22 @@ model AthletesJoinRequest {
 
   @@index([athletesCommunityId, status, requestedAt])
   @@index([userId, status, requestedAt])
+}
+
+model AthletesPhoto {
+  id                   String             @id
+  athletesCommunityId  String
+  objectKey            String             @unique
+  contentType          String
+  sizeBytes            Int
+  uploadedByUserId     String
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  athletesCommunity    AthletesCommunity  @relation(fields: [athletesCommunityId], references: [id], onDelete: Restrict)
+  uploadedBy           User               @relation("AthletesPhotoUploader", fields: [uploadedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([athletesCommunityId, createdAt, id])
+  @@index([uploadedByUserId, createdAt])
 }
 
 model Team {
