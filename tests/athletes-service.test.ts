@@ -200,3 +200,53 @@ test("AthletesService protects final Founder authority and Moderator scope", asy
       error instanceof AthletesError && error.code === "ATHLETES_FOUNDER_ROLE_FORBIDDEN",
   );
 });
+
+test("AthletesService allows Founder content for an active Founder in the same community", async () => {
+  const repo = repositoryStub();
+  let checkedCommunityId = "";
+  repo.managerRole = async (id, userId) => {
+    checkedCommunityId = id;
+    return id === "ath-1" && userId === "founder" ? "FOUNDER" : null;
+  };
+  const service = new AthletesService(repo);
+
+  await service.requireFounderContent("founder", "ath-1");
+
+  assert.equal(checkedCommunityId, "ath-1");
+});
+
+test("AthletesService denies non-Founders and a Founder from another Athletes community", async () => {
+  const rolesByCommunity: Record<string, AthletesRole> = {
+    "ath-1:moderator": "MODERATOR",
+    "ath-1:member": "MEMBER",
+    "ath-2:other-founder": "FOUNDER",
+  };
+  const repo = repositoryStub();
+  repo.managerRole = async (id, userId) => rolesByCommunity[`${id}:${userId}`] ?? null;
+  const service = new AthletesService(repo);
+
+  for (const userId of ["moderator", "member", "outsider", "other-founder"]) {
+    await assert.rejects(
+      () => service.requireFounderContent(userId, "ath-1"),
+      (error: unknown) =>
+        error instanceof AthletesError && error.code === "ATHLETES_FOUNDER_REQUIRED",
+    );
+  }
+});
+
+test("AthletesService denies Founder content when the Athletes community is archived", async () => {
+  const repo = repositoryStub({ founder: "FOUNDER" });
+  let roleChecked = false;
+  repo.lifecycle = async () => ({ ...community(), status: "ARCHIVED" });
+  repo.managerRole = async () => {
+    roleChecked = true;
+    return "FOUNDER";
+  };
+  const service = new AthletesService(repo);
+
+  await assert.rejects(
+    () => service.requireFounderContent("founder", "ath-1"),
+    (error: unknown) => error instanceof AthletesError && error.code === "ATHLETES_NOT_FOUND",
+  );
+  assert.equal(roleChecked, false);
+});
