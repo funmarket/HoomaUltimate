@@ -1,14 +1,14 @@
 # ADR-056 — Athletes Founder Photo Board
 
-Status: **ACCEPTED PRODUCT/ARCHITECTURE CONTRACT — IMPLEMENTATION PHASES FOLLOW**
+Status: **ACCEPTED PRODUCT/ARCHITECTURE CONTRACT — IMPLEMENTED ON `phase-0-foundation`**
 
 ## Context
 
-Athletes is an independent HOOMA-connected sports-community domain. Its current shipped foundation includes `AthletesCommunity`, `AthletesMembership`, `AthletesJoinRequest`, public discovery/detail, membership/management lifecycle, and a member-private Whistle Board through the shared transient Whistle engine.
+Athletes is an independent HOOMA-connected sports-community domain. Its current merged foundation includes `AthletesCommunity`, `AthletesMembership`, `AthletesJoinRequest`, public discovery/detail, membership/management lifecycle, a member-private Whistle Board through the shared transient Whistle engine, and the Founder-curated Photo Board governed by this ADR.
 
-The approved next durable media capability is a deliberately narrow Founder-curated **Photo Board**. This ADR locks the product and ownership boundary before authorization, contracts, schema, repository, storage orchestration, routes, or frontend implementation begins.
+The Photo Board was approved as a deliberately narrow Founder-curated durable media capability. This ADR originally locked the product and ownership boundary before authorization, contracts, schema, repository, storage orchestration, routes, or frontend implementation began.
 
-This decision does not claim that Photo Board code is already shipped.
+The bounded Photo Board source vertical slice has since been implemented on `phase-0-foundation`. This decision records that merged repository state and does not claim that any specific deployment has object-storage credentials or configuration.
 
 ## Decision
 
@@ -84,9 +84,9 @@ Archiving an `AthletesCommunity` must deny active private Photo Board access but
 
 Internal cleanup of an object that was uploaded but whose metadata transaction failed is reliability behavior, not a user-facing delete feature.
 
-## Explicitly not authorized by this ADR
+## Historical governance boundary
 
-This governance phase does **not** authorize implementation of:
+At the time this ADR was accepted, its governance-only phase did **not itself** authorize implementation of:
 
 - Founder photo authorization code;
 - Photo Board contracts/DTOs;
@@ -101,17 +101,17 @@ This governance phase does **not** authorize implementation of:
 - changes to Ride;
 - changes to Whistle behavior.
 
-Those changes must occur only in their approved later phases and pass their own test/score/merge gates.
+The bounded Photo Board implementation phases have since completed on `phase-0-foundation`. This historical list does not mean the implemented Photo Board layers are absent today, and it still does not authorize generic Media infrastructure, Ride changes, or Whistle behavior changes.
 
 ## Consequences
 
 - The feature stays Athletes-owned and member-private.
-- Founder curation is enforced server-side when implementation begins; UI hiding will never be sufficient authorization.
+- Founder curation is enforced server-side; UI hiding is never sufficient authorization.
 - PostgreSQL and object storage retain distinct responsibilities.
 - Existing shared storage infrastructure can be reused without creating a generic Media domain.
 - Archive semantics preserve durable data while closing active private access.
-- Later implementation phases have a bounded contract and cannot invent social mechanics.
+- The implemented vertical slice remains bounded by this contract and cannot invent social mechanics.
 
-## Verification for this governance phase
+## Verification history
 
-Review/CI must prove that this change is documentation-only, introduces no Photo Board code/schema/routes, and remains compatible with repository architecture/documentation checks. Later phases must provide behavioral tests for the capabilities they implement.
+The original governance phase was documentation-only and intentionally introduced no Photo Board code, schema, or routes. Subsequent approved implementation phases supplied the bounded authorization, contracts, metadata persistence, repository/service/storage orchestration, authenticated HTTP routes, frontend integration, and behavioral verification. Phase 16 synchronizes this ADR to that merged repository state while preserving the original product constraints and without making a claim about any specific deployment's object-storage configuration.
