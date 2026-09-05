@@ -163,6 +163,8 @@ Athletes is not a HOOMA Community subtype, not a Team subtype, not a generic cre
 
 Current Athletes behavior includes public discovery/detail, create, update/archive, join/request/cancel, manager request approval/decline, member list, direct-add by canonical username, bounded member removal, and an Athletes member Whistle Board through the shared Whistle engine. Equipment, marketplace, Payments, Ride integration, Requests integration, FundMe and ULTRAS remain separate slices unless explicitly implemented by their owning domains.
 
+Current Photo Board behavior is member-private and Founder-curated. Only an active `FOUNDER` membership in the same active Athletes community may upload. Active `MODERATOR` and `MEMBER` memberships may view but may not upload. Outsiders, public/anonymous users, memberships from another Athletes community, and archived Athletes communities are denied active Photo Board access. Photo Board metadata is Athletes-owned durable PostgreSQL data, image bytes use shared object storage, and the current Photo Board has no captions, likes/reactions, comments/replies, albums, manual ordering, moderator/member upload, public board, or user-facing delete.
+
 Athletes is a permanent navigation destination at `/athletes`. It must not appear inside the HOOMA Community create section.
 
 ## 2.5 Places tabs
