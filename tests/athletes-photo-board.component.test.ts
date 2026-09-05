@@ -81,8 +81,16 @@ test("Photo Board adds no social, moderator/member upload, or delete mechanics",
   assert.doesNotMatch(component, /deletePhoto|removePhoto|method:\s*"DELETE"/i);
 });
 
-test("Phase 12 exports the standalone component without starting Phase 13 detail integration", () => {
+test("Phase 13 integrates Photo Board into the member-only Athletes detail surface", () => {
   assert.match(index, /import "\.\/athletes\/athletes-photo-board\.css"/);
   assert.match(index, /export \* from "\.\/athletes\/AthletesPhotoBoard"/);
-  assert.doesNotMatch(athletesPages, /AthletesPhotoBoard/);
+  assert.match(athletesPages, /import \{ AthletesPhotoBoard \} from "\.\/AthletesPhotoBoard"/);
+  assert.match(
+    athletesPages,
+    /<AthletesPhotoBoard[\s\S]*athletesCommunityId=\{athletesCommunityId\}[\s\S]*communityStatus=\{detail\.status\}[\s\S]*viewerRole=\{detail\.viewerRole\}/,
+  );
+  assert.match(
+    athletesPages,
+    /detail\.viewerRole \? \([\s\S]*<AthletesWhistleBoard[\s\S]*<AthletesPhotoBoard/,
+  );
 });
