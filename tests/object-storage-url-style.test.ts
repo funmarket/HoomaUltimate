@@ -45,35 +45,32 @@ function assertSignedHost(call: CapturedRequest, expectedHost: string): void {
   assert.match(call.headers.get("authorization") ?? "", /SignedHeaders=.*host/);
 }
 
-test(
-  "S3ObjectStorage preserves path-style addressing by default for PUT, GET and DELETE",
-  async () => {
-    await withCapturedFetch(async (calls) => {
-      const storage = new S3ObjectStorage(baseConfig);
-      const key = "athletes/example/photo.jpg";
+test("S3ObjectStorage preserves path-style addressing by default for PUT, GET and DELETE", async () => {
+  await withCapturedFetch(async (calls) => {
+    const storage = new S3ObjectStorage(baseConfig);
+    const key = "athletes/example/photo.jpg";
 
-      await storage.put(key, new Uint8Array([1, 2, 3]), "image/jpeg");
-      const stored = await storage.get(key);
-      await storage.remove(key);
+    await storage.put(key, new Uint8Array([1, 2, 3]), "image/jpeg");
+    const stored = await storage.get(key);
+    await storage.remove(key);
 
-      assert.equal(calls.length, 3);
-      assert.deepEqual(calls.map((call) => call.method), ["PUT", "GET", "DELETE"]);
+    assert.equal(calls.length, 3);
+    assert.deepEqual(calls.map((call) => call.method), ["PUT", "GET", "DELETE"]);
 
-      for (const call of calls) {
-        assert.equal(
-          call.url,
-          "https://storage.example.com/hooma-test/athletes/example/photo.jpg",
-        );
-        assert.equal(new URL(call.url).pathname, "/hooma-test/athletes/example/photo.jpg");
-        assertSignedHost(call, "storage.example.com");
-      }
+    for (const call of calls) {
+      assert.equal(
+        call.url,
+        "https://storage.example.com/hooma-test/athletes/example/photo.jpg",
+      );
+      assert.equal(new URL(call.url).pathname, "/hooma-test/athletes/example/photo.jpg");
+      assertSignedHost(call, "storage.example.com");
+    }
 
-      assert.deepEqual(stored.body, new Uint8Array([7, 8, 9]));
-      assert.equal(stored.contentType, "image/jpeg");
-      assert.equal(stored.sizeBytes, 3);
-    });
-  },
-);
+    assert.deepEqual(stored.body, new Uint8Array([7, 8, 9]));
+    assert.equal(stored.contentType, "image/jpeg");
+    assert.equal(stored.sizeBytes, 3);
+  });
+});
 
 test("S3ObjectStorage uses virtual-hosted addressing for PUT, GET and DELETE", async () => {
   await withCapturedFetch(async (calls) => {
