@@ -30,8 +30,14 @@ function locationLabel(item: Pick<PublicAthletesSummary, "city" | "houma" | "slu
   return [item.city, item.houma].filter(Boolean).join(" · ") || `@${item.slug}`;
 }
 
-export function AthletesPage() {
-  const { api, authenticationHref } = useHoomaFrontend();
+export function AthletesPage({
+  onCreateCommunity,
+  createCommunityDisabled = false,
+}: {
+  readonly onCreateCommunity: () => void;
+  readonly createCommunityDisabled?: boolean;
+}) {
+  const { api } = useHoomaFrontend();
   const navigate = useNavigate();
   const [items, setItems] = useState<PublicAthletesSummary[]>([]);
   const [sport, setSport] = useState<AthletesSport | "ALL">("ALL");
@@ -58,8 +64,6 @@ export function AthletesPage() {
     };
   }, [api, sport]);
 
-  const signInHref = authenticationHref("/athletes/new");
-
   return (
     <div className="page athletes-page">
       <section className="athletes-surface athletes-hero athletes-hero--hub">
@@ -71,21 +75,14 @@ export function AthletesPage() {
             <button
               className="button athletes-action athletes-action--primary"
               type="button"
-              onClick={() => navigate("/athletes/new")}
+              onClick={onCreateCommunity}
+              disabled={createCommunityDisabled}
             >
               <span className="athletes-action__icon" aria-hidden="true">
                 +
               </span>
               Create community
             </button>
-            {signInHref ? (
-              <a
-                className="button secondary athletes-action athletes-action--secondary"
-                href={signInHref}
-              >
-                Sign in to create
-              </a>
-            ) : null}
           </div>
         </div>
         <span className="athletes-hero__motion" aria-hidden="true" />
