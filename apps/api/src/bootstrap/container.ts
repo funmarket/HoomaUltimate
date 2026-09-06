@@ -80,6 +80,7 @@ function objectStorage(
     bucket: config.OBJECT_STORAGE_BUCKET,
     accessKeyId: config.OBJECT_STORAGE_ACCESS_KEY_ID,
     secretAccessKey: config.OBJECT_STORAGE_SECRET_ACCESS_KEY,
+    urlStyle: config.OBJECT_STORAGE_URL_STYLE,
   });
 }
 

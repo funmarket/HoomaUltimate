@@ -13,6 +13,7 @@ const objectStorageShape = {
   OBJECT_STORAGE_BUCKET: z.string().min(1).optional(),
   OBJECT_STORAGE_ACCESS_KEY_ID: z.string().min(1).optional(),
   OBJECT_STORAGE_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+  OBJECT_STORAGE_URL_STYLE: z.enum(["path", "virtual"]).default("path"),
 };
 
 const apiEnvironmentSchema = z
