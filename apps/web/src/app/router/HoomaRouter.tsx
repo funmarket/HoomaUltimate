@@ -1,5 +1,5 @@
 import { lazy, Suspense, useMemo } from "react";
-import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
 import {
   AddPlacePage,
   AthletesDetailPage,
@@ -38,9 +38,10 @@ import {
   TeamEditPage,
   TeamLineupPage,
   TeamsPage,
+  useHoomaFrontend,
   WatchPage,
 } from "@hooma/frontend";
-import { AccountProvider } from "../../account/AccountProvider";
+import { AccountProvider, useAccount } from "../../account/AccountProvider";
 import { createTelegramRuntime } from "../../telegram/runtime";
 import { HoomaShell } from "../shell/HoomaShell";
 
@@ -81,6 +82,41 @@ function requiredParam(name: string, value: string | undefined): string {
 function PublicProfileRoute() {
   const { username } = useParams();
   return <PublicProfilePage username={requiredParam("username", username)} />;
+}
+
+function AthletesHubRoute() {
+  const navigate = useNavigate();
+  const { authenticationHref } = useHoomaFrontend();
+  const { me, loading, error } = useAccount();
+
+  function createCommunity() {
+    if (loading || error) return;
+    if (me) {
+      navigate("/athletes/new");
+      return;
+    }
+    const href = authenticationHref("/athletes/new");
+    if (href) navigate(href);
+  }
+
+  return (
+    <AthletesPage
+      onCreateCommunity={createCommunity}
+      createCommunityDisabled={loading || Boolean(error)}
+    />
+  );
+}
+
+function CreateAthletesRoute() {
+  const { authenticationHref } = useHoomaFrontend();
+  const { me, loading, error } = useAccount();
+
+  if (loading) return <p className="status">Loading account…</p>;
+  if (error) return <p className="status">{error}</p>;
+  if (me) return <CreateAthletesPage />;
+
+  const href = authenticationHref("/athletes/new");
+  return href ? <Navigate to={href} replace /> : <p className="status">Authentication required.</p>;
 }
 
 function AthletesDetailRoute() {
@@ -261,8 +297,8 @@ function HoomaRoutes() {
               <Route path="/hooma/new" element={<CreateHoomaPage />} />
               <Route path="/hooma/:communityId/edit" element={<HoomaEditRoute />} />
               <Route path="/hooma/:communityId" element={<HoomaDetailRoute />} />
-              <Route path="/athletes" element={<AthletesPage />} />
-              <Route path="/athletes/new" element={<CreateAthletesPage />} />
+              <Route path="/athletes" element={<AthletesHubRoute />} />
+              <Route path="/athletes/new" element={<CreateAthletesRoute />} />
               <Route path="/athletes/:athletesCommunityId" element={<AthletesDetailRoute />} />
               <Route path="/teams" element={<TeamsPage />} />
               <Route path="/teams/new" element={<CreateTeamPage />} />
