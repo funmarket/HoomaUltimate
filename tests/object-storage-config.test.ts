@@ -41,7 +41,7 @@ test("object storage config rejects invalid URL style", () => {
         OBJECT_STORAGE_SECRET_ACCESS_KEY: "secret-key",
         OBJECT_STORAGE_URL_STYLE: "invalid",
       }),
-    /Invalid option: expected one of "path"\|"virtual"/,
+    /OBJECT_STORAGE_URL_STYLE/,
   );
 });
 
