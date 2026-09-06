@@ -407,3 +407,15 @@ This supersedes only the old navigation/Home-IA portions of ADR-011, ADR-036 and
 The dedicated decision record is `docs/adr/ADR-055-current-navigation-home-ia.md`.
 
 **Reason:** Merged source and navigation contract tests intentionally changed the current IA. Documentation must not direct later agents to revert those source-backed product decisions.
+
+## ADR-056 — Athletes Founder Photo Board
+
+**Decision:** Athletes owns a private durable Photo Board for one `AthletesCommunity`. Only an active same-community `FOUNDER` may upload. Active `MODERATOR` and `MEMBER` memberships may view but may not upload. Outsiders, public/anonymous users, memberships from another Athletes community, and archived Athletes communities are denied active Photo Board access.
+
+Athletes owns durable Photo Board metadata in PostgreSQL. Photo bytes use the shared `packages/storage` / `ObjectStorage` transport. Photo Board remains separate from Whistle and does not create a generic Media domain. The current upload policy is JPEG/PNG/WebP with a 5 MiB maximum and route-scoped binary parsing. The current product has no captions, likes/reactions, comments/replies, albums, manual ordering, moderator/member upload, public board, or user-facing delete.
+
+**Current-state note:** The bounded Photo Board source vertical slice described by this decision is merged on `phase-0-foundation`, including Athletes-owned authorization, metadata persistence, repository/service behavior, and authenticated HTTP routes. This note records merged repository state and does not make a claim about any specific deployment's object-storage configuration.
+
+The dedicated decision record is `docs/adr/ADR-056-athletes-founder-photo-board.md`.
+
+**Reason:** Keep durable Athletes member media inside Athletes ownership while reusing shared object transport, preserving least privilege, preventing cross-community access, and keeping Photo Board separate from Whistle and generic Media.

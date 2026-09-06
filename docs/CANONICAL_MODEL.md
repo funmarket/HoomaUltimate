@@ -247,6 +247,20 @@ AthletesJoinRequest
   resolvedByUserId?
 ```
 
+## AthletesPhoto
+
+```text
+AthletesPhoto
+  id
+  athletesCommunityId
+  objectKey                    unique internal object-storage key
+  contentType
+  sizeBytes
+  uploadedByUserId             canonical User
+  createdAt
+  updatedAt
+```
+
 Rules:
 
 - Athletes records never live in `Community`, `CommunityMembership`, Team, or generic membership tables;
@@ -256,6 +270,12 @@ Rules:
 - MODERATOR authority is intentionally minimum-safe in this foundation: it may review join requests, direct-add users, and remove MEMBER records, but it may not manage settings, archive, manage founders, or manage moderators;
 - MEMBER has no management authority;
 - public discovery/detail is privacy-safe and independent from authenticated membership actions;
+- AthletesPhoto belongs to one AthletesCommunity; PostgreSQL stores Photo Board metadata and shared object storage stores image bytes;
+- only an active same-community FOUNDER may upload Photo Board images;
+- active same-community FOUNDER, MODERATOR, and MEMBER memberships may list/read Photo Board content; outsiders, cross-community memberships, and archived Athletes communities are denied active Photo Board access;
+- Photo Board API metadata does not expose internal `objectKey` or `uploadedByUserId`;
+- Photo Board is separate from Whistle; Photo Board bytes are never stored in Redis and Whistle body/storage behavior is unchanged;
+- the current Photo Board has no captions, likes/reactions, comments/replies, albums, manual ordering, moderator/member upload, public board, or user-facing delete;
 - equipment, Events, marketplace, Ride/Requests/FundMe integration, ULTRAS and generic community abstractions are not part of this foundation.
 
 ---
