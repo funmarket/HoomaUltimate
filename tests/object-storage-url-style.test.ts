@@ -55,7 +55,10 @@ test("S3ObjectStorage preserves path-style addressing by default for PUT, GET an
     await storage.remove(key);
 
     assert.equal(calls.length, 3);
-    assert.deepEqual(calls.map((call) => call.method), ["PUT", "GET", "DELETE"]);
+    assert.deepEqual(
+      calls.map((call) => call.method),
+      ["PUT", "GET", "DELETE"],
+    );
 
     for (const call of calls) {
       assert.equal(call.url, "https://storage.example.com/hooma-test/athletes/example/photo.jpg");
@@ -83,7 +86,10 @@ test("S3ObjectStorage uses virtual-hosted addressing for PUT, GET and DELETE", a
     await storage.remove(key);
 
     assert.equal(calls.length, 3);
-    assert.deepEqual(calls.map((call) => call.method), ["PUT", "GET", "DELETE"]);
+    assert.deepEqual(
+      calls.map((call) => call.method),
+      ["PUT", "GET", "DELETE"],
+    );
 
     for (const call of calls) {
       assert.equal(
