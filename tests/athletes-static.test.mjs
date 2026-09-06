@@ -4,6 +4,7 @@ import test from "node:test";
 
 const router = readFileSync("apps/web/src/app/router/HoomaRouter.tsx", "utf8");
 const hoomaPage = readFileSync("packages/frontend/src/communities/HoomaPage.tsx", "utf8");
+const athletesPage = readFileSync("packages/frontend/src/athletes/AthletesPages.tsx", "utf8");
 const api = readFileSync("packages/frontend/src/api.ts", "utf8");
 
 test("Athletes routes are registered without changing Home or bottom navigation", () => {
@@ -11,6 +12,52 @@ test("Athletes routes are registered without changing Home or bottom navigation"
   assert.match(router, /path="\/athletes\/new"/);
   assert.match(router, /path="\/athletes\/:athletesCommunityId"/);
   assert.doesNotMatch(router, /bottom.*Athletes|Athletes.*bottom/i);
+});
+
+test("Athletes create entry delegates authentication to app account state", () => {
+  assert.match(athletesPage, /export function AthletesPage\(\{[\s\S]*onCreateCommunity/);
+  assert.match(athletesPage, /onClick=\{onCreateCommunity\}/);
+  assert.doesNotMatch(athletesPage, /Sign in to create/);
+  const athletesHub = athletesPage.slice(
+    athletesPage.indexOf("export function AthletesPage"),
+    athletesPage.indexOf("export function CreateAthletesPage"),
+  );
+  assert.doesNotMatch(athletesHub, /authenticationHref/);
+
+  const hubRoute = router.slice(
+    router.indexOf("function AthletesHubRoute()"),
+    router.indexOf("function CreateAthletesRoute()"),
+  );
+  assert.match(hubRoute, /useAccount\(\)/);
+  assert.match(hubRoute, /if \(loading\) return;/);
+  assert.match(hubRoute, /if \(me\)[\s\S]*navigate\("\/athletes\/new"\)/);
+  assert.match(hubRoute, /if \(error\) return;/);
+  assert.ok(
+    hubRoute.indexOf("if (me)") < hubRoute.indexOf("if (error)"),
+    "signed-in account must take precedence over auxiliary account authority errors",
+  );
+  assert.match(hubRoute, /createCommunityDisabled=\{loading \|\| Boolean\(error && !me\)\}/);
+  assert.match(hubRoute, /authenticationHref\("\/athletes\/new"\)/);
+
+  assert.match(router, /path="\/athletes" element=\{<AthletesHubRoute \/>\}/);
+});
+
+test("direct Athletes creation route requires a resolved signed-in HOOMA account", () => {
+  const createRoute = router.slice(
+    router.indexOf("function CreateAthletesRoute()"),
+    router.indexOf("function AthletesDetailRoute()"),
+  );
+  assert.match(createRoute, /useAccount\(\)/);
+  assert.match(createRoute, /if \(loading\) return/);
+  assert.match(createRoute, /if \(me\) return <CreateAthletesPage \/>/);
+  assert.match(createRoute, /if \(error\) return/);
+  assert.ok(
+    createRoute.indexOf("if (me)") < createRoute.indexOf("if (error)"),
+    "direct create route must allow a resolved signed-in account before auxiliary errors",
+  );
+  assert.match(createRoute, /authenticationHref\("\/athletes\/new"\)/);
+  assert.match(createRoute, /<Navigate to=\{href\} replace \/>/);
+  assert.match(router, /path="\/athletes\/new" element=\{<CreateAthletesRoute \/>\}/);
 });
 
 test("HOOMA page links Athletes separately from HOOMA Community creation", () => {
