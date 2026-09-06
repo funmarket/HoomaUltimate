@@ -20,6 +20,7 @@ export type S3ObjectStorageConfig = {
   readonly bucket: string;
   readonly accessKeyId: string;
   readonly secretAccessKey: string;
+  readonly urlStyle?: "path" | "virtual";
 };
 
 function hex(bytes: ArrayBuffer): string {
@@ -56,8 +57,29 @@ function encodePathSegment(value: string): string {
   );
 }
 
-function canonicalObjectPath(bucket: string, key: string): string {
-  return `/${encodePathSegment(bucket)}/${key.split("/").map(encodePathSegment).join("/")}`;
+function encodedKeyPath(key: string): string {
+  return `/${key.split("/").map(encodePathSegment).join("/")}`;
+}
+
+function objectRequestUrl(
+  endpoint: URL,
+  bucket: string,
+  key: string,
+  urlStyle: "path" | "virtual",
+): URL {
+  const url = new URL(endpoint);
+  const keyPath = encodedKeyPath(key);
+
+  if (urlStyle === "virtual") {
+    url.hostname = `${bucket}.${endpoint.hostname}`;
+    url.pathname = keyPath;
+  } else {
+    url.pathname = `/${encodePathSegment(bucket)}${keyPath}`;
+  }
+
+  url.search = "";
+  url.hash = "";
+  return url;
 }
 
 export class S3ObjectStorage implements ObjectStorage {
@@ -97,8 +119,14 @@ export class S3ObjectStorage implements ObjectStorage {
     const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
     const shortDate = amzDate.slice(0, 8);
     const payloadHash = await sha256(body ?? new Uint8Array());
-    const canonicalUri = canonicalObjectPath(this.config.bucket, key);
-    const host = this.endpoint.host;
+    const url = objectRequestUrl(
+      this.endpoint,
+      this.config.bucket,
+      key,
+      this.config.urlStyle ?? "path",
+    );
+    const canonicalUri = url.pathname;
+    const host = url.host;
     const headers: Record<string, string> = {
       host,
       "x-amz-content-sha256": payloadHash,
@@ -130,7 +158,6 @@ export class S3ObjectStorage implements ObjectStorage {
     const serviceKey = await hmac(regionKey, "s3");
     const signingKey = await hmac(serviceKey, "aws4_request");
     const signature = hex(await hmac(signingKey, stringToSign));
-    const url = new URL(canonicalUri, this.endpoint);
     const requestInit: RequestInit = {
       method,
       headers: {
