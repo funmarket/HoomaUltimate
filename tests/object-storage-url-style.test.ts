@@ -63,7 +63,10 @@ test("S3ObjectStorage preserves path-style addressing by default for PUT, GET an
     );
 
     for (const call of calls) {
-      assert.equal(call.url, "https://storage.example.com/hooma-test/athletes/example/photo.jpg");
+      assert.equal(
+        call.url,
+        "https://storage.example.com/hooma-test/athletes/example/photo.jpg",
+      );
       assert.equal(new URL(call.url).pathname, "/hooma-test/athletes/example/photo.jpg");
       assertSignedHost(call, "storage.example.com");
     }
