@@ -90,11 +90,12 @@ function AthletesHubRoute() {
   const { me, loading, error } = useAccount();
 
   function createCommunity() {
-    if (loading || error) return;
+    if (loading) return;
     if (me) {
       navigate("/athletes/new");
       return;
     }
+    if (error) return;
     const href = authenticationHref("/athletes/new");
     if (href) navigate(href);
   }
@@ -102,7 +103,7 @@ function AthletesHubRoute() {
   return (
     <AthletesPage
       onCreateCommunity={createCommunity}
-      createCommunityDisabled={loading || Boolean(error)}
+      createCommunityDisabled={loading || Boolean(error && !me)}
     />
   );
 }
@@ -112,8 +113,8 @@ function CreateAthletesRoute() {
   const { me, loading, error } = useAccount();
 
   if (loading) return <p className="status">Loading account…</p>;
-  if (error) return <p className="status">{error}</p>;
   if (me) return <CreateAthletesPage />;
+  if (error) return <p className="status">{error}</p>;
 
   const href = authenticationHref("/athletes/new");
   return href ? <Navigate to={href} replace /> : <p className="status">Authentication required.</p>;
