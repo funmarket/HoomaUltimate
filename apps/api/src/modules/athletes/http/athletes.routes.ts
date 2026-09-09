@@ -55,6 +55,7 @@ export function createAthletesMemberRouter(
   router.get(
     "/:athletesCommunityId/photos",
     asyncHandler(async (req, res) => {
+      res.setHeader("cache-control", "private, no-store");
       res.json(
         await photoService.list(
           getAuth(req).userId,

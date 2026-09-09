@@ -519,3 +519,40 @@ test("Read maps storage failure for the Photo error surface", async () => {
     expectAthletesCode("ATHLETES_PHOTO_UNAVAILABLE"),
   );
 });
+
+test("Photo upload records recovery intent before any object write", async () => {
+  const photos = photoRepositoryStub();
+  const objects = storageStub();
+  let prepared = false;
+  photos.repository.prepareUpload = async () => {
+    prepared = true;
+  };
+  const put = objects.storage.put;
+  objects.storage.put = async (...args) => {
+    assert.equal(prepared, true);
+    return put(...args);
+  };
+  await photoService({ "ath-1:founder": "FOUNDER" }, photos.repository, objects.storage).upload(
+    "founder",
+    "ath-1",
+    { contentType: "image/png", body: new Uint8Array([1]) },
+  );
+  prepared = false;
+  photos.repository.prepareUpload = async () => {
+    throw new Error("database unavailable");
+  };
+  await assert.rejects(
+    () =>
+      photoService({ "ath-1:founder": "FOUNDER" }, photos.repository, objects.storage).upload(
+        "founder",
+        "ath-1",
+        { contentType: "image/png", body: new Uint8Array([1]) },
+      ),
+    /database unavailable/,
+  );
+  assert.equal(
+    objects.puts.length,
+    1,
+    "failed intent persistence must not write an untracked object",
+  );
+});
