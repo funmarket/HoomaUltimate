@@ -57,7 +57,8 @@ function repositoryStub(
   roles: Record<string, AthletesRole | null> = {},
   joinPolicy: "OPEN" | "APPROVAL_REQUIRED" = "OPEN",
 ): AthletesRepository {
-  return {
+  const repository: AthletesRepository = {
+    withCommunityLock: async (_id, operation) => operation(repository),
     listPublic: async () => ({ items: [], nextCursor: null }),
     getPublic: async () => community(joinPolicy),
     createWithFounder: async (userId, input) => ({
@@ -82,6 +83,7 @@ function repositoryStub(
     removeMember: async () => true,
     setRole: async () => true,
   };
+  return repository;
 }
 
 test("AthletesService creates a community with founder membership atomically", async () => {

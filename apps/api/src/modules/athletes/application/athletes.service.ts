@@ -59,32 +59,38 @@ export class AthletesService {
   }
 
   async update(userId: string, id: string, input: AthletesCommunityUpdateInput) {
-    const current = await this.requireFounder(userId, id);
-    const nextVisibility = input.visibility ?? current.visibility;
-    return this.repository.update(id, {
-      ...input,
-      ...(nextVisibility === "PRIVATE" ? { joinPolicy: "APPROVAL_REQUIRED" as const } : {}),
+    return this.inCommunity(id, async (scope) => {
+      const current = await scope.requireFounder(userId, id);
+      const nextVisibility = input.visibility ?? current.visibility;
+      return scope.repository.update(id, {
+        ...input,
+        ...(nextVisibility === "PRIVATE" ? { joinPolicy: "APPROVAL_REQUIRED" as const } : {}),
+      });
     });
   }
 
   async archive(userId: string, id: string) {
-    await this.requireFounder(userId, id);
-    await this.repository.archive(id);
-    return { ok: true };
+    return this.inCommunity(id, async (scope) => {
+      await scope.requireFounder(userId, id);
+      await scope.repository.archive(id);
+      return { ok: true };
+    });
   }
 
   async join(userId: string, id: string): Promise<AthletesJoinResult> {
-    const community = await this.requireActive(id);
-    const existingRole = await this.repository.activeRole(id, userId);
-    if (existingRole) return { status: "JOINED", membership: { role: existingRole } };
-    if (community.joinPolicy === "OPEN") {
-      const membership = await this.repository.joinOpen(id, userId);
-      return { status: "JOINED", membership: { role: membership.role } };
-    }
-    const result = await this.repository.requestJoin(id, userId);
-    if (result.kind === "MEMBERSHIP")
-      return { status: "JOINED", membership: { role: result.role } };
-    return { status: "PENDING", request: serializeRequest(result.request) };
+    return this.inCommunity(id, async (scope) => {
+      const community = await scope.requireActive(id);
+      const existingRole = await scope.repository.activeRole(id, userId);
+      if (existingRole) return { status: "JOINED", membership: { role: existingRole } };
+      if (community.joinPolicy === "OPEN") {
+        const membership = await scope.repository.joinOpen(id, userId);
+        return { status: "JOINED", membership: { role: membership.role } };
+      }
+      const result = await scope.repository.requestJoin(id, userId);
+      if (result.kind === "MEMBERSHIP")
+        return { status: "JOINED", membership: { role: result.role } };
+      return { status: "PENDING", request: serializeRequest(result.request) };
+    });
   }
 
   async myJoinRequest(userId: string, id: string) {
@@ -94,10 +100,16 @@ export class AthletesService {
   }
 
   async cancelJoinRequest(userId: string, id: string) {
-    const cancelled = await this.repository.cancelJoinRequest(id, userId);
-    if (!cancelled)
-      throw new AthletesError("ATHLETES_JOIN_REQUEST_NOT_FOUND", "Pending join request not found");
-    return { ok: true };
+    return this.inCommunity(id, async (scope) => {
+      await scope.requireActive(id);
+      const cancelled = await scope.repository.cancelJoinRequest(id, userId);
+      if (!cancelled)
+        throw new AthletesError(
+          "ATHLETES_JOIN_REQUEST_NOT_FOUND",
+          "Pending join request not found",
+        );
+      return { ok: true };
+    });
   }
 
   async joinRequests(userId: string, id: string) {
@@ -106,19 +118,39 @@ export class AthletesService {
   }
 
   async approveJoinRequest(userId: string, id: string, targetUserId: string) {
-    await this.requireManager(userId, id);
-    const changed = await this.repository.resolveJoinRequest(id, targetUserId, userId, "APPROVE");
-    if (!changed)
-      throw new AthletesError("ATHLETES_JOIN_REQUEST_NOT_FOUND", "Pending join request not found");
-    return { ok: true };
+    return this.inCommunity(id, async (scope) => {
+      await scope.requireManager(userId, id);
+      const changed = await scope.repository.resolveJoinRequest(
+        id,
+        targetUserId,
+        userId,
+        "APPROVE",
+      );
+      if (!changed)
+        throw new AthletesError(
+          "ATHLETES_JOIN_REQUEST_NOT_FOUND",
+          "Pending join request not found",
+        );
+      return { ok: true };
+    });
   }
 
   async declineJoinRequest(userId: string, id: string, targetUserId: string) {
-    await this.requireManager(userId, id);
-    const changed = await this.repository.resolveJoinRequest(id, targetUserId, userId, "DECLINE");
-    if (!changed)
-      throw new AthletesError("ATHLETES_JOIN_REQUEST_NOT_FOUND", "Pending join request not found");
-    return { ok: true };
+    return this.inCommunity(id, async (scope) => {
+      await scope.requireManager(userId, id);
+      const changed = await scope.repository.resolveJoinRequest(
+        id,
+        targetUserId,
+        userId,
+        "DECLINE",
+      );
+      if (!changed)
+        throw new AthletesError(
+          "ATHLETES_JOIN_REQUEST_NOT_FOUND",
+          "Pending join request not found",
+        );
+      return { ok: true };
+    });
   }
 
   async members(userId: string, id: string) {
@@ -128,41 +160,47 @@ export class AthletesService {
   }
 
   async addMember(userId: string, id: string, username: string) {
-    await this.requireManager(userId, id);
-    const member = await this.repository.addMemberByUsername(
-      id,
-      username.trim().toLowerCase(),
-      userId,
-    );
-    if (!member) throw new AthletesError("ATHLETES_USER_NOT_FOUND", "User not found");
-    return { member };
+    return this.inCommunity(id, async (scope) => {
+      await scope.requireManager(userId, id);
+      const member = await scope.repository.addMemberByUsername(
+        id,
+        username.trim().toLowerCase(),
+        userId,
+      );
+      if (!member) throw new AthletesError("ATHLETES_USER_NOT_FOUND", "User not found");
+      return { member };
+    });
   }
 
   async removeMember(userId: string, id: string, targetUserId: string) {
-    const actorRole = await this.requireManager(userId, id);
-    const targetRole = await this.repository.activeRole(id, targetUserId);
-    if (!targetRole)
-      throw new AthletesError("ATHLETES_MEMBER_NOT_FOUND", "Athletes member not found");
-    if (targetRole === "FOUNDER")
-      throw new AthletesError("ATHLETES_FOUNDER_REMOVE_FORBIDDEN", "Founder cannot be removed");
-    if (actorRole === "MODERATOR" && targetRole !== "MEMBER")
-      throw new AthletesError("ATHLETES_MODERATOR_SCOPE", "Moderator can only remove members");
-    await this.repository.removeMember(id, targetUserId);
-    return { ok: true };
+    return this.inCommunity(id, async (scope) => {
+      const actorRole = await scope.requireManager(userId, id);
+      const targetRole = await scope.repository.activeRole(id, targetUserId);
+      if (!targetRole)
+        throw new AthletesError("ATHLETES_MEMBER_NOT_FOUND", "Athletes member not found");
+      if (targetRole === "FOUNDER")
+        throw new AthletesError("ATHLETES_FOUNDER_REMOVE_FORBIDDEN", "Founder cannot be removed");
+      if (actorRole === "MODERATOR" && targetRole !== "MEMBER")
+        throw new AthletesError("ATHLETES_MODERATOR_SCOPE", "Moderator can only remove members");
+      await scope.repository.removeMember(id, targetUserId);
+      return { ok: true };
+    });
   }
 
   async setRole(userId: string, id: string, targetUserId: string, role: "MODERATOR" | "MEMBER") {
-    await this.requireFounder(userId, id);
-    const targetRole = await this.repository.activeRole(id, targetUserId);
-    if (!targetRole)
-      throw new AthletesError("ATHLETES_MEMBER_NOT_FOUND", "Athletes member not found");
-    if (targetRole === "FOUNDER")
-      throw new AthletesError(
-        "ATHLETES_FOUNDER_ROLE_FORBIDDEN",
-        "Founder role cannot be changed here",
-      );
-    await this.repository.setRole(id, targetUserId, role);
-    return { ok: true };
+    return this.inCommunity(id, async (scope) => {
+      await scope.requireFounder(userId, id);
+      const targetRole = await scope.repository.activeRole(id, targetUserId);
+      if (!targetRole)
+        throw new AthletesError("ATHLETES_MEMBER_NOT_FOUND", "Athletes member not found");
+      if (targetRole === "FOUNDER")
+        throw new AthletesError(
+          "ATHLETES_FOUNDER_ROLE_FORBIDDEN",
+          "Founder role cannot be changed here",
+        );
+      await scope.repository.setRole(id, targetUserId, role);
+      return { ok: true };
+    });
   }
 
   async requireFounderContent(userId: string, id: string) {
@@ -172,6 +210,15 @@ export class AthletesService {
   async requireMemberContent(userId: string, id: string) {
     const role = await this.repository.activeRole(id, userId);
     if (!role) throw new AthletesError("ATHLETES_MEMBER_REQUIRED", "Athletes membership required");
+  }
+
+  private inCommunity<T>(
+    id: string,
+    operation: (service: AthletesService) => Promise<T>,
+  ): Promise<T> {
+    return this.repository.withCommunityLock(id, (repository) =>
+      operation(new AthletesService(repository)),
+    );
   }
 
   private async requireActive(id: string) {

@@ -73,6 +73,11 @@ export interface AthletesCreateRecordInput extends AthletesCommunityCreateInput 
 }
 
 export interface AthletesRepository {
+  /** Run policy reads and writes under one community lock and transaction. */
+  withCommunityLock<T>(
+    id: string,
+    operation: (repository: AthletesRepository) => Promise<T>,
+  ): Promise<T>;
   listPublic(
     input: AthletesPublicListInput,
   ): Promise<{ items: unknown[]; nextCursor: string | null }>;

@@ -76,7 +76,8 @@ function athletesRepositoryStub(
 ): AthletesRepository {
   const roleFor = (id: string, userId: string) => roles[`${id}:${userId}`] ?? null;
 
-  return {
+  const repository: AthletesRepository = {
+    withCommunityLock: async (_id, operation) => operation(repository),
     listPublic: async () => ({ items: [], nextCursor: null }),
     getPublic: async (id) => community(id, statuses[id] ?? "ACTIVE"),
     createWithFounder: async (userId, input) => ({
@@ -101,6 +102,7 @@ function athletesRepositoryStub(
     removeMember: async () => true,
     setRole: async () => true,
   };
+  return repository;
 }
 
 function photoRecord(overrides: Partial<AthletesPhotoRecord> = {}): AthletesPhotoRecord {

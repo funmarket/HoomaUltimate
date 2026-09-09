@@ -119,7 +119,22 @@ function isPrismaUniqueConflict(error: unknown): error is Prisma.PrismaClientKno
 }
 
 export class PrismaAthletesRepository implements AthletesRepository {
-  constructor(private readonly db: PrismaClient) {}
+  constructor(private readonly db: PrismaClient | Prisma.TransactionClient) {}
+
+  private transaction<T>(operation: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
+    return "$transaction" in this.db ? this.db.$transaction(operation) : operation(this.db);
+  }
+
+  withCommunityLock<T>(
+    id: string,
+    operation: (repository: AthletesRepository) => Promise<T>,
+  ): Promise<T> {
+    return this.transaction(async (tx) => {
+      // All Athletes lifecycle writers acquire this row before reading policy.
+      await tx.$queryRaw`SELECT "id" FROM "AthletesCommunity" WHERE "id" = ${id} FOR UPDATE`;
+      return operation(new PrismaAthletesRepository(tx));
+    });
+  }
 
   async listPublic(input: Parameters<AthletesRepository["listPublic"]>[0]) {
     const rows = await this.db.athletesCommunity.findMany({
@@ -148,7 +163,7 @@ export class PrismaAthletesRepository implements AthletesRepository {
     for (let suffix = 0; suffix < 10; suffix += 1) {
       const slug = suffix === 0 ? base : `${base}-${suffix}`;
       try {
-        return await this.db.$transaction(async (tx) => {
+        return await this.transaction(async (tx) => {
           const community = await tx.athletesCommunity.create({
             data: {
               slug,
@@ -211,7 +226,7 @@ export class PrismaAthletesRepository implements AthletesRepository {
 
   async joinOpen(id: string, userId: string) {
     try {
-      return await this.db.$transaction(async (tx) => {
+      return await this.transaction(async (tx) => {
         const now = new Date();
         const membership = await reactivateMembership(tx, id, userId, "MEMBER", now);
         await tx.athletesJoinRequest.updateMany({
@@ -234,7 +249,7 @@ export class PrismaAthletesRepository implements AthletesRepository {
 
   async requestJoin(id: string, userId: string) {
     try {
-      return await this.db.$transaction(async (tx) => {
+      return await this.transaction(async (tx) => {
         const existing = await tx.athletesMembership.findFirst({
           where: { athletesCommunityId: id, userId, leftAt: null },
           select: { role: true },
@@ -308,7 +323,7 @@ export class PrismaAthletesRepository implements AthletesRepository {
     decision: "APPROVE" | "DECLINE",
   ) {
     try {
-      return await this.db.$transaction(async (tx) => {
+      return await this.transaction(async (tx) => {
         const now = new Date();
         const changed = await tx.athletesJoinRequest.updateMany({
           where: { athletesCommunityId: id, userId: targetUserId, status: "PENDING" },
@@ -370,7 +385,7 @@ export class PrismaAthletesRepository implements AthletesRepository {
     });
     if (!presentation) return null;
     try {
-      return await this.db.$transaction(async (tx) => {
+      return await this.transaction(async (tx) => {
         const community = await tx.athletesCommunity.findFirst({
           where: { id, status: "ACTIVE" },
           select: { id: true },
