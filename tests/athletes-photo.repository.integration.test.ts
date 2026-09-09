@@ -67,6 +67,14 @@ test("Athletes Photo repository persists and scopes board metadata by Athletes c
       ],
     });
 
+    await db.athletesMembership.create({
+      data: { athletesCommunityId: firstCommunity.id, userId: uploader.id, role: "FOUNDER" },
+    });
+    await repository.prepareUpload(
+      `photo-created-${suffix}`,
+      firstCommunity.id,
+      `athletes-photos/${firstCommunity.id}/photo-created-${suffix}`,
+    );
     const created = await repository.create({
       id: `photo-created-${suffix}`,
       athletesCommunityId: firstCommunity.id,

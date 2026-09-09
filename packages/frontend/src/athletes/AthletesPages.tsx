@@ -1,29 +1,16 @@
-import type { AthletesMember, AthletesSport } from "@hooma/contracts/athletes";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useAthletesDetail } from "./useAthletesDetail";
+import { sports, sportLabel } from "./sports";
+import { AthletesCommunityForm } from "./AthletesCommunityForm";
+import type { AthletesSport } from "@hooma/contracts/athletes";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { PublicAthletesDetail, PublicAthletesSummary } from "../api";
+import type { PublicAthletesSummary } from "../api";
 import { useHoomaFrontend } from "../context";
 import { AthletesWhistleBoard } from "../whistle/HoomaWhistleBoard";
 import { AthletesPhotoBoard } from "./AthletesPhotoBoard";
 
-const sports: readonly { value: AthletesSport; label: string }[] = [
-  { value: "CYCLING", label: "Cycling" },
-  { value: "RUNNING", label: "Running" },
-  { value: "SWIMMING", label: "Swimming" },
-  { value: "FOOTBALL", label: "Football" },
-  { value: "BASKETBALL", label: "Basketball" },
-  { value: "TENNIS", label: "Tennis" },
-  { value: "PADEL", label: "Padel" },
-  { value: "GYM_FITNESS", label: "Gym/Fitness" },
-  { value: "OTHER", label: "Other" },
-];
-
 function report(reason: unknown, fallback: string): string {
   return reason instanceof Error ? reason.message : fallback;
-}
-
-function sportLabel(value: AthletesSport): string {
-  return sports.find((sport) => sport.value === value)?.label ?? value;
 }
 
 function locationLabel(item: Pick<PublicAthletesSummary, "city" | "houma" | "slug">): string {
@@ -44,25 +31,58 @@ export function AthletesPage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const generation = useRef(0);
+  const pagePending = useRef(false);
+  const load = useCallback(
+    async (cursor?: string) => {
+      if (cursor && pagePending.current) return;
+      const version = generation.current;
+      pagePending.current = true;
+      if (cursor) setLoadingMore(true);
+      else setLoading(true);
+      setError("");
+      try {
+        const response = await api.athletes.publicList({
+          limit: 30,
+          ...(sport === "ALL" ? {} : { sport }),
+          ...(cursor ? { cursor } : {}),
+        });
+        if (version !== generation.current) return;
+        setItems((previous) =>
+          cursor
+            ? [
+                ...previous,
+                ...response.items.filter(
+                  (item) => !previous.some((existing) => existing.id === item.id),
+                ),
+              ]
+            : response.items,
+        );
+        setNextCursor(response.nextCursor);
+      } catch (reason) {
+        if (version === generation.current) setError(report(reason, "Unable to load Athletes"));
+      } finally {
+        if (version === generation.current) {
+          pagePending.current = false;
+          setLoading(false);
+          setLoadingMore(false);
+        }
+      }
+    },
+    [api, sport],
+  );
   useEffect(() => {
-    let active = true;
-    setLoading(true);
-    setError("");
-    void api.athletes
-      .publicList(sport === "ALL" ? { limit: 30 } : { sport, limit: 30 })
-      .then((response) => {
-        if (active) setItems(response.items);
-      })
-      .catch((reason) => {
-        if (active) setError(report(reason, "Unable to load Athletes"));
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+    generation.current += 1;
+    pagePending.current = false;
+    setItems([]);
+    setNextCursor(null);
+    void load();
     return () => {
-      active = false;
+      generation.current += 1;
     };
-  }, [api, sport]);
+  }, [load]);
 
   return (
     <div className="page athletes-page">
@@ -116,7 +136,11 @@ export function AthletesPage({
         </div>
       </section>
 
-      {error ? <div className="error-box">{error}</div> : null}
+      {error ? (
+        <div className="error-box" role="alert">
+          {error} <button onClick={() => void load(nextCursor ?? undefined)}>Retry</button>
+        </div>
+      ) : null}
       {loading ? <div className="state-card">Loading Athletes communities…</div> : null}
       {!loading && !items.length && !error ? (
         <div className="state-card">
@@ -133,6 +157,16 @@ export function AthletesPage({
               key={item.id}
               onClick={() => navigate(`/athletes/${item.id}`)}
             >
+              <AthletesImage
+                src={item.bannerUrl}
+                className="athletes-banner"
+                alt={`${item.name} banner`}
+              />
+              <AthletesImage
+                src={item.logoUrl}
+                className="athletes-logo"
+                alt={`${item.name} logo`}
+              />
               <span className="athletes-card__motif" aria-hidden="true" />
               <span className="athletes-sport">{sportLabel(item.sport)}</span>
               <h2>{item.name}</h2>
@@ -152,228 +186,26 @@ export function AthletesPage({
           ))}
         </section>
       ) : null}
+      {nextCursor ? (
+        <button
+          className="button athletes-action athletes-action--secondary"
+          disabled={loadingMore}
+          onClick={() => void load(nextCursor)}
+        >
+          {loadingMore ? "Loading…" : "Load more communities"}
+        </button>
+      ) : null}
     </div>
   );
 }
 
 export function CreateAthletesPage() {
-  const { api, protectedError } = useHoomaFrontend();
   const navigate = useNavigate();
-  const [sport, setSport] = useState<AthletesSport>("RUNNING");
-  const [visibility, setVisibility] = useState<"PUBLIC" | "PRIVATE">("PUBLIC");
-  const [joinPolicy, setJoinPolicy] = useState<"OPEN" | "APPROVAL_REQUIRED">("OPEN");
-  const [creating, setCreating] = useState(false);
-  const [error, setError] = useState("");
-
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    setCreating(true);
-    setError("");
-    try {
-      const created = await api.athletes.create({
-        name: String(data.get("name")).trim(),
-        sport,
-        description: String(data.get("description")).trim() || null,
-        city: String(data.get("city")).trim() || null,
-        houma: String(data.get("houma")).trim() || null,
-        logoUrl: String(data.get("logoUrl")).trim() || null,
-        bannerUrl: String(data.get("bannerUrl")).trim() || null,
-        visibility,
-        joinPolicy: visibility === "PRIVATE" ? "APPROVAL_REQUIRED" : joinPolicy,
-      });
-      navigate(`/athletes/${created.id}`, { replace: true });
-    } catch (reason) {
-      setError(protectedError(reason, "Unable to create Athletes community"));
-    } finally {
-      setCreating(false);
-    }
-  }
-
   return (
-    <div className="page athletes-page athletes-create-page" data-sport={sport}>
-      <a className="team-management-back athletes-back" href="/athletes">
-        ← Athletes
-      </a>
-      <section className="athletes-surface athletes-hero athletes-hero--create" data-sport={sport}>
-        <span className="athletes-card__motif" aria-hidden="true" />
-        <div className="athletes-hero__content">
-          <span className="eyebrow">CREATE ATHLETES</span>
-          <h1>Build your {sportLabel(sport)} circle.</h1>
-          <p>Choose the sport first. The community carries that identity from creation onward.</p>
-        </div>
-      </section>
-      {error ? <div className="error-box">{error}</div> : null}
-      <form className="athletes-surface athletes-create-form" onSubmit={submit}>
-        <fieldset className="athletes-sport-picker">
-          <legend>Choose a sport</legend>
-          <div
-            className="athletes-sport-picker__grid"
-            role="radiogroup"
-            aria-label="Choose a sport"
-          >
-            {sports.map((option) => (
-              <label
-                className={
-                  sport === option.value
-                    ? "athletes-sport-option is-selected"
-                    : "athletes-sport-option"
-                }
-                data-sport={option.value}
-                key={option.value}
-              >
-                <input
-                  type="radio"
-                  name="sportChoice"
-                  value={option.value}
-                  aria-label={option.label}
-                  checked={sport === option.value}
-                  onChange={() => setSport(option.value)}
-                />
-                <span className="athletes-sport-option__motif" aria-hidden="true" />
-                <span>{option.label}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-
-        <div className="athletes-form-grid">
-          <label className="athletes-field">
-            <span>Name</span>
-            <input
-              name="name"
-              required
-              minLength={2}
-              maxLength={100}
-              placeholder="Community name"
-            />
-          </label>
-          <label className="athletes-field">
-            <span>City</span>
-            <input name="city" maxLength={100} placeholder="City" />
-          </label>
-          <label className="athletes-field">
-            <span>HOUMA / neighborhood</span>
-            <input name="houma" maxLength={100} placeholder="Area or neighborhood" />
-          </label>
-          <label className="athletes-field">
-            <span>Logo URL</span>
-            <input name="logoUrl" type="url" maxLength={2000} placeholder="https://…" />
-          </label>
-          <label className="athletes-field athletes-span-2">
-            <span>Banner image URL</span>
-            <input name="bannerUrl" type="url" maxLength={2000} placeholder="https://…" />
-          </label>
-          <label className="athletes-field athletes-span-2">
-            <span>Description</span>
-            <textarea
-              name="description"
-              maxLength={600}
-              rows={4}
-              placeholder="What brings this community together?"
-            />
-          </label>
-        </div>
-
-        <fieldset className="athletes-choice-grid">
-          <legend>Discovery and joining</legend>
-          <label
-            className={
-              visibility === "PUBLIC"
-                ? "athletes-choice-option is-selected"
-                : "athletes-choice-option"
-            }
-          >
-            <input
-              type="radio"
-              name="visibility"
-              aria-label="Public"
-              checked={visibility === "PUBLIC"}
-              onChange={() => setVisibility("PUBLIC")}
-            />
-            <span>
-              <strong>Public</strong>
-              <small>People can discover this Athletes community.</small>
-            </span>
-          </label>
-          <label
-            className={
-              visibility === "PRIVATE"
-                ? "athletes-choice-option is-selected"
-                : "athletes-choice-option"
-            }
-          >
-            <input
-              type="radio"
-              name="visibility"
-              aria-label="Private"
-              checked={visibility === "PRIVATE"}
-              onChange={() => {
-                setVisibility("PRIVATE");
-                setJoinPolicy("APPROVAL_REQUIRED");
-              }}
-            />
-            <span>
-              <strong>Private</strong>
-              <small>Discovery stays privacy-safe and joining requires approval.</small>
-            </span>
-          </label>
-          <label
-            className={
-              joinPolicy === "OPEN" && visibility === "PUBLIC"
-                ? "athletes-choice-option is-selected"
-                : "athletes-choice-option"
-            }
-          >
-            <input
-              type="radio"
-              name="joinPolicy"
-              aria-label="Open join"
-              checked={joinPolicy === "OPEN" && visibility === "PUBLIC"}
-              disabled={visibility === "PRIVATE"}
-              onChange={() => setJoinPolicy("OPEN")}
-            />
-            <span>
-              <strong>Open join</strong>
-              <small>Authenticated users can join immediately.</small>
-            </span>
-          </label>
-          <label
-            className={
-              joinPolicy === "APPROVAL_REQUIRED"
-                ? "athletes-choice-option is-selected"
-                : "athletes-choice-option"
-            }
-          >
-            <input
-              type="radio"
-              name="joinPolicy"
-              aria-label="Approval required"
-              checked={joinPolicy === "APPROVAL_REQUIRED"}
-              onChange={() => setJoinPolicy("APPROVAL_REQUIRED")}
-            />
-            <span>
-              <strong>Approval required</strong>
-              <small>Founders or moderators review requests.</small>
-            </span>
-          </label>
-        </fieldset>
-        <div className="athletes-form-actions">
-          <a
-            className="button secondary athletes-action athletes-action--secondary"
-            href="/athletes"
-          >
-            Cancel
-          </a>
-          <button className="button athletes-action athletes-action--primary" disabled={creating}>
-            <span className="athletes-action__icon" aria-hidden="true">
-              +
-            </span>
-            {creating ? "Creating…" : "Create community"}
-          </button>
-        </div>
-      </form>
-    </div>
+    <AthletesCommunityForm
+      onSaved={(id) => navigate(`/athletes/${id}`, { replace: true })}
+      onCancel={() => navigate("/athletes")}
+    />
   );
 }
 
@@ -382,105 +214,93 @@ export function AthletesDetailPage({
 }: {
   readonly athletesCommunityId: string;
 }) {
-  const { api, protectedError } = useHoomaFrontend();
-  const [detail, setDetail] = useState<PublicAthletesDetail | null>(null);
-  const [members, setMembers] = useState<AthletesMember[]>([]);
-  const [requests, setRequests] = useState<{ userId: string }[]>([]);
-  const [username, setUsername] = useState("");
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  const canManage = useMemo(
-    () => detail?.viewerRole === "FOUNDER" || detail?.viewerRole === "MODERATOR",
-    [detail],
+  return (
+    <AthletesDetailContent key={athletesCommunityId} athletesCommunityId={athletesCommunityId} />
   );
+}
 
-  async function reload() {
-    setLoading(true);
-    setError("");
-    try {
-      const next = await api.athletes.detail(athletesCommunityId);
-      setDetail(next);
-      if (next.viewerRole) {
-        try {
-          setMembers(await api.athletes.members(athletesCommunityId));
-        } catch {
-          setMembers([]);
-        }
-      } else {
-        setMembers([]);
-      }
-      if (next.viewerRole === "FOUNDER" || next.viewerRole === "MODERATOR") {
-        try {
-          setRequests((await api.athletes.joinRequests(athletesCommunityId)).requests);
-        } catch {
-          setRequests([]);
-        }
-      } else {
-        setRequests([]);
-      }
-    } catch (reason) {
-      setError(report(reason, "Unable to load Athletes community"));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    void reload();
-  }, [athletesCommunityId]);
-
-  async function join() {
-    setError("");
-    setNotice("");
-    try {
-      const result = await api.athletes.join(athletesCommunityId);
-      setNotice(result.status === "JOINED" ? "Joined Athletes community." : "Join request sent.");
-      await reload();
-    } catch (reason) {
-      setError(protectedError(reason, "Unable to join Athletes community"));
-    }
-  }
-
-  async function addMember(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError("");
-    setNotice("");
-    try {
-      await api.athletes.addMember(athletesCommunityId, username);
-      setUsername("");
-      setNotice("Member added.");
-      await reload();
-    } catch (reason) {
-      setError(protectedError(reason, "Unable to add Athletes member"));
-    }
-  }
+function AthletesDetailContent({
+  athletesCommunityId: id,
+}: {
+  readonly athletesCommunityId: string;
+}) {
+  const { api } = useHoomaFrontend();
+  const navigate = useNavigate();
+  const state = useAthletesDetail(id);
+  const {
+    detail,
+    members,
+    requests,
+    error,
+    membersError,
+    requestsError,
+    notice,
+    loading,
+    busy,
+    reload,
+    act,
+  } = state;
+  const [username, setUsername] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [confirmArchive, setConfirmArchive] = useState(false);
+  const founder = detail?.viewerRole === "FOUNDER";
+  const canManage = founder || detail?.viewerRole === "MODERATOR";
 
   if (loading)
     return (
       <div className="page athletes-page">
-        <div className="state-card">Loading Athletes community…</div>
+        <div className="state-card" role="status">
+          Loading Athletes community…
+        </div>
       </div>
     );
   if (!detail)
     return (
       <div className="page athletes-page">
-        {error ? <div className="error-box">{error}</div> : null}
+        <div className="error-box" role="alert">
+          {error || "Community unavailable."}
+        </div>
+        <button className="button" onClick={() => void reload()}>
+          Retry
+        </button>
       </div>
+    );
+  if (editing && founder)
+    return (
+      <AthletesCommunityForm
+        community={detail}
+        onSaved={() => {
+          setEditing(false);
+          void reload();
+        }}
+        onCancel={() => setEditing(false)}
+      />
     );
 
   return (
     <div className="page athletes-page athletes-detail-page" data-sport={detail.sport}>
-      <a className="team-management-back athletes-back" href="/athletes">
+      <button
+        type="button"
+        className="team-management-back athletes-back"
+        onClick={() => navigate("/athletes")}
+      >
         ← Athletes
-      </a>
+      </button>
       <section
         className="athletes-surface athletes-hero athletes-hero--detail"
         data-sport={detail.sport}
       >
-        <span className="athletes-card__motif" aria-hidden="true" />
+        <AthletesImage
+          src={detail.bannerUrl}
+          className="athletes-banner"
+          alt={`${detail.name} banner`}
+        />
         <div className="athletes-hero__content">
+          <AthletesImage
+            src={detail.logoUrl}
+            className="athletes-logo"
+            alt={`${detail.name} logo`}
+          />
           <span className="eyebrow">{sportLabel(detail.sport)}</span>
           <h1>{detail.name}</h1>
           <p>{detail.description || "Train and compete with this Athletes community."}</p>
@@ -490,8 +310,16 @@ export function AthletesDetailPage({
           </div>
         </div>
       </section>
-      {notice ? <div className="success-box">{notice}</div> : null}
-      {error ? <div className="error-box">{error}</div> : null}
+      {notice ? (
+        <div className="success-box" role="status">
+          {notice}
+        </div>
+      ) : null}
+      {error ? (
+        <div className="error-box" role="alert">
+          {error}
+        </div>
+      ) : null}
       <section className="athletes-surface athletes-join-panel">
         <div className="athletes-join-panel__status">
           <span>{detail.visibility === "PRIVATE" ? "Private" : "Public"}</span>
@@ -499,92 +327,222 @@ export function AthletesDetailPage({
         </div>
         {detail.viewerRole ? (
           <strong className="athletes-role">{detail.viewerRole}</strong>
+        ) : detail.viewerJoinRequestStatus === "PENDING" ? (
+          <>
+            <span role="status">Join request pending</span>
+            <button
+              type="button"
+              className="button secondary athletes-action athletes-action--secondary"
+              disabled={busy}
+              onClick={() =>
+                void act(() => api.athletes.cancelJoinRequest(id), "Join request cancelled.")
+              }
+            >
+              Cancel request
+            </button>
+          </>
         ) : (
           <button
-            className="button athletes-action athletes-action--primary athletes-action--compact"
-            type="button"
-            onClick={() => void join()}
+            className="button athletes-action athletes-action--primary"
+            disabled={busy}
+            onClick={() =>
+              void act(
+                () => api.athletes.join(id),
+                detail.joinPolicy === "OPEN" ? "Joined Athletes community." : "Join request sent.",
+              )
+            }
           >
-            <span className="athletes-action__icon" aria-hidden="true">
-              +
-            </span>
             {detail.joinPolicy === "OPEN" ? "Join" : "Request to join"}
           </button>
         )}
       </section>
+      {founder ? (
+        <section className="athletes-surface athletes-section">
+          <h2>Community settings</h2>
+          <div className="athletes-actions">
+            <button
+              className="button athletes-action athletes-action--secondary"
+              disabled={busy}
+              onClick={() => setEditing(true)}
+            >
+              Edit community
+            </button>
+            <button
+              className="athletes-mini-action athletes-mini-action--decline"
+              disabled={busy}
+              onClick={() => setConfirmArchive(true)}
+            >
+              Archive community
+            </button>
+          </div>
+          {confirmArchive ? (
+            <div role="group" aria-label="Confirm archive">
+              <p>Archive {detail.name}? Member access will close. Photos will be retained.</p>
+              <button
+                className="athletes-mini-action athletes-mini-action--decline"
+                disabled={busy}
+                onClick={() =>
+                  void act(
+                    () => api.athletes.archive(id),
+                    "Community archived.",
+                    () => navigate("/athletes", { replace: true }),
+                  )
+                }
+              >
+                Confirm archive
+              </button>{" "}
+              <button
+                className="athletes-mini-action"
+                disabled={busy}
+                onClick={() => setConfirmArchive(false)}
+              >
+                Keep community
+              </button>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
       {detail.viewerRole ? (
         <>
-          <AthletesWhistleBoard athletesCommunityId={athletesCommunityId} />
+          <AthletesWhistleBoard athletesCommunityId={id} />
           <AthletesPhotoBoard
-            athletesCommunityId={athletesCommunityId}
+            athletesCommunityId={id}
             communityStatus={detail.status}
             viewerRole={detail.viewerRole}
           />
-        </>
-      ) : null}
-      {members.length ? (
-        <section className="athletes-surface athletes-section">
-          <div className="athletes-section-heading">
-            <div>
-              <span className="eyebrow">MEMBERS</span>
-              <h2>Active Athletes</h2>
-            </div>
-            <span className="athletes-section-count">{members.length}</span>
-          </div>
-          <div className="athletes-member-list">
-            {members.map((member) => (
-              <div className="athletes-member-row" key={member.userId}>
-                <span>
-                  <strong>{member.presentation?.displayName ?? member.userId}</strong>
-                  <small>
-                    {member.presentation ? `@${member.presentation.username}` : member.userId}
-                  </small>
-                </span>
-                <b className="athletes-member-role">{member.role}</b>
+          <section className="athletes-surface athletes-section">
+            <h2>Active Athletes</h2>
+            {membersError ? (
+              <div role="alert" className="error-box">
+                {membersError} <button onClick={() => void reload()}>Retry members</button>
               </div>
-            ))}
-          </div>
-        </section>
+            ) : (
+              <div className="athletes-member-list">
+                {members.map((member) => (
+                  <div className="athletes-member-row" key={member.userId}>
+                    <span>
+                      {member.presentation ? (
+                        <a href={`/profile/${encodeURIComponent(member.presentation.username)}`}>
+                          <strong>{member.presentation.displayName}</strong>
+                          <small>@{member.presentation.username}</small>
+                        </a>
+                      ) : (
+                        <strong>Member</strong>
+                      )}
+                    </span>
+                    <b className="athletes-member-role">{member.role}</b>
+                    {canManage && member.role !== "FOUNDER" ? (
+                      <span className="athletes-request-actions">
+                        {founder ? (
+                          <button
+                            className="athletes-mini-action"
+                            disabled={busy}
+                            onClick={() =>
+                              void act(
+                                () =>
+                                  api.athletes.setMemberRole(
+                                    id,
+                                    member.userId,
+                                    member.role === "MODERATOR" ? "MEMBER" : "MODERATOR",
+                                  ),
+                                "Member role updated.",
+                              )
+                            }
+                          >
+                            {member.role === "MODERATOR"
+                              ? "Remove moderator role"
+                              : "Make moderator"}
+                          </button>
+                        ) : null}
+                        {founder || member.role === "MEMBER" ? (
+                          <button
+                            className="athletes-mini-action athletes-mini-action--decline"
+                            disabled={busy}
+                            onClick={() =>
+                              void act(
+                                () => api.athletes.removeMember(id, member.userId),
+                                "Member removed.",
+                              )
+                            }
+                          >
+                            Remove member
+                          </button>
+                        ) : null}
+                      </span>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </>
       ) : null}
       {canManage ? (
         <section className="athletes-surface athletes-section athletes-manage-section">
-          <span className="eyebrow">MANAGE MEMBERS</span>
-          <form className="athletes-inline-form" onSubmit={addMember}>
+          <h2>Manage members</h2>
+          <form
+            className="athletes-inline-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void act(async () => {
+                await api.athletes.addMember(id, username);
+                setUsername("");
+              }, "Member added.");
+            }}
+          >
             <input
               value={username}
               onChange={(event) => setUsername(event.currentTarget.value)}
               placeholder="username"
               aria-label="Username to add"
               required
+              maxLength={50}
+              disabled={busy}
             />
-            <button className="button athletes-action athletes-action--secondary" type="submit">
+            <button
+              className="button athletes-action athletes-action--secondary"
+              type="submit"
+              disabled={busy}
+            >
               Add member
             </button>
           </form>
-          {requests.length ? (
+          <h3>Join requests</h3>
+          {requestsError ? (
+            <div className="error-box" role="alert">
+              {requestsError} <button onClick={() => void reload()}>Retry requests</button>
+            </div>
+          ) : requests.length ? (
             <div className="athletes-member-list athletes-request-list">
               {requests.map((request) => (
-                <div className="athletes-member-row athletes-request-row" key={request.userId}>
-                  <span>{request.userId}</span>
+                <div className="athletes-member-row athletes-request-row" key={request.id}>
+                  <span>
+                    {request.requester.presentation?.displayName ?? "Member"}
+                    {request.requester.presentation ? (
+                      <small>@{request.requester.presentation.username}</small>
+                    ) : null}
+                  </span>
                   <span className="athletes-request-actions">
                     <button
                       className="athletes-mini-action athletes-mini-action--approve"
-                      type="button"
+                      disabled={busy}
                       onClick={() =>
-                        void api.athletes
-                          .approveJoinRequest(athletesCommunityId, request.userId)
-                          .then(reload)
+                        void act(
+                          () => api.athletes.approveJoinRequest(id, request.userId),
+                          "Join request approved.",
+                        )
                       }
                     >
                       Approve
                     </button>
                     <button
                       className="athletes-mini-action athletes-mini-action--decline"
-                      type="button"
+                      disabled={busy}
                       onClick={() =>
-                        void api.athletes
-                          .declineJoinRequest(athletesCommunityId, request.userId)
-                          .then(reload)
+                        void act(
+                          () => api.athletes.declineJoinRequest(id, request.userId),
+                          "Join request declined.",
+                        )
                       }
                     >
                       Decline
@@ -600,4 +558,25 @@ export function AthletesDetailPage({
       ) : null}
     </div>
   );
+}
+
+function AthletesImage({
+  src,
+  alt,
+  className,
+}: {
+  readonly src: string | null;
+  readonly alt: string;
+  readonly className: string;
+}) {
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  return src && failedSrc !== src ? (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      loading="lazy"
+      onError={() => setFailedSrc(src)}
+    />
+  ) : null;
 }

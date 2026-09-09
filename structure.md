@@ -441,3 +441,7 @@ For every task:
 14. Report exact changed files, documentation updates, proof, current commit, remaining risk, and evidence-based score.
 
 No task is complete while affected governing documentation still describes the old source state.
+
+## In-flight Athletes hardening — PR #265
+
+Athletes API methods are extracted to `packages/frontend/src/athletes/api.ts` and composed through the existing shared transport. The creation/settings form and detail-loading hook have bounded Athletes ownership. The Athletes repository exposes a transaction-scoped community lock so policy checks and lifecycle writes share one transaction. Sharp decoding is behind an Athletes validator port. Photo recovery reuses the existing Worker Outbox engine with an Athletes-specific handler; it does not deploy a Worker service or create a second job engine.

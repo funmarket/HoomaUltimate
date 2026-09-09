@@ -1,3 +1,4 @@
+import sharp from "sharp";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { loadApiConfig } from "@hooma/config";
@@ -142,7 +143,18 @@ test("Athletes Photo Board HTTP routes keep upload Founder-only and content memb
       "ATHLETES_PHOTO_TYPE_INVALID",
     );
 
-    const uploadBytes = Uint8Array.of(137, 80, 78, 71, 13, 10, 26, 10);
+    const corruptUpload = await fetch(`${base}/api/v1/athletes/${athletesCommunityId}/photos`, {
+      method: "POST",
+      headers: imageHeaders(founder.cookie, "image/png"),
+      body: Uint8Array.of(137, 80, 78, 71, 13, 10, 26, 10),
+    });
+    assert.equal(corruptUpload.status, 415);
+    assert.equal(storage.objects.size, 0);
+    const uploadBytes = new Uint8Array(
+      await sharp({ create: { width: 2, height: 2, channels: 3, background: "#ffffff" } })
+        .png()
+        .toBuffer(),
+    );
     const upload = await fetch(`${base}/api/v1/athletes/${athletesCommunityId}/photos`, {
       method: "POST",
       headers: imageHeaders(founder.cookie, "image/png"),
@@ -194,6 +206,7 @@ test("Athletes Photo Board HTTP routes keep upload Founder-only and content memb
     assert.equal(memberContent.status, 200);
     assert.equal(memberContent.headers.get("content-type"), "image/png");
     assert.deepEqual(new Uint8Array(await memberContent.arrayBuffer()), uploadBytes);
+    assert.equal(memberContent.headers.get("cache-control"), "private, no-store");
 
     const outsiderContent = await fetch(
       `${base}/api/v1/athletes/${athletesCommunityId}/photos/${uploaded.id}/content`,

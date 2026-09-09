@@ -430,7 +430,8 @@
 .athletes-hero--detail {
   min-height: 13rem;
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
+  align-items: stretch;
   border-color: rgba(243, 207, 98, 0.17);
 }
 
@@ -701,6 +702,7 @@
 .athletes-member-row {
   min-width: 0;
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 0.75rem;
   align-items: center;
@@ -999,4 +1001,28 @@
   .athletes-card {
     transition: none;
   }
+}
+
+.athletes-banner {
+  display: block;
+  width: 100%;
+  max-height: 16rem;
+  object-fit: contain;
+  border-radius: 1rem;
+}
+.athletes-logo {
+  display: block;
+  width: 4rem;
+  height: 4rem;
+  object-fit: contain;
+  border-radius: 0.75rem;
+}
+.athletes-member-row .athletes-request-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.athletes-member-row .athletes-request-actions > button {
+  flex: 1 1 10rem;
 }

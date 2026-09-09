@@ -76,9 +76,15 @@ function athletesRepositoryStub(
 ): AthletesRepository {
   const roleFor = (id: string, userId: string) => roles[`${id}:${userId}`] ?? null;
 
-  return {
+  const repository: AthletesRepository = {
+    withCommunityLock: async (_id, operation) => operation(repository),
     listPublic: async () => ({ items: [], nextCursor: null }),
-    getPublic: async (id) => community(id, statuses[id] ?? "ACTIVE"),
+    getPublic: async (id) => ({
+      ...community(id, statuses[id] ?? "ACTIVE"),
+      memberCount: 1,
+      createdAt: TEST_DATE,
+      updatedAt: TEST_DATE,
+    }),
     createWithFounder: async (userId, input) => ({
       ...community("created-athletes"),
       createdByUserId: userId,
@@ -101,6 +107,7 @@ function athletesRepositoryStub(
     removeMember: async () => true,
     setRole: async () => true,
   };
+  return repository;
 }
 
 function photoRecord(overrides: Partial<AthletesPhotoRecord> = {}): AthletesPhotoRecord {
@@ -122,6 +129,7 @@ function photoRepositoryStub(records: AthletesPhotoRecord[] = []) {
   let createFailure: Error | null = null;
 
   const repository: AthletesPhotoRepository = {
+    prepareUpload: async () => undefined,
     create: async (input) => {
       created.push(input);
       if (createFailure) throw createFailure;
@@ -209,6 +217,7 @@ function photoService(
     new AthletesService(athletesRepositoryStub(roles, statuses)),
     photos,
     storage,
+    { validate: async () => undefined },
   );
 }
 
@@ -508,5 +517,42 @@ test("Read maps storage failure for the Photo error surface", async () => {
   await assert.rejects(
     () => service.read("member", "ath-1", "photo-1"),
     expectAthletesCode("ATHLETES_PHOTO_UNAVAILABLE"),
+  );
+});
+
+test("Photo upload records recovery intent before any object write", async () => {
+  const photos = photoRepositoryStub();
+  const objects = storageStub();
+  let prepared = false;
+  photos.repository.prepareUpload = async () => {
+    prepared = true;
+  };
+  const put = objects.storage.put;
+  objects.storage.put = async (...args) => {
+    assert.equal(prepared, true);
+    return put(...args);
+  };
+  await photoService({ "ath-1:founder": "FOUNDER" }, photos.repository, objects.storage).upload(
+    "founder",
+    "ath-1",
+    { contentType: "image/png", body: new Uint8Array([1]) },
+  );
+  prepared = false;
+  photos.repository.prepareUpload = async () => {
+    throw new Error("database unavailable");
+  };
+  await assert.rejects(
+    () =>
+      photoService({ "ath-1:founder": "FOUNDER" }, photos.repository, objects.storage).upload(
+        "founder",
+        "ath-1",
+        { contentType: "image/png", body: new Uint8Array([1]) },
+      ),
+    /database unavailable/,
+  );
+  assert.equal(
+    objects.puts.length,
+    1,
+    "failed intent persistence must not write an untracked object",
   );
 });

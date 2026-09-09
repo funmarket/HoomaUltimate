@@ -1,3 +1,7 @@
+import { ATHLETES_PHOTO_RECONCILE_TOPIC } from "@hooma/contracts/athletes";
+import { AthletesService } from "../application/athletes.service.js";
+import { AthletesError } from "../domain/athletes-error.js";
+import { PrismaAthletesRepository } from "./prisma-athletes.repository.js";
 import { Prisma, type PrismaClient } from "@hooma/database";
 import type {
   AthletesPhotoCreateInput,
@@ -23,19 +27,59 @@ type AthletesPhotoRow = Prisma.AthletesPhotoGetPayload<{
 export class PrismaAthletesPhotoRepository implements AthletesPhotoRepository {
   constructor(private readonly db: PrismaClient) {}
 
-  async create(input: AthletesPhotoCreateInput): Promise<AthletesPhotoRecord> {
-    const row = await this.db.athletesPhoto.create({
-      data: input,
-      select: athletesPhotoSelect,
+  async prepareUpload(
+    photoId: string,
+    athletesCommunityId: string,
+    objectKey: string,
+  ): Promise<void> {
+    await this.db.outboxEvent.upsert({
+      where: { id: photoId },
+      create: {
+        id: photoId,
+        topic: ATHLETES_PHOTO_RECONCILE_TOPIC,
+        aggregateType: "AthletesPhoto",
+        aggregateId: photoId,
+        payload: { photoId, athletesCommunityId, objectKey },
+        availableAt: new Date(Date.now() + 60 * 60 * 1000),
+      },
+      update: { payload: { photoId, athletesCommunityId, objectKey } },
     });
-
-    return serializeAthletesPhoto(row);
   }
 
-  async listForCommunity(athletesCommunityId: string): Promise<AthletesPhotoRecord[]> {
+  async create(input: AthletesPhotoCreateInput): Promise<AthletesPhotoRecord> {
+    return this.db.$transaction(async (tx) =>
+      new PrismaAthletesRepository(tx).withCommunityLock(
+        input.athletesCommunityId,
+        async (repository) => {
+          // Reuse the same policy after object I/O, under the lifecycle lock.
+          await new AthletesService(repository).requireFounderContent(
+            input.uploadedByUserId,
+            input.athletesCommunityId,
+          );
+          const intent = await tx.outboxEvent.deleteMany({
+            where: { id: input.id, topic: ATHLETES_PHOTO_RECONCILE_TOPIC, status: "PENDING" },
+          });
+          if (intent.count !== 1)
+            throw new AthletesError(
+              "ATHLETES_PHOTO_UPLOAD_FAILED",
+              "Photo upload expired; please retry",
+            );
+          const row = await tx.athletesPhoto.create({ data: input, select: athletesPhotoSelect });
+          return serializeAthletesPhoto(row);
+        },
+      ),
+    );
+  }
+
+  async listForCommunity(
+    athletesCommunityId: string,
+    page: { cursor?: string | undefined; limit: number } = { limit: 24 },
+  ): Promise<AthletesPhotoRecord[]> {
     const rows = await this.db.athletesPhoto.findMany({
       where: { athletesCommunityId },
       orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      take: Math.min(Math.max(page.limit, 1), 50),
+      ...(page.cursor ? { cursor: { id: page.cursor }, skip: 1 } : {}),
       select: athletesPhotoSelect,
     });
 

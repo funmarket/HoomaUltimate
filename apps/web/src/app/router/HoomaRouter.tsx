@@ -122,8 +122,10 @@ function CreateAthletesRoute() {
 
 function AthletesDetailRoute() {
   const { athletesCommunityId } = useParams();
+  const { me } = useAccount();
   return (
     <AthletesDetailPage
+      key={`${athletesCommunityId}:${me?.id ?? "guest"}`}
       athletesCommunityId={requiredParam("athletesCommunityId", athletesCommunityId)}
     />
   );

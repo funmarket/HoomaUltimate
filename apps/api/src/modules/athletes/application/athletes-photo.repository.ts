@@ -19,8 +19,12 @@ export interface AthletesPhotoCreateInput {
 }
 
 export interface AthletesPhotoRepository {
+  prepareUpload(photoId: string, athletesCommunityId: string, objectKey: string): Promise<void>;
   create(input: AthletesPhotoCreateInput): Promise<AthletesPhotoRecord>;
-  listForCommunity(athletesCommunityId: string): Promise<AthletesPhotoRecord[]>;
+  listForCommunity(
+    athletesCommunityId: string,
+    page?: { cursor?: string | undefined; limit: number },
+  ): Promise<AthletesPhotoRecord[]>;
   getForCommunity(
     athletesCommunityId: string,
     photoId: string,

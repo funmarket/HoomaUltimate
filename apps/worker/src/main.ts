@@ -1,3 +1,5 @@
+import { ATHLETES_PHOTO_RECONCILE_TOPIC } from "@hooma/contracts/athletes";
+import { createAthletesPhotoCleanupHandler } from "./athletes/athletes-photo-cleanup.js";
 import { loadObjectStorageConfig, type ObjectStorageConfig } from "@hooma/config";
 import { disconnectDatabase, getDatabaseClient } from "@hooma/database";
 import { S3ObjectStorage, type ObjectStorage } from "@hooma/storage";
@@ -18,6 +20,10 @@ const database = getDatabaseClient();
 const outboxHandlers = new Map<string, OutboxHandler>();
 const storage = objectStorage(objectStorageConfig);
 if (storage) {
+  outboxHandlers.set(
+    ATHLETES_PHOTO_RECONCILE_TOPIC,
+    createAthletesPhotoCleanupHandler(database, storage),
+  );
   outboxHandlers.set(
     RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC,
     createRideVehiclePhotoCleanupHandler(storage),

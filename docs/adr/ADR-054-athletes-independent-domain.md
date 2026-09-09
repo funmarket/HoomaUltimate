@@ -90,3 +90,9 @@ This foundation keeps the invariant that `PRIVATE` Athletes communities require 
 - Frontend Athletes pages must use Athletes API routes, not `api.communities.create` or Team APIs.
 - `/hooma` may link to Athletes only as a separate domain navigation surface, never as a “Create HOOMA” option.
 - Current permanent bottom navigation is `Home | Play | Watch | HOOMA | Athletes`; see ADR-055.
+
+## In-flight production hardening
+
+Branch `fix/athletes-production-readiness` serializes each existing-community lifecycle mutation on the AthletesCommunity row. The repository supplies a transaction-scoped port; the application service checks active state, current actor/target roles and joining policy inside that boundary. Archive, settings, join/request/cancel, request decisions, direct-add, removal and role changes use the same lock. Creation retains its atomic Founder transaction. This is in-flight source, not a merged or deployed claim.
+
+The same in-flight branch completes Founder settings/archive and moderator-role controls, bounded member removal, applicant pending/cancel state, cursor discovery and saved logo/banner display. Detail state is scoped to community identity with stale-response protection; member/request failures are visible and retryable. Athletes API methods live in the Athletes frontend folder and use the existing shared transport. Create/update response types describe write results rather than claiming a member count. Slugs retain Unicode letters/numbers and collision retries use UUID suffixes.
