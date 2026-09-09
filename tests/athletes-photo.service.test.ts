@@ -79,7 +79,12 @@ function athletesRepositoryStub(
   const repository: AthletesRepository = {
     withCommunityLock: async (_id, operation) => operation(repository),
     listPublic: async () => ({ items: [], nextCursor: null }),
-    getPublic: async (id) => community(id, statuses[id] ?? "ACTIVE"),
+    getPublic: async (id) => ({
+      ...community(id, statuses[id] ?? "ACTIVE"),
+      memberCount: 1,
+      createdAt: TEST_DATE,
+      updatedAt: TEST_DATE,
+    }),
     createWithFounder: async (userId, input) => ({
       ...community("created-athletes"),
       createdByUserId: userId,
@@ -124,6 +129,7 @@ function photoRepositoryStub(records: AthletesPhotoRecord[] = []) {
   let createFailure: Error | null = null;
 
   const repository: AthletesPhotoRepository = {
+    prepareUpload: async () => undefined,
     create: async (input) => {
       created.push(input);
       if (createFailure) throw createFailure;
@@ -211,6 +217,7 @@ function photoService(
     new AthletesService(athletesRepositoryStub(roles, statuses)),
     photos,
     storage,
+    { validate: async () => undefined },
   );
 }
 

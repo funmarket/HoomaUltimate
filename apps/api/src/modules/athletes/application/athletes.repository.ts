@@ -1,5 +1,7 @@
 import type {
   AthletesCommunityCreateInput,
+  AthletesPublicDetail,
+  AthletesPublicSummary,
   AthletesCommunityUpdateInput,
   AthletesJoinPolicy,
   AthletesJoinRequestStatus,
@@ -80,8 +82,8 @@ export interface AthletesRepository {
   ): Promise<T>;
   listPublic(
     input: AthletesPublicListInput,
-  ): Promise<{ items: unknown[]; nextCursor: string | null }>;
-  getPublic(id: string): Promise<unknown | null>;
+  ): Promise<{ items: AthletesPublicSummary[]; nextCursor: string | null }>;
+  getPublic(id: string): Promise<AthletesPublicDetail | null>;
   createWithFounder(
     userId: string,
     input: AthletesCreateRecordInput,

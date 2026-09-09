@@ -185,3 +185,23 @@ export type AthletesPhotoMetadata = z.infer<typeof athletesPhotoMetadataSchema>;
 export type AthletesPhotoList = z.infer<typeof athletesPhotoListSchema>;
 export type AthletesPhotoUploadResponse = z.infer<typeof athletesPhotoUploadResponseSchema>;
 export type AthletesMemberAdd = z.infer<typeof athletesMemberAddSchema>;
+
+/** Create/update return community fields; member counts belong to read projections. */
+export type AthletesCommunityWriteResult = Omit<
+  AthletesPublicDetail,
+  "memberCount" | "viewerRole" | "viewerJoinRequestStatus"
+>;
+
+export const athletesPhotoListQuerySchema = z.object({
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(24),
+});
+
+export const ATHLETES_PHOTO_RECONCILE_TOPIC = "athletes.photo.reconcile-object";
+export const athletesPhotoCleanupPayloadSchema = z
+  .object({
+    photoId: z.string().min(1),
+    athletesCommunityId: z.string().min(1),
+    objectKey: z.string().min(1),
+  })
+  .strict();

@@ -45,8 +45,11 @@ test("Photo Board gates viewing to active Athletes members and uploading to Foun
 });
 
 test("Photo Board uses the existing typed Photo API and authenticated Blob rendering path", () => {
-  assert.match(component, /api\.athletes\.listPhotos\(athletesCommunityId\)/);
-  assert.match(component, /api\.athletes\.fetchPhotoContent\(athletesCommunityId, photo\.id\)/);
+  assert.match(component, /api\.athletes\.listPhotos\(athletesCommunityId, cursor\)/);
+  assert.match(
+    component,
+    /fetchPhotoContent\(athletesCommunityId, photo\.id, controller\.signal\)/,
+  );
   assert.match(component, /api\.athletes\.uploadPhoto\(athletesCommunityId, file, contentType\)/);
   assert.match(component, /URL\.createObjectURL\(blob\)/);
   assert.match(component, /URL\.revokeObjectURL/);
@@ -87,7 +90,7 @@ test("Phase 13 integrates Photo Board into the member-only Athletes detail surfa
   assert.match(athletesPages, /import \{ AthletesPhotoBoard \} from "\.\/AthletesPhotoBoard"/);
   assert.match(
     athletesPages,
-    /<AthletesPhotoBoard[\s\S]*athletesCommunityId=\{athletesCommunityId\}[\s\S]*communityStatus=\{detail\.status\}[\s\S]*viewerRole=\{detail\.viewerRole\}/,
+    /<AthletesPhotoBoard[\s\S]*athletesCommunityId=\{id\}[\s\S]*communityStatus=\{detail\.status\}[\s\S]*viewerRole=\{detail\.viewerRole\}/,
   );
   assert.match(
     athletesPages,

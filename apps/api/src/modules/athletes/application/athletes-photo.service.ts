@@ -1,3 +1,4 @@
+import type { AthletesPhotoValidator } from "./athletes-photo-validator.js";
 import { randomUUID } from "node:crypto";
 import {
   ATHLETES_PHOTO_MAX_BYTES,
@@ -32,6 +33,7 @@ export class AthletesPhotoService {
     private readonly athletes: AthletesPhotoAuthorization,
     private readonly photos: AthletesPhotoRepository,
     private readonly storage: ObjectStorage | null,
+    private readonly validator: AthletesPhotoValidator,
   ) {}
 
   async upload(
@@ -65,13 +67,20 @@ export class AthletesPhotoService {
       );
     }
 
+    await this.validator.validate(input.body, parsedContentType.data);
+
     const photoId = randomUUID();
     const requestedObjectKey = athletesPhotoObjectKey(athletesCommunityId, photoId);
+    // Persist recovery intent before writing bytes so a crash cannot erase the
+    // only record of a pending upload. Successful metadata commits consume it.
+    await this.photos.prepareUpload(photoId, athletesCommunityId, requestedObjectKey);
     let uploadedObjectKey: string | null = null;
 
     try {
       const stored = await this.storage.put(requestedObjectKey, input.body, parsedContentType.data);
       uploadedObjectKey = stored.key;
+      if (stored.key !== requestedObjectKey)
+        await this.photos.prepareUpload(photoId, athletesCommunityId, stored.key);
       const storedContentType = athletesPhotoContentTypeSchema.parse(stored.contentType);
 
       const metadata = await this.photos.create({
@@ -101,9 +110,13 @@ export class AthletesPhotoService {
     }
   }
 
-  async list(userId: string, athletesCommunityId: string): Promise<AthletesPhotoList> {
+  async list(
+    userId: string,
+    athletesCommunityId: string,
+    page: { cursor?: string | undefined; limit: number } = { limit: 24 },
+  ): Promise<AthletesPhotoList> {
     await this.athletes.requireMemberContent(userId, athletesCommunityId);
-    return (await this.photos.listForCommunity(athletesCommunityId)).map(publicPhotoMetadata);
+    return (await this.photos.listForCommunity(athletesCommunityId, page)).map(publicPhotoMetadata);
   }
 
   async read(

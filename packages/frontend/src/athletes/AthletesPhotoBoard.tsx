@@ -15,11 +15,6 @@ type AthletesPhotoBoardProps = {
   readonly viewerRole: AthletesRole | null | undefined;
 };
 
-type DisplayPhoto = {
-  readonly metadata: AthletesPhotoMetadata;
-  readonly objectUrl: string;
-};
-
 function isAthletesPhotoContentType(value: string): value is AthletesPhotoContentType {
   return ATHLETES_PHOTO_CONTENT_TYPES.includes(value as AthletesPhotoContentType);
 }
@@ -43,72 +38,54 @@ export function AthletesPhotoBoard({
   viewerRole,
 }: AthletesPhotoBoardProps) {
   const { api, protectedError } = useHoomaFrontend();
-  const [photos, setPhotos] = useState<DisplayPhoto[]>([]);
+  const [photos, setPhotos] = useState<AthletesPhotoMetadata[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [validationError, setValidationError] = useState("");
   const [serverError, setServerError] = useState("");
-  const photoUrlsRef = useRef<string[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const loadVersionRef = useRef(0);
 
   const isActiveMember =
     communityStatus === "ACTIVE" && viewerRole !== null && viewerRole !== undefined;
   const canUpload = communityStatus === "ACTIVE" && viewerRole === "FOUNDER";
 
-  const replacePhotos = useCallback((next: DisplayPhoto[]) => {
-    for (const objectUrl of photoUrlsRef.current) URL.revokeObjectURL(objectUrl);
-    photoUrlsRef.current = next.map((photo) => photo.objectUrl);
-    setPhotos(next);
-  }, []);
-
-  const loadPhotos = useCallback(async () => {
-    const loadVersion = ++loadVersionRef.current;
-    const next: DisplayPhoto[] = [];
-    setLoading(true);
-    setServerError("");
-
-    try {
-      const metadata = await api.athletes.listPhotos(athletesCommunityId);
-      for (const photo of metadata) {
-        const blob = await api.athletes.fetchPhotoContent(athletesCommunityId, photo.id);
-        next.push({ metadata: photo, objectUrl: URL.createObjectURL(blob) });
+  const loadPhotos = useCallback(
+    async (cursor?: string) => {
+      const loadVersion = ++loadVersionRef.current;
+      setLoading(true);
+      setServerError("");
+      try {
+        const metadata = await api.athletes.listPhotos(athletesCommunityId, cursor);
+        if (loadVersion !== loadVersionRef.current) return;
+        setPhotos((previous) =>
+          cursor
+            ? [
+                ...previous,
+                ...metadata.filter((photo) => !previous.some((item) => item.id === photo.id)),
+              ]
+            : metadata,
+        );
+        setNextCursor(metadata.length === 24 ? (metadata.at(-1)?.id ?? null) : null);
+      } catch (reason) {
+        if (loadVersion === loadVersionRef.current)
+          setServerError(protectedError(reason, "Unable to load Photo Board"));
+      } finally {
+        if (loadVersion === loadVersionRef.current) setLoading(false);
       }
-
-      if (loadVersion !== loadVersionRef.current) {
-        for (const photo of next) URL.revokeObjectURL(photo.objectUrl);
-        return;
-      }
-      replacePhotos(next);
-    } catch (reason) {
-      for (const photo of next) URL.revokeObjectURL(photo.objectUrl);
-      if (loadVersion === loadVersionRef.current) {
-        setServerError(protectedError(reason, "Unable to load Photo Board"));
-      }
-    } finally {
-      if (loadVersion === loadVersionRef.current) setLoading(false);
-    }
-  }, [api, athletesCommunityId, protectedError, replacePhotos]);
+    },
+    [api, athletesCommunityId, protectedError],
+  );
 
   useEffect(() => {
-    if (!isActiveMember) {
+    setPhotos([]);
+    setNextCursor(null);
+    if (isActiveMember) void loadPhotos();
+    else setLoading(false);
+    return () => {
       loadVersionRef.current += 1;
-      replacePhotos([]);
-      setLoading(false);
-      setValidationError("");
-      setServerError("");
-      return;
-    }
-    void loadPhotos();
-  }, [isActiveMember, loadPhotos, replacePhotos]);
-
-  useEffect(
-    () => () => {
-      loadVersionRef.current += 1;
-      for (const objectUrl of photoUrlsRef.current) URL.revokeObjectURL(objectUrl);
-      photoUrlsRef.current = [];
-    },
-    [],
-  );
+    };
+  }, [isActiveMember, loadPhotos]);
 
   async function uploadPhoto(event: ChangeEvent<HTMLInputElement>) {
     const input = event.currentTarget;
@@ -161,7 +138,7 @@ export function AthletesPhotoBoard({
           <input
             type="file"
             accept={ATHLETES_PHOTO_CONTENT_TYPES.join(",")}
-            disabled={uploading}
+            disabled={uploading || loading}
             onChange={(event) => void uploadPhoto(event)}
           />
           <span className="athletes-action__icon" aria-hidden="true">
@@ -177,7 +154,14 @@ export function AthletesPhotoBoard({
         </div>
       ) : null}
       {validationError ? <div className="error-box">{validationError}</div> : null}
-      {serverError ? <div className="error-box">{serverError}</div> : null}
+      {serverError ? (
+        <div className="error-box" role="alert">
+          {serverError}{" "}
+          <button disabled={loading} onClick={() => void loadPhotos(nextCursor ?? undefined)}>
+            Retry Photo Board
+          </button>
+        </div>
+      ) : null}
       {loading ? (
         <div className="athletes-photo-board__state" role="status">
           Loading Photo Board…
@@ -193,16 +177,93 @@ export function AthletesPhotoBoard({
       {photos.length ? (
         <div className="athletes-photo-board__grid">
           {photos.map((photo, index) => (
-            <figure className="athletes-photo-board__photo" key={photo.metadata.id}>
-              <img
-                src={photo.objectUrl}
-                alt={`Photo ${index + 1} from Athletes Photo Board`}
-                loading="lazy"
-              />
-            </figure>
+            <AthletesPhoto
+              key={photo.id}
+              athletesCommunityId={athletesCommunityId}
+              photo={photo}
+              index={index}
+            />
           ))}
         </div>
       ) : null}
+      {nextCursor ? (
+        <button
+          className="button athletes-action athletes-action--secondary"
+          disabled={loading || uploading}
+          onClick={() => void loadPhotos(nextCursor)}
+        >
+          {loading ? "Loading…" : "Load more photos"}
+        </button>
+      ) : null}
     </section>
+  );
+}
+
+function AthletesPhoto({
+  athletesCommunityId,
+  photo,
+  index,
+}: {
+  readonly athletesCommunityId: string;
+  readonly photo: AthletesPhotoMetadata;
+  readonly index: number;
+}) {
+  const { api, protectedError } = useHoomaFrontend();
+  const element = useRef<HTMLElement | null>(null);
+  const [visible, setVisible] = useState(typeof IntersectionObserver === "undefined");
+  const [objectUrl, setObjectUrl] = useState("");
+  const [error, setError] = useState("");
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined" || !element.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setVisible(entry?.isIntersecting ?? false),
+      { rootMargin: "300px" },
+    );
+    observer.observe(element.current);
+    return () => observer.disconnect();
+  }, []);
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+    let url = "";
+    setObjectUrl("");
+    setError("");
+    if (visible)
+      void api.athletes
+        .fetchPhotoContent(athletesCommunityId, photo.id, controller.signal)
+        .then((blob) => {
+          if (!active) return;
+          url = URL.createObjectURL(blob);
+          setObjectUrl(url);
+        })
+        .catch((reason) => {
+          if (active) setError(protectedError(reason, "Unable to load photo"));
+        });
+    return () => {
+      active = false;
+      controller.abort();
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [api, athletesCommunityId, photo.id, visible, attempt, protectedError]);
+  return (
+    <figure ref={element} className="athletes-photo-board__photo">
+      {objectUrl ? (
+        <img
+          src={objectUrl}
+          alt={`Photo ${index + 1} from Athletes Photo Board`}
+          loading="lazy"
+          onError={() => setError("This photo could not be displayed.")}
+        />
+      ) : null}
+      {error ? (
+        <div role="alert">
+          {error}
+          <button onClick={() => setAttempt((value) => value + 1)}>Retry photo {index + 1}</button>
+        </div>
+      ) : !objectUrl ? (
+        <span role="status">Loading photo {index + 1}…</span>
+      ) : null}
+    </figure>
   );
 }

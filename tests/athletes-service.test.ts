@@ -60,7 +60,12 @@ function repositoryStub(
   const repository: AthletesRepository = {
     withCommunityLock: async (_id, operation) => operation(repository),
     listPublic: async () => ({ items: [], nextCursor: null }),
-    getPublic: async () => community(joinPolicy),
+    getPublic: async () => ({
+      ...community(joinPolicy),
+      memberCount: 1,
+      createdAt: "2026-09-01T10:00:00.000Z",
+      updatedAt: "2026-09-01T10:00:00.000Z",
+    }),
     createWithFounder: async (userId, input) => ({
       ...community(input.joinPolicy),
       id: "created-athletes",

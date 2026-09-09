@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { Prisma, type PrismaClient } from "@hooma/database";
 import type {
   AthletesCommunityCreateInput,
@@ -12,7 +13,7 @@ function slugify(value: string): string {
       .trim()
       .toLowerCase()
       .normalize("NFKD")
-      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/[^\p{L}\p{N}]+/gu, "-")
       .replace(/^-|-$/g, "")
       .slice(0, 70) || "athletes"
   );
@@ -161,7 +162,7 @@ export class PrismaAthletesRepository implements AthletesRepository {
   async createWithFounder(userId: string, input: AthletesCommunityCreateInput) {
     const base = slugify(input.name);
     for (let suffix = 0; suffix < 10; suffix += 1) {
-      const slug = suffix === 0 ? base : `${base}-${suffix}`;
+      const slug = suffix === 0 ? base : `${base}-${randomUUID()}`;
       try {
         return await this.transaction(async (tx) => {
           const community = await tx.athletesCommunity.create({

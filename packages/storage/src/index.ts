@@ -160,6 +160,7 @@ export class S3ObjectStorage implements ObjectStorage {
     const signature = hex(await hmac(signingKey, stringToSign));
     const requestInit: RequestInit = {
       method,
+      signal: AbortSignal.timeout(30_000),
       headers: {
         ...headers,
         authorization: `AWS4-HMAC-SHA256 Credential=${this.config.accessKeyId}/${scope}, SignedHeaders=${signedHeaders}, Signature=${signature}`,

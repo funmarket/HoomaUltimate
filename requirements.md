@@ -1357,3 +1357,7 @@ Do not turn it into:
 For future-approved domains, this document may state product direction before implementation exists, but the text must make that distinction clear.
 
 When the product owner makes a newer explicit decision that conflicts with this file, implementation follows the newer decision and this contract should be updated promptly so later agents do not drift back to stale behavior.
+
+## In-flight Athletes readiness corrections — PR #265
+
+The production-readiness branch completes existing Founder management and applicant cancellation in the UI, adds cursor discovery and branding display, protects detail state from stale requests, and makes management failures retryable. Photo uploads validate decodable format and use a 40-megapixel resource ceiling alongside 5 MiB; gallery pages and independent image loading do not impose a photo-count limit. These corrections preserve the roles and exclusions in section 2.4. Foundation/deployment completion is pending final verification and storage activation.

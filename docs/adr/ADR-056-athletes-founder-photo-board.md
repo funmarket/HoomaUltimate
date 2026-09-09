@@ -115,3 +115,11 @@ The bounded Photo Board implementation phases have since completed on `phase-0-f
 ## Verification history
 
 The original governance phase was documentation-only and intentionally introduced no Photo Board code, schema, or routes. Subsequent approved implementation phases supplied the bounded authorization, contracts, metadata persistence, repository/service/storage orchestration, authenticated HTTP routes, frontend integration, and behavioral verification. Phase 16 synchronizes this ADR to that merged repository state while preserving the original product constraints and without making a claim about any specific deployment's object-storage configuration.
+
+## In-flight production hardening (PR #265)
+
+The production-readiness branch adds actual JPEG/PNG/WebP decoding (including corrupt/truncated and MIME mismatch rejection) with a 40-megapixel decoder resource ceiling; the existing 5 MiB limit remains. Photo metadata lists use cursor pages of 24 (maximum 50 requested); this is a page size, not a community photo-count limit. Image bytes load near the viewport, release Blob URLs outside it, and fail/retry independently. Private content responses specify `private, no-store`.
+
+Before object upload, Athletes records a recovery intent in the existing OutboxEvent table. Metadata publication rechecks the active Founder under the community lifecycle lock and atomically consumes the pending intent. Failed uploads retain an intent for the existing Worker Outbox engine after a one-hour recovery window. Shared S3 requests have a 30-second timeout. The Athletes handler checks key ownership and never deletes objects associated with published photo metadata. This introduces no generic Media domain, separate storage abstraction, media deletion UI or additional table.
+
+Runtime status is distinct: storage bucket activation is blocked because connected Railway tools expose no bucket operation. No new Worker service is created by this task; automatic cleanup requires the existing Worker code to run in an appropriately configured runtime. Live storage/role verification remains outstanding. These are in-flight changes, not deployed claims.

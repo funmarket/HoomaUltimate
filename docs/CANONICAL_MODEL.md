@@ -1172,3 +1172,7 @@ public/private UI projection
 ```
 
 Any mismatch is a blocker, not a reason for a compatibility patch.
+
+## In-flight Athletes consistency corrections — PR #265
+
+Existing-community lifecycle mutations serialize policy reads and writes using the AthletesCommunity row. Photo upload recovery uses existing OutboxEvent records, identified by photo ID and the `athletes.photo.reconcile-object` topic. Successful photo metadata publication consumes the pending intent in the same transaction after active-Founder authorization; failed publication leaves recovery information durable. AthletesPhoto and object storage remain the only durable photo metadata/byte owners. No schema migration or new table is introduced by this correction.

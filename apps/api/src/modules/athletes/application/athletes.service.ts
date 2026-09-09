@@ -51,7 +51,7 @@ export class AthletesService {
       this.repository.activeRole(id, viewerUserId),
       this.repository.getJoinRequest(id, viewerUserId),
     ]);
-    return { ...(record as object), viewerRole, viewerJoinRequestStatus: request?.status ?? null };
+    return { ...record, viewerRole, viewerJoinRequestStatus: request?.status ?? null };
   }
 
   create(userId: string, input: AthletesCommunityCreateInput) {

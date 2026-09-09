@@ -1,6 +1,7 @@
 import { Buffer } from "node:buffer";
 import {
   athletesCommunityCreateSchema,
+  athletesPhotoListQuerySchema,
   athletesCommunityUpdateSchema,
   athletesListQuerySchema,
   athletesMemberAddSchema,
@@ -55,7 +56,11 @@ export function createAthletesMemberRouter(
     "/:athletesCommunityId/photos",
     asyncHandler(async (req, res) => {
       res.json(
-        await photoService.list(getAuth(req).userId, String(req.params.athletesCommunityId)),
+        await photoService.list(
+          getAuth(req).userId,
+          String(req.params.athletesCommunityId),
+          athletesPhotoListQuerySchema.parse(req.query),
+        ),
       );
     }),
   );
@@ -80,6 +85,7 @@ export function createAthletesMemberRouter(
         String(req.params.athletesCommunityId),
         String(req.params.photoId),
       );
+      res.setHeader("cache-control", "private, no-store");
       res.setHeader("content-type", photo.contentType);
       res.send(Buffer.from(photo.body));
     }),

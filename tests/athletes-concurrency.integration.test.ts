@@ -65,6 +65,18 @@ test("Athletes lifecycle serializes policy changes and competing membership writ
   assert.ok(founder && moderator && target && applicant);
   const ids: string[] = [];
   try {
+    const slugs = new Set<string>();
+    for (let index = 0; index < 12; index += 1) {
+      const repeated = await service.create(founder, {
+        name: "عداؤون",
+        sport: "RUNNING",
+        visibility: "PUBLIC",
+        joinPolicy: "OPEN",
+      });
+      ids.push(repeated.id);
+      slugs.add(repeated.slug);
+    }
+    assert.equal(slugs.size, 12, "valid repeated Unicode names do not exhaust ten slug candidates");
     const community = await service.create(founder, {
       name: `Concurrent Athletes ${Date.now()}`,
       sport: "RUNNING",

@@ -1000,3 +1000,23 @@
     transition: none;
   }
 }
+
+.athletes-banner {
+  display: block;
+  width: 100%;
+  max-height: 16rem;
+  object-fit: contain;
+  border-radius: 1rem;
+}
+.athletes-logo {
+  display: block;
+  width: 4rem;
+  height: 4rem;
+  object-fit: contain;
+  border-radius: 0.75rem;
+}
+.athletes-member-row .athletes-request-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
