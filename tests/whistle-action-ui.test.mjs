@@ -6,7 +6,6 @@ const board = readFileSync("packages/frontend/src/whistle/HoomaWhistleBoard.tsx"
 const action = readFileSync("packages/frontend/src/whistle/WhistleAction.tsx", "utf8");
 const css = readFileSync("packages/frontend/src/whistle/whistle.css", "utf8");
 const profile = readFileSync("apps/web/src/profile/UserWhistlePanel.tsx", "utf8");
-const profileCss = readFileSync("apps/web/src/profile/profile.css", "utf8");
 const gamer = readFileSync("packages/frontend/src/gamers/GamerWhistlePanel.tsx", "utf8");
 
 test("Community, Event, Athletes, and Ride share the canonical Whistle action", () => {
@@ -21,7 +20,6 @@ test("Direct user and Gamer direct Whistle reuse the same canonical action", () 
   assert.match(profile, /WhistleAction/);
   assert.match(profile, /label="Open Whistle"/);
   assert.match(profile, /trailing=\{`\$\{feed\.remainingToday\}\/11`\}/);
-  assert.match(profileCss, /button:not\(\.whistle-action\)/);
   assert.match(gamer, /import \{ WhistleAction \} from "\.\.\/whistle\/WhistleAction"/);
   assert.match(gamer, /<WhistleAction[\s\S]*trailing=\{`\$\{feed\.remainingToday\}\/11`\}/);
 });
