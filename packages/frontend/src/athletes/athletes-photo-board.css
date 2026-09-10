@@ -163,6 +163,34 @@
   opacity: 0.55;
 }
 
+.athletes-photo-board__delete-error {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.5rem;
+  left: 0.5rem;
+  z-index: 4;
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.7rem;
+  border: 1px solid rgba(255, 107, 97, 0.48);
+  border-radius: 0.85rem;
+  background: rgba(30, 8, 8, 0.94);
+  color: #ffc2bd;
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
+.athletes-photo-board__delete-error button {
+  min-height: 38px;
+  border: 1px solid rgba(255, 107, 97, 0.44);
+  border-radius: 999px;
+  background: transparent;
+  color: #ffaaa4;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 .athletes-photo-board__photo-error,
 .athletes-photo-board__photo-loading {
   position: absolute;
