@@ -84,7 +84,7 @@
   color: #ff8f84;
 }
 
-.whistle-action {
+.whistle-action.whistle-action {
   min-height: 46px;
   min-width: 154px;
   display: inline-grid;
@@ -147,8 +147,8 @@
   text-align: center;
 }
 
-.whistle-action:hover,
-.whistle-action:focus-visible {
+.whistle-action.whistle-action:hover,
+.whistle-action.whistle-action:focus-visible {
   border-color: #c4dc43;
   background:
     radial-gradient(circle at 16% 50%, rgba(196, 220, 67, 0.14), transparent 38%),
@@ -160,11 +160,11 @@
   outline: none;
 }
 
-.whistle-action:active {
+.whistle-action.whistle-action:active {
   transform: translateY(1px) scale(0.995);
 }
 
-.whistle-action:disabled {
+.whistle-action.whistle-action:disabled {
   opacity: 0.45;
   cursor: not-allowed;
   transform: none;
