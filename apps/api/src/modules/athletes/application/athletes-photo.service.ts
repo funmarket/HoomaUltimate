@@ -11,7 +11,10 @@ import {
 } from "@hooma/contracts/athletes";
 import type { ObjectStorage } from "@hooma/storage";
 import { AthletesError } from "../domain/athletes-error.js";
-import type { AthletesPhotoRecord, AthletesPhotoRepository } from "./athletes-photo.repository.js";
+import type {
+  AthletesPhotoRecord,
+  AthletesPhotoRepository,
+} from "./athletes-photo.repository.js";
 import type { AthletesService } from "./athletes.service.js";
 
 export interface AthletesPhotoUploadInput {
