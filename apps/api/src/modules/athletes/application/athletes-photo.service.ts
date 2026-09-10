@@ -1,3 +1,4 @@
+import type { AthletesPhotoOptimizer } from "./athletes-photo-optimizer.js";
 import type { AthletesPhotoValidator } from "./athletes-photo-validator.js";
 import { randomUUID } from "node:crypto";
 import {
@@ -34,6 +35,7 @@ export class AthletesPhotoService {
     private readonly photos: AthletesPhotoRepository,
     private readonly storage: ObjectStorage | null,
     private readonly validator: AthletesPhotoValidator,
+    private readonly optimizer: AthletesPhotoOptimizer,
   ) {}
 
   async upload(
@@ -68,6 +70,7 @@ export class AthletesPhotoService {
     }
 
     await this.validator.validate(input.body, parsedContentType.data);
+    const optimized = await this.optimizer.optimize(input.body, parsedContentType.data);
 
     const photoId = randomUUID();
     const requestedObjectKey = athletesPhotoObjectKey(athletesCommunityId, photoId);
@@ -77,7 +80,11 @@ export class AthletesPhotoService {
     let uploadedObjectKey: string | null = null;
 
     try {
-      const stored = await this.storage.put(requestedObjectKey, input.body, parsedContentType.data);
+      const stored = await this.storage.put(
+        requestedObjectKey,
+        optimized.body,
+        optimized.contentType,
+      );
       uploadedObjectKey = stored.key;
       if (stored.key !== requestedObjectKey)
         await this.photos.prepareUpload(photoId, athletesCommunityId, stored.key);
@@ -144,6 +151,22 @@ export class AthletesPhotoService {
       };
     } catch {
       throw new AthletesError("ATHLETES_PHOTO_UNAVAILABLE", "Athletes photo is unavailable");
+    }
+  }
+
+  async delete(
+    userId: string,
+    athletesCommunityId: string,
+    photoId: string,
+  ): Promise<void> {
+    await this.athletes.requireFounderContent(userId, athletesCommunityId);
+    const deleted = await this.photos.deleteForCommunity(
+      athletesCommunityId,
+      photoId,
+      userId,
+    );
+    if (!deleted) {
+      throw new AthletesError("ATHLETES_PHOTO_NOT_FOUND", "Athletes photo not found");
     }
   }
 }
