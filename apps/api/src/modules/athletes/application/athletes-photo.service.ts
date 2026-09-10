@@ -160,11 +160,7 @@ export class AthletesPhotoService {
     photoId: string,
   ): Promise<void> {
     await this.athletes.requireFounderContent(userId, athletesCommunityId);
-    const deleted = await this.photos.deleteForCommunity(
-      athletesCommunityId,
-      photoId,
-      userId,
-    );
+    const deleted = await this.photos.deleteForCommunity(athletesCommunityId, photoId, userId);
     if (!deleted) {
       throw new AthletesError("ATHLETES_PHOTO_NOT_FOUND", "Athletes photo not found");
     }
