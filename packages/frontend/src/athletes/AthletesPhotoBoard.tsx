@@ -48,7 +48,7 @@ export function AthletesPhotoBoard({
 
   const isActiveMember =
     communityStatus === "ACTIVE" && viewerRole !== null && viewerRole !== undefined;
-  const canUpload = communityStatus === "ACTIVE" && viewerRole === "FOUNDER";
+  const canCurate = communityStatus === "ACTIVE" && viewerRole === "FOUNDER";
 
   const loadPhotos = useCallback(
     async (cursor?: string) => {
@@ -91,7 +91,7 @@ export function AthletesPhotoBoard({
     const input = event.currentTarget;
     const file = input.files?.[0];
     input.value = "";
-    if (!file || !canUpload || uploading) return;
+    if (!file || !canCurate || uploading) return;
 
     const validationMessage = validateAthletesPhotoUpload(file);
     if (validationMessage) {
@@ -133,7 +133,7 @@ export function AthletesPhotoBoard({
         </span>
       </div>
 
-      {canUpload ? (
+      {canCurate ? (
         <label className="athletes-photo-board__upload athletes-action athletes-action--secondary">
           <input
             type="file"
@@ -182,6 +182,10 @@ export function AthletesPhotoBoard({
               athletesCommunityId={athletesCommunityId}
               photo={photo}
               index={index}
+              canDelete={canCurate}
+              onDeleted={(photoId) =>
+                setPhotos((current) => current.filter((item) => item.id !== photoId))
+              }
             />
           ))}
         </div>
@@ -203,10 +207,14 @@ function AthletesPhoto({
   athletesCommunityId,
   photo,
   index,
+  canDelete,
+  onDeleted,
 }: {
   readonly athletesCommunityId: string;
   readonly photo: AthletesPhotoMetadata;
   readonly index: number;
+  readonly canDelete: boolean;
+  readonly onDeleted: (photoId: string) => void;
 }) {
   const { api, protectedError } = useHoomaFrontend();
   const element = useRef<HTMLElement | null>(null);
@@ -214,6 +222,9 @@ function AthletesPhoto({
   const [objectUrl, setObjectUrl] = useState("");
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
   useEffect(() => {
     if (typeof IntersectionObserver === "undefined" || !element.current) return;
     const observer = new IntersectionObserver(
@@ -223,6 +234,7 @@ function AthletesPhoto({
     observer.observe(element.current);
     return () => observer.disconnect();
   }, []);
+
   useEffect(() => {
     let active = true;
     const controller = new AbortController();
@@ -246,6 +258,22 @@ function AthletesPhoto({
       if (url) URL.revokeObjectURL(url);
     };
   }, [api, athletesCommunityId, photo.id, visible, attempt, protectedError]);
+
+  async function deletePhoto() {
+    if (!canDelete || deleting) return;
+    setDeleting(true);
+    setError("");
+    try {
+      await api.athletes.deletePhoto(athletesCommunityId, photo.id);
+      onDeleted(photo.id);
+    } catch (reason) {
+      setError(protectedError(reason, "Unable to delete photo"));
+      setConfirmDelete(false);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
     <figure ref={element} className="athletes-photo-board__photo">
       {objectUrl ? (
@@ -256,13 +284,46 @@ function AthletesPhoto({
           onError={() => setError("This photo could not be displayed.")}
         />
       ) : null}
+
+      {canDelete ? (
+        <button
+          type="button"
+          className="athletes-photo-board__delete"
+          aria-label={`Delete photo ${index + 1}`}
+          aria-expanded={confirmDelete}
+          disabled={deleting}
+          onClick={() => setConfirmDelete((current) => !current)}
+        >
+          <span aria-hidden="true">×</span>
+        </button>
+      ) : null}
+
+      {confirmDelete && canDelete ? (
+        <div className="athletes-photo-board__delete-confirm" role="group" aria-label="Confirm photo deletion">
+          <strong>Delete this photo?</strong>
+          <span>This removes it from the Photo Board.</span>
+          <div>
+            <button type="button" disabled={deleting} onClick={() => void deletePhoto()}>
+              {deleting ? "Deleting…" : "Delete"}
+            </button>
+            <button type="button" disabled={deleting} onClick={() => setConfirmDelete(false)}>
+              Keep
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {error ? (
-        <div role="alert">
+        <div className="athletes-photo-board__photo-error" role="alert">
           {error}
-          <button onClick={() => setAttempt((value) => value + 1)}>Retry photo {index + 1}</button>
+          {!confirmDelete ? (
+            <button onClick={() => setAttempt((value) => value + 1)}>Retry photo {index + 1}</button>
+          ) : null}
         </div>
       ) : !objectUrl ? (
-        <span role="status">Loading photo {index + 1}…</span>
+        <span className="athletes-photo-board__photo-loading" role="status">
+          Loading photo {index + 1}…
+        </span>
       ) : null}
     </figure>
   );
