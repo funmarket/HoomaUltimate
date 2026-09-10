@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useHoomaFrontend } from "../context";
 import { HoomaApiError, type WhistleList, type WhistleListItem } from "../api";
 import { listEventWhistles, sendEventWhistle } from "./event-api";
+import { WhistleAction } from "./WhistleAction";
 
 const MAX_GRAPHEMES = 33;
 const REFRESH_INTERVAL_MS = 10_000;
@@ -182,15 +183,14 @@ function WhistleBoard({
                 placeholder="Pitch at 7? ⚽"
                 aria-describedby={`whistle-count-${contextType}-${contextId}`}
               />
-              <button
-                className="button"
+              <WhistleAction
                 type="submit"
+                label={sending ? "Sending…" : "Whistle"}
+                trailing={`${feed.remainingToday}/11`}
                 disabled={
                   !body.trim() || count > MAX_GRAPHEMES || sending || feed.remainingToday <= 0
                 }
-              >
-                {sending ? "Sending…" : "Whistle"}
-              </button>
+              />
             </div>
           </label>
           <small
