@@ -303,7 +303,11 @@ function AthletesPhoto({
       ) : null}
 
       {confirmDelete && canDelete ? (
-        <div className="athletes-photo-board__delete-confirm" role="group" aria-label="Confirm photo deletion">
+        <div
+          className="athletes-photo-board__delete-confirm"
+          role="group"
+          aria-label="Confirm photo deletion"
+        >
           <strong>Delete this photo?</strong>
           <span>This removes it from the Photo Board.</span>
           <div>
@@ -320,7 +324,9 @@ function AthletesPhoto({
       {deleteError ? (
         <div className="athletes-photo-board__delete-error" role="alert">
           <span>{deleteError}</span>
-          <button type="button" onClick={() => setDeleteError("")}>Dismiss</button>
+          <button type="button" onClick={() => setDeleteError("")}>
+            Dismiss
+          </button>
         </div>
       ) : null}
 
