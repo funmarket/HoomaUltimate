@@ -80,7 +80,11 @@ export class AthletesPhotoService {
     let uploadedObjectKey: string | null = null;
 
     try {
-      const stored = await this.storage.put(requestedObjectKey, optimized.body, optimized.contentType);
+      const stored = await this.storage.put(
+        requestedObjectKey,
+        optimized.body,
+        optimized.contentType,
+      );
       uploadedObjectKey = stored.key;
       if (stored.key !== requestedObjectKey)
         await this.photos.prepareUpload(photoId, athletesCommunityId, stored.key);
@@ -150,11 +154,7 @@ export class AthletesPhotoService {
     }
   }
 
-  async delete(
-    userId: string,
-    athletesCommunityId: string,
-    photoId: string,
-  ): Promise<void> {
+  async delete(userId: string, athletesCommunityId: string, photoId: string): Promise<void> {
     await this.athletes.requireFounderContent(userId, athletesCommunityId);
     const deleted = await this.photos.deleteForCommunity(athletesCommunityId, photoId, userId);
     if (!deleted) {
