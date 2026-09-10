@@ -27,7 +27,7 @@
   resize: vertical;
 }
 
-.profile-edit-form button {
+.profile-edit-form button:not(.whistle-action) {
   width: fit-content;
   border: 1px solid #b8ff2a;
   border-radius: 999px;
@@ -39,7 +39,7 @@
   cursor: pointer;
 }
 
-.profile-edit-form button:disabled {
+.profile-edit-form button:not(.whistle-action):disabled {
   cursor: wait;
   opacity: 0.65;
 }
@@ -345,7 +345,7 @@
   background: transparent;
 }
 
-.public-profile-contact button {
+.public-profile-contact button:not(.whistle-action) {
   width: 100%;
   min-height: 48px;
   border: 1px solid #b8ff2a;
