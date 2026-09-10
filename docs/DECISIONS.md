@@ -410,11 +410,11 @@ The dedicated decision record is `docs/adr/ADR-055-current-navigation-home-ia.md
 
 ## ADR-056 — Athletes Founder Photo Board
 
-**Decision:** Athletes owns a private durable Photo Board for one `AthletesCommunity`. Only an active same-community `FOUNDER` may upload. Active `MODERATOR` and `MEMBER` memberships may view but may not upload. Outsiders, public/anonymous users, memberships from another Athletes community, and archived Athletes communities are denied active Photo Board access.
+**Decision:** Athletes owns a private durable Photo Board for one `AthletesCommunity`. Only an active same-community `FOUNDER` may upload or delete. Active `MODERATOR` and `MEMBER` memberships may view but may not upload or delete. Outsiders, public/anonymous users, memberships from another Athletes community, and archived Athletes communities are denied active Photo Board access.
 
-Athletes owns durable Photo Board metadata in PostgreSQL. Photo bytes use the shared `packages/storage` / `ObjectStorage` transport. Photo Board remains separate from Whistle and does not create a generic Media domain. The current upload policy is JPEG/PNG/WebP with a 5 MiB maximum and route-scoped binary parsing. The current product has no captions, likes/reactions, comments/replies, albums, manual ordering, moderator/member upload, public board, or user-facing delete.
+Athletes owns durable Photo Board metadata in PostgreSQL. Photo bytes use the shared `packages/storage` / `ObjectStorage` transport. Accepted JPEG/PNG/WebP uploads up to 5 MiB are normalized server-side to WebP with a maximum 1600px edge and no enlargement before persistence, and metadata records the stored optimized descriptor. Founder deletion removes the canonical AthletesPhoto record transactionally and queues the existing Athletes object-reconciliation OutboxEvent so Worker cleanup owns eventual object removal. Photo Board remains separate from Whistle and does not create a generic Media domain or social-feed lifecycle.
 
-**Current-state note:** The bounded Photo Board source vertical slice described by this decision is merged on `phase-0-foundation`, including Athletes-owned authorization, metadata persistence, repository/service behavior, and authenticated HTTP routes. This note records merged repository state and does not make a claim about any specific deployment's object-storage configuration.
+The current product has no captions, likes/reactions, comments/replies, albums, manual ordering, moderator/member curation, or public board.
 
 The dedicated decision record is `docs/adr/ADR-056-athletes-founder-photo-board.md`.
 

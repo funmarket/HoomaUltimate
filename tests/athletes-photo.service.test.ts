@@ -126,6 +126,11 @@ function photoRecord(overrides: Partial<AthletesPhotoRecord> = {}): AthletesPhot
 
 function photoRepositoryStub(records: AthletesPhotoRecord[] = []) {
   const created: AthletesPhotoCreateInput[] = [];
+  const deleted: Array<{
+    athletesCommunityId: string;
+    photoId: string;
+    deletedByUserId: string;
+  }> = [];
   let createFailure: Error | null = null;
 
   const repository: AthletesPhotoRepository = {
@@ -141,11 +146,18 @@ function photoRepositoryStub(records: AthletesPhotoRecord[] = []) {
       records.find(
         (record) => record.athletesCommunityId === athletesCommunityId && record.id === photoId,
       ) ?? null,
+    deleteForCommunity: async (athletesCommunityId, photoId, deletedByUserId) => {
+      deleted.push({ athletesCommunityId, photoId, deletedByUserId });
+      return records.some(
+        (record) => record.athletesCommunityId === athletesCommunityId && record.id === photoId,
+      );
+    },
   };
 
   return {
     repository,
     created,
+    deleted,
     failCreate(error: Error) {
       createFailure = error;
     },
@@ -212,12 +224,20 @@ function photoService(
   photos: AthletesPhotoRepository,
   storage: ObjectStorage | null,
   statuses: Record<string, CommunityStatus> = {},
+  optimize: (
+    body: Uint8Array,
+    contentType: "image/jpeg" | "image/png" | "image/webp",
+  ) => Promise<{
+    body: Uint8Array;
+    contentType: "image/jpeg" | "image/png" | "image/webp";
+  }> = async (body, contentType) => ({ body, contentType }),
 ) {
   return new AthletesPhotoService(
     new AthletesService(athletesRepositoryStub(roles, statuses)),
     photos,
     storage,
     { validate: async () => undefined },
+    { optimize },
   );
 }
 
@@ -261,6 +281,31 @@ test("Founder upload accepts every allowed MIME", async () => {
     assert.equal("objectKey" in result, false);
     assert.equal("uploadedByUserId" in result, false);
   }
+});
+
+test("Upload stores the optimized descriptor instead of original bytes", async () => {
+  const photos = photoRepositoryStub();
+  const objects = storageStub();
+  const optimized = new Uint8Array([7, 7]);
+  const service = photoService(
+    { "ath-1:founder": "FOUNDER" },
+    photos.repository,
+    objects.storage,
+    {},
+    async () => ({ body: optimized, contentType: "image/webp" }),
+  );
+
+  const result = await service.upload("founder", "ath-1", {
+    contentType: "image/jpeg",
+    body: new Uint8Array([1, 2, 3, 4]),
+  });
+
+  assert.deepEqual(objects.puts[0]!.body, optimized);
+  assert.equal(objects.puts[0]!.contentType, "image/webp");
+  assert.equal(photos.created[0]!.contentType, "image/webp");
+  assert.equal(photos.created[0]!.sizeBytes, 2);
+  assert.equal(result.contentType, "image/webp");
+  assert.equal(result.sizeBytes, 2);
 });
 
 test("Upload persists the descriptor returned by ObjectStorage", async () => {
@@ -517,6 +562,45 @@ test("Read maps storage failure for the Photo error surface", async () => {
   await assert.rejects(
     () => service.read("member", "ath-1", "photo-1"),
     expectAthletesCode("ATHLETES_PHOTO_UNAVAILABLE"),
+  );
+});
+
+test("Founder can delete a same-community photo and non-Founders cannot", async () => {
+  const photos = photoRepositoryStub([photoRecord()]);
+  const service = photoService(
+    {
+      "ath-1:founder": "FOUNDER",
+      "ath-1:member": "MEMBER",
+      "ath-1:moderator": "MODERATOR",
+    },
+    photos.repository,
+    storageStub().storage,
+  );
+
+  await service.delete("founder", "ath-1", "photo-1");
+  assert.deepEqual(photos.deleted, [
+    { athletesCommunityId: "ath-1", photoId: "photo-1", deletedByUserId: "founder" },
+  ]);
+
+  for (const userId of ["member", "moderator", "outsider"]) {
+    await assert.rejects(
+      () => service.delete(userId, "ath-1", "photo-1"),
+      expectAthletesCode("ATHLETES_FOUNDER_REQUIRED"),
+    );
+  }
+  assert.equal(photos.deleted.length, 1);
+});
+
+test("Founder delete reports a missing photo", async () => {
+  const photos = photoRepositoryStub([]);
+  const service = photoService(
+    { "ath-1:founder": "FOUNDER" },
+    photos.repository,
+    storageStub().storage,
+  );
+  await assert.rejects(
+    () => service.delete("founder", "ath-1", "missing"),
+    expectAthletesCode("ATHLETES_PHOTO_NOT_FOUND"),
   );
 });
 

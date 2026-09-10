@@ -131,6 +131,12 @@ export function createAthletesApi(transport: HoomaTransport) {
         contentType,
         { method: "POST" },
       ),
+    deletePhoto: (id: string, photoId: string) =>
+      request<{ ok: true }>(
+        transport,
+        `/api/v1/athletes/${encodeURIComponent(id)}/photos/${encodeURIComponent(photoId)}`,
+        { method: "DELETE" },
+      ),
     fetchPhotoContent: (id: string, photoId: string, signal?: AbortSignal) =>
       requestBlob(
         transport,

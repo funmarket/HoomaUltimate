@@ -1,22 +1,20 @@
 # ADR-056 — Athletes Founder Photo Board
 
-Status: **ACCEPTED PRODUCT/ARCHITECTURE CONTRACT — IMPLEMENTED ON `phase-0-foundation`**
+Status: **ACCEPTED PRODUCT/ARCHITECTURE CONTRACT — IMPLEMENTED ON `phase-0-foundation` AND EXTENDED BY PRODUCT-OWNER DECISION 2026-09-10**
 
 ## Context
 
-Athletes is an independent HOOMA-connected sports-community domain. Its current merged foundation includes `AthletesCommunity`, `AthletesMembership`, `AthletesJoinRequest`, public discovery/detail, membership/management lifecycle, a member-private Whistle Board through the shared transient Whistle engine, and the Founder-curated Photo Board governed by this ADR.
+Athletes is an independent HOOMA-connected sports-community domain. Its merged foundation includes `AthletesCommunity`, `AthletesMembership`, `AthletesJoinRequest`, public discovery/detail, membership/management lifecycle, a member-private Whistle Board through the shared transient Whistle engine, and the Founder-curated Photo Board governed by this ADR.
 
-The Photo Board was approved as a deliberately narrow Founder-curated durable media capability. This ADR originally locked the product and ownership boundary before authorization, contracts, schema, repository, storage orchestration, routes, or frontend implementation began.
-
-The bounded Photo Board source vertical slice has since been implemented on `phase-0-foundation`. This decision records that merged repository state and does not claim that any specific deployment has object-storage credentials or configuration.
+The Photo Board is deliberately narrow: durable managed photos curated by the Founder for active members. The product owner explicitly extended this contract on 2026-09-10 to allow the active same-community Founder to delete Photo Board photos and to optimize uploaded photos before durable object-storage persistence. This extension does not turn Photo Board into a social feed or generic Media domain.
 
 ## Decision
 
 ### Product access
 
 - The Photo Board belongs to one `AthletesCommunity`.
-- Only an **active FOUNDER membership in that same active Athletes community** may upload photos.
-- Active `MODERATOR` and `MEMBER` memberships may view the board but may not upload.
+- Only an **active FOUNDER membership in that same active Athletes community** may upload or delete photos.
+- Active `MODERATOR` and `MEMBER` memberships may view the board but may not upload or delete.
 - Outsiders and public/anonymous viewers may not view the board.
 - Membership in a different Athletes community grants no access.
 - An archived Athletes community does not expose its private Photo Board through active member routes. Archive is an access-state boundary, not destructive media deletion.
@@ -25,7 +23,7 @@ The bounded Photo Board source vertical slice has since been implemented on `pha
 
 The Photo Board is a private, Founder-curated durable gallery for Athletes members. It is **not** a social feed.
 
-The initial capability has no:
+The current capability has no:
 
 - captions;
 - likes or reactions;
@@ -34,12 +32,11 @@ The initial capability has no:
 - albums;
 - manual ordering tools;
 - photo-count limit invented by this phase;
-- moderator upload;
-- member upload;
-- public board;
-- user-facing delete feature.
+- moderator upload or deletion;
+- member upload or deletion;
+- public board.
 
-A future product decision may add a capability only by explicitly changing the governing contract; implementation must not infer one from storage primitives.
+Founder deletion is curation authority over Photo Board media only; it does not add general moderation or generic media ownership.
 
 ### Whistle separation
 
@@ -49,13 +46,15 @@ Photo Board and Whistle remain separate concepts and persistence paths.
 - Photo bytes are durable managed media in object storage.
 - Whistle body content remains transient under the shared Whistle engine and its existing Redis-only body-content boundary.
 - Photo bytes, metadata, captions, or identifiers must not be encoded into Whistle bodies as a substitute for Photo Board persistence.
-- Photo Board implementation must not change Whistle quota, expiry, contexts, or persistence.
+- Photo Board implementation must not change Whistle quota, expiry, contexts, authorization, or persistence.
+
+A visual refresh of the shared Whistle action may be applied across its existing UI surfaces, but it does not alter Whistle domain behavior.
 
 ### Data and storage ownership
 
 Athletes owns Photo Board business policy and durable photo metadata. The shared `packages/storage` / `ObjectStorage` abstraction owns binary-object transport; it does not own Athletes authorization or photo lifecycle policy.
 
-The intended persistence split is:
+The persistence split remains:
 
 ```text
 Athletes domain -> durable Photo Board metadata -> PostgreSQL
@@ -64,62 +63,56 @@ Athletes application/infrastructure -> ObjectStorage -> S3-compatible object byt
 
 Do not create a generic Media domain, generic MediaAsset authority, second storage client, or cross-domain media repository for this feature. Ride/Gamers may be inspected as technical precedent only; they do not become Athletes dependencies or business owners.
 
-Metadata must remain metadata; image bytes do not belong in PostgreSQL or Redis.
+Metadata remains metadata; image bytes do not belong in PostgreSQL or Redis.
 
-### Initial upload policy
+### Upload and optimization policy
 
-The initial Photo Board upload policy follows the verified current Ride managed-photo precedent unless a later explicit product decision changes it:
+Incoming Photo Board uploads remain:
 
 - accepted MIME types: `image/jpeg`, `image/png`, `image/webp`;
-- maximum body size: **5 MiB**;
-- binary upload parsing must be route-scoped rather than changing the whole API body parser.
+- maximum request body size: **5 MiB**;
+- maximum decoded input: **40 megapixels**;
+- binary upload parsing is route-scoped.
 
-The precedent is technical only. Athletes must implement its own domain authorization and metadata lifecycle.
+After successful validation, the API normalizes the durable stored object before persistence:
 
-### Deletion and archive semantics
+- auto-orient from source orientation;
+- preserve aspect ratio;
+- maximum width/height envelope **1600 × 1600 px** with no enlargement;
+- encode durable object bytes as **WebP quality 82, effort 4**;
+- do not keep a second original object;
+- metadata records the stored descriptor returned by `ObjectStorage`, including stored `contentType` and `sizeBytes`.
 
-There is no user-facing Photo Board delete capability in the initial product.
+This optimization is server-owned so Web and Telegram uploads receive the same durable-storage policy and clients cannot bypass it.
 
-Archiving an `AthletesCommunity` must deny active private Photo Board access but must not be treated as destructive deletion of its durable photo metadata or object bytes. Any future retention, administrative cleanup, legal deletion, or hard-delete policy requires a separate explicit decision and must include object/metadata consistency rules.
+### Founder deletion and consistency
 
-Internal cleanup of an object that was uploaded but whose metadata transaction failed is reliability behavior, not a user-facing delete feature.
+Founder deletion is a full server-authorized lifecycle operation:
 
-## Historical governance boundary
+1. The service requires an active same-community `FOUNDER`.
+2. Under the existing Athletes community lifecycle lock, the repository rechecks Founder authority and resolves the exact photo by `(athletesCommunityId, photoId)`.
+3. In one PostgreSQL transaction, durable `AthletesPhoto` metadata is removed and an `OutboxEvent` is created for the existing `ATHLETES_PHOTO_RECONCILE_TOPIC` with that photo's exact object key.
+4. The existing Worker reconciliation handler sees that no durable photo metadata owns the object and removes the object through shared `ObjectStorage`.
+5. Worker retry semantics preserve eventual cleanup if object storage is temporarily unavailable.
 
-At the time this ADR was accepted, its governance-only phase did **not itself** authorize implementation of:
+Deletion must not perform an untracked best-effort object delete after removing metadata. No new deletion table, generic media worker, or second storage abstraction is introduced.
 
-- Founder photo authorization code;
-- Photo Board contracts/DTOs;
-- Prisma models or migrations;
-- photo repositories;
-- photo services/storage orchestration;
-- HTTP photo routes;
-- frontend binary transport changes;
-- frontend Photo Board API methods;
-- Photo Board UI/components;
-- generic Media infrastructure;
-- changes to Ride;
-- changes to Whistle behavior.
+### Archive semantics
 
-The bounded Photo Board implementation phases have since completed on `phase-0-foundation`. This historical list does not mean the implemented Photo Board layers are absent today, and it still does not authorize generic Media infrastructure, Ride changes, or Whistle behavior changes.
+Archiving an `AthletesCommunity` denies active private Photo Board access but does **not** delete its durable photo metadata or object bytes. Archive remains preservation, not retention cleanup.
 
 ## Consequences
 
 - The feature stays Athletes-owned and member-private.
-- Founder curation is enforced server-side; UI hiding is never sufficient authorization.
+- Founder upload and deletion are enforced server-side; UI hiding is never sufficient authorization.
 - PostgreSQL and object storage retain distinct responsibilities.
-- Existing shared storage infrastructure can be reused without creating a generic Media domain.
+- Uploaded photos consume less durable object storage because only the bounded normalized WebP is retained.
+- Existing transactional outbox and Worker infrastructure own reliable object cleanup after Founder deletion.
 - Archive semantics preserve durable data while closing active private access.
-- The implemented vertical slice remains bounded by this contract and cannot invent social mechanics.
+- Photo Board remains non-social and does not expand into Ride, Whistle, or generic Media ownership.
 
 ## Verification history
 
-The original governance phase was documentation-only and intentionally introduced no Photo Board code, schema, or routes. Subsequent approved implementation phases supplied the bounded authorization, contracts, metadata persistence, repository/service/storage orchestration, authenticated HTTP routes, frontend integration, and behavioral verification. Phase 16 synchronizes this ADR to that merged repository state while preserving the original product constraints and without making a claim about any specific deployment's object-storage configuration.
+The original governance phase was documentation-only. Subsequent phases implemented authorization, contracts, metadata persistence, repository/service/storage orchestration, authenticated HTTP routes, frontend integration, image validation, cursor paging, lazy binary loading, and orphan reconciliation. PR #265 supplied production-readiness hardening and object-storage recovery semantics.
 
-## In-flight production hardening (PR #265)
-
-The production-readiness branch adds actual JPEG/PNG/WebP decoding (including corrupt/truncated and MIME mismatch rejection) with a 40-megapixel decoder resource ceiling; the existing 5 MiB limit remains. Photo metadata lists use cursor pages of 24 (maximum 50 requested); this is a page size, not a community photo-count limit. Image bytes load near the viewport, release Blob URLs outside it, and fail/retry independently. Private content responses specify `private, no-store`.
-
-Before object upload, Athletes records a recovery intent in the existing OutboxEvent table. Metadata publication rechecks the active Founder under the community lifecycle lock and atomically consumes the pending intent. Failed uploads retain an intent for the existing Worker Outbox engine after a one-hour recovery window. Shared S3 requests have a 30-second timeout. The Athletes handler checks key ownership and never deletes objects associated with published photo metadata. This introduces no generic Media domain, separate storage abstraction, media deletion UI or additional table.
-
-Runtime status is distinct: storage bucket activation is blocked because connected Railway tools expose no bucket operation. No new Worker service is created by this task; automatic cleanup requires the existing Worker code to run in an appropriately configured runtime. Live storage/role verification remains outstanding. These are in-flight changes, not deployed claims.
+The 2026-09-10 extension adds bounded server-side WebP normalization and Founder-only deletion using the existing Athletes metadata + outbox + Worker architecture. Runtime deployment remains a separate verification step from source completion.

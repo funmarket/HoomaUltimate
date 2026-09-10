@@ -51,7 +51,6 @@ export class PrismaAthletesPhotoRepository implements AthletesPhotoRepository {
       new PrismaAthletesRepository(tx).withCommunityLock(
         input.athletesCommunityId,
         async (repository) => {
-          // Reuse the same policy after object I/O, under the lifecycle lock.
           await new AthletesService(repository).requireFounderContent(
             input.uploadedByUserId,
             input.athletesCommunityId,
@@ -96,6 +95,42 @@ export class PrismaAthletesPhotoRepository implements AthletesPhotoRepository {
     });
 
     return row ? serializeAthletesPhoto(row) : null;
+  }
+
+  async deleteForCommunity(
+    athletesCommunityId: string,
+    photoId: string,
+    deletedByUserId: string,
+  ): Promise<boolean> {
+    return this.db.$transaction(async (tx) =>
+      new PrismaAthletesRepository(tx).withCommunityLock(
+        athletesCommunityId,
+        async (repository) => {
+          await new AthletesService(repository).requireFounderContent(
+            deletedByUserId,
+            athletesCommunityId,
+          );
+          const row = await tx.athletesPhoto.findFirst({
+            where: { id: photoId, athletesCommunityId },
+            select: athletesPhotoSelect,
+          });
+          if (!row) return false;
+
+          await tx.athletesPhoto.delete({ where: { id: photoId } });
+          await tx.outboxEvent.create({
+            data: {
+              id: photoId,
+              topic: ATHLETES_PHOTO_RECONCILE_TOPIC,
+              aggregateType: "AthletesPhoto",
+              aggregateId: photoId,
+              payload: { photoId, athletesCommunityId, objectKey: row.objectKey },
+              availableAt: new Date(),
+            },
+          });
+          return true;
+        },
+      ),
+    );
   }
 }
 

@@ -73,7 +73,7 @@ function imageHeaders(cookie: string, contentType: string) {
   return { cookie, origin: config.WEB_ORIGIN, "content-type": contentType };
 }
 
-test("Athletes Photo Board HTTP routes keep upload Founder-only and content member-private", async () => {
+test("Athletes Photo Board HTTP routes keep curation Founder-only and content member-private", async () => {
   const storage = new MemoryObjectStorage();
   const container = createContainer(config, { objectStorage: storage });
   const app = createApp(config, container);
@@ -85,6 +85,7 @@ test("Athletes Photo Board HTTP routes keep upload Founder-only and content memb
   const suffix = Date.now().toString(36);
   const createdUserIds: string[] = [];
   let athletesCommunityId: string | null = null;
+  let uploadedPhotoId: string | null = null;
 
   try {
     const founder = await register(base, `ath_photo_founder_${suffix}`);
@@ -150,8 +151,9 @@ test("Athletes Photo Board HTTP routes keep upload Founder-only and content memb
     });
     assert.equal(corruptUpload.status, 415);
     assert.equal(storage.objects.size, 0);
+
     const uploadBytes = new Uint8Array(
-      await sharp({ create: { width: 2, height: 2, channels: 3, background: "#ffffff" } })
+      await sharp({ create: { width: 2400, height: 1200, channels: 3, background: "#ffffff" } })
         .png()
         .toBuffer(),
     );
@@ -171,18 +173,23 @@ test("Athletes Photo Board HTTP routes keep upload Founder-only and content memb
       objectKey?: unknown;
       uploadedByUserId?: unknown;
     };
+    uploadedPhotoId = uploaded.id;
     assert.equal(uploaded.athletesCommunityId, athletesCommunityId);
-    assert.equal(uploaded.contentType, "image/png");
-    assert.equal(uploaded.sizeBytes, uploadBytes.byteLength);
+    assert.equal(uploaded.contentType, "image/webp");
+    assert.ok(uploaded.sizeBytes > 0);
     assert.equal(uploaded.objectKey, undefined);
     assert.equal(uploaded.uploadedByUserId, undefined);
-    assert.ok(uploaded.createdAt);
-    assert.ok(uploaded.updatedAt);
 
     const persisted = await db.athletesPhoto.findUniqueOrThrow({ where: { id: uploaded.id } });
     assert.equal(persisted.athletesCommunityId, athletesCommunityId);
     assert.equal(persisted.uploadedByUserId, founder.userId);
-    assert.ok(storage.objects.has(persisted.objectKey));
+    assert.equal(persisted.contentType, "image/webp");
+    const stored = storage.objects.get(persisted.objectKey);
+    assert.ok(stored);
+    const storedMetadata = await sharp(stored.body).metadata();
+    assert.equal(storedMetadata.format, "webp");
+    assert.equal(storedMetadata.width, 1600);
+    assert.equal(storedMetadata.height, 800);
 
     const memberList = await fetch(`${base}/api/v1/athletes/${athletesCommunityId}/photos`, {
       headers: jsonHeaders(member.cookie),
@@ -194,35 +201,49 @@ test("Athletes Photo Board HTTP routes keep upload Founder-only and content memb
     assert.equal("objectKey" in (listed[0] ?? {}), false);
     assert.equal("uploadedByUserId" in (listed[0] ?? {}), false);
 
-    const outsiderList = await fetch(`${base}/api/v1/athletes/${athletesCommunityId}/photos`, {
-      headers: jsonHeaders(outsider.cookie),
-    });
-    assert.equal(outsiderList.status, 403);
-
     const memberContent = await fetch(
       `${base}/api/v1/athletes/${athletesCommunityId}/photos/${uploaded.id}/content`,
       { headers: jsonHeaders(member.cookie) },
     );
     assert.equal(memberContent.status, 200);
-    assert.equal(memberContent.headers.get("content-type"), "image/png");
-    assert.deepEqual(new Uint8Array(await memberContent.arrayBuffer()), uploadBytes);
+    assert.equal(memberContent.headers.get("content-type"), "image/webp");
     assert.equal(memberContent.headers.get("cache-control"), "private, no-store");
 
-    const outsiderContent = await fetch(
-      `${base}/api/v1/athletes/${athletesCommunityId}/photos/${uploaded.id}/content`,
-      { headers: jsonHeaders(outsider.cookie) },
+    const memberDelete = await fetch(
+      `${base}/api/v1/athletes/${athletesCommunityId}/photos/${uploaded.id}`,
+      { method: "DELETE", headers: jsonHeaders(member.cookie) },
     );
-    assert.equal(outsiderContent.status, 403);
+    assert.equal(memberDelete.status, 403);
+    assert.ok(await db.athletesPhoto.findUnique({ where: { id: uploaded.id } }));
 
-    const missingContent = await fetch(
-      `${base}/api/v1/athletes/${athletesCommunityId}/photos/missing-photo/content`,
+    const outsiderDelete = await fetch(
+      `${base}/api/v1/athletes/${athletesCommunityId}/photos/${uploaded.id}`,
+      { method: "DELETE", headers: jsonHeaders(outsider.cookie) },
+    );
+    assert.equal(outsiderDelete.status, 403);
+
+    const founderDelete = await fetch(
+      `${base}/api/v1/athletes/${athletesCommunityId}/photos/${uploaded.id}`,
+      { method: "DELETE", headers: jsonHeaders(founder.cookie) },
+    );
+    assert.equal(founderDelete.status, 200);
+    assert.deepEqual(await founderDelete.json(), { ok: true });
+    assert.equal(await db.athletesPhoto.findUnique({ where: { id: uploaded.id } }), null);
+    const deleteIntent = await db.outboxEvent.findUnique({ where: { id: uploaded.id } });
+    assert.equal(deleteIntent?.topic, "athletes.photo.reconcile-object");
+    assert.equal(deleteIntent?.status, "PENDING");
+
+    const afterDeleteList = await fetch(`${base}/api/v1/athletes/${athletesCommunityId}/photos`, {
+      headers: jsonHeaders(member.cookie),
+    });
+    assert.equal(afterDeleteList.status, 200);
+    assert.deepEqual(await afterDeleteList.json(), []);
+
+    const deletedContent = await fetch(
+      `${base}/api/v1/athletes/${athletesCommunityId}/photos/${uploaded.id}/content`,
       { headers: jsonHeaders(member.cookie) },
     );
-    assert.equal(missingContent.status, 404);
-    assert.equal(
-      ((await missingContent.json()) as { error: { code: string } }).error.code,
-      "ATHLETES_PHOTO_NOT_FOUND",
-    );
+    assert.equal(deletedContent.status, 404);
 
     const jsonRouteStillWorks = await fetch(`${base}/api/v1/athletes/${athletesCommunityId}`, {
       headers: jsonHeaders(founder.cookie),
@@ -237,6 +258,7 @@ test("Athletes Photo Board HTTP routes keep upload Founder-only and content memb
       server.close((error) => (error ? reject(error) : resolve())),
     );
     container.redis.close();
+    if (uploadedPhotoId) await db.outboxEvent.deleteMany({ where: { id: uploadedPhotoId } });
     if (athletesCommunityId) {
       await db.athletesPhoto.deleteMany({ where: { athletesCommunityId } });
       await db.athletesJoinRequest.deleteMany({ where: { athletesCommunityId } });

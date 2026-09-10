@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react
 import {
   createProfileApi,
   useHoomaFrontend,
+  WhistleAction,
   type WhistleList,
   type WhistleListItem,
 } from "@hooma/frontend";
@@ -97,9 +98,7 @@ export function UserWhistlePanel({
     return (
       <div className="profile-edit-form profile-inline-state">
         <span className="muted">Send a short private signal that disappears at the UTC reset.</span>
-        <button type="button" onClick={() => void openPanel()}>
-          Open Whistle
-        </button>
+        <WhistleAction type="button" label="Open Whistle" onClick={() => void openPanel()} />
       </div>
     );
   }
@@ -132,12 +131,12 @@ export function UserWhistlePanel({
         <small id="user-whistle-count" className={count > MAX_GRAPHEMES ? "is-over" : ""}>
           {count}/{MAX_GRAPHEMES} graphemes · {feed.remainingToday}/11 left today
         </small>
-        <button
+        <WhistleAction
           type="submit"
+          label={sending ? "Sending…" : "Whistle"}
+          trailing={`${feed.remainingToday}/11`}
           disabled={!body.trim() || count > MAX_GRAPHEMES || sending || feed.remainingToday <= 0}
-        >
-          {sending ? "Sending…" : "Whistle"}
-        </button>
+        />
       </form>
 
       {error ? <p role="alert">{error}</p> : null}

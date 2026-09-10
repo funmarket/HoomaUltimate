@@ -24,6 +24,7 @@ test("Athletes Photo frontend API uses shared authenticated transport", async ()
     new Response(new Uint8Array([1, 2, 3]), {
       headers: { "content-type": "image/webp" },
     }),
+    Response.json({ ok: true }),
   ];
 
   globalThis.fetch = async (input, init) => {
@@ -57,7 +58,11 @@ test("Athletes Photo frontend API uses shared authenticated transport", async ()
     assert.equal(content.type, "image/webp");
     assert.deepEqual(Array.from(new Uint8Array(await content.arrayBuffer())), [1, 2, 3]);
 
-    assert.equal(calls.length, 3);
+    assert.deepEqual(await api.athletes.deletePhoto("athletes/community 1", "photo/1"), {
+      ok: true,
+    });
+
+    assert.equal(calls.length, 4);
     assert.equal(
       calls[0]?.input,
       "https://api.example.test/api/v1/athletes/athletes%2Fcommunity%201/photos",
@@ -69,6 +74,10 @@ test("Athletes Photo frontend API uses shared authenticated transport", async ()
     assert.equal(
       calls[2]?.input,
       "https://api.example.test/api/v1/athletes/athletes%2Fcommunity%201/photos/photo%2F1/content",
+    );
+    assert.equal(
+      calls[3]?.input,
+      "https://api.example.test/api/v1/athletes/athletes%2Fcommunity%201/photos/photo%2F1",
     );
 
     for (const call of calls) {
@@ -86,6 +95,7 @@ test("Athletes Photo frontend API uses shared authenticated transport", async ()
     assert.equal(calls[1]?.init?.body, uploadBody);
     assert.equal(uploadHeaders.get("content-type"), "image/webp");
     assert.equal(contentHeaders.has("content-type"), false);
+    assert.equal(calls[3]?.init?.method, "DELETE");
   } finally {
     globalThis.fetch = originalFetch;
   }

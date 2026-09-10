@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import type { WhistleList, WhistleListItem } from "../api";
 import { useHoomaFrontend } from "../context";
+import { WhistleAction } from "../whistle/WhistleAction";
 import { listGamerWhistles, sendGamerWhistle } from "./gamer-whistle-api";
 
 const MAX_GRAPHEMES = 33;
@@ -102,12 +103,12 @@ export function GamerWhistlePanel({
             placeholder={`Whistle ${recipientName}`}
             aria-label={`Whistle ${recipientName}`}
           />
-          <button
+          <WhistleAction
             type="submit"
+            label={sending ? "Sending…" : "Whistle"}
+            trailing={`${feed.remainingToday}/11`}
             disabled={!body.trim() || count > MAX_GRAPHEMES || sending || feed.remainingToday <= 0}
-          >
-            {sending ? "..." : "SEND"}
-          </button>
+          />
         </div>
         <small className={count > MAX_GRAPHEMES ? "is-over" : ""}>
           {count}/{MAX_GRAPHEMES} · {feed.remainingToday}/11 left today

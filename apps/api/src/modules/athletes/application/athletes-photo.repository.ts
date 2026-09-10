@@ -29,4 +29,9 @@ export interface AthletesPhotoRepository {
     athletesCommunityId: string,
     photoId: string,
   ): Promise<AthletesPhotoRecord | null>;
+  deleteForCommunity(
+    athletesCommunityId: string,
+    photoId: string,
+    deletedByUserId: string,
+  ): Promise<boolean>;
 }

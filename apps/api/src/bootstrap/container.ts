@@ -1,3 +1,4 @@
+import { SharpAthletesPhotoOptimizer } from "../modules/athletes/infrastructure/sharp-athletes-photo-optimizer.js";
 import { SharpAthletesPhotoValidator } from "../modules/athletes/infrastructure/sharp-athletes-photo-validator.js";
 import type { ApiConfig } from "@hooma/config";
 import { getDatabaseClient } from "@hooma/database";
@@ -123,6 +124,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     athletesPhotoRepository,
     storage,
     new SharpAthletesPhotoValidator(),
+    new SharpAthletesPhotoOptimizer(),
   );
   const teamRepository = new PrismaTeamRepository(database);
   const teamLifecycleRepository = new PrismaTeamLifecycleRepository(database);
