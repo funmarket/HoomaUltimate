@@ -24,7 +24,10 @@ test("Photo Board upload validation accepts only canonical non-empty images up t
     "Choose a non-empty image.",
   );
   assert.equal(
-    validateAthletesPhotoUpload({ size: ATHLETES_PHOTO_MAX_BYTES + 1, type: "image/webp" }),
+    validateAthletesPhotoUpload({
+      size: ATHLETES_PHOTO_MAX_BYTES + 1,
+      type: "image/webp",
+    }),
     "Photo must be 5 MiB or smaller.",
   );
 });
@@ -34,7 +37,10 @@ test("Photo Board gates viewing to active Athletes members and curation to Found
     component,
     /communityStatus === "ACTIVE" && viewerRole !== null && viewerRole !== undefined/,
   );
-  assert.match(component, /const canCurate = communityStatus === "ACTIVE" && viewerRole === "FOUNDER"/);
+  assert.match(
+    component,
+    /const canCurate = communityStatus === "ACTIVE" && viewerRole === "FOUNDER"/,
+  );
   assert.match(component, /if \(!isActiveMember\) return null/);
   assert.match(component, /\{canCurate \? \(/);
   assert.doesNotMatch(component, /viewerRole === "MODERATOR"[^\n]*(upload|delete)/i);
@@ -43,7 +49,10 @@ test("Photo Board gates viewing to active Athletes members and curation to Found
 
 test("Photo Board uses the typed authenticated API for list, read, upload, and delete", () => {
   assert.match(component, /api\.athletes\.listPhotos\(athletesCommunityId, cursor\)/);
-  assert.match(component, /fetchPhotoContent\(athletesCommunityId, photo\.id, controller\.signal\)/);
+  assert.match(
+    component,
+    /fetchPhotoContent\(athletesCommunityId, photo\.id, controller\.signal\)/,
+  );
   assert.match(component, /api\.athletes\.uploadPhoto\(athletesCommunityId, file, contentType\)/);
   assert.match(component, /api\.athletes\.deletePhoto\(athletesCommunityId, photo\.id\)/);
   assert.match(component, /URL\.createObjectURL\(blob\)/);
@@ -67,7 +76,10 @@ test("Photo Board stays mobile-first and gives the Founder delete control a safe
   assert.match(component, /athletes-surface athletes-section athletes-photo-board/);
   assert.match(component, /aria-label=\{`Delete photo \$\{index \+ 1\}`\}/);
   assert.match(css, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
-  assert.match(css, /\.athletes-photo-board__delete[\s\S]*width: 44px;[\s\S]*height: 44px;/);
+  assert.match(
+    css,
+    /\.athletes-photo-board__delete[\s\S]*width: 44px;[\s\S]*height: 44px;/,
+  );
   assert.match(css, /object-fit: cover/);
   assert.match(css, /@media \(min-width: 42rem\)/);
   assert.match(css, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
