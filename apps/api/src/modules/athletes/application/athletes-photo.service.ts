@@ -80,11 +80,7 @@ export class AthletesPhotoService {
     let uploadedObjectKey: string | null = null;
 
     try {
-      const stored = await this.storage.put(
-        requestedObjectKey,
-        optimized.body,
-        optimized.contentType,
-      );
+      const stored = await this.storage.put(requestedObjectKey, optimized.body, optimized.contentType);
       uploadedObjectKey = stored.key;
       if (stored.key !== requestedObjectKey)
         await this.photos.prepareUpload(photoId, athletesCommunityId, stored.key);
