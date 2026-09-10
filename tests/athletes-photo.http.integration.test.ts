@@ -59,7 +59,9 @@ async function register(base: string, username: string) {
   assert.equal(response.status, 201);
   const cookie = response.headers.get("set-cookie");
   assert.ok(cookie);
-  const credential = await db.webCredential.findUniqueOrThrow({ where: { loginUsername: username } });
+  const credential = await db.webCredential.findUniqueOrThrow({
+    where: { loginUsername: username },
+  });
   return { cookie, userId: credential.userId, username };
 }
 
@@ -113,11 +115,14 @@ test("Athletes Photo Board HTTP routes keep curation Founder-only and content me
     });
     assert.equal(addMember.status, 201);
 
-    const unauthenticatedUpload = await fetch(`${base}/api/v1/athletes/${athletesCommunityId}/photos`, {
-      method: "POST",
-      headers: { origin: config.WEB_ORIGIN, "content-type": "image/png" },
-      body: Uint8Array.of(1, 2, 3),
-    });
+    const unauthenticatedUpload = await fetch(
+      `${base}/api/v1/athletes/${athletesCommunityId}/photos`,
+      {
+        method: "POST",
+        headers: { origin: config.WEB_ORIGIN, "content-type": "image/png" },
+        body: Uint8Array.of(1, 2, 3),
+      },
+    );
     assert.equal(unauthenticatedUpload.status, 401);
 
     const memberUpload = await fetch(`${base}/api/v1/athletes/${athletesCommunityId}/photos`, {
@@ -244,7 +249,10 @@ test("Athletes Photo Board HTTP routes keep curation Founder-only and content me
       headers: jsonHeaders(founder.cookie),
     });
     assert.equal(jsonRouteStillWorks.status, 200);
-    assert.equal(((await jsonRouteStillWorks.json()) as { viewerRole: string }).viewerRole, "FOUNDER");
+    assert.equal(
+      ((await jsonRouteStillWorks.json()) as { viewerRole: string }).viewerRole,
+      "FOUNDER",
+    );
   } finally {
     await new Promise<void>((resolve, reject) =>
       server.close((error) => (error ? reject(error) : resolve())),
