@@ -129,7 +129,7 @@ MANAGE_TEAM_EVENTS
 
 ## ADR-019 — Team leader coordination starts only after acceptance
 
-**Decision:** Challenge coordination messages are available only when the Challenge is ACCEPTED and only to Coach-equivalent participants or an Assistant with `RESPOND_TO_CHALLENGE` for a participating Team.
+**Decision:** Challenge coordination messages are available only after the Challenge is ACCEPTED and only to Coach-equivalent participants or an Assistant with `RESPOND_TO_CHALLENGE` for a participating Team.
 
 **Reason:** The conversation exists for accepted-match coordination, not as general Team chat.
 
@@ -279,7 +279,7 @@ unused sends never carry into the next UTC day
 every Whistle expires at the next UTC midnight
 body in Redis only
 PostgreSQL metadata only
-authorized feeds show the body directly
+authorized feeds show bodies directly
 no Reveal endpoint
 no 60-second viewer window
 no reveal/seen keys
