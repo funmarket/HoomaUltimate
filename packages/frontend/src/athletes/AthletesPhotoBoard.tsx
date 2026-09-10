@@ -220,7 +220,8 @@ function AthletesPhoto({
   const element = useRef<HTMLElement | null>(null);
   const [visible, setVisible] = useState(typeof IntersectionObserver === "undefined");
   const [objectUrl, setObjectUrl] = useState("");
-  const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState("");
+  const [deleteError, setDeleteError] = useState("");
   const [attempt, setAttempt] = useState(0);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -240,7 +241,7 @@ function AthletesPhoto({
     const controller = new AbortController();
     let url = "";
     setObjectUrl("");
-    setError("");
+    setLoadError("");
     if (visible)
       void api.athletes
         .fetchPhotoContent(athletesCommunityId, photo.id, controller.signal)
@@ -250,7 +251,7 @@ function AthletesPhoto({
           setObjectUrl(url);
         })
         .catch((reason) => {
-          if (active) setError(protectedError(reason, "Unable to load photo"));
+          if (active) setLoadError(protectedError(reason, "Unable to load photo"));
         });
     return () => {
       active = false;
@@ -262,12 +263,12 @@ function AthletesPhoto({
   async function deletePhoto() {
     if (!canDelete || deleting) return;
     setDeleting(true);
-    setError("");
+    setDeleteError("");
     try {
       await api.athletes.deletePhoto(athletesCommunityId, photo.id);
       onDeleted(photo.id);
     } catch (reason) {
-      setError(protectedError(reason, "Unable to delete photo"));
+      setDeleteError(protectedError(reason, "Unable to delete photo"));
       setConfirmDelete(false);
     } finally {
       setDeleting(false);
@@ -281,7 +282,7 @@ function AthletesPhoto({
           src={objectUrl}
           alt={`Photo ${index + 1} from Athletes Photo Board`}
           loading="lazy"
-          onError={() => setError("This photo could not be displayed.")}
+          onError={() => setLoadError("This photo could not be displayed.")}
         />
       ) : null}
 
@@ -292,7 +293,10 @@ function AthletesPhoto({
           aria-label={`Delete photo ${index + 1}`}
           aria-expanded={confirmDelete}
           disabled={deleting}
-          onClick={() => setConfirmDelete((current) => !current)}
+          onClick={() => {
+            setDeleteError("");
+            setConfirmDelete((current) => !current);
+          }}
         >
           <span aria-hidden="true">×</span>
         </button>
@@ -313,12 +317,17 @@ function AthletesPhoto({
         </div>
       ) : null}
 
-      {error ? (
+      {deleteError ? (
+        <div className="athletes-photo-board__delete-error" role="alert">
+          <span>{deleteError}</span>
+          <button type="button" onClick={() => setDeleteError("")}>Dismiss</button>
+        </div>
+      ) : null}
+
+      {loadError ? (
         <div className="athletes-photo-board__photo-error" role="alert">
-          {error}
-          {!confirmDelete ? (
-            <button onClick={() => setAttempt((value) => value + 1)}>Retry photo {index + 1}</button>
-          ) : null}
+          {loadError}
+          <button onClick={() => setAttempt((value) => value + 1)}>Retry photo {index + 1}</button>
         </div>
       ) : !objectUrl ? (
         <span className="athletes-photo-board__photo-loading" role="status">
