@@ -58,6 +58,7 @@
 }
 
 .athletes-photo-board__photo {
+  position: relative;
   min-width: 0;
   aspect-ratio: 1 / 1;
   margin: 0;
@@ -72,6 +73,118 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.athletes-photo-board__delete {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(255, 107, 97, 0.72);
+  border-radius: 50%;
+  background: rgba(6, 7, 7, 0.82);
+  color: #ff9189;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.athletes-photo-board__delete span {
+  font-size: 1.45rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.athletes-photo-board__delete:hover,
+.athletes-photo-board__delete:focus-visible {
+  border-color: #ff8b83;
+  background: rgba(45, 12, 12, 0.9);
+  outline: 2px solid rgba(255, 107, 97, 0.24);
+  outline-offset: 2px;
+}
+
+.athletes-photo-board__delete:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.athletes-photo-board__delete-confirm {
+  position: absolute;
+  inset: auto 0.5rem 0.5rem;
+  z-index: 3;
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 107, 97, 0.48);
+  border-radius: 0.85rem;
+  background: rgba(7, 8, 8, 0.94);
+  color: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.34);
+}
+
+.athletes-photo-board__delete-confirm > span {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
+.athletes-photo-board__delete-confirm > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+.athletes-photo-board__delete-confirm button {
+  min-height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.88);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.athletes-photo-board__delete-confirm button:first-child {
+  border-color: rgba(255, 107, 97, 0.72);
+  color: #ff9189;
+}
+
+.athletes-photo-board__delete-confirm button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.athletes-photo-board__photo-error,
+.athletes-photo-board__photo-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  gap: 0.4rem;
+  padding: 0.8rem;
+  background: rgba(8, 9, 9, 0.88);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.76rem;
+  text-align: center;
+}
+
+.athletes-photo-board__photo-error button {
+  border: 1px solid var(--athletes-border-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.82);
+  padding: 0.45rem 0.7rem;
+  font: inherit;
+  cursor: pointer;
 }
 
 @media (min-width: 42rem) {
