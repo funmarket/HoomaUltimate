@@ -78,6 +78,17 @@ export function createAthletesMemberRouter(
       );
     }),
   );
+  router.delete(
+    "/:athletesCommunityId/photos/:photoId",
+    asyncHandler(async (req, res) => {
+      await photoService.delete(
+        getAuth(req).userId,
+        String(req.params.athletesCommunityId),
+        String(req.params.photoId),
+      );
+      res.json({ ok: true });
+    }),
+  );
   router.get(
     "/:athletesCommunityId/photos/:photoId/content",
     asyncHandler(async (req, res) => {
