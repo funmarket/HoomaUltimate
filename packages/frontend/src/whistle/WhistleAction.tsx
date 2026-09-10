@@ -17,7 +17,12 @@ export function WhistleAction({ label, trailing, className = "", ...props }: Whi
             strokeLinecap="round"
             strokeLinejoin="round"
           />
-          <path d="M2.5 8.5h3M2.5 17.5h3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          <path
+            d="M2.5 8.5h3M2.5 17.5h3"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
         </svg>
       </span>
       <span className="whistle-action__label">{label}</span>
