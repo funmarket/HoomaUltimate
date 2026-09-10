@@ -126,6 +126,7 @@ function photoRecord(overrides: Partial<AthletesPhotoRecord> = {}): AthletesPhot
 
 function photoRepositoryStub(records: AthletesPhotoRecord[] = []) {
   const created: AthletesPhotoCreateInput[] = [];
+  const deleted: Array<{ athletesCommunityId: string; photoId: string; deletedByUserId: string }> = [];
   let createFailure: Error | null = null;
 
   const repository: AthletesPhotoRepository = {
@@ -141,11 +142,18 @@ function photoRepositoryStub(records: AthletesPhotoRecord[] = []) {
       records.find(
         (record) => record.athletesCommunityId === athletesCommunityId && record.id === photoId,
       ) ?? null,
+    deleteForCommunity: async (athletesCommunityId, photoId, deletedByUserId) => {
+      deleted.push({ athletesCommunityId, photoId, deletedByUserId });
+      return records.some(
+        (record) => record.athletesCommunityId === athletesCommunityId && record.id === photoId,
+      );
+    },
   };
 
   return {
     repository,
     created,
+    deleted,
     failCreate(error: Error) {
       createFailure = error;
     },
@@ -212,12 +220,17 @@ function photoService(
   photos: AthletesPhotoRepository,
   storage: ObjectStorage | null,
   statuses: Record<string, CommunityStatus> = {},
+  optimize: (body: Uint8Array, contentType: "image/jpeg" | "image/png" | "image/webp") => Promise<{
+    body: Uint8Array;
+    contentType: "image/jpeg" | "image/png" | "image/webp";
+  }> = async (body, contentType) => ({ body, contentType }),
 ) {
   return new AthletesPhotoService(
     new AthletesService(athletesRepositoryStub(roles, statuses)),
     photos,
     storage,
     { validate: async () => undefined },
+    { optimize },
   );
 }
 
@@ -238,10 +251,7 @@ test("Founder upload accepts every allowed MIME", async () => {
     );
     const body = new Uint8Array([1, 2, 3]);
 
-    const result = await service.upload("founder", "ath-1", {
-      contentType,
-      body,
-    });
+    const result = await service.upload("founder", "ath-1", { contentType, body });
 
     assert.equal(objects.puts.length, 1);
     assert.match(objects.puts[0]!.key, /^athletes-photos\/ath-1\//);
@@ -261,6 +271,31 @@ test("Founder upload accepts every allowed MIME", async () => {
     assert.equal("objectKey" in result, false);
     assert.equal("uploadedByUserId" in result, false);
   }
+});
+
+test("Upload stores the optimized descriptor instead of original bytes", async () => {
+  const photos = photoRepositoryStub();
+  const objects = storageStub();
+  const optimized = new Uint8Array([7, 7]);
+  const service = photoService(
+    { "ath-1:founder": "FOUNDER" },
+    photos.repository,
+    objects.storage,
+    {},
+    async () => ({ body: optimized, contentType: "image/webp" }),
+  );
+
+  const result = await service.upload("founder", "ath-1", {
+    contentType: "image/jpeg",
+    body: new Uint8Array([1, 2, 3, 4]),
+  });
+
+  assert.deepEqual(objects.puts[0]!.body, optimized);
+  assert.equal(objects.puts[0]!.contentType, "image/webp");
+  assert.equal(photos.created[0]!.contentType, "image/webp");
+  assert.equal(photos.created[0]!.sizeBytes, 2);
+  assert.equal(result.contentType, "image/webp");
+  assert.equal(result.sizeBytes, 2);
 });
 
 test("Upload persists the descriptor returned by ObjectStorage", async () => {
@@ -289,11 +324,7 @@ test("Upload denies non-Founders and a Founder from another community", async ()
 
   for (const userId of ["moderator", "member", "outsider", "other-founder"]) {
     await assert.rejects(
-      () =>
-        service.upload(userId, "ath-1", {
-          contentType: "image/jpeg",
-          body: new Uint8Array([1]),
-        }),
+      () => service.upload(userId, "ath-1", { contentType: "image/jpeg", body: new Uint8Array([1]) }),
       expectAthletesCode("ATHLETES_FOUNDER_REQUIRED"),
     );
   }
@@ -310,11 +341,7 @@ test("Upload denies archived Athletes communities", async () => {
   });
 
   await assert.rejects(
-    () =>
-      service.upload("founder", "ath-1", {
-        contentType: "image/jpeg",
-        body: new Uint8Array([1]),
-      }),
+    () => service.upload("founder", "ath-1", { contentType: "image/jpeg", body: new Uint8Array([1]) }),
     expectAthletesCode("ATHLETES_NOT_FOUND"),
   );
   assert.equal(objects.puts.length, 0);
@@ -326,27 +353,18 @@ test("Upload validates MIME, non-empty bytes, and 5 MiB maximum", async () => {
   const service = photoService({ "ath-1:founder": "FOUNDER" }, photos.repository, objects.storage);
 
   await assert.rejects(
-    () =>
-      service.upload("founder", "ath-1", {
-        contentType: "image/gif",
-        body: new Uint8Array([1]),
-      }),
+    () => service.upload("founder", "ath-1", { contentType: "image/gif", body: new Uint8Array([1]) }),
     expectAthletesCode("ATHLETES_PHOTO_TYPE_INVALID"),
   );
   await assert.rejects(
-    () =>
-      service.upload("founder", "ath-1", {
-        contentType: "image/jpeg",
-        body: new Uint8Array(),
-      }),
+    () => service.upload("founder", "ath-1", { contentType: "image/jpeg", body: new Uint8Array() }),
     expectAthletesCode("ATHLETES_PHOTO_REQUIRED"),
   );
   await assert.rejects(
-    () =>
-      service.upload("founder", "ath-1", {
-        contentType: "image/jpeg",
-        body: new Uint8Array(ATHLETES_PHOTO_MAX_BYTES + 1),
-      }),
+    () => service.upload("founder", "ath-1", {
+      contentType: "image/jpeg",
+      body: new Uint8Array(ATHLETES_PHOTO_MAX_BYTES + 1),
+    }),
     expectAthletesCode("ATHLETES_PHOTO_TOO_LARGE"),
   );
 
@@ -359,11 +377,7 @@ test("Upload rejects unavailable storage", async () => {
   const service = photoService({ "ath-1:founder": "FOUNDER" }, photos.repository, null);
 
   await assert.rejects(
-    () =>
-      service.upload("founder", "ath-1", {
-        contentType: "image/jpeg",
-        body: new Uint8Array([1]),
-      }),
+    () => service.upload("founder", "ath-1", { contentType: "image/jpeg", body: new Uint8Array([1]) }),
     expectAthletesCode("ATHLETES_PHOTO_STORAGE_NOT_CONFIGURED"),
   );
   assert.equal(photos.created.length, 0);
@@ -376,11 +390,7 @@ test("Upload maps storage failure before metadata persistence", async () => {
   const service = photoService({ "ath-1:founder": "FOUNDER" }, photos.repository, objects.storage);
 
   await assert.rejects(
-    () =>
-      service.upload("founder", "ath-1", {
-        contentType: "image/jpeg",
-        body: new Uint8Array([1]),
-      }),
+    () => service.upload("founder", "ath-1", { contentType: "image/jpeg", body: new Uint8Array([1]) }),
     expectAthletesCode("ATHLETES_PHOTO_UPLOAD_FAILED"),
   );
   assert.equal(photos.created.length, 0);
@@ -396,11 +406,7 @@ test("Metadata failure removes the exact uploaded object", async () => {
   const service = photoService({ "ath-1:founder": "FOUNDER" }, photos.repository, objects.storage);
 
   await assert.rejects(
-    () =>
-      service.upload("founder", "ath-1", {
-        contentType: "image/jpeg",
-        body: new Uint8Array([1, 2, 3]),
-      }),
+    () => service.upload("founder", "ath-1", { contentType: "image/jpeg", body: new Uint8Array([1, 2, 3]) }),
     (error: unknown) => error === metadataFailure,
   );
   assert.deepEqual(objects.removes, ["stored/ath-1/orphan-key"]);
@@ -414,11 +420,7 @@ test("Cleanup failure surfaces an unreconciled orphan error", async () => {
   const service = photoService({ "ath-1:founder": "FOUNDER" }, photos.repository, objects.storage);
 
   await assert.rejects(
-    () =>
-      service.upload("founder", "ath-1", {
-        contentType: "image/jpeg",
-        body: new Uint8Array([1, 2, 3]),
-      }),
+    () => service.upload("founder", "ath-1", { contentType: "image/jpeg", body: new Uint8Array([1, 2, 3]) }),
     (error: unknown) =>
       error instanceof AggregateError &&
       error.errors.length === 2 &&
@@ -432,40 +434,27 @@ test("Active same-community members list public metadata", async () => {
     photoRecord(),
     photoRecord({ id: "photo-2", athletesCommunityId: "ath-2" }),
   ]);
-  const service = photoService(
-    { "ath-1:member": "MEMBER" },
-    photos.repository,
-    storageStub().storage,
-  );
+  const service = photoService({ "ath-1:member": "MEMBER" }, photos.repository, storageStub().storage);
 
   const result = await service.list("member", "ath-1");
 
-  assert.deepEqual(result, [
-    {
-      id: "photo-1",
-      athletesCommunityId: "ath-1",
-      contentType: "image/jpeg",
-      sizeBytes: 3,
-      createdAt: TEST_DATE,
-      updatedAt: TEST_DATE,
-    },
-  ]);
+  assert.deepEqual(result, [{
+    id: "photo-1",
+    athletesCommunityId: "ath-1",
+    contentType: "image/jpeg",
+    sizeBytes: 3,
+    createdAt: TEST_DATE,
+    updatedAt: TEST_DATE,
+  }]);
 });
 
 test("List and read enforce active same-community membership", async () => {
   const photos = photoRepositoryStub([photoRecord()]);
   const objects = storageStub();
-  const activeService = photoService(
-    { "ath-2:other-member": "MEMBER" },
-    photos.repository,
-    objects.storage,
-  );
+  const activeService = photoService({ "ath-2:other-member": "MEMBER" }, photos.repository, objects.storage);
 
   for (const userId of ["outsider", "other-member"]) {
-    await assert.rejects(
-      () => activeService.list(userId, "ath-1"),
-      expectAthletesCode("ATHLETES_MEMBER_REQUIRED"),
-    );
+    await assert.rejects(() => activeService.list(userId, "ath-1"), expectAthletesCode("ATHLETES_MEMBER_REQUIRED"));
     await assert.rejects(
       () => activeService.read(userId, "ath-1", "photo-1"),
       expectAthletesCode("ATHLETES_MEMBER_REQUIRED"),
@@ -479,10 +468,7 @@ test("List and read enforce active same-community membership", async () => {
     { "ath-1": "ARCHIVED" },
   );
 
-  await assert.rejects(
-    () => archivedService.list("member", "ath-1"),
-    expectAthletesCode("ATHLETES_MEMBER_REQUIRED"),
-  );
+  await assert.rejects(() => archivedService.list("member", "ath-1"), expectAthletesCode("ATHLETES_MEMBER_REQUIRED"));
   await assert.rejects(
     () => archivedService.read("member", "ath-1", "photo-1"),
     expectAthletesCode("ATHLETES_MEMBER_REQUIRED"),
@@ -520,6 +506,37 @@ test("Read maps storage failure for the Photo error surface", async () => {
   );
 });
 
+test("Founder can delete a same-community photo and non-Founders cannot", async () => {
+  const photos = photoRepositoryStub([photoRecord()]);
+  const service = photoService(
+    { "ath-1:founder": "FOUNDER", "ath-1:member": "MEMBER", "ath-1:moderator": "MODERATOR" },
+    photos.repository,
+    storageStub().storage,
+  );
+
+  await service.delete("founder", "ath-1", "photo-1");
+  assert.deepEqual(photos.deleted, [
+    { athletesCommunityId: "ath-1", photoId: "photo-1", deletedByUserId: "founder" },
+  ]);
+
+  for (const userId of ["member", "moderator", "outsider"]) {
+    await assert.rejects(
+      () => service.delete(userId, "ath-1", "photo-1"),
+      expectAthletesCode("ATHLETES_FOUNDER_REQUIRED"),
+    );
+  }
+  assert.equal(photos.deleted.length, 1);
+});
+
+test("Founder delete reports a missing photo", async () => {
+  const photos = photoRepositoryStub([]);
+  const service = photoService({ "ath-1:founder": "FOUNDER" }, photos.repository, storageStub().storage);
+  await assert.rejects(
+    () => service.delete("founder", "ath-1", "missing"),
+    expectAthletesCode("ATHLETES_PHOTO_NOT_FOUND"),
+  );
+});
+
 test("Photo upload records recovery intent before any object write", async () => {
   const photos = photoRepositoryStub();
   const objects = storageStub();
@@ -542,17 +559,12 @@ test("Photo upload records recovery intent before any object write", async () =>
     throw new Error("database unavailable");
   };
   await assert.rejects(
-    () =>
-      photoService({ "ath-1:founder": "FOUNDER" }, photos.repository, objects.storage).upload(
-        "founder",
-        "ath-1",
-        { contentType: "image/png", body: new Uint8Array([1]) },
-      ),
+    () => photoService({ "ath-1:founder": "FOUNDER" }, photos.repository, objects.storage).upload(
+      "founder",
+      "ath-1",
+      { contentType: "image/png", body: new Uint8Array([1]) },
+    ),
     /database unavailable/,
   );
-  assert.equal(
-    objects.puts.length,
-    1,
-    "failed intent persistence must not write an untracked object",
-  );
+  assert.equal(objects.puts.length, 1, "failed intent persistence must not write an untracked object");
 });
