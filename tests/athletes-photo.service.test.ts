@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { ATHLETES_PHOTO_MAX_BYTES } from "@hooma/contracts/athletes";
-import type { ObjectStorage } from "@hooma/storage";
+import type { ObjectStorage, ObjectStorageReadUrlSigner } from "@hooma/storage";
 import { AthletesContentAuthorization } from "../apps/api/src/modules/athletes/application/athletes-content-authorizer.js";
 import type {
   AthletesPhotoCreateInput,
@@ -169,12 +169,14 @@ function storageStub() {
   const puts: Array<{ key: string; body: Uint8Array; contentType: string }> = [];
   const gets: string[] = [];
   const removes: string[] = [];
+  const signedReads: Array<{ key: string; expiresInSeconds: number }> = [];
   let putFailure: Error | null = null;
   let getFailure: Error | null = null;
   let removeFailure: Error | null = null;
+  let signFailure: Error | null = null;
   let returnedKey: string | null = null;
 
-  const storage: ObjectStorage = {
+  const storage: ObjectStorage & ObjectStorageReadUrlSigner = {
     put: async (key, body, contentType) => {
       puts.push({ key, body, contentType });
       if (putFailure) throw putFailure;
@@ -198,6 +200,11 @@ function storageStub() {
       removes.push(key);
       if (removeFailure) throw removeFailure;
     },
+    createReadUrl: async (key, expiresInSeconds) => {
+      signedReads.push({ key, expiresInSeconds });
+      if (signFailure) throw signFailure;
+      return `https://storage.example.test/${encodeURIComponent(key)}?signed=1`;
+    },
   };
 
   return {
@@ -205,6 +212,7 @@ function storageStub() {
     puts,
     gets,
     removes,
+    signedReads,
     failPut(error: Error) {
       putFailure = error;
     },
@@ -213,6 +221,9 @@ function storageStub() {
     },
     failRemove(error: Error) {
       removeFailure = error;
+    },
+    failSign(error: Error) {
+      signFailure = error;
     },
     returnKey(key: string) {
       returnedKey = key;
@@ -531,7 +542,7 @@ test("Active same-community members list public metadata", async () => {
   ]);
 });
 
-test("List and read enforce active same-community membership", async () => {
+test("List and delivery enforce active same-community membership", async () => {
   const photos = photoRepositoryStub([photoRecord()]);
   const objects = storageStub();
   const activeService = photoService(
@@ -546,7 +557,7 @@ test("List and read enforce active same-community membership", async () => {
       expectAthletesCode("ATHLETES_MEMBER_REQUIRED"),
     );
     await assert.rejects(
-      () => activeService.read(userId, "ath-1", "photo-1"),
+      () => activeService.delivery(userId, "ath-1", "photo-1"),
       expectAthletesCode("ATHLETES_MEMBER_REQUIRED"),
     );
   }
@@ -563,39 +574,66 @@ test("List and read enforce active same-community membership", async () => {
     expectAthletesCode("ATHLETES_MEMBER_REQUIRED"),
   );
   await assert.rejects(
-    () => archivedService.read("member", "ath-1", "photo-1"),
+    () => archivedService.delivery("member", "ath-1", "photo-1"),
     expectAthletesCode("ATHLETES_MEMBER_REQUIRED"),
   );
-  assert.deepEqual(objects.gets, []);
+  assert.deepEqual(objects.signedReads, []);
 });
 
-test("Read resolves scoped metadata before stored bytes", async () => {
+test("Delivery signs the scoped object for five minutes without reading bytes through API", async () => {
   const photos = photoRepositoryStub([photoRecord()]);
   const objects = storageStub();
   const service = photoService({ "ath-1:member": "MEMBER" }, photos.repository, objects.storage);
 
-  const result = await service.read("member", "ath-1", "photo-1");
+  const before = Date.now();
+  const result = await service.delivery("member", "ath-1", "photo-1");
+  const after = Date.now();
 
-  assert.deepEqual(objects.gets, ["athletes-photos/ath-1/photo-1"]);
-  assert.equal(result.contentType, "image/jpeg");
-  assert.deepEqual(result.body, new Uint8Array([7, 8, 9]));
+  assert.deepEqual(objects.signedReads, [
+    { key: "athletes-photos/ath-1/photo-1", expiresInSeconds: 300 },
+  ]);
+  assert.deepEqual(objects.gets, []);
+  assert.match(result.contentUrl, /^https:\/\/storage\.example\.test\//);
+  const expiresAt = new Date(result.expiresAt).getTime();
+  assert.ok(expiresAt >= before + 300_000);
+  assert.ok(expiresAt <= after + 300_000);
 
   await assert.rejects(
-    () => service.read("member", "ath-1", "missing-photo"),
+    () => service.delivery("member", "ath-1", "missing-photo"),
     expectAthletesCode("ATHLETES_PHOTO_NOT_FOUND"),
   );
-  assert.equal(objects.gets.length, 1);
+  assert.equal(objects.signedReads.length, 1);
 });
 
-test("Read maps storage failure for the Photo error surface", async () => {
+test("Delivery maps signing failure for the Photo error surface", async () => {
   const photos = photoRepositoryStub([photoRecord()]);
   const objects = storageStub();
-  objects.failGet(new Error("object unavailable"));
+  objects.failSign(new Error("object unavailable"));
   const service = photoService({ "ath-1:member": "MEMBER" }, photos.repository, objects.storage);
 
   await assert.rejects(
-    () => service.read("member", "ath-1", "photo-1"),
+    () => service.delivery("member", "ath-1", "photo-1"),
     expectAthletesCode("ATHLETES_PHOTO_UNAVAILABLE"),
+  );
+});
+
+test("Delivery rejects storage without read URL signing capability", async () => {
+  const photos = photoRepositoryStub([photoRecord()]);
+  const basicStorage: ObjectStorage = {
+    put: async (key, body, contentType) => ({ key, contentType, sizeBytes: body.byteLength }),
+    get: async (key) => ({
+      key,
+      contentType: "image/webp",
+      sizeBytes: 1,
+      body: new Uint8Array([1]),
+    }),
+    remove: async () => undefined,
+  };
+  const service = photoService({ "ath-1:member": "MEMBER" }, photos.repository, basicStorage);
+
+  await assert.rejects(
+    () => service.delivery("member", "ath-1", "photo-1"),
+    expectAthletesCode("ATHLETES_PHOTO_STORAGE_NOT_CONFIGURED"),
   );
 });
 
