@@ -8,6 +8,7 @@ import type {
 } from "../application/athletes-photo.repository.js";
 import type {
   AthletesPhotoTransactionRepository,
+  AthletesPhotoTransactionScope,
   AthletesPhotoUnitOfWork,
 } from "../application/athletes-photo.unit-of-work.js";
 import { PrismaAthletesRepository } from "./prisma-athletes.repository.js";
@@ -95,7 +96,7 @@ export class PrismaAthletesPhotoRepository
 
   withCommunityLock<T>(
     athletesCommunityId: string,
-    operation: Parameters<AthletesPhotoUnitOfWork["withCommunityLock"]>[1],
+    operation: (scope: AthletesPhotoTransactionScope) => Promise<T>,
   ): Promise<T> {
     return this.db.$transaction(async (tx) => {
       const athletes = new PrismaAthletesRepository(tx);
@@ -105,7 +106,7 @@ export class PrismaAthletesPhotoRepository
           photos: new PrismaAthletesPhotoTransactionRepository(tx),
         }),
       );
-    }) as Promise<T>;
+    });
   }
 
   async listForCommunity(
