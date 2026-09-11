@@ -27,16 +27,4 @@ console.log(`Checking formatting for ${files.length} changed file(s).`);
 const prettier = spawnSync("npm", ["exec", "--", "prettier", "--check", ...files], {
   stdio: "inherit",
 });
-
-if ((prettier.status ?? 1) !== 0) {
-  for (const file of files) {
-    const formatted = spawnSync("npm", ["exec", "--", "prettier", file], {
-      encoding: "utf8",
-    });
-    if (formatted.status === 0 && formatted.stdout) {
-      console.log(`\n--- PRETTIER ${file} ---\n${formatted.stdout}--- END PRETTIER ${file} ---`);
-    }
-  }
-}
-
 process.exit(prettier.status ?? 1);
