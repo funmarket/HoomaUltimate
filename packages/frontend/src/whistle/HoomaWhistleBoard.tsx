@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useHoomaFrontend } from "../context";
-import { HoomaApiError, type WhistleList, type WhistleListItem } from "../api";
+import { HoomaApiError, type WhistleList } from "../api";
 import { listEventWhistles, sendEventWhistle } from "./event-api";
 import { WhistleAction } from "./WhistleAction";
+import { WhistleRoom } from "./WhistleRoom";
 
 const MAX_GRAPHEMES = 33;
 const REFRESH_INTERVAL_MS = 10_000;
@@ -21,34 +22,6 @@ type WhistleBoardProps = {
 function graphemeCount(value: string): number {
   const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
   return Array.from(segmenter.segment(value)).length;
-}
-
-function authorName(whistle: WhistleListItem): string {
-  return (
-    whistle.author?.presentation?.displayName ||
-    whistle.author?.presentation?.username ||
-    "HOOMA member"
-  );
-}
-
-function authorInitials(whistle: WhistleListItem): string {
-  return (
-    authorName(whistle)
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase())
-      .join("") || "H"
-  );
-}
-
-function relativeTime(value: string): string {
-  const deltaSeconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000));
-  if (deltaSeconds < 60) return "just now";
-  const minutes = Math.floor(deltaSeconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  return `${hours}h ago`;
 }
 
 function resetLabel(value: string): string {
@@ -203,39 +176,11 @@ function WhistleBoard({
       ) : null}
 
       {error ? <div className="error-box">{error}</div> : null}
-      {loading ? <div className="whistle-empty">Listening for Whistles…</div> : null}
-      {!loading && !feed.items.length ? (
-        <div className="whistle-empty">
-          <strong>{emptyTitle}</strong>
-          <span>{emptyText}</span>
-        </div>
-      ) : null}
-
-      {feed.items.length ? (
-        <div className="whistle-list">
-          {feed.items.map((whistle) => {
-            const presentation = whistle.author?.presentation;
-            return (
-              <div className="whistle-card is-revealed" key={whistle.id}>
-                <div className="whistle-author">
-                  {presentation?.photoUrl ? (
-                    <img src={presentation.photoUrl} alt="" />
-                  ) : (
-                    <span>{authorInitials(whistle)}</span>
-                  )}
-                  <div>
-                    <strong>{authorName(whistle)}</strong>
-                    <small>{relativeTime(whistle.createdAt)}</small>
-                  </div>
-                </div>
-                <div className="whistle-body-zone">
-                  <p className="whistle-body">{whistle.body}</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : null}
+      <WhistleRoom
+        items={feed.items}
+        loading={loading}
+        emptyText={`${emptyTitle} ${emptyText}`}
+      />
     </article>
   );
 }
