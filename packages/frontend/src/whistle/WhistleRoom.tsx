@@ -27,7 +27,10 @@ function authorInitials(whistle: WhistleListItem): string {
 }
 
 function relativeTime(value: string): string {
-  const deltaSeconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000));
+  const deltaSeconds = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(value).getTime()) / 1000),
+  );
   if (deltaSeconds < 60) return "just now";
   const minutes = Math.floor(deltaSeconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
@@ -62,7 +65,8 @@ export function WhistleRoom({ items, loading = false, emptyText }: WhistleRoomPr
     }
 
     const isFirstLoadedMessage = previousLastIdRef.current === null;
-    const hasNewMessage = previousLastIdRef.current !== null && previousLastIdRef.current !== lastId;
+    const hasNewMessage =
+      previousLastIdRef.current !== null && previousLastIdRef.current !== lastId;
 
     if (isFirstLoadedMessage || (hasNewMessage && wasPinnedRef.current)) {
       requestAnimationFrame(() => scrollToLatest(isFirstLoadedMessage ? "auto" : "smooth"));
