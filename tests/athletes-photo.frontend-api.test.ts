@@ -18,12 +18,14 @@ test("Athletes Photo frontend API uses shared authenticated transport", async ()
     createdAt: "2026-09-05T12:00:00.000Z",
     updatedAt: "2026-09-05T12:00:00.000Z",
   };
+  const delivery = {
+    contentUrl: "https://storage.example.test/private/photo-1?X-Amz-Signature=signed",
+    expiresAt: "2026-09-05T12:05:00.000Z",
+  };
   const responses = [
     Response.json([metadata]),
     Response.json(metadata, { status: 201 }),
-    new Response(new Uint8Array([1, 2, 3]), {
-      headers: { "content-type": "image/webp" },
-    }),
+    Response.json(delivery),
     Response.json({ ok: true }),
   ];
 
@@ -54,9 +56,10 @@ test("Athletes Photo frontend API uses shared authenticated transport", async ()
     );
     assert.deepEqual(uploaded, metadata);
 
-    const content = await api.athletes.fetchPhotoContent("athletes/community 1", "photo/1");
-    assert.equal(content.type, "image/webp");
-    assert.deepEqual(Array.from(new Uint8Array(await content.arrayBuffer())), [1, 2, 3]);
+    assert.deepEqual(
+      await api.athletes.photoDelivery("athletes/community 1", "photo/1"),
+      delivery,
+    );
 
     assert.deepEqual(await api.athletes.deletePhoto("athletes/community 1", "photo/1"), {
       ok: true,
@@ -73,7 +76,7 @@ test("Athletes Photo frontend API uses shared authenticated transport", async ()
     );
     assert.equal(
       calls[2]?.input,
-      "https://api.example.test/api/v1/athletes/athletes%2Fcommunity%201/photos/photo%2F1/content",
+      "https://api.example.test/api/v1/athletes/athletes%2Fcommunity%201/photos/photo%2F1/delivery",
     );
     assert.equal(
       calls[3]?.input,
@@ -88,13 +91,13 @@ test("Athletes Photo frontend API uses shared authenticated transport", async ()
 
     const listHeaders = new Headers(calls[0]?.init?.headers);
     const uploadHeaders = new Headers(calls[1]?.init?.headers);
-    const contentHeaders = new Headers(calls[2]?.init?.headers);
+    const deliveryHeaders = new Headers(calls[2]?.init?.headers);
 
     assert.equal(listHeaders.get("content-type"), "application/json");
     assert.equal(calls[1]?.init?.method, "POST");
     assert.equal(calls[1]?.init?.body, uploadBody);
     assert.equal(uploadHeaders.get("content-type"), "image/webp");
-    assert.equal(contentHeaders.has("content-type"), false);
+    assert.equal(deliveryHeaders.get("content-type"), "application/json");
     assert.equal(calls[3]?.init?.method, "DELETE");
   } finally {
     globalThis.fetch = originalFetch;
