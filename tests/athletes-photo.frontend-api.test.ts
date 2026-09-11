@@ -56,10 +56,7 @@ test("Athletes Photo frontend API uses shared authenticated transport", async ()
     );
     assert.deepEqual(uploaded, metadata);
 
-    assert.deepEqual(
-      await api.athletes.photoDelivery("athletes/community 1", "photo/1"),
-      delivery,
-    );
+    assert.deepEqual(await api.athletes.photoDelivery("athletes/community 1", "photo/1"), delivery);
 
     assert.deepEqual(await api.athletes.deletePhoto("athletes/community 1", "photo/1"), {
       ok: true,
