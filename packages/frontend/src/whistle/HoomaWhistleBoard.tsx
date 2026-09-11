@@ -45,7 +45,11 @@ function WhistleBoard({
   canCompose = true,
 }: WhistleBoardProps) {
   const { api, transport, protectedError } = useHoomaFrontend();
-  const [feed, setFeed] = useState<WhistleList>({ items: [], remainingToday: 11, resetsAt: "" });
+  const [feed, setFeed] = useState<WhistleList>({
+    items: [],
+    remainingToday: 11,
+    resetsAt: "",
+  });
   const [body, setBody] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -94,7 +98,13 @@ function WhistleBoard({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!canCompose || !body.trim() || count > MAX_GRAPHEMES || sending || feed.remainingToday <= 0)
+    if (
+      !canCompose ||
+      !body.trim() ||
+      count > MAX_GRAPHEMES ||
+      sending ||
+      feed.remainingToday <= 0
+    )
       return;
     setSending(true);
     setError("");
