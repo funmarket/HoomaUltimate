@@ -53,7 +53,9 @@ function WhistleBoard({
   const [body, setBody] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [authorized, setAuthorized] = useState(contextType !== "EVENT");
+  const [authorized, setAuthorized] = useState(
+    contextType !== "EVENT",
+  );
   const [error, setError] = useState("");
   const count = graphemeCount(body);
 
@@ -74,7 +76,9 @@ function WhistleBoard({
         setError("");
       } catch (reason) {
         if (
-          (contextType === "EVENT" || contextType === "ATHLETES" || contextType === "RIDE") &&
+          (contextType === "EVENT" ||
+            contextType === "ATHLETES" ||
+            contextType === "RIDE") &&
           reason instanceof HoomaApiError &&
           (reason.status === 401 || reason.status === 403)
         ) {
