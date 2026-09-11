@@ -4,6 +4,7 @@ import test from "node:test";
 
 const board = readFileSync("packages/frontend/src/whistle/HoomaWhistleBoard.tsx", "utf8");
 const action = readFileSync("packages/frontend/src/whistle/WhistleAction.tsx", "utf8");
+const room = readFileSync("packages/frontend/src/whistle/WhistleRoom.tsx", "utf8");
 const css = readFileSync("packages/frontend/src/whistle/whistle.css", "utf8");
 const profile = readFileSync("apps/web/src/profile/UserWhistlePanel.tsx", "utf8");
 const gamer = readFileSync("packages/frontend/src/gamers/GamerWhistlePanel.tsx", "utf8");
@@ -32,4 +33,19 @@ test("Whistle action owns a recognizable transparent lime-outlined identity", ()
   assert.match(css, /border: 1px solid rgba\(196, 220, 67, 0\.78\)/);
   assert.match(css, /border-radius: 999px/);
   assert.match(css, /text-transform: uppercase/);
+});
+
+test("all Whistle conversations use one compact scrollable room instead of message cards", () => {
+  assert.match(board, /<WhistleRoom/);
+  assert.match(profile, /<WhistleRoom/);
+  assert.match(gamer, /<WhistleRoom/);
+  assert.match(room, /className="whistle-message"/);
+  assert.match(room, /role="log"/);
+  assert.match(room, /↓ Latest/);
+  assert.doesNotMatch(board, /whistle-card/);
+  assert.match(css, /\.whistle-room \{/);
+  assert.match(css, /overflow-y: auto/);
+  assert.match(css, /height: clamp\(340px, 52vh, 470px\)/);
+  assert.match(css, /\.whistle-message \{/);
+  assert.doesNotMatch(css, /\.whistle-card \{/);
 });
