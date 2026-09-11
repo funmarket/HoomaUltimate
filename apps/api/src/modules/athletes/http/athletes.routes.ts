@@ -78,6 +78,19 @@ export function createAthletesMemberRouter(
       );
     }),
   );
+  router.get(
+    "/:athletesCommunityId/photos/:photoId/delivery",
+    asyncHandler(async (req, res) => {
+      res.setHeader("cache-control", "private, no-store");
+      res.json(
+        await photoService.delivery(
+          getAuth(req).userId,
+          String(req.params.athletesCommunityId),
+          String(req.params.photoId),
+        ),
+      );
+    }),
+  );
   router.delete(
     "/:athletesCommunityId/photos/:photoId",
     asyncHandler(async (req, res) => {
@@ -87,19 +100,6 @@ export function createAthletesMemberRouter(
         String(req.params.photoId),
       );
       res.json({ ok: true });
-    }),
-  );
-  router.get(
-    "/:athletesCommunityId/photos/:photoId/content",
-    asyncHandler(async (req, res) => {
-      const photo = await photoService.read(
-        getAuth(req).userId,
-        String(req.params.athletesCommunityId),
-        String(req.params.photoId),
-      );
-      res.setHeader("cache-control", "private, no-store");
-      res.setHeader("content-type", photo.contentType);
-      res.send(Buffer.from(photo.body));
     }),
   );
   router.get(
