@@ -36,10 +36,7 @@ class PrismaAthletesPhotoTransactionRepository implements AthletesPhotoTransacti
       where: { id: input.id, topic: ATHLETES_PHOTO_RECONCILE_TOPIC, status: "PENDING" },
     });
     if (intent.count !== 1) {
-      throw new AthletesError(
-        "ATHLETES_PHOTO_UPLOAD_FAILED",
-        "Photo upload expired; please retry",
-      );
+      throw new AthletesError("ATHLETES_PHOTO_UPLOAD_FAILED", "Photo upload expired; please retry");
     }
     const row = await this.tx.athletesPhoto.create({
       data: input,
@@ -48,10 +45,7 @@ class PrismaAthletesPhotoTransactionRepository implements AthletesPhotoTransacti
     return serializeAthletesPhoto(row);
   }
 
-  async deleteAndScheduleCleanup(
-    athletesCommunityId: string,
-    photoId: string,
-  ): Promise<boolean> {
+  async deleteAndScheduleCleanup(athletesCommunityId: string, photoId: string): Promise<boolean> {
     const row = await this.tx.athletesPhoto.findFirst({
       where: { id: photoId, athletesCommunityId },
       select: athletesPhotoSelect,
