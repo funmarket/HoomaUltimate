@@ -7,13 +7,14 @@ import type {
   AthletesJoinResult,
   AthletesMember,
   AthletesPhotoContentType,
+  AthletesPhotoDelivery,
   AthletesPhotoList,
   AthletesPhotoUploadResponse,
   AthletesPublicDetail,
   AthletesPublicSummary,
   AthletesSport,
 } from "@hooma/contracts/athletes";
-import { request, requestBinary, requestBlob, HoomaApiError, type HoomaTransport } from "../http";
+import { request, requestBinary, HoomaApiError, type HoomaTransport } from "../http";
 type PublicAthletesSummary = AthletesPublicSummary;
 type PublicAthletesDetail = AthletesPublicDetail;
 type PublicAthletesList = { items: PublicAthletesSummary[]; nextCursor: string | null };
@@ -137,10 +138,10 @@ export function createAthletesApi(transport: HoomaTransport) {
         `/api/v1/athletes/${encodeURIComponent(id)}/photos/${encodeURIComponent(photoId)}`,
         { method: "DELETE" },
       ),
-    fetchPhotoContent: (id: string, photoId: string, signal?: AbortSignal) =>
-      requestBlob(
+    photoDelivery: (id: string, photoId: string, signal?: AbortSignal) =>
+      request<AthletesPhotoDelivery>(
         transport,
-        `/api/v1/athletes/${encodeURIComponent(id)}/photos/${encodeURIComponent(photoId)}/content`,
+        `/api/v1/athletes/${encodeURIComponent(id)}/photos/${encodeURIComponent(photoId)}/delivery`,
         signal ? { signal } : undefined,
       ),
   };
