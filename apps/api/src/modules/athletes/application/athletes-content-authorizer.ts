@@ -1,5 +1,8 @@
 import { AthletesError } from "../domain/athletes-error.js";
-import type { AthletesCommunityRecord, AthletesRepository } from "./athletes.repository.js";
+import type {
+  AthletesCommunityRecord,
+  AthletesRepository,
+} from "./athletes.repository.js";
 
 export interface AthletesMemberContentAuthorizer {
   requireMemberContent(userId: string, athletesCommunityId: string): Promise<void>;
