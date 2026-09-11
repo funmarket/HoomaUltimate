@@ -1,12 +1,12 @@
 # ADR-056 — Athletes Founder Photo Board
 
-Status: **ACCEPTED PRODUCT/ARCHITECTURE CONTRACT — IMPLEMENTED ON `phase-0-foundation` AND EXTENDED BY PRODUCT-OWNER DECISION 2026-09-10**
+Status: **ACCEPTED PRODUCT/ARCHITECTURE CONTRACT — IMPLEMENTED ON `phase-0-foundation` AND EXTENDED BY PRODUCT-OWNER DECISIONS 2026-09-10 AND 2026-09-11**
 
 ## Context
 
 Athletes is an independent HOOMA-connected sports-community domain. Its merged foundation includes `AthletesCommunity`, `AthletesMembership`, `AthletesJoinRequest`, public discovery/detail, membership/management lifecycle, a member-private Whistle Board through the shared transient Whistle engine, and the Founder-curated Photo Board governed by this ADR.
 
-The Photo Board is deliberately narrow: durable managed photos curated by the Founder for active members. The product owner explicitly extended this contract on 2026-09-10 to allow the active same-community Founder to delete Photo Board photos and to optimize uploaded photos before durable object-storage persistence. This extension does not turn Photo Board into a social feed or generic Media domain.
+The Photo Board is deliberately narrow: durable managed photos curated by the Founder for active members. The product owner explicitly extended this contract on 2026-09-10 to allow the active same-community Founder to delete Photo Board photos and to optimize uploaded photos before durable object-storage persistence. The 2026-09-11 hardening narrows Athletes authorization dependencies and moves final Photo write policy orchestration above Prisma infrastructure without changing user-visible behavior. These extensions do not turn Photo Board into a social feed or generic Media domain.
 
 ## Decision
 
@@ -125,4 +125,4 @@ The original governance phase was documentation-only. Subsequent phases implemen
 
 The 2026-09-10 extension added bounded server-side WebP normalization and Founder-only deletion using the existing Athletes metadata + outbox + Worker architecture.
 
-The 2026-09-11 Step A hardening is in flight on its dedicated branch: it narrows cross-domain Athletes authorization dependencies and moves final Photo write policy orchestration out of Prisma infrastructure while preserving the existing transaction/row-lock/outbox behavior. It is not foundation truth until its PR is merged and verified.
+PR #268 implements the 2026-09-11 Step A hardening: it narrows cross-domain Athletes authorization dependencies and moves final Photo write policy orchestration out of Prisma infrastructure while preserving the existing transaction, row-lock, upload-recovery, and deletion-outbox behavior. Repository CI verifies the final source before merge; production runtime deployment remains a separate verification step.
