@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import type { WhistleList, WhistleListItem } from "../api";
+import type { WhistleList } from "../api";
 import { useHoomaFrontend } from "../context";
 import { WhistleAction } from "../whistle/WhistleAction";
+import { WhistleRoom } from "../whistle/WhistleRoom";
 import { listGamerWhistles, sendGamerWhistle } from "./gamer-whistle-api";
 
 const MAX_GRAPHEMES = 33;
@@ -9,14 +10,6 @@ const MAX_GRAPHEMES = 33;
 function graphemeCount(value: string): number {
   const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
   return Array.from(segmenter.segment(value)).length;
-}
-
-function authorName(whistle: WhistleListItem): string {
-  return (
-    whistle.author?.presentation?.displayName ||
-    whistle.author?.presentation?.username ||
-    "HOOMA gamer"
-  );
 }
 
 export function GamerWhistlePanel({
@@ -84,16 +77,11 @@ export function GamerWhistlePanel({
         </button>
       </div>
 
-      <div className="gamer-whistle-feed" aria-live="polite">
-        {loading ? <small>Listening…</small> : null}
-        {!loading && !feed.items.length ? <small>No Whistles between you today.</small> : null}
-        {feed.items.slice(0, 4).map((whistle) => (
-          <div className="gamer-whistle-message" key={whistle.id}>
-            <strong>{authorName(whistle)}</strong>
-            <p>{whistle.body}</p>
-          </div>
-        ))}
-      </div>
+      <WhistleRoom
+        items={feed.items}
+        loading={loading}
+        emptyText="No Whistles between you today."
+      />
 
       <form className="gamer-whistle-composer" onSubmit={submit}>
         <div className="gamer-whistle-input-row">
