@@ -1,7 +1,4 @@
-import type {
-  AthletesPhotoCreateInput,
-  AthletesPhotoRecord,
-} from "./athletes-photo.repository.js";
+import type { AthletesPhotoCreateInput, AthletesPhotoRecord } from "./athletes-photo.repository.js";
 import type { AthletesRepository } from "./athletes.repository.js";
 
 export interface AthletesPhotoTransactionRepository {
