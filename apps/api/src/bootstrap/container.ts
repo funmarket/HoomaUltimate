@@ -2,11 +2,7 @@ import { SharpAthletesPhotoOptimizer } from "../modules/athletes/infrastructure/
 import { SharpAthletesPhotoValidator } from "../modules/athletes/infrastructure/sharp-athletes-photo-validator.js";
 import type { ApiConfig } from "@hooma/config";
 import { getDatabaseClient } from "@hooma/database";
-import {
-  S3ObjectStorage,
-  type ObjectStorage,
-  type ObjectStorageReadUrlSigner,
-} from "@hooma/storage";
+import { S3ObjectStorage, type ObjectStorage } from "@hooma/storage";
 import { RedisClient } from "../infrastructure/redis/redis-client.js";
 import { IdentityService } from "../modules/identity/application/identity.service.js";
 import { PrismaIdentityRepository } from "../modules/identity/infrastructure/prisma-identity.repository.js";
@@ -64,7 +60,6 @@ import { RedisReadinessProbe } from "../modules/system/infrastructure/redis-read
 
 interface ContainerOverrides {
   readonly objectStorage?: ObjectStorage | null;
-  readonly objectStorageReadUrlSigner?: ObjectStorageReadUrlSigner | null;
 }
 
 function objectStorage(
@@ -95,12 +90,6 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
   const database = getDatabaseClient();
   const redis = new RedisClient(config.REDIS_URL ?? "redis://localhost:6379");
   const storage = objectStorage(config, overrides);
-  const readUrlSigner =
-    "objectStorageReadUrlSigner" in overrides
-      ? (overrides.objectStorageReadUrlSigner ?? null)
-      : storage instanceof S3ObjectStorage
-        ? storage
-        : null;
   const readinessService = new ReadinessService(
     new PrismaReadinessProbe(database),
     new RedisReadinessProbe(redis),
@@ -135,7 +124,6 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     athletesPhotoRepository,
     athletesPhotoRepository,
     storage,
-    readUrlSigner,
     new SharpAthletesPhotoValidator(),
     new SharpAthletesPhotoOptimizer(),
   );
