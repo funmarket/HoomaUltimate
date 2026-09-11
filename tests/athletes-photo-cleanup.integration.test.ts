@@ -3,6 +3,7 @@ import test from "node:test";
 import { randomUUID } from "node:crypto";
 import { getDatabaseClient } from "@hooma/database";
 import { ATHLETES_PHOTO_RECONCILE_TOPIC } from "@hooma/contracts/athletes";
+import { AthletesContentAuthorization } from "../apps/api/src/modules/athletes/application/athletes-content-authorizer.js";
 import { AthletesService } from "../apps/api/src/modules/athletes/application/athletes.service.js";
 import { PrismaAthletesRepository } from "../apps/api/src/modules/athletes/infrastructure/prisma-athletes.repository.js";
 import { PrismaAthletesPhotoRepository } from "../apps/api/src/modules/athletes/infrastructure/prisma-athletes-photo.repository.js";
@@ -44,10 +45,16 @@ test("Athletes recovery survives failed publication and never deletes a publishe
     sizeBytes: 10,
     uploadedByUserId: user.id,
   });
+  const publish = async (input: ReturnType<typeof metadata>) =>
+    photos.withCommunityLock(input.athletesCommunityId, async (scope) => {
+      const authorization = new AthletesContentAuthorization(scope.athletes);
+      await authorization.requireFounderContent(input.uploadedByUserId, input.athletesCommunityId);
+      return scope.photos.createPrepared(input);
+    });
   try {
     await photos.prepareUpload(publishedId, community.id, key(publishedId));
     assert.ok(await db.outboxEvent.findUnique({ where: { id: publishedId } }));
-    await photos.create(metadata(publishedId));
+    await publish(metadata(publishedId));
     assert.equal(await db.outboxEvent.findUnique({ where: { id: publishedId } }), null);
     await cleanup({
       id: publishedId,
@@ -62,7 +69,7 @@ test("Athletes recovery survives failed publication and never deletes a publishe
 
     await photos.prepareUpload(failedId, community.id, key(failedId));
     await athletes.archive(user.id, community.id);
-    await assert.rejects(() => photos.create(metadata(failedId)), /not found/);
+    await assert.rejects(() => publish(metadata(failedId)), /not found/);
     assert.ok(await db.outboxEvent.findUnique({ where: { id: failedId } }));
     await db.outboxEvent.update({ where: { id: failedId }, data: { availableAt: new Date(0) } });
     const runner = new OutboxRunner(
