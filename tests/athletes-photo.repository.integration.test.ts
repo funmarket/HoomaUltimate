@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { getDatabaseClient } from "@hooma/database";
+import { AthletesContentAuthorization } from "../apps/api/src/modules/athletes/application/athletes-content-authorizer.js";
 import { PrismaAthletesPhotoRepository } from "../apps/api/src/modules/athletes/infrastructure/prisma-athletes-photo.repository.js";
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -34,6 +35,8 @@ test("Athletes Photo repository persists and scopes board metadata by Athletes c
     const firstPhotoId = `photo-a-${suffix}`;
     const secondPhotoId = `photo-z-${suffix}`;
     const otherCommunityPhotoId = `photo-other-${suffix}`;
+    const createdPhotoId = `photo-created-${suffix}`;
+    const createdObjectKey = `athletes-photos/${firstCommunity.id}/${createdPhotoId}`;
 
     await db.athletesPhoto.createMany({
       data: [
@@ -70,18 +73,18 @@ test("Athletes Photo repository persists and scopes board metadata by Athletes c
     await db.athletesMembership.create({
       data: { athletesCommunityId: firstCommunity.id, userId: uploader.id, role: "FOUNDER" },
     });
-    await repository.prepareUpload(
-      `photo-created-${suffix}`,
-      firstCommunity.id,
-      `athletes-photos/${firstCommunity.id}/photo-created-${suffix}`,
-    );
-    const created = await repository.create({
-      id: `photo-created-${suffix}`,
-      athletesCommunityId: firstCommunity.id,
-      objectKey: `athletes-photos/${firstCommunity.id}/photo-created-${suffix}`,
-      contentType: "image/png",
-      sizeBytes: 44,
-      uploadedByUserId: uploader.id,
+    await repository.prepareUpload(createdPhotoId, firstCommunity.id, createdObjectKey);
+    const created = await repository.withCommunityLock(firstCommunity.id, async (scope) => {
+      const authorization = new AthletesContentAuthorization(scope.athletes);
+      await authorization.requireFounderContent(uploader.id, firstCommunity.id);
+      return scope.photos.createPrepared({
+        id: createdPhotoId,
+        athletesCommunityId: firstCommunity.id,
+        objectKey: createdObjectKey,
+        contentType: "image/png",
+        sizeBytes: 44,
+        uploadedByUserId: uploader.id,
+      });
     });
 
     assert.equal(created.athletesCommunityId, firstCommunity.id);
@@ -114,7 +117,11 @@ test("Athletes Photo repository persists and scopes board metadata by Athletes c
     );
     assert.equal(otherCommunity?.id, otherCommunityPhotoId);
   } finally {
+    await db.outboxEvent.deleteMany({ where: { aggregateId: `photo-created-${suffix}` } });
     await db.athletesPhoto.deleteMany({
+      where: { athletesCommunityId: { in: [firstCommunity.id, secondCommunity.id] } },
+    });
+    await db.athletesMembership.deleteMany({
       where: { athletesCommunityId: { in: [firstCommunity.id, secondCommunity.id] } },
     });
     await db.athletesCommunity.deleteMany({
