@@ -3,8 +3,8 @@ import {
   createProfileApi,
   useHoomaFrontend,
   WhistleAction,
+  WhistleRoom,
   type WhistleList,
-  type WhistleListItem,
 } from "@hooma/frontend";
 
 const MAX_GRAPHEMES = 33;
@@ -12,14 +12,6 @@ const MAX_GRAPHEMES = 33;
 function graphemeCount(value: string): number {
   const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
   return Array.from(segmenter.segment(value)).length;
-}
-
-function authorName(whistle: WhistleListItem): string {
-  return (
-    whistle.author?.presentation?.displayName ||
-    whistle.author?.presentation?.username ||
-    "HOOMA member"
-  );
 }
 
 export function UserWhistlePanel({
@@ -105,18 +97,11 @@ export function UserWhistlePanel({
 
   return (
     <div className="profile-edit-form" aria-label={`Direct Whistle with ${recipientName}`}>
-      <div className="profile-inline-state" aria-live="polite">
-        {loading ? <span className="muted">Listening for Whistles…</span> : null}
-        {!loading && !feed.items.length ? (
-          <span className="muted">No Whistles between you today.</span>
-        ) : null}
-        {feed.items.map((whistle) => (
-          <div key={whistle.id}>
-            <strong>{authorName(whistle)}</strong>
-            <p>{whistle.body}</p>
-          </div>
-        ))}
-      </div>
+      <WhistleRoom
+        items={feed.items}
+        loading={loading}
+        emptyText="No Whistles between you today."
+      />
 
       <form onSubmit={submit}>
         <label>

@@ -64,3 +64,4 @@ export * from "./watch/WatchPage";
 export * from "./athletes/AthletesPages";
 export * from "./athletes/AthletesPhotoBoard";
 export * from "./whistle/WhistleAction";
+export * from "./whistle/WhistleRoom";
