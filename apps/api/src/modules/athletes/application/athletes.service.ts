@@ -5,6 +5,7 @@ import type {
   AthletesJoinResult,
 } from "@hooma/contracts/athletes";
 import { AthletesError } from "../domain/athletes-error.js";
+import { AthletesContentAuthorization } from "./athletes-content-authorizer.js";
 import type {
   AthletesJoinRequestRecord,
   AthletesRepository,
@@ -37,7 +38,11 @@ function normalizedCreate(input: AthletesCommunityCreateInput) {
 }
 
 export class AthletesService {
-  constructor(private readonly repository: AthletesRepository) {}
+  private readonly contentAuthorization: AthletesContentAuthorization;
+
+  constructor(private readonly repository: AthletesRepository) {
+    this.contentAuthorization = new AthletesContentAuthorization(repository);
+  }
 
   listPublic(input: Parameters<AthletesRepository["listPublic"]>[0]) {
     return this.repository.listPublic({ ...input, limit: Math.min(Math.max(input.limit, 1), 100) });
@@ -87,8 +92,9 @@ export class AthletesService {
         return { status: "JOINED", membership: { role: membership.role } };
       }
       const result = await scope.repository.requestJoin(id, userId);
-      if (result.kind === "MEMBERSHIP")
+      if (result.kind === "MEMBERSHIP") {
         return { status: "JOINED", membership: { role: result.role } };
+      }
       return { status: "PENDING", request: serializeRequest(result.request) };
     });
   }
@@ -103,11 +109,12 @@ export class AthletesService {
     return this.inCommunity(id, async (scope) => {
       await scope.requireActive(id);
       const cancelled = await scope.repository.cancelJoinRequest(id, userId);
-      if (!cancelled)
+      if (!cancelled) {
         throw new AthletesError(
           "ATHLETES_JOIN_REQUEST_NOT_FOUND",
           "Pending join request not found",
         );
+      }
       return { ok: true };
     });
   }
@@ -126,11 +133,12 @@ export class AthletesService {
         userId,
         "APPROVE",
       );
-      if (!changed)
+      if (!changed) {
         throw new AthletesError(
           "ATHLETES_JOIN_REQUEST_NOT_FOUND",
           "Pending join request not found",
         );
+      }
       return { ok: true };
     });
   }
@@ -144,18 +152,18 @@ export class AthletesService {
         userId,
         "DECLINE",
       );
-      if (!changed)
+      if (!changed) {
         throw new AthletesError(
           "ATHLETES_JOIN_REQUEST_NOT_FOUND",
           "Pending join request not found",
         );
+      }
       return { ok: true };
     });
   }
 
   async members(userId: string, id: string) {
-    const role = await this.repository.activeRole(id, userId);
-    if (!role) throw new AthletesError("ATHLETES_MEMBER_REQUIRED", "Athletes membership required");
+    await this.contentAuthorization.requireMemberContent(userId, id);
     return this.repository.listMembers(id);
   }
 
@@ -176,12 +184,15 @@ export class AthletesService {
     return this.inCommunity(id, async (scope) => {
       const actorRole = await scope.requireManager(userId, id);
       const targetRole = await scope.repository.activeRole(id, targetUserId);
-      if (!targetRole)
+      if (!targetRole) {
         throw new AthletesError("ATHLETES_MEMBER_NOT_FOUND", "Athletes member not found");
-      if (targetRole === "FOUNDER")
+      }
+      if (targetRole === "FOUNDER") {
         throw new AthletesError("ATHLETES_FOUNDER_REMOVE_FORBIDDEN", "Founder cannot be removed");
-      if (actorRole === "MODERATOR" && targetRole !== "MEMBER")
+      }
+      if (actorRole === "MODERATOR" && targetRole !== "MEMBER") {
         throw new AthletesError("ATHLETES_MODERATOR_SCOPE", "Moderator can only remove members");
+      }
       await scope.repository.removeMember(id, targetUserId);
       return { ok: true };
     });
@@ -191,25 +202,26 @@ export class AthletesService {
     return this.inCommunity(id, async (scope) => {
       await scope.requireFounder(userId, id);
       const targetRole = await scope.repository.activeRole(id, targetUserId);
-      if (!targetRole)
+      if (!targetRole) {
         throw new AthletesError("ATHLETES_MEMBER_NOT_FOUND", "Athletes member not found");
-      if (targetRole === "FOUNDER")
+      }
+      if (targetRole === "FOUNDER") {
         throw new AthletesError(
           "ATHLETES_FOUNDER_ROLE_FORBIDDEN",
           "Founder role cannot be changed here",
         );
+      }
       await scope.repository.setRole(id, targetUserId, role);
       return { ok: true };
     });
   }
 
-  async requireFounderContent(userId: string, id: string) {
-    await this.requireFounder(userId, id);
+  requireFounderContent(userId: string, id: string): Promise<void> {
+    return this.contentAuthorization.requireFounderContent(userId, id);
   }
 
-  async requireMemberContent(userId: string, id: string) {
-    const role = await this.repository.activeRole(id, userId);
-    if (!role) throw new AthletesError("ATHLETES_MEMBER_REQUIRED", "Athletes membership required");
+  requireMemberContent(userId: string, id: string): Promise<void> {
+    return this.contentAuthorization.requireMemberContent(userId, id);
   }
 
   private inCommunity<T>(
@@ -223,27 +235,25 @@ export class AthletesService {
 
   private async requireActive(id: string) {
     const community = await this.repository.lifecycle(id);
-    if (!community || community.status !== "ACTIVE")
+    if (!community || community.status !== "ACTIVE") {
       throw new AthletesError("ATHLETES_NOT_FOUND", "Athletes community not found");
+    }
     return community;
   }
 
-  private async requireFounder(userId: string, id: string) {
-    const community = await this.requireActive(id);
-    const role = await this.repository.managerRole(id, userId);
-    if (role !== "FOUNDER")
-      throw new AthletesError("ATHLETES_FOUNDER_REQUIRED", "Athletes Founder access required");
-    return community;
+  private requireFounder(userId: string, id: string) {
+    return this.contentAuthorization.requireFounder(userId, id);
   }
 
   private async requireManager(userId: string, id: string): Promise<AthletesRole> {
     await this.requireActive(id);
     const role = await this.repository.managerRole(id, userId);
-    if (role !== "FOUNDER" && role !== "MODERATOR")
+    if (role !== "FOUNDER" && role !== "MODERATOR") {
       throw new AthletesError(
         "ATHLETES_MANAGER_REQUIRED",
         "Athletes Founder or Moderator access required",
       );
+    }
     return role;
   }
 }

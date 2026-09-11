@@ -1,12 +1,12 @@
 # ADR-056 — Athletes Founder Photo Board
 
-Status: **ACCEPTED PRODUCT/ARCHITECTURE CONTRACT — IMPLEMENTED ON `phase-0-foundation` AND EXTENDED BY PRODUCT-OWNER DECISION 2026-09-10**
+Status: **ACCEPTED PRODUCT/ARCHITECTURE CONTRACT — IMPLEMENTED ON `phase-0-foundation` AND EXTENDED BY PRODUCT-OWNER DECISIONS 2026-09-10 AND 2026-09-11**
 
 ## Context
 
 Athletes is an independent HOOMA-connected sports-community domain. Its merged foundation includes `AthletesCommunity`, `AthletesMembership`, `AthletesJoinRequest`, public discovery/detail, membership/management lifecycle, a member-private Whistle Board through the shared transient Whistle engine, and the Founder-curated Photo Board governed by this ADR.
 
-The Photo Board is deliberately narrow: durable managed photos curated by the Founder for active members. The product owner explicitly extended this contract on 2026-09-10 to allow the active same-community Founder to delete Photo Board photos and to optimize uploaded photos before durable object-storage persistence. This extension does not turn Photo Board into a social feed or generic Media domain.
+The Photo Board is deliberately narrow: durable managed photos curated by the Founder for active members. The product owner explicitly extended this contract on 2026-09-10 to allow the active same-community Founder to delete Photo Board photos and to optimize uploaded photos before durable object-storage persistence. The 2026-09-11 hardening narrows Athletes authorization dependencies and moves final Photo write policy orchestration above Prisma infrastructure without changing user-visible behavior. These extensions do not turn Photo Board into a social feed or generic Media domain.
 
 ## Decision
 
@@ -89,13 +89,18 @@ This optimization is server-owned so Web and Telegram uploads receive the same d
 
 Founder deletion is a full server-authorized lifecycle operation:
 
-1. The service requires an active same-community `FOUNDER`.
-2. Under the existing Athletes community lifecycle lock, the repository rechecks Founder authority and resolves the exact photo by `(athletesCommunityId, photoId)`.
-3. In one PostgreSQL transaction, durable `AthletesPhoto` metadata is removed and an `OutboxEvent` is created for the existing `ATHLETES_PHOTO_RECONCILE_TOPIC` with that photo's exact object key.
-4. The existing Worker reconciliation handler sees that no durable photo metadata owns the object and removes the object through shared `ObjectStorage`.
-5. Worker retry semantics preserve eventual cleanup if object storage is temporarily unavailable.
+1. The application service requires an active same-community `FOUNDER` before beginning expensive upload work or a delete request.
+2. Photo create/delete commits run through an Athletes-owned application `AthletesPhotoUnitOfWork` port. Its Prisma adapter opens one transaction, acquires the existing `AthletesCommunity` row lock, and supplies transaction-scoped Athletes and Photo repositories back to the application layer.
+3. Inside that locked application callback, the canonical Athletes content-authorization policy rechecks Founder authority before any Photo metadata write. Prisma Photo infrastructure does not import, construct, or call `AthletesService`.
+4. A successful upload commit consumes its pending reconciliation intent and creates durable `AthletesPhoto` metadata in the same transaction.
+5. A Founder deletion resolves the exact photo by `(athletesCommunityId, photoId)`, removes its metadata, and creates an `OutboxEvent` for the existing `ATHLETES_PHOTO_RECONCILE_TOPIC` with that photo's exact object key in the same transaction.
+6. The existing Worker reconciliation handler sees that no durable photo metadata owns the deleted object and removes it through shared `ObjectStorage`; Worker retry semantics preserve eventual cleanup if object storage is temporarily unavailable.
 
-Deletion must not perform an untracked best-effort object delete after removing metadata. No new deletion table, generic media worker, or second storage abstraction is introduced.
+The transaction boundary must preserve the final locked authorization recheck. Deletion must not perform an untracked best-effort object delete after removing metadata. No new deletion table, generic media worker, or second storage abstraction is introduced.
+
+### Cross-domain authorization boundary
+
+Other domains must not depend on the complete concrete `AthletesService` merely to authorize Athletes member content. Athletes exposes narrow application authorization ports for member-private and Founder-only content. Whistle consumes only the member-content authorization capability it needs; Photo Board consumes the explicit Athletes content authorization contract plus its Photo transaction unit of work. Athletes remains the sole owner of its membership policy.
 
 ### Archive semantics
 
@@ -105,6 +110,9 @@ Archiving an `AthletesCommunity` denies active private Photo Board access but do
 
 - The feature stays Athletes-owned and member-private.
 - Founder upload and deletion are enforced server-side; UI hiding is never sufficient authorization.
+- Final Photo write authorization remains protected by the same Athletes lifecycle row lock as the metadata mutation.
+- Infrastructure implements application ports without re-entering the application-service layer.
+- Cross-domain Whistle authorization depends on a narrow Athletes capability rather than the whole Athletes service.
 - PostgreSQL and object storage retain distinct responsibilities.
 - Uploaded photos consume less durable object storage because only the bounded normalized WebP is retained.
 - Existing transactional outbox and Worker infrastructure own reliable object cleanup after Founder deletion.
@@ -115,4 +123,6 @@ Archiving an `AthletesCommunity` denies active private Photo Board access but do
 
 The original governance phase was documentation-only. Subsequent phases implemented authorization, contracts, metadata persistence, repository/service/storage orchestration, authenticated HTTP routes, frontend integration, image validation, cursor paging, lazy binary loading, and orphan reconciliation. PR #265 supplied production-readiness hardening and object-storage recovery semantics.
 
-The 2026-09-10 extension adds bounded server-side WebP normalization and Founder-only deletion using the existing Athletes metadata + outbox + Worker architecture. Runtime deployment remains a separate verification step from source completion.
+The 2026-09-10 extension added bounded server-side WebP normalization and Founder-only deletion using the existing Athletes metadata + outbox + Worker architecture.
+
+PR #268 implements the 2026-09-11 Step A hardening: it narrows cross-domain Athletes authorization dependencies and moves final Photo write policy orchestration out of Prisma infrastructure while preserving the existing transaction, row-lock, upload-recovery, and deletion-outbox behavior. Repository CI verifies the final source before merge; production runtime deployment remains a separate verification step.

@@ -1,13 +1,17 @@
 import { ATHLETES_PHOTO_RECONCILE_TOPIC } from "@hooma/contracts/athletes";
-import { AthletesService } from "../application/athletes.service.js";
-import { AthletesError } from "../domain/athletes-error.js";
-import { PrismaAthletesRepository } from "./prisma-athletes.repository.js";
 import { Prisma, type PrismaClient } from "@hooma/database";
 import type {
   AthletesPhotoCreateInput,
   AthletesPhotoRecord,
   AthletesPhotoRepository,
 } from "../application/athletes-photo.repository.js";
+import type {
+  AthletesPhotoTransactionRepository,
+  AthletesPhotoTransactionScope,
+  AthletesPhotoUnitOfWork,
+} from "../application/athletes-photo.unit-of-work.js";
+import { AthletesError } from "../domain/athletes-error.js";
+import { PrismaAthletesRepository } from "./prisma-athletes.repository.js";
 
 const athletesPhotoSelect = Prisma.validator<Prisma.AthletesPhotoSelect>()({
   id: true,
@@ -24,7 +28,48 @@ type AthletesPhotoRow = Prisma.AthletesPhotoGetPayload<{
   select: typeof athletesPhotoSelect;
 }>;
 
-export class PrismaAthletesPhotoRepository implements AthletesPhotoRepository {
+class PrismaAthletesPhotoTransactionRepository implements AthletesPhotoTransactionRepository {
+  constructor(private readonly tx: Prisma.TransactionClient) {}
+
+  async createPrepared(input: AthletesPhotoCreateInput): Promise<AthletesPhotoRecord> {
+    const intent = await this.tx.outboxEvent.deleteMany({
+      where: { id: input.id, topic: ATHLETES_PHOTO_RECONCILE_TOPIC, status: "PENDING" },
+    });
+    if (intent.count !== 1) {
+      throw new AthletesError("ATHLETES_PHOTO_UPLOAD_FAILED", "Photo upload expired; please retry");
+    }
+    const row = await this.tx.athletesPhoto.create({
+      data: input,
+      select: athletesPhotoSelect,
+    });
+    return serializeAthletesPhoto(row);
+  }
+
+  async deleteAndScheduleCleanup(athletesCommunityId: string, photoId: string): Promise<boolean> {
+    const row = await this.tx.athletesPhoto.findFirst({
+      where: { id: photoId, athletesCommunityId },
+      select: athletesPhotoSelect,
+    });
+    if (!row) return false;
+
+    await this.tx.athletesPhoto.delete({ where: { id: photoId } });
+    await this.tx.outboxEvent.create({
+      data: {
+        id: photoId,
+        topic: ATHLETES_PHOTO_RECONCILE_TOPIC,
+        aggregateType: "AthletesPhoto",
+        aggregateId: photoId,
+        payload: { photoId, athletesCommunityId, objectKey: row.objectKey },
+        availableAt: new Date(),
+      },
+    });
+    return true;
+  }
+}
+
+export class PrismaAthletesPhotoRepository
+  implements AthletesPhotoRepository, AthletesPhotoUnitOfWork
+{
   constructor(private readonly db: PrismaClient) {}
 
   async prepareUpload(
@@ -46,28 +91,19 @@ export class PrismaAthletesPhotoRepository implements AthletesPhotoRepository {
     });
   }
 
-  async create(input: AthletesPhotoCreateInput): Promise<AthletesPhotoRecord> {
-    return this.db.$transaction(async (tx) =>
-      new PrismaAthletesRepository(tx).withCommunityLock(
-        input.athletesCommunityId,
-        async (repository) => {
-          await new AthletesService(repository).requireFounderContent(
-            input.uploadedByUserId,
-            input.athletesCommunityId,
-          );
-          const intent = await tx.outboxEvent.deleteMany({
-            where: { id: input.id, topic: ATHLETES_PHOTO_RECONCILE_TOPIC, status: "PENDING" },
-          });
-          if (intent.count !== 1)
-            throw new AthletesError(
-              "ATHLETES_PHOTO_UPLOAD_FAILED",
-              "Photo upload expired; please retry",
-            );
-          const row = await tx.athletesPhoto.create({ data: input, select: athletesPhotoSelect });
-          return serializeAthletesPhoto(row);
-        },
-      ),
-    );
+  withCommunityLock<T>(
+    athletesCommunityId: string,
+    operation: (scope: AthletesPhotoTransactionScope) => Promise<T>,
+  ): Promise<T> {
+    return this.db.$transaction(async (tx) => {
+      const athletes = new PrismaAthletesRepository(tx);
+      return athletes.withCommunityLock(athletesCommunityId, (lockedAthletes) =>
+        operation({
+          athletes: lockedAthletes,
+          photos: new PrismaAthletesPhotoTransactionRepository(tx),
+        }),
+      );
+    });
   }
 
   async listForCommunity(
@@ -95,42 +131,6 @@ export class PrismaAthletesPhotoRepository implements AthletesPhotoRepository {
     });
 
     return row ? serializeAthletesPhoto(row) : null;
-  }
-
-  async deleteForCommunity(
-    athletesCommunityId: string,
-    photoId: string,
-    deletedByUserId: string,
-  ): Promise<boolean> {
-    return this.db.$transaction(async (tx) =>
-      new PrismaAthletesRepository(tx).withCommunityLock(
-        athletesCommunityId,
-        async (repository) => {
-          await new AthletesService(repository).requireFounderContent(
-            deletedByUserId,
-            athletesCommunityId,
-          );
-          const row = await tx.athletesPhoto.findFirst({
-            where: { id: photoId, athletesCommunityId },
-            select: athletesPhotoSelect,
-          });
-          if (!row) return false;
-
-          await tx.athletesPhoto.delete({ where: { id: photoId } });
-          await tx.outboxEvent.create({
-            data: {
-              id: photoId,
-              topic: ATHLETES_PHOTO_RECONCILE_TOPIC,
-              aggregateType: "AthletesPhoto",
-              aggregateId: photoId,
-              payload: { photoId, athletesCommunityId, objectKey: row.objectKey },
-              availableAt: new Date(),
-            },
-          });
-          return true;
-        },
-      ),
-    );
   }
 }
 

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { ATHLETES_PHOTO_MAX_BYTES } from "@hooma/contracts/athletes";
 import type { ObjectStorage } from "@hooma/storage";
+import { AthletesContentAuthorization } from "../apps/api/src/modules/athletes/application/athletes-content-authorizer.js";
 import type {
   AthletesPhotoCreateInput,
   AthletesPhotoRecord,
@@ -9,19 +10,23 @@ import type {
 } from "../apps/api/src/modules/athletes/application/athletes-photo.repository.js";
 import { AthletesPhotoService } from "../apps/api/src/modules/athletes/application/athletes-photo.service.js";
 import type {
+  AthletesPhotoTransactionRepository,
+  AthletesPhotoUnitOfWork,
+} from "../apps/api/src/modules/athletes/application/athletes-photo.unit-of-work.js";
+import type {
   AthletesCommunityRecord,
   AthletesJoinRequestRecord,
   AthletesMembershipRecord,
   AthletesRepository,
   AthletesRole,
 } from "../apps/api/src/modules/athletes/application/athletes.repository.js";
-import { AthletesService } from "../apps/api/src/modules/athletes/application/athletes.service.js";
 import { AthletesError } from "../apps/api/src/modules/athletes/domain/athletes-error.js";
 
 const TEST_DATE = "2026-09-05T12:00:00.000Z";
 
 type CommunityStatus = "ACTIVE" | "ARCHIVED";
 type RoleMap = Record<string, AthletesRole | null>;
+type TestPhotoRepository = AthletesPhotoRepository & AthletesPhotoTransactionRepository;
 
 function community(id = "ath-1", status: CommunityStatus = "ACTIVE"): AthletesCommunityRecord {
   return {
@@ -126,16 +131,12 @@ function photoRecord(overrides: Partial<AthletesPhotoRecord> = {}): AthletesPhot
 
 function photoRepositoryStub(records: AthletesPhotoRecord[] = []) {
   const created: AthletesPhotoCreateInput[] = [];
-  const deleted: Array<{
-    athletesCommunityId: string;
-    photoId: string;
-    deletedByUserId: string;
-  }> = [];
+  const deleted: Array<{ athletesCommunityId: string; photoId: string }> = [];
   let createFailure: Error | null = null;
 
-  const repository: AthletesPhotoRepository = {
+  const repository: TestPhotoRepository = {
     prepareUpload: async () => undefined,
-    create: async (input) => {
+    createPrepared: async (input) => {
       created.push(input);
       if (createFailure) throw createFailure;
       return photoRecord(input);
@@ -146,8 +147,8 @@ function photoRepositoryStub(records: AthletesPhotoRecord[] = []) {
       records.find(
         (record) => record.athletesCommunityId === athletesCommunityId && record.id === photoId,
       ) ?? null,
-    deleteForCommunity: async (athletesCommunityId, photoId, deletedByUserId) => {
-      deleted.push({ athletesCommunityId, photoId, deletedByUserId });
+    deleteAndScheduleCleanup: async (athletesCommunityId, photoId) => {
+      deleted.push({ athletesCommunityId, photoId });
       return records.some(
         (record) => record.athletesCommunityId === athletesCommunityId && record.id === photoId,
       );
@@ -221,7 +222,7 @@ function storageStub() {
 
 function photoService(
   roles: RoleMap,
-  photos: AthletesPhotoRepository,
+  photos: TestPhotoRepository,
   storage: ObjectStorage | null,
   statuses: Record<string, CommunityStatus> = {},
   optimize: (
@@ -231,10 +232,19 @@ function photoService(
     body: Uint8Array;
     contentType: "image/jpeg" | "image/png" | "image/webp";
   }> = async (body, contentType) => ({ body, contentType }),
+  lockedRoles: RoleMap = roles,
+  lockedStatuses: Record<string, CommunityStatus> = statuses,
 ) {
+  const athletes = athletesRepositoryStub(roles, statuses);
+  const lockedAthletes = athletesRepositoryStub(lockedRoles, lockedStatuses);
+  const unitOfWork: AthletesPhotoUnitOfWork = {
+    withCommunityLock: async (_athletesCommunityId, operation) =>
+      operation({ athletes: lockedAthletes, photos }),
+  };
   return new AthletesPhotoService(
-    new AthletesService(athletesRepositoryStub(roles, statuses)),
+    new AthletesContentAuthorization(athletes),
     photos,
+    unitOfWork,
     storage,
     { validate: async () => undefined },
     { optimize },
@@ -363,6 +373,30 @@ test("Upload denies archived Athletes communities", async () => {
     expectAthletesCode("ATHLETES_NOT_FOUND"),
   );
   assert.equal(objects.puts.length, 0);
+});
+
+test("Upload rechecks Founder authority inside the locked transaction", async () => {
+  const photos = photoRepositoryStub();
+  const objects = storageStub();
+  const service = photoService(
+    { "ath-1:founder": "FOUNDER" },
+    photos.repository,
+    objects.storage,
+    {},
+    undefined,
+    { "ath-1:founder": null },
+  );
+
+  await assert.rejects(
+    () =>
+      service.upload("founder", "ath-1", {
+        contentType: "image/jpeg",
+        body: new Uint8Array([1]),
+      }),
+    expectAthletesCode("ATHLETES_FOUNDER_REQUIRED"),
+  );
+  assert.equal(photos.created.length, 0);
+  assert.equal(objects.removes.length, 1);
 });
 
 test("Upload validates MIME, non-empty bytes, and 5 MiB maximum", async () => {
@@ -578,9 +612,7 @@ test("Founder can delete a same-community photo and non-Founders cannot", async 
   );
 
   await service.delete("founder", "ath-1", "photo-1");
-  assert.deepEqual(photos.deleted, [
-    { athletesCommunityId: "ath-1", photoId: "photo-1", deletedByUserId: "founder" },
-  ]);
+  assert.deepEqual(photos.deleted, [{ athletesCommunityId: "ath-1", photoId: "photo-1" }]);
 
   for (const userId of ["member", "moderator", "outsider"]) {
     await assert.rejects(
