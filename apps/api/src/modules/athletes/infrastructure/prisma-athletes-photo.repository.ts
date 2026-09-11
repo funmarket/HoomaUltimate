@@ -45,10 +45,7 @@ class PrismaAthletesPhotoTransactionRepository implements AthletesPhotoTransacti
     return serializeAthletesPhoto(row);
   }
 
-  async deleteAndScheduleCleanup(
-    athletesCommunityId: string,
-    photoId: string,
-  ): Promise<boolean> {
+  async deleteAndScheduleCleanup(athletesCommunityId: string, photoId: string): Promise<boolean> {
     const row = await this.tx.athletesPhoto.findFirst({
       where: { id: photoId, athletesCommunityId },
       select: athletesPhotoSelect,
