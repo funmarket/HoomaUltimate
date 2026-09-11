@@ -12,13 +12,18 @@ test("Whistle depends on the narrow Athletes content authorizer", async () => {
   assert.doesNotMatch(whistle, /athletes\.service\.js/);
 });
 
-test("Athletes Photo application service uses explicit authorization and unit-of-work ports", async () => {
-  const photos = await source("apps/api/src/modules/athletes/application/athletes-photo.service.ts");
-  assert.match(photos, /AthletesContentAuthorizer/);
-  assert.match(photos, /AthletesPhotoUnitOfWork/);
-  assert.doesNotMatch(photos, /Pick<\s*AthletesService/);
-  assert.doesNotMatch(photos, /athletes\.service\.js/);
-});
+test(
+  "Athletes Photo application service uses explicit authorization and unit-of-work ports",
+  async () => {
+    const photos = await source(
+      "apps/api/src/modules/athletes/application/athletes-photo.service.ts",
+    );
+    assert.match(photos, /AthletesContentAuthorizer/);
+    assert.match(photos, /AthletesPhotoUnitOfWork/);
+    assert.doesNotMatch(photos, /Pick<\s*AthletesService/);
+    assert.doesNotMatch(photos, /athletes\.service\.js/);
+  },
+);
 
 test("Prisma Athletes Photo infrastructure never re-enters AthletesService", async () => {
   const repository = await source(
