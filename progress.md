@@ -8,7 +8,7 @@ Target base: `phase-0-foundation`
 
 Progression gate: each step must score **more than 8/10** under `docs/LIVING_BUILD_PLAN.md` before the next step starts. A score of 9 requires exact-commit deployment to the intended runtime plus live runtime/health evidence.
 
-- [IN PROGRESS] Step A — Athletes authorization boundaries and Photo transaction unit of work
+- [COMPLETE] Step A — Athletes authorization boundaries and Photo transaction unit of work
 - [ ] Step B — Athletes Photo Board signed delivery optimization
 - [ ] Step C — WebSession `lastSeenAt` activity projection and Active Athletes redesign
 - [ ] Step D — Whistle older-history access and canonical user-profile navigation
@@ -16,20 +16,23 @@ Progression gate: each step must score **more than 8/10** under `docs/LIVING_BUI
 ### Step A — Athletes authorization boundaries and Photo transaction unit of work
 
 - Branch: `refactor/athletes-authorization-photo-uow`
-- Pull request: `#268`
-- Base commit: `ecaecf82e2ab8479ed22d9d7c136f5a54ec4a21a`
+- Pull requests: `#268` implementation; `#269` integration-test verification repair.
+- Base commit: `ecaecf82e2ab8479ed22d9d7c136f5a54ec4a21a`.
+- Final verified implementation commit on `phase-0-foundation`: `2971c532dad40c179a708861e2f4babdee8cccf9`.
 - Scope: replace broad/concrete Athletes authorization dependencies with explicit application ports; remove Prisma Photo infrastructure re-entry into `AthletesService`; preserve Founder/member policy, lifecycle row locking, upload recovery intent, Photo deletion outbox cleanup, and all existing user-visible behavior.
 - Database migration: none.
-- Source review: completed; authorization direction, transaction/row-lock behavior, recovery intent, deletion outbox behavior, and affected governing documentation were reviewed. The two formatter findings from CI run `#1836` were corrected and the temporary diagnostic change was removed.
-- CI: final-source run pending. Earlier run `#1836` passed install, database generation/validation/migration, and architecture verification before stopping at formatting; later gates from that run are not counted as evidence.
-- Merge: product owner requested PR `#268` be merged after the final source passes the repository verification ladder.
-- Exact-commit runtime deployment: not performed by this PR review/merge task.
-- Live runtime/health evidence: pending a separate deployment task.
-- Score: pending final CI; Step B remains blocked unless Step A later scores more than 8/10.
+- Source review: completed. Authorization direction, transaction/row-lock behavior, recovery intent, deletion outbox behavior, and affected governing documentation were reviewed.
+- Verification repair: after `#268` merged, the full CI log exposed two stale PostgreSQL integration tests that still called the removed public Photo repository `create(...)` API. `#269` updated only those tests to use the canonical locked `AthletesPhotoUnitOfWork` + `createPrepared(...)` path used by production code.
+- CI: run `#1843` (`34655378436`) passed on exact repair head `fd1a75c10712e30ffdd5898395a04eff09be6e49`: install, Prisma generation/validation/migrate deploy, architecture check, changed-file formatting, changed-source lint, typecheck, package build, unit tests, full build, PostgreSQL integration tests, deploy preflight, security check, and migration status.
+- Merge: `#268` merged as `feb3226d6b692140d4231ce899e6bac1704f8bc7`; verification repair `#269` merged as `2971c532dad40c179a708861e2f4babdee8cccf9`.
+- Exact-commit runtime deployment: Railway production API deployment `5b1b7887-c4a3-4941-9119-02697cdc10d1` reached `SUCCESS` for commit `2971c532dad40c179a708861e2f4babdee8cccf9`. Railway production Worker deployment `061b7e11-762e-468d-a242-98837885a915` also reached `SUCCESS` for the same commit.
+- Runtime/data evidence: production API pre-deploy ran `prisma migrate deploy`, found 42 migrations, and reported no pending migrations; API startup reported `HOOMA API listening on 3000`. Railway HTTP evidence after the deploy showed successful authenticated Athletes Whistle requests with no upstream errors. Worker startup reported the Outbox engine active with two handlers registered, and its production service configuration includes the required `OBJECT_STORAGE_*` variable set used by Athletes Photo cleanup.
+- Score: **9/10** under `docs/LIVING_BUILD_PLAN.md`. Source, regression, real PostgreSQL integration, exact-commit production deployment, API runtime traffic, migration state, and Worker startup/configuration are proven. A score of 10 is not claimed because this closeout did not perform a fresh authenticated Photo upload/delete/object-cleanup user-path smoke test in production.
+- Progression: Step B is now unblocked but has not been started.
 
 ### Step B — Athletes Photo Board signed delivery optimization
 
-Not started. Must wait for Step A score > 8/10.
+Not started. Step A has cleared the >8/10 progression gate.
 
 ### Step C — WebSession activity and Active Athletes redesign
 
