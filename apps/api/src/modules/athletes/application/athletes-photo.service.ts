@@ -1,5 +1,3 @@
-import type { AthletesPhotoOptimizer } from "./athletes-photo-optimizer.js";
-import type { AthletesPhotoValidator } from "./athletes-photo-validator.js";
 import { randomUUID } from "node:crypto";
 import {
   ATHLETES_PHOTO_MAX_BYTES,
@@ -11,8 +9,14 @@ import {
 } from "@hooma/contracts/athletes";
 import type { ObjectStorage } from "@hooma/storage";
 import { AthletesError } from "../domain/athletes-error.js";
+import {
+  AthletesContentAuthorization,
+  type AthletesContentAuthorizer,
+} from "./athletes-content-authorizer.js";
+import type { AthletesPhotoOptimizer } from "./athletes-photo-optimizer.js";
 import type { AthletesPhotoRecord, AthletesPhotoRepository } from "./athletes-photo.repository.js";
-import type { AthletesService } from "./athletes.service.js";
+import type { AthletesPhotoUnitOfWork } from "./athletes-photo.unit-of-work.js";
+import type { AthletesPhotoValidator } from "./athletes-photo-validator.js";
 
 export interface AthletesPhotoUploadInput {
   readonly contentType: string;
@@ -24,15 +28,11 @@ export interface AthletesPhotoBinary {
   readonly body: Uint8Array;
 }
 
-type AthletesPhotoAuthorization = Pick<
-  AthletesService,
-  "requireFounderContent" | "requireMemberContent"
->;
-
 export class AthletesPhotoService {
   constructor(
-    private readonly athletes: AthletesPhotoAuthorization,
+    private readonly athletes: AthletesContentAuthorizer,
     private readonly photos: AthletesPhotoRepository,
+    private readonly photoUnitOfWork: AthletesPhotoUnitOfWork,
     private readonly storage: ObjectStorage | null,
     private readonly validator: AthletesPhotoValidator,
     private readonly optimizer: AthletesPhotoOptimizer,
@@ -86,18 +86,26 @@ export class AthletesPhotoService {
         optimized.contentType,
       );
       uploadedObjectKey = stored.key;
-      if (stored.key !== requestedObjectKey)
+      if (stored.key !== requestedObjectKey) {
         await this.photos.prepareUpload(photoId, athletesCommunityId, stored.key);
+      }
       const storedContentType = athletesPhotoContentTypeSchema.parse(stored.contentType);
 
-      const metadata = await this.photos.create({
-        id: photoId,
+      const metadata = await this.photoUnitOfWork.withCommunityLock(
         athletesCommunityId,
-        objectKey: stored.key,
-        contentType: storedContentType,
-        sizeBytes: stored.sizeBytes,
-        uploadedByUserId: userId,
-      });
+        async (scope) => {
+          const lockedAuthorization = new AthletesContentAuthorization(scope.athletes);
+          await lockedAuthorization.requireFounderContent(userId, athletesCommunityId);
+          return scope.photos.createPrepared({
+            id: photoId,
+            athletesCommunityId,
+            objectKey: stored.key,
+            contentType: storedContentType,
+            sizeBytes: stored.sizeBytes,
+            uploadedByUserId: userId,
+          });
+        },
+      );
 
       uploadedObjectKey = null;
       return publicPhotoMetadata(metadata);
@@ -156,7 +164,14 @@ export class AthletesPhotoService {
 
   async delete(userId: string, athletesCommunityId: string, photoId: string): Promise<void> {
     await this.athletes.requireFounderContent(userId, athletesCommunityId);
-    const deleted = await this.photos.deleteForCommunity(athletesCommunityId, photoId, userId);
+    const deleted = await this.photoUnitOfWork.withCommunityLock(
+      athletesCommunityId,
+      async (scope) => {
+        const lockedAuthorization = new AthletesContentAuthorization(scope.athletes);
+        await lockedAuthorization.requireFounderContent(userId, athletesCommunityId);
+        return scope.photos.deleteAndScheduleCleanup(athletesCommunityId, photoId);
+      },
+    );
     if (!deleted) {
       throw new AthletesError("ATHLETES_PHOTO_NOT_FOUND", "Athletes photo not found");
     }
