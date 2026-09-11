@@ -1,6 +1,5 @@
 import { ATHLETES_PHOTO_RECONCILE_TOPIC } from "@hooma/contracts/athletes";
 import { Prisma, type PrismaClient } from "@hooma/database";
-import { AthletesError } from "../domain/athletes-error.js";
 import type {
   AthletesPhotoCreateInput,
   AthletesPhotoRecord,
@@ -11,6 +10,7 @@ import type {
   AthletesPhotoTransactionScope,
   AthletesPhotoUnitOfWork,
 } from "../application/athletes-photo.unit-of-work.js";
+import { AthletesError } from "../domain/athletes-error.js";
 import { PrismaAthletesRepository } from "./prisma-athletes.repository.js";
 
 const athletesPhotoSelect = Prisma.validator<Prisma.AthletesPhotoSelect>()({
@@ -41,11 +41,17 @@ class PrismaAthletesPhotoTransactionRepository implements AthletesPhotoTransacti
         "Photo upload expired; please retry",
       );
     }
-    const row = await this.tx.athletesPhoto.create({ data: input, select: athletesPhotoSelect });
+    const row = await this.tx.athletesPhoto.create({
+      data: input,
+      select: athletesPhotoSelect,
+    });
     return serializeAthletesPhoto(row);
   }
 
-  async deleteAndScheduleCleanup(athletesCommunityId: string, photoId: string): Promise<boolean> {
+  async deleteAndScheduleCleanup(
+    athletesCommunityId: string,
+    photoId: string,
+  ): Promise<boolean> {
     const row = await this.tx.athletesPhoto.findFirst({
       where: { id: photoId, athletesCommunityId },
       select: athletesPhotoSelect,
