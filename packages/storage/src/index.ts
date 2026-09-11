@@ -93,7 +93,7 @@ function objectRequestUrl(
 function canonicalQuery(parameters: Readonly<Record<string, string>>): string {
   return Object.entries(parameters)
     .map(([name, value]) => [awsEncode(name), awsEncode(value)] as const)
-    .sort(([left], [right]) => left.localeCompare(right))
+    .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
     .map(([name, value]) => `${name}=${value}`)
     .join("&");
 }
