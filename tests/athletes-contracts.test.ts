@@ -6,6 +6,7 @@ import {
   athletesJoinRequestStatusSchema,
   athletesMemberAddSchema,
   athletesPhotoContentTypeSchema,
+  athletesPhotoDeliverySchema,
   athletesPhotoListSchema,
   athletesPhotoMetadataSchema,
   athletesPhotoUploadResponseSchema,
@@ -73,6 +74,17 @@ test("Athletes Photo contracts expose canonical private-board metadata", () => {
   assert.deepEqual(athletesPhotoListSchema.parse([photo]), [photo]);
 });
 
+test("Athletes Photo delivery is a separate short-lived response projection", () => {
+  const delivery = {
+    contentUrl: "https://storage.example.com/private/photo.webp?X-Amz-Signature=abc",
+    expiresAt: "2026-09-05T11:35:00.000Z",
+  };
+
+  assert.deepEqual(athletesPhotoDeliverySchema.parse(delivery), delivery);
+  assert.throws(() => athletesPhotoDeliverySchema.parse({ ...delivery, objectKey: "private/key" }));
+  assert.throws(() => athletesPhotoDeliverySchema.parse({ ...delivery, expiresAt: "not-a-date" }));
+});
+
 test("Athletes Photo contracts enforce the accepted MIME and size policy", () => {
   for (const contentType of ["image/jpeg", "image/png", "image/webp"]) {
     assert.equal(athletesPhotoContentTypeSchema.parse(contentType), contentType);
@@ -101,7 +113,7 @@ test("Athletes Photo contracts enforce the accepted MIME and size policy", () =>
   );
 });
 
-test("Athletes Photo metadata rejects storage, uploader, and social fields", () => {
+test("Athletes Photo metadata rejects storage, uploader, delivery, and social fields", () => {
   const photo = {
     id: "photo-1",
     athletesCommunityId: "ath-1",
@@ -115,6 +127,7 @@ test("Athletes Photo metadata rejects storage, uploader, and social fields", () 
     ["objectKey", "athletes/ath-1/photo-1"],
     ["uploadedByUserId", "founder"],
     ["storageUrl", "https://storage.example.com/private/photo-1"],
+    ["contentUrl", "https://storage.example.com/private/photo-1?signed=1"],
     ["caption", "finish line"],
     ["reactions", 3],
   ] as const) {
