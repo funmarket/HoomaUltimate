@@ -53,9 +53,7 @@ function WhistleBoard({
   const [body, setBody] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [authorized, setAuthorized] = useState(
-    contextType !== "EVENT",
-  );
+  const [authorized, setAuthorized] = useState(contextType !== "EVENT");
   const [error, setError] = useState("");
   const count = graphemeCount(body);
 
@@ -76,9 +74,7 @@ function WhistleBoard({
         setError("");
       } catch (reason) {
         if (
-          (contextType === "EVENT" ||
-            contextType === "ATHLETES" ||
-            contextType === "RIDE") &&
+          (contextType === "EVENT" || contextType === "ATHLETES" || contextType === "RIDE") &&
           reason instanceof HoomaApiError &&
           (reason.status === 401 || reason.status === 403)
         ) {
@@ -102,13 +98,7 @@ function WhistleBoard({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (
-      !canCompose ||
-      !body.trim() ||
-      count > MAX_GRAPHEMES ||
-      sending ||
-      feed.remainingToday <= 0
-    )
+    if (!canCompose || !body.trim() || count > MAX_GRAPHEMES || sending || feed.remainingToday <= 0)
       return;
     setSending(true);
     setError("");
@@ -190,11 +180,7 @@ function WhistleBoard({
       ) : null}
 
       {error ? <div className="error-box">{error}</div> : null}
-      <WhistleRoom
-        items={feed.items}
-        loading={loading}
-        emptyText={`${emptyTitle} ${emptyText}`}
-      />
+      <WhistleRoom items={feed.items} loading={loading} emptyText={`${emptyTitle} ${emptyText}`} />
     </article>
   );
 }
