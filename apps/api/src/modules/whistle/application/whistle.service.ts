@@ -1,12 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { AppError } from "../../../http/errors/app-error.js";
-import type { AthletesService } from "../../athletes/application/athletes.service.js";
+import type { AthletesMemberContentAuthorizer } from "../../athletes/application/athletes-content-authorizer.js";
 import type { CommunityService } from "../../communities/application/community.service.js";
 import type { EventService } from "../../events/application/event.service.js";
 import type { GamerService } from "../../gamers/application/gamer.service.js";
 import type { CanonicalUserReader } from "../../identity/application/canonical-user.reader.js";
-import type { RideService } from "../../rides/application/ride.service.js";
 import type { UserNotificationService } from "../../notifications/application/user-notification.service.js";
+import type { RideService } from "../../rides/application/ride.service.js";
 import type {
   WhistleContextType,
   WhistleMetadataRecord,
@@ -48,7 +48,7 @@ export class WhistleService {
     private readonly events: EventService,
     private readonly gamers: GamerService,
     private readonly users: CanonicalUserReader,
-    private readonly athletes: AthletesService,
+    private readonly athletes: AthletesMemberContentAuthorizer,
     private readonly rides?: RideService,
     private readonly notifications?: UserNotificationService,
   ) {}
@@ -199,8 +199,9 @@ export class WhistleService {
     const body = rawBody.trim();
     const graphemes = graphemeCount(body);
     if (graphemes < 1) throw new AppError(400, "WHISTLE_EMPTY", "Whistle cannot be empty");
-    if (graphemes > 33)
+    if (graphemes > 33) {
       throw new AppError(400, "WHISTLE_TOO_LONG", "Whistle is limited to 33 graphemes");
+    }
 
     const now = new Date();
     const expiresAt = nextUtcMidnight(now);
