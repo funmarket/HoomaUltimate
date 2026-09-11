@@ -15,7 +15,10 @@ function assertSignedReadUrl(value: string, expectedHost: string, expectedPath: 
   assert.equal(url.host, expectedHost);
   assert.equal(url.pathname, expectedPath);
   assert.equal(url.searchParams.get("X-Amz-Algorithm"), "AWS4-HMAC-SHA256");
-  assert.match(url.searchParams.get("X-Amz-Credential") ?? "", /^access-key\/\d{8}\/auto\/s3\/aws4_request$/);
+  assert.match(
+    url.searchParams.get("X-Amz-Credential") ?? "",
+    /^access-key\/\d{8}\/auto\/s3\/aws4_request$/,
+  );
   assert.match(url.searchParams.get("X-Amz-Date") ?? "", /^\d{8}T\d{6}Z$/);
   assert.equal(url.searchParams.get("X-Amz-Expires"), "300");
   assert.equal(url.searchParams.get("X-Amz-SignedHeaders"), "host");
@@ -55,17 +58,19 @@ test("S3ObjectStorage creates virtual-hosted signed GET URLs", async () => {
   });
   const url = await storage.createReadUrl("athletes/example/photo.webp", 300);
 
-  assertSignedReadUrl(
-    url,
-    "hooma-test.storage.example.com:9443",
-    "/athletes/example/photo.webp",
-  );
+  assertSignedReadUrl(url, "hooma-test.storage.example.com:9443", "/athletes/example/photo.webp");
 });
 
 test("S3ObjectStorage bounds signed read URL lifetime", async () => {
   const storage = new S3ObjectStorage(baseConfig);
 
   await assert.rejects(() => storage.createReadUrl("photo.webp", 0), /between 1 and 3600 seconds/);
-  await assert.rejects(() => storage.createReadUrl("photo.webp", 3601), /between 1 and 3600 seconds/);
-  await assert.rejects(() => storage.createReadUrl("photo.webp", 1.5), /between 1 and 3600 seconds/);
+  await assert.rejects(
+    () => storage.createReadUrl("photo.webp", 3601),
+    /between 1 and 3600 seconds/,
+  );
+  await assert.rejects(
+    () => storage.createReadUrl("photo.webp", 1.5),
+    /between 1 and 3600 seconds/,
+  );
 });
