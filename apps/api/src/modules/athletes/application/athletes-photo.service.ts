@@ -31,7 +31,6 @@ export class AthletesPhotoService {
     private readonly photos: AthletesPhotoRepository,
     private readonly photoUnitOfWork: AthletesPhotoUnitOfWork,
     private readonly storage: ObjectStorage | null,
-    private readonly readUrlSigner: ObjectStorageReadUrlSigner | null,
     private readonly validator: AthletesPhotoValidator,
     private readonly optimizer: AthletesPhotoOptimizer,
   ) {}
@@ -142,7 +141,7 @@ export class AthletesPhotoService {
     if (!metadata) {
       throw new AthletesError("ATHLETES_PHOTO_NOT_FOUND", "Athletes photo not found");
     }
-    if (!this.readUrlSigner) {
+    if (!this.storage || !supportsReadUrlSigning(this.storage)) {
       throw new AthletesError(
         "ATHLETES_PHOTO_STORAGE_NOT_CONFIGURED",
         "Athletes photo storage is not configured",
@@ -152,7 +151,7 @@ export class AthletesPhotoService {
     const issuedAt = Date.now();
     try {
       return {
-        contentUrl: await this.readUrlSigner.createReadUrl(
+        contentUrl: await this.storage.createReadUrl(
           metadata.objectKey,
           ATHLETES_PHOTO_READ_URL_TTL_SECONDS,
         ),
@@ -177,6 +176,12 @@ export class AthletesPhotoService {
       throw new AthletesError("ATHLETES_PHOTO_NOT_FOUND", "Athletes photo not found");
     }
   }
+}
+
+function supportsReadUrlSigning(
+  storage: ObjectStorage,
+): storage is ObjectStorage & ObjectStorageReadUrlSigner {
+  return "createReadUrl" in storage && typeof storage.createReadUrl === "function";
 }
 
 function normalizeContentType(contentType: string): string {
