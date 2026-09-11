@@ -38,7 +38,11 @@ function relativeTime(value: string): string {
   return `${hours}h ago`;
 }
 
-export function WhistleRoom({ items, loading = false, emptyText }: WhistleRoomProps) {
+export function WhistleRoom({
+  items,
+  loading = false,
+  emptyText,
+}: WhistleRoomProps) {
   const roomRef = useRef<HTMLDivElement>(null);
   const wasPinnedRef = useRef(true);
   const previousLastIdRef = useRef<string | null>(null);
@@ -69,7 +73,9 @@ export function WhistleRoom({ items, loading = false, emptyText }: WhistleRoomPr
       previousLastIdRef.current !== null && previousLastIdRef.current !== lastId;
 
     if (isFirstLoadedMessage || (hasNewMessage && wasPinnedRef.current)) {
-      requestAnimationFrame(() => scrollToLatest(isFirstLoadedMessage ? "auto" : "smooth"));
+      requestAnimationFrame(() =>
+        scrollToLatest(isFirstLoadedMessage ? "auto" : "smooth"),
+      );
     } else if (hasNewMessage) {
       setShowLatest(true);
     }
@@ -123,7 +129,11 @@ export function WhistleRoom({ items, loading = false, emptyText }: WhistleRoomPr
         })}
       </div>
       {showLatest ? (
-        <button className="whistle-room__latest" type="button" onClick={() => scrollToLatest()}>
+        <button
+          className="whistle-room__latest"
+          type="button"
+          onClick={() => scrollToLatest()}
+        >
           ↓ Latest
         </button>
       ) : null}
