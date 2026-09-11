@@ -47,17 +47,17 @@ test("Photo Board gates viewing to active Athletes members and curation to Found
   assert.doesNotMatch(component, /viewerRole === "MEMBER"[^\n]*(upload|delete)/i);
 });
 
-test("Photo Board uses the typed authenticated API for list, read, upload, and delete", () => {
+test("Photo Board requests short-lived delivery only near visible photos", () => {
   assert.match(component, /api\.athletes\.listPhotos\(athletesCommunityId, cursor\)/);
-  assert.match(
-    component,
-    /fetchPhotoContent\(athletesCommunityId, photo\.id, controller\.signal\)/,
-  );
+  assert.match(component, /\.photoDelivery\(athletesCommunityId, photo\.id, controller\.signal\)/);
+  assert.match(component, /setContentUrl\(delivery\.contentUrl\)/);
+  assert.match(component, /src=\{contentUrl\}/);
+  assert.match(component, /referrerPolicy="no-referrer"/);
+  assert.match(component, /rootMargin: "300px"/);
   assert.match(component, /api\.athletes\.uploadPhoto\(athletesCommunityId, file, contentType\)/);
   assert.match(component, /api\.athletes\.deletePhoto\(athletesCommunityId, photo\.id\)/);
-  assert.match(component, /URL\.createObjectURL\(blob\)/);
-  assert.match(component, /URL\.revokeObjectURL/);
-  assert.doesNotMatch(component, /objectKey|storageUrl|s3|presign/i);
+  assert.doesNotMatch(component, /fetchPhotoContent|URL\.createObjectURL|URL\.revokeObjectURL/);
+  assert.doesNotMatch(component, /objectKey|storageUrl/i);
 });
 
 test("Photo Board presents loading, empty, upload, validation, delete confirmation, and error states", () => {
