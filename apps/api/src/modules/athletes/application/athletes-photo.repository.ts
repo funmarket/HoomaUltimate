@@ -20,7 +20,6 @@ export interface AthletesPhotoCreateInput {
 
 export interface AthletesPhotoRepository {
   prepareUpload(photoId: string, athletesCommunityId: string, objectKey: string): Promise<void>;
-  create(input: AthletesPhotoCreateInput): Promise<AthletesPhotoRecord>;
   listForCommunity(
     athletesCommunityId: string,
     page?: { cursor?: string | undefined; limit: number },
@@ -29,9 +28,4 @@ export interface AthletesPhotoRepository {
     athletesCommunityId: string,
     photoId: string,
   ): Promise<AthletesPhotoRecord | null>;
-  deleteForCommunity(
-    athletesCommunityId: string,
-    photoId: string,
-    deletedByUserId: string,
-  ): Promise<boolean>;
 }
