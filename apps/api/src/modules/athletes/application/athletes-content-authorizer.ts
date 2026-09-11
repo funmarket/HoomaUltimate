@@ -36,10 +36,7 @@ export class AthletesContentAuthorization implements AthletesContentAuthorizer {
     }
     const role = await this.repository.managerRole(athletesCommunityId, userId);
     if (role !== "FOUNDER") {
-      throw new AthletesError(
-        "ATHLETES_FOUNDER_REQUIRED",
-        "Athletes Founder access required",
-      );
+      throw new AthletesError("ATHLETES_FOUNDER_REQUIRED", "Athletes Founder access required");
     }
     return community;
   }
