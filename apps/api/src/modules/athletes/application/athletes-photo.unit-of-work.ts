@@ -1,15 +1,12 @@
-import type { AthletesRepository } from "./athletes.repository.js";
 import type {
   AthletesPhotoCreateInput,
   AthletesPhotoRecord,
 } from "./athletes-photo.repository.js";
+import type { AthletesRepository } from "./athletes.repository.js";
 
 export interface AthletesPhotoTransactionRepository {
   createPrepared(input: AthletesPhotoCreateInput): Promise<AthletesPhotoRecord>;
-  deleteAndScheduleCleanup(
-    athletesCommunityId: string,
-    photoId: string,
-  ): Promise<boolean>;
+  deleteAndScheduleCleanup(athletesCommunityId: string, photoId: string): Promise<boolean>;
 }
 
 export interface AthletesPhotoTransactionScope {
