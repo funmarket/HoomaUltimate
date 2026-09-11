@@ -9,7 +9,7 @@ Target base: `phase-0-foundation`
 Progression gate: each step must score **more than 8/10** under `docs/LIVING_BUILD_PLAN.md` before the next step starts. A score of 9 requires exact-commit deployment to the intended runtime plus live runtime/health evidence.
 
 - [COMPLETE] Step A — Athletes authorization boundaries and Photo transaction unit of work
-- [ ] Step B — Athletes Photo Board signed delivery optimization
+- [IN PROGRESS] Step B — Athletes Photo Board signed delivery optimization
 - [ ] Step C — WebSession `lastSeenAt` activity projection and Active Athletes redesign
 - [ ] Step D — Whistle older-history access and canonical user-profile navigation
 
@@ -32,7 +32,13 @@ Progression gate: each step must score **more than 8/10** under `docs/LIVING_BUI
 
 ### Step B — Athletes Photo Board signed delivery optimization
 
-Not started. Step A has cleared the >8/10 progression gate.
+- Branch: `feat/athletes-photo-signed-delivery`.
+- Pull request: `#271` (draft while verification is incomplete).
+- Base commit: `60bf028ca722363d17e1ce47dd6816b78cfd4414`.
+- Scope: keep Photo Board metadata private and Athletes-owned while replacing API byte proxying with active-member-authorized, short-lived signed object-storage GET delivery. The browser requests delivery only when a photo approaches the viewport, receives a five-minute bearer URL, and downloads optimized bytes directly from object storage. Founder-only upload/delete policy, server-side WebP optimization, pagination, deletion outbox cleanup, and the canonical metadata schema remain unchanged.
+- Storage boundary: `ObjectStorage` remains the shared byte-storage contract for existing domains; signed reads are a separate `ObjectStorageReadUrlSigner` capability implemented by S3 storage so unrelated consumers are not forced into Athletes delivery behavior.
+- Database migration: none intended.
+- Verification: in progress. Step C remains blocked until the final Step B source passes the full repository verification ladder and scores more than 8/10.
 
 ### Step C — WebSession activity and Active Athletes redesign
 
