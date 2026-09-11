@@ -122,6 +122,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
   const athletesPhotoService = new AthletesPhotoService(
     athletesService,
     athletesPhotoRepository,
+    athletesPhotoRepository,
     storage,
     new SharpAthletesPhotoValidator(),
     new SharpAthletesPhotoOptimizer(),
