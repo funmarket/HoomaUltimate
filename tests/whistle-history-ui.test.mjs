@@ -8,26 +8,41 @@ const userDirect = readFileSync("apps/web/src/profile/UserWhistlePanel.tsx", "ut
 const gamerDirect = readFileSync("packages/frontend/src/gamers/GamerWhistlePanel.tsx", "utf8");
 const history = readFileSync("packages/frontend/src/whistle/history.ts", "utf8");
 
-test("shared Whistle room owns older-history access and canonical author profile navigation", () => {
-  assert.match(room, /hasOlder/);
-  assert.match(room, /↑ Load older/);
-  assert.match(room, /loadingOlder/);
-  assert.match(room, /href=\{`\/profile\/\$\{encodeURIComponent\(presentation\.username\)\}`\}/);
-  assert.match(room, /useLayoutEffect/);
-  assert.match(room, /room\.scrollTop \+= room\.scrollHeight - previousScrollHeightRef\.current/);
-});
+test(
+  "shared Whistle room owns older-history access and canonical author profile navigation",
+  () => {
+    assert.match(room, /hasOlder/);
+    assert.match(room, /↑ Load older/);
+    assert.match(room, /loadingOlder/);
+    assert.match(
+      room,
+      /href=\{`\/profile\/\$\{encodeURIComponent\(presentation\.username\)\}`\}/,
+    );
+    assert.match(room, /useLayoutEffect/);
+    assert.match(
+      room,
+      /room\.scrollTop \+= room\.scrollHeight - previousScrollHeightRef\.current/,
+    );
+  },
+);
 
-test("Community/Event/Athletes/Ride and direct Whistle surfaces expose the shared older-history control", () => {
-  for (const source of [board, userDirect, gamerDirect]) {
-    assert.match(source, /hasOlder=\{Boolean\(feed\.nextCursor\)\}/);
-    assert.match(source, /onLoadOlder=\{\(\) => void loadOlder\(\)\}/);
-    assert.match(source, /mergeOlderWhistlePage/);
-  }
-});
+test(
+  "Community/Event/Athletes/Ride and direct Whistle surfaces expose the shared older-history control",
+  () => {
+    for (const source of [board, userDirect, gamerDirect]) {
+      assert.match(source, /hasOlder=\{Boolean\(feed\.nextCursor\)\}/);
+      assert.match(source, /onLoadOlder=\{\(\) => void loadOlder\(\)\}/);
+      assert.match(source, /mergeOlderWhistlePage/);
+    }
+  },
+);
 
 test("client history drops previous-day bodies when the UTC reset changes", () => {
   assert.match(history, /crossedUtcReset/);
   assert.match(history, /current\.resetsAt !== incoming\.resetsAt/);
-  assert.match(history, /if \(!current\.items\.length \|\| crossedUtcReset\(current, incoming\)\) return incoming/);
+  assert.match(
+    history,
+    /if \(!current\.items\.length \|\| crossedUtcReset\(current, incoming\)\) return incoming/,
+  );
   assert.match(history, /if \(crossedUtcReset\(current, incoming\)\) return incoming/);
 });
