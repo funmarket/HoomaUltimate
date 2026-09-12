@@ -189,6 +189,7 @@ This rule exists for scalability and user experience as well as code cleanliness
 | Concept                                              | Canonical owner                             |
 | ---------------------------------------------------- | ------------------------------------------- |
 | Login identity/session                               | Identity/Auth                               |
+| Web-session activity (`WebSession.lastSeenAt`)       | Identity                                    |
 | User presentation/profile                            | Identity                                    |
 | Global App Admin authority                           | Platform Admin                              |
 | Sensitive-operation history                          | Audit                                       |
@@ -246,6 +247,12 @@ Rules:
 
 Whistle metadata/quota/context/expiry truth is durable where designed; Whistle body remains Redis-only and must never fall back to PostgreSQL, audit metadata, outbox payloads, notifications, analytics, URLs, or logs.
 
+### WebSession activity boundary
+
+`WebSession.lastSeenAt` is Identity-owned durable web-session activity metadata. Identity touches it only while resolving a valid WebSession and throttles writes to at most once per 60 seconds per session. Activity projection uses only unrevoked, unexpired WebSessions; it does not create Redis presence, Telegram activity fallback, online/offline flags, or a second presence table.
+
+Cross-domain consumers must use an Identity application port rather than query `WebSession` persistence directly. Step C exposes the batched `UserLastSeenReader`, which returns each requested User's most recent `lastSeenAt` across active WebSessions or `null` when no active WebSession exists.
+
 ---
 
 ## 8. Identity and authentication
@@ -258,6 +265,8 @@ TelegramIdentity         -> User
 ```
 
 If valid Web and Telegram credentials resolve to different Users, return `AUTH_CONFLICT`. Never guess, silently merge, or choose one identity.
+
+Web activity is session-derived rather than generic presence. Identity owns `WebSession.lastSeenAt`, updates it at the session-resolution boundary with a 60-second per-session throttle, and exposes only the narrow batched activity reader required by consumers. Athletes may project that nullable value onto its existing active member list but does not own or write WebSession state.
 
 Replaceable Telegram bot identity/configuration belongs in environment variables.
 
@@ -442,6 +451,6 @@ For every task:
 
 No task is complete while affected governing documentation still describes the old source state.
 
-## In-flight Athletes hardening — PR #265
+## In-flight Athletes hardening — Step C
 
-Athletes API methods are extracted to `packages/frontend/src/athletes/api.ts` and composed through the existing shared transport. The creation/settings form and detail-loading hook have bounded Athletes ownership. The Athletes repository exposes a transaction-scoped community lock so policy checks and lifecycle writes share one transaction. Sharp decoding is behind an Athletes validator port. Photo recovery reuses the existing Worker Outbox engine with an Athletes-specific handler; it does not deploy a Worker service or create a second job engine.
+PR `#274` keeps Athletes membership authority inside Athletes while projecting Identity-owned web-session activity through the narrow `UserLastSeenReader`. The existing member list is preserved: avatar, display name, `@username`, role, canonical `/profile/:username` navigation, and nullable last-seen text are presentation only. A member with no active WebSession remains an Athletes member and renders `No recent web activity`; Athletes never invents online/offline state or queries Identity persistence directly.
