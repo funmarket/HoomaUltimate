@@ -35,9 +35,7 @@ export function CalendarEntryForm({
   useEffect(() => {
     const timezone = entry?.timezone ?? ATHLETES_CALENDAR_TIMEZONE;
     setTitle(entry?.title ?? "");
-    setDateKey(
-      entry ? dateKeyForInstant(entry.startsAt, timezone) : selectedDateKey,
-    );
+    setDateKey(entry ? dateKeyForInstant(entry.startsAt, timezone) : selectedDateKey);
     setStartTime(entry ? timeForInstant(entry.startsAt, timezone) : "18:00");
     setEndTime(entry?.endsAt ? timeForInstant(entry.endsAt, timezone) : "");
     setLocationName(entry?.locationName ?? "");
@@ -119,9 +117,7 @@ export function CalendarEntryForm({
           />
         </label>
       </div>
-      {invalidEnd ? (
-        <p className="error-box">End time must be after start time.</p>
-      ) : null}
+      {invalidEnd ? <p className="error-box">End time must be after start time.</p> : null}
 
       <label>
         <span>Location</span>

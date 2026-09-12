@@ -76,11 +76,7 @@ class FakePersistence
     return ENTRY;
   }
 
-  async update(
-    _communityId: string,
-    _entryId: string,
-    _input: AthletesCalendarEntryUpdateInput,
-  ) {
+  async update(_communityId: string, _entryId: string, _input: AthletesCalendarEntryUpdateInput) {
     this.calls.push("update");
     return ENTRY;
   }
@@ -147,14 +143,7 @@ test("Athletes Calendar mutations authorize Founder inside the lifecycle lock", 
 
   assert.deepEqual(authorizer.memberChecks, []);
   assert.deepEqual(authorizer.founderChecks, []);
-  assert.deepEqual(persistence.calls, [
-    "lock",
-    "create",
-    "lock",
-    "update",
-    "lock",
-    "cancel",
-  ]);
+  assert.deepEqual(persistence.calls, ["lock", "create", "lock", "update", "lock", "cancel"]);
 });
 
 test("Athletes Calendar rejects a locked non-Founder before persistence mutation", async () => {
@@ -165,8 +154,7 @@ test("Athletes Calendar rejects a locked non-Founder before persistence mutation
   await assert.rejects(
     () => service.create("member-1", "athletes-1", WRITE),
     (error: unknown) =>
-      error instanceof AthletesError &&
-      error.code === "ATHLETES_FOUNDER_REQUIRED",
+      error instanceof AthletesError && error.code === "ATHLETES_FOUNDER_REQUIRED",
   );
   assert.deepEqual(persistence.calls, ["lock"]);
 });

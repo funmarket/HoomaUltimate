@@ -74,11 +74,7 @@ test("Athletes Calendar create cannot race an Athletes archive", async () => {
         }
         await new Promise((resolve) => setTimeout(resolve, 10));
       }
-      assert.equal(
-        waiting,
-        true,
-        "calendar create must wait for the Athletes lifecycle lock",
-      );
+      assert.equal(waiting, true, "calendar create must wait for the Athletes lifecycle lock");
     } finally {
       releaseArchive.resolve();
       await archiveTransaction;
@@ -86,8 +82,7 @@ test("Athletes Calendar create cannot race an Athletes archive", async () => {
 
     await assert.rejects(
       createAttempt,
-      (error: unknown) =>
-        error instanceof AthletesError && error.code === "ATHLETES_NOT_FOUND",
+      (error: unknown) => error instanceof AthletesError && error.code === "ATHLETES_NOT_FOUND",
     );
     assert.equal(
       await db.athletesCalendarEntry.count({

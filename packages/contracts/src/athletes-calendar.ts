@@ -1,10 +1,7 @@
 import { z } from "zod";
 
 export const ATHLETES_CALENDAR_MAX_RANGE_DAYS = 45;
-export const athletesCalendarEntryStatusSchema = z.enum([
-  "SCHEDULED",
-  "CANCELLED",
-]);
+export const athletesCalendarEntryStatusSchema = z.enum(["SCHEDULED", "CANCELLED"]);
 
 function validTimeZone(value: string): boolean {
   try {
@@ -22,8 +19,7 @@ export const athletesCalendarTimezoneSchema = z
   .max(64)
   .refine(validTimeZone, "Calendar timezone must be a valid IANA timezone");
 
-const optionalText = (max: number) =>
-  z.string().trim().max(max).nullable().optional();
+const optionalText = (max: number) => z.string().trim().max(max).nullable().optional();
 
 export const athletesCalendarRangeSchema = z
   .object({
@@ -42,8 +38,7 @@ export const athletesCalendarRangeSchema = z
       });
       return;
     }
-    const maxMilliseconds =
-      ATHLETES_CALENDAR_MAX_RANGE_DAYS * 24 * 60 * 60 * 1000;
+    const maxMilliseconds = ATHLETES_CALENDAR_MAX_RANGE_DAYS * 24 * 60 * 60 * 1000;
     if (to.getTime() - from.getTime() > maxMilliseconds) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
@@ -105,13 +100,7 @@ export const athletesCalendarEntrySchema = z
 export const athletesCalendarListSchema = z.array(athletesCalendarEntrySchema);
 
 export type AthletesCalendarRange = z.infer<typeof athletesCalendarRangeSchema>;
-export type AthletesCalendarEntryCreateInput = z.infer<
-  typeof athletesCalendarEntryCreateSchema
->;
-export type AthletesCalendarEntryUpdateInput = z.infer<
-  typeof athletesCalendarEntryUpdateSchema
->;
+export type AthletesCalendarEntryCreateInput = z.infer<typeof athletesCalendarEntryCreateSchema>;
+export type AthletesCalendarEntryUpdateInput = z.infer<typeof athletesCalendarEntryUpdateSchema>;
 export type AthletesCalendarEntry = z.infer<typeof athletesCalendarEntrySchema>;
-export type AthletesCalendarEntryStatus = z.infer<
-  typeof athletesCalendarEntryStatusSchema
->;
+export type AthletesCalendarEntryStatus = z.infer<typeof athletesCalendarEntryStatusSchema>;

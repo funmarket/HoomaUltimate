@@ -7,13 +7,7 @@ import { useHoomaFrontend } from "../../context";
 import { CalendarEntryForm } from "./CalendarEntryForm";
 import { DayAgenda } from "./DayAgenda";
 import { MonthGrid } from "./MonthGrid";
-import {
-  dateKeyForInstant,
-  firstOfMonth,
-  monthLabel,
-  shiftMonth,
-  todayKey,
-} from "./date";
+import { dateKeyForInstant, firstOfMonth, monthLabel, shiftMonth, todayKey } from "./date";
 import { useAthletesCalendar } from "./useAthletesCalendar";
 
 export function AthletesCalendar({
@@ -31,16 +25,11 @@ export function AthletesCalendar({
   const [creating, setCreating] = useState(false);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState("");
-  const { entries, loading, error, reload } = useAthletesCalendar(
-    athletesCommunityId,
-    monthKey,
-  );
+  const { entries, loading, error, reload } = useAthletesCalendar(athletesCommunityId, monthKey);
 
   const selectedEntries = useMemo(
     () =>
-      entries.filter(
-        (entry) => dateKeyForInstant(entry.startsAt, entry.timezone) === selectedKey,
-      ),
+      entries.filter((entry) => dateKeyForInstant(entry.startsAt, entry.timezone) === selectedKey),
     [entries, selectedKey],
   );
   const eventCounts = useMemo(() => {
@@ -85,9 +74,7 @@ export function AthletesCalendar({
       if (savedMonth === monthKey) await reload();
       else setMonthKey(savedMonth);
     } catch (reason) {
-      setActionError(
-        reason instanceof Error ? reason.message : "Unable to save calendar event",
-      );
+      setActionError(reason instanceof Error ? reason.message : "Unable to save calendar event");
     } finally {
       setBusy(false);
     }
@@ -100,9 +87,7 @@ export function AthletesCalendar({
       await api.athletes.calendar.cancel(athletesCommunityId, entry.id);
       await reload();
     } catch (reason) {
-      setActionError(
-        reason instanceof Error ? reason.message : "Unable to cancel calendar event",
-      );
+      setActionError(reason instanceof Error ? reason.message : "Unable to cancel calendar event");
     } finally {
       setBusy(false);
     }
@@ -132,26 +117,14 @@ export function AthletesCalendar({
       </div>
 
       <div className="athletes-calendar-nav">
-        <button
-          type="button"
-          aria-label="Previous month"
-          onClick={() => moveMonth(-1)}
-        >
+        <button type="button" aria-label="Previous month" onClick={() => moveMonth(-1)}>
           ‹
         </button>
-        <button
-          type="button"
-          className="athletes-calendar-today"
-          onClick={() => selectDate(today)}
-        >
+        <button type="button" className="athletes-calendar-today" onClick={() => selectDate(today)}>
           Today
         </button>
         <strong>{monthLabel(monthKey)}</strong>
-        <button
-          type="button"
-          aria-label="Next month"
-          onClick={() => moveMonth(1)}
-        >
+        <button type="button" aria-label="Next month" onClick={() => moveMonth(1)}>
           ›
         </button>
       </div>
@@ -161,9 +134,7 @@ export function AthletesCalendar({
           {error} <button onClick={() => void reload()}>Retry</button>
         </div>
       ) : null}
-      {loading ? (
-        <p className="muted athletes-calendar-loading">Loading calendar…</p>
-      ) : null}
+      {loading ? <p className="muted athletes-calendar-loading">Loading calendar…</p> : null}
 
       <MonthGrid
         monthKey={monthKey}

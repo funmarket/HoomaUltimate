@@ -29,9 +29,7 @@ test("Athletes Calendar enforces membership, Founder writes, isolation and lifec
     new AthletesContentAuthorization(athletesRepository),
     new PrismaAthletesCalendarRepository(db),
   );
-  const users = await Promise.all(
-    Array.from({ length: 3 }, () => db.user.create({ data: {} })),
-  );
+  const users = await Promise.all(Array.from({ length: 3 }, () => db.user.create({ data: {} })));
   const [founder, member, outsider] = users.map((user) => user.id);
   assert.ok(founder && member && outsider);
   const communityIds: string[] = [];
@@ -85,16 +83,9 @@ test("Athletes Calendar enforces membership, Founder writes, isolation and lifec
         error instanceof AthletesError && error.code === "ATHLETES_FOUNDER_REQUIRED",
     );
     await assert.rejects(
-      () =>
-        calendar.update(
-          founder,
-          second.id,
-          created.id,
-          writeInput(created, "Wrong group"),
-        ),
+      () => calendar.update(founder, second.id, created.id, writeInput(created, "Wrong group")),
       (error: unknown) =>
-        error instanceof AthletesError &&
-        error.code === "ATHLETES_CALENDAR_ENTRY_NOT_FOUND",
+        error instanceof AthletesError && error.code === "ATHLETES_CALENDAR_ENTRY_NOT_FOUND",
     );
 
     const updated = await calendar.update(
@@ -107,21 +98,11 @@ test("Athletes Calendar enforces membership, Founder writes, isolation and lifec
 
     const cancelled = await calendar.cancel(founder, first.id, created.id);
     assert.equal(cancelled.status, "CANCELLED");
-    assert.equal(
-      (await calendar.cancel(founder, first.id, created.id)).status,
-      "CANCELLED",
-    );
+    assert.equal((await calendar.cancel(founder, first.id, created.id)).status, "CANCELLED");
     await assert.rejects(
-      () =>
-        calendar.update(
-          founder,
-          first.id,
-          created.id,
-          writeInput(updated, "Too late"),
-        ),
+      () => calendar.update(founder, first.id, created.id, writeInput(updated, "Too late")),
       (error: unknown) =>
-        error instanceof AthletesError &&
-        error.code === "ATHLETES_CALENDAR_ENTRY_NOT_EDITABLE",
+        error instanceof AthletesError && error.code === "ATHLETES_CALENDAR_ENTRY_NOT_EDITABLE",
     );
 
     await athletes.archive(founder, first.id);
