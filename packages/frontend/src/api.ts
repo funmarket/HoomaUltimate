@@ -88,7 +88,12 @@ export type WhistleListItem = {
     presentation: { displayName: string; username: string; photoUrl: string | null } | null;
   };
 };
-export type WhistleList = { items: WhistleListItem[]; remainingToday: number; resetsAt: string };
+export type WhistleList = {
+  items: WhistleListItem[];
+  remainingToday: number;
+  resetsAt: string;
+  nextCursor: string | null;
+};
 export type PublicTeamSummary = {
   id: string;
   slug: string;
@@ -221,6 +226,10 @@ function publicListPath(filters: TeamListFilters = {}): string {
   return `/api/public/v1/teams?${params.toString()}`;
 }
 
+function whistleListPath(path: string, cursor?: string): string {
+  return cursor ? `${path}?cursor=${encodeURIComponent(cursor)}` : path;
+}
+
 export function createHoomaApi(transport: HoomaTransport) {
   const identity = {
     register: (input: RegisterInput) =>
@@ -339,10 +348,13 @@ export function createHoomaApi(transport: HoomaTransport) {
       ),
   };
   const whistles = {
-    community: (communityId: string) =>
+    community: (communityId: string, cursor?: string) =>
       request<WhistleList>(
         transport,
-        `/api/v1/whistles/contexts/COMMUNITY/${encodeURIComponent(communityId)}`,
+        whistleListPath(
+          `/api/v1/whistles/contexts/COMMUNITY/${encodeURIComponent(communityId)}`,
+          cursor,
+        ),
       ),
     sendToCommunity: (communityId: string, body: string) =>
       request<{ whistle: WhistleListItem; remainingToday: number; resetsAt: string }>(
@@ -350,10 +362,13 @@ export function createHoomaApi(transport: HoomaTransport) {
         `/api/v1/whistles/contexts/COMMUNITY/${encodeURIComponent(communityId)}`,
         { method: "POST", body: JSON.stringify({ body }) },
       ),
-    athletes: (athletesCommunityId: string) =>
+    athletes: (athletesCommunityId: string, cursor?: string) =>
       request<WhistleList>(
         transport,
-        `/api/v1/whistles/contexts/ATHLETES/${encodeURIComponent(athletesCommunityId)}`,
+        whistleListPath(
+          `/api/v1/whistles/contexts/ATHLETES/${encodeURIComponent(athletesCommunityId)}`,
+          cursor,
+        ),
       ),
     sendToAthletes: (athletesCommunityId: string, body: string) =>
       request<{ whistle: WhistleListItem; remainingToday: number; resetsAt: string }>(
@@ -361,10 +376,13 @@ export function createHoomaApi(transport: HoomaTransport) {
         `/api/v1/whistles/contexts/ATHLETES/${encodeURIComponent(athletesCommunityId)}`,
         { method: "POST", body: JSON.stringify({ body }) },
       ),
-    ride: (rideRequestId: string) =>
+    ride: (rideRequestId: string, cursor?: string) =>
       request<WhistleList>(
         transport,
-        `/api/v1/whistles/contexts/RIDE/${encodeURIComponent(rideRequestId)}`,
+        whistleListPath(
+          `/api/v1/whistles/contexts/RIDE/${encodeURIComponent(rideRequestId)}`,
+          cursor,
+        ),
       ),
     sendToRide: (rideRequestId: string, body: string) =>
       request<{ whistle: WhistleListItem; remainingToday: number; resetsAt: string }>(
