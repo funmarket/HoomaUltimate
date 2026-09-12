@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useHoomaFrontend } from "../context";
 import { HoomaApiError, type WhistleList } from "../api";
 import { listEventWhistles, sendEventWhistle } from "./event-api";
+import { emptyWhistleList, mergeNewestWhistlePage, mergeOlderWhistlePage } from "./history";
 import { WhistleAction } from "./WhistleAction";
 import { WhistleRoom } from "./WhistleRoom";
 
@@ -45,31 +46,35 @@ function WhistleBoard({
   canCompose = true,
 }: WhistleBoardProps) {
   const { api, transport, protectedError } = useHoomaFrontend();
-  const [feed, setFeed] = useState<WhistleList>({
-    items: [],
-    remainingToday: 11,
-    resetsAt: "",
-  });
+  const [feed, setFeed] = useState<WhistleList>(() => emptyWhistleList());
   const [body, setBody] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const [sending, setSending] = useState(false);
   const [authorized, setAuthorized] = useState(contextType !== "EVENT");
   const [error, setError] = useState("");
   const count = graphemeCount(body);
 
+  const fetchPage = useCallback(
+    (cursor?: string) =>
+      contextType === "COMMUNITY"
+        ? api.whistles.community(contextId, cursor)
+        : contextType === "ATHLETES"
+          ? api.whistles.athletes(contextId, cursor)
+          : contextType === "RIDE"
+            ? cursor
+              ? api.whistles.ride(contextId, cursor)
+              : api.whistles.ride(contextId)
+            : listEventWhistles(transport, contextId, cursor),
+    [api, contextId, contextType, transport],
+  );
+
   const load = useCallback(
     async (quiet = false) => {
       if (!quiet) setLoading(true);
       try {
-        const next =
-          contextType === "COMMUNITY"
-            ? await api.whistles.community(contextId)
-            : contextType === "ATHLETES"
-              ? await api.whistles.athletes(contextId)
-              : contextType === "RIDE"
-                ? await api.whistles.ride(contextId)
-                : await listEventWhistles(transport, contextId);
-        setFeed(next);
+        const next = await fetchPage();
+        setFeed((current) => mergeNewestWhistlePage(current, next));
         setAuthorized(true);
         setError("");
       } catch (reason) {
@@ -87,7 +92,7 @@ function WhistleBoard({
         if (!quiet) setLoading(false);
       }
     },
-    [api, contextId, contextType, protectedError, transport],
+    [contextType, fetchPage, protectedError],
   );
 
   useEffect(() => {
@@ -95,6 +100,21 @@ function WhistleBoard({
     const interval = setInterval(() => void load(true), REFRESH_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [load]);
+
+  async function loadOlder() {
+    const cursor = feed.nextCursor;
+    if (!cursor || loadingOlder) return;
+    setLoadingOlder(true);
+    try {
+      const older = await fetchPage(cursor);
+      setFeed((current) => mergeOlderWhistlePage(current, older));
+      setError("");
+    } catch (reason) {
+      setError(protectedError(reason, "Could not load older Whistles"));
+    } finally {
+      setLoadingOlder(false);
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -180,7 +200,14 @@ function WhistleBoard({
       ) : null}
 
       {error ? <div className="error-box">{error}</div> : null}
-      <WhistleRoom items={feed.items} loading={loading} emptyText={`${emptyTitle} ${emptyText}`} />
+      <WhistleRoom
+        items={feed.items}
+        loading={loading}
+        emptyText={`${emptyTitle} ${emptyText}`}
+        hasOlder={Boolean(feed.nextCursor)}
+        loadingOlder={loadingOlder}
+        onLoadOlder={() => void loadOlder()}
+      />
     </article>
   );
 }

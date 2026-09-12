@@ -1,6 +1,7 @@
 import { Prisma, type PrismaClient } from "@hooma/database";
 import type {
   WhistleContextType,
+  WhistleListCursor,
   WhistleMetadataRecord,
   WhistleRepository,
 } from "../application/whistle.repository.js";
@@ -95,7 +96,14 @@ export class PrismaWhistleRepository implements WhistleRepository {
     contextId: string,
     now: Date,
     limit: number,
+    cursor?: WhistleListCursor,
   ): Promise<WhistleMetadataRecord[]> {
+    const cursorPredicate = cursor
+      ? Prisma.sql`AND (
+          w."createdAt" < ${cursor.createdAt}
+          OR (w."createdAt" = ${cursor.createdAt} AND w."id" < ${cursor.id})
+        )`
+      : Prisma.sql``;
     const rows = await this.db.$queryRaw<MetadataRow[]>(Prisma.sql`
       SELECT w."id", w."authorUserId", w."contextType", w."contextId", w."createdAt", w."expiresAt",
         p."displayName", p."username", p."photoUrl"
@@ -104,6 +112,7 @@ export class PrismaWhistleRepository implements WhistleRepository {
       WHERE w."contextType" = CAST(${contextType} AS "WhistleContextType")
         AND w."contextId" = ${contextId}
         AND w."expiresAt" > ${now}
+        ${cursorPredicate}
       ORDER BY w."createdAt" DESC, w."id" DESC
       LIMIT ${limit}
     `);

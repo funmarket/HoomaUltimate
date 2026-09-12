@@ -15,6 +15,7 @@ const contextSchema = z.enum([
   "GAMER_SQUAD",
 ]);
 const createSchema = z.object({ body: z.string().min(1) });
+const listQuerySchema = z.object({ cursor: z.string().min(1).optional() });
 
 export function createWhistleRouter(service: WhistleService): Router {
   const router = Router();
@@ -22,7 +23,14 @@ export function createWhistleRouter(service: WhistleService): Router {
   router.get(
     "/users/:username",
     asyncHandler(async (req, res) => {
-      res.json(await service.listDirectUser(getAuth(req).userId, String(req.params.username)));
+      const query = listQuerySchema.parse(req.query);
+      res.json(
+        await service.listDirectUser(
+          getAuth(req).userId,
+          String(req.params.username),
+          query.cursor,
+        ),
+      );
     }),
   );
 
@@ -45,7 +53,14 @@ export function createWhistleRouter(service: WhistleService): Router {
   router.get(
     "/gamers/:profileId",
     asyncHandler(async (req, res) => {
-      res.json(await service.listDirectGamer(getAuth(req).userId, String(req.params.profileId)));
+      const query = listQuerySchema.parse(req.query);
+      res.json(
+        await service.listDirectGamer(
+          getAuth(req).userId,
+          String(req.params.profileId),
+          query.cursor,
+        ),
+      );
     }),
   );
 
@@ -69,7 +84,15 @@ export function createWhistleRouter(service: WhistleService): Router {
     "/contexts/:contextType/:contextId",
     asyncHandler(async (req, res) => {
       const contextType = contextSchema.parse(req.params.contextType) as WhistleContextType;
-      res.json(await service.list(getAuth(req).userId, contextType, String(req.params.contextId)));
+      const query = listQuerySchema.parse(req.query);
+      res.json(
+        await service.list(
+          getAuth(req).userId,
+          contextType,
+          String(req.params.contextId),
+          query.cursor,
+        ),
+      );
     }),
   );
 

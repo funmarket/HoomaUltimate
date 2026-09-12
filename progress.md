@@ -11,7 +11,7 @@ Progression gate: each step must score **more than 8/10** under `docs/LIVING_BUI
 - [COMPLETE] Step A — Athletes authorization boundaries and Photo transaction unit of work
 - [COMPLETE] Step B — Athletes Photo Board signed delivery optimization
 - [COMPLETE] Step C — WebSession `lastSeenAt` activity projection and Active Athletes redesign
-- [ ] Step D — Whistle older-history access and canonical user-profile navigation
+- [IN PROGRESS] Step D — Whistle older-history access and canonical user-profile navigation
 
 ### Step A — Athletes authorization boundaries and Photo transaction unit of work
 
@@ -69,4 +69,16 @@ Progression gate: each step must score **more than 8/10** under `docs/LIVING_BUI
 
 ### Step D — Whistle history and canonical user navigation
 
-Not started. Step C has cleared the required **more than 8/10** progression gate, so Step D may begin only from a fresh `phase-0-foundation` inspection.
+- Branch: `feat/whistle-current-day-history`.
+- Pull request: `#278`.
+- Base commit: `928cb9fa2a730dd90a9a8c04fc9a849587291746`.
+- Verified implementation head before this progress-only reconciliation: `37f4adf6ebbd13750352771413e3f1600c42adeb`.
+- Scope: add opaque keyset pagination for older Whistle metadata rows within the current UTC day only; retain Redis-only Whistle bodies and PostgreSQL-only metadata; preserve the global 33-grapheme / 11-per-UTC-day quota and existing server-side authorization; expose one shared `Load older` interaction across Community/Event/Athletes/Ride, Gamer Direct, and User Direct Whistle rooms; preserve the user's viewport when older rows are prepended; merge newest polling with already-loaded history; drop stale client history when the UTC reset changes; and link author presentation to the existing canonical `/profile/:username` route.
+- Persistence/model impact: no Prisma schema change and no migration. The existing `WhistleMetadata` ordering supports `(createdAt DESC, id DESC)` keyset traversal. Transient Whistle body storage, expiry, and durable metadata ownership are unchanged.
+- Explicit non-goals preserved: no permanent archive, no previous-day reads, no durable bodies, no Reveal state, no new messaging table, no quota/auth redesign, and no duplicate profile/card implementation.
+- CI repair: exact-head CI `#1903` initially exposed two Step D unit regressions before integration ran: the component-level `whistle-history.css` import leaked into emitted package JavaScript and failed Node consumers, and the Ride source-shape guard no longer saw the canonical zero-cursor `api.whistles.ride(contextId)` call. The CSS rules were moved into the existing exported `whistle.css`, the orphan stylesheet was removed, and the Ride fetch path now keeps the canonical current-page call while using the cursor only for older pages. No production Redis/configuration change was required.
+- CI verification: exact implementation head `37f4adf6ebbd13750352771413e3f1600c42adeb` passed CI `#1907` (`34700282602`): install, Prisma generation/validation/migrate deploy, architecture check, changed-file formatting, changed-source lint, typecheck, package build, full unit tests, full build, real PostgreSQL+Redis integration tests, deploy preflight, security check, and migration status.
+- Integration proof: the permanent Whistle history integration test creates an authenticated Community fixture, seeds 105 active current-day metadata rows across 11 users, stores their bodies in Redis with the current UTC-day TTL, verifies a 100-row first page and 5-row second page with a non-overlapping opaque cursor traversal, confirms Redis body hydration and UTC reset metadata, and rejects an invalid cursor with HTTP 400.
+- Governance audit: `requirements.md`, `structure.md`, `docs/CANONICAL_MODEL.md`, and `docs/DECISIONS.md` were reviewed against the implementation. Step D does not change their canonical Whistle retention, storage, quota, auth, or identity rules, so no governing-document edit is required.
+- Pre-merge score: **8/10** under `docs/LIVING_BUILD_PLAN.md`. The full vertical source slice, static/build/unit proof, and real PostgreSQL+Redis integration proof are green on the exact implementation head. A score of 9 is not claimed before an exact merged commit is deployed and runtime evidence is collected.
+- Remaining gate: rerun the complete CI ladder on the final head containing this progress update, then re-check base/concurrency/diff and merge `#278`. Exact-commit deployment/runtime verification remains required before Step D can be marked complete or used to unblock another step.

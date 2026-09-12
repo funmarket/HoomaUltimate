@@ -1,10 +1,11 @@
 import { request, type HoomaTransport } from "../api";
 import type { WhistleList, WhistleListItem } from "../api";
+import { whistleListPath } from "./history";
 
-export function listEventWhistles(transport: HoomaTransport, eventId: string) {
+export function listEventWhistles(transport: HoomaTransport, eventId: string, cursor?: string) {
   return request<WhistleList>(
     transport,
-    `/api/v1/whistles/contexts/EVENT/${encodeURIComponent(eventId)}`,
+    whistleListPath(`/api/v1/whistles/contexts/EVENT/${encodeURIComponent(eventId)}`, cursor),
   );
 }
 

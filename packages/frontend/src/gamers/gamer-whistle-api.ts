@@ -1,10 +1,15 @@
 import type { WhistleList, WhistleListItem } from "../api";
 import { request, type HoomaTransport } from "../http";
+import { whistleListPath } from "../whistle/history";
 
-export function listGamerWhistles(transport: HoomaTransport, otherProfileId: string) {
+export function listGamerWhistles(
+  transport: HoomaTransport,
+  otherProfileId: string,
+  cursor?: string,
+) {
   return request<WhistleList>(
     transport,
-    `/api/v1/whistles/gamers/${encodeURIComponent(otherProfileId)}`,
+    whistleListPath(`/api/v1/whistles/gamers/${encodeURIComponent(otherProfileId)}`, cursor),
   );
 }
 
