@@ -3,10 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const pages = readFileSync("packages/frontend/src/athletes/AthletesPages.tsx", "utf8");
-const css = readFileSync(
-  "packages/frontend/src/athletes/athletes-member-management.css",
-  "utf8",
-);
+const css = readFileSync("packages/frontend/src/athletes/athletes-member-management.css", "utf8");
 const index = readFileSync("packages/frontend/src/index.ts", "utf8");
 
 test("Athletes membership management keeps direct add secondary", () => {
