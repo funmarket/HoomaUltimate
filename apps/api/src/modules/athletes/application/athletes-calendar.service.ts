@@ -8,7 +8,10 @@ import {
   type AthletesContentAuthorizer,
 } from "./athletes-content-authorizer.js";
 import type { AthletesCalendarRepository } from "./athletes-calendar.repository.js";
-import type { AthletesCalendarUnitOfWork } from "./athletes-calendar.unit-of-work.js";
+import type {
+  AthletesCalendarTransactionRepository,
+  AthletesCalendarUnitOfWork,
+} from "./athletes-calendar.unit-of-work.js";
 
 export class AthletesCalendarService {
   constructor(
@@ -56,11 +59,7 @@ export class AthletesCalendarService {
   private withFounderLock<T>(
     userId: string,
     athletesCommunityId: string,
-    operation: Parameters<AthletesCalendarUnitOfWork["withCommunityLock"]>[1] extends (
-      scope: infer Scope,
-    ) => Promise<unknown>
-      ? (calendar: Scope extends { calendar: infer Calendar } ? Calendar : never) => Promise<T>
-      : never,
+    operation: (calendar: AthletesCalendarTransactionRepository) => Promise<T>,
   ): Promise<T> {
     return this.unitOfWork.withCommunityLock(athletesCommunityId, async (scope) => {
       const lockedAuthorization = new AthletesContentAuthorization(scope.athletes);
