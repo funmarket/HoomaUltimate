@@ -188,6 +188,7 @@ This rule exists for scalability and user experience as well as code cleanliness
 
 | Concept                                              | Canonical owner                             |
 | ---------------------------------------------------- | ------------------------------------------- |
+| Web session activity history                         | Identity/WebSession                         |
 | Login identity/session                               | Identity/Auth                               |
 | User presentation/profile                            | Identity                                    |
 | Global App Admin authority                           | Platform Admin                              |
@@ -195,6 +196,7 @@ This rule exists for scalability and user experience as well as code cleanliness
 | HOOMA neighborhood community + membership            | Communities                                 |
 | Football Team, roster, responsibilities/capabilities | Teams                                       |
 | Athletes sports community, membership, join requests | Athletes                                    |
+| Active Athletes member list with web-activity context | Athletes (read) + Identity (lastSeenAt)     |
 | Team lineup                                          | Teams                                       |
 | Team challenge + accepted TeamGame coordination      | Teams                                       |
 | Event lifecycle, RSVP/waitlist, formation, check-in  | Events                                      |
@@ -225,6 +227,8 @@ ADR-052 authorizes Community-scoped RideRequest audience projection into HOOMA N
 
 ADR-054 authorizes the Athletes foundation as its own HOOMA-connected domain inside the existing API/frontend/database architecture. Athletes owns `AthletesCommunity`, `AthletesMembership`, and `AthletesJoinRequest`; it reuses canonical `User` and must not extend or store lifecycle records in the Communities or Teams tables.
 
+Athletes Active Members display is read-only projection implemented by Athletes with a narrow, batched Identity reader port to fetch `WebSession.lastSeenAt` history. Identity owns all `WebSession` records and their `lastSeenAt` value semantics; Athletes requests only a read-only batched resolution of many user IDs to their most recent recorded web activity timestamp. No Identity-scoped member list or presence API is created; Athletes uses only this explicit batched reader.
+
 ---
 
 ## 7. Persistence architecture
@@ -241,6 +245,10 @@ Rules:
 - Tables remain single-purpose and owned by their domain semantics.
 - Do not add speculative tables for unassigned future features.
 - After release, shipped migration history is forward-only.
+
+### WebSession persistence and activity boundary
+
+WebSession records include `lastSeenAt` as durable timestamp field updated at the Identity session-resolution boundary with up to 60-second throttling per request to prevent write amplification. This field is the sole web-activity source of truth for product features like Active Athletes. Unauthorized or deliberately expired/revoked sessions are never updated, so `lastSeenAt` implies authorization only for the exact session row and its resolution window. No Redis presence table, Telegram activity fallback, or duplicate activity history table exists. When `lastSeenAt` is unavailable or never touched, Athletes and other consumers show nothing rather than falling back to secondary sources.
 
 ### Whistle persistence boundary
 
@@ -445,3 +453,4 @@ No task is complete while affected governing documentation still describes the o
 ## In-flight Athletes hardening — PR #265
 
 Athletes API methods are extracted to `packages/frontend/src/athletes/api.ts` and composed through the existing shared transport. The creation/settings form and detail-loading hook have bounded Athletes ownership. The Athletes repository exposes a transaction-scoped community lock so policy checks and lifecycle writes share one transaction. Sharp decoding is behind an Athletes validator port. Photo recovery reuses the existing Worker Outbox engine with an Athletes-specific handler; it does not deploy a Worker service or create a second job engine.
+

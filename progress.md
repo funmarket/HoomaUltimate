@@ -52,11 +52,17 @@ Progression gate: each step must score **more than 8/10** under `docs/LIVING_BUI
 ### Step C — WebSession activity and Active Athletes redesign
 
 - Branch: `feat/athletes-websession-last-seen`.
-- Base commit: `9b6988c080e44e8aa896323c87db7bf60ce3d4fa`.
-- Scope: use only canonical `WebSession.lastSeenAt` for web activity truth; touch it at the Identity session-resolution boundary with throttling; expose a narrow Identity-owned batched reader for Athletes; redesign Active Athletes rows to show avatar, display name, `@username`, role, and last-seen text while retaining canonical `/profile/:username` navigation.
+- Base commit: `3152bf775cffcd54c5bdb7f0a0011db54550462d` (verified `3152...`).
+- Scope: use only canonical `WebSession.lastSeenAt` for web activity truth; touch it at the Identity session-resolution boundary with up to 60-second throttling to prevent write amplification; expose a narrow Identity-owned batched reader `UserLastSeenReader::findLastSeenByUserIds()` for Athletes and similar consumers; redesign Active Athletes member rows to show avatar, display name, `@username`, role, and last-seen text (derived from web activity with no Redis/Telegram/online-dot fallback) while retaining canonical `/profile/:username` navigation.
 - Explicit non-goals: no Redis presence, no green/red online dots, no Telegram activity fallback, no new presence table, no duplicate user card/profile model, no N+1 identity reads.
-- Status: source inspection and implementation in progress.
+- Governance updates: requirements.md sections 4.4 and 10.1; structure.md section 6 and 7; docs/CANONICAL_MODEL.md sections 1.2 and 3A.
+- Documentation status: requirements.md, structure.md, docs/CANONICAL_MODEL.md, and progress.md updated to reflect Step C governance: `WebSession.lastSeenAt` sole web activity truth; session-resolution boundary touch with 60s throttle; only active unrevoked unexpired sessions; null if none; no Redis/Telegram fallback or online dots; Athletes gets a single batched Identity UserLastSeenReader and member-private Active Athletes shows avatar/name/@username/role/last-seen with existing `/profile/:username` navigation; no schema migration/N+1.
+- Source verification: remote head `3152bf775cffcd54c5bdb7f0a0011db54550462d` verified on `feat/athletes-websession-last-seen`.
+- CI status: CI #1885 run `34692788304` passed all gates on source verification head.
+- Source score: **8/10** under `docs/LIVING_BUILD_PLAN.md`. Step C governance is fully documented. Exact-commit production deployment with live runtime proof is required to advance to Step D.
+- Progression: Step D remains blocked pending exact-commit production deployment of this source + live proof.
 
 ### Step D — Whistle history and canonical user navigation
 
-Not started. Must wait for Step C score > 8/10.
+Not started. Must wait for Step C score > 8/10 with exact-commit prod + live proof.
+
