@@ -10,7 +10,7 @@ Progression gate: each step must score **more than 8/10** under `docs/LIVING_BUI
 
 - [COMPLETE] Step A — Athletes authorization boundaries and Photo transaction unit of work
 - [COMPLETE] Step B — Athletes Photo Board signed delivery optimization
-- [IN PROGRESS] Step C — WebSession `lastSeenAt` activity projection and Active Athletes redesign
+- [COMPLETE] Step C — WebSession `lastSeenAt` activity projection and Active Athletes redesign
 - [ ] Step D — Whistle older-history access and canonical user-profile navigation
 
 ### Step A — Athletes authorization boundaries and Photo transaction unit of work
@@ -52,14 +52,21 @@ Progression gate: each step must score **more than 8/10** under `docs/LIVING_BUI
 ### Step C — WebSession activity and Active Athletes redesign
 
 - Branch: `feat/athletes-websession-last-seen`.
-- Base commit: `9b6988c080e44e8aa896323c87db7bf60ce3d4fa`.
-- Verified implementation head before governance updates: `3152bf775cffcd54c5bdb7f0a0011db54550462d`.
-- Scope: use only canonical `WebSession.lastSeenAt` for web activity truth; touch it at the Identity session-resolution boundary with throttling; expose a narrow Identity-owned batched reader for Athletes; redesign Active Athletes rows to show avatar, display name, `@username`, role, and last-seen text while retaining canonical `/profile/:username` navigation.
+- Pull request: `#274`.
+- Base commit: `8f8d01b302e9fb46e07ac4f569f6bbf96c3ac81a`.
+- Final verified feature head: `9a36e277c96d00251a6cdd16ce46f0f11dc21794`.
+- Merge commit on `phase-0-foundation`: `5ec5f870f2903c6d969fc3255dfd5b6f5d1f02fd`.
+- Scope: use only canonical `WebSession.lastSeenAt` for web activity truth; touch it at the Identity session-resolution boundary with a 60-second per-session throttle; expose a narrow Identity-owned batched reader for Athletes; redesign Active Athletes rows to show avatar, display name, `@username`, role, and last-seen text while retaining canonical `/profile/:username` navigation.
 - Activity projection: the member list remains the canonical active Athletes membership list. Identity returns the most recent `lastSeenAt` among that user's active, unrevoked, unexpired WebSessions; members with no such session remain in the list with nullable `lastSeenAt` and UI text `No recent web activity` rather than being hidden or assigned invented online/offline state.
-- Explicit non-goals: no Redis presence, no green/red online dots, no Telegram activity fallback, no new presence table, no duplicate user card/profile model, no N+1 identity reads.
-- CI verification: CI `#1885` (`34692788304`) passed on exact implementation commit `3152bf775cffcd54c5bdb7f0a0011db54550462d` after the formatting-only follow-up `#275` was merged into the Step C branch.
-- Source score: **8/10** under `docs/LIVING_BUILD_PLAN.md`. The implementation and exact-head CI are verified, but the required governing-document alignment and exact-commit production runtime proof are not yet complete. Step D therefore remains blocked by the repository's **more than 8/10** progression gate.
+- Explicit non-goals preserved: no Redis presence, no green/red online dots, no Telegram activity fallback, no new presence table, no duplicate user card/profile model, no N+1 identity reads, and no schema migration.
+- Governance verification: `requirements.md`, `structure.md`, `docs/CANONICAL_MODEL.md`, and this progress ledger were aligned to the actual implementation. Abandoned PR `#276` was not reused because it contained broad unrelated documentation deletion and incorrect wording that would have hidden members without active WebSessions.
+- CI verification: exact final PR head `9a36e277c96d00251a6cdd16ce46f0f11dc21794` passed CI `#1890` (`34694996557`): install, Prisma generation/validation/migrate deploy, architecture check, changed-file formatting, changed-source lint, typecheck, package build, unit tests, full build, real integration tests, deploy preflight, security check, and migration status.
+- Exact-commit production deployment: Railway production API deployment `2b831d92-5114-4b59-9083-ec84fb4c52d9`, HOOMA Web deployment `9d90a3af-2a84-4bd7-9132-0900560854ac`, HOOMA Telegram deployment `1d7b4811-32fd-4bde-a812-a021f9bb5cb6`, and HOOMA Worker deployment `f668d271-693a-4522-be8e-c61980ac86ae` all reached `SUCCESS` for exact merge commit `5ec5f870f2903c6d969fc3255dfd5b6f5d1f02fd`.
+- Runtime evidence: production API pre-deploy ran `prisma migrate deploy`, found 42 migrations, and reported no pending migrations; startup reported `HOOMA API listening on 3000`. Railway HTTP logs on that exact deployment then showed authenticated Athletes Whistle requests returning HTTP 304 with no upstream errors, proving the deployed authenticated request/session boundary remained operational after Step C.
+- Targeted smoke limitation: a separate synthetic register/create/member-read/archive/logout smoke was prepared, but the execution runner could not resolve any `*.up.railway.app` hostname. The failure occurred before the first HTTP request, so it created no temporary production user/community and supplied no additional functional evidence. No direct SQL, alternate provider, infrastructure mutation, or bypass was used to manufacture proof.
+- Score: **9/10** under `docs/LIVING_BUILD_PLAN.md`. Exact final-head CI, governing-document alignment, exact-commit API/Web/Telegram/Worker production deployment, production migration/startup health, and real authenticated Athletes traffic are proven. A score of 10 is not claimed because this closeout did not obtain a fresh targeted production member-list readback demonstrating the rendered `lastSeenAt` value end-to-end.
+- Progression: Step D is **unblocked but not started**.
 
 ### Step D — Whistle history and canonical user navigation
 
-Not started. Must wait for Step C score > 8/10.
+Not started. Step C has cleared the required **more than 8/10** progression gate, so Step D may begin only from a fresh `phase-0-foundation` inspection.
