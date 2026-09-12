@@ -120,7 +120,13 @@ function WhistleBoard({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!canCompose || !body.trim() || count > MAX_GRAPHEMES || sending || feed.remainingToday <= 0)
+    if (
+      !canCompose ||
+      !body.trim() ||
+      count > MAX_GRAPHEMES ||
+      sending ||
+      feed.remainingToday <= 0
+    )
       return;
     setSending(true);
     setError("");
