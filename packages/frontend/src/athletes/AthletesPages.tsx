@@ -9,6 +9,7 @@ import { useHoomaFrontend } from "../context";
 import { AthletesWhistleBoard } from "../whistle/HoomaWhistleBoard";
 import { AthletesPhotoBoard } from "./AthletesPhotoBoard";
 import { ActiveAthletesList } from "./ActiveAthletesList";
+import { AthletesCalendar } from "./calendar/AthletesCalendar";
 
 function report(reason: unknown, fallback: string): string {
   return reason instanceof Error ? reason.message : fallback;
@@ -405,12 +406,13 @@ function AthletesDetailContent({
       ) : null}
       {detail.viewerRole ? (
         <>
-          <AthletesWhistleBoard athletesCommunityId={id} />
+          <AthletesCalendar athletesCommunityId={id} founder={founder} />
           <AthletesPhotoBoard
             athletesCommunityId={id}
             communityStatus={detail.status}
             viewerRole={detail.viewerRole}
           />
+          <AthletesWhistleBoard athletesCommunityId={id} />
           <section className="athletes-surface athletes-section">
             <h2>Active Athletes</h2>
             {membersError ? (
@@ -451,9 +453,7 @@ function AthletesDetailContent({
             </div>
             <span
               className="athletes-section-count"
-              aria-label={`${requests.length} pending join ${
-                requests.length === 1 ? "request" : "requests"
-              }`}
+              aria-label={`${requests.length} pending join ${requests.length === 1 ? "request" : "requests"}`}
             >
               {requests.length}
             </span>
