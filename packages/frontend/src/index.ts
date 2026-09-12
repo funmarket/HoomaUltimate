@@ -9,6 +9,7 @@ import "./athletes/athletes.css";
 import "./athletes/athletes-semantic.css";
 import "./athletes/athletes-photo-board.css";
 import "./athletes/athletes-controls.css";
+import "./athletes/athletes-member-management.css";
 import "./athletes/active-athletes.css";
 import "./forms/hooma-form.css";
 import "./game-location/game-location.css";
