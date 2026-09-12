@@ -65,9 +65,13 @@ export function CalendarEntryForm({
           <span className="eyebrow">{entry ? "EDIT EVENT" : "NEW EVENT"}</span>
           <h3>{entry ? entry.title : "Add to calendar"}</h3>
         </div>
-        <button type="button" className="athletes-calendar-form__close" onClick={onClose}>
+        <button
+          type="button"
+          className="athletes-calendar-form__close"
+          aria-label="Close event editor"
+          onClick={onClose}
+        >
           ×
-          <span className="sr-only">Close event editor</span>
         </button>
       </div>
 
