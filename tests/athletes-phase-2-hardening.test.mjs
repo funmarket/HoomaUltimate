@@ -224,7 +224,7 @@ test("Discovery consumes the cursor and appends older communities", async () => 
   assert.ok(urls.some((url) => url.includes("cursor=newer")));
 });
 
-test("Photo Board retries signed delivery failures without proxy blobs", async () => {
+test("Photo Board retries signed delivery failures", async () => {
   const { AthletesPhotoBoard } =
     await import("../packages/frontend/dist/athletes/AthletesPhotoBoard.js");
   let secondFails = true;
@@ -242,13 +242,16 @@ test("Photo Board retries signed delivery failures without proxy blobs", async (
       );
     if (url.includes("/second/delivery") && secondFails)
       return response({ error: { message: "Photo unavailable" } }, 503);
-    if (url.includes("/photos/") && url.endsWith("/delivery")) {
-      const photoId = url.includes("/first/") ? "first" : "second";
+    if (url.includes("/first/delivery"))
       return response({
-        contentUrl: `https://storage.example.test/${photoId}.webp?X-Amz-Signature=signed`,
+        contentUrl: "https://storage.test/first",
         expiresAt: new Date(Date.now() + 300000).toISOString(),
       });
-    }
+    if (url.includes("/second/delivery"))
+      return response({
+        contentUrl: "https://storage.test/second",
+        expiresAt: new Date(Date.now() + 300000).toISOString(),
+      });
     throw new Error(`Unexpected fetch URL: ${url}`);
   };
 
@@ -262,17 +265,11 @@ test("Photo Board retries signed delivery failures without proxy blobs", async (
     ),
   );
   const first = await view.findByAltText("Photo 1 from Athletes Photo Board");
-  assert.match(
-    first.getAttribute("src") ?? "",
-    /^https:\/\/storage\.example\.test\/first\.webp\?/,
-  );
+  assert.equal(first.getAttribute("src"), "https://storage.test/first");
   await view.findByText("Photo unavailable");
   assert.equal(view.queryByText("Add photo"), null);
   secondFails = false;
   fireEvent.click(view.getByText("Retry photo 2"));
   const second = await view.findByAltText("Photo 2 from Athletes Photo Board");
-  assert.match(
-    second.getAttribute("src") ?? "",
-    /^https:\/\/storage\.example\.test\/second\.webp\?/,
-  );
+  assert.equal(second.getAttribute("src"), "https://storage.test/second");
 });
