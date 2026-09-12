@@ -5,6 +5,7 @@ import type {
 } from "@hooma/contracts/profile";
 import type { WhistleList, WhistleListItem } from "./api";
 import { request, type HoomaTransport } from "./http";
+import { whistleListPath } from "./whistle/history";
 
 export type CanonicalPublicProfile = {
   presentation: {
@@ -40,8 +41,11 @@ export function createProfileApi(transport: HoomaTransport) {
         transport,
         `/api/public/v1/profiles/${encodeURIComponent(username)}`,
       ),
-    directWhistles: (username: string) =>
-      request<WhistleList>(transport, `/api/v1/whistles/users/${encodeURIComponent(username)}`),
+    directWhistles: (username: string, cursor?: string) =>
+      request<WhistleList>(
+        transport,
+        whistleListPath(`/api/v1/whistles/users/${encodeURIComponent(username)}`, cursor),
+      ),
     sendDirectWhistle: (username: string, body: string) =>
       request<{
         whistle: WhistleListItem;
