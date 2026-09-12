@@ -18,6 +18,6 @@ model AthletesCalendarEntry {
   createdAt           DateTime                    @default(now())
   updatedAt           DateTime                    @updatedAt
 
-  @@index([athletesCommunityId, status, startsAt, id])
+  @@index([athletesCommunityId, startsAt, id])
   @@index([createdByUserId, startsAt])
 }
