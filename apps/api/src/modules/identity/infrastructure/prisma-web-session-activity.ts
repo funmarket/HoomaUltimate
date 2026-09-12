@@ -4,7 +4,11 @@ import type { WebSessionActivity } from "../application/web-session-activity.js"
 export class PrismaWebSessionActivity implements WebSessionActivity {
   constructor(private readonly db: PrismaClient) {}
 
-  async resolveActiveSession(tokenHash: string, now: Date, touchBefore: Date): Promise<string | null> {
+  async resolveActiveSession(
+    tokenHash: string,
+    now: Date,
+    touchBefore: Date,
+  ): Promise<string | null> {
     const session = await this.db.webSession.findFirst({
       where: { tokenHash, revokedAt: null, expiresAt: { gt: now } },
       select: { id: true, userId: true, lastSeenAt: true },
