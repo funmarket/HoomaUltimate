@@ -31,6 +31,9 @@ import {
 import { AppError } from "../../../http/errors/app-error.js";
 import { defaultDisplayName, normalizeEmail, normalizeUsername } from "../domain/normalization.js";
 import type { IdentityRepository } from "./identity.repository.js";
+import type { WebSessionActivity } from "./web-session-activity.js";
+
+const WEB_SESSION_TOUCH_INTERVAL_MS = 60_000;
 
 export type TelegramResolution =
   | { kind: "absent" }
@@ -47,6 +50,7 @@ export class IdentityService {
     private readonly repository: IdentityRepository,
     private readonly config: ApiConfig,
     private readonly platformOwnerBootstrap?: PlatformOwnerBootstrap,
+    private readonly webSessionActivity?: WebSessionActivity,
   ) {}
 
   async register(input: RegisterInput): Promise<{ sessionToken: string }> {
@@ -97,7 +101,16 @@ export class IdentityService {
 
   async resolveWebSession(rawToken: string | undefined): Promise<string | null> {
     if (!rawToken) return null;
-    return (await this.repository.findActiveSession(hashSessionToken(rawToken)))?.userId ?? null;
+    const tokenHash = hashSessionToken(rawToken);
+    if (!this.webSessionActivity) {
+      return (await this.repository.findActiveSession(tokenHash))?.userId ?? null;
+    }
+    const now = new Date();
+    return this.webSessionActivity.resolveActiveSession(
+      tokenHash,
+      now,
+      new Date(now.getTime() - WEB_SESSION_TOUCH_INTERVAL_MS),
+    );
   }
 
   async logout(rawToken: string | undefined): Promise<void> {
