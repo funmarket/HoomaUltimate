@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { WhistleListItem } from "../api";
+import "./whistle-history.css";
 
 type WhistleRoomProps = {
   readonly items: readonly WhistleListItem[];
