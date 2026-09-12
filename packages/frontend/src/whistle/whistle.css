@@ -187,7 +187,7 @@
   scrollbar-width: thin;
   scrollbar-color: rgba(196, 220, 67, 0.38) transparent;
   display: grid;
-  align-content: end;
+  align-content: safe end;
   padding: 8px 14px 10px;
   border: 1px solid rgba(196, 220, 67, 0.22);
   border-radius: 18px;

@@ -7,6 +7,7 @@ const board = readFileSync("packages/frontend/src/whistle/HoomaWhistleBoard.tsx"
 const userDirect = readFileSync("apps/web/src/profile/UserWhistlePanel.tsx", "utf8");
 const gamerDirect = readFileSync("packages/frontend/src/gamers/GamerWhistlePanel.tsx", "utf8");
 const history = readFileSync("packages/frontend/src/whistle/history.ts", "utf8");
+const whistleCss = readFileSync("packages/frontend/src/whistle/whistle.css", "utf8");
 
 test("shared Whistle room owns older-history access and canonical author profile navigation", () => {
   assert.match(room, /hasOlder/);
@@ -15,6 +16,11 @@ test("shared Whistle room owns older-history access and canonical author profile
   assert.match(room, /href=\{`\/profile\/\$\{encodeURIComponent\(presentation\.username\)\}`\}/);
   assert.match(room, /useLayoutEffect/);
   assert.match(room, /room\.scrollTop \+= room\.scrollHeight - previousScrollHeightRef\.current/);
+});
+
+test("shared Whistle scroll container keeps oldest loaded history reachable", () => {
+  assert.match(whistleCss, /\.whistle-room\s*\{[\s\S]*align-content:\s*safe end;/);
+  assert.doesNotMatch(whistleCss, /align-content:\s*end;/);
 });
 
 test("Community/Event/Athletes/Ride and direct Whistle surfaces expose the shared older-history control", () => {
