@@ -25,6 +25,11 @@ export type WhistleMetadataRecord = {
   author?: { presentation: WhistleAuthorPresentation | null };
 };
 
+export type WhistleListCursor = {
+  createdAt: Date;
+  id: string;
+};
+
 export interface WhistleRepository {
   createWithDailyQuota(input: {
     id: string;
@@ -42,6 +47,7 @@ export interface WhistleRepository {
     contextId: string,
     now: Date,
     limit: number,
+    cursor?: WhistleListCursor,
   ): Promise<WhistleMetadataRecord[]>;
   deleteExpired(now: Date): Promise<number>;
 }
