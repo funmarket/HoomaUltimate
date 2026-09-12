@@ -8,6 +8,8 @@ import { IdentityService } from "../modules/identity/application/identity.servic
 import { PrismaIdentityRepository } from "../modules/identity/infrastructure/prisma-identity.repository.js";
 import { PrismaCanonicalUserReader } from "../modules/identity/infrastructure/prisma-canonical-user.reader.js";
 import { PrismaUserPresentationReader } from "../modules/identity/infrastructure/prisma-user-presentation.reader.js";
+import { PrismaUserLastSeenReader } from "../modules/identity/infrastructure/prisma-user-last-seen.reader.js";
+import { PrismaWebSessionActivity } from "../modules/identity/infrastructure/prisma-web-session-activity.js";
 import { PrismaPlatformAdminRepository } from "../modules/platform-admin/infrastructure/prisma-platform-admin.repository.js";
 import { PlatformAdminService } from "../modules/platform-admin/application/platform-admin.service.js";
 import { PlaceService } from "../modules/places/application/place.service.js";
@@ -97,9 +99,16 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
   const platformAdminRepository = new PrismaPlatformAdminRepository(database);
   const platformAdminService = new PlatformAdminService(platformAdminRepository);
   const identityRepository = new PrismaIdentityRepository(database);
-  const identityService = new IdentityService(identityRepository, config, platformAdminService);
+  const webSessionActivity = new PrismaWebSessionActivity(database);
+  const identityService = new IdentityService(
+    identityRepository,
+    config,
+    platformAdminService,
+    webSessionActivity,
+  );
   const canonicalUserReader = new PrismaCanonicalUserReader(database);
   const userPresentationReader = new PrismaUserPresentationReader(database);
+  const userLastSeenReader = new PrismaUserLastSeenReader(database);
 
   const placeRepository = new PrismaPlaceRepository(database);
   const placeImageResolver = new HttpExternalPlaceImageResolver();
@@ -117,7 +126,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
   const communityRepository = new PrismaCommunityRepository(database);
   const communityService = new CommunityService(communityRepository, platformAdminService);
   const athletesRepository = new PrismaAthletesRepository(database);
-  const athletesService = new AthletesService(athletesRepository);
+  const athletesService = new AthletesService(athletesRepository, userLastSeenReader);
   const athletesPhotoRepository = new PrismaAthletesPhotoRepository(database);
   const athletesPhotoService = new AthletesPhotoService(
     athletesService,
