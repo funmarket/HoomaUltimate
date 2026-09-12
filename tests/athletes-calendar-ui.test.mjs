@@ -9,7 +9,7 @@ const calendar = readFileSync(
 );
 const grid = readFileSync("packages/frontend/src/athletes/calendar/MonthGrid.tsx", "utf8");
 const css = readFileSync(
-  "packages/frontend/src/athletes/calendar/athletes-calendar.css",
+  "packages/frontend/src/athletes/calendar/athletes-calendar-grid.css",
   "utf8",
 );
 
