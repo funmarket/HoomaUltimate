@@ -13,16 +13,17 @@ import type {
   AthletesCalendarUnitOfWork,
 } from "./athletes-calendar.unit-of-work.js";
 
+type AthletesCalendarPersistence = AthletesCalendarRepository & AthletesCalendarUnitOfWork;
+
 export class AthletesCalendarService {
   constructor(
     private readonly authorizer: AthletesContentAuthorizer,
-    private readonly repository: AthletesCalendarRepository,
-    private readonly unitOfWork: AthletesCalendarUnitOfWork,
+    private readonly persistence: AthletesCalendarPersistence,
   ) {}
 
   async list(userId: string, athletesCommunityId: string, range: AthletesCalendarRange) {
     await this.authorizer.requireMemberContent(userId, athletesCommunityId);
-    return this.repository.listForCommunity(
+    return this.persistence.listForCommunity(
       athletesCommunityId,
       new Date(range.from),
       new Date(range.to),
@@ -61,7 +62,7 @@ export class AthletesCalendarService {
     athletesCommunityId: string,
     operation: (calendar: AthletesCalendarTransactionRepository) => Promise<T>,
   ): Promise<T> {
-    return this.unitOfWork.withCommunityLock(athletesCommunityId, async (scope) => {
+    return this.persistence.withCommunityLock(athletesCommunityId, async (scope) => {
       const lockedAuthorization = new AthletesContentAuthorization(scope.athletes);
       await lockedAuthorization.requireFounderContent(userId, athletesCommunityId);
       return operation(scope.calendar);
