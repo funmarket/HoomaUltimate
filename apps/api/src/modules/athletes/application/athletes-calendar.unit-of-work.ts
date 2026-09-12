@@ -1,6 +1,9 @@
-import type { AthletesCalendarEntryCreateInput, AthletesCalendarEntryUpdateInput } from "@hooma/contracts/athletes-calendar";
+import type {
+  AthletesCalendarEntry,
+  AthletesCalendarEntryCreateInput,
+  AthletesCalendarEntryUpdateInput,
+} from "@hooma/contracts/athletes-calendar";
 import type { AthletesRepository } from "./athletes.repository.js";
-import type { AthletesCalendarEntry } from "@hooma/contracts/athletes-calendar";
 
 export interface AthletesCalendarTransactionRepository {
   create(
