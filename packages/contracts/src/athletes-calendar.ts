@@ -3,6 +3,22 @@ import { z } from "zod";
 export const ATHLETES_CALENDAR_MAX_RANGE_DAYS = 45;
 export const athletesCalendarEntryStatusSchema = z.enum(["SCHEDULED", "CANCELLED"]);
 
+function validTimeZone(value: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: value }).format();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export const athletesCalendarTimezoneSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(64)
+  .refine(validTimeZone, "Calendar timezone must be a valid IANA timezone");
+
 const optionalText = (max: number) => z.string().trim().max(max).nullable().optional();
 
 export const athletesCalendarRangeSchema = z
@@ -37,7 +53,7 @@ const calendarWriteFields = {
   description: optionalText(1000),
   startsAt: z.string().datetime(),
   endsAt: z.string().datetime().nullable().optional(),
-  timezone: z.string().trim().min(1).max(64).default("Africa/Tunis"),
+  timezone: athletesCalendarTimezoneSchema.default("Africa/Tunis"),
   locationName: optionalText(160),
 };
 
@@ -72,7 +88,7 @@ export const athletesCalendarEntrySchema = z
     description: z.string().nullable(),
     startsAt: z.string().datetime(),
     endsAt: z.string().datetime().nullable(),
-    timezone: z.string().min(1),
+    timezone: athletesCalendarTimezoneSchema,
     locationName: z.string().nullable(),
     status: athletesCalendarEntryStatusSchema,
     cancelledAt: z.string().datetime().nullable(),
