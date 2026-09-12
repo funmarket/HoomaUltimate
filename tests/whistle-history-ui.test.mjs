@@ -22,7 +22,10 @@ test("shared Whistle scroll container keeps oldest loaded history reachable", ()
   assert.match(whistleCss, /\.whistle-room\s*\{[\s\S]*align-content:\s*safe end;/);
   assert.doesNotMatch(whistleCss, /align-content:\s*end;/);
   assert.match(whistleCss, /scrollbar-color:\s*transparent transparent;/);
-  assert.match(whistleCss, /\.whistle-room::\-webkit-scrollbar-thumb\s*\{[\s\S]*background:\s*transparent;/);
+  assert.match(
+    whistleCss,
+    /\.whistle-room::\-webkit-scrollbar-thumb\s*\{[\s\S]*background:\s*transparent;/,
+  );
 });
 
 test("Community/Event/Athletes/Ride and direct Whistle surfaces expose the shared older-history control", () => {
