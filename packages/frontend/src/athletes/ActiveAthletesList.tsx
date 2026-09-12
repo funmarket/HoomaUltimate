@@ -1,5 +1,4 @@
 import type { AthletesMember } from "@hooma/contracts/athletes";
-import "./active-athletes.css";
 
 function lastSeenLabel(value: string | null): string {
   if (!value) return "No recent web activity";
