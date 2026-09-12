@@ -31,3 +31,15 @@ test("Prisma Athletes Photo infrastructure never re-enters AthletesService", asy
   assert.doesNotMatch(repository, /AthletesService/);
   assert.doesNotMatch(repository, /athletes\.service\.js/);
 });
+
+test("Athletes consumes Identity last-seen only through the narrow application reader", async () => {
+  const athletes = await source("apps/api/src/modules/athletes/application/athletes.service.ts");
+  assert.match(athletes, /UserLastSeenReader/);
+  assert.match(athletes, /findLastSeenByUserIds/);
+  assert.doesNotMatch(athletes, /@hooma\/database|Prisma|webSession/);
+
+  const reader = await source(
+    "apps/api/src/modules/identity/application/user-last-seen.reader.ts",
+  );
+  assert.match(reader, /findLastSeenByUserIds/);
+});
