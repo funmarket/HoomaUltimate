@@ -8,7 +8,10 @@ const css = readFileSync("packages/frontend/src/athletes/active-athletes.css", "
 const index = readFileSync("packages/frontend/src/index.ts", "utf8");
 
 test("Active Athletes keeps canonical profile navigation and identity presentation", () => {
-  assert.match(component, /href=\{`\/profile\/\$\{encodeURIComponent\(presentation\.username\)\}`\}/);
+  assert.match(
+    component,
+    /href=\{`\/profile\/\$\{encodeURIComponent\(presentation\.username\)\}`\}/,
+  );
   assert.match(component, /presentation\.displayName/);
   assert.match(component, /@\{presentation\.username\}/);
   assert.match(component, /presentation\?\.photoUrl/);

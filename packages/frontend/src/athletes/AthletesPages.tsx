@@ -435,10 +435,7 @@ function AthletesDetailContent({
                   )
                 }
                 onRemove={(member) =>
-                  void act(
-                    () => api.athletes.removeMember(id, member.userId),
-                    "Member removed.",
-                  )
+                  void act(() => api.athletes.removeMember(id, member.userId), "Member removed.")
                 }
               />
             )}
