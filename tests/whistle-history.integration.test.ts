@@ -24,7 +24,9 @@ const config = loadApiConfig({
 const db = getDatabaseClient();
 
 function encodeRedis(parts: readonly string[]): string {
-  return `*${parts.length}\r\n${parts.map((part) => `$${Buffer.byteLength(part)}\r\n${part}\r\n`).join("")}`;
+  return `*${parts.length}\r\n${parts
+    .map((part) => `$${Buffer.byteLength(part)}\r\n${part}\r\n`)
+    .join("")}`;
 }
 
 async function redisCommand(parts: readonly string[]): Promise<string | number | null> {
@@ -85,7 +87,9 @@ async function register(base: string, username: string) {
   assert.equal(response.status, 201);
   const cookie = response.headers.get("set-cookie");
   assert.ok(cookie);
-  const credential = await db.webCredential.findUniqueOrThrow({ where: { loginUsername: username } });
+  const credential = await db.webCredential.findUniqueOrThrow({
+    where: { loginUsername: username },
+  });
   return { cookie, userId: credential.userId };
 }
 
@@ -151,7 +155,13 @@ test("Whistle history pages older active rows without extending the UTC-day boun
     await db.whistleMetadata.createMany({ data: rows });
     for (const [index, id] of whistleIds.entries()) {
       assert.equal(
-        await redisCommand(["SET", `whistle:body:${id}`, `history-body-${index}`, "PX", String(ttlMs)]),
+        await redisCommand([
+          "SET",
+          `whistle:body:${id}`,
+          `history-body-${index}`,
+          "PX",
+          String(ttlMs),
+        ]),
         "OK",
       );
     }
@@ -168,9 +178,12 @@ test("Whistle history pages older active rows without extending the UTC-day boun
     assert.ok(firstPayload.nextCursor);
     assert.equal(firstPayload.resetsAt, expiresAt.toISOString());
 
-    const second = await fetch(`${listUrl}?cursor=${encodeURIComponent(firstPayload.nextCursor!)}`, {
-      headers: headers(users[0]!.cookie),
-    });
+    const second = await fetch(
+      `${listUrl}?cursor=${encodeURIComponent(firstPayload.nextCursor!)}`,
+      {
+        headers: headers(users[0]!.cookie),
+      },
+    );
     assert.equal(second.status, 200);
     const secondPayload = (await second.json()) as {
       items: Array<{ id: string; body: string }>;
@@ -184,7 +197,11 @@ test("Whistle history pages older active rows without extending the UTC-day boun
     const allIds = [...firstPayload.items, ...secondPayload.items].map((item) => item.id);
     assert.equal(new Set(allIds).size, 105);
     assert.deepEqual(new Set(allIds), new Set(whistleIds));
-    assert.ok([...firstPayload.items, ...secondPayload.items].every((item) => item.body.startsWith("history-body-")));
+    assert.ok(
+      [...firstPayload.items, ...secondPayload.items].every((item) =>
+        item.body.startsWith("history-body-"),
+      ),
+    );
 
     const invalid = await fetch(`${listUrl}?cursor=not-a-valid-history-cursor`, {
       headers: headers(users[0]!.cookie),
@@ -193,7 +210,9 @@ test("Whistle history pages older active rows without extending the UTC-day boun
   } finally {
     if (whistleIds.length) {
       await db.whistleMetadata.deleteMany({ where: { id: { in: whistleIds } } });
-      await redisCommand(["DEL", ...whistleIds.map((id) => `whistle:body:${id}`)]).catch(() => null);
+      await redisCommand(["DEL", ...whistleIds.map((id) => `whistle:body:${id}`)]).catch(
+        () => null,
+      );
     }
     if (communityId) {
       await db.communityMembership.deleteMany({ where: { communityId } });
