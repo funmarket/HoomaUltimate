@@ -8,6 +8,7 @@ import type { PublicAthletesSummary } from "../api";
 import { useHoomaFrontend } from "../context";
 import { AthletesWhistleBoard } from "../whistle/HoomaWhistleBoard";
 import { AthletesPhotoBoard } from "./AthletesPhotoBoard";
+import { ActiveAthletesList } from "./ActiveAthletesList";
 
 function report(reason: unknown, fallback: string): string {
   return reason instanceof Error ? reason.message : fallback;
@@ -417,62 +418,29 @@ function AthletesDetailContent({
                 {membersError} <button onClick={() => void reload()}>Retry members</button>
               </div>
             ) : (
-              <div className="athletes-member-list">
-                {members.map((member) => (
-                  <div className="athletes-member-row" key={member.userId}>
-                    <span>
-                      {member.presentation ? (
-                        <a href={`/profile/${encodeURIComponent(member.presentation.username)}`}>
-                          <strong>{member.presentation.displayName}</strong>
-                          <small>@{member.presentation.username}</small>
-                        </a>
-                      ) : (
-                        <strong>Member</strong>
-                      )}
-                    </span>
-                    <b className="athletes-member-role">{member.role}</b>
-                    {canManage && member.role !== "FOUNDER" ? (
-                      <span className="athletes-request-actions">
-                        {founder ? (
-                          <button
-                            className="athletes-mini-action"
-                            disabled={busy}
-                            onClick={() =>
-                              void act(
-                                () =>
-                                  api.athletes.setMemberRole(
-                                    id,
-                                    member.userId,
-                                    member.role === "MODERATOR" ? "MEMBER" : "MODERATOR",
-                                  ),
-                                "Member role updated.",
-                              )
-                            }
-                          >
-                            {member.role === "MODERATOR"
-                              ? "Remove moderator role"
-                              : "Make moderator"}
-                          </button>
-                        ) : null}
-                        {founder || member.role === "MEMBER" ? (
-                          <button
-                            className="athletes-mini-action athletes-mini-action--decline"
-                            disabled={busy}
-                            onClick={() =>
-                              void act(
-                                () => api.athletes.removeMember(id, member.userId),
-                                "Member removed.",
-                              )
-                            }
-                          >
-                            Remove member
-                          </button>
-                        ) : null}
-                      </span>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
+              <ActiveAthletesList
+                members={members}
+                founder={founder}
+                canManage={canManage}
+                busy={busy}
+                onToggleRole={(member) =>
+                  void act(
+                    () =>
+                      api.athletes.setMemberRole(
+                        id,
+                        member.userId,
+                        member.role === "MODERATOR" ? "MEMBER" : "MODERATOR",
+                      ),
+                    "Member role updated.",
+                  )
+                }
+                onRemove={(member) =>
+                  void act(
+                    () => api.athletes.removeMember(id, member.userId),
+                    "Member removed.",
+                  )
+                }
+              />
             )}
           </section>
         </>
