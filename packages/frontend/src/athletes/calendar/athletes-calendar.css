@@ -4,25 +4,19 @@
   padding: 1rem;
 }
 
-.athletes-calendar-header,
-.athletes-calendar-event__actions {
+.athletes-calendar-header {
   display: flex;
   align-items: center;
-}
-
-.athletes-calendar-header {
   justify-content: space-between;
   gap: 0.75rem;
 }
 
-.athletes-calendar-header h2,
-.athletes-calendar-agenda h3 {
+.athletes-calendar-header h2 {
   margin: 0.15rem 0 0;
 }
 
 .athletes-calendar-create,
-.athletes-calendar-nav button,
-.athletes-calendar-event__actions button {
+.athletes-calendar-nav button {
   min-height: 2.75rem;
   border: 1px solid var(--athletes-border-strong);
   border-radius: 0.9rem;
@@ -70,173 +64,12 @@
   white-space: nowrap;
 }
 
-.athletes-calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 0.22rem;
-  min-width: 0;
-}
-
-.athletes-calendar-weekday {
-  padding: 0.2rem 0;
-  text-align: center;
-  color: var(--muted, #a4a4a4);
-  font-size: 0.66rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-}
-
-.athletes-calendar-day {
-  position: relative;
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 0.05rem;
-  min-width: 0;
-  min-height: 2.9rem;
-  padding: 0.2rem 0;
-  border: 1px solid transparent;
-  border-radius: 0.85rem;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  font-size: 0.88rem;
-  font-weight: 750;
-}
-
-.athletes-calendar-day[data-outside-month="true"] {
-  opacity: 0.38;
-}
-
-.athletes-calendar-day[data-today="true"] {
-  border-color: var(--athletes-yellow);
-}
-
-.athletes-calendar-day[data-selected="true"] {
-  background: var(--athletes-yellow);
-  color: #151515;
-  opacity: 1;
-}
-
-.athletes-calendar-day__events {
-  min-height: 0.6rem;
-  overflow: hidden;
-  font-size: 0.62rem;
-  line-height: 0.6rem;
-  letter-spacing: 0.03em;
-  white-space: nowrap;
-}
-
-.athletes-calendar-loading,
-.athletes-calendar-empty {
+.athletes-calendar-loading {
   margin: 0;
-}
-
-.athletes-calendar-agenda {
-  display: grid;
-  gap: 0.7rem;
-  padding-top: 0.2rem;
-}
-
-.athletes-calendar-agenda__heading {
-  display: grid;
-  gap: 0.05rem;
-}
-
-.athletes-calendar-agenda__list {
-  display: grid;
-  gap: 0.55rem;
-}
-
-.athletes-calendar-event {
-  overflow: hidden;
-  border: 1px solid var(--athletes-border);
-  border-radius: 1rem;
-  background: var(--athletes-surface-raised);
-}
-
-.athletes-calendar-event[data-cancelled="true"] {
-  opacity: 0.62;
-}
-
-.athletes-calendar-event summary {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 0.7rem;
-  align-items: center;
-  min-height: 4.25rem;
-  padding: 0.7rem 0.8rem;
-  cursor: pointer;
-  list-style: none;
-}
-
-.athletes-calendar-event summary::-webkit-details-marker {
-  display: none;
-}
-
-.athletes-calendar-event__time {
-  min-width: 3.2rem;
-  font-variant-numeric: tabular-nums;
-  font-weight: 850;
-}
-
-.athletes-calendar-event__summary {
-  display: grid;
-  gap: 0.2rem;
-  min-width: 0;
-}
-
-.athletes-calendar-event__summary strong,
-.athletes-calendar-event__summary small {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.athletes-calendar-event__summary small {
-  color: var(--muted, #a4a4a4);
-}
-
-.athletes-calendar-event__detail {
-  display: grid;
-  gap: 0.65rem;
-  padding: 0 0.8rem 0.8rem;
-}
-
-.athletes-calendar-event__detail p {
-  display: grid;
-  gap: 0.15rem;
-  margin: 0;
-}
-
-.athletes-calendar-event__detail p strong {
-  font-size: 0.72rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.athletes-calendar-event__actions {
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.athletes-calendar-event__actions button {
-  flex: 1 1 7rem;
-  padding: 0 0.75rem;
-  font-weight: 800;
-}
-
-.athletes-calendar-event__actions .athletes-calendar-event__cancel {
-  color: var(--athletes-danger);
 }
 
 @media (min-width: 560px) {
   .athletes-calendar {
     padding: 1.15rem;
-  }
-
-  .athletes-calendar-day {
-    min-height: 3.35rem;
   }
 }
