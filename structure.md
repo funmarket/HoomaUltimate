@@ -195,6 +195,7 @@ This rule exists for scalability and user experience as well as code cleanliness
 | HOOMA neighborhood community + membership            | Communities                                 |
 | Football Team, roster, responsibilities/capabilities | Teams                                       |
 | Athletes sports community, membership, join requests | Athletes                                    |
+| User last-seen activity via web session             | Identity (WebSession.lastSeenAt)            |
 | Team lineup                                          | Teams                                       |
 | Team challenge + accepted TeamGame coordination      | Teams                                       |
 | Event lifecycle, RSVP/waitlist, formation, check-in  | Events                                      |
@@ -245,6 +246,10 @@ Rules:
 ### Whistle persistence boundary
 
 Whistle metadata/quota/context/expiry truth is durable where designed; Whistle body remains Redis-only and must never fall back to PostgreSQL, audit metadata, outbox payloads, notifications, analytics, URLs, or logs.
+
+### WebSession activity
+
+`WebSession.lastSeenAt` is the sole source of truth for web user activity. It is touched at the Identity session-resolution boundary with 60-second throttling to minimize database write load. A session is active only when unrevoked and unexpired. Athletes uses Identity's batched `UserLastSeenReader` to fetch multiple users' last-seen state in a single query, avoiding N+1 queries.
 
 ---
 
@@ -442,6 +447,19 @@ For every task:
 
 No task is complete while affected governing documentation still describes the old source state.
 
-## In-flight Athletes hardening — PR #265
+## In-flight Athletes hardening — Step C: WebSession activity and Active Athletes
 
-Athletes API methods are extracted to `packages/frontend/src/athletes/api.ts` and composed through the existing shared transport. The creation/settings form and detail-loading hook have bounded Athletes ownership. The Athletes repository exposes a transaction-scoped community lock so policy checks and lifecycle writes share one transaction. Sharp decoding is behind an Athletes validator port. Photo recovery reuses the existing Worker Outbox engine with an Athletes-specific handler; it does not deploy a Worker service or create a second job engine.
+Branch: `feat/athletes-websession-last-seen`  
+Base: `9b6988c080e44e8aa896323c87db7bf60ce3d4fa`  
+Status: Implementation underway
+
+Scope:
+- `WebSession.lastSeenAt` sole activity source via Identity session-resolution boundary;
+- 60-second throttle per session for minimal database write load;
+- Identity-owned batched `UserLastSeenReader` for Athletes;
+- Active Athletes shows only active, unrevoked, unexpired sessions with avatar, display name, `@username`, role, last-seen text;
+- canonical `/profile/:username` navigation preserved.
+
+Non-goals:
+- no Redis presence, no online dots, no Telegram activity fallback, no new presence table, no N+1 identity reads, no schema migration, no duplicate user card/profile model.
+

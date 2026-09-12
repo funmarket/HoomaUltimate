@@ -85,8 +85,16 @@ WebSession
   expiresAt
   revokedAt?
   createdAt
-  lastSeenAt
+  lastSeenAt          Updated at session-resolution boundary with 60s throttle
 ```
+
+Rules:
+
+- `lastSeenAt` is the sole source of truth for web user activity;
+- touched at Identity session-resolution boundary only, minimizing database writes;
+- 60-second throttle per session to prevent burst write load;
+- a session is active only when unrevoked (`revokedAt IS NULL`) and unexpired (`expiresAt > now()`);
+- if a user has no active sessions, they are not considered active.
 
 ## TelegramIdentity
 
@@ -279,7 +287,21 @@ Rules:
 - Photo Board is separate from Whistle; Photo Board bytes are never stored in Redis and Whistle body/storage behavior is unchanged;
 - the current Photo Board has no captions, likes/reactions, comments/replies, albums, manual ordering, moderator/member curation, or public board;
 - Founder Photo Board deletion is scoped curation authority only and does not create a generic Media ownership model or social-feed lifecycle;
-- equipment, Events, marketplace, Ride/Requests/FundMe integration, ULTRAS and generic community abstractions are not part of this foundation.
+- equipment, Events, marketplace, Ride/Requests/FundMe integration, ULTRAS and generic community abstractions are not part of this foundation;
+
+## Active Athletes list
+
+Active Athletes displays only users with active, unrevoked, unexpired web sessions. Member rows show:
+
+- avatar (from UserPresentation.photoUrl);
+- display name (from UserPresentation.displayName);
+- `@username` (from UserPresentation.username);
+- role (FOUNDER, MODERATOR, or MEMBER);
+- text-formatted last-seen timestamp (from WebSession.lastSeenAt).
+
+If a user has no active sessions, they do not appear in the Active Athletes list.
+
+Athletes uses Identity's batched `UserLastSeenReader` to fetch multiple users' last-seen timestamps in a single query, avoiding N+1 queries. No Redis presence, Telegram activity fallback, online/offline dots, or new presence table exists.
 
 ---
 
@@ -899,283 +921,11 @@ Authenticated/private actions:
 /api/v1/*
 ```
 
-Global Platform Admin:
+Platform Admin:
 
 ```text
 /api/v1/admin/*
 ```
 
-Rules:
+Every protected action is authorized server-side.
 
-- public Team DTO never includes unpublished lineup;
-- public Game DTO never includes leader coordination messages;
-- member management DTO may expose only data the authenticated principal is authorized to manage;
-- Whistle Community, Event, Gamer Direct, and User Direct reads/sends are authenticated and server-authorized operations;
-- UI hiding is not authorization.
-
----
-
-# 19. Gamers current vertical-slice boundary
-
-Gamers is explicitly unfrozen by ADR-041. G1 established the persisted game catalog, G2 added game-specific GamerProfile identity plus privacy-safe Challengers discovery, and G3 adds the human challenge lifecycle, public full Gamer profiles, canonical Match Cards, and the Arena projection without coupling Gamers to football Team/Play challenge models.
-
-Current canonical ownership is:
-
-```text
-Gamers domain
-  -> GamerGameRepository port
-  -> GamerProfileRepository port
-  -> GamerChallengeRepository port
-  -> GamerService
-  -> Gamer public/member routers
-  -> PrismaGamerGameRepository
-  -> PrismaGamerProfileRepository
-  -> PrismaGamerChallengeRepository
-  -> PostgreSQL
-  -> shared Web/Telegram Gamers frontend projection
-```
-
-## GamerGame
-
-```text
-GamerGame
-  id
-  slug              unique
-  name
-  normalizedName    unique
-  status            ACTIVE | INACTIVE
-  createdByUserId?
-  createdAt
-  updatedAt
-```
-
-G1 rules remain canonical:
-
-- PostgreSQL is the only game-catalog source of truth; there is no hardcoded bootstrap catalog or frontend game array;
-- the launch catalog is persisted by migration and currently seeds `EA SPORTS FC Mobile` and the generic canonical `Ludo` entry;
-- public clients may list active games and read an active game by slug under `/api/public/v1/gamers/*`;
-- authenticated Users may contribute a missing game through `/api/v1/gamers/games`;
-- user-created games remain the same canonical `GamerGame` entity as seeded games; there is no parallel community-game table;
-- obvious duplicate names are normalized before creation and rejected, with a database unique constraint providing concurrency-safe protection;
-- ambiguous or merely similar names are never silently fuzzy-merged;
-- `createdByUserId` records the contributing User when applicable without making that User the owner of catalog truth;
-- Platform Admin may later curate, rename, merge or deactivate catalog spam through its own authorized slice; G1 does not create an Admin catalog UI;
-- the shared `/gamers` page is used by both Web and Telegram delivery and reads/writes only through the canonical Gamers API.
-
-## GamerProfile
-
-```text
-GamerProfile
-  id
-  userId
-  gameId
-  handle
-  openToChallenge
-  createdAt
-  updatedAt
-
-Unique: (userId, gameId)
-```
-
-G2/G3 profile rules:
-
-- one canonical HOOMA `User` may have at most one GamerProfile for a given GamerGame;
-- GamerProfile is game-specific identity and participation state, never a second User identity;
-- the game handle belongs to GamerProfile, while canonical username, display name, photo, and bio remain owned by User/UserPresentation;
-- the same User may have separate GamerProfiles and handles for different games;
-- only profiles with `openToChallenge == true` appear in public Challengers discovery;
-- public Challenger cards expose only GamerProfile `id`, game `handle`, and the canonical public presentation required by the card;
-- the public full Gamer profile deliberately exposes GamerProfile `id`, `handle`, `openToChallenge`, and canonical public presentation `username`, `displayName`, `photoUrl`, and `bio`;
-- neither public projection exposes canonical `userId`, internal `gameId`, GamerProfile timestamps, login credentials, email, sessions, or other private account data;
-- authenticated member routes may read/update only the current User’s GamerProfile for the requested game;
-- profile/discovery operations require an ACTIVE GamerGame; missing or inactive games are rejected rather than creating orphan/hidden profile state;
-- handle input is normalized for Unicode compatibility, trimmed, and internal whitespace collapsed before persistence;
-- public discovery never invents `ONLINE` presence or other telemetry HOOMA does not own.
-
-## GamerChallenge
-
-```text
-GamerChallenge
-  id
-  gameId
-  challengerProfileId
-  challengedProfileId
-  pairKey
-  status             PENDING | ACCEPTED | DECLINED | CANCELLED
-  createdAt
-  respondedAt?
-  cancelledAt?
-  updatedAt
-```
-
-G3 challenge rules:
-
-- GamerChallenge belongs only to Gamers; it never reuses TeamChallenge, TeamGame, Play Event, Team membership, Team authority, or football challenge tables;
-- challenger and challenged identities are GamerProfile records in the same ACTIVE GamerGame;
-- self-challenge is forbidden in service policy and by a PostgreSQL check constraint;
-- the challenged GamerProfile must be open to challenge at creation time;
-- `pairKey` is derived from the two GamerProfile ids in deterministic sorted order and therefore represents an unordered pair;
-- PostgreSQL owns concurrency safety through a partial unique index on `(gameId, pairKey)` while `status == PENDING`, so same-direction and reverse-direction simultaneous requests cannot create two unresolved challenges;
-- only the challenged GamerProfile’s canonical User may accept or decline a PENDING challenge;
-- only the challenger GamerProfile’s canonical User may cancel a PENDING challenge;
-- repeating the same already-completed action is idempotent; incompatible terminal rewrites are rejected;
-- G3 status transitions are `PENDING -> ACCEPTED | DECLINED | CANCELLED`; result submission/dispute/completion belongs to the later result slice.
-
-## Match Card and Arena
-
-- an ACCEPTED GamerChallenge is the canonical G3 Match Card; there is deliberately no `GamerMatch` table or duplicate accepted-match identity;
-- Arena is a member projection of the current User’s GamerChallenges for the selected game, not a persistence table;
-- incoming PENDING challenges expose Accept/Reject actions to the challenged User; outgoing PENDING challenges expose Cancel to the challenger;
-- accepted challenges render as Match Cards linking both public Gamer profiles;
-- actual gameplay remains external to HOOMA; G3 does not claim game-server integration, score telemetry, or presence;
-- SQUADS and RANKINGS remain unavailable until their dedicated slices are implemented truthfully;
-- result confirmation/dispute, ranking calculation, GamerSquad, Gamer Squad Whistle authorization, global Gamer chat/feed, and gameplay APIs remain future work and are not implied by G3.
-
----
-
-# 20. Pitch canonical Place capability
-
-Pitch is implemented and is not a frozen future concept.
-
-Canonical Pitch ownership is:
-
-```text
-Place
-  -> physical identity, location, contact, and PlaceImage[]
-  -> PlaceOwnership / PlaceOwnershipClaim
-  -> PlaceCapability(kind=PITCH)
-       = current approved/public Pitch profile and hourly pricing
-  -> PlaceCapabilityApplication(kind=PITCH)
-       = verified-owner proposed Pitch profile/pricing update
-```
-
-Rules:
-
-- `Place` is the only physical venue record;
-- `Place.phone`, `Place.email`, and `Place.websiteUrl` are the single contact authority for Pitch;
-- `PlaceImage[]` is the runtime image authority;
-- `PlaceCapability(kind=PITCH)` owns the current approved Pitch summary, hourly rate, and currency;
-- a Pitch suggestion creates pending Place + pending PITCH capability with submitted hourly rate/currency together;
-- approval of a community suggestion does not grant Place ownership to the suggester;
-- later Pitch application submission requires verified Place ownership;
-- `PlaceCapabilityApplication(kind=PITCH)` contains Pitch-owned summary/pricing proposal data only and must not duplicate Place contact;
-- pending/rejected owner applications never overwrite the last approved public Pitch profile;
-- public Pitch projection requires complete supported hourly pricing and never invents fallback pricing.
-
-The dedicated accepted decision is `docs/adr/ADR-042-pitch-suggestion-claim-lifecycle.md`.
-
----
-
-# 21. Authorized Ride and Requests concepts
-
-ADR-050 begins the durable Ride and Requests vertical slices. Canonical schema work is authorized for these domains in their numbered implementation tasks, subject to the policies below. RIDE-002 adds core Ride persistence; RIDE-006 adds Ride-owned vehicle-photo metadata. RIDE-007A adds governed Ride context and advertised compensation contracts before persistence changes. Requests, Fundraising and Payments remain separately ordered.
-
-RIDE-002 establishes the core Ride-owned canonical persistence:
-
-```text
-RideOffer
-RideRequest
-RideParticipation
-RideMeetingPoint
-RideOfferWaypoint
-RideOfferVehiclePhoto
-```
-
-Ride context values are:
-
-```text
-MATCHDAY
-GENERAL
-```
-
-`MATCHDAY` means football/event transportation. `GENERAL` is the canonical value behind user-facing Anywhere Ride. Matchday Ride and Anywhere Ride are contexts/views over the same Ride domain, not separate durable domains or duplicate backend systems.
-
-Ride compensation terms are advertised Ride terms only:
-
-```text
-FREE
-CASH
-```
-
-Driver offers may advertise `FREE` or `CASH` with positive integer minor-unit amount, ISO currency and basis. Passenger requests may advertise no cash offer (`FREE`) or a `CASH` offer with positive integer minor-unit amount and ISO currency. Human-entered cash amounts must convert through the shared supported cash-currency exponent source before becoming canonical minor units; current supported cash currencies are `TND`, `EUR` and `USD`, with `TND` using three decimal minor-unit precision. Ride contracts/domain policy must reject payment-processing state such as payment intents, checkout, settlement, wallet, card/provider callbacks, paid status or payment-received status; future PAY-001 owns payment execution.
-
-Ride destination uses exactly one strategy: owning Event reference, canonical Place reference, or Ride-owned custom destination label. The database enforces this for `RideOffer` and `RideRequest`. Event and Place display data remains owned by those domains and is read through narrow reference ports. Ride public projections must omit exact private pickup or meeting location.
-
-RideRequest audience scope is Ride-owned. `GLOBAL` requests have zero Community targets and are public through normal Ride request discovery. `COMMUNITY` requests persist exact `RideRequestCommunityAudience` target rows and are excluded from public Ride request list/detail. User-facing `All my HOOMAs` is a write-time command that resolves current active memberships into exact target rows; there is no durable `ALL_MY_HOOMAS` state. Community HOOMA NOW composes active/open/unexpired canonical RideRequests for explicitly targeted active Communities where the requester and viewer are active members. HOOMA NOW does not own, copy, or mutate RideRequest lifecycle, and the same RideRequest ID appears in every targeted Community feed.
-
-Ride participation uses a separate `RideParticipation` record rather than passenger arrays. Persistence enforces one participation identity per `RideOffer`/passenger User, while passenger requests still require driver/owner acceptance before they consume accepted capacity. Drivers cannot join their own Ride Offer as passengers. Offer, request and participation cancellation rules are owned by Rides and must preserve terminal lifecycle history.
-
-Ride waypoints are ordered `RideOfferWaypoint` records with optional canonical Place references and Ride-owned area labels; no JSON route blob or geospatial-route provider dependency is part of the current core persistence.
-
-Ride vehicle-photo bytes belong in object storage. `RideOfferVehiclePhoto` is a single-purpose Ride-owned metadata record for the managed object key, content type, size and lifecycle fields until a separately authorized generic Media domain exists. PostgreSQL must not store photo bytes, base64 payloads, storage credentials or polymorphic generic media ownership for this slice.
-
-Requests-owned canonical concepts may include:
-
-```text
-Request
-RequestClaim
-```
-
-Requests use quantity-based partial claims. More than one active claimer is allowed while unclaimed quantity remains, and persistence must enforce that accepted/active claim quantities cannot exceed the requested quantity. Quantity-one requests behave as single-claim requests through the same rule, not through a second exclusive-only model.
-
-Requests do not own Ride, Fundraising, Payment or generic action state. FundMe remains grouped under Requests in navigation, but durable Fundraising and Payments state stays separately governed.
-
----
-
-# 22. Frozen future concepts
-
-The normalized initial schema must not add durable product tables for these until their vertical slice begins:
-
-```text
-Place/Watch capability work outside the already-implemented Pitch model
-ULTRAS
-FundMe
-Payments
-MediaAsset beyond any truly required current foundation
-Replay
-HOOMA NOW read models
-```
-
-Whistle is explicitly unfrozen by ADR-039/ADR-040. Gamers is explicitly unfrozen by ADR-041. Pitch is explicitly implemented under ADR-042 and is therefore no longer in this list. Ride and Requests are explicitly unfrozen by ADR-050 and are therefore no longer in this frozen list.
-
-Foundation interfaces/packages may exist, but a speculative schema is not implementation.
-
----
-
-# 23. Migration requirement
-
-Before first HOOMA ULTIMATE release, all pre-release current migrations are replaced with one reviewed initial migration generated from the reconciled schema and augmented with intentional PostgreSQL constraints where required.
-
-After first release, migration history becomes forward-only.
-
----
-
-# 23. Completion rule
-
-A model is not considered correct because this file exists.
-
-Normalization for a current domain is complete only when:
-
-```text
-CANONICAL_MODEL
-      =
-schema.prisma
-      =
-initial migration result
-      =
-repository fields/constraints
-      =
-service policy
-      =
-contracts
-      =
-integration test behavior
-      =
-public/private UI projection
-```
-
-Any mismatch is a blocker, not a reason for a compatibility patch.
-
-## In-flight Athletes consistency corrections — PR #265
-
-Existing-community lifecycle mutations serialize policy reads and writes using the AthletesCommunity row. Photo upload recovery uses existing OutboxEvent records, identified by photo ID and the `athletes.photo.reconcile-object` topic. Successful photo metadata publication consumes the pending intent in the same transaction after active-Founder authorization; failed publication leaves recovery information durable. AthletesPhoto and object storage remain the only durable photo metadata/byte owners. No schema migration or new table is introduced by this correction.

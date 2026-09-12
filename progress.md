@@ -51,12 +51,16 @@ Progression gate: each step must score **more than 8/10** under `docs/LIVING_BUI
 
 ### Step C — WebSession activity and Active Athletes redesign
 
-- Branch: `feat/athletes-websession-last-seen`.
-- Base commit: `9b6988c080e44e8aa896323c87db7bf60ce3d4fa`.
+- Branch: `feat/athletes-websession-last-seen`
+- Base commit: `9b6988c080e44e8aa896323c87db7bf60ce3d4fa`
+- HEAD: `3152bf775cffcd54c5bdb7f0a0011db54550462d`
 - Scope: use only canonical `WebSession.lastSeenAt` for web activity truth; touch it at the Identity session-resolution boundary with throttling; expose a narrow Identity-owned batched reader for Athletes; redesign Active Athletes rows to show avatar, display name, `@username`, role, and last-seen text while retaining canonical `/profile/:username` navigation.
 - Explicit non-goals: no Redis presence, no green/red online dots, no Telegram activity fallback, no new presence table, no duplicate user card/profile model, no N+1 identity reads.
-- Status: source inspection and implementation in progress.
+- CI verification: CI #1885 run 34692788304 passed on exact commit `3152bf775cffcd54c5bdb7f0a0011db54550462d`.
+- Source score: **8/10** under `docs/LIVING_BUILD_PLAN.md`. Implementation is complete with source verification, CI confirmation, documentation alignment, and all non-goals honored. A score of 9 requires exact-commit deployment to production with live runtime and health evidence.
+- Progression: **Step D blocked until exact-commit production deployment and live proof**.
 
 ### Step D — Whistle history and canonical user navigation
 
-Not started. Must wait for Step C score > 8/10.
+Not started. Must wait for Step C score > 8/10 and production deployment proof.
+
