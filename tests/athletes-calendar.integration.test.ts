@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import type { AthletesCalendarEntry } from "@hooma/contracts/athletes-calendar";
 import { getDatabaseClient } from "@hooma/database";
 import { AthletesCalendarService } from "../apps/api/src/modules/athletes/application/athletes-calendar.service.js";
 import { AthletesContentAuthorization } from "../apps/api/src/modules/athletes/application/athletes-content-authorizer.js";
@@ -9,6 +10,17 @@ import { PrismaAthletesCalendarRepository } from "../apps/api/src/modules/athlet
 import { PrismaAthletesRepository } from "../apps/api/src/modules/athletes/infrastructure/prisma-athletes.repository.js";
 
 const db = getDatabaseClient();
+
+function writeInput(entry: AthletesCalendarEntry, title = entry.title) {
+  return {
+    title,
+    description: entry.description,
+    startsAt: entry.startsAt,
+    endsAt: entry.endsAt,
+    timezone: entry.timezone,
+    locationName: entry.locationName,
+  };
+}
 
 test("Athletes Calendar enforces membership, Founder writes, isolation and lifecycle", async () => {
   const athletesRepository = new PrismaAthletesRepository(db);
@@ -63,31 +75,29 @@ test("Athletes Calendar enforces membership, Founder writes, isolation and lifec
         error instanceof AthletesError && error.code === "ATHLETES_MEMBER_REQUIRED",
     );
     await assert.rejects(
-      () => calendar.create(member, first.id, { ...created, title: "Forbidden" }),
+      () => calendar.create(member, first.id, writeInput(created, "Forbidden")),
       (error: unknown) =>
         error instanceof AthletesError && error.code === "ATHLETES_FOUNDER_REQUIRED",
     );
     await assert.rejects(
-      () => calendar.update(founder, second.id, created.id, { ...created, title: "Wrong group" }),
+      () => calendar.update(founder, second.id, created.id, writeInput(created, "Wrong group")),
       (error: unknown) =>
         error instanceof AthletesError && error.code === "ATHLETES_CALENDAR_ENTRY_NOT_FOUND",
     );
 
-    const updated = await calendar.update(founder, first.id, created.id, {
-      title: "Evening intervals",
-      description: created.description,
-      startsAt: created.startsAt,
-      endsAt: created.endsAt,
-      timezone: created.timezone,
-      locationName: created.locationName,
-    });
+    const updated = await calendar.update(
+      founder,
+      first.id,
+      created.id,
+      writeInput(created, "Evening intervals"),
+    );
     assert.equal(updated.title, "Evening intervals");
 
     const cancelled = await calendar.cancel(founder, first.id, created.id);
     assert.equal(cancelled.status, "CANCELLED");
     assert.equal((await calendar.cancel(founder, first.id, created.id)).status, "CANCELLED");
     await assert.rejects(
-      () => calendar.update(founder, first.id, created.id, { ...updated, title: "Too late" }),
+      () => calendar.update(founder, first.id, created.id, writeInput(updated, "Too late")),
       (error: unknown) =>
         error instanceof AthletesError && error.code === "ATHLETES_CALENDAR_ENTRY_NOT_EDITABLE",
     );
