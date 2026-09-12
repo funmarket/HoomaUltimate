@@ -5,12 +5,17 @@ import type {
   AthletesCalendarEntryUpdateInput,
 } from "@hooma/contracts/athletes-calendar";
 import type { AthletesCalendarRepository } from "../application/athletes-calendar.repository.js";
+import type {
+  AthletesCalendarTransactionRepository,
+  AthletesCalendarTransactionScope,
+  AthletesCalendarUnitOfWork,
+} from "../application/athletes-calendar.unit-of-work.js";
 import { AthletesError } from "../domain/athletes-error.js";
+import { PrismaAthletesRepository } from "./prisma-athletes.repository.js";
 
 type CalendarRow = {
   id: string;
   athletesCommunityId: string;
-  createdByUserId: string;
   title: string;
   description: string | null;
   startsAt: Date;
@@ -40,114 +45,101 @@ function toEntry(row: CalendarRow): AthletesCalendarEntry {
   };
 }
 
-export class PrismaAthletesCalendarRepository implements AthletesCalendarRepository {
-  constructor(private readonly db: PrismaClient) {}
+class PrismaAthletesCalendarTransactionRepository implements AthletesCalendarTransactionRepository {
+  constructor(private readonly tx: Prisma.TransactionClient) {}
 
-  private async lockActiveCommunity(
-    tx: Prisma.TransactionClient,
-    athletesCommunityId: string,
-    mode: "SHARE" | "UPDATE",
-  ): Promise<void> {
-    const rows =
-      mode === "SHARE"
-        ? await tx.$queryRaw<Array<{ id: string }>>`
-            SELECT "id" FROM "AthletesCommunity"
-            WHERE "id" = ${athletesCommunityId} AND "status" = 'ACTIVE'
-            FOR SHARE
-          `
-        : await tx.$queryRaw<Array<{ id: string }>>`
-            SELECT "id" FROM "AthletesCommunity"
-            WHERE "id" = ${athletesCommunityId} AND "status" = 'ACTIVE'
-            FOR UPDATE
-          `;
-    if (!rows.length) {
-      throw new AthletesError("ATHLETES_NOT_FOUND", "Athletes community not found");
-    }
-  }
-
-  listForCommunity(athletesCommunityId: string, from: Date, to: Date) {
-    return this.db.$transaction(async (tx) => {
-      await this.lockActiveCommunity(tx, athletesCommunityId, "SHARE");
-      const rows = await tx.athletesCalendarEntry.findMany({
-        where: { athletesCommunityId, startsAt: { gte: from, lt: to } },
-        orderBy: [{ startsAt: "asc" }, { id: "asc" }],
-      });
-      return rows.map(toEntry);
-    });
-  }
-
-  create(
+  async create(
     athletesCommunityId: string,
     createdByUserId: string,
     input: AthletesCalendarEntryCreateInput,
   ) {
-    return this.db.$transaction(async (tx) => {
-      await this.lockActiveCommunity(tx, athletesCommunityId, "UPDATE");
-      const row = await tx.athletesCalendarEntry.create({
-        data: {
-          athletesCommunityId,
-          createdByUserId,
-          title: input.title,
-          description: input.description ?? null,
-          startsAt: new Date(input.startsAt),
-          endsAt: input.endsAt ? new Date(input.endsAt) : null,
-          timezone: input.timezone,
-          locationName: input.locationName ?? null,
-        },
-      });
-      return toEntry(row);
+    const row = await this.tx.athletesCalendarEntry.create({
+      data: {
+        athletesCommunityId,
+        createdByUserId,
+        title: input.title,
+        description: input.description ?? null,
+        startsAt: new Date(input.startsAt),
+        endsAt: input.endsAt ? new Date(input.endsAt) : null,
+        timezone: input.timezone,
+        locationName: input.locationName ?? null,
+      },
     });
+    return toEntry(row);
   }
 
-  update(
+  async update(
     athletesCommunityId: string,
     entryId: string,
     input: AthletesCalendarEntryUpdateInput,
   ) {
-    return this.db.$transaction(async (tx) => {
-      await this.lockActiveCommunity(tx, athletesCommunityId, "UPDATE");
-      const current = await tx.athletesCalendarEntry.findFirst({
-        where: { id: entryId, athletesCommunityId },
-      });
-      if (!current) {
-        throw new AthletesError("ATHLETES_CALENDAR_ENTRY_NOT_FOUND", "Calendar event not found");
-      }
-      if (current.status !== "SCHEDULED") {
-        throw new AthletesError(
-          "ATHLETES_CALENDAR_ENTRY_NOT_EDITABLE",
-          "Cancelled calendar events cannot be edited",
-        );
-      }
-      const row = await tx.athletesCalendarEntry.update({
-        where: { id: entryId },
-        data: {
-          title: input.title,
-          description: input.description ?? null,
-          startsAt: new Date(input.startsAt),
-          endsAt: input.endsAt ? new Date(input.endsAt) : null,
-          timezone: input.timezone,
-          locationName: input.locationName ?? null,
-        },
-      });
-      return toEntry(row);
+    const current = await this.tx.athletesCalendarEntry.findFirst({
+      where: { id: entryId, athletesCommunityId },
     });
+    if (!current) {
+      throw new AthletesError("ATHLETES_CALENDAR_ENTRY_NOT_FOUND", "Calendar event not found");
+    }
+    if (current.status !== "SCHEDULED") {
+      throw new AthletesError(
+        "ATHLETES_CALENDAR_ENTRY_NOT_EDITABLE",
+        "Cancelled calendar events cannot be edited",
+      );
+    }
+    const row = await this.tx.athletesCalendarEntry.update({
+      where: { id: entryId },
+      data: {
+        title: input.title,
+        description: input.description ?? null,
+        startsAt: new Date(input.startsAt),
+        endsAt: input.endsAt ? new Date(input.endsAt) : null,
+        timezone: input.timezone,
+        locationName: input.locationName ?? null,
+      },
+    });
+    return toEntry(row);
   }
 
-  cancel(athletesCommunityId: string, entryId: string) {
+  async cancel(athletesCommunityId: string, entryId: string) {
+    const current = await this.tx.athletesCalendarEntry.findFirst({
+      where: { id: entryId, athletesCommunityId },
+    });
+    if (!current) {
+      throw new AthletesError("ATHLETES_CALENDAR_ENTRY_NOT_FOUND", "Calendar event not found");
+    }
+    if (current.status === "CANCELLED") return toEntry(current);
+    const row = await this.tx.athletesCalendarEntry.update({
+      where: { id: entryId },
+      data: { status: "CANCELLED", cancelledAt: new Date() },
+    });
+    return toEntry(row);
+  }
+}
+
+export class PrismaAthletesCalendarRepository
+  implements AthletesCalendarRepository, AthletesCalendarUnitOfWork
+{
+  constructor(private readonly db: PrismaClient) {}
+
+  async listForCommunity(athletesCommunityId: string, from: Date, to: Date) {
+    const rows = await this.db.athletesCalendarEntry.findMany({
+      where: { athletesCommunityId, startsAt: { gte: from, lt: to } },
+      orderBy: [{ startsAt: "asc" }, { id: "asc" }],
+    });
+    return rows.map(toEntry);
+  }
+
+  withCommunityLock<T>(
+    athletesCommunityId: string,
+    operation: (scope: AthletesCalendarTransactionScope) => Promise<T>,
+  ): Promise<T> {
     return this.db.$transaction(async (tx) => {
-      await this.lockActiveCommunity(tx, athletesCommunityId, "UPDATE");
-      const current = await tx.athletesCalendarEntry.findFirst({
-        where: { id: entryId, athletesCommunityId },
-      });
-      if (!current) {
-        throw new AthletesError("ATHLETES_CALENDAR_ENTRY_NOT_FOUND", "Calendar event not found");
-      }
-      if (current.status === "CANCELLED") return toEntry(current);
-      const row = await tx.athletesCalendarEntry.update({
-        where: { id: entryId },
-        data: { status: "CANCELLED", cancelledAt: new Date() },
-      });
-      return toEntry(row);
+      const athletes = new PrismaAthletesRepository(tx);
+      return athletes.withCommunityLock(athletesCommunityId, (lockedAthletes) =>
+        operation({
+          athletes: lockedAthletes,
+          calendar: new PrismaAthletesCalendarTransactionRepository(tx),
+        }),
+      );
     });
   }
 }
