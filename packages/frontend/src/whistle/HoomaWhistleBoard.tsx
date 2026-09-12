@@ -2,11 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useHoomaFrontend } from "../context";
 import { HoomaApiError, type WhistleList } from "../api";
 import { listEventWhistles, sendEventWhistle } from "./event-api";
-import {
-  emptyWhistleList,
-  mergeNewestWhistlePage,
-  mergeOlderWhistlePage,
-} from "./history";
+import { emptyWhistleList, mergeNewestWhistlePage, mergeOlderWhistlePage } from "./history";
 import { WhistleAction } from "./WhistleAction";
 import { WhistleRoom } from "./WhistleRoom";
 
@@ -120,13 +116,7 @@ function WhistleBoard({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (
-      !canCompose ||
-      !body.trim() ||
-      count > MAX_GRAPHEMES ||
-      sending ||
-      feed.remainingToday <= 0
-    )
+    if (!canCompose || !body.trim() || count > MAX_GRAPHEMES || sending || feed.remainingToday <= 0)
       return;
     setSending(true);
     setError("");
