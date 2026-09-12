@@ -42,10 +42,6 @@ test("WhistleRoom follows latest by default but never yanks a user out of histor
     value: dom.window.getComputedStyle.bind(dom.window),
     configurable: true,
   });
-  Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", {
-    value: true,
-    configurable: true,
-  });
 
   Object.defineProperty(dom.window.HTMLElement.prototype, "scrollHeight", {
     configurable: true,
