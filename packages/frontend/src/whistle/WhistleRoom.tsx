@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { WhistleListItem } from "../api";
 
 type WhistleRoomProps = {
@@ -86,7 +86,7 @@ export function WhistleRoom({
     previousScrollHeightRef.current = room.scrollHeight;
   }, [firstId, lastId, hasOlder]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!lastId) {
       previousLastIdRef.current = null;
       return;
@@ -97,7 +97,7 @@ export function WhistleRoom({
       previousLastIdRef.current !== null && previousLastIdRef.current !== lastId;
 
     if (isFirstLoadedMessage || (hasNewMessage && wasPinnedRef.current)) {
-      requestAnimationFrame(() => scrollToLatest(isFirstLoadedMessage ? "auto" : "smooth"));
+      scrollToLatest(isFirstLoadedMessage ? "auto" : "smooth");
     } else if (hasNewMessage) {
       setShowLatest(true);
     }
