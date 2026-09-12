@@ -84,14 +84,17 @@ test("older page advances only the older-history cursor and deduplicates overlap
   assert.equal(merged.nextCursor, null);
 });
 
-test("UTC reset replaces client history instead of retaining previous-day Whistle bodies", () => {
-  const previousDay = page(
-    [item("previous-day", "2026-09-12T23:59:00.000Z")],
-    null,
-    "2026-09-13T00:00:00.000Z",
-  );
-  const newDay = page([], null, "2026-09-14T00:00:00.000Z");
+test(
+  "UTC reset replaces client history instead of retaining previous-day Whistle bodies",
+  () => {
+    const previousDay = page(
+      [item("previous-day", "2026-09-12T23:59:00.000Z")],
+      null,
+      "2026-09-13T00:00:00.000Z",
+    );
+    const newDay = page([], null, "2026-09-14T00:00:00.000Z");
 
-  assert.deepEqual(mergeNewestWhistlePage(previousDay, newDay), newDay);
-  assert.deepEqual(mergeOlderWhistlePage(previousDay, newDay), newDay);
-});
+    assert.deepEqual(mergeNewestWhistlePage(previousDay, newDay), newDay);
+    assert.deepEqual(mergeOlderWhistlePage(previousDay, newDay), newDay);
+  },
+);
