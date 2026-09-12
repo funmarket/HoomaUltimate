@@ -21,8 +21,8 @@ CREATE TABLE "AthletesCalendarEntry" (
   CONSTRAINT "AthletesCalendarEntry_pkey" PRIMARY KEY ("id")
 );
 
-CREATE INDEX "AthletesCalendarEntry_athletesCommunityId_status_startsAt_id_idx"
-  ON "AthletesCalendarEntry"("athletesCommunityId", "status", "startsAt", "id");
+CREATE INDEX "AthletesCalendarEntry_athletesCommunityId_startsAt_id_idx"
+  ON "AthletesCalendarEntry"("athletesCommunityId", "startsAt", "id");
 
 CREATE INDEX "AthletesCalendarEntry_createdByUserId_startsAt_idx"
   ON "AthletesCalendarEntry"("createdByUserId", "startsAt");
