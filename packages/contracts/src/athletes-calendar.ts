@@ -58,7 +58,7 @@ const calendarWriteFields = {
 };
 
 function validateTimes(
-  input: { startsAt: string; endsAt?: string | null },
+  input: { startsAt: string; endsAt?: string | null | undefined },
   context: z.RefinementCtx,
 ) {
   if (input.endsAt && new Date(input.endsAt) <= new Date(input.startsAt)) {
