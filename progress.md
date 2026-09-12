@@ -10,7 +10,7 @@ Progression gate: each step must score **more than 8/10** under `docs/LIVING_BUI
 
 - [COMPLETE] Step A — Athletes authorization boundaries and Photo transaction unit of work
 - [COMPLETE] Step B — Athletes Photo Board signed delivery optimization
-- [ ] Step C — WebSession `lastSeenAt` activity projection and Active Athletes redesign
+- [IN PROGRESS] Step C — WebSession `lastSeenAt` activity projection and Active Athletes redesign
 - [ ] Step D — Whistle older-history access and canonical user-profile navigation
 
 ### Step A — Athletes authorization boundaries and Photo transaction unit of work
@@ -33,7 +33,7 @@ Progression gate: each step must score **more than 8/10** under `docs/LIVING_BUI
 ### Step B — Athletes Photo Board signed delivery optimization
 
 - Branch: `feat/athletes-photo-signed-delivery`.
-- Pull request: `#271`.
+- Pull request: `#271` implementation; `#272` runtime closeout.
 - Base commit: `60bf028ca722363d17e1ce47dd6816b78cfd4414`.
 - Final verified feature head: `7e8b9c9273cae79e49949f25dde81da26bb8950c`.
 - Merge commit on `phase-0-foundation`: `2fe5e467c14ac29a83eb2aa35218523d695919c7`.
@@ -41,16 +41,21 @@ Progression gate: each step must score **more than 8/10** under `docs/LIVING_BUI
 - Storage boundary: `ObjectStorage` remains the shared byte-storage contract for existing domains; signed reads are a separate `ObjectStorageReadUrlSigner` capability implemented by S3 storage so unrelated consumers are not forced into Athletes delivery behavior.
 - Database migration: none.
 - Verification repair: the full CI ladder exposed one stale Athletes hardening test that still mocked the removed authenticated byte-proxy route plus changed-file formatting drift. Both were corrected without bypassing or weakening any gate.
-- CI: final run `#1871` (`34661477776`) passed on exact feature head `7e8b9c9273cae79e49949f25dde81da26bb8950c`: install, Prisma generation/validation/migrate deploy, architecture check, changed-file formatting, changed-source lint, typecheck, package build, unit tests, full build, PostgreSQL/Redis integration tests, deploy preflight, security check, and migration status.
-- Exact-commit production deployment: Railway production API deployment `369e6e2a-d2e2-478a-9f08-f1ce7bc75166` reached `SUCCESS` for merge commit `2fe5e467c14ac29a83eb2aa35218523d695919c7`. HOOMA Web deployment `f1522462-d0df-4535-813e-802fb8dbf61e` and HOOMA Telegram deployment `3604305b-5c3e-415e-9708-e0769ac1aca5` also reached `SUCCESS` for the same exact commit. The Worker deployment `15b58a2a-89dd-4437-8b66-b1c663098cf7` is also online on that release.
-- Runtime/config evidence: the API is online with one running replica and no current warnings or crashes; its healthcheck is `/health`. Production pre-deploy found all 42 migrations and reported `No pending migrations to apply`; runtime startup reported `HOOMA API listening on 3000`. The API has all required `OBJECT_STORAGE_ENDPOINT`, `OBJECT_STORAGE_REGION`, `OBJECT_STORAGE_BUCKET`, `OBJECT_STORAGE_ACCESS_KEY_ID`, `OBJECT_STORAGE_SECRET_ACCESS_KEY`, and `OBJECT_STORAGE_URL_STYLE` variables configured, and the `hooma-athletes-photos` Railway bucket exists in `ams`.
-- Live traffic evidence: after the exact-commit deploy, the API continued serving authenticated ATHLETES-context traffic with no upstream errors. No production `/photos/:photoId/delivery` request was present in the available HTTP log window, and the available read-only tooling could not safely manufacture a production member session/photo merely to create one.
-- Score: **9/10** under `docs/LIVING_BUILD_PLAN.md`. The complete source/CI ladder, real PostgreSQL/Redis integration, exact-commit API/Web/Telegram production deployment, API health/runtime evidence, migration state, and object-storage runtime configuration are proven. A score of 10 is not claimed because this closeout did not perform a fresh authenticated production Photo delivery request followed by a direct signed-object GET; doing that without an already-available safe member credential/photo would require mutating production test data or bypassing auth, which this verification deliberately did not do.
-- Progression: Step C is **unblocked** because Step B now scores more than 8/10.
+- CI: final implementation run `#1871` (`34661477776`) passed on exact feature head `7e8b9c9273cae79e49949f25dde81da26bb8950c`; runtime-closeout PR `#272` also passed the complete verification ladder in run `#1873` (`34664988039`).
+- Exact-commit production deployment: Railway production API deployment `369e6e2a-d2e2-478a-9f08-f1ce7bc75166` reached `SUCCESS` for merge commit `2fe5e467c14ac29a83eb2aa35218523d695919c7`. HOOMA Web deployment `f1522462-d0df-4535-813e-802fb8dbf61e` and HOOMA Telegram deployment `3604305b-5c3e-415e-9708-e0769ac1aca5` also reached `SUCCESS` for the same exact commit. The Worker deployment `15b58a2a-89dd-4437-8b66-b1c663098cf7` was also online on that release. The subsequent docs-only closeout commit `9b6988c080e44e8aa896323c87db7bf60ce3d4fa` also deployed successfully.
+- Runtime/config evidence: production has the complete `OBJECT_STORAGE_*` configuration and `hooma-athletes-photos` bucket in `ams`. A fresh production smoke test then exercised the real application path without auth bypass or direct database patching: register temporary web user, create private `APPROVAL_REQUIRED` Athletes community, upload a real PNG through `POST /api/v1/athletes/:id/photos`, receive optimized WebP metadata, request `GET /api/v1/athletes/:communityId/photos/:photoId/delivery`, perform a direct GET against the returned signed object-storage URL, delete through the application API, observe Worker cleanup, archive the community, and logout.
+- End-to-end signed-delivery proof: the uploaded image was optimized to `image/webp` with a 14,916-byte payload; the delivery URL carried the expected AWS SigV4 query parameters with a 300-second expiry; the direct object-storage GET returned HTTP 200, `image/webp`, and exactly 14,916 bytes. After application deletion, the same signed URL returned HTTP 404 after about 5 seconds, proving the Worker removed the underlying object rather than only the metadata row.
+- Smoke-test cleanup: the temporary Athletes community was archived and the session logged out. A temporary user remains because HOOMA currently has no user-delete API; no direct SQL was used to remove it.
+- Score: **10/10** under `docs/LIVING_BUILD_PLAN.md`. Step B is now proven through source, full CI, exact-commit deployment, real production auth/session behavior, upload/optimization, signed URL generation, direct object delivery, application deletion, and asynchronous object cleanup.
+- Progression: Step C is **unblocked and started**.
 
 ### Step C — WebSession activity and Active Athletes redesign
 
-Not started. Step B has cleared the >8/10 progression gate.
+- Branch: `feat/athletes-websession-last-seen`.
+- Base commit: `9b6988c080e44e8aa896323c87db7bf60ce3d4fa`.
+- Scope: use only canonical `WebSession.lastSeenAt` for web activity truth; touch it at the Identity session-resolution boundary with throttling; expose a narrow Identity-owned batched reader for Athletes; redesign Active Athletes rows to show avatar, display name, `@username`, role, and last-seen text while retaining canonical `/profile/:username` navigation.
+- Explicit non-goals: no Redis presence, no green/red online dots, no Telegram activity fallback, no new presence table, no duplicate user card/profile model, no N+1 identity reads.
+- Status: source inspection and implementation in progress.
 
 ### Step D — Whistle history and canonical user navigation
 
