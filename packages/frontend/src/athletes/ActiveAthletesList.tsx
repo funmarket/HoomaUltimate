@@ -7,7 +7,8 @@ function lastSeenLabel(value: string | null): string {
   const elapsed = Math.max(0, Date.now() - timestamp);
   if (elapsed < 60_000) return "Last seen just now";
   if (elapsed < 60 * 60_000) return `Last seen ${Math.floor(elapsed / 60_000)}m ago`;
-  if (elapsed < 24 * 60 * 60_000) return `Last seen ${Math.floor(elapsed / (60 * 60_000))}h ago`;
+  if (elapsed < 24 * 60 * 60_000)
+    return `Last seen ${Math.floor(elapsed / (60 * 60_000))}h ago`;
   return `Last seen ${Math.floor(elapsed / (24 * 60 * 60_000))}d ago`;
 }
 
@@ -52,7 +53,9 @@ export function ActiveAthletesList({
                 ) : (
                   <strong>Member</strong>
                 )}
-                <small className="active-athlete-last-seen">{lastSeenLabel(member.lastSeenAt)}</small>
+                <small className="active-athlete-last-seen">
+                  {lastSeenLabel(member.lastSeenAt)}
+                </small>
               </div>
             </div>
             <div className="active-athlete-meta">
