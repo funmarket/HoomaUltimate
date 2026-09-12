@@ -66,9 +66,14 @@ test("WhistleRoom follows latest by default but never yanks a user out of histor
     },
   });
 
+  const React = await import("react");
+  Object.defineProperty(globalThis, "React", {
+    value: React,
+    writable: true,
+    configurable: true,
+  });
   const { fireEvent, render, cleanup } = await import("@testing-library/react");
   const { WhistleRoom } = await import("../packages/frontend/src/whistle/WhistleRoom");
-  const React = await import("react");
 
   const first = whistle("1", "2026-09-12T10:00:00.000Z");
   const second = whistle("2", "2026-09-12T10:01:00.000Z");
