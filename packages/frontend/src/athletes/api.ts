@@ -15,6 +15,8 @@ import type {
   AthletesSport,
 } from "@hooma/contracts/athletes";
 import { request, requestBinary, HoomaApiError, type HoomaTransport } from "../http";
+import { createAthletesCalendarApi } from "./calendar/api";
+
 type PublicAthletesSummary = AthletesPublicSummary;
 type PublicAthletesDetail = AthletesPublicDetail;
 type PublicAthletesList = { items: PublicAthletesSummary[]; nextCursor: string | null };
@@ -31,6 +33,7 @@ function athletesPublicListPath(
 
 export function createAthletesApi(transport: HoomaTransport) {
   return {
+    calendar: createAthletesCalendarApi(transport),
     publicList: (filters?: { sport?: AthletesSport; cursor?: string; limit?: number }) =>
       request<PublicAthletesList>(transport, athletesPublicListPath(filters)),
     publicDetail: (id: string) =>
