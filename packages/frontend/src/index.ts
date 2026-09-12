@@ -12,6 +12,7 @@ import "./athletes/athletes-controls.css";
 import "./athletes/athletes-member-management.css";
 import "./athletes/active-athletes.css";
 import "./athletes/calendar/athletes-calendar.css";
+import "./athletes/calendar/athletes-calendar-form.css";
 import "./forms/hooma-form.css";
 import "./game-location/game-location.css";
 import "./places/places.css";
