@@ -37,7 +37,10 @@ export function AthletesCalendar({
   );
 
   const selectedEntries = useMemo(
-    () => entries.filter((entry) => dateKeyForInstant(entry.startsAt, entry.timezone) === selectedKey),
+    () =>
+      entries.filter(
+        (entry) => dateKeyForInstant(entry.startsAt, entry.timezone) === selectedKey,
+      ),
     [entries, selectedKey],
   );
   const eventCounts = useMemo(() => {
@@ -82,7 +85,9 @@ export function AthletesCalendar({
       if (savedMonth === monthKey) await reload();
       else setMonthKey(savedMonth);
     } catch (reason) {
-      setActionError(reason instanceof Error ? reason.message : "Unable to save calendar event");
+      setActionError(
+        reason instanceof Error ? reason.message : "Unable to save calendar event",
+      );
     } finally {
       setBusy(false);
     }
@@ -95,7 +100,9 @@ export function AthletesCalendar({
       await api.athletes.calendar.cancel(athletesCommunityId, entry.id);
       await reload();
     } catch (reason) {
-      setActionError(reason instanceof Error ? reason.message : "Unable to cancel calendar event");
+      setActionError(
+        reason instanceof Error ? reason.message : "Unable to cancel calendar event",
+      );
     } finally {
       setBusy(false);
     }
