@@ -5,6 +5,7 @@ import {
   athletesCalendarEntryCreateSchema,
   athletesCalendarEntrySchema,
   athletesCalendarRangeSchema,
+  athletesCalendarTimezoneSchema,
 } from "@hooma/contracts/athletes-calendar";
 
 test("Athletes Calendar accepts a bounded event and applies the canonical timezone", () => {
@@ -18,6 +19,8 @@ test("Athletes Calendar accepts a bounded event and applies the canonical timezo
 
   assert.equal(parsed.timezone, "Africa/Tunis");
   assert.equal(parsed.title, "Evening training");
+  assert.equal(athletesCalendarTimezoneSchema.parse("Europe/Rome"), "Europe/Rome");
+  assert.throws(() => athletesCalendarTimezoneSchema.parse("Not/A_Timezone"));
 });
 
 test("Athletes Calendar rejects invalid event timing and unrelated product fields", () => {
@@ -32,6 +35,13 @@ test("Athletes Calendar rejects invalid event timing and unrelated product field
       ...base,
       endsAt: "2026-09-18T19:00:00.000Z",
       rsvp: true,
+    }),
+  );
+  assert.throws(() =>
+    athletesCalendarEntryCreateSchema.parse({
+      ...base,
+      endsAt: "2026-09-18T19:00:00.000Z",
+      timezone: "Invalid/Timezone",
     }),
   );
 });
