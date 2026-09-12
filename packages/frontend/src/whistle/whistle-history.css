@@ -1,0 +1,47 @@
+.whistle-room__older {
+  align-self: center;
+  justify-self: center;
+  min-height: 34px;
+  margin: 4px 0 8px;
+  padding: 7px 12px;
+  border: 1px solid rgba(181, 155, 87, 0.42);
+  border-radius: 999px;
+  background: rgba(6, 8, 6, 0.88);
+  color: #d8d0c1;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.whistle-room__older:hover,
+.whistle-room__older:focus-visible {
+  border-color: rgba(196, 220, 67, 0.62);
+  color: #f2ead7;
+  outline: none;
+}
+
+.whistle-room__older:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.whistle-message__author {
+  min-width: 0;
+  overflow: hidden;
+  color: #f2ead7;
+  font-size: 12px;
+  font-weight: 850;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.whistle-message__author:hover,
+.whistle-message__author:focus-visible {
+  color: #dcec83;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  outline: none;
+}
