@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   createProfileApi,
+  emptyWhistleList,
+  mergeNewestWhistlePage,
+  mergeOlderWhistlePage,
   useHoomaFrontend,
   WhistleAction,
   WhistleRoom,
@@ -25,13 +28,10 @@ export function UserWhistlePanel({
   const profileApi = useMemo(() => createProfileApi(transport), [transport]);
   const [isSelf, setIsSelf] = useState<boolean | null>(null);
   const [open, setOpen] = useState(false);
-  const [feed, setFeed] = useState<WhistleList>({
-    items: [],
-    remainingToday: 11,
-    resetsAt: "",
-  });
+  const [feed, setFeed] = useState<WhistleList>(() => emptyWhistleList());
   const [body, setBody] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const count = graphemeCount(body);
@@ -54,7 +54,8 @@ export function UserWhistlePanel({
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setFeed(await profileApi.directWhistles(username));
+      const next = await profileApi.directWhistles(username);
+      setFeed((current) => mergeNewestWhistlePage(current, next));
       setError("");
     } catch (reason) {
       setError(protectedError(reason, "Could not load direct Whistles"));
@@ -62,6 +63,21 @@ export function UserWhistlePanel({
       setLoading(false);
     }
   }, [profileApi, protectedError, username]);
+
+  async function loadOlder() {
+    const cursor = feed.nextCursor;
+    if (!cursor || loadingOlder) return;
+    setLoadingOlder(true);
+    try {
+      const older = await profileApi.directWhistles(username, cursor);
+      setFeed((current) => mergeOlderWhistlePage(current, older));
+      setError("");
+    } catch (reason) {
+      setError(protectedError(reason, "Could not load older direct Whistles"));
+    } finally {
+      setLoadingOlder(false);
+    }
+  }
 
   async function openPanel() {
     setOpen(true);
@@ -101,6 +117,9 @@ export function UserWhistlePanel({
         items={feed.items}
         loading={loading}
         emptyText="No Whistles between you today."
+        hasOlder={Boolean(feed.nextCursor)}
+        loadingOlder={loadingOlder}
+        onLoadOlder={() => void loadOlder()}
       />
 
       <form onSubmit={submit}>
