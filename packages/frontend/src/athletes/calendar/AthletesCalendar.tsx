@@ -132,7 +132,11 @@ export function AthletesCalendar({
       </div>
 
       <div className="athletes-calendar-nav">
-        <button type="button" aria-label="Previous month" onClick={() => moveMonth(-1)}>
+        <button
+          type="button"
+          aria-label="Previous month"
+          onClick={() => moveMonth(-1)}
+        >
           ‹
         </button>
         <button
@@ -143,7 +147,11 @@ export function AthletesCalendar({
           Today
         </button>
         <strong>{monthLabel(monthKey)}</strong>
-        <button type="button" aria-label="Next month" onClick={() => moveMonth(1)}>
+        <button
+          type="button"
+          aria-label="Next month"
+          onClick={() => moveMonth(1)}
+        >
           ›
         </button>
       </div>
@@ -153,7 +161,9 @@ export function AthletesCalendar({
           {error} <button onClick={() => void reload()}>Retry</button>
         </div>
       ) : null}
-      {loading ? <p className="muted athletes-calendar-loading">Loading calendar…</p> : null}
+      {loading ? (
+        <p className="muted athletes-calendar-loading">Loading calendar…</p>
+      ) : null}
 
       <MonthGrid
         monthKey={monthKey}

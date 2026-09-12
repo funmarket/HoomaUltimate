@@ -19,7 +19,11 @@ function response(body: unknown): Response {
   } as Response;
 }
 
-function entry(id: string, title: string, startsAt: string): AthletesCalendarEntry {
+function entry(
+  id: string,
+  title: string,
+  startsAt: string,
+): AthletesCalendarEntry {
   return {
     id,
     athletesCommunityId: "athletes-1",
@@ -40,8 +44,14 @@ test("Athletes Calendar ignores a stale month response after navigation", async 
   const dom = new JSDOM("<!doctype html><html><body></body></html>", {
     url: "http://localhost/",
   });
-  Object.defineProperty(globalThis, "window", { value: dom.window, configurable: true });
-  Object.defineProperty(globalThis, "document", { value: dom.window.document, configurable: true });
+  Object.defineProperty(globalThis, "window", {
+    value: dom.window,
+    configurable: true,
+  });
+  Object.defineProperty(globalThis, "document", {
+    value: dom.window.document,
+    configurable: true,
+  });
   Object.defineProperty(globalThis, "navigator", {
     value: dom.window.navigator,
     configurable: true,
@@ -50,8 +60,14 @@ test("Athletes Calendar ignores a stale month response after navigation", async 
     value: dom.window.HTMLElement,
     configurable: true,
   });
-  Object.defineProperty(globalThis, "Element", { value: dom.window.Element, configurable: true });
-  Object.defineProperty(globalThis, "Node", { value: dom.window.Node, configurable: true });
+  Object.defineProperty(globalThis, "Element", {
+    value: dom.window.Element,
+    configurable: true,
+  });
+  Object.defineProperty(globalThis, "Node", {
+    value: dom.window.Node,
+    configurable: true,
+  });
 
   const first = deferred<Response>();
   const second = deferred<Response>();
@@ -71,7 +87,9 @@ test("Athletes Calendar ignores a stale month response after navigation", async 
     configurable: true,
   });
   const { cleanup, render, waitFor } = await import("@testing-library/react");
-  const { HoomaFrontendProvider } = await import("../packages/frontend/src/context");
+  const { HoomaFrontendProvider } = await import(
+    "../packages/frontend/src/context"
+  );
   const { useAthletesCalendar } = await import(
     "../packages/frontend/src/athletes/calendar/useAthletesCalendar"
   );
@@ -82,7 +100,11 @@ test("Athletes Calendar ignores a stale month response after navigation", async 
       "div",
       null,
       React.createElement("span", { "data-testid": "loading" }, String(loading)),
-      React.createElement("span", { "data-testid": "title" }, entries[0]?.title ?? "empty"),
+      React.createElement(
+        "span",
+        { "data-testid": "title" },
+        entries[0]?.title ?? "empty",
+      ),
     );
   }
 
@@ -99,11 +121,21 @@ test("Athletes Calendar ignores a stale month response after navigation", async 
   view.rerender(renderProbe("2026-10-01"));
   await waitFor(() => assert.equal(requests, 2));
 
-  second.resolve(response([entry("october", "October training", "2026-10-08T17:00:00.000Z")]));
-  await waitFor(() => assert.equal(view.getByTestId("title").textContent, "October training"));
+  second.resolve(
+    response([
+      entry("october", "October training", "2026-10-08T17:00:00.000Z"),
+    ]),
+  );
+  await waitFor(() =>
+    assert.equal(view.getByTestId("title").textContent, "October training"),
+  );
   assert.equal(view.getByTestId("loading").textContent, "false");
 
-  first.resolve(response([entry("september", "September training", "2026-09-08T17:00:00.000Z")]));
+  first.resolve(
+    response([
+      entry("september", "September training", "2026-09-08T17:00:00.000Z"),
+    ]),
+  );
   await new Promise((resolve) => setTimeout(resolve, 0));
 
   assert.equal(view.getByTestId("title").textContent, "October training");

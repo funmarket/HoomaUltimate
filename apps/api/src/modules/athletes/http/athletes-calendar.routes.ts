@@ -8,7 +8,9 @@ import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import { getAuth } from "../../identity/http/auth-request.js";
 import type { AthletesCalendarService } from "../application/athletes-calendar.service.js";
 
-export function createAthletesCalendarRouter(service: AthletesCalendarService): Router {
+export function createAthletesCalendarRouter(
+  service: AthletesCalendarService,
+): Router {
   const router = Router();
 
   router.get(

@@ -13,7 +13,8 @@ import type {
   AthletesCalendarUnitOfWork,
 } from "./athletes-calendar.unit-of-work.js";
 
-type AthletesCalendarPersistence = AthletesCalendarRepository & AthletesCalendarUnitOfWork;
+type AthletesCalendarPersistence = AthletesCalendarRepository &
+  AthletesCalendarUnitOfWork;
 
 export class AthletesCalendarService {
   constructor(
@@ -21,7 +22,11 @@ export class AthletesCalendarService {
     private readonly persistence: AthletesCalendarPersistence,
   ) {}
 
-  async list(userId: string, athletesCommunityId: string, range: AthletesCalendarRange) {
+  async list(
+    userId: string,
+    athletesCommunityId: string,
+    range: AthletesCalendarRange,
+  ) {
     await this.authorizer.requireMemberContent(userId, athletesCommunityId);
     return this.persistence.listForCommunity(
       athletesCommunityId,
@@ -62,10 +67,16 @@ export class AthletesCalendarService {
     athletesCommunityId: string,
     operation: (calendar: AthletesCalendarTransactionRepository) => Promise<T>,
   ): Promise<T> {
-    return this.persistence.withCommunityLock(athletesCommunityId, async (scope) => {
-      const lockedAuthorization = new AthletesContentAuthorization(scope.athletes);
-      await lockedAuthorization.requireFounderContent(userId, athletesCommunityId);
-      return operation(scope.calendar);
-    });
+    return this.persistence.withCommunityLock(
+      athletesCommunityId,
+      async (scope) => {
+        const lockedAuthorization = new AthletesContentAuthorization(scope.athletes);
+        await lockedAuthorization.requireFounderContent(
+          userId,
+          athletesCommunityId,
+        );
+        return operation(scope.calendar);
+      },
+    );
   }
 }
