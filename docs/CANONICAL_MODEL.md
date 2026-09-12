@@ -88,6 +88,16 @@ WebSession
   lastSeenAt
 ```
 
+Rules:
+
+- `lastSeenAt` is Identity-owned durable web-session activity metadata, not generic online/offline presence;
+- Identity updates `lastSeenAt` only while resolving a valid authenticated WebSession;
+- writes are throttled to at most once per 60 seconds per session;
+- activity reads consider only active WebSessions where `revokedAt == null` and `expiresAt > now`;
+- the canonical user-level projection is the most recent `lastSeenAt` across that User's active WebSessions, or `null` when no active WebSession exists;
+- cross-domain consumers must use the Identity-owned batched `UserLastSeenReader` application port rather than query `WebSession` persistence directly;
+- Telegram authentication, Redis, Athletes persistence, and other product-domain tables are not fallback activity sources.
+
 ## TelegramIdentity
 
 ```text
@@ -280,6 +290,18 @@ Rules:
 - the current Photo Board has no captions, likes/reactions, comments/replies, albums, manual ordering, moderator/member curation, or public board;
 - Founder Photo Board deletion is scoped curation authority only and does not create a generic Media ownership model or social-feed lifecycle;
 - equipment, Events, marketplace, Ride/Requests/FundMe integration, ULTRAS and generic community abstractions are not part of this foundation.
+
+## Active Athletes projection
+
+Active Athletes is a private presentation of the existing active `AthletesMembership` list; WebSession activity never defines or filters Athletes membership.
+
+For each member, the projection may combine:
+
+- Athletes-owned `role` and membership identity;
+- canonical Identity/UserPresentation `displayName`, `username`, and `photoUrl`;
+- Identity-owned nullable user-level `lastSeenAt`, obtained only through the batched `UserLastSeenReader`.
+
+If a User has no active, unrevoked, unexpired WebSession, `lastSeenAt` is `null` and the member remains in the list. The current UI renders that state as `No recent web activity` rather than inventing `ONLINE`, `OFFLINE`, green/red dots, Telegram-derived presence, or Redis presence. Member navigation continues to the canonical `/profile/:username` identity page; no Athletes-specific duplicate user profile/card model exists.
 
 ---
 
@@ -1176,6 +1198,6 @@ public/private UI projection
 
 Any mismatch is a blocker, not a reason for a compatibility patch.
 
-## In-flight Athletes consistency corrections — PR #265
+## In-flight Athletes consistency — Step C
 
-Existing-community lifecycle mutations serialize policy reads and writes using the AthletesCommunity row. Photo upload recovery uses existing OutboxEvent records, identified by photo ID and the `athletes.photo.reconcile-object` topic. Successful photo metadata publication consumes the pending intent in the same transaction after active-Founder authorization; failed publication leaves recovery information durable. AthletesPhoto and object storage remain the only durable photo metadata/byte owners. No schema migration or new table is introduced by this correction.
+PR `#274` keeps `WebSession.lastSeenAt` under Identity ownership and exposes only the narrow batched `UserLastSeenReader` to Athletes. Athletes preserves its canonical active membership list and projects nullable Identity activity alongside canonical UserPresentation fields; a missing active WebSession produces `lastSeenAt == null` rather than removing the member or fabricating online/offline state. No schema migration, presence table, Redis presence layer, Telegram fallback, or duplicate user identity model is introduced by this slice.
