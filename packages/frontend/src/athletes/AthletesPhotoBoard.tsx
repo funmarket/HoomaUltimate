@@ -219,7 +219,7 @@ function AthletesPhoto({
   const { api, protectedError } = useHoomaFrontend();
   const element = useRef<HTMLElement | null>(null);
   const [visible, setVisible] = useState(typeof IntersectionObserver === "undefined");
-  const [objectUrl, setObjectUrl] = useState("");
+  const [contentUrl, setContentUrl] = useState("");
   const [loadError, setLoadError] = useState("");
   const [deleteError, setDeleteError] = useState("");
   const [attempt, setAttempt] = useState(0);
@@ -239,24 +239,21 @@ function AthletesPhoto({
   useEffect(() => {
     let active = true;
     const controller = new AbortController();
-    let url = "";
-    setObjectUrl("");
+    setContentUrl("");
     setLoadError("");
-    if (visible)
+    if (visible) {
       void api.athletes
-        .fetchPhotoContent(athletesCommunityId, photo.id, controller.signal)
-        .then((blob) => {
-          if (!active) return;
-          url = URL.createObjectURL(blob);
-          setObjectUrl(url);
+        .photoDelivery(athletesCommunityId, photo.id, controller.signal)
+        .then((delivery) => {
+          if (active) setContentUrl(delivery.contentUrl);
         })
         .catch((reason) => {
           if (active) setLoadError(protectedError(reason, "Unable to load photo"));
         });
+    }
     return () => {
       active = false;
       controller.abort();
-      if (url) URL.revokeObjectURL(url);
     };
   }, [api, athletesCommunityId, photo.id, visible, attempt, protectedError]);
 
@@ -277,11 +274,12 @@ function AthletesPhoto({
 
   return (
     <figure ref={element} className="athletes-photo-board__photo">
-      {objectUrl ? (
+      {contentUrl ? (
         <img
-          src={objectUrl}
+          src={contentUrl}
           alt={`Photo ${index + 1} from Athletes Photo Board`}
           loading="lazy"
+          referrerPolicy="no-referrer"
           onError={() => setLoadError("This photo could not be displayed.")}
         />
       ) : null}
@@ -335,7 +333,7 @@ function AthletesPhoto({
           {loadError}
           <button onClick={() => setAttempt((value) => value + 1)}>Retry photo {index + 1}</button>
         </div>
-      ) : !objectUrl ? (
+      ) : !contentUrl ? (
         <span className="athletes-photo-board__photo-loading" role="status">
           Loading photo {index + 1}…
         </span>

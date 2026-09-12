@@ -2,12 +2,12 @@ import { randomUUID } from "node:crypto";
 import {
   ATHLETES_PHOTO_MAX_BYTES,
   athletesPhotoContentTypeSchema,
-  type AthletesPhotoContentType,
+  type AthletesPhotoDelivery,
   type AthletesPhotoList,
   type AthletesPhotoMetadata,
   type AthletesPhotoUploadResponse,
 } from "@hooma/contracts/athletes";
-import type { ObjectStorage } from "@hooma/storage";
+import type { ObjectStorage, ObjectStorageReadUrlSigner } from "@hooma/storage";
 import { AthletesError } from "../domain/athletes-error.js";
 import {
   AthletesContentAuthorization,
@@ -18,13 +18,10 @@ import type { AthletesPhotoRecord, AthletesPhotoRepository } from "./athletes-ph
 import type { AthletesPhotoUnitOfWork } from "./athletes-photo.unit-of-work.js";
 import type { AthletesPhotoValidator } from "./athletes-photo-validator.js";
 
+const ATHLETES_PHOTO_READ_URL_TTL_SECONDS = 5 * 60;
+
 export interface AthletesPhotoUploadInput {
   readonly contentType: string;
-  readonly body: Uint8Array;
-}
-
-export interface AthletesPhotoBinary {
-  readonly contentType: AthletesPhotoContentType;
   readonly body: Uint8Array;
 }
 
@@ -134,28 +131,31 @@ export class AthletesPhotoService {
     return (await this.photos.listForCommunity(athletesCommunityId, page)).map(publicPhotoMetadata);
   }
 
-  async read(
+  async delivery(
     userId: string,
     athletesCommunityId: string,
     photoId: string,
-  ): Promise<AthletesPhotoBinary> {
+  ): Promise<AthletesPhotoDelivery> {
     await this.athletes.requireMemberContent(userId, athletesCommunityId);
     const metadata = await this.photos.getForCommunity(athletesCommunityId, photoId);
     if (!metadata) {
       throw new AthletesError("ATHLETES_PHOTO_NOT_FOUND", "Athletes photo not found");
     }
-    if (!this.storage) {
+    if (!this.storage || !supportsReadUrlSigning(this.storage)) {
       throw new AthletesError(
         "ATHLETES_PHOTO_STORAGE_NOT_CONFIGURED",
         "Athletes photo storage is not configured",
       );
     }
 
+    const issuedAt = Date.now();
     try {
-      const stored = await this.storage.get(metadata.objectKey);
       return {
-        contentType: athletesPhotoContentTypeSchema.parse(metadata.contentType),
-        body: stored.body,
+        contentUrl: await this.storage.createReadUrl(
+          metadata.objectKey,
+          ATHLETES_PHOTO_READ_URL_TTL_SECONDS,
+        ),
+        expiresAt: new Date(issuedAt + ATHLETES_PHOTO_READ_URL_TTL_SECONDS * 1000).toISOString(),
       };
     } catch {
       throw new AthletesError("ATHLETES_PHOTO_UNAVAILABLE", "Athletes photo is unavailable");
@@ -176,6 +176,12 @@ export class AthletesPhotoService {
       throw new AthletesError("ATHLETES_PHOTO_NOT_FOUND", "Athletes photo not found");
     }
   }
+}
+
+function supportsReadUrlSigning(
+  storage: ObjectStorage,
+): storage is ObjectStorage & ObjectStorageReadUrlSigner {
+  return "createReadUrl" in storage && typeof storage.createReadUrl === "function";
 }
 
 function normalizeContentType(contentType: string): string {

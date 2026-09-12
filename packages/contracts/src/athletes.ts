@@ -156,6 +156,13 @@ export const athletesPhotoMetadataSchema = z
   })
   .strict();
 
+export const athletesPhotoDeliverySchema = z
+  .object({
+    contentUrl: z.string().url(),
+    expiresAt: z.string().datetime(),
+  })
+  .strict();
+
 export const athletesPhotoListSchema = z.array(athletesPhotoMetadataSchema);
 export const athletesPhotoUploadResponseSchema = athletesPhotoMetadataSchema;
 
@@ -182,6 +189,7 @@ export type AthletesJoinResult = z.infer<typeof athletesJoinResultSchema>;
 export type AthletesJoinRequest = z.infer<typeof athletesJoinRequestSchema>;
 export type AthletesJoinRequestForManager = z.infer<typeof athletesJoinRequestForManagerSchema>;
 export type AthletesPhotoMetadata = z.infer<typeof athletesPhotoMetadataSchema>;
+export type AthletesPhotoDelivery = z.infer<typeof athletesPhotoDeliverySchema>;
 export type AthletesPhotoList = z.infer<typeof athletesPhotoListSchema>;
 export type AthletesPhotoUploadResponse = z.infer<typeof athletesPhotoUploadResponseSchema>;
 export type AthletesMemberAdd = z.infer<typeof athletesMemberAddSchema>;

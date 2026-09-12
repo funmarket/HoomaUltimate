@@ -3,7 +3,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { loadApiConfig } from "@hooma/config";
 import { getDatabaseClient } from "@hooma/database";
-import type { ObjectStorage, StoredObject, StoredObjectDescriptor } from "@hooma/storage";
+import type {
+  ObjectStorage,
+  ObjectStorageReadUrlSigner,
+  StoredObject,
+  StoredObjectDescriptor,
+} from "@hooma/storage";
 import { createApp } from "../apps/api/src/bootstrap/app.js";
 import { createContainer } from "../apps/api/src/bootstrap/container.js";
 
@@ -20,8 +25,9 @@ const config = loadApiConfig({
 });
 const db = getDatabaseClient();
 
-class MemoryObjectStorage implements ObjectStorage {
+class MemoryObjectStorage implements ObjectStorage, ObjectStorageReadUrlSigner {
   readonly objects = new Map<string, StoredObject>();
+  readonly signedReads: Array<{ key: string; expiresInSeconds: number }> = [];
 
   async put(key: string, body: Uint8Array, contentType: string): Promise<StoredObjectDescriptor> {
     const stored: StoredObject = {
@@ -42,6 +48,12 @@ class MemoryObjectStorage implements ObjectStorage {
 
   async remove(key: string): Promise<void> {
     this.objects.delete(key);
+  }
+
+  async createReadUrl(key: string, expiresInSeconds: number): Promise<string> {
+    if (!this.objects.has(key)) throw new Error("object not found");
+    this.signedReads.push({ key, expiresInSeconds });
+    return `https://storage.example.test/${encodeURIComponent(key)}?signed=1`;
   }
 }
 
@@ -73,7 +85,7 @@ function imageHeaders(cookie: string, contentType: string) {
   return { cookie, origin: config.WEB_ORIGIN, "content-type": contentType };
 }
 
-test("Athletes Photo Board HTTP routes keep curation Founder-only and content member-private", async () => {
+test("Athletes Photo Board HTTP routes keep curation Founder-only and delivery member-private", async () => {
   const storage = new MemoryObjectStorage();
   const container = createContainer(config, { objectStorage: storage });
   const app = createApp(config, container);
@@ -200,14 +212,31 @@ test("Athletes Photo Board HTTP routes keep curation Founder-only and content me
     assert.equal(listed[0]?.id, uploaded.id);
     assert.equal("objectKey" in (listed[0] ?? {}), false);
     assert.equal("uploadedByUserId" in (listed[0] ?? {}), false);
+    assert.equal("contentUrl" in (listed[0] ?? {}), false);
 
-    const memberContent = await fetch(
+    const outsiderDelivery = await fetch(
+      `${base}/api/v1/athletes/${athletesCommunityId}/photos/${uploaded.id}/delivery`,
+      { headers: jsonHeaders(outsider.cookie) },
+    );
+    assert.equal(outsiderDelivery.status, 403);
+    assert.deepEqual(storage.signedReads, []);
+
+    const memberDelivery = await fetch(
+      `${base}/api/v1/athletes/${athletesCommunityId}/photos/${uploaded.id}/delivery`,
+      { headers: jsonHeaders(member.cookie) },
+    );
+    assert.equal(memberDelivery.status, 200);
+    assert.equal(memberDelivery.headers.get("cache-control"), "private, no-store");
+    const delivery = (await memberDelivery.json()) as { contentUrl: string; expiresAt: string };
+    assert.match(delivery.contentUrl, /^https:\/\/storage\.example\.test\//);
+    assert.ok(new Date(delivery.expiresAt).getTime() > Date.now());
+    assert.deepEqual(storage.signedReads, [{ key: persisted.objectKey, expiresInSeconds: 300 }]);
+
+    const legacyContent = await fetch(
       `${base}/api/v1/athletes/${athletesCommunityId}/photos/${uploaded.id}/content`,
       { headers: jsonHeaders(member.cookie) },
     );
-    assert.equal(memberContent.status, 200);
-    assert.equal(memberContent.headers.get("content-type"), "image/webp");
-    assert.equal(memberContent.headers.get("cache-control"), "private, no-store");
+    assert.equal(legacyContent.status, 404);
 
     const memberDelete = await fetch(
       `${base}/api/v1/athletes/${athletesCommunityId}/photos/${uploaded.id}`,
@@ -239,11 +268,11 @@ test("Athletes Photo Board HTTP routes keep curation Founder-only and content me
     assert.equal(afterDeleteList.status, 200);
     assert.deepEqual(await afterDeleteList.json(), []);
 
-    const deletedContent = await fetch(
-      `${base}/api/v1/athletes/${athletesCommunityId}/photos/${uploaded.id}/content`,
+    const deletedDelivery = await fetch(
+      `${base}/api/v1/athletes/${athletesCommunityId}/photos/${uploaded.id}/delivery`,
       { headers: jsonHeaders(member.cookie) },
     );
-    assert.equal(deletedContent.status, 404);
+    assert.equal(deletedDelivery.status, 404);
 
     const jsonRouteStillWorks = await fetch(`${base}/api/v1/athletes/${athletesCommunityId}`, {
       headers: jsonHeaders(founder.cookie),

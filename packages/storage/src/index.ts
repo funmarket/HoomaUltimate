@@ -14,6 +14,10 @@ export interface ObjectStorage {
   remove(key: string): Promise<void>;
 }
 
+export interface ObjectStorageReadUrlSigner {
+  createReadUrl(key: string, expiresInSeconds: number): Promise<string>;
+}
+
 export type S3ObjectStorageConfig = {
   readonly endpoint: string;
   readonly region: string;
@@ -57,6 +61,10 @@ function encodePathSegment(value: string): string {
   );
 }
 
+function awsEncode(value: string): string {
+  return encodePathSegment(value).replace(/%7E/g, "~");
+}
+
 function encodedKeyPath(key: string): string {
   return `/${key.split("/").map(encodePathSegment).join("/")}`;
 }
@@ -82,7 +90,15 @@ function objectRequestUrl(
   return url;
 }
 
-export class S3ObjectStorage implements ObjectStorage {
+function canonicalQuery(parameters: Readonly<Record<string, string>>): string {
+  return Object.entries(parameters)
+    .map(([name, value]) => [awsEncode(name), awsEncode(value)] as const)
+    .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+    .map(([name, value]) => `${name}=${value}`)
+    .join("&");
+}
+
+export class S3ObjectStorage implements ObjectStorage, ObjectStorageReadUrlSigner {
   private readonly endpoint: URL;
 
   constructor(private readonly config: S3ObjectStorageConfig) {
@@ -107,6 +123,57 @@ export class S3ObjectStorage implements ObjectStorage {
 
   async remove(key: string): Promise<void> {
     await this.request("DELETE", key);
+  }
+
+  async createReadUrl(key: string, expiresInSeconds: number): Promise<string> {
+    if (!Number.isInteger(expiresInSeconds) || expiresInSeconds < 1 || expiresInSeconds > 3600) {
+      throw new Error("Object storage read URL expiry must be between 1 and 3600 seconds");
+    }
+
+    const now = new Date();
+    const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
+    const shortDate = amzDate.slice(0, 8);
+    const scope = `${shortDate}/${this.config.region}/s3/aws4_request`;
+    const url = objectRequestUrl(
+      this.endpoint,
+      this.config.bucket,
+      key,
+      this.config.urlStyle ?? "path",
+    );
+    const host = url.host;
+    const parameters = {
+      "X-Amz-Algorithm": "AWS4-HMAC-SHA256",
+      "X-Amz-Credential": `${this.config.accessKeyId}/${scope}`,
+      "X-Amz-Date": amzDate,
+      "X-Amz-Expires": String(expiresInSeconds),
+      "X-Amz-SignedHeaders": "host",
+    };
+    const query = canonicalQuery(parameters);
+    const canonicalRequest = [
+      "GET",
+      url.pathname,
+      query,
+      `host:${host}\n`,
+      "host",
+      "UNSIGNED-PAYLOAD",
+    ].join("\n");
+    const stringToSign = ["AWS4-HMAC-SHA256", amzDate, scope, await sha256(canonicalRequest)].join(
+      "\n",
+    );
+    const signingKey = await this.signingKey(shortDate);
+    const signature = hex(await hmac(signingKey, stringToSign));
+    url.search = `${query}&X-Amz-Signature=${signature}`;
+    return url.toString();
+  }
+
+  private async signingKey(shortDate: string): Promise<ArrayBuffer> {
+    const dateKey = await hmac(
+      new TextEncoder().encode(`AWS4${this.config.secretAccessKey}`),
+      shortDate,
+    );
+    const regionKey = await hmac(dateKey, this.config.region);
+    const serviceKey = await hmac(regionKey, "s3");
+    return hmac(serviceKey, "aws4_request");
   }
 
   private async request(
@@ -150,13 +217,7 @@ export class S3ObjectStorage implements ObjectStorage {
     const stringToSign = ["AWS4-HMAC-SHA256", amzDate, scope, await sha256(canonicalRequest)].join(
       "\n",
     );
-    const dateKey = await hmac(
-      new TextEncoder().encode(`AWS4${this.config.secretAccessKey}`),
-      shortDate,
-    );
-    const regionKey = await hmac(dateKey, this.config.region);
-    const serviceKey = await hmac(regionKey, "s3");
-    const signingKey = await hmac(serviceKey, "aws4_request");
+    const signingKey = await this.signingKey(shortDate);
     const signature = hex(await hmac(signingKey, stringToSign));
     const requestInit: RequestInit = {
       method,

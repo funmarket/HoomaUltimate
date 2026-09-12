@@ -224,15 +224,10 @@ test("Discovery consumes the cursor and appends older communities", async () => 
   assert.ok(urls.some((url) => url.includes("cursor=newer")));
 });
 
-test("Photo Board displays successful photos independently and retries a failed photo", async () => {
+test("Photo Board retries signed delivery failures", async () => {
   const { AthletesPhotoBoard } =
     await import("../packages/frontend/dist/athletes/AthletesPhotoBoard.js");
-  const createUrl = URL.createObjectURL;
-  const revokeUrl = URL.revokeObjectURL;
-  const revoked = [];
   let secondFails = true;
-  URL.createObjectURL = () => `blob:photo-${Math.random()}`;
-  URL.revokeObjectURL = (url) => revoked.push(url);
   globalThis.fetch = async (url) => {
     if (url.endsWith("/photos"))
       return response(
@@ -245,30 +240,36 @@ test("Photo Board displays successful photos independently and retries a failed 
           updatedAt: new Date().toISOString(),
         })),
       );
-    if (url.includes("/second/") && secondFails)
+    if (url.includes("/second/delivery") && secondFails)
       return response({ error: { message: "Photo unavailable" } }, 503);
-    return new Response(new Uint8Array([1]), { headers: { "content-type": "image/png" } });
+    if (url.includes("/first/delivery"))
+      return response({
+        contentUrl: "https://storage.test/first",
+        expiresAt: new Date(Date.now() + 300000).toISOString(),
+      });
+    if (url.includes("/second/delivery"))
+      return response({
+        contentUrl: "https://storage.test/second",
+        expiresAt: new Date(Date.now() + 300000).toISOString(),
+      });
+    throw new Error(`Unexpected fetch URL: ${url}`);
   };
-  try {
-    const view = render(
-      wrap(
-        h(AthletesPhotoBoard, {
-          athletesCommunityId: "one",
-          communityStatus: "ACTIVE",
-          viewerRole: "MEMBER",
-        }),
-      ),
-    );
-    await view.findByAltText("Photo 1 from Athletes Photo Board");
-    await view.findByText("Photo unavailable");
-    assert.equal(view.queryByText("Add photo"), null);
-    secondFails = false;
-    fireEvent.click(view.getByText("Retry photo 2"));
-    await view.findByAltText("Photo 2 from Athletes Photo Board");
-    view.unmount();
-    assert.equal(revoked.length, 2);
-  } finally {
-    URL.createObjectURL = createUrl;
-    URL.revokeObjectURL = revokeUrl;
-  }
+
+  const view = render(
+    wrap(
+      h(AthletesPhotoBoard, {
+        athletesCommunityId: "one",
+        communityStatus: "ACTIVE",
+        viewerRole: "MEMBER",
+      }),
+    ),
+  );
+  const first = await view.findByAltText("Photo 1 from Athletes Photo Board");
+  assert.equal(first.getAttribute("src"), "https://storage.test/first");
+  await view.findByText("Photo unavailable");
+  assert.equal(view.queryByText("Add photo"), null);
+  secondFails = false;
+  fireEvent.click(view.getByText("Retry photo 2"));
+  const second = await view.findByAltText("Photo 2 from Athletes Photo Board");
+  assert.equal(second.getAttribute("src"), "https://storage.test/second");
 });
