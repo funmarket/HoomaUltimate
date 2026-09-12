@@ -20,10 +20,7 @@ const config = loadApiConfig({
 });
 const db = getDatabaseClient();
 
-async function register(
-  base: string,
-  suffix: string,
-): Promise<{ cookie: string; userId: string }> {
+async function register(base: string, suffix: string): Promise<{ cookie: string; userId: string }> {
   const response = await fetch(`${base}/api/public/v1/auth/register`, {
     method: "POST",
     headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },

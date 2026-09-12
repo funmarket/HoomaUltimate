@@ -38,8 +38,6 @@ test("Athletes consumes Identity last-seen only through the narrow application r
   assert.match(athletes, /findLastSeenByUserIds/);
   assert.doesNotMatch(athletes, /@hooma\/database|Prisma|webSession/);
 
-  const reader = await source(
-    "apps/api/src/modules/identity/application/user-last-seen.reader.ts",
-  );
+  const reader = await source("apps/api/src/modules/identity/application/user-last-seen.reader.ts");
   assert.match(reader, /findLastSeenByUserIds/);
 });
