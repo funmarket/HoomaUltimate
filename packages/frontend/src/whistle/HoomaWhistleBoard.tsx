@@ -62,7 +62,9 @@ function WhistleBoard({
         : contextType === "ATHLETES"
           ? api.whistles.athletes(contextId, cursor)
           : contextType === "RIDE"
-            ? api.whistles.ride(contextId, cursor)
+            ? cursor
+              ? api.whistles.ride(contextId, cursor)
+              : api.whistles.ride(contextId)
             : listEventWhistles(transport, contextId, cursor),
     [api, contextId, contextType, transport],
   );
