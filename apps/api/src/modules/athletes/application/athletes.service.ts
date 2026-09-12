@@ -4,6 +4,7 @@ import type {
   AthletesJoinRequest,
   AthletesJoinResult,
 } from "@hooma/contracts/athletes";
+import type { UserLastSeenReader } from "../../identity/application/user-last-seen.reader.js";
 import { AthletesError } from "../domain/athletes-error.js";
 import { AthletesContentAuthorization } from "./athletes-content-authorizer.js";
 import type {
@@ -40,7 +41,10 @@ function normalizedCreate(input: AthletesCommunityCreateInput) {
 export class AthletesService {
   private readonly contentAuthorization: AthletesContentAuthorization;
 
-  constructor(private readonly repository: AthletesRepository) {
+  constructor(
+    private readonly repository: AthletesRepository,
+    private readonly userLastSeenReader: UserLastSeenReader,
+  ) {
     this.contentAuthorization = new AthletesContentAuthorization(repository);
   }
 
@@ -164,7 +168,15 @@ export class AthletesService {
 
   async members(userId: string, id: string) {
     await this.contentAuthorization.requireMemberContent(userId, id);
-    return this.repository.listMembers(id);
+    const members = await this.repository.listMembers(id);
+    const lastSeenByUserId = await this.userLastSeenReader.findLastSeenByUserIds(
+      members.map((member) => member.userId),
+    );
+    return members.map((member) => ({
+      ...member,
+      joinedAt: member.joinedAt.toISOString(),
+      lastSeenAt: lastSeenByUserId.get(member.userId)?.toISOString() ?? null,
+    }));
   }
 
   async addMember(userId: string, id: string, username: string) {
@@ -229,7 +241,7 @@ export class AthletesService {
     operation: (service: AthletesService) => Promise<T>,
   ): Promise<T> {
     return this.repository.withCommunityLock(id, (repository) =>
-      operation(new AthletesService(repository)),
+      operation(new AthletesService(repository, this.userLastSeenReader)),
     );
   }
 
