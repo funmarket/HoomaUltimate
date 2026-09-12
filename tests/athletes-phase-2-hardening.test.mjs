@@ -262,11 +262,17 @@ test("Photo Board retries signed delivery failures without proxy blobs", async (
     ),
   );
   const first = await view.findByAltText("Photo 1 from Athletes Photo Board");
-  assert.match(first.getAttribute("src") ?? "", /^https:\/\/storage\.example\.test\/first\.webp\?/);
+  assert.match(
+    first.getAttribute("src") ?? "",
+    /^https:\/\/storage\.example\.test\/first\.webp\?/,
+  );
   await view.findByText("Photo unavailable");
   assert.equal(view.queryByText("Add photo"), null);
   secondFails = false;
   fireEvent.click(view.getByText("Retry photo 2"));
   const second = await view.findByAltText("Photo 2 from Athletes Photo Board");
-  assert.match(second.getAttribute("src") ?? "", /^https:\/\/storage\.example\.test\/second\.webp\?/);
+  assert.match(
+    second.getAttribute("src") ?? "",
+    /^https:\/\/storage\.example\.test\/second\.webp\?/,
+  );
 });
