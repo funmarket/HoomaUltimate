@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import type { WhistleList } from "../api";
 import { useHoomaFrontend } from "../context";
+import {
+  emptyWhistleList,
+  mergeNewestWhistlePage,
+  mergeOlderWhistlePage,
+} from "../whistle/history";
 import { WhistleAction } from "../whistle/WhistleAction";
 import { WhistleRoom } from "../whistle/WhistleRoom";
 import { listGamerWhistles, sendGamerWhistle } from "./gamer-whistle-api";
@@ -22,13 +27,10 @@ export function GamerWhistlePanel({
   readonly onClose: () => void;
 }) {
   const { transport, protectedError } = useHoomaFrontend();
-  const [feed, setFeed] = useState<WhistleList>({
-    items: [],
-    remainingToday: 11,
-    resetsAt: "",
-  });
+  const [feed, setFeed] = useState<WhistleList>(() => emptyWhistleList());
   const [body, setBody] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const count = graphemeCount(body);
@@ -36,7 +38,8 @@ export function GamerWhistlePanel({
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setFeed(await listGamerWhistles(transport, otherProfileId));
+      const next = await listGamerWhistles(transport, otherProfileId);
+      setFeed((current) => mergeNewestWhistlePage(current, next));
       setError("");
     } catch (reason) {
       setError(protectedError(reason, "Could not load Gamer Whistles"));
@@ -48,6 +51,21 @@ export function GamerWhistlePanel({
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function loadOlder() {
+    const cursor = feed.nextCursor;
+    if (!cursor || loadingOlder) return;
+    setLoadingOlder(true);
+    try {
+      const older = await listGamerWhistles(transport, otherProfileId, cursor);
+      setFeed((current) => mergeOlderWhistlePage(current, older));
+      setError("");
+    } catch (reason) {
+      setError(protectedError(reason, "Could not load older Gamer Whistles"));
+    } finally {
+      setLoadingOlder(false);
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -81,6 +99,9 @@ export function GamerWhistlePanel({
         items={feed.items}
         loading={loading}
         emptyText="No Whistles between you today."
+        hasOlder={Boolean(feed.nextCursor)}
+        loadingOlder={loadingOlder}
+        onLoadOlder={() => void loadOlder()}
       />
 
       <form className="gamer-whistle-composer" onSubmit={submit}>
