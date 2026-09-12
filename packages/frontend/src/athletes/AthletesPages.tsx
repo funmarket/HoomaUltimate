@@ -451,7 +451,9 @@ function AthletesDetailContent({
             </div>
             <span
               className="athletes-section-count"
-              aria-label={`${requests.length} pending join ${requests.length === 1 ? "request" : "requests"}`}
+              aria-label={`${requests.length} pending join ${
+                requests.length === 1 ? "request" : "requests"
+              }`}
             >
               {requests.length}
             </span>
