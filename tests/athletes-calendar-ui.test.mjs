@@ -27,7 +27,7 @@ test("Athletes Calendar is phone-first month plus selected-day agenda", () => {
   assert.match(calendar, /<MonthGrid/);
   assert.match(calendar, /<DayAgenda/);
   assert.match(calendar, />Today</);
-  assert.match(grid, /repeat\(7, minmax\(0, 1fr\)\)/);
+  assert.match(grid, /const WEEKDAYS = \["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"\]/);
   assert.match(css, /grid-template-columns: repeat\(7, minmax\(0, 1fr\)\);/);
   assert.match(css, /min-height: 2\.9rem;/);
   assert.doesNotMatch(calendar, /WeekView|hourly|time-grid/);
