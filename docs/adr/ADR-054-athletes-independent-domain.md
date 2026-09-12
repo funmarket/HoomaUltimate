@@ -3,7 +3,7 @@
 Status: Accepted
 Date: 2026-09-01
 
-> **Current-state note (2026-09-03):** This ADR's domain-independence decision remains authoritative. Its original PR-scope statements that Whistle was future and bottom navigation remained unchanged are historical. Subsequent merged source enabled the Athletes member Whistle Board through the shared Whistle engine and placed `Athletes` in the fifth permanent bottom-navigation slot. ADR-055 governs current navigation.
+> **Current-state note (2026-09-12):** This ADR's domain-independence decision remains authoritative. Its original PR-scope statements that Whistle was future, bottom navigation remained unchanged, and Athletes-specific scheduling was excluded from the foundation are historical. Subsequent product decisions enabled the Athletes member Whistle Board, placed `Athletes` in the fifth permanent bottom-navigation slot, and authorized the Athletes-owned Calendar in ADR-057. ADR-055 governs current navigation; ADR-057 governs Calendar ownership and scope.
 
 ## Context
 
@@ -62,7 +62,7 @@ HOOMA Communities remain Communities-owned. Teams remain Teams-owned. ADR-053’
 
 ULTRAS remains frozen.
 
-The current foundation also enables an Athletes member Whistle Board through the one shared Whistle engine and Athletes-owned membership authorization. Equipment posts, marketplace, Athletes-specific Events, Ride integration, Requests integration, FundMe and Payments remain separate slices unless their owning domains explicitly implement them.
+The current foundation also enables an Athletes member Whistle Board through the one shared Whistle engine and Athletes-owned membership authorization. ADR-057 separately authorizes an Athletes-owned Calendar for group scheduling without turning those records into global PLAY/WATCH Events. Equipment posts, marketplace, Ride integration, Requests integration, FundMe and Payments remain separate slices unless their owning domains explicitly implement them.
 
 ## Authorization
 
