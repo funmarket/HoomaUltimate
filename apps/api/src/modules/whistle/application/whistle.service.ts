@@ -231,7 +231,8 @@ export class WhistleService {
       }),
       remainingToday: Math.max(0, DAILY_LIMIT - used),
       resetsAt: resetsAt.toISOString(),
-      nextCursor: hasMore && pageRows.length ? encodeListCursor(pageRows[pageRows.length - 1]!) : null,
+      nextCursor:
+        hasMore && pageRows.length ? encodeListCursor(pageRows[pageRows.length - 1]!) : null,
     };
   }
 
