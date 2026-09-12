@@ -1,0 +1,96 @@
+.active-athletes-list {
+  display: grid;
+  gap: 10px;
+}
+
+.active-athlete-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface, #111) 94%, white 6%);
+}
+
+.active-athlete-identity {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.active-athlete-avatar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--surface, #111) 82%, white 18%);
+  font-weight: 800;
+}
+
+.active-athlete-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.active-athlete-copy,
+.active-athlete-profile,
+.active-athlete-meta {
+  display: grid;
+  gap: 2px;
+}
+
+.active-athlete-copy {
+  min-width: 0;
+}
+
+.active-athlete-profile {
+  color: inherit;
+  text-decoration: none;
+}
+
+.active-athlete-profile strong,
+.active-athlete-profile span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.active-athlete-profile span,
+.active-athlete-last-seen {
+  color: var(--muted, #9a9a9a);
+  font-size: 0.78rem;
+}
+
+.active-athlete-role {
+  justify-self: end;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  opacity: 0.72;
+}
+
+.active-athlete-meta {
+  justify-items: end;
+}
+
+@media (max-width: 640px) {
+  .active-athlete-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .active-athlete-meta {
+    width: 100%;
+    justify-items: start;
+  }
+
+  .active-athlete-role {
+    justify-self: start;
+  }
+}
