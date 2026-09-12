@@ -224,58 +224,49 @@ test("Discovery consumes the cursor and appends older communities", async () => 
   assert.ok(urls.some((url) => url.includes("cursor=newer")));
 });
 
-test(
-  "Photo Board displays successful signed deliveries independently and retries a failed delivery",
-  async () => {
-    const { AthletesPhotoBoard } =
-      await import("../packages/frontend/dist/athletes/AthletesPhotoBoard.js");
-    let secondFails = true;
-    globalThis.fetch = async (url) => {
-      if (url.endsWith("/photos"))
-        return response(
-          ["first", "second"].map((id) => ({
-            id,
-            athletesCommunityId: "one",
-            contentType: "image/png",
-            sizeBytes: 1,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          })),
-        );
-      if (url.includes("/second/delivery") && secondFails)
-        return response({ error: { message: "Photo unavailable" } }, 503);
-      if (url.includes("/photos/") && url.endsWith("/delivery")) {
-        const photoId = url.includes("/first/") ? "first" : "second";
-        return response({
-          contentUrl: `https://storage.example.test/${photoId}.webp?X-Amz-Signature=signed`,
-          expiresAt: new Date(Date.now() + 300000).toISOString(),
-        });
-      }
-      throw new Error(`Unexpected fetch URL: ${url}`);
-    };
-
-    const view = render(
-      wrap(
-        h(AthletesPhotoBoard, {
+test("Photo Board retries signed delivery failures without proxy blobs", async () => {
+  const { AthletesPhotoBoard } =
+    await import("../packages/frontend/dist/athletes/AthletesPhotoBoard.js");
+  let secondFails = true;
+  globalThis.fetch = async (url) => {
+    if (url.endsWith("/photos"))
+      return response(
+        ["first", "second"].map((id) => ({
+          id,
           athletesCommunityId: "one",
-          communityStatus: "ACTIVE",
-          viewerRole: "MEMBER",
-        }),
-      ),
-    );
-    const first = await view.findByAltText("Photo 1 from Athletes Photo Board");
-    assert.match(
-      first.getAttribute("src") ?? "",
-      /^https:\/\/storage\.example\.test\/first\.webp\?/,
-    );
-    await view.findByText("Photo unavailable");
-    assert.equal(view.queryByText("Add photo"), null);
-    secondFails = false;
-    fireEvent.click(view.getByText("Retry photo 2"));
-    const second = await view.findByAltText("Photo 2 from Athletes Photo Board");
-    assert.match(
-      second.getAttribute("src") ?? "",
-      /^https:\/\/storage\.example\.test\/second\.webp\?/,
-    );
-  },
-);
+          contentType: "image/png",
+          sizeBytes: 1,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        })),
+      );
+    if (url.includes("/second/delivery") && secondFails)
+      return response({ error: { message: "Photo unavailable" } }, 503);
+    if (url.includes("/photos/") && url.endsWith("/delivery")) {
+      const photoId = url.includes("/first/") ? "first" : "second";
+      return response({
+        contentUrl: `https://storage.example.test/${photoId}.webp?X-Amz-Signature=signed`,
+        expiresAt: new Date(Date.now() + 300000).toISOString(),
+      });
+    }
+    throw new Error(`Unexpected fetch URL: ${url}`);
+  };
+
+  const view = render(
+    wrap(
+      h(AthletesPhotoBoard, {
+        athletesCommunityId: "one",
+        communityStatus: "ACTIVE",
+        viewerRole: "MEMBER",
+      }),
+    ),
+  );
+  const first = await view.findByAltText("Photo 1 from Athletes Photo Board");
+  assert.match(first.getAttribute("src") ?? "", /^https:\/\/storage\.example\.test\/first\.webp\?/);
+  await view.findByText("Photo unavailable");
+  assert.equal(view.queryByText("Add photo"), null);
+  secondFails = false;
+  fireEvent.click(view.getByText("Retry photo 2"));
+  const second = await view.findByAltText("Photo 2 from Athletes Photo Board");
+  assert.match(second.getAttribute("src") ?? "", /^https:\/\/storage\.example\.test\/second\.webp\?/);
+});
