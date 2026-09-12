@@ -8,6 +8,13 @@ import type {
 import type { AthletesContentAuthorizer } from "../apps/api/src/modules/athletes/application/athletes-content-authorizer.js";
 import type { AthletesCalendarRepository } from "../apps/api/src/modules/athletes/application/athletes-calendar.repository.js";
 import { AthletesCalendarService } from "../apps/api/src/modules/athletes/application/athletes-calendar.service.js";
+import type {
+  AthletesCalendarTransactionRepository,
+  AthletesCalendarTransactionScope,
+  AthletesCalendarUnitOfWork,
+} from "../apps/api/src/modules/athletes/application/athletes-calendar.unit-of-work.js";
+import type { AthletesRepository } from "../apps/api/src/modules/athletes/application/athletes.repository.js";
+import { AthletesError } from "../apps/api/src/modules/athletes/domain/athletes-error.js";
 
 const ENTRY: AthletesCalendarEntry = {
   id: "calendar-1",
@@ -46,8 +53,14 @@ class FakeAuthorizer implements AthletesContentAuthorizer {
   }
 }
 
-class FakeRepository implements AthletesCalendarRepository {
+class FakePersistence
+  implements
+    AthletesCalendarRepository,
+    AthletesCalendarUnitOfWork,
+    AthletesCalendarTransactionRepository
+{
   calls: string[] = [];
+  lockedRole: "FOUNDER" | "MEMBER" = "FOUNDER";
 
   async listForCommunity() {
     this.calls.push("list");
@@ -76,12 +89,41 @@ class FakeRepository implements AthletesCalendarRepository {
     this.calls.push("cancel");
     return { ...ENTRY, status: "CANCELLED" as const };
   }
+
+  async withCommunityLock<T>(
+    athletesCommunityId: string,
+    operation: (scope: AthletesCalendarTransactionScope) => Promise<T>,
+  ) {
+    this.calls.push("lock");
+    const role = this.lockedRole;
+    const athletes = {
+      lifecycle: async () => ({
+        id: athletesCommunityId,
+        slug: "athletes-1",
+        name: "Athletes One",
+        sport: "RUNNING",
+        description: null,
+        city: null,
+        houma: null,
+        logoUrl: null,
+        bannerUrl: null,
+        visibility: "PRIVATE",
+        joinPolicy: "APPROVAL_REQUIRED",
+        status: "ACTIVE",
+        createdByUserId: "founder-1",
+        createdAt: new Date("2026-09-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-09-01T00:00:00.000Z"),
+      }),
+      managerRole: async () => role,
+    } as unknown as AthletesRepository;
+    return operation({ athletes, calendar: this });
+  }
 }
 
 test("Athletes Calendar reads require active member authorization", async () => {
   const authorizer = new FakeAuthorizer();
-  const repository = new FakeRepository();
-  const service = new AthletesCalendarService(authorizer, repository);
+  const persistence = new FakePersistence();
+  const service = new AthletesCalendarService(authorizer, persistence);
 
   const result = await service.list("member-1", "athletes-1", {
     from: "2026-09-01T00:00:00.000Z",
@@ -91,19 +133,32 @@ test("Athletes Calendar reads require active member authorization", async () => 
   assert.deepEqual(result, [ENTRY]);
   assert.deepEqual(authorizer.memberChecks, ["athletes-1"]);
   assert.deepEqual(authorizer.founderChecks, []);
-  assert.deepEqual(repository.calls, ["list"]);
+  assert.deepEqual(persistence.calls, ["list"]);
 });
 
-test("Athletes Calendar mutations require Founder authorization", async () => {
+test("Athletes Calendar mutations authorize Founder inside the lifecycle lock", async () => {
   const authorizer = new FakeAuthorizer();
-  const repository = new FakeRepository();
-  const service = new AthletesCalendarService(authorizer, repository);
+  const persistence = new FakePersistence();
+  const service = new AthletesCalendarService(authorizer, persistence);
 
   await service.create("founder-1", "athletes-1", WRITE);
   await service.update("founder-1", "athletes-1", "calendar-1", WRITE);
   await service.cancel("founder-1", "athletes-1", "calendar-1");
 
   assert.deepEqual(authorizer.memberChecks, []);
-  assert.deepEqual(authorizer.founderChecks, ["athletes-1", "athletes-1", "athletes-1"]);
-  assert.deepEqual(repository.calls, ["create", "update", "cancel"]);
+  assert.deepEqual(authorizer.founderChecks, []);
+  assert.deepEqual(persistence.calls, ["lock", "create", "lock", "update", "lock", "cancel"]);
+});
+
+test("Athletes Calendar rejects a locked non-Founder before persistence mutation", async () => {
+  const persistence = new FakePersistence();
+  persistence.lockedRole = "MEMBER";
+  const service = new AthletesCalendarService(new FakeAuthorizer(), persistence);
+
+  await assert.rejects(
+    () => service.create("member-1", "athletes-1", WRITE),
+    (error: unknown) =>
+      error instanceof AthletesError && error.code === "ATHLETES_FOUNDER_REQUIRED",
+  );
+  assert.deepEqual(persistence.calls, ["lock"]);
 });
