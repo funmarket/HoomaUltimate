@@ -27,7 +27,10 @@ test("WhistleRoom follows latest by default but never yanks a user out of histor
 
   Object.defineProperty(globalThis, "window", { value: dom.window, configurable: true });
   Object.defineProperty(globalThis, "document", { value: dom.window.document, configurable: true });
-  Object.defineProperty(globalThis, "navigator", { value: dom.window.navigator, configurable: true });
+  Object.defineProperty(globalThis, "navigator", {
+    value: dom.window.navigator,
+    configurable: true,
+  });
   Object.defineProperty(globalThis, "HTMLElement", {
     value: dom.window.HTMLElement,
     configurable: true,
