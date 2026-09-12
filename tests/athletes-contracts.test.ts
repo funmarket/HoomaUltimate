@@ -5,6 +5,7 @@ import {
   athletesCommunityCreateSchema,
   athletesJoinRequestStatusSchema,
   athletesMemberAddSchema,
+  athletesMemberSchema,
   athletesPhotoContentTypeSchema,
   athletesPhotoDeliverySchema,
   athletesPhotoListSchema,
@@ -52,6 +53,23 @@ test("Athletes direct add uses username input only", () => {
     username: "runner_one",
   });
   assert.throws(() => athletesMemberAddSchema.parse({ userId: "user-1" }));
+});
+
+test("Athletes member projection carries nullable canonical web last-seen", () => {
+  const member = {
+    userId: "runner-1",
+    role: "MEMBER" as const,
+    joinedAt: "2026-09-12T09:00:00.000Z",
+    lastSeenAt: "2026-09-12T10:00:00.000Z",
+    presentation: {
+      displayName: "Runner One",
+      username: "runner_one",
+      photoUrl: null,
+    },
+  };
+  assert.deepEqual(athletesMemberSchema.parse(member), member);
+  assert.equal(athletesMemberSchema.parse({ ...member, lastSeenAt: null }).lastSeenAt, null);
+  assert.throws(() => athletesMemberSchema.parse({ ...member, lastSeenAt: "online" }));
 });
 
 test("public Athletes projections do not expose creator user ids", () => {

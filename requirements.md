@@ -165,6 +165,8 @@ Current Athletes behavior includes public discovery/detail, create, update/archi
 
 Current Photo Board behavior is member-private and Founder-curated. Only an active `FOUNDER` membership in the same active Athletes community may upload or delete Photo Board photos. Active `MODERATOR` and `MEMBER` memberships may view but may not upload or delete. Outsiders, public/anonymous users, memberships from another Athletes community, and archived Athletes communities are denied active Photo Board access. Photo Board metadata is Athletes-owned durable PostgreSQL data, image bytes use shared object storage, and accepted JPEG/PNG/WebP uploads up to 5 MiB are normalized server-side to WebP with a maximum 1600px edge and no enlargement before durable storage. Founder deletion removes the canonical Athletes Photo Board record and queues the existing Athletes object-reconciliation cleanup path; it does not create a generic Media or social-feed authority. The current Photo Board has no captions, likes/reactions, comments/replies, albums, manual ordering, moderator/member curation, or public board.
 
+Active Athletes remains the existing active Athletes member list; WebSession activity does not filter membership. Each member row may show the canonical User avatar, display name, `@username`, Athletes role, and a text last-seen value derived only from Identity-owned `WebSession.lastSeenAt`. Identity returns the most recent `lastSeenAt` across that User's active, unrevoked, unexpired WebSessions. If no such session exists, the member remains visible with nullable activity rendered as `No recent web activity`. This feature does not create online/offline status, green/red dots, Redis presence, Telegram activity fallback, a second presence table, or a duplicate profile/card model. Clicking the member identity continues to use the canonical `/profile/:username` route.
+
 Athletes is a permanent navigation destination at `/athletes`. It must not appear inside the HOOMA Community create section.
 
 ## 2.5 Places tabs
@@ -312,6 +314,8 @@ Production cookies are:
 - revocable.
 
 Logout revokes the session server-side. Browser state-changing requests require origin/CSRF protections.
+
+`WebSession.lastSeenAt` is the canonical source for web-session activity, not a generic real-time presence signal. Identity updates it only at authenticated WebSession resolution and throttles the write to at most once per 60 seconds per session. Activity readers consider only unrevoked, unexpired WebSessions and may return the most recent active-session timestamp for a User or `null` when no active WebSession exists. Telegram authentication, Redis, and product-domain tables must not be used as fallback activity sources.
 
 ## 4.5 Telegram authentication
 
@@ -1358,6 +1362,6 @@ For future-approved domains, this document may state product direction before im
 
 When the product owner makes a newer explicit decision that conflicts with this file, implementation follows the newer decision and this contract should be updated promptly so later agents do not drift back to stale behavior.
 
-## In-flight Athletes readiness corrections — PR #265
+## In-flight Athletes hardening — Step C
 
-The production-readiness branch completes existing Founder management and applicant cancellation in the UI, adds cursor discovery and branding display, protects detail state from stale requests, and makes management failures retryable. Photo uploads validate decodable format and use a 40-megapixel resource ceiling alongside 5 MiB; gallery pages and independent image loading do not impose a photo-count limit. These corrections preserve the roles and exclusions in section 2.4. Foundation/deployment completion is pending final verification and storage activation.
+PR `#274` adds Identity-owned WebSession activity projection to the existing Athletes member surface. The member list itself remains Athletes-owned and unchanged by session presence: active Athletes members remain visible even when they have no active WebSession, in which case `lastSeenAt` is null and the UI shows `No recent web activity`. The slice adds no real-time presence system, Telegram fallback, Redis presence state, new presence table, or duplicate user profile/card model. Exact-commit production runtime verification is still required before Step C can pass the progression gate.

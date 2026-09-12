@@ -117,6 +117,7 @@ export const athletesMemberSchema = z.object({
   userId: z.string().min(1),
   role: athletesRoleSchema,
   joinedAt: z.string().datetime(),
+  lastSeenAt: z.string().datetime().nullable(),
   presentation: z
     .object({
       displayName: z.string().min(1),
