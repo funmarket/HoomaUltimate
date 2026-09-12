@@ -185,7 +185,7 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
-  scrollbar-color: rgba(196, 220, 67, 0.38) transparent;
+  scrollbar-color: transparent transparent;
   display: grid;
   align-content: safe end;
   padding: 8px 14px 10px;
@@ -205,7 +205,7 @@
 
 .whistle-room::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: rgba(196, 220, 67, 0.32);
+  background: transparent;
 }
 
 .whistle-room-state {
