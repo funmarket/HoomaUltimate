@@ -444,35 +444,18 @@ function AthletesDetailContent({
       ) : null}
       {canManage ? (
         <section className="athletes-surface athletes-section athletes-manage-section">
-          <h2>Manage members</h2>
-          <form
-            className="athletes-inline-form"
-            onSubmit={(event) => {
-              event.preventDefault();
-              void act(async () => {
-                await api.athletes.addMember(id, username);
-                setUsername("");
-              }, "Member added.");
-            }}
-          >
-            <input
-              value={username}
-              onChange={(event) => setUsername(event.currentTarget.value)}
-              placeholder="username"
-              aria-label="Username to add"
-              required
-              maxLength={50}
-              disabled={busy}
-            />
-            <button
-              className="button athletes-action athletes-action--secondary"
-              type="submit"
-              disabled={busy}
+          <div className="athletes-section-heading athletes-manage-heading">
+            <div>
+              <span className="eyebrow">MEMBERSHIP</span>
+              <h2>Join requests</h2>
+            </div>
+            <span
+              className="athletes-section-count"
+              aria-label={`${requests.length} pending join ${requests.length === 1 ? "request" : "requests"}`}
             >
-              Add member
-            </button>
-          </form>
-          <h3>Join requests</h3>
+              {requests.length}
+            </span>
+          </div>
           {requestsError ? (
             <div className="error-box" role="alert">
               {requestsError} <button onClick={() => void reload()}>Retry requests</button>
@@ -519,6 +502,42 @@ function AthletesDetailContent({
           ) : (
             <p className="muted">No pending join requests.</p>
           )}
+          <details className="athletes-direct-add">
+            <summary>Add member directly</summary>
+            <div className="athletes-direct-add__body">
+              <p className="muted">Add an existing HOOMA user by username.</p>
+              <form
+                className="athletes-inline-form athletes-direct-add__form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void act(async () => {
+                    await api.athletes.addMember(id, username);
+                    setUsername("");
+                  }, "Member added.");
+                }}
+              >
+                <label className="athletes-direct-add__field">
+                  <span>HOOMA username</span>
+                  <input
+                    value={username}
+                    onChange={(event) => setUsername(event.currentTarget.value)}
+                    placeholder="username"
+                    autoComplete="off"
+                    required
+                    maxLength={50}
+                    disabled={busy}
+                  />
+                </label>
+                <button
+                  className="button athletes-action athletes-action--secondary"
+                  type="submit"
+                  disabled={busy}
+                >
+                  Add member
+                </button>
+              </form>
+            </div>
+          </details>
         </section>
       ) : null}
     </div>
