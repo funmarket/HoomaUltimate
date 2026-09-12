@@ -13,9 +13,7 @@ export interface WebCredentialRecord {
 }
 
 export interface SessionRecord {
-  readonly id: string;
   readonly userId: string;
-  readonly lastSeenAt: Date;
 }
 
 export interface LoginMethodsRecord {
@@ -135,7 +133,6 @@ export interface IdentityRepository {
   recordLoginSuccess(userId: string): Promise<void>;
   createSession(userId: string, tokenHash: string, expiresAt: Date): Promise<void>;
   findActiveSession(tokenHash: string): Promise<SessionRecord | null>;
-  touchSession(sessionId: string, lastSeenAt: Date): Promise<void>;
   revokeSession(tokenHash: string): Promise<void>;
   findTelegramUserId(telegramUserId: bigint): Promise<string | null>;
   upsertTelegramIdentity(input: TelegramIdentityInput): Promise<string>;
