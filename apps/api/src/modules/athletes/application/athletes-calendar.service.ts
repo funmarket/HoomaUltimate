@@ -3,13 +3,18 @@ import type {
   AthletesCalendarEntryUpdateInput,
   AthletesCalendarRange,
 } from "@hooma/contracts/athletes-calendar";
-import type { AthletesContentAuthorizer } from "./athletes-content-authorizer.js";
+import {
+  AthletesContentAuthorization,
+  type AthletesContentAuthorizer,
+} from "./athletes-content-authorizer.js";
 import type { AthletesCalendarRepository } from "./athletes-calendar.repository.js";
+import type { AthletesCalendarUnitOfWork } from "./athletes-calendar.unit-of-work.js";
 
 export class AthletesCalendarService {
   constructor(
     private readonly authorizer: AthletesContentAuthorizer,
     private readonly repository: AthletesCalendarRepository,
+    private readonly unitOfWork: AthletesCalendarUnitOfWork,
   ) {}
 
   async list(userId: string, athletesCommunityId: string, range: AthletesCalendarRange) {
@@ -21,27 +26,46 @@ export class AthletesCalendarService {
     );
   }
 
-  async create(
+  create(
     userId: string,
     athletesCommunityId: string,
     input: AthletesCalendarEntryCreateInput,
   ) {
-    await this.authorizer.requireFounderContent(userId, athletesCommunityId);
-    return this.repository.create(athletesCommunityId, userId, input);
+    return this.withFounderLock(userId, athletesCommunityId, (calendar) =>
+      calendar.create(athletesCommunityId, userId, input),
+    );
   }
 
-  async update(
+  update(
     userId: string,
     athletesCommunityId: string,
     entryId: string,
     input: AthletesCalendarEntryUpdateInput,
   ) {
-    await this.authorizer.requireFounderContent(userId, athletesCommunityId);
-    return this.repository.update(athletesCommunityId, entryId, input);
+    return this.withFounderLock(userId, athletesCommunityId, (calendar) =>
+      calendar.update(athletesCommunityId, entryId, input),
+    );
   }
 
-  async cancel(userId: string, athletesCommunityId: string, entryId: string) {
-    await this.authorizer.requireFounderContent(userId, athletesCommunityId);
-    return this.repository.cancel(athletesCommunityId, entryId);
+  cancel(userId: string, athletesCommunityId: string, entryId: string) {
+    return this.withFounderLock(userId, athletesCommunityId, (calendar) =>
+      calendar.cancel(athletesCommunityId, entryId),
+    );
+  }
+
+  private withFounderLock<T>(
+    userId: string,
+    athletesCommunityId: string,
+    operation: Parameters<AthletesCalendarUnitOfWork["withCommunityLock"]>[1] extends (
+      scope: infer Scope,
+    ) => Promise<unknown>
+      ? (calendar: Scope extends { calendar: infer Calendar } ? Calendar : never) => Promise<T>
+      : never,
+  ): Promise<T> {
+    return this.unitOfWork.withCommunityLock(athletesCommunityId, async (scope) => {
+      const lockedAuthorization = new AthletesContentAuthorization(scope.athletes);
+      await lockedAuthorization.requireFounderContent(userId, athletesCommunityId);
+      return operation(scope.calendar);
+    });
   }
 }
