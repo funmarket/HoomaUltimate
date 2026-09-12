@@ -9,12 +9,14 @@ import type { UserNotificationService } from "../../notifications/application/us
 import type { RideService } from "../../rides/application/ride.service.js";
 import type {
   WhistleContextType,
+  WhistleListCursor,
   WhistleMetadataRecord,
   WhistleRepository,
 } from "./whistle.repository.js";
 import type { WhistleTransientStore } from "./whistle.store.js";
 
 const DAILY_LIMIT = 11;
+const LIST_PAGE_SIZE = 100;
 
 function graphemeCount(value: string): number {
   const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
@@ -23,6 +25,31 @@ function graphemeCount(value: string): number {
 
 function dayKey(now: Date): string {
   return now.toISOString().slice(0, 10);
+}
+
+function encodeListCursor(row: WhistleMetadataRecord): string {
+  return Buffer.from(JSON.stringify([row.createdAt.toISOString(), row.id])).toString("base64url");
+}
+
+function decodeListCursor(value: string | undefined): WhistleListCursor | undefined {
+  if (!value) return undefined;
+  try {
+    const decoded: unknown = JSON.parse(Buffer.from(value, "base64url").toString("utf8"));
+    if (
+      !Array.isArray(decoded) ||
+      decoded.length !== 2 ||
+      typeof decoded[0] !== "string" ||
+      typeof decoded[1] !== "string" ||
+      !decoded[1]
+    ) {
+      throw new Error("invalid cursor payload");
+    }
+    const createdAt = new Date(decoded[0]);
+    if (Number.isNaN(createdAt.valueOf())) throw new Error("invalid cursor timestamp");
+    return { createdAt, id: decoded[1] };
+  } catch {
+    throw new AppError(400, "WHISTLE_CURSOR_INVALID", "Whistle history cursor is invalid");
+  }
 }
 
 export function nextUtcMidnight(now: Date): Date {
@@ -38,6 +65,13 @@ export type WhistleListItem = {
   createdAt: string;
   expiresAt: string;
   author: WhistleMetadataRecord["author"];
+};
+
+export type WhistleListResult = {
+  items: WhistleListItem[];
+  remainingToday: number;
+  resetsAt: string;
+  nextCursor: string | null;
 };
 
 export class WhistleService {
@@ -96,9 +130,10 @@ export class WhistleService {
     userId: string,
     contextType: WhistleContextType,
     contextId: string,
-  ): Promise<{ items: WhistleListItem[]; remainingToday: number; resetsAt: string }> {
+    cursor?: string,
+  ): Promise<WhistleListResult> {
     await this.authorizeContext(userId, contextType, contextId, "read");
-    return this.listAuthorized(userId, contextType, contextId);
+    return this.listAuthorized(userId, contextType, contextId, cursor);
   }
 
   async create(
@@ -119,9 +154,9 @@ export class WhistleService {
     );
   }
 
-  async listDirectGamer(userId: string, otherProfileId: string) {
+  async listDirectGamer(userId: string, otherProfileId: string, cursor?: string) {
     const contextId = await this.gamers.resolveDirectWhistleContext(userId, otherProfileId);
-    return this.listAuthorized(userId, "GAMER_DIRECT", contextId);
+    return this.listAuthorized(userId, "GAMER_DIRECT", contextId, cursor);
   }
 
   async createDirectGamer(userId: string, otherProfileId: string, rawBody: string) {
@@ -129,9 +164,9 @@ export class WhistleService {
     return this.createAuthorized(userId, "GAMER_DIRECT", contextId, rawBody);
   }
 
-  async listDirectUser(userId: string, targetUsername: string) {
+  async listDirectUser(userId: string, targetUsername: string, cursor?: string) {
     const directContext = await this.resolveDirectUserContext(userId, targetUsername);
-    return this.listAuthorized(userId, "USER_DIRECT", directContext.contextId);
+    return this.listAuthorized(userId, "USER_DIRECT", directContext.contextId, cursor);
   }
 
   async createDirectUser(userId: string, targetUsername: string, rawBody: string) {
@@ -159,18 +194,28 @@ export class WhistleService {
     userId: string,
     contextType: WhistleContextType,
     contextId: string,
-  ): Promise<{ items: WhistleListItem[]; remainingToday: number; resetsAt: string }> {
+    encodedCursor?: string,
+  ): Promise<WhistleListResult> {
     const now = new Date();
     const resetsAt = nextUtcMidnight(now);
+    const cursor = decodeListCursor(encodedCursor);
     await this.repository.deleteExpired(now);
-    const rows = await this.repository.listActive(contextType, contextId, now, 100);
+    const rows = await this.repository.listActive(
+      contextType,
+      contextId,
+      now,
+      LIST_PAGE_SIZE + 1,
+      cursor,
+    );
+    const hasMore = rows.length > LIST_PAGE_SIZE;
+    const pageRows = rows.slice(0, LIST_PAGE_SIZE);
     const [bodies, used] = await Promise.all([
-      this.transientStore.getBodies(rows.map((row) => row.id)),
+      this.transientStore.getBodies(pageRows.map((row) => row.id)),
       this.repository.quotaUsed(userId, dayKey(now)),
     ]);
 
     return {
-      items: rows.flatMap((row) => {
+      items: pageRows.flatMap((row) => {
         const body = bodies.get(row.id);
         if (body === undefined) return [];
         return [
@@ -186,6 +231,7 @@ export class WhistleService {
       }),
       remainingToday: Math.max(0, DAILY_LIMIT - used),
       resetsAt: resetsAt.toISOString(),
+      nextCursor: hasMore && pageRows.length ? encodeListCursor(pageRows[pageRows.length - 1]!) : null,
     };
   }
 
