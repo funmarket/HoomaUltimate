@@ -28,6 +28,10 @@
       "types": "./src/athletes.ts",
       "default": "./dist/athletes.js"
     },
+    "./athletes-calendar": {
+      "types": "./src/athletes-calendar.ts",
+      "default": "./dist/athletes-calendar.js"
+    },
     "./communities": {
       "types": "./src/communities.ts",
       "default": "./dist/communities.js"

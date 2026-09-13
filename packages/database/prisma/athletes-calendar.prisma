@@ -1,0 +1,23 @@
+enum AthletesCalendarEntryStatus {
+  SCHEDULED
+  CANCELLED
+}
+
+model AthletesCalendarEntry {
+  id                  String                      @id @default(cuid())
+  athletesCommunityId String
+  createdByUserId     String
+  title               String
+  description         String?
+  startsAt            DateTime
+  endsAt              DateTime?
+  timezone            String                      @default("Africa/Tunis")
+  locationName        String?
+  status              AthletesCalendarEntryStatus @default(SCHEDULED)
+  cancelledAt         DateTime?
+  createdAt           DateTime                    @default(now())
+  updatedAt           DateTime                    @updatedAt
+
+  @@index([athletesCommunityId, startsAt, id])
+  @@index([createdByUserId, startsAt])
+}

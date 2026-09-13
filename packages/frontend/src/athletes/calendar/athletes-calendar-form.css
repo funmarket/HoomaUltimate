@@ -1,0 +1,76 @@
+.athletes-calendar-form {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.9rem;
+  border: 1px solid var(--athletes-border-strong);
+  border-radius: 1rem;
+  background: var(--athletes-surface-raised);
+}
+
+.athletes-calendar-form__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.athletes-calendar-form__heading h3 {
+  margin: 0.15rem 0 0;
+}
+
+.athletes-calendar-form label {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.athletes-calendar-form input,
+.athletes-calendar-form textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 3rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--athletes-border-strong);
+  border-radius: 0.85rem;
+  background: rgba(0, 0, 0, 0.16);
+  color: inherit;
+  font: inherit;
+}
+
+.athletes-calendar-form textarea {
+  resize: vertical;
+}
+
+.athletes-calendar-form__time-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+.athletes-calendar-form__time-grid label:first-child {
+  grid-column: 1 / -1;
+}
+
+.athletes-calendar-form__close {
+  width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0;
+  border: 1px solid var(--athletes-border-strong);
+  border-radius: 0.9rem;
+  background: var(--athletes-surface-raised);
+  color: inherit;
+  font: inherit;
+  font-size: 1.4rem;
+}
+
+@media (min-width: 560px) {
+  .athletes-calendar-form__time-grid {
+    grid-template-columns: 1.25fr 1fr 1fr;
+  }
+
+  .athletes-calendar-form__time-grid label:first-child {
+    grid-column: auto;
+  }
+}

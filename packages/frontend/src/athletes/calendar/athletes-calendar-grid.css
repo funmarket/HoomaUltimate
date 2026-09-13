@@ -1,0 +1,63 @@
+.athletes-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.22rem;
+  min-width: 0;
+}
+
+.athletes-calendar-weekday {
+  padding: 0.2rem 0;
+  text-align: center;
+  color: var(--muted, #a4a4a4);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.athletes-calendar-day {
+  position: relative;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0.05rem;
+  min-width: 0;
+  min-height: 2.9rem;
+  padding: 0.2rem 0;
+  border: 1px solid transparent;
+  border-radius: 0.85rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 750;
+}
+
+.athletes-calendar-day[data-outside-month="true"] {
+  opacity: 0.38;
+}
+
+.athletes-calendar-day[data-today="true"] {
+  border-color: var(--athletes-yellow);
+}
+
+.athletes-calendar-day[data-selected="true"] {
+  background: var(--athletes-yellow);
+  color: #151515;
+  opacity: 1;
+}
+
+.athletes-calendar-day__events {
+  min-height: 0.6rem;
+  overflow: hidden;
+  font-size: 0.62rem;
+  line-height: 0.6rem;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+@media (min-width: 560px) {
+  .athletes-calendar-day {
+    min-height: 3.35rem;
+  }
+}
