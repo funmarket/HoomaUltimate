@@ -186,37 +186,37 @@ This rule exists for scalability and user experience as well as code cleanliness
 
 ## 6. Canonical domain ownership
 
-| Concept                                              | Canonical owner                             |
-| ---------------------------------------------------- | ------------------------------------------- |
-| Login identity/session                               | Identity/Auth                               |
-| Web-session activity (`WebSession.lastSeenAt`)       | Identity                                    |
-| User presentation/profile                            | Identity                                    |
-| Global App Admin authority                           | Platform Admin                              |
-| Sensitive-operation history                          | Audit                                       |
-| HOOMA neighborhood community + membership            | Communities                                 |
-| Football Team, roster, responsibilities/capabilities | Teams                                       |
-| Athletes sports community, membership, join requests | Athletes                                    |
-| Team lineup                                          | Teams                                       |
-| Team challenge + accepted TeamGame coordination      | Teams                                       |
-| Event lifecycle, RSVP/waitlist, formation, check-in  | Events                                      |
-| Play Open Matches, player listings, match visibility | Play over Events                            |
-| Shared transient Whistle engine                      | Whistle                                     |
-| Physical venue                                       | Places                                      |
-| Place ownership/claim lifecycle                      | Places                                      |
-| Pitch capability/application/pricing                 | Pitch over canonical Place                  |
-| Watch activity/event use of venue                    | Watch/Events using canonical Place directly |
-| FanHub discovery classification                      | Places/Watch projection, never a role       |
-| ULTRAS supporter community                           | ULTRAS                                      |
-| Gamer profile/squad/challenge                        | Gamers                                      |
-| Help/request + claims                                | Requests                                    |
-| Ride coordination/location privacy                   | Rides                                       |
-| Fundraiser/contribution                              | Fundraising                                 |
-| Payment rails/intents/settlement                     | Payments                                    |
-| Domain-owned managed media metadata                  | Owning domain; generic Media unshipped      |
-| Media bytes                                          | Object storage                              |
-| Async work                                           | Outbox + Worker                             |
-| Post-activity Replay                                 | Replay                                      |
-| Aggregated Home/Now views                            | Discovery/read models only                  |
+| Concept                                                 | Canonical owner                             |
+| ------------------------------------------------------- | ------------------------------------------- |
+| Login identity/session                                  | Identity/Auth                               |
+| Web-session activity (`WebSession.lastSeenAt`)          | Identity                                    |
+| User presentation/profile                               | Identity                                    |
+| Global App Admin authority                              | Platform Admin                              |
+| Sensitive-operation history                             | Audit                                       |
+| HOOMA neighborhood community + membership               | Communities                                 |
+| Football Team, roster, responsibilities/capabilities    | Teams                                       |
+| Athletes community, membership, join requests, Calendar | Athletes                                    |
+| Team lineup                                             | Teams                                       |
+| Team challenge + accepted TeamGame coordination         | Teams                                       |
+| Event lifecycle, RSVP/waitlist, formation, check-in     | Events                                      |
+| Play Open Matches, player listings, match visibility    | Play over Events                            |
+| Shared transient Whistle engine                         | Whistle                                     |
+| Physical venue                                          | Places                                      |
+| Place ownership/claim lifecycle                         | Places                                      |
+| Pitch capability/application/pricing                    | Pitch over canonical Place                  |
+| Watch activity/event use of venue                       | Watch/Events using canonical Place directly |
+| FanHub discovery classification                         | Places/Watch projection, never a role       |
+| ULTRAS supporter community                              | ULTRAS                                      |
+| Gamer profile/squad/challenge                           | Gamers                                      |
+| Help/request + claims                                   | Requests                                    |
+| Ride coordination/location privacy                      | Rides                                       |
+| Fundraiser/contribution                                 | Fundraising                                 |
+| Payment rails/intents/settlement                        | Payments                                    |
+| Domain-owned managed media metadata                     | Owning domain; generic Media unshipped      |
+| Media bytes                                             | Object storage                              |
+| Async work                                              | Outbox + Worker                             |
+| Post-activity Replay                                    | Replay                                      |
+| Aggregated Home/Now views                               | Discovery/read models only                  |
 
 Physical `Place` is the venue source of truth. Pitch extends Place through Pitch-owned capability/application behavior. Watch references canonical Place; it does not require a duplicate Watch venue entity or a generic capability model merely for symmetry.
 
@@ -225,6 +225,8 @@ ADR-050 explicitly unfreezes durable Ride and Requests vertical slices. Rides ow
 ADR-052 authorizes Community-scoped RideRequest audience projection into HOOMA NOW without changing ownership. Ride owns the canonical request, audience scope and exact `RideRequestCommunityAudience` target rows. Community owns membership facts used for requester and viewer authorization. HOOMA NOW is presentation/composition only and must not create copied RideRequest payloads, a second lifecycle, a second status field, or a Community-owned Ride request table.
 
 ADR-054 authorizes the Athletes foundation as its own HOOMA-connected domain inside the existing API/frontend/database architecture. Athletes owns `AthletesCommunity`, `AthletesMembership`, and `AthletesJoinRequest`; it reuses canonical `User` and must not extend or store lifecycle records in the Communities or Teams tables.
+
+ADR-057 keeps the private Athletes Calendar inside the Athletes domain. `AthletesCalendarEntry` is separate from the canonical Event/Play/Watch lifecycle. Active Athletes members may read bounded Calendar ranges without taking the parent lifecycle row lock. Calendar mutations reuse the existing Athletes community `FOR UPDATE` lifecycle lock and recheck active Founder authority inside the same transaction, so archive and Calendar writes serialize through one authority.
 
 ---
 

@@ -1,0 +1,176 @@
+.athletes-calendar {
+  display: grid;
+  gap: 1rem;
+}
+
+.athletes-calendar__heading p,
+.athletes-calendar__form small {
+  margin: 0.25rem 0 0;
+  color: rgba(255, 255, 255, 0.64);
+  font-size: 0.82rem;
+}
+
+.athletes-calendar__month-nav,
+.athletes-calendar__agenda-heading,
+.athletes-calendar__entry-actions,
+.athletes-calendar__form-actions,
+.athletes-calendar__confirm > div {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.athletes-calendar__month-nav {
+  justify-content: space-between;
+}
+
+.athletes-calendar__month-nav button,
+.athletes-calendar__grid button {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--athletes-border);
+  border-radius: 0.85rem;
+  background: rgba(255, 255, 255, 0.025);
+  color: rgba(255, 255, 255, 0.9);
+  font: inherit;
+}
+
+.athletes-calendar__weekdays,
+.athletes-calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.athletes-calendar__weekdays span {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 0.68rem;
+}
+
+.athletes-calendar__grid button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 0.35rem;
+}
+
+.athletes-calendar__grid button small {
+  position: absolute;
+  right: 0.25rem;
+  bottom: 0.2rem;
+  color: var(--athletes-yellow);
+  font-size: 0.62rem;
+}
+
+.athletes-calendar__grid button.is-selected {
+  border-color: var(--athletes-lime);
+  box-shadow: inset 0 0 0 1px rgba(163, 230, 53, 0.26);
+}
+
+.athletes-calendar__grid button.is-today span {
+  color: var(--athletes-yellow-strong);
+  font-weight: 800;
+}
+
+.athletes-calendar__agenda {
+  display: grid;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+}
+
+.athletes-calendar__agenda-heading {
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.athletes-calendar__agenda-heading > div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.athletes-calendar__entry,
+.athletes-calendar__state,
+.athletes-calendar__form {
+  border: 1px solid var(--athletes-border);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.025);
+  padding: 0.9rem;
+}
+
+.athletes-calendar__entry {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.athletes-calendar__entry > div:first-child {
+  display: grid;
+  gap: 0.28rem;
+}
+
+.athletes-calendar__entry p {
+  margin: 0.3rem 0 0;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.athletes-calendar__entry.is-cancelled {
+  opacity: 0.62;
+}
+
+.athletes-calendar__cancelled {
+  color: var(--athletes-danger);
+  font-weight: 800;
+}
+
+.athletes-calendar__confirm {
+  display: grid;
+  gap: 0.55rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--athletes-border);
+}
+
+.athletes-calendar__confirm span {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.82rem;
+}
+
+.athletes-calendar__form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.athletes-calendar__form h3 {
+  margin: 0;
+}
+
+.athletes-calendar__form label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.athletes-calendar__form input,
+.athletes-calendar__form textarea {
+  width: 100%;
+  min-height: 44px;
+}
+
+.athletes-calendar__form textarea {
+  min-height: 6rem;
+  resize: vertical;
+}
+
+.athletes-calendar__form-actions {
+  flex-direction: column;
+}
+
+@media (min-width: 42rem) {
+  .athletes-calendar__form-actions {
+    flex-direction: row;
+  }
+
+  .athletes-calendar__form-actions .athletes-action {
+    width: auto;
+  }
+}

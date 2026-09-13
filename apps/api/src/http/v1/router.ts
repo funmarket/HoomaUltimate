@@ -38,7 +38,11 @@ export function createMemberV1Router(container: AppContainer, config: ApiConfig)
   router.use("/communities", createCommunityMemberRouter(container.communityService));
   router.use(
     "/athletes",
-    createAthletesMemberRouter(container.athletesService, container.athletesPhotoService),
+    createAthletesMemberRouter(
+      container.athletesService,
+      container.athletesPhotoService,
+      container.athletesCalendarService,
+    ),
   );
   router.use("/teams", createTeamMemberRouter(container.teamService));
   router.use("/events", createEventMemberRouter(container.eventService));

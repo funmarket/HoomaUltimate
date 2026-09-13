@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import type { PublicAthletesSummary } from "../api";
 import { useHoomaFrontend } from "../context";
 import { AthletesWhistleBoard } from "../whistle/HoomaWhistleBoard";
+import { AthletesCalendar } from "./AthletesCalendar";
 import { AthletesPhotoBoard } from "./AthletesPhotoBoard";
 import { ActiveAthletesList } from "./ActiveAthletesList";
 
@@ -406,6 +407,7 @@ function AthletesDetailContent({
       {detail.viewerRole ? (
         <>
           <AthletesWhistleBoard athletesCommunityId={id} />
+          <AthletesCalendar athletesCommunityId={id} founder={founder} />
           <AthletesPhotoBoard
             athletesCommunityId={id}
             communityStatus={detail.status}

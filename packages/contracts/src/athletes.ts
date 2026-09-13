@@ -32,6 +32,16 @@ export const athletesPhotoContentTypeSchema = z.enum(ATHLETES_PHOTO_CONTENT_TYPE
 
 const optionalText = (max: number) => z.string().trim().max(max).nullable().optional();
 const optionalUrl = z.string().trim().url().max(2000).nullable().optional();
+const ATHLETES_CALENDAR_MAX_RANGE_MS = 45 * 24 * 60 * 60 * 1000;
+
+function validIanaTimezone(value: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: value }).format(new Date());
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export const athletesCommunityCreateSchema = z
   .object({
@@ -167,6 +177,97 @@ export const athletesPhotoDeliverySchema = z
 export const athletesPhotoListSchema = z.array(athletesPhotoMetadataSchema);
 export const athletesPhotoUploadResponseSchema = athletesPhotoMetadataSchema;
 
+const athletesCalendarTimezoneSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(100)
+  .refine(validIanaTimezone, "Timezone must be a valid IANA timezone");
+
+export const athletesCalendarCreateSchema = z
+  .object({
+    title: z.string().trim().min(1).max(100),
+    description: optionalText(600),
+    location: optionalText(200),
+    startsAt: z.string().datetime(),
+    endsAt: z.string().datetime(),
+    timezone: athletesCalendarTimezoneSchema,
+  })
+  .strict()
+  .superRefine((input, context) => {
+    if (Date.parse(input.endsAt) <= Date.parse(input.startsAt)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["endsAt"],
+        message: "Calendar entry must end after it starts",
+      });
+    }
+  });
+
+export const athletesCalendarUpdateSchema = z
+  .object({
+    title: z.string().trim().min(1).max(100).optional(),
+    description: optionalText(600),
+    location: optionalText(200),
+    startsAt: z.string().datetime().optional(),
+    endsAt: z.string().datetime().optional(),
+    timezone: athletesCalendarTimezoneSchema.optional(),
+  })
+  .strict()
+  .refine((input) => Object.keys(input).length > 0, "At least one Calendar field is required")
+  .superRefine((input, context) => {
+    if (input.startsAt && input.endsAt && Date.parse(input.endsAt) <= Date.parse(input.startsAt)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["endsAt"],
+        message: "Calendar entry must end after it starts",
+      });
+    }
+  });
+
+export const athletesCalendarEntrySchema = z
+  .object({
+    id: z.string().min(1),
+    athletesCommunityId: z.string().min(1),
+    title: z.string().min(1),
+    description: z.string().nullable(),
+    location: z.string().nullable(),
+    startsAt: z.string().datetime(),
+    endsAt: z.string().datetime(),
+    timezone: athletesCalendarTimezoneSchema,
+    cancelledAt: z.string().datetime().nullable(),
+    createdAt: z.string().datetime(),
+    updatedAt: z.string().datetime(),
+  })
+  .strict();
+
+export const athletesCalendarListSchema = z.array(athletesCalendarEntrySchema);
+export const athletesCalendarListQuerySchema = z
+  .object({
+    from: z.string().datetime(),
+    to: z.string().datetime(),
+  })
+  .strict()
+  .superRefine((input, context) => {
+    const from = Date.parse(input.from);
+    const to = Date.parse(input.to);
+    if (to <= from) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["to"],
+        message: "Calendar range must end after it starts",
+      });
+      return;
+    }
+    if (to - from > ATHLETES_CALENDAR_MAX_RANGE_MS) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["to"],
+        message: "Calendar range cannot exceed 45 days",
+      });
+    }
+  });
+
 export const athletesMemberAddSchema = z
   .object({ username: z.string().trim().min(1).max(50) })
   .strict();
@@ -193,6 +294,11 @@ export type AthletesPhotoMetadata = z.infer<typeof athletesPhotoMetadataSchema>;
 export type AthletesPhotoDelivery = z.infer<typeof athletesPhotoDeliverySchema>;
 export type AthletesPhotoList = z.infer<typeof athletesPhotoListSchema>;
 export type AthletesPhotoUploadResponse = z.infer<typeof athletesPhotoUploadResponseSchema>;
+export type AthletesCalendarCreateInput = z.infer<typeof athletesCalendarCreateSchema>;
+export type AthletesCalendarUpdateInput = z.infer<typeof athletesCalendarUpdateSchema>;
+export type AthletesCalendarEntry = z.infer<typeof athletesCalendarEntrySchema>;
+export type AthletesCalendarList = z.infer<typeof athletesCalendarListSchema>;
+export type AthletesCalendarListQuery = z.infer<typeof athletesCalendarListQuerySchema>;
 export type AthletesMemberAdd = z.infer<typeof athletesMemberAddSchema>;
 
 /** Create/update return community fields; member counts belong to read projections. */
