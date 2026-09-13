@@ -93,6 +93,7 @@ function scenario(detail, overrides = {}) {
         ],
       });
     if (path.endsWith("/photos")) return response([]);
+    if (path.endsWith("/calendar")) return response([]);
     if (path.includes("/whistles/"))
       return response({
         items: [],

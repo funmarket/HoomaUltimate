@@ -419,3 +419,11 @@ The current product has no captions, likes/reactions, comments/replies, albums, 
 The dedicated decision record is `docs/adr/ADR-056-athletes-founder-photo-board.md`.
 
 **Reason:** Keep durable Athletes member media inside Athletes ownership while reusing shared object transport, preserving least privilege, preventing cross-community access, and keeping Photo Board separate from Whistle and generic Media.
+
+## ADR-057 — Athletes private Calendar ownership and lifecycle locking
+
+**Decision:** Athletes owns `AthletesCalendarEntry` as member-private durable schedule data separate from the canonical Event/Play/Watch lifecycle. Active same-community Athletes members may read bounded Calendar ranges. Only the active same-community Founder may create, edit, or cancel entries. Reads use ordinary member authorization and do not acquire the Athletes lifecycle row lock. Mutations reuse the existing Athletes community `FOR UPDATE` lifecycle lock and recheck active Founder authority in the same transaction. New-entry timezone defaults come from the phone/browser-resolved IANA timezone, with UTC fallback only when the runtime cannot provide a valid IANA timezone.
+
+The dedicated decision record is `docs/adr/ADR-057-athletes-calendar.md`.
+
+**Reason:** Keep private Athletes coordination in one owning domain, prevent Event/Play/Watch coupling, align documentation with the actual lock boundary, and make archive-versus-Calendar-write behavior deterministic.
