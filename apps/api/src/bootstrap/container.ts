@@ -22,8 +22,10 @@ import { PitchSuggestionService } from "../modules/pitch/application/pitch-sugge
 import { PrismaPitchRepository } from "../modules/pitch/infrastructure/prisma-pitch.repository.js";
 import { CommunityService } from "../modules/communities/application/community.service.js";
 import { PrismaCommunityRepository } from "../modules/communities/infrastructure/prisma-community.repository.js";
+import { AthletesCalendarService } from "../modules/athletes/application/athletes-calendar.service.js";
 import { AthletesPhotoService } from "../modules/athletes/application/athletes-photo.service.js";
 import { AthletesService } from "../modules/athletes/application/athletes.service.js";
+import { PrismaAthletesCalendarRepository } from "../modules/athletes/infrastructure/prisma-athletes-calendar.repository.js";
 import { PrismaAthletesPhotoRepository } from "../modules/athletes/infrastructure/prisma-athletes-photo.repository.js";
 import { PrismaAthletesRepository } from "../modules/athletes/infrastructure/prisma-athletes.repository.js";
 import { TeamService } from "../modules/teams/application/team.service.js";
@@ -127,6 +129,12 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
   const communityService = new CommunityService(communityRepository, platformAdminService);
   const athletesRepository = new PrismaAthletesRepository(database);
   const athletesService = new AthletesService(athletesRepository, userLastSeenReader);
+  const athletesCalendarRepository = new PrismaAthletesCalendarRepository(database);
+  const athletesCalendarService = new AthletesCalendarService(
+    athletesService,
+    athletesCalendarRepository,
+    athletesCalendarRepository,
+  );
   const athletesPhotoRepository = new PrismaAthletesPhotoRepository(database);
   const athletesPhotoService = new AthletesPhotoService(
     athletesService,
@@ -225,6 +233,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     pitchModerationService,
     communityService,
     athletesService,
+    athletesCalendarService,
     athletesPhotoService,
     teamService,
     eventService,
