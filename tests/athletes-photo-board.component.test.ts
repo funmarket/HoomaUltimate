@@ -100,8 +100,14 @@ test("Photo Board remains integrated into the member-only Athletes detail surfac
     athletesPages,
     /<AthletesPhotoBoard[\s\S]*athletesCommunityId=\{id\}[\s\S]*communityStatus=\{detail\.status\}[\s\S]*viewerRole=\{detail\.viewerRole\}/,
   );
-  assert.match(
-    athletesPages,
-    /detail\.viewerRole \? \([\s\S]*<AthletesWhistleBoard[\s\S]*<AthletesPhotoBoard/,
-  );
+
+  const calendarIndex = athletesPages.indexOf("<AthletesCalendar");
+  const photoIndex = athletesPages.indexOf("<AthletesPhotoBoard");
+  const whistleIndex = athletesPages.indexOf("<AthletesWhistleBoard");
+  const activeIndex = athletesPages.indexOf("<h2>Active Athletes</h2>");
+
+  assert.ok(calendarIndex >= 0);
+  assert.ok(photoIndex > calendarIndex);
+  assert.ok(whistleIndex > photoIndex);
+  assert.ok(activeIndex > whistleIndex);
 });

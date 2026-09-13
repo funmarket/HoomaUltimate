@@ -60,7 +60,7 @@ export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
   const [selectedKey, setSelectedKey] = useState(today);
   const [mode, setMode] = useState<"idle" | "create" | "edit">("idle");
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<EntryForm>(() => defaultForm(today));
+  const [draft, setDraft] = useState<EntryForm>(() => defaultForm(today));
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState("");
   const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
@@ -97,30 +97,31 @@ export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
   function startCreate() {
     setMode("create");
     setEditingId(null);
-    setForm(defaultForm(selectedKey));
+    setDraft(defaultForm(selectedKey));
     setActionError("");
   }
 
   function startEdit(entry: AthletesCalendarEntry) {
     setMode("edit");
     setEditingId(entry.id);
-    setForm(formForEntry(entry));
+    setDraft(formForEntry(entry));
     setActionError("");
     setConfirmCancelId(null);
   }
 
-  async function submit(event: FormEvent) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!founder || busy) return;
+    const data = new FormData(event.currentTarget);
     setBusy(true);
     setActionError("");
     try {
       const input: AthletesCalendarCreateInput = {
-        title: form.title.trim(),
-        description: form.description.trim() || null,
-        location: form.location.trim() || null,
-        startsAt: localInputToIso(form.startsAt),
-        endsAt: localInputToIso(form.endsAt),
+        title: String(data.get("title") ?? "").trim(),
+        description: String(data.get("description") ?? "").trim() || null,
+        location: String(data.get("location") ?? "").trim() || null,
+        startsAt: localInputToIso(String(data.get("startsAt") ?? "")),
+        endsAt: localInputToIso(String(data.get("endsAt") ?? "")),
         timezone,
       };
       if (mode === "edit" && editingId) {
@@ -303,60 +304,31 @@ export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
       </div>
 
       {mode !== "idle" && founder ? (
-        <form className="athletes-calendar__form" onSubmit={(event) => void submit(event)}>
+        <form
+          key={mode === "edit" ? `edit-${editingId ?? "unknown"}` : `create-${selectedKey}`}
+          className="athletes-calendar__form"
+          onSubmit={(event) => void submit(event)}
+        >
           <h3>{mode === "edit" ? "Edit plan" : "Add plan"}</h3>
           <label>
             Title
-            <input
-              required
-              maxLength={100}
-              value={form.title}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, title: event.currentTarget.value }))
-              }
-            />
+            <input name="title" required maxLength={100} defaultValue={draft.title} />
           </label>
           <label>
             Starts
-            <input
-              required
-              type="datetime-local"
-              value={form.startsAt}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, startsAt: event.currentTarget.value }))
-              }
-            />
+            <input name="startsAt" required type="datetime-local" defaultValue={draft.startsAt} />
           </label>
           <label>
             Ends
-            <input
-              required
-              type="datetime-local"
-              value={form.endsAt}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, endsAt: event.currentTarget.value }))
-              }
-            />
+            <input name="endsAt" required type="datetime-local" defaultValue={draft.endsAt} />
           </label>
           <label>
             Location
-            <input
-              maxLength={200}
-              value={form.location}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, location: event.currentTarget.value }))
-              }
-            />
+            <input name="location" maxLength={200} defaultValue={draft.location} />
           </label>
           <label>
             Notes
-            <textarea
-              maxLength={600}
-              value={form.description}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, description: event.currentTarget.value }))
-              }
-            />
+            <textarea name="description" maxLength={600} defaultValue={draft.description} />
           </label>
           <small>Timezone: {timezone} (from this phone/device)</small>
           {actionError ? (
