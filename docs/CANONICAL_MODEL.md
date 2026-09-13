@@ -271,6 +271,24 @@ AthletesPhoto
   updatedAt
 ```
 
+## AthletesCalendarEntry
+
+```text
+AthletesCalendarEntry
+  id
+  athletesCommunityIdcanonical AthletesCommunity
+  title
+  description?
+  location?
+  startsAt UTC instant
+  endsAt   UTC instant; strictly after startsAt
+  timezone valid IANA timezone captured at write time
+  cancelledAt?
+  createdByUserId    canonical User; internal provenance
+  createdAt
+  updatedAt
+```
+
 Rules:
 
 - Athletes records never live in `Community`, `CommunityMembership`, Team, or generic membership tables;
@@ -289,6 +307,14 @@ Rules:
 - Photo Board is separate from Whistle; Photo Board bytes are never stored in Redis and Whistle body/storage behavior is unchanged;
 - the current Photo Board has no captions, likes/reactions, comments/replies, albums, manual ordering, moderator/member curation, or public board;
 - Founder Photo Board deletion is scoped curation authority only and does not create a generic Media ownership model or social-feed lifecycle;
+- `AthletesCalendarEntry` is private Athletes-owned schedule data and does not reuse Event, Play, Watch, Pitch, or Gamers lifecycle state;
+- active same-community FOUNDER, MODERATOR, and MEMBER memberships may list Calendar entries; only the active same-community FOUNDER may create, edit, or cancel them;
+- Calendar reads use ordinary active-member authorization and bounded interval-overlap queries without acquiring the Athletes lifecycle row lock;
+- Calendar mutations reuse the existing Athletes community `FOR UPDATE` lifecycle lock and recheck active Founder authority inside the same transaction;
+- Calendar query windows are positive and capped at 45 days; `endsAt` must be later than `startsAt`;
+- cancellation is one-way and idempotent: cancelled entries remain visible and cannot be edited back to active state;
+- `createdByUserId` remains internal persistence provenance and is not exposed by the Calendar API projection;
+- each Calendar entry stores a valid IANA timezone; frontend creation defaults to the phone/browser-resolved IANA timezone with UTC fallback when no valid device timezone is available;
 - equipment, Events, marketplace, Ride/Requests/FundMe integration, ULTRAS and generic community abstractions are not part of this foundation.
 
 ## Active Athletes projection
