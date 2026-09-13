@@ -316,12 +316,7 @@ export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
           </label>
           <label>
             Starts
-            <input
-              name="startsAt"
-              required
-              type="datetime-local"
-              defaultValue={draft.startsAt}
-            />
+            <input name="startsAt" required type="datetime-local" defaultValue={draft.startsAt} />
           </label>
           <label>
             Ends
