@@ -92,7 +92,7 @@ jobs:
           text = decisions.read_text()
           if "## ADR-057 — Athletes private Calendar ownership and lifecycle locking" in text:
               raise SystemExit("docs/DECISIONS.md: ADR-057 already exists")
-          decisions.write_text(text.rstrip() + adr57 + "\n")
+          decisions.write_text(text.rstrip() + adr57.rstrip() + "\n")
 
           requirements_paragraph = "The Athletes Calendar is member-private Athletes-owned schedule data for one `AthletesCommunity`; it does not reuse Event, Play, Watch, Pitch or Gamers lifecycle state. Active same-community `FOUNDER`, `MODERATOR` and `MEMBER` memberships may list Calendar entries through bounded interval-overlap ranges of at most 45 days, while only the active same-community `FOUNDER` may create, edit or cancel entries. Calendar entries require `endsAt > startsAt`, store a valid IANA timezone, and new-entry UI defaults that timezone from `Intl.DateTimeFormat().resolvedOptions().timeZone`, using `UTC` only when the runtime cannot provide a valid IANA timezone; no GPS/location permission is required. Cancellation is one-way and idempotent, cancelled entries remain visible, and archived communities, outsiders and cross-community memberships cannot access active Calendar content. Calendar reads use ordinary active-member authorization without taking the Athletes lifecycle row lock; Calendar mutations reuse the existing Athletes community `FOR UPDATE` lifecycle lock and recheck active Founder authority inside the same transaction so archive-versus-Calendar-write races serialize safely.\n\n"
           replace_once(
