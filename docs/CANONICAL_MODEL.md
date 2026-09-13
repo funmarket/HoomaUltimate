@@ -276,15 +276,15 @@ AthletesPhoto
 ```text
 AthletesCalendarEntry
   id
-  athletesCommunityIdcanonical AthletesCommunity
+  athletesCommunityId          canonical AthletesCommunity
   title
   description?
   location?
-  startsAt UTC instant
-  endsAt   UTC instant; strictly after startsAt
-  timezone valid IANA timezone captured at write time
+  startsAt                     UTC instant
+  endsAt                       UTC instant; strictly after startsAt
+  timezone                     valid IANA timezone captured at write time
   cancelledAt?
-  createdByUserId    canonical User; internal provenance
+  createdByUserId              canonical User; internal provenance
   createdAt
   updatedAt
 ```
