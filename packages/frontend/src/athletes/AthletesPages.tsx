@@ -406,13 +406,13 @@ function AthletesDetailContent({
       ) : null}
       {detail.viewerRole ? (
         <>
-          <AthletesWhistleBoard athletesCommunityId={id} />
           <AthletesCalendar athletesCommunityId={id} founder={founder} />
           <AthletesPhotoBoard
             athletesCommunityId={id}
             communityStatus={detail.status}
             viewerRole={detail.viewerRole}
           />
+          <AthletesWhistleBoard athletesCommunityId={id} />
           <section className="athletes-surface athletes-section">
             <h2>Active Athletes</h2>
             {membersError ? (
