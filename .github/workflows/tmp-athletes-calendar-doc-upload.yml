@@ -22,35 +22,18 @@ jobs:
           from pathlib import Path
           path = Path("docs/CANONICAL_MODEL.md")
           text = path.read_text()
-          old = '''AthletesCalendarEntry
-  id
-  athletesCommunityIdcanonical AthletesCommunity
-  title
-  description?
-  location?
-  startsAt UTC instant
-  endsAt   UTC instant; strictly after startsAt
-  timezone valid IANA timezone captured at write time
-  cancelledAt?
-  createdByUserId    canonical User; internal provenance
-  createdAt
-  updatedAt'''
-          new = '''AthletesCalendarEntry
-  id
-  athletesCommunityId          canonical AthletesCommunity
-  title
-  description?
-  location?
-  startsAt                     UTC instant
-  endsAt                       UTC instant; strictly after startsAt
-  timezone                     valid IANA timezone captured at write time
-  cancelledAt?
-  createdByUserId              canonical User; internal provenance
-  createdAt
-  updatedAt'''
-          if text.count(old) != 1:
-              raise SystemExit(f"expected malformed Calendar model block once, found {text.count(old)}")
-          path.write_text(text.replace(old, new, 1))
+          replacements = {
+              "  athletesCommunityIdcanonical AthletesCommunity": "  athletesCommunityId          canonical AthletesCommunity",
+              "  startsAt UTC instant": "  startsAt                     UTC instant",
+              "  endsAt   UTC instant; strictly after startsAt": "  endsAt                       UTC instant; strictly after startsAt",
+              "  timezone valid IANA timezone captured at write time": "  timezone                     valid IANA timezone captured at write time",
+              "  createdByUserId    canonical User; internal provenance": "  createdByUserId              canonical User; internal provenance",
+          }
+          for old, new in replacements.items():
+              if text.count(old) != 1:
+                  raise SystemExit(f"expected canonical-model anchor exactly once: {old!r}")
+              text = text.replace(old, new, 1)
+          path.write_text(text)
 
       - name: Commit normalized document blob
         run: |
