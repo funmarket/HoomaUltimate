@@ -1,5 +1,8 @@
 import { Buffer } from "node:buffer";
 import {
+  athletesCalendarCreateSchema,
+  athletesCalendarListQuerySchema,
+  athletesCalendarUpdateSchema,
   athletesCommunityCreateSchema,
   athletesPhotoListQuerySchema,
   athletesCommunityUpdateSchema,
@@ -10,6 +13,7 @@ import {
 import { Router, raw } from "express";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import { getAuth } from "../../identity/http/auth-request.js";
+import type { AthletesCalendarService } from "../application/athletes-calendar.service.js";
 import type { AthletesPhotoService } from "../application/athletes-photo.service.js";
 import type { AthletesService } from "../application/athletes.service.js";
 
@@ -40,6 +44,7 @@ export function createAthletesPublicRouter(service: AthletesService): Router {
 export function createAthletesMemberRouter(
   service: AthletesService,
   photoService: AthletesPhotoService,
+  calendarService: AthletesCalendarService,
 ): Router {
   const router = Router();
   router.post(
@@ -50,6 +55,56 @@ export function createAthletesMemberRouter(
         .json(
           await service.create(getAuth(req).userId, athletesCommunityCreateSchema.parse(req.body)),
         );
+    }),
+  );
+  router.get(
+    "/:athletesCommunityId/calendar",
+    asyncHandler(async (req, res) => {
+      res.setHeader("cache-control", "private, no-store");
+      res.json(
+        await calendarService.list(
+          getAuth(req).userId,
+          String(req.params.athletesCommunityId),
+          athletesCalendarListQuerySchema.parse(req.query),
+        ),
+      );
+    }),
+  );
+  router.post(
+    "/:athletesCommunityId/calendar",
+    asyncHandler(async (req, res) => {
+      res.status(201).json(
+        await calendarService.create(
+          getAuth(req).userId,
+          String(req.params.athletesCommunityId),
+          athletesCalendarCreateSchema.parse(req.body),
+        ),
+      );
+    }),
+  );
+  router.patch(
+    "/:athletesCommunityId/calendar/:entryId",
+    asyncHandler(async (req, res) => {
+      res.json(
+        await calendarService.update(
+          getAuth(req).userId,
+          String(req.params.athletesCommunityId),
+          String(req.params.entryId),
+          athletesCalendarUpdateSchema.parse(req.body),
+        ),
+      );
+    }),
+  );
+  router.post(
+    "/:athletesCommunityId/calendar/:entryId/cancel",
+    asyncHandler(async (req, res) => {
+      res.json(
+        await calendarService.cancel(
+          getAuth(req).userId,
+          String(req.params.athletesCommunityId),
+          String(req.params.entryId),
+        ),
+      );
     }),
   );
   router.get(

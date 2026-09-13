@@ -1,4 +1,8 @@
 import type {
+  AthletesCalendarCreateInput,
+  AthletesCalendarEntry,
+  AthletesCalendarList,
+  AthletesCalendarUpdateInput,
   AthletesCommunityCreateInput,
   AthletesCommunityWriteResult,
   AthletesCommunityUpdateInput,
@@ -27,6 +31,11 @@ function athletesPublicListPath(
   if (filters.cursor) params.set("cursor", filters.cursor);
   params.set("limit", String(filters.limit ?? 30));
   return `/api/public/v1/athletes?${params.toString()}`;
+}
+
+function calendarListPath(id: string, from: string, to: string): string {
+  const params = new URLSearchParams({ from, to });
+  return `/api/v1/athletes/${encodeURIComponent(id)}/calendar?${params.toString()}`;
 }
 
 export function createAthletesApi(transport: HoomaTransport) {
@@ -118,6 +127,26 @@ export function createAthletesApi(transport: HoomaTransport) {
         transport,
         `/api/v1/athletes/${encodeURIComponent(id)}/members/${encodeURIComponent(userId)}/role`,
         { method: "PATCH", body: JSON.stringify({ role }) },
+      ),
+    listCalendar: (id: string, from: string, to: string) =>
+      request<AthletesCalendarList>(transport, calendarListPath(id, from, to)),
+    createCalendarEntry: (id: string, input: AthletesCalendarCreateInput) =>
+      request<AthletesCalendarEntry>(
+        transport,
+        `/api/v1/athletes/${encodeURIComponent(id)}/calendar`,
+        { method: "POST", body: JSON.stringify(input) },
+      ),
+    updateCalendarEntry: (id: string, entryId: string, input: AthletesCalendarUpdateInput) =>
+      request<AthletesCalendarEntry>(
+        transport,
+        `/api/v1/athletes/${encodeURIComponent(id)}/calendar/${encodeURIComponent(entryId)}`,
+        { method: "PATCH", body: JSON.stringify(input) },
+      ),
+    cancelCalendarEntry: (id: string, entryId: string) =>
+      request<AthletesCalendarEntry>(
+        transport,
+        `/api/v1/athletes/${encodeURIComponent(id)}/calendar/${encodeURIComponent(entryId)}/cancel`,
+        { method: "POST" },
       ),
     listPhotos: (id: string, cursor?: string) =>
       request<AthletesPhotoList>(
