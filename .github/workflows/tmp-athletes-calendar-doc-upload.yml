@@ -9,103 +9,54 @@ permissions:
   contents: write
 
 jobs:
-  build-doc-blobs:
+  normalize-doc-blobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Apply exact Athletes Calendar governing-doc insertions
+      - name: Normalize Athletes Calendar model block
         shell: python
         run: |
           from pathlib import Path
+          path = Path("docs/CANONICAL_MODEL.md")
+          text = path.read_text()
+          old = '''AthletesCalendarEntry
+  id
+  athletesCommunityIdcanonical AthletesCommunity
+  title
+  description?
+  location?
+  startsAt UTC instant
+  endsAt   UTC instant; strictly after startsAt
+  timezone valid IANA timezone captured at write time
+  cancelledAt?
+  createdByUserId    canonical User; internal provenance
+  createdAt
+  updatedAt'''
+          new = '''AthletesCalendarEntry
+  id
+  athletesCommunityId          canonical AthletesCommunity
+  title
+  description?
+  location?
+  startsAt                     UTC instant
+  endsAt                       UTC instant; strictly after startsAt
+  timezone                     valid IANA timezone captured at write time
+  cancelledAt?
+  createdByUserId              canonical User; internal provenance
+  createdAt
+  updatedAt'''
+          if text.count(old) != 1:
+              raise SystemExit(f"expected malformed Calendar model block once, found {text.count(old)}")
+          path.write_text(text.replace(old, new, 1))
 
-          def replace_once(path: str, old: str, new: str) -> None:
-              file = Path(path)
-              text = file.read_text()
-              if text.count(old) != 1:
-                  raise SystemExit(f"{path}: expected anchor exactly once, found {text.count(old)}")
-              file.write_text(text.replace(old, new, 1))
-
-          replace_once(
-              "structure.md",
-              "| Athletes sports community, membership, join requests | Athletes                                    |",
-              "| Athletes community, membership, join requests, Calendar | Athletes                                 |",
-          )
-          replace_once(
-              "structure.md",
-              "ADR-054 authorizes the Athletes foundation as its own HOOMA-connected domain inside the existing API/frontend/database architecture. Athletes owns `AthletesCommunity`, `AthletesMembership`, and `AthletesJoinRequest`; it reuses canonical `User` and must not extend or store lifecycle records in the Communities or Teams tables.\n\n---",
-              "ADR-054 authorizes the Athletes foundation as its own HOOMA-connected domain inside the existing API/frontend/database architecture. Athletes owns `AthletesCommunity`, `AthletesMembership`, and `AthletesJoinRequest`; it reuses canonical `User` and must not extend or store lifecycle records in the Communities or Teams tables.\n\nADR-057 keeps the private Athletes Calendar inside the Athletes domain. `AthletesCalendarEntry` is separate from the canonical Event/Play/Watch lifecycle. Active Athletes members may read bounded Calendar ranges without taking the parent lifecycle row lock. Calendar mutations reuse the existing Athletes community `FOR UPDATE` lifecycle lock and recheck active Founder authority inside the same transaction, so archive and Calendar writes serialize through one authority.\n\n---",
-          )
-
-          calendar_model = '''## AthletesCalendarEntry
-
-          ```text
-          AthletesCalendarEntry
-            id
-            athletesCommunityId          canonical AthletesCommunity
-            title
-            description?
-            location?
-            startsAt                     UTC instant
-            endsAt                       UTC instant; strictly after startsAt
-            timezone                     valid IANA timezone captured at write time
-            cancelledAt?
-            createdByUserId              canonical User; internal provenance
-            createdAt
-            updatedAt
-          ```
-
-          '''.replace("          ", "")
-          replace_once(
-              "docs/CANONICAL_MODEL.md",
-              "```\n\nRules:\n\n- Athletes records never live in `Community`, `CommunityMembership`, Team, or generic membership tables;",
-              "```\n\n" + calendar_model + "Rules:\n\n- Athletes records never live in `Community`, `CommunityMembership`, Team, or generic membership tables;",
-          )
-          calendar_rules = '''- `AthletesCalendarEntry` is private Athletes-owned schedule data and does not reuse Event, Play, Watch, Pitch, or Gamers lifecycle state;
-          - active same-community FOUNDER, MODERATOR, and MEMBER memberships may list Calendar entries; only the active same-community FOUNDER may create, edit, or cancel them;
-          - Calendar reads use ordinary active-member authorization and bounded interval-overlap queries without acquiring the Athletes lifecycle row lock;
-          - Calendar mutations reuse the existing Athletes community `FOR UPDATE` lifecycle lock and recheck active Founder authority inside the same transaction;
-          - Calendar query windows are positive and capped at 45 days; `endsAt` must be later than `startsAt`;
-          - cancellation is one-way and idempotent: cancelled entries remain visible and cannot be edited back to active state;
-          - `createdByUserId` remains internal persistence provenance and is not exposed by the Calendar API projection;
-          - each Calendar entry stores a valid IANA timezone; frontend creation defaults to the phone/browser-resolved IANA timezone with UTC fallback when no valid device timezone is available;
-          '''.replace("          ", "")
-          replace_once(
-              "docs/CANONICAL_MODEL.md",
-              "- Founder Photo Board deletion is scoped curation authority only and does not create a generic Media ownership model or social-feed lifecycle;\n- equipment, Events, marketplace, Ride/Requests/FundMe integration, ULTRAS and generic community abstractions are not part of this foundation.",
-              "- Founder Photo Board deletion is scoped curation authority only and does not create a generic Media ownership model or social-feed lifecycle;\n" + calendar_rules + "- equipment, Events, marketplace, Ride/Requests/FundMe integration, ULTRAS and generic community abstractions are not part of this foundation.",
-          )
-
-          adr57 = '''
-
-          ## ADR-057 — Athletes private Calendar ownership and lifecycle locking
-
-          **Decision:** Athletes owns `AthletesCalendarEntry` as member-private durable schedule data separate from the canonical Event/Play/Watch lifecycle. Active same-community Athletes members may read bounded Calendar ranges. Only the active same-community Founder may create, edit, or cancel entries. Reads use ordinary member authorization and do not acquire the Athletes lifecycle row lock. Mutations reuse the existing Athletes community `FOR UPDATE` lifecycle lock and recheck active Founder authority in the same transaction. New-entry timezone defaults come from the phone/browser-resolved IANA timezone, with UTC fallback only when the runtime cannot provide a valid IANA timezone.
-
-          The dedicated decision record is `docs/adr/ADR-057-athletes-calendar.md`.
-
-          **Reason:** Keep private Athletes coordination in one owning domain, prevent Event/Play/Watch coupling, align documentation with the actual lock boundary, and make archive-versus-Calendar-write behavior deterministic.
-          '''.replace("          ", "")
-          decisions = Path("docs/DECISIONS.md")
-          text = decisions.read_text()
-          if "## ADR-057 — Athletes private Calendar ownership and lifecycle locking" in text:
-              raise SystemExit("docs/DECISIONS.md: ADR-057 already exists")
-          decisions.write_text(text.rstrip() + adr57.rstrip() + "\n")
-
-          requirements_paragraph = "The Athletes Calendar is member-private Athletes-owned schedule data for one `AthletesCommunity`; it does not reuse Event, Play, Watch, Pitch or Gamers lifecycle state. Active same-community `FOUNDER`, `MODERATOR` and `MEMBER` memberships may list Calendar entries through bounded interval-overlap ranges of at most 45 days, while only the active same-community `FOUNDER` may create, edit or cancel entries. Calendar entries require `endsAt > startsAt`, store a valid IANA timezone, and new-entry UI defaults that timezone from `Intl.DateTimeFormat().resolvedOptions().timeZone`, using `UTC` only when the runtime cannot provide a valid IANA timezone; no GPS/location permission is required. Cancellation is one-way and idempotent, cancelled entries remain visible, and archived communities, outsiders and cross-community memberships cannot access active Calendar content. Calendar reads use ordinary active-member authorization without taking the Athletes lifecycle row lock; Calendar mutations reuse the existing Athletes community `FOR UPDATE` lifecycle lock and recheck active Founder authority inside the same transaction so archive-versus-Calendar-write races serialize safely.\n\n"
-          replace_once(
-              "requirements.md",
-              "Active Athletes remains the existing active Athletes member list; WebSession activity does not filter membership.",
-              requirements_paragraph + "Active Athletes remains the existing active Athletes member list; WebSession activity does not filter membership.",
-          )
-
-      - name: Commit exact document blobs on scratch branch
+      - name: Commit normalized document blob
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add requirements.md structure.md docs/CANONICAL_MODEL.md docs/DECISIONS.md
+          git add docs/CANONICAL_MODEL.md
           git diff --cached --check
-          git commit -m "docs: stage athletes calendar governing updates"
+          git commit -m "docs: normalize athletes calendar model formatting"
           git push origin HEAD:tmp/athletes-calendar-doc-upload
