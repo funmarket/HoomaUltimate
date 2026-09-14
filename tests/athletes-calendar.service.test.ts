@@ -104,8 +104,7 @@ function harness(initial: AthletesCalendarRecord[] = []) {
           );
           return {
             entry,
-            viewerStatus:
-              entryRsvps.find((rsvp) => rsvp.userId === viewerUserId)?.status ?? null,
+            viewerStatus: entryRsvps.find((rsvp) => rsvp.userId === viewerUserId)?.status ?? null,
             counts: {
               going: entryRsvps.filter((rsvp) => rsvp.status === "GOING").length,
               maybe: entryRsvps.filter((rsvp) => rsvp.status === "MAYBE").length,
