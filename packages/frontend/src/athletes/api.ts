@@ -1,7 +1,7 @@
 import type {
   AthletesCalendarCreateInput,
   AthletesCalendarEntry,
-  AthletesCalendarListView,
+  AthletesCalendarListPage,
   AthletesCalendarRsvpInput,
   AthletesCalendarRsvpResult,
   AthletesCalendarUpdateInput,
@@ -47,8 +47,9 @@ function pagedJoinRequestPath(id: string, cursor?: string): string {
   return `/api/v1/athletes/${encodeURIComponent(id)}/join-requests?${params.toString()}`;
 }
 
-function calendarListPath(id: string, from: string, to: string): string {
-  const params = new URLSearchParams({ from, to });
+function calendarListPath(id: string, from: string, to: string, cursor?: string): string {
+  const params = new URLSearchParams({ from, to, limit: "50" });
+  if (cursor) params.set("cursor", cursor);
   return `/api/v1/athletes/${encodeURIComponent(id)}/calendar?${params.toString()}`;
 }
 
@@ -139,8 +140,8 @@ export function createAthletesApi(transport: HoomaTransport) {
         `/api/v1/athletes/${encodeURIComponent(id)}/members/${encodeURIComponent(userId)}/role`,
         { method: "PATCH", body: JSON.stringify({ role }) },
       ),
-    listCalendar: (id: string, from: string, to: string) =>
-      request<AthletesCalendarListView>(transport, calendarListPath(id, from, to)),
+    listCalendar: (id: string, from: string, to: string, cursor?: string) =>
+      request<AthletesCalendarListPage>(transport, calendarListPath(id, from, to, cursor)),
     createCalendarEntry: (id: string, input: AthletesCalendarCreateInput) =>
       request<AthletesCalendarEntry>(
         transport,

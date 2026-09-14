@@ -330,7 +330,7 @@ Rules:
 - RSVP rows are retained when membership ends, but current `GOING | MAYBE | NOT_GOING` aggregate counts include only Users with an active same-community AthletesMembership (`leftAt == null`);
 - cancelled entries reject new RSVP changes and use the same current-active-member count semantics; retained rows are not a cancellation-time snapshot;
 - Calendar RSVP never reads from, writes to, or reuses generic `EventRsvp`/waitlist state;
-- Calendar query windows are positive and capped at 45 days; `endsAt` must be later than `startsAt`;
+- Calendar query windows are positive and capped at 45 days; list reads are additionally row-bounded with stable cursor pagination, and RSVP aggregates are computed only for entries in the returned page; `endsAt` must be later than `startsAt`;
 - cancellation is one-way and idempotent: cancelled entries remain visible and cannot be edited back to active state;
 - `createdByUserId` remains internal persistence provenance and is not exposed by the Calendar API projection;
 - each Calendar entry stores a valid IANA timezone; frontend creation defaults to the phone/browser-resolved IANA timezone with UTC fallback when no valid device timezone is available;

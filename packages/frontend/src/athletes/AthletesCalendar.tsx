@@ -83,7 +83,10 @@ export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
   const [rsvpBusyId, setRsvpBusyId] = useState<string | null>(null);
   const [rsvpError, setRsvpError] = useState("");
   const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
-  const { entries, loading, error, reload } = useAthletesCalendar(athletesCommunityId, monthKey);
+  const { entries, loading, loadingMore, error, hasMore, reload, loadMore } = useAthletesCalendar(
+    athletesCommunityId,
+    monthKey,
+  );
 
   const cells = useMemo(() => calendarMonthCells(monthKey), [monthKey]);
   const eventCounts = useMemo(() => {
@@ -368,6 +371,16 @@ export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
           <div className="error-box" role="alert">
             {rsvpError}
           </div>
+        ) : null}
+        {hasMore ? (
+          <button
+            type="button"
+            className="button athletes-action athletes-action--secondary athletes-action--compact"
+            disabled={loadingMore}
+            onClick={() => void loadMore()}
+          >
+            {loadingMore ? "Loading more Calendar…" : "Load more Calendar"}
+          </button>
         ) : null}
       </div>
 

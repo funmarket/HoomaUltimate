@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   ATHLETES_PHOTO_MAX_BYTES,
+  athletesCalendarListPageSchema,
+  athletesCalendarListQuerySchema,
   athletesCommunityCreateSchema,
   athletesJoinRequestListQuerySchema,
   athletesJoinRequestPageSchema,
@@ -52,6 +54,60 @@ test("Athletes contracts reject invalid sport, role, status and generic fields",
   );
 });
 
+test("Athletes Calendar list contracts enforce bounded cursor pages", () => {
+  assert.deepEqual(
+    athletesCalendarListQuerySchema.parse({
+      from: "2026-09-20T00:00:00.000Z",
+      to: "2026-09-21T00:00:00.000Z",
+    }),
+    {
+      from: "2026-09-20T00:00:00.000Z",
+      to: "2026-09-21T00:00:00.000Z",
+      limit: 50,
+    },
+  );
+  assert.deepEqual(
+    athletesCalendarListQuerySchema.parse({
+      from: "2026-09-20T00:00:00.000Z",
+      to: "2026-09-21T00:00:00.000Z",
+      cursor: "calendar-1",
+      limit: "100",
+    }),
+    {
+      from: "2026-09-20T00:00:00.000Z",
+      to: "2026-09-21T00:00:00.000Z",
+      cursor: "calendar-1",
+      limit: 100,
+    },
+  );
+  assert.throws(() =>
+    athletesCalendarListQuerySchema.parse({
+      from: "2026-09-20T00:00:00.000Z",
+      to: "2026-09-21T00:00:00.000Z",
+      limit: 101,
+    }),
+  );
+
+  const entry = {
+    id: "calendar-1",
+    athletesCommunityId: "ath-1",
+    title: "Training",
+    description: null,
+    location: null,
+    startsAt: "2026-09-20T17:00:00.000Z",
+    endsAt: "2026-09-20T18:00:00.000Z",
+    timezone: "UTC",
+    cancelledAt: null,
+    createdAt: "2026-09-13T12:00:00.000Z",
+    updatedAt: "2026-09-13T12:00:00.000Z",
+    rsvp: { viewerStatus: null, counts: { going: 0, maybe: 0, notGoing: 0 } },
+  };
+  assert.deepEqual(athletesCalendarListPageSchema.parse({ items: [entry], nextCursor: null }), {
+    items: [entry],
+    nextCursor: null,
+  });
+});
+
 test("Athletes direct add uses username input only", () => {
   assert.deepEqual(athletesMemberAddSchema.parse({ username: "runner_one" }), {
     username: "runner_one",
@@ -61,13 +117,10 @@ test("Athletes direct add uses username input only", () => {
 
 test("Athletes member and join-request list contracts enforce bounded cursor pages", () => {
   assert.deepEqual(athletesMemberListQuerySchema.parse({}), { limit: 50 });
-  assert.deepEqual(
-    athletesJoinRequestListQuerySchema.parse({ cursor: "cursor-1", limit: "100" }),
-    {
-      cursor: "cursor-1",
-      limit: 100,
-    },
-  );
+  assert.deepEqual(athletesJoinRequestListQuerySchema.parse({ cursor: "cursor-1", limit: "100" }), {
+    cursor: "cursor-1",
+    limit: 100,
+  });
   assert.throws(() => athletesMemberListQuerySchema.parse({ limit: 101 }));
   assert.throws(() => athletesJoinRequestListQuerySchema.parse({ limit: 0 }));
 
@@ -78,13 +131,10 @@ test("Athletes member and join-request list contracts enforce bounded cursor pag
     lastSeenAt: null,
     presentation: null,
   };
-  assert.deepEqual(
-    athletesMemberPageSchema.parse({ items: [member], nextCursor: "member-1" }),
-    {
-      items: [member],
-      nextCursor: "member-1",
-    },
-  );
+  assert.deepEqual(athletesMemberPageSchema.parse({ items: [member], nextCursor: "member-1" }), {
+    items: [member],
+    nextCursor: "member-1",
+  });
 
   const request = {
     id: "request-1",
@@ -96,10 +146,10 @@ test("Athletes member and join-request list contracts enforce bounded cursor pag
     resolvedByUserId: null,
     requester: { presentation: null },
   };
-  assert.deepEqual(
-    athletesJoinRequestPageSchema.parse({ items: [request], nextCursor: null }),
-    { items: [request], nextCursor: null },
-  );
+  assert.deepEqual(athletesJoinRequestPageSchema.parse({ items: [request], nextCursor: null }), {
+    items: [request],
+    nextCursor: null,
+  });
 });
 
 test("Athletes member projection carries nullable canonical web last-seen", () => {

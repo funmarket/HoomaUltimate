@@ -66,17 +66,21 @@ export class AthletesCalendarService {
     userId: string,
     athletesCommunityId: string,
     query: AthletesCalendarListQuery,
-  ): Promise<AthletesCalendarEntryView[]> {
+  ): Promise<{ items: AthletesCalendarEntryView[]; nextCursor: string | null }> {
     await this.authorization.requireMemberContent(userId, athletesCommunityId);
-    const rows = await this.repository.listForCommunity(
+    const page = await this.repository.listForCommunity(
       athletesCommunityId,
       {
-        from: new Date(query.from),
-        to: new Date(query.to),
+        range: {
+          from: new Date(query.from),
+          to: new Date(query.to),
+        },
+        limit: query.limit ?? 50,
+        ...(query.cursor !== undefined ? { cursor: query.cursor } : {}),
       },
       userId,
     );
-    return rows.map(serializeView);
+    return { items: page.items.map(serializeView), nextCursor: page.nextCursor };
   }
 
   create(

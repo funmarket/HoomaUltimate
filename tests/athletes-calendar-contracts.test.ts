@@ -73,6 +73,7 @@ test("Athletes Calendar list range is positive and capped at 45 days", () => {
     {
       from: "2026-09-01T00:00:00.000Z",
       to: "2026-10-16T00:00:00.000Z",
+      limit: 50,
     },
   );
   assert.throws(() =>

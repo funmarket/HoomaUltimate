@@ -4,6 +4,7 @@ import type { AthletesCalendarRsvpStatus } from "@hooma/contracts/athletes";
 import type { AthletesContentAuthorizer } from "../apps/api/src/modules/athletes/application/athletes-content-authorizer.js";
 import type {
   AthletesCalendarCreateRecordInput,
+  AthletesCalendarListRecordInput,
   AthletesCalendarRecord,
   AthletesCalendarRepository,
   AthletesCalendarTransactionRepository,
@@ -90,16 +91,27 @@ function harness(initial: AthletesCalendarRecord[] = []) {
   let sharedLockCalls = 0;
   let listCalls = 0;
   const repository: AthletesCalendarRepository = {
-    async listForCommunity(athletesCommunityId, range, viewerUserId) {
+    async listForCommunity(
+      athletesCommunityId,
+      input: AthletesCalendarListRecordInput,
+      viewerUserId,
+    ) {
       listCalls += 1;
-      return rows
+      const matching = rows
         .filter(
           (row) =>
             row.athletesCommunityId === athletesCommunityId &&
-            row.startsAt < range.to &&
-            row.endsAt > range.from,
+            row.startsAt < input.range.to &&
+            row.endsAt > input.range.from,
         )
-        .map((entry) => {
+        .sort(
+          (left, right) =>
+            left.startsAt.getTime() - right.startsAt.getTime() || left.id.localeCompare(right.id),
+        );
+      const start = input.cursor ? matching.findIndex((row) => row.id === input.cursor) + 1 : 0;
+      const pageRows = matching.slice(start, start + input.limit);
+      return {
+        items: pageRows.map((entry) => {
           const entryRsvps = [...rsvps.values()].filter(
             (rsvp) => rsvp.calendarEntryId === entry.id,
           );
@@ -112,7 +124,9 @@ function harness(initial: AthletesCalendarRecord[] = []) {
               notGoing: entryRsvps.filter((rsvp) => rsvp.status === "NOT_GOING").length,
             },
           };
-        });
+        }),
+        nextCursor: matching.length > start + input.limit ? (pageRows.at(-1)?.id ?? null) : null,
+      };
     },
   };
   const transaction: AthletesCalendarTransactionRepository = {
@@ -189,16 +203,17 @@ test("active member Calendar read uses ordinary authorization without a lifecycl
     state.unitOfWork,
   );
 
-  const entries = await service.list("member", "ath-1", {
+  const page = await service.list("member", "ath-1", {
     from: "2026-09-20T00:00:00.000Z",
     to: "2026-09-21T00:00:00.000Z",
   });
-  assert.equal(entries.length, 1);
+  assert.equal(page.items.length, 1);
+  assert.equal(page.nextCursor, null);
   assert.equal(state.listCalls(), 1);
   assert.equal(state.exclusiveLockCalls(), 0);
   assert.equal(state.sharedLockCalls(), 0);
-  assert.equal("createdByUserId" in entries[0]!, false);
-  assert.deepEqual(entries[0]!.rsvp, {
+  assert.equal("createdByUserId" in page.items[0]!, false);
+  assert.deepEqual(page.items[0]!.rsvp, {
     viewerStatus: null,
     counts: { going: 0, maybe: 0, notGoing: 0 },
   });
@@ -211,6 +226,42 @@ test("active member Calendar read uses ordinary authorization without a lifecycl
       }),
     expectCode("ATHLETES_MEMBER_REQUIRED"),
   );
+});
+
+test("Calendar list preserves bounded cursor pages", async () => {
+  const state = harness([
+    record({ id: "entry-1", startsAt: START }),
+    record({ id: "entry-2", startsAt: START }),
+    record({ id: "entry-3", startsAt: new Date("2026-09-20T19:00:00.000Z") }),
+  ]);
+  const service = new AthletesCalendarService(
+    authorizer(["member"]),
+    state.repository,
+    state.unitOfWork,
+  );
+
+  const first = await service.list("member", "ath-1", {
+    from: "2026-09-20T00:00:00.000Z",
+    to: "2026-09-21T00:00:00.000Z",
+    limit: 2,
+  });
+  assert.deepEqual(
+    first.items.map((entry) => entry.id),
+    ["entry-1", "entry-2"],
+  );
+  assert.equal(first.nextCursor, "entry-2");
+
+  const second = await service.list("member", "ath-1", {
+    from: "2026-09-20T00:00:00.000Z",
+    to: "2026-09-21T00:00:00.000Z",
+    cursor: first.nextCursor!,
+    limit: 2,
+  });
+  assert.deepEqual(
+    second.items.map((entry) => entry.id),
+    ["entry-3"],
+  );
+  assert.equal(second.nextCursor, null);
 });
 
 test("Founder Calendar mutations keep the exclusive Athletes lifecycle lock", async () => {
@@ -269,12 +320,12 @@ test("active members set and change one RSVP row through the shared lifecycle gu
   assert.equal(state.exclusiveLockCalls(), 0);
   assert.equal(state.sharedLockCalls(), 1);
 
-  let entries = await service.list("member", "ath-1", {
+  let page = await service.list("member", "ath-1", {
     from: "2026-09-20T00:00:00.000Z",
     to: "2026-09-21T00:00:00.000Z",
   });
-  assert.equal(entries[0]!.rsvp.viewerStatus, "GOING");
-  assert.deepEqual(entries[0]!.rsvp.counts, { going: 1, maybe: 0, notGoing: 0 });
+  assert.equal(page.items[0]!.rsvp.viewerStatus, "GOING");
+  assert.deepEqual(page.items[0]!.rsvp.counts, { going: 1, maybe: 0, notGoing: 0 });
 
   assert.deepEqual(await service.setRsvp("member", "ath-1", "entry-1", "MAYBE"), {
     entryId: "entry-1",
@@ -284,12 +335,12 @@ test("active members set and change one RSVP row through the shared lifecycle gu
   assert.equal(state.exclusiveLockCalls(), 0);
   assert.equal(state.sharedLockCalls(), 2);
 
-  entries = await service.list("member", "ath-1", {
+  page = await service.list("member", "ath-1", {
     from: "2026-09-20T00:00:00.000Z",
     to: "2026-09-21T00:00:00.000Z",
   });
-  assert.equal(entries[0]!.rsvp.viewerStatus, "MAYBE");
-  assert.deepEqual(entries[0]!.rsvp.counts, { going: 0, maybe: 1, notGoing: 0 });
+  assert.equal(page.items[0]!.rsvp.viewerStatus, "MAYBE");
+  assert.deepEqual(page.items[0]!.rsvp.counts, { going: 0, maybe: 1, notGoing: 0 });
 });
 
 test("RSVP rejects outsiders, cancelled entries, and cross-community entry ids", async () => {

@@ -27,6 +27,17 @@ export interface AthletesCalendarEntryViewRecord {
   readonly counts: AthletesCalendarRsvpCountsRecord;
 }
 
+export interface AthletesCalendarListRecordInput {
+  readonly range: { readonly from: Date; readonly to: Date };
+  readonly cursor?: string;
+  readonly limit: number;
+}
+
+export interface AthletesCalendarEntryViewPageRecord {
+  readonly items: AthletesCalendarEntryViewRecord[];
+  readonly nextCursor: string | null;
+}
+
 export interface AthletesCalendarCreateRecordInput {
   readonly id: string;
   readonly athletesCommunityId: string;
@@ -58,9 +69,9 @@ export interface AthletesCalendarRsvpUpsertInput {
 export interface AthletesCalendarRepository {
   listForCommunity(
     athletesCommunityId: string,
-    range: { readonly from: Date; readonly to: Date },
+    input: AthletesCalendarListRecordInput,
     viewerUserId: string,
-  ): Promise<AthletesCalendarEntryViewRecord[]>;
+  ): Promise<AthletesCalendarEntryViewPageRecord>;
 }
 
 export interface AthletesCalendarTransactionRepository {
