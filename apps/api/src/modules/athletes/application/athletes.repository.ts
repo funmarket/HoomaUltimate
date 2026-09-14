@@ -70,6 +70,21 @@ export interface AthletesPublicListInput {
   readonly limit: number;
 }
 
+export interface AthletesMemberListInput {
+  readonly cursor?: string;
+  readonly limit: number;
+}
+
+export interface AthletesJoinRequestListInput {
+  readonly cursor?: string;
+  readonly limit: number;
+}
+
+export interface AthletesPage<Record> {
+  readonly items: Record[];
+  readonly nextCursor: string | null;
+}
+
 export interface AthletesCreateRecordInput extends AthletesCommunityCreateInput {
   readonly joinPolicy: AthletesJoinPolicy;
 }
@@ -103,14 +118,20 @@ export interface AthletesRepository {
   >;
   getJoinRequest(id: string, userId: string): Promise<AthletesJoinRequestRecord | null>;
   cancelJoinRequest(id: string, userId: string): Promise<boolean>;
-  listJoinRequests(id: string): Promise<AthletesJoinRequestManagerRecord[]>;
+  listJoinRequests(
+    id: string,
+    input: AthletesJoinRequestListInput,
+  ): Promise<AthletesPage<AthletesJoinRequestManagerRecord>>;
   resolveJoinRequest(
     id: string,
     targetUserId: string,
     resolverUserId: string,
     decision: "APPROVE" | "DECLINE",
   ): Promise<boolean>;
-  listMembers(id: string): Promise<AthletesMemberRecord[]>;
+  listMembers(
+    id: string,
+    input: AthletesMemberListInput,
+  ): Promise<AthletesPage<AthletesMemberRecord>>;
   addMemberByUsername(
     id: string,
     username: string,
