@@ -27,29 +27,26 @@ test("Athletes Calendar and RSVP remain inside the Athletes boundary", async () 
   );
 });
 
-test(
-  "Athletes Calendar reads stay lock-free while Founder and RSVP writes use the lifecycle lock",
-  async () => {
-    const service = await source(
-      "apps/api/src/modules/athletes/application/athletes-calendar.service.ts",
-    );
-    const list = service.slice(service.indexOf("async list("), service.indexOf("  create("));
-    const founderMutations = service.slice(
-      service.indexOf("  create("),
-      service.indexOf("  setRsvp("),
-    );
-    const rsvpMutation = service.slice(service.indexOf("  setRsvp("));
+test("Athletes Calendar reads stay lock-free while Founder and RSVP writes use the lifecycle lock", async () => {
+  const service = await source(
+    "apps/api/src/modules/athletes/application/athletes-calendar.service.ts",
+  );
+  const list = service.slice(service.indexOf("async list("), service.indexOf("  create("));
+  const founderMutations = service.slice(
+    service.indexOf("  create("),
+    service.indexOf("  setRsvp("),
+  );
+  const rsvpMutation = service.slice(service.indexOf("  setRsvp("));
 
-    assert.match(list, /requireMemberContent/);
-    assert.match(list, /repository\.listForCommunity/);
-    assert.doesNotMatch(list, /withCommunityLock/);
-    assert.match(founderMutations, /withCommunityLock/);
-    assert.match(founderMutations, /requireFounderContent/);
-    assert.match(rsvpMutation, /withCommunityLock/);
-    assert.match(rsvpMutation, /requireMemberContent/);
-    assert.match(rsvpMutation, /upsertRsvp/);
-  },
-);
+  assert.match(list, /requireMemberContent/);
+  assert.match(list, /repository\.listForCommunity/);
+  assert.doesNotMatch(list, /withCommunityLock/);
+  assert.match(founderMutations, /withCommunityLock/);
+  assert.match(founderMutations, /requireFounderContent/);
+  assert.match(rsvpMutation, /withCommunityLock/);
+  assert.match(rsvpMutation, /requireMemberContent/);
+  assert.match(rsvpMutation, /upsertRsvp/);
+});
 
 test("Athletes Calendar RSVP persistence enforces one response per user per entry", async () => {
   const schema = await source("packages/database/prisma/athletes-calendar.prisma");
@@ -62,18 +59,15 @@ test("Athletes Calendar RSVP persistence enforces one response per user per entr
   assert.match(migration, /ON DELETE CASCADE/);
 });
 
-test(
-  "Athletes Calendar uses the device-resolved IANA timezone and no geographic product default",
-  async () => {
-    const time = await source("packages/frontend/src/athletes/athletes-calendar-time.ts");
-    const component = await source("packages/frontend/src/athletes/AthletesCalendar.tsx");
+test("Athletes Calendar uses the device-resolved IANA timezone and no geographic product default", async () => {
+  const time = await source("packages/frontend/src/athletes/athletes-calendar-time.ts");
+  const component = await source("packages/frontend/src/athletes/AthletesCalendar.tsx");
 
-    assert.match(time, /Intl\.DateTimeFormat\(\)\.resolvedOptions\(\)\.timeZone/);
-    assert.match(time, /return resolved && isIanaTimezone\(resolved\) \? resolved : "UTC"/);
-    assert.match(component, /useMemo\(deviceTimezone, \[\]\)/);
-    assert.match(component, /from this phone\/device/);
-  },
-);
+  assert.match(time, /Intl\.DateTimeFormat\(\)\.resolvedOptions\(\)\.timeZone/);
+  assert.match(time, /return resolved && isIanaTimezone\(resolved\) \? resolved : "UTC"/);
+  assert.match(component, /useMemo\(deviceTimezone, \[\]\)/);
+  assert.match(component, /from this phone\/device/);
+});
 
 test("ADR-057 remains the base Calendar decision and ADR-058 owns Calendar RSVP", async () => {
   const base = await source("docs/adr/ADR-057-athletes-calendar.md");

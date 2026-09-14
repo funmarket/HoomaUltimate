@@ -129,9 +129,7 @@ export class PrismaAthletesCalendarRepository
       }),
     ]);
 
-    const countsByEntry = new Map(
-      entryIds.map((id) => [id, { going: 0, maybe: 0, notGoing: 0 }]),
-    );
+    const countsByEntry = new Map(entryIds.map((id) => [id, { going: 0, maybe: 0, notGoing: 0 }]));
     for (const group of grouped) {
       const counts = countsByEntry.get(group.calendarEntryId);
       if (!counts) continue;
@@ -140,9 +138,7 @@ export class PrismaAthletesCalendarRepository
       if (group.status === "NOT_GOING") counts.notGoing = group._count._all;
     }
 
-    const viewerByEntry = new Map(
-      viewerRows.map((row) => [row.calendarEntryId, row.status]),
-    );
+    const viewerByEntry = new Map(viewerRows.map((row) => [row.calendarEntryId, row.status]));
     return rows.map((row) => ({
       entry: mapRow(row),
       viewerStatus: viewerByEntry.get(row.id) ?? null,
