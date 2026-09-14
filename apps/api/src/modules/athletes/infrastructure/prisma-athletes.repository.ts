@@ -301,10 +301,15 @@ export class PrismaAthletesRepository implements AthletesRepository {
     return changed.count > 0;
   }
 
-  async listJoinRequests(id: string) {
+  async listJoinRequests(
+    id: string,
+    input: Parameters<AthletesRepository["listJoinRequests"]>[1],
+  ) {
     const rows = await this.db.athletesJoinRequest.findMany({
       where: { athletesCommunityId: id, status: "PENDING" },
       orderBy: [{ requestedAt: "asc" }, { id: "asc" }],
+      take: input.limit + 1,
+      ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
       select: {
         ...joinRequestSelect,
         requester: {
@@ -314,7 +319,10 @@ export class PrismaAthletesRepository implements AthletesRepository {
         },
       },
     });
-    return rows;
+    return {
+      items: rows.slice(0, input.limit),
+      nextCursor: rows.length > input.limit ? (rows[input.limit - 1]?.id ?? null) : null,
+    };
   }
 
   async resolveJoinRequest(
@@ -356,11 +364,14 @@ export class PrismaAthletesRepository implements AthletesRepository {
     }
   }
 
-  async listMembers(id: string) {
+  async listMembers(id: string, input: Parameters<AthletesRepository["listMembers"]>[1]) {
     const rows = await this.db.athletesMembership.findMany({
       where: { athletesCommunityId: id, leftAt: null, athletesCommunity: { status: "ACTIVE" } },
-      orderBy: [{ role: "asc" }, { joinedAt: "asc" }],
+      orderBy: [{ role: "asc" }, { joinedAt: "asc" }, { id: "asc" }],
+      take: input.limit + 1,
+      ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
       select: {
+        id: true,
         userId: true,
         role: true,
         joinedAt: true,
@@ -371,12 +382,16 @@ export class PrismaAthletesRepository implements AthletesRepository {
         },
       },
     });
-    return rows.map((row) => ({
-      userId: row.userId,
-      role: row.role,
-      joinedAt: row.joinedAt,
-      presentation: row.user.presentation,
-    }));
+    const page = rows.slice(0, input.limit);
+    return {
+      items: page.map((row) => ({
+        userId: row.userId,
+        role: row.role,
+        joinedAt: row.joinedAt,
+        presentation: row.user.presentation,
+      })),
+      nextCursor: rows.length > input.limit ? (page[page.length - 1]?.id ?? null) : null,
+    };
   }
 
   async addMemberByUsername(id: string, username: string, resolverUserId: string) {
