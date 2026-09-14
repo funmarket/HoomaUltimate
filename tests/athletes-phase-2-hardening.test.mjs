@@ -201,6 +201,69 @@ test("Failed approval is surfaced and can be retried", async () => {
   assert.equal(view.getByText("Approve").disabled, false);
 });
 
+test("Membership-count-changing actions refresh detail without resetting member surfaces", async () => {
+  const detail = community();
+  let detailReads = 0;
+  globalThis.fetch = async (url, init = {}) => {
+    const parsed = new URL(url);
+    const path = parsed.pathname;
+    const method = init.method ?? "GET";
+    if (method === "POST" && path.endsWith("/join-requests/applicant/approve")) {
+      return response({ ok: true });
+    }
+    if (method !== "GET") return response({ ok: true });
+    if (path.endsWith("/members")) {
+      return response({
+        items: [
+          {
+            userId: "runner",
+            role: "MEMBER",
+            joinedAt: detail.createdAt,
+            lastSeenAt: null,
+            presentation: { username: "runner", displayName: "Runner", photoUrl: null },
+          },
+        ],
+        nextCursor: null,
+      });
+    }
+    if (path.endsWith("/join-requests")) {
+      return response({
+        items: [
+          {
+            id: "request",
+            athletesCommunityId: detail.id,
+            userId: "applicant",
+            status: "PENDING",
+            requestedAt: detail.createdAt,
+            resolvedAt: null,
+            resolvedByUserId: null,
+            requester: {
+              presentation: { displayName: "Applicant", username: "applicant", photoUrl: null },
+            },
+          },
+        ],
+        nextCursor: null,
+      });
+    }
+    if (path.endsWith("/photos") || path.endsWith("/calendar")) return response([]);
+    if (path.includes("/whistles/")) {
+      return response({
+        items: [],
+        remainingToday: 11,
+        resetsAt: new Date(Date.now() + 86400000).toISOString(),
+      });
+    }
+    detailReads += 1;
+    return response({ ...detail, memberCount: detailReads > 1 ? 3 : 2 });
+  };
+
+  const view = render(wrap(h(AthletesDetailPage, { athletesCommunityId: "one" })));
+  await view.findByText("2 athletes");
+  fireEvent.click(await view.findByText("Approve"));
+  await view.findByText("Join request approved.");
+  await view.findByText("3 athletes");
+});
+
 test("Changing community ignores delayed detail from the previous community", async () => {
   let finish;
   scenario(community("two", null), {
@@ -235,7 +298,7 @@ test("Discovery consumes the cursor and appends older communities", async () => 
   assert.ok(urls.some((url) => url.includes("cursor=newer")));
 });
 
-test("Membership sections consume independent cursors", async () => {
+test("Membership sections consume independent cursors without duplicate first-page fetches", async () => {
   const detail = community();
   const urls = [];
   globalThis.fetch = async (url, init = {}) => {
@@ -312,12 +375,27 @@ test("Membership sections consume independent cursors", async () => {
   };
 
   const view = render(wrap(h(AthletesDetailPage, { athletesCommunityId: "one" })));
-  fireEvent.click(await view.findByText("Load more athletes"));
+  await view.findByText("Load more athletes");
+  await waitFor(() =>
+    assert.equal(
+      urls.filter((url) => {
+        const parsed = new URL(url);
+        return parsed.pathname.endsWith("/members") && !parsed.searchParams.has("cursor");
+      }).length,
+      1,
+    ),
+  );
+  assert.equal(
+    urls.filter((url) => {
+      const parsed = new URL(url);
+      return parsed.pathname.endsWith("/join-requests") && !parsed.searchParams.has("cursor");
+    }).length,
+    1,
+  );
+  fireEvent.click(view.getByText("Load more athletes"));
   await view.findByText("Runner Two");
   fireEvent.click(view.getByText("Load more requests"));
-  await waitFor(() =>
-    assert.ok(urls.some((url) => url.includes("cursor=membership-1"))),
-  );
+  await waitFor(() => assert.ok(urls.some((url) => url.includes("cursor=membership-1"))));
   assert.ok(urls.some((url) => url.includes("cursor=request-1")));
 });
 
