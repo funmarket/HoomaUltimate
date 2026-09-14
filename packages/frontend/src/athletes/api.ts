@@ -9,9 +9,9 @@ import type {
   AthletesCommunityWriteResult,
   AthletesCommunityUpdateInput,
   AthletesJoinRequest,
-  AthletesJoinRequestForManager,
+  AthletesJoinRequestPage,
   AthletesJoinResult,
-  AthletesMember,
+  AthletesMemberPage,
   AthletesPhotoContentType,
   AthletesPhotoDelivery,
   AthletesPhotoList,
@@ -33,6 +33,18 @@ function athletesPublicListPath(
   if (filters.cursor) params.set("cursor", filters.cursor);
   params.set("limit", String(filters.limit ?? 30));
   return `/api/public/v1/athletes?${params.toString()}`;
+}
+
+function pagedMemberPath(id: string, cursor?: string): string {
+  const params = new URLSearchParams({ limit: "50" });
+  if (cursor) params.set("cursor", cursor);
+  return `/api/v1/athletes/${encodeURIComponent(id)}/members?${params.toString()}`;
+}
+
+function pagedJoinRequestPath(id: string, cursor?: string): string {
+  const params = new URLSearchParams({ limit: "50" });
+  if (cursor) params.set("cursor", cursor);
+  return `/api/v1/athletes/${encodeURIComponent(id)}/join-requests?${params.toString()}`;
 }
 
 function calendarListPath(id: string, from: string, to: string): string {
@@ -93,11 +105,8 @@ export function createAthletesApi(transport: HoomaTransport) {
       request<{ ok: true }>(transport, `/api/v1/athletes/${encodeURIComponent(id)}/join-request`, {
         method: "DELETE",
       }),
-    joinRequests: (id: string) =>
-      request<{ requests: AthletesJoinRequestForManager[] }>(
-        transport,
-        `/api/v1/athletes/${encodeURIComponent(id)}/join-requests`,
-      ),
+    joinRequests: (id: string, cursor?: string) =>
+      request<AthletesJoinRequestPage>(transport, pagedJoinRequestPath(id, cursor)),
     approveJoinRequest: (id: string, userId: string) =>
       request<{ ok: true }>(
         transport,
@@ -110,8 +119,8 @@ export function createAthletesApi(transport: HoomaTransport) {
         `/api/v1/athletes/${encodeURIComponent(id)}/join-requests/${encodeURIComponent(userId)}/decline`,
         { method: "POST" },
       ),
-    members: (id: string) =>
-      request<AthletesMember[]>(transport, `/api/v1/athletes/${encodeURIComponent(id)}/members`),
+    members: (id: string, cursor?: string) =>
+      request<AthletesMemberPage>(transport, pagedMemberPath(id, cursor)),
     addMember: (id: string, username: string) =>
       request<{ member: { userId: string; username: string } }>(
         transport,

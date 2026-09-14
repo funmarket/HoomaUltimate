@@ -35,20 +35,30 @@ export function useAthletesDetail(id: string) {
       const next = await api.athletes.detail(id);
       if (!active()) return;
       setDetail(next);
-      const manager = next.viewerRole === "FOUNDER" || next.viewerRole === "MODERATOR";
+      const manager =
+        next.viewerRole === "FOUNDER" || next.viewerRole === "MODERATOR";
       const [memberResult, requestResult] = await Promise.allSettled([
-        next.viewerRole ? api.athletes.members(id) : Promise.resolve([]),
+        next.viewerRole
+          ? api.athletes.members(id).then((page) => page.items)
+          : Promise.resolve([]),
         manager
-          ? api.athletes.joinRequests(id).then((result) => result.requests)
+          ? api.athletes.joinRequests(id).then((page) => page.items)
           : Promise.resolve([]),
       ]);
       if (!active()) return;
       if (memberResult.status === "fulfilled") setMembers(memberResult.value);
-      else setMembersError(protectedError(memberResult.reason, "Unable to load members"));
+      else
+        setMembersError(
+          protectedError(memberResult.reason, "Unable to load members"),
+        );
       if (requestResult.status === "fulfilled") setRequests(requestResult.value);
-      else setRequestsError(protectedError(requestResult.reason, "Unable to load join requests"));
+      else
+        setRequestsError(
+          protectedError(requestResult.reason, "Unable to load join requests"),
+        );
     } catch (reason) {
-      if (active()) setError(protectedError(reason, "Unable to load Athletes community"));
+      if (active())
+        setError(protectedError(reason, "Unable to load Athletes community"));
     } finally {
       if (active()) setLoading(false);
     }
@@ -63,7 +73,11 @@ export function useAthletesDetail(id: string) {
     };
   }, [reload]);
 
-  async function act(operation: () => Promise<unknown>, success: string, after?: () => void) {
+  async function act(
+    operation: () => Promise<unknown>,
+    success: string,
+    after?: () => void,
+  ) {
     if (actionPending.current) return;
     actionPending.current = true;
     setBusy(true);
@@ -76,7 +90,8 @@ export function useAthletesDetail(id: string) {
       if (after) after();
       else await reload();
     } catch (reason) {
-      if (mounted.current) setError(protectedError(reason, "Unable to complete this action"));
+      if (mounted.current)
+        setError(protectedError(reason, "Unable to complete this action"));
     } finally {
       actionPending.current = false;
       if (mounted.current) setBusy(false);
