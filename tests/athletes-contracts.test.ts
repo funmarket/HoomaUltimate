@@ -61,10 +61,13 @@ test("Athletes direct add uses username input only", () => {
 
 test("Athletes member and join-request list contracts enforce bounded cursor pages", () => {
   assert.deepEqual(athletesMemberListQuerySchema.parse({}), { limit: 50 });
-  assert.deepEqual(athletesJoinRequestListQuerySchema.parse({ cursor: "cursor-1", limit: "100" }), {
-    cursor: "cursor-1",
-    limit: 100,
-  });
+  assert.deepEqual(
+    athletesJoinRequestListQuerySchema.parse({ cursor: "cursor-1", limit: "100" }),
+    {
+      cursor: "cursor-1",
+      limit: 100,
+    },
+  );
   assert.throws(() => athletesMemberListQuerySchema.parse({ limit: 101 }));
   assert.throws(() => athletesJoinRequestListQuerySchema.parse({ limit: 0 }));
 
@@ -75,10 +78,13 @@ test("Athletes member and join-request list contracts enforce bounded cursor pag
     lastSeenAt: null,
     presentation: null,
   };
-  assert.deepEqual(athletesMemberPageSchema.parse({ items: [member], nextCursor: "member-1" }), {
-    items: [member],
-    nextCursor: "member-1",
-  });
+  assert.deepEqual(
+    athletesMemberPageSchema.parse({ items: [member], nextCursor: "member-1" }),
+    {
+      items: [member],
+      nextCursor: "member-1",
+    },
+  );
 
   const request = {
     id: "request-1",
