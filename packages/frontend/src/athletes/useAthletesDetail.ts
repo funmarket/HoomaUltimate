@@ -29,14 +29,14 @@ export function useAthletesDetail(id: string) {
   const version = useRef(0);
   const mounted = useRef(true);
   const actionPending = useRef(false);
-  const membersPending = useRef(false);
-  const requestsPending = useRef(false);
+  const membersPendingVersion = useRef<number | null>(null);
+  const requestsPendingVersion = useRef<number | null>(null);
 
   const loadMembers = useCallback(
     async (cursor?: string, reset = false) => {
-      if (membersPending.current) return;
       const current = version.current;
-      membersPending.current = true;
+      if (membersPendingVersion.current === current) return;
+      membersPendingVersion.current = current;
       setMembersError("");
       if (cursor) setMembersLoadingMore(true);
       try {
@@ -53,7 +53,7 @@ export function useAthletesDetail(id: string) {
           setMembersError(protectedError(reason, "Unable to load members"));
         }
       } finally {
-        membersPending.current = false;
+        if (membersPendingVersion.current === current) membersPendingVersion.current = null;
         if (mounted.current && current === version.current) setMembersLoadingMore(false);
       }
     },
@@ -62,9 +62,9 @@ export function useAthletesDetail(id: string) {
 
   const loadRequests = useCallback(
     async (cursor?: string, reset = false) => {
-      if (requestsPending.current) return;
       const current = version.current;
-      requestsPending.current = true;
+      if (requestsPendingVersion.current === current) return;
+      requestsPendingVersion.current = current;
       setRequestsError("");
       if (cursor) setRequestsLoadingMore(true);
       try {
@@ -81,7 +81,7 @@ export function useAthletesDetail(id: string) {
           setRequestsError(protectedError(reason, "Unable to load join requests"));
         }
       } finally {
-        requestsPending.current = false;
+        if (requestsPendingVersion.current === current) requestsPendingVersion.current = null;
         if (mounted.current && current === version.current) setRequestsLoadingMore(false);
       }
     },
@@ -91,8 +91,6 @@ export function useAthletesDetail(id: string) {
   const reload = useCallback(async () => {
     const current = ++version.current;
     const active = () => mounted.current && current === version.current;
-    membersPending.current = false;
-    requestsPending.current = false;
     setLoading(true);
     setError("");
     setDetail(null);
@@ -124,8 +122,8 @@ export function useAthletesDetail(id: string) {
     return () => {
       mounted.current = false;
       version.current += 1;
-      membersPending.current = false;
-      requestsPending.current = false;
+      membersPendingVersion.current = null;
+      requestsPendingVersion.current = null;
     };
   }, [reload]);
 
