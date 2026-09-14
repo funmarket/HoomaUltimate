@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
+import type { AthletesCalendarEntryView } from "@hooma/contracts/athletes";
 import { JSDOM } from "jsdom";
-import type { AthletesCalendarEntry } from "@hooma/contracts/athletes";
 
 test("Athletes Calendar Add plan submits without unmounting the Calendar", async () => {
   const dom = new JSDOM("<!doctype html><html><body></body></html>", {
@@ -37,7 +38,7 @@ test("Athletes Calendar Add plan submits without unmounting the Calendar", async
   const { AthletesCalendar } = await import("../packages/frontend/src/athletes/AthletesCalendar");
 
   const originalFetch = globalThis.fetch;
-  let entries: AthletesCalendarEntry[] = [];
+  let entries: AthletesCalendarEntryView[] = [];
   const requests: Array<{ method: string; url: string; body: unknown }> = [];
 
   globalThis.fetch = async (input, init) => {
@@ -65,7 +66,7 @@ test("Athletes Calendar Add plan submits without unmounting the Calendar", async
       };
       requests.push({ method, url, body });
       const now = "2026-09-13T18:30:00.000Z";
-      const created: AthletesCalendarEntry = {
+      const created: AthletesCalendarEntryView = {
         id: "calendar-1",
         athletesCommunityId: "community-1",
         title: body.title,
@@ -77,6 +78,10 @@ test("Athletes Calendar Add plan submits without unmounting the Calendar", async
         cancelledAt: null,
         createdAt: now,
         updatedAt: now,
+        rsvp: {
+          viewerStatus: null,
+          counts: { going: 0, maybe: 0, notGoing: 0 },
+        },
       };
       entries = [created];
       return new Response(JSON.stringify(created), {
@@ -126,4 +131,25 @@ test("Athletes Calendar Add plan submits without unmounting the Calendar", async
     cleanup();
     dom.window.close();
   }
+});
+
+test("Athletes Calendar renders the three member RSVP choices with a compact mobile-first control", async () => {
+  const [component, css] = await Promise.all([
+    readFile(
+      new URL("../packages/frontend/src/athletes/AthletesCalendar.tsx", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL("../packages/frontend/src/athletes/athletes-calendar.css", import.meta.url),
+      "utf8",
+    ),
+  ]);
+
+  assert.match(component, /status: "GOING", label: "Going"/);
+  assert.match(component, /status: "MAYBE", label: "Maybe"/);
+  assert.match(component, /status: "NOT_GOING", label: "Not going"/);
+  assert.match(component, /aria-pressed=\{entry\.rsvp\.viewerStatus === option\.status\}/);
+  assert.match(component, /setCalendarRsvp/);
+  assert.match(css, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
+  assert.match(css, /min-height: 44px/);
 });

@@ -2,6 +2,7 @@ import { Buffer } from "node:buffer";
 import {
   athletesCalendarCreateSchema,
   athletesCalendarListQuerySchema,
+  athletesCalendarRsvpInputSchema,
   athletesCalendarUpdateSchema,
   athletesCommunityCreateSchema,
   athletesPhotoListQuerySchema,
@@ -105,6 +106,20 @@ export function createAthletesMemberRouter(
           getAuth(req).userId,
           String(req.params.athletesCommunityId),
           String(req.params.entryId),
+        ),
+      );
+    }),
+  );
+  router.put(
+    "/:athletesCommunityId/calendar/:entryId/rsvp",
+    asyncHandler(async (req, res) => {
+      const input = athletesCalendarRsvpInputSchema.parse(req.body);
+      res.json(
+        await calendarService.setRsvp(
+          getAuth(req).userId,
+          String(req.params.athletesCommunityId),
+          String(req.params.entryId),
+          input.status,
         ),
       );
     }),

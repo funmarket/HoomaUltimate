@@ -1,6 +1,8 @@
 import type {
   AthletesCalendarCreateInput,
   AthletesCalendarEntry,
+  AthletesCalendarEntryView,
+  AthletesCalendarRsvpStatus,
   AthletesCalendarUpdateInput,
 } from "@hooma/contracts/athletes";
 import { useMemo, useState, type FormEvent } from "react";
@@ -32,6 +34,15 @@ type EntryForm = {
   endsAt: string;
 };
 
+const RSVP_OPTIONS: ReadonlyArray<{
+  readonly status: AthletesCalendarRsvpStatus;
+  readonly label: string;
+}> = [
+  { status: "GOING", label: "Going" },
+  { status: "MAYBE", label: "Maybe" },
+  { status: "NOT_GOING", label: "Not going" },
+];
+
 function defaultForm(selectedKey: string): EntryForm {
   return {
     title: "",
@@ -52,6 +63,12 @@ function formForEntry(entry: AthletesCalendarEntry): EntryForm {
   };
 }
 
+function rsvpCount(entry: AthletesCalendarEntryView, status: AthletesCalendarRsvpStatus): number {
+  if (status === "GOING") return entry.rsvp.counts.going;
+  if (status === "MAYBE") return entry.rsvp.counts.maybe;
+  return entry.rsvp.counts.notGoing;
+}
+
 export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
   const { api, protectedError } = useHoomaFrontend();
   const timezone = useMemo(deviceTimezone, []);
@@ -63,6 +80,8 @@ export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
   const [draft, setDraft] = useState<EntryForm>(() => defaultForm(today));
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState("");
+  const [rsvpBusyId, setRsvpBusyId] = useState<string | null>(null);
+  const [rsvpError, setRsvpError] = useState("");
   const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
   const { entries, loading, error, reload } = useAthletesCalendar(athletesCommunityId, monthKey);
 
@@ -86,6 +105,7 @@ export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
     setEditingId(null);
     setConfirmCancelId(null);
     setActionError("");
+    setRsvpError("");
   }
 
   function showToday() {
@@ -154,6 +174,20 @@ export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
       setActionError(protectedError(reason, "Unable to cancel Calendar entry"));
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function setRsvp(entryId: string, status: AthletesCalendarRsvpStatus) {
+    if (rsvpBusyId) return;
+    setRsvpBusyId(entryId);
+    setRsvpError("");
+    try {
+      await api.athletes.setCalendarRsvp(athletesCommunityId, entryId, { status });
+      await reload();
+    } catch (reason) {
+      setRsvpError(protectedError(reason, "Unable to update your RSVP"));
+    } finally {
+      setRsvpBusyId(null);
     }
   }
 
@@ -263,6 +297,35 @@ export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
                 <span className="athletes-calendar__cancelled">Cancelled</span>
               ) : null}
             </div>
+            {entry.cancelledAt ? (
+              <div className="athletes-calendar__rsvp-summary">
+                Going {entry.rsvp.counts.going} · Maybe {entry.rsvp.counts.maybe} · Not going{" "}
+                {entry.rsvp.counts.notGoing}
+              </div>
+            ) : (
+              <div className="athletes-calendar__rsvp">
+                <span className="eyebrow">YOUR RSVP</span>
+                <div
+                  className="athletes-calendar__rsvp-options"
+                  role="group"
+                  aria-label={`RSVP for ${entry.title}`}
+                >
+                  {RSVP_OPTIONS.map((option) => (
+                    <button
+                      key={option.status}
+                      type="button"
+                      className={`athletes-calendar__rsvp-button ${entry.rsvp.viewerStatus === option.status ? "is-selected" : ""}`.trim()}
+                      aria-pressed={entry.rsvp.viewerStatus === option.status}
+                      disabled={rsvpBusyId !== null}
+                      onClick={() => void setRsvp(entry.id, option.status)}
+                    >
+                      <span>{option.label}</span>
+                      <small>{rsvpCount(entry, option.status)}</small>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             {founder && !entry.cancelledAt ? (
               <div className="athletes-calendar__entry-actions">
                 <button
@@ -301,6 +364,11 @@ export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
             ) : null}
           </article>
         ))}
+        {rsvpError ? (
+          <div className="error-box" role="alert">
+            {rsvpError}
+          </div>
+        ) : null}
       </div>
 
       {mode !== "idle" && founder ? (

@@ -6,37 +6,57 @@ async function source(path) {
   return readFile(new URL(`../${path}`, import.meta.url), "utf8");
 }
 
-test("Athletes Calendar remains inside the Athletes boundary", async () => {
+test("Athletes Calendar and RSVP remain inside the Athletes boundary", async () => {
   const service = await source(
     "apps/api/src/modules/athletes/application/athletes-calendar.service.ts",
   );
   const repository = await source(
     "apps/api/src/modules/athletes/infrastructure/prisma-athletes-calendar.repository.ts",
   );
-  const combined = `${service}\n${repository}`;
+  const schema = await source("packages/database/prisma/athletes-calendar.prisma");
+  const combined = `${service}\n${repository}\n${schema}`;
 
   assert.match(service, /AthletesContentAuthoriz/);
   assert.match(service, /AthletesCalendarUnitOfWork/);
   assert.match(repository, /withCommunityLock/);
   assert.match(repository, /PrismaAthletesRepository/);
+  assert.match(schema, /model AthletesCalendarRsvp/);
   assert.doesNotMatch(
     combined,
-    /modules\/(events|play|watch|pitch|gamers)|@hooma\/contracts\/(events|play|watch|pitch|gamers)/,
+    /modules\/(events|play|watch|pitch|gamers)|@hooma\/contracts\/(events|play|watch|pitch|gamers)|EventRsvp/,
   );
 });
 
-test("Athletes Calendar reads do not claim a lifecycle lock while mutations do", async () => {
+test("Athletes Calendar reads stay lock-free while Founder and RSVP writes use the lifecycle lock", async () => {
   const service = await source(
     "apps/api/src/modules/athletes/application/athletes-calendar.service.ts",
   );
   const list = service.slice(service.indexOf("async list("), service.indexOf("  create("));
-  const mutations = service.slice(service.indexOf("  create("));
+  const founderMutations = service.slice(
+    service.indexOf("  create("),
+    service.indexOf("  setRsvp("),
+  );
+  const rsvpMutation = service.slice(service.indexOf("  setRsvp("));
 
   assert.match(list, /requireMemberContent/);
   assert.match(list, /repository\.listForCommunity/);
   assert.doesNotMatch(list, /withCommunityLock/);
-  assert.match(mutations, /withCommunityLock/);
-  assert.match(mutations, /requireFounderContent/);
+  assert.match(founderMutations, /withCommunityLock/);
+  assert.match(founderMutations, /requireFounderContent/);
+  assert.match(rsvpMutation, /withCommunityLock/);
+  assert.match(rsvpMutation, /requireMemberContent/);
+  assert.match(rsvpMutation, /upsertRsvp/);
+});
+
+test("Athletes Calendar RSVP persistence enforces one response per user per entry", async () => {
+  const schema = await source("packages/database/prisma/athletes-calendar.prisma");
+  const migration = await source(
+    "packages/database/prisma/migrations/20260914080000_add_athletes_calendar_rsvp/migration.sql",
+  );
+
+  assert.match(schema, /@@unique\(\[calendarEntryId, userId\]\)/);
+  assert.match(migration, /AthletesCalendarRsvp_calendarEntryId_userId_key/);
+  assert.match(migration, /ON DELETE CASCADE/);
 });
 
 test("Athletes Calendar uses the device-resolved IANA timezone and no geographic product default", async () => {
@@ -49,11 +69,14 @@ test("Athletes Calendar uses the device-resolved IANA timezone and no geographic
   assert.match(component, /from this phone\/device/);
 });
 
-test("ADR-057 states the actual read and mutation locking contract", async () => {
-  const adr = await source("docs/adr/ADR-057-athletes-calendar.md");
-  assert.match(adr, /reads do not acquire the Athletes lifecycle row lock/i);
-  assert.match(adr, /mutations.*FOR UPDATE/i);
-  assert.match(adr, /Founder.*same transaction/i);
-  assert.match(adr, /AthletesCalendarEntry/);
-  assert.doesNotMatch(adr, /shared read lock/i);
+test("ADR-057 remains the base Calendar decision and ADR-058 owns Calendar RSVP", async () => {
+  const base = await source("docs/adr/ADR-057-athletes-calendar.md");
+  const rsvp = await source("docs/adr/ADR-058-athletes-calendar-rsvp.md");
+
+  assert.match(base, /reads do not acquire the Athletes lifecycle row lock/i);
+  assert.match(base, /mutations.*FOR UPDATE/i);
+  assert.match(base, /AthletesCalendarEntry/);
+  assert.match(rsvp, /Going.*Maybe.*Not going/is);
+  assert.match(rsvp, /AthletesCalendarRsvp/);
+  assert.match(rsvp, /generic Event RSVP/i);
 });

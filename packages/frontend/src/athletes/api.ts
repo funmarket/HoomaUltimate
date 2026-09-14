@@ -1,7 +1,9 @@
 import type {
   AthletesCalendarCreateInput,
   AthletesCalendarEntry,
-  AthletesCalendarList,
+  AthletesCalendarListView,
+  AthletesCalendarRsvpInput,
+  AthletesCalendarRsvpResult,
   AthletesCalendarUpdateInput,
   AthletesCommunityCreateInput,
   AthletesCommunityWriteResult,
@@ -129,7 +131,7 @@ export function createAthletesApi(transport: HoomaTransport) {
         { method: "PATCH", body: JSON.stringify({ role }) },
       ),
     listCalendar: (id: string, from: string, to: string) =>
-      request<AthletesCalendarList>(transport, calendarListPath(id, from, to)),
+      request<AthletesCalendarListView>(transport, calendarListPath(id, from, to)),
     createCalendarEntry: (id: string, input: AthletesCalendarCreateInput) =>
       request<AthletesCalendarEntry>(
         transport,
@@ -147,6 +149,12 @@ export function createAthletesApi(transport: HoomaTransport) {
         transport,
         `/api/v1/athletes/${encodeURIComponent(id)}/calendar/${encodeURIComponent(entryId)}/cancel`,
         { method: "POST" },
+      ),
+    setCalendarRsvp: (id: string, entryId: string, input: AthletesCalendarRsvpInput) =>
+      request<AthletesCalendarRsvpResult>(
+        transport,
+        `/api/v1/athletes/${encodeURIComponent(id)}/calendar/${encodeURIComponent(entryId)}/rsvp`,
+        { method: "PUT", body: JSON.stringify(input) },
       ),
     listPhotos: (id: string, cursor?: string) =>
       request<AthletesPhotoList>(

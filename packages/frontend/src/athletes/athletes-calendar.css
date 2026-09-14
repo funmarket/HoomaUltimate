@@ -122,6 +122,59 @@
   font-weight: 800;
 }
 
+.athletes-calendar__rsvp {
+  display: grid;
+  gap: 0.45rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--athletes-border);
+}
+
+.athletes-calendar__rsvp-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.athletes-calendar__rsvp-button {
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid var(--athletes-border);
+  border-radius: 0.8rem;
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(255, 255, 255, 0.84);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 750;
+  display: grid;
+  place-items: center;
+  gap: 0.12rem;
+  padding: 0.48rem 0.28rem;
+  text-align: center;
+}
+
+.athletes-calendar__rsvp-button small {
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.68rem;
+}
+
+.athletes-calendar__rsvp-button.is-selected {
+  border-color: var(--athletes-lime);
+  background: rgba(163, 230, 53, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(163, 230, 53, 0.18);
+  color: rgba(255, 255, 255, 0.96);
+}
+
+.athletes-calendar__rsvp-button:disabled {
+  opacity: 0.6;
+}
+
+.athletes-calendar__rsvp-summary {
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--athletes-border);
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.78rem;
+}
+
 .athletes-calendar__confirm {
   display: grid;
   gap: 0.55rem;

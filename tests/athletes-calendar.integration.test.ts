@@ -49,7 +49,11 @@ function calendarUrl(base: string, communityId: string) {
   return `${base}/api/v1/athletes/${communityId}/calendar?from=${from}&to=${to}`;
 }
 
-test("Athletes private Calendar enforces membership, Founder mutation and community isolation", async () => {
+function rsvpUrl(base: string, communityId: string, entryId: string) {
+  return `${base}/api/v1/athletes/${communityId}/calendar/${entryId}/rsvp`;
+}
+
+test("Athletes private Calendar enforces membership, Founder mutation, RSVP ownership and community isolation", async () => {
   const app = createApp(config, createContainer(config));
   const server = app.listen(0, "127.0.0.1");
   await new Promise<void>((resolve) => server.once("listening", resolve));
@@ -134,14 +138,76 @@ test("Athletes private Calendar enforces membership, Founder mutation and commun
     assert.equal(created.timezone, "Europe/Paris");
     assert.equal("createdByUserId" in created, false);
 
+    const outsiderRsvp = await fetch(rsvpUrl(base, firstId, created.id), {
+      method: "PUT",
+      headers: headers(outsider.cookie),
+      body: JSON.stringify({ status: "GOING" }),
+    });
+    assert.equal(outsiderRsvp.status, 403);
+
     const memberRead = await fetch(calendarUrl(base, firstId), {
       headers: headers(member.cookie),
     });
     assert.equal(memberRead.status, 200);
-    const entries = (await memberRead.json()) as Array<Record<string, unknown>>;
+    let entries = (await memberRead.json()) as Array<Record<string, unknown>>;
     assert.equal(entries.length, 1);
     assert.equal(entries[0]!.id, created.id);
     assert.equal("createdByUserId" in entries[0]!, false);
+    assert.deepEqual(entries[0]!.rsvp, {
+      viewerStatus: null,
+      counts: { going: 0, maybe: 0, notGoing: 0 },
+    });
+
+    const memberGoing = await fetch(rsvpUrl(base, firstId, created.id), {
+      method: "PUT",
+      headers: headers(member.cookie),
+      body: JSON.stringify({ status: "GOING" }),
+    });
+    assert.equal(memberGoing.status, 200);
+    assert.deepEqual(await memberGoing.json(), { entryId: created.id, status: "GOING" });
+
+    const founderMaybe = await fetch(rsvpUrl(base, firstId, created.id), {
+      method: "PUT",
+      headers: headers(founder.cookie),
+      body: JSON.stringify({ status: "MAYBE" }),
+    });
+    assert.equal(founderMaybe.status, 200);
+
+    const memberNotGoing = await fetch(rsvpUrl(base, firstId, created.id), {
+      method: "PUT",
+      headers: headers(member.cookie),
+      body: JSON.stringify({ status: "NOT_GOING" }),
+    });
+    assert.equal(memberNotGoing.status, 200);
+
+    const persistedMemberRsvps = await db.athletesCalendarRsvp.count({
+      where: { calendarEntryId: created.id, userId: member.userId },
+    });
+    assert.equal(persistedMemberRsvps, 1);
+
+    const memberReadAfterRsvp = await fetch(calendarUrl(base, firstId), {
+      headers: headers(member.cookie),
+    });
+    assert.equal(memberReadAfterRsvp.status, 200);
+    entries = (await memberReadAfterRsvp.json()) as Array<Record<string, unknown>>;
+    assert.deepEqual(entries[0]!.rsvp, {
+      viewerStatus: "NOT_GOING",
+      counts: { going: 0, maybe: 1, notGoing: 1 },
+    });
+
+    const invalidRsvp = await fetch(rsvpUrl(base, firstId, created.id), {
+      method: "PUT",
+      headers: headers(member.cookie),
+      body: JSON.stringify({ status: "INTERESTED" }),
+    });
+    assert.equal(invalidRsvp.status, 400);
+
+    const crossCommunityRsvp = await fetch(rsvpUrl(base, secondId, created.id), {
+      method: "PUT",
+      headers: headers(founder.cookie),
+      body: JSON.stringify({ status: "GOING" }),
+    });
+    assert.equal(crossCommunityRsvp.status, 404);
 
     const crossCommunityUpdate = await fetch(
       `${base}/api/v1/athletes/${secondId}/calendar/${created.id}`,
@@ -168,6 +234,13 @@ test("Athletes private Calendar enforces membership, Founder mutation and commun
     assert.equal(cancel.status, 200);
     const cancelled = (await cancel.json()) as { cancelledAt: string | null };
     assert.ok(cancelled.cancelledAt);
+
+    const rsvpCancelled = await fetch(rsvpUrl(base, firstId, created.id), {
+      method: "PUT",
+      headers: headers(member.cookie),
+      body: JSON.stringify({ status: "MAYBE" }),
+    });
+    assert.equal(rsvpCancelled.status, 409);
 
     const editCancelled = await fetch(`${base}/api/v1/athletes/${firstId}/calendar/${created.id}`, {
       method: "PATCH",

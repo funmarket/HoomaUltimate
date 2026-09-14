@@ -42,7 +42,9 @@ Cancellation is one-way. A cancelled entry remains durable and visible as cancel
 
 The frontend defaults new entries to the phone/browser-resolved IANA timezone from `Intl.DateTimeFormat().resolvedOptions().timeZone`, with `UTC` only when the runtime cannot provide a valid IANA timezone. This does not require GPS/location permission. Calendar display and day grouping use the viewing device timezone while the entry retains the creator-selected IANA timezone as durable metadata.
 
-Calendar remains Athletes-owned. It does not create or reuse Event, Play, Watch, Pitch, Gamers, RSVP, waitlist, recurrence, payment, reminder, chat, or generic Calendar lifecycle state.
+Calendar remains Athletes-owned. It does not create or reuse Event, Play, Watch, Pitch, Gamers, waitlist, recurrence, payment, reminder, chat, or generic Calendar lifecycle state.
+
+**RSVP scope update:** ADR-058 supersedes this ADR only where the original Calendar scope excluded RSVP state. Athletes Calendar now owns its own Going / Maybe / Not going RSVP records; it still does not reuse generic Event RSVP or waitlist state.
 
 ## Consequences
 
@@ -52,3 +54,4 @@ Calendar remains Athletes-owned. It does not create or reuse Event, Play, Watch,
 - Calendar writes and Athletes archive share the same authoritative parent lock and transaction boundary.
 - The device timezone is a presentation/input default, not a hard-coded geographic product default.
 - Permanent tests must cover membership privacy, Founder-only mutation, bounded range validation, cross-community isolation, irreversible cancellation, API projection privacy, and a real PostgreSQL archive-versus-create lock race.
+- ADR-058 governs Athletes-owned Calendar RSVP state and its member authorization rules.
