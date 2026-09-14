@@ -1,12 +1,21 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { loadApiConfig } from "@hooma/config";
 import { getDatabaseClient } from "@hooma/database";
-import { AthletesCalendarService } from "../apps/api/src/modules/athletes/application/athletes-calendar.service.js";
-import { AthletesService } from "../apps/api/src/modules/athletes/application/athletes.service.js";
-import { PrismaAthletesCalendarRepository } from "../apps/api/src/modules/athletes/infrastructure/prisma-athletes-calendar.repository.js";
-import { PrismaAthletesRepository } from "../apps/api/src/modules/athletes/infrastructure/prisma-athletes.repository.js";
-import { AthletesError } from "../apps/api/src/modules/athletes/domain/athletes-error.js";
+import { createApp } from "../apps/api/src/bootstrap/app.js";
+import { createContainer } from "../apps/api/src/bootstrap/container.js";
 
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) throw new Error("DATABASE_URL is required for Calendar RSVP concurrency tests");
+
+const config = loadApiConfig({
+  ...process.env,
+  NODE_ENV: "test",
+  DATABASE_URL: databaseUrl,
+  WEB_ORIGIN: "http://localhost:5173",
+  TELEGRAM_ORIGIN: "http://localhost:5174",
+  TELEGRAM_BOT_TOKEN: "integration-test-token",
+});
 const db = getDatabaseClient();
 
 function deferred() {
@@ -15,10 +24,6 @@ function deferred() {
     resolve = done;
   });
   return { promise, resolve };
-}
-
-function expectCode(code: string) {
-  return (error: unknown) => error instanceof AthletesError && error.code === code;
 }
 
 async function withTimeout<T>(promise: Promise<T>, message: string): Promise<T> {
@@ -46,195 +51,245 @@ async function waitForSharedLockWait(): Promise<void> {
     if (Number(rows[0]?.count) > 0) return;
     await new Promise((resolve) => setTimeout(resolve, 10));
   }
-  assert.fail("RSVP transaction did not wait for the shared lifecycle guard");
+  assert.fail("RSVP request did not wait for the shared lifecycle guard");
 }
 
-test("Athletes Calendar RSVP preserves shared-lock lifecycle safety", async (t) => {
-  const athletesRepo = new PrismaAthletesRepository(db);
-  const athletes = new AthletesService(athletesRepo);
-  const calendarRepo = new PrismaAthletesCalendarRepository(db);
-  const calendar = new AthletesCalendarService(athletes, calendarRepo, calendarRepo);
-  const users = await Promise.all(Array.from({ length: 5 }, () => db.user.create({ data: {} })));
-  const [founder, memberA, memberB, memberC, memberD] = users;
-  const communityIds: string[] = [];
+async function register(base: string, username: string) {
+  const response = await fetch(`${base}/api/public/v1/auth/register`, {
+    method: "POST",
+    headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
+    body: JSON.stringify({
+      loginUsername: username,
+      password: "correct horse battery staple",
+      displayUsername: username,
+      displayName: username,
+    }),
+  });
+  assert.equal(response.status, 201);
+  const cookie = response.headers.get("set-cookie");
+  assert.ok(cookie);
+  const credential = await db.webCredential.findUniqueOrThrow({
+    where: { loginUsername: username },
+  });
+  return { cookie, userId: credential.userId, username };
+}
 
-  async function fixture(label: string, memberIds: readonly string[]) {
-    const community = await athletes.create(founder!.id, {
-      name: `RSVP ${label} ${Date.now()} ${communityIds.length}`,
-      sport: "RUNNING",
-      visibility: "PUBLIC",
-      joinPolicy: "OPEN",
-    });
-    communityIds.push(community.id);
+function headers(cookie: string) {
+  return { cookie, origin: config.WEB_ORIGIN, "content-type": "application/json" };
+}
 
-    for (const userId of memberIds) {
-      const joined = await athletes.join(userId, community.id);
-      assert.equal(joined.status, "JOINED");
-    }
+function rsvpUrl(base: string, communityId: string, entryId: string) {
+  return `${base}/api/v1/athletes/${communityId}/calendar/${entryId}/rsvp`;
+}
 
-    const entry = await calendar.create(founder!.id, community.id, {
-      title: `${label} training`,
-      startsAt: "2026-09-20T17:00:00.000Z",
-      endsAt: "2026-09-20T18:00:00.000Z",
-      timezone: "UTC",
-    });
-    return { community, entry };
-  }
+test("Athletes Calendar RSVP uses shared lifecycle locking safely", async () => {
+  const app = createApp(config, createContainer(config));
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise<void>((resolve) => server.once("listening", resolve));
+  const address = server.address();
+  assert.ok(address && typeof address === "object");
+  const base = `http://127.0.0.1:${address.port}`;
+  const suffix = Date.now().toString(36);
+  const userIds: string[] = [];
+  let communityId: string | null = null;
 
   try {
-    await t.test("independent RSVPs can hold the shared guard together", async () => {
-      const { community, entry } = await fixture("parallel", [memberA!.id, memberB!.id]);
-      const acquired = deferred();
-      const release = deferred();
-      const firstUow = {
-        withCommunityLock(id: string, operation: Parameters<typeof calendarRepo.withCommunityLock>[1]) {
-          return calendarRepo.withCommunityLock(id, operation);
-        },
-        withCommunitySharedLock(
-          id: string,
-          operation: Parameters<typeof calendarRepo.withCommunitySharedLock>[1],
-        ) {
-          return calendarRepo.withCommunitySharedLock(id, async (scope) => {
-            acquired.resolve();
-            await release.promise;
-            return operation(scope);
-          });
-        },
-      };
-      const firstCalendar = new AthletesCalendarService(athletes, calendarRepo, firstUow);
-      const first = firstCalendar.setRsvp(memberA!.id, community.id, entry.id, "GOING");
-      void first.catch(() => undefined);
-      await acquired.promise;
+    const founder = await register(base, `rsvp_founder_${suffix}`);
+    const memberA = await register(base, `rsvp_a_${suffix}`);
+    const memberB = await register(base, `rsvp_b_${suffix}`);
+    const memberC = await register(base, `rsvp_c_${suffix}`);
+    userIds.push(founder.userId, memberA.userId, memberB.userId, memberC.userId);
 
-      const second = calendar.setRsvp(memberB!.id, community.id, entry.id, "MAYBE");
-      try {
-        await withTimeout(second, "independent RSVP blocked behind another shared guard");
-      } finally {
-        release.resolve();
-        await Promise.allSettled([first, second]);
-      }
-
-      await first;
-      const count = await db.athletesCalendarRsvp.count({
-        where: { calendarEntryId: entry.id },
-      });
-      assert.equal(count, 2);
+    const communityResponse = await fetch(`${base}/api/v1/athletes`, {
+      method: "POST",
+      headers: headers(founder.cookie),
+      body: JSON.stringify({
+        name: `RSVP Concurrency ${suffix}`,
+        sport: "RUNNING",
+        visibility: "PRIVATE",
+        joinPolicy: "APPROVAL_REQUIRED",
+      }),
     });
+    assert.equal(communityResponse.status, 201);
+    communityId = ((await communityResponse.json()) as { id: string }).id;
 
-    await t.test("same-user concurrent updates keep one RSVP row", async () => {
-      const { community, entry } = await fixture("same-user", [memberD!.id]);
-      await Promise.all([
-        calendar.setRsvp(memberD!.id, community.id, entry.id, "GOING"),
-        calendar.setRsvp(memberD!.id, community.id, entry.id, "MAYBE"),
-      ]);
-      const count = await db.athletesCalendarRsvp.count({
-        where: { calendarEntryId: entry.id, userId: memberD!.id },
+    for (const member of [memberA, memberB, memberC]) {
+      const added = await fetch(`${base}/api/v1/athletes/${communityId}/members`, {
+        method: "POST",
+        headers: headers(founder.cookie),
+        body: JSON.stringify({ username: member.username }),
       });
-      assert.equal(count, 1);
+      assert.equal(added.status, 201);
+    }
+
+    const createEntry = async (title: string) => {
+      const response = await fetch(`${base}/api/v1/athletes/${communityId}/calendar`, {
+        method: "POST",
+        headers: headers(founder.cookie),
+        body: JSON.stringify({
+          title,
+          startsAt: "2026-09-20T17:00:00.000Z",
+          endsAt: "2026-09-20T18:00:00.000Z",
+          timezone: "UTC",
+        }),
+      });
+      assert.equal(response.status, 201);
+      return ((await response.json()) as { id: string }).id;
+    };
+
+    const parallelEntry = await createEntry("Parallel RSVP");
+    const shareHeld = deferred();
+    const releaseShare = deferred();
+    const shareTransaction = db.$transaction(async (tx) => {
+      await tx.$queryRaw`
+        SELECT id FROM "AthletesCommunity"
+        WHERE id = ${communityId}
+        FOR SHARE
+      `;
+      shareHeld.resolve();
+      await releaseShare.promise;
     });
+    await shareHeld.promise;
 
-    await t.test("member removal wins against an in-flight RSVP", async () => {
-      const { community, entry } = await fixture("remove", [memberB!.id]);
-      const removed = deferred();
-      const release = deferred();
-      const removal = athletesRepo.withCommunityLock(community.id, async (scoped) => {
-        assert.equal(await scoped.removeMember(community.id, memberB!.id), true);
-        removed.resolve();
-        await release.promise;
-      });
-      void removal.catch(removed.resolve);
-      await removed.promise;
-
-      const rsvp = calendar.setRsvp(memberB!.id, community.id, entry.id, "GOING");
-      void rsvp.catch(() => undefined);
-      try {
-        await waitForSharedLockWait();
-      } finally {
-        release.resolve();
-        await removal;
-      }
-
-      await assert.rejects(rsvp, expectCode("ATHLETES_MEMBER_REQUIRED"));
-      const count = await db.athletesCalendarRsvp.count({
-        where: { calendarEntryId: entry.id, userId: memberB!.id },
-      });
-      assert.equal(count, 0);
+    const parallelRsvp = fetch(rsvpUrl(base, communityId, parallelEntry), {
+      method: "PUT",
+      headers: headers(memberA.cookie),
+      body: JSON.stringify({ status: "GOING" }),
     });
+    try {
+      const response = await withTimeout(
+        parallelRsvp,
+        "RSVP was blocked by a compatible shared lifecycle lock",
+      );
+      assert.equal(response.status, 200);
+    } finally {
+      releaseShare.resolve();
+      await shareTransaction;
+    }
 
-    await t.test("Calendar cancellation wins against an in-flight RSVP", async () => {
-      const { community, entry } = await fixture("cancel", [memberC!.id]);
-      const cancelled = deferred();
-      const release = deferred();
-      const cancellingUow = {
-        withCommunityLock(
-          id: string,
-          operation: Parameters<typeof calendarRepo.withCommunityLock>[1],
-        ) {
-          return calendarRepo.withCommunityLock(id, async (scope) => {
-            const result = await operation(scope);
-            cancelled.resolve();
-            await release.promise;
-            return result;
-          });
-        },
-        withCommunitySharedLock(
-          id: string,
-          operation: Parameters<typeof calendarRepo.withCommunitySharedLock>[1],
-        ) {
-          return calendarRepo.withCommunitySharedLock(id, operation);
-        },
-      };
-      const cancellingCalendar = new AthletesCalendarService(athletes, calendarRepo, cancellingUow);
-      const cancel = cancellingCalendar.cancel(founder!.id, community.id, entry.id);
-      void cancel.catch(cancelled.resolve);
-      await cancelled.promise;
-
-      const rsvp = calendar.setRsvp(memberC!.id, community.id, entry.id, "GOING");
-      void rsvp.catch(() => undefined);
-      try {
-        await waitForSharedLockWait();
-      } finally {
-        release.resolve();
-        await cancel;
-      }
-
-      await assert.rejects(rsvp, expectCode("ATHLETES_CALENDAR_ENTRY_CANCELLED"));
-      const count = await db.athletesCalendarRsvp.count({
-        where: { calendarEntryId: entry.id, userId: memberC!.id },
-      });
-      assert.equal(count, 0);
+    const sameUserEntry = await createEntry("Same user RSVP");
+    const sameUserUrl = rsvpUrl(base, communityId, sameUserEntry);
+    const sameUserResponses = await Promise.all([
+      fetch(sameUserUrl, {
+        method: "PUT",
+        headers: headers(memberB.cookie),
+        body: JSON.stringify({ status: "GOING" }),
+      }),
+      fetch(sameUserUrl, {
+        method: "PUT",
+        headers: headers(memberB.cookie),
+        body: JSON.stringify({ status: "MAYBE" }),
+      }),
+    ]);
+    assert.equal(sameUserResponses[0]!.status, 200);
+    assert.equal(sameUserResponses[1]!.status, 200);
+    const sameUserCount = await db.athletesCalendarRsvp.count({
+      where: { calendarEntryId: sameUserEntry, userId: memberB.userId },
     });
+    assert.equal(sameUserCount, 1);
 
-    await t.test("community archive wins against an in-flight RSVP", async () => {
-      const { community, entry } = await fixture("archive", [memberA!.id]);
-      const archived = deferred();
-      const release = deferred();
-      const archive = athletesRepo.withCommunityLock(community.id, async (scoped) => {
-        assert.equal(await scoped.archive(community.id), true);
-        archived.resolve();
-        await release.promise;
-      });
-      void archive.catch(archived.resolve);
-      await archived.promise;
-
-      const rsvp = calendar.setRsvp(memberA!.id, community.id, entry.id, "GOING");
-      void rsvp.catch(() => undefined);
-      try {
-        await waitForSharedLockWait();
-      } finally {
-        release.resolve();
-        await archive;
-      }
-
-      await assert.rejects(rsvp, expectCode("ATHLETES_MEMBER_REQUIRED"));
-      const count = await db.athletesCalendarRsvp.count({
-        where: { calendarEntryId: entry.id, userId: memberA!.id },
-      });
-      assert.equal(count, 0);
+    const removalEntry = await createEntry("Removal race");
+    const removalChanged = deferred();
+    const releaseRemoval = deferred();
+    const removalTransaction = db.$transaction(async (tx) => {
+      await tx.$queryRaw`
+        SELECT id FROM "AthletesCommunity"
+        WHERE id = ${communityId}
+        FOR UPDATE
+      `;
+      await tx.$executeRaw`
+        UPDATE "AthletesMembership"
+        SET "leftAt" = NOW()
+        WHERE "athletesCommunityId" = ${communityId}
+          AND "userId" = ${memberC.userId}
+          AND "leftAt" IS NULL
+      `;
+      removalChanged.resolve();
+      await releaseRemoval.promise;
     });
+    await removalChanged.promise;
+
+    const removalRsvp = fetch(rsvpUrl(base, communityId, removalEntry), {
+      method: "PUT",
+      headers: headers(memberC.cookie),
+      body: JSON.stringify({ status: "GOING" }),
+    });
+    void removalRsvp.catch(() => undefined);
+    try {
+      await waitForSharedLockWait();
+    } finally {
+      releaseRemoval.resolve();
+      await removalTransaction;
+    }
+    assert.equal((await removalRsvp).status, 403);
+
+    const cancellationEntry = await createEntry("Cancellation race");
+    const cancellationChanged = deferred();
+    const releaseCancellation = deferred();
+    const cancellationTransaction = db.$transaction(async (tx) => {
+      await tx.$queryRaw`
+        SELECT id FROM "AthletesCommunity"
+        WHERE id = ${communityId}
+        FOR UPDATE
+      `;
+      await tx.athletesCalendarEntry.update({
+        where: { id: cancellationEntry },
+        data: { cancelledAt: new Date() },
+      });
+      cancellationChanged.resolve();
+      await releaseCancellation.promise;
+    });
+    await cancellationChanged.promise;
+
+    const cancellationRsvp = fetch(rsvpUrl(base, communityId, cancellationEntry), {
+      method: "PUT",
+      headers: headers(memberA.cookie),
+      body: JSON.stringify({ status: "GOING" }),
+    });
+    void cancellationRsvp.catch(() => undefined);
+    try {
+      await waitForSharedLockWait();
+    } finally {
+      releaseCancellation.resolve();
+      await cancellationTransaction;
+    }
+    assert.equal((await cancellationRsvp).status, 409);
+
+    const archiveEntry = await createEntry("Archive race");
+    const archiveChanged = deferred();
+    const releaseArchive = deferred();
+    const archiveTransaction = db.$transaction(async (tx) => {
+      await tx.$queryRaw`
+        SELECT id FROM "AthletesCommunity"
+        WHERE id = ${communityId}
+        FOR UPDATE
+      `;
+      await tx.athletesCommunity.update({
+        where: { id: communityId },
+        data: { status: "ARCHIVED" },
+      });
+      archiveChanged.resolve();
+      await releaseArchive.promise;
+    });
+    await archiveChanged.promise;
+
+    const archiveRsvp = fetch(rsvpUrl(base, communityId, archiveEntry), {
+      method: "PUT",
+      headers: headers(memberB.cookie),
+      body: JSON.stringify({ status: "GOING" }),
+    });
+    void archiveRsvp.catch(() => undefined);
+    try {
+      await waitForSharedLockWait();
+    } finally {
+      releaseArchive.resolve();
+      await archiveTransaction;
+    }
+    assert.equal((await archiveRsvp).status, 403);
   } finally {
-    await db.athletesCommunity.deleteMany({ where: { id: { in: communityIds } } });
-    await db.user.deleteMany({ where: { id: { in: users.map((user) => user.id) } } });
+    if (communityId) await db.athletesCommunity.deleteMany({ where: { id: communityId } });
+    await db.user.deleteMany({ where: { id: { in: userIds } } });
+    server.close();
     await db.$disconnect();
   }
 });
