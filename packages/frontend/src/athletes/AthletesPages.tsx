@@ -230,17 +230,13 @@ function AthletesDetailContent({
   const { api } = useHoomaFrontend();
   const navigate = useNavigate();
   const state = useAthletesDetail(id);
-  const { detail, error, notice, loading, busy, reload, act } = state;
+  const { detail, error, notice, loading, busy, reload, refreshDetail, act } = state;
   const [username, setUsername] = useState("");
   const [editing, setEditing] = useState(false);
   const [confirmArchive, setConfirmArchive] = useState(false);
   const founder = detail?.viewerRole === "FOUNDER";
   const canManage = founder || detail?.viewerRole === "MODERATOR";
-  const membership = useAthletesMembershipPages(
-    id,
-    Boolean(detail?.viewerRole),
-    canManage,
-  );
+  const membership = useAthletesMembershipPages(id, Boolean(detail?.viewerRole), canManage);
   const {
     members,
     requests,
@@ -258,6 +254,9 @@ function AthletesDetailContent({
   } = membership;
   const refreshMembershipAfterAction = () => {
     void refreshMembership();
+  };
+  const refreshDetailAndMembershipAfterAction = async () => {
+    await Promise.all([refreshDetail(), refreshMembership()]);
   };
 
   if (loading)
@@ -454,7 +453,7 @@ function AthletesDetailContent({
                     void act(
                       () => api.athletes.removeMember(id, member.userId),
                       "Member removed.",
-                      refreshMembershipAfterAction,
+                      refreshDetailAndMembershipAfterAction,
                     )
                   }
                 />
@@ -490,8 +489,7 @@ function AthletesDetailContent({
           </div>
           {requestsError ? (
             <div className="error-box" role="alert">
-              {requestsError}{" "}
-              <button onClick={() => void refreshRequests()}>Retry requests</button>
+              {requestsError} <button onClick={() => void refreshRequests()}>Retry requests</button>
             </div>
           ) : requests.length ? (
             <>
@@ -512,7 +510,7 @@ function AthletesDetailContent({
                           void act(
                             () => api.athletes.approveJoinRequest(id, request.userId),
                             "Join request approved.",
-                            refreshMembershipAfterAction,
+                            refreshDetailAndMembershipAfterAction,
                           )
                         }
                       >
@@ -562,7 +560,7 @@ function AthletesDetailContent({
                       setUsername("");
                     },
                     "Member added.",
-                    refreshMembershipAfterAction,
+                    refreshDetailAndMembershipAfterAction,
                   );
                 }}
               >
