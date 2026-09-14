@@ -7,10 +7,18 @@ import type {
 import type {
   AthletesCalendarUnitOfWork,
 } from "../apps/api/src/modules/athletes/application/athletes-calendar.unit-of-work.js";
-import { AthletesCalendarService } from "../apps/api/src/modules/athletes/application/athletes-calendar.service.js";
-import { AthletesService } from "../apps/api/src/modules/athletes/application/athletes.service.js";
-import { PrismaAthletesCalendarRepository } from "../apps/api/src/modules/athletes/infrastructure/prisma-athletes-calendar.repository.js";
-import { PrismaAthletesRepository } from "../apps/api/src/modules/athletes/infrastructure/prisma-athletes.repository.js";
+import {
+  AthletesCalendarService,
+} from "../apps/api/src/modules/athletes/application/athletes-calendar.service.js";
+import {
+  AthletesService,
+} from "../apps/api/src/modules/athletes/application/athletes.service.js";
+import {
+  PrismaAthletesCalendarRepository,
+} from "../apps/api/src/modules/athletes/infrastructure/prisma-athletes-calendar.repository.js";
+import {
+  PrismaAthletesRepository,
+} from "../apps/api/src/modules/athletes/infrastructure/prisma-athletes.repository.js";
 import { AthletesError } from "../apps/api/src/modules/athletes/domain/athletes-error.js";
 
 const db = getDatabaseClient();
@@ -235,19 +243,22 @@ test(
         },
       );
 
-      await t.test("same-user concurrent RSVP updates still leave one durable row", async () => {
-        const { community, entry } = await fixture("same-user", [memberD!.id]);
-        await Promise.all([
-          calendarService.setRsvp(memberD!.id, community.id, entry.id, "GOING"),
-          calendarService.setRsvp(memberD!.id, community.id, entry.id, "MAYBE"),
-        ]);
-        assert.equal(
-          await db.athletesCalendarRsvp.count({
-            where: { calendarEntryId: entry.id, userId: memberD!.id },
-          }),
-          1,
-        );
-      });
+      await t.test(
+        "same-user concurrent RSVP updates still leave one durable row",
+        async () => {
+          const { community, entry } = await fixture("same-user", [memberD!.id]);
+          await Promise.all([
+            calendarService.setRsvp(memberD!.id, community.id, entry.id, "GOING"),
+            calendarService.setRsvp(memberD!.id, community.id, entry.id, "MAYBE"),
+          ]);
+          assert.equal(
+            await db.athletesCalendarRsvp.count({
+              where: { calendarEntryId: entry.id, userId: memberD!.id },
+            }),
+            1,
+          );
+        },
+      );
 
       await t.test(
         "member removal blocks an in-flight RSVP until authority is rechecked",
