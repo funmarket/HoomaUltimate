@@ -1,4 +1,5 @@
 import { useAthletesDetail } from "./useAthletesDetail";
+import { useAthletesMembershipPages } from "./useAthletesMembershipPages";
 import { sports, sportLabel } from "./sports";
 import { AthletesCommunityForm } from "./AthletesCommunityForm";
 import type { AthletesSport } from "@hooma/contracts/athletes";
@@ -229,24 +230,31 @@ function AthletesDetailContent({
   const { api } = useHoomaFrontend();
   const navigate = useNavigate();
   const state = useAthletesDetail(id);
-  const {
-    detail,
-    members,
-    requests,
-    error,
-    membersError,
-    requestsError,
-    notice,
-    loading,
-    busy,
-    reload,
-    act,
-  } = state;
+  const { detail, error, notice, loading, busy, reload, act } = state;
   const [username, setUsername] = useState("");
   const [editing, setEditing] = useState(false);
   const [confirmArchive, setConfirmArchive] = useState(false);
   const founder = detail?.viewerRole === "FOUNDER";
   const canManage = founder || detail?.viewerRole === "MODERATOR";
+  const membership = useAthletesMembershipPages(id, Boolean(detail?.viewerRole), canManage);
+  const {
+    members,
+    requests,
+    membersNextCursor,
+    requestsNextCursor,
+    membersError,
+    requestsError,
+    loadingMoreMembers,
+    loadingMoreRequests,
+    refreshMembers,
+    refreshRequests,
+    refreshMembership,
+    loadMoreMembers,
+    loadMoreRequests,
+  } = membership;
+  const refreshMembershipAfterAction = () => {
+    void refreshMembership();
+  };
 
   if (loading)
     return (
@@ -417,29 +425,45 @@ function AthletesDetailContent({
             <h2>Active Athletes</h2>
             {membersError ? (
               <div role="alert" className="error-box">
-                {membersError} <button onClick={() => void reload()}>Retry members</button>
+                {membersError} <button onClick={() => void refreshMembers()}>Retry members</button>
               </div>
             ) : (
-              <ActiveAthletesList
-                members={members}
-                founder={founder}
-                canManage={canManage}
-                busy={busy}
-                onToggleRole={(member) =>
-                  void act(
-                    () =>
-                      api.athletes.setMemberRole(
-                        id,
-                        member.userId,
-                        member.role === "MODERATOR" ? "MEMBER" : "MODERATOR",
-                      ),
-                    "Member role updated.",
-                  )
-                }
-                onRemove={(member) =>
-                  void act(() => api.athletes.removeMember(id, member.userId), "Member removed.")
-                }
-              />
+              <>
+                <ActiveAthletesList
+                  members={members}
+                  founder={founder}
+                  canManage={canManage}
+                  busy={busy}
+                  onToggleRole={(member) =>
+                    void act(
+                      () =>
+                        api.athletes.setMemberRole(
+                          id,
+                          member.userId,
+                          member.role === "MODERATOR" ? "MEMBER" : "MODERATOR",
+                        ),
+                      "Member role updated.",
+                      refreshMembershipAfterAction,
+                    )
+                  }
+                  onRemove={(member) =>
+                    void act(
+                      () => api.athletes.removeMember(id, member.userId),
+                      "Member removed.",
+                      refreshMembershipAfterAction,
+                    )
+                  }
+                />
+                {membersNextCursor ? (
+                  <button
+                    className="button athletes-action athletes-action--secondary"
+                    disabled={loadingMoreMembers}
+                    onClick={() => void loadMoreMembers()}
+                  >
+                    {loadingMoreMembers ? "Loading…" : "Load more athletes"}
+                  </button>
+                ) : null}
+              </>
             )}
           </section>
         </>
@@ -453,7 +477,7 @@ function AthletesDetailContent({
             </div>
             <span
               className="athletes-section-count"
-              aria-label={`${requests.length} pending join ${
+              aria-label={`${requests.length} loaded pending join ${
                 requests.length === 1 ? "request" : "requests"
               }`}
             >
@@ -462,47 +486,61 @@ function AthletesDetailContent({
           </div>
           {requestsError ? (
             <div className="error-box" role="alert">
-              {requestsError} <button onClick={() => void reload()}>Retry requests</button>
+              {requestsError}{" "}
+              <button onClick={() => void refreshRequests()}>Retry requests</button>
             </div>
           ) : requests.length ? (
-            <div className="athletes-member-list athletes-request-list">
-              {requests.map((request) => (
-                <div className="athletes-member-row athletes-request-row" key={request.id}>
-                  <span>
-                    {request.requester.presentation?.displayName ?? "Member"}
-                    {request.requester.presentation ? (
-                      <small>@{request.requester.presentation.username}</small>
-                    ) : null}
-                  </span>
-                  <span className="athletes-request-actions">
-                    <button
-                      className="athletes-mini-action athletes-mini-action--approve"
-                      disabled={busy}
-                      onClick={() =>
-                        void act(
-                          () => api.athletes.approveJoinRequest(id, request.userId),
-                          "Join request approved.",
-                        )
-                      }
-                    >
-                      Approve
-                    </button>
-                    <button
-                      className="athletes-mini-action athletes-mini-action--decline"
-                      disabled={busy}
-                      onClick={() =>
-                        void act(
-                          () => api.athletes.declineJoinRequest(id, request.userId),
-                          "Join request declined.",
-                        )
-                      }
-                    >
-                      Decline
-                    </button>
-                  </span>
-                </div>
-              ))}
-            </div>
+            <>
+              <div className="athletes-member-list athletes-request-list">
+                {requests.map((request) => (
+                  <div className="athletes-member-row athletes-request-row" key={request.id}>
+                    <span>
+                      {request.requester.presentation?.displayName ?? "Member"}
+                      {request.requester.presentation ? (
+                        <small>@{request.requester.presentation.username}</small>
+                      ) : null}
+                    </span>
+                    <span className="athletes-request-actions">
+                      <button
+                        className="athletes-mini-action athletes-mini-action--approve"
+                        disabled={busy}
+                        onClick={() =>
+                          void act(
+                            () => api.athletes.approveJoinRequest(id, request.userId),
+                            "Join request approved.",
+                            refreshMembershipAfterAction,
+                          )
+                        }
+                      >
+                        Approve
+                      </button>
+                      <button
+                        className="athletes-mini-action athletes-mini-action--decline"
+                        disabled={busy}
+                        onClick={() =>
+                          void act(
+                            () => api.athletes.declineJoinRequest(id, request.userId),
+                            "Join request declined.",
+                            refreshMembershipAfterAction,
+                          )
+                        }
+                      >
+                        Decline
+                      </button>
+                    </span>
+                  </div>
+                ))}
+              </div>
+              {requestsNextCursor ? (
+                <button
+                  className="button athletes-action athletes-action--secondary"
+                  disabled={loadingMoreRequests}
+                  onClick={() => void loadMoreRequests()}
+                >
+                  {loadingMoreRequests ? "Loading…" : "Load more requests"}
+                </button>
+              ) : null}
+            </>
           ) : (
             <p className="muted">No pending join requests.</p>
           )}
@@ -514,10 +552,14 @@ function AthletesDetailContent({
                 className="athletes-inline-form athletes-direct-add__form"
                 onSubmit={(event) => {
                   event.preventDefault();
-                  void act(async () => {
-                    await api.athletes.addMember(id, username);
-                    setUsername("");
-                  }, "Member added.");
+                  void act(
+                    async () => {
+                      await api.athletes.addMember(id, username);
+                      setUsername("");
+                    },
+                    "Member added.",
+                    refreshMembershipAfterAction,
+                  );
                 }}
               >
                 <label className="athletes-direct-add__field">

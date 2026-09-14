@@ -5,11 +5,13 @@ import {
   athletesCalendarRsvpInputSchema,
   athletesCalendarUpdateSchema,
   athletesCommunityCreateSchema,
-  athletesPhotoListQuerySchema,
   athletesCommunityUpdateSchema,
+  athletesJoinRequestListQuerySchema,
   athletesListQuerySchema,
   athletesMemberAddSchema,
+  athletesMemberListQuerySchema,
   athletesMemberRoleUpdateSchema,
+  athletesPhotoListQuerySchema,
 } from "@hooma/contracts/athletes";
 import { Router, raw } from "express";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
@@ -219,9 +221,15 @@ export function createAthletesMemberRouter(
   );
   router.get(
     "/:id/join-requests",
-    asyncHandler(async (req, res) =>
-      res.json(await service.joinRequests(getAuth(req).userId, String(req.params.id))),
-    ),
+    asyncHandler(async (req, res) => {
+      const query = athletesJoinRequestListQuerySchema.parse(req.query);
+      res.json(
+        await service.joinRequests(getAuth(req).userId, String(req.params.id), {
+          limit: query.limit,
+          ...(query.cursor !== undefined ? { cursor: query.cursor } : {}),
+        }),
+      );
+    }),
   );
   router.post(
     "/:id/join-requests/:userId/approve",
@@ -249,9 +257,15 @@ export function createAthletesMemberRouter(
   );
   router.get(
     "/:id/members",
-    asyncHandler(async (req, res) =>
-      res.json(await service.members(getAuth(req).userId, String(req.params.id))),
-    ),
+    asyncHandler(async (req, res) => {
+      const query = athletesMemberListQuerySchema.parse(req.query);
+      res.json(
+        await service.members(getAuth(req).userId, String(req.params.id), {
+          limit: query.limit,
+          ...(query.cursor !== undefined ? { cursor: query.cursor } : {}),
+        }),
+      );
+    }),
   );
   router.post(
     "/:id/members",
