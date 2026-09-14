@@ -1,4 +1,7 @@
-import type { AthletesJoinRequestForManager, AthletesMember } from "@hooma/contracts/athletes";
+import type {
+  AthletesJoinRequestForManager,
+  AthletesMember,
+} from "@hooma/contracts/athletes";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useHoomaFrontend } from "../context";
 
@@ -66,7 +69,9 @@ export function useAthletesMembershipPages(
     try {
       const page = await api.athletes.members(id, membersNextCursor);
       if (current !== generation.current) return;
-      setMembers((previous) => appendUnique(previous, page.items, (member) => member.userId));
+      setMembers((previous) =>
+        appendUnique(previous, page.items, (member) => member.userId),
+      );
       setMembersNextCursor(page.nextCursor);
     } catch (reason) {
       if (current === generation.current) {
@@ -85,7 +90,9 @@ export function useAthletesMembershipPages(
     try {
       const page = await api.athletes.joinRequests(id, requestsNextCursor);
       if (current !== generation.current) return;
-      setRequests((previous) => appendUnique(previous, page.items, (request) => request.id));
+      setRequests((previous) =>
+        appendUnique(previous, page.items, (request) => request.id),
+      );
       setRequestsNextCursor(page.nextCursor);
     } catch (reason) {
       if (current === generation.current) {
