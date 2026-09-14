@@ -72,25 +72,35 @@ function scenario(detail, overrides = {}) {
     if (override) return override(init);
     if (method !== "GET") return response({ ok: true, id: detail.id });
     if (path.endsWith("/members"))
-      return response([
-        {
-          userId: "runner",
-          role: "MEMBER",
-          joinedAt: detail.createdAt,
-          presentation: { username: "runner", displayName: "Runner", photoUrl: null },
-        },
-      ]);
+      return response({
+        items: [
+          {
+            userId: "runner",
+            role: "MEMBER",
+            joinedAt: detail.createdAt,
+            lastSeenAt: null,
+            presentation: { username: "runner", displayName: "Runner", photoUrl: null },
+          },
+        ],
+        nextCursor: null,
+      });
     if (path.endsWith("/join-requests"))
       return response({
-        requests: [
+        items: [
           {
             id: "request",
+            athletesCommunityId: detail.id,
             userId: "applicant",
+            status: "PENDING",
+            requestedAt: detail.createdAt,
+            resolvedAt: null,
+            resolvedByUserId: null,
             requester: {
               presentation: { displayName: "Applicant", username: "applicant", photoUrl: null },
             },
           },
         ],
+        nextCursor: null,
       });
     if (path.endsWith("/photos")) return response([]);
     if (path.endsWith("/calendar")) return response([]);
