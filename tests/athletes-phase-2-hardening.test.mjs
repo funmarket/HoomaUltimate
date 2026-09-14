@@ -65,32 +65,43 @@ function response(body, status = 200) {
 function scenario(detail, overrides = {}) {
   const calls = [];
   globalThis.fetch = async (url, init = {}) => {
-    const path = new URL(url).pathname;
+    const parsedUrl = new URL(url);
+    const path = parsedUrl.pathname;
     const method = init.method ?? "GET";
-    calls.push({ path, method, body: init.body });
+    calls.push({ path, method, body: init.body, search: parsedUrl.search });
     const override = overrides[`${method} ${path}`];
-    if (override) return override(init);
+    if (override) return override(init, parsedUrl);
     if (method !== "GET") return response({ ok: true, id: detail.id });
     if (path.endsWith("/members"))
-      return response([
-        {
-          userId: "runner",
-          role: "MEMBER",
-          joinedAt: detail.createdAt,
-          presentation: { username: "runner", displayName: "Runner", photoUrl: null },
-        },
-      ]);
+      return response({
+        items: [
+          {
+            userId: "runner",
+            role: "MEMBER",
+            joinedAt: detail.createdAt,
+            lastSeenAt: null,
+            presentation: { username: "runner", displayName: "Runner", photoUrl: null },
+          },
+        ],
+        nextCursor: null,
+      });
     if (path.endsWith("/join-requests"))
       return response({
-        requests: [
+        items: [
           {
             id: "request",
+            athletesCommunityId: detail.id,
             userId: "applicant",
+            status: "PENDING",
+            requestedAt: detail.createdAt,
+            resolvedAt: null,
+            resolvedByUserId: null,
             requester: {
               presentation: { displayName: "Applicant", username: "applicant", photoUrl: null },
             },
           },
         ],
+        nextCursor: null,
       });
     if (path.endsWith("/photos")) return response([]);
     if (path.endsWith("/calendar")) return response([]);
@@ -223,6 +234,69 @@ test("Discovery consumes the cursor and appends older communities", async () => 
   await view.findByText("Community older");
   assert.ok(view.getByText("Community newer"));
   assert.ok(urls.some((url) => url.includes("cursor=newer")));
+});
+
+test("Member and request pagination load independently", async () => {
+  const detail = community();
+  const calls = scenario(detail, {
+    "GET /api/v1/athletes/one/members": (_init, url) =>
+      response(
+        url.searchParams.has("cursor")
+          ? {
+              items: [
+                {
+                  userId: "runner-2",
+                  role: "MEMBER",
+                  joinedAt: detail.createdAt,
+                  lastSeenAt: null,
+                  presentation: { username: "runner2", displayName: "Runner Two", photoUrl: null },
+                },
+              ],
+              nextCursor: null,
+            }
+          : {
+              items: [
+                {
+                  userId: "runner-1",
+                  role: "MEMBER",
+                  joinedAt: detail.createdAt,
+                  lastSeenAt: null,
+                  presentation: { username: "runner1", displayName: "Runner One", photoUrl: null },
+                },
+              ],
+              nextCursor: "member-next",
+            },
+      ),
+    "GET /api/v1/athletes/one/join-requests": (_init, url) =>
+      response(
+        url.searchParams.has("cursor")
+          ? { items: [], nextCursor: null }
+          : {
+              items: [
+                {
+                  id: "request-1",
+                  athletesCommunityId: detail.id,
+                  userId: "applicant",
+                  status: "PENDING",
+                  requestedAt: detail.createdAt,
+                  resolvedAt: null,
+                  resolvedByUserId: null,
+                  requester: { presentation: null },
+                },
+              ],
+              nextCursor: "request-next",
+            },
+      ),
+  });
+  const view = render(wrap(h(AthletesDetailPage, { athletesCommunityId: "one" })));
+  fireEvent.click(await view.findByText("Load more athletes"));
+  await view.findByText("Runner Two");
+  assert.equal(view.getAllByText("Load more requests").length, 1);
+  assert.ok(calls.some((call) => call.path.endsWith("/members") && call.search.includes("cursor=")));
+  assert.equal(
+    calls.some((call) => call.path.endsWith("/join-requests") && call.search.includes("cursor=")),
+    false,
+  );
 });
 
 test("Photo Board retries signed delivery failures", async () => {

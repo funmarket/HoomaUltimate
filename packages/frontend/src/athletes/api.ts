@@ -9,9 +9,9 @@ import type {
   AthletesCommunityWriteResult,
   AthletesCommunityUpdateInput,
   AthletesJoinRequest,
-  AthletesJoinRequestForManager,
+  AthletesJoinRequestPage,
   AthletesJoinResult,
-  AthletesMember,
+  AthletesMemberPage,
   AthletesPhotoContentType,
   AthletesPhotoDelivery,
   AthletesPhotoList,
@@ -38,6 +38,12 @@ function athletesPublicListPath(
 function calendarListPath(id: string, from: string, to: string): string {
   const params = new URLSearchParams({ from, to });
   return `/api/v1/athletes/${encodeURIComponent(id)}/calendar?${params.toString()}`;
+}
+
+function privatePagePath(id: string, resource: "members" | "join-requests", cursor?: string): string {
+  const params = new URLSearchParams({ limit: "50" });
+  if (cursor) params.set("cursor", cursor);
+  return `/api/v1/athletes/${encodeURIComponent(id)}/${resource}?${params.toString()}`;
 }
 
 export function createAthletesApi(transport: HoomaTransport) {
@@ -93,11 +99,8 @@ export function createAthletesApi(transport: HoomaTransport) {
       request<{ ok: true }>(transport, `/api/v1/athletes/${encodeURIComponent(id)}/join-request`, {
         method: "DELETE",
       }),
-    joinRequests: (id: string) =>
-      request<{ requests: AthletesJoinRequestForManager[] }>(
-        transport,
-        `/api/v1/athletes/${encodeURIComponent(id)}/join-requests`,
-      ),
+    joinRequests: (id: string, cursor?: string) =>
+      request<AthletesJoinRequestPage>(transport, privatePagePath(id, "join-requests", cursor)),
     approveJoinRequest: (id: string, userId: string) =>
       request<{ ok: true }>(
         transport,
@@ -110,8 +113,8 @@ export function createAthletesApi(transport: HoomaTransport) {
         `/api/v1/athletes/${encodeURIComponent(id)}/join-requests/${encodeURIComponent(userId)}/decline`,
         { method: "POST" },
       ),
-    members: (id: string) =>
-      request<AthletesMember[]>(transport, `/api/v1/athletes/${encodeURIComponent(id)}/members`),
+    members: (id: string, cursor?: string) =>
+      request<AthletesMemberPage>(transport, privatePagePath(id, "members", cursor)),
     addMember: (id: string, username: string) =>
       request<{ member: { userId: string; username: string } }>(
         transport,

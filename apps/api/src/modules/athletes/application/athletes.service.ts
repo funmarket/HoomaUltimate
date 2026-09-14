@@ -2,12 +2,16 @@ import type {
   AthletesCommunityCreateInput,
   AthletesCommunityUpdateInput,
   AthletesJoinRequest,
+  AthletesJoinRequestForManager,
+  AthletesJoinRequestListQuery,
   AthletesJoinResult,
+  AthletesMemberListQuery,
 } from "@hooma/contracts/athletes";
 import type { UserLastSeenReader } from "../../identity/application/user-last-seen.reader.js";
 import { AthletesError } from "../domain/athletes-error.js";
 import { AthletesContentAuthorization } from "./athletes-content-authorizer.js";
 import type {
+  AthletesJoinRequestManagerRecord,
   AthletesJoinRequestRecord,
   AthletesRepository,
   AthletesRole,
@@ -22,6 +26,22 @@ function serializeRequest(request: AthletesJoinRequestRecord): AthletesJoinReque
     requestedAt: request.requestedAt.toISOString(),
     resolvedAt: request.resolvedAt?.toISOString() ?? null,
     resolvedByUserId: request.resolvedByUserId,
+  };
+}
+
+function serializeManagerRequest(
+  request: AthletesJoinRequestManagerRecord,
+): AthletesJoinRequestForManager {
+  return {
+    ...serializeRequest(request),
+    requester: request.requester,
+  };
+}
+
+function boundedPage(input: AthletesMemberListQuery | AthletesJoinRequestListQuery) {
+  return {
+    limit: Math.min(Math.max(input.limit, 1), 100),
+    ...(input.cursor !== undefined ? { cursor: input.cursor } : {}),
   };
 }
 
@@ -123,9 +143,13 @@ export class AthletesService {
     });
   }
 
-  async joinRequests(userId: string, id: string) {
+  async joinRequests(userId: string, id: string, input: AthletesJoinRequestListQuery) {
     await this.requireManager(userId, id);
-    return { requests: await this.repository.listJoinRequests(id) };
+    const page = await this.repository.listJoinRequests(id, boundedPage(input));
+    return {
+      items: page.items.map(serializeManagerRequest),
+      nextCursor: page.nextCursor,
+    };
   }
 
   async approveJoinRequest(userId: string, id: string, targetUserId: string) {
@@ -166,17 +190,20 @@ export class AthletesService {
     });
   }
 
-  async members(userId: string, id: string) {
+  async members(userId: string, id: string, input: AthletesMemberListQuery) {
     await this.contentAuthorization.requireMemberContent(userId, id);
-    const members = await this.repository.listMembers(id);
+    const page = await this.repository.listMembers(id, boundedPage(input));
     const lastSeenByUserId = await this.userLastSeenReader.findLastSeenByUserIds(
-      members.map((member) => member.userId),
+      page.items.map((member) => member.userId),
     );
-    return members.map((member) => ({
-      ...member,
-      joinedAt: member.joinedAt.toISOString(),
-      lastSeenAt: lastSeenByUserId.get(member.userId)?.toISOString() ?? null,
-    }));
+    return {
+      items: page.items.map((member) => ({
+        ...member,
+        joinedAt: member.joinedAt.toISOString(),
+        lastSeenAt: lastSeenByUserId.get(member.userId)?.toISOString() ?? null,
+      })),
+      nextCursor: page.nextCursor,
+    };
   }
 
   async addMember(userId: string, id: string, username: string) {
