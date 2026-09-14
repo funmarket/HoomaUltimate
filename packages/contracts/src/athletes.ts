@@ -297,11 +297,18 @@ export const athletesCalendarRsvpResultSchema = z
   .strict();
 
 export const athletesCalendarListSchema = z.array(athletesCalendarEntrySchema);
-export const athletesCalendarListViewSchema = z.array(athletesCalendarEntryViewSchema);
+export const athletesCalendarListPageSchema = z
+  .object({
+    items: z.array(athletesCalendarEntryViewSchema),
+    nextCursor: z.string().min(1).nullable(),
+  })
+  .strict();
 export const athletesCalendarListQuerySchema = z
   .object({
     from: z.string().datetime(),
     to: z.string().datetime(),
+    cursor: z.string().min(1).optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(50),
   })
   .strict()
   .superRefine((input, context) => {
@@ -364,7 +371,7 @@ export type AthletesCalendarEntryView = z.infer<typeof athletesCalendarEntryView
 export type AthletesCalendarRsvpInput = z.infer<typeof athletesCalendarRsvpInputSchema>;
 export type AthletesCalendarRsvpResult = z.infer<typeof athletesCalendarRsvpResultSchema>;
 export type AthletesCalendarList = z.infer<typeof athletesCalendarListSchema>;
-export type AthletesCalendarListView = z.infer<typeof athletesCalendarListViewSchema>;
+export type AthletesCalendarListPage = z.infer<typeof athletesCalendarListPageSchema>;
 export type AthletesCalendarListQuery = z.infer<typeof athletesCalendarListQuerySchema>;
 export type AthletesMemberAdd = z.infer<typeof athletesMemberAddSchema>;
 

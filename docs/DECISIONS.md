@@ -422,7 +422,7 @@ The dedicated decision record is `docs/adr/ADR-056-athletes-founder-photo-board.
 
 ## ADR-057 — Athletes private Calendar ownership and lifecycle locking
 
-**Decision:** Athletes owns `AthletesCalendarEntry` as member-private durable schedule data separate from the canonical Event/Play/Watch lifecycle. Active same-community Athletes members may read bounded Calendar ranges. Only the active same-community Founder may create, edit, or cancel entries. Reads use ordinary member authorization and do not acquire the Athletes lifecycle row lock. Founder Calendar mutations reuse the existing Athletes community `FOR UPDATE` lifecycle lock and recheck active Founder authority in the same transaction. New-entry timezone defaults come from the phone/browser-resolved IANA timezone, with UTC fallback only when the runtime cannot provide a valid IANA timezone.
+**Decision:** Athletes owns `AthletesCalendarEntry` as member-private durable schedule data separate from the canonical Event/Play/Watch lifecycle. Active same-community Athletes members may read bounded Calendar ranges with row-bounded stable cursor pagination. Only the active same-community Founder may create, edit, or cancel entries. Reads use ordinary member authorization and do not acquire the Athletes lifecycle row lock. Founder Calendar mutations reuse the existing Athletes community `FOR UPDATE` lifecycle lock and recheck active Founder authority in the same transaction. New-entry timezone defaults come from the phone/browser-resolved IANA timezone, with UTC fallback only when the runtime cannot provide a valid IANA timezone.
 
 The dedicated decision record is `docs/adr/ADR-057-athletes-calendar.md`.
 

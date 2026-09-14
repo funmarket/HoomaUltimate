@@ -2,7 +2,7 @@ import type { AthletesCalendarRsvpStatus } from "@hooma/contracts/athletes";
 import { Prisma, type PrismaClient } from "@hooma/database";
 import type {
   AthletesCalendarCreateRecordInput,
-  AthletesCalendarEntryViewRecord,
+  AthletesCalendarEntryViewPageRecord,
   AthletesCalendarRecord,
   AthletesCalendarRepository,
   AthletesCalendarRsvpUpsertInput,
@@ -108,21 +108,24 @@ export class PrismaAthletesCalendarRepository
 
   async listForCommunity(
     athletesCommunityId: string,
-    range: { readonly from: Date; readonly to: Date },
+    input: Parameters<AthletesCalendarRepository["listForCommunity"]>[1],
     viewerUserId: string,
-  ): Promise<AthletesCalendarEntryViewRecord[]> {
+  ): Promise<AthletesCalendarEntryViewPageRecord> {
     const rows = await this.db.athletesCalendarEntry.findMany({
       where: {
         athletesCommunityId,
-        startsAt: { lt: range.to },
-        endsAt: { gt: range.from },
+        startsAt: { lt: input.range.to },
+        endsAt: { gt: input.range.from },
       },
       orderBy: [{ startsAt: "asc" }, { id: "asc" }],
+      take: input.limit + 1,
+      ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
       select: calendarSelect,
     });
-    if (rows.length === 0) return [];
+    const pageRows = rows.slice(0, input.limit);
+    if (pageRows.length === 0) return { items: [], nextCursor: null };
 
-    const entryIds = rows.map((row) => row.id);
+    const entryIds = pageRows.map((row) => row.id);
     const [grouped, viewerRows] = await Promise.all([
       this.db.$queryRaw<ActiveRsvpCountRow[]>(Prisma.sql`
         SELECT
@@ -154,11 +157,14 @@ export class PrismaAthletesCalendarRepository
     }
 
     const viewerByEntry = new Map(viewerRows.map((row) => [row.calendarEntryId, row.status]));
-    return rows.map((row) => ({
-      entry: mapRow(row),
-      viewerStatus: viewerByEntry.get(row.id) ?? null,
-      counts: countsByEntry.get(row.id) ?? { going: 0, maybe: 0, notGoing: 0 },
-    }));
+    return {
+      items: pageRows.map((row) => ({
+        entry: mapRow(row),
+        viewerStatus: viewerByEntry.get(row.id) ?? null,
+        counts: countsByEntry.get(row.id) ?? { going: 0, maybe: 0, notGoing: 0 },
+      })),
+      nextCursor: rows.length > input.limit ? (pageRows.at(-1)?.id ?? null) : null,
+    };
   }
 
   withCommunityLock<T>(

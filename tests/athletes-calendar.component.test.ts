@@ -49,7 +49,7 @@ test("Athletes Calendar Add plan submits without unmounting the Calendar", async
     }
 
     if (method === "GET") {
-      return new Response(JSON.stringify(entries), {
+      return new Response(JSON.stringify({ items: entries, nextCursor: null }), {
         status: 200,
         headers: { "content-type": "application/json" },
       });

@@ -34,7 +34,7 @@ Calendar access is private to the owning Athletes community:
 - outsiders and cross-community memberships are denied;
 - archived Athletes communities do not grant active Calendar access.
 
-Calendar reads use the ordinary Athletes member-content authorization boundary followed by a bounded repository read. **Calendar reads do not acquire the Athletes lifecycle row lock.** Read ranges must be positive and may not exceed 45 days.
+Calendar reads use the ordinary Athletes member-content authorization boundary followed by a bounded repository read. **Calendar reads do not acquire the Athletes lifecycle row lock.** Read ranges must be positive and may not exceed 45 days. The read is also row-bounded with stable cursor pagination; RSVP viewer status and aggregate counts are loaded only for entries in the returned page.
 
 Calendar mutations use the existing Athletes community lifecycle `FOR UPDATE` lock. Founder authority and active-community state are rechecked inside the same transaction before the Calendar row mutation. This makes archive-versus-Calendar-write races deterministic without creating a second lock authority.
 
@@ -53,5 +53,5 @@ Calendar remains Athletes-owned. It does not create or reuse Event, Play, Watch,
 - Read traffic does not take an unnecessary exclusive community lifecycle lock.
 - Calendar writes and Athletes archive share the same authoritative parent lock and transaction boundary.
 - The device timezone is a presentation/input default, not a hard-coded geographic product default.
-- Permanent tests must cover membership privacy, Founder-only mutation, bounded range validation, cross-community isolation, irreversible cancellation, API projection privacy, and a real PostgreSQL archive-versus-create lock race.
+- Permanent tests must cover membership privacy, Founder-only mutation, bounded range validation, row-bounded cursor traversal, per-page RSVP aggregation, cross-community isolation, irreversible cancellation, API projection privacy, and a real PostgreSQL archive-versus-create lock race.
 - ADR-058 governs Athletes-owned Calendar RSVP state and its member authorization rules.

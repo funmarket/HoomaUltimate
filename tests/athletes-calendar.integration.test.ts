@@ -109,7 +109,7 @@ test("Athletes private Calendar enforces membership, Founder mutation, RSVP owne
       headers: headers(member.cookie),
     });
     assert.equal(memberList.status, 200);
-    assert.deepEqual(await memberList.json(), []);
+    assert.deepEqual(await memberList.json(), { items: [], nextCursor: null });
 
     const memberCreate = await fetch(`${base}/api/v1/athletes/${firstId}/calendar`, {
       method: "POST",
@@ -152,8 +152,13 @@ test("Athletes private Calendar enforces membership, Founder mutation, RSVP owne
       headers: headers(member.cookie),
     });
     assert.equal(memberRead.status, 200);
-    let entries = (await memberRead.json()) as Array<Record<string, unknown>>;
+    let page = (await memberRead.json()) as {
+      items: Array<Record<string, unknown>>;
+      nextCursor: string | null;
+    };
+    let entries = page.items;
     assert.equal(entries.length, 1);
+    assert.equal(page.nextCursor, null);
     assert.equal(entries[0]!.id, created.id);
     assert.equal("createdByUserId" in entries[0]!, false);
     assert.deepEqual(entries[0]!.rsvp, {
@@ -199,7 +204,11 @@ test("Athletes private Calendar enforces membership, Founder mutation, RSVP owne
       headers: headers(member.cookie),
     });
     assert.equal(beforeFormerRemoval.status, 200);
-    entries = (await beforeFormerRemoval.json()) as Array<Record<string, unknown>>;
+    page = (await beforeFormerRemoval.json()) as {
+      items: Array<Record<string, unknown>>;
+      nextCursor: string | null;
+    };
+    entries = page.items;
     assert.deepEqual(entries[0]!.rsvp, {
       viewerStatus: "NOT_GOING",
       counts: { going: 1, maybe: 1, notGoing: 1 },
@@ -225,7 +234,11 @@ test("Athletes private Calendar enforces membership, Founder mutation, RSVP owne
       headers: headers(member.cookie),
     });
     assert.equal(memberReadAfterRsvp.status, 200);
-    entries = (await memberReadAfterRsvp.json()) as Array<Record<string, unknown>>;
+    page = (await memberReadAfterRsvp.json()) as {
+      items: Array<Record<string, unknown>>;
+      nextCursor: string | null;
+    };
+    entries = page.items;
     assert.deepEqual(entries[0]!.rsvp, {
       viewerStatus: "NOT_GOING",
       counts: { going: 0, maybe: 1, notGoing: 1 },
@@ -275,7 +288,11 @@ test("Athletes private Calendar enforces membership, Founder mutation, RSVP owne
       headers: headers(member.cookie),
     });
     assert.equal(cancelledRead.status, 200);
-    entries = (await cancelledRead.json()) as Array<Record<string, unknown>>;
+    page = (await cancelledRead.json()) as {
+      items: Array<Record<string, unknown>>;
+      nextCursor: string | null;
+    };
+    entries = page.items;
     assert.deepEqual(entries[0]!.rsvp, {
       viewerStatus: "NOT_GOING",
       counts: { going: 0, maybe: 1, notGoing: 1 },
@@ -304,6 +321,116 @@ test("Athletes private Calendar enforces membership, Founder mutation, RSVP owne
       ((await repeatCancel.json()) as { cancelledAt: string | null }).cancelledAt,
       cancelled.cancelledAt,
     );
+  } finally {
+    await db.athletesCommunity.deleteMany({ where: { id: { in: communityIds } } });
+    await db.user.deleteMany({ where: { id: { in: userIds } } });
+    server.close();
+  }
+});
+
+test("Athletes Calendar pages tied rows and only aggregates returned entries", async () => {
+  const app = createApp(config, createContainer(config));
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise<void>((resolve) => server.once("listening", resolve));
+  const address = server.address();
+  assert.ok(address && typeof address === "object");
+  const base = `http://127.0.0.1:${address.port}`;
+  const suffix = Date.now().toString(36);
+  const communityIds: string[] = [];
+  const userIds: string[] = [];
+
+  try {
+    const founder = await register(base, `cal_page_founder_${suffix}`);
+    const member = await register(base, `cal_page_member_${suffix}`);
+    userIds.push(founder.userId, member.userId);
+
+    const createCommunity = await fetch(`${base}/api/v1/athletes`, {
+      method: "POST",
+      headers: headers(founder.cookie),
+      body: JSON.stringify({
+        name: `Calendar Page ${suffix}`,
+        sport: "RUNNING",
+        visibility: "PRIVATE",
+        joinPolicy: "APPROVAL_REQUIRED",
+      }),
+    });
+    assert.equal(createCommunity.status, 201);
+    const community = (await createCommunity.json()) as { id: string };
+    communityIds.push(community.id);
+
+    const addMember = await fetch(`${base}/api/v1/athletes/${community.id}/members`, {
+      method: "POST",
+      headers: headers(founder.cookie),
+      body: JSON.stringify({ username: member.username }),
+    });
+    assert.equal(addMember.status, 201);
+
+    const entryIds: string[] = [];
+    for (const title of ["A tied row", "B tied row", "C later row"]) {
+      const createEntry = await fetch(`${base}/api/v1/athletes/${community.id}/calendar`, {
+        method: "POST",
+        headers: headers(founder.cookie),
+        body: JSON.stringify({
+          title,
+          startsAt: title.startsWith("C") ? "2026-09-20T19:00:00.000Z" : "2026-09-20T17:00:00.000Z",
+          endsAt: title.startsWith("C") ? "2026-09-20T20:00:00.000Z" : "2026-09-20T18:00:00.000Z",
+          timezone: "UTC",
+        }),
+      });
+      assert.equal(createEntry.status, 201);
+      entryIds.push(((await createEntry.json()) as { id: string }).id);
+    }
+
+    const firstRsvp = await fetch(rsvpUrl(base, community.id, entryIds[0]!), {
+      method: "PUT",
+      headers: headers(member.cookie),
+      body: JSON.stringify({ status: "GOING" }),
+    });
+    assert.equal(firstRsvp.status, 200);
+    const hiddenPageRsvp = await fetch(rsvpUrl(base, community.id, entryIds[2]!), {
+      method: "PUT",
+      headers: headers(member.cookie),
+      body: JSON.stringify({ status: "NOT_GOING" }),
+    });
+    assert.equal(hiddenPageRsvp.status, 200);
+
+    const from = encodeURIComponent("2026-09-20T00:00:00.000Z");
+    const to = encodeURIComponent("2026-09-21T00:00:00.000Z");
+    const firstResponse = await fetch(
+      `${base}/api/v1/athletes/${community.id}/calendar?from=${from}&to=${to}&limit=2`,
+      { headers: headers(member.cookie) },
+    );
+    assert.equal(firstResponse.status, 200);
+    const first = (await firstResponse.json()) as {
+      items: Array<{ id: string; rsvp: { counts: { going: number; notGoing: number } } }>;
+      nextCursor: string | null;
+    };
+    assert.equal(first.items.length, 2);
+    assert.ok(first.nextCursor);
+    assert.deepEqual(first.items.map((entry) => entry.id).sort(), entryIds.slice(0, 2).sort());
+    assert.equal(
+      first.items.reduce((total, entry) => total + entry.rsvp.counts.notGoing, 0),
+      0,
+      "RSVP aggregates must be scoped to returned Calendar rows only",
+    );
+
+    const secondResponse = await fetch(
+      `${base}/api/v1/athletes/${community.id}/calendar?from=${from}&to=${to}&limit=2&cursor=${encodeURIComponent(
+        first.nextCursor,
+      )}`,
+      { headers: headers(member.cookie) },
+    );
+    assert.equal(secondResponse.status, 200);
+    const second = (await secondResponse.json()) as {
+      items: Array<{ id: string; rsvp: { counts: { notGoing: number } } }>;
+      nextCursor: string | null;
+    };
+    assert.deepEqual(
+      second.items.map((entry) => entry.id),
+      [entryIds[2]],
+    );
+    assert.equal(second.items[0]?.rsvp.counts.notGoing, 1);
+    assert.equal(second.nextCursor, null);
   } finally {
     await db.athletesCommunity.deleteMany({ where: { id: { in: communityIds } } });
     await db.user.deleteMany({ where: { id: { in: userIds } } });
