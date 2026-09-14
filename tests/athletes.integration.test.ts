@@ -295,129 +295,125 @@ test("Athletes HTTP lifecycle uses independent persistence and canonical users",
   }
 });
 
-test(
-  "Athletes member and join-request cursors traverse 1000+ tied rows without drift",
-  async () => {
-    const app = createApp(config, createContainer(config));
-    const server = app.listen(0, "127.0.0.1");
-    await new Promise<void>((resolve) => server.once("listening", resolve));
-    const address = server.address();
-    assert.ok(address && typeof address === "object");
-    const base = `http://127.0.0.1:${address.port}`;
-    const suffix = Date.now().toString(36);
-    const tiedAt = new Date("2026-09-14T12:00:00.000Z");
+test("Athletes pagination traverses 1000+ tied member and request rows", async () => {
+  const app = createApp(config, createContainer(config));
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise<void>((resolve) => server.once("listening", resolve));
+  const address = server.address();
+  assert.ok(address && typeof address === "object");
+  const base = `http://127.0.0.1:${address.port}`;
+  const suffix = Date.now().toString(36);
+  const tiedAt = new Date("2026-09-14T12:00:00.000Z");
 
-    try {
-      const founder = await register(base, `ath_page_founder_${suffix}`);
-      const createdResponse = await fetch(`${base}/api/v1/athletes`, {
-        method: "POST",
-        headers: headers(founder.cookie),
-        body: JSON.stringify({
-          name: `Paged Athletes ${suffix}`,
-          sport: "RUNNING",
-          visibility: "PRIVATE",
-          joinPolicy: "APPROVAL_REQUIRED",
-        }),
-      });
-      assert.equal(createdResponse.status, 201);
-      const created = (await createdResponse.json()) as { id: string };
+  try {
+    const founder = await register(base, `ath_page_founder_${suffix}`);
+    const createdResponse = await fetch(`${base}/api/v1/athletes`, {
+      method: "POST",
+      headers: headers(founder.cookie),
+      body: JSON.stringify({
+        name: `Paged Athletes ${suffix}`,
+        sport: "RUNNING",
+        visibility: "PRIVATE",
+        joinPolicy: "APPROVAL_REQUIRED",
+      }),
+    });
+    assert.equal(createdResponse.status, 201);
+    const created = (await createdResponse.json()) as { id: string };
 
-      const memberUserIds = Array.from({ length: 1050 }, (_, index) =>
-        `ath-page-member-${suffix}-${index.toString().padStart(4, "0")}`,
+    const memberUserIds = Array.from({ length: 1050 }, (_, index) =>
+      `ath-page-member-${suffix}-${index.toString().padStart(4, "0")}`,
+    );
+    const requestUserIds = Array.from({ length: 1050 }, (_, index) =>
+      `ath-page-request-${suffix}-${index.toString().padStart(4, "0")}`,
+    );
+    await db.user.createMany({
+      data: [...memberUserIds, ...requestUserIds].map((id) => ({ id })),
+    });
+    await db.athletesMembership.createMany({
+      data: memberUserIds.map((userId) => ({
+        athletesCommunityId: created.id,
+        userId,
+        role: "MEMBER",
+        joinedAt: tiedAt,
+      })),
+    });
+    await db.athletesJoinRequest.createMany({
+      data: requestUserIds.map((userId) => ({
+        athletesCommunityId: created.id,
+        userId,
+        status: "PENDING",
+        requestedAt: tiedAt,
+      })),
+    });
+
+    const memberPlan = await db.$queryRaw<{ "QUERY PLAN": string }[]>`
+      EXPLAIN (ANALYZE, BUFFERS)
+      SELECT "id"
+      FROM "AthletesMembership"
+      WHERE "athletesCommunityId" = ${created.id} AND "leftAt" IS NULL
+      ORDER BY "role" ASC, "joinedAt" ASC, "id" ASC
+      LIMIT 101
+    `;
+    const requestPlan = await db.$queryRaw<{ "QUERY PLAN": string }[]>`
+      EXPLAIN (ANALYZE, BUFFERS)
+      SELECT "id"
+      FROM "AthletesJoinRequest"
+      WHERE "athletesCommunityId" = ${created.id} AND "status" = 'PENDING'
+      ORDER BY "requestedAt" ASC, "id" ASC
+      LIMIT 101
+    `;
+    const memberPlanText = memberPlan.map((row) => row["QUERY PLAN"]).join("\n");
+    const requestPlanText = requestPlan.map((row) => row["QUERY PLAN"]).join("\n");
+    console.log(`ATHLETES_MEMBER_PAGE_PLAN\n${memberPlanText}`);
+    console.log(`ATHLETES_JOIN_REQUEST_PAGE_PLAN\n${requestPlanText}`);
+
+    const memberIds: string[] = [];
+    let memberCursor: string | null = null;
+    do {
+      const params = new URLSearchParams({ limit: "100" });
+      if (memberCursor) params.set("cursor", memberCursor);
+      const response = await fetch(
+        `${base}/api/v1/athletes/${created.id}/members?${params.toString()}`,
+        { headers: headers(founder.cookie) },
       );
-      const requestUserIds = Array.from({ length: 1050 }, (_, index) =>
-        `ath-page-request-${suffix}-${index.toString().padStart(4, "0")}`,
+      assert.equal(response.status, 200);
+      const page = (await response.json()) as {
+        items: { userId: string; role: string }[];
+        nextCursor: string | null;
+      };
+      memberIds.push(...page.items.map((member) => member.userId));
+      if (memberIds.length === page.items.length) {
+        assert.equal(page.items[0]?.role, "FOUNDER");
+      }
+      memberCursor = page.nextCursor;
+    } while (memberCursor);
+
+    const requestIds: string[] = [];
+    let requestCursor: string | null = null;
+    do {
+      const params = new URLSearchParams({ limit: "100" });
+      if (requestCursor) params.set("cursor", requestCursor);
+      const response = await fetch(
+        `${base}/api/v1/athletes/${created.id}/join-requests?${params.toString()}`,
+        { headers: headers(founder.cookie) },
       );
-      await db.user.createMany({
-        data: [...memberUserIds, ...requestUserIds].map((id) => ({ id })),
-      });
-      await db.athletesMembership.createMany({
-        data: memberUserIds.map((userId) => ({
-          athletesCommunityId: created.id,
-          userId,
-          role: "MEMBER",
-          joinedAt: tiedAt,
-        })),
-      });
-      await db.athletesJoinRequest.createMany({
-        data: requestUserIds.map((userId) => ({
-          athletesCommunityId: created.id,
-          userId,
-          status: "PENDING",
-          requestedAt: tiedAt,
-        })),
-      });
+      assert.equal(response.status, 200);
+      const page = (await response.json()) as {
+        items: { userId: string }[];
+        nextCursor: string | null;
+      };
+      requestIds.push(...page.items.map((request) => request.userId));
+      requestCursor = page.nextCursor;
+    } while (requestCursor);
 
-      const memberPlan = await db.$queryRaw<{ "QUERY PLAN": string }[]>`
-        EXPLAIN (ANALYZE, BUFFERS)
-        SELECT "id"
-        FROM "AthletesMembership"
-        WHERE "athletesCommunityId" = ${created.id} AND "leftAt" IS NULL
-        ORDER BY "role" ASC, "joinedAt" ASC, "id" ASC
-        LIMIT 101
-      `;
-      const requestPlan = await db.$queryRaw<{ "QUERY PLAN": string }[]>`
-        EXPLAIN (ANALYZE, BUFFERS)
-        SELECT "id"
-        FROM "AthletesJoinRequest"
-        WHERE "athletesCommunityId" = ${created.id} AND "status" = 'PENDING'
-        ORDER BY "requestedAt" ASC, "id" ASC
-        LIMIT 101
-      `;
-      console.log(
-        `ATHLETES_MEMBER_PAGE_PLAN\n${memberPlan.map((row) => row["QUERY PLAN"]).join("\n")}`,
-      );
-      console.log(
-        `ATHLETES_JOIN_REQUEST_PAGE_PLAN\n${requestPlan.map((row) => row["QUERY PLAN"]).join("\n")}`,
-      );
-
-      const memberIds: string[] = [];
-      let memberCursor: string | null = null;
-      do {
-        const params = new URLSearchParams({ limit: "100" });
-        if (memberCursor) params.set("cursor", memberCursor);
-        const response = await fetch(
-          `${base}/api/v1/athletes/${created.id}/members?${params.toString()}`,
-          { headers: headers(founder.cookie) },
-        );
-        assert.equal(response.status, 200);
-        const page = (await response.json()) as {
-          items: { userId: string; role: string }[];
-          nextCursor: string | null;
-        };
-        memberIds.push(...page.items.map((member) => member.userId));
-        if (memberIds.length === page.items.length)
-          assert.equal(page.items[0]?.role, "FOUNDER");
-        memberCursor = page.nextCursor;
-      } while (memberCursor);
-
-      const requestIds: string[] = [];
-      let requestCursor: string | null = null;
-      do {
-        const params = new URLSearchParams({ limit: "100" });
-        if (requestCursor) params.set("cursor", requestCursor);
-        const response = await fetch(
-          `${base}/api/v1/athletes/${created.id}/join-requests?${params.toString()}`,
-          { headers: headers(founder.cookie) },
-        );
-        assert.equal(response.status, 200);
-        const page = (await response.json()) as {
-          items: { userId: string }[];
-          nextCursor: string | null;
-        };
-        requestIds.push(...page.items.map((request) => request.userId));
-        requestCursor = page.nextCursor;
-      } while (requestCursor);
-
-      const expectedMemberIds = [founder.userId, ...memberUserIds].sort();
-      assert.equal(memberIds.length, expectedMemberIds.length);
-      assert.equal(new Set(memberIds).size, expectedMemberIds.length);
-      assert.deepEqual([...memberIds].sort(), expectedMemberIds);
-      assert.equal(requestIds.length, requestUserIds.length);
-      assert.equal(new Set(requestIds).size, requestUserIds.length);
-      assert.deepEqual([...requestIds].sort(), [...requestUserIds].sort());
-    } finally {
-      server.close();
-    }
-  },
-);
+    const expectedMemberIds = [founder.userId, ...memberUserIds].sort();
+    assert.equal(memberIds.length, expectedMemberIds.length);
+    assert.equal(new Set(memberIds).size, expectedMemberIds.length);
+    assert.deepEqual([...memberIds].sort(), expectedMemberIds);
+    assert.equal(requestIds.length, requestUserIds.length);
+    assert.equal(new Set(requestIds).size, requestUserIds.length);
+    assert.deepEqual([...requestIds].sort(), [...requestUserIds].sort());
+  } finally {
+    server.close();
+  }
+});
