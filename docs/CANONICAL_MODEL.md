@@ -933,8 +933,8 @@ Current rules:
 - unused daily quota never carries over; every new UTC day begins with all 11 sends available;
 - authorized context members receive Whistle bodies directly in the feed; there is no Reveal operation or per-viewer reveal/seen state;
 - Redis body TTL is the remaining lifetime until the next UTC midnight;
-- expired PostgreSQL metadata is deleted by the Whistle cleanup path and is not permanent Whistle history;
-- product visibility and quota reset take effect at UTC midnight even when physical PostgreSQL cleanup is triggered by a later list/send operation;
+- expired PostgreSQL metadata is deleted by the Worker Whistle cleanup path and is not permanent Whistle history;
+- product visibility and quota reset take effect at UTC midnight even when physical PostgreSQL cleanup occurs later;
 - `COMMUNITY` requires active Community membership;
 - `EVENT` uses the existing Event member-content authorization boundary;
 - `GAMER_DIRECT` uses its dedicated Gamer-specific server-derived direct-pair authorization and is never accepted through the generic raw-context route;
@@ -965,6 +965,8 @@ Authenticated/private actions:
 ```text
 /api/v1/*
 ```
+
+API request throttling is an infrastructure boundary over both public and member API route groups. Counters live in Redis so limits are shared across API instances. The API must not add PostgreSQL rate-limit tables or process-local `Map` counters as the limiting authority.
 
 Global Platform Admin:
 

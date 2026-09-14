@@ -135,7 +135,7 @@ Implement layered controls:
 - temporary lockout/backoff;
 - structured security logging that never logs passwords/session tokens.
 
-Exact thresholds belong in central config and tests, not scattered constants.
+Exact thresholds belong in central config and tests, not scattered constants. HTTP API rate limiting uses Redis-backed counters so limits are shared across API instances; it must not rely on process-local maps or PostgreSQL rate-limit tables.
 
 ## 8. CSRF / write-origin protection
 

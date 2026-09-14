@@ -23,6 +23,8 @@ const apiEnvironmentSchema = z
     API_PORT: portSchema.default(3000),
     DATABASE_URL: z.string().min(1),
     REDIS_URL: z.string().url().optional(),
+    API_RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().positive().default(60),
+    API_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().default(6000),
     WEB_ORIGIN: z.string().url().default("http://localhost:5173"),
     TELEGRAM_ORIGIN: z.string().url().default("http://localhost:5174"),
     SESSION_COOKIE_NAME: z.string().min(1).default("hooma_session"),
