@@ -27,6 +27,12 @@ export function useAthletesDetail(id: string) {
   const memberPagePending = useRef(false);
   const requestPagePending = useRef(false);
 
+  const reloadDetail = useCallback(async () => {
+    const current = version.current;
+    const next = await api.athletes.detail(id);
+    if (mounted.current && current === version.current) setDetail(next);
+  }, [api, id]);
+
   const reloadMembers = useCallback(
     async (cursor?: string) => {
       if (memberPagePending.current) return;
@@ -188,6 +194,7 @@ export function useAthletesDetail(id: string) {
     requestsLoadingMore,
     busy,
     reload,
+    reloadDetail,
     reloadMembers,
     reloadRequests,
     act,
