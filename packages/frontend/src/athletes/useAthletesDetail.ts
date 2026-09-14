@@ -119,7 +119,9 @@ export function useAthletesDetail(id: string) {
       setDetail(next);
       const manager = next.viewerRole === "FOUNDER" || next.viewerRole === "MODERATOR";
       const [memberResult, requestResult] = await Promise.allSettled([
-        next.viewerRole ? api.athletes.members(id) : Promise.resolve({ items: [], nextCursor: null }),
+        next.viewerRole
+          ? api.athletes.members(id)
+          : Promise.resolve({ items: [], nextCursor: null }),
         manager
           ? api.athletes.joinRequests(id)
           : Promise.resolve({ items: [], nextCursor: null }),
