@@ -40,7 +40,11 @@ function calendarListPath(id: string, from: string, to: string): string {
   return `/api/v1/athletes/${encodeURIComponent(id)}/calendar?${params.toString()}`;
 }
 
-function privatePagePath(id: string, resource: "members" | "join-requests", cursor?: string): string {
+function privatePagePath(
+  id: string,
+  resource: "members" | "join-requests",
+  cursor?: string,
+): string {
   const params = new URLSearchParams({ limit: "50" });
   if (cursor) params.set("cursor", cursor);
   return `/api/v1/athletes/${encodeURIComponent(id)}/${resource}?${params.toString()}`;

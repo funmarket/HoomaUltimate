@@ -93,10 +93,13 @@ test("Athletes member and join-request pages use explicit items and nextCursor e
     lastSeenAt: null,
     presentation: null,
   };
-  assert.deepEqual(athletesMemberPageSchema.parse({ items: [member], nextCursor: "membership-1" }), {
-    items: [member],
-    nextCursor: "membership-1",
-  });
+  assert.deepEqual(
+    athletesMemberPageSchema.parse({ items: [member], nextCursor: "membership-1" }),
+    {
+      items: [member],
+      nextCursor: "membership-1",
+    },
+  );
   const request = {
     id: "request-1",
     athletesCommunityId: "ath-1",
