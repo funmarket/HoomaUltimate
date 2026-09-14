@@ -104,6 +104,29 @@ test("API rate-limit middleware returns 429 with Retry-After after the shared li
   });
 });
 
+test("API rate-limit middleware prefers Express trusted proxy client IP", async () => {
+  const seen: Array<{ bucket: string; identifier: string }> = [];
+  const middleware = createApiRateLimitMiddleware(
+    {
+      async consume(bucket, identifier) {
+        seen.push({ bucket, identifier });
+        return { allowed: true, limit: 10, remaining: 9, retryAfterSeconds: 60 };
+      },
+    },
+    "public",
+  );
+  const request = {
+    ips: ["198.51.100.42", "10.0.0.10"],
+    ip: "10.0.0.10",
+    socket: { remoteAddress: "10.0.0.10" },
+  } as unknown as Request;
+  const response = createResponse();
+
+  await middleware(request, response as unknown as Response, () => undefined);
+
+  assert.deepEqual(seen, [{ bucket: "public", identifier: "198.51.100.42" }]);
+});
+
 test("API rate limiting remains Redis-backed and does not add PostgreSQL or Map authority", () => {
   const container = readFileSync("apps/api/src/bootstrap/container.ts", "utf8");
   const app = readFileSync("apps/api/src/bootstrap/app.ts", "utf8");
@@ -111,6 +134,7 @@ test("API rate limiting remains Redis-backed and does not add PostgreSQL or Map 
 
   assert.match(container, /RedisApiRateLimiter/);
   assert.match(app, /createApiRateLimitMiddleware/);
+  assert.match(app, /trust proxy/);
   assert.doesNotMatch(prismaSchema, /RateLimit|ApiRateLimit|LoginAttempt/);
   assert.doesNotMatch(container, /new Map<.*rate/i);
 });

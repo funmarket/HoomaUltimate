@@ -12,6 +12,7 @@ import { createApiRateLimitMiddleware } from "../http/rate-limit/api-rate-limit.
 export function createApp(config: ApiConfig, container: AppContainer) {
   const app = express();
   app.disable("x-powered-by");
+  app.set("trust proxy", config.API_TRUST_PROXY_HOPS);
   app.use(helmet());
   app.use(
     cors({

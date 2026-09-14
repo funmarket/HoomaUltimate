@@ -25,6 +25,6 @@ export function createApiRateLimitMiddleware(
 }
 
 function requestIdentifier(request: Request): string {
-  const ip = request.ip || request.socket.remoteAddress || "unknown";
+  const ip = request.ips?.[0] || request.ip || request.socket.remoteAddress || "unknown";
   return ip.startsWith("::ffff:") ? ip.slice("::ffff:".length) : ip;
 }
