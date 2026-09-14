@@ -276,8 +276,13 @@ test("Whistle enforces visible daily UTC sessions, quota and metadata-only persi
       { headers: headers(member.cookie) },
     );
     assert.equal(cleanupTrigger.status, 200);
+    const afterExpiredInsert = (await cleanupTrigger.json()) as { items: Array<{ id: string }> };
+    assert.equal(
+      afterExpiredInsert.items.some((item) => item.id === expiredId),
+      false,
+    );
     const expiredCount = await db.whistleMetadata.count({ where: { id: expiredId } });
-    assert.equal(expiredCount, 0);
+    assert.equal(expiredCount, 1);
   } finally {
     await new Promise<void>((resolve, reject) =>
       server.close((error) => (error ? reject(error) : resolve())),

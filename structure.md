@@ -249,7 +249,7 @@ Rules:
 
 ### Whistle persistence boundary
 
-Whistle metadata/quota/context/expiry truth is durable where designed; Whistle body remains Redis-only and must never fall back to PostgreSQL, audit metadata, outbox payloads, notifications, analytics, URLs, or logs.
+Whistle metadata/quota/context/expiry truth is durable where designed; Whistle body remains Redis-only and must never fall back to PostgreSQL, audit metadata, outbox payloads, notifications, analytics, URLs, or logs. Visibility is based on `expiresAt > now`; normal API reads/writes do not physically delete expired metadata, and bounded metadata cleanup belongs to the Worker.
 
 ### WebSession activity boundary
 

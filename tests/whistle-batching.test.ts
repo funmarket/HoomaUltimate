@@ -36,9 +36,6 @@ function repositoryStub(overrides: Partial<WhistleRepository> = {}): WhistleRepo
     async listActive() {
       return [];
     },
-    async deleteExpired() {
-      return 0;
-    },
     ...overrides,
   };
 }
