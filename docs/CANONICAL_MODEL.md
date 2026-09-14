@@ -289,6 +289,20 @@ AthletesCalendarEntry
   updatedAt
 ```
 
+## AthletesCalendarRsvp
+
+```text
+AthletesCalendarRsvp
+  id
+  calendarEntryId              canonical AthletesCalendarEntry
+  userId                       canonical User
+  status                       GOING | MAYBE | NOT_GOING
+  createdAt
+  updatedAt
+
+Unique: (calendarEntryId, userId)
+```
+
 Rules:
 
 - Athletes records never live in `Community`, `CommunityMembership`, Team, or generic membership tables;
@@ -307,10 +321,15 @@ Rules:
 - Photo Board is separate from Whistle; Photo Board bytes are never stored in Redis and Whistle body/storage behavior is unchanged;
 - the current Photo Board has no captions, likes/reactions, comments/replies, albums, manual ordering, moderator/member curation, or public board;
 - Founder Photo Board deletion is scoped curation authority only and does not create a generic Media ownership model or social-feed lifecycle;
-- `AthletesCalendarEntry` is private Athletes-owned schedule data and does not reuse Event, Play, Watch, Pitch, or Gamers lifecycle state;
+- `AthletesCalendarEntry` and `AthletesCalendarRsvp` are private Athletes-owned schedule/attendance data and do not reuse Event, Play, Watch, Pitch, or Gamers lifecycle state;
 - active same-community FOUNDER, MODERATOR, and MEMBER memberships may list Calendar entries; only the active same-community FOUNDER may create, edit, or cancel them;
 - Calendar reads use ordinary active-member authorization and bounded interval-overlap queries without acquiring the Athletes lifecycle row lock;
-- Calendar mutations reuse the existing Athletes community `FOR UPDATE` lifecycle lock and recheck active Founder authority inside the same transaction;
+- Founder Calendar create/edit/cancel mutations reuse the existing Athletes community exclusive `FOR UPDATE` lifecycle lock and recheck active Founder authority inside the same transaction;
+- only an active same-community Athletes member may create or change an RSVP; RSVP writes take a shared `FOR SHARE` lifecycle guard, recheck active membership and same-community/non-cancelled Calendar scope in that transaction, then upsert the one canonical row;
+- independent RSVP shared guards may coexist, while archive, member removal, Calendar cancellation, and other exclusive lifecycle writers conflict with them;
+- RSVP rows are retained when membership ends, but current `GOING | MAYBE | NOT_GOING` aggregate counts include only Users with an active same-community AthletesMembership (`leftAt == null`);
+- cancelled entries reject new RSVP changes and use the same current-active-member count semantics; retained rows are not a cancellation-time snapshot;
+- Calendar RSVP never reads from, writes to, or reuses generic `EventRsvp`/waitlist state;
 - Calendar query windows are positive and capped at 45 days; `endsAt` must be later than `startsAt`;
 - cancellation is one-way and idempotent: cancelled entries remain visible and cannot be edited back to active state;
 - `createdByUserId` remains internal persistence provenance and is not exposed by the Calendar API projection;
