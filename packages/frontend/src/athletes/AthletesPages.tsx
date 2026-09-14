@@ -425,7 +425,8 @@ function AthletesDetailContent({
             <h2>Active Athletes</h2>
             {membersError ? (
               <div role="alert" className="error-box">
-                {membersError} <button onClick={() => void refreshMembers()}>Retry members</button>
+                {membersError}{" "}
+                <button onClick={() => void refreshMembers()}>Retry members</button>
               </div>
             ) : (
               <>
