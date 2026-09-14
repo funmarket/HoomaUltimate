@@ -301,7 +301,10 @@ test("AthletesService requests last-seen only for the current member page", asyn
   };
   const service = new AthletesService(repo, reader);
 
-  const page = await service.members("viewer", "ath-1", { cursor: "membership-0", limit: 2 });
+  const page = await service.members("viewer", "ath-1", {
+    cursor: "membership-0",
+    limit: 2,
+  });
 
   assert.deepEqual(receivedInput, { cursor: "membership-0", limit: 2 });
   assert.deepEqual(requestedUserIds, ["member-1", "member-2"]);
@@ -327,7 +330,10 @@ test("AthletesService preserves authoritative join-request cursors", async () =>
   };
   const service = serviceFor(repo);
 
-  const page = await service.joinRequests("founder", "ath-1", { cursor: "before", limit: 1 });
+  const page = await service.joinRequests("founder", "ath-1", {
+    cursor: "before",
+    limit: 1,
+  });
 
   assert.deepEqual(receivedInput, { cursor: "before", limit: 1 });
   assert.equal(page.nextCursor, "request-cursor");
