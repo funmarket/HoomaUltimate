@@ -94,10 +94,13 @@ test("Athletes member and join-request cursors traverse tied rows without gaps",
       nextCursor: string | null;
     };
     assert.equal(firstRequests.items.length, 2);
-    assert.ok(firstRequests.nextCursor);
+    const requestCursor = firstRequests.nextCursor;
+    assert.ok(requestCursor);
 
     const secondRequestsResponse = await fetch(
-      `${base}/api/v1/athletes/${created.id}/join-requests?limit=2&cursor=${encodeURIComponent(firstRequests.nextCursor)}`,
+      `${base}/api/v1/athletes/${created.id}/join-requests?limit=2&cursor=${encodeURIComponent(
+        requestCursor,
+      )}`,
       { headers: headers(founder.cookie) },
     );
     assert.equal(secondRequestsResponse.status, 200);
