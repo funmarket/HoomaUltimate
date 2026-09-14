@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { useHoomaFrontend } from "../context";
 import { HoomaApiError, type WhistleList } from "../api";
 import { listEventWhistles, sendEventWhistle } from "./event-api";
@@ -7,7 +7,9 @@ import { WhistleAction } from "./WhistleAction";
 import { WhistleRoom } from "./WhistleRoom";
 
 const MAX_GRAPHEMES = 33;
-const REFRESH_INTERVAL_MS = 10_000;
+const WHISTLE_ACTIVE_REFRESH_INTERVAL_MS = 10_000;
+const WHISTLE_QUIET_REFRESH_INTERVAL_MS = 30_000;
+const WHISTLE_HIDDEN_REFRESH_INTERVAL_MS = 60_000;
 
 type BoardContext = "COMMUNITY" | "EVENT" | "ATHLETES" | "RIDE";
 
@@ -54,6 +56,18 @@ function WhistleBoard({
   const [authorized, setAuthorized] = useState(contextType !== "EVENT");
   const [error, setError] = useState("");
   const count = graphemeCount(body);
+  const feedItemsLengthRef = useRef(0);
+
+  useEffect(() => {
+    feedItemsLengthRef.current = feed.items.length;
+  }, [feed.items.length]);
+
+  function nextRefreshInterval(): number {
+    if (document.visibilityState === "hidden") return WHISTLE_HIDDEN_REFRESH_INTERVAL_MS;
+    return feedItemsLengthRef.current
+      ? WHISTLE_ACTIVE_REFRESH_INTERVAL_MS
+      : WHISTLE_QUIET_REFRESH_INTERVAL_MS;
+  }
 
   const fetchPage = useCallback(
     (cursor?: string) =>
@@ -96,9 +110,26 @@ function WhistleBoard({
   );
 
   useEffect(() => {
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const schedule = () => {
+      if (stopped) return;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        void load(true).finally(schedule);
+      }, nextRefreshInterval());
+    };
+    const onVisibilityChange = () => schedule();
+
     void load();
-    const interval = setInterval(() => void load(true), REFRESH_INTERVAL_MS);
-    return () => clearInterval(interval);
+    schedule();
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      stopped = true;
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      if (timer) clearTimeout(timer);
+    };
   }, [load]);
 
   async function loadOlder() {

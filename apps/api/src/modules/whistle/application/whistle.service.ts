@@ -199,7 +199,6 @@ export class WhistleService {
     const now = new Date();
     const resetsAt = nextUtcMidnight(now);
     const cursor = decodeListCursor(encodedCursor);
-    await this.repository.deleteExpired(now);
     const rows = await this.repository.listActive(
       contextType,
       contextId,
@@ -255,7 +254,6 @@ export class WhistleService {
     const expiresInMilliseconds = expiresAt.getTime() - now.getTime();
     const id = randomUUID();
 
-    await this.repository.deleteExpired(now);
     await this.transientStore.putBody(id, body, expiresInMilliseconds);
     try {
       const metadata = await this.repository.createWithDailyQuota({

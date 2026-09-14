@@ -11,10 +11,12 @@ import {
   createRideVehiclePhotoCleanupHandler,
   RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC,
 } from "./rides/ride-vehicle-photo-cleanup.js";
+import { cleanupExpiredWhistles } from "./whistle/whistle-cleanup.js";
 
 const EVENT_CHAT_CLEANUP_INTERVAL_MS = 60_000;
 const GAMER_MATCH_RECONCILIATION_INTERVAL_MS = 15_000;
 const OUTBOX_POLL_INTERVAL_MS = 5_000;
+const WHISTLE_CLEANUP_INTERVAL_MS = 60_000;
 const objectStorageConfig = loadObjectStorageConfig(process.env);
 const database = getDatabaseClient();
 const outboxHandlers = new Map<string, OutboxHandler>();
@@ -34,10 +36,12 @@ const outbox = new OutboxRunner(new OutboxRepository(database), outboxHandlers);
 let cleanupRunning = false;
 let gamerMatchesRunning = false;
 let outboxRunning = false;
+let whistleCleanupRunning = false;
 let shuttingDown = false;
 let cleanupPromise: Promise<void> | null = null;
 let gamerMatchesPromise: Promise<void> | null = null;
 let outboxPromise: Promise<void> | null = null;
+let whistleCleanupPromise: Promise<void> | null = null;
 
 async function runEventChatCleanup(): Promise<void> {
   if (cleanupRunning || shuttingDown) return;
@@ -92,13 +96,35 @@ async function runOutbox(): Promise<void> {
   await outboxPromise;
 }
 
+async function runWhistleCleanup(): Promise<void> {
+  if (whistleCleanupRunning || shuttingDown) return;
+  whistleCleanupRunning = true;
+  whistleCleanupPromise = (async () => {
+    try {
+      const result = await cleanupExpiredWhistles(database);
+      if (result.deletedMetadata > 0) console.log("Whistle cleanup completed", result);
+    } catch (error) {
+      console.error("Whistle cleanup failed", error);
+    } finally {
+      whistleCleanupRunning = false;
+      whistleCleanupPromise = null;
+    }
+  })();
+  await whistleCleanupPromise;
+}
+
 console.log(
-  `HOOMA worker started with Event chat cleanup, Gamer match reconciliation and Outbox engine (${outboxHandlers.size} handlers registered).`,
+  `HOOMA worker started with Event chat cleanup, Whistle cleanup, Gamer match reconciliation and Outbox engine (${outboxHandlers.size} handlers registered).`,
 );
 void runEventChatCleanup();
+void runWhistleCleanup();
 void runGamerMatchReconciliation();
 void runOutbox();
 const cleanupTimer = setInterval(() => void runEventChatCleanup(), EVENT_CHAT_CLEANUP_INTERVAL_MS);
+const whistleCleanupTimer = setInterval(
+  () => void runWhistleCleanup(),
+  WHISTLE_CLEANUP_INTERVAL_MS,
+);
 const gamerMatchesTimer = setInterval(
   () => void runGamerMatchReconciliation(),
   GAMER_MATCH_RECONCILIATION_INTERVAL_MS,
@@ -110,10 +136,11 @@ async function shutdown(signal: NodeJS.Signals): Promise<void> {
   shuttingDown = true;
   console.log(`Received ${signal}; shutting down worker.`);
   clearInterval(cleanupTimer);
+  clearInterval(whistleCleanupTimer);
   clearInterval(gamerMatchesTimer);
   clearInterval(outboxTimer);
   await Promise.allSettled(
-    [cleanupPromise, gamerMatchesPromise, outboxPromise].filter(
+    [cleanupPromise, whistleCleanupPromise, gamerMatchesPromise, outboxPromise].filter(
       (promise): promise is Promise<void> => promise !== null,
     ),
   );

@@ -286,7 +286,7 @@ no reveal/seen keys
 expired metadata is cleanup data, not permanent Whistle history
 ```
 
-At the UTC reset, prior-day bodies are no longer readable and the new day starts with all 11 sends available. Redis expires bodies at the session boundary. PostgreSQL metadata may be physically removed by the next Whistle cleanup execution, but expired rows cannot remain visible or count against the new day's quota.
+At the UTC reset, prior-day bodies are no longer readable and the new day starts with all 11 sends available. Redis expires bodies at the session boundary. PostgreSQL metadata may be physically removed by the bounded Worker Whistle cleanup execution, but normal API reads/writes do not physically delete expired rows and expired rows cannot remain visible or count against the new day's quota.
 
 Current enabled contexts include private `COMMUNITY`, authorized `EVENT`, authorized `ATHLETES`, authorized `RIDE`, dedicated server-derived `GAMER_DIRECT`, and dedicated server-derived `USER_DIRECT`. `TEAM`, `ULTRAS`, and `GAMER_SQUAD` remain disabled until their owning domains provide explicit authorization.
 

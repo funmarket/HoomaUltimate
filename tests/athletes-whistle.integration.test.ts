@@ -338,12 +338,18 @@ test("Athletes Whistle is a private active-member board on the shared transient 
       INSERT INTO "WhistleMetadata" ("id", "authorUserId", "contextType", "contextId", "createdAt", "expiresAt")
       VALUES (${expiredId}, ${member.userId}, CAST('ATHLETES' AS "WhistleContextType"), ${athletes.id}, ${new Date(Date.now() - 86_400_000)}, ${new Date(Date.now() - 1_000)})
     `);
+    const afterExpiredInsert = await fetch(`${base}${whistlePath(athletes.id)}`, {
+      headers: headers(member.cookie),
+    });
+    assert.equal(afterExpiredInsert.status, 200);
+    const afterExpiredInsertPayload = (await afterExpiredInsert.json()) as {
+      items: Array<{ id: string }>;
+    };
     assert.equal(
-      (await fetch(`${base}${whistlePath(athletes.id)}`, { headers: headers(member.cookie) }))
-        .status,
-      200,
+      afterExpiredInsertPayload.items.some((item) => item.id === expiredId),
+      false,
     );
-    assert.equal(await db.whistleMetadata.count({ where: { id: expiredId } }), 0);
+    assert.equal(await db.whistleMetadata.count({ where: { id: expiredId } }), 1);
   } finally {
     await new Promise<void>((resolve, reject) =>
       server.close((error) => (error ? reject(error) : resolve())),

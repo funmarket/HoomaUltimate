@@ -49,5 +49,4 @@ export interface WhistleRepository {
     limit: number,
     cursor?: WhistleListCursor,
   ): Promise<WhistleMetadataRecord[]>;
-  deleteExpired(now: Date): Promise<number>;
 }

@@ -118,9 +118,4 @@ export class PrismaWhistleRepository implements WhistleRepository {
     `);
     return rows.map(rowToRecord);
   }
-
-  async deleteExpired(now: Date): Promise<number> {
-    const result = await this.db.whistleMetadata.deleteMany({ where: { expiresAt: { lte: now } } });
-    return result.count;
-  }
 }
