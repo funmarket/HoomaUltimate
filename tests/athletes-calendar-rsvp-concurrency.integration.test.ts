@@ -65,7 +65,9 @@ test(
       calendarRepository,
       calendarRepository,
     );
-    const users = await Promise.all(Array.from({ length: 5 }, () => db.user.create({ data: {} })));
+    const users = await Promise.all(
+      Array.from({ length: 5 }, () => db.user.create({ data: {} })),
+    );
     const [founder, memberA, memberB, memberC, memberD] = users;
     const communityIds: string[] = [];
 
