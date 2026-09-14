@@ -301,10 +301,7 @@ export class PrismaAthletesRepository implements AthletesRepository {
     return changed.count > 0;
   }
 
-  async listJoinRequests(
-    id: string,
-    input: Parameters<AthletesRepository["listJoinRequests"]>[1],
-  ) {
+  async listJoinRequests(id: string, input: Parameters<AthletesRepository["listJoinRequests"]>[1]) {
     const rows = await this.db.athletesJoinRequest.findMany({
       where: { athletesCommunityId: id, status: "PENDING" },
       orderBy: [{ requestedAt: "asc" }, { id: "asc" }],
