@@ -1,0 +1,46 @@
+name: tmp-athletes-calendar-prettier
+
+on:
+  push:
+    branches:
+      - tmp/athletes-calendar-prettier
+
+permissions:
+  contents: write
+
+jobs:
+  format-calendar-files:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - name: Format exact RSVP files
+        run: |
+          npx prettier --write \
+            apps/api/src/modules/athletes/infrastructure/prisma-athletes-calendar.repository.ts \
+            tests/athletes-calendar-architecture.test.mjs \
+            tests/athletes-calendar.component.test.ts \
+            tests/athletes-calendar.service.test.ts
+          git diff --check
+      - name: Commit formatted blobs when needed
+        run: |
+          if git diff --quiet; then
+            echo "Already formatted"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            apps/api/src/modules/athletes/infrastructure/prisma-athletes-calendar.repository.ts \
+            tests/athletes-calendar-architecture.test.mjs \
+            tests/athletes-calendar.component.test.ts \
+            tests/athletes-calendar.service.test.ts
+          git commit -m "chore: format athletes calendar RSVP files"
+          git push origin HEAD:tmp/athletes-calendar-prettier
