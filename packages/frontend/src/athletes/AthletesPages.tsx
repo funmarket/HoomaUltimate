@@ -239,7 +239,15 @@ function AthletesDetailContent({
     notice,
     loading,
     busy,
+    membersNextCursor,
+    requestsNextCursor,
+    membersLoadingMore,
+    requestsLoadingMore,
     reload,
+    reloadMembers,
+    reloadRequests,
+    loadMoreMembers,
+    loadMoreRequests,
     act,
   } = state;
   const [username, setUsername] = useState("");
@@ -417,9 +425,11 @@ function AthletesDetailContent({
             <h2>Active Athletes</h2>
             {membersError ? (
               <div role="alert" className="error-box">
-                {membersError} <button onClick={() => void reload()}>Retry members</button>
+                {membersError}{" "}
+                <button onClick={() => void reloadMembers()}>Retry members</button>
               </div>
-            ) : (
+            ) : null}
+            {members.length || !membersError ? (
               <ActiveAthletesList
                 members={members}
                 founder={founder}
@@ -434,13 +444,27 @@ function AthletesDetailContent({
                         member.role === "MODERATOR" ? "MEMBER" : "MODERATOR",
                       ),
                     "Member role updated.",
+                    reloadMembers,
                   )
                 }
                 onRemove={(member) =>
-                  void act(() => api.athletes.removeMember(id, member.userId), "Member removed.")
+                  void act(
+                    () => api.athletes.removeMember(id, member.userId),
+                    "Member removed.",
+                    reloadMembers,
+                  )
                 }
               />
-            )}
+            ) : null}
+            {membersNextCursor ? (
+              <button
+                className="button athletes-action athletes-action--secondary"
+                disabled={membersLoadingMore}
+                onClick={() => void loadMoreMembers()}
+              >
+                {membersLoadingMore ? "Loading…" : "Load more athletes"}
+              </button>
+            ) : null}
           </section>
         </>
       ) : null}
@@ -462,9 +486,11 @@ function AthletesDetailContent({
           </div>
           {requestsError ? (
             <div className="error-box" role="alert">
-              {requestsError} <button onClick={() => void reload()}>Retry requests</button>
+              {requestsError}{" "}
+              <button onClick={() => void reloadRequests()}>Retry requests</button>
             </div>
-          ) : requests.length ? (
+          ) : null}
+          {requests.length ? (
             <div className="athletes-member-list athletes-request-list">
               {requests.map((request) => (
                 <div className="athletes-member-row athletes-request-row" key={request.id}>
@@ -482,6 +508,9 @@ function AthletesDetailContent({
                         void act(
                           () => api.athletes.approveJoinRequest(id, request.userId),
                           "Join request approved.",
+                          async () => {
+                            await Promise.all([reloadMembers(), reloadRequests()]);
+                          },
                         )
                       }
                     >
@@ -494,6 +523,7 @@ function AthletesDetailContent({
                         void act(
                           () => api.athletes.declineJoinRequest(id, request.userId),
                           "Join request declined.",
+                          reloadRequests,
                         )
                       }
                     >
@@ -503,9 +533,18 @@ function AthletesDetailContent({
                 </div>
               ))}
             </div>
-          ) : (
+          ) : !requestsError ? (
             <p className="muted">No pending join requests.</p>
-          )}
+          ) : null}
+          {requestsNextCursor ? (
+            <button
+              className="button athletes-action athletes-action--secondary"
+              disabled={requestsLoadingMore}
+              onClick={() => void loadMoreRequests()}
+            >
+              {requestsLoadingMore ? "Loading…" : "Load more requests"}
+            </button>
+          ) : null}
           <details className="athletes-direct-add">
             <summary>Add member directly</summary>
             <div className="athletes-direct-add__body">
@@ -514,10 +553,16 @@ function AthletesDetailContent({
                 className="athletes-inline-form athletes-direct-add__form"
                 onSubmit={(event) => {
                   event.preventDefault();
-                  void act(async () => {
-                    await api.athletes.addMember(id, username);
-                    setUsername("");
-                  }, "Member added.");
+                  void act(
+                    async () => {
+                      await api.athletes.addMember(id, username);
+                      setUsername("");
+                    },
+                    "Member added.",
+                    async () => {
+                      await Promise.all([reloadMembers(), reloadRequests()]);
+                    },
+                  );
                 }}
               >
                 <label className="athletes-direct-add__field">
