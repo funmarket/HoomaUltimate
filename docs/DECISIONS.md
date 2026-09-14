@@ -422,8 +422,26 @@ The dedicated decision record is `docs/adr/ADR-056-athletes-founder-photo-board.
 
 ## ADR-057 — Athletes private Calendar ownership and lifecycle locking
 
-**Decision:** Athletes owns `AthletesCalendarEntry` as member-private durable schedule data separate from the canonical Event/Play/Watch lifecycle. Active same-community Athletes members may read bounded Calendar ranges. Only the active same-community Founder may create, edit, or cancel entries. Reads use ordinary member authorization and do not acquire the Athletes lifecycle row lock. Mutations reuse the existing Athletes community `FOR UPDATE` lifecycle lock and recheck active Founder authority in the same transaction. New-entry timezone defaults come from the phone/browser-resolved IANA timezone, with UTC fallback only when the runtime cannot provide a valid IANA timezone.
+**Decision:** Athletes owns `AthletesCalendarEntry` as member-private durable schedule data separate from the canonical Event/Play/Watch lifecycle. Active same-community Athletes members may read bounded Calendar ranges. Only the active same-community Founder may create, edit, or cancel entries. Reads use ordinary member authorization and do not acquire the Athletes lifecycle row lock. Founder Calendar mutations reuse the existing Athletes community `FOR UPDATE` lifecycle lock and recheck active Founder authority in the same transaction. New-entry timezone defaults come from the phone/browser-resolved IANA timezone, with UTC fallback only when the runtime cannot provide a valid IANA timezone.
 
 The dedicated decision record is `docs/adr/ADR-057-athletes-calendar.md`.
 
-**Reason:** Keep private Athletes coordination in one owning domain, prevent Event/Play/Watch coupling, align documentation with the actual lock boundary, and make archive-versus-Calendar-write behavior deterministic.
+**Reason:** Keep private Athletes coordination in one owning domain, prevent Event/Play/Watch coupling, align documentation with the actual lock boundary, and make archive-versus-Founder-Calendar-write behavior deterministic.
+
+## ADR-058 — Athletes Calendar RSVP
+
+**Decision:** Athletes Calendar owns `AthletesCalendarRsvp` directly rather than reusing generic Event RSVP. Statuses are `GOING | MAYBE | NOT_GOING`; `(calendarEntryId, userId)` is unique; changing status updates the same response; only an active same-community Athletes member may set/change a response; cancelled entries reject further changes; Calendar reads expose the viewer response plus aggregate counts without attendee identity lists.
+
+ADR-059 supersedes only ADR-058's original exclusive RSVP lifecycle-lock rule and defines how retained RSVP rows behave in current aggregates.
+
+The dedicated decision record is `docs/adr/ADR-058-athletes-calendar-rsvp.md`.
+
+**Reason:** Private Athletes attendance intent has different lifecycle semantics from Play/Event capacity and waitlist RSVP, so it remains Athletes-owned.
+
+## ADR-059 — Athletes Calendar RSVP concurrency and active-member counts
+
+**Decision:** RSVP writes use a shared Athletes community `FOR SHARE` lifecycle guard in the same transaction as active-membership, same-community entry, cancellation, and upsert checks. Independent RSVP writers may therefore proceed concurrently. Existing archive/member-removal/Founder Calendar mutations retain their exclusive `FOR UPDATE` guard and conflict with in-flight shared RSVP guards. RSVP rows remain durable when membership ends, while current aggregate counts include only Users with an active same-community AthletesMembership; cancelled entries use the same current-active-member count semantics and are not treated as cancellation-time snapshots.
+
+The dedicated decision record is `docs/adr/ADR-059-athletes-calendar-rsvp-concurrency-and-counts.md`.
+
+**Reason:** Remove unnecessary community-wide RSVP serialization without weakening lifecycle correctness, and keep historical responses from inflating current participation counts after membership ends.

@@ -41,3 +41,7 @@ Calendar reads remain lock-free as established by ADR-057. Founder Calendar crea
 ## Relationship to ADR-057
 
 ADR-057 remains authoritative for Athletes Calendar ownership, privacy, timezone handling, Founder event management, cancellation, and lifecycle locking. This ADR supersedes only ADR-057's original statement that Calendar has no RSVP state.
+
+## Superseded in part by ADR-059
+
+ADR-059 supersedes only this ADR's RSVP lifecycle-lock concurrency rule and its previously undefined membership-ended aggregate semantics. The Athletes-owned RSVP model, statuses, one-row-per-user constraint, active-member write authority, cancellation rule, privacy boundary, and separation from generic Event RSVP remain authoritative.
