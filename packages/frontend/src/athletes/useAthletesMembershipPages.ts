@@ -5,7 +5,11 @@ import type {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useHoomaFrontend } from "../context";
 
-function appendUnique<T>(previous: T[], incoming: T[], key: (item: T) => string): T[] {
+function appendUnique<T>(
+  previous: T[],
+  incoming: T[],
+  key: (item: T) => string,
+): T[] {
   const known = new Set(previous.map(key));
   return [...previous, ...incoming.filter((item) => !known.has(key(item)))];
 }
@@ -58,7 +62,10 @@ export function useAthletesMembershipPages(
 
   const refreshMembership = useCallback(async () => {
     if (!enabled) return;
-    await Promise.all([refreshMembers(), canManage ? refreshRequests() : Promise.resolve()]);
+    await Promise.all([
+      refreshMembers(),
+      canManage ? refreshRequests() : Promise.resolve(),
+    ]);
   }, [canManage, enabled, refreshMembers, refreshRequests]);
 
   const loadMoreMembers = useCallback(async () => {
