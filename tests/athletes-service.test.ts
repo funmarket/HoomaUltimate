@@ -80,10 +80,10 @@ function repositoryStub(
     joinOpen: async (_id, userId) => membership(userId),
     requestJoin: async (_id, userId) => ({ kind: "REQUEST", request: pending(userId) }),
     getJoinRequest: async () => null,
-    listJoinRequests: async () => [],
+    listJoinRequests: async () => ({ items: [], nextCursor: null }),
     resolveJoinRequest: async () => true,
     cancelJoinRequest: async () => true,
-    listMembers: async () => [],
+    listMembers: async () => ({ items: [], nextCursor: null }),
     addMemberByUsername: async () => ({ userId: "target", username: "target" }),
     removeMember: async () => true,
     setRole: async () => true,
@@ -256,4 +256,44 @@ test("AthletesService denies Founder content when the Athletes community is arch
     (error: unknown) => error instanceof AthletesError && error.code === "ATHLETES_NOT_FOUND",
   );
   assert.equal(roleChecked, false);
+});
+
+test("AthletesService batches last-seen only for the current member page", async () => {
+  const repo = repositoryStub({ viewer: "MEMBER" });
+  let receivedPage: { cursor?: string; limit: number } | undefined;
+  repo.listMembers = async (_id, input) => {
+    receivedPage = input;
+    return {
+      items: [
+        {
+          userId: "member-a",
+          role: "MEMBER",
+          joinedAt: new Date("2026-09-01T10:00:00.000Z"),
+          presentation: null,
+        },
+        {
+          userId: "member-b",
+          role: "MEMBER",
+          joinedAt: new Date("2026-09-01T10:00:00.000Z"),
+          presentation: null,
+        },
+      ],
+      nextCursor: "mem-member-b",
+    };
+  };
+  let lastSeenIds: readonly string[] = [];
+  const service = new AthletesService(repo, {
+    findLastSeenByUserIds: async (userIds) => {
+      lastSeenIds = userIds;
+      return new Map([["member-a", new Date("2026-09-14T08:00:00.000Z")]]);
+    },
+  });
+
+  const page = await service.members("viewer", "ath-1", { cursor: "mem-before", limit: 2 });
+
+  assert.deepEqual(receivedPage, { cursor: "mem-before", limit: 2 });
+  assert.deepEqual(lastSeenIds, ["member-a", "member-b"]);
+  assert.equal(page.nextCursor, "mem-member-b");
+  assert.equal(page.items[0]?.lastSeenAt, "2026-09-14T08:00:00.000Z");
+  assert.equal(page.items[1]?.lastSeenAt, null);
 });
