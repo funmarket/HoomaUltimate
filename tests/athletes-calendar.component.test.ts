@@ -133,17 +133,26 @@ test("Athletes Calendar Add plan submits without unmounting the Calendar", async
   }
 });
 
-test("Athletes Calendar renders the three member RSVP choices with a compact mobile-first control", async () => {
-  const [component, css] = await Promise.all([
-    readFile(new URL("../packages/frontend/src/athletes/AthletesCalendar.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../packages/frontend/src/athletes/athletes-calendar.css", import.meta.url), "utf8"),
-  ]);
+test(
+  "Athletes Calendar renders the three member RSVP choices with a compact mobile-first control",
+  async () => {
+    const [component, css] = await Promise.all([
+      readFile(
+        new URL("../packages/frontend/src/athletes/AthletesCalendar.tsx", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL("../packages/frontend/src/athletes/athletes-calendar.css", import.meta.url),
+        "utf8",
+      ),
+    ]);
 
-  assert.match(component, /status: "GOING", label: "Going"/);
-  assert.match(component, /status: "MAYBE", label: "Maybe"/);
-  assert.match(component, /status: "NOT_GOING", label: "Not going"/);
-  assert.match(component, /aria-pressed=\{entry\.rsvp\.viewerStatus === option\.status\}/);
-  assert.match(component, /setCalendarRsvp/);
-  assert.match(css, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
-  assert.match(css, /min-height: 44px/);
-});
+    assert.match(component, /status: "GOING", label: "Going"/);
+    assert.match(component, /status: "MAYBE", label: "Maybe"/);
+    assert.match(component, /status: "NOT_GOING", label: "Not going"/);
+    assert.match(component, /aria-pressed=\{entry\.rsvp\.viewerStatus === option\.status\}/);
+    assert.match(component, /setCalendarRsvp/);
+    assert.match(css, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
+    assert.match(css, /min-height: 44px/);
+  },
+);

@@ -140,7 +140,9 @@ export class PrismaAthletesCalendarRepository
       if (group.status === "NOT_GOING") counts.notGoing = group._count._all;
     }
 
-    const viewerByEntry = new Map(viewerRows.map((row) => [row.calendarEntryId, row.status]));
+    const viewerByEntry = new Map(
+      viewerRows.map((row) => [row.calendarEntryId, row.status]),
+    );
     return rows.map((row) => ({
       entry: mapRow(row),
       viewerStatus: viewerByEntry.get(row.id) ?? null,
