@@ -1068,7 +1068,7 @@ For `USER_DIRECT`:
 - self-Whistle is forbidden;
 - the durable pair identity is the deterministic unordered pair of the two canonical User IDs;
 - the client never supplies `senderUserId`, `targetUserId`, `contextId`, `pairKey`, or `contextType` for pair construction;
-- `USER_DIRECT` is not accepted by the generic `/api/v1/whistles/contexts/:contextType/:contextId` route;
+- `USER_DIRECT` is not accepted by the generic `/contexts/:contextType/:contextId` route;
 - changing a public username does not change an already-derived canonical User pair identity;
 - no DirectMessage, Conversation, inbox, pair, or parallel Whistle-body table is created for this capability.
 
