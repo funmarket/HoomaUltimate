@@ -386,7 +386,8 @@ test(
           nextCursor: string | null;
         };
         memberIds.push(...page.items.map((member) => member.userId));
-        if (memberIds.length === page.items.length) assert.equal(page.items[0]?.role, "FOUNDER");
+        if (memberIds.length === page.items.length)
+          assert.equal(page.items[0]?.role, "FOUNDER");
         memberCursor = page.nextCursor;
       } while (memberCursor);
 
