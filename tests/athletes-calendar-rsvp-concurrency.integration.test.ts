@@ -65,9 +65,7 @@ test(
       calendarRepository,
       calendarRepository,
     );
-    const users = await Promise.all(
-      Array.from({ length: 5 }, () => db.user.create({ data: {} })),
-    );
+    const users = await Promise.all(Array.from({ length: 5 }, () => db.user.create({ data: {} })));
     const [founder, memberA, memberB, memberC, memberD] = users;
     const communityIds: string[] = [];
 
@@ -120,12 +118,7 @@ test(
           void firstRsvp.catch(() => undefined);
           await firstAcquired.promise;
 
-          const secondRsvp = calendarService.setRsvp(
-            memberB!.id,
-            community.id,
-            entry.id,
-            "MAYBE",
-          );
+          const secondRsvp = calendarService.setRsvp(memberB!.id, community.id, entry.id, "MAYBE");
           try {
             await withTimeout(
               secondRsvp,
@@ -241,10 +234,7 @@ test(
             await cancelPromise;
           }
 
-          await assert.rejects(
-            competingRsvp,
-            expectCode("ATHLETES_CALENDAR_ENTRY_CANCELLED"),
-          );
+          await assert.rejects(competingRsvp, expectCode("ATHLETES_CALENDAR_ENTRY_CANCELLED"));
           assert.equal(
             await db.athletesCalendarRsvp.count({
               where: { calendarEntryId: entry.id, userId: memberC!.id },
