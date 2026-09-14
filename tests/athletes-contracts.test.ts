@@ -3,8 +3,12 @@ import test from "node:test";
 import {
   ATHLETES_PHOTO_MAX_BYTES,
   athletesCommunityCreateSchema,
+  athletesJoinRequestListQuerySchema,
+  athletesJoinRequestPageSchema,
   athletesJoinRequestStatusSchema,
   athletesMemberAddSchema,
+  athletesMemberListQuerySchema,
+  athletesMemberPageSchema,
   athletesMemberSchema,
   athletesPhotoContentTypeSchema,
   athletesPhotoDeliverySchema,
@@ -70,6 +74,44 @@ test("Athletes member projection carries nullable canonical web last-seen", () =
   assert.deepEqual(athletesMemberSchema.parse(member), member);
   assert.equal(athletesMemberSchema.parse({ ...member, lastSeenAt: null }).lastSeenAt, null);
   assert.throws(() => athletesMemberSchema.parse({ ...member, lastSeenAt: "online" }));
+});
+
+test("Athletes private membership page queries are bounded", () => {
+  assert.equal(athletesMemberListQuerySchema.parse({}).limit, 50);
+  assert.equal(athletesJoinRequestListQuerySchema.parse({}).limit, 50);
+  assert.equal(athletesMemberListQuerySchema.parse({ limit: "100" }).limit, 100);
+  assert.equal(athletesJoinRequestListQuerySchema.parse({ limit: "1" }).limit, 1);
+  assert.throws(() => athletesMemberListQuerySchema.parse({ limit: 101 }));
+  assert.throws(() => athletesJoinRequestListQuerySchema.parse({ limit: 0 }));
+});
+
+test("Athletes private membership pages expose items and authoritative cursors", () => {
+  const member = {
+    userId: "runner-1",
+    role: "MEMBER" as const,
+    joinedAt: "2026-09-12T09:00:00.000Z",
+    lastSeenAt: null,
+    presentation: null,
+  };
+  assert.deepEqual(
+    athletesMemberPageSchema.parse({ items: [member], nextCursor: "membership-1" }),
+    { items: [member], nextCursor: "membership-1" },
+  );
+
+  const request = {
+    id: "request-1",
+    athletesCommunityId: "ath-1",
+    userId: "runner-1",
+    status: "PENDING" as const,
+    requestedAt: "2026-09-12T09:00:00.000Z",
+    resolvedAt: null,
+    resolvedByUserId: null,
+    requester: { presentation: null },
+  };
+  assert.deepEqual(
+    athletesJoinRequestPageSchema.parse({ items: [request], nextCursor: "request-1" }),
+    { items: [request], nextCursor: "request-1" },
+  );
 });
 
 test("public Athletes projections do not expose creator user ids", () => {
