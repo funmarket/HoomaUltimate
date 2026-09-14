@@ -3,8 +3,12 @@ import test from "node:test";
 import {
   ATHLETES_PHOTO_MAX_BYTES,
   athletesCommunityCreateSchema,
+  athletesJoinRequestListQuerySchema,
+  athletesJoinRequestPageSchema,
   athletesJoinRequestStatusSchema,
   athletesMemberAddSchema,
+  athletesMemberListQuerySchema,
+  athletesMemberPageSchema,
   athletesMemberSchema,
   athletesPhotoContentTypeSchema,
   athletesPhotoDeliverySchema,
@@ -46,6 +50,25 @@ test("Athletes contracts reject invalid sport, role, status and generic fields",
       communityId: "community-1",
     }),
   );
+});
+
+test("Athletes member and join-request pages are bounded cursor contracts", () => {
+  assert.deepEqual(athletesMemberListQuerySchema.parse({}), { limit: 50 });
+  assert.deepEqual(athletesJoinRequestListQuerySchema.parse({ cursor: "cursor-1" }), {
+    cursor: "cursor-1",
+    limit: 50,
+  });
+  assert.equal(athletesMemberListQuerySchema.parse({ limit: "100" }).limit, 100);
+  assert.throws(() => athletesMemberListQuerySchema.parse({ limit: 101 }));
+  assert.throws(() => athletesJoinRequestListQuerySchema.parse({ limit: 0 }));
+  assert.deepEqual(athletesMemberPageSchema.parse({ items: [], nextCursor: null }), {
+    items: [],
+    nextCursor: null,
+  });
+  assert.deepEqual(athletesJoinRequestPageSchema.parse({ items: [], nextCursor: "req-1" }), {
+    items: [],
+    nextCursor: "req-1",
+  });
 });
 
 test("Athletes direct add uses username input only", () => {
