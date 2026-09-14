@@ -236,7 +236,11 @@ function AthletesDetailContent({
   const [confirmArchive, setConfirmArchive] = useState(false);
   const founder = detail?.viewerRole === "FOUNDER";
   const canManage = founder || detail?.viewerRole === "MODERATOR";
-  const membership = useAthletesMembershipPages(id, Boolean(detail?.viewerRole), canManage);
+  const membership = useAthletesMembershipPages(
+    id,
+    Boolean(detail?.viewerRole),
+    canManage,
+  );
   const {
     members,
     requests,
