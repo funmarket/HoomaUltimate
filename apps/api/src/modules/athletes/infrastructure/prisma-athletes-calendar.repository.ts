@@ -1,8 +1,10 @@
 import { Prisma, type PrismaClient } from "@hooma/database";
 import type {
   AthletesCalendarCreateRecordInput,
+  AthletesCalendarEntryViewRecord,
   AthletesCalendarRecord,
   AthletesCalendarRepository,
+  AthletesCalendarRsvpUpsertInput,
   AthletesCalendarTransactionRepository,
   AthletesCalendarUpdateRecordInput,
 } from "../application/athletes-calendar.repository.js";
@@ -77,6 +79,20 @@ class PrismaAthletesCalendarTransactionRepository implements AthletesCalendarTra
     });
     return this.getForCommunity(athletesCommunityId, entryId);
   }
+
+  async upsertRsvp(input: AthletesCalendarRsvpUpsertInput): Promise<void> {
+    await this.tx.athletesCalendarRsvp.upsert({
+      where: {
+        calendarEntryId_userId: {
+          calendarEntryId: input.calendarEntryId,
+          userId: input.userId,
+        },
+      },
+      update: { status: input.status },
+      create: input,
+      select: { id: true },
+    });
+  }
 }
 
 export class PrismaAthletesCalendarRepository
@@ -87,7 +103,8 @@ export class PrismaAthletesCalendarRepository
   async listForCommunity(
     athletesCommunityId: string,
     range: { readonly from: Date; readonly to: Date },
-  ): Promise<AthletesCalendarRecord[]> {
+    viewerUserId: string,
+  ): Promise<AthletesCalendarEntryViewRecord[]> {
     const rows = await this.db.athletesCalendarEntry.findMany({
       where: {
         athletesCommunityId,
@@ -97,7 +114,38 @@ export class PrismaAthletesCalendarRepository
       orderBy: [{ startsAt: "asc" }, { id: "asc" }],
       select: calendarSelect,
     });
-    return rows.map(mapRow);
+    if (rows.length === 0) return [];
+
+    const entryIds = rows.map((row) => row.id);
+    const [grouped, viewerRows] = await Promise.all([
+      this.db.athletesCalendarRsvp.groupBy({
+        by: ["calendarEntryId", "status"],
+        where: { calendarEntryId: { in: entryIds } },
+        _count: { _all: true },
+      }),
+      this.db.athletesCalendarRsvp.findMany({
+        where: { calendarEntryId: { in: entryIds }, userId: viewerUserId },
+        select: { calendarEntryId: true, status: true },
+      }),
+    ]);
+
+    const countsByEntry = new Map(
+      entryIds.map((id) => [id, { going: 0, maybe: 0, notGoing: 0 }]),
+    );
+    for (const group of grouped) {
+      const counts = countsByEntry.get(group.calendarEntryId);
+      if (!counts) continue;
+      if (group.status === "GOING") counts.going = group._count._all;
+      if (group.status === "MAYBE") counts.maybe = group._count._all;
+      if (group.status === "NOT_GOING") counts.notGoing = group._count._all;
+    }
+
+    const viewerByEntry = new Map(viewerRows.map((row) => [row.calendarEntryId, row.status]));
+    return rows.map((row) => ({
+      entry: mapRow(row),
+      viewerStatus: viewerByEntry.get(row.id) ?? null,
+      counts: countsByEntry.get(row.id) ?? { going: 0, maybe: 0, notGoing: 0 },
+    }));
   }
 
   withCommunityLock<T>(

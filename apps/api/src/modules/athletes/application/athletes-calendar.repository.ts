@@ -1,3 +1,5 @@
+import type { AthletesCalendarRsvpStatus } from "@hooma/contracts/athletes";
+
 export interface AthletesCalendarRecord {
   readonly id: string;
   readonly athletesCommunityId: string;
@@ -11,6 +13,18 @@ export interface AthletesCalendarRecord {
   readonly createdByUserId: string;
   readonly createdAt: Date;
   readonly updatedAt: Date;
+}
+
+export interface AthletesCalendarRsvpCountsRecord {
+  readonly going: number;
+  readonly maybe: number;
+  readonly notGoing: number;
+}
+
+export interface AthletesCalendarEntryViewRecord {
+  readonly entry: AthletesCalendarRecord;
+  readonly viewerStatus: AthletesCalendarRsvpStatus | null;
+  readonly counts: AthletesCalendarRsvpCountsRecord;
 }
 
 export interface AthletesCalendarCreateRecordInput {
@@ -34,11 +48,19 @@ export interface AthletesCalendarUpdateRecordInput {
   readonly timezone: string;
 }
 
+export interface AthletesCalendarRsvpUpsertInput {
+  readonly id: string;
+  readonly calendarEntryId: string;
+  readonly userId: string;
+  readonly status: AthletesCalendarRsvpStatus;
+}
+
 export interface AthletesCalendarRepository {
   listForCommunity(
     athletesCommunityId: string,
     range: { readonly from: Date; readonly to: Date },
-  ): Promise<AthletesCalendarRecord[]>;
+    viewerUserId: string,
+  ): Promise<AthletesCalendarEntryViewRecord[]>;
 }
 
 export interface AthletesCalendarTransactionRepository {
@@ -57,4 +79,5 @@ export interface AthletesCalendarTransactionRepository {
     athletesCommunityId: string,
     entryId: string,
   ): Promise<AthletesCalendarRecord | null>;
+  upsertRsvp(input: AthletesCalendarRsvpUpsertInput): Promise<void>;
 }

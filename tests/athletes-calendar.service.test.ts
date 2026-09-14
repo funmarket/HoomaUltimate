@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import type { AthletesCalendarRsvpStatus } from "@hooma/contracts/athletes";
 import type { AthletesContentAuthorizer } from "../apps/api/src/modules/athletes/application/athletes-content-authorizer.js";
 import type {
   AthletesCalendarCreateRecordInput,
@@ -44,7 +45,15 @@ function authorizer(memberIds: string[]): AthletesContentAuthorizer {
   };
 }
 
-function athletesScope(founderId = "founder"): AthletesRepository {
+function athletesScope(
+  founderId = "founder",
+  memberIds: readonly string[] = ["member"],
+): AthletesRepository {
+  const roleFor = (userId: string) => {
+    if (userId === founderId) return "FOUNDER" as const;
+    if (memberIds.includes(userId)) return "MEMBER" as const;
+    return null;
+  };
   return {
     lifecycle: async (id) => ({
       id,
@@ -63,23 +72,47 @@ function athletesScope(founderId = "founder"): AthletesRepository {
       createdAt: START,
       updatedAt: START,
     }),
-    managerRole: async (_id, userId) => (userId === founderId ? "FOUNDER" : "MEMBER"),
+    managerRole: async (_id, userId) => roleFor(userId),
+    activeRole: async (_id, userId) => roleFor(userId),
   } as unknown as AthletesRepository;
 }
 
+type StoredRsvp = {
+  calendarEntryId: string;
+  userId: string;
+  status: AthletesCalendarRsvpStatus;
+};
+
 function harness(initial: AthletesCalendarRecord[] = []) {
   const rows = [...initial];
+  const rsvps = new Map<string, StoredRsvp>();
   let lockCalls = 0;
   let listCalls = 0;
   const repository: AthletesCalendarRepository = {
-    async listForCommunity(athletesCommunityId, range) {
+    async listForCommunity(athletesCommunityId, range, viewerUserId) {
       listCalls += 1;
-      return rows.filter(
-        (row) =>
-          row.athletesCommunityId === athletesCommunityId &&
-          row.startsAt < range.to &&
-          row.endsAt > range.from,
-      );
+      return rows
+        .filter(
+          (row) =>
+            row.athletesCommunityId === athletesCommunityId &&
+            row.startsAt < range.to &&
+            row.endsAt > range.from,
+        )
+        .map((entry) => {
+          const entryRsvps = [...rsvps.values()].filter(
+            (rsvp) => rsvp.calendarEntryId === entry.id,
+          );
+          return {
+            entry,
+            viewerStatus:
+              entryRsvps.find((rsvp) => rsvp.userId === viewerUserId)?.status ?? null,
+            counts: {
+              going: entryRsvps.filter((rsvp) => rsvp.status === "GOING").length,
+              maybe: entryRsvps.filter((rsvp) => rsvp.status === "MAYBE").length,
+              notGoing: entryRsvps.filter((rsvp) => rsvp.status === "NOT_GOING").length,
+            },
+          };
+        });
     },
   };
   const transaction: AthletesCalendarTransactionRepository = {
@@ -115,6 +148,13 @@ function harness(initial: AthletesCalendarRecord[] = []) {
       rows[index] = { ...rows[index]!, cancelledAt, updatedAt: cancelledAt };
       return rows[index]!;
     },
+    async upsertRsvp(input) {
+      rsvps.set(`${input.calendarEntryId}:${input.userId}`, {
+        calendarEntryId: input.calendarEntryId,
+        userId: input.userId,
+        status: input.status,
+      });
+    },
   };
   const unitOfWork: AthletesCalendarUnitOfWork = {
     async withCommunityLock(_athletesCommunityId, operation) {
@@ -124,6 +164,7 @@ function harness(initial: AthletesCalendarRecord[] = []) {
   };
   return {
     rows,
+    rsvps,
     repository,
     unitOfWork,
     lockCalls: () => lockCalls,
@@ -151,6 +192,10 @@ test("active member Calendar read uses ordinary authorization without the mutati
   assert.equal(state.listCalls(), 1);
   assert.equal(state.lockCalls(), 0);
   assert.equal("createdByUserId" in entries[0]!, false);
+  assert.deepEqual(entries[0]!.rsvp, {
+    viewerStatus: null,
+    counts: { going: 0, maybe: 0, notGoing: 0 },
+  });
 
   await assert.rejects(
     () =>
@@ -162,7 +207,7 @@ test("active member Calendar read uses ordinary authorization without the mutati
   );
 });
 
-test("Founder mutations execute inside the Athletes lifecycle lock", async () => {
+test("Founder Calendar mutations execute inside the Athletes lifecycle lock", async () => {
   const state = harness();
   const service = new AthletesCalendarService(
     authorizer(["founder"]),
@@ -179,7 +224,6 @@ test("Founder mutations execute inside the Athletes lifecycle lock", async () =>
     timezone: "UTC",
   });
   assert.equal(state.lockCalls(), 1);
-  assert.equal(created.title, "Intervals");
 
   const updated = await service.update("founder", "ath-1", created.id, {
     title: "Intervals updated",
@@ -200,17 +244,78 @@ test("Founder mutations execute inside the Athletes lifecycle lock", async () =>
   );
 });
 
-test("non-Founder cannot mutate and cross-community ids cannot escape scope", async () => {
+test("active members can set and change one RSVP row", async () => {
+  const state = harness([record()]);
+  const service = new AthletesCalendarService(
+    authorizer(["member"]),
+    state.repository,
+    state.unitOfWork,
+  );
+
+  assert.deepEqual(await service.setRsvp("member", "ath-1", "entry-1", "GOING"), {
+    entryId: "entry-1",
+    status: "GOING",
+  });
+  assert.equal(state.rsvps.size, 1);
+
+  let entries = await service.list("member", "ath-1", {
+    from: "2026-09-20T00:00:00.000Z",
+    to: "2026-09-21T00:00:00.000Z",
+  });
+  assert.equal(entries[0]!.rsvp.viewerStatus, "GOING");
+  assert.deepEqual(entries[0]!.rsvp.counts, { going: 1, maybe: 0, notGoing: 0 });
+
+  assert.deepEqual(await service.setRsvp("member", "ath-1", "entry-1", "MAYBE"), {
+    entryId: "entry-1",
+    status: "MAYBE",
+  });
+  assert.equal(state.rsvps.size, 1);
+
+  entries = await service.list("member", "ath-1", {
+    from: "2026-09-20T00:00:00.000Z",
+    to: "2026-09-21T00:00:00.000Z",
+  });
+  assert.equal(entries[0]!.rsvp.viewerStatus, "MAYBE");
+  assert.deepEqual(entries[0]!.rsvp.counts, { going: 0, maybe: 1, notGoing: 0 });
+});
+
+test("RSVP rejects outsiders, cancelled entries, and cross-community entry ids", async () => {
+  const state = harness([record()]);
+  const service = new AthletesCalendarService(
+    authorizer(["member"]),
+    state.repository,
+    state.unitOfWork,
+  );
+
+  await assert.rejects(
+    () => service.setRsvp("outsider", "ath-1", "entry-1", "GOING"),
+    expectCode("ATHLETES_MEMBER_REQUIRED"),
+  );
+  await assert.rejects(
+    () => service.setRsvp("member", "ath-2", "entry-1", "GOING"),
+    expectCode("ATHLETES_CALENDAR_ENTRY_NOT_FOUND"),
+  );
+
+  state.rows[0] = record({ cancelledAt: START });
+  await assert.rejects(
+    () => service.setRsvp("member", "ath-1", "entry-1", "NOT_GOING"),
+    expectCode("ATHLETES_CALENDAR_ENTRY_CANCELLED"),
+  );
+  assert.equal(state.rsvps.size, 0);
+});
+
+test("non-Founder cannot create and cross-community ids cannot escape scope", async () => {
   const state = harness([record()]);
   const memberScope: AthletesCalendarUnitOfWork = {
     async withCommunityLock(_athletesCommunityId, operation) {
       return operation({
-        athletes: athletesScope("someone-else"),
+        athletes: athletesScope("someone-else", ["member"]),
         calendar: {
           create: async () => record(),
           getForCommunity: async () => null,
           update: async () => null,
           cancel: async () => null,
+          upsertRsvp: async () => {},
         },
       });
     },

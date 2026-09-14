@@ -241,7 +241,35 @@ export const athletesCalendarEntrySchema = z
   })
   .strict();
 
+export const athletesCalendarRsvpStatusSchema = z.enum(["GOING", "MAYBE", "NOT_GOING"]);
+export const athletesCalendarRsvpCountsSchema = z
+  .object({
+    going: z.number().int().nonnegative(),
+    maybe: z.number().int().nonnegative(),
+    notGoing: z.number().int().nonnegative(),
+  })
+  .strict();
+export const athletesCalendarRsvpSummarySchema = z
+  .object({
+    viewerStatus: athletesCalendarRsvpStatusSchema.nullable(),
+    counts: athletesCalendarRsvpCountsSchema,
+  })
+  .strict();
+export const athletesCalendarEntryViewSchema = athletesCalendarEntrySchema.extend({
+  rsvp: athletesCalendarRsvpSummarySchema,
+});
+export const athletesCalendarRsvpInputSchema = z
+  .object({ status: athletesCalendarRsvpStatusSchema })
+  .strict();
+export const athletesCalendarRsvpResultSchema = z
+  .object({
+    entryId: z.string().min(1),
+    status: athletesCalendarRsvpStatusSchema,
+  })
+  .strict();
+
 export const athletesCalendarListSchema = z.array(athletesCalendarEntrySchema);
+export const athletesCalendarListViewSchema = z.array(athletesCalendarEntryViewSchema);
 export const athletesCalendarListQuerySchema = z
   .object({
     from: z.string().datetime(),
@@ -297,7 +325,14 @@ export type AthletesPhotoUploadResponse = z.infer<typeof athletesPhotoUploadResp
 export type AthletesCalendarCreateInput = z.infer<typeof athletesCalendarCreateSchema>;
 export type AthletesCalendarUpdateInput = z.infer<typeof athletesCalendarUpdateSchema>;
 export type AthletesCalendarEntry = z.infer<typeof athletesCalendarEntrySchema>;
+export type AthletesCalendarRsvpStatus = z.infer<typeof athletesCalendarRsvpStatusSchema>;
+export type AthletesCalendarRsvpCounts = z.infer<typeof athletesCalendarRsvpCountsSchema>;
+export type AthletesCalendarRsvpSummary = z.infer<typeof athletesCalendarRsvpSummarySchema>;
+export type AthletesCalendarEntryView = z.infer<typeof athletesCalendarEntryViewSchema>;
+export type AthletesCalendarRsvpInput = z.infer<typeof athletesCalendarRsvpInputSchema>;
+export type AthletesCalendarRsvpResult = z.infer<typeof athletesCalendarRsvpResultSchema>;
 export type AthletesCalendarList = z.infer<typeof athletesCalendarListSchema>;
+export type AthletesCalendarListView = z.infer<typeof athletesCalendarListViewSchema>;
 export type AthletesCalendarListQuery = z.infer<typeof athletesCalendarListQuerySchema>;
 export type AthletesMemberAdd = z.infer<typeof athletesMemberAddSchema>;
 

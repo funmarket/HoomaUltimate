@@ -1,11 +1,11 @@
-import type { AthletesCalendarEntry } from "@hooma/contracts/athletes";
+import type { AthletesCalendarEntryView } from "@hooma/contracts/athletes";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useHoomaFrontend } from "../context";
 import { monthFetchRange } from "./athletes-calendar-time";
 
 export function useAthletesCalendar(athletesCommunityId: string, monthKey: string) {
   const { api, protectedError } = useHoomaFrontend();
-  const [entries, setEntries] = useState<AthletesCalendarEntry[]>([]);
+  const [entries, setEntries] = useState<AthletesCalendarEntryView[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const generation = useRef(0);

@@ -1,3 +1,9 @@
+enum AthletesCalendarRsvpStatus {
+  GOING
+  MAYBE
+  NOT_GOING
+}
+
 model AthletesCalendarEntry {
   id                   String   @id
   /// Canonical AthletesCommunity id. The governed migration enforces the foreign key.
@@ -16,4 +22,19 @@ model AthletesCalendarEntry {
 
   @@index([athletesCommunityId, startsAt, id])
   @@index([athletesCommunityId, cancelledAt, startsAt])
+}
+
+model AthletesCalendarRsvp {
+  id              String                     @id
+  /// Canonical AthletesCalendarEntry id. The governed migration enforces the foreign key.
+  calendarEntryId String
+  /// Canonical User id of the responding member. The governed migration enforces the foreign key.
+  userId          String
+  status          AthletesCalendarRsvpStatus
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+
+  @@unique([calendarEntryId, userId])
+  @@index([calendarEntryId, status])
+  @@index([userId])
 }

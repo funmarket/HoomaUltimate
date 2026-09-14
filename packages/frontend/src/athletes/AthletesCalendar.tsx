@@ -1,6 +1,8 @@
 import type {
   AthletesCalendarCreateInput,
   AthletesCalendarEntry,
+  AthletesCalendarEntryView,
+  AthletesCalendarRsvpStatus,
   AthletesCalendarUpdateInput,
 } from "@hooma/contracts/athletes";
 import { useMemo, useState, type FormEvent } from "react";
@@ -32,6 +34,15 @@ type EntryForm = {
   endsAt: string;
 };
 
+const RSVP_OPTIONS: ReadonlyArray<{
+  readonly status: AthletesCalendarRsvpStatus;
+  readonly label: string;
+}> = [
+  { status: "GOING", label: "Going" },
+  { status: "MAYBE", label: "Maybe" },
+  { status: "NOT_GOING", label: "Not going" },
+];
+
 function defaultForm(selectedKey: string): EntryForm {
   return {
     title: "",
@@ -52,6 +63,12 @@ function formForEntry(entry: AthletesCalendarEntry): EntryForm {
   };
 }
 
+function rsvpCount(entry: AthletesCalendarEntryView, status: AthletesCalendarRsvpStatus): number {
+  if (status === "GOING") return entry.rsvp.counts.going;
+  if (status === "MAYBE") return entry.rsvp.counts.maybe;
+  return entry.rsvp.counts.notGoing;
+}
+
 export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
   const { api, protectedError } = useHoomaFrontend();
   const timezone = useMemo(deviceTimezone, []);
@@ -63,6 +80,8 @@ export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
   const [draft, setDraft] = useState<EntryForm>(() => defaultForm(today));
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState("");
+  const [rsvpBusyId, setRsvpBusyId] = useState<string | null>(null);
+  const [rsvpError, setRsvpError] = useState("");
   const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
   const { entries, loading, error, reload } = useAthletesCalendar(athletesCommunityId, monthKey);
 
@@ -86,6 +105,7 @@ export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
     setEditingId(null);
     setConfirmCancelId(null);
     setActionError("");
+    setRsvpError("");
   }
 
   function showToday() {
@@ -157,6 +177,20 @@ export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
     }
   }
 
+  async function setRsvp(entryId: string, status: AthletesCalendarRsvpStatus) {
+    if (rsvpBusyId) return;
+    setRsvpBusyId(entryId);
+    setRsvpError("");
+    try {
+      await api.athletes.setCalendarRsvp(athletesCommunityId, entryId, { status });
+      await reload();
+    } catch (reason) {
+      setRsvpError(protectedError(reason, "Unable to update your RSVP"));
+    } finally {
+      setRsvpBusyId(null);
+    }
+  }
+
   return (
     <section
       className="athletes-surface athletes-section athletes-calendar"
@@ -174,19 +208,11 @@ export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
       </div>
 
       <div className="athletes-calendar__month-nav">
-        <button
-          type="button"
-          aria-label="Previous month"
-          onClick={() => setMonthKey(shiftMonth(monthKey, -1))}
-        >
+        <button type="button" aria-label="Previous month" onClick={() => setMonthKey(shiftMonth(monthKey, -1))}>
           ←
         </button>
         <strong>{monthLabel(monthKey)}</strong>
-        <button
-          type="button"
-          aria-label="Next month"
-          onClick={() => setMonthKey(shiftMonth(monthKey, 1))}
-        >
+        <button type="button" aria-label="Next month" onClick={() => setMonthKey(shiftMonth(monthKey, 1))}>
           →
         </button>
       </div>
@@ -222,21 +248,13 @@ export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
             <strong>{selectedKey}</strong>
           </div>
           {founder ? (
-            <button
-              type="button"
-              className="button athletes-action athletes-action--secondary athletes-action--compact"
-              onClick={startCreate}
-            >
+            <button type="button" className="button athletes-action athletes-action--secondary athletes-action--compact" onClick={startCreate}>
               + Add plan
             </button>
           ) : null}
         </div>
 
-        {loading ? (
-          <div role="status" className="athletes-calendar__state">
-            Loading Calendar…
-          </div>
-        ) : null}
+        {loading ? <div role="status" className="athletes-calendar__state">Loading Calendar…</div> : null}
         {error ? (
           <div className="error-box" role="alert">
             {error} <button onClick={() => void reload()}>Retry Calendar</button>
@@ -247,60 +265,63 @@ export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
         ) : null}
 
         {selectedEntries.map((entry) => (
-          <article
-            key={entry.id}
-            className={`athletes-calendar__entry ${entry.cancelledAt ? "is-cancelled" : ""}`}
-          >
+          <article key={entry.id} className={`athletes-calendar__entry ${entry.cancelledAt ? "is-cancelled" : ""}`}>
             <div>
               <strong>{entry.title}</strong>
               <span>
-                {formatCalendarTime(entry.startsAt, timezone)} –{" "}
-                {formatCalendarTime(entry.endsAt, timezone)}
+                {formatCalendarTime(entry.startsAt, timezone)} – {formatCalendarTime(entry.endsAt, timezone)}
               </span>
               {entry.location ? <span>{entry.location}</span> : null}
               {entry.description ? <p>{entry.description}</p> : null}
-              {entry.cancelledAt ? (
-                <span className="athletes-calendar__cancelled">Cancelled</span>
-              ) : null}
+              {entry.cancelledAt ? <span className="athletes-calendar__cancelled">Cancelled</span> : null}
             </div>
+
+            {entry.cancelledAt ? (
+              <div className="athletes-calendar__rsvp-summary">
+                Going {entry.rsvp.counts.going} · Maybe {entry.rsvp.counts.maybe} · Not going {entry.rsvp.counts.notGoing}
+              </div>
+            ) : (
+              <div className="athletes-calendar__rsvp">
+                <span className="eyebrow">YOUR RSVP</span>
+                <div className="athletes-calendar__rsvp-options" role="group" aria-label={`RSVP for ${entry.title}`}>
+                  {RSVP_OPTIONS.map((option) => (
+                    <button
+                      key={option.status}
+                      type="button"
+                      className={`athletes-calendar__rsvp-button ${entry.rsvp.viewerStatus === option.status ? "is-selected" : ""}`.trim()}
+                      aria-pressed={entry.rsvp.viewerStatus === option.status}
+                      disabled={rsvpBusyId !== null}
+                      onClick={() => void setRsvp(entry.id, option.status)}
+                    >
+                      <span>{option.label}</span>
+                      <small>{rsvpCount(entry, option.status)}</small>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {founder && !entry.cancelledAt ? (
               <div className="athletes-calendar__entry-actions">
-                <button
-                  type="button"
-                  className="athletes-mini-action"
-                  onClick={() => startEdit(entry)}
-                >
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  className="athletes-mini-action athletes-mini-action--decline"
-                  onClick={() => setConfirmCancelId(entry.id)}
-                >
+                <button type="button" className="athletes-mini-action" onClick={() => startEdit(entry)}>Edit</button>
+                <button type="button" className="athletes-mini-action athletes-mini-action--decline" onClick={() => setConfirmCancelId(entry.id)}>
                   Cancel plan
                 </button>
               </div>
             ) : null}
             {confirmCancelId === entry.id ? (
-              <div
-                className="athletes-calendar__confirm"
-                role="group"
-                aria-label="Confirm Calendar cancellation"
-              >
+              <div className="athletes-calendar__confirm" role="group" aria-label="Confirm Calendar cancellation">
                 <strong>Cancel this plan?</strong>
                 <span>Cancellation is permanent; the entry stays visible as cancelled.</span>
                 <div>
-                  <button type="button" disabled={busy} onClick={() => void cancelEntry(entry.id)}>
-                    Confirm cancellation
-                  </button>
-                  <button type="button" disabled={busy} onClick={() => setConfirmCancelId(null)}>
-                    Keep plan
-                  </button>
+                  <button type="button" disabled={busy} onClick={() => void cancelEntry(entry.id)}>Confirm cancellation</button>
+                  <button type="button" disabled={busy} onClick={() => setConfirmCancelId(null)}>Keep plan</button>
                 </div>
               </div>
             ) : null}
           </article>
         ))}
+        {rsvpError ? <div className="error-box" role="alert">{rsvpError}</div> : null}
       </div>
 
       {mode !== "idle" && founder ? (
@@ -310,38 +331,15 @@ export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
           onSubmit={(event) => void submit(event)}
         >
           <h3>{mode === "edit" ? "Edit plan" : "Add plan"}</h3>
-          <label>
-            Title
-            <input name="title" required maxLength={100} defaultValue={draft.title} />
-          </label>
-          <label>
-            Starts
-            <input name="startsAt" required type="datetime-local" defaultValue={draft.startsAt} />
-          </label>
-          <label>
-            Ends
-            <input name="endsAt" required type="datetime-local" defaultValue={draft.endsAt} />
-          </label>
-          <label>
-            Location
-            <input name="location" maxLength={200} defaultValue={draft.location} />
-          </label>
-          <label>
-            Notes
-            <textarea name="description" maxLength={600} defaultValue={draft.description} />
-          </label>
+          <label>Title<input name="title" required maxLength={100} defaultValue={draft.title} /></label>
+          <label>Starts<input name="startsAt" required type="datetime-local" defaultValue={draft.startsAt} /></label>
+          <label>Ends<input name="endsAt" required type="datetime-local" defaultValue={draft.endsAt} /></label>
+          <label>Location<input name="location" maxLength={200} defaultValue={draft.location} /></label>
+          <label>Notes<textarea name="description" maxLength={600} defaultValue={draft.description} /></label>
           <small>Timezone: {timezone} (from this phone/device)</small>
-          {actionError ? (
-            <div className="error-box" role="alert">
-              {actionError}
-            </div>
-          ) : null}
+          {actionError ? <div className="error-box" role="alert">{actionError}</div> : null}
           <div className="athletes-calendar__form-actions">
-            <button
-              type="submit"
-              className="button athletes-action athletes-action--primary"
-              disabled={busy}
-            >
+            <button type="submit" className="button athletes-action athletes-action--primary" disabled={busy}>
               {busy ? "Saving…" : "Save plan"}
             </button>
             <button
@@ -359,9 +357,7 @@ export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
           </div>
         </form>
       ) : actionError ? (
-        <div className="error-box" role="alert">
-          {actionError}
-        </div>
+        <div className="error-box" role="alert">{actionError}</div>
       ) : null}
     </section>
   );
