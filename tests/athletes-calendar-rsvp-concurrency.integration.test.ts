@@ -1,19 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { getDatabaseClient } from "@hooma/database";
-import type {
-  AthletesCalendarUnitOfWork,
-} from "../apps/api/src/modules/athletes/application/athletes-calendar.unit-of-work.js";
-import {
-  AthletesCalendarService,
-} from "../apps/api/src/modules/athletes/application/athletes-calendar.service.js";
+import type { AthletesCalendarUnitOfWork } from "../apps/api/src/modules/athletes/application/athletes-calendar.unit-of-work.js";
+import { AthletesCalendarService } from "../apps/api/src/modules/athletes/application/athletes-calendar.service.js";
 import { AthletesService } from "../apps/api/src/modules/athletes/application/athletes.service.js";
-import {
-  PrismaAthletesCalendarRepository,
-} from "../apps/api/src/modules/athletes/infrastructure/prisma-athletes-calendar.repository.js";
-import {
-  PrismaAthletesRepository,
-} from "../apps/api/src/modules/athletes/infrastructure/prisma-athletes.repository.js";
+import { PrismaAthletesCalendarRepository } from "../apps/api/src/modules/athletes/infrastructure/prisma-athletes-calendar.repository.js";
+import { PrismaAthletesRepository } from "../apps/api/src/modules/athletes/infrastructure/prisma-athletes.repository.js";
 import { AthletesError } from "../apps/api/src/modules/athletes/domain/athletes-error.js";
 
 const db = getDatabaseClient();
