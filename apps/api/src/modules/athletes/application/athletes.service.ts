@@ -38,6 +38,13 @@ function normalizedCreate(input: AthletesCommunityCreateInput) {
   };
 }
 
+function boundedPageInput(input: { readonly cursor?: string; readonly limit: number }) {
+  return {
+    ...(input.cursor !== undefined ? { cursor: input.cursor } : {}),
+    limit: Math.min(Math.max(input.limit, 1), 100),
+  };
+}
+
 export class AthletesService {
   private readonly contentAuthorization: AthletesContentAuthorization;
 
@@ -123,9 +130,20 @@ export class AthletesService {
     });
   }
 
-  async joinRequests(userId: string, id: string) {
+  async joinRequests(
+    userId: string,
+    id: string,
+    input: Parameters<AthletesRepository["listJoinRequests"]>[1],
+  ) {
     await this.requireManager(userId, id);
-    return { requests: await this.repository.listJoinRequests(id) };
+    const page = await this.repository.listJoinRequests(id, boundedPageInput(input));
+    return {
+      items: page.items.map((request) => ({
+        ...serializeRequest(request),
+        requester: request.requester,
+      })),
+      nextCursor: page.nextCursor,
+    };
   }
 
   async approveJoinRequest(userId: string, id: string, targetUserId: string) {
@@ -166,17 +184,24 @@ export class AthletesService {
     });
   }
 
-  async members(userId: string, id: string) {
+  async members(
+    userId: string,
+    id: string,
+    input: Parameters<AthletesRepository["listMembers"]>[1],
+  ) {
     await this.contentAuthorization.requireMemberContent(userId, id);
-    const members = await this.repository.listMembers(id);
+    const page = await this.repository.listMembers(id, boundedPageInput(input));
     const lastSeenByUserId = await this.userLastSeenReader.findLastSeenByUserIds(
-      members.map((member) => member.userId),
+      page.items.map((member) => member.userId),
     );
-    return members.map((member) => ({
-      ...member,
-      joinedAt: member.joinedAt.toISOString(),
-      lastSeenAt: lastSeenByUserId.get(member.userId)?.toISOString() ?? null,
-    }));
+    return {
+      items: page.items.map((member) => ({
+        ...member,
+        joinedAt: member.joinedAt.toISOString(),
+        lastSeenAt: lastSeenByUserId.get(member.userId)?.toISOString() ?? null,
+      })),
+      nextCursor: page.nextCursor,
+    };
   }
 
   async addMember(userId: string, id: string, username: string) {

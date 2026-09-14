@@ -137,6 +137,20 @@ export const athletesMemberSchema = z.object({
     .nullable(),
 });
 
+export const athletesMemberListQuerySchema = z
+  .object({
+    cursor: z.string().min(1).optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(50),
+  })
+  .strict();
+
+export const athletesMemberPageSchema = z
+  .object({
+    items: z.array(athletesMemberSchema),
+    nextCursor: z.string().min(1).nullable(),
+  })
+  .strict();
+
 export const athletesJoinRequestSchema = z.object({
   id: z.string().min(1),
   athletesCommunityId: z.string().min(1),
@@ -150,6 +164,20 @@ export const athletesJoinRequestSchema = z.object({
 export const athletesJoinRequestForManagerSchema = athletesJoinRequestSchema.extend({
   requester: z.object({ presentation: athletesMemberSchema.shape.presentation }),
 });
+
+export const athletesJoinRequestListQuerySchema = z
+  .object({
+    cursor: z.string().min(1).optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(50),
+  })
+  .strict();
+
+export const athletesJoinRequestPageSchema = z
+  .object({
+    items: z.array(athletesJoinRequestForManagerSchema),
+    nextCursor: z.string().min(1).nullable(),
+  })
+  .strict();
 
 export const athletesJoinResultSchema = z.discriminatedUnion("status", [
   z.object({ status: z.literal("JOINED"), membership: z.object({ role: athletesRoleSchema }) }),
@@ -315,9 +343,13 @@ export type AthletesListQuery = z.infer<typeof athletesListQuerySchema>;
 export type AthletesPublicSummary = z.infer<typeof athletesPublicSummarySchema>;
 export type AthletesPublicDetail = z.infer<typeof athletesPublicDetailSchema>;
 export type AthletesMember = z.infer<typeof athletesMemberSchema>;
+export type AthletesMemberListQuery = z.infer<typeof athletesMemberListQuerySchema>;
+export type AthletesMemberPage = z.infer<typeof athletesMemberPageSchema>;
 export type AthletesJoinResult = z.infer<typeof athletesJoinResultSchema>;
 export type AthletesJoinRequest = z.infer<typeof athletesJoinRequestSchema>;
 export type AthletesJoinRequestForManager = z.infer<typeof athletesJoinRequestForManagerSchema>;
+export type AthletesJoinRequestListQuery = z.infer<typeof athletesJoinRequestListQuerySchema>;
+export type AthletesJoinRequestPage = z.infer<typeof athletesJoinRequestPageSchema>;
 export type AthletesPhotoMetadata = z.infer<typeof athletesPhotoMetadataSchema>;
 export type AthletesPhotoDelivery = z.infer<typeof athletesPhotoDeliverySchema>;
 export type AthletesPhotoList = z.infer<typeof athletesPhotoListSchema>;
