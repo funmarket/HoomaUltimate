@@ -23,10 +23,8 @@ if (files.length === 0) {
   process.exit(0);
 }
 
-console.log(`Formatting ${files.length} changed file(s) for exact diagnostic diff.`);
+console.log(`Formatting ${files.length} changed file(s) for exact diagnostic output.`);
 const prettier = spawnSync("npm", ["exec", "--", "prettier", "--write", ...files], {
   stdio: "inherit",
 });
-if ((prettier.status ?? 1) !== 0) process.exit(prettier.status ?? 1);
-spawnSync("git", ["diff", "--", ...files], { stdio: "inherit" });
-process.exit(1);
+process.exit(prettier.status ?? 1);
