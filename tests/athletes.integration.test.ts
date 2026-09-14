@@ -284,10 +284,9 @@ test("Athletes HTTP lifecycle uses independent persistence and canonical users",
       headers: headers(runner.cookie),
     });
     assert.equal(members.status, 200);
+    const memberPage = (await members.json()) as { items: { userId: string }[] };
     assert.equal(
-      ((await members.json()) as { items: { userId: string }[] }).items.some(
-        (member) => member.userId === founder.userId,
-      ),
+      memberPage.items.some((member) => member.userId === founder.userId),
       true,
     );
   } finally {
