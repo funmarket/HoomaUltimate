@@ -77,7 +77,8 @@ test("Photo Board stays mobile-first and gives the Founder delete control a safe
   assert.match(component, /aria-label=\{`Delete photo \$\{index \+ 1\}`\}/);
   assert.match(css, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
   assert.match(css, /\.athletes-photo-board__delete[\s\S]*width: 44px;[\s\S]*height: 44px;/);
-  assert.match(css, /object-fit: cover/);
+  assert.match(css, /object-fit: contain/);
+  assert.match(css, /object-position: center/);
   assert.match(css, /@media \(min-width: 42rem\)/);
   assert.match(css, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
 });
