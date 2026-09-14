@@ -122,9 +122,7 @@ export function useAthletesDetail(id: string) {
         next.viewerRole
           ? api.athletes.members(id)
           : Promise.resolve({ items: [], nextCursor: null }),
-        manager
-          ? api.athletes.joinRequests(id)
-          : Promise.resolve({ items: [], nextCursor: null }),
+        manager ? api.athletes.joinRequests(id) : Promise.resolve({ items: [], nextCursor: null }),
       ]);
       if (!active()) return;
       if (memberResult.status === "fulfilled") {
