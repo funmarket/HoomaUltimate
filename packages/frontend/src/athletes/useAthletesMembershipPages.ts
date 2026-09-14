@@ -1,4 +1,7 @@
-import type { AthletesJoinRequestForManager, AthletesMember } from "@hooma/contracts/athletes";
+import type {
+  AthletesJoinRequestForManager,
+  AthletesMember,
+} from "@hooma/contracts/athletes";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useHoomaFrontend } from "../context";
 
@@ -7,11 +10,7 @@ function appendUnique<T>(previous: T[], incoming: T[], key: (item: T) => string)
   return [...previous, ...incoming.filter((item) => !known.has(key(item)))];
 }
 
-export function useAthletesMembershipPages(
-  id: string,
-  enabled: boolean,
-  canManage: boolean,
-) {
+export function useAthletesMembershipPages(id: string, enabled: boolean, canManage: boolean) {
   const { api, protectedError } = useHoomaFrontend();
   const [members, setMembers] = useState<AthletesMember[]>([]);
   const [requests, setRequests] = useState<AthletesJoinRequestForManager[]>([]);
