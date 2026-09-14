@@ -103,7 +103,7 @@ function scenario(detail, overrides = {}) {
         nextCursor: null,
       });
     if (path.endsWith("/photos")) return response([]);
-    if (path.endsWith("/calendar")) return response([]);
+    if (path.endsWith("/calendar")) return response({ items: [], nextCursor: null });
     if (path.includes("/whistles/"))
       return response({
         items: [],
@@ -245,7 +245,8 @@ test("Membership-count-changing actions refresh detail without resetting member 
         nextCursor: null,
       });
     }
-    if (path.endsWith("/photos") || path.endsWith("/calendar")) return response([]);
+    if (path.endsWith("/photos")) return response([]);
+    if (path.endsWith("/calendar")) return response({ items: [], nextCursor: null });
     if (path.includes("/whistles/")) {
       return response({
         items: [],
@@ -364,7 +365,8 @@ test("Membership sections consume independent cursors without duplicate first-pa
             },
       );
     }
-    if (path.endsWith("/photos") || path.endsWith("/calendar")) return response([]);
+    if (path.endsWith("/photos")) return response([]);
+    if (path.endsWith("/calendar")) return response({ items: [], nextCursor: null });
     if (path.includes("/whistles/"))
       return response({
         items: [],
