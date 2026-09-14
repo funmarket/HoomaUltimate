@@ -4,6 +4,7 @@ import type { ApiConfig } from "@hooma/config";
 import { getDatabaseClient } from "@hooma/database";
 import { S3ObjectStorage, type ObjectStorage } from "@hooma/storage";
 import { RedisClient } from "../infrastructure/redis/redis-client.js";
+import { RedisApiRateLimiter } from "../http/rate-limit/redis-api-rate-limiter.js";
 import { IdentityService } from "../modules/identity/application/identity.service.js";
 import { PrismaIdentityRepository } from "../modules/identity/infrastructure/prisma-identity.repository.js";
 import { PrismaCanonicalUserReader } from "../modules/identity/infrastructure/prisma-canonical-user.reader.js";
@@ -93,6 +94,11 @@ function objectStorage(
 export function createContainer(config: ApiConfig, overrides: ContainerOverrides = {}) {
   const database = getDatabaseClient();
   const redis = new RedisClient(config.REDIS_URL ?? "redis://localhost:6379");
+  const apiRateLimiter = new RedisApiRateLimiter(redis, {
+    keyPrefix: "hooma:api-rate-limit:v1",
+    limit: config.API_RATE_LIMIT_MAX_REQUESTS,
+    windowSeconds: config.API_RATE_LIMIT_WINDOW_SECONDS,
+  });
   const storage = objectStorage(config, overrides);
   const readinessService = new ReadinessService(
     new PrismaReadinessProbe(database),
@@ -223,6 +229,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
   return {
     database,
     redis,
+    apiRateLimiter,
     readinessService,
     identityService,
     platformAdminService,
