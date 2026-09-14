@@ -67,8 +67,9 @@ test("Athletes private Calendar enforces membership, Founder mutation, RSVP owne
   try {
     const founder = await register(base, `cal_founder_${suffix}`);
     const member = await register(base, `cal_member_${suffix}`);
+    const former = await register(base, `cal_former_${suffix}`);
     const outsider = await register(base, `cal_outsider_${suffix}`);
-    userIds.push(founder.userId, member.userId, outsider.userId);
+    userIds.push(founder.userId, member.userId, former.userId, outsider.userId);
 
     const createCommunity = async (name: string) => {
       const response = await fetch(`${base}/api/v1/athletes`, {
@@ -90,12 +91,14 @@ test("Athletes private Calendar enforces membership, Founder mutation, RSVP owne
     const firstId = await createCommunity(`Calendar One ${suffix}`);
     const secondId = await createCommunity(`Calendar Two ${suffix}`);
 
-    const addMember = await fetch(`${base}/api/v1/athletes/${firstId}/members`, {
-      method: "POST",
-      headers: headers(founder.cookie),
-      body: JSON.stringify({ username: member.username }),
-    });
-    assert.equal(addMember.status, 201);
+    for (const username of [member.username, former.username]) {
+      const addMember = await fetch(`${base}/api/v1/athletes/${firstId}/members`, {
+        method: "POST",
+        headers: headers(founder.cookie),
+        body: JSON.stringify({ username }),
+      });
+      assert.equal(addMember.status, 201);
+    }
 
     const outsiderList = await fetch(calendarUrl(base, firstId), {
       headers: headers(outsider.cookie),
@@ -166,6 +169,13 @@ test("Athletes private Calendar enforces membership, Founder mutation, RSVP owne
     assert.equal(memberGoing.status, 200);
     assert.deepEqual(await memberGoing.json(), { entryId: created.id, status: "GOING" });
 
+    const formerGoing = await fetch(rsvpUrl(base, firstId, created.id), {
+      method: "PUT",
+      headers: headers(former.cookie),
+      body: JSON.stringify({ status: "GOING" }),
+    });
+    assert.equal(formerGoing.status, 200);
+
     const founderMaybe = await fetch(rsvpUrl(base, firstId, created.id), {
       method: "PUT",
       headers: headers(founder.cookie),
@@ -184,6 +194,32 @@ test("Athletes private Calendar enforces membership, Founder mutation, RSVP owne
       where: { calendarEntryId: created.id, userId: member.userId },
     });
     assert.equal(persistedMemberRsvps, 1);
+
+    const beforeFormerRemoval = await fetch(calendarUrl(base, firstId), {
+      headers: headers(member.cookie),
+    });
+    assert.equal(beforeFormerRemoval.status, 200);
+    entries = (await beforeFormerRemoval.json()) as Array<Record<string, unknown>>;
+    assert.deepEqual(entries[0]!.rsvp, {
+      viewerStatus: "NOT_GOING",
+      counts: { going: 1, maybe: 1, notGoing: 1 },
+    });
+
+    const removeFormer = await fetch(
+      `${base}/api/v1/athletes/${firstId}/members/${former.userId}`,
+      { method: "DELETE", headers: headers(founder.cookie) },
+    );
+    assert.equal(removeFormer.status, 200);
+
+    const persistedFormerRsvps = await db.athletesCalendarRsvp.count({
+      where: { calendarEntryId: created.id, userId: former.userId },
+    });
+    assert.equal(persistedFormerRsvps, 1, "membership removal must retain RSVP history");
+
+    const formerReadAfterRemoval = await fetch(calendarUrl(base, firstId), {
+      headers: headers(former.cookie),
+    });
+    assert.equal(formerReadAfterRemoval.status, 403);
 
     const memberReadAfterRsvp = await fetch(calendarUrl(base, firstId), {
       headers: headers(member.cookie),
@@ -234,6 +270,16 @@ test("Athletes private Calendar enforces membership, Founder mutation, RSVP owne
     assert.equal(cancel.status, 200);
     const cancelled = (await cancel.json()) as { cancelledAt: string | null };
     assert.ok(cancelled.cancelledAt);
+
+    const cancelledRead = await fetch(calendarUrl(base, firstId), {
+      headers: headers(member.cookie),
+    });
+    assert.equal(cancelledRead.status, 200);
+    entries = (await cancelledRead.json()) as Array<Record<string, unknown>>;
+    assert.deepEqual(entries[0]!.rsvp, {
+      viewerStatus: "NOT_GOING",
+      counts: { going: 0, maybe: 1, notGoing: 1 },
+    });
 
     const rsvpCancelled = await fetch(rsvpUrl(base, firstId, created.id), {
       method: "PUT",

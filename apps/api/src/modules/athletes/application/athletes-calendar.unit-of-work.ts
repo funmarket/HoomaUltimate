@@ -11,4 +11,8 @@ export interface AthletesCalendarUnitOfWork {
     athletesCommunityId: string,
     operation: (scope: AthletesCalendarTransactionScope) => Promise<T>,
   ): Promise<T>;
+  withCommunitySharedLock<T>(
+    athletesCommunityId: string,
+    operation: (scope: AthletesCalendarTransactionScope) => Promise<T>,
+  ): Promise<T>;
 }

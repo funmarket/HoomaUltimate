@@ -188,7 +188,7 @@ export class AthletesCalendarService {
     entryId: string,
     status: AthletesCalendarRsvpStatus,
   ): Promise<AthletesCalendarRsvpResult> {
-    return this.unitOfWork.withCommunityLock(athletesCommunityId, async (scope) => {
+    return this.unitOfWork.withCommunitySharedLock(athletesCommunityId, async (scope) => {
       await new AthletesContentAuthorization(scope.athletes).requireMemberContent(
         userId,
         athletesCommunityId,

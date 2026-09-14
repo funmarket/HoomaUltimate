@@ -19,6 +19,7 @@ test("Athletes Calendar and RSVP remain inside the Athletes boundary", async () 
   assert.match(service, /AthletesContentAuthoriz/);
   assert.match(service, /AthletesCalendarUnitOfWork/);
   assert.match(repository, /withCommunityLock/);
+  assert.match(repository, /withCommunitySharedLock/);
   assert.match(repository, /PrismaAthletesRepository/);
   assert.match(schema, /model AthletesCalendarRsvp/);
   assert.doesNotMatch(
@@ -27,9 +28,12 @@ test("Athletes Calendar and RSVP remain inside the Athletes boundary", async () 
   );
 });
 
-test("Athletes Calendar reads stay lock-free while Founder and RSVP writes use the lifecycle lock", async () => {
+test("Athletes Calendar reads stay lock-free, Founder writes stay exclusive, and RSVP uses the shared lifecycle guard", async () => {
   const service = await source(
     "apps/api/src/modules/athletes/application/athletes-calendar.service.ts",
+  );
+  const repository = await source(
+    "apps/api/src/modules/athletes/infrastructure/prisma-athletes-calendar.repository.ts",
   );
   const list = service.slice(service.indexOf("async list("), service.indexOf("  create("));
   const founderMutations = service.slice(
@@ -41,11 +45,15 @@ test("Athletes Calendar reads stay lock-free while Founder and RSVP writes use t
   assert.match(list, /requireMemberContent/);
   assert.match(list, /repository\.listForCommunity/);
   assert.doesNotMatch(list, /withCommunityLock/);
+  assert.doesNotMatch(list, /withCommunitySharedLock/);
   assert.match(founderMutations, /withCommunityLock/);
+  assert.doesNotMatch(founderMutations, /withCommunitySharedLock/);
   assert.match(founderMutations, /requireFounderContent/);
-  assert.match(rsvpMutation, /withCommunityLock/);
+  assert.match(rsvpMutation, /withCommunitySharedLock/);
+  assert.doesNotMatch(rsvpMutation, /withCommunityLock\(/);
   assert.match(rsvpMutation, /requireMemberContent/);
   assert.match(rsvpMutation, /upsertRsvp/);
+  assert.match(repository, /FOR SHARE/);
 });
 
 test("Athletes Calendar RSVP persistence enforces one response per user per entry", async () => {
@@ -74,9 +82,10 @@ test("ADR-057 remains the base Calendar decision and ADR-058 owns Calendar RSVP"
   const rsvp = await source("docs/adr/ADR-058-athletes-calendar-rsvp.md");
 
   assert.match(base, /reads do not acquire the Athletes lifecycle row lock/i);
-  assert.match(base, /mutations.*FOR UPDATE/i);
+  assert.match(base, /Founder.*mutations.*FOR UPDATE/is);
   assert.match(base, /AthletesCalendarEntry/);
   assert.match(rsvp, /Going.*Maybe.*Not going/is);
   assert.match(rsvp, /AthletesCalendarRsvp/);
   assert.match(rsvp, /generic Event RSVP/i);
+  assert.match(rsvp, /active members/i);
 });

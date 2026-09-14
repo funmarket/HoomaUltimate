@@ -86,7 +86,8 @@ type StoredRsvp = {
 function harness(initial: AthletesCalendarRecord[] = []) {
   const rows = [...initial];
   const rsvps = new Map<string, StoredRsvp>();
-  let lockCalls = 0;
+  let exclusiveLockCalls = 0;
+  let sharedLockCalls = 0;
   let listCalls = 0;
   const repository: AthletesCalendarRepository = {
     async listForCommunity(athletesCommunityId, range, viewerUserId) {
@@ -157,7 +158,11 @@ function harness(initial: AthletesCalendarRecord[] = []) {
   };
   const unitOfWork: AthletesCalendarUnitOfWork = {
     async withCommunityLock(_athletesCommunityId, operation) {
-      lockCalls += 1;
+      exclusiveLockCalls += 1;
+      return operation({ athletes: athletesScope(), calendar: transaction });
+    },
+    async withCommunitySharedLock(_athletesCommunityId, operation) {
+      sharedLockCalls += 1;
       return operation({ athletes: athletesScope(), calendar: transaction });
     },
   };
@@ -166,7 +171,8 @@ function harness(initial: AthletesCalendarRecord[] = []) {
     rsvps,
     repository,
     unitOfWork,
-    lockCalls: () => lockCalls,
+    exclusiveLockCalls: () => exclusiveLockCalls,
+    sharedLockCalls: () => sharedLockCalls,
     listCalls: () => listCalls,
   };
 }
@@ -175,7 +181,7 @@ function expectCode(code: string) {
   return (error: unknown) => error instanceof AthletesError && error.code === code;
 }
 
-test("active member Calendar read uses ordinary authorization without the mutation lock", async () => {
+test("active member Calendar read uses ordinary authorization without a lifecycle lock", async () => {
   const state = harness([record()]);
   const service = new AthletesCalendarService(
     authorizer(["member"]),
@@ -189,7 +195,8 @@ test("active member Calendar read uses ordinary authorization without the mutati
   });
   assert.equal(entries.length, 1);
   assert.equal(state.listCalls(), 1);
-  assert.equal(state.lockCalls(), 0);
+  assert.equal(state.exclusiveLockCalls(), 0);
+  assert.equal(state.sharedLockCalls(), 0);
   assert.equal("createdByUserId" in entries[0]!, false);
   assert.deepEqual(entries[0]!.rsvp, {
     viewerStatus: null,
@@ -206,7 +213,7 @@ test("active member Calendar read uses ordinary authorization without the mutati
   );
 });
 
-test("Founder Calendar mutations execute inside the Athletes lifecycle lock", async () => {
+test("Founder Calendar mutations keep the exclusive Athletes lifecycle lock", async () => {
   const state = harness();
   const service = new AthletesCalendarService(
     authorizer(["founder"]),
@@ -222,19 +229,22 @@ test("Founder Calendar mutations execute inside the Athletes lifecycle lock", as
     endsAt: END.toISOString(),
     timezone: "UTC",
   });
-  assert.equal(state.lockCalls(), 1);
+  assert.equal(state.exclusiveLockCalls(), 1);
+  assert.equal(state.sharedLockCalls(), 0);
 
   const updated = await service.update("founder", "ath-1", created.id, {
     title: "Intervals updated",
   });
-  assert.equal(state.lockCalls(), 2);
+  assert.equal(state.exclusiveLockCalls(), 2);
+  assert.equal(state.sharedLockCalls(), 0);
   assert.equal(updated.title, "Intervals updated");
 
   const cancelled = await service.cancel("founder", "ath-1", created.id);
-  assert.equal(state.lockCalls(), 3);
+  assert.equal(state.exclusiveLockCalls(), 3);
   assert.ok(cancelled.cancelledAt);
   const cancelledAgain = await service.cancel("founder", "ath-1", created.id);
-  assert.equal(state.lockCalls(), 4);
+  assert.equal(state.exclusiveLockCalls(), 4);
+  assert.equal(state.sharedLockCalls(), 0);
   assert.equal(cancelledAgain.cancelledAt, cancelled.cancelledAt);
 
   await assert.rejects(
@@ -243,7 +253,7 @@ test("Founder Calendar mutations execute inside the Athletes lifecycle lock", as
   );
 });
 
-test("active members can set and change one RSVP row", async () => {
+test("active members set and change one RSVP row through the shared lifecycle guard", async () => {
   const state = harness([record()]);
   const service = new AthletesCalendarService(
     authorizer(["member"]),
@@ -256,6 +266,8 @@ test("active members can set and change one RSVP row", async () => {
     status: "GOING",
   });
   assert.equal(state.rsvps.size, 1);
+  assert.equal(state.exclusiveLockCalls(), 0);
+  assert.equal(state.sharedLockCalls(), 1);
 
   let entries = await service.list("member", "ath-1", {
     from: "2026-09-20T00:00:00.000Z",
@@ -269,6 +281,8 @@ test("active members can set and change one RSVP row", async () => {
     status: "MAYBE",
   });
   assert.equal(state.rsvps.size, 1);
+  assert.equal(state.exclusiveLockCalls(), 0);
+  assert.equal(state.sharedLockCalls(), 2);
 
   entries = await service.list("member", "ath-1", {
     from: "2026-09-20T00:00:00.000Z",
@@ -301,12 +315,26 @@ test("RSVP rejects outsiders, cancelled entries, and cross-community entry ids",
     expectCode("ATHLETES_CALENDAR_ENTRY_CANCELLED"),
   );
   assert.equal(state.rsvps.size, 0);
+  assert.equal(state.exclusiveLockCalls(), 0);
+  assert.equal(state.sharedLockCalls(), 3);
 });
 
 test("non-Founder cannot create and cross-community ids cannot escape scope", async () => {
   const state = harness([record()]);
   const memberScope: AthletesCalendarUnitOfWork = {
     async withCommunityLock(_athletesCommunityId, operation) {
+      return operation({
+        athletes: athletesScope("someone-else", ["member"]),
+        calendar: {
+          create: async () => record(),
+          getForCommunity: async () => null,
+          update: async () => null,
+          cancel: async () => null,
+          upsertRsvp: async () => {},
+        },
+      });
+    },
+    async withCommunitySharedLock(_athletesCommunityId, operation) {
       return operation({
         athletes: athletesScope("someone-else", ["member"]),
         calendar: {

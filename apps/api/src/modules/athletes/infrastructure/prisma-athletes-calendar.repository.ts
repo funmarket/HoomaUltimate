@@ -1,3 +1,4 @@
+import type { AthletesCalendarRsvpStatus } from "@hooma/contracts/athletes";
 import { Prisma, type PrismaClient } from "@hooma/database";
 import type {
   AthletesCalendarCreateRecordInput,
@@ -30,6 +31,11 @@ const calendarSelect = Prisma.validator<Prisma.AthletesCalendarEntrySelect>()({
 });
 
 type CalendarRow = Prisma.AthletesCalendarEntryGetPayload<{ select: typeof calendarSelect }>;
+type ActiveRsvpCountRow = {
+  readonly calendarEntryId: string;
+  readonly status: AthletesCalendarRsvpStatus;
+  readonly count: bigint;
+};
 
 function mapRow(row: CalendarRow): AthletesCalendarRecord {
   return row;
@@ -118,11 +124,19 @@ export class PrismaAthletesCalendarRepository
 
     const entryIds = rows.map((row) => row.id);
     const [grouped, viewerRows] = await Promise.all([
-      this.db.athletesCalendarRsvp.groupBy({
-        by: ["calendarEntryId", "status"],
-        where: { calendarEntryId: { in: entryIds } },
-        _count: { _all: true },
-      }),
+      this.db.$queryRaw<ActiveRsvpCountRow[]>(Prisma.sql`
+        SELECT
+          r."calendarEntryId" AS "calendarEntryId",
+          r."status" AS "status",
+          COUNT(*)::bigint AS "count"
+        FROM "AthletesCalendarRsvp" AS r
+        INNER JOIN "AthletesMembership" AS m
+          ON m."userId" = r."userId"
+         AND m."athletesCommunityId" = ${athletesCommunityId}
+         AND m."leftAt" IS NULL
+        WHERE r."calendarEntryId" IN (${Prisma.join(entryIds)})
+        GROUP BY r."calendarEntryId", r."status"
+      `),
       this.db.athletesCalendarRsvp.findMany({
         where: { calendarEntryId: { in: entryIds }, userId: viewerUserId },
         select: { calendarEntryId: true, status: true },
@@ -133,9 +147,10 @@ export class PrismaAthletesCalendarRepository
     for (const group of grouped) {
       const counts = countsByEntry.get(group.calendarEntryId);
       if (!counts) continue;
-      if (group.status === "GOING") counts.going = group._count._all;
-      if (group.status === "MAYBE") counts.maybe = group._count._all;
-      if (group.status === "NOT_GOING") counts.notGoing = group._count._all;
+      const count = Number(group.count);
+      if (group.status === "GOING") counts.going = count;
+      if (group.status === "MAYBE") counts.maybe = count;
+      if (group.status === "NOT_GOING") counts.notGoing = count;
     }
 
     const viewerByEntry = new Map(viewerRows.map((row) => [row.calendarEntryId, row.status]));
@@ -158,6 +173,19 @@ export class PrismaAthletesCalendarRepository
           calendar: new PrismaAthletesCalendarTransactionRepository(tx),
         }),
       );
+    });
+  }
+
+  withCommunitySharedLock<T>(
+    athletesCommunityId: string,
+    operation: (scope: AthletesCalendarTransactionScope) => Promise<T>,
+  ): Promise<T> {
+    return this.db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "AthletesCommunity" WHERE "id" = ${athletesCommunityId} FOR SHARE`;
+      return operation({
+        athletes: new PrismaAthletesRepository(tx),
+        calendar: new PrismaAthletesCalendarTransactionRepository(tx),
+      });
     });
   }
 }
