@@ -53,6 +53,10 @@ function pending(userId = "member"): AthletesJoinRequestRecord {
   };
 }
 
+const noLastSeen = {
+  findLastSeenByUserIds: async () => new Map<string, Date | null>(),
+};
+
 function repositoryStub(
   roles: Record<string, AthletesRole | null> = {},
   joinPolicy: "OPEN" | "APPROVAL_REQUIRED" = "OPEN",
@@ -80,10 +84,10 @@ function repositoryStub(
     joinOpen: async (_id, userId) => membership(userId),
     requestJoin: async (_id, userId) => ({ kind: "REQUEST", request: pending(userId) }),
     getJoinRequest: async () => null,
-    listJoinRequests: async () => [],
+    listJoinRequests: async () => ({ items: [], nextCursor: null }),
     resolveJoinRequest: async () => true,
     cancelJoinRequest: async () => true,
-    listMembers: async () => [],
+    listMembers: async () => ({ items: [], nextCursor: null }),
     addMemberByUsername: async () => ({ userId: "target", username: "target" }),
     removeMember: async () => true,
     setRole: async () => true,
@@ -105,7 +109,7 @@ test("AthletesService creates a community with founder membership atomically", a
       name: input.name,
     };
   };
-  const service = new AthletesService(repo);
+  const service = new AthletesService(repo, noLastSeen);
   const created = await service.create("founder", {
     name: "Private Runners",
     sport: "RUNNING",
@@ -118,7 +122,7 @@ test("AthletesService creates a community with founder membership atomically", a
 });
 
 test("AthletesService joins OPEN communities immediately", async () => {
-  const service = new AthletesService(repositoryStub());
+  const service = new AthletesService(repositoryStub(), noLastSeen);
   assert.deepEqual(await service.join("member", "ath-1"), {
     status: "JOINED",
     membership: { role: "MEMBER" },
@@ -126,7 +130,7 @@ test("AthletesService joins OPEN communities immediately", async () => {
 });
 
 test("AthletesService creates pending requests for approval-required communities", async () => {
-  const service = new AthletesService(repositoryStub({}, "APPROVAL_REQUIRED"));
+  const service = new AthletesService(repositoryStub({}, "APPROVAL_REQUIRED"), noLastSeen);
   assert.deepEqual(await service.join("member", "ath-1"), {
     status: "PENDING",
     request: {
@@ -144,6 +148,7 @@ test("AthletesService creates pending requests for approval-required communities
 test("AthletesService requires Founder or Moderator for request management", async () => {
   const service = new AthletesService(
     repositoryStub({ moderator: "MODERATOR", member: "MEMBER" }, "APPROVAL_REQUIRED"),
+    noLastSeen,
   );
   await assert.rejects(
     () => service.approveJoinRequest("member", "ath-1", "target"),
@@ -155,7 +160,7 @@ test("AthletesService requires Founder or Moderator for request management", asy
 
 test("AthletesService direct add resolves canonical username and rejects missing users", async () => {
   const repo = repositoryStub({ founder: "FOUNDER" });
-  const service = new AthletesService(repo);
+  const service = new AthletesService(repo, noLastSeen);
   assert.deepEqual(await service.addMember("founder", "ath-1", "target"), {
     member: { userId: "target", username: "target" },
   });
@@ -177,7 +182,7 @@ test("AthletesService keeps PRIVATE communities approval-required on update", as
       joinPolicy: input.joinPolicy ?? "APPROVAL_REQUIRED",
     };
   };
-  const service = new AthletesService(repo);
+  const service = new AthletesService(repo, noLastSeen);
   await service.update("founder", "ath-1", { joinPolicy: "OPEN" });
   assert.equal(receivedPolicy, "APPROVAL_REQUIRED");
 });
@@ -191,6 +196,7 @@ test("AthletesService protects final Founder authority and Moderator scope", asy
       targetModerator: "MODERATOR",
       member: "MEMBER",
     }),
+    noLastSeen,
   );
   await assert.rejects(
     () => service.removeMember("founder", "ath-1", "targetFounder"),
@@ -215,7 +221,7 @@ test("AthletesService allows Founder content for an active Founder in the same c
     checkedCommunityId = id;
     return id === "ath-1" && userId === "founder" ? "FOUNDER" : null;
   };
-  const service = new AthletesService(repo);
+  const service = new AthletesService(repo, noLastSeen);
 
   await service.requireFounderContent("founder", "ath-1");
 
@@ -230,7 +236,7 @@ test("AthletesService denies non-Founders and a Founder from another Athletes co
   };
   const repo = repositoryStub();
   repo.managerRole = async (id, userId) => rolesByCommunity[`${id}:${userId}`] ?? null;
-  const service = new AthletesService(repo);
+  const service = new AthletesService(repo, noLastSeen);
 
   for (const userId of ["moderator", "member", "outsider", "other-founder"]) {
     await assert.rejects(
@@ -249,11 +255,78 @@ test("AthletesService denies Founder content when the Athletes community is arch
     roleChecked = true;
     return "FOUNDER";
   };
-  const service = new AthletesService(repo);
+  const service = new AthletesService(repo, noLastSeen);
 
   await assert.rejects(
     () => service.requireFounderContent("founder", "ath-1"),
     (error: unknown) => error instanceof AthletesError && error.code === "ATHLETES_NOT_FOUND",
   );
   assert.equal(roleChecked, false);
+});
+
+test("AthletesService batches last-seen only for the current member page", async () => {
+  const repo = repositoryStub({ viewer: "MEMBER" });
+  repo.listMembers = async (_id, input) => {
+    assert.deepEqual(input, { limit: 50, cursor: "membership-cursor" });
+    return {
+      items: [
+        {
+          userId: "runner-1",
+          role: "MEMBER",
+          joinedAt: new Date("2026-09-12T09:00:00.000Z"),
+          presentation: null,
+        },
+        {
+          userId: "runner-2",
+          role: "MEMBER",
+          joinedAt: new Date("2026-09-12T09:00:00.000Z"),
+          presentation: null,
+        },
+      ],
+      nextCursor: "membership-next",
+    };
+  };
+  let requestedUserIds: readonly string[] = [];
+  const lastSeenReader = {
+    findLastSeenByUserIds: async (userIds: readonly string[]) => {
+      requestedUserIds = userIds;
+      return new Map<string, Date | null>([
+        ["runner-1", new Date("2026-09-12T10:00:00.000Z")],
+      ]);
+    },
+  };
+  const service = new AthletesService(repo, lastSeenReader);
+
+  const page = await service.members("viewer", "ath-1", {
+    cursor: "membership-cursor",
+    limit: 50,
+  });
+
+  assert.deepEqual(requestedUserIds, ["runner-1", "runner-2"]);
+  assert.equal(page.nextCursor, "membership-next");
+  assert.equal(page.items[0]?.lastSeenAt, "2026-09-12T10:00:00.000Z");
+  assert.equal(page.items[1]?.lastSeenAt, null);
+});
+
+test("AthletesService returns serialized bounded manager request pages", async () => {
+  const repo = repositoryStub({ founder: "FOUNDER" });
+  repo.listJoinRequests = async (_id, input) => {
+    assert.deepEqual(input, { limit: 100 });
+    return {
+      items: [
+        {
+          ...pending("runner"),
+          requester: { presentation: null },
+        },
+      ],
+      nextCursor: "request-next",
+    };
+  };
+  const service = new AthletesService(repo, noLastSeen);
+
+  const page = await service.joinRequests("founder", "ath-1", { limit: 100 });
+
+  assert.equal(page.nextCursor, "request-next");
+  assert.equal(page.items[0]?.requestedAt, "2026-09-01T10:00:00.000Z");
+  assert.equal(page.items[0]?.userId, "runner");
 });
