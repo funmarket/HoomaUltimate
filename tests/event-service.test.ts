@@ -107,9 +107,11 @@ function playAccess(overrides: Partial<EventAccessRecord> = {}): EventAccessReco
     placeId: null,
     type: "PLAY",
     playVisibility: "OPEN",
+    playFormat: "FIVE_V_FIVE",
     watchKind: null,
     createdByUserId: "founder",
     status: "PUBLISHED",
+    startsAt: new Date("2026-12-01T18:00:00.000Z"),
     entryFeeMinor: 0n,
     ...overrides,
   };
@@ -193,9 +195,11 @@ test("EventService checks persisted Cultural subtype on partial updates", async 
     placeId: "place-1",
     type: "WATCH",
     playVisibility: null,
+    playFormat: null,
     watchKind: "CULTURAL",
     createdByUserId: "user-1",
     status: "PUBLISHED",
+    startsAt: new Date("2026-12-01T18:00:00.000Z"),
     entryFeeMinor: 0n,
   });
   repository.update = async () => {
@@ -231,6 +235,15 @@ test("EventService returns only the authenticated user's RSVP state", async () =
   const service = new EventService(repository, {} as CommunityService, approvedPlaces());
   assert.deepEqual(await service.getMyRsvp("user-1", "event-1"), {
     rsvp: { status: "WAITLISTED" },
+    actions: {
+      isCreator: false,
+      canJoin: false,
+      canCancelRsvp: true,
+      canCheckIn: false,
+      checkInOpensAt: "2026-12-01T17:00:00.000Z",
+      attended: false,
+      checkInUnavailableReason: "WAITLISTED",
+    },
   });
 });
 
@@ -299,7 +312,24 @@ test("EventService rejects formation players outside the confirmed event roster"
         name: "5v5",
         format: "FIVE_V_FIVE",
         published: true,
-        slots: [{ userId: "outsider", team: "A", position: "GK", label: "GK", x: 50, y: 90 }],
+        slots: [
+          ...Array.from({ length: 5 }, (_, index) => ({
+            userId: index === 0 ? "outsider" : null,
+            team: "A" as const,
+            position: index === 0 ? "GK" : null,
+            label: index === 0 ? "GK" : `A${index + 1}`,
+            x: 20 + index * 15,
+            y: 80 - index * 12,
+          })),
+          ...Array.from({ length: 5 }, (_, index) => ({
+            userId: null,
+            team: "B" as const,
+            position: index === 0 ? "GK" : null,
+            label: index === 0 ? "GK" : `B${index + 1}`,
+            x: 20 + index * 15,
+            y: 20 + index * 12,
+          })),
+        ],
       }),
     (error: unknown) =>
       error instanceof Error && error.message.includes("confirmed or attended RSVP"),
