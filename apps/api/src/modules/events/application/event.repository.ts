@@ -1,4 +1,9 @@
-import type { EventCreateInput, EventFormationInput, EventUpdateInput } from "@hooma/contracts";
+import type {
+  EventCreateInput,
+  EventFormationInput,
+  EventUpdateInput,
+  FootballFormatInput,
+} from "@hooma/contracts";
 import type { PublicEvent, PublicEventPage } from "@hooma/contracts/events";
 
 export interface EventPublicListInput {
@@ -22,9 +27,11 @@ export interface EventAccessRecord {
   readonly placeId: string | null;
   readonly type: "PLAY" | "WATCH";
   readonly playVisibility: "OPEN" | "PRIVATE" | null;
+  readonly playFormat: FootballFormatInput | null;
   readonly watchKind: "MATCH" | "CULTURAL" | null;
   readonly createdByUserId: string;
   readonly status: "PUBLISHED" | "CANCELLED" | "COMPLETED";
+  readonly startsAt: Date;
   readonly entryFeeMinor: bigint;
 }
 
@@ -88,7 +95,7 @@ export interface EventRepository {
   declinePlayerInvite(inviteId: string, targetUserId: string): Promise<unknown | null>;
   createFormation(userId: string, eventId: string, input: EventFormationInput): Promise<unknown>;
   canViewMemberContent(eventId: string, userId: string): Promise<boolean>;
-  listFormations(eventId: string): Promise<unknown>;
+  listFormations(eventId: string, includeDrafts: boolean): Promise<unknown>;
   checkIn(
     eventId: string,
     userId: string,

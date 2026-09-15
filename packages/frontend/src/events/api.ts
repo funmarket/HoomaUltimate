@@ -9,7 +9,19 @@ export type PublicWatchQuery = {
   limit?: number;
 };
 export type EventRsvpState = "CONFIRMED" | "WAITLISTED" | "CANCELLED" | "ATTENDED" | "NO_SHOW";
-export type MyEventRsvp = { rsvp: { status: EventRsvpState } | null };
+export type EventParticipationActions = {
+  isCreator: boolean;
+  canJoin: boolean;
+  canCancelRsvp: boolean;
+  canCheckIn: boolean;
+  checkInOpensAt: string;
+  attended: boolean;
+  checkInUnavailableReason: string | null;
+};
+export type MyEventRsvp = {
+  rsvp: { status: EventRsvpState } | null;
+  actions: EventParticipationActions;
+};
 export type EventPlayerInvite = {
   id: string;
   eventId: string;

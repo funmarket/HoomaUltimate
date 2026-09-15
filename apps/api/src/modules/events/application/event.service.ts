@@ -1,9 +1,17 @@
-import type { EventCreateInput, EventFormationInput, EventUpdateInput } from "@hooma/contracts";
+import {
+  FOOTBALL_FORMAT_PLAYER_COUNTS,
+  type EventCreateInput,
+  type EventFormationInput,
+  type EventUpdateInput,
+} from "@hooma/contracts";
+import { AppError } from "../../../http/errors/app-error.js";
 import type { CommunityService } from "../../communities/application/community.service.js";
 import type { ApprovedPitchReader } from "../../pitch/application/approved-pitch.reader.js";
 import type { PlaceService } from "../../places/application/place.service.js";
 import { EventError } from "../domain/event-error.js";
+import { eventCheckInOpensAt } from "../domain/event-policy.js";
 import type {
+  EventAccessRecord,
   EventOpenPlayListInput,
   EventPublicListInput,
   EventRepository,
@@ -84,7 +92,43 @@ export class EventService {
     if (access.type === "PLAY" && !(await this.repository.canAccessPlay(eventId, userId))) {
       throw new EventError("EVENT_NOT_FOUND", "Event not found");
     }
-    return { rsvp: await this.repository.getRsvp(eventId, userId) };
+    const rsvp = await this.repository.getRsvp(eventId, userId);
+    const isCreator = access.createdByUserId === userId;
+    const active = access.status === "PUBLISHED";
+    const checkInOpensAt = eventCheckInOpensAt(access.startsAt);
+    const now = new Date();
+    const attended = rsvp?.status === "ATTENDED";
+    const canJoin = active && !isCreator && (!rsvp || rsvp.status === "CANCELLED");
+    const canCancelRsvp =
+      active && !isCreator && Boolean(rsvp && ["CONFIRMED", "WAITLISTED"].includes(rsvp.status));
+    const canCheckIn =
+      active && !isCreator && rsvp?.status === "CONFIRMED" && now >= checkInOpensAt;
+
+    let checkInUnavailableReason: string | null = null;
+    if (!canCheckIn) {
+      if (isCreator) checkInUnavailableReason = "CREATOR";
+      else if (!active) checkInUnavailableReason = "EVENT_INACTIVE";
+      else if (attended) checkInUnavailableReason = "ALREADY_ATTENDED";
+      else if (!rsvp) checkInUnavailableReason = "NO_RSVP";
+      else if (rsvp.status === "WAITLISTED") checkInUnavailableReason = "WAITLISTED";
+      else if (rsvp.status === "CANCELLED") checkInUnavailableReason = "CANCELLED";
+      else if (rsvp.status === "CONFIRMED" && now < checkInOpensAt)
+        checkInUnavailableReason = "TOO_EARLY";
+      else checkInUnavailableReason = "RSVP_NOT_ELIGIBLE";
+    }
+
+    return {
+      rsvp,
+      actions: {
+        isCreator,
+        canJoin,
+        canCancelRsvp,
+        canCheckIn,
+        checkInOpensAt: checkInOpensAt.toISOString(),
+        attended,
+        checkInUnavailableReason,
+      },
+    };
   }
 
   async requireMemberContent(userId: string, eventId: string): Promise<void> {
@@ -157,6 +201,8 @@ export class EventService {
     try {
       return await this.repository.update(eventId, input);
     } catch (error) {
+      if (error instanceof Error && error.message === "EVENT_NOT_EDITABLE")
+        throw new EventError("EVENT_NOT_EDITABLE", "Only published events can be edited");
       if (error instanceof Error && error.message === "EVENT_TIME_INVALID")
         throw new EventError("EVENT_TIME_INVALID", "Event end time must be after start time");
       if (error instanceof Error && error.message === "WATCH_EVENT_KIND_IMMUTABLE")
@@ -172,14 +218,26 @@ export class EventService {
     const access = await this.requireManage(userId, eventId);
     if (access.status !== "PUBLISHED")
       throw new EventError("EVENT_NOT_CANCELLABLE", "Event is not active");
-    return this.repository.cancel(eventId);
+    try {
+      return await this.repository.cancel(eventId);
+    } catch (error) {
+      if (error instanceof Error && error.message === "EVENT_NOT_CANCELLABLE")
+        throw new EventError("EVENT_NOT_CANCELLABLE", "Event is not active");
+      throw error;
+    }
   }
 
   async complete(userId: string, eventId: string) {
     const access = await this.requireManage(userId, eventId);
     if (access.status !== "PUBLISHED")
       throw new EventError("EVENT_NOT_COMPLETABLE", "Event is not active");
-    return this.repository.complete(eventId);
+    try {
+      return await this.repository.complete(eventId);
+    } catch (error) {
+      if (error instanceof Error && error.message === "EVENT_NOT_COMPLETABLE")
+        throw new EventError("EVENT_NOT_COMPLETABLE", "Event is not active");
+      throw error;
+    }
   }
 
   async join(userId: string, eventId: string) {
@@ -188,6 +246,12 @@ export class EventService {
       throw new EventError("EVENT_NOT_FOUND", "Active event not found");
     if (access.type === "PLAY" && !(await this.repository.canAccessPlay(eventId, userId))) {
       throw new EventError("EVENT_NOT_FOUND", "Active event not found");
+    }
+    if (access.createdByUserId === userId) {
+      throw new EventError(
+        "EVENT_CREATOR_PARTICIPATION_FORBIDDEN",
+        "Event creator does not join through participant RSVP",
+      );
     }
     if (access.entryFeeMinor > 0n)
       throw new EventError(
@@ -201,6 +265,11 @@ export class EventService {
         throw new EventError("EVENT_FULL", "Event is full and waitlist is disabled");
       if (error instanceof Error && error.message === "EVENT_NOT_ACTIVE")
         throw new EventError("EVENT_NOT_ACTIVE", "Event is no longer open for RSVP");
+      if (error instanceof Error && error.message === "EVENT_CREATOR_PARTICIPATION_FORBIDDEN")
+        throw new EventError(
+          "EVENT_CREATOR_PARTICIPATION_FORBIDDEN",
+          "Event creator does not join through participant RSVP",
+        );
       throw error;
     }
   }
@@ -210,6 +279,12 @@ export class EventService {
     if (!access) throw new EventError("EVENT_NOT_FOUND", "Event not found");
     if (access.type === "PLAY" && !(await this.repository.canAccessPlay(eventId, userId))) {
       throw new EventError("EVENT_NOT_FOUND", "Event not found");
+    }
+    if (access.createdByUserId === userId) {
+      throw new EventError(
+        "EVENT_CREATOR_PARTICIPATION_FORBIDDEN",
+        "Event creator does not cancel participant RSVP",
+      );
     }
     try {
       return await this.repository.cancelRsvp(eventId, userId);
@@ -235,7 +310,18 @@ export class EventService {
     if (existingRsvp && ["CONFIRMED", "WAITLISTED", "ATTENDED"].includes(existingRsvp.status)) {
       throw new EventError("EVENT_INVITE_ALREADY_JOINED", "This player is already in the event");
     }
-    return this.repository.upsertPlayerInvite(eventId, targetUserId, userId);
+    try {
+      return await this.repository.upsertPlayerInvite(eventId, targetUserId, userId);
+    } catch (error) {
+      if (error instanceof Error && error.message === "EVENT_INVITE_NOT_AVAILABLE")
+        throw new EventError(
+          "EVENT_INVITE_NOT_AVAILABLE",
+          "Only an active Play event can invite players",
+        );
+      if (error instanceof Error && error.message === "EVENT_INVITE_ALREADY_JOINED")
+        throw new EventError("EVENT_INVITE_ALREADY_JOINED", "This player is already in the event");
+      throw error;
+    }
   }
 
   incomingPlayerInvites(userId: string) {
@@ -266,6 +352,12 @@ export class EventService {
       if (error instanceof Error && error.message === "EVENT_NOT_ACTIVE") {
         throw new EventError("EVENT_INVITE_CLOSED", "This event invitation is no longer active");
       }
+      if (error instanceof Error && error.message === "EVENT_CREATOR_PARTICIPATION_FORBIDDEN") {
+        throw new EventError(
+          "EVENT_CREATOR_PARTICIPATION_FORBIDDEN",
+          "Event creator does not join through participant RSVP",
+        );
+      }
       if (error instanceof Error && error.message === "EVENT_INVITE_STATE_CHANGED") {
         throw new EventError("EVENT_INVITE_CLOSED", "This event invitation is already closed");
       }
@@ -287,7 +379,28 @@ export class EventService {
   }
 
   async createFormation(userId: string, eventId: string, input: EventFormationInput) {
-    await this.requireManage(userId, eventId);
+    const access = await this.requireManage(userId, eventId);
+    if (access.type !== "PLAY" || !access.playFormat) {
+      throw new EventError(
+        "EVENT_FORMATION_INVALID_CONTEXT",
+        "Formations are available only for Play events",
+      );
+    }
+    if (input.format !== access.playFormat) {
+      throw new EventError(
+        "EVENT_FORMATION_FORMAT_MISMATCH",
+        "Formation format must match the Event format",
+      );
+    }
+    const expectedTeamSize = FOOTBALL_FORMAT_PLAYER_COUNTS[access.playFormat];
+    const teamACount = input.slots.filter((slot) => slot.team === "A").length;
+    const teamBCount = input.slots.filter((slot) => slot.team === "B").length;
+    if (teamACount !== expectedTeamSize || teamBCount !== expectedTeamSize) {
+      throw new EventError(
+        "EVENT_FORMATION_INVALID_SLOT_COUNT",
+        `Formation must contain exactly ${expectedTeamSize} slots per team`,
+      );
+    }
     const roster = await this.repository.formationRoster(eventId);
     const allowed = new Set(roster.map((player) => player.userId));
     const used = new Set<string>();
@@ -311,8 +424,10 @@ export class EventService {
   }
 
   async listFormations(userId: string, eventId: string) {
+    const access = await this.repository.access(eventId);
+    if (!access) throw new EventError("EVENT_NOT_FOUND", "Event not found");
     await this.requireMemberContent(userId, eventId);
-    return this.repository.listFormations(eventId);
+    return this.repository.listFormations(eventId, await this.canManage(userId, access));
   }
 
   async checkIn(
@@ -324,6 +439,21 @@ export class EventService {
     try {
       return await this.repository.checkIn(eventId, userId, latitude, longitude);
     } catch (error) {
+      if (error instanceof Error && error.message === "EVENT_CREATOR_PARTICIPATION_FORBIDDEN") {
+        throw new EventError(
+          "EVENT_CREATOR_PARTICIPATION_FORBIDDEN",
+          "Event creator does not use participant check-in",
+        );
+      }
+      if (error instanceof Error && error.message === "EVENT_NOT_ACTIVE") {
+        throw new EventError("EVENT_NOT_ACTIVE", "Event is not active for check-in");
+      }
+      if (error instanceof Error && error.message === "EVENT_CHECK_IN_NOT_OPEN") {
+        throw new EventError(
+          "EVENT_CHECK_IN_NOT_OPEN",
+          "Check-in opens 60 minutes before the Event starts",
+        );
+      }
       if (error instanceof Error && error.message === "EVENT_CHECK_IN_REQUIRES_CONFIRMED_RSVP") {
         throw new EventError(
           "EVENT_CHECK_IN_REQUIRES_CONFIRMED_RSVP",
@@ -348,14 +478,22 @@ export class EventService {
     return message;
   }
 
+  private async canManage(userId: string, access: EventAccessRecord): Promise<boolean> {
+    if (access.createdByUserId === userId) return true;
+    if (access.type !== "PLAY" || !access.communityId) return false;
+    try {
+      await this.communities.requireCoach(access.communityId, userId);
+      return true;
+    } catch (error) {
+      if (error instanceof AppError && error.code === "COMMUNITY_COACH_REQUIRED") return false;
+      throw error;
+    }
+  }
+
   private async requireManage(userId: string, eventId: string) {
     const access = await this.repository.access(eventId);
     if (!access) throw new EventError("EVENT_NOT_FOUND", "Event not found");
-    if (access.createdByUserId === userId) return access;
-    if (access.type === "PLAY" && access.communityId) {
-      await this.communities.requireCoach(access.communityId, userId);
-      return access;
-    }
+    if (await this.canManage(userId, access)) return access;
     throw new EventError("EVENT_MANAGE_FORBIDDEN", "Only the Watch event creator can manage it");
   }
 }

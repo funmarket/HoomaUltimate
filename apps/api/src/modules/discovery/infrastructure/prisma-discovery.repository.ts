@@ -19,7 +19,11 @@ export class PrismaDiscoveryRepository implements DiscoveryRepository {
           AND: [
             {
               OR: [
-                { type: "PLAY", community: { visibility: "PUBLIC" } },
+                {
+                  type: "PLAY",
+                  community: { visibility: "PUBLIC" },
+                  playDetails: { is: { visibility: "OPEN" } },
+                },
                 {
                   type: "WATCH",
                   place: { moderationStatus: "APPROVED", archivedAt: null },

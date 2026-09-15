@@ -1,6 +1,6 @@
 import type { EventCreateInput, EventFormationInput, EventUpdateInput } from "@hooma/contracts";
 import { Prisma, type PrismaClient } from "@hooma/database";
-import { eventChatWindow } from "../domain/event-policy.js";
+import { eventChatWindow, eventCheckInOpensAt } from "../domain/event-policy.js";
 import type {
   EventAccessRecord,
   EventOpenPlayListInput,
@@ -143,8 +143,9 @@ export class PrismaEventRepository implements EventRepository {
         type: true,
         createdByUserId: true,
         status: true,
+        startsAt: true,
         entryFeeMinor: true,
-        playDetails: { select: { visibility: true } },
+        playDetails: { select: { visibility: true, format: true } },
       },
     });
     if (!event) return null;
@@ -154,8 +155,10 @@ export class PrismaEventRepository implements EventRepository {
       type: event.type,
       createdByUserId: event.createdByUserId,
       status: event.status,
+      startsAt: event.startsAt,
       entryFeeMinor: event.entryFeeMinor,
       playVisibility: event.playDetails?.visibility ?? null,
+      playFormat: event.playDetails?.format ?? null,
     };
     if (event.type !== "WATCH") return { ...base, watchKind: null };
     const cultural = await this.db.watchCulturalEventDetails.findUnique({
@@ -309,7 +312,9 @@ export class PrismaEventRepository implements EventRepository {
 
   async update(eventId: string, input: EventUpdateInput) {
     return this.db.$transaction(async (tx) => {
+      await lockEvent(tx, eventId);
       const current = await tx.event.findUniqueOrThrow({ where: { id: eventId } });
+      if (current.status !== "PUBLISHED") throw new Error("EVENT_NOT_EDITABLE");
       const currentCultural =
         current.type === "WATCH"
           ? await tx.watchCulturalEventDetails.findUnique({ where: { eventId } })
@@ -402,25 +407,37 @@ export class PrismaEventRepository implements EventRepository {
 
   async cancel(eventId: string) {
     const now = new Date();
-    await this.db.$transaction([
-      this.db.event.update({ where: { id: eventId }, data: { status: "CANCELLED" } }),
-      this.db.eventPlayerInvite.updateMany({
+    await this.db.$transaction(async (tx) => {
+      await lockEvent(tx, eventId);
+      const event = await tx.event.findUniqueOrThrow({
+        where: { id: eventId },
+        select: { status: true },
+      });
+      if (event.status !== "PUBLISHED") throw new Error("EVENT_NOT_CANCELLABLE");
+      await tx.event.update({ where: { id: eventId }, data: { status: "CANCELLED" } });
+      await tx.eventPlayerInvite.updateMany({
         where: { eventId, status: "PENDING" },
         data: { status: "CANCELLED", respondedAt: now },
-      }),
-    ]);
+      });
+    });
     return { cancelled: true };
   }
 
   async complete(eventId: string) {
     const now = new Date();
-    await this.db.$transaction([
-      this.db.event.update({ where: { id: eventId }, data: { status: "COMPLETED" } }),
-      this.db.eventPlayerInvite.updateMany({
+    await this.db.$transaction(async (tx) => {
+      await lockEvent(tx, eventId);
+      const event = await tx.event.findUniqueOrThrow({
+        where: { id: eventId },
+        select: { status: true },
+      });
+      if (event.status !== "PUBLISHED") throw new Error("EVENT_NOT_COMPLETABLE");
+      await tx.event.update({ where: { id: eventId }, data: { status: "COMPLETED" } });
+      await tx.eventPlayerInvite.updateMany({
         where: { eventId, status: "PENDING" },
         data: { status: "CANCELLED", respondedAt: now },
-      }),
-    ]);
+      });
+    });
     return this.getPublic(eventId);
   }
 
@@ -440,6 +457,10 @@ export class PrismaEventRepository implements EventRepository {
       await tx.eventRsvp.update({
         where: { id: existing.id },
         data: { status: "CANCELLED", waitlistSequence: null },
+      });
+      await tx.formationSlot.updateMany({
+        where: { userId, formation: { eventId } },
+        data: { userId: null },
       });
       let promotedUserId: string | null = null;
       if (existing.status === "CONFIRMED") {
@@ -484,27 +505,42 @@ export class PrismaEventRepository implements EventRepository {
   }
 
   upsertPlayerInvite(eventId: string, targetUserId: string, invitedByUserId: string) {
-    return this.db.eventPlayerInvite.upsert({
-      where: { eventId_targetUserId: { eventId, targetUserId } },
-      create: { eventId, targetUserId, invitedByUserId },
-      update: {
-        invitedByUserId,
-        status: "PENDING",
-        respondedAt: null,
-        createdAt: new Date(),
-      },
-      include: {
-        event: {
-          select: {
-            id: true,
-            title: true,
-            startsAt: true,
-            timezone: true,
-            venueName: true,
-            address: true,
+    return this.db.$transaction(async (tx) => {
+      await lockEvent(tx, eventId);
+      const event = await tx.event.findUniqueOrThrow({
+        where: { id: eventId },
+        select: { type: true, status: true },
+      });
+      if (event.type !== "PLAY" || event.status !== "PUBLISHED")
+        throw new Error("EVENT_INVITE_NOT_AVAILABLE");
+      const rsvp = await tx.eventRsvp.findUnique({
+        where: { eventId_userId: { eventId, userId: targetUserId } },
+        select: { status: true },
+      });
+      if (rsvp && ["CONFIRMED", "WAITLISTED", "ATTENDED"].includes(rsvp.status))
+        throw new Error("EVENT_INVITE_ALREADY_JOINED");
+      return tx.eventPlayerInvite.upsert({
+        where: { eventId_targetUserId: { eventId, targetUserId } },
+        create: { eventId, targetUserId, invitedByUserId },
+        update: {
+          invitedByUserId,
+          status: "PENDING",
+          respondedAt: null,
+          createdAt: new Date(),
+        },
+        include: {
+          event: {
+            select: {
+              id: true,
+              title: true,
+              startsAt: true,
+              timezone: true,
+              venueName: true,
+              address: true,
+            },
           },
         },
-      },
+      });
     });
   }
 
@@ -661,9 +697,9 @@ export class PrismaEventRepository implements EventRepository {
     );
   }
 
-  listFormations(eventId: string) {
+  listFormations(eventId: string, includeDrafts: boolean) {
     return this.db.formation.findMany({
-      where: { eventId },
+      where: { eventId, ...(includeDrafts ? {} : { published: true }) },
       include: { slots: { orderBy: [{ team: "asc" }, { position: "asc" }] } },
       orderBy: { createdAt: "desc" },
     });
@@ -675,25 +711,49 @@ export class PrismaEventRepository implements EventRepository {
     latitude?: number | null,
     longitude?: number | null,
   ) {
-    const rsvp = await this.db.eventRsvp.findUnique({
-      where: { eventId_userId: { eventId, userId } },
-      select: { status: true },
-    });
-    if (!rsvp || !["CONFIRMED", "ATTENDED"].includes(rsvp.status))
-      throw new Error("EVENT_CHECK_IN_REQUIRES_CONFIRMED_RSVP");
-    const checkedInAt = new Date();
-    await this.db.$transaction([
-      this.db.eventCheckIn.upsert({
+    return this.db.$transaction(async (tx) => {
+      await lockEvent(tx, eventId);
+      const event = await tx.event.findUniqueOrThrow({
+        where: { id: eventId },
+        select: { status: true, startsAt: true, createdByUserId: true },
+      });
+      if (event.createdByUserId === userId)
+        throw new Error("EVENT_CREATOR_PARTICIPATION_FORBIDDEN");
+      if (event.status !== "PUBLISHED") throw new Error("EVENT_NOT_ACTIVE");
+      const checkedInAt = new Date();
+      if (checkedInAt < eventCheckInOpensAt(event.startsAt))
+        throw new Error("EVENT_CHECK_IN_NOT_OPEN");
+      const rsvp = await tx.eventRsvp.findUnique({
         where: { eventId_userId: { eventId, userId } },
-        create: { eventId, userId, latitude: latitude ?? null, longitude: longitude ?? null },
-        update: { latitude: latitude ?? null, longitude: longitude ?? null },
-      }),
-      this.db.eventRsvp.update({
+        select: { status: true, checkedInAt: true },
+      });
+      if (!rsvp || !["CONFIRMED", "ATTENDED"].includes(rsvp.status))
+        throw new Error("EVENT_CHECK_IN_REQUIRES_CONFIRMED_RSVP");
+      if (rsvp.status === "ATTENDED") {
+        const existing = await tx.eventCheckIn.findUnique({
+          where: { eventId_userId: { eventId, userId } },
+          select: { createdAt: true },
+        });
+        return {
+          checkedIn: true,
+          checkedInAt: rsvp.checkedInAt ?? existing?.createdAt ?? null,
+        };
+      }
+      await tx.eventCheckIn.create({
+        data: {
+          eventId,
+          userId,
+          latitude: latitude ?? null,
+          longitude: longitude ?? null,
+          createdAt: checkedInAt,
+        },
+      });
+      await tx.eventRsvp.update({
         where: { eventId_userId: { eventId, userId } },
         data: { status: "ATTENDED", checkedInAt },
-      }),
-    ]);
-    return { checkedIn: true, checkedInAt };
+      });
+      return { checkedIn: true, checkedInAt };
+    });
   }
 
   async listChat(eventId: string, userId: string) {
@@ -764,9 +824,10 @@ async function joinEvent(
   await lockEvent(tx, eventId);
   const event = await tx.event.findUniqueOrThrow({
     where: { id: eventId },
-    select: { status: true, capacity: true, waitlistEnabled: true },
+    select: { status: true, capacity: true, waitlistEnabled: true, createdByUserId: true },
   });
   if (event.status !== "PUBLISHED") throw new Error("EVENT_NOT_ACTIVE");
+  if (event.createdByUserId === userId) throw new Error("EVENT_CREATOR_PARTICIPATION_FORBIDDEN");
   const existing = await tx.eventRsvp.findUnique({
     where: { eventId_userId: { eventId, userId } },
     select: { status: true },
