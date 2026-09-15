@@ -65,11 +65,23 @@ test("Event check-in policy opens exactly at T-60 and has no closing cutoff", ()
 
   assert.equal(EVENT_CHECK_IN_OPEN_BEFORE_MS, 60 * 60 * 1000);
   assert.equal(opensAt.toISOString(), "2026-12-01T17:00:00.000Z");
-  assert.equal(new Date("2026-12-01T16:59:00.000Z") < opensAt, true, "T-61 is too early");
+  assert.equal(
+    new Date("2026-12-01T16:59:00.000Z") < opensAt,
+    true,
+    "T-61 is too early",
+  );
   assert.equal(new Date("2026-12-01T17:00:00.000Z") >= opensAt, true, "T-60 is open");
   assert.equal(new Date("2026-12-01T17:30:00.000Z") >= opensAt, true, "T-30 stays open");
-  assert.equal(new Date("2026-12-01T18:00:00.000Z") >= opensAt, true, "start time stays open");
-  assert.equal(new Date("2026-12-01T19:00:00.000Z") >= opensAt, true, "after start stays open");
+  assert.equal(
+    new Date("2026-12-01T18:00:00.000Z") >= opensAt,
+    true,
+    "start time stays open",
+  );
+  assert.equal(
+    new Date("2026-12-01T19:00:00.000Z") >= opensAt,
+    true,
+    "after start stays open",
+  );
 });
 
 test("Event participation state uses exact creator identity instead of management authority", async () => {
@@ -200,7 +212,10 @@ test("repository enforces opening time server-side and does not add a post-start
     "apps/api/src/modules/events/infrastructure/prisma-event.repository.ts",
     "utf8",
   );
-  const checkInSource = source.slice(source.indexOf("async checkIn("), source.indexOf("async listChat("));
+  const checkInSource = source.slice(
+    source.indexOf("async checkIn("),
+    source.indexOf("async listChat("),
+  );
 
   assert.match(checkInSource, /checkedInAt < eventCheckInOpensAt\(event\.startsAt\)/);
   assert.doesNotMatch(checkInSource, /checkedInAt > event\.startsAt/);
