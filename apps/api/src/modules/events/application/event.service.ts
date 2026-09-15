@@ -4,7 +4,6 @@ import {
   type EventFormationInput,
   type EventUpdateInput,
 } from "@hooma/contracts";
-import { AppError } from "../../../http/errors/app-error.js";
 import type { CommunityService } from "../../communities/application/community.service.js";
 import type { ApprovedPitchReader } from "../../pitch/application/approved-pitch.reader.js";
 import type { PlaceService } from "../../places/application/place.service.js";
@@ -16,6 +15,15 @@ import type {
   EventPublicListInput,
   EventRepository,
 } from "./event.repository.js";
+
+function hasErrorCode(error: unknown, code: string): boolean {
+  return Boolean(
+    error &&
+      typeof error === "object" &&
+      "code" in error &&
+      (error as { readonly code?: unknown }).code === code,
+  );
+}
 
 export class EventService {
   constructor(
@@ -485,7 +493,7 @@ export class EventService {
       await this.communities.requireCoach(access.communityId, userId);
       return true;
     } catch (error) {
-      if (error instanceof AppError && error.code === "COMMUNITY_COACH_REQUIRED") return false;
+      if (hasErrorCode(error, "COMMUNITY_COACH_REQUIRED")) return false;
       throw error;
     }
   }
