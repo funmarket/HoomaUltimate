@@ -87,12 +87,7 @@ async function createCommunity(base: string, cookie: string, name: string) {
   return (await response.json()) as { id: string };
 }
 
-async function createPlayEvent(
-  base: string,
-  cookie: string,
-  communityId: string,
-  title: string,
-) {
+async function createPlayEvent(base: string, cookie: string, communityId: string, title: string) {
   const response = await fetch(`${base}/api/v1/events`, {
     method: "POST",
     headers: headers(cookie),
