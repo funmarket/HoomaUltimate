@@ -23,7 +23,7 @@ test("readiness reports PostgreSQL and Redis available", async () => {
   try {
     assert.deepEqual(await readiness.check(), {
       status: "ok",
-      checks: { postgres: "ok", redis: "ok" },
+      checks: { postgres: "ok", redis: "ok", objectStorage: "not_configured" },
     });
   } finally {
     redis.close();
@@ -42,6 +42,6 @@ test("readiness reports a failed dependency without throwing details", async () 
 
   assert.deepEqual(await readiness.check(), {
     status: "not_ready",
-    checks: { postgres: "ok", redis: "failed" },
+    checks: { postgres: "ok", redis: "failed", objectStorage: "not_configured" },
   });
 });

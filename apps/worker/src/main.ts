@@ -1,10 +1,15 @@
 import { ATHLETES_PHOTO_RECONCILE_TOPIC } from "@hooma/contracts/athletes";
 import { createAthletesPhotoCleanupHandler } from "./athletes/athletes-photo-cleanup.js";
 import { loadObjectStorageConfig, type ObjectStorageConfig } from "@hooma/config";
-import { disconnectDatabase, getDatabaseClient } from "@hooma/database";
-import { S3ObjectStorage, type ObjectStorage } from "@hooma/storage";
+import { disconnectDatabase, getDatabaseClient, type PrismaClient } from "@hooma/database";
+import {
+  S3ObjectStorage,
+  type ObjectStorage,
+  type ObjectStorageReadinessProbe,
+} from "@hooma/storage";
 import { cleanupExpiredEventChat } from "./events/event-chat-cleanup.js";
 import { reconcileGamerMatches } from "./gamers/match-reconciliation.js";
+import { createWorkerHealthServer } from "./health/worker-health.js";
 import { OutboxRepository } from "./outbox/outbox.repository.js";
 import { type OutboxHandler, OutboxRunner } from "./outbox/outbox.runner.js";
 import {
@@ -17,10 +22,26 @@ const EVENT_CHAT_CLEANUP_INTERVAL_MS = 60_000;
 const GAMER_MATCH_RECONCILIATION_INTERVAL_MS = 15_000;
 const OUTBOX_POLL_INTERVAL_MS = 5_000;
 const WHISTLE_CLEANUP_INTERVAL_MS = 60_000;
+
+class WorkerDatabaseReadinessProbe {
+  constructor(private readonly database: PrismaClient) {}
+
+  async check(): Promise<void> {
+    await this.database.$queryRaw`SELECT 1`;
+  }
+}
+
+const missingObjectStorageProbe: ObjectStorageReadinessProbe = {
+  async check(): Promise<void> {
+    throw new Error("Object storage is not configured");
+  },
+};
+
 const objectStorageConfig = loadObjectStorageConfig(process.env);
 const database = getDatabaseClient();
 const outboxHandlers = new Map<string, OutboxHandler>();
 const storage = objectStorage(objectStorageConfig);
+const storageReadiness = objectStorageReadinessProbe(storage);
 if (storage) {
   outboxHandlers.set(
     ATHLETES_PHOTO_RECONCILE_TOPIC,
@@ -32,6 +53,14 @@ if (storage) {
   );
 }
 const outbox = new OutboxRunner(new OutboxRepository(database), outboxHandlers);
+const healthServer = createWorkerHealthServer({
+  service: "worker",
+  version: process.env.npm_package_version ?? "0.1.0",
+  checks: {
+    postgres: new WorkerDatabaseReadinessProbe(database),
+    objectStorage: storageReadiness ?? missingObjectStorageProbe,
+  },
+});
 
 let cleanupRunning = false;
 let gamerMatchesRunning = false;
@@ -116,6 +145,10 @@ async function runWhistleCleanup(): Promise<void> {
 console.log(
   `HOOMA worker started with Event chat cleanup, Whistle cleanup, Gamer match reconciliation and Outbox engine (${outboxHandlers.size} handlers registered).`,
 );
+const healthPort = Number(process.env.PORT ?? process.env.WORKER_HEALTH_PORT ?? 3001);
+healthServer.listen(healthPort, "0.0.0.0", () => {
+  console.log(`HOOMA worker health server listening on ${healthPort}.`);
+});
 void runEventChatCleanup();
 void runWhistleCleanup();
 void runGamerMatchReconciliation();
@@ -144,6 +177,9 @@ async function shutdown(signal: NodeJS.Signals): Promise<void> {
       (promise): promise is Promise<void> => promise !== null,
     ),
   );
+  await new Promise<void>((resolve, reject) => {
+    healthServer.close((error) => (error ? reject(error) : resolve()));
+  });
   await disconnectDatabase();
 }
 
@@ -168,4 +204,13 @@ function objectStorage(config: ObjectStorageConfig): ObjectStorage | null {
     secretAccessKey: config.OBJECT_STORAGE_SECRET_ACCESS_KEY,
     urlStyle: config.OBJECT_STORAGE_URL_STYLE,
   });
+}
+
+function objectStorageReadinessProbe(
+  storage: ObjectStorage | null,
+): ObjectStorageReadinessProbe | undefined {
+  if (storage && "check" in storage && typeof storage.check === "function") {
+    return storage as ObjectStorageReadinessProbe;
+  }
+  return undefined;
 }

@@ -2,7 +2,11 @@ import { SharpAthletesPhotoOptimizer } from "../modules/athletes/infrastructure/
 import { SharpAthletesPhotoValidator } from "../modules/athletes/infrastructure/sharp-athletes-photo-validator.js";
 import type { ApiConfig } from "@hooma/config";
 import { getDatabaseClient } from "@hooma/database";
-import { S3ObjectStorage, type ObjectStorage } from "@hooma/storage";
+import {
+  S3ObjectStorage,
+  type ObjectStorage,
+  type ObjectStorageReadinessProbe,
+} from "@hooma/storage";
 import { RedisClient } from "../infrastructure/redis/redis-client.js";
 import { RedisApiRateLimiter } from "../http/rate-limit/redis-api-rate-limiter.js";
 import { IdentityService } from "../modules/identity/application/identity.service.js";
@@ -91,6 +95,15 @@ function objectStorage(
   });
 }
 
+function objectStorageReadinessProbe(
+  storage: ObjectStorage | null,
+): ObjectStorageReadinessProbe | undefined {
+  if (storage && "check" in storage && typeof storage.check === "function") {
+    return storage as ObjectStorageReadinessProbe;
+  }
+  return undefined;
+}
+
 export function createContainer(config: ApiConfig, overrides: ContainerOverrides = {}) {
   const database = getDatabaseClient();
   const redis = new RedisClient(config.REDIS_URL ?? "redis://localhost:6379");
@@ -103,6 +116,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
   const readinessService = new ReadinessService(
     new PrismaReadinessProbe(database),
     new RedisReadinessProbe(redis),
+    objectStorageReadinessProbe(storage),
   );
   const platformAdminRepository = new PrismaPlatformAdminRepository(database);
   const platformAdminService = new PlatformAdminService(platformAdminRepository);
