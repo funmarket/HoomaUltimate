@@ -1,4 +1,4 @@
-type RideMapPreviewCoordinates = {
+export type RideMapPreviewCoordinates = {
   readonly latitude: number;
   readonly longitude: number;
 };
@@ -10,6 +10,29 @@ export interface RideMapPreviewInput {
   readonly callout: string;
   readonly privacyNote: string;
   readonly coordinates?: RideMapPreviewCoordinates | null;
+}
+
+export interface RideMapPreviewImage {
+  readonly contentType: string;
+  readonly body: Uint8Array;
+}
+
+export interface RideStaticMapProvider {
+  renderPublicDestinationMap(input: {
+    readonly searchText: string;
+  }): Promise<RideMapPreviewImage | null>;
+  renderPrivateMeetingPointMap(input: {
+    readonly coordinates: RideMapPreviewCoordinates | null;
+  }): Promise<RideMapPreviewImage | null>;
+}
+
+const encoder = new TextEncoder();
+
+export function renderRideMapPreviewSvgImage(input: RideMapPreviewInput): RideMapPreviewImage {
+  return {
+    contentType: "image/svg+xml",
+    body: encoder.encode(renderRideMapPreviewSvg(input)),
+  };
 }
 
 export function renderRideMapPreviewSvg(input: RideMapPreviewInput): string {

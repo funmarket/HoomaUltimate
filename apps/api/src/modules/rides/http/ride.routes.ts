@@ -85,10 +85,11 @@ export function createRidePublicRouter(service: RideService): Router {
   router.get(
     "/offers/:offerId/map",
     asyncHandler(async (request, response) => {
+      const preview = await service.getPublicOfferMapPreview(String(request.params.offerId));
       response
         .set("cache-control", "public, max-age=300, stale-while-revalidate=300")
-        .type("image/svg+xml")
-        .send(await service.getPublicOfferMapPreview(String(request.params.offerId)));
+        .type(preview.contentType)
+        .send(Buffer.from(preview.body));
     }),
   );
 
@@ -294,15 +295,14 @@ export function createRideMemberRouter(service: RideService): Router {
   router.get(
     "/participations/:participationId/meeting-point/map",
     asyncHandler(async (request, response) => {
+      const preview = await service.getMeetingPointMapPreview(
+        getAuth(request).userId,
+        String(request.params.participationId),
+      );
       response
         .set("cache-control", "private, no-store")
-        .type("image/svg+xml")
-        .send(
-          await service.getMeetingPointMapPreview(
-            getAuth(request).userId,
-            String(request.params.participationId),
-          ),
-        );
+        .type(preview.contentType)
+        .send(Buffer.from(preview.body));
     }),
   );
 
