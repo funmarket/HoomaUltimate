@@ -16,7 +16,10 @@ test("success navigation state round-trips one transient success notice", () => 
 
 test("interaction notice reader ignores invalid and blank state", () => {
   assert.equal(readInteractionNotice(null), null);
-  assert.equal(readInteractionNotice({ hoomaInteractionNotice: { kind: "error", message: "No" } }), null);
+  assert.equal(
+    readInteractionNotice({ hoomaInteractionNotice: { kind: "error", message: "No" } }),
+    null,
+  );
   assert.equal(
     readInteractionNotice({ hoomaInteractionNotice: { kind: "success", message: "   " } }),
     null,
