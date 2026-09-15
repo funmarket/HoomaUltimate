@@ -72,6 +72,36 @@ test("S3ObjectStorage preserves path-style addressing by default for PUT, GET an
   });
 });
 
+test("S3ObjectStorage checks path-style bucket readiness without object keys", async () => {
+  await withCapturedFetch(async (calls) => {
+    const storage = new S3ObjectStorage(baseConfig);
+
+    await storage.check();
+
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0]?.method, "HEAD");
+    assert.equal(calls[0]?.url, "https://storage.example.com/hooma-test");
+    assertSignedHost(calls[0]!, "storage.example.com");
+  });
+});
+
+test("S3ObjectStorage checks virtual-hosted bucket readiness without object keys", async () => {
+  await withCapturedFetch(async (calls) => {
+    const storage = new S3ObjectStorage({
+      ...baseConfig,
+      endpoint: "https://storage.example.com:9443",
+      urlStyle: "virtual",
+    });
+
+    await storage.check();
+
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0]?.method, "HEAD");
+    assert.equal(calls[0]?.url, "https://hooma-test.storage.example.com:9443/");
+    assertSignedHost(calls[0]!, "hooma-test.storage.example.com:9443");
+  });
+});
+
 test("S3ObjectStorage uses virtual-hosted addressing for PUT, GET and DELETE", async () => {
   await withCapturedFetch(async (calls) => {
     const storage = new S3ObjectStorage({

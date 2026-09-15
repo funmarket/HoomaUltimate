@@ -19,14 +19,24 @@ test("API production config rejects missing object storage", () => {
 test("production storage readiness stays on the shared object storage authority", () => {
   const config = readFileSync("packages/config/src/index.ts", "utf8");
   const apiContainer = readFileSync("apps/api/src/bootstrap/container.ts", "utf8");
+  const apiReadiness = readFileSync(
+    "apps/api/src/modules/system/application/readiness.service.ts",
+    "utf8",
+  );
   const workerMain = readFileSync("apps/worker/src/main.ts", "utf8");
+  const workerHealth = readFileSync("apps/worker/src/health/worker-health.ts", "utf8");
   const healthRoutes = readFileSync("apps/api/src/http/system/health.routes.ts", "utf8");
 
   assert.match(config, /loadObjectStorageConfig/);
   assert.match(config, /NODE_ENV/);
   assert.match(config, /required in production/);
   assert.match(apiContainer, /S3ObjectStorage/);
+  assert.match(apiContainer, /objectStorageReadinessProbe/);
+  assert.match(apiReadiness, /objectStorage/);
   assert.match(workerMain, /loadObjectStorageConfig/);
   assert.match(workerMain, /S3ObjectStorage/);
+  assert.match(workerMain, /createWorkerHealthServer/);
+  assert.match(workerHealth, /objectStorage/);
+  assert.match(workerHealth, /\/health\/ready/);
   assert.doesNotMatch(healthRoutes, /health\/storage|storage\/ready/);
 });

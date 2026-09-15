@@ -18,6 +18,10 @@ export interface ObjectStorageReadUrlSigner {
   createReadUrl(key: string, expiresInSeconds: number): Promise<string>;
 }
 
+export interface ObjectStorageReadinessProbe {
+  check(): Promise<void>;
+}
+
 export type S3ObjectStorageConfig = {
   readonly endpoint: string;
   readonly region: string;
@@ -90,6 +94,19 @@ function objectRequestUrl(
   return url;
 }
 
+function bucketRequestUrl(endpoint: URL, bucket: string, urlStyle: "path" | "virtual"): URL {
+  const url = new URL(endpoint);
+  if (urlStyle === "virtual") {
+    url.hostname = `${bucket}.${endpoint.hostname}`;
+    url.pathname = "/";
+  } else {
+    url.pathname = `/${encodePathSegment(bucket)}`;
+  }
+  url.search = "";
+  url.hash = "";
+  return url;
+}
+
 function canonicalQuery(parameters: Readonly<Record<string, string>>): string {
   return Object.entries(parameters)
     .map(([name, value]) => [awsEncode(name), awsEncode(value)] as const)
@@ -98,7 +115,9 @@ function canonicalQuery(parameters: Readonly<Record<string, string>>): string {
     .join("&");
 }
 
-export class S3ObjectStorage implements ObjectStorage, ObjectStorageReadUrlSigner {
+export class S3ObjectStorage
+  implements ObjectStorage, ObjectStorageReadUrlSigner, ObjectStorageReadinessProbe
+{
   private readonly endpoint: URL;
 
   constructor(private readonly config: S3ObjectStorageConfig) {
@@ -123,6 +142,10 @@ export class S3ObjectStorage implements ObjectStorage, ObjectStorageReadUrlSigne
 
   async remove(key: string): Promise<void> {
     await this.request("DELETE", key);
+  }
+
+  async check(): Promise<void> {
+    await this.request("HEAD");
   }
 
   async createReadUrl(key: string, expiresInSeconds: number): Promise<string> {
@@ -177,8 +200,8 @@ export class S3ObjectStorage implements ObjectStorage, ObjectStorageReadUrlSigne
   }
 
   private async request(
-    method: "GET" | "PUT" | "DELETE",
-    key: string,
+    method: "GET" | "PUT" | "DELETE" | "HEAD",
+    key?: string,
     body?: Uint8Array,
     contentType?: string,
   ): Promise<Response> {
@@ -186,12 +209,9 @@ export class S3ObjectStorage implements ObjectStorage, ObjectStorageReadUrlSigne
     const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
     const shortDate = amzDate.slice(0, 8);
     const payloadHash = await sha256(body ?? new Uint8Array());
-    const url = objectRequestUrl(
-      this.endpoint,
-      this.config.bucket,
-      key,
-      this.config.urlStyle ?? "path",
-    );
+    const url = key
+      ? objectRequestUrl(this.endpoint, this.config.bucket, key, this.config.urlStyle ?? "path")
+      : bucketRequestUrl(this.endpoint, this.config.bucket, this.config.urlStyle ?? "path");
     const canonicalUri = url.pathname;
     const host = url.host;
     const headers: Record<string, string> = {

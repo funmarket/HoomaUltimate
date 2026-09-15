@@ -175,7 +175,7 @@ MANAGE_TEAM_EVENTS
 
 **Decision:** Persistent business truth stays in PostgreSQL. Redis is disposable transient infrastructure. Managed media bytes live in S3-compatible storage, including current domain-owned media flows where implemented.
 
-Production runtimes that can create or clean up managed media require complete `OBJECT_STORAGE_*` configuration at startup; they must fail closed rather than running Photo upload or media-cleanup paths without object storage authority.
+Production runtimes that can create or clean up managed media require complete `OBJECT_STORAGE_*` configuration at startup; they must fail closed rather than running Photo upload or media-cleanup paths without object storage authority. API readiness includes object storage when configured, and the Worker exposes the same live/ready health paths so deployment health checks can verify storage-backed cleanup readiness instead of only process liveness.
 
 **Reason:** Clear failure and retention semantics.
 
