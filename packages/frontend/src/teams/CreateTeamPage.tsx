@@ -29,9 +29,7 @@ export function CreateTeamPage() {
         const firstEligible = response?.communities.find(
           (community) => community.role === "FOUNDER" || community.role === "COACH",
         );
-        const requestedCommunityId = new URLSearchParams(window.location.search).get(
-          "communityId",
-        );
+        const requestedCommunityId = new URLSearchParams(window.location.search).get("communityId");
         const requestedEligible = response?.communities.find(
           (community) =>
             community.id === requestedCommunityId &&
