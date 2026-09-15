@@ -74,6 +74,46 @@ export function createAthletesMemberRouter(
     }),
   );
   router.post(
+    "/:athletesCommunityId/calendar/media",
+    raw({ type: "*/*", limit: "5mb" }),
+    asyncHandler(async (req, res) => {
+      const body = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
+      res
+        .status(201)
+        .json(
+          await calendarService.uploadMedia(
+            getAuth(req).userId,
+            String(req.params.athletesCommunityId),
+            { contentType: req.get("content-type") ?? "", body },
+          ),
+        );
+    }),
+  );
+  router.delete(
+    "/:athletesCommunityId/calendar/media/:mediaId",
+    asyncHandler(async (req, res) => {
+      await calendarService.discardPreparedMedia(
+        getAuth(req).userId,
+        String(req.params.athletesCommunityId),
+        String(req.params.mediaId),
+      );
+      res.json({ ok: true });
+    }),
+  );
+  router.get(
+    "/:athletesCommunityId/calendar/:entryId/media/delivery",
+    asyncHandler(async (req, res) => {
+      res.setHeader("cache-control", "private, no-store");
+      res.json(
+        await calendarService.mediaDelivery(
+          getAuth(req).userId,
+          String(req.params.athletesCommunityId),
+          String(req.params.entryId),
+        ),
+      );
+    }),
+  );
+  router.post(
     "/:athletesCommunityId/calendar",
     asyncHandler(async (req, res) => {
       res

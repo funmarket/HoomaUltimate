@@ -10,7 +10,18 @@ model AthletesCalendarEntry {
   athletesCommunityId  String
   title                String
   description          String?
+  /// Founder-entered event address / meeting place.
   location             String?
+  /// External event-photo URL. Mutually exclusive with uploaded media fields.
+  photoUrl              String?
+  /// Opaque identifier for a Calendar-owned uploaded event photo.
+  photoMediaId          String?  @unique
+  /// Private object-storage key for uploaded Calendar event media. Never exposed by the API.
+  photoObjectKey        String?  @unique
+  /// Optimized uploaded media content type. Internal storage metadata only.
+  photoContentType      String?
+  /// Optimized uploaded media size. Internal storage metadata only.
+  photoSizeBytes        Int?
   startsAt             DateTime
   endsAt               DateTime
   timezone             String

@@ -2,6 +2,8 @@ import type {
   AthletesCalendarCreateInput,
   AthletesCalendarEntry,
   AthletesCalendarListPage,
+  AthletesCalendarMediaDelivery,
+  AthletesCalendarMediaUploadResponse,
   AthletesCalendarRsvpInput,
   AthletesCalendarRsvpResult,
   AthletesCalendarUpdateInput,
@@ -142,6 +144,26 @@ export function createAthletesApi(transport: HoomaTransport) {
       ),
     listCalendar: (id: string, from: string, to: string, cursor?: string) =>
       request<AthletesCalendarListPage>(transport, calendarListPath(id, from, to, cursor)),
+    uploadCalendarMedia: (id: string, body: Blob, contentType: AthletesPhotoContentType) =>
+      requestBinary<AthletesCalendarMediaUploadResponse>(
+        transport,
+        `/api/v1/athletes/${encodeURIComponent(id)}/calendar/media`,
+        body,
+        contentType,
+        { method: "POST" },
+      ),
+    discardCalendarMedia: (id: string, mediaId: string) =>
+      request<{ ok: true }>(
+        transport,
+        `/api/v1/athletes/${encodeURIComponent(id)}/calendar/media/${encodeURIComponent(mediaId)}`,
+        { method: "DELETE" },
+      ),
+    calendarMediaDelivery: (id: string, entryId: string, signal?: AbortSignal) =>
+      request<AthletesCalendarMediaDelivery>(
+        transport,
+        `/api/v1/athletes/${encodeURIComponent(id)}/calendar/${encodeURIComponent(entryId)}/media/delivery`,
+        signal ? { signal } : undefined,
+      ),
     createCalendarEntry: (id: string, input: AthletesCalendarCreateInput) =>
       request<AthletesCalendarEntry>(
         transport,

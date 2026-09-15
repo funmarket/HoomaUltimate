@@ -1,11 +1,14 @@
-import type {
-  AthletesCalendarCreateInput,
-  AthletesCalendarEntry,
-  AthletesCalendarEntryView,
-  AthletesCalendarRsvpStatus,
-  AthletesCalendarUpdateInput,
+import {
+  ATHLETES_PHOTO_CONTENT_TYPES,
+  ATHLETES_PHOTO_MAX_BYTES,
+  type AthletesCalendarCreateInput,
+  type AthletesCalendarEntry,
+  type AthletesCalendarEntryView,
+  type AthletesCalendarRsvpStatus,
+  type AthletesCalendarUpdateInput,
+  type AthletesPhotoContentType,
 } from "@hooma/contracts/athletes";
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useHoomaFrontend } from "../context";
 import {
   calendarMonthCells,
@@ -30,6 +33,7 @@ type EntryForm = {
   title: string;
   description: string;
   location: string;
+  photoUrl: string;
   startsAt: string;
   endsAt: string;
 };
@@ -48,6 +52,7 @@ function defaultForm(selectedKey: string): EntryForm {
     title: "",
     description: "",
     location: "",
+    photoUrl: "",
     startsAt: `${selectedKey}T18:00`,
     endsAt: `${selectedKey}T19:00`,
   };
@@ -58,9 +63,19 @@ function formForEntry(entry: AthletesCalendarEntry): EntryForm {
     title: entry.title,
     description: entry.description ?? "",
     location: entry.location ?? "",
+    photoUrl: entry.photoUrl ?? "",
     startsAt: isoToLocalInput(entry.startsAt),
     endsAt: isoToLocalInput(entry.endsAt),
   };
+}
+
+function validateEventPhoto(file: File): string | null {
+  if (!ATHLETES_PHOTO_CONTENT_TYPES.includes(file.type as AthletesPhotoContentType)) {
+    return "Choose a JPEG, PNG, or WebP event photo.";
+  }
+  if (file.size <= 0) return "Choose a non-empty event photo.";
+  if (file.size > ATHLETES_PHOTO_MAX_BYTES) return "Event photo must be 5 MiB or smaller.";
+  return null;
 }
 
 function rsvpCount(entry: AthletesCalendarEntryView, status: AthletesCalendarRsvpStatus): number {
@@ -101,6 +116,7 @@ export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
     () => entries.filter((entry) => dateKeyForInstant(entry.startsAt, timezone) === selectedKey),
     [entries, selectedKey, timezone],
   );
+  const editingEntry = editingId ? (entries.find((entry) => entry.id === editingId) ?? null) : null;
 
   function chooseDate(key: string) {
     setSelectedKey(key);
@@ -136,10 +152,43 @@ export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
     event.preventDefault();
     if (!founder || busy) return;
     const data = new FormData(event.currentTarget);
+    const selectedFile = data.get("photoFile");
+    const photoFile = selectedFile instanceof File && selectedFile.size > 0 ? selectedFile : null;
+    const photoUrlInput = String(data.get("photoUrl") ?? "").trim();
+    const removePhoto = data.get("removePhoto") === "on";
+    const currentPhotoUrl = editingEntry?.photoUrl ?? "";
+    const linkWasChanged = photoUrlInput !== currentPhotoUrl;
+
+    if (removePhoto && photoFile) {
+      setActionError("Choose either a replacement event photo or remove the current photo.");
+      return;
+    }
+    if (photoFile && photoUrlInput && (mode === "create" || linkWasChanged)) {
+      setActionError("Choose either an uploaded event photo or a photo link, not both.");
+      return;
+    }
+    if (photoFile) {
+      const validationMessage = validateEventPhoto(photoFile);
+      if (validationMessage) {
+        setActionError(validationMessage);
+        return;
+      }
+    }
+
     setBusy(true);
     setActionError("");
+    let uploadedMediaId: string | null = null;
     try {
-      const input: AthletesCalendarCreateInput = {
+      if (photoFile) {
+        const uploaded = await api.athletes.uploadCalendarMedia(
+          athletesCommunityId,
+          photoFile,
+          photoFile.type as AthletesPhotoContentType,
+        );
+        uploadedMediaId = uploaded.mediaId;
+      }
+
+      const common = {
         title: String(data.get("title") ?? "").trim(),
         description: String(data.get("description") ?? "").trim() || null,
         location: String(data.get("location") ?? "").trim() || null,
@@ -147,16 +196,45 @@ export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
         endsAt: localInputToIso(String(data.get("endsAt") ?? "")),
         timezone,
       };
+
       if (mode === "edit" && editingId) {
-        const update: AthletesCalendarUpdateInput = input;
+        const update: AthletesCalendarUpdateInput = { ...common };
+        if (uploadedMediaId) {
+          update.photoMediaId = uploadedMediaId;
+          update.photoUrl = null;
+        } else if (removePhoto) {
+          update.photoMediaId = null;
+          update.photoUrl = null;
+        } else if (editingEntry?.photoMediaId) {
+          if (photoUrlInput) {
+            update.photoMediaId = null;
+            update.photoUrl = photoUrlInput;
+          }
+        } else if (linkWasChanged) {
+          update.photoMediaId = null;
+          update.photoUrl = photoUrlInput || null;
+        }
         await api.athletes.updateCalendarEntry(athletesCommunityId, editingId, update);
       } else {
+        const input: AthletesCalendarCreateInput = {
+          ...common,
+          photoMediaId: uploadedMediaId,
+          photoUrl: uploadedMediaId ? null : photoUrlInput || null,
+        };
         await api.athletes.createCalendarEntry(athletesCommunityId, input);
       }
+
       setMode("idle");
       setEditingId(null);
       await reload();
     } catch (reason) {
+      if (uploadedMediaId) {
+        try {
+          await api.athletes.discardCalendarMedia(athletesCommunityId, uploadedMediaId);
+        } catch {
+          // Recovery intent still owns unattached bytes; Worker cleanup remains authoritative.
+        }
+      }
       setActionError(protectedError(reason, "Unable to save Calendar entry"));
     } finally {
       setBusy(false);
@@ -288,13 +366,18 @@ export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
             key={entry.id}
             className={`athletes-calendar__entry ${entry.cancelledAt ? "is-cancelled" : ""}`}
           >
+            {entry.photoUrl || entry.photoMediaId ? (
+              <AthletesCalendarPhoto athletesCommunityId={athletesCommunityId} entry={entry} />
+            ) : null}
             <div>
               <strong>{entry.title}</strong>
               <span>
                 {formatCalendarTime(entry.startsAt, timezone)} –{" "}
                 {formatCalendarTime(entry.endsAt, timezone)}
               </span>
-              {entry.location ? <span>{entry.location}</span> : null}
+              {entry.location ? (
+                <span className="athletes-calendar__address">{entry.location}</span>
+              ) : null}
               {entry.description ? <p>{entry.description}</p> : null}
               {entry.cancelledAt ? (
                 <span className="athletes-calendar__cancelled">Cancelled</span>
@@ -404,9 +487,36 @@ export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
             <input name="endsAt" required type="datetime-local" defaultValue={draft.endsAt} />
           </label>
           <label>
-            Location
-            <input name="location" maxLength={200} defaultValue={draft.location} />
+            Event address
+            <input
+              name="location"
+              maxLength={200}
+              autoComplete="street-address"
+              defaultValue={draft.location}
+            />
           </label>
+          <label>
+            Event photo link
+            <input
+              name="photoUrl"
+              type="url"
+              maxLength={2000}
+              inputMode="url"
+              placeholder="https://…"
+              defaultValue={draft.photoUrl}
+            />
+          </label>
+          <label>
+            Upload event photo
+            <input name="photoFile" type="file" accept={ATHLETES_PHOTO_CONTENT_TYPES.join(",")} />
+            <small>JPEG, PNG or WebP · maximum 5 MiB · use upload or a photo link.</small>
+          </label>
+          {mode === "edit" && (editingEntry?.photoUrl || editingEntry?.photoMediaId) ? (
+            <label className="athletes-calendar__remove-photo">
+              <input name="removePhoto" type="checkbox" />
+              Remove current event photo
+            </label>
+          ) : null}
           <label>
             Notes
             <textarea name="description" maxLength={600} defaultValue={draft.description} />
@@ -445,5 +555,54 @@ export function AthletesCalendar({ athletesCommunityId, founder }: Props) {
         </div>
       ) : null}
     </section>
+  );
+}
+
+function AthletesCalendarPhoto({
+  athletesCommunityId,
+  entry,
+}: {
+  readonly athletesCommunityId: string;
+  readonly entry: AthletesCalendarEntry;
+}) {
+  const { api, protectedError } = useHoomaFrontend();
+  const [contentUrl, setContentUrl] = useState(entry.photoUrl ?? "");
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoadError("");
+    if (entry.photoUrl) {
+      setContentUrl(entry.photoUrl);
+      return () => controller.abort();
+    }
+    if (!entry.photoMediaId) {
+      setContentUrl("");
+      return () => controller.abort();
+    }
+    setContentUrl("");
+    void api.athletes
+      .calendarMediaDelivery(athletesCommunityId, entry.id, controller.signal)
+      .then((delivery) => setContentUrl(delivery.contentUrl))
+      .catch((reason) => {
+        if (!controller.signal.aborted) {
+          setLoadError(protectedError(reason, "Unable to load event photo"));
+        }
+      });
+    return () => controller.abort();
+  }, [api, athletesCommunityId, entry.id, entry.photoMediaId, entry.photoUrl, protectedError]);
+
+  if (loadError) return <div className="athletes-calendar__photo-error">{loadError}</div>;
+  if (!contentUrl)
+    return <div className="athletes-calendar__photo-loading">Loading event photo…</div>;
+  return (
+    <img
+      className="athletes-calendar__photo"
+      src={contentUrl}
+      alt={`${entry.title} event`}
+      loading="lazy"
+      referrerPolicy="no-referrer"
+      onError={() => setLoadError("This event photo could not be displayed.")}
+    />
   );
 }

@@ -1,8 +1,13 @@
-import type { AthletesCalendarRsvpStatus } from "@hooma/contracts/athletes";
+import {
+  ATHLETES_CALENDAR_MEDIA_RECONCILE_TOPIC,
+  athletesCalendarMediaCleanupPayloadSchema,
+  type AthletesCalendarRsvpStatus,
+} from "@hooma/contracts/athletes";
 import { Prisma, type PrismaClient } from "@hooma/database";
 import type {
   AthletesCalendarCreateRecordInput,
   AthletesCalendarEntryViewPageRecord,
+  AthletesCalendarMediaRecord,
   AthletesCalendarRecord,
   AthletesCalendarRepository,
   AthletesCalendarRsvpUpsertInput,
@@ -21,6 +26,11 @@ const calendarSelect = Prisma.validator<Prisma.AthletesCalendarEntrySelect>()({
   title: true,
   description: true,
   location: true,
+  photoUrl: true,
+  photoMediaId: true,
+  photoObjectKey: true,
+  photoContentType: true,
+  photoSizeBytes: true,
   startsAt: true,
   endsAt: true,
   timezone: true,
@@ -41,6 +51,16 @@ function mapRow(row: CalendarRow): AthletesCalendarRecord {
   return row;
 }
 
+function mediaCleanupPayload(media: AthletesCalendarMediaRecord) {
+  return {
+    mediaId: media.mediaId,
+    athletesCommunityId: media.athletesCommunityId,
+    objectKey: media.objectKey,
+    contentType: media.contentType,
+    sizeBytes: media.sizeBytes,
+  };
+}
+
 class PrismaAthletesCalendarTransactionRepository implements AthletesCalendarTransactionRepository {
   constructor(private readonly tx: Prisma.TransactionClient) {}
 
@@ -59,6 +79,71 @@ class PrismaAthletesCalendarTransactionRepository implements AthletesCalendarTra
       select: calendarSelect,
     });
     return row ? mapRow(row) : null;
+  }
+
+  async consumePreparedMedia(
+    mediaId: string,
+    athletesCommunityId: string,
+  ): Promise<AthletesCalendarMediaRecord | null> {
+    const intent = await this.tx.outboxEvent.findFirst({
+      where: {
+        id: mediaId,
+        topic: ATHLETES_CALENDAR_MEDIA_RECONCILE_TOPIC,
+        aggregateType: "AthletesCalendarMedia",
+        aggregateId: mediaId,
+        status: "PENDING",
+      },
+      select: { payload: true },
+    });
+    if (!intent) return null;
+    const payload = athletesCalendarMediaCleanupPayloadSchema.parse(intent.payload);
+    if (
+      payload.athletesCommunityId !== athletesCommunityId ||
+      !payload.contentType ||
+      !payload.sizeBytes
+    ) {
+      return null;
+    }
+    const consumed = await this.tx.outboxEvent.deleteMany({
+      where: {
+        id: mediaId,
+        topic: ATHLETES_CALENDAR_MEDIA_RECONCILE_TOPIC,
+        status: "PENDING",
+      },
+    });
+    if (consumed.count !== 1) return null;
+    return {
+      mediaId,
+      athletesCommunityId,
+      objectKey: payload.objectKey,
+      contentType: payload.contentType,
+      sizeBytes: payload.sizeBytes,
+    };
+  }
+
+  async scheduleMediaCleanup(media: AthletesCalendarMediaRecord): Promise<void> {
+    await this.tx.outboxEvent.upsert({
+      where: { id: media.mediaId },
+      create: {
+        id: media.mediaId,
+        topic: ATHLETES_CALENDAR_MEDIA_RECONCILE_TOPIC,
+        aggregateType: "AthletesCalendarMedia",
+        aggregateId: media.mediaId,
+        payload: mediaCleanupPayload(media),
+        availableAt: new Date(),
+      },
+      update: {
+        topic: ATHLETES_CALENDAR_MEDIA_RECONCILE_TOPIC,
+        aggregateType: "AthletesCalendarMedia",
+        aggregateId: media.mediaId,
+        payload: mediaCleanupPayload(media),
+        availableAt: new Date(),
+        status: "PENDING",
+        claimedAt: null,
+        deliveredAt: null,
+        lastError: null,
+      },
+    });
   }
 
   async update(
@@ -165,6 +250,92 @@ export class PrismaAthletesCalendarRepository
       })),
       nextCursor: rows.length > input.limit ? (pageRows.at(-1)?.id ?? null) : null,
     };
+  }
+
+  async getForCommunity(
+    athletesCommunityId: string,
+    entryId: string,
+  ): Promise<AthletesCalendarRecord | null> {
+    const row = await this.db.athletesCalendarEntry.findFirst({
+      where: { id: entryId, athletesCommunityId },
+      select: calendarSelect,
+    });
+    return row ? mapRow(row) : null;
+  }
+
+  async prepareMediaUpload(
+    mediaId: string,
+    athletesCommunityId: string,
+    objectKey: string,
+  ): Promise<void> {
+    await this.db.outboxEvent.upsert({
+      where: { id: mediaId },
+      create: {
+        id: mediaId,
+        topic: ATHLETES_CALENDAR_MEDIA_RECONCILE_TOPIC,
+        aggregateType: "AthletesCalendarMedia",
+        aggregateId: mediaId,
+        payload: {
+          mediaId,
+          athletesCommunityId,
+          objectKey,
+          contentType: null,
+          sizeBytes: null,
+        },
+        availableAt: new Date(Date.now() + 60 * 60 * 1000),
+      },
+      update: {
+        payload: {
+          mediaId,
+          athletesCommunityId,
+          objectKey,
+          contentType: null,
+          sizeBytes: null,
+        },
+        availableAt: new Date(Date.now() + 60 * 60 * 1000),
+      },
+    });
+  }
+
+  async completeMediaUpload(input: AthletesCalendarMediaRecord): Promise<void> {
+    const updated = await this.db.outboxEvent.updateMany({
+      where: {
+        id: input.mediaId,
+        topic: ATHLETES_CALENDAR_MEDIA_RECONCILE_TOPIC,
+        status: "PENDING",
+      },
+      data: {
+        payload: mediaCleanupPayload(input),
+        availableAt: new Date(Date.now() + 60 * 60 * 1000),
+      },
+    });
+    if (updated.count !== 1) {
+      throw new Error("Calendar event-photo recovery intent is not available");
+    }
+  }
+
+  async expeditePreparedMediaCleanup(
+    mediaId: string,
+    athletesCommunityId: string,
+  ): Promise<boolean> {
+    const intent = await this.db.outboxEvent.findFirst({
+      where: {
+        id: mediaId,
+        topic: ATHLETES_CALENDAR_MEDIA_RECONCILE_TOPIC,
+        aggregateType: "AthletesCalendarMedia",
+        aggregateId: mediaId,
+        status: "PENDING",
+      },
+      select: { payload: true },
+    });
+    if (!intent) return false;
+    const payload = athletesCalendarMediaCleanupPayloadSchema.parse(intent.payload);
+    if (payload.athletesCommunityId !== athletesCommunityId) return false;
+    await this.db.outboxEvent.update({
+      where: { id: mediaId },
+      data: { availableAt: new Date() },
+    });
+    return true;
   }
 
   withCommunityLock<T>(

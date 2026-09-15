@@ -94,6 +94,8 @@ test("Athletes Calendar list contracts enforce bounded cursor pages", () => {
     title: "Training",
     description: null,
     location: null,
+    photoUrl: null,
+    photoMediaId: null,
     startsAt: "2026-09-20T17:00:00.000Z",
     endsAt: "2026-09-20T18:00:00.000Z",
     timezone: "UTC",

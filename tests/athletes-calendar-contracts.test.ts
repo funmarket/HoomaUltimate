@@ -18,6 +18,8 @@ const entry = {
   title: "Training",
   description: null,
   location: null,
+  photoUrl: null,
+  photoMediaId: null,
   startsAt: start,
   endsAt: end,
   timezone: "UTC",
@@ -31,12 +33,36 @@ test("Athletes Calendar contracts accept a valid IANA timezone and bounded inter
     title: "Evening run",
     description: "Easy pace",
     location: "Park entrance",
+    photoUrl: "https://images.example.test/evening-run.webp",
     startsAt: start,
     endsAt: end,
     timezone: "Europe/Paris",
   });
   assert.equal(parsed.timezone, "Europe/Paris");
   assert.equal(parsed.title, "Evening run");
+  assert.equal(parsed.location, "Park entrance");
+  assert.equal(parsed.photoUrl, "https://images.example.test/evening-run.webp");
+});
+
+test("Athletes Calendar contracts accept uploaded event media and reject two photo sources", () => {
+  const parsed = athletesCalendarCreateSchema.parse({
+    title: "Evening run",
+    photoMediaId: "media-1",
+    startsAt: start,
+    endsAt: end,
+    timezone: "UTC",
+  });
+  assert.equal(parsed.photoMediaId, "media-1");
+  assert.throws(() =>
+    athletesCalendarCreateSchema.parse({
+      title: "Broken media",
+      photoUrl: "https://images.example.test/run.webp",
+      photoMediaId: "media-1",
+      startsAt: start,
+      endsAt: end,
+      timezone: "UTC",
+    }),
+  );
 });
 
 test("Athletes Calendar contracts reject invalid timezone and time ordering", () => {
@@ -90,9 +116,12 @@ test("Athletes Calendar list range is positive and capped at 45 days", () => {
   );
 });
 
-test("Athletes Calendar API projection excludes internal creator identity", () => {
+test("Athletes Calendar API projection excludes internal creator and storage identity", () => {
   assert.deepEqual(athletesCalendarEntrySchema.parse(entry), entry);
   assert.throws(() => athletesCalendarEntrySchema.parse({ ...entry, createdByUserId: "founder" }));
+  assert.throws(() =>
+    athletesCalendarEntrySchema.parse({ ...entry, photoObjectKey: "athletes-calendar-media/x/y" }),
+  );
 });
 
 test("Athletes Calendar RSVP accepts exactly Going, Maybe, and Not going states", () => {
