@@ -1,30 +1,20 @@
 import { spawnSync } from "node:child_process";
-import { getChangedFiles } from "./changed-files.mjs";
 
-const baseSha = process.env.CI_BASE_SHA?.trim();
-const headSha = process.env.CI_HEAD_SHA?.trim();
+const files = [
+  "apps/web/src/admin/ControlRoomOverview.tsx",
+  "apps/web/src/admin/ManagedEntities.tsx",
+  "apps/web/src/admin/ReviewQueues.tsx",
+];
 
-let changedFiles;
-try {
-  changedFiles = getChangedFiles({ baseSha, headSha });
-} catch (error) {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exit(1);
+for (const file of files) {
+  const result = spawnSync("npm", ["exec", "--", "prettier", file], {
+    encoding: "utf8",
+  });
+  console.log(`=== PRETTIER ${file} ===`);
+  if (result.stdout) process.stdout.write(result.stdout);
+  if (result.stderr) process.stderr.write(result.stderr);
+  console.log(`=== END ${file} ===`);
+  if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
-const supportedExtension = /\.(?:ts|tsx|js|mjs|json|css|md|yml|yaml)$/i;
-const supportedRoot = /^(?:apps|packages|scripts|tests|\.github)\//;
-const files = changedFiles.filter(
-  (file) => supportedExtension.test(file) && (supportedRoot.test(file) || !file.includes("/")),
-);
-
-if (files.length === 0) {
-  console.log("No Prettier-managed files changed.");
-  process.exit(0);
-}
-
-console.log(`Checking formatting for ${files.length} changed file(s).`);
-const prettier = spawnSync("npm", ["exec", "--", "prettier", "--check", ...files], {
-  stdio: "inherit",
-});
-process.exit(prettier.status ?? 1);
+process.exit(1);
