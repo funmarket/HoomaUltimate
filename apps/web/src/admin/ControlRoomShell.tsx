@@ -103,7 +103,9 @@ export function ControlRoomShell({
             : "Delegated platform authority is limited to the permissions assigned by a Platform Admin."}
         </p>
         {!isPlatformOwner ? (
-          <p className="admin-authority-detail">{delegatedAuthority || "No delegated permissions"}</p>
+          <p className="admin-authority-detail">
+            {delegatedAuthority || "No delegated permissions"}
+          </p>
         ) : null}
         {message ? <p className="status">{message}</p> : null}
         {error ? <p className="error">{error}</p> : null}

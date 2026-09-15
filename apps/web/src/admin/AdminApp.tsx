@@ -1,8 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import type {
-  AppManagerSummary,
-  PlatformManagerCapability,
-} from "@hooma/contracts/platform-admin";
+import type { AppManagerSummary, PlatformManagerCapability } from "@hooma/contracts/platform-admin";
 import {
   createPlatformAdminApi,
   useHoomaFrontend,
@@ -225,7 +222,9 @@ export function AdminApp() {
         <p className="eyebrow">PLATFORM CONTROL ROOM</p>
         <h2>{accessState === "error" ? "Unable to verify access" : "Loading access"}</h2>
         <p className={accessState === "error" ? "error" : "muted"}>
-          {accessState === "error" ? error || "Platform access check failed." : "Checking authority…"}
+          {accessState === "error"
+            ? error || "Platform access check failed."
+            : "Checking authority…"}
         </p>
       </section>
     );

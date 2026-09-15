@@ -58,7 +58,8 @@ function QueueSection({
                   </span>
                   {"hourlyRateMinor" in item && item.hourlyRateMinor !== null && item.currency ? (
                     <p>
-                      {formatPitchHourlyRate(item.hourlyRateMinor, item.currency)} {item.currency} / hour
+                      {formatPitchHourlyRate(item.hourlyRateMinor, item.currency)} {" "}
+                      {item.currency} / hour
                     </p>
                   ) : null}
                   {"summary" in item && item.summary ? <p>{item.summary}</p> : null}

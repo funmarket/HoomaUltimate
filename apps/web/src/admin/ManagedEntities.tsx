@@ -79,7 +79,9 @@ export function ManagedEntities({
               <div className="admin-entity-detail-copy">
                 <strong>{selectedCommunity.name}</strong>
                 <span>
-                  {selectedCommunity.houma || selectedCommunity.city || `@${selectedCommunity.slug}`}
+                  {selectedCommunity.houma ||
+                    selectedCommunity.city ||
+                    `@${selectedCommunity.slug}`}
                 </span>
                 <small>@{selectedCommunity.slug}</small>
               </div>

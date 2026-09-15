@@ -1,8 +1,5 @@
 import type { FormEvent } from "react";
-import type {
-  AppManagerSummary,
-  PlatformManagerCapability,
-} from "@hooma/contracts/platform-admin";
+import type { AppManagerSummary, PlatformManagerCapability } from "@hooma/contracts/platform-admin";
 
 export const MANAGER_CAPABILITIES: readonly PlatformManagerCapability[] = [
   "REVIEW_PITCH_APPLICATIONS",

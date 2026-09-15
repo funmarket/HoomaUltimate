@@ -117,7 +117,9 @@ export function ControlRoomOverview({
                     {entry.entityType}
                     {entry.entityId ? ` · ${entry.entityId}` : ""}
                   </span>
-                  <time dateTime={entry.createdAt}>{new Date(entry.createdAt).toLocaleString()}</time>
+                  <time dateTime={entry.createdAt}>
+                    {new Date(entry.createdAt).toLocaleString()}
+                  </time>
                 </article>
               ))}
             </div>
