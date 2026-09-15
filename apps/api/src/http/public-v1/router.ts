@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type { ApiConfig } from "@hooma/config";
 import type { AppContainer } from "../../bootstrap/container.js";
+import { createApiRateLimitMiddleware } from "../rate-limit/api-rate-limit.middleware.js";
 import { createCommunityPublicRouter } from "../../modules/communities/http/community.routes.js";
 import { createAthletesPublicRouter } from "../../modules/athletes/http/athletes.routes.js";
 import { createDiscoveryPublicRouter } from "../../modules/discovery/http/discovery.routes.js";
@@ -18,6 +19,14 @@ import { createTeamPublicRouter } from "../../modules/teams/http/team.routes.js"
 
 export function createPublicV1Router(container: AppContainer, config: ApiConfig): Router {
   const router = Router();
+  router.use(
+    "/auth",
+    createApiRateLimitMiddleware(container.apiRateLimiter, {
+      bucket: "auth-write",
+      methods: ["POST"],
+      limit: config.API_RATE_LIMIT_AUTH_MAX_REQUESTS,
+    }),
+  );
   router.use("/auth", createIdentityPublicRouter(container.identityService, config));
   router.use("/profiles", createIdentityProfilePublicRouter(container.identityService));
   router.use("/places", createPlacesPublicRouter(container.placeService));
@@ -32,6 +41,14 @@ export function createPublicV1Router(container: AppContainer, config: ApiConfig)
   router.use("/gamers", createGamerPublicRouter(container.gamerService));
   router.use("/play", createPlayPublicRouter(container.playService));
   router.use("/rides", createRidePublicRouter(container.rideService));
+  router.use(
+    "/discovery",
+    createApiRateLimitMiddleware(container.apiRateLimiter, {
+      bucket: "public-discovery",
+      methods: ["GET"],
+      limit: config.API_RATE_LIMIT_DISCOVERY_MAX_REQUESTS,
+    }),
+  );
   router.use("/discovery", createDiscoveryPublicRouter(container.discoveryService));
   return router;
 }

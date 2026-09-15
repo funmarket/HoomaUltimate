@@ -3,6 +3,7 @@ import { RedisClientError, type RedisValue } from "../../infrastructure/redis/re
 import {
   normalizeRateLimitOptions,
   type ApiRateLimiter,
+  type ApiRateLimitPolicy,
   type ApiRateLimiterOptions,
   type ApiRateLimitDecision,
 } from "./api-rate-limiter.js";
@@ -34,9 +35,18 @@ export class RedisApiRateLimiter implements ApiRateLimiter {
     this.options = normalizeRateLimitOptions(options);
   }
 
-  async consume(bucket: string, identifier: string): Promise<ApiRateLimitDecision> {
+  async consume(
+    bucket: string,
+    identifier: string,
+    policy: ApiRateLimitPolicy = {},
+  ): Promise<ApiRateLimitDecision> {
+    const options = normalizeRateLimitOptions({
+      ...this.options,
+      ...(policy.limit === undefined ? {} : { limit: policy.limit }),
+      ...(policy.windowSeconds === undefined ? {} : { windowSeconds: policy.windowSeconds }),
+    });
     const key = this.key(bucket, identifier);
-    const windowMilliseconds = this.options.windowSeconds * 1_000;
+    const windowMilliseconds = options.windowSeconds * 1_000;
     let result: RedisValue;
     try {
       result = await this.redis.command([
@@ -44,7 +54,7 @@ export class RedisApiRateLimiter implements ApiRateLimiter {
         CONSUME_SCRIPT,
         "1",
         key,
-        String(this.options.limit),
+        String(options.limit),
         String(windowMilliseconds),
       ]);
     } catch (error) {
@@ -57,10 +67,10 @@ export class RedisApiRateLimiter implements ApiRateLimiter {
     const count = toNumber(result[0]!);
     const ttlMilliseconds = Math.max(1, toNumber(result[1]!));
     const retryAfterSeconds = Math.max(1, Math.ceil(ttlMilliseconds / 1_000));
-    const remaining = Math.max(0, this.options.limit - count);
+    const remaining = Math.max(0, options.limit - count);
     return {
-      allowed: count <= this.options.limit,
-      limit: this.options.limit,
+      allowed: count <= options.limit,
+      limit: options.limit,
       remaining,
       retryAfterSeconds,
     };

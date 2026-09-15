@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type { ApiConfig } from "@hooma/config";
 import type { AppContainer } from "../../bootstrap/container.js";
+import { createApiRateLimitMiddleware } from "../rate-limit/api-rate-limit.middleware.js";
 import { requireAuthentication } from "../../modules/identity/http/auth.middleware.js";
 import { createIdentityMemberRouter } from "../../modules/identity/http/identity.member.routes.js";
 import { createPlatformAdminRouter } from "../../modules/platform-admin/http/platform-admin.routes.js";
@@ -20,6 +21,12 @@ import { createUserNotificationRouter } from "../../modules/notifications/http/u
 export function createMemberV1Router(container: AppContainer, config: ApiConfig): Router {
   const router = Router();
   router.use(requireAuthentication(container.identityService, config));
+  router.use(
+    createApiRateLimitMiddleware(container.apiRateLimiter, {
+      bucket: "member",
+      identity: "authenticated-user",
+    }),
+  );
   router.use(createIdentityMemberRouter(container.identityService, config));
   router.use(
     "/admin",
@@ -57,6 +64,24 @@ export function createMemberV1Router(container: AppContainer, config: ApiConfig)
     createRideCommunityInteractionRouter(container.rideCommunityInteractionService),
   );
   router.use("/notifications", createUserNotificationRouter(container.userNotificationService));
+  router.use(
+    "/whistles",
+    createApiRateLimitMiddleware(container.apiRateLimiter, {
+      bucket: "whistle-read",
+      identity: "authenticated-user",
+      methods: ["GET"],
+      limit: config.API_RATE_LIMIT_WHISTLE_READ_MAX_REQUESTS,
+    }),
+  );
+  router.use(
+    "/whistles",
+    createApiRateLimitMiddleware(container.apiRateLimiter, {
+      bucket: "whistle-write",
+      identity: "authenticated-user",
+      methods: ["POST"],
+      limit: config.API_RATE_LIMIT_WHISTLE_WRITE_MAX_REQUESTS,
+    }),
+  );
   router.use("/whistles", createWhistleRouter(container.whistleService));
   return router;
 }

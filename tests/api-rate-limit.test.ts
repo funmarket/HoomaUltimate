@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import type { Request, Response } from "express";
 import { createApiRateLimitMiddleware } from "../apps/api/src/http/rate-limit/api-rate-limit.middleware.js";
 import { RedisApiRateLimiter } from "../apps/api/src/http/rate-limit/redis-api-rate-limiter.js";
+import { createApp } from "../apps/api/src/bootstrap/app.js";
 import type { RedisValue } from "../apps/api/src/infrastructure/redis/redis-client.js";
 
 class FakeRedis {
@@ -78,7 +79,7 @@ test("API rate-limit middleware returns 429 with Retry-After after the shared li
     limit: 1,
     windowSeconds: 60,
   });
-  const middleware = createApiRateLimitMiddleware(limiter, "public");
+  const middleware = createApiRateLimitMiddleware(limiter, { bucket: "public" });
   const request = {
     ip: "203.0.113.10",
     socket: { remoteAddress: "203.0.113.10" },
@@ -113,7 +114,7 @@ test("API rate-limit middleware prefers Express trusted proxy client IP", async 
         return { allowed: true, limit: 10, remaining: 9, retryAfterSeconds: 60 };
       },
     },
-    "public",
+    { bucket: "public" },
   );
   const request = {
     ips: ["198.51.100.42", "10.0.0.10"],
@@ -127,6 +128,63 @@ test("API rate-limit middleware prefers Express trusted proxy client IP", async 
   assert.deepEqual(seen, [{ bucket: "public", identifier: "198.51.100.42" }]);
 });
 
+test("authenticated member rate limits use canonical user identity instead of shared IP", async () => {
+  const seen: Array<{ bucket: string; identifier: string }> = [];
+  const middleware = createApiRateLimitMiddleware(
+    {
+      async consume(bucket, identifier) {
+        seen.push({ bucket, identifier });
+        return { allowed: true, limit: 10, remaining: 9, retryAfterSeconds: 60 };
+      },
+    },
+    { bucket: "member", identity: "authenticated-user" },
+  );
+  const request = {
+    auth: { userId: "user_123", transports: ["web"] },
+    ips: ["198.51.100.42", "10.0.0.10"],
+    ip: "10.0.0.10",
+    socket: { remoteAddress: "10.0.0.10" },
+  } as unknown as Request;
+
+  await middleware(request, createResponse() as unknown as Response, () => undefined);
+
+  assert.deepEqual(seen, [{ bucket: "member", identifier: "user:user_123" }]);
+});
+
+test("rate-limit middleware can apply tighter per-bucket policy while keeping Redis authority", async () => {
+  const seen: Array<{
+    bucket: string;
+    identifier: string;
+    limit?: number;
+    windowSeconds?: number;
+  }> = [];
+  const middleware = createApiRateLimitMiddleware(
+    {
+      async consume(bucket, identifier, policy) {
+        seen.push({
+          bucket,
+          identifier,
+          limit: policy?.limit,
+          windowSeconds: policy?.windowSeconds,
+        });
+        return { allowed: true, limit: policy?.limit ?? 10, remaining: 0, retryAfterSeconds: 60 };
+      },
+    },
+    { bucket: "whistle-write", identity: "authenticated-user", limit: 120, windowSeconds: 60 },
+  );
+  const request = {
+    auth: { userId: "user_456", transports: ["telegram"] },
+    ip: "203.0.113.5",
+    socket: { remoteAddress: "203.0.113.5" },
+  } as unknown as Request;
+
+  await middleware(request, createResponse() as unknown as Response, () => undefined);
+
+  assert.deepEqual(seen, [
+    { bucket: "whistle-write", identifier: "user:user_456", limit: 120, windowSeconds: 60 },
+  ]);
+});
+
 test("API rate limiting remains Redis-backed and does not add PostgreSQL or Map authority", () => {
   const container = readFileSync("apps/api/src/bootstrap/container.ts", "utf8");
   const app = readFileSync("apps/api/src/bootstrap/app.ts", "utf8");
@@ -137,4 +195,42 @@ test("API rate limiting remains Redis-backed and does not add PostgreSQL or Map 
   assert.match(app, /trust proxy/);
   assert.doesNotMatch(prismaSchema, /RateLimit|ApiRateLimit|LoginAttempt/);
   assert.doesNotMatch(container, /new Map<.*rate/i);
+});
+
+test("API mounts granular rate-limit policy without route-wide authenticated IP-only member bucket", () => {
+  const appSource = readFileSync("apps/api/src/bootstrap/app.ts", "utf8");
+  const memberRouter = readFileSync("apps/api/src/http/v1/router.ts", "utf8");
+  const publicRouter = readFileSync("apps/api/src/http/public-v1/router.ts", "utf8");
+
+  assert.match(appSource, /bucket: "member-preauth"/);
+  assert.doesNotMatch(appSource, /bucket: "member"/);
+  assert.match(memberRouter, /identity: "authenticated-user"/);
+  assert.match(memberRouter, /bucket: "member"/);
+  assert.match(memberRouter, /bucket: "whistle-read"/);
+  assert.match(memberRouter, /bucket: "whistle-write"/);
+  assert.match(publicRouter, /bucket: "auth-write"/);
+  assert.match(publicRouter, /bucket: "public-discovery"/);
+});
+
+test("app rate limiting keeps health routes outside throttling", () => {
+  const calls: string[] = [];
+  const app = createApp(
+    {
+      API_TRUST_PROXY_HOPS: 1,
+      WEB_ORIGIN: "http://localhost:5173",
+      TELEGRAM_ORIGIN: "http://localhost:5174",
+    } as never,
+    {
+      readinessService: { check: async () => ({ status: "ok", checks: {} }) },
+      apiRateLimiter: {
+        async consume(bucket: string) {
+          calls.push(bucket);
+          return { allowed: false, limit: 1, remaining: 0, retryAfterSeconds: 60 };
+        },
+      },
+    } as never,
+  );
+
+  assert.ok(app);
+  assert.deepEqual(calls, []);
 });
