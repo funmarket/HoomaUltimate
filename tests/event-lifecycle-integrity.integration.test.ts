@@ -108,6 +108,29 @@ async function createPlayEvent(base: string, cookie: string, communityId: string
   return (await response.json()) as { id: string };
 }
 
+async function publishGameListing(base: string, cookie: string) {
+  const response = await fetch(`${base}/api/v1/play/player-listing`, {
+    method: "PUT",
+    headers: headers(cookie),
+    body: JSON.stringify({ lookingFor: "GAME" }),
+  });
+  assert.equal(response.status, 200);
+  return (await response.json()) as { id: string };
+}
+
+async function sendInvite(
+  base: string,
+  cookie: string,
+  listingId: string,
+  eventId: string,
+) {
+  return fetch(`${base}/api/v1/play/player-listings/${listingId}/event-invite`, {
+    method: "POST",
+    headers: headers(cookie),
+    body: JSON.stringify({ eventId }),
+  });
+}
+
 test("cancel and complete serialize so exactly one terminal transition wins", async () => {
   await resetDatabase();
   const app = createApp(config, createContainer(config));
@@ -205,6 +228,68 @@ test("updates serialize with cancellation and completion without editing a close
         assert.equal(stored.title, updatedTitle);
       } else {
         assert.equal(stored.title, originalTitle);
+      }
+    }
+  } finally {
+    await new Promise<void>((resolve, reject) => {
+      server.close((error) => (error ? reject(error) : resolve()));
+    });
+    await resetDatabase();
+  }
+});
+
+test("player invitations serialize with event closure and never remain pending", async () => {
+  await resetDatabase();
+  const app = createApp(config, createContainer(config));
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise<void>((resolve) => server.once("listening", resolve));
+  const address = server.address();
+  assert.ok(address && typeof address === "object");
+  const base = `http://127.0.0.1:${address.port}`;
+
+  try {
+    const founderCookie = await register(base, "lifecycle_invite_founder");
+    const cancelTargetCookie = await register(base, "lifecycle_invite_cancel");
+    const completeTargetCookie = await register(base, "lifecycle_invite_complete");
+    const community = await createCommunity(base, founderCookie, "Invite Lifecycle Race");
+
+    for (const [terminalAction, terminalStatus, targetCookie] of [
+      ["cancel", "CANCELLED", cancelTargetCookie],
+      ["complete", "COMPLETED", completeTargetCookie],
+    ] as const) {
+      const event = await createPlayEvent(
+        base,
+        founderCookie,
+        community.id,
+        `Invite ${terminalAction}`,
+      );
+      const listing = await publishGameListing(base, targetCookie);
+
+      const [inviteResponse, lifecycleResponse] = await Promise.all([
+        sendInvite(base, founderCookie, listing.id, event.id),
+        fetch(`${base}/api/v1/events/${event.id}/${terminalAction}`, {
+          method: "POST",
+          headers: headers(founderCookie),
+        }),
+      ]);
+
+      assert.equal(lifecycleResponse.status, 200);
+      assert.ok(inviteResponse.status === 201 || inviteResponse.status === 409);
+
+      const storedEvent = await db.event.findUniqueOrThrow({
+        where: { id: event.id },
+        select: { status: true },
+      });
+      assert.equal(storedEvent.status, terminalStatus);
+
+      const storedInvites = await db.eventPlayerInvite.findMany({
+        where: { eventId: event.id },
+        select: { status: true },
+      });
+      if (inviteResponse.status === 201) {
+        assert.deepEqual(storedInvites.map((invite) => invite.status), ["CANCELLED"]);
+      } else {
+        assert.deepEqual(storedInvites, []);
       }
     }
   } finally {
