@@ -290,7 +290,7 @@ export function HoomaAccountHeader({
             <div className="hooma-account-menu__platform">
               <MenuRow
                 icon={<ShieldIcon />}
-                title="Control Room"
+                title="Platform Control Room"
                 subtitle="HOOMA platform management"
                 onClick={() => navigate(onAdmin)}
               />

@@ -9,6 +9,7 @@ import { createGamersApi, useHoomaFrontend } from "@hooma/frontend";
 import "./gamer-disputes.css";
 
 type ProofUrls = Record<string, Partial<Record<GamerMatchSide, string>>>;
+type QueueLoadState = "loading" | "ready" | "error";
 
 function claimLabel(submission: GamerMatchSubmission | undefined): string {
   return submission
@@ -119,17 +120,39 @@ function DisputeCard({
   );
 }
 
-export function GamerDisputeConsole() {
+export function GamerDisputeConsole({
+  onCountChange,
+  onQueueStateChange,
+}: {
+  readonly onCountChange?: (count: number) => void;
+  readonly onQueueStateChange?: (state: QueueLoadState) => void;
+} = {}) {
   const { transport } = useHoomaFrontend();
   const gamersApi = useMemo(() => createGamersApi(transport), [transport]);
   const [disputes, setDisputes] = useState<GamerDispute[]>([]);
   const [proofUrls, setProofUrls] = useState<ProofUrls>({});
   const [busyId, setBusyId] = useState("");
+  const [queueState, setQueueState] = useState<QueueLoadState>("loading");
   const [error, setError] = useState("");
 
   async function load() {
-    const response = await gamersApi.adminDisputes();
+    setQueueState("loading");
+    onQueueStateChange?.("loading");
+
+    let response: Awaited<ReturnType<typeof gamersApi.adminDisputes>>;
+    try {
+      response = await gamersApi.adminDisputes();
+    } catch (reason) {
+      setQueueState("error");
+      onQueueStateChange?.("error");
+      throw reason;
+    }
+
     setDisputes(response.items);
+    setQueueState("ready");
+    onCountChange?.(response.items.length);
+    onQueueStateChange?.("ready");
+
     const nextUrls: ProofUrls = {};
     await Promise.all(
       response.items.flatMap((dispute) =>
@@ -177,16 +200,20 @@ export function GamerDisputeConsole() {
   }
 
   return (
-    <section className="panel gamer-dispute-console">
+    <section className="panel gamer-dispute-console" id="gamers">
       <div className="section-heading">
         <div>
           <p className="eyebrow">GAMER DISPUTES</p>
           <h2>EA FC Match Evidence</h2>
         </div>
-        <span>{disputes.length}</span>
+        <span>{queueState === "ready" ? disputes.length : "—"}</span>
       </div>
       {error ? <p className="error">{error}</p> : null}
-      {!disputes.length ? <p className="muted">Dispute queue is clear.</p> : null}
+      {queueState === "loading" ? <p className="muted">Loading dispute queue…</p> : null}
+      {queueState === "error" ? <p className="muted">Dispute queue is unavailable.</p> : null}
+      {queueState === "ready" && !disputes.length ? (
+        <p className="muted">Dispute queue is clear.</p>
+      ) : null}
       <div className="gamer-dispute-list">
         {disputes.map((dispute) => (
           <DisputeCard
