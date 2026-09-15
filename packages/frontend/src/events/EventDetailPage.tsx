@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useHoomaFrontend } from "../context";
 import { HoomaApiError } from "../http";
 import { EventWhistleBoard } from "../whistle/HoomaWhistleBoard";
-import type { EventRsvpState, PublicEvent } from "./api";
+import type { EventParticipationActions, EventRsvpState, PublicEvent } from "./api";
 import { useEventApi } from "./useEventApi";
 import { createPlayApi } from "./play-api";
 
@@ -100,6 +100,7 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
   const playApi = useMemo(() => createPlayApi(transport), [transport]);
   const [event, setEvent] = useState<PublicEvent | null>(null);
   const [rsvp, setRsvp] = useState<ActiveRsvpState>(null);
+  const [actions, setActions] = useState<EventParticipationActions | null>(null);
   const [canManage, setCanManage] = useState(false);
   const [participationLoading, setParticipationLoading] = useState(true);
   const [actionPending, setActionPending] = useState(false);
@@ -144,9 +145,12 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
     try {
       const result = await eventApi.myRsvp(eventId);
       setRsvp(activeRsvp(result.rsvp?.status));
+      setActions(result.actions);
     } catch (reason) {
-      if (reason instanceof HoomaApiError && reason.status === 401) setRsvp(null);
-      else setError(reason instanceof Error ? reason.message : "Unable to load RSVP state");
+      if (reason instanceof HoomaApiError && reason.status === 401) {
+        setRsvp(null);
+        setActions(null);
+      } else setError(reason instanceof Error ? reason.message : "Unable to load RSVP state");
     } finally {
       setParticipationLoading(false);
     }
@@ -158,9 +162,8 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
     setStatus("");
     try {
       const result = await eventApi.join(eventId);
-      setRsvp(result.status);
       setStatus(result.status === "WAITLISTED" ? "Added to the waitlist." : "You are going.");
-      await reloadEvent();
+      await Promise.all([reloadEvent(), reloadParticipation()]);
     } catch (reason) {
       setError(protectedError(reason, "Unable to join event"));
     } finally {
@@ -174,9 +177,8 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
     setStatus("");
     try {
       await eventApi.cancelRsvp(eventId);
-      setRsvp(null);
       setStatus("RSVP cancelled.");
-      await reloadEvent();
+      await Promise.all([reloadEvent(), reloadParticipation()]);
     } catch (reason) {
       setError(protectedError(reason, "Unable to leave event"));
     } finally {
@@ -187,7 +189,6 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
   if (!event)
     return error ? <p className="error">{error}</p> : <p className="status">Loading event…</p>;
 
-  const eventOpen = event.status !== "COMPLETED";
   const isWatch = event.type === "WATCH";
   const location = isWatch
     ? event.place?.name || "Place to be confirmed"
@@ -280,7 +281,7 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
           </div>
 
           <div className="watch-event-detail__actions" aria-label="Watch event actions">
-            {!rsvp && eventOpen ? (
+            {actions?.canJoin ? (
               <button
                 className="watch-event-detail__action watch-event-detail__action--primary"
                 type="button"
@@ -313,7 +314,7 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
           {rsvpLabel ? (
             <div className="watch-event-detail__participation">
               <span className="watch-event-detail__rsvp-state">{rsvpLabel}</span>
-              {rsvp === "WAITLISTED" || rsvp === "CONFIRMED" ? (
+              {actions?.canCancelRsvp ? (
                 <button
                   className="watch-event-detail__cancel"
                   type="button"
@@ -439,7 +440,7 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
             <div className="play-event-primary-action play-event-primary-action--static">
               Checked in
             </div>
-          ) : rsvp === "WAITLISTED" || rsvp === "CONFIRMED" ? (
+          ) : actions?.canCancelRsvp ? (
             <button
               className="play-event-primary-action"
               type="button"
@@ -463,7 +464,7 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
                   ? "Leave waitlist"
                   : "Cancel RSVP"}
             </button>
-          ) : eventOpen ? (
+          ) : actions?.canJoin ? (
             <button
               className="play-event-primary-action"
               type="button"
@@ -495,10 +496,17 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
               <strong>Temporary event chat</strong>
               <span>Available only to participants while the event chat window is open</span>
             </a>
-            <a href={`/events/${eventId}/check-in`}>
-              <strong>Check in</strong>
-              <span>Confirmed participants can mark attendance on matchday</span>
-            </a>
+            {actions?.canCheckIn ? (
+              <a href={`/events/${eventId}/check-in`}>
+                <strong>Check in</strong>
+                <span>Confirmed participants can mark attendance on matchday</span>
+              </a>
+            ) : actions?.checkInUnavailableReason === "TOO_EARLY" ? (
+              <div>
+                <strong>Check in</strong>
+                <span>Opens {new Date(actions.checkInOpensAt).toLocaleString()}</span>
+              </div>
+            ) : null}
           </div>
         </section>
       ) : null}

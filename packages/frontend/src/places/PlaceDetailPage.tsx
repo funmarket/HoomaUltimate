@@ -2,7 +2,12 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import type { PublicPlaceSummary } from "@hooma/contracts/places";
 import { useHoomaFrontend } from "../context";
-import { createEventApi, type EventRsvpState, type PublicEvent } from "../events/api";
+import {
+  createEventApi,
+  type EventParticipationActions,
+  type EventRsvpState,
+  type PublicEvent,
+} from "../events/api";
 import { HoomaApiError } from "../http";
 import { FitSingleLineText } from "../ui/FitSingleLineText";
 import {
@@ -115,6 +120,8 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
   const [menuExpanded, setMenuExpanded] = useState(false);
   const [eventsExpanded, setEventsExpanded] = useState(false);
   const [rsvp, setRsvp] = useState<ActiveRsvpState>(null);
+  const [participationActions, setParticipationActions] =
+    useState<EventParticipationActions | null>(null);
   const [participationLoading, setParticipationLoading] = useState(false);
   const [actionPending, setActionPending] = useState(false);
   const [message, setMessage] = useState("");
@@ -159,9 +166,12 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
     try {
       const result = await eventsApi.myRsvp(eventId);
       setRsvp(activeRsvp(result.rsvp?.status));
+      setParticipationActions(result.actions);
     } catch (reason) {
-      if (reason instanceof HoomaApiError && reason.status === 401) setRsvp(null);
-      else setError(reason instanceof Error ? reason.message : "Unable to load RSVP state");
+      if (reason instanceof HoomaApiError && reason.status === 401) {
+        setRsvp(null);
+        setParticipationActions(null);
+      } else setError(reason instanceof Error ? reason.message : "Unable to load RSVP state");
     } finally {
       setParticipationLoading(false);
     }
@@ -193,16 +203,23 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
 
   useEffect(() => {
     if (selectedEventId) void loadParticipation(selectedEventId);
-    else setRsvp(null);
+    else {
+      setRsvp(null);
+      setParticipationActions(null);
+    }
   }, [selectedEventId]);
 
   async function refreshSelectedWatchContext() {
     if (!selectedEventId) return;
-    await Promise.all([loadSelectedEvent(selectedEventId), loadPlaceEvents()]);
+    await Promise.all([
+      loadSelectedEvent(selectedEventId),
+      loadParticipation(selectedEventId),
+      loadPlaceEvents(),
+    ]);
   }
 
   async function joinSelectedEvent() {
-    if (!selectedEventId || actionPending) return;
+    if (!selectedEventId || actionPending || !participationActions?.canJoin) return;
     setActionPending(true);
     setError("");
     setMessage("");
@@ -219,7 +236,7 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
   }
 
   async function leaveSelectedEvent() {
-    if (!selectedEventId || actionPending) return;
+    if (!selectedEventId || actionPending || !participationActions?.canCancelRsvp) return;
     setActionPending(true);
     setError("");
     setMessage("");
@@ -296,8 +313,6 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
   const selectedDate = selectedEvent ? eventDateParts(selectedEvent) : null;
   const visibleMenuItems = menuExpanded ? place.menuItems : place.menuItems.slice(0, 5);
   const visibleEvents = eventsExpanded ? events : events.slice(0, 2);
-  const eventOpen = selectedEvent?.status !== "COMPLETED";
-  const isGoing = rsvp === "CONFIRMED" || rsvp === "WAITLISTED";
   const hasContact = Boolean(place.phone || place.email || place.websiteUrl);
 
   return (
@@ -350,7 +365,7 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
             <div className="place-watch-actions">
               {rsvp === "ATTENDED" ? (
                 <div className="place-watch-action place-watch-action--joined">Checked in</div>
-              ) : isGoing ? (
+              ) : participationActions?.canCancelRsvp ? (
                 <button
                   type="button"
                   className="place-watch-action place-watch-action--primary"
@@ -364,7 +379,7 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
                       ? "Leave waitlist"
                       : "Cancel RSVP"}
                 </button>
-              ) : eventOpen ? (
+              ) : participationActions?.canJoin ? (
                 <button
                   type="button"
                   className="place-watch-action place-watch-action--primary"

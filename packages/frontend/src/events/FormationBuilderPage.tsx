@@ -338,21 +338,22 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
       setError("");
       try {
         const [eventResult, rosterResult, formationResult] = await Promise.all([
-          eventApi.publicDetail(eventId),
+          eventApi.manage(eventId),
           eventApi.formationRoster(eventId),
           eventApi.formations(eventId),
         ]);
         if (!active) return;
+        const eventFormat = eventResult.playDetails?.format;
+        if (eventResult.type !== "PLAY" || !isFormat(eventFormat)) {
+          throw new Error("Formation builder requires a managed Play event with a valid format");
+        }
+        const initialFormation = defaultFormation(eventFormat);
         setEvent(eventResult);
         setPlayers(rosterResult.players);
         setFormations(formationResult);
-        const eventFormat = eventResult.playDetails?.format;
-        if (isFormat(eventFormat)) {
-          const initialFormation = defaultFormation(eventFormat);
-          setFormat(eventFormat);
-          setFormationId(initialFormation.id);
-          setSlots(makeSlots(eventFormat, initialFormation.id));
-        }
+        setFormat(eventFormat);
+        setFormationId(initialFormation.id);
+        setSlots(makeSlots(eventFormat, initialFormation.id));
       } catch (reason) {
         if (active) setError(protectedError(reason, "Unable to load formation builder"));
       }
@@ -372,14 +373,6 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
     () => players.filter((player) => !assigned.has(player.userId)),
     [assigned, players],
   );
-
-  function changeFormat(next: Format) {
-    const nextFormation = defaultFormation(next);
-    setFormat(next);
-    setFormationId(nextFormation.id);
-    setSlots(makeSlots(next, nextFormation.id));
-    setSuccess("");
-  }
 
   function changeFormation(nextFormationId: string) {
     setFormationId(nextFormationId);
@@ -459,13 +452,7 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
         <div className="formation-builder__selectors">
           <label>
             Match size
-            <select value={format} onChange={(event) => changeFormat(event.target.value as Format)}>
-              {FORMAT_OPTIONS.map((option) => (
-                <option value={option.value} key={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <strong>{formatLabel(format)}</strong>
           </label>
           <label>
             Formation
