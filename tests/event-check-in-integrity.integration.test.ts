@@ -6,7 +6,9 @@ import { createApp } from "../apps/api/src/bootstrap/app.js";
 import { createContainer } from "../apps/api/src/bootstrap/container.js";
 
 const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) throw new Error("DATABASE_URL is required for Event check-in integration tests");
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL is required for Event check-in integration tests");
+}
 
 const config = loadApiConfig({
   ...process.env,
@@ -129,7 +131,7 @@ async function expectError(response: Response, status: number, code: string) {
   assert.equal(body.error.code, code);
 }
 
-test("Event check-in enforces timing, identity, RSVP, lifecycle and serialization", async () => {
+test("Event check-in integrity contract", async () => {
   await resetDatabase();
   const app = createApp(config, createContainer(config));
   const server = app.listen(0, "127.0.0.1");
@@ -236,10 +238,16 @@ test("Event check-in enforces timing, identity, RSVP, lifecycle and serializatio
     await db.eventRsvp.create({
       data: { eventId: event.id, userId: lifecycle.userId, status: "CONFIRMED" },
     });
-    await db.event.update({ where: { id: event.id }, data: { status: "CANCELLED" } });
+    await db.event.update({
+      where: { id: event.id },
+      data: { status: "CANCELLED" },
+    });
     const cancelledEvent = await checkIn(base, event.id, lifecycle.cookie);
     await expectError(cancelledEvent, 409, "EVENT_NOT_ACTIVE");
-    await db.event.update({ where: { id: event.id }, data: { status: "COMPLETED" } });
+    await db.event.update({
+      where: { id: event.id },
+      data: { status: "COMPLETED" },
+    });
     const completedEvent = await checkIn(base, event.id, lifecycle.cookie);
     await expectError(completedEvent, 409, "EVENT_NOT_ACTIVE");
 
@@ -253,7 +261,11 @@ test("Event check-in enforces timing, identity, RSVP, lifecycle and serializatio
       },
     });
     await db.eventRsvp.create({
-      data: { eventId: watchEvent.id, userId: watchPlayer.userId, status: "CONFIRMED" },
+      data: {
+        eventId: watchEvent.id,
+        userId: watchPlayer.userId,
+        status: "CONFIRMED",
+      },
     });
     const watchCheckIn = await checkIn(base, watchEvent.id, watchPlayer.cookie);
     assert.equal(watchCheckIn.status, 200);
@@ -276,7 +288,11 @@ test("Event check-in enforces timing, identity, RSVP, lifecycle and serializatio
       },
     });
     await db.eventRsvp.create({
-      data: { eventId: raceEvent.id, userId: racing.userId, status: "CONFIRMED" },
+      data: {
+        eventId: raceEvent.id,
+        userId: racing.userId,
+        status: "CONFIRMED",
+      },
     });
 
     const [cancelRace, checkInRace] = await Promise.all([
@@ -286,10 +302,15 @@ test("Event check-in enforces timing, identity, RSVP, lifecycle and serializatio
       }),
       checkIn(base, raceEvent.id, racing.cookie),
     ]);
-    assert.equal([cancelRace.status, checkInRace.status].filter((status) => status === 200).length, 1);
+    const raceSuccesses = [cancelRace.status, checkInRace.status].filter(
+      (status) => status === 200,
+    );
+    assert.equal(raceSuccesses.length, 1);
 
     const raceRsvp = await db.eventRsvp.findUniqueOrThrow({
-      where: { eventId_userId: { eventId: raceEvent.id, userId: racing.userId } },
+      where: {
+        eventId_userId: { eventId: raceEvent.id, userId: racing.userId },
+      },
     });
     const raceCheckIns = await db.eventCheckIn.count({
       where: { eventId: raceEvent.id, userId: racing.userId },
