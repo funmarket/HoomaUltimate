@@ -1,5 +1,6 @@
 export const EVENT_CHAT_OPEN_BEFORE_MS = 6 * 60 * 60 * 1000;
 export const EVENT_CHAT_CLOSE_AFTER_MS = 6 * 60 * 60 * 1000;
+export const EVENT_CHECK_IN_OPEN_BEFORE_MS = 60 * 60 * 1000;
 
 export function eventChatWindow(
   startsAt: Date,
@@ -9,6 +10,10 @@ export function eventChatWindow(
     opensAt: new Date(startsAt.getTime() - EVENT_CHAT_OPEN_BEFORE_MS),
     closesAt: new Date((endsAt ?? startsAt).getTime() + EVENT_CHAT_CLOSE_AFTER_MS),
   };
+}
+
+export function eventCheckInOpensAt(startsAt: Date): Date {
+  return new Date(startsAt.getTime() - EVENT_CHECK_IN_OPEN_BEFORE_MS);
 }
 
 export function assertFreeEvent(entryFeeMinor: number | bigint): void {
