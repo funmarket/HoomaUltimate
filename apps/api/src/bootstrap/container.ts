@@ -154,6 +154,9 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     athletesService,
     athletesCalendarRepository,
     athletesCalendarRepository,
+    storage,
+    new SharpAthletesPhotoValidator(),
+    new SharpAthletesPhotoOptimizer(),
   );
   const athletesPhotoRepository = new PrismaAthletesPhotoRepository(database);
   const athletesPhotoService = new AthletesPhotoService(

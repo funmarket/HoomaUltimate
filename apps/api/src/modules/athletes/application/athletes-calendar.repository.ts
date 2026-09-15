@@ -6,6 +6,11 @@ export interface AthletesCalendarRecord {
   readonly title: string;
   readonly description: string | null;
   readonly location: string | null;
+  readonly photoUrl: string | null;
+  readonly photoMediaId: string | null;
+  readonly photoObjectKey: string | null;
+  readonly photoContentType: string | null;
+  readonly photoSizeBytes: number | null;
   readonly startsAt: Date;
   readonly endsAt: Date;
   readonly timezone: string;
@@ -13,6 +18,14 @@ export interface AthletesCalendarRecord {
   readonly createdByUserId: string;
   readonly createdAt: Date;
   readonly updatedAt: Date;
+}
+
+export interface AthletesCalendarMediaRecord {
+  readonly mediaId: string;
+  readonly athletesCommunityId: string;
+  readonly objectKey: string;
+  readonly contentType: string;
+  readonly sizeBytes: number;
 }
 
 export interface AthletesCalendarRsvpCountsRecord {
@@ -44,6 +57,11 @@ export interface AthletesCalendarCreateRecordInput {
   readonly title: string;
   readonly description: string | null;
   readonly location: string | null;
+  readonly photoUrl: string | null;
+  readonly photoMediaId: string | null;
+  readonly photoObjectKey: string | null;
+  readonly photoContentType: string | null;
+  readonly photoSizeBytes: number | null;
   readonly startsAt: Date;
   readonly endsAt: Date;
   readonly timezone: string;
@@ -54,6 +72,11 @@ export interface AthletesCalendarUpdateRecordInput {
   readonly title: string;
   readonly description: string | null;
   readonly location: string | null;
+  readonly photoUrl: string | null;
+  readonly photoMediaId: string | null;
+  readonly photoObjectKey: string | null;
+  readonly photoContentType: string | null;
+  readonly photoSizeBytes: number | null;
   readonly startsAt: Date;
   readonly endsAt: Date;
   readonly timezone: string;
@@ -72,6 +95,17 @@ export interface AthletesCalendarRepository {
     input: AthletesCalendarListRecordInput,
     viewerUserId: string,
   ): Promise<AthletesCalendarEntryViewPageRecord>;
+  getForCommunity(
+    athletesCommunityId: string,
+    entryId: string,
+  ): Promise<AthletesCalendarRecord | null>;
+  prepareMediaUpload(
+    mediaId: string,
+    athletesCommunityId: string,
+    objectKey: string,
+  ): Promise<void>;
+  completeMediaUpload(input: AthletesCalendarMediaRecord): Promise<void>;
+  expeditePreparedMediaCleanup(mediaId: string, athletesCommunityId: string): Promise<boolean>;
 }
 
 export interface AthletesCalendarTransactionRepository {
@@ -90,5 +124,10 @@ export interface AthletesCalendarTransactionRepository {
     athletesCommunityId: string,
     entryId: string,
   ): Promise<AthletesCalendarRecord | null>;
+  consumePreparedMedia(
+    mediaId: string,
+    athletesCommunityId: string,
+  ): Promise<AthletesCalendarMediaRecord | null>;
+  scheduleMediaCleanup(media: AthletesCalendarMediaRecord): Promise<void>;
   upsertRsvp(input: AthletesCalendarRsvpUpsertInput): Promise<void>;
 }

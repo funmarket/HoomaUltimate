@@ -32,6 +32,7 @@ export const athletesPhotoContentTypeSchema = z.enum(ATHLETES_PHOTO_CONTENT_TYPE
 
 const optionalText = (max: number) => z.string().trim().max(max).nullable().optional();
 const optionalUrl = z.string().trim().url().max(2000).nullable().optional();
+const optionalId = z.string().trim().min(1).max(100).nullable().optional();
 const ATHLETES_CALENDAR_MAX_RANGE_MS = 45 * 24 * 60 * 60 * 1000;
 
 function validIanaTimezone(value: string): boolean {
@@ -212,17 +213,33 @@ const athletesCalendarTimezoneSchema = z
   .max(100)
   .refine(validIanaTimezone, "Timezone must be a valid IANA timezone");
 
+function requireSingleCalendarPhotoSource(
+  input: { photoUrl?: string | null | undefined; photoMediaId?: string | null | undefined },
+  context: z.RefinementCtx,
+): void {
+  if (input.photoUrl && input.photoMediaId) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["photoUrl"],
+      message: "Choose either an uploaded event photo or a photo URL, not both",
+    });
+  }
+}
+
 export const athletesCalendarCreateSchema = z
   .object({
     title: z.string().trim().min(1).max(100),
     description: optionalText(600),
     location: optionalText(200),
+    photoUrl: optionalUrl,
+    photoMediaId: optionalId,
     startsAt: z.string().datetime(),
     endsAt: z.string().datetime(),
     timezone: athletesCalendarTimezoneSchema,
   })
   .strict()
   .superRefine((input, context) => {
+    requireSingleCalendarPhotoSource(input, context);
     if (Date.parse(input.endsAt) <= Date.parse(input.startsAt)) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
@@ -237,6 +254,8 @@ export const athletesCalendarUpdateSchema = z
     title: z.string().trim().min(1).max(100).optional(),
     description: optionalText(600),
     location: optionalText(200),
+    photoUrl: optionalUrl,
+    photoMediaId: optionalId,
     startsAt: z.string().datetime().optional(),
     endsAt: z.string().datetime().optional(),
     timezone: athletesCalendarTimezoneSchema.optional(),
@@ -244,6 +263,7 @@ export const athletesCalendarUpdateSchema = z
   .strict()
   .refine((input) => Object.keys(input).length > 0, "At least one Calendar field is required")
   .superRefine((input, context) => {
+    requireSingleCalendarPhotoSource(input, context);
     if (input.startsAt && input.endsAt && Date.parse(input.endsAt) <= Date.parse(input.startsAt)) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
@@ -260,6 +280,8 @@ export const athletesCalendarEntrySchema = z
     title: z.string().min(1),
     description: z.string().nullable(),
     location: z.string().nullable(),
+    photoUrl: z.string().url().nullable(),
+    photoMediaId: z.string().min(1).nullable(),
     startsAt: z.string().datetime(),
     endsAt: z.string().datetime(),
     timezone: athletesCalendarTimezoneSchema,
@@ -268,6 +290,11 @@ export const athletesCalendarEntrySchema = z
     updatedAt: z.string().datetime(),
   })
   .strict();
+
+export const athletesCalendarMediaUploadResponseSchema = z
+  .object({ mediaId: z.string().min(1) })
+  .strict();
+export const athletesCalendarMediaDeliverySchema = athletesPhotoDeliverySchema;
 
 export const athletesCalendarRsvpStatusSchema = z.enum(["GOING", "MAYBE", "NOT_GOING"]);
 export const athletesCalendarRsvpCountsSchema = z
@@ -364,6 +391,10 @@ export type AthletesPhotoUploadResponse = z.infer<typeof athletesPhotoUploadResp
 export type AthletesCalendarCreateInput = z.infer<typeof athletesCalendarCreateSchema>;
 export type AthletesCalendarUpdateInput = z.infer<typeof athletesCalendarUpdateSchema>;
 export type AthletesCalendarEntry = z.infer<typeof athletesCalendarEntrySchema>;
+export type AthletesCalendarMediaUploadResponse = z.infer<
+  typeof athletesCalendarMediaUploadResponseSchema
+>;
+export type AthletesCalendarMediaDelivery = z.infer<typeof athletesCalendarMediaDeliverySchema>;
 export type AthletesCalendarRsvpStatus = z.infer<typeof athletesCalendarRsvpStatusSchema>;
 export type AthletesCalendarRsvpCounts = z.infer<typeof athletesCalendarRsvpCountsSchema>;
 export type AthletesCalendarRsvpSummary = z.infer<typeof athletesCalendarRsvpSummarySchema>;
@@ -392,5 +423,16 @@ export const athletesPhotoCleanupPayloadSchema = z
     photoId: z.string().min(1),
     athletesCommunityId: z.string().min(1),
     objectKey: z.string().min(1),
+  })
+  .strict();
+
+export const ATHLETES_CALENDAR_MEDIA_RECONCILE_TOPIC = "athletes.calendar.media.reconcile-object";
+export const athletesCalendarMediaCleanupPayloadSchema = z
+  .object({
+    mediaId: z.string().min(1),
+    athletesCommunityId: z.string().min(1),
+    objectKey: z.string().min(1),
+    contentType: athletesPhotoContentTypeSchema.nullable(),
+    sizeBytes: z.number().int().positive().max(ATHLETES_PHOTO_MAX_BYTES).nullable(),
   })
   .strict();
