@@ -1,10 +1,15 @@
 import type { FormEvent } from "react";
-import type { AppManagerSummary, PlatformManagerCapability } from "@hooma/contracts/platform-admin";
+import type {
+  AppManagerSummary,
+  PlatformManagerCapability,
+} from "@hooma/contracts/platform-admin";
 
 export const MANAGER_CAPABILITIES: readonly PlatformManagerCapability[] = [
   "REVIEW_PITCH_APPLICATIONS",
   "VIEW_AUDIT",
 ];
+
+type ManagerLoadState = "loading" | "ready" | "error";
 
 function capabilityCopy(capability: PlatformManagerCapability): {
   label: string;
@@ -24,9 +29,11 @@ function capabilityCopy(capability: PlatformManagerCapability): {
 
 export function AccessManagers({
   managers,
+  loadState,
   onSubmit,
 }: {
   readonly managers: readonly AppManagerSummary[];
+  readonly loadState: ManagerLoadState;
   readonly onSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void>;
 }) {
   return (
@@ -36,7 +43,7 @@ export function AccessManagers({
           <p className="eyebrow">PEOPLE</p>
           <h2>Access &amp; Managers</h2>
         </div>
-        <span>{managers.length}</span>
+        <span>{loadState === "ready" ? managers.length : "—"}</span>
       </div>
       <form className="admin-manager-form" onSubmit={(event) => void onSubmit(event)}>
         <input name="username" placeholder="HOOMA username" required />
@@ -61,17 +68,26 @@ export function AccessManagers({
         </p>
       </form>
       <div className="admin-manager-list">
-        {managers.map((manager) => (
-          <article key={manager.userId}>
-            <strong>{manager.displayName}</strong>
-            <span>@{manager.username}</span>
-            <small>
-              {manager.capabilities.length
-                ? manager.capabilities.map((capability) => capabilityCopy(capability).label).join(" · ")
-                : "No active delegated permissions"}
-            </small>
-          </article>
-        ))}
+        {loadState === "loading" ? <p className="muted">Loading App Managers…</p> : null}
+        {loadState === "error" ? <p className="muted">App Managers are unavailable.</p> : null}
+        {loadState === "ready" && !managers.length ? (
+          <p className="muted">No App Managers have delegated permissions.</p>
+        ) : null}
+        {loadState === "ready"
+          ? managers.map((manager) => (
+              <article key={manager.userId}>
+                <strong>{manager.displayName}</strong>
+                <span>@{manager.username}</span>
+                <small>
+                  {manager.capabilities.length
+                    ? manager.capabilities
+                        .map((capability) => capabilityCopy(capability).label)
+                        .join(" · ")
+                    : "No active delegated permissions"}
+                </small>
+              </article>
+            ))
+          : null}
       </div>
     </section>
   );

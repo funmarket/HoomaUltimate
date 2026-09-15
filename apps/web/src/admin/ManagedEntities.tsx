@@ -1,12 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import type { PublicCommunitySummary, PublicTeamSummary } from "@hooma/frontend";
 
+type EntityLoadState = "loading" | "ready" | "error";
+
 export function ManagedEntities({
   communities,
   teams,
+  communitiesState,
+  teamsState,
 }: {
   readonly communities: readonly PublicCommunitySummary[];
   readonly teams: readonly PublicTeamSummary[];
+  readonly communitiesState: EntityLoadState;
+  readonly teamsState: EntityLoadState;
 }) {
   const [selectedCommunityId, setSelectedCommunityId] = useState("");
   const [selectedTeamId, setSelectedTeamId] = useState("");
@@ -35,7 +41,7 @@ export function ManagedEntities({
             <p className="eyebrow">COMMUNITIES</p>
             <h2>Active HOOMAs</h2>
           </div>
-          <span>{communities.length}</span>
+          <span>{communitiesState === "ready" ? communities.length : "—"}</span>
         </div>
         <div className="admin-entity-picker">
           <label className="admin-entity-select-label">
@@ -44,19 +50,31 @@ export function ManagedEntities({
               className="admin-entity-select"
               value={selectedCommunityId}
               onChange={(event) => setSelectedCommunityId(event.currentTarget.value)}
-              disabled={!communities.length}
+              disabled={communitiesState !== "ready" || !communities.length}
             >
               <option value="">Select a HOOMA</option>
-              {communities.map((community) => (
-                <option key={community.id} value={community.id}>
-                  {community.name}
-                  {community.houma || community.city ? ` — ${community.houma || community.city}` : ""}
-                </option>
-              ))}
+              {communitiesState === "ready"
+                ? communities.map((community) => (
+                    <option key={community.id} value={community.id}>
+                      {community.name}
+                      {community.houma || community.city
+                        ? ` — ${community.houma || community.city}`
+                        : ""}
+                    </option>
+                  ))
+                : null}
             </select>
           </label>
-          {!communities.length ? <p className="muted">No active HOOMAs.</p> : null}
-          {selectedCommunity ? (
+          {communitiesState === "loading" ? (
+            <p className="muted">Loading active HOOMAs…</p>
+          ) : null}
+          {communitiesState === "error" ? (
+            <p className="muted">Active HOOMAs are unavailable.</p>
+          ) : null}
+          {communitiesState === "ready" && !communities.length ? (
+            <p className="muted">No active HOOMAs.</p>
+          ) : null}
+          {communitiesState === "ready" && selectedCommunity ? (
             <article className="admin-entity-detail">
               <div className="admin-entity-detail-copy">
                 <strong>{selectedCommunity.name}</strong>
@@ -79,7 +97,7 @@ export function ManagedEntities({
             <p className="eyebrow">TEAMS</p>
             <h2>Active Teams</h2>
           </div>
-          <span>{teams.length}</span>
+          <span>{teamsState === "ready" ? teams.length : "—"}</span>
         </div>
         <div className="admin-entity-picker">
           <label className="admin-entity-select-label">
@@ -88,19 +106,27 @@ export function ManagedEntities({
               className="admin-entity-select"
               value={selectedTeamId}
               onChange={(event) => setSelectedTeamId(event.currentTarget.value)}
-              disabled={!teams.length}
+              disabled={teamsState !== "ready" || !teams.length}
             >
               <option value="">Select a Team</option>
-              {teams.map((team) => (
-                <option key={team.id} value={team.id}>
-                  {team.name}
-                  {team.houma || team.city ? ` — ${team.houma || team.city}` : ""}
-                </option>
-              ))}
+              {teamsState === "ready"
+                ? teams.map((team) => (
+                    <option key={team.id} value={team.id}>
+                      {team.name}
+                      {team.houma || team.city ? ` — ${team.houma || team.city}` : ""}
+                    </option>
+                  ))
+                : null}
             </select>
           </label>
-          {!teams.length ? <p className="muted">No active Teams.</p> : null}
-          {selectedTeam ? (
+          {teamsState === "loading" ? <p className="muted">Loading active Teams…</p> : null}
+          {teamsState === "error" ? (
+            <p className="muted">Active Teams are unavailable.</p>
+          ) : null}
+          {teamsState === "ready" && !teams.length ? (
+            <p className="muted">No active Teams.</p>
+          ) : null}
+          {teamsState === "ready" && selectedTeam ? (
             <article className="admin-entity-detail">
               <div className="admin-entity-detail-copy">
                 <strong>{selectedTeam.name}</strong>

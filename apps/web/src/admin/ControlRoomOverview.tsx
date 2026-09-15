@@ -17,11 +17,13 @@ function attentionStateLabel(item: AttentionItem): string {
 
 export function ControlRoomOverview({
   overview,
+  overviewState,
   attentionItems,
   recentAudit,
   auditState,
 }: {
   readonly overview: PlatformOverview | null;
+  readonly overviewState: AttentionLoadState | null;
   readonly attentionItems: readonly AttentionItem[];
   readonly recentAudit: readonly PlatformAuditEntry[];
   readonly auditState: AttentionLoadState | null;
@@ -50,7 +52,7 @@ export function ControlRoomOverview({
         )}
       </section>
 
-      {overview ? (
+      {overviewState ? (
         <section className="panel admin-snapshot">
           <div className="section-heading">
             <div>
@@ -58,24 +60,33 @@ export function ControlRoomOverview({
               <h2>Current platform totals</h2>
             </div>
           </div>
-          <dl>
-            <div>
-              <dt>Users</dt>
-              <dd>{overview.users}</dd>
-            </div>
-            <div>
-              <dt>Platform Admins</dt>
-              <dd>{overview.activePlatformAdmins}</dd>
-            </div>
-            <div>
-              <dt>App Managers</dt>
-              <dd>{overview.activeAppManagers}</dd>
-            </div>
-            <div>
-              <dt>Audit entries</dt>
-              <dd>{overview.auditEntries}</dd>
-            </div>
-          </dl>
+          {overviewState === "loading" ? <p className="muted">Loading platform totals…</p> : null}
+          {overviewState === "error" ? (
+            <p className="muted">Platform totals are unavailable.</p>
+          ) : null}
+          {overviewState === "ready" && !overview ? (
+            <p className="muted">No platform totals are available.</p>
+          ) : null}
+          {overviewState === "ready" && overview ? (
+            <dl>
+              <div>
+                <dt>Users</dt>
+                <dd>{overview.users}</dd>
+              </div>
+              <div>
+                <dt>Platform Admins</dt>
+                <dd>{overview.activePlatformAdmins}</dd>
+              </div>
+              <div>
+                <dt>App Managers</dt>
+                <dd>{overview.activeAppManagers}</dd>
+              </div>
+              <div>
+                <dt>Audit entries</dt>
+                <dd>{overview.auditEntries}</dd>
+              </div>
+            </dl>
+          ) : null}
         </section>
       ) : null}
 

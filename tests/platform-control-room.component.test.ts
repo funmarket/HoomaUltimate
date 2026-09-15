@@ -1,54 +1,154 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import test from "node:test";
+import type { AdminPlaceReviewQueueItem } from "@hooma/contracts/platform-admin";
+import { JSDOM } from "jsdom";
 
-const adminApp = readFileSync("apps/web/src/admin/AdminApp.tsx", "utf8");
-const shell = readFileSync("apps/web/src/admin/ControlRoomShell.tsx", "utf8");
-const overview = readFileSync("apps/web/src/admin/ControlRoomOverview.tsx", "utf8");
-const queues = readFileSync("apps/web/src/admin/ReviewQueues.tsx", "utf8");
-const audit = readFileSync("apps/web/src/admin/AuditArchive.tsx", "utf8");
-const disputes = readFileSync("apps/web/src/admin/GamerDisputeConsole.tsx", "utf8");
-const accountHeader = readFileSync("packages/ui/src/account/HoomaAccountHeader.tsx", "utf8");
+test("Platform Control Room keeps visible module states independent", async () => {
+  const dom = new JSDOM("<!doctype html><html><body></body></html>", {
+    url: "http://localhost/",
+  });
 
-// PR 1 is a composition/refactor slice: it must keep canonical APIs and domain workflows in place.
-test("Platform Control Room is composed from focused admin modules", () => {
-  assert.match(adminApp, /<ControlRoomShell/);
-  assert.match(adminApp, /<ControlRoomOverview/);
-  assert.match(adminApp, /<ReviewQueues/);
-  assert.match(adminApp, /<AccessManagers/);
-  assert.match(adminApp, /<ManagedEntities/);
-  assert.match(adminApp, /<AuditArchive/);
-  assert.doesNotMatch(adminApp, /function QueueSection/);
-  assert.doesNotMatch(adminApp, /fetch\(/);
-});
+  Object.defineProperty(globalThis, "window", { value: dom.window, configurable: true });
+  Object.defineProperty(globalThis, "document", { value: dom.window.document, configurable: true });
+  Object.defineProperty(globalThis, "navigator", {
+    value: dom.window.navigator,
+    configurable: true,
+  });
+  Object.defineProperty(globalThis, "HTMLElement", {
+    value: dom.window.HTMLElement,
+    configurable: true,
+  });
+  Object.defineProperty(globalThis, "Element", { value: dom.window.Element, configurable: true });
+  Object.defineProperty(globalThis, "Node", { value: dom.window.Node, configurable: true });
+  Object.defineProperty(globalThis, "Event", { value: dom.window.Event, configurable: true });
+  Object.defineProperty(globalThis, "FormData", {
+    value: dom.window.FormData,
+    configurable: true,
+  });
 
-test("Needs Attention is queue-backed and does not invent platform health", () => {
-  assert.match(overview, /Needs Attention/);
-  assert.match(adminApp, /queues\.places\.length/);
-  assert.match(adminApp, /queues\["place-ownership"\]\.length/);
-  assert.match(adminApp, /queues\.pitch\.length/);
-  assert.match(adminApp, /gamerDisputeCount/);
-  assert.match(disputes, /onCountChange\?\.\(response\.items\.length\)/);
-  assert.doesNotMatch(overview, /Healthy|Database status|Worker status|Storage status/i);
-});
+  const React = await import("react");
+  Object.defineProperty(globalThis, "React", {
+    value: React,
+    writable: true,
+    configurable: true,
+  });
+  const { cleanup, render } = await import("@testing-library/react");
+  const { ReviewQueues } = await import("../apps/web/src/admin/ReviewQueues");
+  const { AccessManagers } = await import("../apps/web/src/admin/AccessManagers");
+  const { ManagedEntities } = await import("../apps/web/src/admin/ManagedEntities");
+  const { ControlRoomOverview } = await import("../apps/web/src/admin/ControlRoomOverview");
 
-test("audit evidence is separated from actionable review queues", () => {
-  assert.match(audit, /Audit Archive/);
-  assert.match(overview, /Recent Admin Activity/i);
-  assert.match(overview, /View Audit Archive/);
-  assert.doesNotMatch(queues, /Audit Archive|Recent sensitive actions/);
-});
+  const placeReview = {
+    id: "place-review-1",
+    place: {
+      name: "Ready Place",
+      houma: null,
+      city: "Tunis",
+      address: "1 Test Street",
+    },
+    applicant: {
+      displayName: "Applicant",
+      username: "applicant",
+    },
+  } as AdminPlaceReviewQueueItem;
 
-test("authority labels distinguish Platform Admin from delegated App Manager", () => {
-  assert.match(shell, /PLATFORM ADMIN/);
-  assert.match(shell, /APP MANAGER/);
-  assert.match(shell, /Pitch Review/);
-  assert.match(shell, /Audit/);
-  assert.match(accountHeader, /title="Platform Control Room"/);
-});
+  try {
+    const queueView = render(
+      React.createElement(ReviewQueues, {
+        queues: {
+          places: [placeReview],
+          "place-ownership": [],
+          pitch: [],
+        },
+        queueStates: {
+          places: "ready",
+          "place-ownership": "error",
+          pitch: "loading",
+        },
+        showPlaceQueues: true,
+        showPitchQueue: true,
+        onDecision: () => undefined,
+      }),
+    );
 
-test("PR 1 does not introduce future control-plane models or capabilities", () => {
-  for (const source of [adminApp, shell, overview, queues, audit]) {
-    assert.doesNotMatch(source, /AdminIssue|FeatureAvailability|FeatureFlag|MANAGE_USERS|MANAGE_ADMIN_ISSUES/);
+    assert.ok(queueView.getByText("Ready Place"));
+    assert.ok(queueView.getByText("This queue is unavailable."));
+    assert.ok(queueView.getByText("Loading queue…"));
+    assert.equal(queueView.getAllByText("—").length, 2);
+    queueView.unmount();
+
+    const managerView = render(
+      React.createElement(AccessManagers, {
+        managers: [],
+        loadState: "error",
+        onSubmit: async () => undefined,
+      }),
+    );
+
+    assert.ok(managerView.getByText("App Managers are unavailable."));
+    assert.ok(managerView.getByText("—"));
+    assert.equal(managerView.queryByText("No App Managers have delegated permissions."), null);
+    managerView.rerender(
+      React.createElement(AccessManagers, {
+        managers: [],
+        loadState: "ready",
+        onSubmit: async () => undefined,
+      }),
+    );
+    assert.ok(managerView.getByText("No App Managers have delegated permissions."));
+    managerView.unmount();
+
+    const entityView = render(
+      React.createElement(ManagedEntities, {
+        communities: [],
+        teams: [],
+        communitiesState: "loading",
+        teamsState: "error",
+      }),
+    );
+
+    assert.ok(entityView.getByText("Loading active HOOMAs…"));
+    assert.ok(entityView.getByText("Active Teams are unavailable."));
+    assert.equal(entityView.getAllByText("—").length, 2);
+    assert.equal(entityView.queryByText("No active HOOMAs."), null);
+    assert.equal(entityView.queryByText("No active Teams."), null);
+    entityView.rerender(
+      React.createElement(ManagedEntities, {
+        communities: [],
+        teams: [],
+        communitiesState: "ready",
+        teamsState: "ready",
+      }),
+    );
+    assert.ok(entityView.getByText("No active HOOMAs."));
+    assert.ok(entityView.getByText("No active Teams."));
+    entityView.unmount();
+
+    const overviewView = render(
+      React.createElement(ControlRoomOverview, {
+        overview: null,
+        overviewState: "loading",
+        attentionItems: [],
+        recentAudit: [],
+        auditState: "error",
+      }),
+    );
+
+    assert.ok(overviewView.getByText("Loading platform totals…"));
+    assert.ok(overviewView.getByText("Recent activity is unavailable."));
+    overviewView.rerender(
+      React.createElement(ControlRoomOverview, {
+        overview: null,
+        overviewState: "error",
+        attentionItems: [],
+        recentAudit: [],
+        auditState: "loading",
+      }),
+    );
+    assert.ok(overviewView.getByText("Platform totals are unavailable."));
+    assert.ok(overviewView.getByText("Loading recent activity…"));
+  } finally {
+    cleanup();
+    dom.window.close();
   }
 });

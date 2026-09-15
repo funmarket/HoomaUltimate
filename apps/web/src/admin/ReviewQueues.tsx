@@ -6,7 +6,7 @@ import type {
 import { formatPitchHourlyRate } from "@hooma/frontend";
 
 type QueueName = "places" | "place-ownership" | "pitch";
-type QueueLoadState = "loading" | "ready" | "error";
+export type QueueLoadState = "loading" | "ready" | "error";
 type AdminQueueDisplayItem =
   | AdminPlaceReviewQueueItem
   | AdminPlaceOwnershipReviewQueueItem
@@ -17,6 +17,8 @@ export interface AdminQueues {
   "place-ownership": AdminPlaceOwnershipReviewQueueItem[];
   pitch: AdminPitchReviewQueueItem[];
 }
+
+export type AdminQueueStates = Record<QueueName, QueueLoadState>;
 
 function QueueSection({
   id,
@@ -87,13 +89,13 @@ function QueueSection({
 
 export function ReviewQueues({
   queues,
-  loadState,
+  queueStates,
   showPlaceQueues,
   showPitchQueue,
   onDecision,
 }: {
   readonly queues: AdminQueues;
-  readonly loadState: QueueLoadState;
+  readonly queueStates: AdminQueueStates;
   readonly showPlaceQueues: boolean;
   readonly showPitchQueue: boolean;
   readonly onDecision: (
@@ -110,7 +112,7 @@ export function ReviewQueues({
           eyebrow="PLACES"
           title="Place submissions"
           items={queues.places}
-          loadState={loadState}
+          loadState={queueStates.places}
           onDecision={(id, decision) => onDecision("places", id, decision)}
         />
       ) : null}
@@ -120,7 +122,7 @@ export function ReviewQueues({
           eyebrow="OWNERSHIP"
           title="Place ownership claims"
           items={queues["place-ownership"]}
-          loadState={loadState}
+          loadState={queueStates["place-ownership"]}
           onDecision={(id, decision) => onDecision("place-ownership", id, decision)}
         />
       ) : null}
@@ -130,7 +132,7 @@ export function ReviewQueues({
           eyebrow="PITCH"
           title="Pitch business applications"
           items={queues.pitch}
-          loadState={loadState}
+          loadState={queueStates.pitch}
           onDecision={(id, decision) => onDecision("pitch", id, decision)}
         />
       ) : null}
