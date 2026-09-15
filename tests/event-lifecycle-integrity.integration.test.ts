@@ -118,12 +118,7 @@ async function publishGameListing(base: string, cookie: string) {
   return (await response.json()) as { id: string };
 }
 
-async function sendInvite(
-  base: string,
-  cookie: string,
-  listingId: string,
-  eventId: string,
-) {
+async function sendInvite(base: string, cookie: string, listingId: string, eventId: string) {
   return fetch(`${base}/api/v1/play/player-listings/${listingId}/event-invite`, {
     method: "POST",
     headers: headers(cookie),
