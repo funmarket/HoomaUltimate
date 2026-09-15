@@ -163,7 +163,7 @@ test("Play event preserves capacity/waitlist, formation, check-in, temporary cha
           ...Array.from({ length: 4 }, (_, index) => ({
             userId: null,
             team: "A",
-            position: null,
+            position: ["DF", "DF", "MF", "FW"][index],
             label: `A${index + 2}`,
             x: 25 + index * 15,
             y: 80 - index * 15,
@@ -171,7 +171,7 @@ test("Play event preserves capacity/waitlist, formation, check-in, temporary cha
           ...Array.from({ length: 5 }, (_, index) => ({
             userId: null,
             team: "B",
-            position: index === 0 ? "GK" : null,
+            position: index === 0 ? "GK" : ["DF", "DF", "MF", "FW"][index - 1],
             label: index === 0 ? "Keeper" : `B${index + 1}`,
             x: 20 + index * 15,
             y: 20 + index * 12,
