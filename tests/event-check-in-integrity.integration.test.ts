@@ -31,6 +31,16 @@ async function resetDatabase() {
   await db.playEventDetails.deleteMany();
   await db.watchEventDetails.deleteMany();
   await db.event.deleteMany();
+  await db.place.deleteMany();
+  await db.teamGame.deleteMany();
+  await db.teamChallengeMessage.deleteMany();
+  await db.teamChallenge.deleteMany();
+  await db.teamLineupSlot.deleteMany();
+  await db.teamLineup.deleteMany();
+  await db.teamCapabilityGrant.deleteMany();
+  await db.teamResponsibilityAssignment.deleteMany();
+  await db.teamPlayer.deleteMany();
+  await db.team.deleteMany();
   await db.communityMembership.deleteMany();
   await db.community.deleteMany();
   await db.webSession.deleteMany();
