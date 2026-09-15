@@ -68,12 +68,13 @@ test("Ride hero actions keep approved IA and phone-first button layout", () => {
   assert.match(gateway, /RideCarPlusIcon/);
   assert.doesNotMatch(gateway, /RideLockIcon/);
   const icons = source("packages/frontend/src/rides/RideIcons.tsx");
-  assert.match(icons, /requestAction: "\/rides\/icons\/request-action\.png"/);
-  assert.match(icons, /browseOffers: "\/rides\/icons\/browse-offers\.png"/);
-  assert.match(icons, /offerSeats: "\/rides\/icons\/offer-seats\.png"/);
-  assert.match(icons, /privacy: "\/rides\/icons\/privacy-lock\.png"/);
+  assert.match(icons, /requestAction: rideIconAsset\("request-action"\)/);
+  assert.match(icons, /browseOffers: rideIconAsset\("browse-offers"\)/);
+  assert.match(icons, /offerSeats: rideIconAsset\("offer-seats"\)/);
+  assert.match(icons, /privacy: rideIconAsset\("privacy-lock"\)/);
   assert.match(icons, /RIDE_EXACT_ICON_ASSETS/);
-  assert.match(icons, /<img alt="" aria-hidden="true"/);
+  assert.match(icons, /srcSet=\{asset\.srcSet\}/);
+  assert.match(icons, /decoding="async"/);
   assert.doesNotMatch(gateway, /⌖|●●●|🔒/);
 
   const actions = cssRule(css, ".ride-hero__actions");
@@ -112,10 +113,10 @@ test("Ride hub has the required four distinctive feature cards and compact real-
   assert.match(gateway, /RideRouteIcon/);
   assert.match(gateway, /RideMapPinPlusIcon/);
   assert.match(gateway, /RideHistoryIcon/);
-  assert.match(gateway, /matchday: "\/rides\/icons\/matchday-ride\.png"/);
-  assert.match(gateway, /anywhere: "\/rides\/icons\/anywhere-ride\.png"/);
-  assert.match(gateway, /requestFeature: "\/rides\/icons\/request-ride\.png"/);
-  assert.match(gateway, /myRides: "\/rides\/icons\/my-rides\.png"/);
+  assert.match(gateway, /matchday: rideIconAsset\("matchday-ride"\)/);
+  assert.match(gateway, /anywhere: rideIconAsset\("anywhere-ride"\)/);
+  assert.match(gateway, /requestFeature: rideIconAsset\("request-ride"\)/);
+  assert.match(gateway, /myRides: rideIconAsset\("my-rides"\)/);
   assert.doesNotMatch(gateway, /⌂|▰|🔒/);
   assert.match(gateway, /RideCompensationBadge/);
   assert.match(gateway, /photoUrl\(offer\.id\)/);
