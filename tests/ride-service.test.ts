@@ -46,10 +46,12 @@ import type {
   UserPresentationSummary,
 } from "../apps/api/src/modules/identity/application/user-presentation.reader.js";
 import { RideService } from "../apps/api/src/modules/rides/application/ride.service.js";
+import type { RideStaticMapProvider } from "../apps/api/src/modules/rides/application/ride-map-preview.js";
 import { RideError, type RideErrorCode } from "../apps/api/src/modules/rides/domain/ride-error.js";
 import { RidePolicyError } from "../apps/api/src/modules/rides/domain/ride-policy.js";
 
 const now = new Date("2026-08-30T12:00:00.000Z").toISOString();
+const textDecoder = new TextDecoder();
 
 test("RideService derives driver identity and validates Event destination before creating an offer", async () => {
   const fixture = createServiceFixture();
@@ -399,10 +401,12 @@ test("RideService renders public and exact static Ride map previews through the 
   const fixture = createServiceFixture();
 
   const publicPreview = await fixture.service.getPublicOfferMapPreview("offer-1");
-  assert.match(publicPreview, /PUBLIC PREVIEW/);
-  assert.match(publicPreview, /Stade Olympique de Rades/);
-  assert.doesNotMatch(publicPreview, /36\.8/);
-  assert.doesNotMatch(publicPreview, /10\.18/);
+  assert.equal(publicPreview.contentType, "image/svg+xml");
+  const publicPreviewBody = textDecoder.decode(publicPreview.body);
+  assert.match(publicPreviewBody, /PUBLIC PREVIEW/);
+  assert.match(publicPreviewBody, /Stade Olympique de Rades/);
+  assert.doesNotMatch(publicPreviewBody, /36\.8/);
+  assert.doesNotMatch(publicPreviewBody, /10\.18/);
 
   fixture.meetingPoints.authorizedResult = {
     id: "meeting-1",
@@ -414,10 +418,12 @@ test("RideService renders public and exact static Ride map previews through the 
     updatedAt: now,
   };
   const exactPreview = await fixture.service.getMeetingPointMapPreview("passenger-1", "part-1");
-  assert.match(exactPreview, /PRIVATE EXACT PREVIEW/);
-  assert.match(exactPreview, /Gate 4/);
-  assert.match(exactPreview, /36\.80000/);
-  assert.match(exactPreview, /10\.18000/);
+  assert.equal(exactPreview.contentType, "image/svg+xml");
+  const exactPreviewBody = textDecoder.decode(exactPreview.body);
+  assert.match(exactPreviewBody, /PRIVATE EXACT PREVIEW/);
+  assert.match(exactPreviewBody, /Gate 4/);
+  assert.match(exactPreviewBody, /36\.80000/);
+  assert.match(exactPreviewBody, /10\.18000/);
 
   fixture.meetingPoints.authorizedResult = null;
   await assertRideError(
@@ -427,7 +433,30 @@ test("RideService renders public and exact static Ride map previews through the 
   );
 });
 
-function createServiceFixture() {
+test("RideService uses configured static map provider and falls back only when it has no image", async () => {
+  const provider = new FakeRideStaticMapProvider();
+  const fixture = createServiceFixture(provider);
+
+  const publicPreview = await fixture.service.getPublicOfferMapPreview("offer-1");
+  assert.equal(publicPreview.contentType, "image/png");
+  assert.deepEqual([...publicPreview.body], [1, 2, 3]);
+  assert.equal(provider.publicSearchText, "Stade Olympique de Rades");
+
+  fixture.meetingPoints.authorizedResult = {
+    id: "meeting-1",
+    participationId: "part-1",
+    label: "Gate 4",
+    latitude: 36.8,
+    longitude: 10.18,
+    createdAt: now,
+    updatedAt: now,
+  };
+  const exactPreview = await fixture.service.getMeetingPointMapPreview("passenger-1", "part-1");
+  assert.equal(exactPreview.contentType, "image/png");
+  assert.deepEqual(provider.privateCoordinates, { latitude: 36.8, longitude: 10.18 });
+});
+
+function createServiceFixture(staticMapProvider: RideStaticMapProvider | null = null) {
   const offers = new FakeRideOfferRepository();
   const requests = new FakeRideRequestRepository();
   const participations = new FakeRideParticipationRepository();
@@ -449,6 +478,7 @@ function createServiceFixture() {
     userPresentations,
     vehiclePhotos,
     storage,
+    staticMapProvider,
   );
   return {
     service,
@@ -463,6 +493,24 @@ function createServiceFixture() {
     vehiclePhotos,
     storage,
   };
+}
+
+class FakeRideStaticMapProvider implements RideStaticMapProvider {
+  public publicSearchText: string | null = null;
+  public privateCoordinates: { readonly latitude: number; readonly longitude: number } | null =
+    null;
+
+  async renderPublicDestinationMap(input: { readonly searchText: string }) {
+    this.publicSearchText = input.searchText;
+    return { contentType: "image/png", body: Uint8Array.of(1, 2, 3) };
+  }
+
+  async renderPrivateMeetingPointMap(input: {
+    readonly coordinates: { readonly latitude: number; readonly longitude: number } | null;
+  }) {
+    this.privateCoordinates = input.coordinates;
+    return input.coordinates ? { contentType: "image/png", body: Uint8Array.of(4, 5, 6) } : null;
+  }
 }
 
 class FakeRideOfferRepository implements RideOfferRepository {

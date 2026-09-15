@@ -46,6 +46,9 @@ const apiEnvironmentSchema = z
       .default(720),
     TELEGRAM_BOT_TOKEN: z.string().default(""),
     TELEGRAM_INIT_DATA_MAX_AGE_SECONDS: z.coerce.number().int().positive().default(86400),
+    STADIA_MAPS_API_KEY: z.string().default(""),
+    RIDE_STATIC_MAP_PROVIDER: z.enum(["svg", "stadiamaps"]).default("svg"),
+    RIDE_STATIC_MAP_STYLE: z.string().min(1).default("alidade_smooth_dark"),
     PLATFORM_ADMIN_BOOTSTRAP_TELEGRAM_USER_ID: telegramUserIdSchema,
     ...objectStorageShape,
   })

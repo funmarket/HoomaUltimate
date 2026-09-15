@@ -38,7 +38,11 @@ import type {
   RideVehiclePhotoRepository,
 } from "./ride-vehicle-photo.repository.js";
 import type { RideRequestListInput, RideRequestRepository } from "./ride-request.repository.js";
-import { renderRideMapPreviewSvg } from "./ride-map-preview.js";
+import {
+  renderRideMapPreviewSvgImage,
+  type RideMapPreviewImage,
+  type RideStaticMapProvider,
+} from "./ride-map-preview.js";
 
 type PublicRideOfferListInput = Omit<RideOfferListInput, "limit"> & { readonly limit?: number };
 type PublicRideRequestListInput = Omit<RideRequestListInput, "limit"> & { readonly limit?: number };
@@ -64,6 +68,7 @@ export class RideService {
     private readonly userPresentations: UserPresentationReader,
     private readonly vehiclePhotos: RideVehiclePhotoRepository,
     private readonly storage: ObjectStorage | null,
+    private readonly staticMapProvider: RideStaticMapProvider | null = null,
   ) {}
 
   listPublicOffers(input: PublicRideOfferListInput = {}) {
@@ -124,33 +129,52 @@ export class RideService {
     return request;
   }
 
-  async getPublicOfferMapPreview(rideOfferId: string) {
+  async getPublicOfferMapPreview(rideOfferId: string): Promise<RideMapPreviewImage> {
     const offer = await this.getPublicOffer(rideOfferId);
-    return renderRideMapPreviewSvg({
-      badge: "PUBLIC PREVIEW",
-      title: destinationLabelForPreview(offer.destination),
-      subtitle: `${offer.originAreaLabel} → ${destinationLabelForPreview(offer.destination)}`,
-      callout: publicCalloutForDestination(offer.destination),
-      privacyNote: "Approximate public Ride preview. Exact meeting points stay private.",
-    });
+    const title = destinationLabelForPreview(offer.destination);
+    const preview = this.staticMapProvider
+      ? await this.staticMapProvider.renderPublicDestinationMap({
+          searchText: publicMapSearchText(offer.destination),
+        })
+      : null;
+    return (
+      preview ??
+      renderRideMapPreviewSvgImage({
+        badge: "PUBLIC PREVIEW",
+        title,
+        subtitle: `${offer.originAreaLabel} → ${title}`,
+        callout: publicCalloutForDestination(offer.destination),
+        privacyNote: "Approximate public Ride preview. Exact meeting points stay private.",
+      })
+    );
   }
 
-  async getMeetingPointMapPreview(viewerUserId: string, participationId: string) {
+  async getMeetingPointMapPreview(
+    viewerUserId: string,
+    participationId: string,
+  ): Promise<RideMapPreviewImage> {
     const meetingPoint = await this.getMeetingPoint(viewerUserId, participationId);
-    return renderRideMapPreviewSvg({
-      badge: "PRIVATE EXACT PREVIEW",
-      title: meetingPoint.label,
-      subtitle: "Visible only to the driver and accepted passenger",
-      callout: meetingPoint.label,
-      privacyNote:
-        meetingPoint.latitude !== null && meetingPoint.longitude !== null
-          ? "Server-rendered exact meeting point for authorized Ride parties."
-          : "Coordinates are unavailable; exact meeting point label only.",
-      coordinates:
-        meetingPoint.latitude !== null && meetingPoint.longitude !== null
-          ? { latitude: meetingPoint.latitude, longitude: meetingPoint.longitude }
-          : null,
-    });
+    const coordinates =
+      meetingPoint.latitude !== null && meetingPoint.longitude !== null
+        ? { latitude: meetingPoint.latitude, longitude: meetingPoint.longitude }
+        : null;
+    const preview = this.staticMapProvider
+      ? await this.staticMapProvider.renderPrivateMeetingPointMap({ coordinates })
+      : null;
+    return (
+      preview ??
+      renderRideMapPreviewSvgImage({
+        badge: "PRIVATE EXACT PREVIEW",
+        title: meetingPoint.label,
+        subtitle: "Visible only to the driver and accepted passenger",
+        callout: meetingPoint.label,
+        privacyNote:
+          meetingPoint.latitude !== null && meetingPoint.longitude !== null
+            ? "Server-rendered exact meeting point for authorized Ride parties."
+            : "Coordinates are unavailable; exact meeting point label only.",
+        coordinates,
+      })
+    );
   }
 
   async getMyRequest(requesterUserId: string, rideRequestId: string) {
@@ -656,6 +680,19 @@ function destinationLabelForPreview(
       return `Event ${destination.title}`;
     case "PLACE":
       return destination.name;
+    case "CUSTOM":
+      return destination.label;
+  }
+}
+
+function publicMapSearchText(
+  destination: PublicRideOffer["destination"] | PublicRideRequest["destination"],
+): string {
+  switch (destination.type) {
+    case "EVENT":
+      return destination.title;
+    case "PLACE":
+      return [destination.name, destination.city, destination.houma].filter(Boolean).join(", ");
     case "CUSTOM":
       return destination.label;
   }
