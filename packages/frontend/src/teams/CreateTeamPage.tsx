@@ -178,11 +178,7 @@ export function CreateTeamPage() {
             <a className="button secondary" href="/teams">
               Cancel
             </a>{" "}
-            <button
-              className="button"
-              disabled={creating || !name.trim()}
-              aria-busy={creating}
-            >
+            <button className="button" disabled={creating || !name.trim()} aria-busy={creating}>
               {creating ? "Creating…" : "Create Team"}
             </button>
           </div>
