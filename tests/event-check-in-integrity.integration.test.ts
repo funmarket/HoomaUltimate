@@ -164,6 +164,7 @@ test("Event check-in integrity contract", async () => {
     const lifecycle = await register(base, "checkin_lifecycle");
     const watchPlayer = await register(base, "checkin_watch");
     const racing = await register(base, "checkin_race");
+    const concurrent = await register(base, "checkin_concurrent");
     const community = await createCommunity(base, founder.cookie);
     const event = await createPlayEvent(base, founder.cookie, community.id);
 
@@ -335,6 +336,33 @@ test("Event check-in integrity contract", async () => {
       assert.equal(cancelRace.status, 200);
       assert.equal(checkInRace.status, 403);
     }
+
+    await db.eventRsvp.create({
+      data: {
+        eventId: raceEvent.id,
+        userId: concurrent.userId,
+        status: "CONFIRMED",
+      },
+    });
+    const [concurrentA, concurrentB] = await Promise.all([
+      checkIn(base, raceEvent.id, concurrent.cookie),
+      checkIn(base, raceEvent.id, concurrent.cookie),
+    ]);
+    assert.equal(concurrentA.status, 200);
+    assert.equal(concurrentB.status, 200);
+    assert.equal(
+      await db.eventCheckIn.count({
+        where: { eventId: raceEvent.id, userId: concurrent.userId },
+      }),
+      1,
+    );
+    const concurrentRsvp = await db.eventRsvp.findUniqueOrThrow({
+      where: {
+        eventId_userId: { eventId: raceEvent.id, userId: concurrent.userId },
+      },
+    });
+    assert.equal(concurrentRsvp.status, "ATTENDED");
+    assert.ok(concurrentRsvp.checkedInAt);
   } finally {
     await new Promise<void>((resolve, reject) => {
       server.close((error) => (error ? reject(error) : resolve()));
