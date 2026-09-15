@@ -16,6 +16,11 @@ const objectStorageShape = {
   OBJECT_STORAGE_URL_STYLE: z.enum(["path", "virtual"]).default("path"),
 };
 
+const objectStorageEnvironmentShape = {
+  NODE_ENV: nodeEnvironmentSchema.default("development"),
+  ...objectStorageShape,
+};
+
 const apiEnvironmentSchema = z
   .object({
     NODE_ENV: nodeEnvironmentSchema.default("development"),
@@ -59,7 +64,7 @@ const apiEnvironmentSchema = z
   });
 
 const objectStorageEnvironmentSchema = z
-  .object(objectStorageShape)
+  .object(objectStorageEnvironmentShape)
   .superRefine((value, context) => {
     validateCompleteObjectStorageConfig(value, context);
   });
@@ -78,7 +83,7 @@ export function loadObjectStorageConfig(
 }
 
 function validateCompleteObjectStorageConfig(
-  value: ObjectStorageConfig,
+  value: ObjectStorageConfig | ApiConfig,
   context: z.RefinementCtx,
 ): void {
   const storageValues = [
@@ -89,6 +94,13 @@ function validateCompleteObjectStorageConfig(
     value.OBJECT_STORAGE_SECRET_ACCESS_KEY,
   ];
   const configured = storageValues.filter(Boolean).length;
+  if (value.NODE_ENV === "production" && configured === 0) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["OBJECT_STORAGE_ENDPOINT"],
+      message: "OBJECT_STORAGE_* configuration is required in production",
+    });
+  }
   if (configured > 0 && configured < storageValues.length) {
     context.addIssue({
       code: z.ZodIssueCode.custom,

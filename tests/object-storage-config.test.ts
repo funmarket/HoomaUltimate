@@ -17,6 +17,19 @@ test("object storage config loads without API-only production requirements", () 
   assert.equal(config.OBJECT_STORAGE_URL_STYLE, "path");
 });
 
+test("object storage config rejects production without complete storage credentials", () => {
+  assert.throws(
+    () => loadObjectStorageConfig({ NODE_ENV: "production" }),
+    /OBJECT_STORAGE_.*required in production/,
+  );
+});
+
+test("object storage config still allows missing storage outside production", () => {
+  const config = loadObjectStorageConfig({ NODE_ENV: "development" });
+
+  assert.equal(config.OBJECT_STORAGE_ENDPOINT, undefined);
+});
+
 test("object storage config accepts explicit virtual URL style", () => {
   const config = loadObjectStorageConfig({
     OBJECT_STORAGE_ENDPOINT: "https://storage.example.com",
