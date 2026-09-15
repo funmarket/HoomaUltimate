@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import type { MeResponse } from "@hooma/contracts";
 import { useHoomaFrontend } from "../context";
+import { successNavigationState } from "../interaction-feedback";
 
 export function CreateTeamPage() {
   const { api, authenticationHref, protectedError } = useHoomaFrontend();
@@ -61,7 +62,7 @@ export function CreateTeamPage() {
         badgeUrl: badgeUrl.trim() || null,
         bannerUrl: bannerUrl.trim() || null,
       });
-      navigate("/teams");
+      navigate("/teams", { state: successNavigationState("Team created.") });
     } catch (reason) {
       setError(protectedError(reason, "Could not create Team"));
     } finally {
@@ -177,7 +178,11 @@ export function CreateTeamPage() {
             <a className="button secondary" href="/teams">
               Cancel
             </a>{" "}
-            <button className="button" disabled={creating || !name.trim()}>
+            <button
+              className="button"
+              disabled={creating || !name.trim()}
+              aria-busy={creating}
+            >
               {creating ? "Creating…" : "Create Team"}
             </button>
           </div>
