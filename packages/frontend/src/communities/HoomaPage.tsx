@@ -10,6 +10,7 @@ import type {
 } from "../api";
 import { useHoomaFrontend } from "../context";
 import { CommunityHoomaNowSection } from "../discovery/HoomaNowSection";
+import { successNavigationState } from "../interaction-feedback";
 import { HoomaWhistleBoard } from "../whistle/HoomaWhistleBoard";
 import { CommunityLogo, CommunityMediaSurface } from "./CommunityMedia";
 import { HoomaMembershipRequests } from "./HoomaMembershipRequests";
@@ -285,10 +286,12 @@ export function CreateHoomaPage() {
       });
       const after = new URLSearchParams(window.location.search).get("after");
       if (after === "team-create") {
-        navigate(`/teams/new?communityId=${encodeURIComponent(created.id)}`);
+        navigate(`/teams/new?communityId=${encodeURIComponent(created.id)}`, {
+          state: successNavigationState("HOOMA community created."),
+        });
         return;
       }
-      navigate("/hooma");
+      navigate("/hooma", { state: successNavigationState("HOOMA community created.") });
     } catch (reason) {
       setError(protectedError(reason, "Could not create HOOMA"));
     } finally {
@@ -423,7 +426,11 @@ export function CreateHoomaPage() {
           <button className="button secondary" type="button" onClick={() => navigate("/hooma")}>
             Cancel
           </button>
-          <button className="button" disabled={creating || name.trim().length < 2}>
+          <button
+            className="button"
+            disabled={creating || name.trim().length < 2}
+            aria-busy={creating}
+          >
             {creating ? "Creating…" : "Create HOOMA"}
           </button>
         </div>

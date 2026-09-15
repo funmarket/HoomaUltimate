@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import type { MeResponse, PlayEventVisibility, WatchEventKind } from "@hooma/contracts";
 import type { PublicPlaceSummary } from "@hooma/contracts/places";
 import type { PublicPitch } from "@hooma/contracts/pitch";
 import { useHoomaFrontend } from "../context";
 import { GameLocationPicker } from "../game-location/GameLocationPicker";
+import { successNavigationState } from "../interaction-feedback";
 import { createPlacesApi } from "../places/api";
 import { createPitchApi } from "../pitch/api";
 import { PlayVisibilityField } from "./PlayVisibilityField";
@@ -13,6 +15,7 @@ import { WatchEventForm, type WatchEventFormValue } from "./WatchEventForm";
 export function CreateEventPage() {
   const eventApi = useEventApi();
   const { api, transport, protectedError } = useHoomaFrontend();
+  const navigate = useNavigate();
   const placesApi = useMemo(() => createPlacesApi(transport), [transport]);
   const pitchApi = useMemo(() => createPitchApi(transport), [transport]);
   const searchParams = new URLSearchParams(window.location.search);
@@ -51,7 +54,7 @@ export function CreateEventPage() {
     ) ?? [];
 
   async function submitWatch(value: WatchEventFormValue) {
-    if (!value.placeId) return;
+    if (!value.placeId || pending) return;
     setPending(true);
     setError("");
     try {
@@ -73,7 +76,9 @@ export function CreateEventPage() {
         play: null,
         watch: value.watch,
       });
-      window.location.href = `/events/${created.id}`;
+      navigate(`/events/${created.id}`, {
+        state: successNavigationState("Watch event created."),
+      });
     } catch (reason) {
       setError(protectedError(reason, "Unable to create Watch event"));
     } finally {
@@ -81,8 +86,9 @@ export function CreateEventPage() {
     }
   }
 
-  function submitPlay(event: FormEvent<HTMLFormElement>) {
+  async function submitPlay(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (pending) return;
     const data = new FormData(event.currentTarget);
     const startsAt = new Date(String(data.get("startsAt")));
     const endsValue = String(data.get("endsAt") || "");
@@ -90,10 +96,11 @@ export function CreateEventPage() {
     const placeId = String(data.get("placeId") || "").trim() || null;
     const venueName = placeId ? null : String(data.get("venueName") || "").trim() || null;
     const address = placeId ? null : String(data.get("address") || "").trim() || null;
+    setPending(true);
     setError("");
 
-    void eventApi
-      .create({
+    try {
+      const created = await eventApi.create({
         title: String(data.get("title")),
         description: String(data.get("description")) || null,
         startsAt: startsAt.toISOString(),
@@ -115,11 +122,13 @@ export function CreateEventPage() {
           visibility: String(data.get("visibility")) as PlayEventVisibility,
         },
         watch: null,
-      })
-      .then((created) => {
-        window.location.href = `/events/${created.id}`;
-      })
-      .catch((reason) => setError(protectedError(reason, "Unable to create game")));
+      });
+      navigate(`/events/${created.id}`, { state: successNavigationState("Game created.") });
+    } catch (reason) {
+      setError(protectedError(reason, "Unable to create game"));
+    } finally {
+      setPending(false);
+    }
   }
 
   if (!me && error)
@@ -239,8 +248,13 @@ export function CreateEventPage() {
             Paid game entry is intentionally disabled until Cash and Telegram Stars are wired into
             Payments.
           </p>
-          <button className="event-form__primary-action" type="submit">
-            Publish game
+          <button
+            className="event-form__primary-action"
+            type="submit"
+            disabled={pending}
+            aria-busy={pending}
+          >
+            {pending ? "Publishing…" : "Publish game"}
           </button>
           {error ? <p className="error">{error}</p> : null}
         </form>

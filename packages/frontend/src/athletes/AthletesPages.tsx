@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { PublicAthletesSummary } from "../api";
 import { useHoomaFrontend } from "../context";
+import { successNavigationState } from "../interaction-feedback";
 import { AthletesWhistleBoard } from "../whistle/HoomaWhistleBoard";
 import { AthletesCalendar } from "./AthletesCalendar";
 import { AthletesPhotoBoard } from "./AthletesPhotoBoard";
@@ -206,7 +207,12 @@ export function CreateAthletesPage() {
   const navigate = useNavigate();
   return (
     <AthletesCommunityForm
-      onSaved={(id) => navigate(`/athletes/${id}`, { replace: true })}
+      onSaved={(id) =>
+        navigate(`/athletes/${id}`, {
+          replace: true,
+          state: successNavigationState("Athletes community created."),
+        })
+      }
       onCancel={() => navigate("/athletes")}
     />
   );

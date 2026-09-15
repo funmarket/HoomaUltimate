@@ -25,9 +25,10 @@ test("HOOMA creation only continues back to Teams for the bounded team-create ha
   assert.match(source, /after === "team-create"/);
   assert.match(
     source,
-    /navigate\(`\/teams\/new\?communityId=\$\{encodeURIComponent\(created\.id\)\}`\)/,
+    /navigate\(`\/teams\/new\?communityId=\$\{encodeURIComponent\(created\.id\)\}`,/,
   );
-  assert.match(source, /navigate\("\/hooma"\)/);
+  assert.match(source, /navigate\("\/hooma",/);
+  assert.match(source, /successNavigationState\("HOOMA community created\."\)/);
   assert.doesNotMatch(source, /returnTo/);
 });
 

@@ -1,6 +1,10 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { HoomaAccountHeader, HoomaBottomNav } from "@hooma/ui";
-import { useHoomaFrontend } from "@hooma/frontend";
+import {
+  clearInteractionNoticeState,
+  readInteractionNotice,
+  useHoomaFrontend,
+} from "@hooma/frontend";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAccount } from "../../account/AccountProvider";
 import type { TelegramRuntime } from "../../telegram/runtime";
@@ -17,9 +21,33 @@ export function HoomaShell({
   const location = useLocation();
   const { api } = useHoomaFrontend();
   const { me, managedTeams, hasPlatformControlAccess, loading, error, refresh } = useAccount();
+  const [interactionNotice, setInteractionNotice] = useState("");
   useTelegramBackButton(runtime);
 
   useEffect(() => runtime.connect(), [runtime]);
+
+  const routeNoticeMessage = readInteractionNotice(location.state)?.message ?? "";
+  useEffect(() => {
+    if (!routeNoticeMessage) return;
+    setInteractionNotice(routeNoticeMessage);
+    navigate(`${location.pathname}${location.search}${location.hash}`, {
+      replace: true,
+      state: clearInteractionNoticeState(location.state),
+    });
+  }, [
+    location.hash,
+    location.pathname,
+    location.search,
+    location.state,
+    navigate,
+    routeNoticeMessage,
+  ]);
+
+  useEffect(() => {
+    if (!interactionNotice) return;
+    const timer = window.setTimeout(() => setInteractionNotice(""), 5000);
+    return () => window.clearTimeout(timer);
+  }, [interactionNotice]);
 
   async function signOut() {
     await api.identity.logout();
@@ -59,6 +87,11 @@ export function HoomaShell({
         {...(hasPlatformControlAccess ? { onAdmin: () => navigate("/admin") } : {})}
         {...(!hasTelegramIdentity ? { onSignOut: () => void signOut() } : {})}
       />
+      {interactionNotice ? (
+        <p className="status success" role="status" aria-live="polite">
+          ✓ {interactionNotice}
+        </p>
+      ) : null}
       {shellError ? <p className="status">{shellError}</p> : null}
       <section className="shell-content">{children}</section>
       <HoomaBottomNav pathname={navPathname} onNavigate={(href) => navigate(href)} />
