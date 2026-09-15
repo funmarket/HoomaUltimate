@@ -6,7 +6,16 @@ export interface ApiRateLimitDecision {
 }
 
 export interface ApiRateLimiter {
-  consume(bucket: string, identifier: string): Promise<ApiRateLimitDecision>;
+  consume(
+    bucket: string,
+    identifier: string,
+    policy?: ApiRateLimitPolicy,
+  ): Promise<ApiRateLimitDecision>;
+}
+
+export interface ApiRateLimitPolicy {
+  readonly limit?: number;
+  readonly windowSeconds?: number;
 }
 
 export interface ApiRateLimiterOptions {

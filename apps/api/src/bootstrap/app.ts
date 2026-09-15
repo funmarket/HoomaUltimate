@@ -22,9 +22,15 @@ export function createApp(config: ApiConfig, container: AppContainer) {
   );
   app.use(express.json({ limit: "1mb" }));
   app.use(createHealthRouter(container.readinessService));
-  app.use("/api/public/v1", createApiRateLimitMiddleware(container.apiRateLimiter, "public"));
+  app.use(
+    "/api/public/v1",
+    createApiRateLimitMiddleware(container.apiRateLimiter, { bucket: "public" }),
+  );
   app.use("/api/public/v1", createPublicV1Router(container, config));
-  app.use("/api/v1", createApiRateLimitMiddleware(container.apiRateLimiter, "member"));
+  app.use(
+    "/api/v1",
+    createApiRateLimitMiddleware(container.apiRateLimiter, { bucket: "member-preauth" }),
+  );
   app.use("/api/v1", createMemberV1Router(container, config));
   app.use(errorHandler);
   return app;

@@ -135,7 +135,7 @@ Implement layered controls:
 - temporary lockout/backoff;
 - structured security logging that never logs passwords/session tokens.
 
-Exact thresholds belong in central config and tests, not scattered constants. HTTP API rate limiting uses Redis-backed counters so limits are shared across API instances; it must not rely on process-local maps or PostgreSQL rate-limit tables. The API sets an explicit trusted-proxy hop count before deriving client IPs for those counters so production proxy headers are handled deliberately rather than implicitly.
+Exact thresholds belong in central config and tests, not scattered constants. HTTP API rate limiting uses Redis-backed counters so limits are shared across API instances; it must not rely on process-local maps or PostgreSQL rate-limit tables. The API sets an explicit trusted-proxy hop count before deriving client IPs for public counters so production proxy headers are handled deliberately rather than implicitly. Authenticated member counters use the canonical authenticated User identity once authentication has resolved, with tighter Redis buckets layered on high-amplification paths such as auth writes, Whistle read/write traffic, and public discovery.
 
 ## 8. CSRF / write-origin protection
 
