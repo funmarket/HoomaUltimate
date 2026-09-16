@@ -15,6 +15,7 @@ enum AppManagerCapability {
   REVIEW_PITCH_APPLICATIONS
   VIEW_AUDIT
   MANAGE_ADMIN_ISSUES
+  MANAGE_USERS
 }
 
 enum ModerationStatus {

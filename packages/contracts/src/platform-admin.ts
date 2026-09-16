@@ -6,9 +6,17 @@ export const platformManagerCapabilitySchema = z.enum([
   "REVIEW_PITCH_APPLICATIONS",
   "VIEW_AUDIT",
   "MANAGE_ADMIN_ISSUES",
+  "MANAGE_USERS",
 ]);
 export const adminIssueSeveritySchema = z.enum(["INFO", "WARNING", "CRITICAL"]);
 export const adminIssueStatusUpdateSchema = z.object({
+  note: z.string().trim().min(1).max(1000),
+});
+export const adminUserSearchQuerySchema = z.object({
+  query: z.string().trim().min(2).max(120),
+  limit: z.coerce.number().int().min(1).max(50).optional().default(25),
+});
+export const userSessionRevocationSchema = z.object({
   note: z.string().trim().min(1).max(1000),
 });
 
@@ -20,12 +28,14 @@ export const moderationDecisionSchema = z.object({
 export const adminPitchReviewTargetSchema = z.enum(["INITIAL_SUGGESTION", "OWNER_REVISION"]);
 
 export const appManagerUpdateSchema = z.object({
-  capabilities: z.array(platformManagerCapabilitySchema).max(3),
+  capabilities: z.array(platformManagerCapabilitySchema).max(4),
 });
 
 export type PlatformManagerCapability = z.infer<typeof platformManagerCapabilitySchema>;
 export type AdminIssueSeverity = z.infer<typeof adminIssueSeveritySchema>;
 export type AdminIssueStatusUpdateInput = z.infer<typeof adminIssueStatusUpdateSchema>;
+export type AdminUserSearchQueryInput = z.infer<typeof adminUserSearchQuerySchema>;
+export type UserSessionRevocationInput = z.infer<typeof userSessionRevocationSchema>;
 export type ModerationDecisionInput = z.infer<typeof moderationDecisionSchema>;
 export type AdminPitchReviewTarget = z.infer<typeof adminPitchReviewTargetSchema>;
 export type AppManagerUpdateInput = z.infer<typeof appManagerUpdateSchema>;
@@ -88,4 +98,55 @@ export interface AdminIssueSummary {
   readonly entityId: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
+}
+
+export interface AdminUserSearchItem {
+  readonly userId: string;
+  readonly username: string;
+  readonly displayName: string;
+  readonly photoUrl: string | null;
+  readonly telegramUsername: string | null;
+  readonly hasWebCredential: boolean;
+  readonly lastLoginAt: string | null;
+  readonly activeSessionCount: number;
+  readonly isPlatformAdmin: boolean;
+  readonly managerCapabilities: readonly PlatformManagerCapability[];
+}
+
+export interface AdminUserSessionSummary {
+  readonly id: string;
+  readonly createdAt: string;
+  readonly lastSeenAt: string;
+  readonly expiresAt: string;
+  readonly revokedAt: string | null;
+  readonly isActive: boolean;
+}
+
+export interface AdminUserDetail {
+  readonly userId: string;
+  readonly presentation: {
+    readonly username: string;
+    readonly displayName: string;
+    readonly photoUrl: string | null;
+  };
+  readonly identity: {
+    readonly web: {
+      readonly loginUsername: string;
+      readonly email: string | null;
+      readonly lastLoginAt: string | null;
+    } | null;
+    readonly telegram: {
+      readonly telegramUserId: string;
+      readonly telegramUsername: string | null;
+      readonly lastAuthenticatedAt: string;
+    } | null;
+  };
+  readonly access: {
+    readonly isPlatformAdmin: boolean;
+    readonly managerCapabilities: readonly PlatformManagerCapability[];
+  };
+  readonly security: {
+    readonly activeSessionCount: number;
+    readonly sessions: readonly AdminUserSessionSummary[];
+  };
 }

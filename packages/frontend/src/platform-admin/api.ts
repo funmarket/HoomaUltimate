@@ -5,13 +5,20 @@ import type {
   AdminPitchReviewQueueItem,
   AdminPlaceOwnershipReviewQueueItem,
   AdminPlaceReviewQueueItem,
+  AdminUserDetail,
+  AdminUserSearchItem,
   AppManagerSummary,
   ModerationDecisionInput,
   PlatformManagerCapability,
+  UserSessionRevocationInput,
 } from "@hooma/contracts/platform-admin";
 import { request, type HoomaTransport } from "../http";
 
-export type { AdminIssueSummary } from "@hooma/contracts/platform-admin";
+export type {
+  AdminIssueSummary,
+  AdminUserDetail,
+  AdminUserSearchItem,
+} from "@hooma/contracts/platform-admin";
 
 export interface PlatformOverview {
   readonly users: number;
@@ -54,6 +61,19 @@ export function createPlatformAdminApi(transport: HoomaTransport) {
         },
       ),
     managers: () => request<AppManagerSummary[]>(transport, "/api/v1/admin/managers"),
+    users: (query: string) =>
+      request<AdminUserSearchItem[]>(
+        transport,
+        `/api/v1/admin/users?query=${encodeURIComponent(query)}&limit=25`,
+      ),
+    userDetail: (userId: string) =>
+      request<AdminUserDetail>(transport, `/api/v1/admin/users/${encodeURIComponent(userId)}`),
+    revokeUserSessions: (userId: string, input: UserSessionRevocationInput) =>
+      request<{ ok: true; revokedSessionCount: number }>(
+        transport,
+        `/api/v1/admin/users/${encodeURIComponent(userId)}/sessions/revoke`,
+        { method: "POST", body: JSON.stringify(input) },
+      ),
     setManager: (username: string, capabilities: readonly PlatformManagerCapability[]) =>
       request<{ ok: true }>(transport, `/api/v1/admin/managers/${encodeURIComponent(username)}`, {
         method: "PUT",

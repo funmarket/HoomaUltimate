@@ -5,6 +5,7 @@ export const MANAGER_CAPABILITIES: readonly PlatformManagerCapability[] = [
   "REVIEW_PITCH_APPLICATIONS",
   "VIEW_AUDIT",
   "MANAGE_ADMIN_ISSUES",
+  "MANAGE_USERS",
 ];
 
 type ManagerLoadState = "loading" | "ready" | "error";
@@ -23,6 +24,12 @@ function capabilityCopy(capability: PlatformManagerCapability): {
     return {
       label: "Admin Issues",
       description: "Resolve and dismiss existing operational admin issues.",
+    };
+  }
+  if (capability === "MANAGE_USERS") {
+    return {
+      label: "User Security",
+      description: "Search safe user identity details and revoke active web sessions.",
     };
   }
   return {
