@@ -18,7 +18,12 @@ const meRecord = {
   managerCapabilities: [] as const,
   communities: [],
   athletesCommunities: [
-    { id: "ath-1", name: "Tunis Runners", slug: "tunis-runners", role: "MODERATOR" as const },
+    {
+      id: "ath-1",
+      name: "Tunis Runners",
+      slug: "tunis-runners",
+      role: "MODERATOR" as const,
+    },
   ],
   teams: [],
 };
@@ -49,7 +54,11 @@ test("PrismaIdentityRepository.findMe reads active Athletes memberships and proj
           athletesMemberships: [
             {
               role: "MODERATOR",
-              athletesCommunity: { id: "ath-1", name: "Tunis Runners", slug: "tunis-runners" },
+              athletesCommunity: {
+                id: "ath-1",
+                name: "Tunis Runners",
+                slug: "tunis-runners",
+              },
             },
           ],
           teamPlayers: [],
@@ -66,7 +75,10 @@ test("PrismaIdentityRepository.findMe reads active Athletes memberships and proj
     select?: {
       athletesMemberships?: {
         where?: { leftAt?: null };
-        select?: { role?: boolean; athletesCommunity?: { select?: Record<string, boolean> } };
+        select?: {
+          role?: boolean;
+          athletesCommunity?: { select?: Record<string, boolean> };
+        };
       };
     };
   };
