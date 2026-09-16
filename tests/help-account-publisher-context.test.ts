@@ -3,8 +3,12 @@ import test from "node:test";
 import type { ApiConfig } from "@hooma/config";
 import type { PrismaClient } from "@hooma/database";
 import { IdentityService } from "../apps/api/src/modules/identity/application/identity.service.js";
-import type { IdentityRepository } from "../apps/api/src/modules/identity/application/identity.repository.js";
-import { PrismaIdentityRepository } from "../apps/api/src/modules/identity/infrastructure/prisma-identity.repository.js";
+import type {
+  IdentityRepository,
+} from "../apps/api/src/modules/identity/application/identity.repository.js";
+import {
+  PrismaIdentityRepository,
+} from "../apps/api/src/modules/identity/infrastructure/prisma-identity.repository.js";
 
 const meRecord = {
   id: "user-1",
