@@ -335,6 +335,7 @@ export class IdentityService {
       platformRoles: [...user.platformRoles],
       managerCapabilities: [...user.managerCapabilities],
       communities: [...user.communities],
+      athletesCommunities: [...user.athletesCommunities],
       teams: user.teams.map((team) => ({
         ...team,
         responsibilities: [...team.responsibilities],

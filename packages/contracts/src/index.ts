@@ -57,6 +57,14 @@ export const meResponseSchema = z.object({
       role: z.enum(["FOUNDER", "COACH", "MEMBER"]),
     }),
   ),
+  athletesCommunities: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      slug: z.string(),
+      role: z.enum(["FOUNDER", "MODERATOR", "MEMBER"]),
+    }),
+  ),
   teams: z.array(
     z.object({
       id: z.string(),
