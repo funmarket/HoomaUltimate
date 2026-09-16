@@ -49,7 +49,7 @@ test("PrismaIdentityRepository.findMe reads active Athletes memberships and proj
           athletesMemberships: [
             {
               role: "MODERATOR",
-              community: { id: "ath-1", name: "Tunis Runners", slug: "tunis-runners" },
+              athletesCommunity: { id: "ath-1", name: "Tunis Runners", slug: "tunis-runners" },
             },
           ],
           teamPlayers: [],
@@ -66,14 +66,14 @@ test("PrismaIdentityRepository.findMe reads active Athletes memberships and proj
     select?: {
       athletesMemberships?: {
         where?: { leftAt?: null };
-        select?: { role?: boolean; community?: { select?: Record<string, boolean> } };
+        select?: { role?: boolean; athletesCommunity?: { select?: Record<string, boolean> } };
       };
     };
   };
 
   assert.deepEqual(query.select?.athletesMemberships?.where, { leftAt: null });
   assert.equal(query.select?.athletesMemberships?.select?.role, true);
-  assert.deepEqual(query.select?.athletesMemberships?.select?.community?.select, {
+  assert.deepEqual(query.select?.athletesMemberships?.select?.athletesCommunity?.select, {
     id: true,
     name: true,
     slug: true,
