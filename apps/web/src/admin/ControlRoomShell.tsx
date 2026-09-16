@@ -3,6 +3,7 @@ import type { PlatformManagerCapability } from "@hooma/contracts/platform-admin"
 
 function capabilityLabel(capability: PlatformManagerCapability): string {
   if (capability === "REVIEW_PITCH_APPLICATIONS") return "Pitch Review";
+  if (capability === "MANAGE_ADMIN_ISSUES") return "Admin Issues";
   return "Audit";
 }
 
@@ -10,10 +11,12 @@ function ControlRoomNavigation({
   isPlatformOwner,
   canReviewPitch,
   canViewAudit,
+  canManageAdminIssues,
 }: {
   readonly isPlatformOwner: boolean;
   readonly canReviewPitch: boolean;
   readonly canViewAudit: boolean;
+  readonly canManageAdminIssues: boolean;
 }) {
   const groups = [
     {
@@ -50,8 +53,11 @@ function ControlRoomNavigation({
       ],
     },
     {
-      label: "EVIDENCE",
-      links: canViewAudit ? [{ href: "#audit-archive", label: "Audit Archive" }] : [],
+      label: "AUDIT & ISSUES",
+      links: [
+        ...(canManageAdminIssues ? [{ href: "#admin-action-inbox", label: "Admin Issues" }] : []),
+        ...(canViewAudit ? [{ href: "#audit-archive", label: "Audit Archive" }] : []),
+      ],
     },
   ].filter((group) => group.links.length > 0);
 
@@ -78,6 +84,7 @@ export function ControlRoomShell({
   managerCapabilities,
   canReviewPitch,
   canViewAudit,
+  canManageAdminIssues,
   message,
   error,
   children,
@@ -86,6 +93,7 @@ export function ControlRoomShell({
   readonly managerCapabilities: readonly PlatformManagerCapability[];
   readonly canReviewPitch: boolean;
   readonly canViewAudit: boolean;
+  readonly canManageAdminIssues: boolean;
   readonly message: string;
   readonly error: string;
   readonly children: ReactNode;
@@ -115,6 +123,7 @@ export function ControlRoomShell({
         isPlatformOwner={isPlatformOwner}
         canReviewPitch={canReviewPitch}
         canViewAudit={canViewAudit}
+        canManageAdminIssues={canManageAdminIssues}
       />
 
       {children}

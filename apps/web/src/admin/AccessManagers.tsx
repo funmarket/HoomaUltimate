@@ -4,6 +4,7 @@ import type { AppManagerSummary, PlatformManagerCapability } from "@hooma/contra
 export const MANAGER_CAPABILITIES: readonly PlatformManagerCapability[] = [
   "REVIEW_PITCH_APPLICATIONS",
   "VIEW_AUDIT",
+  "MANAGE_ADMIN_ISSUES",
 ];
 
 type ManagerLoadState = "loading" | "ready" | "error";
@@ -16,6 +17,12 @@ function capabilityCopy(capability: PlatformManagerCapability): {
     return {
       label: "Pitch Review",
       description: "Review existing Pitch applications and revisions.",
+    };
+  }
+  if (capability === "MANAGE_ADMIN_ISSUES") {
+    return {
+      label: "Admin Issues",
+      description: "Resolve and dismiss existing operational admin issues.",
     };
   }
   return {

@@ -59,12 +59,12 @@ export class PlatformAdminService implements PlatformAdminAuthorizer {
   }
 
   async issues(userId: string, limit = 25) {
-    await this.requireCapability(userId, "VIEW_AUDIT");
+    await this.requireAnyCapability(userId, ["VIEW_AUDIT", "MANAGE_ADMIN_ISSUES"]);
     return this.repository.adminIssues(Math.min(Math.max(limit, 1), 100));
   }
 
   async resolveIssue(userId: string, issueId: string, note?: string | null) {
-    await this.requirePlatformAdmin(userId);
+    await this.requireCapability(userId, "MANAGE_ADMIN_ISSUES");
     const reason = this.requireAdminIssueReason(note);
     const updated = await this.repository.setAdminIssueDisposition(
       userId,
@@ -77,7 +77,7 @@ export class PlatformAdminService implements PlatformAdminAuthorizer {
   }
 
   async dismissIssue(userId: string, issueId: string, note?: string | null) {
-    await this.requirePlatformAdmin(userId);
+    await this.requireCapability(userId, "MANAGE_ADMIN_ISSUES");
     const reason = this.requireAdminIssueReason(note);
     const updated = await this.repository.setAdminIssueDisposition(
       userId,
@@ -99,6 +99,20 @@ export class PlatformAdminService implements PlatformAdminAuthorizer {
       );
     }
     return reason;
+  }
+
+  private async requireAnyCapability(
+    userId: string,
+    capabilities: readonly PlatformManagerCapability[],
+  ): Promise<void> {
+    for (const capability of capabilities) {
+      if (await this.can(userId, capability)) return;
+    }
+    throw new AppError(
+      403,
+      "APP_MANAGER_CAPABILITY_REQUIRED",
+      `${capabilities.join(" or ")} access required`,
+    );
   }
 
   async managers(userId: string) {

@@ -2,7 +2,11 @@ import { z } from "zod";
 import type { PublicPlaceSummary } from "./places.js";
 import type { PitchRentalCurrency } from "./pitch.js";
 
-export const platformManagerCapabilitySchema = z.enum(["REVIEW_PITCH_APPLICATIONS", "VIEW_AUDIT"]);
+export const platformManagerCapabilitySchema = z.enum([
+  "REVIEW_PITCH_APPLICATIONS",
+  "VIEW_AUDIT",
+  "MANAGE_ADMIN_ISSUES",
+]);
 export const adminIssueSeveritySchema = z.enum(["INFO", "WARNING", "CRITICAL"]);
 export const adminIssueStatusUpdateSchema = z.object({
   note: z.string().trim().min(1).max(1000),
@@ -16,7 +20,7 @@ export const moderationDecisionSchema = z.object({
 export const adminPitchReviewTargetSchema = z.enum(["INITIAL_SUGGESTION", "OWNER_REVISION"]);
 
 export const appManagerUpdateSchema = z.object({
-  capabilities: z.array(platformManagerCapabilitySchema).max(2),
+  capabilities: z.array(platformManagerCapabilitySchema).max(3),
 });
 
 export type PlatformManagerCapability = z.infer<typeof platformManagerCapabilitySchema>;
