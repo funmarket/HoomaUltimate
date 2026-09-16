@@ -6,7 +6,8 @@ import { createApp } from "../apps/api/src/bootstrap/app.js";
 import { createContainer } from "../apps/api/src/bootstrap/container.js";
 
 const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) throw new Error("DATABASE_URL is required for discovery privacy integration tests");
+if (!databaseUrl)
+  throw new Error("DATABASE_URL is required for discovery privacy integration tests");
 
 const config = loadApiConfig({
   ...process.env,
@@ -98,7 +99,7 @@ async function openMatchIds(base: string, cookie: string) {
   return body.items.map((item) => item.id);
 }
 
-test("Play discovery never widens Event visibility and listing-only discovery stays Event-free", async () => {
+test("Play discovery preserves Event privacy and Event-free listings", async () => {
   await resetDatabase();
   const app = createApp(config, createContainer(config));
   const server = app.listen(0, "127.0.0.1");
