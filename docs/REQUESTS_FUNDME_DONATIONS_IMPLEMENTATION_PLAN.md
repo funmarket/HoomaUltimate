@@ -222,6 +222,7 @@ Allowed files for this slice:
 ```text
 packages/contracts/src/help.ts
 packages/contracts/src/index.ts
+packages/contracts/package.json
 apps/api/src/modules/identity/application/identity.repository.ts
 apps/api/src/modules/identity/application/identity.service.ts
 apps/api/src/modules/identity/infrastructure/prisma-identity.repository.ts
@@ -235,6 +236,7 @@ Current Slice 1 findings:
 - `IdentityService.me` maps `user.communities` and `user.teams` only.
 - `PrismaIdentityRepository.findMe` can query `athletesMemberships` from the existing Prisma model without a new migration.
 - `AthletesRole` values are `FOUNDER`, `MODERATOR`, `MEMBER`.
+- `@hooma/contracts` uses explicit package subpath exports, so `packages/contracts/package.json` must export `./help` for the new shared contract module to be consumable consistently.
 
 Files changed so far:
 
