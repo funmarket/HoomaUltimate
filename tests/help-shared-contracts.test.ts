@@ -26,8 +26,13 @@ const baseMe = {
 };
 
 test("Help shared contracts expose the exact audience scopes", () => {
-  assert.deepEqual(HELP_AUDIENCE_SCOPES, ["PUBLIC", "HOOMA_COMMUNITY", "ATHLETES_COMMUNITY"]);
-  for (const scope of HELP_AUDIENCE_SCOPES) assert.equal(helpAudienceScopeSchema.parse(scope), scope);
+  assert.deepEqual(HELP_AUDIENCE_SCOPES, [
+    "PUBLIC",
+    "HOOMA_COMMUNITY",
+    "ATHLETES_COMMUNITY",
+  ]);
+  for (const scope of HELP_AUDIENCE_SCOPES)
+    assert.equal(helpAudienceScopeSchema.parse(scope), scope);
   assert.throws(() => helpAudienceScopeSchema.parse("TEAM"));
 });
 
@@ -42,7 +47,8 @@ test("Help shared contracts expose the exact broad categories", () => {
     "COMMUNITY",
     "OTHER",
   ]);
-  for (const category of HELP_CATEGORIES) assert.equal(helpCategorySchema.parse(category), category);
+  for (const category of HELP_CATEGORIES)
+    assert.equal(helpCategorySchema.parse(category), category);
   assert.throws(() => helpCategorySchema.parse("FOOTBALL_REQUEST"));
 });
 
@@ -66,12 +72,22 @@ test("me response includes Athletes communities as publisher contexts", () => {
   const parsed = meResponseSchema.parse({
     ...baseMe,
     athletesCommunities: [
-      { id: "ath-1", name: "Tunis Runners", slug: "tunis-runners", role: "MODERATOR" },
+      {
+        id: "ath-1",
+        name: "Tunis Runners",
+        slug: "tunis-runners",
+        role: "MODERATOR",
+      },
     ],
   });
 
   assert.deepEqual(parsed.athletesCommunities, [
-    { id: "ath-1", name: "Tunis Runners", slug: "tunis-runners", role: "MODERATOR" },
+    {
+      id: "ath-1",
+      name: "Tunis Runners",
+      slug: "tunis-runners",
+      role: "MODERATOR",
+    },
   ]);
   assert.throws(() =>
     meResponseSchema.parse({
