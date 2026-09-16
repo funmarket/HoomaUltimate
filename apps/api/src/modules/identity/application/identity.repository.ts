@@ -94,6 +94,12 @@ export interface MeRecord {
     readonly slug: string;
     readonly role: "FOUNDER" | "COACH" | "MEMBER";
   }[];
+  readonly athletesCommunities: readonly {
+    readonly id: string;
+    readonly name: string;
+    readonly slug: string;
+    readonly role: "FOUNDER" | "MODERATOR" | "MEMBER";
+  }[];
   readonly teams: readonly {
     readonly id: string;
     readonly name: string;
