@@ -69,13 +69,6 @@ model HelpRequest {
   cancelledAt                  DateTime?
   createdAt                    DateTime                   @default(now())
   updatedAt                    DateTime                   @updatedAt
-  createdBy                    User                       @relation("HelpRequestCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
-  publisherCommunity           Community?                 @relation("HelpRequestPublisherCommunity", fields: [publisherCommunityId], references: [id], onDelete: Restrict)
-  publisherTeam                Team?                      @relation("HelpRequestPublisherTeam", fields: [publisherTeamId], references: [id], onDelete: Restrict)
-  publisherAthletesCommunity   AthletesCommunity?         @relation("HelpRequestPublisherAthletesCommunity", fields: [publisherAthletesCommunityId], references: [id], onDelete: Restrict)
-  audienceCommunity            Community?                 @relation("HelpRequestAudienceCommunity", fields: [audienceCommunityId], references: [id], onDelete: Restrict)
-  audienceAthletesCommunity    AthletesCommunity?         @relation("HelpRequestAudienceAthletesCommunity", fields: [audienceAthletesCommunityId], references: [id], onDelete: Restrict)
-  place                        Place?                     @relation("HelpRequestPlace", fields: [placeId], references: [id], onDelete: Restrict)
 
   @@index([status, createdAt, id])
   @@index([audienceScope, status, createdAt])
