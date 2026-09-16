@@ -284,7 +284,7 @@ export class PrismaPlatformAdminRepository implements PlatformAdminRepository {
     actorUserId: string,
     issueId: string,
     disposition: AdminIssueDisposition,
-    note?: string | null,
+    note: string,
   ): Promise<boolean> {
     const key = decodeOutboxIssueId(issueId);
     if (!key) return false;
@@ -318,7 +318,7 @@ export class PrismaPlatformAdminRepository implements PlatformAdminRepository {
           topic: key.topic,
           aggregateType: key.aggregateType,
           aggregateId: key.aggregateId,
-          note: note?.trim() || null,
+          note: note.trim(),
         },
       },
     });

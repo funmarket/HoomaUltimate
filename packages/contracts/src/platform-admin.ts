@@ -5,7 +5,7 @@ import type { PitchRentalCurrency } from "./pitch.js";
 export const platformManagerCapabilitySchema = z.enum(["REVIEW_PITCH_APPLICATIONS", "VIEW_AUDIT"]);
 export const adminIssueSeveritySchema = z.enum(["INFO", "WARNING", "CRITICAL"]);
 export const adminIssueStatusUpdateSchema = z.object({
-  note: z.string().trim().max(1000).optional().nullable(),
+  note: z.string().trim().min(1).max(1000),
 });
 
 export const moderationDecisionSchema = z.object({

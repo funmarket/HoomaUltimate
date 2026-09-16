@@ -65,11 +65,12 @@ export class PlatformAdminService implements PlatformAdminAuthorizer {
 
   async resolveIssue(userId: string, issueId: string, note?: string | null) {
     await this.requirePlatformAdmin(userId);
+    const reason = this.requireAdminIssueReason(note);
     const updated = await this.repository.setAdminIssueDisposition(
       userId,
       issueId,
       "RESOLVED",
-      note,
+      reason,
     );
     if (!updated) throw new AppError(404, "ADMIN_ISSUE_NOT_FOUND", "Admin issue not found");
     return { ok: true };
@@ -77,14 +78,27 @@ export class PlatformAdminService implements PlatformAdminAuthorizer {
 
   async dismissIssue(userId: string, issueId: string, note?: string | null) {
     await this.requirePlatformAdmin(userId);
+    const reason = this.requireAdminIssueReason(note);
     const updated = await this.repository.setAdminIssueDisposition(
       userId,
       issueId,
       "DISMISSED",
-      note,
+      reason,
     );
     if (!updated) throw new AppError(404, "ADMIN_ISSUE_NOT_FOUND", "Admin issue not found");
     return { ok: true };
+  }
+
+  private requireAdminIssueReason(note?: string | null): string {
+    const reason = note?.trim();
+    if (!reason) {
+      throw new AppError(
+        400,
+        "ADMIN_ISSUE_REASON_REQUIRED",
+        "Resolving or dismissing an admin issue requires a reason",
+      );
+    }
+    return reason;
   }
 
   async managers(userId: string) {
