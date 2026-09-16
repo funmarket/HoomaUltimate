@@ -90,11 +90,14 @@ test(
 
     assert.deepEqual(query.select?.athletesMemberships?.where, { leftAt: null });
     assert.equal(query.select?.athletesMemberships?.select?.role, true);
-    assert.deepEqual(query.select?.athletesMemberships?.select?.athletesCommunity?.select, {
-      id: true,
-      name: true,
-      slug: true,
-    });
+    assert.deepEqual(
+      query.select?.athletesMemberships?.select?.athletesCommunity?.select,
+      {
+        id: true,
+        name: true,
+        slug: true,
+      },
+    );
     assert.deepEqual(result?.athletesCommunities, meRecord.athletesCommunities);
   },
 );
