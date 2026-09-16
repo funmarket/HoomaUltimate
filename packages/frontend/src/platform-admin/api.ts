@@ -35,7 +35,7 @@ export function createPlatformAdminApi(transport: HoomaTransport) {
     overview: () => request<PlatformOverview>(transport, "/api/v1/admin/overview"),
     audit: () => request<PlatformAuditEntry[]>(transport, "/api/v1/admin/audit?limit=100"),
     issues: () => request<AdminIssueSummary[]>(transport, "/api/v1/admin/issues?limit=25"),
-    resolveIssue: (issueId: string, input: AdminIssueStatusUpdateInput = {}) =>
+    resolveIssue: (issueId: string, input: AdminIssueStatusUpdateInput) =>
       request<{ ok: true }>(
         transport,
         `/api/v1/admin/issues/${encodeURIComponent(issueId)}/resolve`,
@@ -44,7 +44,7 @@ export function createPlatformAdminApi(transport: HoomaTransport) {
           body: JSON.stringify(input),
         },
       ),
-    dismissIssue: (issueId: string, input: AdminIssueStatusUpdateInput = {}) =>
+    dismissIssue: (issueId: string, input: AdminIssueStatusUpdateInput) =>
       request<{ ok: true }>(
         transport,
         `/api/v1/admin/issues/${encodeURIComponent(issueId)}/dismiss`,

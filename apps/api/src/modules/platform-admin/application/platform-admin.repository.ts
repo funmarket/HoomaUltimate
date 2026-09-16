@@ -44,6 +44,6 @@ export interface PlatformAdminRepository {
     actorUserId: string,
     issueId: string,
     disposition: AdminIssueDisposition,
-    note?: string | null,
+    note: string,
   ): Promise<boolean>;
 }
