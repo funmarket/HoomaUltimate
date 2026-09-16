@@ -8,9 +8,9 @@ Authoritative repository: `funmarket/HoomaUltimate`
 Authoritative branch: `phase-0-foundation`
 Working branch: `feat/help-slice-1-contracts-contexts`
 Original attached-plan baseline: `c304fed4c925cbcd578fdbafb21926f927e400f5`
-Current verified foundation HEAD: `b07167f9beb0003eceddb3fd73bfbff53417a618`
-Current task: `Slice 1 - Shared contracts + account publisher contexts`
-Exact next task: implement only shared Help contracts and `meResponse.athletesCommunities` account publisher context.
+Slice 1 base foundation HEAD: `b07167f9beb0003eceddb3fd73bfbff53417a618`
+Current task: `Slice 2 - Requests database/domain`
+Exact next task: start Slice 2 from the integrated Slice 1 foundation and implement only the Requests database/domain scope defined by this plan.
 
 ## Execution loop
 
@@ -117,21 +117,18 @@ Persistence must use concrete foreign keys, not polymorphic strings. `createdByU
 
 Verified on 2026-09-16 against live branch state:
 
-- `phase-0-foundation` HEAD is `b07167f9beb0003eceddb3fd73bfbff53417a618`.
-- The latest live commit is `feat: add platform admin user security (#315)`.
-- No open PR targeting `phase-0-foundation` was found during Slice 0 inspection.
-- The attached implementation baseline `c304fed4c925cbcd578fdbafb21926f927e400f5` is stale but still the product/architecture plan source.
+- Slice 1 was based on `phase-0-foundation` HEAD `b07167f9beb0003eceddb3fd73bfbff53417a618` (`feat: add platform admin user security (#315)`).
+- The attached implementation baseline `c304fed4c925cbcd578fdbafb21926f927e400f5` is stale but remains the product/architecture plan source.
 - Current Requests frontend exists at `packages/frontend/src/requests/RequestsPage.tsx` and `packages/frontend/src/requests/requests.css`.
-- Current Requests tabs are only `Requests | FundMe`.
-- Current routes are `/requests`, `/requests/fundme`, and `/fundme -> /requests/fundme`.
-- Current Requests/FundMe UI is an honest placeholder and does not claim backend behavior.
-- No Requests, Donations, or Fundraising backend module exists yet.
-- `packages/contracts/src/help.ts` does not exist yet.
-- Current `meResponseSchema` exposes `communities` and `teams`, but not `athletesCommunities`.
-- Identity `findMe` currently reads HOOMA communities, teams, responsibilities, and team capabilities, but not Athletes memberships.
-- Prisma already has `AthletesCommunity`, `AthletesMembership`, and `AthletesRole`.
-- Active Railway API/Web/Telegram/Worker services are configured from `phase-0-foundation`; old `HoomaUltimate` service points to `main` and is not the current implementation source.
-- Railway API deployment `83e0ce02-5922-4b33-8e4f-80c680db021f` succeeded for `b07167f9beb0003eceddb3fd73bfbff53417a618` and applied migration `20260916142000_app_manager_users_capability`.
+- Current Requests tabs remain only `Requests | FundMe`.
+- Current routes remain `/requests`, `/requests/fundme`, and `/fundme -> /requests/fundme`.
+- Current Requests/FundMe UI remains an honest placeholder and does not claim backend behavior.
+- No Requests, Donations, or Fundraising backend module has been introduced by Slice 1.
+- `packages/contracts/src/help.ts` now defines the narrow shared Help audience, category, and item taxonomy contracts and is exported through `@hooma/contracts/help`.
+- `meResponseSchema` now exposes `athletesCommunities` publisher contexts.
+- Identity `findMe` now reads active Athletes memberships (`leftAt: null`) and returns community id/name/slug plus role.
+- Prisma already has `AthletesCommunity`, `AthletesMembership`, and `AthletesRole`; Slice 1 required no migration.
+- Slice 1 implementation head `fd861bf1a4b00739d9e964cbc710dfd6856439ee` passed the complete CI workflow in run `35161861982`.
 
 ## Slice ledger
 
@@ -171,26 +168,25 @@ Verification evidence:
 - Branch HEAD verified from GitHub branch API.
 - Requests page and CSS verified from current source.
 - Router verified for `/requests`, `/requests/fundme`, and `/fundme` redirect.
-- Contracts `meResponseSchema` verified to lack `athletesCommunities`.
-- Identity repository/service verified to lack Athletes memberships in `findMe` and returned `MeResponse`.
+- Contracts `meResponseSchema` verified to lack `athletesCommunities` before Slice 1.
+- Identity repository/service verified to lack Athletes memberships in `findMe` and returned `MeResponse` before Slice 1.
 - Prisma schema verified to already contain Athletes community membership source tables.
-- Railway production status and deployment logs verified current API deployment and migration application.
+- Railway production status and deployment logs verified current API deployment and migration application at the Slice 0 baseline.
 
 Score: **9/10**
 
 Score justification:
 
-Fresh source and deployment inspection completed, no overlap found, stale baseline recognized, and the next safe slice is unambiguous. A 10 is not claimed because this environment has not yet run a local repository test command.
+Fresh source and deployment inspection completed, no overlap found, stale baseline recognized, and the next safe slice was unambiguous. A 10 was not claimed because that inspection slice did not run local repository test commands.
 
 Unresolved risks:
 
-- Local verification may expose type or format issues after code mutations.
 - GitHub connector edits are one-file commits unless a lower-level tree commit is used.
-- The existing codebase places root `MeResponse` schema in `packages/contracts/src/index.ts`; care is needed to add `help.ts` without creating a giant shared contract.
+- The existing codebase places root `MeResponse` schema in `packages/contracts/src/index.ts`; shared Help contracts must remain narrow as later slices are implemented.
 
 ### Slice 1 - Shared contracts + account publisher contexts
 
-Status: `IN_PROGRESS`
+Status: `COMPLETE`
 
 Authorized implementation only:
 
@@ -217,7 +213,7 @@ No payment provider code
 No migration unless proven necessary
 ```
 
-Allowed files for this slice:
+Files changed:
 
 ```text
 packages/contracts/src/help.ts
@@ -226,33 +222,59 @@ packages/contracts/package.json
 apps/api/src/modules/identity/application/identity.repository.ts
 apps/api/src/modules/identity/application/identity.service.ts
 apps/api/src/modules/identity/infrastructure/prisma-identity.repository.ts
-focused tests proving meResponse athletesCommunities and contracts
-this live plan file
-```
-
-Current Slice 1 findings:
-
-- `meResponseSchema` currently returns `communities` and `teams` only.
-- `IdentityService.me` maps `user.communities` and `user.teams` only.
-- `PrismaIdentityRepository.findMe` can query `athletesMemberships` from the existing Prisma model without a new migration.
-- `AthletesRole` values are `FOUNDER`, `MODERATOR`, `MEMBER`.
-- `@hooma/contracts` uses explicit package subpath exports, so `packages/contracts/package.json` must export `./help` for the new shared contract module to be consumable consistently.
-
-Files changed so far:
-
-```text
+tests/help-shared-contracts.test.ts
+tests/help-account-publisher-context.test.ts
 docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md
 ```
 
 Migrations created: none.
 
-Tests added: none yet.
+Tests added:
 
-Tests run: none yet.
+```text
+tests/help-shared-contracts.test.ts
+tests/help-account-publisher-context.test.ts
+```
 
-Verification evidence: Slice 1 inspection complete, production mutation not yet started.
+Tests run and required regression gates:
 
-Score: not scored yet.
+```text
+npm ci
+npm run db:generate
+npm run db:validate
+npm run db:migrate:deploy
+npm run architecture:check
+changed-file Prettier check
+changed-source lint
+npm run typecheck
+npm run build:packages
+npm test
+npm run build
+npm run test:integration
+npm run deploy:preflight
+npm run security:check
+npm run db:migrate:status
+```
+
+Verification evidence:
+
+- Exact implementation head `fd861bf1a4b00739d9e964cbc710dfd6856439ee` passed all CI gates in workflow run `35161861982`.
+- Shared contracts are exported without adding Requests, Donations, or Fundraising persistence or UI behavior.
+- `IdentityService.me` returns `athletesCommunities` from the authoritative identity repository result.
+- `PrismaIdentityRepository.findMe` reads only active Athletes memberships and projects community identity plus role.
+- Focused tests cover the shared Help contract values and the `/me` Athletes publisher-context readback/query behavior.
+- The Slice 1 diff remains confined to the nine authorized files listed above.
+
+Score: **9.3/10**
+
+Score justification:
+
+The authorized Slice 1 contract and account-context work is implemented with focused tests, no migration, no frontend/domain scope expansion, and the full repository CI gate passed on the exact implementation head. The score remains below 10 because production deployment is not required or claimed for this contract-only slice prior to merge.
+
+Unresolved risks:
+
+- Later publisher authorization must continue to derive current authority from canonical community/team/Athletes membership sources rather than caching authority in Help tables.
+- Slice 2 must be a separate domain slice and must not retroactively expand PR #316.
 
 ### Slice 2 - Requests database/domain
 
