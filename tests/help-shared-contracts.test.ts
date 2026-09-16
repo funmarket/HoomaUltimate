@@ -26,11 +26,7 @@ const baseMe = {
 };
 
 test("Help shared contracts expose the exact audience scopes", () => {
-  assert.deepEqual(HELP_AUDIENCE_SCOPES, [
-    "PUBLIC",
-    "HOOMA_COMMUNITY",
-    "ATHLETES_COMMUNITY",
-  ]);
+  assert.deepEqual(HELP_AUDIENCE_SCOPES, ["PUBLIC", "HOOMA_COMMUNITY", "ATHLETES_COMMUNITY"]);
   for (const scope of HELP_AUDIENCE_SCOPES)
     assert.equal(helpAudienceScopeSchema.parse(scope), scope);
   assert.throws(() => helpAudienceScopeSchema.parse("TEAM"));
