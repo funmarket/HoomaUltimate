@@ -362,6 +362,13 @@ export class PrismaIdentityRepository implements IdentityRepository {
           },
           orderBy: { joinedAt: "asc" },
         },
+        athletesMemberships: {
+          where: { leftAt: null },
+          select: {
+            role: true,
+            athletesCommunity: { select: { id: true, name: true, slug: true } },
+          },
+        },
         teamPlayers: {
           where: { leftAt: null },
           select: {
@@ -437,6 +444,10 @@ export class PrismaIdentityRepository implements IdentityRepository {
       managerCapabilities: user.appManagerGrants.map((grant) => grant.capability),
       communities: user.communityMemberships.map((membership) => ({
         ...membership.community,
+        role: membership.role,
+      })),
+      athletesCommunities: user.athletesMemberships.map((membership) => ({
+        ...membership.athletesCommunity,
         role: membership.role,
       })),
       teams: [...teamMap.values()],
