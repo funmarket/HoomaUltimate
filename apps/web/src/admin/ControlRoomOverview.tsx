@@ -102,9 +102,7 @@ export function ControlRoomOverview({
             </a>
           </div>
           {auditState === "loading" ? <p className="muted">Loading recent activity…</p> : null}
-          {auditState === "error" ? (
-            <p className="muted">Recent activity is unavailable.</p>
-          ) : null}
+          {auditState === "error" ? <p className="muted">Recent activity is unavailable.</p> : null}
           {auditState === "ready" && !recentAudit.length ? (
             <p className="muted">No audit entries are available.</p>
           ) : null}

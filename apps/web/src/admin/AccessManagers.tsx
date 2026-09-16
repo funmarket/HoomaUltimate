@@ -27,10 +27,12 @@ function capabilityCopy(capability: PlatformManagerCapability): {
 export function AccessManagers({
   managers,
   loadState,
+  isSaving,
   onSubmit,
 }: {
   readonly managers: readonly AppManagerSummary[];
   readonly loadState: ManagerLoadState;
+  readonly isSaving: boolean;
   readonly onSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void>;
 }) {
   return (
@@ -42,14 +44,18 @@ export function AccessManagers({
         </div>
         <span>{loadState === "ready" ? managers.length : "—"}</span>
       </div>
-      <form className="admin-manager-form" onSubmit={(event) => void onSubmit(event)}>
-        <input name="username" placeholder="HOOMA username" required />
+      <form
+        className="admin-manager-form"
+        aria-busy={isSaving}
+        onSubmit={(event) => void onSubmit(event)}
+      >
+        <input name="username" placeholder="HOOMA username" required disabled={isSaving} />
         <div className="admin-capability-grid">
           {MANAGER_CAPABILITIES.map((capability) => {
             const copy = capabilityCopy(capability);
             return (
               <label key={capability}>
-                <input type="checkbox" name={capability} />
+                <input type="checkbox" name={capability} disabled={isSaving} />
                 <span>
                   <strong>{copy.label}</strong>
                   <small>{copy.description}</small>
@@ -58,7 +64,9 @@ export function AccessManagers({
             );
           })}
         </div>
-        <button type="submit">Save App Manager permissions</button>
+        <button type="submit" disabled={isSaving}>
+          {isSaving ? "Saving App Manager permissions…" : "Save App Manager permissions"}
+        </button>
         <p className="muted">
           Place submissions, ownership claims, Gamer disputes, Communities and Teams remain Platform
           Admin-only. Submit with no permissions selected to revoke all App Manager access.

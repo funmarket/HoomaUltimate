@@ -336,6 +336,8 @@ export function ProfileContent({
 }) {
   const primaryPosition = profile?.player?.preferredPositions[0] ?? null;
   const openTeam = me.teams[0]?.name ?? null;
+  const canEnterPlatformControlRoom =
+    me.platformRoles.includes("PLATFORM_ADMIN") || me.managerCapabilities.length > 0;
 
   return (
     <>
@@ -434,9 +436,9 @@ export function ProfileContent({
           <p>No community memberships yet.</p>
         )}
       </section>
-      {me.platformRoles.includes("PLATFORM_ADMIN") ? (
+      {canEnterPlatformControlRoom ? (
         <a className="admin-link" href="/admin">
-          Open App Admin
+          Open Platform Control Room
         </a>
       ) : null}
     </>
@@ -446,7 +448,10 @@ export function ProfileContent({
 function IdentityBadges({ identities }: { identities: readonly ProfileIdentity[] }) {
   const values = identities.length ? identities : (["GHOST_RIDER"] as const);
   return (
-    <div className="profile-identity-badges public-profile-identities" aria-label="HOOMA identities">
+    <div
+      className="profile-identity-badges public-profile-identities"
+      aria-label="HOOMA identities"
+    >
       {values.map((identity) => (
         <span key={identity} data-identity={identity}>
           {identity === "GHOST_RIDER" ? "Ghost Rider" : identityLabel(identity)}

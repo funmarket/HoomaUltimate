@@ -8,9 +8,7 @@ import { formatPitchHourlyRate } from "@hooma/frontend";
 type QueueName = "places" | "place-ownership" | "pitch";
 export type QueueLoadState = "loading" | "ready" | "error";
 type AdminQueueDisplayItem =
-  | AdminPlaceReviewQueueItem
-  | AdminPlaceOwnershipReviewQueueItem
-  | AdminPitchReviewQueueItem;
+  AdminPlaceReviewQueueItem | AdminPlaceOwnershipReviewQueueItem | AdminPitchReviewQueueItem;
 
 export interface AdminQueues {
   places: AdminPlaceReviewQueueItem[];
@@ -26,6 +24,8 @@ function QueueSection({
   eyebrow,
   items,
   loadState,
+  pendingId,
+  decisionsDisabled,
   onDecision,
 }: {
   readonly id: string;
@@ -33,6 +33,8 @@ function QueueSection({
   readonly eyebrow: string;
   readonly items: readonly AdminQueueDisplayItem[];
   readonly loadState: QueueLoadState;
+  readonly pendingId: string | null;
+  readonly decisionsDisabled: boolean;
   readonly onDecision: (id: string, decision: "APPROVE" | "REJECT") => void;
 }) {
   return (
@@ -58,8 +60,8 @@ function QueueSection({
                   </span>
                   {"hourlyRateMinor" in item && item.hourlyRateMinor !== null && item.currency ? (
                     <p>
-                      {formatPitchHourlyRate(item.hourlyRateMinor, item.currency)} {" "}
-                      {item.currency} / hour
+                      {formatPitchHourlyRate(item.hourlyRateMinor, item.currency)} {item.currency} /
+                      hour
                     </p>
                   ) : null}
                   {"summary" in item && item.summary ? <p>{item.summary}</p> : null}
@@ -67,13 +69,18 @@ function QueueSection({
                     <p className="admin-review-evidence">{item.evidence}</p>
                   ) : null}
                 </div>
-                <div className="admin-review-actions">
-                  <button type="button" onClick={() => onDecision(item.id, "APPROVE")}>
-                    Approve
+                <div className="admin-review-actions" aria-busy={decisionsDisabled}>
+                  <button
+                    type="button"
+                    disabled={decisionsDisabled}
+                    onClick={() => onDecision(item.id, "APPROVE")}
+                  >
+                    {pendingId === item.id ? "Saving decision…" : "Approve"}
                   </button>
                   <button
                     type="button"
                     className="secondary"
+                    disabled={decisionsDisabled}
                     onClick={() => onDecision(item.id, "REJECT")}
                   >
                     Reject
@@ -93,18 +100,17 @@ export function ReviewQueues({
   queueStates,
   showPlaceQueues,
   showPitchQueue,
+  pendingDecision,
   onDecision,
 }: {
   readonly queues: AdminQueues;
   readonly queueStates: AdminQueueStates;
   readonly showPlaceQueues: boolean;
   readonly showPitchQueue: boolean;
-  readonly onDecision: (
-    queue: QueueName,
-    id: string,
-    decision: "APPROVE" | "REJECT",
-  ) => void;
+  readonly pendingDecision: { readonly queue: QueueName; readonly id: string } | null;
+  readonly onDecision: (queue: QueueName, id: string, decision: "APPROVE" | "REJECT") => void;
 }) {
+  const decisionsDisabled = pendingDecision !== null;
   return (
     <>
       {showPlaceQueues ? (
@@ -114,6 +120,8 @@ export function ReviewQueues({
           title="Place submissions"
           items={queues.places}
           loadState={queueStates.places}
+          pendingId={pendingDecision?.queue === "places" ? pendingDecision.id : null}
+          decisionsDisabled={decisionsDisabled}
           onDecision={(id, decision) => onDecision("places", id, decision)}
         />
       ) : null}
@@ -124,6 +132,8 @@ export function ReviewQueues({
           title="Place ownership claims"
           items={queues["place-ownership"]}
           loadState={queueStates["place-ownership"]}
+          pendingId={pendingDecision?.queue === "place-ownership" ? pendingDecision.id : null}
+          decisionsDisabled={decisionsDisabled}
           onDecision={(id, decision) => onDecision("place-ownership", id, decision)}
         />
       ) : null}
@@ -134,6 +144,8 @@ export function ReviewQueues({
           title="Pitch business applications"
           items={queues.pitch}
           loadState={queueStates.pitch}
+          pendingId={pendingDecision?.queue === "pitch" ? pendingDecision.id : null}
+          decisionsDisabled={decisionsDisabled}
           onDecision={(id, decision) => onDecision("pitch", id, decision)}
         />
       ) : null}

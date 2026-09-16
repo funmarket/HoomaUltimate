@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type { AppManagerSummary, PlatformManagerCapability } from "@hooma/contracts/platform-admin";
 import {
   createPlatformAdminApi,
@@ -56,6 +56,12 @@ export function AdminApp() {
   const [gamerDisputeState, setGamerDisputeState] = useState<AttentionLoadState>("loading");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [pendingDecision, setPendingDecision] = useState<{ queue: QueueName; id: string } | null>(
+    null,
+  );
+  const [managerSaving, setManagerSaving] = useState(false);
+  const decisionInFlight = useRef(false);
+  const managerSaveInFlight = useRef(false);
 
   function can(capability: PlatformManagerCapability): boolean {
     return Boolean(access?.isPlatformOwner || access?.managerCapabilities.includes(capability));
@@ -69,6 +75,46 @@ export function AdminApp() {
     } catch {
       setState("error");
     }
+  }
+
+  function setQueueState(queue: QueueName, state: LoadState) {
+    setQueueStates((current) => ({ ...current, [queue]: state }));
+  }
+
+  async function loadQueue(queue: QueueName) {
+    await loadModule(
+      (state) => setQueueState(queue, state),
+      async () => {
+        if (queue === "places") {
+          const rows = await adminApi.placeQueue();
+          setQueues((current) => ({ ...current, places: rows }));
+        } else if (queue === "place-ownership") {
+          const rows = await adminApi.placeOwnershipQueue();
+          setQueues((current) => ({ ...current, "place-ownership": rows }));
+        } else {
+          const rows = await adminApi.pitchQueue();
+          setQueues((current) => ({ ...current, pitch: rows }));
+        }
+      },
+    );
+  }
+
+  async function loadManagers() {
+    await loadModule(setManagerState, async () => {
+      setManagers(await adminApi.managers());
+    });
+  }
+
+  async function loadOverview() {
+    await loadModule(setOverviewState, async () => {
+      setOverview(await adminApi.overview());
+    });
+  }
+
+  async function loadAudit() {
+    await loadModule(setAuditState, async () => {
+      setAudit(await adminApi.audit());
+    });
   }
 
   async function load() {
@@ -97,64 +143,20 @@ export function AdminApp() {
       currentAccess.isPlatformOwner || currentAccess.managerCapabilities.includes(capability);
 
     if (allowed("VIEW_AUDIT")) {
-      tasks.push(
-        loadModule(setOverviewState, async () => {
-          setOverview(await adminApi.overview());
-        }),
-        loadModule(setAuditState, async () => {
-          setAudit(await adminApi.audit());
-        }),
-      );
+      tasks.push(loadOverview(), loadAudit());
     }
 
     if (currentAccess.isPlatformOwner) {
-      tasks.push(
-        loadModule(
-          (state) =>
-            setQueueStates((current) => ({
-              ...current,
-              places: state,
-            })),
-          async () => {
-            const rows = await adminApi.placeQueue();
-            setQueues((current) => ({ ...current, places: rows }));
-          },
-        ),
-        loadModule(
-          (state) =>
-            setQueueStates((current) => ({
-              ...current,
-              "place-ownership": state,
-            })),
-          async () => {
-            const rows = await adminApi.placeOwnershipQueue();
-            setQueues((current) => ({ ...current, "place-ownership": rows }));
-          },
-        ),
-      );
+      tasks.push(loadQueue("places"), loadQueue("place-ownership"));
     }
 
     if (allowed("REVIEW_PITCH_APPLICATIONS")) {
-      tasks.push(
-        loadModule(
-          (state) =>
-            setQueueStates((current) => ({
-              ...current,
-              pitch: state,
-            })),
-          async () => {
-            const rows = await adminApi.pitchQueue();
-            setQueues((current) => ({ ...current, pitch: rows }));
-          },
-        ),
-      );
+      tasks.push(loadQueue("pitch"));
     }
 
     if (currentAccess.isPlatformOwner) {
       tasks.push(
-        loadModule(setManagerState, async () => {
-          setManagers(await adminApi.managers());
-        }),
+        loadManagers(),
         loadModule(setCommunitiesState, async () => {
           const page = await api.communities.publicList();
           setCommunities(page.items);
@@ -174,6 +176,9 @@ export function AdminApp() {
   }, [api, adminApi]);
 
   async function decide(queue: QueueName, id: string, decision: "APPROVE" | "REJECT") {
+    if (decisionInFlight.current) return;
+    decisionInFlight.current = true;
+    setPendingDecision({ queue, id });
     const note =
       window.prompt(`${decision === "APPROVE" ? "Approval" : "Rejection"} note (optional)`) ?? "";
     const input = { decision, note: note || null } as const;
@@ -190,14 +195,22 @@ export function AdminApp() {
         await adminApi.decidePitch(row.target, id, input);
       }
       setMessage("Decision saved and audited.");
-      await load();
+      const refreshes = [loadQueue(queue)];
+      if (can("VIEW_AUDIT")) refreshes.push(loadOverview(), loadAudit());
+      await Promise.all(refreshes);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Unable to save decision");
+    } finally {
+      decisionInFlight.current = false;
+      setPendingDecision(null);
     }
   }
 
   async function appointManager(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (managerSaveInFlight.current) return;
+    managerSaveInFlight.current = true;
+    setManagerSaving(true);
     const form = event.currentTarget;
     const data = new FormData(form);
     const username = String(data.get("username") ?? "").trim();
@@ -210,9 +223,12 @@ export function AdminApp() {
       setMessage(
         capabilities.length ? "App Manager permissions saved." : "App Manager permissions revoked.",
       );
-      await load();
+      await Promise.all([loadManagers(), loadOverview(), loadAudit()]);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Unable to update App Manager");
+    } finally {
+      managerSaveInFlight.current = false;
+      setManagerSaving(false);
     }
   }
 
@@ -298,6 +314,7 @@ export function AdminApp() {
         queueStates={queueStates}
         showPlaceQueues={access.isPlatformOwner}
         showPitchQueue={canReviewPitch}
+        pendingDecision={pendingDecision}
         onDecision={(queue, id, decision) => void decide(queue, id, decision)}
       />
 
@@ -305,11 +322,19 @@ export function AdminApp() {
         <GamerDisputeConsole
           onCountChange={setGamerDisputeCount}
           onQueueStateChange={setGamerDisputeState}
+          onResolved={async () => {
+            if (can("VIEW_AUDIT")) await Promise.all([loadOverview(), loadAudit()]);
+          }}
         />
       ) : null}
 
       {access.isPlatformOwner ? (
-        <AccessManagers managers={managers} loadState={managerState} onSubmit={appointManager} />
+        <AccessManagers
+          managers={managers}
+          loadState={managerState}
+          isSaving={managerSaving}
+          onSubmit={appointManager}
+        />
       ) : null}
 
       {access.isPlatformOwner ? (

@@ -403,7 +403,7 @@ Profile projects real canonical relationships, such as:
 - future ULTRAS memberships/role when ULTRAS exists;
 - future Gamer Squad memberships/role when Gamers exists;
 - future owned/managed Places when Places ownership exists;
-- Platform Admin entry only for an actual Platform Admin.
+- Platform Control Room entry only for an actual Platform Admin or an App Manager with at least one server-recognized delegated platform capability.
 
 Clicking a listed entity opens the real entity page. Management entry points appear only when the user has the required server-recognized authority.
 

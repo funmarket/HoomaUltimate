@@ -65,9 +65,7 @@ export function ManagedEntities({
                 : null}
             </select>
           </label>
-          {communitiesState === "loading" ? (
-            <p className="muted">Loading active HOOMAs…</p>
-          ) : null}
+          {communitiesState === "loading" ? <p className="muted">Loading active HOOMAs…</p> : null}
           {communitiesState === "error" ? (
             <p className="muted">Active HOOMAs are unavailable.</p>
           ) : null}
@@ -122,9 +120,7 @@ export function ManagedEntities({
             </select>
           </label>
           {teamsState === "loading" ? <p className="muted">Loading active Teams…</p> : null}
-          {teamsState === "error" ? (
-            <p className="muted">Active Teams are unavailable.</p>
-          ) : null}
+          {teamsState === "error" ? <p className="muted">Active Teams are unavailable.</p> : null}
           {teamsState === "ready" && !teams.length ? (
             <p className="muted">No active Teams.</p>
           ) : null}

@@ -4,6 +4,7 @@ import type {
   ProfileIdentity,
   ProfileUpdateInput,
 } from "@hooma/contracts/profile";
+import type { PlatformManagerCapability } from "@hooma/contracts/platform-admin";
 
 export interface WebCredentialRecord {
   readonly userId: string;
@@ -86,6 +87,7 @@ export interface MeRecord {
     readonly bio: string | null;
   };
   readonly platformRoles: readonly "PLATFORM_ADMIN"[];
+  readonly managerCapabilities: readonly PlatformManagerCapability[];
   readonly communities: readonly {
     readonly id: string;
     readonly name: string;
