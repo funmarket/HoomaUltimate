@@ -49,6 +49,8 @@ import { PrismaGamerMatchRepository } from "../modules/gamers/infrastructure/pri
 import { PrismaGamerProfileRepository } from "../modules/gamers/infrastructure/prisma-gamer-profile.repository.js";
 import { PlayService } from "../modules/play/application/play.service.js";
 import { PrismaPlayPlayerListingRepository } from "../modules/play/infrastructure/prisma-play.repository.js";
+import { RequestService } from "../modules/requests/application/request.service.js";
+import { PrismaRequestRepository } from "../modules/requests/infrastructure/prisma-request.repository.js";
 import { RideCommunityInteractionService } from "../modules/rides/application/ride-community-interaction.service.js";
 import { RideService } from "../modules/rides/application/ride.service.js";
 import { PrismaRideCommunityInteractionRepository } from "../modules/rides/infrastructure/prisma-ride-community-interaction.repository.js";
@@ -210,6 +212,8 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
   );
   const playRepository = new PrismaPlayPlayerListingRepository(database);
   const playService = new PlayService(playRepository, teamService, eventService);
+  const requestRepository = new PrismaRequestRepository(database);
+  const requestService = new RequestService(requestRepository, requestRepository);
   const rideOfferRepository = new PrismaRideOfferRepository(database);
   const rideRequestRepository = new PrismaRideRequestRepository(database);
   const rideReferenceReader = new PrismaRideReferenceReader(database);
@@ -280,6 +284,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     gamerService,
     gamerMatchService,
     playService,
+    requestService,
     rideService,
     rideCommunityInteractionService,
     userNotificationService,
