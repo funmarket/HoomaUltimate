@@ -6,7 +6,7 @@ import type {
   RequestRepository,
   RequestVisibilityReader,
 } from "../apps/api/src/modules/requests/application/request.repository.js";
-import { AppError } from "../apps/api/src/http/errors/app-error.js";
+import { RequestError } from "../apps/api/src/modules/requests/domain/request-error.js";
 
 function requestRecord(overrides: Partial<HelpRequestRecord> = {}): HelpRequestRecord {
   return {
@@ -111,7 +111,8 @@ test("Requests require current HOOMA Founder or Coach authority for official pub
       ...personalInput,
       publisher: { publisherCommunityId: "community-1" },
     }),
-    (error: unknown) => error instanceof AppError && error.statusCode === 403,
+    (error: unknown) =>
+      error instanceof RequestError && error.code === "REQUEST_COMMUNITY_PUBLISHER_FORBIDDEN",
   );
 });
 
@@ -129,7 +130,8 @@ test("Requests require current Team Coach responsibility and reject Assistant-on
       ...personalInput,
       publisher: { publisherTeamId: "team-1" },
     }),
-    (error: unknown) => error instanceof AppError && error.statusCode === 403,
+    (error: unknown) =>
+      error instanceof RequestError && error.code === "REQUEST_TEAM_PUBLISHER_FORBIDDEN",
   );
 });
 
@@ -172,6 +174,6 @@ test("Requests hide private scoped objects from nonmembers with not-found semant
 
   await assert.rejects(
     service.getForMember("outsider", "private-request"),
-    (error: unknown) => error instanceof AppError && error.statusCode === 404,
+    (error: unknown) => error instanceof RequestError && error.code === "REQUEST_NOT_FOUND",
   );
 });
