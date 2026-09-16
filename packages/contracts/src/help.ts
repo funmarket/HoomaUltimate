@@ -1,10 +1,6 @@
 import { z } from "zod";
 
-export const HELP_AUDIENCE_SCOPES = [
-  "PUBLIC",
-  "HOOMA_COMMUNITY",
-  "ATHLETES_COMMUNITY",
-] as const;
+export const HELP_AUDIENCE_SCOPES = ["PUBLIC", "HOOMA_COMMUNITY", "ATHLETES_COMMUNITY"] as const;
 export const helpAudienceScopeSchema = z.enum(HELP_AUDIENCE_SCOPES);
 export type HelpAudienceScope = z.infer<typeof helpAudienceScopeSchema>;
 
