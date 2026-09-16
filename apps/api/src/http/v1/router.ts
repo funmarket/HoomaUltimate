@@ -32,6 +32,7 @@ export function createMemberV1Router(container: AppContainer, config: ApiConfig)
     "/admin",
     createPlatformAdminRouter(
       container.platformAdminService,
+      container.identityAdminService,
       container.placeService,
       container.pitchModerationService,
       container.gamerMatchService,

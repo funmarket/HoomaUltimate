@@ -9,7 +9,9 @@ import {
 } from "@hooma/storage";
 import { RedisClient } from "../infrastructure/redis/redis-client.js";
 import { RedisApiRateLimiter } from "../http/rate-limit/redis-api-rate-limiter.js";
+import { IdentityAdminService } from "../modules/identity/application/identity-admin.service.js";
 import { IdentityService } from "../modules/identity/application/identity.service.js";
+import { PrismaIdentityAdminRepository } from "../modules/identity/infrastructure/prisma-identity-admin.repository.js";
 import { PrismaIdentityRepository } from "../modules/identity/infrastructure/prisma-identity.repository.js";
 import { PrismaCanonicalUserReader } from "../modules/identity/infrastructure/prisma-canonical-user.reader.js";
 import { PrismaUserPresentationReader } from "../modules/identity/infrastructure/prisma-user-presentation.reader.js";
@@ -132,6 +134,10 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
   const canonicalUserReader = new PrismaCanonicalUserReader(database);
   const userPresentationReader = new PrismaUserPresentationReader(database);
   const userLastSeenReader = new PrismaUserLastSeenReader(database);
+  const identityAdminService = new IdentityAdminService(
+    new PrismaIdentityAdminRepository(database),
+    platformAdminService,
+  );
 
   const placeRepository = new PrismaPlaceRepository(database);
   const placeImageResolver = new HttpExternalPlaceImageResolver();
@@ -258,6 +264,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     apiRateLimiter,
     readinessService,
     identityService,
+    identityAdminService,
     platformAdminService,
     placeService,
     approvedPitchReader,

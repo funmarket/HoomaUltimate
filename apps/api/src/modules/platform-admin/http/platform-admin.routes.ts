@@ -2,8 +2,10 @@ import { Router } from "express";
 import {
   adminIssueStatusUpdateSchema,
   adminPitchReviewTargetSchema,
+  adminUserSearchQuerySchema,
   appManagerUpdateSchema,
   moderationDecisionSchema,
+  userSessionRevocationSchema,
 } from "@hooma/contracts/platform-admin";
 import { gamerDisputeResolutionInputSchema, gamerMatchSideSchema } from "@hooma/contracts/gamers";
 import { AppError } from "../../../http/errors/app-error.js";
@@ -12,6 +14,7 @@ import type { GamerMatchService } from "../../gamers/application/gamer-match.ser
 import { getAuth } from "../../identity/http/auth-request.js";
 import type { PitchModerationService } from "../../pitch/application/pitch-moderation.service.js";
 import type { PlaceService } from "../../places/application/place.service.js";
+import type { IdentityAdminService } from "../../identity/application/identity-admin.service.js";
 import type { PlatformAdminService } from "../application/platform-admin.service.js";
 
 type ModerationDecision = {
@@ -28,6 +31,7 @@ function parseModerationDecision(body: unknown): ModerationDecision {
 
 export function createPlatformAdminRouter(
   service: PlatformAdminService,
+  identityAdmin: IdentityAdminService,
   places: PlaceService,
   pitchModeration: PitchModerationService,
   gamerMatches: GamerMatchService,
@@ -112,6 +116,37 @@ export function createPlatformAdminRouter(
           getAuth(request).userId,
           String(request.params.username),
           input.capabilities,
+        ),
+      );
+    }),
+  );
+
+  router.get(
+    "/users",
+    asyncHandler(async (request, response) => {
+      const input = adminUserSearchQuerySchema.parse(request.query);
+      response.json(
+        await identityAdmin.searchUsers(getAuth(request).userId, input.query, input.limit),
+      );
+    }),
+  );
+  router.get(
+    "/users/:userId",
+    asyncHandler(async (request, response) => {
+      response.json(
+        await identityAdmin.userDetail(getAuth(request).userId, String(request.params.userId)),
+      );
+    }),
+  );
+  router.post(
+    "/users/:userId/sessions/revoke",
+    asyncHandler(async (request, response) => {
+      const input = userSessionRevocationSchema.parse(request.body);
+      response.json(
+        await identityAdmin.revokeUserSessions(
+          getAuth(request).userId,
+          String(request.params.userId),
+          input.note,
         ),
       );
     }),

@@ -4,6 +4,8 @@ import {
   createPlatformAdminApi,
   useHoomaFrontend,
   type AdminIssueSummary,
+  type AdminUserDetail,
+  type AdminUserSearchItem,
   type PlatformAuditEntry,
   type PlatformOverview,
   type PublicCommunitySummary,
@@ -25,6 +27,98 @@ import "./admin.css";
 type QueueName = "places" | "place-ownership" | "pitch";
 type LoadState = "loading" | "ready" | "error";
 
+function AdminUsers({
+  users,
+  detail,
+  loadState,
+  isRevoking,
+  onSearch,
+  onSelect,
+  onRevokeSessions,
+}: {
+  readonly users: readonly AdminUserSearchItem[];
+  readonly detail: AdminUserDetail | null;
+  readonly loadState: LoadState | null;
+  readonly isRevoking: boolean;
+  readonly onSearch: (event: FormEvent<HTMLFormElement>) => Promise<void>;
+  readonly onSelect: (userId: string) => Promise<void>;
+  readonly onRevokeSessions: (userId: string) => Promise<void>;
+}) {
+  return (
+    <section className="panel" id="user-security">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">PEOPLE</p>
+          <h2>User security administration</h2>
+        </div>
+        <span>{loadState === "ready" ? users.length : "—"}</span>
+      </div>
+      <p className="muted">
+        Search safe Identity-owned account details and revoke active web sessions when needed.
+      </p>
+      <form className="admin-manager-form" onSubmit={(event) => void onSearch(event)}>
+        <input
+          name="query"
+          placeholder="Search username, email, Telegram ID, or user id"
+          minLength={2}
+          required
+        />
+        <button type="submit">Search users</button>
+      </form>
+      {loadState === "loading" ? <p className="muted">Searching users…</p> : null}
+      {loadState === "error" ? <p className="muted">User search is unavailable.</p> : null}
+      {loadState === "ready" && !users.length ? <p className="muted">No users matched.</p> : null}
+      <div className="admin-manager-list">
+        {users.map((user) => (
+          <article key={user.userId}>
+            <strong>{user.displayName}</strong>
+            <span>@{user.username}</span>
+            <small>
+              {user.activeSessionCount} active session{user.activeSessionCount === 1 ? "" : "s"}
+              {user.telegramUsername ? ` · Telegram @${user.telegramUsername}` : ""}
+            </small>
+            <button type="button" onClick={() => void onSelect(user.userId)}>
+              View user security
+            </button>
+          </article>
+        ))}
+      </div>
+      {detail ? (
+        <article className="panel">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">IDENTITY DETAIL</p>
+              <h3>{detail.presentation.displayName}</h3>
+            </div>
+            <span>{detail.security.activeSessionCount} active</span>
+          </div>
+          <p className="muted">Web login: {detail.identity.web?.loginUsername ?? "—"}</p>
+          <p className="muted">Telegram: {detail.identity.telegram?.telegramUsername ?? "—"}</p>
+          <h4>Active sessions</h4>
+          {detail.security.sessions.length ? (
+            <ul>
+              {detail.security.sessions.map((session) => (
+                <li key={session.id}>
+                  {session.isActive ? "Active" : "Inactive"} · last seen {session.lastSeenAt}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="muted">No web sessions recorded.</p>
+          )}
+          <button
+            type="button"
+            disabled={isRevoking || detail.security.activeSessionCount === 0}
+            onClick={() => void onRevokeSessions(detail.userId)}
+          >
+            {isRevoking ? "Revoking active sessions…" : "Revoke active sessions"}
+          </button>
+        </article>
+      ) : null}
+    </section>
+  );
+}
+
 export function AdminApp() {
   const { api, transport } = useHoomaFrontend();
   const adminApi = useMemo(() => createPlatformAdminApi(transport), [transport]);
@@ -38,6 +132,10 @@ export function AdminApp() {
   const [managers, setManagers] = useState<AppManagerSummary[]>([]);
   const [audit, setAudit] = useState<PlatformAuditEntry[]>([]);
   const [adminIssues, setAdminIssues] = useState<AdminIssueSummary[]>([]);
+  const [adminUsers, setAdminUsers] = useState<AdminUserSearchItem[]>([]);
+  const [selectedUser, setSelectedUser] = useState<AdminUserDetail | null>(null);
+  const [userSearchState, setUserSearchState] = useState<LoadState | null>(null);
+  const [userSessionsRevoking, setUserSessionsRevoking] = useState(false);
   const [queues, setQueues] = useState<AdminQueues>({
     places: [],
     "place-ownership": [],
@@ -124,6 +222,52 @@ export function AdminApp() {
     await loadModule(setAdminIssuesState, async () => {
       setAdminIssues(await adminApi.issues());
     });
+  }
+
+  async function searchAdminUsers(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const query = String(data.get("query") ?? "").trim();
+    if (query.length < 2) return;
+    setUserSearchState("loading");
+    setError("");
+    setMessage("");
+    try {
+      const rows = await adminApi.users(query);
+      setAdminUsers(rows);
+      setSelectedUser(null);
+      setUserSearchState("ready");
+    } catch (reason) {
+      setUserSearchState("error");
+      setError(reason instanceof Error ? reason.message : "Unable to search users");
+    }
+  }
+
+  async function selectAdminUser(userId: string) {
+    setError("");
+    try {
+      setSelectedUser(await adminApi.userDetail(userId));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unable to load user security detail");
+    }
+  }
+
+  async function revokeAdminUserSessions(userId: string) {
+    if (userSessionsRevoking) return;
+    const note = window.prompt("Reason for revoking this user's active sessions")?.trim();
+    if (!note) return;
+    setUserSessionsRevoking(true);
+    setError("");
+    setMessage("");
+    try {
+      const result = await adminApi.revokeUserSessions(userId, { note });
+      setMessage(`${result.revokedSessionCount} active user session(s) revoked and audited.`);
+      setSelectedUser(await adminApi.userDetail(userId));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unable to revoke user sessions");
+    } finally {
+      setUserSessionsRevoking(false);
+    }
   }
 
   async function load() {
@@ -273,6 +417,7 @@ export function AdminApp() {
   const canReviewPitch = can("REVIEW_PITCH_APPLICATIONS");
   const canViewAudit = can("VIEW_AUDIT");
   const canManageAdminIssues = can("MANAGE_ADMIN_ISSUES");
+  const canManageUsers = can("MANAGE_USERS");
   const attentionItems: AttentionItem[] = [];
   if (access.isPlatformOwner) {
     attentionItems.push(
@@ -322,6 +467,7 @@ export function AdminApp() {
       canReviewPitch={canReviewPitch}
       canViewAudit={canViewAudit}
       canManageAdminIssues={canManageAdminIssues}
+      canManageUsers={canManageUsers}
       message={message}
       error={error}
     >
@@ -352,6 +498,18 @@ export function AdminApp() {
             if (can("VIEW_AUDIT")) await Promise.all([loadOverview(), loadAudit()]);
             if (can("VIEW_AUDIT") || can("MANAGE_ADMIN_ISSUES")) await loadAdminIssues();
           }}
+        />
+      ) : null}
+
+      {canManageUsers ? (
+        <AdminUsers
+          users={adminUsers}
+          detail={selectedUser}
+          loadState={userSearchState}
+          isRevoking={userSessionsRevoking}
+          onSearch={searchAdminUsers}
+          onSelect={selectAdminUser}
+          onRevokeSessions={revokeAdminUserSessions}
         />
       ) : null}
 

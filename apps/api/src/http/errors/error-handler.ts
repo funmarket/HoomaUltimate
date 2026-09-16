@@ -5,6 +5,10 @@ import {
   AthletesError,
   type AthletesErrorCode,
 } from "../../modules/athletes/domain/athletes-error.js";
+import {
+  IdentityAdminError,
+  type IdentityAdminErrorCode,
+} from "../../modules/identity/domain/identity-admin-error.js";
 import { RideError, type RideErrorCode } from "../../modules/rides/domain/ride-error.js";
 import { AppError } from "./app-error.js";
 
@@ -111,6 +115,13 @@ const RIDE_STATUS: Record<RideErrorCode, number> = {
   RIDE_WHISTLE_SELF_FORBIDDEN: 409,
 };
 
+const IDENTITY_ADMIN_STATUS: Record<IdentityAdminErrorCode, number> = {
+  USER_SEARCH_QUERY_REQUIRED: 400,
+  USER_NOT_FOUND: 404,
+  USER_SESSION_REVOCATION_REASON_REQUIRED: 400,
+  USER_SESSION_REVOCATION_TARGET_FORBIDDEN: 403,
+};
+
 export const errorHandler: ErrorRequestHandler = (error, _request, response, _next) => {
   void _next;
 
@@ -129,6 +140,12 @@ export const errorHandler: ErrorRequestHandler = (error, _request, response, _ne
   if (error instanceof RideError) {
     response
       .status(RIDE_STATUS[error.code])
+      .json({ error: { code: error.code, message: error.message } });
+    return;
+  }
+  if (error instanceof IdentityAdminError) {
+    response
+      .status(IDENTITY_ADMIN_STATUS[error.code])
       .json({ error: { code: error.code, message: error.message } });
     return;
   }

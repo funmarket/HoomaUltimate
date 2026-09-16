@@ -488,12 +488,13 @@ test("App Manager capabilities project only their authorized Control Room module
     writable: true,
     configurable: true,
   });
-  const { cleanup, render, waitFor } = await import("@testing-library/react");
+  const { cleanup, fireEvent, render, waitFor } = await import("@testing-library/react");
   const { HoomaFrontendProvider } = await import("@hooma/frontend");
   const { AdminApp } = await import("../apps/web/src/admin/AdminApp");
 
   const originalFetch = globalThis.fetch;
-  let capability: "REVIEW_PITCH_APPLICATIONS" | "VIEW_AUDIT" | "MANAGE_ADMIN_ISSUES" =
+  let capability:
+    "REVIEW_PITCH_APPLICATIONS" | "VIEW_AUDIT" | "MANAGE_ADMIN_ISSUES" | "MANAGE_USERS" =
     "REVIEW_PITCH_APPLICATIONS";
   let requested: string[] = [];
   globalThis.fetch = async (input) => {
@@ -524,6 +525,25 @@ test("App Manager capabilities project only their authorized Control Room module
     }
     if (url.pathname === "/api/v1/admin/issues") {
       return new Response("[]", { status: 200, headers: { "content-type": "application/json" } });
+    }
+    if (url.pathname === "/api/v1/admin/users") {
+      return new Response(
+        JSON.stringify([
+          {
+            userId: "user-1",
+            username: "alice",
+            displayName: "Alice User",
+            photoUrl: null,
+            telegramUsername: "alice_tg",
+            hasWebCredential: true,
+            lastLoginAt: "2026-09-16T10:00:00.000Z",
+            activeSessionCount: 1,
+            isPlatformAdmin: false,
+            managerCapabilities: [],
+          },
+        ]),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
     }
     return new Response(null, { status: 500 });
   };
@@ -569,6 +589,26 @@ test("App Manager capabilities project only their authorized Control Room module
     assert.equal(issuesView.queryByText("Audit Archive"), null);
     assert.equal(issuesView.queryByText("Pitch business applications"), null);
     assert.deepEqual(requested.sort(), ["/api/v1/admin/access", "/api/v1/admin/issues"]);
+    cleanup();
+
+    capability = "MANAGE_USERS";
+    requested = [];
+    const usersView = render(controlRoom());
+    await waitFor(() => assert.ok(usersView.getByText("User security administration")));
+    assert.equal(usersView.queryByText("Audit Archive"), null);
+    assert.equal(usersView.queryByText("Pitch business applications"), null);
+    assert.equal(usersView.queryByText("Admin Action Inbox"), null);
+    assert.deepEqual(requested.sort(), ["/api/v1/admin/access"]);
+
+    fireEvent.change(
+      usersView.getByPlaceholderText("Search username, email, Telegram ID, or user id"),
+      {
+        target: { value: "alice" },
+      },
+    );
+    fireEvent.click(usersView.getByRole("button", { name: "Search users" }));
+    await waitFor(() => assert.ok(usersView.getByText("Alice User")));
+    assert.deepEqual(requested.sort(), ["/api/v1/admin/access", "/api/v1/admin/users"]);
   } finally {
     globalThis.fetch = originalFetch;
     cleanup();
@@ -611,7 +651,7 @@ test("Access Managers exposes only concrete delegated Control Room capabilities"
             userId: "manager-1",
             username: "ops",
             displayName: "Ops Manager",
-            capabilities: ["MANAGE_ADMIN_ISSUES"],
+            capabilities: ["MANAGE_ADMIN_ISSUES", "MANAGE_USERS"],
           },
         ],
         loadState: "ready",
@@ -622,7 +662,8 @@ test("Access Managers exposes only concrete delegated Control Room capabilities"
 
     assert.ok(view.getAllByText("Admin Issues").length);
     assert.ok(view.getByText("Resolve and dismiss existing operational admin issues."));
-    assert.equal(view.queryByText("Users"), null);
+    assert.ok(view.getAllByText("User Security").length);
+    assert.ok(view.getByText("Search safe user identity details and revoke active web sessions."));
     assert.equal(view.queryByText("Feature Availability"), null);
   } finally {
     cleanup();
