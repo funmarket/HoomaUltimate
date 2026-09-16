@@ -1,11 +1,52 @@
-import type { PlatformManagerCapability } from "@hooma/contracts/platform-admin";
+import type { AdminIssueSummary, PlatformManagerCapability } from "@hooma/contracts/platform-admin";
 import type { PrismaClient } from "@hooma/database";
 import type {
+  AdminIssueDisposition,
   AppManagerRecord,
   PlatformAdminAuditEntry,
   PlatformAdminOverview,
   PlatformAdminRepository,
 } from "../application/platform-admin.repository.js";
+
+type OutboxIssueKey = {
+  readonly source: "OUTBOX";
+  readonly topic: string;
+  readonly aggregateType: string | null;
+  readonly aggregateId: string | null;
+};
+
+type FailedOutboxIssueGroup = {
+  readonly topic: string;
+  readonly aggregateType: string | null;
+  readonly aggregateId: string | null;
+  readonly _count: { readonly _all: number };
+  readonly _min: { readonly createdAt: Date | null };
+  readonly _max: { readonly updatedAt: Date | null };
+};
+
+const ISSUE_RESOLUTION_ACTIONS = ["ADMIN_ISSUE_RESOLVED", "ADMIN_ISSUE_DISMISSED"] as const;
+
+function encodeOutboxIssueId(key: OutboxIssueKey): string {
+  return `outbox:${Buffer.from(JSON.stringify(key)).toString("base64url")}`;
+}
+
+function decodeOutboxIssueId(issueId: string): OutboxIssueKey | null {
+  if (!issueId.startsWith("outbox:")) return null;
+  try {
+    const parsed = JSON.parse(
+      Buffer.from(issueId.slice("outbox:".length), "base64url").toString("utf8"),
+    ) as Partial<OutboxIssueKey>;
+    if (parsed.source !== "OUTBOX" || typeof parsed.topic !== "string") return null;
+    return {
+      source: "OUTBOX",
+      topic: parsed.topic,
+      aggregateType: typeof parsed.aggregateType === "string" ? parsed.aggregateType : null,
+      aggregateId: typeof parsed.aggregateId === "string" ? parsed.aggregateId : null,
+    };
+  } catch {
+    return null;
+  }
+}
 
 export class PrismaPlatformAdminRepository implements PlatformAdminRepository {
   constructor(private readonly db: PrismaClient) {}
@@ -171,5 +212,116 @@ export class PrismaPlatformAdminRepository implements PlatformAdminRepository {
       orderBy: { createdAt: "desc" },
       take: limit,
     });
+  }
+
+  private async outboxIssueDispositionExists(issueId: string, updatedAt: Date): Promise<boolean> {
+    const disposition = await this.db.auditLog.findFirst({
+      where: {
+        action: { in: [...ISSUE_RESOLUTION_ACTIONS] },
+        entityType: "AdminIssue",
+        entityId: issueId,
+        createdAt: { gte: updatedAt },
+      },
+      select: { id: true },
+    });
+    return Boolean(disposition);
+  }
+
+  private outboxIssueFromGroup(group: FailedOutboxIssueGroup): AdminIssueSummary {
+    const updatedAt = group._max.updatedAt ?? new Date();
+    const createdAt = group._min.createdAt ?? updatedAt;
+    const key: OutboxIssueKey = {
+      source: "OUTBOX",
+      topic: group.topic,
+      aggregateType: group.aggregateType,
+      aggregateId: group.aggregateId,
+    };
+    return {
+      id: encodeOutboxIssueId(key),
+      title: "Outbox delivery failed",
+      summary: `The ${group.topic} outbox pipeline has failed delivery events requiring operator attention.`,
+      severity: "WARNING",
+      source: "OUTBOX",
+      occurrenceCount: group._count._all,
+      entityType: group.aggregateType ?? "OutboxEvent",
+      entityId: group.aggregateId,
+      createdAt: createdAt.toISOString(),
+      updatedAt: updatedAt.toISOString(),
+    };
+  }
+
+  async adminIssues(limit: number): Promise<readonly AdminIssueSummary[]> {
+    const issues: AdminIssueSummary[] = [];
+    const batchSize = Math.min(Math.max(limit * 2, 25), 100);
+    let skip = 0;
+
+    while (issues.length < limit) {
+      const failedOutboxGroups = await this.db.outboxEvent.groupBy({
+        by: ["topic", "aggregateType", "aggregateId"],
+        where: { status: "FAILED" },
+        _count: { _all: true },
+        _min: { createdAt: true },
+        _max: { updatedAt: true },
+        orderBy: { _max: { updatedAt: "desc" } },
+        skip,
+        take: batchSize,
+      });
+      if (!failedOutboxGroups.length) break;
+
+      for (const group of failedOutboxGroups) {
+        const issue = this.outboxIssueFromGroup(group);
+        if (await this.outboxIssueDispositionExists(issue.id, new Date(issue.updatedAt))) continue;
+        issues.push(issue);
+        if (issues.length >= limit) break;
+      }
+      skip += failedOutboxGroups.length;
+    }
+
+    return issues;
+  }
+
+  async setAdminIssueDisposition(
+    actorUserId: string,
+    issueId: string,
+    disposition: AdminIssueDisposition,
+    note?: string | null,
+  ): Promise<boolean> {
+    const key = decodeOutboxIssueId(issueId);
+    if (!key) return false;
+    const failedOutboxGroups = await this.db.outboxEvent.groupBy({
+      by: ["topic", "aggregateType", "aggregateId"],
+      where: {
+        status: "FAILED",
+        topic: key.topic,
+        aggregateType: key.aggregateType,
+        aggregateId: key.aggregateId,
+      },
+      _count: { _all: true },
+      _min: { createdAt: true },
+      _max: { updatedAt: true },
+      orderBy: { _max: { updatedAt: "desc" } },
+      take: 1,
+    });
+    const [group] = failedOutboxGroups;
+    if (!group) return false;
+    const issue = this.outboxIssueFromGroup(group);
+    if (issue.id !== issueId) return false;
+    if (await this.outboxIssueDispositionExists(issueId, new Date(issue.updatedAt))) return false;
+    await this.db.auditLog.create({
+      data: {
+        actorUserId,
+        action: disposition === "RESOLVED" ? "ADMIN_ISSUE_RESOLVED" : "ADMIN_ISSUE_DISMISSED",
+        entityType: "AdminIssue",
+        entityId: issueId,
+        metadata: {
+          source: key.source,
+          topic: key.topic,
+          aggregateType: key.aggregateType,
+          aggregateId: key.aggregateId,
+          note: note?.trim() || null,
+        },
+      },
+    });
+    return true;
   }
 }

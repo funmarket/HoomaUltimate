@@ -3,6 +3,7 @@ import type { AppManagerSummary, PlatformManagerCapability } from "@hooma/contra
 import {
   createPlatformAdminApi,
   useHoomaFrontend,
+  type AdminIssueSummary,
   type PlatformAuditEntry,
   type PlatformOverview,
   type PublicCommunitySummary,
@@ -36,6 +37,7 @@ export function AdminApp() {
   const [teams, setTeams] = useState<PublicTeamSummary[]>([]);
   const [managers, setManagers] = useState<AppManagerSummary[]>([]);
   const [audit, setAudit] = useState<PlatformAuditEntry[]>([]);
+  const [adminIssues, setAdminIssues] = useState<AdminIssueSummary[]>([]);
   const [queues, setQueues] = useState<AdminQueues>({
     places: [],
     "place-ownership": [],
@@ -44,6 +46,7 @@ export function AdminApp() {
   const [accessState, setAccessState] = useState<LoadState>("loading");
   const [overviewState, setOverviewState] = useState<LoadState>("loading");
   const [auditState, setAuditState] = useState<LoadState>("loading");
+  const [adminIssuesState, setAdminIssuesState] = useState<LoadState>("loading");
   const [managerState, setManagerState] = useState<LoadState>("loading");
   const [communitiesState, setCommunitiesState] = useState<LoadState>("loading");
   const [teamsState, setTeamsState] = useState<LoadState>("loading");
@@ -117,6 +120,12 @@ export function AdminApp() {
     });
   }
 
+  async function loadAdminIssues() {
+    await loadModule(setAdminIssuesState, async () => {
+      setAdminIssues(await adminApi.issues());
+    });
+  }
+
   async function load() {
     setAccessState("loading");
     setError("");
@@ -143,7 +152,7 @@ export function AdminApp() {
       currentAccess.isPlatformOwner || currentAccess.managerCapabilities.includes(capability);
 
     if (allowed("VIEW_AUDIT")) {
-      tasks.push(loadOverview(), loadAudit());
+      tasks.push(loadOverview(), loadAdminIssues(), loadAudit());
     }
 
     if (currentAccess.isPlatformOwner) {
@@ -196,7 +205,7 @@ export function AdminApp() {
       }
       setMessage("Decision saved and audited.");
       const refreshes = [loadQueue(queue)];
-      if (can("VIEW_AUDIT")) refreshes.push(loadOverview(), loadAudit());
+      if (can("VIEW_AUDIT")) refreshes.push(loadOverview(), loadAdminIssues(), loadAudit());
       await Promise.all(refreshes);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Unable to save decision");
@@ -223,7 +232,7 @@ export function AdminApp() {
       setMessage(
         capabilities.length ? "App Manager permissions saved." : "App Manager permissions revoked.",
       );
-      await Promise.all([loadManagers(), loadOverview(), loadAudit()]);
+      await Promise.all([loadManagers(), loadOverview(), loadAdminIssues(), loadAudit()]);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Unable to update App Manager");
     } finally {
@@ -305,6 +314,8 @@ export function AdminApp() {
         overview={canViewAudit ? overview : null}
         overviewState={canViewAudit ? overviewState : null}
         attentionItems={attentionItems}
+        adminIssues={canViewAudit ? adminIssues : []}
+        adminIssuesState={canViewAudit ? adminIssuesState : null}
         recentAudit={audit.slice(0, 5)}
         auditState={canViewAudit ? auditState : null}
       />
@@ -323,7 +334,8 @@ export function AdminApp() {
           onCountChange={setGamerDisputeCount}
           onQueueStateChange={setGamerDisputeState}
           onResolved={async () => {
-            if (can("VIEW_AUDIT")) await Promise.all([loadOverview(), loadAudit()]);
+            if (can("VIEW_AUDIT"))
+              await Promise.all([loadOverview(), loadAdminIssues(), loadAudit()]);
           }}
         />
       ) : null}

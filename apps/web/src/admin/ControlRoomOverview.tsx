@@ -1,4 +1,4 @@
-import type { PlatformAuditEntry, PlatformOverview } from "@hooma/frontend";
+import type { AdminIssueSummary, PlatformAuditEntry, PlatformOverview } from "@hooma/frontend";
 
 export type AttentionLoadState = "loading" | "ready" | "error";
 
@@ -19,12 +19,16 @@ export function ControlRoomOverview({
   overview,
   overviewState,
   attentionItems,
+  adminIssues,
+  adminIssuesState,
   recentAudit,
   auditState,
 }: {
   readonly overview: PlatformOverview | null;
   readonly overviewState: AttentionLoadState | null;
   readonly attentionItems: readonly AttentionItem[];
+  readonly adminIssues: readonly AdminIssueSummary[];
+  readonly adminIssuesState: AttentionLoadState | null;
   readonly recentAudit: readonly PlatformAuditEntry[];
   readonly auditState: AttentionLoadState | null;
 }) {
@@ -86,6 +90,42 @@ export function ControlRoomOverview({
                 <dd>{overview.auditEntries}</dd>
               </div>
             </dl>
+          ) : null}
+        </section>
+      ) : null}
+
+      {adminIssuesState ? (
+        <section className="panel admin-action-inbox" id="admin-action-inbox">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">OPERATIONAL ISSUES</p>
+              <h2>Admin Action Inbox</h2>
+            </div>
+          </div>
+          {adminIssuesState === "loading" ? <p className="muted">Loading admin issues…</p> : null}
+          {adminIssuesState === "error" ? (
+            <p className="muted">Admin issues are unavailable.</p>
+          ) : null}
+          {adminIssuesState === "ready" && !adminIssues.length ? (
+            <p className="muted">No operational admin issues require attention.</p>
+          ) : null}
+          {adminIssuesState === "ready" && adminIssues.length ? (
+            <div className="admin-audit-list">
+              {adminIssues.map((issue) => (
+                <article key={issue.id}>
+                  <strong>{issue.title}</strong>
+                  <span>
+                    {issue.summary} ·{" "}
+                    {`${issue.occurrenceCount} ${
+                      issue.occurrenceCount === 1 ? "occurrence" : "occurrences"
+                    }`}
+                  </span>
+                  <time dateTime={issue.updatedAt}>
+                    {new Date(issue.updatedAt).toLocaleString()}
+                  </time>
+                </article>
+              ))}
+            </div>
           ) : null}
         </section>
       ) : null}

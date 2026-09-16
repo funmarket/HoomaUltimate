@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  adminIssueStatusUpdateSchema,
   adminPitchReviewTargetSchema,
   appManagerUpdateSchema,
   moderationDecisionSchema,
@@ -53,6 +54,44 @@ export function createPlatformAdminRouter(
       const rawLimit = Number(request.query.limit ?? 100);
       response.json(
         await service.audit(getAuth(request).userId, Number.isFinite(rawLimit) ? rawLimit : 100),
+      );
+    }),
+  );
+
+  router.get(
+    "/issues",
+    asyncHandler(async (request, response) => {
+      const rawLimit = Number(request.query.limit ?? 25);
+      response.json(
+        await service.issues(getAuth(request).userId, Number.isFinite(rawLimit) ? rawLimit : 25),
+      );
+    }),
+  );
+
+  router.post(
+    "/issues/:issueId/resolve",
+    asyncHandler(async (request, response) => {
+      const input = adminIssueStatusUpdateSchema.parse(request.body);
+      response.json(
+        await service.resolveIssue(
+          getAuth(request).userId,
+          String(request.params.issueId),
+          input.note,
+        ),
+      );
+    }),
+  );
+
+  router.post(
+    "/issues/:issueId/dismiss",
+    asyncHandler(async (request, response) => {
+      const input = adminIssueStatusUpdateSchema.parse(request.body);
+      response.json(
+        await service.dismissIssue(
+          getAuth(request).userId,
+          String(request.params.issueId),
+          input.note,
+        ),
       );
     }),
   );

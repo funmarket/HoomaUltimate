@@ -58,6 +58,35 @@ export class PlatformAdminService implements PlatformAdminAuthorizer {
     return this.repository.auditEntries(Math.min(Math.max(limit, 1), 200));
   }
 
+  async issues(userId: string, limit = 25) {
+    await this.requireCapability(userId, "VIEW_AUDIT");
+    return this.repository.adminIssues(Math.min(Math.max(limit, 1), 100));
+  }
+
+  async resolveIssue(userId: string, issueId: string, note?: string | null) {
+    await this.requirePlatformAdmin(userId);
+    const updated = await this.repository.setAdminIssueDisposition(
+      userId,
+      issueId,
+      "RESOLVED",
+      note,
+    );
+    if (!updated) throw new AppError(404, "ADMIN_ISSUE_NOT_FOUND", "Admin issue not found");
+    return { ok: true };
+  }
+
+  async dismissIssue(userId: string, issueId: string, note?: string | null) {
+    await this.requirePlatformAdmin(userId);
+    const updated = await this.repository.setAdminIssueDisposition(
+      userId,
+      issueId,
+      "DISMISSED",
+      note,
+    );
+    if (!updated) throw new AppError(404, "ADMIN_ISSUE_NOT_FOUND", "Admin issue not found");
+    return { ok: true };
+  }
+
   async managers(userId: string) {
     await this.requirePlatformAdmin(userId);
     return this.repository.listManagers();
