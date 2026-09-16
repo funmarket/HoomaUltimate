@@ -4,7 +4,7 @@ import type {
   HelpRequestList,
   HelpRequestListQuery,
 } from "@hooma/contracts/requests";
-import { AppError } from "../../../http/errors/app-error.js";
+import { RequestError } from "../domain/request-error.js";
 import type {
   HelpRequestRecord,
   RequestRepository,
@@ -48,7 +48,7 @@ export class RequestService {
 
   async getPublic(id: string): Promise<HelpRequest> {
     const request = await this.repository.getPublic(id);
-    if (!request) throw new AppError(404, "REQUEST_NOT_FOUND", "Request not found");
+    if (!request) throw new RequestError("REQUEST_NOT_FOUND", "Request not found");
     return serialize(request);
   }
 
@@ -58,7 +58,7 @@ export class RequestService {
 
   async getForMember(userId: string, id: string): Promise<HelpRequest> {
     const request = await this.repository.getVisibleToMember(userId, id);
-    if (!request) throw new AppError(404, "REQUEST_NOT_FOUND", "Request not found");
+    if (!request) throw new RequestError("REQUEST_NOT_FOUND", "Request not found");
     return serialize(request);
   }
 
@@ -67,8 +67,7 @@ export class RequestService {
     if (publisher.publisherCommunityId) {
       const role = await this.visibility.communityRole(publisher.publisherCommunityId, userId);
       if (role !== "FOUNDER" && role !== "COACH") {
-        throw new AppError(
-          403,
+        throw new RequestError(
           "REQUEST_COMMUNITY_PUBLISHER_FORBIDDEN",
           "Founder or Coach access required",
         );
@@ -82,7 +81,10 @@ export class RequestService {
         userId,
       );
       if (responsibility !== "COACH") {
-        throw new AppError(403, "REQUEST_TEAM_PUBLISHER_FORBIDDEN", "Team Coach access required");
+        throw new RequestError(
+          "REQUEST_TEAM_PUBLISHER_FORBIDDEN",
+          "Team Coach access required",
+        );
       }
       return;
     }
@@ -93,8 +95,7 @@ export class RequestService {
         userId,
       );
       if (role !== "FOUNDER" && role !== "MODERATOR") {
-        throw new AppError(
-          403,
+        throw new RequestError(
           "REQUEST_ATHLETES_PUBLISHER_FORBIDDEN",
           "Athletes Founder or Moderator access required",
         );
@@ -105,8 +106,7 @@ export class RequestService {
   private async requireAudienceMembership(userId: string, input: HelpRequestCreateInput) {
     if (input.audience.scope === "HOOMA_COMMUNITY") {
       if (!(await this.visibility.isCommunityMember(input.audience.communityId, userId))) {
-        throw new AppError(
-          403,
+        throw new RequestError(
           "REQUEST_AUDIENCE_MEMBERSHIP_REQUIRED",
           "HOOMA membership required",
         );
@@ -118,8 +118,7 @@ export class RequestService {
       input.audience.scope === "ATHLETES_COMMUNITY" &&
       !(await this.visibility.isAthletesMember(input.audience.athletesCommunityId, userId))
     ) {
-      throw new AppError(
-        403,
+      throw new RequestError(
         "REQUEST_AUDIENCE_MEMBERSHIP_REQUIRED",
         "Athletes membership required",
       );
