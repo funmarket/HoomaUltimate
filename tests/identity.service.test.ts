@@ -53,6 +53,7 @@ class FakeIdentityRepository implements IdentityRepository {
       bio: null,
     },
     platformRoles: [],
+    managerCapabilities: [],
     communities: [],
     teams: [],
   };

@@ -26,5 +26,10 @@ if (files.length === 0) {
 console.log(`Checking formatting for ${files.length} changed file(s).`);
 const prettier = spawnSync("npm", ["exec", "--", "prettier", "--check", ...files], {
   stdio: "inherit",
+  shell: process.platform === "win32",
 });
+if (prettier.error) {
+  console.error(prettier.error.message);
+  process.exit(1);
+}
 process.exit(prettier.status ?? 1);

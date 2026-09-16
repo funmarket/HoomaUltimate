@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { platformManagerCapabilitySchema } from "./platform-admin.js";
 
 export const healthResponseSchema = z.object({
   status: z.literal("ok"),
@@ -47,6 +48,7 @@ export const meResponseSchema = z.object({
   }),
   transports: z.array(z.enum(["web", "telegram"])),
   platformRoles: z.array(z.literal("PLATFORM_ADMIN")),
+  managerCapabilities: z.array(platformManagerCapabilitySchema).optional().default([]),
   communities: z.array(
     z.object({
       id: z.string(),

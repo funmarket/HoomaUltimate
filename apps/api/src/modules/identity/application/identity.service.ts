@@ -333,6 +333,7 @@ export class IdentityService {
       presentation: user.presentation,
       transports: [...transports],
       platformRoles: [...user.platformRoles],
+      managerCapabilities: [...user.managerCapabilities],
       communities: [...user.communities],
       teams: user.teams.map((team) => ({
         ...team,

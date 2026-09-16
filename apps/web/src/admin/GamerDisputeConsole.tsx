@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type {
   GamerDispute,
   GamerDisputeResolutionInput,
@@ -9,6 +9,9 @@ import { createGamersApi, useHoomaFrontend } from "@hooma/frontend";
 import "./gamer-disputes.css";
 
 type ProofUrls = Record<string, Partial<Record<GamerMatchSide, string>>>;
+type ProofLoadState = "loading" | "ready" | "error";
+type ProofStates = Record<string, Partial<Record<GamerMatchSide, ProofLoadState>>>;
+type QueueLoadState = "loading" | "ready" | "error";
 
 function claimLabel(submission: GamerMatchSubmission | undefined): string {
   return submission
@@ -19,17 +22,40 @@ function claimLabel(submission: GamerMatchSubmission | undefined): string {
 function DisputeCard({
   dispute,
   proofUrls,
+  proofStates,
   busy,
   onResolve,
 }: {
   readonly dispute: GamerDispute;
   readonly proofUrls: Partial<Record<GamerMatchSide, string>>;
+  readonly proofStates: Partial<Record<GamerMatchSide, ProofLoadState>>;
   readonly busy: boolean;
   readonly onResolve: (input: GamerDisputeResolutionInput) => void;
 }) {
   const [notes, setNotes] = useState("");
   const challengerSubmission = dispute.submissions.find((item) => item.side === "CHALLENGER");
   const challengedSubmission = dispute.submissions.find((item) => item.side === "CHALLENGED");
+
+  function proof(
+    side: GamerMatchSide,
+    submission: GamerMatchSubmission | undefined,
+    playerLabel: string,
+  ) {
+    if (!submission) {
+      return <div className="gamer-dispute-proof-missing">No {playerLabel} proof submitted</div>;
+    }
+    if (proofStates[side] === "error") {
+      return <div className="gamer-dispute-proof-missing">{playerLabel} proof unavailable</div>;
+    }
+    if (proofStates[side] !== "ready" || !proofUrls[side]) {
+      return <div className="gamer-dispute-proof-missing">Loading {playerLabel} proof…</div>;
+    }
+    return (
+      <a href={proofUrls[side]} target="_blank" rel="noreferrer">
+        <img src={proofUrls[side]} alt={`${playerLabel} submitted match proof`} />
+      </a>
+    );
+  }
 
   function resolveFrom(submission: GamerMatchSubmission | undefined) {
     if (!submission || !notes.trim()) return;
@@ -57,13 +83,7 @@ function DisputeCard({
             <span>{dispute.challenger.handle}</span>
             <b>Claim: {claimLabel(challengerSubmission)}</b>
           </div>
-          {proofUrls.CHALLENGER ? (
-            <a href={proofUrls.CHALLENGER} target="_blank" rel="noreferrer">
-              <img src={proofUrls.CHALLENGER} alt="Challenger submitted match proof" />
-            </a>
-          ) : (
-            <div className="gamer-dispute-proof-missing">No challenger proof</div>
-          )}
+          {proof("CHALLENGER", challengerSubmission, "Challenger")}
         </section>
         <section>
           <div className="gamer-dispute-player">
@@ -71,13 +91,7 @@ function DisputeCard({
             <span>{dispute.challenged.handle}</span>
             <b>Claim: {claimLabel(challengedSubmission)}</b>
           </div>
-          {proofUrls.CHALLENGED ? (
-            <a href={proofUrls.CHALLENGED} target="_blank" rel="noreferrer">
-              <img src={proofUrls.CHALLENGED} alt="Challenged player submitted match proof" />
-            </a>
-          ) : (
-            <div className="gamer-dispute-proof-missing">No challenged proof</div>
-          )}
+          {proof("CHALLENGED", challengedSubmission, "Challenged player")}
         </section>
       </div>
       <div className="gamer-dispute-resolution">
@@ -119,27 +133,66 @@ function DisputeCard({
   );
 }
 
-export function GamerDisputeConsole() {
+export function GamerDisputeConsole({
+  onCountChange,
+  onQueueStateChange,
+  onResolved,
+}: {
+  readonly onCountChange?: (count: number) => void;
+  readonly onQueueStateChange?: (state: QueueLoadState) => void;
+  readonly onResolved?: () => Promise<void> | void;
+} = {}) {
   const { transport } = useHoomaFrontend();
   const gamersApi = useMemo(() => createGamersApi(transport), [transport]);
   const [disputes, setDisputes] = useState<GamerDispute[]>([]);
   const [proofUrls, setProofUrls] = useState<ProofUrls>({});
-  const [busyId, setBusyId] = useState("");
+  const [proofStates, setProofStates] = useState<ProofStates>({});
+  const [busyIds, setBusyIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [queueState, setQueueState] = useState<QueueLoadState>("loading");
   const [error, setError] = useState("");
+  const resolvingInFlight = useRef<Set<string>>(new Set());
 
   async function load() {
-    const response = await gamersApi.adminDisputes();
+    setQueueState("loading");
+    onQueueStateChange?.("loading");
+
+    let response: Awaited<ReturnType<typeof gamersApi.adminDisputes>>;
+    try {
+      response = await gamersApi.adminDisputes();
+    } catch (reason) {
+      setQueueState("error");
+      onQueueStateChange?.("error");
+      throw reason;
+    }
+
     setDisputes(response.items);
+    setQueueState("ready");
+    onCountChange?.(response.items.length);
+    onQueueStateChange?.("ready");
+
     const nextUrls: ProofUrls = {};
+    const nextStates: ProofStates = {};
+    response.items.forEach((dispute) => {
+      dispute.submissions.forEach((submission) => {
+        (nextStates[dispute.id] ??= {})[submission.side] = "loading";
+      });
+    });
+    setProofStates(nextStates);
     await Promise.all(
       response.items.flatMap((dispute) =>
         (["CHALLENGER", "CHALLENGED"] as const).map(async (side) => {
           if (!dispute.submissions.some((item) => item.side === side)) return;
-          const blob = await gamersApi.adminDisputeProof(dispute.id, side);
-          (nextUrls[dispute.id] ??= {})[side] = URL.createObjectURL(blob);
+          try {
+            const blob = await gamersApi.adminDisputeProof(dispute.id, side);
+            (nextUrls[dispute.id] ??= {})[side] = URL.createObjectURL(blob);
+            (nextStates[dispute.id] ??= {})[side] = "ready";
+          } catch {
+            (nextStates[dispute.id] ??= {})[side] = "error";
+          }
         }),
       ),
     );
+    setProofStates({ ...nextStates });
     setProofUrls((current) => {
       Object.values(current).forEach((bySide) =>
         Object.values(bySide).forEach((url) => {
@@ -164,36 +217,49 @@ export function GamerDisputeConsole() {
   }, [gamersApi]);
 
   async function resolve(matchId: string, input: GamerDisputeResolutionInput) {
-    setBusyId(matchId);
+    if (resolvingInFlight.current.has(matchId)) return;
+    resolvingInFlight.current.add(matchId);
+    setBusyIds((current) => new Set(current).add(matchId));
     setError("");
     try {
       await gamersApi.resolveAdminDispute(matchId, input);
       await load();
+      await onResolved?.();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Unable to resolve Gamer dispute");
     } finally {
-      setBusyId("");
+      resolvingInFlight.current.delete(matchId);
+      setBusyIds((current) => {
+        const next = new Set(current);
+        next.delete(matchId);
+        return next;
+      });
     }
   }
 
   return (
-    <section className="panel gamer-dispute-console">
+    <section className="panel gamer-dispute-console" id="gamers">
       <div className="section-heading">
         <div>
           <p className="eyebrow">GAMER DISPUTES</p>
           <h2>EA FC Match Evidence</h2>
         </div>
-        <span>{disputes.length}</span>
+        <span>{queueState === "ready" ? disputes.length : "—"}</span>
       </div>
       {error ? <p className="error">{error}</p> : null}
-      {!disputes.length ? <p className="muted">Dispute queue is clear.</p> : null}
+      {queueState === "loading" ? <p className="muted">Loading dispute queue…</p> : null}
+      {queueState === "error" ? <p className="muted">Dispute queue is unavailable.</p> : null}
+      {queueState === "ready" && !disputes.length ? (
+        <p className="muted">Dispute queue is clear.</p>
+      ) : null}
       <div className="gamer-dispute-list">
         {disputes.map((dispute) => (
           <DisputeCard
             key={dispute.id}
             dispute={dispute}
             proofUrls={proofUrls[dispute.id] ?? {}}
-            busy={busyId === dispute.id}
+            proofStates={proofStates[dispute.id] ?? {}}
+            busy={busyIds.has(dispute.id)}
             onResolve={(input) => void resolve(dispute.id, input)}
           />
         ))}

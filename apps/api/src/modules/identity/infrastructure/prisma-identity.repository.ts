@@ -349,6 +349,11 @@ export class PrismaIdentityRepository implements IdentityRepository {
           where: { revokedAt: null, role: "PLATFORM_ADMIN" },
           select: { role: true },
         },
+        appManagerGrants: {
+          where: { revokedAt: null },
+          select: { capability: true },
+          orderBy: { capability: "asc" },
+        },
         communityMemberships: {
           where: { leftAt: null },
           select: {
@@ -429,6 +434,7 @@ export class PrismaIdentityRepository implements IdentityRepository {
       id: user.id,
       presentation: user.presentation,
       platformRoles: user.platformRoles.map(() => "PLATFORM_ADMIN" as const),
+      managerCapabilities: user.appManagerGrants.map((grant) => grant.capability),
       communities: user.communityMemberships.map((membership) => ({
         ...membership.community,
         role: membership.role,
