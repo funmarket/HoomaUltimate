@@ -493,7 +493,8 @@ test("App Manager capabilities project only their authorized Control Room module
   const { AdminApp } = await import("../apps/web/src/admin/AdminApp");
 
   const originalFetch = globalThis.fetch;
-  let capability: "REVIEW_PITCH_APPLICATIONS" | "VIEW_AUDIT" = "REVIEW_PITCH_APPLICATIONS";
+  let capability: "REVIEW_PITCH_APPLICATIONS" | "VIEW_AUDIT" | "MANAGE_ADMIN_ISSUES" =
+    "REVIEW_PITCH_APPLICATIONS";
   let requested: string[] = [];
   globalThis.fetch = async (input) => {
     const url = new URL(String(input));
@@ -559,8 +560,71 @@ test("App Manager capabilities project only their authorized Control Room module
       "/api/v1/admin/issues",
       "/api/v1/admin/overview",
     ]);
+    cleanup();
+
+    capability = "MANAGE_ADMIN_ISSUES";
+    requested = [];
+    const issuesView = render(controlRoom());
+    await waitFor(() => assert.ok(issuesView.getByText("Admin Action Inbox")));
+    assert.equal(issuesView.queryByText("Audit Archive"), null);
+    assert.equal(issuesView.queryByText("Pitch business applications"), null);
+    assert.deepEqual(requested.sort(), ["/api/v1/admin/access", "/api/v1/admin/issues"]);
   } finally {
     globalThis.fetch = originalFetch;
+    cleanup();
+    dom.window.close();
+  }
+});
+
+test("Access Managers exposes only concrete delegated Control Room capabilities", async () => {
+  const dom = new JSDOM("<!doctype html><html><body></body></html>", {
+    url: "http://localhost/",
+  });
+
+  Object.defineProperty(globalThis, "window", { value: dom.window, configurable: true });
+  Object.defineProperty(globalThis, "document", { value: dom.window.document, configurable: true });
+  Object.defineProperty(globalThis, "navigator", {
+    value: dom.window.navigator,
+    configurable: true,
+  });
+  Object.defineProperty(globalThis, "HTMLElement", {
+    value: dom.window.HTMLElement,
+    configurable: true,
+  });
+  Object.defineProperty(globalThis, "Element", { value: dom.window.Element, configurable: true });
+  Object.defineProperty(globalThis, "Node", { value: dom.window.Node, configurable: true });
+
+  const React = await import("react");
+  Object.defineProperty(globalThis, "React", {
+    value: React,
+    writable: true,
+    configurable: true,
+  });
+  const { cleanup, render } = await import("@testing-library/react");
+  const { AccessManagers } = await import("../apps/web/src/admin/AccessManagers");
+
+  try {
+    const view = render(
+      React.createElement(AccessManagers, {
+        managers: [
+          {
+            userId: "manager-1",
+            username: "ops",
+            displayName: "Ops Manager",
+            capabilities: ["MANAGE_ADMIN_ISSUES"],
+          },
+        ],
+        loadState: "ready",
+        isSaving: false,
+        onSubmit: async () => {},
+      }),
+    );
+
+    assert.ok(view.getAllByText("Admin Issues").length);
+    assert.ok(view.getByText("Resolve and dismiss existing operational admin issues."));
+    assert.equal(view.queryByText("Users"), null);
+    assert.equal(view.queryByText("Feature Availability"), null);
+  } finally {
     cleanup();
     dom.window.close();
   }

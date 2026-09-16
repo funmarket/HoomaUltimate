@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { AppError } from "../apps/api/src/http/errors/app-error.js";
+import type { PlatformManagerCapability } from "@hooma/contracts/platform-admin";
 import type { PlatformAdminRepository } from "../apps/api/src/modules/platform-admin/application/platform-admin.repository.js";
 import { PlatformAdminService } from "../apps/api/src/modules/platform-admin/application/platform-admin.service.js";
 import { PrismaPlatformAdminRepository } from "../apps/api/src/modules/platform-admin/infrastructure/prisma-platform-admin.repository.js";
@@ -90,7 +91,13 @@ function disposition(entityId: string, createdAt: string): DispositionRecord {
 function createServiceRepository(overrides: Partial<PlatformAdminRepository> = {}) {
   const repository: PlatformAdminRepository = {
     hasPlatformAdminRole: async (userId) => userId === "platform-admin",
-    managerCapabilities: async (userId) => (userId === "audit-manager" ? ["VIEW_AUDIT"] : []),
+    managerCapabilities: async (userId) => {
+      if (userId === "audit-manager") return ["VIEW_AUDIT"];
+      if (userId === "issue-manager") {
+        return ["MANAGE_ADMIN_ISSUES" as PlatformManagerCapability];
+      }
+      return [];
+    },
     findUserByTelegramId: async () => null,
     findUserByUsername: async () => null,
     reconcilePlatformOwner: async () => {},
@@ -248,7 +255,7 @@ test("Admin Issue resolve and dismiss require a non-empty reason", async () => {
   );
 });
 
-test("Admin Issue disposition remains Platform Admin only while VIEW_AUDIT managers can read", async () => {
+test("VIEW_AUDIT managers can read admin issues but cannot write without MANAGE_ADMIN_ISSUES", async () => {
   const calls: string[] = [];
   const service = new PlatformAdminService(
     createServiceRepository({
@@ -266,8 +273,29 @@ test("Admin Issue disposition remains Platform Admin only while VIEW_AUDIT manag
   await service.issues("audit-manager", 25);
   await rejectsWithCode(
     () => service.resolveIssue("audit-manager", "issue-1", "investigated failure"),
-    "PLATFORM_ADMIN_REQUIRED",
+    "APP_MANAGER_CAPABILITY_REQUIRED",
   );
   await rejectsWithCode(() => service.issues("normal-user", 25), "APP_MANAGER_CAPABILITY_REQUIRED");
   assert.deepEqual(calls, ["read"]);
+});
+
+test("Admin Issue management capability can read and resolve operational issues", async () => {
+  const calls: string[] = [];
+  const service = new PlatformAdminService(
+    createServiceRepository({
+      adminIssues: async () => {
+        calls.push("read");
+        return [];
+      },
+      setAdminIssueDisposition: async () => {
+        calls.push("write");
+        return true;
+      },
+    }),
+  );
+
+  await service.issues("issue-manager", 25);
+  await service.resolveIssue("issue-manager", "issue-1", "failed delivery investigated");
+
+  assert.deepEqual(calls, ["read", "write"]);
 });

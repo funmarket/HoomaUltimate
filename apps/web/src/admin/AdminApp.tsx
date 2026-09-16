@@ -152,7 +152,11 @@ export function AdminApp() {
       currentAccess.isPlatformOwner || currentAccess.managerCapabilities.includes(capability);
 
     if (allowed("VIEW_AUDIT")) {
-      tasks.push(loadOverview(), loadAdminIssues(), loadAudit());
+      tasks.push(loadOverview(), loadAudit());
+    }
+
+    if (allowed("VIEW_AUDIT") || allowed("MANAGE_ADMIN_ISSUES")) {
+      tasks.push(loadAdminIssues());
     }
 
     if (currentAccess.isPlatformOwner) {
@@ -205,7 +209,8 @@ export function AdminApp() {
       }
       setMessage("Decision saved and audited.");
       const refreshes = [loadQueue(queue)];
-      if (can("VIEW_AUDIT")) refreshes.push(loadOverview(), loadAdminIssues(), loadAudit());
+      if (can("VIEW_AUDIT")) refreshes.push(loadOverview(), loadAudit());
+      if (can("VIEW_AUDIT") || can("MANAGE_ADMIN_ISSUES")) refreshes.push(loadAdminIssues());
       await Promise.all(refreshes);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Unable to save decision");
@@ -267,6 +272,7 @@ export function AdminApp() {
 
   const canReviewPitch = can("REVIEW_PITCH_APPLICATIONS");
   const canViewAudit = can("VIEW_AUDIT");
+  const canManageAdminIssues = can("MANAGE_ADMIN_ISSUES");
   const attentionItems: AttentionItem[] = [];
   if (access.isPlatformOwner) {
     attentionItems.push(
@@ -300,6 +306,14 @@ export function AdminApp() {
       state: gamerDisputeState,
     });
   }
+  if (canManageAdminIssues) {
+    attentionItems.push({
+      label: "Admin issues",
+      count: adminIssues.length,
+      href: "#admin-action-inbox",
+      state: adminIssuesState,
+    });
+  }
 
   return (
     <ControlRoomShell
@@ -307,6 +321,7 @@ export function AdminApp() {
       managerCapabilities={access.managerCapabilities}
       canReviewPitch={canReviewPitch}
       canViewAudit={canViewAudit}
+      canManageAdminIssues={canManageAdminIssues}
       message={message}
       error={error}
     >
@@ -314,8 +329,8 @@ export function AdminApp() {
         overview={canViewAudit ? overview : null}
         overviewState={canViewAudit ? overviewState : null}
         attentionItems={attentionItems}
-        adminIssues={canViewAudit ? adminIssues : []}
-        adminIssuesState={canViewAudit ? adminIssuesState : null}
+        adminIssues={canManageAdminIssues || canViewAudit ? adminIssues : []}
+        adminIssuesState={canManageAdminIssues || canViewAudit ? adminIssuesState : null}
         recentAudit={audit.slice(0, 5)}
         auditState={canViewAudit ? auditState : null}
       />
@@ -334,8 +349,8 @@ export function AdminApp() {
           onCountChange={setGamerDisputeCount}
           onQueueStateChange={setGamerDisputeState}
           onResolved={async () => {
-            if (can("VIEW_AUDIT"))
-              await Promise.all([loadOverview(), loadAdminIssues(), loadAudit()]);
+            if (can("VIEW_AUDIT")) await Promise.all([loadOverview(), loadAudit()]);
+            if (can("VIEW_AUDIT") || can("MANAGE_ADMIN_ISSUES")) await loadAdminIssues();
           }}
         />
       ) : null}
