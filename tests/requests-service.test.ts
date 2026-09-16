@@ -100,7 +100,11 @@ test("Requests allow personal publishing for any authenticated user", async () =
 test("Requests require current HOOMA Founder or Coach authority for official publishing", async () => {
   const service = new RequestService(
     repository(),
-    visibility({ async communityRole() { return "MEMBER"; } }),
+    visibility({
+      async communityRole() {
+        return "MEMBER";
+      },
+    }),
   );
   await assert.rejects(
     service.create("user-1", {
@@ -114,7 +118,11 @@ test("Requests require current HOOMA Founder or Coach authority for official pub
 test("Requests require current Team Coach responsibility and reject Assistant-only authority", async () => {
   const service = new RequestService(
     repository(),
-    visibility({ async teamResponsibility() { return "ASSISTANT"; } }),
+    visibility({
+      async teamResponsibility() {
+        return "ASSISTANT";
+      },
+    }),
   );
   await assert.rejects(
     service.create("user-1", {
@@ -136,7 +144,11 @@ test("Requests allow Athletes Founder or Moderator official publishing", async (
         return requestRecord({ publisherAthletesCommunityId: "athletes-1" });
       },
     },
-    visibility({ async athletesRole() { return "MODERATOR"; } }),
+    visibility({
+      async athletesRole() {
+        return "MODERATOR";
+      },
+    }),
   );
 
   const result = await service.create("user-1", {
