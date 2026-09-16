@@ -1,5 +1,7 @@
 import type {
   AdminAccess,
+  AdminIssueStatusUpdateInput,
+  AdminIssueSummary,
   AdminPitchReviewQueueItem,
   AdminPlaceOwnershipReviewQueueItem,
   AdminPlaceReviewQueueItem,
@@ -8,6 +10,8 @@ import type {
   PlatformManagerCapability,
 } from "@hooma/contracts/platform-admin";
 import { request, type HoomaTransport } from "../http";
+
+export type { AdminIssueSummary } from "@hooma/contracts/platform-admin";
 
 export interface PlatformOverview {
   readonly users: number;
@@ -30,6 +34,25 @@ export function createPlatformAdminApi(transport: HoomaTransport) {
     access: () => request<AdminAccess>(transport, "/api/v1/admin/access"),
     overview: () => request<PlatformOverview>(transport, "/api/v1/admin/overview"),
     audit: () => request<PlatformAuditEntry[]>(transport, "/api/v1/admin/audit?limit=100"),
+    issues: () => request<AdminIssueSummary[]>(transport, "/api/v1/admin/issues?limit=25"),
+    resolveIssue: (issueId: string, input: AdminIssueStatusUpdateInput = {}) =>
+      request<{ ok: true }>(
+        transport,
+        `/api/v1/admin/issues/${encodeURIComponent(issueId)}/resolve`,
+        {
+          method: "POST",
+          body: JSON.stringify(input),
+        },
+      ),
+    dismissIssue: (issueId: string, input: AdminIssueStatusUpdateInput = {}) =>
+      request<{ ok: true }>(
+        transport,
+        `/api/v1/admin/issues/${encodeURIComponent(issueId)}/dismiss`,
+        {
+          method: "POST",
+          body: JSON.stringify(input),
+        },
+      ),
     managers: () => request<AppManagerSummary[]>(transport, "/api/v1/admin/managers"),
     setManager: (username: string, capabilities: readonly PlatformManagerCapability[]) =>
       request<{ ok: true }>(transport, `/api/v1/admin/managers/${encodeURIComponent(username)}`, {
@@ -43,8 +66,7 @@ export function createPlatformAdminApi(transport: HoomaTransport) {
         transport,
         "/api/v1/admin/queues/place-ownership",
       ),
-    pitchQueue: () =>
-      request<AdminPitchReviewQueueItem[]>(transport, "/api/v1/admin/queues/pitch"),
+    pitchQueue: () => request<AdminPitchReviewQueueItem[]>(transport, "/api/v1/admin/queues/pitch"),
     decidePlace: (placeId: string, input: ModerationDecisionInput) =>
       request<{ ok: true }>(
         transport,

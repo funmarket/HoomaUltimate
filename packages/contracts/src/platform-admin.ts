@@ -3,6 +3,10 @@ import type { PublicPlaceSummary } from "./places.js";
 import type { PitchRentalCurrency } from "./pitch.js";
 
 export const platformManagerCapabilitySchema = z.enum(["REVIEW_PITCH_APPLICATIONS", "VIEW_AUDIT"]);
+export const adminIssueSeveritySchema = z.enum(["INFO", "WARNING", "CRITICAL"]);
+export const adminIssueStatusUpdateSchema = z.object({
+  note: z.string().trim().max(1000).optional().nullable(),
+});
 
 export const moderationDecisionSchema = z.object({
   decision: z.enum(["APPROVE", "REJECT"]),
@@ -16,6 +20,8 @@ export const appManagerUpdateSchema = z.object({
 });
 
 export type PlatformManagerCapability = z.infer<typeof platformManagerCapabilitySchema>;
+export type AdminIssueSeverity = z.infer<typeof adminIssueSeveritySchema>;
+export type AdminIssueStatusUpdateInput = z.infer<typeof adminIssueStatusUpdateSchema>;
 export type ModerationDecisionInput = z.infer<typeof moderationDecisionSchema>;
 export type AdminPitchReviewTarget = z.infer<typeof adminPitchReviewTargetSchema>;
 export type AppManagerUpdateInput = z.infer<typeof appManagerUpdateSchema>;
@@ -65,4 +71,17 @@ export interface AppManagerSummary {
   readonly username: string;
   readonly displayName: string;
   readonly capabilities: readonly PlatformManagerCapability[];
+}
+
+export interface AdminIssueSummary {
+  readonly id: string;
+  readonly title: string;
+  readonly summary: string;
+  readonly severity: AdminIssueSeverity;
+  readonly source: "OUTBOX";
+  readonly occurrenceCount: number;
+  readonly entityType: string;
+  readonly entityId: string | null;
+  readonly createdAt: string;
+  readonly updatedAt: string;
 }

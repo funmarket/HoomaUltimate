@@ -1,4 +1,4 @@
-import type { PlatformManagerCapability } from "@hooma/contracts/platform-admin";
+import type { AdminIssueSummary, PlatformManagerCapability } from "@hooma/contracts/platform-admin";
 
 export interface PlatformAdminOverview {
   readonly users: number;
@@ -23,6 +23,8 @@ export interface AppManagerRecord {
   readonly capabilities: readonly PlatformManagerCapability[];
 }
 
+export type AdminIssueDisposition = "RESOLVED" | "DISMISSED";
+
 export interface PlatformAdminRepository {
   hasPlatformAdminRole(userId: string): Promise<boolean>;
   managerCapabilities(userId: string): Promise<readonly PlatformManagerCapability[]>;
@@ -37,4 +39,11 @@ export interface PlatformAdminRepository {
   ): Promise<void>;
   overview(): Promise<PlatformAdminOverview>;
   auditEntries(limit: number): Promise<readonly PlatformAdminAuditEntry[]>;
+  adminIssues(limit: number): Promise<readonly AdminIssueSummary[]>;
+  setAdminIssueDisposition(
+    actorUserId: string,
+    issueId: string,
+    disposition: AdminIssueDisposition,
+    note?: string | null,
+  ): Promise<boolean>;
 }

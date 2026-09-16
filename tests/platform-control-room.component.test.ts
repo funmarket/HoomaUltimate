@@ -254,6 +254,7 @@ test("Platform Control Room refreshes only the resource changed by an admin writ
       return json({ users: 1, activePlatformAdmins: 1, activeAppManagers: 0, auditEntries: 0 });
     }
     if (method === "GET" && url.pathname === "/api/v1/admin/audit") return json([]);
+    if (method === "GET" && url.pathname === "/api/v1/admin/issues") return json([]);
     if (method === "GET" && url.pathname === "/api/v1/admin/managers") return json([]);
     if (method === "PUT" && url.pathname === "/api/v1/admin/managers/manager") {
       return managerWrite;
@@ -315,7 +316,8 @@ test("Platform Control Room refreshes only the resource changed by an admin writ
       if (
         key !== "GET /api/v1/admin/managers" &&
         key !== "GET /api/v1/admin/overview" &&
-        !key.startsWith("GET /api/v1/admin/audit")
+        !key.startsWith("GET /api/v1/admin/audit") &&
+        !key.startsWith("GET /api/v1/admin/issues")
       ) {
         assert.equal(requestCounts.get(key), count, key);
       }
@@ -345,7 +347,8 @@ test("Platform Control Room refreshes only the resource changed by an admin writ
         key.startsWith("GET ") &&
         key !== "GET /api/v1/admin/queues/places" &&
         key !== "GET /api/v1/admin/overview" &&
-        !key.startsWith("GET /api/v1/admin/audit")
+        !key.startsWith("GET /api/v1/admin/audit") &&
+        !key.startsWith("GET /api/v1/admin/issues")
       ) {
         assert.equal(requestCounts.get(key), count, key);
       }
@@ -518,6 +521,9 @@ test("App Manager capabilities project only their authorized Control Room module
     if (url.pathname === "/api/v1/admin/audit") {
       return new Response("[]", { status: 200, headers: { "content-type": "application/json" } });
     }
+    if (url.pathname === "/api/v1/admin/issues") {
+      return new Response("[]", { status: 200, headers: { "content-type": "application/json" } });
+    }
     return new Response(null, { status: 500 });
   };
 
@@ -550,6 +556,7 @@ test("App Manager capabilities project only their authorized Control Room module
     assert.deepEqual(requested.sort(), [
       "/api/v1/admin/access",
       "/api/v1/admin/audit",
+      "/api/v1/admin/issues",
       "/api/v1/admin/overview",
     ]);
   } finally {
@@ -797,6 +804,79 @@ test("Profile exposes Platform Control Room entry for Platform Admins and delega
       }),
     );
     assert.ok(view.getByRole("link", { name: "Open Platform Control Room" }));
+  } finally {
+    cleanup();
+    dom.window.close();
+  }
+});
+
+test("Platform Control Room renders operational admin issues separately from audit evidence", async () => {
+  const dom = new JSDOM("<!doctype html><html><body></body></html>", {
+    url: "http://localhost/",
+  });
+
+  Object.defineProperty(globalThis, "window", { value: dom.window, configurable: true });
+  Object.defineProperty(globalThis, "document", { value: dom.window.document, configurable: true });
+  Object.defineProperty(globalThis, "navigator", {
+    value: dom.window.navigator,
+    configurable: true,
+  });
+  Object.defineProperty(globalThis, "HTMLElement", {
+    value: dom.window.HTMLElement,
+    configurable: true,
+  });
+  Object.defineProperty(globalThis, "Element", { value: dom.window.Element, configurable: true });
+  Object.defineProperty(globalThis, "Node", { value: dom.window.Node, configurable: true });
+
+  const React = await import("react");
+  Object.defineProperty(globalThis, "React", {
+    value: React,
+    writable: true,
+    configurable: true,
+  });
+  const { cleanup, render } = await import("@testing-library/react");
+  const { ControlRoomOverview } = await import("../apps/web/src/admin/ControlRoomOverview");
+
+  try {
+    const view = render(
+      React.createElement(ControlRoomOverview, {
+        overview: { users: 4, activePlatformAdmins: 1, activeAppManagers: 1, auditEntries: 7 },
+        overviewState: "ready",
+        attentionItems: [],
+        adminIssues: [
+          {
+            id: "issue-outbox-failed",
+            title: "Outbox delivery failed",
+            summary: "A Telegram delivery outbox event failed after retries.",
+            severity: "WARNING",
+            source: "OUTBOX",
+            occurrenceCount: 3,
+            entityType: "OutboxEvent",
+            entityId: "outbox-1",
+            createdAt: "2026-09-16T00:00:00.000Z",
+            updatedAt: "2026-09-16T01:00:00.000Z",
+          },
+        ],
+        adminIssuesState: "ready",
+        recentAudit: [
+          {
+            id: "audit-1",
+            actorUserId: "admin-1",
+            action: "APP_MANAGER_CAPABILITIES_SET",
+            entityType: "User",
+            entityId: "manager-1",
+            createdAt: "2026-09-16T02:00:00.000Z",
+          },
+        ],
+        auditState: "ready",
+      }),
+    );
+
+    assert.ok(view.getByText("Admin Action Inbox"));
+    assert.ok(view.getByText("Outbox delivery failed"));
+    assert.ok(view.getByText(/3 occurrences/));
+    assert.ok(view.getByText("Latest audit evidence"));
+    assert.ok(view.getByText("APP_MANAGER_CAPABILITIES_SET"));
   } finally {
     cleanup();
     dom.window.close();
