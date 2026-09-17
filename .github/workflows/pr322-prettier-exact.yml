@@ -1,0 +1,25 @@
+name: PR322 Prettier Exact
+
+on:
+  push:
+    branches:
+      - tmp/pr322-prettier-exact
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - name: Print exact Prettier diff
+        run: |
+          npx prettier --write apps/web/src/admin/ControlRoomOverview.tsx
+          git diff -- apps/web/src/admin/ControlRoomOverview.tsx
