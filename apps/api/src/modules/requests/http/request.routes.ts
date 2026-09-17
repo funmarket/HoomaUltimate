@@ -42,12 +42,14 @@ export function createRequestMemberRouter(service: RequestService): Router {
   router.post(
     "/",
     asyncHandler(async (request, response) => {
-      response.status(201).json(
-        await service.create(
-          getAuth(request).userId,
-          helpRequestCreateSchema.parse(request.body),
-        ),
-      );
+      response
+        .status(201)
+        .json(
+          await service.create(
+            getAuth(request).userId,
+            helpRequestCreateSchema.parse(request.body),
+          ),
+        );
     }),
   );
 
