@@ -42,18 +42,19 @@ const helpRequestSelect = Prisma.validator<Prisma.HelpRequestSelect>()({
   updatedAt: true,
 });
 
-const helpRequestResponseSelect = Prisma.validator<Prisma.HelpRequestResponseSelect>()({
-  id: true,
-  requestId: true,
-  responderUserId: true,
-  message: true,
-  status: true,
-  createdAt: true,
-  updatedAt: true,
-  acceptedAt: true,
-  declinedAt: true,
-  withdrawnAt: true,
-});
+const helpRequestResponseSelect =
+  Prisma.validator<Prisma.HelpRequestResponseSelect>()({
+    id: true,
+    requestId: true,
+    responderUserId: true,
+    message: true,
+    status: true,
+    createdAt: true,
+    updatedAt: true,
+    acceptedAt: true,
+    declinedAt: true,
+    withdrawnAt: true,
+  });
 
 type HelpRequestRow = Prisma.HelpRequestGetPayload<{ select: typeof helpRequestSelect }>;
 type HelpRequestResponseRow = Prisma.HelpRequestResponseGetPayload<{
@@ -222,7 +223,10 @@ export class PrismaRequestRepository implements RequestRepository, RequestVisibi
   }
 
   async getById(id: string): Promise<HelpRequestRecord | null> {
-    const row = await this.db.helpRequest.findUnique({ where: { id }, select: helpRequestSelect });
+    const row = await this.db.helpRequest.findUnique({
+      where: { id },
+      select: helpRequestSelect,
+    });
     return row ? record(row) : null;
   }
 
@@ -324,7 +328,11 @@ export class PrismaRequestRepository implements RequestRepository, RequestVisibi
     responseId: string,
   ): Promise<HelpRequestResponseRecord | null> {
     const result = await this.db.helpRequestResponse.updateMany({
-      where: { id: responseId, requestId, status: { in: ["PENDING", "ACCEPTED"] } },
+      where: {
+        id: responseId,
+        requestId,
+        status: { in: ["PENDING", "ACCEPTED"] },
+      },
       data: { status: "WITHDRAWN", withdrawnAt: new Date() },
     });
     if (result.count !== 1) return null;
