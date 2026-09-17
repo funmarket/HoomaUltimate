@@ -6,11 +6,12 @@ This file is the repository living plan for the Requests | FundMe | Donations im
 
 Authoritative repository: `funmarket/HoomaUltimate`
 Authoritative branch: `phase-0-foundation`
-Working branch: `feat/help-slice-1-contracts-contexts`
+Working branch: `feat/help-slice-2-requests-domain`
 Original attached-plan baseline: `c304fed4c925cbcd578fdbafb21926f927e400f5`
 Slice 1 base foundation HEAD: `b07167f9beb0003eceddb3fd73bfbff53417a618`
-Current task: `Slice 2 - Requests database/domain`
-Exact next task: start Slice 2 from the integrated Slice 1 foundation and implement only the Requests database/domain scope defined by this plan.
+Slice 2 base foundation HEAD: `a5bd502f58a746a1a89d33ba4afb28506c2e35b3`
+Current task: `Slice 3 - Requests responses + lifecycle`
+Exact next task: start Slice 3 from the integrated Slice 2 foundation and implement only the Requests responses/lifecycle scope defined by this plan.
 
 ## Execution loop
 
@@ -115,20 +116,20 @@ Persistence must use concrete foreign keys, not polymorphic strings. `createdByU
 
 ## Current verified facts
 
-Verified on 2026-09-16 against live branch state:
+Verified on 2026-09-17 against live branch state:
 
 - Slice 1 was based on `phase-0-foundation` HEAD `b07167f9beb0003eceddb3fd73bfbff53417a618` (`feat: add platform admin user security (#315)`).
+- Slice 2 was based on integrated Slice 1 foundation HEAD `a5bd502f58a746a1a89d33ba4afb28506c2e35b3` (merge of PR #316).
 - The attached implementation baseline `c304fed4c925cbcd578fdbafb21926f927e400f5` is stale but remains the product/architecture plan source.
-- Current Requests frontend exists at `packages/frontend/src/requests/RequestsPage.tsx` and `packages/frontend/src/requests/requests.css`.
+- Current Requests frontend exists at `packages/frontend/src/requests/RequestsPage.tsx` and `packages/frontend/src/requests/requests.css` and was not modified by Slice 2.
 - Current Requests tabs remain only `Requests | FundMe`.
-- Current routes remain `/requests`, `/requests/fundme`, and `/fundme -> /requests/fundme`.
+- Current routes remain `/requests`, `/requests/fundme`, and `/fundme -> /requests/fundme` on the frontend.
 - Current Requests/FundMe UI remains an honest placeholder and does not claim backend behavior.
-- No Requests, Donations, or Fundraising backend module has been introduced by Slice 1.
-- `packages/contracts/src/help.ts` now defines the narrow shared Help audience, category, and item taxonomy contracts and is exported through `@hooma/contracts/help`.
-- `meResponseSchema` now exposes `athletesCommunities` publisher contexts.
-- Identity `findMe` now reads active Athletes memberships (`leftAt: null`) and returns community id/name/slug plus role.
-- Prisma already has `AthletesCommunity`, `AthletesMembership`, and `AthletesRole`; Slice 1 required no migration.
-- Slice 1 implementation head `fd861bf1a4b00739d9e964cbc710dfd6856439ee` passed the complete CI workflow in run `35161861982`.
+- `packages/contracts/src/help.ts` remains the narrow shared Help audience, category, and item taxonomy contract source.
+- `meResponseSchema` continues to expose `athletesCommunities` publisher contexts from Slice 1.
+- Slice 2 introduces the separate Requests backend module, `HelpRequest` persistence, public/member read routes, create authorization, and DI wiring only.
+- Slice 2 does not implement Request responses, lifecycle mutation routes, frontend controls, Donations, FundMe, or payment behavior.
+- Slice 2 implementation head `c2b71e236cf4e9c61ccb9e449a65cec30daa6d92` passed the complete CI workflow in run `35170183466`.
 
 ## Slice ledger
 
@@ -278,7 +279,109 @@ Unresolved risks:
 
 ### Slice 2 - Requests database/domain
 
-Status: `NOT_STARTED`
+Status: `COMPLETE`
+
+Authorized implementation only:
+
+```text
+Requests persistence + migration
+Requests contracts
+repository
+service
+publisher/audience authorization
+public/member routes
+DI wiring
+focused tests
+```
+
+Explicit non-goals:
+
+```text
+No Request responses
+No lifecycle mutation routes
+No Requests frontend implementation
+No Donations backend/frontend
+No FundMe backend/frontend
+No payment provider code
+No unrelated domain cleanup
+```
+
+Files changed:
+
+```text
+apps/api/src/bootstrap/container.ts
+apps/api/src/http/errors/error-handler.ts
+apps/api/src/http/public-v1/router.ts
+apps/api/src/http/v1/router.ts
+apps/api/src/modules/requests/application/request.repository.ts
+apps/api/src/modules/requests/application/request.service.ts
+apps/api/src/modules/requests/domain/request-error.ts
+apps/api/src/modules/requests/http/request.routes.ts
+apps/api/src/modules/requests/infrastructure/prisma-request.repository.ts
+packages/contracts/package.json
+packages/contracts/src/requests.ts
+packages/database/prisma/migrations/20260917003000_help_requests/migration.sql
+packages/database/prisma/requests.prisma
+tests/requests-contracts.test.ts
+tests/requests-domain.integration.test.ts
+tests/requests-service.test.ts
+docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md
+```
+
+Migrations created:
+
+```text
+20260917003000_help_requests
+```
+
+Tests added:
+
+```text
+tests/requests-contracts.test.ts
+tests/requests-service.test.ts
+tests/requests-domain.integration.test.ts
+```
+
+Tests run and required regression gates:
+
+```text
+npm ci
+npm run db:generate
+npm run db:validate
+npm run db:migrate:deploy
+npm run architecture:check
+changed-file Prettier check
+changed-source lint
+npm run typecheck
+npm run build:packages
+npm test
+npm run build
+npm run test:integration
+npm run deploy:preflight
+npm run security:check
+npm run db:migrate:status
+```
+
+Verification evidence:
+
+- Exact implementation head `c2b71e236cf4e9c61ccb9e449a65cec30daa6d92` passed all CI gates in workflow run `35170183466`.
+- Prisma generation, schema validation, all 48 migrations, architecture checks, formatting, lint, typecheck, package build, unit tests, application build, integration tests, deploy preflight, security check, and migration status all passed.
+- `HelpRequest` persistence uses concrete publisher/audience foreign keys and the plan-defined status/field model; no polymorphic owner strings were added.
+- Publisher authority is read from canonical current HOOMA community, team responsibility, and Athletes membership sources rather than cached authority in Requests.
+- Public reads are restricted to public Requests; member reads include only public, own, or currently authorized community/Athletes audience Requests.
+- The diff is confined to the Requests slice, contracts/database wiring, focused tests, and this living plan; no frontend, Donations, FundMe, Whistle, Play, Ride, Watch, Pitch, Gamers, Teams behavior, or Telegram auth implementation was changed.
+
+Score: **9.3/10**
+
+Score justification:
+
+Slice 2 implements the authorized Requests persistence/domain/read/create boundary with focused contract, service, and integration coverage and a complete green repository CI run. The score remains below 10 because production deployment is not part of this slice and later lifecycle/response behavior intentionally remains for Slice 3.
+
+Unresolved risks:
+
+- Request response persistence and lifecycle transitions remain intentionally absent until Slice 3.
+- Later lifecycle authorization must continue to derive current publisher authority from canonical entity sources.
+- Frontend behavior remains intentionally unchanged until Slice 4.
 
 ### Slice 3 - Requests responses + lifecycle
 
