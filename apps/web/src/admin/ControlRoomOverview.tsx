@@ -67,9 +67,9 @@ function AdminIssueDispositionControls({
     setError("");
     try {
       if (disposition === "resolve") {
-        await adminApi.resolveIssue(issue.id, { reason });
+        await adminApi.resolveIssue(issue.id, { note: reason });
       } else {
-        await adminApi.dismissIssue(issue.id, { reason });
+        await adminApi.dismissIssue(issue.id, { note: reason });
       }
       const refreshedIssues = await adminApi.issues();
       onCompleted(
