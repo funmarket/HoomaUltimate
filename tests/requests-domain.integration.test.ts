@@ -22,10 +22,7 @@ test("Requests persist publicly and enforce database quantity integrity", async 
     });
 
     assert.equal((await repository.getPublic(created.id))?.id, created.id);
-    assert.equal(
-      (await repository.getVisibleToMember(viewer.id, created.id))?.id,
-      created.id,
-    );
+    assert.equal((await repository.getVisibleToMember(viewer.id, created.id))?.id, created.id);
 
     await assert.rejects(
       db.helpRequest.create({
