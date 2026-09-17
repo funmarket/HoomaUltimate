@@ -81,16 +81,16 @@ export class RequestService {
         userId,
       );
       if (responsibility !== "COACH") {
-        throw new RequestError(
-          "REQUEST_TEAM_PUBLISHER_FORBIDDEN",
-          "Team Coach access required",
-        );
+        throw new RequestError("REQUEST_TEAM_PUBLISHER_FORBIDDEN", "Team Coach access required");
       }
       return;
     }
 
     if (publisher.publisherAthletesCommunityId) {
-      const role = await this.visibility.athletesRole(publisher.publisherAthletesCommunityId, userId);
+      const role = await this.visibility.athletesRole(
+        publisher.publisherAthletesCommunityId,
+        userId,
+      );
       if (role !== "FOUNDER" && role !== "MODERATOR") {
         throw new RequestError(
           "REQUEST_ATHLETES_PUBLISHER_FORBIDDEN",
@@ -103,10 +103,7 @@ export class RequestService {
   private async requireAudienceMembership(userId: string, input: HelpRequestCreateInput) {
     if (input.audience.scope === "HOOMA_COMMUNITY") {
       if (!(await this.visibility.isCommunityMember(input.audience.communityId, userId))) {
-        throw new RequestError(
-          "REQUEST_AUDIENCE_MEMBERSHIP_REQUIRED",
-          "HOOMA membership required",
-        );
+        throw new RequestError("REQUEST_AUDIENCE_MEMBERSHIP_REQUIRED", "HOOMA membership required");
       }
       return;
     }
