@@ -6,12 +6,13 @@ This file is the repository living plan for the Requests | FundMe | Donations im
 
 Authoritative repository: `funmarket/HoomaUltimate`
 Authoritative branch: `phase-0-foundation`
-Working branch: `feat/help-slice-2-requests-domain`
+Working branch: `feat/help-slice-3-request-responses-lifecycle`
 Original attached-plan baseline: `c304fed4c925cbcd578fdbafb21926f927e400f5`
 Slice 1 base foundation HEAD: `b07167f9beb0003eceddb3fd73bfbff53417a618`
 Slice 2 base foundation HEAD: `a5bd502f58a746a1a89d33ba4afb28506c2e35b3`
-Current task: `Slice 3 - Requests responses + lifecycle`
-Exact next task: start Slice 3 from the integrated Slice 2 foundation and implement only the Requests responses/lifecycle scope defined by this plan.
+Slice 3 base foundation HEAD: `e885c34d1de3027871f3845e9c7a57fbed28a981`
+Current task: `Slice 4 - Requests frontend`
+Exact next task: after Slice 3 is integrated into `phase-0-foundation`, start Slice 4 from that fresh foundation and implement only the Requests frontend scope defined by this plan.
 
 ## Execution loop
 
@@ -120,16 +121,17 @@ Verified on 2026-09-17 against live branch state:
 
 - Slice 1 was based on `phase-0-foundation` HEAD `b07167f9beb0003eceddb3fd73bfbff53417a618` (`feat: add platform admin user security (#315)`).
 - Slice 2 was based on integrated Slice 1 foundation HEAD `a5bd502f58a746a1a89d33ba4afb28506c2e35b3` (merge of PR #316).
+- Slice 3 is based on integrated Slice 2 foundation HEAD `e885c34d1de3027871f3845e9c7a57fbed28a981` (merge of PR #318).
 - The attached implementation baseline `c304fed4c925cbcd578fdbafb21926f927e400f5` is stale but remains the product/architecture plan source.
-- Current Requests frontend exists at `packages/frontend/src/requests/RequestsPage.tsx` and `packages/frontend/src/requests/requests.css` and was not modified by Slice 2.
+- Current Requests frontend exists at `packages/frontend/src/requests/RequestsPage.tsx` and `packages/frontend/src/requests/requests.css` and was not modified by Slice 3.
 - Current Requests tabs remain only `Requests | FundMe`.
 - Current routes remain `/requests`, `/requests/fundme`, and `/fundme -> /requests/fundme` on the frontend.
 - Current Requests/FundMe UI remains an honest placeholder and does not claim backend behavior.
 - `packages/contracts/src/help.ts` remains the narrow shared Help audience, category, and item taxonomy contract source.
 - `meResponseSchema` continues to expose `athletesCommunities` publisher contexts from Slice 1.
-- Slice 2 introduces the separate Requests backend module, `HelpRequest` persistence, public/member read routes, create authorization, and DI wiring only.
-- Slice 2 does not implement Request responses, lifecycle mutation routes, frontend controls, Donations, FundMe, or payment behavior.
-- Slice 2 implementation head `c2b71e236cf4e9c61ccb9e449a65cec30daa6d92` passed the complete CI workflow in run `35170183466`.
+- Slice 2 introduced the separate Requests backend module, `HelpRequest` persistence, public/member read routes, create authorization, and DI wiring.
+- Slice 3 adds `HelpRequestResponse` persistence, response privacy/actions, request lifecycle mutations, expiry preparation, and compare-and-set concurrency protection only.
+- Slice 3 implementation head `3a3d3a199e46cc74314f3a09ce67babea4b2a766` passed the complete CI workflow in run `35220160129` before this ledger closeout update.
 
 ## Slice ledger
 
@@ -385,7 +387,111 @@ Unresolved risks:
 
 ### Slice 3 - Requests responses + lifecycle
 
-Status: `NOT_STARTED`
+Status: `COMPLETE`
+
+Authorized implementation only:
+
+```text
+HelpRequestResponse persistence + contracts
+respond
+withdraw
+accept
+decline
+fulfill
+cancel
+expiry preparation
+current publisher-authority management checks
+response privacy
+compare-and-set concurrency protection
+focused tests
+```
+
+Explicit non-goals:
+
+```text
+No Requests frontend implementation
+No Donations backend/frontend
+No FundMe backend/frontend
+No Worker scheduling or notifications
+No reopening lifecycle
+No unrelated domain cleanup
+```
+
+Files changed:
+
+```text
+apps/api/src/http/errors/error-handler.ts
+apps/api/src/modules/requests/application/request.repository.ts
+apps/api/src/modules/requests/application/request.service.ts
+apps/api/src/modules/requests/domain/request-error.ts
+apps/api/src/modules/requests/http/request.routes.ts
+apps/api/src/modules/requests/infrastructure/prisma-request.repository.ts
+packages/contracts/src/requests.ts
+packages/database/prisma/migrations/20260917020000_help_request_responses_lifecycle/migration.sql
+packages/database/prisma/requests.prisma
+tests/requests-concurrency.integration.test.ts
+tests/requests-responses-contracts.test.ts
+tests/requests-responses-lifecycle.test.ts
+tests/requests-service.test.ts
+docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md
+```
+
+Migrations created:
+
+```text
+20260917020000_help_request_responses_lifecycle
+```
+
+Tests added:
+
+```text
+tests/requests-concurrency.integration.test.ts
+tests/requests-responses-contracts.test.ts
+tests/requests-responses-lifecycle.test.ts
+```
+
+Tests run and required regression gates:
+
+```text
+npm ci
+npm run db:generate
+npm run db:validate
+npm run db:migrate:deploy
+npm run architecture:check
+changed-file Prettier check
+changed-source lint
+npm run typecheck
+npm run build:packages
+npm test
+npm run build
+npm run test:integration
+npm run deploy:preflight
+npm run security:check
+npm run db:migrate:status
+```
+
+Verification evidence:
+
+- Exact implementation head `3a3d3a199e46cc74314f3a09ce67babea4b2a766` passed all CI gates in workflow run `35220160129` before this ledger closeout update.
+- `HelpRequestResponse` uses the plan-defined `PENDING`, `ACCEPTED`, `DECLINED`, and `WITHDRAWN` states with a database uniqueness guarantee on `(requestId, responderUserId)`.
+- Response reads are private to the current request manager or the response author; unauthorized access uses not-found behavior.
+- Request managers cannot respond to their own Request, and duplicate response creation is rejected.
+- Lifecycle management derives current Community, Team, or Athletes authority rather than historical creator authority for entity-published Requests.
+- Accept/decline/withdraw and request fulfill/cancel transitions use conditional updates; concurrency integration tests prove duplicate response creation and competing terminal mutations cannot both win.
+- Expiry preparation atomically transitions due `OPEN`/`IN_PROGRESS` Requests to `EXPIRED`; Worker scheduling remains intentionally outside this slice.
+- The diff is confined to Requests contracts/database/domain/routes/tests and this living plan; no frontend, Donations, FundMe, Whistle, Play, Ride, Watch, Pitch, Gamers, Teams behavior, or Telegram auth implementation was changed.
+
+Score: **9.3/10**
+
+Score justification:
+
+Slice 3 implements the authorized response and lifecycle boundary with database constraints, privacy/authority checks, compare-and-set mutation safety, focused unit/integration coverage, and a complete green repository CI run on the implementation candidate. The score remains below 10 because deployment/Worker scheduling are outside this slice and the final ledger-only head still requires its own CI verification before merge readiness.
+
+Unresolved risks:
+
+- Worker-driven recurring expiry execution remains intentionally deferred to the later Notifications/Worker slice; this slice only provides the atomic expiry operation.
+- Requests frontend behavior remains intentionally unchanged until Slice 4.
+- PR #320 must remain unmerged until its exact final ledger head passes CI and explicit merge authorization is provided.
 
 ### Slice 4 - Requests frontend
 

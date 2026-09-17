@@ -7,6 +7,7 @@ import type {
 import type {
   HelpRequestPage,
   HelpRequestRecord,
+  HelpRequestResponseRecord,
   RequestRepository,
   RequestVisibilityReader,
 } from "../application/request.repository.js";
@@ -41,11 +42,33 @@ const helpRequestSelect = Prisma.validator<Prisma.HelpRequestSelect>()({
   updatedAt: true,
 });
 
+const helpRequestResponseSelect = Prisma.validator<Prisma.HelpRequestResponseSelect>()({
+  id: true,
+  requestId: true,
+  responderUserId: true,
+  message: true,
+  status: true,
+  createdAt: true,
+  updatedAt: true,
+  acceptedAt: true,
+  declinedAt: true,
+  withdrawnAt: true,
+});
+
 type HelpRequestRow = Prisma.HelpRequestGetPayload<{ select: typeof helpRequestSelect }>;
+type HelpRequestResponseRow = Prisma.HelpRequestResponseGetPayload<{
+  select: typeof helpRequestResponseSelect;
+}>;
 
 const publicStatuses: HelpRequestStatus[] = ["OPEN", "IN_PROGRESS", "FULFILLED"];
 
+class RequestMutationConflict extends Error {}
+
 function record(row: HelpRequestRow): HelpRequestRecord {
+  return row;
+}
+
+function responseRecord(row: HelpRequestResponseRow): HelpRequestResponseRecord {
   return row;
 }
 
@@ -64,6 +87,15 @@ function page(rows: readonly HelpRequestRow[], limit: number): HelpRequestPage {
     items: items.map(record),
     nextCursor: rows.length > limit ? (items[items.length - 1]?.id ?? null) : null,
   };
+}
+
+function isUniqueConstraintError(error: unknown): boolean {
+  return Boolean(
+    error &&
+    typeof error === "object" &&
+    "code" in error &&
+    (error as { readonly code?: unknown }).code === "P2002",
+  );
 }
 
 export class PrismaRequestRepository implements RequestRepository, RequestVisibilityReader {
@@ -187,6 +219,152 @@ export class PrismaRequestRepository implements RequestRepository, RequestVisibi
       select: helpRequestSelect,
     });
     return row ? record(row) : null;
+  }
+
+  async getById(id: string): Promise<HelpRequestRecord | null> {
+    const row = await this.db.helpRequest.findUnique({
+      where: { id },
+      select: helpRequestSelect,
+    });
+    return row ? record(row) : null;
+  }
+
+  async createResponse(
+    requestId: string,
+    responderUserId: string,
+    message: string,
+  ): Promise<HelpRequestResponseRecord | null> {
+    try {
+      return responseRecord(
+        await this.db.helpRequestResponse.create({
+          data: { requestId, responderUserId, message },
+          select: helpRequestResponseSelect,
+        }),
+      );
+    } catch (error) {
+      if (isUniqueConstraintError(error)) return null;
+      throw error;
+    }
+  }
+
+  async listResponses(requestId: string): Promise<readonly HelpRequestResponseRecord[]> {
+    const rows = await this.db.helpRequestResponse.findMany({
+      where: { requestId },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      select: helpRequestResponseSelect,
+    });
+    return rows.map(responseRecord);
+  }
+
+  async getResponseById(
+    requestId: string,
+    responseId: string,
+  ): Promise<HelpRequestResponseRecord | null> {
+    const row = await this.db.helpRequestResponse.findFirst({
+      where: { id: responseId, requestId },
+      select: helpRequestResponseSelect,
+    });
+    return row ? responseRecord(row) : null;
+  }
+
+  async getResponseByResponder(
+    requestId: string,
+    responderUserId: string,
+  ): Promise<HelpRequestResponseRecord | null> {
+    const row = await this.db.helpRequestResponse.findUnique({
+      where: { requestId_responderUserId: { requestId, responderUserId } },
+      select: helpRequestResponseSelect,
+    });
+    return row ? responseRecord(row) : null;
+  }
+
+  async acceptResponse(
+    requestId: string,
+    responseId: string,
+  ): Promise<HelpRequestResponseRecord | null> {
+    const now = new Date();
+    try {
+      return await this.db.$transaction(async (tx) => {
+        const responseUpdate = await tx.helpRequestResponse.updateMany({
+          where: { id: responseId, requestId, status: "PENDING" },
+          data: { status: "ACCEPTED", acceptedAt: now },
+        });
+        if (responseUpdate.count !== 1) return null;
+
+        const requestUpdate = await tx.helpRequest.updateMany({
+          where: { id: requestId, status: { in: ["OPEN", "IN_PROGRESS"] } },
+          data: { status: "IN_PROGRESS" },
+        });
+        if (requestUpdate.count !== 1) throw new RequestMutationConflict();
+
+        const row = await tx.helpRequestResponse.findUnique({
+          where: { id: responseId },
+          select: helpRequestResponseSelect,
+        });
+        if (!row) throw new RequestMutationConflict();
+        return responseRecord(row);
+      });
+    } catch (error) {
+      if (error instanceof RequestMutationConflict) return null;
+      throw error;
+    }
+  }
+
+  async declineResponse(
+    requestId: string,
+    responseId: string,
+  ): Promise<HelpRequestResponseRecord | null> {
+    const result = await this.db.helpRequestResponse.updateMany({
+      where: { id: responseId, requestId, status: "PENDING" },
+      data: { status: "DECLINED", declinedAt: new Date() },
+    });
+    if (result.count !== 1) return null;
+    return this.getResponseById(requestId, responseId);
+  }
+
+  async withdrawResponse(
+    requestId: string,
+    responseId: string,
+  ): Promise<HelpRequestResponseRecord | null> {
+    const result = await this.db.helpRequestResponse.updateMany({
+      where: {
+        id: responseId,
+        requestId,
+        status: { in: ["PENDING", "ACCEPTED"] },
+      },
+      data: { status: "WITHDRAWN", withdrawnAt: new Date() },
+    });
+    if (result.count !== 1) return null;
+    return this.getResponseById(requestId, responseId);
+  }
+
+  async transitionRequestStatus(
+    id: string,
+    from: readonly HelpRequestStatus[],
+    to: HelpRequestStatus,
+  ): Promise<HelpRequestRecord | null> {
+    const now = new Date();
+    const result = await this.db.helpRequest.updateMany({
+      where: { id, status: { in: [...from] } },
+      data: {
+        status: to,
+        ...(to === "FULFILLED" ? { fulfilledAt: now } : {}),
+        ...(to === "CANCELLED" ? { cancelledAt: now } : {}),
+      },
+    });
+    if (result.count !== 1) return null;
+    return this.getById(id);
+  }
+
+  async expireDue(now: Date): Promise<number> {
+    const result = await this.db.helpRequest.updateMany({
+      where: {
+        status: { in: ["OPEN", "IN_PROGRESS"] },
+        expiresAt: { not: null, lte: now },
+      },
+      data: { status: "EXPIRED" },
+    });
+    return result.count;
   }
 
   async communityRole(communityId: string, userId: string) {

@@ -41,6 +41,13 @@ enum HelpRequestStatus {
   EXPIRED
 }
 
+enum HelpRequestResponseStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  WITHDRAWN
+}
+
 model HelpRequest {
   id                           String                     @id @default(cuid())
   createdByUserId              String
@@ -81,4 +88,21 @@ model HelpRequest {
   @@index([category, status, createdAt])
   @@index([sport, status, createdAt])
   @@index([expiresAt, status])
+}
+
+model HelpRequestResponse {
+  id              String                    @id @default(cuid())
+  requestId       String
+  responderUserId String
+  message         String
+  status          HelpRequestResponseStatus @default(PENDING)
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+  acceptedAt      DateTime?
+  declinedAt      DateTime?
+  withdrawnAt     DateTime?
+
+  @@unique([requestId, responderUserId])
+  @@index([requestId, status, createdAt])
+  @@index([responderUserId, status, createdAt])
 }
