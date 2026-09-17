@@ -1,8 +1,5 @@
 import { Router } from "express";
-import {
-  helpRequestCreateSchema,
-  helpRequestListQuerySchema,
-} from "@hooma/contracts/requests";
+import { helpRequestCreateSchema, helpRequestListQuerySchema } from "@hooma/contracts/requests";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import { getAuth } from "../../identity/http/auth-request.js";
 import type { RequestService } from "../application/request.service.js";
@@ -45,11 +42,12 @@ export function createRequestMemberRouter(service: RequestService): Router {
   router.post(
     "/",
     asyncHandler(async (request, response) => {
-      response
-        .status(201)
-        .json(
-          await service.create(getAuth(request).userId, helpRequestCreateSchema.parse(request.body)),
-        );
+      response.status(201).json(
+        await service.create(
+          getAuth(request).userId,
+          helpRequestCreateSchema.parse(request.body),
+        ),
+      );
     }),
   );
 
