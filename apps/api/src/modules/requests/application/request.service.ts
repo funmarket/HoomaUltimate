@@ -200,7 +200,9 @@ export class RequestService {
       return role === "FOUNDER" || role === "COACH";
     }
     if (request.publisherTeamId) {
-      return (await this.visibility.teamResponsibility(request.publisherTeamId, userId)) === "COACH";
+      return (
+        (await this.visibility.teamResponsibility(request.publisherTeamId, userId)) === "COACH"
+      );
     }
     if (request.publisherAthletesCommunityId) {
       const role = await this.visibility.athletesRole(request.publisherAthletesCommunityId, userId);
