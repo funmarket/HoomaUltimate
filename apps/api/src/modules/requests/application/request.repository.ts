@@ -69,22 +69,13 @@ export interface RequestRepository {
     message: string,
   ): Promise<HelpRequestResponseRecord | null>;
   listResponses(requestId: string): Promise<readonly HelpRequestResponseRecord[]>;
-  getResponseById(
-    requestId: string,
-    responseId: string,
-  ): Promise<HelpRequestResponseRecord | null>;
+  getResponseById(requestId: string, responseId: string): Promise<HelpRequestResponseRecord | null>;
   getResponseByResponder(
     requestId: string,
     responderUserId: string,
   ): Promise<HelpRequestResponseRecord | null>;
-  acceptResponse(
-    requestId: string,
-    responseId: string,
-  ): Promise<HelpRequestResponseRecord | null>;
-  declineResponse(
-    requestId: string,
-    responseId: string,
-  ): Promise<HelpRequestResponseRecord | null>;
+  acceptResponse(requestId: string, responseId: string): Promise<HelpRequestResponseRecord | null>;
+  declineResponse(requestId: string, responseId: string): Promise<HelpRequestResponseRecord | null>;
   withdrawResponse(
     requestId: string,
     responseId: string,
