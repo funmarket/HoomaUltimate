@@ -7,7 +7,6 @@ import type {
   HelpRequestResponse,
   HelpRequestResponseList,
 } from "@hooma/contracts/requests";
-import { AppError } from "../../../http/errors/app-error.js";
 import { RequestError } from "../domain/request-error.js";
 import type {
   HelpRequestRecord,
@@ -86,14 +85,14 @@ export class RequestService {
     const request = await this.repository.getVisibleToMember(userId, requestId);
     if (!request) throw new RequestError("REQUEST_NOT_FOUND", "Request not found");
     if (request.status !== "OPEN" && request.status !== "IN_PROGRESS") {
-      throw new AppError(409, "REQUEST_NOT_RESPONDABLE", "Request is not accepting responses");
+      throw new RequestError("REQUEST_NOT_RESPONDABLE", "Request is not accepting responses");
     }
     if (request.createdByUserId === userId || (await this.canManage(userId, request))) {
-      throw new AppError(409, "REQUEST_SELF_RESPONSE_FORBIDDEN", "Request managers cannot respond");
+      throw new RequestError("REQUEST_SELF_RESPONSE_FORBIDDEN", "Request managers cannot respond");
     }
     const created = await this.repository.createResponse(requestId, userId, input.message);
     if (!created) {
-      throw new AppError(409, "REQUEST_RESPONSE_ALREADY_EXISTS", "Response already exists");
+      throw new RequestError("REQUEST_RESPONSE_ALREADY_EXISTS", "Response already exists");
     }
     return serializeResponse(created);
   }
@@ -118,7 +117,7 @@ export class RequestService {
     this.requireMutable(request);
     const response = await this.repository.acceptResponse(requestId, responseId);
     if (!response) {
-      throw new AppError(409, "REQUEST_RESPONSE_NOT_PENDING", "Response is not pending");
+      throw new RequestError("REQUEST_RESPONSE_NOT_PENDING", "Response is not pending");
     }
     return serializeResponse(response);
   }
@@ -132,7 +131,7 @@ export class RequestService {
     this.requireMutable(request);
     const response = await this.repository.declineResponse(requestId, responseId);
     if (!response) {
-      throw new AppError(409, "REQUEST_RESPONSE_NOT_PENDING", "Response is not pending");
+      throw new RequestError("REQUEST_RESPONSE_NOT_PENDING", "Response is not pending");
     }
     return serializeResponse(response);
   }
@@ -148,7 +147,7 @@ export class RequestService {
     }
     const withdrawn = await this.repository.withdrawResponse(requestId, responseId);
     if (!withdrawn) {
-      throw new AppError(409, "REQUEST_RESPONSE_NOT_WITHDRAWABLE", "Response cannot be withdrawn");
+      throw new RequestError("REQUEST_RESPONSE_NOT_WITHDRAWABLE", "Response cannot be withdrawn");
     }
     return serializeResponse(withdrawn);
   }
@@ -161,7 +160,7 @@ export class RequestService {
       ["OPEN", "IN_PROGRESS"],
       "FULFILLED",
     );
-    if (!updated) throw new AppError(409, "REQUEST_STATUS_CONFLICT", "Request status changed");
+    if (!updated) throw new RequestError("REQUEST_STATUS_CONFLICT", "Request status changed");
     return serialize(updated);
   }
 
@@ -173,7 +172,7 @@ export class RequestService {
       ["OPEN", "IN_PROGRESS"],
       "CANCELLED",
     );
-    if (!updated) throw new AppError(409, "REQUEST_STATUS_CONFLICT", "Request status changed");
+    if (!updated) throw new RequestError("REQUEST_STATUS_CONFLICT", "Request status changed");
     return serialize(updated);
   }
 
@@ -191,7 +190,7 @@ export class RequestService {
 
   private requireMutable(request: HelpRequestRecord): void {
     if (request.status !== "OPEN" && request.status !== "IN_PROGRESS") {
-      throw new AppError(409, "REQUEST_NOT_MUTABLE", "Request is not mutable");
+      throw new RequestError("REQUEST_NOT_MUTABLE", "Request is not mutable");
     }
   }
 
