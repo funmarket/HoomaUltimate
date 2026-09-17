@@ -85,10 +85,7 @@ function repository(overrides: Partial<RequestRepository> = {}): RequestReposito
       return responseRecord({ responderUserId, message });
     },
     async listResponses() {
-      return [
-        responseRecord(),
-        responseRecord({ id: "response-2", responderUserId: "helper-2" }),
-      ];
+      return [responseRecord(), responseRecord({ id: "response-2", responderUserId: "helper-2" })];
     },
     async getResponseById() {
       return responseRecord();
@@ -117,10 +114,8 @@ function repository(overrides: Partial<RequestRepository> = {}): RequestReposito
     async transitionRequestStatus(_id, _from, to) {
       return requestRecord({
         status: to,
-        fulfilledAt:
-          to === "FULFILLED" ? new Date("2026-09-17T01:10:00.000Z") : null,
-        cancelledAt:
-          to === "CANCELLED" ? new Date("2026-09-17T01:10:00.000Z") : null,
+        fulfilledAt: to === "FULFILLED" ? new Date("2026-09-17T01:10:00.000Z") : null,
+        cancelledAt: to === "CANCELLED" ? new Date("2026-09-17T01:10:00.000Z") : null,
       });
     },
     async expireDue() {
