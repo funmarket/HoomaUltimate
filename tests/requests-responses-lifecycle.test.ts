@@ -43,7 +43,9 @@ function requestRecord(overrides: Partial<HelpRequestRecord> = {}): HelpRequestR
   };
 }
 
-function responseRecord(overrides: Partial<HelpRequestResponseRecord> = {}): HelpRequestResponseRecord {
+function responseRecord(
+  overrides: Partial<HelpRequestResponseRecord> = {},
+): HelpRequestResponseRecord {
   return {
     id: "response-1",
     requestId: "request-1",
@@ -95,13 +97,22 @@ function repository(overrides: Partial<RequestRepository> = {}): RequestReposito
       return responderUserId === "helper-1" ? responseRecord() : null;
     },
     async acceptResponse() {
-      return responseRecord({ status: "ACCEPTED", acceptedAt: new Date("2026-09-17T01:10:00.000Z") });
+      return responseRecord({
+        status: "ACCEPTED",
+        acceptedAt: new Date("2026-09-17T01:10:00.000Z"),
+      });
     },
     async declineResponse() {
-      return responseRecord({ status: "DECLINED", declinedAt: new Date("2026-09-17T01:10:00.000Z") });
+      return responseRecord({
+        status: "DECLINED",
+        declinedAt: new Date("2026-09-17T01:10:00.000Z"),
+      });
     },
     async withdrawResponse() {
-      return responseRecord({ status: "WITHDRAWN", withdrawnAt: new Date("2026-09-17T01:10:00.000Z") });
+      return responseRecord({
+        status: "WITHDRAWN",
+        withdrawnAt: new Date("2026-09-17T01:10:00.000Z"),
+      });
     },
     async transitionRequestStatus(_id, _from, to) {
       return requestRecord({
@@ -149,7 +160,9 @@ test("request managers cannot respond to their own Request", async () => {
 
 test("visible members can create one pending response and duplicates are rejected", async () => {
   const service = new RequestService(repository(), visibility());
-  const created = await service.respond("helper-1", "request-1", { message: "I can help Saturday." });
+  const created = await service.respond("helper-1", "request-1", {
+    message: "I can help Saturday.",
+  });
   assert.equal(created.status, "PENDING");
   assert.equal(created.responderUserId, "helper-1");
 
