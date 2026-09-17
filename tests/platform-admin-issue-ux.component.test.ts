@@ -37,6 +37,13 @@ function installDom() {
   return dom;
 }
 
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+}
+
 const issue: AdminIssueSummary = {
   id: "outbox:test-issue",
   title: "Delivery failure",
@@ -52,6 +59,21 @@ const issue: AdminIssueSummary = {
 
 test("Admin Action Inbox uses controlled reason confirmation for issue dispositions", async () => {
   const dom = installDom();
+  const originalFetch = globalThis.fetch;
+  const requests: Array<{ method: string; path: string; body: unknown }> = [];
+  globalThis.fetch = async (input, init) => {
+    const url = new URL(String(input));
+    const method = init?.method ?? "GET";
+    requests.push({
+      method,
+      path: url.pathname,
+      body: init?.body ? JSON.parse(String(init.body)) : null,
+    });
+    if (method === "POST" && url.pathname.endsWith("/resolve")) return json({ ok: true });
+    if (method === "GET" && url.pathname === "/api/v1/admin/issues") return json([]);
+    return json({ error: { message: `Unexpected request: ${method} ${url.pathname}` } }, 500);
+  };
+
   const React = await import("react");
   Object.defineProperty(globalThis, "React", {
     value: React,
@@ -59,59 +81,59 @@ test("Admin Action Inbox uses controlled reason confirmation for issue dispositi
     configurable: true,
   });
   const { cleanup, fireEvent, render, waitFor } = await import("@testing-library/react");
+  const { HoomaFrontendProvider } = await import("@hooma/frontend");
   const { ControlRoomOverview } = await import("../apps/web/src/admin/ControlRoomOverview");
-  const calls: Array<{ issueId: string; disposition: "resolve" | "dismiss"; note: string }> = [];
 
   try {
+    const props = {
+      overview: null,
+      overviewState: null,
+      attentionItems: [
+        { label: "Admin issues", count: 1, href: "#admin-action-inbox", state: "ready" as const },
+      ],
+      adminIssues: [issue],
+      adminIssuesState: "ready" as const,
+      recentAudit: [],
+      auditState: null,
+    };
     const view = render(
-      React.createElement(ControlRoomOverview, {
-        overview: null,
-        overviewState: null,
-        attentionItems: [],
-        adminIssues: [issue],
-        adminIssuesState: "ready",
-        canManageAdminIssues: true,
-        pendingIssueAction: null,
-        onIssueDisposition: async (issueId, disposition, note) => {
-          calls.push({ issueId, disposition, note });
-          return true;
-        },
-        recentAudit: [],
-        auditState: null,
-      }),
+      React.createElement(
+        HoomaFrontendProvider,
+        { transport: { baseUrl: "http://api.test" } },
+        React.createElement(ControlRoomOverview, props),
+      ),
     );
 
     fireEvent.click(view.getByRole("button", { name: "Resolve" }));
     const note = view.getByLabelText("Reason for resolving issue");
-    assert.ok(note);
     fireEvent.change(note, { target: { value: "Delivery recovered" } });
     fireEvent.click(view.getByRole("button", { name: "Confirm resolve" }));
 
-    await waitFor(() => assert.equal(calls.length, 1));
-    assert.deepEqual(calls[0], {
-      issueId: issue.id,
-      disposition: "resolve",
-      note: "Delivery recovered",
+    await waitFor(() => assert.ok(view.getByText("Admin issue resolved and audited.")));
+    assert.deepEqual(requests[0], {
+      method: "POST",
+      path: `/api/v1/admin/issues/${encodeURIComponent(issue.id)}/resolve`,
+      body: { reason: "Delivery recovered" },
     });
-    await waitFor(() => assert.equal(view.queryByLabelText("Reason for resolving issue"), null));
+    assert.equal(requests[1]?.method, "GET");
+    assert.equal(requests[1]?.path, "/api/v1/admin/issues");
+    assert.ok(view.getByText("No operational admin issues require attention."));
+    assert.ok(view.getByText("0"));
 
     view.rerender(
-      React.createElement(ControlRoomOverview, {
-        overview: null,
-        overviewState: null,
-        attentionItems: [],
-        adminIssues: [issue],
-        adminIssuesState: "ready",
-        canManageAdminIssues: false,
-        pendingIssueAction: null,
-        onIssueDisposition: async () => true,
-        recentAudit: [],
-        auditState: null,
-      }),
+      React.createElement(
+        HoomaFrontendProvider,
+        { transport: { baseUrl: "http://api.test" } },
+        React.createElement(ControlRoomOverview, {
+          ...props,
+          attentionItems: [],
+        }),
+      ),
     );
     assert.equal(view.queryByRole("button", { name: "Resolve" }), null);
     assert.equal(view.queryByRole("button", { name: "Dismiss" }), null);
   } finally {
+    globalThis.fetch = originalFetch;
     cleanup();
     dom.window.close();
   }
