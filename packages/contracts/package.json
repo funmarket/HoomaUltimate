@@ -72,6 +72,10 @@
       "types": "./src/profile.ts",
       "default": "./dist/profile.js"
     },
+    "./requests": {
+      "types": "./src/requests.ts",
+      "default": "./dist/requests.js"
+    },
     "./ride-community-interaction": {
       "types": "./src/ride-community-interaction.ts",
       "default": "./dist/ride-community-interaction.js"

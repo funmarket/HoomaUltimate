@@ -1,0 +1,84 @@
+enum HelpAudienceScope {
+  PUBLIC
+  HOOMA_COMMUNITY
+  ATHLETES_COMMUNITY
+}
+
+enum HelpCategory {
+  PEOPLE
+  ITEM
+  PLACE
+  TRANSPORT
+  SERVICE
+  EDUCATION
+  COMMUNITY
+  OTHER
+}
+
+enum HelpItemKind {
+  FOOTWEAR
+  CLOTHING
+  SPORTS_GEAR
+  BOOKS
+  EQUIPMENT
+  SCHOOL_SUPPLIES
+  HOUSEHOLD
+  BIKE
+  OTHER
+}
+
+enum RequestConditionPreference {
+  ANY
+  NEW_ONLY
+  USED_OK
+}
+
+enum HelpRequestStatus {
+  OPEN
+  IN_PROGRESS
+  FULFILLED
+  CANCELLED
+  EXPIRED
+}
+
+model HelpRequest {
+  id                           String                     @id @default(cuid())
+  createdByUserId              String
+  publisherCommunityId         String?
+  publisherTeamId              String?
+  publisherAthletesCommunityId String?
+  audienceScope                HelpAudienceScope
+  audienceCommunityId          String?
+  audienceAthletesCommunityId  String?
+  category                     HelpCategory
+  itemKind                     HelpItemKind?
+  sport                        AthletesSport?
+  title                        String
+  description                  String
+  quantityNeeded               Int?
+  sizeLabel                    String?
+  conditionPreference          RequestConditionPreference?
+  placeId                      String?
+  city                         String?
+  houma                        String?
+  locationNote                 String?
+  neededByAt                   DateTime?
+  expiresAt                    DateTime?
+  status                       HelpRequestStatus          @default(OPEN)
+  fulfilledAt                  DateTime?
+  cancelledAt                  DateTime?
+  createdAt                    DateTime                   @default(now())
+  updatedAt                    DateTime                   @updatedAt
+
+  @@index([status, createdAt, id])
+  @@index([audienceScope, status, createdAt])
+  @@index([audienceCommunityId, status, createdAt])
+  @@index([audienceAthletesCommunityId, status, createdAt])
+  @@index([createdByUserId, status, createdAt])
+  @@index([publisherCommunityId, status, createdAt])
+  @@index([publisherTeamId, status, createdAt])
+  @@index([publisherAthletesCommunityId, status, createdAt])
+  @@index([category, status, createdAt])
+  @@index([sport, status, createdAt])
+  @@index([expiresAt, status])
+}

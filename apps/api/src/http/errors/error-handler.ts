@@ -9,6 +9,10 @@ import {
   IdentityAdminError,
   type IdentityAdminErrorCode,
 } from "../../modules/identity/domain/identity-admin-error.js";
+import {
+  RequestError,
+  type RequestErrorCode,
+} from "../../modules/requests/domain/request-error.js";
 import { RideError, type RideErrorCode } from "../../modules/rides/domain/ride-error.js";
 import { AppError } from "./app-error.js";
 
@@ -115,6 +119,14 @@ const RIDE_STATUS: Record<RideErrorCode, number> = {
   RIDE_WHISTLE_SELF_FORBIDDEN: 409,
 };
 
+const REQUEST_STATUS: Record<RequestErrorCode, number> = {
+  REQUEST_NOT_FOUND: 404,
+  REQUEST_COMMUNITY_PUBLISHER_FORBIDDEN: 403,
+  REQUEST_TEAM_PUBLISHER_FORBIDDEN: 403,
+  REQUEST_ATHLETES_PUBLISHER_FORBIDDEN: 403,
+  REQUEST_AUDIENCE_MEMBERSHIP_REQUIRED: 403,
+};
+
 const IDENTITY_ADMIN_STATUS: Record<IdentityAdminErrorCode, number> = {
   USER_SEARCH_QUERY_REQUIRED: 400,
   USER_NOT_FOUND: 404,
@@ -140,6 +152,12 @@ export const errorHandler: ErrorRequestHandler = (error, _request, response, _ne
   if (error instanceof RideError) {
     response
       .status(RIDE_STATUS[error.code])
+      .json({ error: { code: error.code, message: error.message } });
+    return;
+  }
+  if (error instanceof RequestError) {
+    response
+      .status(REQUEST_STATUS[error.code])
       .json({ error: { code: error.code, message: error.message } });
     return;
   }

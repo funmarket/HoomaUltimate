@@ -1,0 +1,118 @@
+import { z } from "zod";
+import { athletesSportSchema } from "./athletes.js";
+import { helpAudienceScopeSchema, helpCategorySchema, helpItemKindSchema } from "./help.js";
+
+const idSchema = z.string().trim().min(1);
+const optionalIdSchema = idSchema.optional().nullable();
+const optionalText = (max: number) => z.string().trim().min(1).max(max).optional().nullable();
+
+export const requestConditionPreferenceSchema = z.enum(["ANY", "NEW_ONLY", "USED_OK"]);
+export const helpRequestStatusSchema = z.enum([
+  "OPEN",
+  "IN_PROGRESS",
+  "FULFILLED",
+  "CANCELLED",
+  "EXPIRED",
+]);
+
+export const helpRequestPublisherSchema = z
+  .object({
+    publisherCommunityId: optionalIdSchema,
+    publisherTeamId: optionalIdSchema,
+    publisherAthletesCommunityId: optionalIdSchema,
+  })
+  .strict()
+  .superRefine((input, context) => {
+    const publisherCount = [
+      input.publisherCommunityId,
+      input.publisherTeamId,
+      input.publisherAthletesCommunityId,
+    ].filter((value) => value !== undefined && value !== null).length;
+    if (publisherCount > 1) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "A Request may have at most one official publisher",
+      });
+    }
+  });
+
+export const helpRequestAudienceSchema = z.discriminatedUnion("scope", [
+  z.object({ scope: z.literal("PUBLIC") }).strict(),
+  z.object({ scope: z.literal("HOOMA_COMMUNITY"), communityId: idSchema }).strict(),
+  z.object({ scope: z.literal("ATHLETES_COMMUNITY"), athletesCommunityId: idSchema }).strict(),
+]);
+
+export const helpRequestCreateSchema = z
+  .object({
+    publisher: helpRequestPublisherSchema.default({}),
+    audience: helpRequestAudienceSchema,
+    category: helpCategorySchema,
+    itemKind: helpItemKindSchema.optional().nullable(),
+    sport: athletesSportSchema.optional().nullable(),
+    title: z.string().trim().min(3).max(120),
+    description: z.string().trim().min(10).max(1200),
+    quantityNeeded: z.number().int().positive().optional().nullable(),
+    sizeLabel: optionalText(40),
+    conditionPreference: requestConditionPreferenceSchema.optional().nullable(),
+    placeId: optionalIdSchema,
+    city: optionalText(100),
+    houma: optionalText(100),
+    locationNote: optionalText(240),
+    neededByAt: z.string().datetime().optional().nullable(),
+    expiresAt: z.string().datetime().optional().nullable(),
+  })
+  .strict();
+
+export const helpRequestListQuerySchema = z.object({
+  cursor: idSchema.optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(30),
+  category: helpCategorySchema.optional(),
+  sport: athletesSportSchema.optional(),
+  city: z.string().trim().min(1).max(100).optional(),
+  houma: z.string().trim().min(1).max(100).optional(),
+  status: helpRequestStatusSchema.optional(),
+});
+
+export const helpRequestSchema = z.object({
+  id: idSchema,
+  createdByUserId: idSchema,
+  publisherCommunityId: idSchema.nullable(),
+  publisherTeamId: idSchema.nullable(),
+  publisherAthletesCommunityId: idSchema.nullable(),
+  audienceScope: helpAudienceScopeSchema,
+  audienceCommunityId: idSchema.nullable(),
+  audienceAthletesCommunityId: idSchema.nullable(),
+  category: helpCategorySchema,
+  itemKind: helpItemKindSchema.nullable(),
+  sport: athletesSportSchema.nullable(),
+  title: z.string().min(3).max(120),
+  description: z.string().min(10).max(1200),
+  quantityNeeded: z.number().int().positive().nullable(),
+  sizeLabel: z.string().nullable(),
+  conditionPreference: requestConditionPreferenceSchema.nullable(),
+  placeId: idSchema.nullable(),
+  city: z.string().nullable(),
+  houma: z.string().nullable(),
+  locationNote: z.string().nullable(),
+  neededByAt: z.string().datetime().nullable(),
+  expiresAt: z.string().datetime().nullable(),
+  status: helpRequestStatusSchema,
+  fulfilledAt: z.string().datetime().nullable(),
+  cancelledAt: z.string().datetime().nullable(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+
+export const helpRequestListSchema = z.object({
+  items: z.array(helpRequestSchema),
+  nextCursor: idSchema.nullable(),
+});
+
+export type RequestConditionPreference = z.infer<typeof requestConditionPreferenceSchema>;
+export type HelpRequestStatus = z.infer<typeof helpRequestStatusSchema>;
+export type HelpRequestPublisherInput = z.infer<typeof helpRequestPublisherSchema>;
+export type HelpRequestAudienceInput = z.infer<typeof helpRequestAudienceSchema>;
+export type HelpRequestCreateInput = z.infer<typeof helpRequestCreateSchema>;
+export type HelpRequestListQuery = z.infer<typeof helpRequestListQuerySchema>;
+export type HelpRequest = z.infer<typeof helpRequestSchema>;
+export type HelpRequestList = z.infer<typeof helpRequestListSchema>;
