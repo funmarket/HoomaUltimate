@@ -29,7 +29,10 @@ function AdminIssueDispositionControls({
   onCompleted,
 }: {
   readonly issue: AdminIssueSummary;
-  readonly onCompleted: (issues: readonly AdminIssueSummary[], message: string) => void;
+  readonly onCompleted: (
+    issues: readonly AdminIssueSummary[],
+    message: string,
+  ) => void;
 }) {
   const { transport } = useHoomaFrontend();
   const adminApi = useMemo(() => createPlatformAdminApi(transport), [transport]);
@@ -79,7 +82,9 @@ function AdminIssueDispositionControls({
       setDisposition(null);
       setNote("");
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Unable to update admin issue");
+      setError(
+        reason instanceof Error ? reason.message : "Unable to update admin issue",
+      );
     } finally {
       actionInFlight.current = false;
       setPending(false);
@@ -96,7 +101,9 @@ function AdminIssueDispositionControls({
               Reason for {disposition === "resolve" ? "resolving" : "dismissing"} issue
             </span>
             <textarea
-              aria-label={`Reason for ${disposition === "resolve" ? "resolving" : "dismissing"} issue`}
+              aria-label={`Reason for ${
+                disposition === "resolve" ? "resolving" : "dismissing"
+              } issue`}
               value={note}
               maxLength={1000}
               rows={3}
@@ -145,14 +152,18 @@ export function ControlRoomOverview({
   readonly recentAudit: readonly PlatformAuditEntry[];
   readonly auditState: AttentionLoadState | null;
 }) {
-  const [visibleAdminIssues, setVisibleAdminIssues] = useState<readonly AdminIssueSummary[]>(adminIssues);
+  const [visibleAdminIssues, setVisibleAdminIssues] = useState<readonly AdminIssueSummary[]>(
+    adminIssues,
+  );
   const [issueMessage, setIssueMessage] = useState("");
 
   useEffect(() => {
     setVisibleAdminIssues(adminIssues);
   }, [adminIssues]);
 
-  const canManageAdminIssues = attentionItems.some((item) => item.href === "#admin-action-inbox");
+  const canManageAdminIssues = attentionItems.some(
+    (item) => item.href === "#admin-action-inbox",
+  );
   const visibleAttentionItems = attentionItems.map((item) =>
     item.href === "#admin-action-inbox" && item.state === "ready"
       ? { ...item, count: visibleAdminIssues.length }
@@ -230,7 +241,9 @@ export function ControlRoomOverview({
             </div>
           </div>
           {issueMessage ? <p className="status">{issueMessage}</p> : null}
-          {adminIssuesState === "loading" ? <p className="muted">Loading admin issues…</p> : null}
+          {adminIssuesState === "loading" ? (
+            <p className="muted">Loading admin issues…</p>
+          ) : null}
           {adminIssuesState === "error" ? (
             <p className="muted">Admin issues are unavailable.</p>
           ) : null}
@@ -278,8 +291,12 @@ export function ControlRoomOverview({
               View Audit Archive
             </a>
           </div>
-          {auditState === "loading" ? <p className="muted">Loading recent activity…</p> : null}
-          {auditState === "error" ? <p className="muted">Recent activity is unavailable.</p> : null}
+          {auditState === "loading" ? (
+            <p className="muted">Loading recent activity…</p>
+          ) : null}
+          {auditState === "error" ? (
+            <p className="muted">Recent activity is unavailable.</p>
+          ) : null}
           {auditState === "ready" && !recentAudit.length ? (
             <p className="muted">No audit entries are available.</p>
           ) : null}
