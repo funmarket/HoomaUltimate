@@ -1,4 +1,11 @@
-import type { AdminIssueSummary, PlatformAuditEntry, PlatformOverview } from "@hooma/frontend";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import {
+  createPlatformAdminApi,
+  useHoomaFrontend,
+  type AdminIssueSummary,
+  type PlatformAuditEntry,
+  type PlatformOverview,
+} from "@hooma/frontend";
 
 export type AttentionLoadState = "loading" | "ready" | "error";
 
@@ -9,29 +16,150 @@ export interface AttentionItem {
   readonly state: AttentionLoadState;
 }
 
+type IssueDisposition = "resolve" | "dismiss";
+
 function attentionStateLabel(item: AttentionItem): string {
   if (item.state === "loading") return "Loading";
   if (item.state === "error") return "Unavailable";
   return item.count === 0 ? "Clear" : "Open";
 }
 
+function AdminIssueDispositionControls({
+  issue,
+  onIssuesRefreshed,
+}: {
+  readonly issue: AdminIssueSummary;
+  readonly onIssuesRefreshed: (issues: readonly AdminIssueSummary[]) => void;
+}) {
+  const { transport } = useHoomaFrontend();
+  const adminApi = useMemo(() => createPlatformAdminApi(transport), [transport]);
+  const [disposition, setDisposition] = useState<IssueDisposition | null>(null);
+  const [note, setNote] = useState("");
+  const [pending, setPending] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const actionInFlight = useRef(false);
+
+  function begin(nextDisposition: IssueDisposition) {
+    if (actionInFlight.current) return;
+    setDisposition(nextDisposition);
+    setNote("");
+    setMessage("");
+    setError("");
+  }
+
+  function cancel() {
+    if (actionInFlight.current) return;
+    setDisposition(null);
+    setNote("");
+    setError("");
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!disposition || actionInFlight.current) return;
+    const reason = note.trim();
+    if (!reason) {
+      setError("A reason is required.");
+      return;
+    }
+
+    actionInFlight.current = true;
+    setPending(true);
+    setError("");
+    setMessage("");
+    try {
+      if (disposition === "resolve") {
+        await adminApi.resolveIssue(issue.id, { reason });
+      } else {
+        await adminApi.dismissIssue(issue.id, { reason });
+      }
+      const refreshedIssues = await adminApi.issues();
+      onIssuesRefreshed(refreshedIssues);
+      setMessage(`Admin issue ${disposition === "resolve" ? "resolved" : "dismissed"} and audited.`);
+      setDisposition(null);
+      setNote("");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unable to update admin issue");
+    } finally {
+      actionInFlight.current = false;
+      setPending(false);
+    }
+  }
+
+  return (
+    <div>
+      {message ? <p className="status">{message}</p> : null}
+      {error ? <p className="error">{error}</p> : null}
+      {disposition ? (
+        <form className="admin-manager-form" onSubmit={(event) => void submit(event)}>
+          <label>
+            <span>
+              Reason for {disposition === "resolve" ? "resolving" : "dismissing"} issue
+            </span>
+            <textarea
+              aria-label={`Reason for ${disposition === "resolve" ? "resolving" : "dismissing"} issue`}
+              value={note}
+              maxLength={1000}
+              rows={3}
+              required
+              disabled={pending}
+              onChange={(event) => setNote(event.target.value)}
+            />
+          </label>
+          <button type="submit" disabled={pending}>
+            {pending
+              ? "Saving…"
+              : `Confirm ${disposition === "resolve" ? "resolve" : "dismiss"}`}
+          </button>
+          <button type="button" disabled={pending} onClick={cancel}>
+            Cancel
+          </button>
+        </form>
+      ) : (
+        <div className="admin-manager-form">
+          <button type="button" onClick={() => begin("resolve")}>
+            Resolve
+          </button>
+          <button type="button" onClick={() => begin("dismiss")}>
+            Dismiss
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ControlRoomOverview({
   overview,
   overviewState,
   attentionItems,
-  adminIssues,
-  adminIssuesState,
+  adminIssues = [],
+  adminIssuesState = null,
   recentAudit,
   auditState,
 }: {
   readonly overview: PlatformOverview | null;
   readonly overviewState: AttentionLoadState | null;
   readonly attentionItems: readonly AttentionItem[];
-  readonly adminIssues: readonly AdminIssueSummary[];
-  readonly adminIssuesState: AttentionLoadState | null;
+  readonly adminIssues?: readonly AdminIssueSummary[];
+  readonly adminIssuesState?: AttentionLoadState | null;
   readonly recentAudit: readonly PlatformAuditEntry[];
   readonly auditState: AttentionLoadState | null;
 }) {
+  const [visibleAdminIssues, setVisibleAdminIssues] = useState<readonly AdminIssueSummary[]>(adminIssues);
+
+  useEffect(() => {
+    setVisibleAdminIssues(adminIssues);
+  }, [adminIssues]);
+
+  const canManageAdminIssues = attentionItems.some((item) => item.href === "#admin-action-inbox");
+  const visibleAttentionItems = attentionItems.map((item) =>
+    item.href === "#admin-action-inbox" && item.state === "ready"
+      ? { ...item, count: visibleAdminIssues.length }
+      : item,
+  );
+
   return (
     <section className="admin-overview" id="control-room-overview">
       <section className="panel" id="needs-attention">
@@ -41,9 +169,9 @@ export function ControlRoomOverview({
             <h2>Needs Attention</h2>
           </div>
         </div>
-        {attentionItems.length ? (
+        {visibleAttentionItems.length ? (
           <div className="admin-attention-grid">
-            {attentionItems.map((item) => (
+            {visibleAttentionItems.map((item) => (
               <a className="admin-attention-card" href={item.href} key={item.href}>
                 <span>{item.label}</span>
                 <strong>{item.state === "ready" && item.count !== null ? item.count : "—"}</strong>
@@ -106,12 +234,12 @@ export function ControlRoomOverview({
           {adminIssuesState === "error" ? (
             <p className="muted">Admin issues are unavailable.</p>
           ) : null}
-          {adminIssuesState === "ready" && !adminIssues.length ? (
+          {adminIssuesState === "ready" && !visibleAdminIssues.length ? (
             <p className="muted">No operational admin issues require attention.</p>
           ) : null}
-          {adminIssuesState === "ready" && adminIssues.length ? (
+          {adminIssuesState === "ready" && visibleAdminIssues.length ? (
             <div className="admin-audit-list">
-              {adminIssues.map((issue) => (
+              {visibleAdminIssues.map((issue) => (
                 <article key={issue.id}>
                   <strong>{issue.title}</strong>
                   <span>
@@ -123,6 +251,12 @@ export function ControlRoomOverview({
                   <time dateTime={issue.updatedAt}>
                     {new Date(issue.updatedAt).toLocaleString()}
                   </time>
+                  {canManageAdminIssues ? (
+                    <AdminIssueDispositionControls
+                      issue={issue}
+                      onIssuesRefreshed={setVisibleAdminIssues}
+                    />
+                  ) : null}
                 </article>
               ))}
             </div>
