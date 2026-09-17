@@ -42,19 +42,18 @@ const helpRequestSelect = Prisma.validator<Prisma.HelpRequestSelect>()({
   updatedAt: true,
 });
 
-const helpRequestResponseSelect =
-  Prisma.validator<Prisma.HelpRequestResponseSelect>()({
-    id: true,
-    requestId: true,
-    responderUserId: true,
-    message: true,
-    status: true,
-    createdAt: true,
-    updatedAt: true,
-    acceptedAt: true,
-    declinedAt: true,
-    withdrawnAt: true,
-  });
+const helpRequestResponseSelect = Prisma.validator<Prisma.HelpRequestResponseSelect>()({
+  id: true,
+  requestId: true,
+  responderUserId: true,
+  message: true,
+  status: true,
+  createdAt: true,
+  updatedAt: true,
+  acceptedAt: true,
+  declinedAt: true,
+  withdrawnAt: true,
+});
 
 type HelpRequestRow = Prisma.HelpRequestGetPayload<{ select: typeof helpRequestSelect }>;
 type HelpRequestResponseRow = Prisma.HelpRequestResponseGetPayload<{
@@ -93,9 +92,9 @@ function page(rows: readonly HelpRequestRow[], limit: number): HelpRequestPage {
 function isUniqueConstraintError(error: unknown): boolean {
   return Boolean(
     error &&
-      typeof error === "object" &&
-      "code" in error &&
-      (error as { readonly code?: unknown }).code === "P2002",
+    typeof error === "object" &&
+    "code" in error &&
+    (error as { readonly code?: unknown }).code === "P2002",
   );
 }
 
