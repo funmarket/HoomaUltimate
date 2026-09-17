@@ -9,7 +9,10 @@ import {
   IdentityAdminError,
   type IdentityAdminErrorCode,
 } from "../../modules/identity/domain/identity-admin-error.js";
-import { RequestError, type RequestErrorCode } from "../../modules/requests/domain/request-error.js";
+import {
+  RequestError,
+  type RequestErrorCode,
+} from "../../modules/requests/domain/request-error.js";
 import { RideError, type RideErrorCode } from "../../modules/rides/domain/ride-error.js";
 import { AppError } from "./app-error.js";
 
