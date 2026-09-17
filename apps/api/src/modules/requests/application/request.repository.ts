@@ -69,7 +69,10 @@ export interface RequestRepository {
     message: string,
   ): Promise<HelpRequestResponseRecord | null>;
   listResponses(requestId: string): Promise<readonly HelpRequestResponseRecord[]>;
-  getResponseById(requestId: string, responseId: string): Promise<HelpRequestResponseRecord | null>;
+  getResponseById(
+    requestId: string,
+    responseId: string,
+  ): Promise<HelpRequestResponseRecord | null>;
   getResponseByResponder(
     requestId: string,
     responderUserId: string,
