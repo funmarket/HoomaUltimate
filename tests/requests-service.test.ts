@@ -58,6 +58,36 @@ function repository(): RequestRepository {
     async getVisibleToMember() {
       return requestRecord();
     },
+    async getById() {
+      return requestRecord();
+    },
+    async createResponse() {
+      return null;
+    },
+    async listResponses() {
+      return [];
+    },
+    async getResponseById() {
+      return null;
+    },
+    async getResponseByResponder() {
+      return null;
+    },
+    async acceptResponse() {
+      return null;
+    },
+    async declineResponse() {
+      return null;
+    },
+    async withdrawResponse() {
+      return null;
+    },
+    async transitionRequestStatus() {
+      return null;
+    },
+    async expireDue() {
+      return 0;
+    },
   };
 }
 
