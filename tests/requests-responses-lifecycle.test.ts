@@ -117,8 +117,10 @@ function repository(overrides: Partial<RequestRepository> = {}): RequestReposito
     async transitionRequestStatus(_id, _from, to) {
       return requestRecord({
         status: to,
-        fulfilledAt: to === "FULFILLED" ? new Date("2026-09-17T01:10:00.000Z") : null,
-        cancelledAt: to === "CANCELLED" ? new Date("2026-09-17T01:10:00.000Z") : null,
+        fulfilledAt:
+          to === "FULFILLED" ? new Date("2026-09-17T01:10:00.000Z") : null,
+        cancelledAt:
+          to === "CANCELLED" ? new Date("2026-09-17T01:10:00.000Z") : null,
       });
     },
     async expireDue() {
@@ -175,7 +177,9 @@ test("visible members can create one pending response and duplicates are rejecte
     visibility(),
   );
   await assert.rejects(
-    duplicateService.respond("helper-1", "request-1", { message: "Another response" }),
+    duplicateService.respond("helper-1", "request-1", {
+      message: "Another response",
+    }),
     (error: unknown) =>
       error instanceof AppError && error.code === "REQUEST_RESPONSE_ALREADY_EXISTS",
   );
