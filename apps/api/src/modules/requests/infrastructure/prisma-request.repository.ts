@@ -43,7 +43,7 @@ const helpRequestSelect = Prisma.validator<Prisma.HelpRequestSelect>()({
 
 type HelpRequestRow = Prisma.HelpRequestGetPayload<{ select: typeof helpRequestSelect }>;
 
-const publicStatuses: readonly HelpRequestStatus[] = ["OPEN", "IN_PROGRESS", "FULFILLED"];
+const publicStatuses: HelpRequestStatus[] = ["OPEN", "IN_PROGRESS", "FULFILLED"];
 
 function record(row: HelpRequestRow): HelpRequestRecord {
   return row;
