@@ -14,6 +14,12 @@ export const helpRequestStatusSchema = z.enum([
   "CANCELLED",
   "EXPIRED",
 ]);
+export const helpRequestResponseStatusSchema = z.enum([
+  "PENDING",
+  "ACCEPTED",
+  "DECLINED",
+  "WITHDRAWN",
+]);
 
 export const helpRequestPublisherSchema = z
   .object({
@@ -63,6 +69,10 @@ export const helpRequestCreateSchema = z
   })
   .strict();
 
+export const helpRequestRespondSchema = z
+  .object({ message: z.string().trim().min(1) })
+  .strict();
+
 export const helpRequestListQuerySchema = z.object({
   cursor: idSchema.optional(),
   limit: z.coerce.number().int().min(1).max(100).default(30),
@@ -103,6 +113,23 @@ export const helpRequestSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 
+export const helpRequestResponseSchema = z.object({
+  id: idSchema,
+  requestId: idSchema,
+  responderUserId: idSchema,
+  message: z.string().min(1),
+  status: helpRequestResponseStatusSchema,
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+  acceptedAt: z.string().datetime().nullable(),
+  declinedAt: z.string().datetime().nullable(),
+  withdrawnAt: z.string().datetime().nullable(),
+});
+
+export const helpRequestResponseListSchema = z.object({
+  items: z.array(helpRequestResponseSchema),
+});
+
 export const helpRequestListSchema = z.object({
   items: z.array(helpRequestSchema),
   nextCursor: idSchema.nullable(),
@@ -110,9 +137,13 @@ export const helpRequestListSchema = z.object({
 
 export type RequestConditionPreference = z.infer<typeof requestConditionPreferenceSchema>;
 export type HelpRequestStatus = z.infer<typeof helpRequestStatusSchema>;
+export type HelpRequestResponseStatus = z.infer<typeof helpRequestResponseStatusSchema>;
 export type HelpRequestPublisherInput = z.infer<typeof helpRequestPublisherSchema>;
 export type HelpRequestAudienceInput = z.infer<typeof helpRequestAudienceSchema>;
 export type HelpRequestCreateInput = z.infer<typeof helpRequestCreateSchema>;
+export type HelpRequestRespondInput = z.infer<typeof helpRequestRespondSchema>;
 export type HelpRequestListQuery = z.infer<typeof helpRequestListQuerySchema>;
 export type HelpRequest = z.infer<typeof helpRequestSchema>;
+export type HelpRequestResponse = z.infer<typeof helpRequestResponseSchema>;
+export type HelpRequestResponseList = z.infer<typeof helpRequestResponseListSchema>;
 export type HelpRequestList = z.infer<typeof helpRequestListSchema>;

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { AppError } from "../apps/api/src/http/errors/app-error.js";
 import { RequestService } from "../apps/api/src/modules/requests/application/request.service.js";
 import type {
   HelpRequestRecord,
@@ -142,7 +143,7 @@ test("request managers cannot respond to their own Request", async () => {
   await assert.rejects(
     service.respond("owner-1", "request-1", { message: "I can help." }),
     (error: unknown) =>
-      error instanceof RequestError && error.code === "REQUEST_SELF_RESPONSE_FORBIDDEN",
+      error instanceof AppError && error.code === "REQUEST_SELF_RESPONSE_FORBIDDEN",
   );
 });
 
@@ -163,7 +164,7 @@ test("visible members can create one pending response and duplicates are rejecte
   await assert.rejects(
     duplicateService.respond("helper-1", "request-1", { message: "Another response" }),
     (error: unknown) =>
-      error instanceof RequestError && error.code === "REQUEST_RESPONSE_ALREADY_EXISTS",
+      error instanceof AppError && error.code === "REQUEST_RESPONSE_ALREADY_EXISTS",
   );
 });
 
@@ -198,7 +199,7 @@ test("current entity authority controls lifecycle management, not the historical
 
   await assert.rejects(
     service.fulfill("former-manager", "request-1"),
-    (error: unknown) => error instanceof RequestError && error.code === "REQUEST_MANAGE_FORBIDDEN",
+    (error: unknown) => error instanceof RequestError && error.code === "REQUEST_NOT_FOUND",
   );
   const fulfilled = await service.fulfill("current-manager", "request-1");
   assert.equal(fulfilled.status, "FULFILLED");

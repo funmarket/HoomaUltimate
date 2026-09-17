@@ -3,10 +3,15 @@ import type {
   HelpRequestCreateInput,
   HelpRequestList,
   HelpRequestListQuery,
+  HelpRequestRespondInput,
+  HelpRequestResponse,
+  HelpRequestResponseList,
 } from "@hooma/contracts/requests";
+import { AppError } from "../../../http/errors/app-error.js";
 import { RequestError } from "../domain/request-error.js";
 import type {
   HelpRequestRecord,
+  HelpRequestResponseRecord,
   RequestRepository,
   RequestVisibilityReader,
 } from "./request.repository.js";
@@ -20,6 +25,17 @@ function serialize(record: HelpRequestRecord): HelpRequest {
     cancelledAt: record.cancelledAt?.toISOString() ?? null,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
+  };
+}
+
+function serializeResponse(record: HelpRequestResponseRecord): HelpRequestResponse {
+  return {
+    ...record,
+    createdAt: record.createdAt.toISOString(),
+    updatedAt: record.updatedAt.toISOString(),
+    acceptedAt: record.acceptedAt?.toISOString() ?? null,
+    declinedAt: record.declinedAt?.toISOString() ?? null,
+    withdrawnAt: record.withdrawnAt?.toISOString() ?? null,
   };
 }
 
@@ -60,6 +76,138 @@ export class RequestService {
     const request = await this.repository.getVisibleToMember(userId, id);
     if (!request) throw new RequestError("REQUEST_NOT_FOUND", "Request not found");
     return serialize(request);
+  }
+
+  async respond(
+    userId: string,
+    requestId: string,
+    input: HelpRequestRespondInput,
+  ): Promise<HelpRequestResponse> {
+    const request = await this.repository.getVisibleToMember(userId, requestId);
+    if (!request) throw new RequestError("REQUEST_NOT_FOUND", "Request not found");
+    if (request.status !== "OPEN" && request.status !== "IN_PROGRESS") {
+      throw new AppError(409, "REQUEST_NOT_RESPONDABLE", "Request is not accepting responses");
+    }
+    if (request.createdByUserId === userId || (await this.canManage(userId, request))) {
+      throw new AppError(409, "REQUEST_SELF_RESPONSE_FORBIDDEN", "Request managers cannot respond");
+    }
+    const created = await this.repository.createResponse(requestId, userId, input.message);
+    if (!created) {
+      throw new AppError(409, "REQUEST_RESPONSE_ALREADY_EXISTS", "Response already exists");
+    }
+    return serializeResponse(created);
+  }
+
+  async listResponses(userId: string, requestId: string): Promise<HelpRequestResponseList> {
+    const request = await this.repository.getById(requestId);
+    if (!request) throw new RequestError("REQUEST_NOT_FOUND", "Request not found");
+    if (await this.canManage(userId, request)) {
+      return { items: (await this.repository.listResponses(requestId)).map(serializeResponse) };
+    }
+    const own = await this.repository.getResponseByResponder(requestId, userId);
+    if (!own) throw new RequestError("REQUEST_NOT_FOUND", "Request not found");
+    return { items: [serializeResponse(own)] };
+  }
+
+  async acceptResponse(
+    userId: string,
+    requestId: string,
+    responseId: string,
+  ): Promise<HelpRequestResponse> {
+    const request = await this.requireManage(userId, requestId);
+    this.requireMutable(request);
+    const response = await this.repository.acceptResponse(requestId, responseId);
+    if (!response) {
+      throw new AppError(409, "REQUEST_RESPONSE_NOT_PENDING", "Response is not pending");
+    }
+    return serializeResponse(response);
+  }
+
+  async declineResponse(
+    userId: string,
+    requestId: string,
+    responseId: string,
+  ): Promise<HelpRequestResponse> {
+    const request = await this.requireManage(userId, requestId);
+    this.requireMutable(request);
+    const response = await this.repository.declineResponse(requestId, responseId);
+    if (!response) {
+      throw new AppError(409, "REQUEST_RESPONSE_NOT_PENDING", "Response is not pending");
+    }
+    return serializeResponse(response);
+  }
+
+  async withdrawResponse(
+    userId: string,
+    requestId: string,
+    responseId: string,
+  ): Promise<HelpRequestResponse> {
+    const response = await this.repository.getResponseById(requestId, responseId);
+    if (!response || response.responderUserId !== userId) {
+      throw new RequestError("REQUEST_NOT_FOUND", "Request not found");
+    }
+    const withdrawn = await this.repository.withdrawResponse(requestId, responseId);
+    if (!withdrawn) {
+      throw new AppError(409, "REQUEST_RESPONSE_NOT_WITHDRAWABLE", "Response cannot be withdrawn");
+    }
+    return serializeResponse(withdrawn);
+  }
+
+  async fulfill(userId: string, requestId: string): Promise<HelpRequest> {
+    const request = await this.requireManage(userId, requestId);
+    this.requireMutable(request);
+    const updated = await this.repository.transitionRequestStatus(
+      requestId,
+      ["OPEN", "IN_PROGRESS"],
+      "FULFILLED",
+    );
+    if (!updated) throw new AppError(409, "REQUEST_STATUS_CONFLICT", "Request status changed");
+    return serialize(updated);
+  }
+
+  async cancel(userId: string, requestId: string): Promise<HelpRequest> {
+    const request = await this.requireManage(userId, requestId);
+    this.requireMutable(request);
+    const updated = await this.repository.transitionRequestStatus(
+      requestId,
+      ["OPEN", "IN_PROGRESS"],
+      "CANCELLED",
+    );
+    if (!updated) throw new AppError(409, "REQUEST_STATUS_CONFLICT", "Request status changed");
+    return serialize(updated);
+  }
+
+  async expireDue(now: Date): Promise<number> {
+    return this.repository.expireDue(now);
+  }
+
+  private async requireManage(userId: string, requestId: string): Promise<HelpRequestRecord> {
+    const request = await this.repository.getById(requestId);
+    if (!request || !(await this.canManage(userId, request))) {
+      throw new RequestError("REQUEST_NOT_FOUND", "Request not found");
+    }
+    return request;
+  }
+
+  private requireMutable(request: HelpRequestRecord): void {
+    if (request.status !== "OPEN" && request.status !== "IN_PROGRESS") {
+      throw new AppError(409, "REQUEST_NOT_MUTABLE", "Request is not mutable");
+    }
+  }
+
+  private async canManage(userId: string, request: HelpRequestRecord): Promise<boolean> {
+    if (request.publisherCommunityId) {
+      const role = await this.visibility.communityRole(request.publisherCommunityId, userId);
+      return role === "FOUNDER" || role === "COACH";
+    }
+    if (request.publisherTeamId) {
+      return (await this.visibility.teamResponsibility(request.publisherTeamId, userId)) === "COACH";
+    }
+    if (request.publisherAthletesCommunityId) {
+      const role = await this.visibility.athletesRole(request.publisherAthletesCommunityId, userId);
+      return role === "FOUNDER" || role === "MODERATOR";
+    }
+    return request.createdByUserId === userId;
   }
 
   private async requirePublisherAuthority(userId: string, input: HelpRequestCreateInput) {
