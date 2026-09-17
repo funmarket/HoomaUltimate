@@ -69,9 +69,7 @@ export const helpRequestCreateSchema = z
   })
   .strict();
 
-export const helpRequestRespondSchema = z
-  .object({ message: z.string().trim().min(1) })
-  .strict();
+export const helpRequestRespondSchema = z.object({ message: z.string().trim().min(1) }).strict();
 
 export const helpRequestListQuerySchema = z.object({
   cursor: idSchema.optional(),
