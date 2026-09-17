@@ -90,10 +90,7 @@ export class RequestService {
     }
 
     if (publisher.publisherAthletesCommunityId) {
-      const role = await this.visibility.athletesRole(
-        publisher.publisherAthletesCommunityId,
-        userId,
-      );
+      const role = await this.visibility.athletesRole(publisher.publisherAthletesCommunityId, userId);
       if (role !== "FOUNDER" && role !== "MODERATOR") {
         throw new RequestError(
           "REQUEST_ATHLETES_PUBLISHER_FORBIDDEN",
