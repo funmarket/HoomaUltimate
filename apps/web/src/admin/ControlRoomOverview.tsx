@@ -35,7 +35,10 @@ function AdminIssueDispositionControls({
   ) => void;
 }) {
   const { transport } = useHoomaFrontend();
-  const adminApi = useMemo(() => createPlatformAdminApi(transport), [transport]);
+  const adminApi = useMemo(
+    () => createPlatformAdminApi(transport),
+    [transport],
+  );
   const [disposition, setDisposition] = useState<IssueDisposition | null>(null);
   const [note, setNote] = useState("");
   const [pending, setPending] = useState(false);
@@ -101,7 +104,8 @@ function AdminIssueDispositionControls({
         >
           <label>
             <span>
-              Reason for {disposition === "resolve" ? "resolving" : "dismissing"} issue
+              Reason for{" "}
+              {disposition === "resolve" ? "resolving" : "dismissing"} issue
             </span>
             <textarea
               aria-label={`Reason for ${
@@ -155,9 +159,8 @@ export function ControlRoomOverview({
   readonly recentAudit: readonly PlatformAuditEntry[];
   readonly auditState: AttentionLoadState | null;
 }) {
-  const [visibleAdminIssues, setVisibleAdminIssues] = useState<
-    readonly AdminIssueSummary[]
-  >(adminIssues);
+  const [visibleAdminIssues, setVisibleAdminIssues] =
+    useState<readonly AdminIssueSummary[]>(adminIssues);
   const [issueMessage, setIssueMessage] = useState("");
 
   useEffect(() => {
@@ -185,7 +188,11 @@ export function ControlRoomOverview({
         {visibleAttentionItems.length ? (
           <div className="admin-attention-grid">
             {visibleAttentionItems.map((item) => (
-              <a className="admin-attention-card" href={item.href} key={item.href}>
+              <a
+                className="admin-attention-card"
+                href={item.href}
+                key={item.href}
+              >
                 <span>{item.label}</span>
                 <strong>
                   {item.state === "ready" && item.count !== null ? item.count : "—"}
@@ -257,7 +264,9 @@ export function ControlRoomOverview({
             <p className="muted">Admin issues are unavailable.</p>
           ) : null}
           {adminIssuesState === "ready" && !visibleAdminIssues.length ? (
-            <p className="muted">No operational admin issues require attention.</p>
+            <p className="muted">
+              No operational admin issues require attention.
+            </p>
           ) : null}
           {adminIssuesState === "ready" && visibleAdminIssues.length ? (
             <div className="admin-audit-list">
