@@ -113,7 +113,7 @@ test("Admin Action Inbox uses controlled reason confirmation for issue dispositi
     assert.deepEqual(requests[0], {
       method: "POST",
       path: `/api/v1/admin/issues/${encodeURIComponent(issue.id)}/resolve`,
-      body: { reason: "Delivery recovered" },
+      body: { note: "Delivery recovered" },
     });
     assert.equal(requests[1]?.method, "GET");
     assert.equal(requests[1]?.path, "/api/v1/admin/issues");
