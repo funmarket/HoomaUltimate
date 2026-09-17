@@ -95,7 +95,10 @@ function AdminIssueDispositionControls({
     <div>
       {error ? <p className="error">{error}</p> : null}
       {disposition ? (
-        <form className="admin-manager-form" onSubmit={(event) => void submit(event)}>
+        <form
+          className="admin-manager-form"
+          onSubmit={(event) => void submit(event)}
+        >
           <label>
             <span>
               Reason for {disposition === "resolve" ? "resolving" : "dismissing"} issue
@@ -152,9 +155,9 @@ export function ControlRoomOverview({
   readonly recentAudit: readonly PlatformAuditEntry[];
   readonly auditState: AttentionLoadState | null;
 }) {
-  const [visibleAdminIssues, setVisibleAdminIssues] = useState<readonly AdminIssueSummary[]>(
-    adminIssues,
-  );
+  const [visibleAdminIssues, setVisibleAdminIssues] = useState<
+    readonly AdminIssueSummary[]
+  >(adminIssues);
   const [issueMessage, setIssueMessage] = useState("");
 
   useEffect(() => {
@@ -184,13 +187,17 @@ export function ControlRoomOverview({
             {visibleAttentionItems.map((item) => (
               <a className="admin-attention-card" href={item.href} key={item.href}>
                 <span>{item.label}</span>
-                <strong>{item.state === "ready" && item.count !== null ? item.count : "—"}</strong>
+                <strong>
+                  {item.state === "ready" && item.count !== null ? item.count : "—"}
+                </strong>
                 <small>{attentionStateLabel(item)}</small>
               </a>
             ))}
           </div>
         ) : (
-          <p className="muted">No review queues are delegated to this App Manager.</p>
+          <p className="muted">
+            No review queues are delegated to this App Manager.
+          </p>
         )}
       </section>
 
@@ -202,7 +209,9 @@ export function ControlRoomOverview({
               <h2>Current platform totals</h2>
             </div>
           </div>
-          {overviewState === "loading" ? <p className="muted">Loading platform totals…</p> : null}
+          {overviewState === "loading" ? (
+            <p className="muted">Loading platform totals…</p>
+          ) : null}
           {overviewState === "error" ? (
             <p className="muted">Platform totals are unavailable.</p>
           ) : null}
