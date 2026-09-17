@@ -29,16 +29,10 @@ function AdminIssueDispositionControls({
   onCompleted,
 }: {
   readonly issue: AdminIssueSummary;
-  readonly onCompleted: (
-    issues: readonly AdminIssueSummary[],
-    message: string,
-  ) => void;
+  readonly onCompleted: (issues: readonly AdminIssueSummary[], message: string) => void;
 }) {
   const { transport } = useHoomaFrontend();
-  const adminApi = useMemo(
-    () => createPlatformAdminApi(transport),
-    [transport],
-  );
+  const adminApi = useMemo(() => createPlatformAdminApi(transport), [transport]);
   const [disposition, setDisposition] = useState<IssueDisposition | null>(null);
   const [note, setNote] = useState("");
   const [pending, setPending] = useState(false);
@@ -85,9 +79,7 @@ function AdminIssueDispositionControls({
       setDisposition(null);
       setNote("");
     } catch (reason) {
-      setError(
-        reason instanceof Error ? reason.message : "Unable to update admin issue",
-      );
+      setError(reason instanceof Error ? reason.message : "Unable to update admin issue");
     } finally {
       actionInFlight.current = false;
       setPending(false);
@@ -98,15 +90,9 @@ function AdminIssueDispositionControls({
     <div>
       {error ? <p className="error">{error}</p> : null}
       {disposition ? (
-        <form
-          className="admin-manager-form"
-          onSubmit={(event) => void submit(event)}
-        >
+        <form className="admin-manager-form" onSubmit={(event) => void submit(event)}>
           <label>
-            <span>
-              Reason for{" "}
-              {disposition === "resolve" ? "resolving" : "dismissing"} issue
-            </span>
+            <span>Reason for {disposition === "resolve" ? "resolving" : "dismissing"} issue</span>
             <textarea
               aria-label={`Reason for ${
                 disposition === "resolve" ? "resolving" : "dismissing"
@@ -120,9 +106,7 @@ function AdminIssueDispositionControls({
             />
           </label>
           <button type="submit" disabled={pending}>
-            {pending
-              ? "Saving…"
-              : `Confirm ${disposition === "resolve" ? "resolve" : "dismiss"}`}
+            {pending ? "Saving…" : `Confirm ${disposition === "resolve" ? "resolve" : "dismiss"}`}
           </button>
           <button type="button" disabled={pending} onClick={cancel}>
             Cancel
@@ -167,9 +151,7 @@ export function ControlRoomOverview({
     setVisibleAdminIssues(adminIssues);
   }, [adminIssues]);
 
-  const canManageAdminIssues = attentionItems.some(
-    (item) => item.href === "#admin-action-inbox",
-  );
+  const canManageAdminIssues = attentionItems.some((item) => item.href === "#admin-action-inbox");
   const visibleAttentionItems = attentionItems.map((item) =>
     item.href === "#admin-action-inbox" && item.state === "ready"
       ? { ...item, count: visibleAdminIssues.length }
@@ -188,23 +170,15 @@ export function ControlRoomOverview({
         {visibleAttentionItems.length ? (
           <div className="admin-attention-grid">
             {visibleAttentionItems.map((item) => (
-              <a
-                className="admin-attention-card"
-                href={item.href}
-                key={item.href}
-              >
+              <a className="admin-attention-card" href={item.href} key={item.href}>
                 <span>{item.label}</span>
-                <strong>
-                  {item.state === "ready" && item.count !== null ? item.count : "—"}
-                </strong>
+                <strong>{item.state === "ready" && item.count !== null ? item.count : "—"}</strong>
                 <small>{attentionStateLabel(item)}</small>
               </a>
             ))}
           </div>
         ) : (
-          <p className="muted">
-            No review queues are delegated to this App Manager.
-          </p>
+          <p className="muted">No review queues are delegated to this App Manager.</p>
         )}
       </section>
 
@@ -216,9 +190,7 @@ export function ControlRoomOverview({
               <h2>Current platform totals</h2>
             </div>
           </div>
-          {overviewState === "loading" ? (
-            <p className="muted">Loading platform totals…</p>
-          ) : null}
+          {overviewState === "loading" ? <p className="muted">Loading platform totals…</p> : null}
           {overviewState === "error" ? (
             <p className="muted">Platform totals are unavailable.</p>
           ) : null}
@@ -257,16 +229,12 @@ export function ControlRoomOverview({
             </div>
           </div>
           {issueMessage ? <p className="status">{issueMessage}</p> : null}
-          {adminIssuesState === "loading" ? (
-            <p className="muted">Loading admin issues…</p>
-          ) : null}
+          {adminIssuesState === "loading" ? <p className="muted">Loading admin issues…</p> : null}
           {adminIssuesState === "error" ? (
             <p className="muted">Admin issues are unavailable.</p>
           ) : null}
           {adminIssuesState === "ready" && !visibleAdminIssues.length ? (
-            <p className="muted">
-              No operational admin issues require attention.
-            </p>
+            <p className="muted">No operational admin issues require attention.</p>
           ) : null}
           {adminIssuesState === "ready" && visibleAdminIssues.length ? (
             <div className="admin-audit-list">
@@ -309,12 +277,8 @@ export function ControlRoomOverview({
               View Audit Archive
             </a>
           </div>
-          {auditState === "loading" ? (
-            <p className="muted">Loading recent activity…</p>
-          ) : null}
-          {auditState === "error" ? (
-            <p className="muted">Recent activity is unavailable.</p>
-          ) : null}
+          {auditState === "loading" ? <p className="muted">Loading recent activity…</p> : null}
+          {auditState === "error" ? <p className="muted">Recent activity is unavailable.</p> : null}
           {auditState === "ready" && !recentAudit.length ? (
             <p className="muted">No audit entries are available.</p>
           ) : null}
