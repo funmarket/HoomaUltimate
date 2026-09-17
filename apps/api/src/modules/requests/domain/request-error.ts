@@ -6,7 +6,7 @@ export type RequestErrorCode =
   | "REQUEST_AUDIENCE_MEMBERSHIP_REQUIRED";
 
 export class RequestError extends Error {
-  readonly name = "RequestError";
+  override readonly name = "RequestError";
 
   constructor(
     readonly code: RequestErrorCode,
