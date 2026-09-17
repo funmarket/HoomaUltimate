@@ -26,17 +26,16 @@ function attentionStateLabel(item: AttentionItem): string {
 
 function AdminIssueDispositionControls({
   issue,
-  onIssuesRefreshed,
+  onCompleted,
 }: {
   readonly issue: AdminIssueSummary;
-  readonly onIssuesRefreshed: (issues: readonly AdminIssueSummary[]) => void;
+  readonly onCompleted: (issues: readonly AdminIssueSummary[], message: string) => void;
 }) {
   const { transport } = useHoomaFrontend();
   const adminApi = useMemo(() => createPlatformAdminApi(transport), [transport]);
   const [disposition, setDisposition] = useState<IssueDisposition | null>(null);
   const [note, setNote] = useState("");
   const [pending, setPending] = useState(false);
-  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const actionInFlight = useRef(false);
 
@@ -44,7 +43,6 @@ function AdminIssueDispositionControls({
     if (actionInFlight.current) return;
     setDisposition(nextDisposition);
     setNote("");
-    setMessage("");
     setError("");
   }
 
@@ -67,7 +65,6 @@ function AdminIssueDispositionControls({
     actionInFlight.current = true;
     setPending(true);
     setError("");
-    setMessage("");
     try {
       if (disposition === "resolve") {
         await adminApi.resolveIssue(issue.id, { reason });
@@ -75,8 +72,10 @@ function AdminIssueDispositionControls({
         await adminApi.dismissIssue(issue.id, { reason });
       }
       const refreshedIssues = await adminApi.issues();
-      onIssuesRefreshed(refreshedIssues);
-      setMessage(`Admin issue ${disposition === "resolve" ? "resolved" : "dismissed"} and audited.`);
+      onCompleted(
+        refreshedIssues,
+        `Admin issue ${disposition === "resolve" ? "resolved" : "dismissed"} and audited.`,
+      );
       setDisposition(null);
       setNote("");
     } catch (reason) {
@@ -89,7 +88,6 @@ function AdminIssueDispositionControls({
 
   return (
     <div>
-      {message ? <p className="status">{message}</p> : null}
       {error ? <p className="error">{error}</p> : null}
       {disposition ? (
         <form className="admin-manager-form" onSubmit={(event) => void submit(event)}>
@@ -148,6 +146,7 @@ export function ControlRoomOverview({
   readonly auditState: AttentionLoadState | null;
 }) {
   const [visibleAdminIssues, setVisibleAdminIssues] = useState<readonly AdminIssueSummary[]>(adminIssues);
+  const [issueMessage, setIssueMessage] = useState("");
 
   useEffect(() => {
     setVisibleAdminIssues(adminIssues);
@@ -230,6 +229,7 @@ export function ControlRoomOverview({
               <h2>Admin Action Inbox</h2>
             </div>
           </div>
+          {issueMessage ? <p className="status">{issueMessage}</p> : null}
           {adminIssuesState === "loading" ? <p className="muted">Loading admin issues…</p> : null}
           {adminIssuesState === "error" ? (
             <p className="muted">Admin issues are unavailable.</p>
@@ -254,7 +254,10 @@ export function ControlRoomOverview({
                   {canManageAdminIssues ? (
                     <AdminIssueDispositionControls
                       issue={issue}
-                      onIssuesRefreshed={setVisibleAdminIssues}
+                      onCompleted={(issues, message) => {
+                        setVisibleAdminIssues(issues);
+                        setIssueMessage(message);
+                      }}
                     />
                   ) : null}
                 </article>
