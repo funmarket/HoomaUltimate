@@ -69,10 +69,7 @@ function page(rows: readonly HelpRequestRow[], limit: number): HelpRequestPage {
 export class PrismaRequestRepository implements RequestRepository, RequestVisibilityReader {
   constructor(private readonly db: PrismaClient) {}
 
-  async create(
-    createdByUserId: string,
-    input: HelpRequestCreateInput,
-  ): Promise<HelpRequestRecord> {
+  async create(createdByUserId: string, input: HelpRequestCreateInput): Promise<HelpRequestRecord> {
     const audienceCommunityId =
       input.audience.scope === "HOOMA_COMMUNITY" ? input.audience.communityId : null;
     const audienceAthletesCommunityId =
@@ -206,7 +203,8 @@ export class PrismaRequestRepository implements RequestRepository, RequestVisibi
       select: { role: true },
     });
     if (assignments.some((assignment) => assignment.role === "COACH")) return "COACH" as const;
-    if (assignments.some((assignment) => assignment.role === "ASSISTANT")) return "ASSISTANT" as const;
+    if (assignments.some((assignment) => assignment.role === "ASSISTANT"))
+      return "ASSISTANT" as const;
     return null;
   }
 
