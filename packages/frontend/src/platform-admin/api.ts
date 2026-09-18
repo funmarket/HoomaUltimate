@@ -1,5 +1,6 @@
 import type {
   AdminAccess,
+  AdminAuditQueryInput,
   AdminIssueStatusUpdateInput,
   AdminIssueSummary,
   AdminPitchReviewQueueItem,
@@ -10,6 +11,7 @@ import type {
   AppManagerSummary,
   ModerationDecisionInput,
   PlatformManagerCapability,
+  PlatformAuditPage,
   UserSessionRevocationInput,
 } from "@hooma/contracts/platform-admin";
 import { request, type HoomaTransport } from "../http";
@@ -18,6 +20,8 @@ export type {
   AdminIssueSummary,
   AdminUserDetail,
   AdminUserSearchItem,
+  PlatformAuditEntry,
+  PlatformAuditPage,
 } from "@hooma/contracts/platform-admin";
 
 export interface PlatformOverview {
@@ -27,20 +31,24 @@ export interface PlatformOverview {
   readonly auditEntries: number;
 }
 
-export interface PlatformAuditEntry {
-  readonly id: string;
-  readonly actorUserId: string | null;
-  readonly action: string;
-  readonly entityType: string;
-  readonly entityId: string | null;
-  readonly createdAt: string;
+function auditQueryString(input: AdminAuditQueryInput = {}): string {
+  const params = new URLSearchParams();
+  params.set("limit", String(input.limit ?? 100));
+  if (input.actor) params.set("actor", input.actor);
+  if (input.action) params.set("action", input.action);
+  if (input.entityType) params.set("entityType", input.entityType);
+  if (input.from) params.set("from", input.from);
+  if (input.to) params.set("to", input.to);
+  if (input.cursor) params.set("cursor", input.cursor);
+  return params.toString();
 }
 
 export function createPlatformAdminApi(transport: HoomaTransport) {
   return {
     access: () => request<AdminAccess>(transport, "/api/v1/admin/access"),
     overview: () => request<PlatformOverview>(transport, "/api/v1/admin/overview"),
-    audit: () => request<PlatformAuditEntry[]>(transport, "/api/v1/admin/audit?limit=100"),
+    audit: (input: AdminAuditQueryInput = {}) =>
+      request<PlatformAuditPage>(transport, `/api/v1/admin/audit?${auditQueryString(input)}`),
     issues: () => request<AdminIssueSummary[]>(transport, "/api/v1/admin/issues?limit=25"),
     resolveIssue: (issueId: string, input: AdminIssueStatusUpdateInput) =>
       request<{ ok: true }>(

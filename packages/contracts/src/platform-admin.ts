@@ -16,6 +16,15 @@ export const adminUserSearchQuerySchema = z.object({
   query: z.string().trim().min(2).max(120),
   limit: z.coerce.number().int().min(1).max(50).optional().default(25),
 });
+export const adminAuditQuerySchema = z.object({
+  actor: z.string().trim().min(1).max(120).optional(),
+  action: z.string().trim().min(1).max(120).optional(),
+  entityType: z.string().trim().min(1).max(120).optional(),
+  from: z.string().trim().min(1).max(40).optional(),
+  to: z.string().trim().min(1).max(40).optional(),
+  cursor: z.string().trim().min(1).max(500).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional().default(100),
+});
 export const userSessionRevocationSchema = z.object({
   note: z.string().trim().min(1).max(1000),
 });
@@ -35,6 +44,15 @@ export type PlatformManagerCapability = z.infer<typeof platformManagerCapability
 export type AdminIssueSeverity = z.infer<typeof adminIssueSeveritySchema>;
 export type AdminIssueStatusUpdateInput = z.infer<typeof adminIssueStatusUpdateSchema>;
 export type AdminUserSearchQueryInput = z.infer<typeof adminUserSearchQuerySchema>;
+export interface AdminAuditQueryInput {
+  readonly actor?: string | undefined;
+  readonly action?: string | undefined;
+  readonly entityType?: string | undefined;
+  readonly from?: string | undefined;
+  readonly to?: string | undefined;
+  readonly cursor?: string | undefined;
+  readonly limit?: number | undefined;
+}
 export type UserSessionRevocationInput = z.infer<typeof userSessionRevocationSchema>;
 export type ModerationDecisionInput = z.infer<typeof moderationDecisionSchema>;
 export type AdminPitchReviewTarget = z.infer<typeof adminPitchReviewTargetSchema>;
@@ -98,6 +116,20 @@ export interface AdminIssueSummary {
   readonly entityId: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
+}
+
+export interface PlatformAuditEntry {
+  readonly id: string;
+  readonly actorUserId: string | null;
+  readonly action: string;
+  readonly entityType: string;
+  readonly entityId: string | null;
+  readonly createdAt: string;
+}
+
+export interface PlatformAuditPage {
+  readonly items: readonly PlatformAuditEntry[];
+  readonly nextCursor: string | null;
 }
 
 export interface AdminUserSearchItem {

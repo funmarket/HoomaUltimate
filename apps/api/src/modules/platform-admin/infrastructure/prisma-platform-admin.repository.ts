@@ -4,6 +4,8 @@ import type {
   AdminIssueDisposition,
   AppManagerRecord,
   PlatformAdminAuditEntry,
+  PlatformAdminAuditPage,
+  PlatformAdminAuditQuery,
   PlatformAdminOverview,
   PlatformAdminRepository,
 } from "../application/platform-admin.repository.js";
@@ -25,6 +27,33 @@ type FailedOutboxIssueGroup = {
 };
 
 const ISSUE_RESOLUTION_ACTIONS = ["ADMIN_ISSUE_RESOLVED", "ADMIN_ISSUE_DISMISSED"] as const;
+
+type AuditCursor = {
+  readonly createdAt: Date;
+  readonly id: string;
+};
+
+function encodeAuditCursor(entry: PlatformAdminAuditEntry): string {
+  return Buffer.from(
+    JSON.stringify({ createdAt: entry.createdAt.toISOString(), id: entry.id }),
+  ).toString("base64url");
+}
+
+function decodeAuditCursor(cursor: string | null): AuditCursor | null {
+  if (!cursor) return null;
+  try {
+    const parsed = JSON.parse(Buffer.from(cursor, "base64url").toString("utf8")) as Partial<{
+      createdAt: string;
+      id: string;
+    }>;
+    if (typeof parsed.id !== "string" || typeof parsed.createdAt !== "string") return null;
+    const createdAt = new Date(parsed.createdAt);
+    if (Number.isNaN(createdAt.getTime())) return null;
+    return { createdAt, id: parsed.id };
+  } catch {
+    return null;
+  }
+}
 
 function encodeOutboxIssueId(key: OutboxIssueKey): string {
   return `outbox:${Buffer.from(JSON.stringify(key)).toString("base64url")}`;
@@ -199,8 +228,13 @@ export class PrismaPlatformAdminRepository implements PlatformAdminRepository {
     return { users, activePlatformAdmins, activeAppManagers, auditEntries };
   }
 
-  async auditEntries(limit: number): Promise<readonly PlatformAdminAuditEntry[]> {
-    return this.db.auditLog.findMany({
+  async auditEntries(query: PlatformAdminAuditQuery): Promise<PlatformAdminAuditPage> {
+    const cursor = decodeAuditCursor(query.cursor);
+    const createdAtFilter = {
+      ...(query.from ? { gte: query.from } : {}),
+      ...(query.to ? { lte: query.to } : {}),
+    };
+    const rows = await this.db.auditLog.findMany({
       select: {
         id: true,
         actorUserId: true,
@@ -209,9 +243,36 @@ export class PrismaPlatformAdminRepository implements PlatformAdminRepository {
         entityId: true,
         createdAt: true,
       },
-      orderBy: { createdAt: "desc" },
-      take: limit,
+      where: {
+        ...(query.actor ? { actorUserId: { contains: query.actor } } : {}),
+        ...(query.action ? { action: query.action } : {}),
+        ...(query.entityType ? { entityType: query.entityType } : {}),
+        ...(Object.keys(createdAtFilter).length ? { createdAt: createdAtFilter } : {}),
+        ...(cursor
+          ? {
+              OR: [
+                { createdAt: { lt: cursor.createdAt } },
+                { createdAt: cursor.createdAt, id: { lt: cursor.id } },
+              ],
+            }
+          : {}),
+      },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: query.limit + 1,
     });
+    const items = rows.slice(0, query.limit).map((row) => ({
+      id: row.id,
+      actorUserId: row.actorUserId,
+      action: row.action,
+      entityType: row.entityType,
+      entityId: row.entityId,
+      createdAt: row.createdAt,
+    }));
+    const extra = rows.length > query.limit ? items.at(-1) : undefined;
+    return {
+      items,
+      nextCursor: extra ? encodeAuditCursor(extra) : null,
+    };
   }
 
   private async outboxIssueDispositionExists(issueId: string, updatedAt: Date): Promise<boolean> {
