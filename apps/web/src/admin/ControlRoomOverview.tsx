@@ -16,6 +16,12 @@ export interface AttentionItem {
   readonly state: AttentionLoadState;
 }
 
+export interface ControlRoomMapLink {
+  readonly label: string;
+  readonly description: string;
+  readonly href: string;
+}
+
 type IssueDisposition = "resolve" | "dismiss";
 
 const EMPTY_ADMIN_ISSUES: readonly AdminIssueSummary[] = [];
@@ -132,6 +138,7 @@ export function ControlRoomOverview({
   overview,
   overviewState,
   attentionItems,
+  controlRoomMap = [],
   adminIssues = EMPTY_ADMIN_ISSUES,
   adminIssuesState = null,
   recentAudit,
@@ -140,6 +147,7 @@ export function ControlRoomOverview({
   readonly overview: PlatformOverview | null;
   readonly overviewState: AttentionLoadState | null;
   readonly attentionItems: readonly AttentionItem[];
+  readonly controlRoomMap?: readonly ControlRoomMapLink[];
   readonly adminIssues?: readonly AdminIssueSummary[];
   readonly adminIssuesState?: AttentionLoadState | null;
   readonly recentAudit: readonly PlatformAuditEntry[];
@@ -183,6 +191,25 @@ export function ControlRoomOverview({
           <p className="muted">No review queues are delegated to this App Manager.</p>
         )}
       </section>
+
+      {controlRoomMap.length ? (
+        <section className="panel admin-section-map" aria-label="Control Room section map">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">CONTROL ROOM MAP</p>
+              <h2>Jump into the right admin workflow</h2>
+            </div>
+          </div>
+          <div className="admin-section-map-grid">
+            {controlRoomMap.map((item) => (
+              <a className="admin-section-map-card" href={item.href} key={item.href}>
+                <strong>{item.label}</strong>
+                <span>{item.description}</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {overviewState ? (
         <section className="panel admin-snapshot">
