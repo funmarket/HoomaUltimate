@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  adminAuditQuerySchema,
   adminIssueStatusUpdateSchema,
   adminPitchReviewTargetSchema,
   adminUserSearchQuerySchema,
@@ -55,10 +56,8 @@ export function createPlatformAdminRouter(
   router.get(
     "/audit",
     asyncHandler(async (request, response) => {
-      const rawLimit = Number(request.query.limit ?? 100);
-      response.json(
-        await service.audit(getAuth(request).userId, Number.isFinite(rawLimit) ? rawLimit : 100),
-      );
+      const input = adminAuditQuerySchema.parse(request.query);
+      response.json(await service.audit(getAuth(request).userId, input));
     }),
   );
 

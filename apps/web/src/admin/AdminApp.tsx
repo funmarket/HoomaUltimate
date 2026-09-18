@@ -12,7 +12,7 @@ import {
   type PublicTeamSummary,
 } from "@hooma/frontend";
 import { AccessManagers, MANAGER_CAPABILITIES } from "./AccessManagers";
-import { AuditArchive } from "./AuditArchive";
+import { AuditArchive, type AuditArchiveFilters } from "./AuditArchive";
 import {
   ControlRoomOverview,
   type AttentionItem,
@@ -26,6 +26,14 @@ import "./admin.css";
 
 type QueueName = "places" | "place-ownership" | "pitch";
 type LoadState = "loading" | "ready" | "error";
+
+const EMPTY_AUDIT_FILTERS: AuditArchiveFilters = {
+  actor: "",
+  action: "",
+  entityType: "",
+  from: "",
+  to: "",
+};
 
 function AdminUsers({
   users,
@@ -131,6 +139,9 @@ export function AdminApp() {
   const [teams, setTeams] = useState<PublicTeamSummary[]>([]);
   const [managers, setManagers] = useState<AppManagerSummary[]>([]);
   const [audit, setAudit] = useState<PlatformAuditEntry[]>([]);
+  const [auditFilters, setAuditFilters] = useState<AuditArchiveFilters>(EMPTY_AUDIT_FILTERS);
+  const [auditCursor, setAuditCursor] = useState<string | null>(null);
+  const [auditLoadingMore, setAuditLoadingMore] = useState(false);
   const [adminIssues, setAdminIssues] = useState<AdminIssueSummary[]>([]);
   const [adminUsers, setAdminUsers] = useState<AdminUserSearchItem[]>([]);
   const [selectedUser, setSelectedUser] = useState<AdminUserDetail | null>(null);
@@ -212,10 +223,38 @@ export function AdminApp() {
     });
   }
 
-  async function loadAudit() {
+  async function loadAudit(filters: AuditArchiveFilters = auditFilters) {
     await loadModule(setAuditState, async () => {
-      setAudit(await adminApi.audit());
+      const page = await adminApi.audit({ ...filters, limit: 100 });
+      setAudit([...page.items]);
+      setAuditCursor(page.nextCursor);
     });
+  }
+
+  async function applyAuditFilters(filters: AuditArchiveFilters) {
+    setAuditFilters(filters);
+    setAudit([]);
+    setAuditCursor(null);
+    await loadAudit(filters);
+  }
+
+  async function retryAudit() {
+    await loadAudit(auditFilters);
+  }
+
+  async function loadMoreAudit() {
+    if (!auditCursor || auditLoadingMore) return;
+    setAuditLoadingMore(true);
+    setError("");
+    try {
+      const page = await adminApi.audit({ ...auditFilters, cursor: auditCursor, limit: 100 });
+      setAudit((current) => [...current, ...page.items]);
+      setAuditCursor(page.nextCursor);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unable to load more audit entries");
+    } finally {
+      setAuditLoadingMore(false);
+    }
   }
 
   async function loadAdminIssues() {
@@ -531,7 +570,18 @@ export function AdminApp() {
         />
       ) : null}
 
-      {canViewAudit ? <AuditArchive entries={audit} loadState={auditState} /> : null}
+      {canViewAudit ? (
+        <AuditArchive
+          entries={audit}
+          loadState={auditState}
+          filters={auditFilters}
+          hasMore={Boolean(auditCursor)}
+          isLoadingMore={auditLoadingMore}
+          onFilterChange={(filters) => void applyAuditFilters(filters)}
+          onRetry={() => void retryAudit()}
+          onLoadMore={() => void loadMoreAudit()}
+        />
+      ) : null}
     </ControlRoomShell>
   );
 }

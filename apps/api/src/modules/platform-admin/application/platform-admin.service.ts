@@ -1,4 +1,7 @@
-import type { PlatformManagerCapability } from "@hooma/contracts/platform-admin";
+import type {
+  AdminAuditQueryInput,
+  PlatformManagerCapability,
+} from "@hooma/contracts/platform-admin";
 import { AppError } from "../../../http/errors/app-error.js";
 import type { PlatformAdminAuthorizer } from "./platform-admin.authorizer.js";
 import type { PlatformAdminRepository } from "./platform-admin.repository.js";
@@ -53,9 +56,40 @@ export class PlatformAdminService implements PlatformAdminAuthorizer {
     return this.repository.overview();
   }
 
-  async audit(userId: string, limit = 100) {
+  async audit(userId: string, input: AdminAuditQueryInput = {}) {
     await this.requireCapability(userId, "VIEW_AUDIT");
-    return this.repository.auditEntries(Math.min(Math.max(limit, 1), 200));
+    const actor = this.optionalAuditText(input.actor);
+    const action = this.optionalAuditText(input.action);
+    const entityType = this.optionalAuditText(input.entityType);
+    const from = this.optionalAuditDate(input.from, "from");
+    const to = this.optionalAuditDate(input.to, "to");
+    return this.repository.auditEntries({
+      ...(actor ? { actor } : {}),
+      ...(action ? { action } : {}),
+      ...(entityType ? { entityType } : {}),
+      ...(from ? { from } : {}),
+      ...(to ? { to } : {}),
+      limit: Math.min(Math.max(input.limit ?? 100, 1), 100),
+      cursor: this.optionalAuditText(input.cursor) ?? null,
+    });
+  }
+
+  private optionalAuditText(value?: string): string | undefined {
+    const normalized = value?.trim();
+    return normalized ? normalized : undefined;
+  }
+
+  private optionalAuditDate(value: string | undefined, boundary: "from" | "to"): Date | undefined {
+    const normalized = value?.trim();
+    if (!normalized) return undefined;
+    const dateValue = /^\d{4}-\d{2}-\d{2}$/.test(normalized)
+      ? `${normalized}T${boundary === "from" ? "00:00:00.000" : "23:59:59.999"}Z`
+      : normalized;
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) {
+      throw new AppError(400, "AUDIT_FILTER_INVALID", "Audit date filters must be valid dates");
+    }
+    return date;
   }
 
   async issues(userId: string, limit = 25) {

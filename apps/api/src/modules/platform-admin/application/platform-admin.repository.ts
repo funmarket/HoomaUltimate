@@ -16,6 +16,21 @@ export interface PlatformAdminAuditEntry {
   readonly createdAt: Date;
 }
 
+export interface PlatformAdminAuditQuery {
+  readonly actor?: string;
+  readonly action?: string;
+  readonly entityType?: string;
+  readonly from?: Date;
+  readonly to?: Date;
+  readonly limit: number;
+  readonly cursor: string | null;
+}
+
+export interface PlatformAdminAuditPage {
+  readonly items: readonly PlatformAdminAuditEntry[];
+  readonly nextCursor: string | null;
+}
+
 export interface AppManagerRecord {
   readonly userId: string;
   readonly username: string;
@@ -38,7 +53,7 @@ export interface PlatformAdminRepository {
     capabilities: readonly PlatformManagerCapability[],
   ): Promise<void>;
   overview(): Promise<PlatformAdminOverview>;
-  auditEntries(limit: number): Promise<readonly PlatformAdminAuditEntry[]>;
+  auditEntries(query: PlatformAdminAuditQuery): Promise<PlatformAdminAuditPage>;
   adminIssues(limit: number): Promise<readonly AdminIssueSummary[]>;
   setAdminIssueDisposition(
     actorUserId: string,

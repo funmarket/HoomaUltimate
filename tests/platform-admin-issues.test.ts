@@ -109,7 +109,7 @@ function createServiceRepository(overrides: Partial<PlatformAdminRepository> = {
       activeAppManagers: 0,
       auditEntries: 0,
     }),
-    auditEntries: async () => [],
+    auditEntries: async () => ({ items: [], nextCursor: null }),
     adminIssues: async () => [],
     setAdminIssueDisposition: async () => true,
     ...overrides,

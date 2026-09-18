@@ -253,7 +253,9 @@ test("Platform Control Room refreshes only the resource changed by an admin writ
     if (method === "GET" && url.pathname === "/api/v1/admin/overview") {
       return json({ users: 1, activePlatformAdmins: 1, activeAppManagers: 0, auditEntries: 0 });
     }
-    if (method === "GET" && url.pathname === "/api/v1/admin/audit") return json([]);
+    if (method === "GET" && url.pathname === "/api/v1/admin/audit") {
+      return json({ items: [], nextCursor: null });
+    }
     if (method === "GET" && url.pathname === "/api/v1/admin/issues") return json([]);
     if (method === "GET" && url.pathname === "/api/v1/admin/managers") return json([]);
     if (method === "PUT" && url.pathname === "/api/v1/admin/managers/manager") {
@@ -521,7 +523,10 @@ test("App Manager capabilities project only their authorized Control Room module
       );
     }
     if (url.pathname === "/api/v1/admin/audit") {
-      return new Response("[]", { status: 200, headers: { "content-type": "application/json" } });
+      return new Response(JSON.stringify({ items: [], nextCursor: null }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
     }
     if (url.pathname === "/api/v1/admin/issues") {
       return new Response("[]", { status: 200, headers: { "content-type": "application/json" } });
