@@ -41,18 +41,33 @@
 }
 
 .admin-navigation a,
-.admin-attention-card {
+.admin-navigation-disabled,
+.admin-attention-card,
+.admin-section-map-card {
   color: inherit;
   text-decoration: none;
 }
 
-.admin-navigation a {
+.admin-navigation a,
+.admin-navigation-disabled {
   min-height: 40px;
   display: flex;
   align-items: center;
   border: 1px solid var(--app-line-strong);
   border-radius: 12px;
   padding: 8px 10px;
+  background: color-mix(in srgb, var(--app-surface) 88%, #020617 12%);
+}
+
+.admin-navigation a:hover,
+.admin-navigation a:focus-visible {
+  border-color: var(--app-accent);
+}
+
+.admin-navigation-disabled {
+  cursor: not-allowed;
+  color: var(--app-muted);
+  border-style: dashed;
 }
 
 .admin-overview {
@@ -61,6 +76,7 @@
 }
 
 .admin-attention-grid,
+.admin-section-map-grid,
 .admin-snapshot dl {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -68,6 +84,7 @@
 }
 
 .admin-attention-card,
+.admin-section-map-card,
 .admin-snapshot dl div,
 .admin-review-row,
 .admin-manager-list article,
@@ -78,9 +95,19 @@
   padding: 14px;
 }
 
-.admin-attention-card {
+.admin-attention-card,
+.admin-section-map-card {
   display: grid;
   gap: 6px;
+}
+
+.admin-section-map-card {
+  background: color-mix(in srgb, var(--app-surface) 90%, #020617 10%);
+}
+
+.admin-section-map-card:hover,
+.admin-section-map-card:focus-visible {
+  border-color: var(--app-accent);
 }
 
 .admin-attention-card strong {
@@ -89,6 +116,7 @@
 }
 
 .admin-attention-card small,
+.admin-section-map-card span,
 .admin-capability-grid small {
   opacity: 0.75;
 }
@@ -271,6 +299,7 @@
 @media (max-width: 720px) {
   .admin-navigation,
   .admin-attention-grid,
+  .admin-section-map-grid,
   .admin-snapshot dl,
   .admin-capability-grid {
     grid-template-columns: 1fr;

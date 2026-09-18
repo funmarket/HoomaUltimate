@@ -992,3 +992,97 @@ test("Platform Control Room renders operational admin issues separately from aud
     dom.window.close();
   }
 });
+
+test("Platform Control Room navigation renders completed IA with gated active sections", async () => {
+  const dom = new JSDOM("<!doctype html><html><body></body></html>", {
+    url: "http://localhost/",
+  });
+
+  Object.defineProperty(globalThis, "window", { value: dom.window, configurable: true });
+  Object.defineProperty(globalThis, "document", { value: dom.window.document, configurable: true });
+  Object.defineProperty(globalThis, "navigator", {
+    value: dom.window.navigator,
+    configurable: true,
+  });
+  Object.defineProperty(globalThis, "HTMLElement", {
+    value: dom.window.HTMLElement,
+    configurable: true,
+  });
+  Object.defineProperty(globalThis, "Element", { value: dom.window.Element, configurable: true });
+  Object.defineProperty(globalThis, "Node", { value: dom.window.Node, configurable: true });
+
+  const React = await import("react");
+  Object.defineProperty(globalThis, "React", {
+    value: React,
+    writable: true,
+    configurable: true,
+  });
+  const { cleanup, render } = await import("@testing-library/react");
+  const { ControlRoomShell } = await import("../apps/web/src/admin/ControlRoomShell");
+
+  try {
+    const ownerView = render(
+      React.createElement(
+        ControlRoomShell,
+        {
+          isPlatformOwner: true,
+          managerCapabilities: [],
+          canReviewPitch: true,
+          canViewAudit: true,
+          canManageAdminIssues: true,
+          canManageUsers: true,
+          message: "",
+          error: "",
+        },
+        React.createElement("div"),
+      ),
+    );
+
+    for (const group of [
+      "Overview",
+      "Action Inbox",
+      "People",
+      "Moderation",
+      "Communities",
+      "Teams",
+      "Players",
+      "Rides",
+      "Operations",
+      "Access",
+      "Audit Archive",
+    ]) {
+      assert.ok(ownerView.getAllByText(group).length, group);
+    }
+    assert.equal(
+      ownerView.getByRole("link", { name: "User Controls" }).getAttribute("href"),
+      "#user-security",
+    );
+    assert.equal(ownerView.getByText("Coming soon").getAttribute("aria-disabled"), "true");
+    ownerView.unmount();
+
+    const userManagerView = render(
+      React.createElement(
+        ControlRoomShell,
+        {
+          isPlatformOwner: false,
+          managerCapabilities: ["MANAGE_USERS"],
+          canReviewPitch: false,
+          canViewAudit: false,
+          canManageAdminIssues: false,
+          canManageUsers: true,
+          message: "",
+          error: "",
+        },
+        React.createElement("div"),
+      ),
+    );
+
+    assert.ok(userManagerView.getByRole("link", { name: "User Controls" }));
+    assert.equal(userManagerView.queryByRole("link", { name: "Admin Issues" }), null);
+    assert.equal(userManagerView.queryByRole("link", { name: "Audit Archive" }), null);
+    assert.equal(userManagerView.queryByRole("link", { name: "Access & Managers" }), null);
+  } finally {
+    cleanup();
+    dom.window.close();
+  }
+});

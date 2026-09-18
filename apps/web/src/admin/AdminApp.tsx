@@ -22,6 +22,7 @@ import {
   ControlRoomOverview,
   type AttentionItem,
   type AttentionLoadState,
+  type ControlRoomMapLink,
 } from "./ControlRoomOverview";
 import { ControlRoomShell } from "./ControlRoomShell";
 import { GamerDisputeConsole } from "./GamerDisputeConsole";
@@ -711,6 +712,75 @@ export function AdminApp() {
     });
   }
 
+  const controlRoomMap: ControlRoomMapLink[] = [
+    ...(canManageAdminIssues
+      ? [
+          {
+            label: "Action Inbox",
+            description:
+              "Resolve or dismiss operational admin issues without mixing them into audit history.",
+            href: "#admin-action-inbox",
+          },
+        ]
+      : []),
+    ...(canManageUsers
+      ? [
+          {
+            label: "People / User Controls",
+            description:
+              "Search users, review sanction status, warn, ban, set read-only, disable, or revoke sessions.",
+            href: "#user-security",
+          },
+        ]
+      : []),
+    ...(access.isPlatformOwner
+      ? [
+          {
+            label: "Place and ownership queues",
+            description:
+              "Review current place submissions and ownership claims from the operations queue.",
+            href: "#places",
+          },
+          {
+            label: "Player disputes",
+            description: "Moderate existing EA FC match evidence and disputed player outcomes.",
+            href: "#gamers",
+          },
+          {
+            label: "Communities and Teams",
+            description:
+              "Open existing HOOMA and Team management entry points with readable selectors.",
+            href: "#communities",
+          },
+          {
+            label: "Access",
+            description:
+              "Delegate concrete App Manager capabilities without exposing unauthorized controls.",
+            href: "#access-managers",
+          },
+        ]
+      : []),
+    ...(canReviewPitch
+      ? [
+          {
+            label: "Pitch reviews",
+            description: "Review current Pitch business applications and revisions.",
+            href: "#pitch",
+          },
+        ]
+      : []),
+    ...(canViewAudit
+      ? [
+          {
+            label: "Audit Archive",
+            description:
+              "Explore historical audit evidence separately from operational issue handling.",
+            href: "#audit-archive",
+          },
+        ]
+      : []),
+  ];
+
   return (
     <ControlRoomShell
       isPlatformOwner={access.isPlatformOwner}
@@ -726,6 +796,7 @@ export function AdminApp() {
         overview={canViewAudit ? overview : null}
         overviewState={canViewAudit ? overviewState : null}
         attentionItems={attentionItems}
+        controlRoomMap={controlRoomMap}
         adminIssues={canManageAdminIssues || canViewAudit ? adminIssues : []}
         adminIssuesState={canManageAdminIssues || canViewAudit ? adminIssuesState : null}
         recentAudit={audit.slice(0, 5)}

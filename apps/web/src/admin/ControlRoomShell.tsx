@@ -8,6 +8,10 @@ function capabilityLabel(capability: PlatformManagerCapability): string {
   return "Audit";
 }
 
+type NavigationLink =
+  | { readonly href: string; readonly label: string; readonly status?: never }
+  | { readonly label: string; readonly status: "coming-soon"; readonly href?: never };
+
 function ControlRoomNavigation({
   isPlatformOwner,
   canReviewPitch,
@@ -21,49 +25,64 @@ function ControlRoomNavigation({
   readonly canManageAdminIssues: boolean;
   readonly canManageUsers: boolean;
 }) {
-  const groups = [
+  const groups: Array<{ readonly label: string; readonly links: readonly NavigationLink[] }> = [
     {
-      label: "OVERVIEW",
+      label: "Overview",
       links: [
         { href: "#control-room-overview", label: "Dashboard" },
-        { href: "#needs-attention", label: "Needs Attention" },
+        { href: "#needs-attention", label: "Pending actions" },
       ],
     },
     {
-      label: "PEOPLE",
+      label: "Action Inbox",
+      links: canManageAdminIssues ? [{ href: "#admin-action-inbox", label: "Admin Issues" }] : [],
+    },
+    {
+      label: "People",
+      links: canManageUsers ? [{ href: "#user-security", label: "User Controls" }] : [],
+    },
+    {
+      label: "Moderation",
       links: [
-        ...(canManageUsers ? [{ href: "#user-security", label: "User Security" }] : []),
-        ...(isPlatformOwner ? [{ href: "#access-managers", label: "Access & Managers" }] : []),
+        ...(canManageUsers ? [{ href: "#user-security", label: "Warnings & sanctions" }] : []),
+        ...(isPlatformOwner ? [{ href: "#gamers", label: "Gamer disputes" }] : []),
       ],
     },
     {
-      label: "CONTENT & COMMUNITIES",
-      links: isPlatformOwner
-        ? [
-            { href: "#communities", label: "HOOMA Communities" },
-            { href: "#teams", label: "Teams" },
-          ]
-        : [],
+      label: "Communities",
+      links: isPlatformOwner ? [{ href: "#communities", label: "HOOMA Communities" }] : [],
     },
     {
-      label: "PLACES & ACTIVITY",
+      label: "Teams",
+      links: isPlatformOwner ? [{ href: "#teams", label: "Team management" }] : [],
+    },
+    {
+      label: "Players",
+      links: isPlatformOwner ? [{ href: "#gamers", label: "EA FC Match Evidence" }] : [],
+    },
+    {
+      label: "Rides",
+      links: isPlatformOwner ? [{ label: "Coming soon", status: "coming-soon" as const }] : [],
+    },
+    {
+      label: "Operations",
       links: [
         ...(isPlatformOwner
           ? [
-              { href: "#places", label: "Places" },
-              { href: "#place-ownership", label: "Place Ownership" },
+              { href: "#places", label: "Place submissions" },
+              { href: "#place-ownership", label: "Place ownership" },
             ]
           : []),
-        ...(canReviewPitch ? [{ href: "#pitch", label: "Pitch" }] : []),
-        ...(isPlatformOwner ? [{ href: "#gamers", label: "Gamers" }] : []),
+        ...(canReviewPitch ? [{ href: "#pitch", label: "Pitch reviews" }] : []),
       ],
     },
     {
-      label: "AUDIT & ISSUES",
-      links: [
-        ...(canManageAdminIssues ? [{ href: "#admin-action-inbox", label: "Admin Issues" }] : []),
-        ...(canViewAudit ? [{ href: "#audit-archive", label: "Audit Archive" }] : []),
-      ],
+      label: "Access",
+      links: isPlatformOwner ? [{ href: "#access-managers", label: "Access & Managers" }] : [],
+    },
+    {
+      label: "Audit Archive",
+      links: canViewAudit ? [{ href: "#audit-archive", label: "Audit Archive" }] : [],
     },
   ].filter((group) => group.links.length > 0);
 
@@ -73,11 +92,21 @@ function ControlRoomNavigation({
         <div className="admin-navigation-group" key={group.label}>
           <span>{group.label}</span>
           <div>
-            {group.links.map((link) => (
-              <a href={link.href} key={link.href}>
-                {link.label}
-              </a>
-            ))}
+            {group.links.map((link) =>
+              "href" in link ? (
+                <a href={link.href} key={`${group.label}:${link.href}:${link.label}`}>
+                  {link.label}
+                </a>
+              ) : (
+                <span
+                  className="admin-navigation-disabled"
+                  aria-disabled="true"
+                  key={`${group.label}:${link.label}`}
+                >
+                  {link.label}
+                </span>
+              ),
+            )}
           </div>
         </div>
       ))}
