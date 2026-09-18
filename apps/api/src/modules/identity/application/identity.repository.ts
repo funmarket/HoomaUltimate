@@ -4,6 +4,7 @@ import type {
   ProfileIdentity,
   ProfileUpdateInput,
 } from "@hooma/contracts/profile";
+import type { UserModerationStatus } from "@hooma/contracts";
 import type { PlatformManagerCapability } from "@hooma/contracts/platform-admin";
 
 export interface WebCredentialRecord {
@@ -88,6 +89,7 @@ export interface MeRecord {
   };
   readonly platformRoles: readonly "PLATFORM_ADMIN"[];
   readonly managerCapabilities: readonly PlatformManagerCapability[];
+  readonly moderation: UserModerationStatus;
   readonly communities: readonly {
     readonly id: string;
     readonly name: string;
@@ -163,4 +165,5 @@ export interface IdentityRepository {
     },
   ): Promise<void>;
   findMe(userId: string): Promise<MeRecord | null>;
+  findModerationStatus(userId: string): Promise<UserModerationStatus>;
 }

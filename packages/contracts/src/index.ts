@@ -38,6 +38,15 @@ export const profilePresentationUpdateSchema = z.object({
   bio: z.string().trim().max(500).nullable(),
 });
 
+export const userModerationStatusSchema = z.object({
+  yellowCardCount: z.number().int().min(0),
+  isBanned: z.boolean(),
+  banExpiresAt: z.string().datetime().nullable(),
+  isReadOnly: z.boolean(),
+  readOnlyExpiresAt: z.string().datetime().nullable(),
+  isDisabled: z.boolean(),
+});
+
 export const meResponseSchema = z.object({
   id: z.string(),
   presentation: z.object({
@@ -65,6 +74,14 @@ export const meResponseSchema = z.object({
       role: z.enum(["FOUNDER", "MODERATOR", "MEMBER"]),
     }),
   ),
+  moderation: userModerationStatusSchema.optional().default({
+    yellowCardCount: 0,
+    isBanned: false,
+    banExpiresAt: null,
+    isReadOnly: false,
+    readOnlyExpiresAt: null,
+    isDisabled: false,
+  }),
   teams: z.array(
     z.object({
       id: z.string(),
@@ -94,6 +111,7 @@ export type HealthResponse = z.infer<typeof healthResponseSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ProfilePresentationUpdateInput = z.infer<typeof profilePresentationUpdateSchema>;
+export type UserModerationStatus = z.infer<typeof userModerationStatusSchema>;
 export type MeResponse = z.infer<typeof meResponseSchema>;
 
 export const teamCapabilitySchema = z.enum([

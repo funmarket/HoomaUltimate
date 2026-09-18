@@ -1,4 +1,5 @@
 import type { TelegramIdentityInput } from "@hooma/auth";
+import type { UserModerationStatus } from "@hooma/contracts";
 import { Prisma, type PrismaClient } from "@hooma/database";
 import type { ProfileIdentity } from "@hooma/contracts/profile";
 import type {
@@ -386,6 +387,10 @@ export class PrismaIdentityRepository implements IdentityRepository {
           where: { revokedAt: null },
           select: { teamId: true, capability: true },
         },
+        sanctionsReceived: {
+          select: { actionType: true, expiresAt: true, clearedAt: true },
+          orderBy: { createdAt: "desc" },
+        },
       },
     });
     if (!user?.presentation) return null;
@@ -442,6 +447,7 @@ export class PrismaIdentityRepository implements IdentityRepository {
       presentation: user.presentation,
       platformRoles: user.platformRoles.map(() => "PLATFORM_ADMIN" as const),
       managerCapabilities: user.appManagerGrants.map((grant) => grant.capability),
+      moderation: moderationStatusFromRows(user.sanctionsReceived ?? [], new Date()),
       communities: user.communityMemberships.map((membership) => ({
         ...membership.community,
         role: membership.role,
@@ -452,6 +458,19 @@ export class PrismaIdentityRepository implements IdentityRepository {
       })),
       teams: [...teamMap.values()],
     };
+  }
+
+  async findModerationStatus(userId: string): Promise<UserModerationStatus> {
+    const user = await this.db.user.findUnique({
+      where: { id: userId },
+      select: {
+        sanctionsReceived: {
+          select: { actionType: true, expiresAt: true, clearedAt: true },
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+    return moderationStatusFromRows(user?.sanctionsReceived ?? [], new Date());
   }
 
   private async refreshTelegramIdentity(
@@ -497,6 +516,35 @@ function telegramIdentityData(userId: string, input: TelegramIdentityInput) {
     photoUrl: input.photoUrl ?? null,
     languageCode: input.languageCode ?? null,
     isPremium: input.isPremium ?? false,
+  };
+}
+
+type ModerationSanctionRow = {
+  readonly actionType:
+    "YELLOW_CARD_WARNING" | "RED_CARD_BAN" | "TEMPORARY_BAN" | "READ_ONLY" | "ACCOUNT_DISABLED";
+  readonly expiresAt: Date | null;
+  readonly clearedAt: Date | null;
+};
+
+function moderationStatusFromRows(
+  sanctions: readonly ModerationSanctionRow[],
+  now: Date,
+): UserModerationStatus {
+  const active = sanctions.filter(
+    (sanction) => sanction.clearedAt === null && (!sanction.expiresAt || sanction.expiresAt > now),
+  );
+  const activeBan = active.find(
+    (sanction) => sanction.actionType === "RED_CARD_BAN" || sanction.actionType === "TEMPORARY_BAN",
+  );
+  const activeReadOnly = active.find((sanction) => sanction.actionType === "READ_ONLY");
+  return {
+    yellowCardCount: sanctions.filter((sanction) => sanction.actionType === "YELLOW_CARD_WARNING")
+      .length,
+    isBanned: Boolean(activeBan),
+    banExpiresAt: activeBan?.expiresAt?.toISOString() ?? null,
+    isReadOnly: Boolean(activeReadOnly),
+    readOnlyExpiresAt: activeReadOnly?.expiresAt?.toISOString() ?? null,
+    isDisabled: active.some((sanction) => sanction.actionType === "ACCOUNT_DISABLED"),
   };
 }
 

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { PublicCommunitySummary, PublicTeamSummary } from "@hooma/frontend";
+import { AdminSelect } from "./AdminSelect";
 
 type EntityLoadState = "loading" | "ready" | "error";
 
@@ -24,6 +25,24 @@ export function ManagedEntities({
     () => teams.find((team) => team.id === selectedTeamId) ?? null,
     [teams, selectedTeamId],
   );
+  const communityOptions = useMemo(
+    () =>
+      communities.map((community) => ({
+        value: community.id,
+        label: community.name,
+        description: community.houma || community.city || `@${community.slug}`,
+      })),
+    [communities],
+  );
+  const teamOptions = useMemo(
+    () =>
+      teams.map((team) => ({
+        value: team.id,
+        label: team.name,
+        description: team.houma || team.city || `@${team.slug}`,
+      })),
+    [teams],
+  );
 
   useEffect(() => {
     if (selectedCommunityId && !selectedCommunity) setSelectedCommunityId("");
@@ -44,27 +63,14 @@ export function ManagedEntities({
           <span>{communitiesState === "ready" ? communities.length : "—"}</span>
         </div>
         <div className="admin-entity-picker">
-          <label className="admin-entity-select-label">
-            <span>Select a HOOMA to manage</span>
-            <select
-              className="admin-entity-select"
-              value={selectedCommunityId}
-              onChange={(event) => setSelectedCommunityId(event.currentTarget.value)}
-              disabled={communitiesState !== "ready" || !communities.length}
-            >
-              <option value="">Select a HOOMA</option>
-              {communitiesState === "ready"
-                ? communities.map((community) => (
-                    <option key={community.id} value={community.id}>
-                      {community.name}
-                      {community.houma || community.city
-                        ? ` — ${community.houma || community.city}`
-                        : ""}
-                    </option>
-                  ))
-                : null}
-            </select>
-          </label>
+          <AdminSelect
+            label="Select a HOOMA to manage"
+            value={selectedCommunityId}
+            options={communityOptions}
+            placeholder="Select a HOOMA"
+            disabled={communitiesState !== "ready" || !communities.length}
+            onChange={setSelectedCommunityId}
+          />
           {communitiesState === "loading" ? <p className="muted">Loading active HOOMAs…</p> : null}
           {communitiesState === "error" ? (
             <p className="muted">Active HOOMAs are unavailable.</p>
@@ -100,25 +106,14 @@ export function ManagedEntities({
           <span>{teamsState === "ready" ? teams.length : "—"}</span>
         </div>
         <div className="admin-entity-picker">
-          <label className="admin-entity-select-label">
-            <span>Select a Team to manage</span>
-            <select
-              className="admin-entity-select"
-              value={selectedTeamId}
-              onChange={(event) => setSelectedTeamId(event.currentTarget.value)}
-              disabled={teamsState !== "ready" || !teams.length}
-            >
-              <option value="">Select a Team</option>
-              {teamsState === "ready"
-                ? teams.map((team) => (
-                    <option key={team.id} value={team.id}>
-                      {team.name}
-                      {team.houma || team.city ? ` — ${team.houma || team.city}` : ""}
-                    </option>
-                  ))
-                : null}
-            </select>
-          </label>
+          <AdminSelect
+            label="Select a Team to manage"
+            value={selectedTeamId}
+            options={teamOptions}
+            placeholder="Select a Team"
+            disabled={teamsState !== "ready" || !teams.length}
+            onChange={setSelectedTeamId}
+          />
           {teamsState === "loading" ? <p className="muted">Loading active Teams…</p> : null}
           {teamsState === "error" ? <p className="muted">Active Teams are unavailable.</p> : null}
           {teamsState === "ready" && !teams.length ? (

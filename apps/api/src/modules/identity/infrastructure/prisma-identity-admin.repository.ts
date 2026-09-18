@@ -1,5 +1,8 @@
 import type {
   AdminUserDetail,
+  AdminUserModerationStatus,
+  AdminUserSanctionEvent,
+  AdminUserSanctionType,
   AdminUserSearchItem,
   AdminUserSessionSummary,
   PlatformManagerCapability,
@@ -45,6 +48,51 @@ function activeSessionCount(
   now: Date,
 ): number {
   return sessions.filter((session) => session.revokedAt === null && session.expiresAt > now).length;
+}
+
+type SanctionRow = {
+  readonly id: string;
+  readonly actorUserId: string;
+  readonly actionType: AdminUserSanctionType;
+  readonly reason: string;
+  readonly createdAt: Date;
+  readonly expiresAt: Date | null;
+  readonly clearedAt: Date | null;
+};
+
+function isActiveSanction(sanction: SanctionRow, now: Date): boolean {
+  return sanction.clearedAt === null && (!sanction.expiresAt || sanction.expiresAt > now);
+}
+
+function sanctionEvent(sanction: SanctionRow): AdminUserSanctionEvent {
+  return {
+    id: sanction.id,
+    actorUserId: sanction.actorUserId,
+    actionType: sanction.actionType,
+    reason: sanction.reason,
+    createdAt: sanction.createdAt.toISOString(),
+    expiresAt: iso(sanction.expiresAt),
+    clearedAt: iso(sanction.clearedAt),
+  };
+}
+
+function moderationStatus(sanctions: readonly SanctionRow[], now: Date): AdminUserModerationStatus {
+  const active = sanctions.filter((sanction) => isActiveSanction(sanction, now));
+  const activeBan = active.find(
+    (sanction) => sanction.actionType === "RED_CARD_BAN" || sanction.actionType === "TEMPORARY_BAN",
+  );
+  const activeReadOnly = active.find((sanction) => sanction.actionType === "READ_ONLY");
+  return {
+    yellowCardCount: sanctions.filter((sanction) => sanction.actionType === "YELLOW_CARD_WARNING")
+      .length,
+    isBanned: Boolean(activeBan),
+    banExpiresAt: iso(activeBan?.expiresAt ?? null),
+    isReadOnly: Boolean(activeReadOnly),
+    readOnlyExpiresAt: iso(activeReadOnly?.expiresAt ?? null),
+    isDisabled: active.some((sanction) => sanction.actionType === "ACCOUNT_DISABLED"),
+    activeSanctions: active.map(sanctionEvent),
+    history: sanctions.map(sanctionEvent),
+  };
 }
 
 export class PrismaIdentityAdminRepository implements IdentityAdminRepository {
@@ -132,6 +180,19 @@ export class PrismaIdentityAdminRepository implements IdentityAdminRepository {
           select: { capability: true },
           orderBy: { capability: "asc" },
         },
+        sanctionsReceived: {
+          select: {
+            id: true,
+            actorUserId: true,
+            actionType: true,
+            reason: true,
+            createdAt: true,
+            expiresAt: true,
+            clearedAt: true,
+          },
+          orderBy: { createdAt: "desc" },
+          take: 50,
+        },
       },
     });
     if (!user?.presentation) return null;
@@ -170,6 +231,13 @@ export class PrismaIdentityAdminRepository implements IdentityAdminRepository {
         activeSessionCount: sessions.filter((session) => session.isActive).length,
         sessions,
       },
+      moderation: moderationStatus(
+        user.sanctionsReceived.map((sanction) => ({
+          ...sanction,
+          actionType: sanction.actionType as AdminUserSanctionType,
+        })),
+        now,
+      ),
     };
   }
 
@@ -199,6 +267,72 @@ export class PrismaIdentityAdminRepository implements IdentityAdminRepository {
         },
       });
       return result.count;
+    });
+  }
+
+  async issueUserSanction(input: {
+    actorUserId: string;
+    targetUserId: string;
+    actionType: AdminUserSanctionType;
+    reason: string;
+    expiresAt: Date | null;
+  }): Promise<void> {
+    await this.db.$transaction(async (tx) => {
+      await tx.userSanction.create({
+        data: {
+          actorUserId: input.actorUserId,
+          targetUserId: input.targetUserId,
+          actionType: input.actionType,
+          reason: input.reason.trim(),
+          expiresAt: input.expiresAt,
+        },
+      });
+      await tx.auditLog.create({
+        data: {
+          actorUserId: input.actorUserId,
+          action: `USER_SANCTION_${input.actionType}`,
+          entityType: "User",
+          entityId: input.targetUserId,
+          metadata: {
+            reason: input.reason.trim(),
+            expiresAt: input.expiresAt?.toISOString() ?? null,
+          },
+        },
+      });
+    });
+  }
+
+  async clearUserSanction(input: {
+    actorUserId: string;
+    targetUserId: string;
+    sanctionId: string;
+    reason: string;
+  }): Promise<boolean> {
+    const now = new Date();
+    return this.db.$transaction(async (tx) => {
+      const update = await tx.userSanction.updateMany({
+        where: {
+          id: input.sanctionId,
+          targetUserId: input.targetUserId,
+          clearedAt: null,
+        },
+        data: {
+          clearedAt: now,
+          clearedByUserId: input.actorUserId,
+          clearReason: input.reason.trim(),
+        },
+      });
+      if (update.count === 0) return false;
+      await tx.auditLog.create({
+        data: {
+          actorUserId: input.actorUserId,
+          action: "USER_SANCTION_CLEARED",
+          entityType: "User",
+          entityId: input.targetUserId,
+          metadata: { reason: input.reason.trim(), sanctionId: input.sanctionId },
+        },
+      });
+      return true;
     });
   }
 }

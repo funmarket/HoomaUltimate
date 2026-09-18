@@ -43,6 +43,16 @@ const safeUserDetail = {
       },
     ],
   },
+  moderation: {
+    yellowCardCount: 0,
+    isBanned: false,
+    banExpiresAt: null,
+    isReadOnly: false,
+    readOnlyExpiresAt: null,
+    isDisabled: false,
+    activeSanctions: [],
+    history: [],
+  },
 };
 
 function createAuthorizer(): PlatformAdminAuthorizer {
@@ -107,6 +117,17 @@ function createRepository(overrides: Partial<IdentityAdminRepository> = {}) {
     revokeActiveUserSessions: async (actorUserId, targetUserId, reason) => {
       calls.push(`revoke:${actorUserId}:${targetUserId}:${reason}`);
       return 1;
+    },
+    issueUserSanction: async (input) => {
+      calls.push(
+        `sanction:${input.actorUserId}:${input.targetUserId}:${input.actionType}:${input.reason}:${input.expiresAt?.toISOString() ?? "none"}`,
+      );
+    },
+    clearUserSanction: async (input) => {
+      calls.push(
+        `clear:${input.actorUserId}:${input.targetUserId}:${input.sanctionId}:${input.reason}`,
+      );
+      return input.sanctionId !== "missing";
     },
     ...overrides,
   };
@@ -205,4 +226,107 @@ test("delegated user managers cannot revoke Platform Admin or App Manager sessio
     "detail:admin-issues-manager",
     "revoke:platform-admin:admin-issues-manager:owner review",
   ]);
+});
+
+test("yellow cards require a reason and third strike escalates to red card one-week ban", async () => {
+  let yellowCount = 2;
+  const { repository, calls } = createRepository({
+    findAdminUserDetail: async (targetUserId) => {
+      calls.push(`detail:${targetUserId}`);
+      return {
+        ...safeUserDetail,
+        moderation: {
+          ...safeUserDetail.moderation,
+          yellowCardCount: yellowCount,
+        },
+      };
+    },
+    issueUserSanction: async (input) => {
+      calls.push(`sanction:${input.actionType}:${input.reason}:${Boolean(input.expiresAt)}`);
+      if (input.actionType === "YELLOW_CARD_WARNING") yellowCount += 1;
+    },
+  });
+  const service = new IdentityAdminService(repository, createAuthorizer());
+
+  await rejectsWithCode(
+    () =>
+      service.sanctionUser("user-manager", "user-1", {
+        actionType: "YELLOW_CARD_WARNING",
+        reason: " ",
+        expiresAt: null,
+      }),
+    "USER_SANCTION_REASON_REQUIRED",
+  );
+  await service.sanctionUser("user-manager", "user-1", {
+    actionType: "YELLOW_CARD_WARNING",
+    reason: "abuse report confirmed",
+    expiresAt: null,
+  });
+
+  assert.ok(calls.includes("sanction:YELLOW_CARD_WARNING:abuse report confirmed:false"));
+  assert.ok(
+    calls.includes("sanction:RED_CARD_BAN:Automatic red card after third yellow card warning:true"),
+  );
+});
+
+test("temporary ban and read-only controls require future expiration and can be cleared", async () => {
+  const { repository, calls } = createRepository();
+  const service = new IdentityAdminService(repository, createAuthorizer());
+  const future = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+  await rejectsWithCode(
+    () =>
+      service.sanctionUser("user-manager", "user-1", {
+        actionType: "TEMPORARY_BAN",
+        reason: "spam",
+        expiresAt: null,
+      }),
+    "USER_SANCTION_DURATION_REQUIRED",
+  );
+
+  await service.sanctionUser("user-manager", "user-1", {
+    actionType: "TEMPORARY_BAN",
+    reason: "spam",
+    expiresAt: future,
+  });
+  await service.sanctionUser("user-manager", "user-1", {
+    actionType: "READ_ONLY",
+    reason: "cooldown",
+    expiresAt: future,
+  });
+  await service.clearUserSanction("user-manager", "user-1", "sanction-1", {
+    reason: "appeal accepted",
+  });
+
+  assert.ok(
+    calls.some((call) => call.startsWith("sanction:user-manager:user-1:TEMPORARY_BAN:spam:")),
+  );
+  assert.ok(
+    calls.some((call) => call.startsWith("sanction:user-manager:user-1:READ_ONLY:cooldown:")),
+  );
+  assert.ok(calls.includes("clear:user-manager:user-1:sanction-1:appeal accepted"));
+});
+
+test("delegated managers cannot sanction Platform Admin or App Manager users", async () => {
+  const { repository } = createRepository();
+  const service = new IdentityAdminService(repository, createAuthorizer());
+
+  await rejectsWithCode(
+    () =>
+      service.sanctionUser("user-manager", "platform-admin", {
+        actionType: "ACCOUNT_DISABLED",
+        reason: "unsafe target",
+        expiresAt: null,
+      }),
+    "USER_SANCTION_TARGET_FORBIDDEN",
+  );
+  await rejectsWithCode(
+    () =>
+      service.sanctionUser("user-manager", "admin-issues-manager", {
+        actionType: "READ_ONLY",
+        reason: "unsafe target",
+        expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      }),
+    "USER_SANCTION_TARGET_FORBIDDEN",
+  );
 });
