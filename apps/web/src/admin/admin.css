@@ -155,7 +155,9 @@
   gap: 14px;
 }
 
-.admin-manager-form > input {
+.admin-manager-form > input,
+.admin-manager-form > textarea,
+.admin-manager-form > select {
   width: 100%;
   min-width: 0;
 }
@@ -181,22 +183,78 @@
   overflow-wrap: anywhere;
 }
 
-.admin-entity-select-label {
+.admin-select-field {
+  position: relative;
   display: grid;
   gap: 8px;
+}
+
+.admin-select-label {
   font-weight: 700;
 }
 
-.admin-entity-select {
+.admin-select-trigger,
+.admin-select-option {
   width: 100%;
   min-width: 0;
-  min-height: 48px;
   border: 1px solid var(--app-line-strong);
+  background: color-mix(in srgb, var(--app-surface) 92%, #020617 8%);
+  color: var(--app-text);
+  font: inherit;
+  text-align: left;
+}
+
+.admin-select-trigger {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   border-radius: 14px;
   padding: 0 14px;
-  background: inherit;
-  color: inherit;
-  font: inherit;
+}
+
+.admin-select-trigger:focus-visible,
+.admin-select-option:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--app-accent) 60%, transparent);
+  outline-offset: 2px;
+}
+
+.admin-select-trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.admin-select-menu {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 280px;
+  overflow: auto;
+  border: 1px solid var(--app-line-strong);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--app-surface) 94%, #020617 6%);
+  color: var(--app-text);
+  box-shadow: 0 18px 50px rgb(0 0 0 / 0.45);
+}
+
+.admin-select-option {
+  display: grid;
+  gap: 3px;
+  border: 0;
+  border-radius: 0;
+  padding: 12px 14px;
+}
+
+.admin-select-option:hover,
+.admin-select-option[aria-selected="true"] {
+  background: color-mix(in srgb, var(--app-accent) 28%, var(--app-surface));
+}
+
+.admin-select-option small {
+  color: var(--app-muted);
 }
 
 .admin-entity-detail {
@@ -222,4 +280,65 @@
   .admin-entity-detail {
     grid-template-columns: 1fr;
   }
+}
+
+.admin-sanction-status,
+.admin-sanction-actions,
+.admin-sanction-history {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-sanction-card,
+.admin-sanction-history li {
+  border: 1px solid var(--app-line-strong);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.admin-sanction-card {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-sanction-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-sanction-badge {
+  border: 1px solid var(--app-line-strong);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.admin-sanction-badge.yellow {
+  background: #facc15;
+  color: #422006;
+}
+
+.admin-sanction-badge.red {
+  background: #ef4444;
+  color: #fff7ed;
+}
+
+.admin-sanction-badge.readonly {
+  background: #38bdf8;
+  color: #082f49;
+}
+
+.admin-sanction-badge.disabled {
+  background: #64748b;
+  color: #f8fafc;
+}
+
+.admin-sanction-history ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }

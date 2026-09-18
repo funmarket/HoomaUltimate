@@ -50,6 +50,33 @@ export function requireAuthentication(service: IdentityService, config: ApiConfi
       const auth = await resolveAuthentication(request, service, config);
       if (!auth) throw new AppError(401, "AUTH_REQUIRED", "Authentication required");
 
+      const moderation = await service.moderationStatus(auth.userId);
+      if (moderation.isDisabled) {
+        throw new AppError(403, "ACCOUNT_DISABLED", "This account is disabled");
+      }
+      if (moderation.isBanned) {
+        throw new AppError(
+          403,
+          "ACCOUNT_BANNED",
+          moderation.banExpiresAt
+            ? `This account is banned until ${moderation.banExpiresAt}`
+            : "This account is banned",
+        );
+      }
+      if (
+        moderation.isReadOnly &&
+        writeMethods.has(request.method) &&
+        !request.path.startsWith("/admin")
+      ) {
+        throw new AppError(
+          403,
+          "ACCOUNT_READ_ONLY",
+          moderation.readOnlyExpiresAt
+            ? `This account is read-only until ${moderation.readOnlyExpiresAt}`
+            : "This account is read-only",
+        );
+      }
+
       if (auth.transports.includes("web") && writeMethods.has(request.method)) {
         const origin = request.header("origin");
         if (!origin || ![config.WEB_ORIGIN, config.TELEGRAM_ORIGIN].includes(origin)) {

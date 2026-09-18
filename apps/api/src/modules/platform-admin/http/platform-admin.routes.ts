@@ -3,6 +3,8 @@ import {
   adminAuditQuerySchema,
   adminIssueStatusUpdateSchema,
   adminPitchReviewTargetSchema,
+  adminUserSanctionClearInputSchema,
+  adminUserSanctionInputSchema,
   adminUserSearchQuerySchema,
   appManagerUpdateSchema,
   moderationDecisionSchema,
@@ -146,6 +148,35 @@ export function createPlatformAdminRouter(
           getAuth(request).userId,
           String(request.params.userId),
           input.note,
+        ),
+      );
+    }),
+  );
+
+  router.post(
+    "/users/:userId/sanctions",
+    asyncHandler(async (request, response) => {
+      response
+        .status(201)
+        .json(
+          await identityAdmin.sanctionUser(
+            getAuth(request).userId,
+            String(request.params.userId),
+            adminUserSanctionInputSchema.parse(request.body),
+          ),
+        );
+    }),
+  );
+
+  router.post(
+    "/users/:userId/sanctions/:sanctionId/clear",
+    asyncHandler(async (request, response) => {
+      response.json(
+        await identityAdmin.clearUserSanction(
+          getAuth(request).userId,
+          String(request.params.userId),
+          String(request.params.sanctionId),
+          adminUserSanctionClearInputSchema.parse(request.body),
         ),
       );
     }),

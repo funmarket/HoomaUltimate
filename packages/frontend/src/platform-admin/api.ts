@@ -3,6 +3,9 @@ import type {
   AdminAuditQueryInput,
   AdminIssueStatusUpdateInput,
   AdminIssueSummary,
+  AdminUserModerationStatus,
+  AdminUserSanctionClearInput,
+  AdminUserSanctionInput,
   AdminPitchReviewQueueItem,
   AdminPlaceOwnershipReviewQueueItem,
   AdminPlaceReviewQueueItem,
@@ -19,6 +22,8 @@ import { request, type HoomaTransport } from "../http";
 export type {
   AdminIssueSummary,
   AdminUserDetail,
+  AdminUserModerationStatus,
+  AdminUserSanctionEvent,
   AdminUserSearchItem,
   PlatformAuditEntry,
   PlatformAuditPage,
@@ -80,6 +85,18 @@ export function createPlatformAdminApi(transport: HoomaTransport) {
       request<{ ok: true; revokedSessionCount: number }>(
         transport,
         `/api/v1/admin/users/${encodeURIComponent(userId)}/sessions/revoke`,
+        { method: "POST", body: JSON.stringify(input) },
+      ),
+    sanctionUser: (userId: string, input: AdminUserSanctionInput) =>
+      request<{ ok: true; moderation: AdminUserModerationStatus }>(
+        transport,
+        `/api/v1/admin/users/${encodeURIComponent(userId)}/sanctions`,
+        { method: "POST", body: JSON.stringify(input) },
+      ),
+    clearUserSanction: (userId: string, sanctionId: string, input: AdminUserSanctionClearInput) =>
+      request<{ ok: true; moderation: AdminUserModerationStatus }>(
+        transport,
+        `/api/v1/admin/users/${encodeURIComponent(userId)}/sanctions/${encodeURIComponent(sanctionId)}/clear`,
         { method: "POST", body: JSON.stringify(input) },
       ),
     setManager: (username: string, capabilities: readonly PlatformManagerCapability[]) =>

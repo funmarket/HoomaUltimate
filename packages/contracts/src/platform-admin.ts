@@ -29,6 +29,23 @@ export const userSessionRevocationSchema = z.object({
   note: z.string().trim().min(1).max(1000),
 });
 
+export const adminUserSanctionActionSchema = z.enum([
+  "YELLOW_CARD_WARNING",
+  "TEMPORARY_BAN",
+  "READ_ONLY",
+  "ACCOUNT_DISABLED",
+]);
+
+export const adminUserSanctionInputSchema = z.object({
+  actionType: adminUserSanctionActionSchema,
+  reason: z.string().trim().min(1).max(1000),
+  expiresAt: z.string().trim().datetime().optional().nullable(),
+});
+
+export const adminUserSanctionClearInputSchema = z.object({
+  reason: z.string().trim().min(1).max(1000),
+});
+
 export const moderationDecisionSchema = z.object({
   decision: z.enum(["APPROVE", "REJECT"]),
   note: z.string().trim().max(1000).optional().nullable(),
@@ -54,6 +71,9 @@ export interface AdminAuditQueryInput {
   readonly limit?: number | undefined;
 }
 export type UserSessionRevocationInput = z.infer<typeof userSessionRevocationSchema>;
+export type AdminUserSanctionActionInput = z.infer<typeof adminUserSanctionActionSchema>;
+export type AdminUserSanctionInput = z.infer<typeof adminUserSanctionInputSchema>;
+export type AdminUserSanctionClearInput = z.infer<typeof adminUserSanctionClearInputSchema>;
 export type ModerationDecisionInput = z.infer<typeof moderationDecisionSchema>;
 export type AdminPitchReviewTarget = z.infer<typeof adminPitchReviewTargetSchema>;
 export type AppManagerUpdateInput = z.infer<typeof appManagerUpdateSchema>;
@@ -154,6 +174,30 @@ export interface AdminUserSessionSummary {
   readonly isActive: boolean;
 }
 
+export type AdminUserSanctionType =
+  "YELLOW_CARD_WARNING" | "RED_CARD_BAN" | "TEMPORARY_BAN" | "READ_ONLY" | "ACCOUNT_DISABLED";
+
+export interface AdminUserSanctionEvent {
+  readonly id: string;
+  readonly actionType: AdminUserSanctionType;
+  readonly reason: string;
+  readonly createdAt: string;
+  readonly expiresAt: string | null;
+  readonly clearedAt: string | null;
+  readonly actorUserId: string;
+}
+
+export interface AdminUserModerationStatus {
+  readonly yellowCardCount: number;
+  readonly isBanned: boolean;
+  readonly banExpiresAt: string | null;
+  readonly isReadOnly: boolean;
+  readonly readOnlyExpiresAt: string | null;
+  readonly isDisabled: boolean;
+  readonly activeSanctions: readonly AdminUserSanctionEvent[];
+  readonly history: readonly AdminUserSanctionEvent[];
+}
+
 export interface AdminUserDetail {
   readonly userId: string;
   readonly presentation: {
@@ -181,4 +225,5 @@ export interface AdminUserDetail {
     readonly activeSessionCount: number;
     readonly sessions: readonly AdminUserSessionSummary[];
   };
+  readonly moderation: AdminUserModerationStatus;
 }

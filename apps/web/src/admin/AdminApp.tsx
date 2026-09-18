@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import type { AppManagerSummary, PlatformManagerCapability } from "@hooma/contracts/platform-admin";
+import type {
+  AdminUserSanctionActionInput,
+  AdminUserSanctionEvent,
+  AppManagerSummary,
+  PlatformManagerCapability,
+} from "@hooma/contracts/platform-admin";
 import {
   createPlatformAdminApi,
   useHoomaFrontend,
@@ -35,23 +40,73 @@ const EMPTY_AUDIT_FILTERS: AuditArchiveFilters = {
   to: "",
 };
 
+function formatSanctionLabel(actionType: AdminUserSanctionEvent["actionType"]): string {
+  if (actionType === "YELLOW_CARD_WARNING") return "Yellow card warning";
+  if (actionType === "RED_CARD_BAN") return "Red card ban";
+  if (actionType === "TEMPORARY_BAN") return "Temporary ban";
+  if (actionType === "READ_ONLY") return "Read-only mode";
+  return "Account disabled";
+}
+
 function AdminUsers({
   users,
   detail,
   loadState,
-  isRevoking,
+  isMutating,
   onSearch,
   onSelect,
   onRevokeSessions,
+  onSanction,
+  onClearSanction,
 }: {
   readonly users: readonly AdminUserSearchItem[];
   readonly detail: AdminUserDetail | null;
   readonly loadState: LoadState | null;
-  readonly isRevoking: boolean;
+  readonly isMutating: boolean;
   readonly onSearch: (event: FormEvent<HTMLFormElement>) => Promise<void>;
   readonly onSelect: (userId: string) => Promise<void>;
-  readonly onRevokeSessions: (userId: string) => Promise<void>;
+  readonly onRevokeSessions: (userId: string, note: string) => Promise<void>;
+  readonly onSanction: (
+    userId: string,
+    input: { actionType: AdminUserSanctionActionInput; reason: string; expiresAt: string | null },
+  ) => Promise<void>;
+  readonly onClearSanction: (userId: string, sanctionId: string, reason: string) => Promise<void>;
 }) {
+  const [sessionRevokeReason, setSessionRevokeReason] = useState("");
+  const [sanctionAction, setSanctionAction] =
+    useState<AdminUserSanctionActionInput>("YELLOW_CARD_WARNING");
+  const [sanctionReason, setSanctionReason] = useState("");
+  const [sanctionExpiresAt, setSanctionExpiresAt] = useState("");
+  const [clearReasons, setClearReasons] = useState<Record<string, string>>({});
+  const requiresExpiration = sanctionAction === "TEMPORARY_BAN" || sanctionAction === "READ_ONLY";
+
+  async function submitSessionRevocation(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!detail) return;
+    await onRevokeSessions(detail.userId, sessionRevokeReason);
+    setSessionRevokeReason("");
+  }
+
+  async function submitSanction(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!detail) return;
+    await onSanction(detail.userId, {
+      actionType: sanctionAction,
+      reason: sanctionReason,
+      expiresAt:
+        requiresExpiration && sanctionExpiresAt ? new Date(sanctionExpiresAt).toISOString() : null,
+    });
+    setSanctionReason("");
+    setSanctionExpiresAt("");
+  }
+
+  async function clearSanction(event: FormEvent<HTMLFormElement>, sanctionId: string) {
+    event.preventDefault();
+    if (!detail) return;
+    await onClearSanction(detail.userId, sanctionId, clearReasons[sanctionId] ?? "");
+    setClearReasons((current) => ({ ...current, [sanctionId]: "" }));
+  }
+
   return (
     <section className="panel" id="user-security">
       <div className="section-heading">
@@ -62,7 +117,8 @@ function AdminUsers({
         <span>{loadState === "ready" ? users.length : "—"}</span>
       </div>
       <p className="muted">
-        Search safe Identity-owned account details and revoke active web sessions when needed.
+        Search safe Identity-owned account details, manage sanctions, and revoke active web
+        sessions.
       </p>
       <form className="admin-manager-form" onSubmit={(event) => void onSearch(event)}>
         <input
@@ -102,6 +158,74 @@ function AdminUsers({
           </div>
           <p className="muted">Web login: {detail.identity.web?.loginUsername ?? "—"}</p>
           <p className="muted">Telegram: {detail.identity.telegram?.telegramUsername ?? "—"}</p>
+          <div className="admin-sanction-status">
+            <h4>Moderation status</h4>
+            <div className="admin-sanction-badges">
+              <span className="admin-sanction-badge yellow">
+                {detail.moderation.yellowCardCount} yellow card
+                {detail.moderation.yellowCardCount === 1 ? "" : "s"}
+              </span>
+              {detail.moderation.isBanned ? (
+                <span className="admin-sanction-badge red">
+                  Red card / banned until {detail.moderation.banExpiresAt ?? "cleared"}
+                </span>
+              ) : null}
+              {detail.moderation.isReadOnly ? (
+                <span className="admin-sanction-badge readonly">
+                  Read-only until {detail.moderation.readOnlyExpiresAt ?? "cleared"}
+                </span>
+              ) : null}
+              {detail.moderation.isDisabled ? (
+                <span className="admin-sanction-badge disabled">Account disabled</span>
+              ) : null}
+            </div>
+            {!detail.moderation.activeSanctions.length ? (
+              <p className="muted">No active sanctions.</p>
+            ) : null}
+          </div>
+          <form className="admin-manager-form admin-sanction-card" onSubmit={submitSanction}>
+            <h4>Apply user control</h4>
+            <label>
+              Action
+              <select
+                value={sanctionAction}
+                onChange={(event) =>
+                  setSanctionAction(event.currentTarget.value as AdminUserSanctionActionInput)
+                }
+                disabled={isMutating}
+              >
+                <option value="YELLOW_CARD_WARNING">Warn / yellow card</option>
+                <option value="TEMPORARY_BAN">Temporary ban</option>
+                <option value="READ_ONLY">Read-only mode</option>
+                <option value="ACCOUNT_DISABLED">Disable account</option>
+              </select>
+            </label>
+            {requiresExpiration ? (
+              <label>
+                Ends at
+                <input
+                  type="datetime-local"
+                  value={sanctionExpiresAt}
+                  onChange={(event) => setSanctionExpiresAt(event.currentTarget.value)}
+                  required
+                  disabled={isMutating}
+                />
+              </label>
+            ) : null}
+            <label>
+              Reason
+              <textarea
+                value={sanctionReason}
+                rows={3}
+                required
+                disabled={isMutating}
+                onChange={(event) => setSanctionReason(event.currentTarget.value)}
+              />
+            </label>
+            <button type="submit" disabled={isMutating}>
+              {isMutating ? "Saving user control…" : "Apply user control"}
+            </button>
+          </form>
           <h4>Active sessions</h4>
           {detail.security.sessions.length ? (
             <ul>
@@ -114,13 +238,66 @@ function AdminUsers({
           ) : (
             <p className="muted">No web sessions recorded.</p>
           )}
-          <button
-            type="button"
-            disabled={isRevoking || detail.security.activeSessionCount === 0}
-            onClick={() => void onRevokeSessions(detail.userId)}
+          <form
+            className="admin-manager-form admin-sanction-card"
+            onSubmit={submitSessionRevocation}
           >
-            {isRevoking ? "Revoking active sessions…" : "Revoke active sessions"}
-          </button>
+            <label>
+              Reason for revoking active sessions
+              <textarea
+                value={sessionRevokeReason}
+                rows={2}
+                required
+                disabled={isMutating || detail.security.activeSessionCount === 0}
+                onChange={(event) => setSessionRevokeReason(event.currentTarget.value)}
+              />
+            </label>
+            <button type="submit" disabled={isMutating || detail.security.activeSessionCount === 0}>
+              {isMutating ? "Revoking active sessions…" : "Revoke active sessions"}
+            </button>
+          </form>
+          <div className="admin-sanction-history">
+            <h4>Sanction history</h4>
+            {detail.moderation.history.length ? (
+              <ul>
+                {detail.moderation.history.map((sanction) => (
+                  <li key={sanction.id}>
+                    <strong>{formatSanctionLabel(sanction.actionType)}</strong>
+                    <p className="muted">
+                      {sanction.createdAt} ·{" "}
+                      {sanction.expiresAt ? `expires ${sanction.expiresAt}` : "no expiry"}
+                      {sanction.clearedAt ? ` · cleared ${sanction.clearedAt}` : ""}
+                    </p>
+                    <p>{sanction.reason}</p>
+                    {!sanction.clearedAt ? (
+                      <form
+                        className="admin-manager-form"
+                        onSubmit={(event) => void clearSanction(event, sanction.id)}
+                      >
+                        <input
+                          placeholder="Reason for clearing"
+                          required
+                          disabled={isMutating}
+                          value={clearReasons[sanction.id] ?? ""}
+                          onChange={(event) =>
+                            setClearReasons((current) => ({
+                              ...current,
+                              [sanction.id]: event.currentTarget.value,
+                            }))
+                          }
+                        />
+                        <button type="submit" disabled={isMutating}>
+                          Clear sanction
+                        </button>
+                      </form>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="muted">No sanction history.</p>
+            )}
+          </div>
         </article>
       ) : null}
     </section>
@@ -146,7 +323,7 @@ export function AdminApp() {
   const [adminUsers, setAdminUsers] = useState<AdminUserSearchItem[]>([]);
   const [selectedUser, setSelectedUser] = useState<AdminUserDetail | null>(null);
   const [userSearchState, setUserSearchState] = useState<LoadState | null>(null);
-  const [userSessionsRevoking, setUserSessionsRevoking] = useState(false);
+  const [userActionSaving, setUserActionSaving] = useState(false);
   const [queues, setQueues] = useState<AdminQueues>({
     places: [],
     "place-ownership": [],
@@ -291,11 +468,9 @@ export function AdminApp() {
     }
   }
 
-  async function revokeAdminUserSessions(userId: string) {
-    if (userSessionsRevoking) return;
-    const note = window.prompt("Reason for revoking this user's active sessions")?.trim();
-    if (!note) return;
-    setUserSessionsRevoking(true);
+  async function revokeAdminUserSessions(userId: string, note: string) {
+    if (userActionSaving) return;
+    setUserActionSaving(true);
     setError("");
     setMessage("");
     try {
@@ -305,7 +480,44 @@ export function AdminApp() {
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Unable to revoke user sessions");
     } finally {
-      setUserSessionsRevoking(false);
+      setUserActionSaving(false);
+    }
+  }
+
+  async function sanctionAdminUser(
+    userId: string,
+    input: { actionType: AdminUserSanctionActionInput; reason: string; expiresAt: string | null },
+  ) {
+    if (userActionSaving) return;
+    setUserActionSaving(true);
+    setError("");
+    setMessage("");
+    try {
+      await adminApi.sanctionUser(userId, input);
+      setMessage("User control saved and audited.");
+      setSelectedUser(await adminApi.userDetail(userId));
+      if (can("VIEW_AUDIT")) await Promise.all([loadOverview(), loadAudit()]);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unable to save user control");
+    } finally {
+      setUserActionSaving(false);
+    }
+  }
+
+  async function clearAdminUserSanction(userId: string, sanctionId: string, reason: string) {
+    if (userActionSaving) return;
+    setUserActionSaving(true);
+    setError("");
+    setMessage("");
+    try {
+      await adminApi.clearUserSanction(userId, sanctionId, { reason });
+      setMessage("User sanction cleared and audited.");
+      setSelectedUser(await adminApi.userDetail(userId));
+      if (can("VIEW_AUDIT")) await Promise.all([loadOverview(), loadAudit()]);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to clear user sanction");
+    } finally {
+      setUserActionSaving(false);
     }
   }
 
@@ -545,10 +757,12 @@ export function AdminApp() {
           users={adminUsers}
           detail={selectedUser}
           loadState={userSearchState}
-          isRevoking={userSessionsRevoking}
+          isMutating={userActionSaving}
           onSearch={searchAdminUsers}
           onSelect={selectAdminUser}
           onRevokeSessions={revokeAdminUserSessions}
+          onSanction={sanctionAdminUser}
+          onClearSanction={clearAdminUserSanction}
         />
       ) : null}
 

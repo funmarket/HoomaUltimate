@@ -334,6 +334,7 @@ export class IdentityService {
       transports: [...transports],
       platformRoles: [...user.platformRoles],
       managerCapabilities: [...user.managerCapabilities],
+      moderation: user.moderation,
       communities: [...user.communities],
       athletesCommunities: [...user.athletesCommunities],
       teams: user.teams.map((team) => ({
@@ -342,6 +343,10 @@ export class IdentityService {
         capabilities: [...team.capabilities],
       })),
     };
+  }
+
+  async moderationStatus(userId: string) {
+    return this.repository.findModerationStatus(userId);
   }
 
   async updatePresentation(
