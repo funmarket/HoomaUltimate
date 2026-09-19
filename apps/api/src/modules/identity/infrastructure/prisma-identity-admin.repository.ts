@@ -82,9 +82,15 @@ function moderationStatus(sanctions: readonly SanctionRow[], now: Date): AdminUs
     (sanction) => sanction.actionType === "RED_CARD_BAN" || sanction.actionType === "TEMPORARY_BAN",
   );
   const activeReadOnly = active.find((sanction) => sanction.actionType === "READ_ONLY");
+  const latestRedCard = sanctions.find((sanction) => sanction.actionType === "RED_CARD_BAN");
+  const yellowCardCount = sanctions.filter(
+    (sanction) =>
+      sanction.actionType === "YELLOW_CARD_WARNING" &&
+      sanction.clearedAt === null &&
+      (!latestRedCard || sanction.createdAt > latestRedCard.createdAt),
+  ).length;
   return {
-    yellowCardCount: sanctions.filter((sanction) => sanction.actionType === "YELLOW_CARD_WARNING")
-      .length,
+    yellowCardCount,
     isBanned: Boolean(activeBan),
     banExpiresAt: iso(activeBan?.expiresAt ?? null),
     isReadOnly: Boolean(activeReadOnly),
@@ -99,20 +105,28 @@ export class PrismaIdentityAdminRepository implements IdentityAdminRepository {
   constructor(private readonly db: PrismaClient) {}
 
   async searchAdminUsers(query: string, limit: number): Promise<readonly AdminUserSearchItem[]> {
-    const telegramUserId = maybeTelegramUserId(query);
+    const hasQuery = query.length > 0;
+    const telegramUserId = hasQuery ? maybeTelegramUserId(query) : undefined;
     const now = new Date();
+    const where = hasQuery
+      ? {
+          OR: [
+            { id: query },
+            { presentation: { username: { contains: query, mode: "insensitive" as const } } },
+            { presentation: { displayName: { contains: query, mode: "insensitive" as const } } },
+            { webCredential: { loginUsername: { contains: query, mode: "insensitive" as const } } },
+            { webCredential: { email: { contains: query, mode: "insensitive" as const } } },
+            {
+              telegramIdentity: {
+                telegramUsername: { contains: query, mode: "insensitive" as const },
+              },
+            },
+            ...(telegramUserId ? [{ telegramIdentity: { telegramUserId } }] : []),
+          ],
+        }
+      : {};
     const users = await this.db.user.findMany({
-      where: {
-        OR: [
-          { id: query },
-          { presentation: { username: { contains: query, mode: "insensitive" } } },
-          { presentation: { displayName: { contains: query, mode: "insensitive" } } },
-          { webCredential: { loginUsername: { contains: query, mode: "insensitive" } } },
-          { webCredential: { email: { contains: query, mode: "insensitive" } } },
-          { telegramIdentity: { telegramUsername: { contains: query, mode: "insensitive" } } },
-          ...(telegramUserId ? [{ telegramIdentity: { telegramUserId } }] : []),
-        ],
-      },
+      where,
       select: {
         id: true,
         createdAt: true,
@@ -271,20 +285,24 @@ export class PrismaIdentityAdminRepository implements IdentityAdminRepository {
   }
 
   async issueUserSanction(input: {
+    sanctionId: string;
     actorUserId: string;
     targetUserId: string;
     actionType: AdminUserSanctionType;
     reason: string;
     expiresAt: Date | null;
+    createdAt: Date;
   }): Promise<void> {
     await this.db.$transaction(async (tx) => {
       await tx.userSanction.create({
         data: {
+          id: input.sanctionId,
           actorUserId: input.actorUserId,
           targetUserId: input.targetUserId,
           actionType: input.actionType,
           reason: input.reason.trim(),
           expiresAt: input.expiresAt,
+          createdAt: input.createdAt,
         },
       });
       await tx.auditLog.create({

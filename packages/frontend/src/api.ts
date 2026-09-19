@@ -212,6 +212,27 @@ export type PlatformAdminOverview = {
   activePlatformAdmins: number;
   auditEntries: number;
 };
+export type UserNotificationItem = {
+  readonly id: string;
+  readonly type:
+    | "DIRECT_USER_WHISTLE"
+    | "RIDE_WHISTLE"
+    | "MODERATION_YELLOW_CARD"
+    | "MODERATION_SECOND_YELLOW_CARD"
+    | "MODERATION_RED_CARD_BAN"
+    | "MODERATION_TEMPORARY_BAN"
+    | "MODERATION_READ_ONLY"
+    | "MODERATION_ACCOUNT_DISABLED";
+  readonly actorUserId: string;
+  readonly strikeNumber: number | null;
+  readonly expiresAt: string | null;
+  readonly createdAt: string;
+  readonly readAt: string | null;
+};
+export type UserNotificationPage = {
+  readonly unreadCount: number;
+  readonly items: readonly UserNotificationItem[];
+};
 
 function publicListPath(filters: TeamListFilters = {}): string {
   const params = new URLSearchParams();
@@ -392,6 +413,16 @@ export function createHoomaApi(transport: HoomaTransport) {
       ),
   };
 
+  const notifications = {
+    list: () => request<UserNotificationPage>(transport, "/api/v1/notifications"),
+    markRead: (notificationId: string) =>
+      request<{ ok: true }>(
+        transport,
+        `/api/v1/notifications/${encodeURIComponent(notificationId)}/read`,
+        { method: "POST" },
+      ),
+  };
+
   const athletes = createAthletesApi(transport);
 
   const teams = {
@@ -475,7 +506,7 @@ export function createHoomaApi(transport: HoomaTransport) {
         method: "POST",
       }),
   };
-  return { identity, platformAdmin, communities, athletes, whistles, teams };
+  return { identity, platformAdmin, communities, athletes, whistles, notifications, teams };
 }
 
 export type HoomaApi = ReturnType<typeof createHoomaApi>;

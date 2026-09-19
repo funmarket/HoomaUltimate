@@ -51,10 +51,17 @@ export function requireAuthentication(service: IdentityService, config: ApiConfi
       if (!auth) throw new AppError(401, "AUTH_REQUIRED", "Authentication required");
 
       const moderation = await service.moderationStatus(auth.userId);
-      if (moderation.isDisabled) {
+      const isModerationStatusRead = request.method === "GET" && request.path === "/me";
+      const isNotificationAccess =
+        request.path === "/notifications" ||
+        (request.method === "POST" &&
+          request.path.startsWith("/notifications/") &&
+          request.path.endsWith("/read"));
+      const allowsRestrictedRead = isModerationStatusRead || isNotificationAccess;
+      if (moderation.isDisabled && !allowsRestrictedRead) {
         throw new AppError(403, "ACCOUNT_DISABLED", "This account is disabled");
       }
-      if (moderation.isBanned) {
+      if (moderation.isBanned && !allowsRestrictedRead) {
         throw new AppError(
           403,
           "ACCOUNT_BANNED",
@@ -63,11 +70,7 @@ export function requireAuthentication(service: IdentityService, config: ApiConfi
             : "This account is banned",
         );
       }
-      if (
-        moderation.isReadOnly &&
-        writeMethods.has(request.method) &&
-        !request.path.startsWith("/admin")
-      ) {
+      if (moderation.isReadOnly && writeMethods.has(request.method) && !isNotificationAccess) {
         throw new AppError(
           403,
           "ACCOUNT_READ_ONLY",

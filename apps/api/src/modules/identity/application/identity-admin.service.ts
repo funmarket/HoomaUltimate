@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type {
   AdminUserDetail,
   AdminUserModerationStatus,
@@ -18,11 +19,13 @@ export interface IdentityAdminRepository {
     reason: string,
   ): Promise<number>;
   issueUserSanction(input: {
+    sanctionId: string;
     actorUserId: string;
     targetUserId: string;
     actionType: AdminUserSanctionActionInput | "RED_CARD_BAN";
     reason: string;
     expiresAt: Date | null;
+    createdAt: Date;
   }): Promise<void>;
   clearUserSanction(input: {
     actorUserId: string;
@@ -32,12 +35,25 @@ export interface IdentityAdminRepository {
   }): Promise<boolean>;
 }
 
+export interface UserModerationNotifier {
+  notifyModerationSanction(input: {
+    recipientUserId: string;
+    actorUserId: string;
+    sanctionId: string;
+    actionType: AdminUserSanctionActionInput | "RED_CARD_BAN";
+    strikeNumber: number | null;
+    expiresAt: Date | null;
+    createdAt: Date;
+  }): Promise<void>;
+}
+
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 export class IdentityAdminService {
   constructor(
     private readonly repository: IdentityAdminRepository,
     private readonly authorizer: PlatformAdminAuthorizer,
+    private readonly notifier?: UserModerationNotifier,
   ) {}
 
   async searchUsers(
@@ -47,7 +63,7 @@ export class IdentityAdminService {
   ): Promise<readonly AdminUserSearchItem[]> {
     await this.authorizer.requireCapability(actorUserId, "MANAGE_USERS");
     const normalizedQuery = query.trim();
-    if (normalizedQuery.length < 2) {
+    if (normalizedQuery.length > 0 && normalizedQuery.length < 2) {
       throw new IdentityAdminError(
         "USER_SEARCH_QUERY_REQUIRED",
         "User search requires at least 2 characters",
@@ -89,29 +105,39 @@ export class IdentityAdminService {
     targetUserId: string,
     input: AdminUserSanctionInput,
   ): Promise<{ readonly ok: true; readonly moderation: AdminUserModerationStatus }> {
-    await this.requireTargetAllowed(actorUserId, targetUserId);
+    const target = await this.requireTargetAllowed(actorUserId, targetUserId);
     const reason = this.requireReason(input.reason, "User sanctions require a reason");
-    const actionType = input.actionType;
-    const expiresAt = this.expirationFor(actionType, input.expiresAt ?? null);
+    const createdAt = new Date();
+    const nextStrike =
+      input.actionType === "YELLOW_CARD_WARNING" ? target.moderation.yellowCardCount + 1 : null;
+    const actionType =
+      input.actionType === "YELLOW_CARD_WARNING" && nextStrike !== null && nextStrike >= 3
+        ? ("RED_CARD_BAN" as const)
+        : input.actionType;
+    const expiresAt =
+      actionType === "RED_CARD_BAN"
+        ? new Date(createdAt.getTime() + ONE_WEEK_MS)
+        : this.expirationFor(input.actionType, input.expiresAt ?? null);
+    const sanctionId = randomUUID();
 
     await this.repository.issueUserSanction({
+      sanctionId,
       actorUserId,
       targetUserId,
       actionType,
       reason,
       expiresAt,
+      createdAt,
     });
-
-    const detailAfterAction = await this.userDetail(actorUserId, targetUserId);
-    if (actionType === "YELLOW_CARD_WARNING" && detailAfterAction.moderation.yellowCardCount >= 3) {
-      await this.repository.issueUserSanction({
-        actorUserId,
-        targetUserId,
-        actionType: "RED_CARD_BAN",
-        reason: "Automatic red card after third yellow card warning",
-        expiresAt: new Date(Date.now() + ONE_WEEK_MS),
-      });
-    }
+    await this.notifier?.notifyModerationSanction({
+      recipientUserId: targetUserId,
+      actorUserId,
+      sanctionId,
+      actionType,
+      strikeNumber: nextStrike,
+      expiresAt,
+      createdAt,
+    });
 
     const finalDetail = await this.userDetail(actorUserId, targetUserId);
     return { ok: true, moderation: finalDetail.moderation };
