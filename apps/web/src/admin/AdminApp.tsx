@@ -17,6 +17,8 @@ import {
   type PublicTeamSummary,
 } from "@hooma/frontend";
 import { AccessManagers, MANAGER_CAPABILITIES } from "./AccessManagers";
+import { AdminIcon } from "./AdminIcons";
+import { AdminSelect } from "./AdminSelect";
 import { AuditArchive, type AuditArchiveFilters } from "./AuditArchive";
 import {
   ControlRoomOverview,
@@ -40,6 +42,33 @@ const EMPTY_AUDIT_FILTERS: AuditArchiveFilters = {
   from: "",
   to: "",
 };
+
+const USER_SANCTION_ACTION_OPTIONS: ReadonlyArray<{
+  readonly value: AdminUserSanctionActionInput;
+  readonly label: string;
+  readonly description: string;
+}> = [
+  {
+    value: "YELLOW_CARD_WARNING",
+    label: "Warn / yellow card",
+    description: "Record a warning. The third yellow automatically becomes a red-card ban.",
+  },
+  {
+    value: "TEMPORARY_BAN",
+    label: "Temporary ban",
+    description: "Block access until the chosen expiration time.",
+  },
+  {
+    value: "READ_ONLY",
+    label: "Read-only mode",
+    description: "Allow reads while blocking member write actions until expiration.",
+  },
+  {
+    value: "ACCOUNT_DISABLED",
+    label: "Disable account",
+    description: "Safe disable when hard deletion is not available.",
+  },
+];
 
 function formatSanctionLabel(actionType: AdminUserSanctionEvent["actionType"]): string {
   if (actionType === "YELLOW_CARD_WARNING") return "Yellow card warning";
@@ -109,7 +138,7 @@ function AdminUsers({
   }
 
   return (
-    <section className="panel" id="user-security">
+    <section className="admin-panel admin-moderation-console" id="user-security">
       <div className="section-heading">
         <div>
           <p className="eyebrow">PEOPLE</p>
@@ -121,41 +150,55 @@ function AdminUsers({
         Search safe Identity-owned account details, manage sanctions, and revoke active web
         sessions.
       </p>
-      <form className="admin-manager-form" onSubmit={(event) => void onSearch(event)}>
+      <form
+        className="admin-filter-toolbar admin-user-search-toolbar"
+        onSubmit={(event) => void onSearch(event)}
+      >
         <input
           name="query"
           placeholder="Search username, email, Telegram ID, or user id"
           minLength={2}
           required
         />
-        <button type="submit">Search users</button>
+        <button className="admin-primary-action" type="submit">
+          <AdminIcon name="search" />
+          Search users
+        </button>
       </form>
       {loadState === "loading" ? <p className="muted">Searching users…</p> : null}
       {loadState === "error" ? <p className="muted">User search is unavailable.</p> : null}
       {loadState === "ready" && !users.length ? <p className="muted">No users matched.</p> : null}
-      <div className="admin-manager-list">
+      <div className="admin-manager-list admin-row-list">
         {users.map((user) => (
-          <article key={user.userId}>
+          <article className="admin-data-row" key={user.userId}>
             <strong>{user.displayName}</strong>
             <span>@{user.username}</span>
             <small>
               {user.activeSessionCount} active session{user.activeSessionCount === 1 ? "" : "s"}
               {user.telegramUsername ? ` · Telegram @${user.telegramUsername}` : ""}
             </small>
-            <button type="button" onClick={() => void onSelect(user.userId)}>
+            <button
+              className="admin-ghost-action"
+              type="button"
+              onClick={() => void onSelect(user.userId)}
+            >
+              <AdminIcon name="moderation" />
               View user security
             </button>
           </article>
         ))}
       </div>
       {detail ? (
-        <article className="panel">
+        <article className="admin-panel admin-user-detail-panel">
           <div className="section-heading">
             <div>
               <p className="eyebrow">IDENTITY DETAIL</p>
               <h3>{detail.presentation.displayName}</h3>
             </div>
-            <span>{detail.security.activeSessionCount} active</span>
+            <span className="admin-chip">
+              <AdminIcon name="people" />
+              {detail.security.activeSessionCount} active
+            </span>
           </div>
           <p className="muted">Web login: {detail.identity.web?.loginUsername ?? "—"}</p>
           <p className="muted">Telegram: {detail.identity.telegram?.telegramUsername ?? "—"}</p>
@@ -163,21 +206,27 @@ function AdminUsers({
             <h4>Moderation status</h4>
             <div className="admin-sanction-badges">
               <span className="admin-sanction-badge yellow">
+                <AdminIcon name="warning" />
                 {detail.moderation.yellowCardCount} yellow card
                 {detail.moderation.yellowCardCount === 1 ? "" : "s"}
               </span>
               {detail.moderation.isBanned ? (
                 <span className="admin-sanction-badge red">
+                  <AdminIcon name="redCard" />
                   Red card / banned until {detail.moderation.banExpiresAt ?? "cleared"}
                 </span>
               ) : null}
               {detail.moderation.isReadOnly ? (
                 <span className="admin-sanction-badge readonly">
+                  <AdminIcon name="readOnly" />
                   Read-only until {detail.moderation.readOnlyExpiresAt ?? "cleared"}
                 </span>
               ) : null}
               {detail.moderation.isDisabled ? (
-                <span className="admin-sanction-badge disabled">Account disabled</span>
+                <span className="admin-sanction-badge disabled">
+                  <AdminIcon name="disable" />
+                  Account disabled
+                </span>
               ) : null}
             </div>
             {!detail.moderation.activeSanctions.length ? (
@@ -186,21 +235,16 @@ function AdminUsers({
           </div>
           <form className="admin-manager-form admin-sanction-card" onSubmit={submitSanction}>
             <h4>Apply user control</h4>
-            <label>
-              Action
-              <select
-                value={sanctionAction}
-                onChange={(event) =>
-                  setSanctionAction(event.currentTarget.value as AdminUserSanctionActionInput)
-                }
-                disabled={isMutating}
-              >
-                <option value="YELLOW_CARD_WARNING">Warn / yellow card</option>
-                <option value="TEMPORARY_BAN">Temporary ban</option>
-                <option value="READ_ONLY">Read-only mode</option>
-                <option value="ACCOUNT_DISABLED">Disable account</option>
-              </select>
-            </label>
+            <AdminSelect
+              label="Action"
+              value={sanctionAction}
+              options={USER_SANCTION_ACTION_OPTIONS}
+              placeholder="Choose a user control"
+              disabled={isMutating}
+              onChange={(value) => {
+                if (value) setSanctionAction(value as AdminUserSanctionActionInput);
+              }}
+            />
             {requiresExpiration ? (
               <label>
                 Ends at
@@ -223,7 +267,22 @@ function AdminUsers({
                 onChange={(event) => setSanctionReason(event.currentTarget.value)}
               />
             </label>
-            <button type="submit" disabled={isMutating}>
+            <button
+              className={`admin-primary-action admin-sanction-action-${sanctionAction.toLowerCase().replaceAll("_", "-")}`}
+              type="submit"
+              disabled={isMutating}
+            >
+              <AdminIcon
+                name={
+                  sanctionAction === "YELLOW_CARD_WARNING"
+                    ? "warning"
+                    : sanctionAction === "TEMPORARY_BAN"
+                      ? "redCard"
+                      : sanctionAction === "READ_ONLY"
+                        ? "readOnly"
+                        : "disable"
+                }
+              />
               {isMutating ? "Saving user control…" : "Apply user control"}
             </button>
           </form>
@@ -253,7 +312,12 @@ function AdminUsers({
                 onChange={(event) => setSessionRevokeReason(event.currentTarget.value)}
               />
             </label>
-            <button type="submit" disabled={isMutating || detail.security.activeSessionCount === 0}>
+            <button
+              className="admin-danger-action"
+              type="submit"
+              disabled={isMutating || detail.security.activeSessionCount === 0}
+            >
+              <AdminIcon name="clear" />
               {isMutating ? "Revoking active sessions…" : "Revoke active sessions"}
             </button>
           </form>
@@ -287,7 +351,8 @@ function AdminUsers({
                             }))
                           }
                         />
-                        <button type="submit" disabled={isMutating}>
+                        <button className="admin-ghost-action" type="submit" disabled={isMutating}>
+                          <AdminIcon name="clear" />
                           Clear sanction
                         </button>
                       </form>
