@@ -189,6 +189,8 @@ test("admin user controls use controlled reason UI and refresh sanction status",
     await waitFor(() => assert.ok(view.getByText("Member One")));
     fireEvent.click(view.getByRole("button", { name: "View user security" }));
     await waitFor(() => assert.ok(view.getByText("2 yellow cards")));
+    assert.equal(view.container.querySelector("select"), null);
+    assert.ok(view.getByRole("button", { name: /Warn \/ yellow card/ }));
     fireEvent.change(view.getByLabelText("Reason"), { target: { value: "abuse warning" } });
     fireEvent.click(view.getByRole("button", { name: "Apply user control" }));
     await waitFor(() => assert.ok(view.getByText("User control saved and audited.")));

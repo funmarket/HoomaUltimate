@@ -6,6 +6,7 @@ import {
   type PlatformAuditEntry,
   type PlatformOverview,
 } from "@hooma/frontend";
+import { AdminIcon } from "./AdminIcons";
 
 export type AttentionLoadState = "loading" | "ready" | "error";
 
@@ -113,19 +114,33 @@ function AdminIssueDispositionControls({
               onChange={(event) => setNote(event.target.value)}
             />
           </label>
-          <button type="submit" disabled={pending}>
+          <button className="admin-primary-action" type="submit" disabled={pending}>
+            <AdminIcon name="check" />
             {pending ? "Saving…" : `Confirm ${disposition === "resolve" ? "resolve" : "dismiss"}`}
           </button>
-          <button type="button" disabled={pending} onClick={cancel}>
+          <button className="admin-ghost-action" type="button" disabled={pending} onClick={cancel}>
+            <AdminIcon name="clear" />
             Cancel
           </button>
         </form>
       ) : (
         <div className="admin-manager-form">
-          <button type="button" disabled={pending} onClick={() => begin("resolve")}>
+          <button
+            className="admin-primary-action"
+            type="button"
+            disabled={pending}
+            onClick={() => begin("resolve")}
+          >
+            <AdminIcon name="check" />
             Resolve
           </button>
-          <button type="button" disabled={pending} onClick={() => begin("dismiss")}>
+          <button
+            className="admin-ghost-action"
+            type="button"
+            disabled={pending}
+            onClick={() => begin("dismiss")}
+          >
+            <AdminIcon name="clear" />
             Dismiss
           </button>
         </div>
@@ -170,7 +185,7 @@ export function ControlRoomOverview({
 
   return (
     <section className="admin-overview" id="control-room-overview">
-      <section className="panel" id="needs-attention">
+      <section className="admin-panel" id="needs-attention">
         <div className="section-heading">
           <div>
             <p className="eyebrow">OVERVIEW</p>
@@ -178,9 +193,10 @@ export function ControlRoomOverview({
           </div>
         </div>
         {visibleAttentionItems.length ? (
-          <div className="admin-attention-grid">
+          <div className="admin-attention-grid admin-kpi-strip">
             {visibleAttentionItems.map((item) => (
-              <a className="admin-attention-card" href={item.href} key={item.href}>
+              <a className="admin-attention-card admin-data-panel" href={item.href} key={item.href}>
+                <AdminIcon name="warning" />
                 <span>{item.label}</span>
                 <strong>{item.state === "ready" && item.count !== null ? item.count : "—"}</strong>
                 <small>{attentionStateLabel(item)}</small>
@@ -193,7 +209,7 @@ export function ControlRoomOverview({
       </section>
 
       {controlRoomMap.length ? (
-        <section className="panel admin-section-map" aria-label="Control Room section map">
+        <section className="admin-panel admin-section-map" aria-label="Control Room section map">
           <div className="section-heading">
             <div>
               <p className="eyebrow">CONTROL ROOM MAP</p>
@@ -202,7 +218,7 @@ export function ControlRoomOverview({
           </div>
           <div className="admin-section-map-grid">
             {controlRoomMap.map((item) => (
-              <a className="admin-section-map-card" href={item.href} key={item.href}>
+              <a className="admin-section-map-card admin-surface" href={item.href} key={item.href}>
                 <strong>{item.label}</strong>
                 <span>{item.description}</span>
               </a>
@@ -212,7 +228,7 @@ export function ControlRoomOverview({
       ) : null}
 
       {overviewState ? (
-        <section className="panel admin-snapshot">
+        <section className="admin-panel admin-snapshot">
           <div className="section-heading">
             <div>
               <p className="eyebrow">PLATFORM SNAPSHOT</p>
@@ -250,7 +266,7 @@ export function ControlRoomOverview({
       ) : null}
 
       {adminIssuesState ? (
-        <section className="panel admin-action-inbox" id="admin-action-inbox">
+        <section className="admin-panel admin-action-inbox" id="admin-action-inbox">
           <div className="section-heading">
             <div>
               <p className="eyebrow">OPERATIONAL ISSUES</p>
@@ -266,9 +282,9 @@ export function ControlRoomOverview({
             <p className="muted">No operational admin issues require attention.</p>
           ) : null}
           {adminIssuesState === "ready" && visibleAdminIssues.length ? (
-            <div className="admin-audit-list">
+            <div className="admin-audit-list admin-row-list">
               {visibleAdminIssues.map((issue) => (
-                <article key={issue.id}>
+                <article className="admin-data-row" key={issue.id}>
                   <strong>{issue.title}</strong>
                   <span>
                     {issue.summary} ·{" "}
@@ -296,13 +312,13 @@ export function ControlRoomOverview({
       ) : null}
 
       {auditState ? (
-        <section className="panel admin-recent-activity">
+        <section className="admin-panel admin-recent-activity">
           <div className="section-heading">
             <div>
               <p className="eyebrow">RECENT ADMIN ACTIVITY</p>
               <h2>Latest audit evidence</h2>
             </div>
-            <a className="admin-link" href="#audit-archive">
+            <a className="admin-link admin-ghost-action" href="#audit-archive">
               View Audit Archive
             </a>
           </div>

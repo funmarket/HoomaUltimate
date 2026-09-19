@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { PlatformManagerCapability } from "@hooma/contracts/platform-admin";
+import { AdminIcon, type AdminIconName } from "./AdminIcons";
 
 function capabilityLabel(capability: PlatformManagerCapability): string {
   if (capability === "REVIEW_PITCH_APPLICATIONS") return "Pitch Review";
@@ -9,8 +10,18 @@ function capabilityLabel(capability: PlatformManagerCapability): string {
 }
 
 type NavigationLink =
-  | { readonly href: string; readonly label: string; readonly status?: never }
-  | { readonly label: string; readonly status: "coming-soon"; readonly href?: never };
+  | {
+      readonly href: string;
+      readonly label: string;
+      readonly icon: AdminIconName;
+      readonly status?: never;
+    }
+  | {
+      readonly label: string;
+      readonly icon: AdminIconName;
+      readonly status: "coming-soon";
+      readonly href?: never;
+    };
 
 function ControlRoomNavigation({
   isPlatformOwner,
@@ -25,91 +36,73 @@ function ControlRoomNavigation({
   readonly canManageAdminIssues: boolean;
   readonly canManageUsers: boolean;
 }) {
-  const groups: Array<{ readonly label: string; readonly links: readonly NavigationLink[] }> = [
-    {
-      label: "Overview",
-      links: [
-        { href: "#control-room-overview", label: "Dashboard" },
-        { href: "#needs-attention", label: "Pending actions" },
-      ],
-    },
-    {
-      label: "Action Inbox",
-      links: canManageAdminIssues ? [{ href: "#admin-action-inbox", label: "Admin Issues" }] : [],
-    },
-    {
-      label: "People",
-      links: canManageUsers ? [{ href: "#user-security", label: "User Controls" }] : [],
-    },
-    {
-      label: "Moderation",
-      links: [
-        ...(canManageUsers ? [{ href: "#user-security", label: "Warnings & sanctions" }] : []),
-        ...(isPlatformOwner ? [{ href: "#gamers", label: "Gamer disputes" }] : []),
-      ],
-    },
-    {
-      label: "Communities",
-      links: isPlatformOwner ? [{ href: "#communities", label: "HOOMA Communities" }] : [],
-    },
-    {
-      label: "Teams",
-      links: isPlatformOwner ? [{ href: "#teams", label: "Team management" }] : [],
-    },
-    {
-      label: "Players",
-      links: isPlatformOwner ? [{ href: "#gamers", label: "EA FC Match Evidence" }] : [],
-    },
-    {
-      label: "Rides",
-      links: isPlatformOwner ? [{ label: "Coming soon", status: "coming-soon" as const }] : [],
-    },
-    {
-      label: "Operations",
-      links: [
-        ...(isPlatformOwner
-          ? [
-              { href: "#places", label: "Place submissions" },
-              { href: "#place-ownership", label: "Place ownership" },
-            ]
-          : []),
-        ...(canReviewPitch ? [{ href: "#pitch", label: "Pitch reviews" }] : []),
-      ],
-    },
-    {
-      label: "Access",
-      links: isPlatformOwner ? [{ href: "#access-managers", label: "Access & Managers" }] : [],
-    },
-    {
-      label: "Audit Archive",
-      links: canViewAudit ? [{ href: "#audit-archive", label: "Audit Archive" }] : [],
-    },
-  ].filter((group) => group.links.length > 0);
+  const groups: readonly NavigationLink[] = [
+    { href: "#control-room-overview", label: "Overview", icon: "dashboard" },
+    ...(canManageAdminIssues
+      ? [{ href: "#admin-action-inbox", label: "Action Inbox", icon: "warning" as const }]
+      : []),
+    ...(canManageUsers
+      ? [{ href: "#user-security", label: "People", icon: "people" as const }]
+      : []),
+    ...(canManageUsers || isPlatformOwner
+      ? [
+          {
+            href: canManageUsers ? "#user-security" : "#gamers",
+            label: "Moderation",
+            icon: "moderation" as const,
+          },
+        ]
+      : []),
+    ...(isPlatformOwner
+      ? [{ href: "#communities", label: "Communities", icon: "communities" as const }]
+      : []),
+    ...(isPlatformOwner ? [{ href: "#teams", label: "Teams", icon: "teams" as const }] : []),
+    ...(isPlatformOwner ? [{ href: "#gamers", label: "Players", icon: "gamepad" as const }] : []),
+    ...(isPlatformOwner
+      ? [{ label: "Rides", status: "coming-soon" as const, icon: "car" as const }]
+      : []),
+    ...(isPlatformOwner || canReviewPitch
+      ? [
+          {
+            href: isPlatformOwner ? "#places" : "#pitch",
+            label: "Operations",
+            icon: "operations" as const,
+          },
+        ]
+      : []),
+    ...(isPlatformOwner
+      ? [{ href: "#access-managers", label: "Access", icon: "access" as const }]
+      : []),
+    ...(canViewAudit
+      ? [{ href: "#audit-archive", label: "Audit Archive", icon: "archive" as const }]
+      : []),
+  ];
 
   return (
-    <nav className="admin-navigation" aria-label="Platform Control Room">
-      {groups.map((group) => (
-        <div className="admin-navigation-group" key={group.label}>
-          <span>{group.label}</span>
-          <div>
-            {group.links.map((link) =>
-              "href" in link ? (
-                <a href={link.href} key={`${group.label}:${link.href}:${link.label}`}>
-                  {link.label}
-                </a>
-              ) : (
-                <span
-                  className="admin-navigation-disabled"
-                  aria-disabled="true"
-                  key={`${group.label}:${link.label}`}
-                >
-                  {link.label}
-                </span>
-              ),
-            )}
-          </div>
-        </div>
-      ))}
+    <nav className="admin-navigation" aria-label="Platform Control Room sections">
+      {groups.map((link) =>
+        "href" in link ? (
+          <a
+            aria-label={link.label === "People" ? "User Controls" : undefined}
+            className="admin-nav-item"
+            href={link.href}
+            key={`${link.href}:${link.label}`}
+          >
+            <AdminIcon name={link.icon} />
+            <span>{link.label}</span>
+          </a>
+        ) : (
+          <span
+            className="admin-nav-item admin-navigation-disabled"
+            aria-disabled="true"
+            key={link.label}
+          >
+            <AdminIcon name={link.icon} />
+            <span>{link.label}</span>
+            <small aria-disabled="true">Coming soon</small>
+          </span>
+        ),
+      )}
     </nav>
   );
 }
@@ -138,23 +131,26 @@ export function ControlRoomShell({
   const delegatedAuthority = managerCapabilities.map(capabilityLabel).join(" · ");
 
   return (
-    <section className="admin-control-room">
-      <section className="auth-card admin-hero">
-        <p className="eyebrow">{isPlatformOwner ? "PLATFORM ADMIN" : "APP MANAGER"}</p>
-        <h1>Platform Control Room</h1>
-        <p className="muted">
-          {isPlatformOwner
-            ? "Global platform administration authority. Domain rules remain enforced by their owning services."
-            : "Delegated platform authority is limited to the permissions assigned by a Platform Admin."}
-        </p>
-        {!isPlatformOwner ? (
-          <p className="admin-authority-detail">
-            {delegatedAuthority || "No delegated permissions"}
+    <section className="admin-control-room admin-workbench">
+      <header className="admin-hero admin-panel admin-workbench-header">
+        <div>
+          <p className="eyebrow">{isPlatformOwner ? "PLATFORM ADMIN" : "APP MANAGER"}</p>
+          <h1>Platform Control Room</h1>
+          <p className="muted">
+            {isPlatformOwner
+              ? "Operator console for live platform queues, user safety, access, and audit evidence."
+              : "Delegated platform authority is limited to the permissions assigned by a Platform Admin."}
           </p>
-        ) : null}
-        {message ? <p className="status">{message}</p> : null}
-        {error ? <p className="error">{error}</p> : null}
-      </section>
+        </div>
+        <div className="admin-command-bar" aria-label="Current authority">
+          <span className="admin-chip admin-chip-success">
+            <AdminIcon name="check" />
+            {isPlatformOwner ? "Owner authority" : delegatedAuthority || "No delegated permissions"}
+          </span>
+          {message ? <span className="admin-chip admin-chip-success">{message}</span> : null}
+          {error ? <span className="admin-chip admin-chip-danger">{error}</span> : null}
+        </div>
+      </header>
 
       <ControlRoomNavigation
         isPlatformOwner={isPlatformOwner}
@@ -164,7 +160,7 @@ export function ControlRoomShell({
         canManageUsers={canManageUsers}
       />
 
-      {children}
+      <div className="admin-workspace">{children}</div>
     </section>
   );
 }

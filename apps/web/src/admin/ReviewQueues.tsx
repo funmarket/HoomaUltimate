@@ -4,6 +4,7 @@ import type {
   AdminPlaceReviewQueueItem,
 } from "@hooma/contracts/platform-admin";
 import { formatPitchHourlyRate } from "@hooma/frontend";
+import { AdminIcon } from "./AdminIcons";
 
 type QueueName = "places" | "place-ownership" | "pitch";
 export type QueueLoadState = "loading" | "ready" | "error";
@@ -38,20 +39,25 @@ function QueueSection({
   readonly onDecision: (id: string, decision: "APPROVE" | "REJECT") => void;
 }) {
   return (
-    <section className="panel admin-review-section" id={id}>
-      <div className="section-heading">
+    <section className="admin-panel admin-review-section" id={id}>
+      <div className="section-heading admin-toolbar">
         <div>
           <p className="eyebrow">{eyebrow}</p>
           <h2>{title}</h2>
         </div>
-        <span>{loadState === "ready" ? items.length : "—"}</span>
+        <span className="admin-chip">
+          <AdminIcon name="filter" />
+          {loadState === "ready" ? `${items.length} queued` : "—"}
+        </span>
       </div>
-      <div className="admin-review-list">
-        {loadState === "loading" ? <p className="muted">Loading queue…</p> : null}
-        {loadState === "error" ? <p className="muted">This queue is unavailable.</p> : null}
+      <div className="admin-review-list admin-row-list">
+        {loadState === "loading" ? <p className="muted admin-empty-state">Loading queue…</p> : null}
+        {loadState === "error" ? (
+          <p className="muted admin-empty-state">This queue is unavailable.</p>
+        ) : null}
         {loadState === "ready"
           ? items.map((item) => (
-              <article className="admin-review-row" key={item.id}>
+              <article className="admin-review-row admin-data-row" key={item.id}>
                 <div>
                   <strong>{item.place.name}</strong>
                   <span>{item.place.houma || item.place.city || item.place.address}</span>
@@ -71,25 +77,30 @@ function QueueSection({
                 </div>
                 <div className="admin-review-actions" aria-busy={decisionsDisabled}>
                   <button
+                    className="admin-primary-action"
                     type="button"
                     disabled={decisionsDisabled}
                     onClick={() => onDecision(item.id, "APPROVE")}
                   >
+                    <AdminIcon name="check" />
                     {pendingId === item.id ? "Saving decision…" : "Approve"}
                   </button>
                   <button
+                    className="admin-danger-action"
                     type="button"
-                    className="secondary"
                     disabled={decisionsDisabled}
                     onClick={() => onDecision(item.id, "REJECT")}
                   >
+                    <AdminIcon name="clear" />
                     Reject
                   </button>
                 </div>
               </article>
             ))
           : null}
-        {loadState === "ready" && !items.length ? <p className="muted">Queue is clear.</p> : null}
+        {loadState === "ready" && !items.length ? (
+          <p className="muted admin-empty-state">Queue is clear.</p>
+        ) : null}
       </div>
     </section>
   );
