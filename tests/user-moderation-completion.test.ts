@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { adminUserSearchQuerySchema } from "@hooma/contracts/platform-admin";
 import { AppError } from "../apps/api/src/http/errors/app-error.js";
 import {
   IdentityAdminService,
@@ -7,7 +8,6 @@ import {
 } from "../apps/api/src/modules/identity/application/identity-admin.service.js";
 import { requireAuthentication } from "../apps/api/src/modules/identity/http/auth.middleware.js";
 import { UserNotificationService } from "../apps/api/src/modules/notifications/application/user-notification.service.js";
-import { adminUserSearchQuerySchema } from "@hooma/contracts/platform-admin";
 import type { PlatformAdminAuthorizer } from "../apps/api/src/modules/platform-admin/application/platform-admin.authorizer.js";
 
 function authorizer(): PlatformAdminAuthorizer {
@@ -69,7 +69,10 @@ test("third strike is a red card one-week ban, not a third yellow card", async (
     expiresAt: null,
   });
 
-  assert.deepEqual(issued.map((item) => item.actionType), ["RED_CARD_BAN"]);
+  assert.deepEqual(
+    issued.map((item) => item.actionType),
+    ["RED_CARD_BAN"],
+  );
   assert.equal(issued[0]?.expiresAt instanceof Date, true);
   assert.deepEqual(notified, ["RED_CARD_BAN"]);
 });
@@ -104,7 +107,8 @@ test("read-only enforcement also blocks admin write routes", async () => {
     {
       method: "POST",
       path: "/admin/users/user-1/sanctions",
-      header: (name: string) => (name.toLowerCase() === "origin" ? "http://localhost" : undefined),
+      header: (name: string) =>
+        name.toLowerCase() === "origin" ? "http://localhost" : undefined,
       headers: { cookie: "sid=session-token" },
     } as never,
     {} as never,

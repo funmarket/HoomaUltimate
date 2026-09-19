@@ -18,9 +18,18 @@ function installDom() {
   });
   Object.defineProperty(globalThis, "window", { value: dom.window, configurable: true });
   Object.defineProperty(globalThis, "document", { value: dom.window.document, configurable: true });
-  Object.defineProperty(globalThis, "navigator", { value: dom.window.navigator, configurable: true });
-  Object.defineProperty(globalThis, "HTMLElement", { value: dom.window.HTMLElement, configurable: true });
-  Object.defineProperty(globalThis, "Element", { value: dom.window.Element, configurable: true });
+  Object.defineProperty(globalThis, "navigator", {
+    value: dom.window.navigator,
+    configurable: true,
+  });
+  Object.defineProperty(globalThis, "HTMLElement", {
+    value: dom.window.HTMLElement,
+    configurable: true,
+  });
+  Object.defineProperty(globalThis, "Element", {
+    value: dom.window.Element,
+    configurable: true,
+  });
   Object.defineProperty(globalThis, "Node", { value: dom.window.Node, configurable: true });
   Object.defineProperty(globalThis, "Event", { value: dom.window.Event, configurable: true });
   return dom;
@@ -36,10 +45,16 @@ function json(body: unknown, status = 200) {
 test("notification bell shows unread moderation notice and marks it read", async () => {
   const dom = installDom();
   const React = await import("react");
-  Object.defineProperty(globalThis, "React", { value: React, writable: true, configurable: true });
+  Object.defineProperty(globalThis, "React", {
+    value: React,
+    writable: true,
+    configurable: true,
+  });
   const { cleanup, fireEvent, render, waitFor } = await import("@testing-library/react");
   const { HoomaFrontendProvider } = await import("@hooma/frontend");
-  const { UserNotificationControl } = await import("../apps/web/src/notifications/UserNotificationControl");
+  const { UserNotificationControl } = await import(
+    "../apps/web/src/notifications/UserNotificationControl"
+  );
   const originalFetch = globalThis.fetch;
   const requests: string[] = [];
 
@@ -77,11 +92,15 @@ test("notification bell shows unread moderation notice and marks it read", async
       ),
     );
 
-    await waitFor(() => assert.ok(view.getByRole("button", { name: /Notifications, 1 unread/i })));
+    await waitFor(() =>
+      assert.ok(view.getByRole("button", { name: /Notifications, 1 unread/i })),
+    );
     fireEvent.click(view.getByRole("button", { name: /Notifications, 1 unread/i }));
     assert.ok(view.getByText(/Yellow card warning/i));
     fireEvent.click(view.getByRole("button", { name: /Yellow card warning/i }));
-    await waitFor(() => assert.ok(requests.includes("POST /api/v1/notifications/n1/read")));
+    await waitFor(() =>
+      assert.ok(requests.includes("POST /api/v1/notifications/n1/read")),
+    );
   } finally {
     globalThis.fetch = originalFetch;
     cleanup();
