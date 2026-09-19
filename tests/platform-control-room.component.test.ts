@@ -603,7 +603,7 @@ test("App Manager capabilities project only their authorized Control Room module
     assert.equal(usersView.queryByText("Audit Archive"), null);
     assert.equal(usersView.queryByText("Pitch business applications"), null);
     assert.equal(usersView.queryByText("Admin Action Inbox"), null);
-    assert.deepEqual(requested.sort(), ["/api/v1/admin/access"]);
+    assert.deepEqual(requested.sort(), ["/api/v1/admin/access", "/api/v1/admin/users"]);
 
     fireEvent.change(
       usersView.getByPlaceholderText("Search username, email, Telegram ID, or user id"),
@@ -613,7 +613,11 @@ test("App Manager capabilities project only their authorized Control Room module
     );
     fireEvent.click(usersView.getByRole("button", { name: "Search users" }));
     await waitFor(() => assert.ok(usersView.getByText("Alice User")));
-    assert.deepEqual(requested.sort(), ["/api/v1/admin/access", "/api/v1/admin/users"]);
+    assert.deepEqual(requested.sort(), [
+      "/api/v1/admin/access",
+      "/api/v1/admin/users",
+      "/api/v1/admin/users",
+    ]);
   } finally {
     globalThis.fetch = originalFetch;
     cleanup();

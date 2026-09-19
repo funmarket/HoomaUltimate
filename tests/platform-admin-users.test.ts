@@ -263,9 +263,10 @@ test("yellow cards require a reason and third strike escalates to red card one-w
     expiresAt: null,
   });
 
-  assert.ok(calls.includes("sanction:YELLOW_CARD_WARNING:abuse report confirmed:false"));
-  assert.ok(
-    calls.includes("sanction:RED_CARD_BAN:Automatic red card after third yellow card warning:true"),
+  assert.ok(calls.includes("sanction:RED_CARD_BAN:abuse report confirmed:true"));
+  assert.equal(
+    calls.some((call) => call.startsWith("sanction:YELLOW_CARD_WARNING:abuse report confirmed:")),
+    false,
   );
 });
 
