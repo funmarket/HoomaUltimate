@@ -10,6 +10,10 @@ import {
   type IdentityAdminErrorCode,
 } from "../../modules/identity/domain/identity-admin-error.js";
 import {
+  UserNotificationError,
+  type UserNotificationErrorCode,
+} from "../../modules/notifications/domain/user-notification-error.js";
+import {
   RequestError,
   type RequestErrorCode,
 } from "../../modules/requests/domain/request-error.js";
@@ -145,6 +149,10 @@ const IDENTITY_ADMIN_STATUS: Record<IdentityAdminErrorCode, number> = {
   USER_SANCTION_NOT_FOUND: 404,
 };
 
+const USER_NOTIFICATION_STATUS: Record<UserNotificationErrorCode, number> = {
+  USER_NOTIFICATION_NOT_FOUND: 404,
+};
+
 export const errorHandler: ErrorRequestHandler = (error, _request, response, _next) => {
   void _next;
 
@@ -175,6 +183,12 @@ export const errorHandler: ErrorRequestHandler = (error, _request, response, _ne
   if (error instanceof IdentityAdminError) {
     response
       .status(IDENTITY_ADMIN_STATUS[error.code])
+      .json({ error: { code: error.code, message: error.message } });
+    return;
+  }
+  if (error instanceof UserNotificationError) {
+    response
+      .status(USER_NOTIFICATION_STATUS[error.code])
       .json({ error: { code: error.code, message: error.message } });
     return;
   }

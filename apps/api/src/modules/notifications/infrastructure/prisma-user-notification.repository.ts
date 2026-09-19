@@ -2,6 +2,7 @@ import type { PrismaClient } from "@hooma/database";
 import type {
   ModerationNotificationType,
   UserNotificationContextType,
+  UserNotificationReadOutcome,
   UserNotificationRecord,
   UserNotificationRepository,
   WhistleNotificationType,
@@ -111,11 +112,22 @@ export class PrismaUserNotificationRepository implements UserNotificationReposit
     );
   }
 
-  async markRead(recipientUserId: string, notificationId: string): Promise<boolean> {
-    const result = await this.db.userNotification.updateMany({
+  async markRead(
+    recipientUserId: string,
+    notificationId: string,
+  ): Promise<UserNotificationReadOutcome> {
+    // Read first so a repeat call stays idempotent while an unknown or foreign id is
+    // reported as "not_found" instead of a fake success.
+    const existing = await this.db.userNotification.findFirst({
+      where: { id: notificationId, recipientUserId },
+      select: { readAt: true },
+    });
+    if (!existing) return "not_found";
+    if (existing.readAt !== null) return "already_read";
+    const updated = await this.db.userNotification.updateMany({
       where: { id: notificationId, recipientUserId, readAt: null },
       data: { readAt: new Date() },
     });
-    return result.count > 0;
+    return updated.count > 0 ? "marked_read" : "already_read";
   }
 }

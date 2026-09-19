@@ -1,3 +1,4 @@
+import { UserNotificationError } from "../domain/user-notification-error.js";
 import type {
   ModerationNotificationType,
   UserNotificationContextType,
@@ -24,6 +25,13 @@ export type ModerationSanctionNotificationInput = {
   strikeNumber: number | null;
   expiresAt: Date | null;
   createdAt: Date;
+};
+
+export type ModerationSanctionClearNotificationInput = {
+  recipientUserId: string;
+  actorUserId: string;
+  sanctionId: string;
+  clearedAt: Date;
 };
 
 function whistleNotificationType(
@@ -96,6 +104,17 @@ export class UserNotificationService {
     });
   }
 
+  async notifyModerationClear(input: ModerationSanctionClearNotificationInput): Promise<void> {
+    await this.repository.createModerationNotification({
+      recipientUserId: input.recipientUserId,
+      actorUserId: input.actorUserId,
+      type: "MODERATION_SANCTION_CLEARED",
+      sanctionId: input.sanctionId,
+      expiresAt: null,
+      createdAt: input.clearedAt,
+    });
+  }
+
   async listForRecipient(recipientUserId: string) {
     const items = await this.repository.listForRecipient(recipientUserId, 50);
     return {
@@ -105,7 +124,10 @@ export class UserNotificationService {
   }
 
   async markRead(recipientUserId: string, notificationId: string) {
-    await this.repository.markRead(recipientUserId, notificationId);
+    const outcome = await this.repository.markRead(recipientUserId, notificationId);
+    if (outcome === "not_found") {
+      throw new UserNotificationError("USER_NOTIFICATION_NOT_FOUND", "Notification not found");
+    }
     return { ok: true as const };
   }
 }

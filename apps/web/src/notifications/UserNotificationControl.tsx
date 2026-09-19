@@ -8,11 +8,15 @@ function notificationTitle(item: UserNotificationItem): string {
   if (item.type === "MODERATION_TEMPORARY_BAN") return "Temporary ban";
   if (item.type === "MODERATION_READ_ONLY") return "Read-only restriction";
   if (item.type === "MODERATION_ACCOUNT_DISABLED") return "Account disabled";
+  if (item.type === "MODERATION_SANCTION_CLEARED") return "Sanction cleared";
   if (item.type === "RIDE_WHISTLE") return "New ride whistle";
   return "New whistle";
 }
 
 function notificationDetail(item: UserNotificationItem): string {
+  if (item.type === "MODERATION_SANCTION_CLEARED") {
+    return `Lifted ${new Date(item.createdAt).toLocaleString()}`;
+  }
   if (item.expiresAt) return `Until ${new Date(item.expiresAt).toLocaleString()}`;
   if (item.type === "MODERATION_YELLOW_CARD") return "First strike";
   if (item.type === "MODERATION_SECOND_YELLOW_CARD") return "Second strike";
@@ -50,7 +54,14 @@ export function UserNotificationControl({ enabled }: { readonly enabled: boolean
 
   async function markRead(item: UserNotificationItem) {
     if (item.readAt !== null) return;
-    await api.notifications.markRead(item.id);
+    try {
+      await api.notifications.markRead(item.id);
+    } catch {
+      // The notification no longer exists for this user, so resync instead of
+      // showing a read state the server never accepted.
+      void load();
+      return;
+    }
     setItems((current) =>
       current.map((entry) =>
         entry.id === item.id ? { ...entry, readAt: new Date().toISOString() } : entry,

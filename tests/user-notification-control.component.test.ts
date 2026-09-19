@@ -110,3 +110,75 @@ test("notification bell shows unread moderation notice and marks it read", async
     dom.window.close();
   }
 });
+
+// prettier-ignore
+test("bell shows a cleared sanction and resyncs when the server rejects the read", async () => {
+  const dom = installDom();
+  const React = await import("react");
+  Object.defineProperty(globalThis, "React", {
+    value: React,
+    writable: true,
+    configurable: true,
+  });
+  const { cleanup, fireEvent, render, waitFor } = await import("@testing-library/react");
+  const { HoomaFrontendProvider } = await import("@hooma/frontend");
+  const { UserNotificationControl } = await import(
+    "../apps/web/src/notifications/UserNotificationControl"
+  );
+  const originalFetch = globalThis.fetch;
+  let listCalls = 0;
+
+  try {
+    globalThis.fetch = async (input, init) => {
+      const url = new URL(String(input));
+      if ((init?.method ?? "GET") === "GET" && url.pathname === "/api/v1/notifications") {
+        listCalls += 1;
+        return json({
+          unreadCount: 1,
+          items: [
+            {
+              id: "n2",
+              type: "MODERATION_SANCTION_CLEARED",
+              actorUserId: "admin-1",
+              strikeNumber: null,
+              expiresAt: null,
+              createdAt: "2026-09-19T12:00:00.000Z",
+              readAt: null,
+            },
+          ],
+        });
+      }
+      if (init?.method === "POST" && url.pathname === "/api/v1/notifications/n2/read") {
+        return json(
+          { error: { code: "USER_NOTIFICATION_NOT_FOUND", message: "Notification not found" } },
+          404,
+        );
+      }
+      return json({ error: { message: "unexpected" } }, 500);
+    };
+
+    const view = render(
+      React.createElement(
+        HoomaFrontendProvider,
+        { transport: { baseUrl: "http://api.test" } },
+        React.createElement(UserNotificationControl, { enabled: true }),
+      ),
+    );
+
+    await waitFor(() =>
+      assert.ok(view.getByRole("button", { name: /Notifications, 1 unread/i })),
+    );
+    fireEvent.click(view.getByRole("button", { name: /Notifications, 1 unread/i }));
+    assert.ok(view.getByText(/Sanction cleared/i));
+    assert.ok(view.getByText(/Lifted/i));
+
+    const callsBeforeRead = listCalls;
+    fireEvent.click(view.getByRole("button", { name: /Sanction cleared/i }));
+    await waitFor(() => assert.ok(listCalls > callsBeforeRead));
+    assert.ok(view.getByRole("button", { name: /Notifications, 1 unread/i }));
+  } finally {
+    globalThis.fetch = originalFetch;
+    cleanup();
+    dom.window.close();
+  }
+});
