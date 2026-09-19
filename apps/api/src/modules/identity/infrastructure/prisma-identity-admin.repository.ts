@@ -108,20 +108,25 @@ export class PrismaIdentityAdminRepository implements IdentityAdminRepository {
     const hasQuery = query.length > 0;
     const telegramUserId = hasQuery ? maybeTelegramUserId(query) : undefined;
     const now = new Date();
+    const where = hasQuery
+      ? {
+          OR: [
+            { id: query },
+            { presentation: { username: { contains: query, mode: "insensitive" as const } } },
+            { presentation: { displayName: { contains: query, mode: "insensitive" as const } } },
+            { webCredential: { loginUsername: { contains: query, mode: "insensitive" as const } } },
+            { webCredential: { email: { contains: query, mode: "insensitive" as const } } },
+            {
+              telegramIdentity: {
+                telegramUsername: { contains: query, mode: "insensitive" as const },
+              },
+            },
+            ...(telegramUserId ? [{ telegramIdentity: { telegramUserId } }] : []),
+          ],
+        }
+      : {};
     const users = await this.db.user.findMany({
-      where: hasQuery
-        ? {
-            OR: [
-              { id: query },
-              { presentation: { username: { contains: query, mode: "insensitive" } } },
-              { presentation: { displayName: { contains: query, mode: "insensitive" } } },
-              { webCredential: { loginUsername: { contains: query, mode: "insensitive" } } },
-              { webCredential: { email: { contains: query, mode: "insensitive" } } },
-              { telegramIdentity: { telegramUsername: { contains: query, mode: "insensitive" } } },
-              ...(telegramUserId ? [{ telegramIdentity: { telegramUserId } }] : []),
-            ],
-          }
-        : undefined,
+      where,
       select: {
         id: true,
         createdAt: true,

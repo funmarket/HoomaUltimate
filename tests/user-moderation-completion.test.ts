@@ -8,6 +8,7 @@ import {
 } from "../apps/api/src/modules/identity/application/identity-admin.service.js";
 import { requireAuthentication } from "../apps/api/src/modules/identity/http/auth.middleware.js";
 import { UserNotificationService } from "../apps/api/src/modules/notifications/application/user-notification.service.js";
+import type { UserNotificationRepository } from "../apps/api/src/modules/notifications/application/user-notification.repository.js";
 import type { PlatformAdminAuthorizer } from "../apps/api/src/modules/platform-admin/application/platform-admin.authorizer.js";
 
 // prettier-ignore
@@ -64,7 +65,7 @@ test("third strike is a red card one-week ban, not a third yellow card", async (
     },
     notifyModerationClear: async () => undefined,
   };
-  const service = new (IdentityAdminService as any)(repository, authorizer(), notifier);
+  const service = new IdentityAdminService(repository, authorizer(), notifier);
 
   await service.sanctionUser("manager", "user-1", {
     actionType: "YELLOW_CARD_WARNING",
@@ -128,7 +129,7 @@ test("read-only enforcement also blocks admin write routes", async () => {
 test("notification service persists moderation notices and supports read state", async () => {
   const created: unknown[] = [];
   const marked: string[] = [];
-  const repository = {
+  const repository: UserNotificationRepository = {
     createWhistleNotification: async () => {
       throw new Error("not used");
     },
@@ -155,7 +156,7 @@ test("notification service persists moderation notices and supports read state",
       return true;
     },
   };
-  const service = new UserNotificationService(repository as never) as any;
+  const service = new UserNotificationService(repository);
 
   await service.notifyModerationSanction({
     recipientUserId: "user-1",

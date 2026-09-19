@@ -311,7 +311,7 @@
 }
 .hooma-notification-popover {
   position: absolute;
-  top: calc(100% + 10px);
+  inset-block-start: calc(100% + 10px);
   right: 0;
   z-index: 35;
   width: min(360px, calc(100vw - 24px));

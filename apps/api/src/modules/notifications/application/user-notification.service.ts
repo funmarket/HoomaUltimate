@@ -20,11 +20,7 @@ export type ModerationSanctionNotificationInput = {
   actorUserId: string;
   sanctionId: string;
   actionType:
-    | "YELLOW_CARD_WARNING"
-    | "RED_CARD_BAN"
-    | "TEMPORARY_BAN"
-    | "READ_ONLY"
-    | "ACCOUNT_DISABLED";
+    "YELLOW_CARD_WARNING" | "RED_CARD_BAN" | "TEMPORARY_BAN" | "READ_ONLY" | "ACCOUNT_DISABLED";
   strikeNumber: number | null;
   expiresAt: Date | null;
   createdAt: Date;

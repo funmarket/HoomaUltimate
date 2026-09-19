@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useHoomaFrontend, type UserUserNotificationItem } from "@hooma/frontend";
+import { useHoomaFrontend, type UserNotificationItem } from "@hooma/frontend";
 
 function notificationTitle(item: UserNotificationItem): string {
   if (item.type === "MODERATION_YELLOW_CARD") return "Yellow card warning";
@@ -46,10 +46,7 @@ export function UserNotificationControl({ enabled }: { readonly enabled: boolean
     return () => window.clearInterval(timer);
   }, [api, enabled]);
 
-  const unreadCount = useMemo(
-    () => items.filter((item) => item.readAt === null).length,
-    [items],
-  );
+  const unreadCount = useMemo(() => items.filter((item) => item.readAt === null).length, [items]);
 
   async function markRead(item: UserNotificationItem) {
     if (item.readAt !== null) return;

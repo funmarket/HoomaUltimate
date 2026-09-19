@@ -70,11 +70,7 @@ export function requireAuthentication(service: IdentityService, config: ApiConfi
             : "This account is banned",
         );
       }
-      if (
-        moderation.isReadOnly &&
-        writeMethods.has(request.method) &&
-        !isNotificationAccess
-      ) {
+      if (moderation.isReadOnly && writeMethods.has(request.method) && !isNotificationAccess) {
         throw new AppError(
           403,
           "ACCOUNT_READ_ONLY",
