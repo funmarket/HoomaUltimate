@@ -32,7 +32,7 @@ export interface IdentityAdminRepository {
     targetUserId: string;
     sanctionId: string;
     reason: string;
-  }): Promise<boolean>;
+  }): Promise<Date | null>;
 }
 
 export interface UserModerationNotifier {
@@ -44,6 +44,12 @@ export interface UserModerationNotifier {
     strikeNumber: number | null;
     expiresAt: Date | null;
     createdAt: Date;
+  }): Promise<void>;
+  notifyModerationClear(input: {
+    recipientUserId: string;
+    actorUserId: string;
+    sanctionId: string;
+    clearedAt: Date;
   }): Promise<void>;
 }
 
@@ -151,14 +157,20 @@ export class IdentityAdminService {
   ): Promise<{ readonly ok: true; readonly moderation: AdminUserModerationStatus }> {
     await this.requireTargetAllowed(actorUserId, targetUserId);
     const reason = this.requireReason(input.reason, "Clearing a user sanction requires a reason");
-    const cleared = await this.repository.clearUserSanction({
+    const clearedAt = await this.repository.clearUserSanction({
       actorUserId,
       targetUserId,
       sanctionId,
       reason,
     });
-    if (!cleared)
+    if (!clearedAt)
       throw new IdentityAdminError("USER_SANCTION_NOT_FOUND", "Active sanction not found");
+    await this.notifier?.notifyModerationClear({
+      recipientUserId: targetUserId,
+      actorUserId,
+      sanctionId,
+      clearedAt,
+    });
     const detail = await this.userDetail(actorUserId, targetUserId);
     return { ok: true, moderation: detail.moderation };
   }

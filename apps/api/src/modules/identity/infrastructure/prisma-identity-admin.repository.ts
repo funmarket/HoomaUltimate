@@ -325,7 +325,7 @@ export class PrismaIdentityAdminRepository implements IdentityAdminRepository {
     targetUserId: string;
     sanctionId: string;
     reason: string;
-  }): Promise<boolean> {
+  }): Promise<Date | null> {
     const now = new Date();
     return this.db.$transaction(async (tx) => {
       const update = await tx.userSanction.updateMany({
@@ -340,7 +340,7 @@ export class PrismaIdentityAdminRepository implements IdentityAdminRepository {
           clearReason: input.reason.trim(),
         },
       });
-      if (update.count === 0) return false;
+      if (update.count === 0) return null;
       await tx.auditLog.create({
         data: {
           actorUserId: input.actorUserId,
@@ -350,7 +350,8 @@ export class PrismaIdentityAdminRepository implements IdentityAdminRepository {
           metadata: { reason: input.reason.trim(), sanctionId: input.sanctionId },
         },
       });
-      return true;
+      // Returned so the caller can notify the moderated user with the exact cleared time.
+      return now;
     });
   }
 }

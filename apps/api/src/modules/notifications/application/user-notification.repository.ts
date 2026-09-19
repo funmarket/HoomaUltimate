@@ -6,10 +6,17 @@ export type ModerationNotificationType =
   | "MODERATION_RED_CARD_BAN"
   | "MODERATION_TEMPORARY_BAN"
   | "MODERATION_READ_ONLY"
-  | "MODERATION_ACCOUNT_DISABLED";
+  | "MODERATION_ACCOUNT_DISABLED"
+  | "MODERATION_SANCTION_CLEARED";
 
 export type UserNotificationType = WhistleNotificationType | ModerationNotificationType;
 export type UserNotificationContextType = "USER_DIRECT" | "RIDE";
+
+/**
+ * "not_found" means the recipient has no such notification, so the caller must not
+ * report success. "already_read" is an idempotent repeat of a successful read.
+ */
+export type UserNotificationReadOutcome = "marked_read" | "already_read" | "not_found";
 
 export type UserNotificationRecord = {
   id: string;
@@ -44,5 +51,5 @@ export interface UserNotificationRepository {
     createdAt: Date;
   }): Promise<UserNotificationRecord>;
   listForRecipient(recipientUserId: string, limit: number): Promise<UserNotificationRecord[]>;
-  markRead(recipientUserId: string, notificationId: string): Promise<boolean>;
+  markRead(recipientUserId: string, notificationId: string): Promise<UserNotificationReadOutcome>;
 }

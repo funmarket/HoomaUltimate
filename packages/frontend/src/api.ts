@@ -222,7 +222,8 @@ export type UserNotificationItem = {
     | "MODERATION_RED_CARD_BAN"
     | "MODERATION_TEMPORARY_BAN"
     | "MODERATION_READ_ONLY"
-    | "MODERATION_ACCOUNT_DISABLED";
+    | "MODERATION_ACCOUNT_DISABLED"
+    | "MODERATION_SANCTION_CLEARED";
   readonly actorUserId: string;
   readonly strikeNumber: number | null;
   readonly expiresAt: string | null;
