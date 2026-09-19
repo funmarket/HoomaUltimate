@@ -506,11 +506,7 @@ export function AdminApp() {
     });
   }
 
-  async function searchAdminUsers(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const query = String(data.get("query") ?? "").trim();
-    if (query.length < 2) return;
+  async function loadAdminUsers(query = "") {
     setUserSearchState("loading");
     setError("");
     setMessage("");
@@ -521,8 +517,16 @@ export function AdminApp() {
       setUserSearchState("ready");
     } catch (reason) {
       setUserSearchState("error");
-      setError(reason instanceof Error ? reason.message : "Unable to search users");
+      setError(reason instanceof Error ? reason.message : "Unable to load users");
     }
+  }
+
+  async function searchAdminUsers(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const query = String(data.get("query") ?? "").trim();
+    if (query.length < 2) return;
+    await loadAdminUsers(query);
   }
 
   async function selectAdminUser(userId: string) {
@@ -618,6 +622,10 @@ export function AdminApp() {
 
     if (allowed("VIEW_AUDIT") || allowed("MANAGE_ADMIN_ISSUES")) {
       tasks.push(loadAdminIssues());
+    }
+
+    if (allowed("MANAGE_USERS")) {
+      tasks.push(loadAdminUsers());
     }
 
     if (currentAccess.isPlatformOwner) {

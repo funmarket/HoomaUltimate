@@ -268,6 +268,12 @@ enum RideCompensationBasis {
 enum UserNotificationType {
   DIRECT_USER_WHISTLE
   RIDE_WHISTLE
+  MODERATION_YELLOW_CARD
+  MODERATION_SECOND_YELLOW_CARD
+  MODERATION_RED_CARD_BAN
+  MODERATION_TEMPORARY_BAN
+  MODERATION_READ_ONLY
+  MODERATION_ACCOUNT_DISABLED
 }
 
 enum GamerGameStatus {
@@ -1332,13 +1338,16 @@ model UserNotification {
   type            UserNotificationType
   contextType     WhistleContextType
   contextId       String
-  whistleId       String
+  whistleId       String?
+  sanctionId      String?
+  expiresAt       DateTime?
   createdAt       DateTime             @default(now())
   readAt          DateTime?
   recipient       User                 @relation("UserNotificationRecipient", fields: [recipientUserId], references: [id], onDelete: Cascade)
   actor           User                 @relation("UserNotificationActor", fields: [actorUserId], references: [id], onDelete: Cascade)
 
   @@unique([recipientUserId, type, whistleId])
+  @@unique([recipientUserId, type, sanctionId])
   @@index([recipientUserId, readAt, createdAt])
   @@index([actorUserId, createdAt])
   @@index([contextType, contextId, createdAt])

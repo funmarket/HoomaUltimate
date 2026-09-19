@@ -1,13 +1,15 @@
 import type { PrismaClient } from "@hooma/database";
 import type {
+  ModerationNotificationType,
   UserNotificationContextType,
   UserNotificationRecord,
   UserNotificationRepository,
+  WhistleNotificationType,
 } from "../application/user-notification.repository.js";
 
 function parseNotificationContextType(value: string): UserNotificationContextType {
   if (value === "USER_DIRECT" || value === "RIDE") return value;
-  throw new Error(`Unsupported Whistle notification context type: ${value}`);
+  throw new Error(`Unsupported notification context type: ${value}`);
 }
 
 function toRecord(row: {
@@ -17,7 +19,9 @@ function toRecord(row: {
   type: UserNotificationRecord["type"];
   contextType: UserNotificationContextType;
   contextId: string;
-  whistleId: string;
+  whistleId: string | null;
+  sanctionId: string | null;
+  expiresAt: Date | null;
   createdAt: Date;
   readAt: Date | null;
 }): UserNotificationRecord {
@@ -30,8 +34,8 @@ export class PrismaUserNotificationRepository implements UserNotificationReposit
   async createWhistleNotification(input: {
     recipientUserId: string;
     actorUserId: string;
-    type: UserNotificationRecord["type"];
-    contextType: UserNotificationRecord["contextType"];
+    type: WhistleNotificationType;
+    contextType: UserNotificationContextType;
     contextId: string;
     whistleId: string;
     createdAt: Date;
@@ -47,7 +51,44 @@ export class PrismaUserNotificationRepository implements UserNotificationReposit
       create: input,
       update: {},
     });
-    return toRecord({ ...notification, contextType: input.contextType });
+    return toRecord({
+      ...notification,
+      contextType: parseNotificationContextType(notification.contextType),
+    });
+  }
+
+  async createModerationNotification(input: {
+    recipientUserId: string;
+    actorUserId: string;
+    type: ModerationNotificationType;
+    sanctionId: string;
+    expiresAt: Date | null;
+    createdAt: Date;
+  }): Promise<UserNotificationRecord> {
+    const notification = await this.db.userNotification.upsert({
+      where: {
+        recipientUserId_type_sanctionId: {
+          recipientUserId: input.recipientUserId,
+          type: input.type,
+          sanctionId: input.sanctionId,
+        },
+      },
+      create: {
+        recipientUserId: input.recipientUserId,
+        actorUserId: input.actorUserId,
+        type: input.type,
+        contextType: "USER_DIRECT",
+        contextId: input.recipientUserId,
+        sanctionId: input.sanctionId,
+        expiresAt: input.expiresAt,
+        createdAt: input.createdAt,
+      },
+      update: {},
+    });
+    return toRecord({
+      ...notification,
+      contextType: parseNotificationContextType(notification.contextType),
+    });
   }
 
   async listForRecipient(
@@ -63,7 +104,18 @@ export class PrismaUserNotificationRepository implements UserNotificationReposit
       take: limit,
     });
     return rows.map((row) =>
-      toRecord({ ...row, contextType: parseNotificationContextType(row.contextType) }),
+      toRecord({
+        ...row,
+        contextType: parseNotificationContextType(row.contextType),
+      }),
     );
+  }
+
+  async markRead(recipientUserId: string, notificationId: string): Promise<boolean> {
+    const result = await this.db.userNotification.updateMany({
+      where: { id: notificationId, recipientUserId, readAt: null },
+      data: { readAt: new Date() },
+    });
+    return result.count > 0;
   }
 }

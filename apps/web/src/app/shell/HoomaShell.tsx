@@ -7,6 +7,7 @@ import {
 } from "@hooma/frontend";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAccount } from "../../account/AccountProvider";
+import { UserNotificationControl } from "../../notifications/UserNotificationControl";
 import type { TelegramRuntime } from "../../telegram/runtime";
 import { useTelegramBackButton } from "../../telegram/useTelegramBackButton";
 
@@ -73,6 +74,7 @@ export function HoomaShell({
         loading={loading}
         canManageTeams={managedTeams.length > 0}
         isPlatformAdmin={hasPlatformControlAccess}
+        notificationControl={<UserNotificationControl enabled={Boolean(me)} />}
         onHome={() => navigate("/")}
         onGuestProfile={() =>
           navigate(

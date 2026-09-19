@@ -136,9 +136,12 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
   const canonicalUserReader = new PrismaCanonicalUserReader(database);
   const userPresentationReader = new PrismaUserPresentationReader(database);
   const userLastSeenReader = new PrismaUserLastSeenReader(database);
+  const userNotificationRepository = new PrismaUserNotificationRepository(database);
+  const userNotificationService = new UserNotificationService(userNotificationRepository);
   const identityAdminService = new IdentityAdminService(
     new PrismaIdentityAdminRepository(database),
     platformAdminService,
+    userNotificationService,
   );
 
   const placeRepository = new PrismaPlaceRepository(database);
@@ -244,8 +247,6 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     rideReferenceReader,
     userPresentationReader,
   );
-  const userNotificationRepository = new PrismaUserNotificationRepository(database);
-  const userNotificationService = new UserNotificationService(userNotificationRepository);
   const whistleRepository = new PrismaWhistleRepository(database);
   const whistleStore = new RedisWhistleStore(redis);
   const whistleService = new WhistleService(

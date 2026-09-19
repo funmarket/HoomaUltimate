@@ -13,7 +13,7 @@ export const adminIssueStatusUpdateSchema = z.object({
   note: z.string().trim().min(1).max(1000),
 });
 export const adminUserSearchQuerySchema = z.object({
-  query: z.string().trim().min(2).max(120),
+  query: z.string().trim().max(120).optional().default(""),
   limit: z.coerce.number().int().min(1).max(50).optional().default(25),
 });
 export const adminAuditQuerySchema = z.object({

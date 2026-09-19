@@ -11,5 +11,13 @@ export function createUserNotificationRouter(service: UserNotificationService): 
       response.json(await service.listForRecipient(getAuth(request).userId));
     }),
   );
+  router.post(
+    "/:notificationId/read",
+    asyncHandler(async (request, response) => {
+      response.json(
+        await service.markRead(getAuth(request).userId, String(request.params.notificationId)),
+      );
+    }),
+  );
   return router;
 }
