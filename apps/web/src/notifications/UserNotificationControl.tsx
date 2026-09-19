@@ -1,30 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { request, useHoomaFrontend } from "@hooma/frontend";
+import { useHoomaFrontend, type UserUserNotificationItem } from "@hooma/frontend";
 
-type NotificationItem = {
-  readonly id: string;
-  readonly type:
-    | "DIRECT_USER_WHISTLE"
-    | "RIDE_WHISTLE"
-    | "MODERATION_YELLOW_CARD"
-    | "MODERATION_SECOND_YELLOW_CARD"
-    | "MODERATION_RED_CARD_BAN"
-    | "MODERATION_TEMPORARY_BAN"
-    | "MODERATION_READ_ONLY"
-    | "MODERATION_ACCOUNT_DISABLED";
-  readonly actorUserId: string;
-  readonly strikeNumber: number | null;
-  readonly expiresAt: string | null;
-  readonly createdAt: string;
-  readonly readAt: string | null;
-};
-
-type NotificationPage = {
-  readonly unreadCount: number;
-  readonly items: readonly NotificationItem[];
-};
-
-function notificationTitle(item: NotificationItem): string {
+function notificationTitle(item: UserNotificationItem): string {
   if (item.type === "MODERATION_YELLOW_CARD") return "Yellow card warning";
   if (item.type === "MODERATION_SECOND_YELLOW_CARD") return "Second yellow card warning";
   if (item.type === "MODERATION_RED_CARD_BAN") return "Red card — banned for one week";
@@ -35,7 +12,7 @@ function notificationTitle(item: NotificationItem): string {
   return "New whistle";
 }
 
-function notificationDetail(item: NotificationItem): string {
+function notificationDetail(item: UserNotificationItem): string {
   if (item.expiresAt) return `Until ${new Date(item.expiresAt).toLocaleString()}`;
   if (item.type === "MODERATION_YELLOW_CARD") return "First strike";
   if (item.type === "MODERATION_SECOND_YELLOW_CARD") return "Second strike";
@@ -44,14 +21,14 @@ function notificationDetail(item: NotificationItem): string {
 }
 
 export function UserNotificationControl({ enabled }: { readonly enabled: boolean }) {
-  const { transport } = useHoomaFrontend();
-  const [items, setItems] = useState<readonly NotificationItem[]>([]);
+  const { api } = useHoomaFrontend();
+  const [items, setItems] = useState<readonly UserNotificationItem[]>([]);
   const [open, setOpen] = useState(false);
 
   async function load() {
     if (!enabled) return;
     try {
-      const page = await request<NotificationPage>(transport, "/api/v1/notifications");
+      const page = await api.notifications.list();
       setItems(page.items);
     } catch {
       setItems([]);
@@ -67,20 +44,16 @@ export function UserNotificationControl({ enabled }: { readonly enabled: boolean
     void load();
     const timer = window.setInterval(() => void load(), 30_000);
     return () => window.clearInterval(timer);
-  }, [enabled, transport]);
+  }, [api, enabled]);
 
   const unreadCount = useMemo(
     () => items.filter((item) => item.readAt === null).length,
     [items],
   );
 
-  async function markRead(item: NotificationItem) {
+  async function markRead(item: UserNotificationItem) {
     if (item.readAt !== null) return;
-    await request<{ readonly ok: true }>(
-      transport,
-      `/api/v1/notifications/${encodeURIComponent(item.id)}/read`,
-      { method: "POST" },
-    );
+    await api.notifications.markRead(item.id);
     setItems((current) =>
       current.map((entry) =>
         entry.id === item.id ? { ...entry, readAt: new Date().toISOString() } : entry,
