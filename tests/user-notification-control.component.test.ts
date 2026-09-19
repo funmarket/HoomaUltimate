@@ -12,6 +12,7 @@ registerHooks({
   },
 });
 
+// prettier-ignore
 function installDom() {
   const dom = new JSDOM("<!doctype html><html><body></body></html>", {
     url: "http://localhost/",
@@ -35,6 +36,7 @@ function installDom() {
   return dom;
 }
 
+// prettier-ignore
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -42,6 +44,7 @@ function json(body: unknown, status = 200) {
   });
 }
 
+// prettier-ignore
 test("notification bell shows unread moderation notice and marks it read", async () => {
   const dom = installDom();
   const React = await import("react");

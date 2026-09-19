@@ -10,6 +10,7 @@ import { requireAuthentication } from "../apps/api/src/modules/identity/http/aut
 import { UserNotificationService } from "../apps/api/src/modules/notifications/application/user-notification.service.js";
 import type { PlatformAdminAuthorizer } from "../apps/api/src/modules/platform-admin/application/platform-admin.authorizer.js";
 
+// prettier-ignore
 function authorizer(): PlatformAdminAuthorizer {
   return {
     isPlatformAdmin: async () => false,
@@ -25,6 +26,7 @@ function authorizer(): PlatformAdminAuthorizer {
   };
 }
 
+// prettier-ignore
 const baseDetail = {
   userId: "user-1",
   presentation: { username: "member", displayName: "Member One", photoUrl: null },
@@ -43,6 +45,7 @@ const baseDetail = {
   },
 } as const;
 
+// prettier-ignore
 test("third strike is a red card one-week ban, not a third yellow card", async () => {
   const issued: Array<{ actionType: string; expiresAt: Date | null }> = [];
   const notified: string[] = [];
@@ -77,11 +80,13 @@ test("third strike is a red card one-week ban, not a third yellow card", async (
   assert.deepEqual(notified, ["RED_CARD_BAN"]);
 });
 
+// prettier-ignore
 test("user listing supports a default recent-users view without a search query", () => {
   const parsed = adminUserSearchQuerySchema.safeParse({ limit: "25" });
   assert.equal(parsed.success, true);
 });
 
+// prettier-ignore
 test("read-only enforcement also blocks admin write routes", async () => {
   const middleware = requireAuthentication(
     {
@@ -119,6 +124,7 @@ test("read-only enforcement also blocks admin write routes", async () => {
   assert.equal((error as { code?: string } | null)?.code, "ACCOUNT_READ_ONLY");
 });
 
+// prettier-ignore
 test("notification service persists moderation notices and supports read state", async () => {
   const created: unknown[] = [];
   const marked: string[] = [];
