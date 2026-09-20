@@ -31,11 +31,7 @@ const apiEnvironmentSchema = z
     API_RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().positive().default(60),
     API_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().default(6000),
     API_RATE_LIMIT_AUTH_MAX_REQUESTS: z.coerce.number().int().positive().default(600),
-    API_RATE_LIMIT_PASSWORD_RECOVERY_MAX_REQUESTS: z.coerce
-      .number()
-      .int()
-      .positive()
-      .default(10),
+    API_RATE_LIMIT_PASSWORD_RECOVERY_MAX_REQUESTS: z.coerce.number().int().positive().default(10),
     API_RATE_LIMIT_WHISTLE_READ_MAX_REQUESTS: z.coerce.number().int().positive().default(600),
     API_RATE_LIMIT_WHISTLE_WRITE_MAX_REQUESTS: z.coerce.number().int().positive().default(120),
     API_RATE_LIMIT_DISCOVERY_MAX_REQUESTS: z.coerce.number().int().positive().default(600),
