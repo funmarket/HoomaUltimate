@@ -78,144 +78,144 @@ async function registerWeb(base: string, loginUsername: string, password: string
 test(
   "linked Telegram recovery resets the Web password, revokes sessions, and consumes the code",
   async () => {
-  await cleanupTestAccounts();
-  const delivery = new CapturingPasswordRecoveryDelivery();
-  const app = createApp(config, createContainer(config, { passwordRecoveryDelivery: delivery }));
-  const server = app.listen(0, "127.0.0.1");
-  await new Promise<void>((resolve) => server.once("listening", resolve));
-  const address = server.address();
-  assert.ok(address && typeof address === "object");
-  const base = `http://127.0.0.1:${address.port}`;
+    await cleanupTestAccounts();
+    const delivery = new CapturingPasswordRecoveryDelivery();
+    const app = createApp(config, createContainer(config, { passwordRecoveryDelivery: delivery }));
+    const server = app.listen(0, "127.0.0.1");
+    await new Promise<void>((resolve) => server.once("listening", resolve));
+    const address = server.address();
+    assert.ok(address && typeof address === "object");
+    const base = `http://127.0.0.1:${address.port}`;
 
-  try {
-    const oldPassword = "correct horse battery staple";
-    const newPassword = "new correct horse battery staple";
-    await registerWeb(base, "recovery_cryptotemplar", oldPassword);
-    const credential = await db.webCredential.findUniqueOrThrow({
-      where: { loginUsername: "recovery_cryptotemplar" },
-      select: { userId: true },
-    });
-    await db.telegramIdentity.create({
-      data: {
-        userId: credential.userId,
-        telegramUserId: 99112233n,
-        telegramUsername: "CryptoTemplar",
-      },
-    });
+    try {
+      const oldPassword = "correct horse battery staple";
+      const newPassword = "new correct horse battery staple";
+      await registerWeb(base, "recovery_cryptotemplar", oldPassword);
+      const credential = await db.webCredential.findUniqueOrThrow({
+        where: { loginUsername: "recovery_cryptotemplar" },
+        select: { userId: true },
+      });
+      await db.telegramIdentity.create({
+        data: {
+          userId: credential.userId,
+          telegramUserId: 99112233n,
+          telegramUsername: "CryptoTemplar",
+        },
+      });
 
-    const request = await fetch(`${base}/api/public/v1/auth/password-recovery/request`, {
-      method: "POST",
-      headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
-      body: JSON.stringify({ loginUsername: "Recovery_CryptoTemplar" }),
-    });
-    assert.equal(request.status, 202);
-    assert.deepEqual(await request.json(), { ok: true });
-    assert.equal(delivery.deliveries.length, 1);
-    assert.equal(delivery.deliveries[0]?.telegramUserId, 99112233n);
-    assert.equal(delivery.deliveries[0]?.loginUsername, "recovery_cryptotemplar");
-    assert.match(delivery.deliveries[0]?.code ?? "", /^[A-Z2-9]{5}-[A-Z2-9]{5}$/);
+      const request = await fetch(`${base}/api/public/v1/auth/password-recovery/request`, {
+        method: "POST",
+        headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
+        body: JSON.stringify({ loginUsername: "Recovery_CryptoTemplar" }),
+      });
+      assert.equal(request.status, 202);
+      assert.deepEqual(await request.json(), { ok: true });
+      assert.equal(delivery.deliveries.length, 1);
+      assert.equal(delivery.deliveries[0]?.telegramUserId, 99112233n);
+      assert.equal(delivery.deliveries[0]?.loginUsername, "recovery_cryptotemplar");
+      assert.match(delivery.deliveries[0]?.code ?? "", /^[A-Z2-9]{5}-[A-Z2-9]{5}$/);
 
-    const challengeBefore = await db.passwordRecoveryChallenge.findFirstOrThrow({
-      where: { userId: credential.userId, consumedAt: null },
-      orderBy: { createdAt: "desc" },
-      select: { codeHash: true },
-    });
-    assert.notEqual(challengeBefore.codeHash, delivery.deliveries[0]?.code);
-    assert.match(challengeBefore.codeHash, /^\$argon2id\$/);
+      const challengeBefore = await db.passwordRecoveryChallenge.findFirstOrThrow({
+        where: { userId: credential.userId, consumedAt: null },
+        orderBy: { createdAt: "desc" },
+        select: { codeHash: true },
+      });
+      assert.notEqual(challengeBefore.codeHash, delivery.deliveries[0]?.code);
+      assert.match(challengeBefore.codeHash, /^\$argon2id\$/);
 
-    const wrongCode = await fetch(`${base}/api/public/v1/auth/password-recovery/confirm`, {
-      method: "POST",
-      headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
-      body: JSON.stringify({
-        loginUsername: "recovery_cryptotemplar",
-        code: "AAAAA-AAAAA",
-        newPassword,
-      }),
-    });
-    assert.equal(wrongCode.status, 400);
-    const afterWrongCode = await db.passwordRecoveryChallenge.findFirstOrThrow({
-      where: { userId: credential.userId, consumedAt: null },
-      orderBy: { createdAt: "desc" },
-      select: { failedAttempts: true },
-    });
-    assert.equal(afterWrongCode.failedAttempts, 1);
+      const wrongCode = await fetch(`${base}/api/public/v1/auth/password-recovery/confirm`, {
+        method: "POST",
+        headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
+        body: JSON.stringify({
+          loginUsername: "recovery_cryptotemplar",
+          code: "AAAAA-AAAAA",
+          newPassword,
+        }),
+      });
+      assert.equal(wrongCode.status, 400);
+      const afterWrongCode = await db.passwordRecoveryChallenge.findFirstOrThrow({
+        where: { userId: credential.userId, consumedAt: null },
+        orderBy: { createdAt: "desc" },
+        select: { failedAttempts: true },
+      });
+      assert.equal(afterWrongCode.failedAttempts, 1);
 
-    const reset = await fetch(`${base}/api/public/v1/auth/password-recovery/confirm`, {
-      method: "POST",
-      headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
-      body: JSON.stringify({
-        loginUsername: "recovery_cryptotemplar",
-        code: delivery.deliveries[0]?.code,
-        newPassword,
-      }),
-    });
-    assert.equal(reset.status, 200);
-    assert.deepEqual(await reset.json(), { ok: true });
+      const reset = await fetch(`${base}/api/public/v1/auth/password-recovery/confirm`, {
+        method: "POST",
+        headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
+        body: JSON.stringify({
+          loginUsername: "recovery_cryptotemplar",
+          code: delivery.deliveries[0]?.code,
+          newPassword,
+        }),
+      });
+      assert.equal(reset.status, 200);
+      assert.deepEqual(await reset.json(), { ok: true });
 
-    const credentialAfter = await db.webCredential.findUniqueOrThrow({
-      where: { loginUsername: "recovery_cryptotemplar" },
-      select: { failedLoginCount: true, lockedUntil: true },
-    });
-    assert.equal(credentialAfter.failedLoginCount, 0);
-    assert.equal(credentialAfter.lockedUntil, null);
+      const credentialAfter = await db.webCredential.findUniqueOrThrow({
+        where: { loginUsername: "recovery_cryptotemplar" },
+        select: { failedLoginCount: true, lockedUntil: true },
+      });
+      assert.equal(credentialAfter.failedLoginCount, 0);
+      assert.equal(credentialAfter.lockedUntil, null);
 
-    const sessions = await db.webSession.findMany({
-      where: { userId: credential.userId },
-      select: { revokedAt: true },
-    });
-    assert.ok(sessions.length >= 1);
-    assert.ok(sessions.every((session) => session.revokedAt instanceof Date));
+      const sessions = await db.webSession.findMany({
+        where: { userId: credential.userId },
+        select: { revokedAt: true },
+      });
+      assert.ok(sessions.length >= 1);
+      assert.ok(sessions.every((session) => session.revokedAt instanceof Date));
 
-    const consumed = await db.passwordRecoveryChallenge.findFirstOrThrow({
-      where: { userId: credential.userId },
-      orderBy: { createdAt: "desc" },
-      select: { consumedAt: true },
-    });
-    assert.ok(consumed.consumedAt instanceof Date);
+      const consumed = await db.passwordRecoveryChallenge.findFirstOrThrow({
+        where: { userId: credential.userId },
+        orderBy: { createdAt: "desc" },
+        select: { consumedAt: true },
+      });
+      assert.ok(consumed.consumedAt instanceof Date);
 
-    const oldLogin = await fetch(`${base}/api/public/v1/auth/login`, {
-      method: "POST",
-      headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
-      body: JSON.stringify({ loginUsername: "recovery_cryptotemplar", password: oldPassword }),
-    });
-    assert.equal(oldLogin.status, 401);
+      const oldLogin = await fetch(`${base}/api/public/v1/auth/login`, {
+        method: "POST",
+        headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
+        body: JSON.stringify({ loginUsername: "recovery_cryptotemplar", password: oldPassword }),
+      });
+      assert.equal(oldLogin.status, 401);
 
-    const newLogin = await fetch(`${base}/api/public/v1/auth/login`, {
-      method: "POST",
-      headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
-      body: JSON.stringify({ loginUsername: "recovery_cryptotemplar", password: newPassword }),
-    });
-    assert.equal(newLogin.status, 200);
+      const newLogin = await fetch(`${base}/api/public/v1/auth/login`, {
+        method: "POST",
+        headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
+        body: JSON.stringify({ loginUsername: "recovery_cryptotemplar", password: newPassword }),
+      });
+      assert.equal(newLogin.status, 200);
 
-    const reuse = await fetch(`${base}/api/public/v1/auth/password-recovery/confirm`, {
-      method: "POST",
-      headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
-      body: JSON.stringify({
-        loginUsername: "recovery_cryptotemplar",
-        code: delivery.deliveries[0]?.code,
-        newPassword: "another secure password",
-      }),
-    });
-    assert.equal(reuse.status, 400);
+      const reuse = await fetch(`${base}/api/public/v1/auth/password-recovery/confirm`, {
+        method: "POST",
+        headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
+        body: JSON.stringify({
+          loginUsername: "recovery_cryptotemplar",
+          code: delivery.deliveries[0]?.code,
+          newPassword: "another secure password",
+        }),
+      });
+      assert.equal(reuse.status, 400);
 
-    await registerWeb(base, "recovery_unlinked", "another correct horse battery staple");
-    const unlinked = await fetch(`${base}/api/public/v1/auth/password-recovery/request`, {
-      method: "POST",
-      headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
-      body: JSON.stringify({ loginUsername: "recovery_unlinked" }),
-    });
-    assert.equal(unlinked.status, 202);
-    assert.deepEqual(await unlinked.json(), { ok: true });
-    assert.equal(delivery.deliveries.length, 1);
+      await registerWeb(base, "recovery_unlinked", "another correct horse battery staple");
+      const unlinked = await fetch(`${base}/api/public/v1/auth/password-recovery/request`, {
+        method: "POST",
+        headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
+        body: JSON.stringify({ loginUsername: "recovery_unlinked" }),
+      });
+      assert.equal(unlinked.status, 202);
+      assert.deepEqual(await unlinked.json(), { ok: true });
+      assert.equal(delivery.deliveries.length, 1);
 
-    const unknown = await fetch(`${base}/api/public/v1/auth/password-recovery/request`, {
-      method: "POST",
-      headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
-      body: JSON.stringify({ loginUsername: "does.not.exist" }),
-    });
-    assert.equal(unknown.status, 202);
-    assert.deepEqual(await unknown.json(), { ok: true });
-    assert.equal(delivery.deliveries.length, 1);
+      const unknown = await fetch(`${base}/api/public/v1/auth/password-recovery/request`, {
+        method: "POST",
+        headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
+        body: JSON.stringify({ loginUsername: "does.not.exist" }),
+      });
+      assert.equal(unknown.status, 202);
+      assert.deepEqual(await unknown.json(), { ok: true });
+      assert.equal(delivery.deliveries.length, 1);
     } finally {
       await new Promise<void>((resolve, reject) =>
         server.close((error) => (error ? reject(error) : resolve())),
