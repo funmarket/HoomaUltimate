@@ -4,7 +4,9 @@ import { loadApiConfig, type ApiConfig } from "@hooma/config";
 import { getDatabaseClient } from "@hooma/database";
 import { createApp } from "../apps/api/src/bootstrap/app.js";
 import { createContainer } from "../apps/api/src/bootstrap/container.js";
-import type { PasswordRecoveryDelivery } from "../apps/api/src/modules/identity/application/password-recovery-delivery.js";
+import type {
+  PasswordRecoveryDelivery,
+} from "../apps/api/src/modules/identity/application/password-recovery-delivery.js";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error("DATABASE_URL is required for password recovery integration tests");
@@ -47,7 +49,9 @@ async function cleanupTestAccounts() {
     where: { telegramUserId: 99112233n },
     select: { userId: true },
   });
-  const userIds = [...new Set([...rows.map((row) => row.userId), ...(telegram ? [telegram.userId] : [])])];
+  const userIds = [
+    ...new Set([...rows.map((row) => row.userId), ...(telegram ? [telegram.userId] : [])]),
+  ];
   if (userIds.length > 0) {
     await db.user.deleteMany({ where: { id: { in: userIds } } });
   }
@@ -71,7 +75,9 @@ async function registerWeb(base: string, loginUsername: string, password: string
   return cookie;
 }
 
-test("linked Telegram recovery resets the Web password, revokes sessions, and consumes the code", async () => {
+test(
+  "linked Telegram recovery resets the Web password, revokes sessions, and consumes the code",
+  async () => {
   await cleanupTestAccounts();
   const delivery = new CapturingPasswordRecoveryDelivery();
   const app = createApp(config, createContainer(config, { passwordRecoveryDelivery: delivery }));
@@ -210,10 +216,11 @@ test("linked Telegram recovery resets the Web password, revokes sessions, and co
     assert.equal(unknown.status, 202);
     assert.deepEqual(await unknown.json(), { ok: true });
     assert.equal(delivery.deliveries.length, 1);
-  } finally {
-    await new Promise<void>((resolve, reject) =>
-      server.close((error) => (error ? reject(error) : resolve())),
-    );
-    await cleanupTestAccounts();
-  }
-});
+    } finally {
+      await new Promise<void>((resolve, reject) =>
+        server.close((error) => (error ? reject(error) : resolve())),
+      );
+      await cleanupTestAccounts();
+    }
+  },
+);
