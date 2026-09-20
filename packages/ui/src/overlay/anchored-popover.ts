@@ -13,11 +13,64 @@ const DEFAULT_GAP = 8;
 const DEFAULT_MAX_WIDTH = 360;
 const BOTTOM_NAV_SELECTOR = ".hooma-bottom-nav:not(.hooma-bottom-nav--hidden)";
 
+/**
+ * Grace period for pointer-leave auto-close. There is a physical gap between a trigger and its
+ * top-layer popover, so closing immediately on leaving the trigger would flicker as the pointer
+ * crosses that gap.
+ */
+const POINTER_LEAVE_CLOSE_DELAY_MS = 175;
+const FINE_POINTER_HOVER_QUERY = "(hover: hover) and (pointer: fine)";
+
 export interface AnchoredPopoverOptions {
   readonly margin?: number;
   readonly gap?: number;
   readonly maxWidth?: number;
   readonly avoidSelector?: string;
+}
+
+export interface AnchoredPopoverPointerOptions {
+  /**
+   * Mouse/fine-pointer convenience only: once the popover has been opened by a pointer
+   * interaction on the anchor, close it after the pointer has left both the anchor and the
+   * popover for the grace delay. Keyboard-opened popovers, touch/coarse-pointer devices and
+   * native light dismiss are unaffected. Enabled by default.
+   */
+  readonly closeOnPointerLeave?: boolean;
+}
+
+function supportsFinePointerHover(): boolean {
+  if (typeof window.matchMedia !== "function") return false;
+  try {
+    return window.matchMedia(FINE_POINTER_HOVER_QUERY).matches;
+  } catch {
+    return false;
+  }
+}
+
+function elementContains(element: Element | null, node: EventTarget | null): boolean {
+  if (!element || !node) return false;
+  const candidate = node as { contains?: (other: Node) => boolean };
+  if (element === node) return true;
+  if (typeof element.contains !== "function") return false;
+  return typeof candidate.contains === "function" ? element.contains(node as Node) : false;
+}
+
+function pointerTarget(
+  clientX: number,
+  clientY: number,
+  fallback: EventTarget | null,
+): EventTarget | null {
+  // Prefer real hit testing so crossing the trigger-to-popover gap is measured honestly; fall
+  // back to the event target where hit testing is unavailable.
+  if (typeof document.elementFromPoint === "function") {
+    try {
+      const under = document.elementFromPoint(clientX, clientY);
+      if (under) return under;
+    } catch {
+      return fallback;
+    }
+  }
+  return fallback;
 }
 
 export function anchoredPopoverGeometry(
@@ -72,16 +125,19 @@ export function useAnchoredPopover({
   gap,
   maxWidth,
   avoidSelector,
-}: AnchoredPopoverOptions & {
-  readonly open: boolean;
-  readonly onClose?: () => void;
-  readonly revision?: unknown;
-}): AnchoredPopoverBinding {
+  closeOnPointerLeave = true,
+}: AnchoredPopoverOptions &
+  AnchoredPopoverPointerOptions & {
+    readonly open: boolean;
+    readonly onClose?: () => void;
+    readonly revision?: unknown;
+  }): AnchoredPopoverBinding {
   const anchorRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLElement>(null);
   const [style, setStyle] = useState<CSSProperties>({});
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  const pointerOpenedRef = useRef(false);
   const geometryOptions = useMemo<AnchoredPopoverOptions>(
     () => ({
       ...(margin === undefined ? {} : { margin }),
@@ -91,6 +147,72 @@ export function useAnchoredPopover({
     }),
     [margin, gap, maxWidth, avoidSelector],
   );
+
+  useEffect(() => {
+    // A pointer press on the anchor marks the next open as pointer-initiated. Keyboard
+    // activation produces a click without a pointerdown, so keyboard behaviour stays untouched.
+    function markPointerIntent(event: Event) {
+      const pointerEvent = event as PointerEvent;
+      if (pointerEvent.pointerType === "touch") return;
+      if (elementContains(anchorRef.current, pointerEvent.target)) pointerOpenedRef.current = true;
+    }
+
+    document.addEventListener("pointerdown", markPointerIntent, true);
+    return () => document.removeEventListener("pointerdown", markPointerIntent, true);
+  }, []);
+
+  useEffect(() => {
+    if (!open) {
+      pointerOpenedRef.current = false;
+      return;
+    }
+    if (!closeOnPointerLeave) return;
+    if (!pointerOpenedRef.current) return;
+    if (!supportsFinePointerHover()) return;
+
+    const anchorElement = anchorRef.current;
+    let pendingClose: number | null = null;
+
+    function cancelPendingClose() {
+      if (pendingClose !== null) {
+        window.clearTimeout(pendingClose);
+        pendingClose = null;
+      }
+    }
+
+    function evaluatePointer(event: Event) {
+      const pointerEvent = event as PointerEvent;
+      if (
+        pointerEvent.pointerType &&
+        pointerEvent.pointerType !== "mouse" &&
+        pointerEvent.pointerType !== "pen"
+      ) {
+        return;
+      }
+
+      const target = pointerTarget(pointerEvent.clientX, pointerEvent.clientY, pointerEvent.target);
+      const insideAnchor = elementContains(anchorElement, target);
+      const insidePopover = elementContains(popoverRef.current, target);
+      if (insideAnchor || insidePopover) {
+        cancelPendingClose();
+        return;
+      }
+      if (pendingClose === null) {
+        pendingClose = window.setTimeout(() => {
+          pendingClose = null;
+          onCloseRef.current?.();
+        }, POINTER_LEAVE_CLOSE_DELAY_MS);
+      }
+    }
+
+    document.addEventListener("pointermove", evaluatePointer, true);
+    document.addEventListener("pointerleave", evaluatePointer, true);
+    return () => {
+      document.removeEventListener("pointermove", evaluatePointer, true);
+      document.removeEventListener("pointerleave", evaluatePointer, true);
+      cancelPendingClose();
+    };
+  }, [closeOnPointerLeave, open]);
 
   useEffect(() => {
     const popover = popoverRef.current;

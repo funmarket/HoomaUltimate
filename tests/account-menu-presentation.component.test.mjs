@@ -63,12 +63,54 @@ async function setup() {
     writable: true,
     configurable: true,
   });
-  const { cleanup, fireEvent, render, waitFor } = await import("@testing-library/react");
+  const { cleanup, fireEvent, render, waitFor, act } = await import("@testing-library/react");
   const { HoomaAccountHeader } = await import("@hooma/ui");
   const { buildAccountMenuSections } = await import(
     "../apps/web/src/app/shell/account-menu-model"
   );
-  return { dom, React, cleanup, fireEvent, render, waitFor, HoomaAccountHeader, buildAccountMenuSections };
+  return { dom, React, cleanup, fireEvent, render, waitFor, act, HoomaAccountHeader, buildAccountMenuSections };
+}
+
+/**
+ * Stubs the fine-pointer hover capability query the shared overlay primitive uses.
+ */
+// prettier-ignore
+function enableFinePointerHover(dom, matches = true) {
+  dom.window.matchMedia = (query) => ({
+    matches: query === "(hover: hover) and (pointer: fine)" ? matches : false,
+    media: query,
+    onchange: null,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    addListener: () => undefined,
+    removeListener: () => undefined,
+    dispatchEvent: () => false,
+  });
+}
+
+/**
+ * Captures the pending-close timer so the grace period can be asserted without real waiting.
+ */
+// prettier-ignore
+function captureCloseTimers(dom) {
+  const originalSetTimeout = dom.window.setTimeout;
+  const originalClearTimeout = dom.window.clearTimeout;
+  const timers = [];
+  dom.window.setTimeout = (callback, delay) => {
+    const entry = { callback, delay, cleared: false };
+    timers.push(entry);
+    return entry;
+  };
+  dom.window.clearTimeout = (handle) => {
+    if (handle && typeof handle === "object" && "cleared" in handle) handle.cleared = true;
+  };
+  return {
+    pending: () => timers.filter((entry) => !entry.cleared),
+    restore: () => {
+      dom.window.setTimeout = originalSetTimeout;
+      dom.window.clearTimeout = originalClearTimeout;
+    },
+  };
 }
 
 /**
@@ -332,4 +374,128 @@ test("the UI package receives no domain authority props", async () => {
   assert.doesNotMatch(header, /@hooma\/(?:frontend|contracts|database)|@prisma\/client/);
   assert.match(header, /readonly sections: readonly HoomaAccountMenuSection\[\];/);
   assert.match(header, /readonly identityAction: HoomaAccountIdentityAction;/);
+});
+
+// prettier-ignore
+test("a pointer-opened account menu closes after the pointer leaves the trigger and the popover", async () => {
+  const context = await setup();
+  try {
+    enableFinePointerHover(context.dom);
+    const { view } = renderMenu(context);
+    const { fireEvent, waitFor, act } = context;
+    const trigger = view.getByRole("button", { name: "Profile and account" });
+
+    fireEvent.pointerDown(trigger, { pointerType: "mouse" });
+    fireEvent.click(trigger);
+    await waitFor(() => assert.ok(menuElement()?.hasAttribute("data-popover-open")));
+
+    const timers = captureCloseTimers(context.dom);
+    fireEvent.pointerMove(document.body, { pointerType: "mouse", clientX: 4, clientY: 520 });
+    const pending = timers.pending();
+    timers.restore();
+
+    assert.equal(pending.length, 1);
+    assert.ok(pending[0].delay >= 150 && pending[0].delay <= 200, `grace was ${pending[0].delay}ms`);
+
+    await act(async () => {
+      pending[0].callback();
+    });
+    assert.equal(menuElement()?.hasAttribute("data-popover-open"), false);
+  } finally {
+    context.cleanup();
+    context.dom.window.close();
+  }
+});
+
+// prettier-ignore
+test("crossing the trigger-to-popover gap keeps the account menu open", async () => {
+  const context = await setup();
+  try {
+    enableFinePointerHover(context.dom);
+    const { view } = renderMenu(context);
+    const { fireEvent, waitFor } = context;
+    const trigger = view.getByRole("button", { name: "Profile and account" });
+
+    fireEvent.pointerDown(trigger, { pointerType: "mouse" });
+    fireEvent.click(trigger);
+    await waitFor(() => assert.ok(menuElement()?.hasAttribute("data-popover-open")));
+
+    const timers = captureCloseTimers(context.dom);
+    // The pointer crosses the gap between trigger and popover: briefly inside neither element.
+    fireEvent.pointerMove(document.body, { pointerType: "mouse", clientX: 4, clientY: 520 });
+    const pending = timers.pending();
+    assert.equal(pending.length, 1);
+
+    fireEvent.pointerMove(menuElement(), { pointerType: "mouse", clientX: 140, clientY: 220 });
+    assert.equal(pending[0].cleared, true);
+    assert.equal(timers.pending().length, 0);
+
+    // Returning to the trigger during the grace period must also cancel the pending close.
+    fireEvent.pointerMove(document.body, { pointerType: "mouse", clientX: 4, clientY: 520 });
+    const second = timers.pending();
+    assert.equal(second.length, 1);
+    fireEvent.pointerMove(trigger, { pointerType: "mouse", clientX: 300, clientY: 20 });
+    assert.equal(second[0].cleared, true);
+    timers.restore();
+
+    assert.equal(menuElement()?.hasAttribute("data-popover-open"), true);
+  } finally {
+    context.cleanup();
+    context.dom.window.close();
+  }
+});
+
+// prettier-ignore
+test("a keyboard-opened account menu is not closed by pointer movement", async () => {
+  const context = await setup();
+  try {
+    enableFinePointerHover(context.dom);
+    const { view } = renderMenu(context);
+    const { fireEvent, waitFor } = context;
+    const trigger = view.getByRole("button", { name: "Profile and account" });
+
+    // Keyboard activation produces a click without a pointerdown.
+    fireEvent.click(trigger);
+    await waitFor(() => assert.ok(menuElement()?.hasAttribute("data-popover-open")));
+
+    const timers = captureCloseTimers(context.dom);
+    fireEvent.pointerMove(document.body, { pointerType: "mouse", clientX: 4, clientY: 520 });
+    const pending = timers.pending();
+    timers.restore();
+
+    assert.equal(pending.length, 0);
+    assert.equal(menuElement()?.hasAttribute("data-popover-open"), true);
+  } finally {
+    context.cleanup();
+    context.dom.window.close();
+  }
+});
+
+// prettier-ignore
+test("touch/coarse pointers keep the click-toggle account menu behaviour", async () => {
+  const context = await setup();
+  try {
+    // No matchMedia stub: the capability query is unavailable, as on touch devices.
+    const { view } = renderMenu(context);
+    const { fireEvent, waitFor } = context;
+    const trigger = view.getByRole("button", { name: "Profile and account" });
+
+    fireEvent.pointerDown(trigger, { pointerType: "touch" });
+    fireEvent.click(trigger);
+    await waitFor(() => assert.ok(menuElement()?.hasAttribute("data-popover-open")));
+
+    const timers = captureCloseTimers(context.dom);
+    fireEvent.pointerMove(document.body, { pointerType: "touch", clientX: 4, clientY: 520 });
+    const pending = timers.pending();
+    timers.restore();
+
+    assert.equal(pending.length, 0);
+    assert.equal(menuElement()?.hasAttribute("data-popover-open"), true);
+
+    fireEvent.click(trigger);
+    assert.equal(menuElement()?.hasAttribute("data-popover-open"), false);
+  } finally {
+    context.cleanup();
+    context.dom.window.close();
+  }
 });
