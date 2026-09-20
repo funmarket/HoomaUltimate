@@ -7,7 +7,10 @@ import {
   normalizePasswordRecoveryCode,
   verifyPasswordRecoveryCode,
 } from "@hooma/auth";
-import type { PasswordRecoveryConfirmInput, PasswordRecoveryRequestInput } from "@hooma/contracts";
+import type {
+  PasswordRecoveryConfirmInput,
+  PasswordRecoveryRequestInput,
+} from "@hooma/contracts/auth-recovery";
 import { PasswordRecoveryError } from "../domain/password-recovery-error.js";
 import { normalizeUsername } from "../domain/normalization.js";
 import type { PasswordRecoveryDelivery } from "./password-recovery-delivery.js";
