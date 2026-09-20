@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@hooma/database";
+import { type Prisma, type PrismaClient } from "@hooma/database";
 import type {
   ModerationNotificationType,
   UserNotificationContextType,
@@ -11,6 +11,17 @@ import type {
 function parseNotificationContextType(value: string): UserNotificationContextType {
   if (value === "USER_DIRECT" || value === "RIDE") return value;
   throw new Error(`Unsupported notification context type: ${value}`);
+}
+
+/**
+ * The notification rows a recipient can actually receive. The bounded list page and the
+ * recipient-wide unread total must agree on applicability, so both read this one predicate.
+ */
+function recipientNotificationWhere(recipientUserId: string): Prisma.UserNotificationWhereInput {
+  return {
+    recipientUserId,
+    contextType: { in: ["USER_DIRECT", "RIDE"] },
+  };
 }
 
 function toRecord(row: {
@@ -97,10 +108,7 @@ export class PrismaUserNotificationRepository implements UserNotificationReposit
     limit: number,
   ): Promise<UserNotificationRecord[]> {
     const rows = await this.db.userNotification.findMany({
-      where: {
-        recipientUserId,
-        contextType: { in: ["USER_DIRECT", "RIDE"] },
-      },
+      where: recipientNotificationWhere(recipientUserId),
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: limit,
     });
@@ -110,6 +118,12 @@ export class PrismaUserNotificationRepository implements UserNotificationReposit
         contextType: parseNotificationContextType(row.contextType),
       }),
     );
+  }
+
+  async countUnreadForRecipient(recipientUserId: string): Promise<number> {
+    return this.db.userNotification.count({
+      where: { ...recipientNotificationWhere(recipientUserId), readAt: null },
+    });
   }
 
   async markRead(

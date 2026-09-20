@@ -209,6 +209,7 @@ test("notification service persists moderation notices and supports read state",
       };
     },
     listForRecipient: async () => [],
+    countUnreadForRecipient: async () => 0,
     markRead: async (_recipientUserId: string, notificationId: string) => {
       marked.push(notificationId);
       return "marked_read";
@@ -265,6 +266,7 @@ test("cleared sanctions produce a sanction-cleared notice without an expiry", as
       };
     },
     listForRecipient: async () => [],
+    countUnreadForRecipient: async () => 0,
     markRead: async () => "marked_read",
   };
   const service = new UserNotificationService(repository);
@@ -297,6 +299,7 @@ test("mark-read fails closed when the notification is not the reader's", async (
       throw new Error("not used");
     },
     listForRecipient: async () => [],
+    countUnreadForRecipient: async () => 0,
     markRead: async () => "not_found",
   };
   const service = new UserNotificationService(repository);

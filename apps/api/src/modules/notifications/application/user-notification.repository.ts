@@ -51,5 +51,10 @@ export interface UserNotificationRepository {
     createdAt: Date;
   }): Promise<UserNotificationRecord>;
   listForRecipient(recipientUserId: string, limit: number): Promise<UserNotificationRecord[]>;
+  /**
+   * The recipient's unread total across every applicable notification row, not just the unread
+   * entries inside a bounded page. Recipient-scoped exactly like `listForRecipient`.
+   */
+  countUnreadForRecipient(recipientUserId: string): Promise<number>;
   markRead(recipientUserId: string, notificationId: string): Promise<UserNotificationReadOutcome>;
 }
