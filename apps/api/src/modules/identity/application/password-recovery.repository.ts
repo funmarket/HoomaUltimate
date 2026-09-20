@@ -30,11 +30,7 @@ export interface PasswordRecoveryRepository {
     userId: string,
     now: Date,
   ): Promise<PasswordRecoveryChallengeRecord | null>;
-  recordFailedAttempt(
-    challengeId: string,
-    now: Date,
-    consume: boolean,
-  ): Promise<boolean>;
+  recordFailedAttempt(challengeId: string, now: Date, consume: boolean): Promise<boolean>;
   invalidateChallenge(challengeId: string, now: Date): Promise<void>;
   completePasswordReset(input: {
     readonly challengeId: string;
