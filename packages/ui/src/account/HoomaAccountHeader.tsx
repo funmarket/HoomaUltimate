@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { BrandMark } from "../brand/BrandMark.js";
+import { useAnchoredPopover } from "../overlay/anchored-popover.js";
 import { AccountMenuChevronIcon, AccountMenuUserIcon } from "./account-menu-icons.js";
 
 export interface HoomaAccountUser {
@@ -77,41 +78,6 @@ function MenuRow({
   );
 }
 
-function accountMenuGeometry(anchor: HTMLElement): CSSProperties {
-  const visualViewport = window.visualViewport;
-  const viewportLeft = visualViewport?.offsetLeft ?? 0;
-  const viewportTop = visualViewport?.offsetTop ?? 0;
-  const viewportWidth = visualViewport?.width ?? window.innerWidth;
-  const viewportHeight = visualViewport?.height ?? window.innerHeight;
-  const viewportRight = viewportLeft + viewportWidth;
-  const viewportBottom = viewportTop + viewportHeight;
-  const margin = 12;
-  const gap = 8;
-  const anchorRect = anchor.getBoundingClientRect();
-  const nav = document.querySelector<HTMLElement>(
-    ".hooma-bottom-nav:not(.hooma-bottom-nav--hidden)",
-  );
-  const navRect = nav?.getBoundingClientRect();
-  const navTop =
-    navRect && navRect.top < viewportBottom && navRect.bottom > viewportTop
-      ? navRect.top - gap
-      : viewportBottom - margin;
-  const bottomLimit = Math.min(viewportBottom - margin, navTop);
-  const width = Math.max(0, Math.min(360, viewportWidth - margin * 2));
-  const left = Math.min(
-    Math.max(viewportLeft + margin, anchorRect.right - width),
-    viewportRight - margin - width,
-  );
-  const top = Math.max(viewportTop + margin, anchorRect.bottom + gap);
-
-  return {
-    top,
-    left,
-    width,
-    maxHeight: Math.max(0, bottomLimit - top),
-  };
-}
-
 export function HoomaAccountHeader({
   user,
   loading,
@@ -123,56 +89,15 @@ export function HoomaAccountHeader({
   notificationControl,
 }: HoomaAccountHeaderProps) {
   const [open, setOpen] = useState(false);
-  const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
-  const anchorRef = useRef<HTMLDivElement>(null);
-  const menuRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const menu = menuRef.current;
-    if (!menu) return;
-
-    function onToggle(event: Event) {
-      const nextState = (event as Event & { newState?: string }).newState;
-      if (nextState === "closed") setOpen(false);
-    }
-
-    menu.addEventListener("toggle", onToggle);
-    return () => menu.removeEventListener("toggle", onToggle);
-  }, [user]);
-
-  useEffect(() => {
-    const menu = menuRef.current;
-    const anchor = anchorRef.current;
-    if (!menu || !anchor) return;
-    const anchorElement = anchor;
-
-    if (!open) {
-      if (menu.matches(":popover-open")) menu.hidePopover();
-      return;
-    }
-
-    function updateGeometry() {
-      setMenuStyle(accountMenuGeometry(anchorElement));
-    }
-
-    updateGeometry();
-    if (!menu.matches(":popover-open")) menu.showPopover();
-    const frame = window.requestAnimationFrame(updateGeometry);
-    const visualViewport = window.visualViewport;
-
-    window.addEventListener("resize", updateGeometry);
-    window.addEventListener("scroll", updateGeometry, true);
-    visualViewport?.addEventListener("resize", updateGeometry);
-    visualViewport?.addEventListener("scroll", updateGeometry);
-
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.removeEventListener("resize", updateGeometry);
-      window.removeEventListener("scroll", updateGeometry, true);
-      visualViewport?.removeEventListener("resize", updateGeometry);
-      visualViewport?.removeEventListener("scroll", updateGeometry);
-    };
-  }, [open, user]);
+  const {
+    anchorRef,
+    popoverRef: menuRef,
+    style: menuStyle,
+  } = useAnchoredPopover({
+    open,
+    revision: user,
+    onClose: () => setOpen(false),
+  });
 
   useEffect(() => {
     if (loading) setOpen(false);
