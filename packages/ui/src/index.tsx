@@ -18,7 +18,11 @@ export {
   AccountMenuWhistleIcon,
 } from "./account/account-menu-icons.js";
 export { anchoredPopoverGeometry, useAnchoredPopover } from "./overlay/anchored-popover.js";
-export type { AnchoredPopoverBinding, AnchoredPopoverOptions } from "./overlay/anchored-popover.js";
+export type {
+  AnchoredPopoverBinding,
+  AnchoredPopoverOptions,
+  AnchoredPopoverPointerOptions,
+} from "./overlay/anchored-popover.js";
 export { HoomaBottomNav, PRIMARY_NAV_ITEMS } from "./navigation/HoomaBottomNav.js";
 export type { HoomaBottomNavProps } from "./navigation/HoomaBottomNav.js";
 export { AppearanceSettings } from "./settings/AppearanceSettings.js";

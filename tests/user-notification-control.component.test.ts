@@ -65,6 +65,95 @@ function json(body: unknown, status = 200) {
   });
 }
 
+/** Stubs the fine-pointer hover capability query the shared overlay primitive uses. */
+// prettier-ignore
+function enableFinePointerHover(dom, matches = true) {
+  dom.window.matchMedia = (query) => ({
+    matches: query === "(hover: hover) and (pointer: fine)" ? matches : false,
+    media: query,
+    onchange: null,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    addListener: () => undefined,
+    removeListener: () => undefined,
+    dispatchEvent: () => false,
+  });
+}
+
+/** Captures the pending-close timer so the grace period can be asserted without real waiting. */
+// prettier-ignore
+function captureCloseTimers(dom) {
+  const originalSetTimeout = dom.window.setTimeout;
+  const originalClearTimeout = dom.window.clearTimeout;
+  const timers = [];
+  dom.window.setTimeout = (callback, delay) => {
+    const entry = { callback, delay, cleared: false };
+    timers.push(entry);
+    return entry;
+  };
+  dom.window.clearTimeout = (handle) => {
+    if (handle && typeof handle === "object" && "cleared" in handle) handle.cleared = true;
+  };
+  return {
+    pending: () => timers.filter((entry) => !entry.cleared),
+    restore: () => {
+      dom.window.setTimeout = originalSetTimeout;
+      dom.window.clearTimeout = originalClearTimeout;
+    },
+  };
+}
+
+/** Minimal bell harness: one unread moderation notice served by the mocked transport. */
+// prettier-ignore
+async function renderBell(dom) {
+  const React = await import("react");
+  Object.defineProperty(globalThis, "React", {
+    value: React,
+    writable: true,
+    configurable: true,
+  });
+  const { act, cleanup, fireEvent, render, waitFor } = await import("@testing-library/react");
+  const { HoomaFrontendProvider } = await import("@hooma/frontend");
+  const { UserNotificationControl } = await import(
+    "../apps/web/src/notifications/UserNotificationControl"
+  );
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = async (input, init) => {
+    const url = new URL(String(input));
+    if ((init?.method ?? "GET") === "GET" && url.pathname === "/api/v1/notifications") {
+      return json({
+        unreadCount: 1,
+        items: [
+          {
+            id: "n1",
+            type: "MODERATION_YELLOW_CARD",
+            actorUserId: "admin-1",
+            strikeNumber: 1,
+            expiresAt: null,
+            createdAt: "2026-09-19T10:00:00.000Z",
+            readAt: null,
+          },
+        ],
+      });
+    }
+    if (init?.method === "POST" && url.pathname === "/api/v1/notifications/n1/read") {
+      return json({ ok: true });
+    }
+    return json({ error: { message: "unexpected" } }, 500);
+  };
+
+  const view = render(
+    React.createElement(
+      HoomaFrontendProvider,
+      { transport: { baseUrl: "http://api.test" } },
+      React.createElement(UserNotificationControl, { enabled: true }),
+    ),
+  );
+
+  return { view, act, cleanup, fireEvent, waitFor, originalFetch };
+}
+
 // prettier-ignore
 test("notification bell shows unread moderation notice and marks it read", async () => {
   const dom = installDom();
@@ -274,6 +363,133 @@ test("bell reports the server unread total and the panel is a viewport-placed to
   } finally {
     globalThis.fetch = originalFetch;
     cleanup();
+    dom.window.close();
+  }
+});
+
+const bellPopover = () => document.querySelector(".hooma-notification-popover");
+
+// prettier-ignore
+test("a pointer-opened notification panel closes after the pointer leaves the bell and the panel", async () => {
+  const dom = installDom();
+  enableFinePointerHover(dom);
+  const { view, act, cleanup, fireEvent, waitFor, originalFetch } = await renderBell(dom);
+
+  try {
+    await waitFor(() => assert.ok(view.getByRole("button", { name: /Notifications, 1 unread/i })));
+    const trigger = view.getByRole("button", { name: /Notifications, 1 unread/i });
+    fireEvent.pointerDown(trigger, { pointerType: "mouse" });
+    fireEvent.click(trigger);
+    await waitFor(() => assert.ok(bellPopover()));
+
+    const timers = captureCloseTimers(dom);
+    fireEvent.pointerMove(document.body, { pointerType: "mouse", clientX: 4, clientY: 520 });
+    const pending = timers.pending();
+    timers.restore();
+
+    assert.equal(pending.length, 1);
+    assert.ok(pending[0].delay >= 150 && pending[0].delay <= 200, `grace was ${pending[0].delay}ms`);
+
+    await act(async () => {
+      pending[0].callback();
+    });
+    assert.equal(bellPopover(), null);
+  } finally {
+    cleanup();
+    globalThis.fetch = originalFetch;
+    dom.window.close();
+  }
+});
+
+// prettier-ignore
+test("crossing the bell-to-panel gap keeps the notification panel open", async () => {
+  const dom = installDom();
+  enableFinePointerHover(dom);
+  const { view, cleanup, fireEvent, waitFor, originalFetch } = await renderBell(dom);
+
+  try {
+    await waitFor(() => assert.ok(view.getByRole("button", { name: /Notifications, 1 unread/i })));
+    const trigger = view.getByRole("button", { name: /Notifications, 1 unread/i });
+    fireEvent.pointerDown(trigger, { pointerType: "mouse" });
+    fireEvent.click(trigger);
+    await waitFor(() => assert.ok(bellPopover()));
+
+    const timers = captureCloseTimers(dom);
+    fireEvent.pointerMove(document.body, { pointerType: "mouse", clientX: 4, clientY: 520 });
+    const pending = timers.pending();
+    assert.equal(pending.length, 1);
+
+    fireEvent.pointerMove(bellPopover(), { pointerType: "mouse", clientX: 140, clientY: 220 });
+    assert.equal(pending[0].cleared, true);
+    assert.equal(timers.pending().length, 0);
+
+    fireEvent.pointerMove(document.body, { pointerType: "mouse", clientX: 4, clientY: 520 });
+    const second = timers.pending();
+    assert.equal(second.length, 1);
+    fireEvent.pointerMove(trigger, { pointerType: "mouse", clientX: 300, clientY: 20 });
+    assert.equal(second[0].cleared, true);
+    timers.restore();
+
+    assert.ok(bellPopover());
+  } finally {
+    cleanup();
+    globalThis.fetch = originalFetch;
+    dom.window.close();
+  }
+});
+
+// prettier-ignore
+test("a keyboard-opened notification panel is not closed by pointer movement", async () => {
+  const dom = installDom();
+  enableFinePointerHover(dom);
+  const { view, cleanup, fireEvent, waitFor, originalFetch } = await renderBell(dom);
+
+  try {
+    await waitFor(() => assert.ok(view.getByRole("button", { name: /Notifications, 1 unread/i })));
+    const trigger = view.getByRole("button", { name: /Notifications, 1 unread/i });
+    // Keyboard activation: click without a pointerdown.
+    fireEvent.click(trigger);
+    await waitFor(() => assert.ok(bellPopover()));
+
+    const timers = captureCloseTimers(dom);
+    fireEvent.pointerMove(document.body, { pointerType: "mouse", clientX: 4, clientY: 520 });
+    const pending = timers.pending();
+    timers.restore();
+
+    assert.equal(pending.length, 0);
+    assert.ok(bellPopover());
+  } finally {
+    cleanup();
+    globalThis.fetch = originalFetch;
+    dom.window.close();
+  }
+});
+
+// prettier-ignore
+test("touch/coarse pointers keep the bell click-toggle behaviour", async () => {
+  const dom = installDom();
+  const { view, cleanup, fireEvent, waitFor, originalFetch } = await renderBell(dom);
+
+  try {
+    await waitFor(() => assert.ok(view.getByRole("button", { name: /Notifications, 1 unread/i })));
+    const trigger = view.getByRole("button", { name: /Notifications, 1 unread/i });
+    fireEvent.pointerDown(trigger, { pointerType: "touch" });
+    fireEvent.click(trigger);
+    await waitFor(() => assert.ok(bellPopover()));
+
+    const timers = captureCloseTimers(dom);
+    fireEvent.pointerMove(document.body, { pointerType: "touch", clientX: 4, clientY: 520 });
+    const pending = timers.pending();
+    timers.restore();
+
+    assert.equal(pending.length, 0);
+    assert.ok(bellPopover());
+
+    fireEvent.click(trigger);
+    assert.equal(bellPopover(), null);
+  } finally {
+    cleanup();
+    globalThis.fetch = originalFetch;
     dom.window.close();
   }
 });
