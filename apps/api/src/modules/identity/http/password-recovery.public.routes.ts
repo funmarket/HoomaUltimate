@@ -1,8 +1,5 @@
 import { Router } from "express";
-import {
-  passwordRecoveryConfirmSchema,
-  passwordRecoveryRequestSchema,
-} from "@hooma/contracts";
+import { passwordRecoveryConfirmSchema, passwordRecoveryRequestSchema } from "@hooma/contracts";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import type { PasswordRecoveryService } from "../application/password-recovery.service.js";
 
