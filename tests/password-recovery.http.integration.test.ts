@@ -4,10 +4,12 @@ import { loadApiConfig, type ApiConfig } from "@hooma/config";
 import { getDatabaseClient } from "@hooma/database";
 import { createApp } from "../apps/api/src/bootstrap/app.js";
 import { createContainer } from "../apps/api/src/bootstrap/container.js";
-import type { PasswordRecoveryDelivery } from "../apps/api/src/modules/identity/application/password-recovery-delivery.js";
+import type {
+  PasswordRecoveryDelivery,
+} from "../apps/api/src/modules/identity/application/password-recovery-delivery.js";
 
 const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) throw new Error("DATABASE_URL is required for password recovery integration tests");
+if (!databaseUrl) throw new Error("DATABASE_URL is required for recovery integration tests");
 
 const loadedConfig = loadApiConfig({
   ...process.env,
