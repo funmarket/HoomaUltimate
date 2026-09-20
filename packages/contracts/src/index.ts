@@ -29,21 +29,6 @@ export const loginSchema = z.object({
   password: z.string().min(1).max(128),
 });
 
-export const passwordRecoveryRequestSchema = z.object({
-  loginUsername: usernameSchema,
-});
-
-export const passwordRecoveryConfirmSchema = z.object({
-  loginUsername: usernameSchema,
-  code: z
-    .string()
-    .trim()
-    .min(10)
-    .max(11)
-    .regex(/^[a-zA-Z0-9-]+$/),
-  newPassword: z.string().min(10).max(128),
-});
-
 export const sessionResponseSchema = z.object({ ok: z.literal(true) });
 
 export const profilePresentationUpdateSchema = z.object({
@@ -125,8 +110,6 @@ export const meResponseSchema = z.object({
 export type HealthResponse = z.infer<typeof healthResponseSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
-export type PasswordRecoveryRequestInput = z.infer<typeof passwordRecoveryRequestSchema>;
-export type PasswordRecoveryConfirmInput = z.infer<typeof passwordRecoveryConfirmSchema>;
 export type ProfilePresentationUpdateInput = z.infer<typeof profilePresentationUpdateSchema>;
 export type UserModerationStatus = z.infer<typeof userModerationStatusSchema>;
 export type MeResponse = z.infer<typeof meResponseSchema>;
