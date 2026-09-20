@@ -9,9 +9,7 @@ import type {
 export class PrismaPasswordRecoveryRepository implements PasswordRecoveryRepository {
   constructor(private readonly db: PrismaClient) {}
 
-  async findTelegramTarget(
-    loginUsername: string,
-  ): Promise<TelegramPasswordRecoveryTarget | null> {
+  async findTelegramTarget(loginUsername: string): Promise<TelegramPasswordRecoveryTarget | null> {
     const credential = await this.db.webCredential.findUnique({
       where: { loginUsername },
       select: {
