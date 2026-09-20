@@ -318,6 +318,7 @@ model User {
   telegramIdentity              TelegramIdentity?
   webCredential                 WebCredential?
   webSessions                   WebSession[]
+  passwordRecoveryChallenges   PasswordRecoveryChallenge[]
   platformRoles                 PlatformRoleAssignment[]
   appManagerGrants              AppManagerGrant[]              @relation("AppManagerRecipient")
   appManagerGrantsGiven         AppManagerGrant[]              @relation("AppManagerGrantor")
@@ -414,6 +415,20 @@ model WebCredential {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PasswordRecoveryChallenge {
+  id             String    @id @default(cuid())
+  userId         String
+  codeHash       String
+  expiresAt      DateTime
+  consumedAt     DateTime?
+  failedAttempts Int       @default(0)
+  createdAt      DateTime  @default(now())
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([expiresAt, consumedAt])
 }
 
 model WebSession {

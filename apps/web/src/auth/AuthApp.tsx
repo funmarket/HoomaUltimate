@@ -15,7 +15,7 @@ function safeReturnTo(): string {
   return value;
 }
 
-function initialMode(): "login" | "register" {
+function initialMode(): "login" | "register" | "recover" {
   return window.location.pathname === "/register" ? "register" : "login";
 }
 
@@ -23,7 +23,8 @@ export function AuthApp() {
   const { api } = useHoomaFrontend();
   const { me, loading, error: accountError, refresh } = useAccount();
   const [error, setError] = useState("");
-  const [mode, setMode] = useState<"login" | "register">(initialMode);
+  const [notice, setNotice] = useState("");
+  const [mode, setMode] = useState<"login" | "register" | "recover">(initialMode);
   const returnTo = useMemo(safeReturnTo, []);
 
   useEffect(() => {
@@ -40,6 +41,18 @@ export function AuthApp() {
   async function completeWithWarning(message: string) {
     setError(message);
     await refresh();
+  }
+
+  function selectMode(nextMode: "login" | "register" | "recover") {
+    setMode(nextMode);
+    setError("");
+    setNotice("");
+  }
+
+  function completePasswordRecovery() {
+    setMode("login");
+    setError("");
+    setNotice("Password reset. Sign in with your new password.");
   }
 
   async function signOut() {
@@ -79,32 +92,43 @@ export function AuthApp() {
   return (
     <section className="auth-card">
       <div className="auth-tabs">
-        <button type="button" aria-pressed={mode === "login"} onClick={() => setMode("login")}>
+        <button type="button" aria-pressed={mode === "login"} onClick={() => selectMode("login")}>
           Sign in
         </button>
         <button
           type="button"
           aria-pressed={mode === "register"}
-          onClick={() => setMode("register")}
+          onClick={() => selectMode("register")}
         >
           Create account
         </button>
       </div>
       {mode === "login" ? (
-        <LoginForm onSuccess={completeAuthentication} onError={setError} />
-      ) : (
+        <LoginForm
+          onSuccess={completeAuthentication}
+          onError={setError}
+          onRecover={() => selectMode("recover")}
+        />
+      ) : mode === "register" ? (
         <RegisterForm
           onSuccess={completeAuthentication}
           onCreatedWithWarning={completeWithWarning}
           onError={setError}
         />
+      ) : (
+        <PasswordRecoveryForm
+          onRecovered={completePasswordRecovery}
+          onCancel={() => selectMode("login")}
+          onError={setError}
+        />
       )}
+      {notice ? <p className="status">{notice}</p> : null}
       {visibleError ? <p className="error">{visibleError}</p> : null}
     </section>
   );
 }
 
-function LoginForm({ onSuccess, onError }: FormCallbacks) {
+function LoginForm({ onSuccess, onError, onRecover }: LoginFormCallbacks) {
   const { api } = useHoomaFrontend();
   return (
     <form
@@ -129,7 +153,135 @@ function LoginForm({ onSuccess, onError }: FormCallbacks) {
         <input name="password" type="password" autoComplete="current-password" required />
       </label>
       <button type="submit">Sign in</button>
+      <button type="button" onClick={onRecover}>
+        Forgot password?
+      </button>
     </form>
+  );
+}
+
+function PasswordRecoveryForm({
+  onRecovered,
+  onCancel,
+  onError,
+}: {
+  readonly onRecovered: () => void;
+  readonly onCancel: () => void;
+  readonly onError: (message: string) => void;
+}) {
+  const { api } = useHoomaFrontend();
+  const [loginUsername, setLoginUsername] = useState("");
+  const [requested, setRequested] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+
+  async function requestCode(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    onError("");
+    setMessage("");
+    const data = new FormData(event.currentTarget);
+    const username = String(data.get("loginUsername")).trim();
+    setBusy(true);
+    try {
+      await api.identity.requestPasswordRecovery({ loginUsername: username });
+      setLoginUsername(username);
+      setRequested(true);
+      setMessage(
+        "If this Web login has a linked Telegram account, HOOMA sent a one-time recovery code there.",
+      );
+    } catch (reason) {
+      onError(reason instanceof Error ? reason.message : "Unable to request password recovery");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function resetPassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    onError("");
+    const data = new FormData(event.currentTarget);
+    const newPassword = String(data.get("newPassword"));
+    const confirmPassword = String(data.get("confirmPassword"));
+    if (newPassword !== confirmPassword) {
+      onError("The new passwords do not match.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.identity.confirmPasswordRecovery({
+        loginUsername,
+        code: String(data.get("code")),
+        newPassword,
+      });
+      onRecovered();
+    } catch (reason) {
+      onError(reason instanceof Error ? reason.message : "Unable to reset password");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <p className="eyebrow">ACCOUNT RECOVERY</p>
+      <h2>Reset Web password</h2>
+      {!requested ? (
+        <form onSubmit={(event) => void requestCode(event)}>
+          <p>
+            Enter your Web login username. If that account is linked to Telegram, HOOMA will send a
+            short-lived recovery code to the linked Telegram account.
+          </p>
+          <label>
+            Login username
+            <input name="loginUsername" autoComplete="username" required />
+          </label>
+          <button type="submit" disabled={busy}>
+            {busy ? "Sending…" : "Send recovery code"}
+          </button>
+        </form>
+      ) : (
+        <form onSubmit={(event) => void resetPassword(event)}>
+          <p>{message}</p>
+          <p>Web login: {loginUsername}</p>
+          <label>
+            Recovery code
+            <input
+              name="code"
+              autoComplete="one-time-code"
+              minLength={10}
+              maxLength={11}
+              required
+            />
+          </label>
+          <label>
+            New password
+            <input
+              name="newPassword"
+              type="password"
+              minLength={10}
+              autoComplete="new-password"
+              required
+            />
+          </label>
+          <label>
+            Confirm new password
+            <input
+              name="confirmPassword"
+              type="password"
+              minLength={10}
+              autoComplete="new-password"
+              required
+            />
+          </label>
+          <button type="submit" disabled={busy}>
+            {busy ? "Resetting…" : "Reset password"}
+          </button>
+        </form>
+      )}
+      <button type="button" onClick={onCancel} disabled={busy}>
+        Back to sign in
+      </button>
+    </>
   );
 }
 
@@ -220,6 +372,10 @@ function RegisterForm({ onSuccess, onCreatedWithWarning, onError }: RegisterForm
 type FormCallbacks = {
   onSuccess: (nextPath?: string) => void | Promise<void>;
   onError: (message: string) => void;
+};
+
+type LoginFormCallbacks = FormCallbacks & {
+  onRecover: () => void;
 };
 
 type RegisterFormCallbacks = FormCallbacks & {

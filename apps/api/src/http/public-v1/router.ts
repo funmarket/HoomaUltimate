@@ -11,6 +11,7 @@ import {
   createIdentityProfilePublicRouter,
   createIdentityPublicRouter,
 } from "../../modules/identity/http/identity.public.routes.js";
+import { createPasswordRecoveryPublicRouter } from "../../modules/identity/http/password-recovery.public.routes.js";
 import { createPlacesPublicRouter } from "../../modules/places/http/place.routes.js";
 import { createPitchPublicRouter } from "../../modules/pitch/http/pitch.routes.js";
 import { createPlayPublicRouter } from "../../modules/play/http/play.routes.js";
@@ -20,6 +21,18 @@ import { createTeamPublicRouter } from "../../modules/teams/http/team.routes.js"
 
 export function createPublicV1Router(container: AppContainer, config: ApiConfig): Router {
   const router = Router();
+  router.use(
+    "/auth/password-recovery",
+    createApiRateLimitMiddleware(container.apiRateLimiter, {
+      bucket: "password-recovery",
+      methods: ["POST"],
+      limit: config.API_RATE_LIMIT_PASSWORD_RECOVERY_MAX_REQUESTS,
+    }),
+  );
+  router.use(
+    "/auth/password-recovery",
+    createPasswordRecoveryPublicRouter(container.passwordRecoveryService),
+  );
   router.use(
     "/auth",
     createApiRateLimitMiddleware(container.apiRateLimiter, {

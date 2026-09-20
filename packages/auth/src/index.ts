@@ -20,6 +20,8 @@ export interface TelegramIdentityInput {
 }
 
 const ACCOUNT_LINK_WINDOW_MS = 10 * 60_000;
+const PASSWORD_RECOVERY_CODE_LENGTH = 10;
+const PASSWORD_RECOVERY_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 export async function hashPassword(password: string): Promise<string> {
   return argon2.hash(password, {
@@ -36,6 +38,37 @@ export async function verifyPassword(hash: string, password: string): Promise<bo
   } catch {
     return false;
   }
+}
+
+export function normalizePasswordRecoveryCode(code: string): string {
+  return code.replace(/[\s-]/g, "").toUpperCase();
+}
+
+export function isPasswordRecoveryCode(code: string): boolean {
+  return new RegExp(`^[${PASSWORD_RECOVERY_ALPHABET}]{${PASSWORD_RECOVERY_CODE_LENGTH}}$`).test(
+    normalizePasswordRecoveryCode(code),
+  );
+}
+
+export function newPasswordRecoveryCode(): string {
+  const bytes = randomBytes(PASSWORD_RECOVERY_CODE_LENGTH);
+  return Array.from(
+    bytes,
+    (byte) => PASSWORD_RECOVERY_ALPHABET[byte & (PASSWORD_RECOVERY_ALPHABET.length - 1)],
+  ).join("");
+}
+
+export function formatPasswordRecoveryCode(code: string): string {
+  const normalized = normalizePasswordRecoveryCode(code);
+  return `${normalized.slice(0, 5)}-${normalized.slice(5)}`;
+}
+
+export async function hashPasswordRecoveryCode(code: string): Promise<string> {
+  return hashPassword(normalizePasswordRecoveryCode(code));
+}
+
+export async function verifyPasswordRecoveryCode(hash: string, code: string): Promise<boolean> {
+  return verifyPassword(hash, normalizePasswordRecoveryCode(code));
 }
 
 export function newSessionToken(): string {
