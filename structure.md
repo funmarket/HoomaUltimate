@@ -323,6 +323,7 @@ Rules:
 - one permanent navigation model;
 - one shared frontend transport contract;
 - domain-owned API clients rather than one cross-product management client;
+- `packages/ui` stays domain-neutral presentation: the application shell composes account-navigation presentation models (sections and items) and the UI package renders them without knowing Teams, Athletes, Pitch, Events, Notifications or Platform Admin;
 - Web cookies and Telegram initData remain distinct auth transports;
 - Telegram safe-area/lifecycle/navigation remains explicitly supported;
 - no duplicate feature tree merely because Telegram is separately deployed;

@@ -3,7 +3,20 @@ import { HomeGatewayGrid } from "./home/HomeGatewayGrid.js";
 import { HomeHero } from "./home/HomeHero.js";
 
 export { HoomaAccountHeader } from "./account/HoomaAccountHeader.js";
-export type { HoomaAccountHeaderProps, HoomaAccountUser } from "./account/HoomaAccountHeader.js";
+export type {
+  HoomaAccountHeaderProps,
+  HoomaAccountIdentityAction,
+  HoomaAccountMenuItem,
+  HoomaAccountMenuSection,
+  HoomaAccountUser,
+} from "./account/HoomaAccountHeader.js";
+export {
+  AccountMenuChevronIcon,
+  AccountMenuSettingsIcon,
+  AccountMenuShieldIcon,
+  AccountMenuUserIcon,
+  AccountMenuWhistleIcon,
+} from "./account/account-menu-icons.js";
 export { HoomaBottomNav, PRIMARY_NAV_ITEMS } from "./navigation/HoomaBottomNav.js";
 export type { HoomaBottomNavProps } from "./navigation/HoomaBottomNav.js";
 export { AppearanceSettings } from "./settings/AppearanceSettings.js";

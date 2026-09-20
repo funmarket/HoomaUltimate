@@ -183,6 +183,21 @@ for (const file of await walk(root)) {
   if (rel.startsWith("apps/worker/") && /apps\/api\/src\/.*\/http\//.test(source)) {
     violations.push(`${rel}: worker must not import API HTTP controllers/routes`);
   }
+
+  if (rel.startsWith("packages/ui/src/")) {
+    forbid(
+      file,
+      source,
+      /@hooma\/(?:frontend|database|contracts)|@prisma\/client/,
+      "UI package must stay domain-neutral presentation; the application shell composes domain data",
+    );
+    forbid(
+      file,
+      source,
+      /from\s+["'][^"']*apps\/(?:api|web|worker)\//,
+      "UI package must not import application source",
+    );
+  }
 }
 
 const canonicalRouterPath = path.join(root, "apps/web/src/app/router/HoomaRouter.tsx");

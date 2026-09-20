@@ -114,11 +114,21 @@
 }
 
 .hooma-account-menu__identity {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 16px;
+  border: 0;
   border-bottom: 1px solid color-mix(in srgb, var(--hooma-chrome-border) 72%, transparent);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.hooma-account-menu__identity:hover,
+.hooma-account-menu__identity:focus-visible {
+  background: color-mix(in srgb, var(--hooma-chrome-gold) 10%, transparent);
 }
 .hooma-account-menu__identity img,
 .hooma-account-menu__avatar-fallback {
@@ -135,15 +145,48 @@
     800 20px Georgia,
     serif;
 }
-.hooma-account-menu__identity > span:last-child {
+.hooma-account-menu__identity-copy {
+  flex: 1;
   display: grid;
   gap: 3px;
   min-width: 0;
+}
+.hooma-account-menu__identity-copy strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .hooma-account-menu__identity small {
   color: var(--hooma-chrome-muted);
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.hooma-account-menu__identity-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--hooma-chrome-muted);
+  font-size: 14px;
+  white-space: nowrap;
+}
+.hooma-account-menu__identity-action svg {
+  width: 15px;
+  height: 15px;
+}
+.hooma-account-menu__section {
+  border-top: 1px solid color-mix(in srgb, var(--hooma-chrome-border) 72%, transparent);
+}
+.hooma-account-menu__section:first-of-type {
+  border-top: 0;
+}
+.hooma-account-menu__section-label {
+  margin: 0;
+  padding: 12px 18px 2px;
+  color: var(--hooma-chrome-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 .hooma-account-menu__rows {
   padding: 8px;
@@ -184,6 +227,22 @@
   color: var(--hooma-chrome-muted);
   font-size: 16px;
 }
+.hooma-account-menu__row-trailing {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  color: var(--hooma-chrome-muted);
+}
+.hooma-account-menu__badge {
+  min-width: 20px;
+  padding: 0 6px;
+  border: 1px solid color-mix(in srgb, var(--hooma-chrome-gold) 70%, transparent);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
 .hooma-account-menu__chevron {
   display: grid;
   place-items: center;
@@ -192,10 +251,6 @@
 .hooma-account-menu__chevron svg {
   width: 17px;
   height: 17px;
-}
-.hooma-account-menu__platform {
-  border-top: 1px solid color-mix(in srgb, var(--hooma-chrome-border) 72%, transparent);
-  padding: 8px;
 }
 .hooma-account-menu__signout {
   width: 100%;
@@ -206,6 +261,10 @@
   color: var(--hooma-chrome-muted);
   text-align: left;
   cursor: pointer;
+}
+.hooma-account-menu__signout:hover,
+.hooma-account-menu__signout:focus-visible {
+  background: color-mix(in srgb, var(--hooma-chrome-gold) 10%, transparent);
 }
 
 .hooma-settings-panel {

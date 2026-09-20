@@ -10,6 +10,7 @@ import { useAccount } from "../../account/AccountProvider";
 import { UserNotificationControl } from "../../notifications/UserNotificationControl";
 import type { TelegramRuntime } from "../../telegram/runtime";
 import { useTelegramBackButton } from "../../telegram/useTelegramBackButton";
+import { buildAccountMenuSections } from "./account-menu-model";
 
 export function HoomaShell({
   children,
@@ -66,14 +67,21 @@ export function HoomaShell({
   const hasTelegramIdentity = Boolean(runtime.initData);
   const navPathname = location.pathname === "/telegram" ? "/" : location.pathname;
   const shellError = error && !location.pathname.startsWith("/rides") ? error : null;
+  const accountSections = buildAccountMenuSections({
+    hasManagedTeams: managedTeams.length > 0,
+    hasPlatformControlAccess,
+    onCoachControlRoom: () => navigate("/teams/control"),
+    onSettings: () => navigate("/settings"),
+    onPlatformControlRoom: () => navigate("/admin"),
+  });
 
   return (
     <main className="foundation-shell">
       <HoomaAccountHeader
         user={user}
         loading={loading}
-        canManageTeams={managedTeams.length > 0}
-        isPlatformAdmin={hasPlatformControlAccess}
+        sections={accountSections}
+        identityAction={{ label: "HOOMA Passport", onSelect: () => navigate("/profile") }}
         notificationControl={<UserNotificationControl enabled={Boolean(me)} />}
         onHome={() => navigate("/")}
         onGuestProfile={() =>
@@ -83,10 +91,6 @@ export function HoomaShell({
               : `/login?returnTo=${encodeURIComponent(location.pathname + location.search)}`,
           )
         }
-        onProfile={() => navigate("/profile")}
-        {...(managedTeams.length ? { onCoach: () => navigate("/teams/control") } : {})}
-        onSettings={() => navigate("/settings")}
-        {...(hasPlatformControlAccess ? { onAdmin: () => navigate("/admin") } : {})}
         {...(!hasTelegramIdentity ? { onSignOut: () => void signOut() } : {})}
       />
       {interactionNotice ? (
