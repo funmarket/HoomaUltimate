@@ -11,7 +11,7 @@ import type {
   PasswordRecoveryConfirmInput,
   PasswordRecoveryRequestInput,
 } from "@hooma/contracts";
-import { AppError } from "../../../http/errors/app-error.js";
+import { PasswordRecoveryError } from "../domain/password-recovery-error.js";
 import { normalizeUsername } from "../domain/normalization.js";
 import type { PasswordRecoveryDelivery } from "./password-recovery-delivery.js";
 import type { PasswordRecoveryRepository } from "./password-recovery.repository.js";
@@ -86,9 +86,8 @@ export class PasswordRecoveryService {
   }
 }
 
-function invalidRecoveryCode(): AppError {
-  return new AppError(
-    400,
+function invalidRecoveryCode(): PasswordRecoveryError {
+  return new PasswordRecoveryError(
     "PASSWORD_RECOVERY_INVALID",
     "Recovery code is invalid or expired",
   );
