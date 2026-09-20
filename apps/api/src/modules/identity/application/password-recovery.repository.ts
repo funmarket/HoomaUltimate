@@ -26,10 +26,7 @@ export interface PasswordRecoveryRepository {
     readonly now: Date;
     readonly notBefore: Date;
   }): Promise<PasswordRecoveryChallengeCreateResult>;
-  findActiveChallenge(
-    userId: string,
-    now: Date,
-  ): Promise<PasswordRecoveryChallengeRecord | null>;
+  findActiveChallenge(userId: string, now: Date): Promise<PasswordRecoveryChallengeRecord | null>;
   recordFailedAttempt(challengeId: string, now: Date, consume: boolean): Promise<boolean>;
   invalidateChallenge(challengeId: string, now: Date): Promise<void>;
   completePasswordReset(input: {
