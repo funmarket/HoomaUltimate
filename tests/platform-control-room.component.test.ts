@@ -603,21 +603,27 @@ test("App Manager capabilities project only their authorized Control Room module
     assert.equal(usersView.queryByText("Audit Archive"), null);
     assert.equal(usersView.queryByText("Pitch business applications"), null);
     assert.equal(usersView.queryByText("Admin Action Inbox"), null);
-    assert.deepEqual(requested.sort(), ["/api/v1/admin/access", "/api/v1/admin/users"]);
-
-    fireEvent.change(
-      usersView.getByPlaceholderText("Search username, email, Telegram ID, or user id"),
-      {
-        target: { value: "alice" },
-      },
+    // MANAGE_USERS authorizes search; it must not auto-load the newest accounts on open.
+    assert.ok(usersView.getByText("Search for a HOOMA user to review account security."));
+    assert.deepEqual(requested.sort(), ["/api/v1/admin/access"]);
+    const searchField = usersView.getByPlaceholderText(
+      "Search username, email, Telegram ID, or user id",
     );
+
+    // An unusable query issues no request at all.
+    fireEvent.change(searchField, { target: { value: "a" } });
+    fireEvent.click(usersView.getByRole("button", { name: "Search users" }));
+    assert.deepEqual(requested.sort(), ["/api/v1/admin/access"]);
+
+    // An intentional search issues exactly the canonical Identity-owned request.
+    fireEvent.change(searchField, { target: { value: "alice" } });
     fireEvent.click(usersView.getByRole("button", { name: "Search users" }));
     await waitFor(() => assert.ok(usersView.getByText("Alice User")));
-    assert.deepEqual(requested.sort(), [
-      "/api/v1/admin/access",
-      "/api/v1/admin/users",
-      "/api/v1/admin/users",
-    ]);
+    assert.deepEqual(requested.sort(), ["/api/v1/admin/access", "/api/v1/admin/users"]);
+    assert.equal(
+      usersView.queryByText("Search for a HOOMA user to review account security."),
+      null,
+    );
   } finally {
     globalThis.fetch = originalFetch;
     cleanup();

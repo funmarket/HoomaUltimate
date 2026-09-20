@@ -165,6 +165,9 @@ function AdminUsers({
           Search users
         </button>
       </form>
+      {loadState === null ? (
+        <p className="muted">Search for a HOOMA user to review account security.</p>
+      ) : null}
       {loadState === "loading" ? <p className="muted">Searching users…</p> : null}
       {loadState === "error" ? <p className="muted">User search is unavailable.</p> : null}
       {loadState === "ready" && !users.length ? <p className="muted">No users matched.</p> : null}
@@ -624,9 +627,9 @@ export function AdminApp() {
       tasks.push(loadAdminIssues());
     }
 
-    if (allowed("MANAGE_USERS")) {
-      tasks.push(loadAdminUsers());
-    }
+    // User Security is a search-first lookup tool: MANAGE_USERS means the administrator may
+    // search users, not that the Control Room should dump the newest accounts on open. The
+    // Identity-owned endpoint still owns the query; the administrator starts it explicitly.
 
     if (currentAccess.isPlatformOwner) {
       tasks.push(loadQueue("places"), loadQueue("place-ownership"));
