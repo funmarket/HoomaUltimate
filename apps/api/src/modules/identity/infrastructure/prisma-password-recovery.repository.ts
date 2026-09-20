@@ -72,10 +72,7 @@ export class PrismaPasswordRecoveryRepository implements PasswordRecoveryReposit
     });
   }
 
-  findActiveChallenge(
-    userId: string,
-    now: Date,
-  ): Promise<PasswordRecoveryChallengeRecord | null> {
+  findActiveChallenge(userId: string, now: Date): Promise<PasswordRecoveryChallengeRecord | null> {
     return this.db.passwordRecoveryChallenge.findFirst({
       where: {
         userId,
