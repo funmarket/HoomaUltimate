@@ -3,8 +3,6 @@ import type { AthletesPublicDetail, AthletesPublicSummary } from "@hooma/contrac
 import type {
   LoginInput,
   MeResponse,
-  PasswordRecoveryConfirmInput,
-  PasswordRecoveryRequestInput,
   ProfilePresentationUpdateInput,
   RegisterInput,
   TeamCapabilityInput,
@@ -13,6 +11,10 @@ import type {
   TeamLineupInput,
   TeamUpdateInput,
 } from "@hooma/contracts";
+import type {
+  PasswordRecoveryConfirmInput,
+  PasswordRecoveryRequestInput,
+} from "@hooma/contracts/auth-recovery";
 import type {
   CommunityCreateInput,
   CommunityJoinRequest,
