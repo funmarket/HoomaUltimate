@@ -16,6 +16,7 @@ registerHooks({
 function installDom() {
   const dom = new JSDOM("<!doctype html><html><body></body></html>", {
     url: "http://localhost/",
+    pretendToBeVisual: true,
   });
   Object.defineProperty(globalThis, "window", { value: dom.window, configurable: true });
   Object.defineProperty(globalThis, "document", { value: dom.window.document, configurable: true });
@@ -33,6 +34,26 @@ function installDom() {
   });
   Object.defineProperty(globalThis, "Node", { value: dom.window.Node, configurable: true });
   Object.defineProperty(globalThis, "Event", { value: dom.window.Event, configurable: true });
+
+  // jsdom does not implement the Popover API that the shared anchored-overlay primitive uses.
+  const elementProto = dom.window.Element.prototype as unknown as {
+    matches: (selector: string) => boolean;
+  };
+  const nativeMatches = elementProto.matches;
+  elementProto.matches = function matches(this: Element, selector: string) {
+    if (selector === ":popover-open") return this.hasAttribute("data-popover-open");
+    return nativeMatches.call(this, selector);
+  };
+  const htmlProto = dom.window.HTMLElement.prototype as unknown as {
+    showPopover: () => void;
+    hidePopover: () => void;
+  };
+  htmlProto.showPopover = function showPopover(this: HTMLElement) {
+    this.setAttribute("data-popover-open", "");
+  };
+  htmlProto.hidePopover = function hidePopover(this: HTMLElement) {
+    this.removeAttribute("data-popover-open");
+  };
   return dom;
 }
 
@@ -176,6 +197,80 @@ test("bell shows a cleared sanction and resyncs when the server rejects the read
     fireEvent.click(view.getByRole("button", { name: /Sanction cleared/i }));
     await waitFor(() => assert.ok(listCalls > callsBeforeRead));
     assert.ok(view.getByRole("button", { name: /Notifications, 1 unread/i }));
+  } finally {
+    globalThis.fetch = originalFetch;
+    cleanup();
+    dom.window.close();
+  }
+});
+
+// prettier-ignore
+test("bell reports the server unread total and the panel is a viewport-placed top-layer popover", async () => {
+  const dom = installDom();
+  const React = await import("react");
+  Object.defineProperty(globalThis, "React", {
+    value: React,
+    writable: true,
+    configurable: true,
+  });
+  const { cleanup, fireEvent, render, waitFor } = await import("@testing-library/react");
+  const { HoomaFrontendProvider } = await import("@hooma/frontend");
+  const { UserNotificationControl } = await import(
+    "../apps/web/src/notifications/UserNotificationControl"
+  );
+  const originalFetch = globalThis.fetch;
+
+  try {
+    globalThis.fetch = async (input, init) => {
+      const url = new URL(String(input));
+      if ((init?.method ?? "GET") === "GET" && url.pathname === "/api/v1/notifications") {
+        // The server total is larger than the visible list; the UI must report the server value.
+        return json({
+          unreadCount: 5,
+          items: [
+            {
+              id: "n9",
+              type: "MODERATION_YELLOW_CARD",
+              actorUserId: "admin-1",
+              strikeNumber: 1,
+              expiresAt: null,
+              createdAt: "2026-09-19T10:00:00.000Z",
+              readAt: null,
+            },
+          ],
+        });
+      }
+      if (init?.method === "POST" && url.pathname === "/api/v1/notifications/n9/read") {
+        return json({ ok: true });
+      }
+      return json({ error: { message: "unexpected" } }, 500);
+    };
+
+    const view = render(
+      React.createElement(
+        HoomaFrontendProvider,
+        { transport: { baseUrl: "http://api.test" } },
+        React.createElement(UserNotificationControl, { enabled: true }),
+      ),
+    );
+
+    await waitFor(() =>
+      assert.ok(view.getByRole("button", { name: /Notifications, 5 unread/i })),
+    );
+    fireEvent.click(view.getByRole("button", { name: /Notifications, 5 unread/i }));
+
+    const panel = document.querySelector(".hooma-notification-popover");
+    assert.ok(panel);
+    assert.equal(panel.getAttribute("popover"), "auto");
+    await waitFor(() =>
+      assert.ok((panel as HTMLElement).style.maxHeight.length > 0),
+    );
+    assert.ok(Number.parseFloat((panel as HTMLElement).style.left) >= 0);
+
+    fireEvent.click(view.getByRole("button", { name: /Yellow card warning/i }));
+    await waitFor(() =>
+      assert.ok(view.getByRole("button", { name: /Notifications, 4 unread/i })),
+    );
   } finally {
     globalThis.fetch = originalFetch;
     cleanup();

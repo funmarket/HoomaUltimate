@@ -116,9 +116,14 @@ export class UserNotificationService {
   }
 
   async listForRecipient(recipientUserId: string) {
-    const items = await this.repository.listForRecipient(recipientUserId, 50);
+    const [items, unreadCount] = await Promise.all([
+      this.repository.listForRecipient(recipientUserId, 50),
+      // The page stays bounded; the total is recipient-wide, so a recipient with more unread
+      // notifications than the page size still sees a truthful count.
+      this.repository.countUnreadForRecipient(recipientUserId),
+    ]);
     return {
-      unreadCount: items.filter((item) => item.readAt === null).length,
+      unreadCount,
       items: items.map(serialize),
     };
   }

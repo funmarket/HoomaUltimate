@@ -19,6 +19,10 @@ const header = await readFile(
   new URL("../packages/ui/src/account/HoomaAccountHeader.tsx", import.meta.url),
   "utf8",
 );
+const overlay = await readFile(
+  new URL("../packages/ui/src/overlay/anchored-popover.ts", import.meta.url),
+  "utf8",
+);
 const accountCss = await readFile(
   new URL("../apps/web/src/account/account.css", import.meta.url),
   "utf8",
@@ -38,8 +42,9 @@ test("account loading is a distinct shell/header state rather than guest present
   assert.match(header, /hooma-profile-trigger__loading/);
   assert.match(header, /if \(loading\) setOpen\(false\);/);
   assert.match(header, /\{user \? \(/);
-  assert.match(header, /if \(!open\) \{/);
-  assert.match(header, /menu\.showPopover\(\)/);
+  assert.match(header, /useAnchoredPopover\(/);
+  assert.match(overlay, /if \(!open\) \{/);
+  assert.match(overlay, /popover\.showPopover\(\)/);
 
   assert.match(accountCss, /\.hooma-profile-trigger__loading \{/);
   assert.match(accountCss, /@media \(prefers-reduced-motion: reduce\)/);
