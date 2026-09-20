@@ -38,16 +38,19 @@ class CapturingPasswordRecoveryDelivery implements PasswordRecoveryDelivery {
   }
 }
 
-async function resetDatabase() {
-  await db.passwordRecoveryChallenge.deleteMany();
-  await db.webSession.deleteMany();
-  await db.webCredential.deleteMany();
-  await db.telegramIdentity.deleteMany();
-  await db.platformRoleAssignment.deleteMany();
-  await db.auditLog.deleteMany();
-  await db.playerProfile.deleteMany();
-  await db.userPresentation.deleteMany();
-  await db.user.deleteMany();
+async function cleanupTestAccounts() {
+  const rows = await db.webCredential.findMany({
+    where: { loginUsername: { in: ["recovery_cryptotemplar", "recovery_unlinked"] } },
+    select: { userId: true },
+  });
+  const telegram = await db.telegramIdentity.findUnique({
+    where: { telegramUserId: 99112233n },
+    select: { userId: true },
+  });
+  const userIds = [...new Set([...rows.map((row) => row.userId), ...(telegram ? [telegram.userId] : [])])];
+  if (userIds.length > 0) {
+    await db.user.deleteMany({ where: { id: { in: userIds } } });
+  }
 }
 
 async function registerWeb(base: string, loginUsername: string, password: string): Promise<string> {
@@ -69,7 +72,7 @@ async function registerWeb(base: string, loginUsername: string, password: string
 }
 
 test("linked Telegram recovery resets the Web password, revokes sessions, and consumes the code", async () => {
-  await resetDatabase();
+  await cleanupTestAccounts();
   const delivery = new CapturingPasswordRecoveryDelivery();
   const app = createApp(config, createContainer(config, { passwordRecoveryDelivery: delivery }));
   const server = app.listen(0, "127.0.0.1");
@@ -81,9 +84,9 @@ test("linked Telegram recovery resets the Web password, revokes sessions, and co
   try {
     const oldPassword = "correct horse battery staple";
     const newPassword = "new correct horse battery staple";
-    await registerWeb(base, "cryptotemplar", oldPassword);
+    await registerWeb(base, "recovery_cryptotemplar", oldPassword);
     const credential = await db.webCredential.findUniqueOrThrow({
-      where: { loginUsername: "cryptotemplar" },
+      where: { loginUsername: "recovery_cryptotemplar" },
       select: { userId: true },
     });
     await db.telegramIdentity.create({
@@ -97,13 +100,13 @@ test("linked Telegram recovery resets the Web password, revokes sessions, and co
     const request = await fetch(`${base}/api/public/v1/auth/password-recovery/request`, {
       method: "POST",
       headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
-      body: JSON.stringify({ loginUsername: "CryptoTemplar" }),
+      body: JSON.stringify({ loginUsername: "Recovery_CryptoTemplar" }),
     });
     assert.equal(request.status, 202);
     assert.deepEqual(await request.json(), { ok: true });
     assert.equal(delivery.deliveries.length, 1);
     assert.equal(delivery.deliveries[0]?.telegramUserId, 99112233n);
-    assert.equal(delivery.deliveries[0]?.loginUsername, "cryptotemplar");
+    assert.equal(delivery.deliveries[0]?.loginUsername, "recovery_cryptotemplar");
     assert.match(delivery.deliveries[0]?.code ?? "", /^[A-Z2-9]{5}-[A-Z2-9]{5}$/);
 
     const challengeBefore = await db.passwordRecoveryChallenge.findFirstOrThrow({
@@ -114,11 +117,28 @@ test("linked Telegram recovery resets the Web password, revokes sessions, and co
     assert.notEqual(challengeBefore.codeHash, delivery.deliveries[0]?.code);
     assert.match(challengeBefore.codeHash, /^\$argon2id\$/);
 
+    const wrongCode = await fetch(`${base}/api/public/v1/auth/password-recovery/confirm`, {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
+      body: JSON.stringify({
+        loginUsername: "recovery_cryptotemplar",
+        code: "AAAAA-AAAAA",
+        newPassword,
+      }),
+    });
+    assert.equal(wrongCode.status, 400);
+    const afterWrongCode = await db.passwordRecoveryChallenge.findFirstOrThrow({
+      where: { userId: credential.userId, consumedAt: null },
+      orderBy: { createdAt: "desc" },
+      select: { failedAttempts: true },
+    });
+    assert.equal(afterWrongCode.failedAttempts, 1);
+
     const reset = await fetch(`${base}/api/public/v1/auth/password-recovery/confirm`, {
       method: "POST",
       headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
       body: JSON.stringify({
-        loginUsername: "cryptotemplar",
+        loginUsername: "recovery_cryptotemplar",
         code: delivery.deliveries[0]?.code,
         newPassword,
       }),
@@ -127,7 +147,7 @@ test("linked Telegram recovery resets the Web password, revokes sessions, and co
     assert.deepEqual(await reset.json(), { ok: true });
 
     const credentialAfter = await db.webCredential.findUniqueOrThrow({
-      where: { loginUsername: "cryptotemplar" },
+      where: { loginUsername: "recovery_cryptotemplar" },
       select: { failedLoginCount: true, lockedUntil: true },
     });
     assert.equal(credentialAfter.failedLoginCount, 0);
@@ -150,14 +170,14 @@ test("linked Telegram recovery resets the Web password, revokes sessions, and co
     const oldLogin = await fetch(`${base}/api/public/v1/auth/login`, {
       method: "POST",
       headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
-      body: JSON.stringify({ loginUsername: "cryptotemplar", password: oldPassword }),
+      body: JSON.stringify({ loginUsername: "recovery_cryptotemplar", password: oldPassword }),
     });
     assert.equal(oldLogin.status, 401);
 
     const newLogin = await fetch(`${base}/api/public/v1/auth/login`, {
       method: "POST",
       headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
-      body: JSON.stringify({ loginUsername: "cryptotemplar", password: newPassword }),
+      body: JSON.stringify({ loginUsername: "recovery_cryptotemplar", password: newPassword }),
     });
     assert.equal(newLogin.status, 200);
 
@@ -165,12 +185,22 @@ test("linked Telegram recovery resets the Web password, revokes sessions, and co
       method: "POST",
       headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
       body: JSON.stringify({
-        loginUsername: "cryptotemplar",
+        loginUsername: "recovery_cryptotemplar",
         code: delivery.deliveries[0]?.code,
         newPassword: "another secure password",
       }),
     });
     assert.equal(reuse.status, 400);
+
+    await registerWeb(base, "recovery_unlinked", "another correct horse battery staple");
+    const unlinked = await fetch(`${base}/api/public/v1/auth/password-recovery/request`, {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
+      body: JSON.stringify({ loginUsername: "recovery_unlinked" }),
+    });
+    assert.equal(unlinked.status, 202);
+    assert.deepEqual(await unlinked.json(), { ok: true });
+    assert.equal(delivery.deliveries.length, 1);
 
     const unknown = await fetch(`${base}/api/public/v1/auth/password-recovery/request`, {
       method: "POST",
@@ -184,6 +214,6 @@ test("linked Telegram recovery resets the Web password, revokes sessions, and co
     await new Promise<void>((resolve, reject) =>
       server.close((error) => (error ? reject(error) : resolve())),
     );
-    await resetDatabase();
+    await cleanupTestAccounts();
   }
 });
