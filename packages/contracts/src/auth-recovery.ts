@@ -7,7 +7,12 @@ export const passwordRecoveryRequestSchema = z.object({
 
 export const passwordRecoveryConfirmSchema = z.object({
   loginUsername: usernameSchema,
-  code: z.string().trim().min(10).max(11).regex(/^[a-zA-Z0-9-]+$/),
+  code: z
+    .string()
+    .trim()
+    .min(10)
+    .max(11)
+    .regex(/^[a-zA-Z0-9-]+$/),
   newPassword: z.string().min(10).max(128),
 });
 
