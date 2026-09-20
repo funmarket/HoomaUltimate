@@ -35,7 +35,7 @@ const apiEnvironmentSchema = z
       .number()
       .int()
       .positive()
-      .default(30),
+      .default(10),
     API_RATE_LIMIT_WHISTLE_READ_MAX_REQUESTS: z.coerce.number().int().positive().default(600),
     API_RATE_LIMIT_WHISTLE_WRITE_MAX_REQUESTS: z.coerce.number().int().positive().default(120),
     API_RATE_LIMIT_DISCOVERY_MAX_REQUESTS: z.coerce.number().int().positive().default(600),
