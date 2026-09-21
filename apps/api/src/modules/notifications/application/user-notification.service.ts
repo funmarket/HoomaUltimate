@@ -115,17 +115,38 @@ export class UserNotificationService {
     });
   }
 
+  async notifyPasswordRecovery(input: {
+    recipientUserId: string;
+    createdAt: Date;
+    expiresAt: Date;
+  }): Promise<void> {
+    await this.repository.createPasswordRecoveryNotification(input);
+  }
+
+  async requireActivePasswordRecoveryNotification(
+    recipientUserId: string,
+    notificationId: string,
+    now: Date,
+  ): Promise<void> {
+    const found = await this.repository.findActivePasswordRecoveryNotification(
+      recipientUserId,
+      notificationId,
+      now,
+    );
+    if (!found) {
+      throw new UserNotificationError(
+        "USER_NOTIFICATION_NOT_FOUND",
+        "Password recovery notification not found",
+      );
+    }
+  }
+
   async listForRecipient(recipientUserId: string) {
     const [items, unreadCount] = await Promise.all([
       this.repository.listForRecipient(recipientUserId, 50),
-      // The page stays bounded; the total is recipient-wide, so a recipient with more unread
-      // notifications than the page size still sees a truthful count.
       this.repository.countUnreadForRecipient(recipientUserId),
     ]);
-    return {
-      unreadCount,
-      items: items.map(serialize),
-    };
+    return { unreadCount, items: items.map(serialize) };
   }
 
   async markRead(recipientUserId: string, notificationId: string) {

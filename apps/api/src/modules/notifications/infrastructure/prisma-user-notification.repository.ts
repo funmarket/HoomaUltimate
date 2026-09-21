@@ -1,4 +1,4 @@
-import { type Prisma, type PrismaClient } from "@hooma/database";
+import { Prisma, type PrismaClient } from "@hooma/database";
 import type {
   ModerationNotificationType,
   UserNotificationContextType,
@@ -21,13 +21,18 @@ function recipientNotificationWhere(recipientUserId: string): Prisma.UserNotific
   return {
     recipientUserId,
     contextType: { in: ["USER_DIRECT", "RIDE"] },
+    AND: [
+      {
+        OR: [{ type: { not: "PASSWORD_RECOVERY" } }, { expiresAt: { gt: new Date() } }],
+      },
+    ],
   };
 }
 
 function toRecord(row: {
   id: string;
   recipientUserId: string;
-  actorUserId: string;
+  actorUserId: string | null;
   type: UserNotificationRecord["type"];
   contextType: UserNotificationContextType;
   contextId: string;
@@ -97,6 +102,73 @@ export class PrismaUserNotificationRepository implements UserNotificationReposit
       },
       update: {},
     });
+    return toRecord({
+      ...notification,
+      contextType: parseNotificationContextType(notification.contextType),
+    });
+  }
+
+  async createPasswordRecoveryNotification(input: {
+    recipientUserId: string;
+    createdAt: Date;
+    expiresAt: Date;
+  }): Promise<UserNotificationRecord> {
+    return this.db.$transaction(async (tx) => {
+      await tx.$queryRaw(Prisma.sql`
+        SELECT "id"
+        FROM "User"
+        WHERE "id" = ${input.recipientUserId}
+        FOR UPDATE
+      `);
+
+      const existing = await tx.userNotification.findFirst({
+        where: {
+          recipientUserId: input.recipientUserId,
+          type: "PASSWORD_RECOVERY",
+          readAt: null,
+          expiresAt: { gt: input.createdAt },
+        },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      });
+      if (existing) {
+        return toRecord({
+          ...existing,
+          contextType: parseNotificationContextType(existing.contextType),
+        });
+      }
+
+      const notification = await tx.userNotification.create({
+        data: {
+          recipientUserId: input.recipientUserId,
+          actorUserId: null,
+          type: "PASSWORD_RECOVERY",
+          contextType: "USER_DIRECT",
+          contextId: input.recipientUserId,
+          expiresAt: input.expiresAt,
+          createdAt: input.createdAt,
+        },
+      });
+      return toRecord({
+        ...notification,
+        contextType: parseNotificationContextType(notification.contextType),
+      });
+    });
+  }
+
+  async findActivePasswordRecoveryNotification(
+    recipientUserId: string,
+    notificationId: string,
+    now: Date,
+  ): Promise<UserNotificationRecord | null> {
+    const notification = await this.db.userNotification.findFirst({
+      where: {
+        id: notificationId,
+        recipientUserId,
+        type: "PASSWORD_RECOVERY",
+        expiresAt: { gt: now },
+      },
+    });
+    if (!notification) return null;
     return toRecord({
       ...notification,
       contextType: parseNotificationContextType(notification.contextType),

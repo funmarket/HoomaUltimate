@@ -1,7 +1,6 @@
 export interface TelegramPasswordRecoveryTarget {
   readonly userId: string;
   readonly loginUsername: string;
-  readonly telegramUserId: bigint;
 }
 
 export interface PasswordRecoveryChallengeRecord {
@@ -19,6 +18,7 @@ export type PasswordRecoveryChallengeCreateResult =
 
 export interface PasswordRecoveryRepository {
   findTelegramTarget(loginUsername: string): Promise<TelegramPasswordRecoveryTarget | null>;
+  findTelegramTargetByUserId(userId: string): Promise<TelegramPasswordRecoveryTarget | null>;
   createChallenge(input: {
     readonly userId: string;
     readonly codeHash: string;

@@ -274,7 +274,7 @@ Web activity is session-derived rather than generic presence. Identity owns `Web
 
 Replaceable Telegram bot identity/configuration belongs in environment variables.
 
-Web password recovery remains Identity/Auth-owned. Telegram-backed recovery may deliver a short-lived single-use code only when the WebCredential and TelegramIdentity already resolve to the same canonical User. Recovery challenge persistence belongs to Identity; successful reset updates the WebCredential and revokes WebSessions. Unverified stored email is not recovery authority.
+Web password recovery remains Identity/Auth-owned. Telegram-backed recovery creates a short-lived HOOMA UserNotification only when the WebCredential and TelegramIdentity already resolve to the same canonical User. The authenticated Telegram Mini App notification action generates the one-time code; password recovery does not use Telegram Bot API message delivery. Recovery challenge persistence belongs to Identity; successful reset updates the WebCredential and revokes WebSessions. Unverified stored email is not recovery authority.
 
 ---
 

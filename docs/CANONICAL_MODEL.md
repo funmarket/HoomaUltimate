@@ -93,8 +93,9 @@ Rules:
 - Identity/Auth is the sole owner;
 - the challenge belongs to one canonical User that already has the target WebCredential;
 - Telegram-backed recovery is available only when that same User also owns the linked TelegramIdentity;
-- only the recovery-code hash is durable; the plaintext recovery code is delivery-only;
-- challenges are short-lived and single-use, with bounded failed attempts and request cooldown;
+- a public request creates a short-lived PASSWORD_RECOVERY UserNotification; the linked Telegram Mini App must authenticate before it can generate and reveal the code;
+- only the recovery-code hash is durable; the plaintext recovery code is returned to that authenticated Telegram session and is never stored in UserNotification;
+- challenges are short-lived and single-use, with bounded failed attempts;
 - successful reset replaces the WebCredential password hash, clears login lock state, revokes active WebSessions, and consumes outstanding challenges;
 - unverified email is not recovery authority.
 

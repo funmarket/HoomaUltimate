@@ -3,12 +3,18 @@ import type { ApiConfig } from "@hooma/config";
 import { profilePresentationUpdateSchema } from "@hooma/contracts";
 import { webCredentialAttachSchema } from "@hooma/contracts/auth-linking";
 import { profileUpdateSchema } from "@hooma/contracts/profile";
+import { AppError } from "../../../http/errors/app-error.js";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
+import type { PasswordRecoveryService } from "../application/password-recovery.service.js";
 import type { IdentityService } from "../application/identity.service.js";
 import { getAuth } from "./auth-request.js";
 import { clearSessionCookie, readCookie } from "./cookies.js";
 
-export function createIdentityMemberRouter(service: IdentityService, config: ApiConfig): Router {
+export function createIdentityMemberRouter(
+  service: IdentityService,
+  config: ApiConfig,
+  passwordRecoveryService: PasswordRecoveryService,
+): Router {
   const router = Router();
 
   router.get(
@@ -39,6 +45,26 @@ export function createIdentityMemberRouter(service: IdentityService, config: Api
             webCredentialAttachSchema.parse(request.body),
           ),
         );
+    }),
+  );
+
+  router.post(
+    "/auth/password-recovery/notifications/:notificationId/code",
+    asyncHandler(async (request, response) => {
+      const auth = getAuth(request);
+      if (!auth.transports.includes("telegram")) {
+        throw new AppError(
+          403,
+          "PASSWORD_RECOVERY_TELEGRAM_REQUIRED",
+          "Open this recovery notification inside Telegram",
+        );
+      }
+      response.json(
+        await passwordRecoveryService.issueCodeFromNotification(
+          auth.userId,
+          String(request.params.notificationId),
+        ),
+      );
     }),
   );
 
