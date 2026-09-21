@@ -14,7 +14,7 @@ Slice 3 base foundation HEAD: `e885c34d1de3027871f3845e9c7a57fbed28a981`
 Slice 4R recovery base foundation HEAD: `0e2b80c714324efc41afc8138e080a19b5f0a69a`
 Stranded Slice 4 branch (SOURCE MATERIAL ONLY - never merged, rebased into, or cherry-picked as a batch): `feat/help-slice-4-requests-frontend` at `e7124f04af798f21fd9b8be7d001cd28da5643d1` (9 commits ahead / 15 behind its merge base `3033dce8e1ff1c4d7c5a4e54a51fdda0e83df523`).
 Current task: `Slice 4.5 - Request expiry Worker execution`
-Exact next task: complete Slice 4.5 exact-head verification and stop at the owner merge gate.
+Exact next task: owner merge approval for PR #338. Do not start Slice 4.6 or Donations before that gate.
 
 ## Execution loop
 
@@ -557,7 +557,7 @@ Slice 4.5 implementation is tracked below.
 
 ### Slice 4.5 - Request expiry Worker execution
 
-Status: `IMPLEMENTED_PENDING_VERIFICATION`
+Status: `VERIFIED`
 
 Working branch: `feat/help-slice-4-5-request-expiry-worker`
 
@@ -590,7 +590,9 @@ TDD / verification evidence so far:
 - RED-first test head: `8abd8896403ef4e16538476d7224f93c5467c157`
 - RED CI: run `35632473995` — failed at `npm test` before the Worker implementation existed, after setup/typecheck/build:packages prerequisites passed.
 - Implementation code through: `ae34713ad09308bf267e2796939902fb133a0e81`
-- Final exact-head CI: pending after this ledger update.
+- Verified implementation head: `73284bcd6aca31317cdba66650b5d376fc9c9a07`
+- Exact-head CI: run `35633693922` — `SUCCESS` (changed-file format/lint, typecheck, unit tests, build, integration, deploy preflight, security and migration status all passed).
+- Final ledger-only head requires its own exact-head CI before merge approval.
 
 Explicitly excluded:
 
