@@ -6,13 +6,15 @@ This file is the repository living plan for the Requests | FundMe | Donations im
 
 Authoritative repository: `funmarket/HoomaUltimate`
 Authoritative branch: `phase-0-foundation`
-Working branch: `feat/help-slice-3-request-responses-lifecycle`
+Working branch: `feat/help-slice-4-requests-frontend-recovery`
 Original attached-plan baseline: `c304fed4c925cbcd578fdbafb21926f927e400f5`
 Slice 1 base foundation HEAD: `b07167f9beb0003eceddb3fd73bfbff53417a618`
 Slice 2 base foundation HEAD: `a5bd502f58a746a1a89d33ba4afb28506c2e35b3`
 Slice 3 base foundation HEAD: `e885c34d1de3027871f3845e9c7a57fbed28a981`
-Current task: `Slice 4 - Requests frontend`
-Exact next task: after Slice 3 is integrated into `phase-0-foundation`, start Slice 4 from that fresh foundation and implement only the Requests frontend scope defined by this plan.
+Slice 4R recovery base foundation HEAD: `0e2b80c714324efc41afc8138e080a19b5f0a69a`
+Stranded Slice 4 branch (SOURCE MATERIAL ONLY - never merged, rebased into, or cherry-picked as a batch): `feat/help-slice-4-requests-frontend` at `e7124f04af798f21fd9b8be7d001cd28da5643d1` (9 commits ahead / 15 behind its merge base `3033dce8e1ff1c4d7c5a4e54a51fdda0e83df523`).
+Current task: `Slice 4R - Requests frontend recovery`
+Exact next task: after Slice 4R is integrated and live-smoke-tested, start `Slice 4.5 - Request expiry Worker execution`.
 
 ## Execution loop
 
@@ -495,7 +497,38 @@ Unresolved risks:
 
 ### Slice 4 - Requests frontend
 
-Status: `NOT_STARTED`
+Status: `IN_PROGRESS`
+
+Current working scope: **Slice 4R - Requests frontend recovery**, on working branch `feat/help-slice-4-requests-frontend-recovery` based on `phase-0-foundation` HEAD `0e2b80c714324efc41afc8138e080a19b5f0a69a`.
+
+Slice 4R scope (only this):
+
+```text
+recover the single Requests frontend API boundary
+Requests public/member feed with the existing query filters
+Request cards and Help tabs (Requests / FundMe only)
+Request creation
+Request detail, one-shot responses, manager lifecycle controls
+routes /requests/new and /requests/:requestId
+focused Requests frontend tests
+restrained dark Help visual system
+```
+
+Explicitly excluded from Slice 4R:
+
+```text
+Donations backend, frontend, route or tab
+FundMe implementation (honest placeholder only)
+any Requests Prisma change or migration
+Requests backend redesign or new endpoints
+Request chat / comments / DMs
+Whistle, HOOMA NOW, notifications or Worker execution
+unrelated cleanup, global UI framework or icon dependency
+```
+
+Recovery rule: `feat/help-slice-4-requests-frontend` is read-only source material. Its useful frontend files are adapted to the current foundation file by file; the branch is never merged, rebased into, or cherry-picked as a batch. Stale parts (disabled Donations tab, solid-lime control system, monolithic pages) are discarded instead of recovered.
+
+Next slice after this: `Slice 4.5 - Request expiry Worker execution` (not implemented in Slice 4R).
 
 ### Slice 5 - Donations database/domain
 

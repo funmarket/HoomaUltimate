@@ -3,6 +3,9 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const requestsPage = await readFile("packages/frontend/src/requests/RequestsPage.tsx", "utf8");
+const helpTabs = await readFile("packages/frontend/src/requests/HelpTabs.tsx", "utf8");
+const requestsApi = await readFile("packages/frontend/src/requests/api.ts", "utf8");
+const requestCard = await readFile("packages/frontend/src/requests/RequestCard.tsx", "utf8");
 const ridesPage = await readFile("packages/frontend/src/rides/RidesPage.tsx", "utf8");
 const rideGatewayPage = await readFile("packages/frontend/src/rides/RideGatewayPage.tsx", "utf8");
 const rideOfferDetailPage = await readFile(
@@ -16,16 +19,23 @@ const rideDestinationFields = await readFile(
 const rideApi = await readFile("packages/frontend/src/rides/api.ts", "utf8");
 const rideCss = await readFile("packages/frontend/src/rides/rides.css", "utf8");
 
-test("Requests shell owns page-local Requests and FundMe tabs without backend pretence", () => {
+test("Requests shell composes the current Help surface without payment pretence", () => {
   assert.match(requestsPage, /export type RequestsPageTab = "requests" \| "fundme"/);
-  assert.match(requestsPage, /href="\/requests"/);
-  assert.match(requestsPage, /href="\/requests\/fundme"/);
-  assert.match(requestsPage, /no donation form or payment intent/i);
-  assert.doesNotMatch(requestsPage, /fetch\(/);
-  assert.doesNotMatch(requestsPage, /create[A-Z][A-Za-z]*Api/);
-  assert.doesNotMatch(requestsPage, /amount|card|checkout|invoice/i);
-});
+  assert.match(requestsPage, /<HelpTabs tab=\{tab\}/);
+  assert.match(requestsPage, /FundMe is not taking contributions yet/i);
 
+  assert.match(helpTabs, /href:\s*"\/requests"/);
+  assert.match(helpTabs, /href:\s*"\/requests\/fundme"/);
+  assert.doesNotMatch(helpTabs, /\/requests\/donations/);
+  assert.doesNotMatch(helpTabs, /Donations/);
+
+  assert.doesNotMatch(requestsPage + helpTabs + requestCard, /fetch\(/);
+
+  assert.match(requestsApi, /export function createRequestsApi/);
+  assert.match(requestsApi, /\/api\/public\/v1\/requests/);
+  assert.match(requestsApi, /\/api\/v1\/requests/);
+  assert.doesNotMatch(requestsApi, /checkout|invoice|payment.?provider|\/contributions/i);
+});
 test("Ride surface uses real Ride APIs and no longer ships the old fake shell", () => {
   assert.match(ridesPage, /export \{ RideGatewayPage, RidesPage \}/);
   assert.match(
