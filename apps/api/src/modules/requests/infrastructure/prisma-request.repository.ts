@@ -1,4 +1,4 @@
-import { Prisma, type PrismaClient } from "@hooma/database";
+import { expireDueHelpRequests, Prisma, type PrismaClient } from "@hooma/database";
 import type {
   HelpRequestCreateInput,
   HelpRequestListQuery,
@@ -357,14 +357,7 @@ export class PrismaRequestRepository implements RequestRepository, RequestVisibi
   }
 
   async expireDue(now: Date): Promise<number> {
-    const result = await this.db.helpRequest.updateMany({
-      where: {
-        status: { in: ["OPEN", "IN_PROGRESS"] },
-        expiresAt: { not: null, lte: now },
-      },
-      data: { status: "EXPIRED" },
-    });
-    return result.count;
+    return expireDueHelpRequests(this.db, now);
   }
 
   async communityRole(communityId: string, userId: string) {
