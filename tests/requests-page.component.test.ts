@@ -146,6 +146,8 @@ function json(body: unknown, status = 200) {
 type StubOptions = {
   readonly me?: unknown;
   readonly publicItems?: readonly unknown[];
+  readonly publicNextCursor?: string | null;
+  readonly publicPageTwoItems?: readonly unknown[];
   readonly memberItems?: readonly unknown[];
 };
 
@@ -158,7 +160,13 @@ function installApiStub(options: StubOptions) {
     calls.push(key);
     if (url.pathname === "/api/public/v1/auth/session") return json(options.me ?? null);
     if (url.pathname === "/api/public/v1/requests") {
-      return json({ items: options.publicItems ?? [], nextCursor: null });
+      if (url.searchParams.get("cursor")) {
+        return json({ items: options.publicPageTwoItems ?? [], nextCursor: null });
+      }
+      return json({
+        items: options.publicItems ?? [],
+        nextCursor: options.publicNextCursor ?? null,
+      });
     }
     if (url.pathname === "/api/v1/requests") {
       return json({ items: options.memberItems ?? [], nextCursor: null });
@@ -282,6 +290,63 @@ test("signed-in visitor uses the member list endpoint and an empty result is a l
       ["GET /api/v1/requests"],
     );
     assert.equal(page.view.queryByText("No Requests are listed yet."), null);
+  } finally {
+    page.close();
+  }
+});
+
+const secondPublicRequest = {
+  ...publicRequest,
+  id: "request-2",
+  title: "Need training cones",
+  description: "Looking for training cones for an evening football session.",
+};
+
+test("Load more appends the next cursor page without replacing existing Requests", async () => {
+  const page = await renderRequestsPage({
+    me: null,
+    publicItems: [publicRequest],
+    publicNextCursor: "cursor-2",
+    publicPageTwoItems: [secondPublicRequest],
+  });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByText("Need size 43 running shoes")));
+    page.fireEvent.click(page.view.getByRole("button", { name: /Load more/i }));
+    await page.waitFor(() => assert.ok(page.view.getByText("Need training cones")));
+    assert.ok(page.view.getByText("Need size 43 running shoes"));
+    assert.ok(
+      page.calls.includes("GET /api/public/v1/requests?cursor=cursor-2"),
+      `expected cursor request, saw ${page.calls.join(" | ")}`,
+    );
+  } finally {
+    page.close();
+  }
+});
+
+test("City filter debounces list reloads and does not repeat identity lookup", async () => {
+  const page = await renderRequestsPage({ me: null, publicItems: [] });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByText("No Requests match these filters.")));
+    page.calls.length = 0;
+
+    const city = page.view.getByLabelText("City");
+    page.fireEvent.change(city, { target: { value: "T" } });
+    page.fireEvent.change(city, { target: { value: "Tu" } });
+    page.fireEvent.change(city, { target: { value: "Tunis" } });
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    assert.equal(page.calls.filter((call) => call.includes("/requests")).length, 0);
+
+    await page.waitFor(
+      () => {
+        assert.deepEqual(
+          page.calls.filter((call) => call.includes("/requests")),
+          ["GET /api/public/v1/requests?city=Tunis"],
+        );
+      },
+      { timeout: 1000 },
+    );
+    assert.equal(page.calls.filter((call) => call.includes("/auth/session")).length, 0);
   } finally {
     page.close();
   }
