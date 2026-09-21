@@ -27,12 +27,14 @@ export class PasswordRecoveryService {
   ) {}
 
   async request(input: PasswordRecoveryRequestInput): Promise<{ ok: true }> {
-    const target = await this.repository.findTelegramTarget(normalizeUsername(input.loginUsername));
-    if (!target) return { ok: true };
-
+    // Do the expensive code hashing before account lookup so unknown/unlinked usernames do not get
+    // a trivially faster response than linked accounts.
     const now = new Date();
     const code = newPasswordRecoveryCode();
     const codeHash = await hashPasswordRecoveryCode(code);
+    const target = await this.repository.findTelegramTarget(normalizeUsername(input.loginUsername));
+    if (!target) return { ok: true };
+
     const expiresAt = new Date(now.getTime() + RECOVERY_TTL_MS);
     const created = await this.repository.createChallenge({
       userId: target.userId,
@@ -43,16 +45,22 @@ export class PasswordRecoveryService {
     });
     if (created.kind !== "created") return { ok: true };
 
-    try {
-      await this.delivery.sendTelegramRecoveryCode({
+    // Telegram delivery must not become a public account-enumeration timing oracle. The request
+    // returns the same generic success response without waiting for the Bot API round trip.
+    void this.delivery
+      .sendTelegramRecoveryCode({
         telegramUserId: target.telegramUserId,
         loginUsername: target.loginUsername,
         code: formatPasswordRecoveryCode(code),
         expiresAt,
+      })
+      .catch(async () => {
+        try {
+          await this.repository.invalidateChallenge(created.id, new Date());
+        } catch {
+          // The public request still stays generic. A later request consumes any stale challenge.
+        }
       });
-    } catch {
-      await this.repository.invalidateChallenge(created.id, now);
-    }
     return { ok: true };
   }
 

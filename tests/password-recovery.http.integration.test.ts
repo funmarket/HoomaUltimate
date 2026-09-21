@@ -29,6 +29,18 @@ class CapturingPasswordRecoveryDelivery implements PasswordRecoveryDelivery {
     code: string;
     expiresAt: Date;
   }[] = [];
+  private deliveryGate: Promise<void> | null = null;
+  private releaseDeliveryGate: (() => void) | null = null;
+
+  blockNextDelivery(): () => void {
+    this.deliveryGate = new Promise<void>((resolve) => {
+      this.releaseDeliveryGate = resolve;
+    });
+    return () => {
+      this.releaseDeliveryGate?.();
+      this.releaseDeliveryGate = null;
+    };
+  }
 
   async sendTelegramRecoveryCode(input: {
     readonly telegramUserId: bigint;
@@ -37,6 +49,9 @@ class CapturingPasswordRecoveryDelivery implements PasswordRecoveryDelivery {
     readonly expiresAt: Date;
   }): Promise<void> {
     this.deliveries.push({ ...input });
+    const gate = this.deliveryGate;
+    this.deliveryGate = null;
+    if (gate) await gate;
   }
 }
 
@@ -103,11 +118,26 @@ test(
         },
       });
 
-      const request = await fetch(`${base}/api/public/v1/auth/password-recovery/request`, {
+      const releaseDelivery = delivery.blockNextDelivery();
+      const requestPromise = fetch(`${base}/api/public/v1/auth/password-recovery/request`, {
         method: "POST",
         headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
         body: JSON.stringify({ loginUsername: "Recovery_CryptoTemplar" }),
       });
+      let request: Response;
+      try {
+        request = await Promise.race([
+          requestPromise,
+          new Promise<never>((_resolve, reject) => {
+            setTimeout(
+              () => reject(new Error("Recovery request waited for Telegram delivery")),
+              2_000,
+            );
+          }),
+        ]);
+      } finally {
+        releaseDelivery();
+      }
       assert.equal(request.status, 202);
       assert.deepEqual(await request.json(), { ok: true });
       assert.equal(delivery.deliveries.length, 1);
