@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { registerHooks } from "node:module";
 import test from "node:test";
 import { JSDOM } from "jsdom";
-import { helpRequestResponseSchema } from "@hooma/contracts/requests";
+import { helpRequestResponseSchema, type HelpRequestResponse } from "@hooma/contracts/requests";
 import { RequestService } from "../apps/api/src/modules/requests/application/request.service.js";
 import type {
   HelpRequestRecord,
@@ -120,6 +120,31 @@ function repository(): RequestRepository {
   };
 }
 
+type HardenedResponse = HelpRequestResponse & {
+  readonly responder?: {
+    readonly displayName: string;
+    readonly username: string;
+    readonly photoUrl: string | null;
+  } | null;
+};
+
+type PresentationReader = {
+  findByUserIds(userIds: readonly string[]): Promise<
+    readonly {
+      readonly userId: string;
+      readonly displayName: string;
+      readonly username: string;
+      readonly photoUrl: string | null;
+    }[]
+  >;
+};
+
+const RequestServiceWithPresentation = RequestService as unknown as new (
+  repository: RequestRepository,
+  visibility: RequestVisibilityReader,
+  presentation: PresentationReader,
+) => RequestService;
+
 function visibility(): RequestVisibilityReader {
   return {
     async communityRole() {
@@ -141,7 +166,7 @@ function visibility(): RequestVisibilityReader {
 }
 
 test("Request responses project only safe responder presentation fields", async () => {
-  const service = new RequestService(repository(), visibility(), {
+  const service = new RequestServiceWithPresentation(repository(), visibility(), {
     async findByUserIds() {
       return [
         {
@@ -155,13 +180,14 @@ test("Request responses project only safe responder presentation fields", async 
   });
 
   const result = await service.listResponses("owner-1", "request-1");
-  assert.deepEqual(result.items[0]?.responder, {
+  const response = result.items[0] as HardenedResponse | undefined;
+  assert.deepEqual(response?.responder, {
     displayName: "Helper One",
     username: "helper",
     photoUrl: "https://cdn.example/helper.jpg",
   });
-  assert.equal("phone" in (result.items[0]?.responder ?? {}), false);
-  assert.deepEqual(helpRequestResponseSchema.parse(result.items[0]), result.items[0]);
+  assert.equal("phone" in (response?.responder ?? {}), false);
+  assert.deepEqual(helpRequestResponseSchema.parse(response), response);
 });
 
 function installDom(url = "http://localhost/requests") {
@@ -236,7 +262,10 @@ test("Requests page appends the next cursor page through Load more", async () =>
     const url = new URL(String(input));
     calls.push(`${url.pathname}${url.search}`);
     if (url.pathname === "/api/public/v1/auth/session") return json(null);
-    if (url.pathname === "/api/public/v1/requests" && url.searchParams.get("cursor") === "cursor-2") {
+    if (
+      url.pathname === "/api/public/v1/requests" &&
+      url.searchParams.get("cursor") === "cursor-2"
+    ) {
       return json({ items: [requestTwo], nextCursor: null });
     }
     if (url.pathname === "/api/public/v1/requests") {
@@ -270,7 +299,9 @@ test("Requests page appends the next cursor page through Load more", async () =>
   }
 });
 
-test("City and Houma filters debounce network reloads and do not repeat identity lookup", async () => {
+test(
+  "City and Houma filters debounce network reloads and do not repeat identity lookup",
+  async () => {
   const dom = installDom();
   const calls: string[] = [];
   const originalFetch = globalThis.fetch;
@@ -319,4 +350,5 @@ test("City and Houma filters debounce network reloads and do not repeat identity
     cleanup();
     dom.window.close();
   }
-});
+  },
+);
