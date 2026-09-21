@@ -6,15 +6,15 @@ This file is the repository living plan for the Requests | FundMe | Donations im
 
 Authoritative repository: `funmarket/HoomaUltimate`
 Authoritative branch: `phase-0-foundation`
-Working branch: none — Slice 4.5 merged to `phase-0-foundation` as `aa5fba64cfb1c4f1704040a46064cae94995f1a1`; next implementation branch is not authorized yet.
+Working branch: `chore/requests-rq-fix-0-reconciliation` from freshly verified `phase-0-foundation` HEAD `e359e3ab665d4690f62ac943a93c4037a12c9e12`.
 Original attached-plan baseline: `c304fed4c925cbcd578fdbafb21926f927e400f5`
 Slice 1 base foundation HEAD: `b07167f9beb0003eceddb3fd73bfbff53417a618`
 Slice 2 base foundation HEAD: `a5bd502f58a746a1a89d33ba4afb28506c2e35b3`
 Slice 3 base foundation HEAD: `e885c34d1de3027871f3845e9c7a57fbed28a981`
 Slice 4R recovery base foundation HEAD: `0e2b80c714324efc41afc8138e080a19b5f0a69a`
 Stranded Slice 4 branch (SOURCE MATERIAL ONLY - never merged, rebased into, or cherry-picked as a batch): `feat/help-slice-4-requests-frontend` at `e7124f04af798f21fd9b8be7d001cd28da5643d1` (9 commits ahead / 15 behind its merge base `3033dce8e1ff1c4d7c5a4e54a51fdda0e83df523`).
-Current task: `Slice 4.5 complete — awaiting next authorized slice`
-Exact next task: `Slice 4.6 - Requests operational hardening`.
+Current task: `RQ-FIX-0 - sport-first Requests architecture and living-ledger reconciliation`
+Exact next task after RQ-FIX-0 verification/integration: `RQ-FIX-1 - shared sports taxonomy foundation`.
 
 ## Execution loop
 
@@ -119,21 +119,20 @@ Persistence must use concrete foreign keys, not polymorphic strings. `createdByU
 
 ## Current verified facts
 
-Verified on 2026-09-17 against live branch state:
+Fresh-verified on 2026-09-21 before RQ-FIX-0 mutation:
 
-- Slice 1 was based on `phase-0-foundation` HEAD `b07167f9beb0003eceddb3fd73bfbff53417a618` (`feat: add platform admin user security (#315)`).
-- Slice 2 was based on integrated Slice 1 foundation HEAD `a5bd502f58a746a1a89d33ba4afb28506c2e35b3` (merge of PR #316).
-- Slice 3 is based on integrated Slice 2 foundation HEAD `e885c34d1de3027871f3845e9c7a57fbed28a981` (merge of PR #318).
-- The attached implementation baseline `c304fed4c925cbcd578fdbafb21926f927e400f5` is stale but remains the product/architecture plan source.
-- Current Requests frontend exists at `packages/frontend/src/requests/RequestsPage.tsx` and `packages/frontend/src/requests/requests.css` and was not modified by Slice 3.
-- Current Requests tabs remain only `Requests | FundMe`.
-- Current routes remain `/requests`, `/requests/fundme`, and `/fundme -> /requests/fundme` on the frontend.
-- Current Requests/FundMe UI remains an honest placeholder and does not claim backend behavior.
-- `packages/contracts/src/help.ts` remains the narrow shared Help audience, category, and item taxonomy contract source.
-- `meResponseSchema` continues to expose `athletesCommunities` publisher contexts from Slice 1.
-- Slice 2 introduced the separate Requests backend module, `HelpRequest` persistence, public/member read routes, create authorization, and DI wiring.
-- Slice 3 adds `HelpRequestResponse` persistence, response privacy/actions, request lifecycle mutations, expiry preparation, and compare-and-set concurrency protection only.
-- Slice 3 implementation head `3a3d3a199e46cc74314f3a09ce67babea4b2a766` passed the complete CI workflow in run `35220160129` before this ledger closeout update.
+- `phase-0-foundation` HEAD is `e359e3ab665d4690f62ac943a93c4037a12c9e12` (`docs(help): close Request expiry Worker slice (#339)`).
+- PR #340 (`feat(requests): harden Requests operations`) is still open, draft, unmerged, and changes only `tests/requests-page.component.test.ts`. It belongs to the pre-redesign Slice 4.6 direction and is superseded by the RQ-FIX program. **Do not merge #340. Do not close or mutate it without explicit owner authorization.**
+- Current Requests frontend is real, not a placeholder: `RequestsPage`, `RequestCreatePage`, `RequestDetailPage`, cards, filters, responses, and the single Requests API client are present under `packages/frontend/src/requests/`.
+- The current Help classification is the wrong flat marketplace-style model: `HELP_CATEGORIES` plus `HELP_ITEM_KINDS`, with optional `AthletesSport`.
+- Current Request contracts require `category`, allow optional `itemKind` and optional `sport`, and list by category/sport/city/houma/status.
+- Current `HelpRequest` persistence stores `category`, optional `itemKind`, optional `sport`, publisher/audience FKs, lifecycle timestamps, location metadata, and product-like metadata.
+- Existing Request lifecycle, publisher/audience authorization, response privacy/actions, compare-and-set mutation safety, cursor repository ordering, and expiry Worker are foundations to preserve rather than redesign.
+- `ATHLETES_SPORTS` / `AthletesSport` is the existing canonical sport authority. No second sport table or parallel enum is authorized.
+- Current Play has only `games | players | mine`; it has no Requests projection.
+- Current Athletes hub is the Communities directory with sport filtering; it has no `Communities | Requests` hub tabs.
+- `placeId` is a real optional Request FK today. RQ-FIX keeps it untouched unless later evidence explicitly justifies removal.
+- Historical Requests migrations are applied history and must not be rewritten. All schema correction uses forward migrations.
 
 ## Slice ledger
 
@@ -545,13 +544,13 @@ Live-verification truth:
 - Do not state that the painted UI was visually verified.
 - The public production Requests API contained zero Requests at verification time, so no populated production Request detail page could be exercised.
 
-Known Requests follow-ups (not implemented and not authorized by this closeout):
-
-Slice 4.6 candidate hardening:
+Historical Requests hardening follow-ups from the pre-redesign plan:
 
 - safe responder profile projection
 - cursor pagination / Load more
 - debounce free-text filters
+
+These remain valid requirements, but they are no longer the next slice. They are deferred to RQ-FIX-6 after the sport-first taxonomy, backend contract, standalone Requests frontend, and Play/Athletes projections are established. PR #340 is source evidence only and must not be merged into the corrected architecture.
 
 Slice 4.5 implementation is tracked below.
 
@@ -609,13 +608,285 @@ unrelated Worker cleanup
 Slice 4.6 implementation
 ```
 
-Slice 4.6 is the next authorized implementation slice when the owner starts it:
+Slice 4.5 is closed. The former Slice 4.6 is superseded by the RQ-FIX correction program below. Do not start Donations implementation until the Requests correction program is completed and integrated.
 
-- safe responder profile projection
-- cursor pagination / Load more
-- debounce free-text filters
+## Requests sport-first correction authority — RQ-FIX program
 
-Slice 4.5 is closed. Do not start Donations before Slice 4.6 is completed and integrated.
+This section supersedes the former flat Requests taxonomy and former Slice 4.6-next ordering. Historical Slice 1-4.5 records remain evidence of what actually shipped; this RQ-FIX section governs the correction program from the current foundation.
+
+### Product authority
+
+Requests is one sports-first local-needs domain.
+
+Canonical hierarchy:
+
+```text
+AthletesSport
+  -> HelpTaxonomySubcategory
+      -> HelpTaxonomyNeed
+          -> city
+              -> houma
+```
+
+Tier 1 sport authority is the existing `ATHLETES_SPORTS` / `AthletesSport` contract. No duplicate Sport table or enum is allowed.
+
+The same canonical `HelpRequest` domain powers:
+
+```text
+Main Requests
+Play Requests projection
+Athletes Requests projection
+```
+
+Do not create `PlayRequest`, `AthletesRequest`, `FootballRequest`, or any duplicate request persistence.
+
+Rides remains separate. FundMe remains separate. Donations remains a future separate giving domain. Donations may reuse PRODUCT taxonomy leaves but must not expose COMMUNITY_ROLE needs.
+
+### Shared taxonomy model target
+
+Use a relational shared taxonomy, with semantics owned by the leaf Need rather than inferred from frontend labels:
+
+```text
+HelpTaxonomySubcategory
+- id
+- sport: AthletesSport
+- slug
+- label
+- sortOrder
+- active
+- timestamps
+- UNIQUE(sport, slug)
+
+HelpTaxonomyNeed
+- id
+- subcategoryId
+- slug
+- label
+- kind: PRODUCT | COMMUNITY_ROLE | COMMUNITY_SUPPORT
+- allowsCustomText
+- sortOrder
+- active
+- timestamps
+- UNIQUE(subcategoryId, slug)
+
+HelpTaxonomyNeedSurface
+- needId
+- surface: REQUESTS | PLAY | ATHLETES | DONATIONS
+- UNIQUE(needId, surface)
+```
+
+Eligibility is server/data policy, not duplicated React logic.
+
+Inactive nodes are unavailable for new creation but remain resolvable for historic Requests. Used taxonomy nodes should be deactivated instead of casually deleted.
+
+The initial taxonomy must be inserted by the forward migration/data migration with deterministic stable IDs/slugs; the repository currently has no canonical seed command that deployment can rely on.
+
+### Corrected Request contract target
+
+Canonical Request classification becomes:
+
+```text
+sport
+subcategoryId
+needId
+customNeed?
+```
+
+Preserve publisher/audience, title/description, place/city/houma/locationNote, neededByAt/expiresAt, lifecycle state, responses, and Worker expiry behavior.
+
+Product metadata remains conditional:
+
+```text
+PRODUCT
+  -> quantityNeeded / sizeLabel / conditionPreference allowed
+
+COMMUNITY_ROLE or COMMUNITY_SUPPORT
+  -> product metadata rejected by backend validation, not merely hidden by UI
+```
+
+`customNeed` is accepted only when the selected Need explicitly has `allowsCustomText = true`.
+
+The Request read DTO should carry resolved taxonomy presentation (sport + subcategory + need labels/identity) so cards/details/projections do not perform client-side taxonomy joins.
+
+### Projection rule
+
+Request list querying must support a server-side surface projection before cursor pagination:
+
+```text
+surface=REQUESTS
+surface=PLAY
+surface=ATHLETES
+```
+
+Repository ordering remains deterministic (`createdAt DESC, id DESC`), but taxonomy eligibility must be applied before pagination. Play and Athletes must not fetch generic pages and filter them afterward in React.
+
+The shared public taxonomy endpoint target is:
+
+```text
+GET /api/public/v1/help/taxonomy?surface=REQUESTS
+GET /api/public/v1/help/taxonomy?surface=PLAY
+GET /api/public/v1/help/taxonomy?surface=ATHLETES
+GET /api/public/v1/help/taxonomy?surface=DONATIONS
+```
+
+The taxonomy backend belongs in a separate `apps/api/src/modules/help-taxonomy/` boundary. Do not move taxonomy persistence into PlayService, AthletesService, or Request HTTP controllers.
+
+### Database correction rule
+
+Never edit historical Requests migrations. Use expand -> inspect/backfill -> compatible switch -> contract.
+
+The new Request hierarchy must be relationally constrained so a Request cannot combine a Sport with a subcategory from another sport or a Need from another subcategory. Service validation is required, but database integrity must also be enforced as far as PostgreSQL/Prisma can safely express it.
+
+Do not guess legacy production mappings from titles/descriptions. Inspect real production combinations before backfill. Ambiguous rows are preserved until explicitly reconciled.
+
+Start with focused taxonomy/query indexes. Do not add a broad city+houma+sport index without query-plan evidence.
+
+### RQ-FIX-0 - architecture and ledger reconciliation
+
+Status: `IMPLEMENTED_PENDING_VERIFICATION`
+
+Authorized scope:
+
+- fresh-check live foundation and overlapping PR state
+- inspect current Requests contracts, Prisma model, Play/Athletes integration state, and living ledger
+- make this sport-first correction program the current repository authority
+- mark former Slice 4.6 / PR #340 as superseded source material, not merge material
+- preserve historical Slice 1-4.5 evidence
+- no application, test, schema, migration, deployment, or PR #340 mutation
+
+Exit gate:
+
+- exact diff contains only this living plan
+- no historical evidence was erased
+- final documentation head passes required repository verification for the slice
+- PR remains unmerged pending explicit owner authorization
+
+### RQ-FIX-1 - shared sports taxonomy foundation
+
+Status: `NOT_STARTED`
+
+Scope:
+
+- `packages/contracts/src/help-taxonomy.ts` and required package export
+- `packages/database/prisma/help-taxonomy.prisma`
+- forward taxonomy migration with deterministic initial taxonomy data
+- separate `apps/api/src/modules/help-taxonomy/` repository/service/infrastructure/HTTP module
+- public taxonomy endpoint by surface
+- DI/public-router wiring
+- RED-first contract/service/integration coverage
+- no `HelpRequest` schema switch yet
+
+### RQ-FIX-2A - Request schema expansion + legacy data reconciliation
+
+Status: `NOT_STARTED`
+
+Scope:
+
+- inspect actual production legacy Request classification combinations read-only before backfill
+- add nullable `subcategoryId` / `needId` using a forward migration
+- preserve legacy `category` / `itemKind` during transition
+- add relational hierarchy integrity and focused indexes
+- backfill only deterministic mappings
+- preserve ambiguous rows; never delete or guess
+
+### RQ-FIX-2B - corrected Request backend + projections
+
+Status: `NOT_STARTED`
+
+Scope:
+
+- canonical sport/subcategory/need validation
+- Request surface filter applied before pagination
+- taxonomy presentation in Request DTOs
+- product/custom metadata validation from selected Need policy
+- preserve existing publisher/audience/lifecycle/response/expiry semantics
+- keep deployment compatibility until the corrected frontend is live
+
+### RQ-FIX-3 - sport-first standalone Requests frontend
+
+Status: `NOT_STARTED`
+
+Scope:
+
+- Sport -> Subcategory -> Specific Item/Need cascading creation flow
+- remove generic Category / Item Kind UI
+- reusable `RequestFeed` and `RequestTaxonomyFilters`
+- taxonomy-driven filters/cards/detail
+- conditional product metadata UI
+- main `/requests` surface uses `surface=REQUESTS`
+
+### RQ-FIX-4 - Play Requests projection
+
+Status: `NOT_STARTED`
+
+Scope:
+
+- Play tabs become Games | Players | Requests | Mine
+- Requests pane consumes canonical Requests using `surface=PLAY`
+- creation delegates to canonical `/requests/new`
+- no Request persistence/service ownership moves into Play
+
+### RQ-FIX-5 - Athletes Requests projection
+
+Status: `NOT_STARTED`
+
+Scope:
+
+- Athletes hub becomes Communities | Requests with Communities as default
+- existing Communities behavior stays intact
+- Requests pane consumes canonical Requests using `surface=ATHLETES`
+- no Request persistence/service ownership moves into Athletes
+
+### RQ-FIX-6 - operational hardening
+
+Status: `NOT_STARTED`
+
+Scope:
+
+- reuse canonical `UserPresentationReader` for responder presentation
+- batch presentation reads; no N+1 profile lookup
+- RequestFeed cursor Load more with deduplication and stale-generation protection
+- debounce City/Houma text filters
+- resolve identity once rather than on every filter change
+- recreate the useful intent of superseded #340 against the corrected architecture
+
+### RQ-FIX-7 - legacy contract/schema removal
+
+Status: `NOT_STARTED`
+
+Precondition:
+
+- prove no deployed/frontend/API/repository path still depends on legacy category/itemKind
+- prove all retained Requests that must survive have valid new taxonomy links
+- stop if production contains unresolved legacy rows
+
+Scope after proof:
+
+- remove legacy Request category/itemKind contract paths
+- forward migration removes legacy columns/enums
+- tighten new taxonomy FKs/nullability as appropriate
+- prove responses/lifecycle/expiry survive migration
+- never rewrite historical migrations
+
+### RQ-FIX global exclusions
+
+Until a slice explicitly names its narrow integration point, do not change:
+
+```text
+Rides behavior
+FundMe implementation
+Donations implementation
+Watch
+Pitch
+Gamers
+Whistle
+Teams behavior
+Telegram authentication
+global navigation
+unrelated styling/refactors
+```
+
+Play and Athletes changes are limited to their RQ-FIX-4 / RQ-FIX-5 Requests projection surfaces; their existing domain mechanics remain authoritative.
 
 ### Slice 5 - Donations database/domain
 
