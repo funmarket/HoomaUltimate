@@ -6,15 +6,15 @@ This file is the repository living plan for the Requests | FundMe | Donations im
 
 Authoritative repository: `funmarket/HoomaUltimate`
 Authoritative branch: `phase-0-foundation`
-Working branch: `chore/requests-rq-fix-0-reconciliation` from freshly verified `phase-0-foundation` HEAD `e359e3ab665d4690f62ac943a93c4037a12c9e12`.
+Working branch: `chore/requests-rq-fix-0-reconciliation`; original RQ-FIX-0 base was `e359e3ab665d4690f62ac943a93c4037a12c9e12`, and the current foundation after reconciled PR #340 is `ef620542c0fba9dc950f3d2491ea67a4057c73ab`.
 Original attached-plan baseline: `c304fed4c925cbcd578fdbafb21926f927e400f5`
 Slice 1 base foundation HEAD: `b07167f9beb0003eceddb3fd73bfbff53417a618`
 Slice 2 base foundation HEAD: `a5bd502f58a746a1a89d33ba4afb28506c2e35b3`
 Slice 3 base foundation HEAD: `e885c34d1de3027871f3845e9c7a57fbed28a981`
 Slice 4R recovery base foundation HEAD: `0e2b80c714324efc41afc8138e080a19b5f0a69a`
 Stranded Slice 4 branch (SOURCE MATERIAL ONLY - never merged, rebased into, or cherry-picked as a batch): `feat/help-slice-4-requests-frontend` at `e7124f04af798f21fd9b8be7d001cd28da5643d1` (9 commits ahead / 15 behind its merge base `3033dce8e1ff1c4d7c5a4e54a51fdda0e83df523`).
-Current task: `RQ-FIX-0 - sport-first Requests architecture and living-ledger reconciliation`
-Exact next task after RQ-FIX-0 verification/integration: `RQ-FIX-1 - shared sports taxonomy foundation`.
+Current task: `RQ-FIX-0 - final branch synchronization, verification, and integration`
+Exact next task after RQ-FIX-0 integration: `RQ-FIX-1 - shared sports taxonomy foundation`.
 
 ## Execution loop
 
@@ -121,8 +121,10 @@ Persistence must use concrete foreign keys, not polymorphic strings. `createdByU
 
 Fresh-verified on 2026-09-21 before RQ-FIX-0 mutation:
 
-- `phase-0-foundation` HEAD is `e359e3ab665d4690f62ac943a93c4037a12c9e12` (`docs(help): close Request expiry Worker slice (#339)`).
-- PR #340 (`feat(requests): harden Requests operations`) is still open, draft, unmerged, and changes only `tests/requests-page.component.test.ts`. It belongs to the pre-redesign Slice 4.6 direction and is superseded by the RQ-FIX program. **Do not merge #340. Do not close or mutate it without explicit owner authorization.**
+- RQ-FIX-0 originally inspected `phase-0-foundation` at `e359e3ab665d4690f62ac943a93c4037a12c9e12` (`docs(help): close Request expiry Worker slice (#339)`).
+- On 2026-09-21 the owner explicitly authorized reconciling and merging PR #340. Its old broad Slice 4.6 scope was narrowed to taxonomy-independent hardening only: cursor Load more with Request-id deduplication, 300ms City/Houma debounce, and one-time optional identity resolution. Safe responder presentation remains deferred to RQ-FIX-6.
+- PR #340 passed the complete repository CI gate on exact head `0e0d4b986ce37284b84551227977300988f269e5` in run `35658317380` and merged as `ef620542c0fba9dc950f3d2491ea67a4057c73ab`.
+- Current `phase-0-foundation` HEAD is therefore `ef620542c0fba9dc950f3d2491ea67a4057c73ab` before final RQ-FIX-0 branch synchronization.
 - Current Requests frontend is real, not a placeholder: `RequestsPage`, `RequestCreatePage`, `RequestDetailPage`, cards, filters, responses, and the single Requests API client are present under `packages/frontend/src/requests/`.
 - The current Help classification is the wrong flat marketplace-style model: `HELP_CATEGORIES` plus `HELP_ITEM_KINDS`, with optional `AthletesSport`.
 - Current Request contracts require `category`, allow optional `itemKind` and optional `sport`, and list by category/sport/city/houma/status.
@@ -550,7 +552,7 @@ Historical Requests hardening follow-ups from the pre-redesign plan:
 - cursor pagination / Load more
 - debounce free-text filters
 
-These remain valid requirements, but they are no longer the next slice. They are deferred to RQ-FIX-6 after the sport-first taxonomy, backend contract, standalone Requests frontend, and Play/Athletes projections are established. PR #340 is source evidence only and must not be merged into the corrected architecture.
+Safe responder profile projection remains deferred to RQ-FIX-6 after the sport-first taxonomy and corrected Request DTO exist. Cursor Load more, Request-id deduplication, City/Houma debounce, and one-time optional identity resolution were reconciled as taxonomy-independent behavior and merged in PR #340 before RQ-FIX-1.
 
 Slice 4.5 implementation is tracked below.
 
@@ -750,9 +752,10 @@ Authorized scope:
 - fresh-check live foundation and overlapping PR state
 - inspect current Requests contracts, Prisma model, Play/Athletes integration state, and living ledger
 - make this sport-first correction program the current repository authority
-- mark former Slice 4.6 / PR #340 as superseded source material, not merge material
+- reconcile the former Slice 4.6 direction with the sport-first correction program
 - preserve historical Slice 1-4.5 evidence
-- no application, test, schema, migration, deployment, or PR #340 mutation
+- record the owner-authorized narrowed PR #340 merge without pulling responder-presentation contract work forward
+- keep RQ-FIX-0 itself documentation-only
 
 Exit gate:
 
@@ -848,7 +851,7 @@ Scope:
 - RequestFeed cursor Load more with deduplication and stale-generation protection
 - debounce City/Houma text filters
 - resolve identity once rather than on every filter change
-- recreate the useful intent of superseded #340 against the corrected architecture
+- add safe responder presentation against the corrected Request response DTO; pagination/debounce/one-time identity behavior already merged via reconciled PR #340
 
 ### RQ-FIX-7 - legacy contract/schema removal
 
