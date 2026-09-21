@@ -36,7 +36,6 @@ export const helpTaxonomyResponseSchema = z.object({
   sports: z.array(helpTaxonomySportSchema),
 });
 
-
 export type HelpTaxonomyNeedKind = z.infer<typeof helpTaxonomyNeedKindSchema>;
 export type HelpTaxonomySurface = z.infer<typeof helpTaxonomySurfaceSchema>;
 export type HelpTaxonomyQuery = z.infer<typeof helpTaxonomyQuerySchema>;
