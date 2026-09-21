@@ -16,6 +16,7 @@ import { createPlacesPublicRouter } from "../../modules/places/http/place.routes
 import { createPitchPublicRouter } from "../../modules/pitch/http/pitch.routes.js";
 import { createPlayPublicRouter } from "../../modules/play/http/play.routes.js";
 import { createRequestPublicRouter } from "../../modules/requests/http/request.routes.js";
+import { createHelpTaxonomyPublicRouter } from "../../modules/help-taxonomy/http/help-taxonomy.routes.js";
 import { createRidePublicRouter } from "../../modules/rides/http/ride.routes.js";
 import { createTeamPublicRouter } from "../../modules/teams/http/team.routes.js";
 
@@ -55,6 +56,7 @@ export function createPublicV1Router(container: AppContainer, config: ApiConfig)
   router.use("/gamers", createGamerPublicRouter(container.gamerService));
   router.use("/play", createPlayPublicRouter(container.playService));
   router.use("/requests", createRequestPublicRouter(container.requestService));
+  router.use("/help/taxonomy", createHelpTaxonomyPublicRouter(container.helpTaxonomyService));
   router.use("/rides", createRidePublicRouter(container.rideService));
   router.use(
     "/discovery",

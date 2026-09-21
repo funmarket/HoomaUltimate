@@ -6,15 +6,15 @@ This file is the repository living plan for the Requests | FundMe | Donations im
 
 Authoritative repository: `funmarket/HoomaUltimate`
 Authoritative branch: `phase-0-foundation`
-Working branch: `chore/requests-rq-fix-0-reconciliation`; original RQ-FIX-0 base was `e359e3ab665d4690f62ac943a93c4037a12c9e12`, and the current foundation after reconciled PR #340 is `ef620542c0fba9dc950f3d2491ea67a4057c73ab`.
+Working branch: `feat/requests-rq-fix-1-taxonomy` from integrated RQ-FIX-0 foundation `36fa68ac28e0b7f600cc230a6578a90dda08f547`.
 Original attached-plan baseline: `c304fed4c925cbcd578fdbafb21926f927e400f5`
 Slice 1 base foundation HEAD: `b07167f9beb0003eceddb3fd73bfbff53417a618`
 Slice 2 base foundation HEAD: `a5bd502f58a746a1a89d33ba4afb28506c2e35b3`
 Slice 3 base foundation HEAD: `e885c34d1de3027871f3845e9c7a57fbed28a981`
 Slice 4R recovery base foundation HEAD: `0e2b80c714324efc41afc8138e080a19b5f0a69a`
 Stranded Slice 4 branch (SOURCE MATERIAL ONLY - never merged, rebased into, or cherry-picked as a batch): `feat/help-slice-4-requests-frontend` at `e7124f04af798f21fd9b8be7d001cd28da5643d1` (9 commits ahead / 15 behind its merge base `3033dce8e1ff1c4d7c5a4e54a51fdda0e83df523`).
-Current task: `RQ-FIX-0 - final branch synchronization, verification, and integration`
-Exact next task after RQ-FIX-0 integration: `RQ-FIX-1 - shared sports taxonomy foundation`.
+Current task: `RQ-FIX-1 - shared sports taxonomy foundation complete and awaiting integration`
+Exact next task after RQ-FIX-1 integration: `RQ-FIX-2A - Request schema expansion + legacy data reconciliation`.
 
 ## Execution loop
 
@@ -745,7 +745,7 @@ Start with focused taxonomy/query indexes. Do not add a broad city+houma+sport i
 
 ### RQ-FIX-0 - architecture and ledger reconciliation
 
-Status: `IMPLEMENTED_PENDING_VERIFICATION`
+Status: `COMPLETE`
 
 Authorized scope:
 
@@ -766,18 +766,67 @@ Exit gate:
 
 ### RQ-FIX-1 - shared sports taxonomy foundation
 
-Status: `NOT_STARTED`
+Status: `COMPLETE`
 
-Scope:
+Implementation branch: `feat/requests-rq-fix-1-taxonomy`
 
-- `packages/contracts/src/help-taxonomy.ts` and required package export
-- `packages/database/prisma/help-taxonomy.prisma`
-- forward taxonomy migration with deterministic initial taxonomy data
-- separate `apps/api/src/modules/help-taxonomy/` repository/service/infrastructure/HTTP module
-- public taxonomy endpoint by surface
-- DI/public-router wiring
-- RED-first contract/service/integration coverage
-- no `HelpRequest` schema switch yet
+Base foundation: `36fa68ac28e0b7f600cc230a6578a90dda08f547`
+
+PR: #342
+
+Implemented scope:
+
+- added `packages/contracts/src/help-taxonomy.ts` with PRODUCT / COMMUNITY_ROLE / COMMUNITY_SUPPORT Need kinds and REQUESTS / PLAY / ATHLETES / DONATIONS surfaces
+- kept `ATHLETES_SPORTS` / `AthletesSport` as the only canonical sport authority; no second sport enum/list was introduced
+- exported `@hooma/contracts/help-taxonomy`
+- added `packages/database/prisma/help-taxonomy.prisma` with relational Subcategory -> Need -> NeedSurface models
+- added uniqueness and focused activity/order indexes without changing `HelpRequest`
+- added forward migration `20260921233000_help_taxonomy_foundation`; no historical migration was edited
+- deterministically seeded 22 sport subcategories, 40 Needs, and 110 surface-eligibility rows
+- seeded required examples including Football / Turf Shoes, Football / Goalkeeper, Running / Pace Partner, and Gym & Fitness / Spotter
+- encoded `allowsCustomText` on explicit OTHER leaves rather than inferring custom-text behavior from slugs
+- added separate `apps/api/src/modules/help-taxonomy/` repository, service, Prisma infrastructure, and HTTP route boundary
+- mounted public `GET /api/public/v1/help/taxonomy?surface=...` under the existing public-v1 router
+- filtered active taxonomy and surface eligibility in the repository before response projection
+- hard-enforced Donations as PRODUCT-only at the repository boundary in addition to deterministic seed policy
+- preserved canonical Athletes sport ordering in the service, with OTHER last
+- added RED-first contract, service, and integration coverage
+- did not switch or backfill `HelpRequest` taxonomy fields; that remains RQ-FIX-2A/2B
+
+Changed targets for this slice:
+
+```text
+packages/contracts/src/help-taxonomy.ts
+packages/contracts/package.json
+packages/database/prisma/help-taxonomy.prisma
+packages/database/prisma/migrations/20260921233000_help_taxonomy_foundation/migration.sql
+apps/api/src/modules/help-taxonomy/application/help-taxonomy.repository.ts
+apps/api/src/modules/help-taxonomy/application/help-taxonomy.service.ts
+apps/api/src/modules/help-taxonomy/infrastructure/prisma-help-taxonomy.repository.ts
+apps/api/src/modules/help-taxonomy/http/help-taxonomy.routes.ts
+apps/api/src/bootstrap/container.ts
+apps/api/src/http/public-v1/router.ts
+tests/help-taxonomy-contracts.test.ts
+tests/help-taxonomy-service.test.ts
+tests/help-taxonomy.integration.test.ts
+docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md
+```
+
+Verification evidence:
+
+- implementation head `e3249c033967ce6ab5fb81fb946cc0f9da33b9d2` passed the complete repository CI workflow in run `35662300714`
+- ledger-inclusive head `7c718d783f836ed02ca05fa52ec9472480d9b0b2` passed the complete repository CI workflow in run `35662789917`
+- both runs passed database generation/validation/migration deploy, architecture check, changed-file formatting, changed-source lint, typecheck, package build, unit tests, full build, integration tests, deploy preflight, security check, and migration status
+- the diff remained confined to the authorized RQ-FIX-1 targets listed above
+- no `HelpRequest` field, lifecycle behavior, response behavior, Play ownership, Athletes ownership, Rides, FundMe, or Donations implementation was changed
+- PR #342 remains unmerged until the owner explicitly authorizes merge
+- RQ-FIX-2A must not start before RQ-FIX-1 is integrated
+
+Score: **9.4/10**
+
+Score justification:
+
+RQ-FIX-1 establishes the shared taxonomy as a separate contracts/database/API boundary, keeps `AthletesSport` canonical, uses only a forward migration with deterministic seed data, enforces Donations PRODUCT-only server-side, and passes full repository CI including integration coverage. The score is below 10 because no production deployment or live HTTP smoke test is required or claimed for this foundation slice; those are not substitutes for the green repository evidence.
 
 ### RQ-FIX-2A - Request schema expansion + legacy data reconciliation
 
