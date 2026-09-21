@@ -91,6 +91,10 @@
     "./team-offers": {
       "types": "./src/team-offers.ts",
       "default": "./dist/team-offers.js"
+    },
+    "./help-taxonomy": {
+      "types": "./src/help-taxonomy.ts",
+      "default": "./dist/help-taxonomy.js"
     }
   }
 }
