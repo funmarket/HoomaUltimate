@@ -6,15 +6,15 @@ This file is the repository living plan for the Requests | FundMe | Donations im
 
 Authoritative repository: `funmarket/HoomaUltimate`
 Authoritative branch: `phase-0-foundation`
-Working branch: `feat/help-slice-4-5-request-expiry-worker`
+Working branch: none — Slice 4.5 merged to `phase-0-foundation` as `aa5fba64cfb1c4f1704040a46064cae94995f1a1`; next implementation branch is not authorized yet.
 Original attached-plan baseline: `c304fed4c925cbcd578fdbafb21926f927e400f5`
 Slice 1 base foundation HEAD: `b07167f9beb0003eceddb3fd73bfbff53417a618`
 Slice 2 base foundation HEAD: `a5bd502f58a746a1a89d33ba4afb28506c2e35b3`
 Slice 3 base foundation HEAD: `e885c34d1de3027871f3845e9c7a57fbed28a981`
 Slice 4R recovery base foundation HEAD: `0e2b80c714324efc41afc8138e080a19b5f0a69a`
 Stranded Slice 4 branch (SOURCE MATERIAL ONLY - never merged, rebased into, or cherry-picked as a batch): `feat/help-slice-4-requests-frontend` at `e7124f04af798f21fd9b8be7d001cd28da5643d1` (9 commits ahead / 15 behind its merge base `3033dce8e1ff1c4d7c5a4e54a51fdda0e83df523`).
-Current task: `Slice 4.5 - Request expiry Worker execution`
-Exact next task: owner merge approval for PR #338. Do not start Slice 4.6 or Donations before that gate.
+Current task: `Slice 4.5 complete — awaiting next authorized slice`
+Exact next task: `Slice 4.6 - Requests operational hardening`.
 
 ## Execution loop
 
@@ -557,13 +557,13 @@ Slice 4.5 implementation is tracked below.
 
 ### Slice 4.5 - Request expiry Worker execution
 
-Status: `VERIFIED`
+Status: `COMPLETE`
 
-Working branch: `feat/help-slice-4-5-request-expiry-worker`
+Final implementation branch: `feat/help-slice-4-5-request-expiry-worker`
 
 Base: `phase-0-foundation` at `3f03653aca0b02ab2b4b97fa17d4ab791a7b9254`
 
-PR: #338 (draft while exact-head verification is pending)
+PR: #338 — merged to `phase-0-foundation` as `aa5fba64cfb1c4f1704040a46064cae94995f1a1`
 
 Authorized scope:
 
@@ -592,7 +592,9 @@ TDD / verification evidence so far:
 - Implementation code through: `ae34713ad09308bf267e2796939902fb133a0e81`
 - Verified implementation head: `73284bcd6aca31317cdba66650b5d376fc9c9a07`
 - Exact-head CI: run `35633693922` — `SUCCESS` (changed-file format/lint, typecheck, unit tests, build, integration, deploy preflight, security and migration status all passed).
-- Final ledger-only head requires its own exact-head CI before merge approval.
+- Final ledger head: `5a81da329e20268cb182201153e84b8ed18bf561`
+- Final exact-head CI: run `35634276713` — `SUCCESS`
+- Merge SHA: `aa5fba64cfb1c4f1704040a46064cae94995f1a1`
 
 Explicitly excluded:
 
@@ -607,13 +609,13 @@ unrelated Worker cleanup
 Slice 4.6 implementation
 ```
 
-After Slice 4.5 is verified and integrated, Slice 4.6 remains a candidate hardening follow-up only:
+Slice 4.6 is the next authorized implementation slice when the owner starts it:
 
 - safe responder profile projection
 - cursor pagination / Load more
 - debounce free-text filters
 
-Do not start Slice 4.6 or Donations in Slice 4.5.
+Slice 4.5 is closed. Do not start Donations before Slice 4.6 is completed and integrated.
 
 ### Slice 5 - Donations database/domain
 
