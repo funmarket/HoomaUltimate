@@ -6,15 +6,15 @@ This file is the repository living plan for the Requests | FundMe | Donations im
 
 Authoritative repository: `funmarket/HoomaUltimate`
 Authoritative branch: `phase-0-foundation`
-Working branch: none — Slice 4R merged to `phase-0-foundation` at `ff57413ffbe31d8cfc688c793b08f6671a99ce5c`; next implementation branch is not authorized yet.
+Working branch: `feat/help-slice-4-5-request-expiry-worker`
 Original attached-plan baseline: `c304fed4c925cbcd578fdbafb21926f927e400f5`
 Slice 1 base foundation HEAD: `b07167f9beb0003eceddb3fd73bfbff53417a618`
 Slice 2 base foundation HEAD: `a5bd502f58a746a1a89d33ba4afb28506c2e35b3`
 Slice 3 base foundation HEAD: `e885c34d1de3027871f3845e9c7a57fbed28a981`
 Slice 4R recovery base foundation HEAD: `0e2b80c714324efc41afc8138e080a19b5f0a69a`
 Stranded Slice 4 branch (SOURCE MATERIAL ONLY - never merged, rebased into, or cherry-picked as a batch): `feat/help-slice-4-requests-frontend` at `e7124f04af798f21fd9b8be7d001cd28da5643d1` (9 commits ahead / 15 behind its merge base `3033dce8e1ff1c4d7c5a4e54a51fdda0e83df523`).
-Current task: `Slice 4R complete — awaiting next authorized slice`
-Exact next task: `Slice 4.5 - Request expiry Worker execution`
+Current task: `Slice 4.5 - Request expiry Worker execution`
+Exact next task: owner merge approval for PR #338. Do not start Slice 4.6 or Donations before that gate.
 
 ## Execution loop
 
@@ -553,7 +553,67 @@ Slice 4.6 candidate hardening:
 - cursor pagination / Load more
 - debounce free-text filters
 
-Next slice after this: `Slice 4.5 - Request expiry Worker execution` (not implemented in Slice 4R).
+Slice 4.5 implementation is tracked below.
+
+### Slice 4.5 - Request expiry Worker execution
+
+Status: `VERIFIED`
+
+Working branch: `feat/help-slice-4-5-request-expiry-worker`
+
+Base: `phase-0-foundation` at `3f03653aca0b02ab2b4b97fa17d4ab791a7b9254`
+
+PR: #338 (draft while exact-head verification is pending)
+
+Authorized scope:
+
+```text
+reuse one canonical due-Request expiry mutation
+expire only OPEN / IN_PROGRESS Requests with a non-null expiresAt at or before the Worker cutoff
+run one expiry sweep when the Worker starts
+repeat the sweep every 60 seconds
+prevent overlapping Request expiry runs
+track and await an in-flight expiry run during graceful Worker shutdown
+focused RED-first Worker expiry tests
+no Request schema or migration change
+```
+
+Implementation:
+
+- `@hooma/database` now owns `expireDueHelpRequests(...)`, the single atomic persistence mutation.
+- `PrismaRequestRepository.expireDue(...)` delegates to that shared mutation, preserving the existing API/service contract.
+- `apps/worker/src/requests/request-expiry.ts` is a thin Worker wrapper around the shared mutation.
+- `apps/worker/src/main.ts` runs Request expiry once at startup and then every 60 seconds with overlap and shutdown guards.
+
+TDD / verification evidence so far:
+
+- RED-first test head: `8abd8896403ef4e16538476d7224f93c5467c157`
+- RED CI: run `35632473995` — failed at `npm test` before the Worker implementation existed, after setup/typecheck/build:packages prerequisites passed.
+- Implementation code through: `ae34713ad09308bf267e2796939902fb133a0e81`
+- Verified implementation head: `73284bcd6aca31317cdba66650b5d376fc9c9a07`
+- Exact-head CI: run `35633693922` — `SUCCESS` (changed-file format/lint, typecheck, unit tests, build, integration, deploy preflight, security and migration status all passed).
+- Final ledger-only head requires its own exact-head CI before merge approval.
+
+Explicitly excluded:
+
+```text
+Requests UI redesign
+Donations implementation
+FundMe implementation
+new Request endpoints
+new Prisma schema or migration
+notifications
+unrelated Worker cleanup
+Slice 4.6 implementation
+```
+
+After Slice 4.5 is verified and integrated, Slice 4.6 remains a candidate hardening follow-up only:
+
+- safe responder profile projection
+- cursor pagination / Load more
+- debounce free-text filters
+
+Do not start Slice 4.6 or Donations in Slice 4.5.
 
 ### Slice 5 - Donations database/domain
 
