@@ -302,53 +302,53 @@ test("Requests page appends the next cursor page through Load more", async () =>
 test(
   "City and Houma filters debounce network reloads and do not repeat identity lookup",
   async () => {
-  const dom = installDom();
-  const calls: string[] = [];
-  const originalFetch = globalThis.fetch;
-  globalThis.fetch = (async (input: RequestInfo | URL) => {
-    const url = new URL(String(input));
-    calls.push(`${url.pathname}${url.search}`);
-    if (url.pathname === "/api/public/v1/auth/session") return json(null);
-    if (url.pathname === "/api/public/v1/requests") return json({ items: [], nextCursor: null });
-    return json({ error: { code: "NOT_FOUND", message: "Unexpected request" } }, 404);
-  }) as typeof fetch;
+    const dom = installDom();
+    const calls: string[] = [];
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = new URL(String(input));
+      calls.push(`${url.pathname}${url.search}`);
+      if (url.pathname === "/api/public/v1/auth/session") return json(null);
+      if (url.pathname === "/api/public/v1/requests") return json({ items: [], nextCursor: null });
+      return json({ error: { code: "NOT_FOUND", message: "Unexpected request" } }, 404);
+    }) as typeof fetch;
 
-  const React = await import("react");
-  Object.defineProperty(globalThis, "React", { value: React, writable: true, configurable: true });
-  const { cleanup, fireEvent, render, waitFor } = await import("@testing-library/react");
-  const { HoomaFrontendProvider, RequestsPage } = await import("@hooma/frontend");
+    const React = await import("react");
+    Object.defineProperty(globalThis, "React", { value: React, writable: true, configurable: true });
+    const { cleanup, fireEvent, render, waitFor } = await import("@testing-library/react");
+    const { HoomaFrontendProvider, RequestsPage } = await import("@hooma/frontend");
 
-  try {
-    const view = render(
-      React.createElement(
-        HoomaFrontendProvider,
-        { transport: { baseUrl: "http://api.test" } },
-        React.createElement(RequestsPage, { tab: "requests" }),
-      ),
-    );
-    await waitFor(() => assert.ok(view.getByText("No Requests match these filters.")));
-    calls.length = 0;
+    try {
+      const view = render(
+        React.createElement(
+          HoomaFrontendProvider,
+          { transport: { baseUrl: "http://api.test" } },
+          React.createElement(RequestsPage, { tab: "requests" }),
+        ),
+      );
+      await waitFor(() => assert.ok(view.getByText("No Requests match these filters.")));
+      calls.length = 0;
 
-    const city = view.getByLabelText("City");
-    fireEvent.change(city, { target: { value: "T" } });
-    fireEvent.change(city, { target: { value: "Tu" } });
-    fireEvent.change(city, { target: { value: "Tunis" } });
+      const city = view.getByLabelText("City");
+      fireEvent.change(city, { target: { value: "T" } });
+      fireEvent.change(city, { target: { value: "Tu" } });
+      fireEvent.change(city, { target: { value: "Tunis" } });
 
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    assert.equal(calls.filter((call) => call.includes("/requests")).length, 0);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      assert.equal(calls.filter((call) => call.includes("/requests")).length, 0);
 
-    await waitFor(
-      () => {
-        const requestCalls = calls.filter((call) => call.includes("/requests"));
-        assert.deepEqual(requestCalls, ["/api/public/v1/requests?city=Tunis"]);
-      },
-      { timeout: 1000 },
-    );
-    assert.equal(calls.filter((call) => call.includes("/auth/session")).length, 0);
-  } finally {
-    globalThis.fetch = originalFetch;
-    cleanup();
-    dom.window.close();
-  }
+      await waitFor(
+        () => {
+          const requestCalls = calls.filter((call) => call.includes("/requests"));
+          assert.deepEqual(requestCalls, ["/api/public/v1/requests?city=Tunis"]);
+        },
+        { timeout: 1000 },
+      );
+      assert.equal(calls.filter((call) => call.includes("/auth/session")).length, 0);
+    } finally {
+      globalThis.fetch = originalFetch;
+      cleanup();
+      dom.window.close();
+    }
   },
 );
