@@ -1,8 +1,5 @@
 import { ATHLETES_SPORTS, type AthletesSport } from "@hooma/contracts/athletes";
-import type {
-  HelpTaxonomyQuery,
-  HelpTaxonomyResponse,
-} from "@hooma/contracts/help-taxonomy";
+import type { HelpTaxonomyQuery, HelpTaxonomyResponse } from "@hooma/contracts/help-taxonomy";
 import type {
   HelpTaxonomyRepository,
   HelpTaxonomySubcategoryRecord,
