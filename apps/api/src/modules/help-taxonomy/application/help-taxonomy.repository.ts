@@ -1,8 +1,5 @@
 import type { AthletesSport } from "@hooma/contracts/athletes";
-import type {
-  HelpTaxonomyNeedKind,
-  HelpTaxonomySurface,
-} from "@hooma/contracts/help-taxonomy";
+import type { HelpTaxonomyNeedKind, HelpTaxonomySurface } from "@hooma/contracts/help-taxonomy";
 
 export interface HelpTaxonomyNeedRecord {
   readonly id: string;
