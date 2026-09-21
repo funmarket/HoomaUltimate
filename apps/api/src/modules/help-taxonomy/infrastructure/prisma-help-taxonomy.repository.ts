@@ -11,12 +11,15 @@ export class PrismaHelpTaxonomyRepository implements HelpTaxonomyRepository {
   async listActiveBySurface(
     surface: HelpTaxonomySurface,
   ): Promise<readonly HelpTaxonomySubcategoryRecord[]> {
+    const kind = surface === "DONATIONS" ? "PRODUCT" : undefined;
+
     return this.db.helpTaxonomySubcategory.findMany({
       where: {
         active: true,
         needs: {
           some: {
             active: true,
+            ...(kind ? { kind } : {}),
             surfaces: { some: { surface } },
           },
         },
@@ -31,6 +34,7 @@ export class PrismaHelpTaxonomyRepository implements HelpTaxonomyRepository {
         needs: {
           where: {
             active: true,
+            ...(kind ? { kind } : {}),
             surfaces: { some: { surface } },
           },
           orderBy: [{ sortOrder: "asc" }, { label: "asc" }, { id: "asc" }],
