@@ -1,7 +1,4 @@
-import {
-  expireDueHelpRequests,
-  type HelpRequestExpiryDatabase,
-} from "@hooma/database";
+import { expireDueHelpRequests, type HelpRequestExpiryDatabase } from "@hooma/database";
 
 export type RequestExpiryDatabase = HelpRequestExpiryDatabase;
 
