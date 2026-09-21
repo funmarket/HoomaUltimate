@@ -10,9 +10,7 @@ export type ModerationNotificationType =
   | "MODERATION_SANCTION_CLEARED";
 
 export type UserNotificationType =
-  | WhistleNotificationType
-  | ModerationNotificationType
-  | "PASSWORD_RECOVERY";
+  WhistleNotificationType | ModerationNotificationType | "PASSWORD_RECOVERY";
 export type UserNotificationContextType = "USER_DIRECT" | "RIDE";
 export type UserNotificationReadOutcome = "marked_read" | "already_read" | "not_found";
 

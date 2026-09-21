@@ -198,10 +198,7 @@ test("linked Telegram recovery uses HOOMA notifications and resets the Web passw
       body: JSON.stringify({ loginUsername: "does.not.exist" }),
     });
     assert.equal(unknown.status, 202);
-    assert.equal(
-      await db.userNotification.count({ where: { type: "PASSWORD_RECOVERY" } }),
-      1,
-    );
+    assert.equal(await db.userNotification.count({ where: { type: "PASSWORD_RECOVERY" } }), 1);
   } finally {
     await new Promise<void>((resolve, reject) =>
       server.close((error) => (error ? reject(error) : resolve())),
