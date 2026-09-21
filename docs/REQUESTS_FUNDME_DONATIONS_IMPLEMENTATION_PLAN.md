@@ -6,15 +6,15 @@ This file is the repository living plan for the Requests | FundMe | Donations im
 
 Authoritative repository: `funmarket/HoomaUltimate`
 Authoritative branch: `phase-0-foundation`
-Working branch: `feat/help-slice-4-requests-frontend-recovery`
+Working branch: none — Slice 4R merged to `phase-0-foundation` at `ff57413ffbe31d8cfc688c793b08f6671a99ce5c`; next implementation branch is not authorized yet.
 Original attached-plan baseline: `c304fed4c925cbcd578fdbafb21926f927e400f5`
 Slice 1 base foundation HEAD: `b07167f9beb0003eceddb3fd73bfbff53417a618`
 Slice 2 base foundation HEAD: `a5bd502f58a746a1a89d33ba4afb28506c2e35b3`
 Slice 3 base foundation HEAD: `e885c34d1de3027871f3845e9c7a57fbed28a981`
 Slice 4R recovery base foundation HEAD: `0e2b80c714324efc41afc8138e080a19b5f0a69a`
 Stranded Slice 4 branch (SOURCE MATERIAL ONLY - never merged, rebased into, or cherry-picked as a batch): `feat/help-slice-4-requests-frontend` at `e7124f04af798f21fd9b8be7d001cd28da5643d1` (9 commits ahead / 15 behind its merge base `3033dce8e1ff1c4d7c5a4e54a51fdda0e83df523`).
-Current task: `Slice 4R - Requests frontend recovery`
-Exact next task: after Slice 4R is integrated and live-smoke-tested, start `Slice 4.5 - Request expiry Worker execution`.
+Current task: `Slice 4R complete — awaiting next authorized slice`
+Exact next task: `Slice 4.5 - Request expiry Worker execution`
 
 ## Execution loop
 
@@ -493,13 +493,13 @@ Unresolved risks:
 
 - Worker-driven recurring expiry execution remains intentionally deferred to the later Notifications/Worker slice; this slice only provides the atomic expiry operation.
 - Requests frontend behavior remains intentionally unchanged until Slice 4.
-- PR #320 must remain unmerged until its exact final ledger head passes CI and explicit merge authorization is provided.
+- Historical Slice 3 merge gate: PR #320 remained unmerged until its exact final ledger head passed CI and explicit merge authorization was provided; it was subsequently merged as `3033dce8e1ff1c4d7c5a4e54a51fdda0e83df523`.
 
 ### Slice 4 - Requests frontend
 
-Status: `IN_PROGRESS`
+Status: `COMPLETE`
 
-Current working scope: **Slice 4R - Requests frontend recovery**, on working branch `feat/help-slice-4-requests-frontend-recovery` based on `phase-0-foundation` HEAD `0e2b80c714324efc41afc8138e080a19b5f0a69a`.
+Final Slice 4R state: **COMPLETE**. Recovery work started from `phase-0-foundation` HEAD `0e2b80c714324efc41afc8138e080a19b5f0a69a` and was merged by PR #336 to `phase-0-foundation` as `ff57413ffbe31d8cfc688c793b08f6671a99ce5c`.
 
 Slice 4R scope (only this):
 
@@ -527,6 +527,31 @@ unrelated cleanup, global UI framework or icon dependency
 ```
 
 Recovery rule: `feat/help-slice-4-requests-frontend` is read-only source material. Its useful frontend files are adapted to the current foundation file by file; the branch is never merged, rebased into, or cherry-picked as a batch. Stale parts (disabled Donations tab, solid-lime control system, monolithic pages) are discarded instead of recovered.
+
+Final Slice 4R evidence:
+
+- PR: #336
+- Recovery head: `c01cea4f197a95967ca6f934cda91da888d857fe`
+- Merge SHA: `ff57413ffbe31d8cfc688c793b08f6671a99ce5c`
+- Post-merge CI: run `35622862450` — `SUCCESS`
+- Railway HOOMA Web deployment: `338297c9-c9d3-40b9-b6fa-3403d0696078`
+- Railway source SHA: `ff57413ffbe31d8cfc688c793b08f6671a99ce5c`
+- Railway status: `SUCCESS`
+
+Live-verification truth:
+
+- Production bundle/deployment verified.
+- Rendered-browser visual smoke check was unavailable because the agent browser harness failed.
+- Do not state that the painted UI was visually verified.
+- The public production Requests API contained zero Requests at verification time, so no populated production Request detail page could be exercised.
+
+Known Requests follow-ups (not implemented and not authorized by this closeout):
+
+Slice 4.6 candidate hardening:
+
+- safe responder profile projection
+- cursor pagination / Load more
+- debounce free-text filters
 
 Next slice after this: `Slice 4.5 - Request expiry Worker execution` (not implemented in Slice 4R).
 
