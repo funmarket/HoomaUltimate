@@ -1,21 +1,13 @@
 import { z } from "zod";
 import { athletesSportSchema } from "./athletes.js";
 
-export const HELP_TAXONOMY_NEED_KINDS = [
-  "PRODUCT",
-  "COMMUNITY_ROLE",
-  "COMMUNITY_SUPPORT",
-] as const;
+export const HELP_TAXONOMY_NEED_KINDS = ["PRODUCT", "COMMUNITY_ROLE", "COMMUNITY_SUPPORT"] as const;
 export const helpTaxonomyNeedKindSchema = z.enum(HELP_TAXONOMY_NEED_KINDS);
 
 export const HELP_TAXONOMY_SURFACES = ["REQUESTS", "PLAY", "ATHLETES", "DONATIONS"] as const;
 export const helpTaxonomySurfaceSchema = z.enum(HELP_TAXONOMY_SURFACES);
 
-export const helpTaxonomyQuerySchema = z
-  .object({
-    surface: helpTaxonomySurfaceSchema,
-  })
-  .strict();
+export const helpTaxonomyQuerySchema = z.object({ surface: helpTaxonomySurfaceSchema }).strict();
 
 export const helpTaxonomyNeedSchema = z.object({
   id: z.string().min(1),
