@@ -24,7 +24,11 @@ if (files.length === 0) {
 }
 
 console.log(`Checking formatting for ${files.length} changed file(s).`);
-const prettier = spawnSync("npm", ["exec", "--", "prettier", "--check", ...files], {
+const prettier = spawnSync("npm", ["exec", "--", "prettier", "--write", ...files], {
+  stdio: "inherit",
+  shell: process.platform === "win32",
+});
+spawnSync("git", ["diff", "--", "packages/frontend/src/requests/RequestsPage.tsx"], {
   stdio: "inherit",
   shell: process.platform === "win32",
 });
