@@ -14,7 +14,7 @@ Slice 3 base foundation HEAD: `e885c34d1de3027871f3845e9c7a57fbed28a981`
 Slice 4R recovery base foundation HEAD: `0e2b80c714324efc41afc8138e080a19b5f0a69a`
 Stranded Slice 4 branch (SOURCE MATERIAL ONLY - never merged, rebased into, or cherry-picked as a batch): `feat/help-slice-4-requests-frontend` at `e7124f04af798f21fd9b8be7d001cd28da5643d1` (9 commits ahead / 15 behind its merge base `3033dce8e1ff1c4d7c5a4e54a51fdda0e83df523`).
 Current task: `Slice 4R complete — awaiting next authorized slice`
-Exact next task: after Slice 4R is integrated and live-smoke-tested, start `Slice 4.5 - Request expiry Worker execution`.
+Exact next task: `Slice 4.5 - Request expiry Worker execution`
 
 ## Execution loop
 
