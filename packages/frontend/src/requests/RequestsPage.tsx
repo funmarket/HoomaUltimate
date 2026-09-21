@@ -3,11 +3,11 @@ import type { HelpRequest } from "@hooma/contracts/requests";
 import { useHoomaFrontend } from "../context";
 import { FundMeIcon, PlusIcon, RequestIcon } from "../help/HelpIcons";
 import { createRequestsApi, type RequestsListQuery } from "./api";
-import { HelpTabs, type HelpTab } from "./HelpTabs";
+import { HelpTabs } from "./HelpTabs";
 import { RequestCard } from "./RequestCard";
 import { RequestFilters } from "./RequestFilters";
 
-export type RequestsPageTab = HelpTab;
+export type RequestsPageTab = "requests" | "fundme";
 
 /**
  * Orchestrates the Help Requests surface: identity, list loading, filters and
