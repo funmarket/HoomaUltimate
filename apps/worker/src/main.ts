@@ -15,6 +15,7 @@ import { cleanupExpiredEventChat } from "./events/event-chat-cleanup.js";
 import { reconcileGamerMatches } from "./gamers/match-reconciliation.js";
 import { createWorkerHealthServer } from "./health/worker-health.js";
 import { OutboxRepository } from "./outbox/outbox.repository.js";
+import { expireDueRequests } from "./requests/request-expiry.js";
 import { type OutboxHandler, OutboxRunner } from "./outbox/outbox.runner.js";
 import {
   createRideVehiclePhotoCleanupHandler,
@@ -25,6 +26,7 @@ import { cleanupExpiredWhistles } from "./whistle/whistle-cleanup.js";
 const EVENT_CHAT_CLEANUP_INTERVAL_MS = 60_000;
 const GAMER_MATCH_RECONCILIATION_INTERVAL_MS = 15_000;
 const OUTBOX_POLL_INTERVAL_MS = 5_000;
+const REQUEST_EXPIRY_INTERVAL_MS = 60_000;
 const WHISTLE_CLEANUP_INTERVAL_MS = 60_000;
 
 class WorkerDatabaseReadinessProbe {
@@ -73,11 +75,13 @@ const healthServer = createWorkerHealthServer({
 let cleanupRunning = false;
 let gamerMatchesRunning = false;
 let outboxRunning = false;
+let requestExpiryRunning = false;
 let whistleCleanupRunning = false;
 let shuttingDown = false;
 let cleanupPromise: Promise<void> | null = null;
 let gamerMatchesPromise: Promise<void> | null = null;
 let outboxPromise: Promise<void> | null = null;
+let requestExpiryPromise: Promise<void> | null = null;
 let whistleCleanupPromise: Promise<void> | null = null;
 
 async function runEventChatCleanup(): Promise<void> {
@@ -133,6 +137,23 @@ async function runOutbox(): Promise<void> {
   await outboxPromise;
 }
 
+async function runRequestExpiry(): Promise<void> {
+  if (requestExpiryRunning || shuttingDown) return;
+  requestExpiryRunning = true;
+  requestExpiryPromise = (async () => {
+    try {
+      const result = await expireDueRequests(database);
+      if (result.expiredRequests > 0) console.log("Request expiry completed", result);
+    } catch (error) {
+      console.error("Request expiry failed", error);
+    } finally {
+      requestExpiryRunning = false;
+      requestExpiryPromise = null;
+    }
+  })();
+  await requestExpiryPromise;
+}
+
 async function runWhistleCleanup(): Promise<void> {
   if (whistleCleanupRunning || shuttingDown) return;
   whistleCleanupRunning = true;
@@ -151,17 +172,22 @@ async function runWhistleCleanup(): Promise<void> {
 }
 
 console.log(
-  `HOOMA worker started with Event chat cleanup, Whistle cleanup, Gamer match reconciliation and Outbox engine (${outboxHandlers.size} handlers registered).`,
+  `HOOMA worker started with Event chat cleanup, Request expiry, Whistle cleanup, Gamer match reconciliation and Outbox engine (${outboxHandlers.size} handlers registered).`,
 );
 const healthPort = Number(process.env.PORT ?? process.env.WORKER_HEALTH_PORT ?? 3001);
 healthServer.listen(healthPort, "0.0.0.0", () => {
   console.log(`HOOMA worker health server listening on ${healthPort}.`);
 });
 void runEventChatCleanup();
+void runRequestExpiry();
 void runWhistleCleanup();
 void runGamerMatchReconciliation();
 void runOutbox();
 const cleanupTimer = setInterval(() => void runEventChatCleanup(), EVENT_CHAT_CLEANUP_INTERVAL_MS);
+const requestExpiryTimer = setInterval(
+  () => void runRequestExpiry(),
+  REQUEST_EXPIRY_INTERVAL_MS,
+);
 const whistleCleanupTimer = setInterval(
   () => void runWhistleCleanup(),
   WHISTLE_CLEANUP_INTERVAL_MS,
@@ -177,11 +203,18 @@ async function shutdown(signal: NodeJS.Signals): Promise<void> {
   shuttingDown = true;
   console.log(`Received ${signal}; shutting down worker.`);
   clearInterval(cleanupTimer);
+  clearInterval(requestExpiryTimer);
   clearInterval(whistleCleanupTimer);
   clearInterval(gamerMatchesTimer);
   clearInterval(outboxTimer);
   await Promise.allSettled(
-    [cleanupPromise, whistleCleanupPromise, gamerMatchesPromise, outboxPromise].filter(
+    [
+      cleanupPromise,
+      requestExpiryPromise,
+      whistleCleanupPromise,
+      gamerMatchesPromise,
+      outboxPromise,
+    ].filter(
       (promise): promise is Promise<void> => promise !== null,
     ),
   );
