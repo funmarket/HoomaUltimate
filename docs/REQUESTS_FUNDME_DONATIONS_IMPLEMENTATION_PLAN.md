@@ -766,18 +766,64 @@ Exit gate:
 
 ### RQ-FIX-1 - shared sports taxonomy foundation
 
-Status: `NOT_STARTED`
+Status: `IMPLEMENTED_PENDING_VERIFICATION`
 
-Scope:
+Implementation branch: `feat/requests-rq-fix-1-taxonomy`
 
-- `packages/contracts/src/help-taxonomy.ts` and required package export
-- `packages/database/prisma/help-taxonomy.prisma`
-- forward taxonomy migration with deterministic initial taxonomy data
-- separate `apps/api/src/modules/help-taxonomy/` repository/service/infrastructure/HTTP module
-- public taxonomy endpoint by surface
-- DI/public-router wiring
-- RED-first contract/service/integration coverage
-- no `HelpRequest` schema switch yet
+Base foundation: `36fa68ac28e0b7f600cc230a6578a90dda08f547`
+
+PR: #342
+
+Implemented scope:
+
+- added `packages/contracts/src/help-taxonomy.ts` with PRODUCT / COMMUNITY_ROLE / COMMUNITY_SUPPORT Need kinds and REQUESTS / PLAY / ATHLETES / DONATIONS surfaces
+- kept `ATHLETES_SPORTS` / `AthletesSport` as the only canonical sport authority; no second sport enum/list was introduced
+- exported `@hooma/contracts/help-taxonomy`
+- added `packages/database/prisma/help-taxonomy.prisma` with relational Subcategory -> Need -> NeedSurface models
+- added uniqueness and focused activity/order indexes without changing `HelpRequest`
+- added forward migration `20260921233000_help_taxonomy_foundation`; no historical migration was edited
+- deterministically seeded 22 sport subcategories, 40 Needs, and 110 surface-eligibility rows
+- seeded required examples including Football / Turf Shoes, Football / Goalkeeper, Running / Pace Partner, and Gym & Fitness / Spotter
+- encoded `allowsCustomText` on explicit OTHER leaves rather than inferring custom-text behavior from slugs
+- added separate `apps/api/src/modules/help-taxonomy/` repository, service, Prisma infrastructure, and HTTP route boundary
+- mounted public `GET /api/public/v1/help/taxonomy?surface=...` under the existing public-v1 router
+- filtered active taxonomy and surface eligibility in the repository before response projection
+- hard-enforced Donations as PRODUCT-only at the repository boundary in addition to deterministic seed policy
+- preserved canonical Athletes sport ordering in the service, with OTHER last
+- added RED-first contract, service, and integration coverage
+- did not switch or backfill `HelpRequest` taxonomy fields; that remains RQ-FIX-2A/2B
+
+Changed targets for this slice:
+
+```text
+packages/contracts/src/help-taxonomy.ts
+packages/contracts/package.json
+packages/database/prisma/help-taxonomy.prisma
+packages/database/prisma/migrations/20260921233000_help_taxonomy_foundation/migration.sql
+apps/api/src/modules/help-taxonomy/application/help-taxonomy.repository.ts
+apps/api/src/modules/help-taxonomy/application/help-taxonomy.service.ts
+apps/api/src/modules/help-taxonomy/infrastructure/prisma-help-taxonomy.repository.ts
+apps/api/src/modules/help-taxonomy/http/help-taxonomy.routes.ts
+apps/api/src/bootstrap/container.ts
+apps/api/src/http/public-v1/router.ts
+tests/help-taxonomy-contracts.test.ts
+tests/help-taxonomy-service.test.ts
+tests/help-taxonomy.integration.test.ts
+docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md
+```
+
+Verification gate:
+
+- exact final branch head must pass the complete repository CI workflow after this ledger update
+- diff must remain confined to the targets above
+- PR must remain unmerged until the owner explicitly authorizes merge
+- RQ-FIX-2A must not start before RQ-FIX-1 is integrated
+
+Score: **pending exact-head CI**
+
+Score justification:
+
+The architecture is source-clean and preserves the existing Request domain boundary, but no final score is claimed until the ledger-inclusive head passes the complete repository CI gate.
 
 ### RQ-FIX-2A - Request schema expansion + legacy data reconciliation
 
