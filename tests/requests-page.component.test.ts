@@ -1,5 +1,16 @@
 import assert from "node:assert/strict";
+import { registerHooks } from "node:module";
 import test from "node:test";
+import { JSDOM } from "jsdom";
+
+registerHooks({
+  load(url, context, nextLoad) {
+    if (url.endsWith(".css")) {
+      return { format: "module", source: "export default {};", shortCircuit: true };
+    }
+    return nextLoad(url, context);
+  },
+});
 
 type RecordedCall = {
   readonly path: string;
@@ -96,5 +107,199 @@ test("Requests API client keeps detail, response and lifecycle routes exact", as
     );
   } finally {
     restore();
+  }
+});
+
+/* ------------------------------------------------------------------ *
+ * Requests page component behaviour (public feed, member feed, filters)
+ * ------------------------------------------------------------------ */
+
+function installDom() {
+  const dom = new JSDOM("<!doctype html><html><body></body></html>", {
+    url: "http://localhost/requests",
+  });
+  const globals: Record<string, unknown> = {
+    window: dom.window,
+    document: dom.window.document,
+    navigator: dom.window.navigator,
+    HTMLElement: dom.window.HTMLElement,
+    Element: dom.window.Element,
+    Node: dom.window.Node,
+    Event: dom.window.Event,
+    FormData: dom.window.FormData,
+    HTMLSelectElement: dom.window.HTMLSelectElement,
+    HTMLInputElement: dom.window.HTMLInputElement,
+  };
+  for (const [key, value] of Object.entries(globals)) {
+    Object.defineProperty(globalThis, key, { value, configurable: true, writable: true });
+  }
+  return dom;
+}
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+}
+
+type StubOptions = {
+  readonly me?: unknown;
+  readonly publicItems?: readonly unknown[];
+  readonly memberItems?: readonly unknown[];
+};
+
+function installApiStub(options: StubOptions) {
+  const calls: string[] = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = new URL(String(input));
+    const key = `${init?.method ?? "GET"} ${url.pathname}${url.search}`;
+    calls.push(key);
+    if (url.pathname === "/api/public/v1/auth/session") return json(options.me ?? null);
+    if (url.pathname === "/api/public/v1/requests") {
+      return json({ items: options.publicItems ?? [], nextCursor: null });
+    }
+    if (url.pathname === "/api/v1/requests") {
+      return json({ items: options.memberItems ?? [], nextCursor: null });
+    }
+    return json({ error: { code: "NOT_FOUND", message: `Unexpected ${key}` } }, 404);
+  }) as typeof fetch;
+  return {
+    calls,
+    restore: () => {
+      globalThis.fetch = originalFetch;
+    },
+  };
+}
+
+const publicRequest = {
+  id: "request-1",
+  createdByUserId: "user-2",
+  publisherCommunityId: null,
+  publisherTeamId: null,
+  publisherAthletesCommunityId: null,
+  audienceScope: "PUBLIC",
+  audienceCommunityId: null,
+  audienceAthletesCommunityId: null,
+  category: "ITEM",
+  itemKind: "FOOTWEAR",
+  sport: "RUNNING",
+  title: "Need size 43 running shoes",
+  description: "Looking for used or new running shoes for training.",
+  quantityNeeded: 1,
+  sizeLabel: "43",
+  conditionPreference: "USED_OK",
+  placeId: null,
+  city: "La Marsa",
+  houma: null,
+  locationNote: null,
+  neededByAt: null,
+  expiresAt: null,
+  status: "OPEN",
+  fulfilledAt: null,
+  cancelledAt: null,
+  createdAt: "2026-09-17T12:00:00.000Z",
+  updatedAt: "2026-09-17T12:00:00.000Z",
+};
+
+const meResponse = {
+  id: "user-1",
+  presentation: { username: "coach", displayName: "Coach Amine", photoUrl: null, bio: null },
+  transports: ["web"],
+  platformRoles: [],
+  managerCapabilities: [],
+  communities: [],
+  athletesCommunities: [],
+  moderation: {
+    yellowCardCount: 0,
+    isBanned: false,
+    banExpiresAt: null,
+    isReadOnly: false,
+    readOnlyExpiresAt: null,
+    isDisabled: false,
+  },
+  teams: [],
+};
+
+async function renderRequestsPage(options: StubOptions) {
+  const dom = installDom();
+  const stub = installApiStub(options);
+  const React = await import("react");
+  Object.defineProperty(globalThis, "React", { value: React, writable: true, configurable: true });
+  const { cleanup, fireEvent, render, waitFor, within } = await import("@testing-library/react");
+  const { HoomaFrontendProvider, RequestsPage } = await import("@hooma/frontend");
+  const view = render(
+    React.createElement(
+      HoomaFrontendProvider,
+      { transport: { baseUrl: "http://api.test" } },
+      React.createElement(RequestsPage, { tab: "requests" }),
+    ),
+  );
+  return {
+    view,
+    calls: stub.calls,
+    waitFor,
+    fireEvent,
+    within,
+    close: () => {
+      stub.restore();
+      cleanup();
+      dom.window.close();
+    },
+  };
+}
+
+test("anonymous /requests loads the real public Requests feed", async () => {
+  const page = await renderRequestsPage({ me: null, publicItems: [publicRequest] });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByText("Need size 43 running shoes")));
+    assert.equal(page.view.queryByText("No Requests are listed yet."), null);
+    assert.ok(page.view.getByRole("link", { name: /Create request/i }));
+    assert.ok(page.view.getByRole("link", { name: /FundMe/i }));
+    assert.equal(page.view.queryByText("Donations"), null);
+    const card = page.view.getByRole("link", { name: /Need size 43 running shoes/i });
+    assert.equal(card.getAttribute("href"), "/requests/request-1");
+    const cardView = page.within(card);
+    assert.ok(cardView.getByText("Item"));
+    assert.ok(cardView.getByText("Open"));
+    assert.ok(cardView.getByText("La Marsa"));
+    assert.deepEqual(
+      page.calls.filter((call) => call.includes("/requests")),
+      ["GET /api/public/v1/requests"],
+    );
+  } finally {
+    page.close();
+  }
+});
+
+test("signed-in visitor uses the member list endpoint and an empty result is a legitimate state", async () => {
+  const page = await renderRequestsPage({ me: meResponse, memberItems: [] });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByText("No Requests match these filters.")));
+    assert.deepEqual(
+      page.calls.filter((call) => call.includes("/requests")),
+      ["GET /api/v1/requests"],
+    );
+    assert.equal(page.view.queryByText("No Requests are listed yet."), null);
+  } finally {
+    page.close();
+  }
+});
+
+test("filters call the existing list query model", async () => {
+  const page = await renderRequestsPage({ me: null, publicItems: [publicRequest] });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByText("Need size 43 running shoes")));
+    page.fireEvent.change(page.view.getByLabelText("Category"), { target: { value: "ITEM" } });
+    page.fireEvent.change(page.view.getByLabelText("City"), { target: { value: "La Marsa" } });
+    await page.waitFor(() =>
+      assert.ok(
+        page.calls.some((call) => call.includes("category=ITEM") && call.includes("city=La+Marsa")),
+        `expected filtered public list call, saw ${page.calls.join(" | ")}`,
+      ),
+    );
+  } finally {
+    page.close();
   }
 });
