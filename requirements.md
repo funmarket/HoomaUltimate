@@ -354,7 +354,7 @@ Future account linking requires an explicit authenticated workflow.
 
 Web password recovery is Identity-owned. A Web account may recover its password through a Telegram identity only when the existing `WebCredential` and `TelegramIdentity` already resolve to the same canonical `User`.
 
-The public recovery-request endpoint must not disclose whether a login username exists or whether that account has a usable recovery channel. For Telegram-backed recovery, the server generates a cryptographically random short-lived single-use code, stores only a password-strength hash of that code, delivers the plaintext code only to the linked Telegram identity, rate-limits requests, and bounds failed confirmation attempts.
+The public recovery-request endpoint must not disclose whether a login username exists or whether that account has a usable recovery channel. For Telegram-backed recovery, the request creates a short-lived HOOMA notification for the same canonical User. Opening that notification inside the authenticated Telegram Mini App generates a cryptographically random single-use code; only a password-strength hash of that code is persisted. Public requests are rate-limited and failed confirmation attempts are bounded.
 
 A successful recovery replaces the Web password with a new Argon2id hash, clears failed-login lock state, revokes existing Web sessions, and consumes outstanding recovery challenges for that User.
 

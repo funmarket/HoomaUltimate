@@ -1,0 +1,4 @@
+ALTER TYPE "UserNotificationType" ADD VALUE 'PASSWORD_RECOVERY';
+
+ALTER TABLE "UserNotification"
+  ALTER COLUMN "actorUserId" DROP NOT NULL;

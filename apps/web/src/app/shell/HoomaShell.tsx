@@ -82,7 +82,9 @@ export function HoomaShell({
         loading={loading}
         sections={accountSections}
         identityAction={{ label: "HOOMA Passport", onSelect: () => navigate("/profile") }}
-        notificationControl={<UserNotificationControl enabled={Boolean(me)} />}
+        notificationControl={
+          <UserNotificationControl enabled={Boolean(me)} telegramRuntime={hasTelegramIdentity} />
+        }
         onHome={() => navigate("/")}
         onGuestProfile={() =>
           navigate(

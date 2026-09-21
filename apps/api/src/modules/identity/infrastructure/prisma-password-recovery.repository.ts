@@ -17,7 +17,7 @@ export class PrismaPasswordRecoveryRepository implements PasswordRecoveryReposit
         loginUsername: true,
         user: {
           select: {
-            telegramIdentity: { select: { telegramUserId: true } },
+            telegramIdentity: { select: { userId: true } },
           },
         },
       },
@@ -27,7 +27,26 @@ export class PrismaPasswordRecoveryRepository implements PasswordRecoveryReposit
     return {
       userId: credential.userId,
       loginUsername: credential.loginUsername,
-      telegramUserId: telegram.telegramUserId,
+    };
+  }
+
+  async findTelegramTargetByUserId(userId: string): Promise<TelegramPasswordRecoveryTarget | null> {
+    const credential = await this.db.webCredential.findUnique({
+      where: { userId },
+      select: {
+        userId: true,
+        loginUsername: true,
+        user: {
+          select: {
+            telegramIdentity: { select: { userId: true } },
+          },
+        },
+      },
+    });
+    if (!credential?.user.telegramIdentity) return null;
+    return {
+      userId: credential.userId,
+      loginUsername: credential.loginUsername,
     };
   }
 

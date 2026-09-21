@@ -28,7 +28,13 @@ export function createMemberV1Router(container: AppContainer, config: ApiConfig)
       identity: "authenticated-user",
     }),
   );
-  router.use(createIdentityMemberRouter(container.identityService, config));
+  router.use(
+    createIdentityMemberRouter(
+      container.identityService,
+      config,
+      container.passwordRecoveryService,
+    ),
+  );
   router.use(
     "/admin",
     createPlatformAdminRouter(

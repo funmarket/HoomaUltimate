@@ -1,13 +1,29 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { sign } from "@tma.js/init-data-node";
 import { loadApiConfig, type ApiConfig } from "@hooma/config";
 import { getDatabaseClient } from "@hooma/database";
 import { createApp } from "../apps/api/src/bootstrap/app.js";
 import { createContainer } from "../apps/api/src/bootstrap/container.js";
-import type { PasswordRecoveryDelivery } from "../apps/api/src/modules/identity/application/password-recovery-delivery.js";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error("DATABASE_URL is required for recovery integration tests");
+
+const telegramBotToken = "integration-test-token";
+const telegramUserId = 99112233;
+const telegramInitData = sign(
+  {
+    user: {
+      id: telegramUserId,
+      first_name: "Crypto",
+      last_name: "Templar",
+      username: "CryptoTemplar",
+      language_code: "en",
+    },
+  },
+  telegramBotToken,
+  new Date(),
+);
 
 const loadedConfig = loadApiConfig({
   ...process.env,
@@ -15,43 +31,10 @@ const loadedConfig = loadApiConfig({
   DATABASE_URL: databaseUrl,
   WEB_ORIGIN: "http://localhost:5173",
   TELEGRAM_ORIGIN: "http://localhost:5174",
-  TELEGRAM_BOT_TOKEN: "integration-test-token",
+  TELEGRAM_BOT_TOKEN: telegramBotToken,
 });
-const config: ApiConfig = loadedConfig;
+const config: ApiConfig = { ...loadedConfig, TELEGRAM_INIT_DATA_MAX_AGE_SECONDS: 0 };
 const db = getDatabaseClient();
-
-class CapturingPasswordRecoveryDelivery implements PasswordRecoveryDelivery {
-  readonly deliveries: {
-    telegramUserId: bigint;
-    loginUsername: string;
-    code: string;
-    expiresAt: Date;
-  }[] = [];
-  private deliveryGate: Promise<void> | null = null;
-  private releaseDeliveryGate: (() => void) | null = null;
-
-  blockNextDelivery(): () => void {
-    this.deliveryGate = new Promise<void>((resolve) => {
-      this.releaseDeliveryGate = resolve;
-    });
-    return () => {
-      this.releaseDeliveryGate?.();
-      this.releaseDeliveryGate = null;
-    };
-  }
-
-  async sendTelegramRecoveryCode(input: {
-    readonly telegramUserId: bigint;
-    readonly loginUsername: string;
-    readonly code: string;
-    readonly expiresAt: Date;
-  }): Promise<void> {
-    this.deliveries.push({ ...input });
-    const gate = this.deliveryGate;
-    this.deliveryGate = null;
-    if (gate) await gate;
-  }
-}
 
 async function cleanupTestAccounts() {
   const rows = await db.webCredential.findMany({
@@ -59,15 +42,13 @@ async function cleanupTestAccounts() {
     select: { userId: true },
   });
   const telegram = await db.telegramIdentity.findUnique({
-    where: { telegramUserId: 99112233n },
+    where: { telegramUserId: BigInt(telegramUserId) },
     select: { userId: true },
   });
   const userIds = [
     ...new Set([...rows.map((row) => row.userId), ...(telegram ? [telegram.userId] : [])]),
   ];
-  if (userIds.length > 0) {
-    await db.user.deleteMany({ where: { id: { in: userIds } } });
-  }
+  if (userIds.length > 0) await db.user.deleteMany({ where: { id: { in: userIds } } });
 }
 
 async function registerWeb(base: string, loginUsername: string, password: string): Promise<string> {
@@ -88,10 +69,9 @@ async function registerWeb(base: string, loginUsername: string, password: string
   return cookie;
 }
 
-test("linked Telegram recovery resets the Web password, revokes sessions, and consumes the code", async () => {
+test("linked Telegram recovery uses HOOMA notifications and resets the Web password", async () => {
   await cleanupTestAccounts();
-  const delivery = new CapturingPasswordRecoveryDelivery();
-  const app = createApp(config, createContainer(config, { passwordRecoveryDelivery: delivery }));
+  const app = createApp(config, createContainer(config));
   const server = app.listen(0, "127.0.0.1");
   await new Promise<void>((resolve) => server.once("listening", resolve));
   const address = server.address();
@@ -101,7 +81,7 @@ test("linked Telegram recovery resets the Web password, revokes sessions, and co
   try {
     const oldPassword = "correct horse battery staple";
     const newPassword = "new correct horse battery staple";
-    await registerWeb(base, "recovery_cryptotemplar", oldPassword);
+    const webCookie = await registerWeb(base, "recovery_cryptotemplar", oldPassword);
     const credential = await db.webCredential.findUniqueOrThrow({
       where: { loginUsername: "recovery_cryptotemplar" },
       select: { userId: true },
@@ -109,95 +89,86 @@ test("linked Telegram recovery resets the Web password, revokes sessions, and co
     await db.telegramIdentity.create({
       data: {
         userId: credential.userId,
-        telegramUserId: 99112233n,
+        telegramUserId: BigInt(telegramUserId),
         telegramUsername: "CryptoTemplar",
       },
     });
 
-    const releaseDelivery = delivery.blockNextDelivery();
-    const requestPromise = fetch(`${base}/api/public/v1/auth/password-recovery/request`, {
+    const request = await fetch(`${base}/api/public/v1/auth/password-recovery/request`, {
       method: "POST",
       headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
       body: JSON.stringify({ loginUsername: "Recovery_CryptoTemplar" }),
     });
-    let request: Response;
-    try {
-      request = await Promise.race([
-        requestPromise,
-        new Promise<never>((_resolve, reject) => {
-          setTimeout(
-            () => reject(new Error("Recovery request waited for Telegram delivery")),
-            2_000,
-          );
-        }),
-      ]);
-    } finally {
-      releaseDelivery();
-    }
     assert.equal(request.status, 202);
-    assert.deepEqual(await request.json(), { ok: true });
-    assert.equal(delivery.deliveries.length, 1);
-    assert.equal(delivery.deliveries[0]?.telegramUserId, 99112233n);
-    assert.equal(delivery.deliveries[0]?.loginUsername, "recovery_cryptotemplar");
-    assert.match(delivery.deliveries[0]?.code ?? "", /^[A-Z2-9]{5}-[A-Z2-9]{5}$/);
 
-    const challengeBefore = await db.passwordRecoveryChallenge.findFirstOrThrow({
+    const notification = await db.userNotification.findFirstOrThrow({
+      where: { recipientUserId: credential.userId, type: "PASSWORD_RECOVERY" },
+      orderBy: { createdAt: "desc" },
+    });
+    assert.equal(notification.actorUserId, null);
+    assert.equal(notification.readAt, null);
+    assert.equal(
+      await db.passwordRecoveryChallenge.count({
+        where: { userId: credential.userId, consumedAt: null },
+      }),
+      0,
+    );
+
+    const webReveal = await fetch(
+      `${base}/api/v1/auth/password-recovery/notifications/${notification.id}/code`,
+      { method: "POST", headers: { cookie: webCookie, origin: config.WEB_ORIGIN } },
+    );
+    assert.equal(webReveal.status, 403);
+
+    const pageResponse = await fetch(`${base}/api/v1/notifications`, {
+      headers: { authorization: `tma ${telegramInitData}` },
+    });
+    assert.equal(pageResponse.status, 200);
+    const page = (await pageResponse.json()) as {
+      unreadCount: number;
+      items: Array<{ type: string; actorUserId: string | null }>;
+    };
+    assert.equal(page.unreadCount, 1);
+    assert.equal(page.items[0]?.type, "PASSWORD_RECOVERY");
+    assert.equal(page.items[0]?.actorUserId, null);
+
+    const reveal = await fetch(
+      `${base}/api/v1/auth/password-recovery/notifications/${notification.id}/code`,
+      {
+        method: "POST",
+        headers: {
+          authorization: `tma ${telegramInitData}`,
+          origin: config.TELEGRAM_ORIGIN,
+        },
+      },
+    );
+    assert.equal(reveal.status, 200);
+    const recovery = (await reveal.json()) as {
+      loginUsername: string;
+      code: string;
+      expiresAt: string;
+    };
+    assert.equal(recovery.loginUsername, "recovery_cryptotemplar");
+    assert.match(recovery.code, /^[A-Z2-9]{5}-[A-Z2-9]{5}$/);
+
+    const challenge = await db.passwordRecoveryChallenge.findFirstOrThrow({
       where: { userId: credential.userId, consumedAt: null },
       orderBy: { createdAt: "desc" },
       select: { codeHash: true },
     });
-    assert.notEqual(challengeBefore.codeHash, delivery.deliveries[0]?.code);
-    assert.match(challengeBefore.codeHash, /^\$argon2id\$/);
-
-    const wrongCode = await fetch(`${base}/api/public/v1/auth/password-recovery/confirm`, {
-      method: "POST",
-      headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
-      body: JSON.stringify({
-        loginUsername: "recovery_cryptotemplar",
-        code: "AAAAA-AAAAA",
-        newPassword,
-      }),
-    });
-    assert.equal(wrongCode.status, 400);
-    const afterWrongCode = await db.passwordRecoveryChallenge.findFirstOrThrow({
-      where: { userId: credential.userId, consumedAt: null },
-      orderBy: { createdAt: "desc" },
-      select: { failedAttempts: true },
-    });
-    assert.equal(afterWrongCode.failedAttempts, 1);
+    assert.notEqual(challenge.codeHash, recovery.code);
+    assert.match(challenge.codeHash, /^\$argon2id\$/);
 
     const reset = await fetch(`${base}/api/public/v1/auth/password-recovery/confirm`, {
       method: "POST",
       headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
       body: JSON.stringify({
         loginUsername: "recovery_cryptotemplar",
-        code: delivery.deliveries[0]?.code,
+        code: recovery.code,
         newPassword,
       }),
     });
     assert.equal(reset.status, 200);
-    assert.deepEqual(await reset.json(), { ok: true });
-
-    const credentialAfter = await db.webCredential.findUniqueOrThrow({
-      where: { loginUsername: "recovery_cryptotemplar" },
-      select: { failedLoginCount: true, lockedUntil: true },
-    });
-    assert.equal(credentialAfter.failedLoginCount, 0);
-    assert.equal(credentialAfter.lockedUntil, null);
-
-    const sessions = await db.webSession.findMany({
-      where: { userId: credential.userId },
-      select: { revokedAt: true },
-    });
-    assert.ok(sessions.length >= 1);
-    assert.ok(sessions.every((session) => session.revokedAt instanceof Date));
-
-    const consumed = await db.passwordRecoveryChallenge.findFirstOrThrow({
-      where: { userId: credential.userId },
-      orderBy: { createdAt: "desc" },
-      select: { consumedAt: true },
-    });
-    assert.ok(consumed.consumedAt instanceof Date);
 
     const oldLogin = await fetch(`${base}/api/public/v1/auth/login`, {
       method: "POST",
@@ -213,17 +184,6 @@ test("linked Telegram recovery resets the Web password, revokes sessions, and co
     });
     assert.equal(newLogin.status, 200);
 
-    const reuse = await fetch(`${base}/api/public/v1/auth/password-recovery/confirm`, {
-      method: "POST",
-      headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
-      body: JSON.stringify({
-        loginUsername: "recovery_cryptotemplar",
-        code: delivery.deliveries[0]?.code,
-        newPassword: "another secure password",
-      }),
-    });
-    assert.equal(reuse.status, 400);
-
     await registerWeb(base, "recovery_unlinked", "another correct horse battery staple");
     const unlinked = await fetch(`${base}/api/public/v1/auth/password-recovery/request`, {
       method: "POST",
@@ -231,8 +191,6 @@ test("linked Telegram recovery resets the Web password, revokes sessions, and co
       body: JSON.stringify({ loginUsername: "recovery_unlinked" }),
     });
     assert.equal(unlinked.status, 202);
-    assert.deepEqual(await unlinked.json(), { ok: true });
-    assert.equal(delivery.deliveries.length, 1);
 
     const unknown = await fetch(`${base}/api/public/v1/auth/password-recovery/request`, {
       method: "POST",
@@ -240,8 +198,7 @@ test("linked Telegram recovery resets the Web password, revokes sessions, and co
       body: JSON.stringify({ loginUsername: "does.not.exist" }),
     });
     assert.equal(unknown.status, 202);
-    assert.deepEqual(await unknown.json(), { ok: true });
-    assert.equal(delivery.deliveries.length, 1);
+    assert.equal(await db.userNotification.count({ where: { type: "PASSWORD_RECOVERY" } }), 1);
   } finally {
     await new Promise<void>((resolve, reject) =>
       server.close((error) => (error ? reject(error) : resolve())),

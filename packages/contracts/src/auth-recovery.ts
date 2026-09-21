@@ -18,3 +18,11 @@ export const passwordRecoveryConfirmSchema = z.object({
 
 export type PasswordRecoveryRequestInput = z.infer<typeof passwordRecoveryRequestSchema>;
 export type PasswordRecoveryConfirmInput = z.infer<typeof passwordRecoveryConfirmSchema>;
+
+export const passwordRecoveryCodeResponseSchema = z.object({
+  loginUsername: usernameSchema,
+  code: z.string().regex(/^[A-Z2-9]{5}-[A-Z2-9]{5}$/),
+  expiresAt: z.string().datetime(),
+});
+
+export type PasswordRecoveryCodeResponse = z.infer<typeof passwordRecoveryCodeResponseSchema>;

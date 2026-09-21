@@ -12,6 +12,7 @@ import type {
   TeamUpdateInput,
 } from "@hooma/contracts";
 import type {
+  PasswordRecoveryCodeResponse,
   PasswordRecoveryConfirmInput,
   PasswordRecoveryRequestInput,
 } from "@hooma/contracts/auth-recovery";
@@ -227,8 +228,9 @@ export type UserNotificationItem = {
     | "MODERATION_TEMPORARY_BAN"
     | "MODERATION_READ_ONLY"
     | "MODERATION_ACCOUNT_DISABLED"
-    | "MODERATION_SANCTION_CLEARED";
-  readonly actorUserId: string;
+    | "MODERATION_SANCTION_CLEARED"
+    | "PASSWORD_RECOVERY";
+  readonly actorUserId: string | null;
   readonly strikeNumber: number | null;
   readonly expiresAt: string | null;
   readonly createdAt: string;
@@ -278,6 +280,12 @@ export function createHoomaApi(transport: HoomaTransport) {
         method: "POST",
         body: JSON.stringify(input),
       }),
+    passwordRecoveryCodeFromNotification: (notificationId: string) =>
+      request<PasswordRecoveryCodeResponse>(
+        transport,
+        `/api/v1/auth/password-recovery/notifications/${encodeURIComponent(notificationId)}/code`,
+        { method: "POST" },
+      ),
     logout: () => request<{ ok: true }>(transport, "/api/v1/auth/logout", { method: "POST" }),
     publicProfile: (username: string) =>
       request<PublicProfile>(transport, `/api/public/v1/profiles/${encodeURIComponent(username)}`),

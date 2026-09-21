@@ -12,11 +12,9 @@ import { RedisApiRateLimiter } from "../http/rate-limit/redis-api-rate-limiter.j
 import { IdentityAdminService } from "../modules/identity/application/identity-admin.service.js";
 import { IdentityService } from "../modules/identity/application/identity.service.js";
 import { PasswordRecoveryService } from "../modules/identity/application/password-recovery.service.js";
-import type { PasswordRecoveryDelivery } from "../modules/identity/application/password-recovery-delivery.js";
 import { PrismaIdentityAdminRepository } from "../modules/identity/infrastructure/prisma-identity-admin.repository.js";
 import { PrismaIdentityRepository } from "../modules/identity/infrastructure/prisma-identity.repository.js";
 import { PrismaPasswordRecoveryRepository } from "../modules/identity/infrastructure/prisma-password-recovery.repository.js";
-import { TelegramPasswordRecoveryDelivery } from "../modules/identity/infrastructure/telegram-password-recovery-delivery.js";
 import { PrismaCanonicalUserReader } from "../modules/identity/infrastructure/prisma-canonical-user.reader.js";
 import { PrismaUserPresentationReader } from "../modules/identity/infrastructure/prisma-user-presentation.reader.js";
 import { PrismaUserLastSeenReader } from "../modules/identity/infrastructure/prisma-user-last-seen.reader.js";
@@ -78,7 +76,6 @@ import { RedisReadinessProbe } from "../modules/system/infrastructure/redis-read
 
 interface ContainerOverrides {
   readonly objectStorage?: ObjectStorage | null;
-  readonly passwordRecoveryDelivery?: PasswordRecoveryDelivery;
 }
 
 function objectStorage(
@@ -138,19 +135,29 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     platformAdminService,
     webSessionActivity,
   );
-  const passwordRecoveryRepository = new PrismaPasswordRecoveryRepository(database);
-  const passwordRecoveryDelivery =
-    overrides.passwordRecoveryDelivery ??
-    new TelegramPasswordRecoveryDelivery(config.TELEGRAM_BOT_TOKEN);
-  const passwordRecoveryService = new PasswordRecoveryService(
-    passwordRecoveryRepository,
-    passwordRecoveryDelivery,
-  );
   const canonicalUserReader = new PrismaCanonicalUserReader(database);
   const userPresentationReader = new PrismaUserPresentationReader(database);
   const userLastSeenReader = new PrismaUserLastSeenReader(database);
   const userNotificationRepository = new PrismaUserNotificationRepository(database);
   const userNotificationService = new UserNotificationService(userNotificationRepository);
+  const passwordRecoveryRepository = new PrismaPasswordRecoveryRepository(database);
+  const passwordRecoveryService = new PasswordRecoveryService(passwordRecoveryRepository, {
+    notify: ({ userId, createdAt, expiresAt }) =>
+      userNotificationService.notifyPasswordRecovery({
+        recipientUserId: userId,
+        createdAt,
+        expiresAt,
+      }),
+    requireActive: ({ userId, notificationId, now }) =>
+      userNotificationService.requireActivePasswordRecoveryNotification(
+        userId,
+        notificationId,
+        now,
+      ),
+    markRead: async (userId, notificationId) => {
+      await userNotificationService.markRead(userId, notificationId);
+    },
+  });
   const identityAdminService = new IdentityAdminService(
     new PrismaIdentityAdminRepository(database),
     platformAdminService,
