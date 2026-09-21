@@ -27,6 +27,7 @@ import {
   PlaceEditPage,
   PlacesPage,
   PlayPage,
+  RequestCreatePage,
   RequestsPage,
   RideMinePage,
   RideOfferCreatePage,
@@ -273,6 +274,7 @@ function HoomaRoutes() {
               <Route path="/pitch" element={<PitchPage />} />
               <Route path="/pitch/manage" element={<PitchManagePage />} />
               <Route path="/pitch/:placeId" element={<PitchDetailRoute />} />
+              <Route path="/requests/new" element={<RequestCreatePage />} />
               <Route path="/requests" element={<RequestsPage tab="requests" />} />
               <Route path="/requests/fundme" element={<RequestsPage tab="fundme" />} />
               <Route path="/fundme" element={<Navigate to="/requests/fundme" replace />} />
