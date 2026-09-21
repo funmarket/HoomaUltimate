@@ -12,7 +12,13 @@ import { request, type HoomaTransport } from "../http";
 const MEMBER_BASE = "/api/v1/requests";
 const PUBLIC_BASE = "/api/public/v1/requests";
 
-function queryPath(base: string, input: HelpRequestListQuery = {}): string {
+/**
+ * Outgoing list filters. The API contract resolves `limit` from its own default,
+ * so the frontend sends only the filters the caller actually chose.
+ */
+export type RequestsListQuery = Partial<HelpRequestListQuery>;
+
+function queryPath(base: string, input: RequestsListQuery = {}): string {
   const params = new URLSearchParams();
   if (input.cursor) params.set("cursor", input.cursor);
   if (input.limit) params.set("limit", String(input.limit));
@@ -39,11 +45,11 @@ function responsePath(requestId: string, responseId?: string): string {
  */
 export function createRequestsApi(transport: HoomaTransport) {
   return {
-    publicList: (input?: HelpRequestListQuery) =>
+    publicList: (input?: RequestsListQuery) =>
       request<HelpRequestList>(transport, queryPath(PUBLIC_BASE, input)),
     publicDetail: (requestId: string) =>
       request<HelpRequest>(transport, `${PUBLIC_BASE}/${encodeURIComponent(requestId)}`),
-    memberList: (input?: HelpRequestListQuery) =>
+    memberList: (input?: RequestsListQuery) =>
       request<HelpRequestList>(transport, queryPath(MEMBER_BASE, input)),
     memberDetail: (requestId: string) =>
       request<HelpRequest>(transport, `${MEMBER_BASE}/${encodeURIComponent(requestId)}`),
