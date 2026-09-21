@@ -62,6 +62,7 @@ export * from "./pitch/PitchManagePage";
 export * from "./pitch/PitchPage";
 export * from "./pitch/pricing";
 export * from "./requests/RequestCreatePage";
+export * from "./requests/RequestDetailPage";
 export * from "./requests/RequestsPage";
 export * from "./rides/api";
 export * from "./rides/RidesPage";

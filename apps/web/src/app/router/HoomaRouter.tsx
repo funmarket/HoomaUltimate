@@ -28,6 +28,7 @@ import {
   PlacesPage,
   PlayPage,
   RequestCreatePage,
+  RequestDetailPage,
   RequestsPage,
   RideMinePage,
   RideOfferCreatePage,
@@ -130,6 +131,11 @@ function AthletesDetailRoute() {
       athletesCommunityId={requiredParam("athletesCommunityId", athletesCommunityId)}
     />
   );
+}
+
+function RequestDetailRoute() {
+  const { requestId } = useParams();
+  return <RequestDetailPage requestId={requiredParam("requestId", requestId)} />;
 }
 
 function TeamDetailRoute() {
@@ -277,6 +283,7 @@ function HoomaRoutes() {
               <Route path="/requests/new" element={<RequestCreatePage />} />
               <Route path="/requests" element={<RequestsPage tab="requests" />} />
               <Route path="/requests/fundme" element={<RequestsPage tab="fundme" />} />
+              <Route path="/requests/:requestId" element={<RequestDetailRoute />} />
               <Route path="/fundme" element={<Navigate to="/requests/fundme" replace />} />
               <Route path="/rides" element={<RidesPage />} />
               <Route path="/rides/matchday" element={<MatchdayRideRoute />} />
