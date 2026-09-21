@@ -90,6 +90,7 @@ test("Help taxonomy database constraints reject duplicate sport/subcategory and 
       }),
     );
   } finally {
+    await db.helpTaxonomyNeed.deleteMany({ where: { subcategoryId } });
     await db.helpTaxonomySubcategory.deleteMany({ where: { id: subcategoryId } });
     await db.$disconnect();
   }
