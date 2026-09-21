@@ -184,10 +184,7 @@ void runWhistleCleanup();
 void runGamerMatchReconciliation();
 void runOutbox();
 const cleanupTimer = setInterval(() => void runEventChatCleanup(), EVENT_CHAT_CLEANUP_INTERVAL_MS);
-const requestExpiryTimer = setInterval(
-  () => void runRequestExpiry(),
-  REQUEST_EXPIRY_INTERVAL_MS,
-);
+const requestExpiryTimer = setInterval(() => void runRequestExpiry(), REQUEST_EXPIRY_INTERVAL_MS);
 const whistleCleanupTimer = setInterval(
   () => void runWhistleCleanup(),
   WHISTLE_CLEANUP_INTERVAL_MS,
@@ -214,9 +211,7 @@ async function shutdown(signal: NodeJS.Signals): Promise<void> {
       whistleCleanupPromise,
       gamerMatchesPromise,
       outboxPromise,
-    ].filter(
-      (promise): promise is Promise<void> => promise !== null,
-    ),
+    ].filter((promise): promise is Promise<void> => promise !== null),
   );
   await new Promise<void>((resolve, reject) => {
     healthServer.close((error) => (error ? reject(error) : resolve()));
