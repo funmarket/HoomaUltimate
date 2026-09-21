@@ -36,14 +36,7 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
       ...(filters.status ? { status: filters.status } : {}),
       ...(filters.limit ? { limit: filters.limit } : {}),
     }),
-    [
-      debouncedCity,
-      debouncedHouma,
-      filters.category,
-      filters.limit,
-      filters.sport,
-      filters.status,
-    ],
+    [debouncedCity, debouncedHouma, filters.category, filters.limit, filters.sport, filters.status],
   );
 
   useEffect(() => {
