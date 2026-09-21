@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ATHLETES_SPORTS, athletesSportSchema } from "./athletes.js";
+import { athletesSportSchema } from "./athletes.js";
 
 export const HELP_TAXONOMY_NEED_KINDS = [
   "PRODUCT",
