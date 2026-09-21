@@ -36,14 +36,7 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
       ...(filters.status ? { status: filters.status } : {}),
       ...(filters.limit ? { limit: filters.limit } : {}),
     }),
-    [
-      debouncedCity,
-      debouncedHouma,
-      filters.category,
-      filters.limit,
-      filters.sport,
-      filters.status,
-    ],
+    [debouncedCity, debouncedHouma, filters.category, filters.limit, filters.sport, filters.status],
   );
 
   useEffect(() => {
@@ -112,9 +105,7 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
         : await requestsApi.publicList(input);
       setItems((current) => [
         ...current,
-        ...result.items.filter(
-          (item) => !current.some((existing) => existing.id === item.id),
-        ),
+        ...result.items.filter((item) => !current.some((existing) => existing.id === item.id)),
       ]);
       setNextCursor(result.nextCursor);
     } catch (reason) {
