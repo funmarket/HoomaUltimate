@@ -1,0 +1,102 @@
+import {
+  formatPasswordRecoveryCode,
+  hashPassword,
+  hashPasswordRecoveryCode,
+  isPasswordRecoveryCode,
+  newPasswordRecoveryCode,
+  normalizePasswordRecoveryCode,
+  verifyPasswordRecoveryCode,
+} from "@hooma/auth";
+import type {
+  PasswordRecoveryConfirmInput,
+  PasswordRecoveryRequestInput,
+} from "@hooma/contracts/auth-recovery";
+import { PasswordRecoveryError } from "../domain/password-recovery-error.js";
+import { normalizeUsername } from "../domain/normalization.js";
+import type { PasswordRecoveryDelivery } from "./password-recovery-delivery.js";
+import type { PasswordRecoveryRepository } from "./password-recovery.repository.js";
+
+const RECOVERY_TTL_MS = 10 * 60_000;
+const RECOVERY_REQUEST_COOLDOWN_MS = 60_000;
+const MAX_FAILED_ATTEMPTS = 5;
+
+export class PasswordRecoveryService {
+  constructor(
+    private readonly repository: PasswordRecoveryRepository,
+    private readonly delivery: PasswordRecoveryDelivery,
+  ) {}
+
+  async request(input: PasswordRecoveryRequestInput): Promise<{ ok: true }> {
+    // Do the expensive code hashing before account lookup so unknown/unlinked usernames do not get
+    // a trivially faster response than linked accounts.
+    const now = new Date();
+    const code = newPasswordRecoveryCode();
+    const codeHash = await hashPasswordRecoveryCode(code);
+    const target = await this.repository.findTelegramTarget(normalizeUsername(input.loginUsername));
+    if (!target) return { ok: true };
+
+    const expiresAt = new Date(now.getTime() + RECOVERY_TTL_MS);
+    const created = await this.repository.createChallenge({
+      userId: target.userId,
+      codeHash,
+      expiresAt,
+      now,
+      notBefore: new Date(now.getTime() - RECOVERY_REQUEST_COOLDOWN_MS),
+    });
+    if (created.kind !== "created") return { ok: true };
+
+    // Telegram delivery must not become a public account-enumeration timing oracle. The request
+    // returns the same generic success response without waiting for the Bot API round trip.
+    void this.delivery
+      .sendTelegramRecoveryCode({
+        telegramUserId: target.telegramUserId,
+        loginUsername: target.loginUsername,
+        code: formatPasswordRecoveryCode(code),
+        expiresAt,
+      })
+      .catch(async () => {
+        try {
+          await this.repository.invalidateChallenge(created.id, new Date());
+        } catch {
+          // The public request still stays generic. A later request consumes any stale challenge.
+        }
+      });
+    return { ok: true };
+  }
+
+  async confirm(input: PasswordRecoveryConfirmInput): Promise<{ ok: true }> {
+    const target = await this.repository.findTelegramTarget(normalizeUsername(input.loginUsername));
+    const code = normalizePasswordRecoveryCode(input.code);
+    if (!target || !isPasswordRecoveryCode(code)) throw invalidRecoveryCode();
+
+    const now = new Date();
+    const challenge = await this.repository.findActiveChallenge(target.userId, now);
+    if (!challenge || challenge.failedAttempts >= MAX_FAILED_ATTEMPTS) {
+      throw invalidRecoveryCode();
+    }
+
+    if (!(await verifyPasswordRecoveryCode(challenge.codeHash, code))) {
+      const consume = challenge.failedAttempts + 1 >= MAX_FAILED_ATTEMPTS;
+      await this.repository.recordFailedAttempt(challenge.id, now, consume);
+      throw invalidRecoveryCode();
+    }
+
+    const passwordHash = await hashPassword(input.newPassword);
+    const completed = await this.repository.completePasswordReset({
+      challengeId: challenge.id,
+      userId: target.userId,
+      passwordHash,
+      now,
+      maxFailedAttempts: MAX_FAILED_ATTEMPTS,
+    });
+    if (!completed) throw invalidRecoveryCode();
+    return { ok: true };
+  }
+}
+
+function invalidRecoveryCode(): PasswordRecoveryError {
+  return new PasswordRecoveryError(
+    "PASSWORD_RECOVERY_INVALID",
+    "Recovery code is invalid or expired",
+  );
+}

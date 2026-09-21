@@ -24,6 +24,10 @@
       "types": "./src/auth-linking.ts",
       "default": "./dist/auth-linking.js"
     },
+    "./auth-recovery": {
+      "types": "./src/auth-recovery.ts",
+      "default": "./dist/auth-recovery.js"
+    },
     "./athletes": {
       "types": "./src/athletes.ts",
       "default": "./dist/athletes.js"

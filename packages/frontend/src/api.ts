@@ -12,6 +12,10 @@ import type {
   TeamUpdateInput,
 } from "@hooma/contracts";
 import type {
+  PasswordRecoveryConfirmInput,
+  PasswordRecoveryRequestInput,
+} from "@hooma/contracts/auth-recovery";
+import type {
   CommunityCreateInput,
   CommunityJoinRequest,
   CommunityJoinRequestForFounder,
@@ -261,6 +265,16 @@ export function createHoomaApi(transport: HoomaTransport) {
       }),
     login: (input: LoginInput) =>
       request<{ ok: true }>(transport, "/api/public/v1/auth/login", {
+        method: "POST",
+        body: JSON.stringify(input),
+      }),
+    requestPasswordRecovery: (input: PasswordRecoveryRequestInput) =>
+      request<{ ok: true }>(transport, "/api/public/v1/auth/password-recovery/request", {
+        method: "POST",
+        body: JSON.stringify(input),
+      }),
+    confirmPasswordRecovery: (input: PasswordRecoveryConfirmInput) =>
+      request<{ ok: true }>(transport, "/api/public/v1/auth/password-recovery/confirm", {
         method: "POST",
         body: JSON.stringify(input),
       }),

@@ -10,6 +10,10 @@ import {
   type IdentityAdminErrorCode,
 } from "../../modules/identity/domain/identity-admin-error.js";
 import {
+  PasswordRecoveryError,
+  type PasswordRecoveryErrorCode,
+} from "../../modules/identity/domain/password-recovery-error.js";
+import {
   UserNotificationError,
   type UserNotificationErrorCode,
 } from "../../modules/notifications/domain/user-notification-error.js";
@@ -153,6 +157,10 @@ const USER_NOTIFICATION_STATUS: Record<UserNotificationErrorCode, number> = {
   USER_NOTIFICATION_NOT_FOUND: 404,
 };
 
+const PASSWORD_RECOVERY_STATUS: Record<PasswordRecoveryErrorCode, number> = {
+  PASSWORD_RECOVERY_INVALID: 400,
+};
+
 export const errorHandler: ErrorRequestHandler = (error, _request, response, _next) => {
   void _next;
 
@@ -189,6 +197,12 @@ export const errorHandler: ErrorRequestHandler = (error, _request, response, _ne
   if (error instanceof UserNotificationError) {
     response
       .status(USER_NOTIFICATION_STATUS[error.code])
+      .json({ error: { code: error.code, message: error.message } });
+    return;
+  }
+  if (error instanceof PasswordRecoveryError) {
+    response
+      .status(PASSWORD_RECOVERY_STATUS[error.code])
       .json({ error: { code: error.code, message: error.message } });
     return;
   }
