@@ -6,15 +6,15 @@ This file is the repository living plan for the Requests | FundMe | Donations im
 
 Authoritative repository: `funmarket/HoomaUltimate`
 Authoritative branch: `phase-0-foundation`
-Working branch: `chore/requests-rq-fix-0-reconciliation`; original RQ-FIX-0 base was `e359e3ab665d4690f62ac943a93c4037a12c9e12`, and the current foundation after reconciled PR #340 is `ef620542c0fba9dc950f3d2491ea67a4057c73ab`.
+Working branch: `feat/requests-rq-fix-1-taxonomy` from integrated RQ-FIX-0 foundation `36fa68ac28e0b7f600cc230a6578a90dda08f547`.
 Original attached-plan baseline: `c304fed4c925cbcd578fdbafb21926f927e400f5`
 Slice 1 base foundation HEAD: `b07167f9beb0003eceddb3fd73bfbff53417a618`
 Slice 2 base foundation HEAD: `a5bd502f58a746a1a89d33ba4afb28506c2e35b3`
 Slice 3 base foundation HEAD: `e885c34d1de3027871f3845e9c7a57fbed28a981`
 Slice 4R recovery base foundation HEAD: `0e2b80c714324efc41afc8138e080a19b5f0a69a`
 Stranded Slice 4 branch (SOURCE MATERIAL ONLY - never merged, rebased into, or cherry-picked as a batch): `feat/help-slice-4-requests-frontend` at `e7124f04af798f21fd9b8be7d001cd28da5643d1` (9 commits ahead / 15 behind its merge base `3033dce8e1ff1c4d7c5a4e54a51fdda0e83df523`).
-Current task: `RQ-FIX-0 - final branch synchronization, verification, and integration`
-Exact next task after RQ-FIX-0 integration: `RQ-FIX-1 - shared sports taxonomy foundation`.
+Current task: `RQ-FIX-1 - shared sports taxonomy foundation complete and awaiting integration`
+Exact next task after RQ-FIX-1 integration: `RQ-FIX-2A - Request schema expansion + legacy data reconciliation`.
 
 ## Execution loop
 
@@ -766,7 +766,7 @@ Exit gate:
 
 ### RQ-FIX-1 - shared sports taxonomy foundation
 
-Status: `IMPLEMENTED_PENDING_VERIFICATION`
+Status: `COMPLETE`
 
 Implementation branch: `feat/requests-rq-fix-1-taxonomy`
 
@@ -815,10 +815,10 @@ docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md
 Verification evidence:
 
 - implementation head `e3249c033967ce6ab5fb81fb946cc0f9da33b9d2` passed the complete repository CI workflow in run `35662300714`
-- that run passed database generation/validation/migration deploy, architecture check, changed-file formatting, changed-source lint, typecheck, package build, unit tests, full build, integration tests, deploy preflight, security check, and migration status
+- ledger-inclusive head `7c718d783f836ed02ca05fa52ec9472480d9b0b2` passed the complete repository CI workflow in run `35662789917`
+- both runs passed database generation/validation/migration deploy, architecture check, changed-file formatting, changed-source lint, typecheck, package build, unit tests, full build, integration tests, deploy preflight, security check, and migration status
 - the diff remained confined to the authorized RQ-FIX-1 targets listed above
 - no `HelpRequest` field, lifecycle behavior, response behavior, Play ownership, Athletes ownership, Rides, FundMe, or Donations implementation was changed
-- this ledger closeout commit must also pass the complete repository CI workflow before PR #342 is merge-ready
 - PR #342 remains unmerged until the owner explicitly authorizes merge
 - RQ-FIX-2A must not start before RQ-FIX-1 is integrated
 
