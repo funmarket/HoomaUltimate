@@ -91,7 +91,10 @@ function installApiStub(options: { readonly me?: unknown }) {
     });
     if (url.pathname === "/api/public/v1/auth/session") return json(options.me ?? null);
     if (url.pathname === "/api/v1/requests" && method === "POST") return json(createdRequest, 201);
-    return json({ error: { code: "NOT_FOUND", message: `Unexpected ${method} ${url.pathname}` } }, 404);
+    return json(
+      { error: { code: "NOT_FOUND", message: `Unexpected ${method} ${url.pathname}` } },
+      404,
+    );
   }) as typeof fetch;
   return {
     calls,
@@ -114,7 +117,8 @@ async function renderCreatePage(options: { readonly me?: unknown }) {
       {
         transport: {
           baseUrl: "http://api.test",
-          authenticationHref: (returnTo: string) => `/login?returnTo=${encodeURIComponent(returnTo)}`,
+          authenticationHref: (returnTo: string) =>
+            `/login?returnTo=${encodeURIComponent(returnTo)}`,
         },
       },
       React.createElement(RequestCreatePage, null),
@@ -137,7 +141,9 @@ async function renderCreatePage(options: { readonly me?: unknown }) {
 test("a guest is sent through the current HOOMA auth flow with returnTo preserved", async () => {
   const page = await renderCreatePage({ me: null });
   try {
-    await page.waitFor(() => assert.ok(page.view.getByRole("link", { name: /Sign in to continue/i })));
+    await page.waitFor(() =>
+      assert.ok(page.view.getByRole("link", { name: /Sign in to continue/i })),
+    );
     const link = page.view.getByRole("link", { name: /Sign in to continue/i });
     assert.equal(link.getAttribute("href"), "/login?returnTo=%2Frequests%2Fnew");
     assert.equal(page.view.queryByLabelText("Title"), null);
@@ -168,7 +174,10 @@ test("a signed-in member can publish a Request and is linked to it", async () =>
     await page.waitFor(() => assert.ok(page.view.getByRole("link", { name: /View Request/i })));
 
     const post = page.calls.find((call) => call.method === "POST");
-    assert.ok(post, `expected a POST, saw ${page.calls.map((c) => `${c.method} ${c.path}`).join(" | ")}`);
+    assert.ok(
+      post,
+      `expected a POST, saw ${page.calls.map((c) => `${c.method} ${c.path}`).join(" | ")}`,
+    );
     assert.equal(post.path, "/api/v1/requests");
     assert.deepEqual(post.body, {
       publisher: {},

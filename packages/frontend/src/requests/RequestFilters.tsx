@@ -40,7 +40,9 @@ export function RequestFilters({
             className={FIELD_CLASS}
             value={value.category ?? ""}
             onChange={(event) =>
-              patch({ category: (event.target.value || undefined) as RequestsListQuery["category"] })
+              patch({
+                category: (event.target.value || undefined) as RequestsListQuery["category"],
+              })
             }
           >
             <option value="">All categories</option>

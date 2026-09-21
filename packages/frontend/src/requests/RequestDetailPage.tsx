@@ -90,7 +90,9 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
   }, [api, protectedError, requestId, requestsApi]);
 
   const manager = canManage(me, item);
-  const ownResponse = me ? responses.find((response) => response.responderUserId === me.id) : undefined;
+  const ownResponse = me
+    ? responses.find((response) => response.responderUserId === me.id)
+    : undefined;
   const mutable = item?.status === "OPEN" || item?.status === "IN_PROGRESS";
   const canRespond = Boolean(me && item && mutable && !manager && !ownResponse);
 
@@ -150,7 +152,10 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
     setPendingAction(next);
     setActionError("");
     try {
-      const updated = next === "fulfill" ? await requestsApi.fulfill(requestId) : await requestsApi.cancel(requestId);
+      const updated =
+        next === "fulfill"
+          ? await requestsApi.fulfill(requestId)
+          : await requestsApi.cancel(requestId);
       setItem(updated);
     } catch (reason) {
       setActionError(protectedError(reason, `Unable to ${next} Request`));
@@ -200,7 +205,9 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
           {item.itemKind ? <span>Item · {titleCase(item.itemKind)}</span> : null}
           {item.quantityNeeded ? <span>Quantity · {item.quantityNeeded}</span> : null}
           {item.sizeLabel ? <span>Size · {item.sizeLabel}</span> : null}
-          {item.conditionPreference ? <span>Condition · {titleCase(item.conditionPreference)}</span> : null}
+          {item.conditionPreference ? (
+            <span>Condition · {titleCase(item.conditionPreference)}</span>
+          ) : null}
           {item.locationNote ? <span>Location · {item.locationNote}</span> : null}
         </div>
 
@@ -231,7 +238,9 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
       {!me && mutable ? (
         <section className="request-response-panel panel">
           <h2>Can you help?</h2>
-          <p className="muted">Sign in to send a private coordination response to the Request manager.</p>
+          <p className="muted">
+            Sign in to send a private coordination response to the Request manager.
+          </p>
           {loginHref ? (
             <a className="help-action" href={loginHref}>
               Sign in to respond
@@ -243,7 +252,9 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
       {canRespond ? (
         <form className="request-response-panel panel" onSubmit={submitResponse}>
           <h2>Respond privately</h2>
-          <p className="muted">Visible to you and the current Request manager. One response at a time.</p>
+          <p className="muted">
+            Visible to you and the current Request manager. One response at a time.
+          </p>
           <label className="request-field__label" htmlFor="request-response-message">
             Your message
           </label>

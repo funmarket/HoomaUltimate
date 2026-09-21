@@ -88,7 +88,9 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
             <section className="requests-empty panel">
               <RequestIcon className="requests-empty__icon" />
               <h2>No Requests match these filters.</h2>
-              <p className="muted">Create one if there is something your football community needs.</p>
+              <p className="muted">
+                Create one if there is something your football community needs.
+              </p>
             </section>
           ) : null}
           {!loading && !error && items.length > 0 ? (
