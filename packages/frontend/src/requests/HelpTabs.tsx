@@ -9,7 +9,8 @@ const HELP_TABS = [
 
 /**
  * Navigation for the Help surface. Only tabs whose slice exists are shown, so
- * Donations stays absent until its own domain and frontend slice are real.
+ * hidden Help sections stay absent until their own domain and frontend slice
+ * are real.
  */
 export function HelpTabs({ tab }: { readonly tab: HelpTab }) {
   return (
