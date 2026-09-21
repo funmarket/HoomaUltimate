@@ -350,6 +350,16 @@ Never auto-merge accounts using name, username, email similarity, photo, Telegra
 
 Future account linking requires an explicit authenticated workflow.
 
+## 4.8 Web password recovery
+
+Web password recovery is Identity-owned. A Web account may recover its password through a Telegram identity only when the existing `WebCredential` and `TelegramIdentity` already resolve to the same canonical `User`.
+
+The public recovery-request endpoint must not disclose whether a login username exists or whether that account has a usable recovery channel. For Telegram-backed recovery, the server generates a cryptographically random short-lived single-use code, stores only a password-strength hash of that code, delivers the plaintext code only to the linked Telegram identity, rate-limits requests, and bounds failed confirmation attempts.
+
+A successful recovery replaces the Web password with a new Argon2id hash, clears failed-login lock state, revokes existing Web sessions, and consumes outstanding recovery challenges for that User.
+
+A stored but unverified email is not password-recovery authority. Email recovery requires an explicit verified-email capability and must not be enabled merely because `WebCredential.email` is present.
+
 ---
 
 # 5. Public/member/Admin API boundary

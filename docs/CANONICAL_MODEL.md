@@ -75,6 +75,29 @@ WebCredential
   updatedAt
 ```
 
+## PasswordRecoveryChallenge
+
+```text
+PasswordRecoveryChallenge
+  id
+  userId
+  codeHash
+  expiresAt
+  consumedAt?
+  failedAttempts
+  createdAt
+```
+
+Rules:
+
+- Identity/Auth is the sole owner;
+- the challenge belongs to one canonical User that already has the target WebCredential;
+- Telegram-backed recovery is available only when that same User also owns the linked TelegramIdentity;
+- only the recovery-code hash is durable; the plaintext recovery code is delivery-only;
+- challenges are short-lived and single-use, with bounded failed attempts and request cooldown;
+- successful reset replaces the WebCredential password hash, clears login lock state, revokes active WebSessions, and consumes outstanding challenges;
+- unverified email is not recovery authority.
+
 ## WebSession
 
 ```text

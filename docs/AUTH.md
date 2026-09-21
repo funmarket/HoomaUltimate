@@ -103,6 +103,37 @@ username + password
 
 Never store the raw bearer/session token in PostgreSQL.
 
+## 5.1 Web password recovery
+
+Web password recovery remains inside Identity/Auth and never creates a second User or merges identities.
+
+Current Telegram-backed recovery flow:
+
+```text
+login username
+ -> generic public recovery request
+ -> resolve WebCredential
+ -> require TelegramIdentity on the same canonical User
+ -> create short-lived single-use recovery challenge
+ -> persist only the recovery-code hash
+ -> send the plaintext recovery code to the linked Telegram account
+ -> confirm username + code + new password
+ -> replace password with a new Argon2id hash
+ -> clear login-failure lock state
+ -> revoke existing Web sessions
+ -> consume outstanding recovery challenges
+```
+
+Security rules:
+
+- request responses do not reveal whether the account exists or has a linked Telegram identity;
+- recovery codes are cryptographically random, expire after 10 minutes, are single-use, and have bounded failed attempts;
+- plaintext recovery codes are never stored in PostgreSQL or logs;
+- Telegram delivery uses the configured bot and the canonical linked `TelegramIdentity.telegramUserId`;
+- there is no temporary plaintext password;
+- a stored but unverified Web email is not recovery authority;
+- email recovery requires a separately implemented verified-email flow.
+
 ## 6. Web sessions
 
 `WebSession` should include enough state for:
