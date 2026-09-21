@@ -314,7 +314,11 @@ test(
     }) as typeof fetch;
 
     const React = await import("react");
-    Object.defineProperty(globalThis, "React", { value: React, writable: true, configurable: true });
+    Object.defineProperty(globalThis, "React", {
+      value: React,
+      writable: true,
+      configurable: true,
+    });
     const { cleanup, fireEvent, render, waitFor } = await import("@testing-library/react");
     const { HoomaFrontendProvider, RequestsPage } = await import("@hooma/frontend");
 
