@@ -745,7 +745,7 @@ Start with focused taxonomy/query indexes. Do not add a broad city+houma+sport i
 
 ### RQ-FIX-0 - architecture and ledger reconciliation
 
-Status: `IMPLEMENTED_PENDING_VERIFICATION`
+Status: `COMPLETE`
 
 Authorized scope:
 
@@ -812,18 +812,21 @@ tests/help-taxonomy.integration.test.ts
 docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md
 ```
 
-Verification gate:
+Verification evidence:
 
-- exact final branch head must pass the complete repository CI workflow after this ledger update
-- diff must remain confined to the targets above
-- PR must remain unmerged until the owner explicitly authorizes merge
+- implementation head `e3249c033967ce6ab5fb81fb946cc0f9da33b9d2` passed the complete repository CI workflow in run `35662300714`
+- that run passed database generation/validation/migration deploy, architecture check, changed-file formatting, changed-source lint, typecheck, package build, unit tests, full build, integration tests, deploy preflight, security check, and migration status
+- the diff remained confined to the authorized RQ-FIX-1 targets listed above
+- no `HelpRequest` field, lifecycle behavior, response behavior, Play ownership, Athletes ownership, Rides, FundMe, or Donations implementation was changed
+- this ledger closeout commit must also pass the complete repository CI workflow before PR #342 is merge-ready
+- PR #342 remains unmerged until the owner explicitly authorizes merge
 - RQ-FIX-2A must not start before RQ-FIX-1 is integrated
 
-Score: **pending exact-head CI**
+Score: **9.4/10**
 
 Score justification:
 
-The architecture is source-clean and preserves the existing Request domain boundary, but no final score is claimed until the ledger-inclusive head passes the complete repository CI gate.
+RQ-FIX-1 establishes the shared taxonomy as a separate contracts/database/API boundary, keeps `AthletesSport` canonical, uses only a forward migration with deterministic seed data, enforces Donations PRODUCT-only server-side, and passes full repository CI including integration coverage. The score is below 10 because no production deployment or live HTTP smoke test is required or claimed for this foundation slice; those are not substitutes for the green repository evidence.
 
 ### RQ-FIX-2A - Request schema expansion + legacy data reconciliation
 
