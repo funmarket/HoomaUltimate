@@ -8,11 +8,7 @@ import {
 } from "@hooma/contracts/help-taxonomy";
 
 test("Help taxonomy contracts expose the authorized kinds and surfaces", () => {
-  assert.deepEqual(HELP_TAXONOMY_NEED_KINDS, [
-    "PRODUCT",
-    "COMMUNITY_ROLE",
-    "COMMUNITY_SUPPORT",
-  ]);
+  assert.deepEqual(HELP_TAXONOMY_NEED_KINDS, ["PRODUCT", "COMMUNITY_ROLE", "COMMUNITY_SUPPORT"]);
   assert.deepEqual(HELP_TAXONOMY_SURFACES, ["REQUESTS", "PLAY", "ATHLETES", "DONATIONS"]);
 });
 
