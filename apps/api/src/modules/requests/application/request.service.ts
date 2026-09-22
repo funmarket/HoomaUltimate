@@ -7,6 +7,9 @@ import type {
   HelpRequestResponse,
   HelpRequestResponseList,
 } from "@hooma/contracts/requests";
+import type { AthletesSport } from "@hooma/contracts/athletes";
+import type { HelpCategory } from "@hooma/contracts/help";
+import type { HelpTaxonomySelectionReader } from "../../help-taxonomy/application/help-taxonomy.repository.js";
 import { RequestError } from "../domain/request-error.js";
 import type {
   HelpRequestRecord,
@@ -15,9 +18,31 @@ import type {
   RequestVisibilityReader,
 } from "./request.repository.js";
 
+const sportLabels: Record<AthletesSport, string> = {
+  CYCLING: "Cycling",
+  RUNNING: "Running",
+  SWIMMING: "Swimming",
+  FOOTBALL: "Football",
+  BASKETBALL: "Basketball",
+  TENNIS: "Tennis",
+  PADEL: "Padel",
+  GYM_FITNESS: "Gym & Fitness",
+  OTHER: "Other",
+};
+
 function serialize(record: HelpRequestRecord): HelpRequest {
+  const { taxonomySubcategory, taxonomyNeed, ...rest } = record;
   return {
-    ...record,
+    ...rest,
+    taxonomy:
+      record.sport && taxonomySubcategory && taxonomyNeed
+        ? {
+            sport: record.sport,
+            sportLabel: sportLabels[record.sport],
+            subcategory: taxonomySubcategory,
+            need: taxonomyNeed,
+          }
+        : null,
     neededByAt: record.neededByAt?.toISOString() ?? null,
     expiresAt: record.expiresAt?.toISOString() ?? null,
     fulfilledAt: record.fulfilledAt?.toISOString() ?? null,
@@ -49,12 +74,62 @@ export class RequestService {
   constructor(
     private readonly repository: RequestRepository,
     private readonly visibility: RequestVisibilityReader,
+    private readonly taxonomy?: HelpTaxonomySelectionReader,
   ) {}
 
   async create(userId: string, input: HelpRequestCreateInput): Promise<HelpRequest> {
     await this.requirePublisherAuthority(userId, input);
     await this.requireAudienceMembership(userId, input);
-    return serialize(await this.repository.create(userId, input));
+
+    if (input.sport && input.subcategoryId && input.needId) {
+      const selection = await this.taxonomy?.findActiveSelection(
+        input.sport,
+        input.subcategoryId,
+        input.needId,
+      );
+      if (!selection) {
+        throw new RequestError("REQUEST_TAXONOMY_INVALID", "Request taxonomy selection is invalid");
+      }
+
+      const hasProductMetadata = Boolean(
+        input.quantityNeeded || input.sizeLabel || input.conditionPreference,
+      );
+      if (selection.need.kind !== "PRODUCT" && hasProductMetadata) {
+        throw new RequestError(
+          "REQUEST_PRODUCT_METADATA_FORBIDDEN",
+          "Product metadata is only allowed for product needs",
+        );
+      }
+      if (input.customNeed && !selection.need.allowsCustomText) {
+        throw new RequestError(
+          "REQUEST_CUSTOM_NEED_FORBIDDEN",
+          "Custom need text is not allowed for this need",
+        );
+      }
+
+      const categoryByKind: Record<typeof selection.need.kind, HelpCategory> = {
+        PRODUCT: "ITEM",
+        COMMUNITY_ROLE: "PEOPLE",
+        COMMUNITY_SUPPORT: "COMMUNITY",
+      };
+      return serialize(
+        await this.repository.create(userId, {
+          ...input,
+          category: categoryByKind[selection.need.kind],
+          itemKind: null,
+        }),
+      );
+    }
+
+    if (!input.category) {
+      throw new RequestError("REQUEST_TAXONOMY_INVALID", "Request taxonomy selection is required");
+    }
+    return serialize(
+      await this.repository.create(userId, {
+        ...input,
+        category: input.category,
+      }),
+    );
   }
 
   async listPublic(input: HelpRequestListQuery): Promise<HelpRequestList> {
