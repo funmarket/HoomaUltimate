@@ -216,29 +216,28 @@ test(
       me: null,
       url: "http://localhost/requests/new?surface=ATHLETES",
     });
-  try {
-    await page.waitFor(() =>
-      assert.ok(page.view.getByRole("link", { name: /Sign in to continue/i })),
-    );
-    assert.ok(
-      page.calls.some(
-        (call) =>
-          call.method === "GET" &&
-          call.path === "/api/public/v1/help/taxonomy?surface=ATHLETES",
-      ),
-      `expected Athletes taxonomy request, saw ${JSON.stringify(page.calls)}`,
-    );
-    const link = page.view.getByRole("link", { name: /Sign in to continue/i });
-    assert.equal(
-      link.getAttribute("href"),
-      "/login?returnTo=%2Frequests%2Fnew%3Fsurface%3DATHLETES",
-    );
+    try {
+      await page.waitFor(() =>
+        assert.ok(page.view.getByRole("link", { name: /Sign in to continue/i })),
+      );
+      assert.ok(
+        page.calls.some(
+          (call) =>
+            call.method === "GET" &&
+            call.path === "/api/public/v1/help/taxonomy?surface=ATHLETES",
+        ),
+        `expected Athletes taxonomy request, saw ${JSON.stringify(page.calls)}`,
+      );
+      const link = page.view.getByRole("link", { name: /Sign in to continue/i });
+      assert.equal(
+        link.getAttribute("href"),
+        "/login?returnTo=%2Frequests%2Fnew%3Fsurface%3DATHLETES",
+      );
     } finally {
       page.close();
     }
   },
 );
-
 test("a signed-in member can publish a Request and is linked to it", async () => {
   const page = await renderCreatePage({ me: meResponse });
   try {
