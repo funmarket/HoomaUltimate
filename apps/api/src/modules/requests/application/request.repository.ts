@@ -6,6 +6,7 @@ import type {
   RequestConditionPreference,
 } from "@hooma/contracts/requests";
 import type { HelpAudienceScope, HelpCategory, HelpItemKind } from "@hooma/contracts/help";
+import type { HelpTaxonomyNeedKind } from "@hooma/contracts/help-taxonomy";
 import type { AthletesSport } from "@hooma/contracts/athletes";
 
 export interface HelpRequestRecord {
@@ -20,6 +21,21 @@ export interface HelpRequestRecord {
   readonly category: HelpCategory;
   readonly itemKind: HelpItemKind | null;
   readonly sport: AthletesSport | null;
+  readonly subcategoryId: string | null;
+  readonly needId: string | null;
+  readonly customNeed: string | null;
+  readonly taxonomySubcategory: {
+    readonly id: string;
+    readonly slug: string;
+    readonly label: string;
+  } | null;
+  readonly taxonomyNeed: {
+    readonly id: string;
+    readonly slug: string;
+    readonly label: string;
+    readonly kind: HelpTaxonomyNeedKind;
+    readonly allowsCustomText: boolean;
+  } | null;
   readonly title: string;
   readonly description: string;
   readonly quantityNeeded: number | null;
@@ -56,8 +72,19 @@ export interface HelpRequestPage {
   readonly nextCursor: string | null;
 }
 
+export type HelpRequestCreatePersistenceInput = Omit<
+  HelpRequestCreateInput,
+  "category" | "itemKind"
+> & {
+  readonly category: HelpCategory;
+  readonly itemKind?: HelpItemKind | null;
+};
+
 export interface RequestRepository {
-  create(createdByUserId: string, input: HelpRequestCreateInput): Promise<HelpRequestRecord>;
+  create(
+    createdByUserId: string,
+    input: HelpRequestCreatePersistenceInput,
+  ): Promise<HelpRequestRecord>;
   listPublic(input: HelpRequestListQuery): Promise<HelpRequestPage>;
   getPublic(id: string): Promise<HelpRequestRecord | null>;
   listVisibleToMember(userId: string, input: HelpRequestListQuery): Promise<HelpRequestPage>;

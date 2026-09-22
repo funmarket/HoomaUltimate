@@ -238,8 +238,12 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
   const playRepository = new PrismaPlayPlayerListingRepository(database);
   const playService = new PlayService(playRepository, teamService, eventService);
   const requestRepository = new PrismaRequestRepository(database);
-  const requestService = new RequestService(requestRepository, requestRepository);
   const helpTaxonomyRepository = new PrismaHelpTaxonomyRepository(database);
+  const requestService = new RequestService(
+    requestRepository,
+    requestRepository,
+    helpTaxonomyRepository,
+  );
   const helpTaxonomyService = new HelpTaxonomyService(helpTaxonomyRepository);
   const rideOfferRepository = new PrismaRideOfferRepository(database);
   const rideRequestRepository = new PrismaRideRequestRepository(database);

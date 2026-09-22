@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { athletesSportSchema } from "./athletes.js";
 import { helpAudienceScopeSchema, helpCategorySchema, helpItemKindSchema } from "./help.js";
+import { helpTaxonomyNeedKindSchema } from "./help-taxonomy.js";
 
 const idSchema = z.string().trim().min(1);
 const optionalIdSchema = idSchema.optional().nullable();
@@ -52,9 +53,12 @@ export const helpRequestCreateSchema = z
   .object({
     publisher: helpRequestPublisherSchema.default({}),
     audience: helpRequestAudienceSchema,
-    category: helpCategorySchema,
+    category: helpCategorySchema.optional(),
     itemKind: helpItemKindSchema.optional().nullable(),
     sport: athletesSportSchema.optional().nullable(),
+    subcategoryId: optionalIdSchema,
+    needId: optionalIdSchema,
+    customNeed: optionalText(120),
     title: z.string().trim().min(3).max(120),
     description: z.string().trim().min(10).max(1200),
     quantityNeeded: z.number().int().positive().optional().nullable(),
@@ -67,15 +71,36 @@ export const helpRequestCreateSchema = z
     neededByAt: z.string().datetime().optional().nullable(),
     expiresAt: z.string().datetime().optional().nullable(),
   })
-  .strict();
+  .strict()
+  .superRefine((input, context) => {
+    const hasTaxonomy = Boolean(input.sport && input.subcategoryId && input.needId);
+    const hasAnyTaxonomy = Boolean(input.subcategoryId || input.needId);
+    if (hasAnyTaxonomy && !hasTaxonomy) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Sport, subcategory and need must be provided together",
+      });
+    }
+    if (!hasTaxonomy && !input.category) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "A corrected taxonomy selection or legacy category is required",
+      });
+    }
+  });
 
 export const helpRequestRespondSchema = z.object({ message: z.string().trim().min(1) }).strict();
+
+export const helpRequestSurfaceSchema = z.enum(["REQUESTS", "PLAY", "ATHLETES"]);
 
 export const helpRequestListQuerySchema = z.object({
   cursor: idSchema.optional(),
   limit: z.coerce.number().int().min(1).max(100).default(30),
   category: helpCategorySchema.optional(),
   sport: athletesSportSchema.optional(),
+  subcategoryId: idSchema.optional(),
+  needId: idSchema.optional(),
+  surface: helpRequestSurfaceSchema.optional(),
   city: z.string().trim().min(1).max(100).optional(),
   houma: z.string().trim().min(1).max(100).optional(),
   status: helpRequestStatusSchema.optional(),
@@ -93,6 +118,28 @@ export const helpRequestSchema = z.object({
   category: helpCategorySchema,
   itemKind: helpItemKindSchema.nullable(),
   sport: athletesSportSchema.nullable(),
+  subcategoryId: idSchema.nullable().optional(),
+  needId: idSchema.nullable().optional(),
+  customNeed: z.string().nullable().optional(),
+  taxonomy: z
+    .object({
+      sport: athletesSportSchema,
+      sportLabel: z.string().min(1),
+      subcategory: z.object({
+        id: idSchema,
+        slug: z.string().min(1),
+        label: z.string().min(1),
+      }),
+      need: z.object({
+        id: idSchema,
+        slug: z.string().min(1),
+        label: z.string().min(1),
+        kind: helpTaxonomyNeedKindSchema,
+        allowsCustomText: z.boolean(),
+      }),
+    })
+    .nullable()
+    .optional(),
   title: z.string().min(3).max(120),
   description: z.string().min(10).max(1200),
   quantityNeeded: z.number().int().positive().nullable(),
@@ -140,6 +187,7 @@ export type HelpRequestPublisherInput = z.infer<typeof helpRequestPublisherSchem
 export type HelpRequestAudienceInput = z.infer<typeof helpRequestAudienceSchema>;
 export type HelpRequestCreateInput = z.infer<typeof helpRequestCreateSchema>;
 export type HelpRequestRespondInput = z.infer<typeof helpRequestRespondSchema>;
+export type HelpRequestSurface = z.infer<typeof helpRequestSurfaceSchema>;
 export type HelpRequestListQuery = z.infer<typeof helpRequestListQuerySchema>;
 export type HelpRequest = z.infer<typeof helpRequestSchema>;
 export type HelpRequestResponse = z.infer<typeof helpRequestResponseSchema>;

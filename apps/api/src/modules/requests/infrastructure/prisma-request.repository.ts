@@ -1,10 +1,7 @@
 import { expireDueHelpRequests, Prisma, type PrismaClient } from "@hooma/database";
+import type { HelpRequestListQuery, HelpRequestStatus } from "@hooma/contracts/requests";
 import type {
-  HelpRequestCreateInput,
-  HelpRequestListQuery,
-  HelpRequestStatus,
-} from "@hooma/contracts/requests";
-import type {
+  HelpRequestCreatePersistenceInput,
   HelpRequestPage,
   HelpRequestRecord,
   HelpRequestResponseRecord,
@@ -24,6 +21,15 @@ const helpRequestSelect = Prisma.validator<Prisma.HelpRequestSelect>()({
   category: true,
   itemKind: true,
   sport: true,
+  subcategoryId: true,
+  needId: true,
+  customNeed: true,
+  taxonomySubcategory: {
+    select: { id: true, slug: true, label: true },
+  },
+  taxonomyNeed: {
+    select: { id: true, slug: true, label: true, kind: true, allowsCustomText: true },
+  },
   title: true,
   description: true,
   quantityNeeded: true,
@@ -76,6 +82,9 @@ function filters(input: HelpRequestListQuery): Prisma.HelpRequestWhereInput {
   return {
     ...(input.category ? { category: input.category } : {}),
     ...(input.sport ? { sport: input.sport } : {}),
+    ...(input.subcategoryId ? { subcategoryId: input.subcategoryId } : {}),
+    ...(input.needId ? { needId: input.needId } : {}),
+    ...(input.surface ? { taxonomyNeed: { surfaces: { some: { surface: input.surface } } } } : {}),
     ...(input.city ? { city: input.city } : {}),
     ...(input.houma ? { houma: input.houma } : {}),
   };
@@ -101,7 +110,10 @@ function isUniqueConstraintError(error: unknown): boolean {
 export class PrismaRequestRepository implements RequestRepository, RequestVisibilityReader {
   constructor(private readonly db: PrismaClient) {}
 
-  async create(createdByUserId: string, input: HelpRequestCreateInput): Promise<HelpRequestRecord> {
+  async create(
+    createdByUserId: string,
+    input: HelpRequestCreatePersistenceInput,
+  ): Promise<HelpRequestRecord> {
     const audienceCommunityId =
       input.audience.scope === "HOOMA_COMMUNITY" ? input.audience.communityId : null;
     const audienceAthletesCommunityId =
@@ -120,6 +132,9 @@ export class PrismaRequestRepository implements RequestRepository, RequestVisibi
           category: input.category,
           itemKind: input.itemKind ?? null,
           sport: input.sport ?? null,
+          subcategoryId: input.subcategoryId ?? null,
+          needId: input.needId ?? null,
+          customNeed: input.customNeed ?? null,
           title: input.title,
           description: input.description,
           quantityNeeded: input.quantityNeeded ?? null,
