@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { HelpTaxonomySelectionReader } from "../apps/api/src/modules/help-taxonomy/application/help-taxonomy.repository.js";
+import type {
+  HelpTaxonomySelectionReader,
+} from "../apps/api/src/modules/help-taxonomy/application/help-taxonomy.repository.js";
 import type {
   HelpRequestCreatePersistenceInput,
   HelpRequestRecord,
@@ -58,7 +60,9 @@ function record(overrides: Partial<HelpRequestRecord> = {}): HelpRequestRecord {
   };
 }
 
-function repository(onCreate?: (input: HelpRequestCreatePersistenceInput) => void): RequestRepository {
+function repository(
+  onCreate?: (input: HelpRequestCreatePersistenceInput) => void,
+): RequestRepository {
   return {
     async create(_userId, input) {
       onCreate?.(input);
