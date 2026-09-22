@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import type { HelpRequest } from "@hooma/contracts/requests";
 import { useHoomaFrontend } from "../context";
-import { FundMeIcon, PlusIcon, RequestIcon } from "../help/HelpIcons";
+import { DonationIcon, FundMeIcon, PlusIcon, RequestIcon } from "../help/HelpIcons";
 import { createRequestsApi, type RequestsListQuery } from "./api";
 import { HelpTabs } from "./HelpTabs";
 import { RequestCard } from "./RequestCard";
 import { RequestFilters } from "./RequestFilters";
 
-export type RequestsPageTab = "requests" | "fundme";
+export type RequestsPageTab = "requests" | "fundme" | "donations";
 
 /**
  * Orchestrates the Help Requests surface: identity, list loading, filters and
@@ -116,25 +116,28 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
   }
 
   const fundmeActive = tab === "fundme";
+  const donationsActive = tab === "donations";
 
   return (
     <section className="page requests-page">
       <header className="help-hero panel">
         <div className="help-hero__copy">
           <span className="eyebrow">HOOMA HELP</span>
-          <h1>{fundmeActive ? "FundMe" : "Requests"}</h1>
+          <h1>{fundmeActive ? "FundMe" : donationsActive ? "Donations" : "Requests"}</h1>
           <p>
             {fundmeActive
               ? "FundMe will carry contributions for community needs once its own slice exists."
-              : "Ask for people, gear, places, transport, services, or other support around real HOOMA activity."}
+              : donationsActive
+                ? "Give useful sports gear locally once the Donations domain is ready."
+                : "Ask for sports gear, community roles, or local support around real HOOMA activity."}
           </p>
         </div>
-        {fundmeActive ? null : (
+        {tab === "requests" ? (
           <a className="help-action" href="/requests/new">
             <PlusIcon />
             <span>Create request</span>
           </a>
-        )}
+        ) : null}
       </header>
 
       <HelpTabs tab={tab} />
@@ -147,6 +150,16 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
           <p className="muted">
             The surface is reserved. There is no campaign, donation form, payment intent or provider
             integration until the later FundMe slices own that behavior.
+          </p>
+        </section>
+      ) : donationsActive ? (
+        <section className="requests-empty panel">
+          <DonationIcon className="requests-empty__icon" />
+          <span className="eyebrow">DONATIONS</span>
+          <h2>Donations are not live yet.</h2>
+          <p className="muted">
+            The Donations area is now part of HOOMA Help navigation. Giving and claiming items will
+            stay disabled until the Donations domain, permissions, and lifecycle are implemented.
           </p>
         </section>
       ) : (

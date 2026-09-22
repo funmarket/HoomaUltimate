@@ -38,6 +38,15 @@ export function FundMeIcon(props: HelpIconProps) {
   );
 }
 
+export function DonationIcon(props: HelpIconProps) {
+  return (
+    <HelpIcon {...props}>
+      <path d="M12 20s-7-4.4-7-9.2A4.2 4.2 0 0 1 12 7.7a4.2 4.2 0 0 1 7 3.1C19 15.6 12 20 12 20Z" />
+      <path d="M9.5 12h5M12 9.5v5" />
+    </HelpIcon>
+  );
+}
+
 export function PlusIcon(props: HelpIconProps) {
   return (
     <HelpIcon {...props}>
