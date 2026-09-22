@@ -13,8 +13,17 @@ export function RequestTaxonomyFilters({
   readonly value: RequestsListQuery;
   readonly onChange: (next: RequestsListQuery) => void;
 }) {
-  const selectedSport = taxonomy.sports.find((entry) => entry.sport === value.sport);
-  const selectedSubcategory = selectedSport?.subcategories.find(
+  const selectedSport =
+    value.requestType === "SPORT"
+      ? taxonomy.sports.find((entry) => entry.sport === value.sport)
+      : undefined;
+  const availableSubcategories =
+    value.requestType === "COMMUNITY"
+      ? taxonomy.community
+      : value.requestType === "SPORT"
+        ? (selectedSport?.subcategories ?? [])
+        : [];
+  const selectedSubcategory = availableSubcategories.find(
     (entry) => entry.id === value.subcategoryId,
   );
 
@@ -30,30 +39,56 @@ export function RequestTaxonomyFilters({
       </div>
       <div className="request-filters__fields">
         <div className="request-field">
-          <label className="request-field__label" htmlFor="request-filter-sport">
-            Sport
+          <label className="request-field__label" htmlFor="request-filter-type">
+            Request type
           </label>
           <select
-            id="request-filter-sport"
+            id="request-filter-type"
             className={FIELD_CLASS}
-            value={value.sport ?? ""}
+            value={value.requestType ?? ""}
             onChange={(event) =>
               patch({
-                sport: (event.target.value || undefined) as RequestsListQuery["sport"],
+                requestType: (event.target.value || undefined) as RequestsListQuery["requestType"],
+                sport: undefined,
                 subcategoryId: undefined,
                 needId: undefined,
               })
             }
           >
-            <option value="">All sports</option>
-            {taxonomy.sports.map((entry) => (
-              <option key={entry.sport} value={entry.sport}>
-                {entry.label}
-              </option>
-            ))}
+            <option value="">All types</option>
+            <option value="SPORT">Sport</option>
+            <option value="COMMUNITY">Community</option>
           </select>
         </div>
 
+        {value.requestType === "SPORT" ? (
+          <div className="request-field">
+            <label className="request-field__label" htmlFor="request-filter-sport">
+              Sport
+            </label>
+            <select
+              id="request-filter-sport"
+              className={FIELD_CLASS}
+              value={value.sport ?? ""}
+              onChange={(event) =>
+                patch({
+                  sport: (event.target.value || undefined) as RequestsListQuery["sport"],
+                  subcategoryId: undefined,
+                  needId: undefined,
+                })
+              }
+            >
+              <option value="">All sports</option>
+              {taxonomy.sports.map((entry) => (
+                <option key={entry.sport} value={entry.sport}>
+                  {entry.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
+
+        {value.requestType ? (
         <div className="request-field">
           <label className="request-field__label" htmlFor="request-filter-subcategory">
             Subcategory
@@ -62,7 +97,7 @@ export function RequestTaxonomyFilters({
             id="request-filter-subcategory"
             className={FIELD_CLASS}
             value={value.subcategoryId ?? ""}
-            disabled={!selectedSport}
+            disabled={value.requestType === "SPORT" && !selectedSport}
             onChange={(event) =>
               patch({
                 subcategoryId: event.target.value || undefined,
@@ -71,14 +106,16 @@ export function RequestTaxonomyFilters({
             }
           >
             <option value="">All subcategories</option>
-            {(selectedSport?.subcategories ?? []).map((entry) => (
+            {availableSubcategories.map((entry) => (
               <option key={entry.id} value={entry.id}>
                 {entry.label}
               </option>
             ))}
           </select>
         </div>
+        ) : null}
 
+        {value.requestType ? (
         <div className="request-field">
           <label className="request-field__label" htmlFor="request-filter-need">
             Specific need
@@ -98,6 +135,7 @@ export function RequestTaxonomyFilters({
             ))}
           </select>
         </div>
+        ) : null}
 
         <div className="request-field">
           <label className="request-field__label" htmlFor="request-filter-city">
