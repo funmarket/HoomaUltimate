@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
+import type { HelpTaxonomyResponse } from "@hooma/contracts/help-taxonomy";
 import type { HelpRequest } from "@hooma/contracts/requests";
 import { useHoomaFrontend } from "../context";
-import { DonationIcon, FundMeIcon, PlusIcon, RequestIcon } from "../help/HelpIcons";
+import { DonationIcon, FundMeIcon, PlusIcon } from "../help/HelpIcons";
 import { createRequestsApi, type RequestsListQuery } from "./api";
 import { HelpTabs } from "./HelpTabs";
-import { RequestCard } from "./RequestCard";
-import { RequestFilters } from "./RequestFilters";
+import { RequestFeed } from "./RequestFeed";
+import { RequestTaxonomyFilters } from "./RequestTaxonomyFilters";
 
 export type RequestsPageTab = "requests" | "fundme" | "donations";
 
@@ -18,7 +19,8 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
   const { api, transport, protectedError } = useHoomaFrontend();
   const requestsApi = useMemo(() => createRequestsApi(transport), [transport]);
   const [items, setItems] = useState<HelpRequest[]>([]);
-  const [filters, setFilters] = useState<RequestsListQuery>({});
+  const [taxonomy, setTaxonomy] = useState<HelpTaxonomyResponse | null>(null);
+  const [filters, setFilters] = useState<RequestsListQuery>({ surface: "REQUESTS" });
   const [debouncedCity, setDebouncedCity] = useState<string | undefined>();
   const [debouncedHouma, setDebouncedHouma] = useState<string | undefined>();
   const [memberViewer, setMemberViewer] = useState<boolean | null>(null);
@@ -29,14 +31,24 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
 
   const effectiveFilters = useMemo<RequestsListQuery>(
     () => ({
-      ...(filters.category ? { category: filters.category } : {}),
+      surface: "REQUESTS",
       ...(filters.sport ? { sport: filters.sport } : {}),
+      ...(filters.subcategoryId ? { subcategoryId: filters.subcategoryId } : {}),
+      ...(filters.needId ? { needId: filters.needId } : {}),
       ...(debouncedCity ? { city: debouncedCity } : {}),
       ...(debouncedHouma ? { houma: debouncedHouma } : {}),
       ...(filters.status ? { status: filters.status } : {}),
       ...(filters.limit ? { limit: filters.limit } : {}),
     }),
-    [debouncedCity, debouncedHouma, filters.category, filters.limit, filters.sport, filters.status],
+    [
+      debouncedCity,
+      debouncedHouma,
+      filters.limit,
+      filters.needId,
+      filters.sport,
+      filters.status,
+      filters.subcategoryId,
+    ],
   );
 
   useEffect(() => {
@@ -46,6 +58,22 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
     }, 300);
     return () => clearTimeout(handle);
   }, [filters.city, filters.houma]);
+
+  useEffect(() => {
+    if (tab !== "requests") return;
+    let active = true;
+    void requestsApi
+      .taxonomy("REQUESTS")
+      .then((result) => {
+        if (active) setTaxonomy(result);
+      })
+      .catch((reason) => {
+        if (active) setError(protectedError(reason, "Unable to load Request categories"));
+      });
+    return () => {
+      active = false;
+    };
+  }, [protectedError, requestsApi, tab]);
 
   useEffect(() => {
     if (tab !== "requests") return;
@@ -164,37 +192,17 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
         </section>
       ) : (
         <>
-          <RequestFilters value={filters} onChange={setFilters} />
-          {loading ? <p className="status">Loading Requests…</p> : null}
-          {error ? <p className="status request-error">{error}</p> : null}
-          {!loading && !error && items.length === 0 ? (
-            <section className="requests-empty panel">
-              <RequestIcon className="requests-empty__icon" />
-              <h2>No Requests match these filters.</h2>
-              <p className="muted">
-                Create one if there is something your football community needs.
-              </p>
-            </section>
+          {taxonomy ? (
+            <RequestTaxonomyFilters taxonomy={taxonomy} value={filters} onChange={setFilters} />
           ) : null}
-          {!loading && !error && items.length > 0 ? (
-            <>
-              <section className="request-list" aria-label="Requests">
-                {items.map((item) => (
-                  <RequestCard key={item.id} item={item} />
-                ))}
-              </section>
-              {nextCursor ? (
-                <button
-                  type="button"
-                  className="help-action"
-                  disabled={loadingMore}
-                  onClick={() => void loadMore()}
-                >
-                  {loadingMore ? "Loading…" : "Load more"}
-                </button>
-              ) : null}
-            </>
-          ) : null}
+          <RequestFeed
+            items={items}
+            loading={loading || !taxonomy}
+            error={error}
+            nextCursor={nextCursor}
+            loadingMore={loadingMore}
+            onLoadMore={() => void loadMore()}
+          />
         </>
       )}
     </section>
