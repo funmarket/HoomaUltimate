@@ -3,14 +3,8 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("HelpRequest schema expands to nullable sport-first taxonomy references without removing legacy fields", async () => {
-  const requestsSchema = await readFile(
-    "packages/database/prisma/requests.prisma",
-    "utf8",
-  );
-  const taxonomySchema = await readFile(
-    "packages/database/prisma/help-taxonomy.prisma",
-    "utf8",
-  );
+  const requestsSchema = await readFile("packages/database/prisma/requests.prisma", "utf8");
+  const taxonomySchema = await readFile("packages/database/prisma/help-taxonomy.prisma", "utf8");
   const migration = await readFile(
     "packages/database/prisma/migrations/20260922004000_help_request_taxonomy_expansion/migration.sql",
     "utf8",
