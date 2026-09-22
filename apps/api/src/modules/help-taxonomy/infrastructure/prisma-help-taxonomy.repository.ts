@@ -20,9 +20,7 @@ export class PrismaHelpTaxonomyRepository implements HelpTaxonomyRepository {
         id: input.subcategoryId,
         requestType: input.requestType,
         active: true,
-        ...(input.requestType === "SPORT"
-          ? { sport: input.sport ?? null }
-          : { sport: null }),
+        ...(input.requestType === "SPORT" ? { sport: input.sport ?? null } : { sport: null }),
         needs: {
           some: {
             id: input.needId,
