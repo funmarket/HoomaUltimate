@@ -114,9 +114,9 @@ test("Requests API client keeps detail, response and lifecycle routes exact", as
  * Requests page component behaviour (public feed, member feed, filters)
  * ------------------------------------------------------------------ */
 
-function installDom() {
+function installDom(url = "http://localhost/requests") {
   const dom = new JSDOM("<!doctype html><html><body></body></html>", {
-    url: "http://localhost/requests",
+    url,
   });
   const globals: Record<string, unknown> = {
     window: dom.window,
@@ -304,8 +304,8 @@ const meResponse = {
   teams: [],
 };
 
-async function renderRequestsPage(options: StubOptions) {
-  const dom = installDom();
+async function renderRequestsPage(options: StubOptions & { readonly url?: string }) {
+  const dom = installDom(options.url);
   const stub = installApiStub(options);
   const React = await import("react");
   Object.defineProperty(globalThis, "React", { value: React, writable: true, configurable: true });
@@ -365,6 +365,33 @@ test("anonymous /requests loads the real public Requests feed", async () => {
     assert.deepEqual(
       page.calls.filter((call) => call.includes("/requests")),
       ["GET /api/public/v1/requests?surface=REQUESTS"],
+    );
+  } finally {
+    page.close();
+  }
+});
+
+test("Athletes projection uses the canonical Requests surface end to end", async () => {
+  const page = await renderRequestsPage({
+    me: null,
+    publicItems: [publicRequest],
+    url: "http://localhost/requests?surface=ATHLETES",
+  });
+  try {
+    await page.waitFor(() =>
+      assert.ok(requestTitles(page.view).includes("Need size 43 running shoes")),
+    );
+    assert.ok(
+      page.calls.includes("GET /api/public/v1/help/taxonomy?surface=ATHLETES"),
+      `expected Athletes taxonomy request, saw ${page.calls.join(" | ")}`,
+    );
+    assert.ok(
+      page.calls.includes("GET /api/public/v1/requests?surface=ATHLETES"),
+      `expected Athletes Requests list, saw ${page.calls.join(" | ")}`,
+    );
+    assert.equal(
+      page.view.getByRole("link", { name: /Create request/i }).getAttribute("href"),
+      "/requests/new?surface=ATHLETES",
     );
   } finally {
     page.close();
