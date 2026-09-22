@@ -21,8 +21,7 @@ export function RequestCreatePage() {
   const requestsApi = useMemo(() => createRequestsApi(transport), [transport]);
   const surface = useMemo(resolveRequestSurface, []);
   const { returnHref, returnLabel } = REQUEST_SURFACES[surface];
-  const createHref =
-    surface === "REQUESTS" ? "/requests/new" : `/requests/new?surface=${surface}`;
+  const createHref = surface === "REQUESTS" ? "/requests/new" : `/requests/new?surface=${surface}`;
   const [me, setMe] = useState<MeResponse | null>(null);
   const [taxonomy, setTaxonomy] = useState<HelpTaxonomyResponse | null>(null);
   const [loading, setLoading] = useState(true);
