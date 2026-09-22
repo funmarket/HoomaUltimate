@@ -1,3 +1,4 @@
+import type { HelpTaxonomyResponse, HelpTaxonomySurface } from "@hooma/contracts/help-taxonomy";
 import type {
   HelpRequest,
   HelpRequestCreateInput,
@@ -24,6 +25,9 @@ function queryPath(base: string, input: RequestsListQuery = {}): string {
   if (input.limit) params.set("limit", String(input.limit));
   if (input.category) params.set("category", input.category);
   if (input.sport) params.set("sport", input.sport);
+  if (input.subcategoryId) params.set("subcategoryId", input.subcategoryId);
+  if (input.needId) params.set("needId", input.needId);
+  if (input.surface) params.set("surface", input.surface);
   if (input.city) params.set("city", input.city);
   if (input.houma) params.set("houma", input.houma);
   if (input.status) params.set("status", input.status);
@@ -45,6 +49,11 @@ function responsePath(requestId: string, responseId?: string): string {
  */
 export function createRequestsApi(transport: HoomaTransport) {
   return {
+    taxonomy: (surface: HelpTaxonomySurface) =>
+      request<HelpTaxonomyResponse>(
+        transport,
+        `/api/public/v1/help/taxonomy?surface=${encodeURIComponent(surface)}`,
+      ),
     publicList: (input?: RequestsListQuery) =>
       request<HelpRequestList>(transport, queryPath(PUBLIC_BASE, input)),
     publicDetail: (requestId: string) =>
