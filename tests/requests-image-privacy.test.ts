@@ -197,7 +197,8 @@ test("bytes that are not the declared image type are rejected", async () => {
   const png = await pngBytes();
   await assert.rejects(
     () => validator.validate(png, "image/jpeg"),
-    (error: unknown) => error instanceof RequestError && error.code === "REQUEST_IMAGE_TYPE_INVALID",
+    (error: unknown) =>
+      error instanceof RequestError && error.code === "REQUEST_IMAGE_TYPE_INVALID",
     "a spoofed content type must not be accepted",
   );
 });
@@ -207,11 +208,13 @@ test("truncated and non-image bytes are rejected", async () => {
   const png = await pngBytes();
   await assert.rejects(
     () => validator.validate(png.slice(0, 24), "image/png"),
-    (error: unknown) => error instanceof RequestError && error.code === "REQUEST_IMAGE_TYPE_INVALID",
+    (error: unknown) =>
+      error instanceof RequestError && error.code === "REQUEST_IMAGE_TYPE_INVALID",
   );
   await assert.rejects(
     () => validator.validate(new TextEncoder().encode("not an image at all"), "image/png"),
-    (error: unknown) => error instanceof RequestError && error.code === "REQUEST_IMAGE_TYPE_INVALID",
+    (error: unknown) =>
+      error instanceof RequestError && error.code === "REQUEST_IMAGE_TYPE_INVALID",
   );
 });
 
@@ -228,7 +231,11 @@ test("an upload without a wired decoder is refused instead of trusted", async ()
     null,
   );
   await assert.rejects(
-    () => service.replaceImage(CREATOR, stored.id, { contentType: "image/png", body: new Uint8Array([1]) }),
+    () =>
+      service.replaceImage(CREATOR, stored.id, {
+        contentType: "image/png",
+        body: new Uint8Array([1]),
+      }),
     (error: unknown) =>
       error instanceof RequestError && error.code === "REQUEST_IMAGE_STORAGE_UNAVAILABLE",
   );
@@ -280,7 +287,8 @@ test("invalid bytes never reach object storage", async () => {
         contentType: "image/png",
         body: new TextEncoder().encode("spoofed"),
       }),
-    (error: unknown) => error instanceof RequestError && error.code === "REQUEST_IMAGE_TYPE_INVALID",
+    (error: unknown) =>
+      error instanceof RequestError && error.code === "REQUEST_IMAGE_TYPE_INVALID",
   );
   assert.equal(objects.length, 0, "rejected bytes are never stored");
 });
@@ -315,7 +323,11 @@ test("only http and https image URLs are accepted", () => {
     "file:///etc/passwd",
     "ftp://cdn.example.com/a.png",
   ]) {
-    assert.equal(requestImageUrlSchema.safeParse(rejected).success, false, `${rejected} is rejected`);
+    assert.equal(
+      requestImageUrlSchema.safeParse(rejected).success,
+      false,
+      `${rejected} is rejected`,
+    );
   }
 });
 
