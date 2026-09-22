@@ -178,7 +178,9 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
 
       <article className="request-detail panel">
         <div className="request-card__topline">
-          <span className="request-chip">{item.taxonomy?.need.label ?? titleCase(item.category)}</span>
+          <span className="request-chip">
+            {item.taxonomy?.need.label ?? titleCase(item.category)}
+          </span>
           <span className={`request-status request-status--${item.status.toLowerCase()}`}>
             <span className="request-status__dot" aria-hidden="true" />
             {titleCase(item.status)}
