@@ -41,7 +41,9 @@ test("Request contracts keep legacy create compatibility during the frontend tra
 
 test("Request contracts require a complete taxonomy selection for corrected creation", () => {
   assert.throws(() => helpRequestCreateSchema.parse({ ...correctedInput, needId: undefined }));
-  assert.throws(() => helpRequestCreateSchema.parse({ ...correctedInput, subcategoryId: undefined }));
+  assert.throws(() =>
+    helpRequestCreateSchema.parse({ ...correctedInput, subcategoryId: undefined }),
+  );
   assert.throws(() =>
     helpRequestCreateSchema.parse({
       publisher: {},
