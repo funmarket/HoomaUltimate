@@ -118,9 +118,9 @@ export const helpRequestSchema = z.object({
   category: helpCategorySchema,
   itemKind: helpItemKindSchema.nullable(),
   sport: athletesSportSchema.nullable(),
-  subcategoryId: idSchema.nullable(),
-  needId: idSchema.nullable(),
-  customNeed: z.string().nullable(),
+  subcategoryId: idSchema.nullable().optional(),
+  needId: idSchema.nullable().optional(),
+  customNeed: z.string().nullable().optional(),
   taxonomy: z
     .object({
       sport: athletesSportSchema,
@@ -138,7 +138,8 @@ export const helpRequestSchema = z.object({
         allowsCustomText: z.boolean(),
       }),
     })
-    .nullable(),
+    .nullable()
+    .optional(),
   title: z.string().min(3).max(120),
   description: z.string().min(10).max(1200),
   quantityNeeded: z.number().int().positive().nullable(),
