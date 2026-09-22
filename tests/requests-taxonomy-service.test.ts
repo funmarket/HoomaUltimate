@@ -1,8 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type {
-  HelpTaxonomySelectionReader,
-} from "../apps/api/src/modules/help-taxonomy/application/help-taxonomy.repository.js";
+import type { HelpTaxonomySelectionReader } from "../apps/api/src/modules/help-taxonomy/application/help-taxonomy.repository.js";
 import type {
   HelpRequestCreatePersistenceInput,
   HelpRequestRecord,
@@ -176,8 +174,10 @@ const corrected = {
   description: "Looking for a football for a local training session.",
 };
 
-test("corrected PRODUCT Requests validate taxonomy and write compatibility legacy fields", async () => {
-  let persisted: HelpRequestCreatePersistenceInput | null = null;
+test(
+  "corrected PRODUCT Requests validate taxonomy and write compatibility legacy fields",
+  async () => {
+    let persisted: HelpRequestCreatePersistenceInput | null = null;
   const service = new RequestService(
     repository((input) => (persisted = input)),
     visibility(),
@@ -187,8 +187,9 @@ test("corrected PRODUCT Requests validate taxonomy and write compatibility legac
   const result = await service.create("user-1", { ...corrected, quantityNeeded: 2 });
   assert.equal(persisted?.category, "ITEM");
   assert.equal(persisted?.itemKind, null);
-  assert.equal(result.taxonomy?.need.kind, "PRODUCT");
-});
+    assert.equal(result.taxonomy?.need.kind, "PRODUCT");
+  },
+);
 
 test("community role/support Needs reject product metadata", async () => {
   const service = new RequestService(repository(), visibility(), taxonomy("COMMUNITY_ROLE"));
