@@ -1,3 +1,8 @@
+enum HelpRequestType {
+  SPORT
+  COMMUNITY
+}
+
 enum HelpTaxonomyNeedKind {
   PRODUCT
   COMMUNITY_ROLE
@@ -12,19 +17,22 @@ enum HelpTaxonomySurface {
 }
 
 model HelpTaxonomySubcategory {
-  id        String         @id
-  sport     AthletesSport
-  slug      String
-  label     String
-  sortOrder Int
-  active    Boolean        @default(true)
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  id          String          @id
+  requestType HelpRequestType
+  sport       AthletesSport?
+  slug        String
+  label       String
+  sortOrder   Int
+  active      Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
   needs        HelpTaxonomyNeed[]
   helpRequests HelpRequest[] @relation("HelpRequestTaxonomySubcategory")
 
   @@unique([sport, slug])
   @@unique([id, sport])
+  @@unique([id, requestType])
+  @@index([requestType, active, sortOrder])
   @@index([sport, active, sortOrder])
 }
 

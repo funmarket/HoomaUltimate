@@ -59,11 +59,12 @@ model HelpRequest {
   audienceAthletesCommunityId  String?
   category                     HelpCategory
   itemKind                     HelpItemKind?
+  requestType                  HelpRequestType?
   sport                        AthletesSport?
   subcategoryId                String?
   needId                       String?
   customNeed                   String?
-  taxonomySubcategory          HelpTaxonomySubcategory? @relation("HelpRequestTaxonomySubcategory", fields: [subcategoryId, sport], references: [id, sport], onDelete: Restrict)
+  taxonomySubcategory          HelpTaxonomySubcategory? @relation("HelpRequestTaxonomySubcategory", fields: [subcategoryId, requestType], references: [id, requestType], onDelete: Restrict)
   taxonomyNeed                 HelpTaxonomyNeed?        @relation("HelpRequestTaxonomyNeed", fields: [needId, subcategoryId], references: [id, subcategoryId], onDelete: Restrict)
   title                        String
   description                  String
@@ -91,6 +92,7 @@ model HelpRequest {
   @@index([publisherTeamId, status, createdAt])
   @@index([publisherAthletesCommunityId, status, createdAt])
   @@index([category, status, createdAt])
+  @@index([requestType, status, createdAt])
   @@index([sport, status, createdAt])
   @@index([subcategoryId, status, createdAt])
   @@index([needId, status, createdAt])

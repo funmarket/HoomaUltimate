@@ -9,6 +9,7 @@ import {
 const correctedInput = {
   publisher: {},
   audience: { scope: "PUBLIC" as const },
+  requestType: "SPORT" as const,
   sport: "FOOTBALL" as const,
   subcategoryId: "hts-football-equipment",
   needId: "htn-football-ball",
@@ -19,10 +20,40 @@ const correctedInput = {
 
 test("Request contracts accept corrected sport-first creation without legacy category fields", () => {
   const parsed = helpRequestCreateSchema.parse(correctedInput);
+  assert.equal(parsed.requestType, "SPORT");
   assert.equal(parsed.sport, "FOOTBALL");
   assert.equal(parsed.subcategoryId, "hts-football-equipment");
   assert.equal(parsed.needId, "htn-football-ball");
   assert.equal(parsed.category, undefined);
+});
+
+test("Request contracts accept Community taxonomy without Sport", () => {
+  const parsed = helpRequestCreateSchema.parse({
+    publisher: {},
+    audience: { scope: "PUBLIC" },
+    requestType: "COMMUNITY",
+    subcategoryId: "hts-community-lost-found",
+    needId: "htn-community-lost-item",
+    title: "Lost wallet near the station",
+    description: "I lost a wallet nearby and need help checking the area.",
+  });
+  assert.equal(parsed.requestType, "COMMUNITY");
+  assert.equal(parsed.sport, undefined);
+});
+
+test("Request contracts reject Sport on Community Requests", () => {
+  assert.throws(() =>
+    helpRequestCreateSchema.parse({
+      publisher: {},
+      audience: { scope: "PUBLIC" },
+      requestType: "COMMUNITY",
+      sport: "FOOTBALL",
+      subcategoryId: "hts-community-lost-found",
+      needId: "htn-community-lost-item",
+      title: "Lost wallet near the station",
+      description: "I lost a wallet nearby and need help checking the area.",
+    }),
+  );
 });
 
 test("Request contracts keep legacy create compatibility during the frontend transition", () => {
@@ -79,11 +110,13 @@ test("Request read DTO carries resolved taxonomy presentation while retaining le
     audienceAthletesCommunityId: null,
     category: "ITEM",
     itemKind: null,
+    requestType: "SPORT",
     sport: "FOOTBALL",
     subcategoryId: "hts-football-equipment",
     needId: "htn-football-ball",
     customNeed: null,
     taxonomy: {
+      requestType: "SPORT",
       sport: "FOOTBALL",
       sportLabel: "Football",
       subcategory: {

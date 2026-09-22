@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { athletesSportSchema } from "./athletes.js";
 import { helpAudienceScopeSchema, helpCategorySchema, helpItemKindSchema } from "./help.js";
-import { helpTaxonomyNeedKindSchema } from "./help-taxonomy.js";
+import { helpRequestTypeSchema, helpTaxonomyNeedKindSchema } from "./help-taxonomy.js";
 
 const idSchema = z.string().trim().min(1);
 const optionalIdSchema = idSchema.optional().nullable();
@@ -55,6 +55,7 @@ export const helpRequestCreateSchema = z
     audience: helpRequestAudienceSchema,
     category: helpCategorySchema.optional(),
     itemKind: helpItemKindSchema.optional().nullable(),
+    requestType: helpRequestTypeSchema.optional().nullable(),
     sport: athletesSportSchema.optional().nullable(),
     subcategoryId: optionalIdSchema,
     needId: optionalIdSchema,
@@ -73,15 +74,51 @@ export const helpRequestCreateSchema = z
   })
   .strict()
   .superRefine((input, context) => {
-    const hasTaxonomy = Boolean(input.sport && input.subcategoryId && input.needId);
+    const hasCompleteTaxonomy = Boolean(input.subcategoryId && input.needId);
     const hasAnyTaxonomy = Boolean(input.subcategoryId || input.needId);
-    if (hasAnyTaxonomy && !hasTaxonomy) {
+
+    if (hasAnyTaxonomy && !hasCompleteTaxonomy) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Sport, subcategory and need must be provided together",
+        message: "Subcategory and need must be provided together",
+      });
+      return;
+    }
+
+    if (input.requestType === "SPORT") {
+      if (!input.sport || !hasCompleteTaxonomy) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Sport Requests require sport, subcategory and need",
+        });
+      }
+      return;
+    }
+
+    if (input.requestType === "COMMUNITY") {
+      if (input.sport) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Community Requests do not accept a sport",
+        });
+      }
+      if (!hasCompleteTaxonomy) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Community Requests require subcategory and need",
+        });
+      }
+      return;
+    }
+
+    const compatibleSportTaxonomy = Boolean(input.sport && hasCompleteTaxonomy);
+    if (hasAnyTaxonomy && !compatibleSportTaxonomy) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Legacy corrected Requests require sport, subcategory and need",
       });
     }
-    if (!hasTaxonomy && !input.category) {
+    if (!compatibleSportTaxonomy && !input.category) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
         message: "A corrected taxonomy selection or legacy category is required",
@@ -97,6 +134,7 @@ export const helpRequestListQuerySchema = z.object({
   cursor: idSchema.optional(),
   limit: z.coerce.number().int().min(1).max(100).default(30),
   category: helpCategorySchema.optional(),
+  requestType: helpRequestTypeSchema.optional(),
   sport: athletesSportSchema.optional(),
   subcategoryId: idSchema.optional(),
   needId: idSchema.optional(),
@@ -117,14 +155,16 @@ export const helpRequestSchema = z.object({
   audienceAthletesCommunityId: idSchema.nullable(),
   category: helpCategorySchema,
   itemKind: helpItemKindSchema.nullable(),
+  requestType: helpRequestTypeSchema.nullable().optional(),
   sport: athletesSportSchema.nullable(),
   subcategoryId: idSchema.nullable().optional(),
   needId: idSchema.nullable().optional(),
   customNeed: z.string().nullable().optional(),
   taxonomy: z
     .object({
-      sport: athletesSportSchema,
-      sportLabel: z.string().min(1),
+      requestType: helpRequestTypeSchema,
+      sport: athletesSportSchema.nullable(),
+      sportLabel: z.string().min(1).nullable(),
       subcategory: z.object({
         id: idSchema,
         slug: z.string().min(1),

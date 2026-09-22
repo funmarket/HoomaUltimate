@@ -6,7 +6,7 @@ import type {
   RequestConditionPreference,
 } from "@hooma/contracts/requests";
 import type { HelpAudienceScope, HelpCategory, HelpItemKind } from "@hooma/contracts/help";
-import type { HelpTaxonomyNeedKind } from "@hooma/contracts/help-taxonomy";
+import type { HelpRequestType, HelpTaxonomyNeedKind } from "@hooma/contracts/help-taxonomy";
 import type { AthletesSport } from "@hooma/contracts/athletes";
 
 export interface HelpRequestRecord {
@@ -20,6 +20,7 @@ export interface HelpRequestRecord {
   readonly audienceAthletesCommunityId: string | null;
   readonly category: HelpCategory;
   readonly itemKind: HelpItemKind | null;
+  readonly requestType: HelpRequestType | null;
   readonly sport: AthletesSport | null;
   readonly subcategoryId: string | null;
   readonly needId: string | null;

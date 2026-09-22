@@ -1,5 +1,5 @@
 import type { AthletesSport } from "@hooma/contracts/athletes";
-import type { HelpTaxonomySurface } from "@hooma/contracts/help-taxonomy";
+import type { HelpRequestType, HelpTaxonomySurface } from "@hooma/contracts/help-taxonomy";
 import type { PrismaClient } from "@hooma/database";
 import type {
   HelpTaxonomyRepository,
@@ -9,13 +9,23 @@ import type {
 export class PrismaHelpTaxonomyRepository implements HelpTaxonomyRepository {
   constructor(private readonly db: PrismaClient) {}
 
-  async findActiveSelection(sport: AthletesSport, subcategoryId: string, needId: string) {
+  async findActiveSelection(input: {
+    readonly requestType: HelpRequestType;
+    readonly sport?: AthletesSport | null;
+    readonly subcategoryId: string;
+    readonly needId: string;
+  }) {
     const need = await this.db.helpTaxonomyNeed.findFirst({
       where: {
-        id: needId,
+        id: input.needId,
         active: true,
-        subcategoryId,
-        subcategory: { id: subcategoryId, sport, active: true },
+        subcategoryId: input.subcategoryId,
+        subcategory: {
+          id: input.subcategoryId,
+          requestType: input.requestType,
+          active: true,
+          ...(input.requestType === "SPORT" ? { sport: input.sport ?? undefined } : { sport: null }),
+        },
       },
       select: {
         id: true,
@@ -27,6 +37,7 @@ export class PrismaHelpTaxonomyRepository implements HelpTaxonomyRepository {
         subcategory: {
           select: {
             id: true,
+            requestType: true,
             sport: true,
             slug: true,
             label: true,
@@ -67,6 +78,7 @@ export class PrismaHelpTaxonomyRepository implements HelpTaxonomyRepository {
       orderBy: [{ sortOrder: "asc" }, { label: "asc" }, { id: "asc" }],
       select: {
         id: true,
+        requestType: true,
         sport: true,
         slug: true,
         label: true,

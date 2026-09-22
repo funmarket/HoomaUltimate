@@ -35,10 +35,11 @@ function serialize(record: HelpRequestRecord): HelpRequest {
   return {
     ...rest,
     taxonomy:
-      record.sport && taxonomySubcategory && taxonomyNeed
+      record.requestType && taxonomySubcategory && taxonomyNeed
         ? {
+            requestType: record.requestType,
             sport: record.sport,
-            sportLabel: sportLabels[record.sport],
+            sportLabel: record.sport ? sportLabels[record.sport] : null,
             subcategory: taxonomySubcategory,
             need: taxonomyNeed,
           }
@@ -81,12 +82,16 @@ export class RequestService {
     await this.requirePublisherAuthority(userId, input);
     await this.requireAudienceMembership(userId, input);
 
-    if (input.sport && input.subcategoryId && input.needId) {
-      const selection = await this.taxonomy?.findActiveSelection(
-        input.sport,
-        input.subcategoryId,
-        input.needId,
-      );
+    const requestType =
+      input.requestType ?? (input.sport && input.subcategoryId && input.needId ? "SPORT" : null);
+
+    if (requestType && input.subcategoryId && input.needId) {
+      const selection = await this.taxonomy?.findActiveSelection({
+        requestType,
+        sport: input.sport,
+        subcategoryId: input.subcategoryId,
+        needId: input.needId,
+      });
       if (!selection) {
         throw new RequestError("REQUEST_TAXONOMY_INVALID", "Request taxonomy selection is invalid");
       }
@@ -106,6 +111,12 @@ export class RequestService {
           "Custom need text is not allowed for this need",
         );
       }
+      if (selection.need.allowsCustomText && !input.customNeed) {
+        throw new RequestError(
+          "REQUEST_CUSTOM_NEED_REQUIRED",
+          "Custom need text is required for this need",
+        );
+      }
 
       const categoryByKind: Record<typeof selection.need.kind, HelpCategory> = {
         PRODUCT: "ITEM",
@@ -115,6 +126,8 @@ export class RequestService {
       return serialize(
         await this.repository.create(userId, {
           ...input,
+          requestType,
+          sport: requestType === "SPORT" ? input.sport : null,
           category: categoryByKind[selection.need.kind],
           itemKind: null,
         }),

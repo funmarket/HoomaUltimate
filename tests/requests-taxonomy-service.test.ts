@@ -21,6 +21,7 @@ function record(overrides: Partial<HelpRequestRecord> = {}): HelpRequestRecord {
     audienceAthletesCommunityId: null,
     category: "ITEM",
     itemKind: null,
+    requestType: "SPORT",
     sport: "FOOTBALL",
     subcategoryId: "hts-football-equipment",
     needId: "htn-football-ball",
@@ -66,6 +67,7 @@ function repository(
       return record({
         category: input.category,
         itemKind: input.itemKind ?? null,
+        requestType: input.requestType ?? null,
         sport: input.sport ?? null,
         subcategoryId: input.subcategoryId ?? null,
         needId: input.needId ?? null,
@@ -140,13 +142,15 @@ function visibility(): RequestVisibilityReader {
 function taxonomy(
   kind: "PRODUCT" | "COMMUNITY_ROLE" | "COMMUNITY_SUPPORT",
   allowsCustomText = false,
+  requestType: "SPORT" | "COMMUNITY" = "SPORT",
 ) {
   return {
     async findActiveSelection() {
       return {
         subcategory: {
-          id: "hts-football-equipment",
-          sport: "FOOTBALL",
+          id: requestType === "SPORT" ? "hts-football-equipment" : "hts-community-lost-found",
+          requestType,
+          sport: requestType === "SPORT" ? ("FOOTBALL" as const) : null,
           slug: "equipment-gear",
           label: "Equipment & Gear",
         },
@@ -166,6 +170,7 @@ function taxonomy(
 const corrected = {
   publisher: {},
   audience: { scope: "PUBLIC" as const },
+  requestType: "SPORT" as const,
   sport: "FOOTBALL" as const,
   subcategoryId: "hts-football-equipment",
   needId: "htn-football-ball",
@@ -182,9 +187,31 @@ test("corrected PRODUCT creation writes compatibility fields", async () => {
   );
 
   const result = await service.create("user-1", { ...corrected, quantityNeeded: 2 });
+  assert.equal(persisted?.requestType, "SPORT");
   assert.equal(persisted?.category, "ITEM");
   assert.equal(persisted?.itemKind, null);
   assert.equal(result.taxonomy?.need.kind, "PRODUCT");
+});
+
+test("Community Requests validate through the same canonical taxonomy reader without Sport", async () => {
+  let persisted: HelpRequestCreatePersistenceInput | null = null;
+  const service = new RequestService(
+    repository((input) => (persisted = input)),
+    visibility(),
+    taxonomy("COMMUNITY_SUPPORT", false, "COMMUNITY"),
+  );
+  await service.create("user-1", {
+    publisher: {},
+    audience: { scope: "PUBLIC" },
+    requestType: "COMMUNITY",
+    subcategoryId: "hts-community-lost-found",
+    needId: "htn-community-lost-item",
+    title: "Lost wallet near the station",
+    description: "I lost a wallet nearby and need help checking the area.",
+  });
+  assert.equal(persisted?.requestType, "COMMUNITY");
+  assert.equal(persisted?.sport, null);
+  assert.equal(persisted?.category, "COMMUNITY");
 });
 
 test("community role/support Needs reject product metadata", async () => {
@@ -213,6 +240,11 @@ test("customNeed is accepted only when the selected Need allows custom text", as
     repository((input) => (persisted = input)),
     visibility(),
     taxonomy("COMMUNITY_SUPPORT", true),
+  );
+  await assert.rejects(
+    allowed.create("user-1", corrected),
+    (error: unknown) =>
+      error instanceof RequestError && error.code === "REQUEST_CUSTOM_NEED_REQUIRED",
   );
   await allowed.create("user-1", { ...corrected, customNeed: "Bring training bibs" });
   assert.equal(persisted?.customNeed, "Bring training bibs");

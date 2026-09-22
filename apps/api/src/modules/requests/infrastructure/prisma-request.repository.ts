@@ -20,6 +20,7 @@ const helpRequestSelect = Prisma.validator<Prisma.HelpRequestSelect>()({
   audienceAthletesCommunityId: true,
   category: true,
   itemKind: true,
+  requestType: true,
   sport: true,
   subcategoryId: true,
   needId: true,
@@ -81,6 +82,7 @@ function responseRecord(row: HelpRequestResponseRow): HelpRequestResponseRecord 
 function filters(input: HelpRequestListQuery): Prisma.HelpRequestWhereInput {
   return {
     ...(input.category ? { category: input.category } : {}),
+    ...(input.requestType ? { requestType: input.requestType } : {}),
     ...(input.sport ? { sport: input.sport } : {}),
     ...(input.subcategoryId ? { subcategoryId: input.subcategoryId } : {}),
     ...(input.needId ? { needId: input.needId } : {}),
@@ -131,6 +133,7 @@ export class PrismaRequestRepository implements RequestRepository, RequestVisibi
           audienceAthletesCommunityId,
           category: input.category,
           itemKind: input.itemKind ?? null,
+          requestType: input.requestType ?? null,
           sport: input.sport ?? null,
           subcategoryId: input.subcategoryId ?? null,
           needId: input.needId ?? null,
