@@ -136,7 +136,10 @@ function visibility(): RequestVisibilityReader {
   };
 }
 
-function taxonomy(kind: "PRODUCT" | "COMMUNITY_ROLE" | "COMMUNITY_SUPPORT", allowsCustomText = false): HelpTaxonomySelectionReader {
+function taxonomy(
+  kind: "PRODUCT" | "COMMUNITY_ROLE" | "COMMUNITY_SUPPORT",
+  allowsCustomText = false,
+): HelpTaxonomySelectionReader {
   return {
     async findActiveSelection() {
       return {
@@ -171,7 +174,11 @@ const corrected = {
 
 test("corrected PRODUCT Requests validate taxonomy and write compatibility legacy fields", async () => {
   let persisted: HelpRequestCreatePersistenceInput | null = null;
-  const service = new RequestService(repository((input) => (persisted = input)), visibility(), taxonomy("PRODUCT"));
+  const service = new RequestService(
+    repository((input) => (persisted = input)),
+    visibility(),
+    taxonomy("PRODUCT"),
+  );
 
   const result = await service.create("user-1", { ...corrected, quantityNeeded: 2 });
   assert.equal(persisted?.category, "ITEM");
@@ -189,7 +196,11 @@ test("community role/support Needs reject product metadata", async () => {
 });
 
 test("customNeed is accepted only when the selected Need allows custom text", async () => {
-  const denied = new RequestService(repository(), visibility(), taxonomy("COMMUNITY_SUPPORT", false));
+  const denied = new RequestService(
+    repository(),
+    visibility(),
+    taxonomy("COMMUNITY_SUPPORT", false),
+  );
   await assert.rejects(
     denied.create("user-1", { ...corrected, customNeed: "Bring training bibs" }),
     (error: unknown) =>
