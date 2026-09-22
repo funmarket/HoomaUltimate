@@ -21,7 +21,10 @@ const rideApi = await readFile("packages/frontend/src/rides/api.ts", "utf8");
 const rideCss = await readFile("packages/frontend/src/rides/rides.css", "utf8");
 
 test("Requests shell composes the current Help surface without payment pretence", () => {
-  assert.match(requestsPage, /export type RequestsPageTab = "requests" \| "fundme" \| "donations"/);
+  assert.match(
+    requestsPage,
+    /export type RequestsPageTab = "requests" \| "fundme" \| "donations"/,
+  );
   assert.match(requestsPage, /<HelpTabs tab=\{tab\}/);
   assert.match(requestsPage, /FundMe is not taking contributions yet/i);
 
@@ -37,7 +40,10 @@ test("Requests shell composes the current Help surface without payment pretence"
   assert.match(requestsApi, /export function createRequestsApi/);
   assert.match(requestsApi, /\/api\/public\/v1\/requests/);
   assert.match(requestsApi, /\/api\/v1\/requests/);
-  assert.doesNotMatch(requestsApi, /checkout|invoice|payment.?provider|\/contributions|\/donations/i);
+  assert.doesNotMatch(
+    requestsApi,
+    /checkout|invoice|payment.?provider|\/contributions|\/donations/i,
+  );
 });
 test("Ride surface uses real Ride APIs and no longer ships the old fake shell", () => {
   assert.match(ridesPage, /export \{ RideGatewayPage, RidesPage \}/);
