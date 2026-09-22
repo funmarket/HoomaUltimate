@@ -38,7 +38,13 @@ export function RequestCard({ item }: { readonly item: HelpRequest }) {
             Needed {new Date(item.neededByAt).toLocaleDateString()}
           </span>
         ) : null}
-        {item.taxonomy ? <span>{item.taxonomy.sportLabel} · {item.taxonomy.subcategory.label}</span> : item.sport ? <span>{titleCase(item.sport)}</span> : null}
+        {item.taxonomy ? (
+          <span>
+            {item.taxonomy.sportLabel} · {item.taxonomy.subcategory.label}
+          </span>
+        ) : item.sport ? (
+          <span>{titleCase(item.sport)}</span>
+        ) : null}
         {item.customNeed ? <span>{item.customNeed}</span> : null}
         {item.quantityNeeded ? <span>Qty {item.quantityNeeded}</span> : null}
       </div>
