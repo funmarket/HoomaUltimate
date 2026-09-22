@@ -20,9 +20,11 @@ model HelpTaxonomySubcategory {
   active    Boolean        @default(true)
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
-  needs     HelpTaxonomyNeed[]
+  needs        HelpTaxonomyNeed[]
+  helpRequests HelpRequest[] @relation("HelpRequestTaxonomySubcategory")
 
   @@unique([sport, slug])
+  @@unique([id, sport])
   @@index([sport, active, sortOrder])
 }
 
@@ -39,8 +41,10 @@ model HelpTaxonomyNeed {
   updatedAt        DateTime                  @updatedAt
   subcategory      HelpTaxonomySubcategory   @relation(fields: [subcategoryId], references: [id], onDelete: Restrict)
   surfaces         HelpTaxonomyNeedSurface[]
+  helpRequests     HelpRequest[] @relation("HelpRequestTaxonomyNeed")
 
   @@unique([subcategoryId, slug])
+  @@unique([id, subcategoryId])
   @@index([subcategoryId, active, sortOrder])
   @@index([kind, active])
 }

@@ -60,6 +60,10 @@ model HelpRequest {
   category                     HelpCategory
   itemKind                     HelpItemKind?
   sport                        AthletesSport?
+  subcategoryId                String?
+  needId                       String?
+  taxonomySubcategory          HelpTaxonomySubcategory? @relation("HelpRequestTaxonomySubcategory", fields: [subcategoryId, sport], references: [id, sport], onDelete: Restrict)
+  taxonomyNeed                 HelpTaxonomyNeed?        @relation("HelpRequestTaxonomyNeed", fields: [needId, subcategoryId], references: [id, subcategoryId], onDelete: Restrict)
   title                        String
   description                  String
   quantityNeeded               Int?
@@ -87,6 +91,8 @@ model HelpRequest {
   @@index([publisherAthletesCommunityId, status, createdAt])
   @@index([category, status, createdAt])
   @@index([sport, status, createdAt])
+  @@index([subcategoryId, status, createdAt])
+  @@index([needId, status, createdAt])
   @@index([expiresAt, status])
 }
 
