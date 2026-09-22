@@ -5,6 +5,7 @@ import { helpRequestCreateSchema, type HelpRequestCreateInput } from "@hooma/con
 import { useHoomaFrontend } from "../context";
 import { PlusIcon } from "../help/HelpIcons";
 import { createRequestsApi } from "./api";
+import { REQUEST_SURFACES, resolveRequestSurface } from "./surface";
 
 function optionalText(value: string): string | undefined {
   const trimmed = value.trim();
@@ -18,6 +19,8 @@ function optionalIso(value: string): string | undefined {
 export function RequestCreatePage() {
   const { api, transport, protectedError, authenticationHref } = useHoomaFrontend();
   const requestsApi = useMemo(() => createRequestsApi(transport), [transport]);
+  const surface = useMemo(resolveRequestSurface, []);
+  const { returnHref, returnLabel } = REQUEST_SURFACES[surface];
   const [me, setMe] = useState<MeResponse | null>(null);
   const [taxonomy, setTaxonomy] = useState<HelpTaxonomyResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,7 +51,7 @@ export function RequestCreatePage() {
 
   useEffect(() => {
     let active = true;
-    void Promise.all([api.identity.meOptional(), requestsApi.taxonomy("REQUESTS")])
+    void Promise.all([api.identity.meOptional(), requestsApi.taxonomy(surface)])
       .then(([current, currentTaxonomy]) => {
         if (!active) return;
         setMe(current);
@@ -63,7 +66,7 @@ export function RequestCreatePage() {
     return () => {
       active = false;
     };
-  }, [api, protectedError, requestsApi]);
+  }, [api, protectedError, requestsApi, surface]);
 
   const publisherOptions = useMemo(() => {
     if (!me) return [];
@@ -229,8 +232,8 @@ export function RequestCreatePage() {
             <a className="help-action" href={`/requests/${encodeURIComponent(createdId)}`}>
               View Request
             </a>
-            <a className="help-action help-action--quiet" href="/requests">
-              Back to Requests
+            <a className="help-action help-action--quiet" href={returnHref}>
+              {returnLabel}
             </a>
           </div>
         </section>
@@ -593,7 +596,7 @@ export function RequestCreatePage() {
             <PlusIcon />
             <span>{saving ? "Publishing…" : "Publish Request"}</span>
           </button>
-          <a className="help-action help-action--quiet" href="/requests">
+          <a className="help-action help-action--quiet" href={returnHref}>
             Cancel
           </a>
         </div>

@@ -377,7 +377,7 @@ test("signed-in visitor uses the member list endpoint and an empty result is a l
     await page.waitFor(() => assert.ok(page.view.getByText("No Requests match these filters.")));
     assert.deepEqual(
       page.calls.filter((call) => call.includes("/requests")),
-      ["GET /api/v1/requests"],
+      ["GET /api/v1/requests?surface=REQUESTS"],
     );
     assert.equal(page.view.queryByText("No Requests are listed yet."), null);
   } finally {
@@ -407,7 +407,7 @@ test("Load more appends the next cursor page without replacing existing Requests
     await page.waitFor(() => assert.ok(requestTitles(page.view).includes("Need training cones")));
     assert.ok(requestTitles(page.view).includes("Need size 43 running shoes"));
     assert.ok(
-      page.calls.includes("GET /api/public/v1/requests?cursor=cursor-2"),
+      page.calls.includes("GET /api/public/v1/requests?surface=REQUESTS&cursor=cursor-2"),
       `expected cursor request, saw ${page.calls.join(" | ")}`,
     );
   } finally {
@@ -433,7 +433,7 @@ test("City filter debounces list reloads and does not repeat identity lookup", a
       () => {
         assert.deepEqual(
           page.calls.filter((call) => call.includes("/requests")),
-          ["GET /api/public/v1/requests?city=Tunis"],
+          ["GET /api/public/v1/requests?surface=REQUESTS&city=Tunis"],
         );
       },
       { timeout: 1000 },

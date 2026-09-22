@@ -107,6 +107,12 @@ export function AthletesPage({
               </span>
               Create community
             </button>
+            <a className="button athletes-action" href="/requests?surface=ATHLETES">
+              <span className="athletes-action__icon" aria-hidden="true">
+                ↗
+              </span>
+              Athletes Requests
+            </a>
           </div>
         </div>
         <span className="athletes-hero__motion" aria-hidden="true" />

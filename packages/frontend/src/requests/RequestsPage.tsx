@@ -7,6 +7,7 @@ import { createRequestsApi, type RequestsListQuery } from "./api";
 import { HelpTabs } from "./HelpTabs";
 import { RequestFeed } from "./RequestFeed";
 import { RequestTaxonomyFilters } from "./RequestTaxonomyFilters";
+import { resolveRequestSurface } from "./surface";
 
 export type RequestsPageTab = "requests" | "fundme" | "donations";
 
@@ -18,9 +19,16 @@ export type RequestsPageTab = "requests" | "fundme" | "donations";
 export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPageTab }) {
   const { api, transport, protectedError } = useHoomaFrontend();
   const requestsApi = useMemo(() => createRequestsApi(transport), [transport]);
+  // One canonical Requests surface: `?surface=` selects the presentation
+  // context (Requests, Play, Athletes) without a second list implementation.
+  const surface = useMemo(resolveRequestSurface, []);
+  // The Requests surface keeps its canonical URL; other surfaces carry the
+  // context so the canonical create page classifies with the right taxonomy.
+  const createHref =
+    surface === "REQUESTS" ? "/requests/new" : `/requests/new?surface=${surface}`;
   const [items, setItems] = useState<HelpRequest[]>([]);
   const [taxonomy, setTaxonomy] = useState<HelpTaxonomyResponse | null>(null);
-  const [filters, setFilters] = useState<RequestsListQuery>({ surface: "REQUESTS" });
+  const [filters, setFilters] = useState<RequestsListQuery>({ surface });
   const [debouncedCity, setDebouncedCity] = useState<string | undefined>();
   const [debouncedHouma, setDebouncedHouma] = useState<string | undefined>();
   const [memberViewer, setMemberViewer] = useState<boolean | null>(null);
@@ -31,7 +39,7 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
 
   const effectiveFilters = useMemo<RequestsListQuery>(
     () => ({
-      surface: "REQUESTS",
+      surface,
       ...(filters.sport ? { sport: filters.sport } : {}),
       ...(filters.subcategoryId ? { subcategoryId: filters.subcategoryId } : {}),
       ...(filters.needId ? { needId: filters.needId } : {}),
@@ -48,6 +56,7 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
       filters.sport,
       filters.status,
       filters.subcategoryId,
+      surface,
     ],
   );
 
@@ -63,7 +72,7 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
     if (tab !== "requests") return;
     let active = true;
     void requestsApi
-      .taxonomy("REQUESTS")
+      .taxonomy(surface)
       .then((result) => {
         if (active) setTaxonomy(result);
       })
@@ -161,7 +170,7 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
           </p>
         </div>
         {tab === "requests" ? (
-          <a className="help-action" href="/requests/new">
+          <a className="help-action" href={createHref}>
             <PlusIcon />
             <span>Create request</span>
           </a>

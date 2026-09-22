@@ -16,6 +16,7 @@ import type { HelpRequestType } from "@hooma/contracts/help-taxonomy";
 import type { HelpCategory } from "@hooma/contracts/help";
 import type { HelpTaxonomySelectionReader } from "../../help-taxonomy/application/help-taxonomy.repository.js";
 import { RequestError } from "../domain/request-error.js";
+import type { RequestImageValidator } from "./request-image-validator.js";
 import type {
   HelpRequestRecord,
   HelpRequestResponseRecord,
@@ -70,15 +71,18 @@ function serialize(
     taxonomySubcategory,
     taxonomyNeed,
     imageObjectKey,
-    imageContentType: _imageContentType,
-    imageSizeBytes: _imageSizeBytes,
+    imageContentType,
+    imageSizeBytes,
     ...rest
   } = record;
   const requestType: HelpRequestType | null = record.requestType;
   return {
     ...rest,
     requester,
-    hasUploadedImage: Boolean(imageObjectKey),
+    // An uploaded photo exists only when the object key, its stored content
+    // type and a positive byte size were all recorded together. The three
+    // fields are stripped from `rest` and never reach a client.
+    hasUploadedImage: Boolean(imageObjectKey && imageContentType && imageSizeBytes),
     fullAddress: includePreciseLocation ? record.fullAddress : null,
     taxonomy:
       requestType && record.subcategoryId && taxonomySubcategory && taxonomyNeed
@@ -133,6 +137,7 @@ export class RequestService {
     private readonly taxonomy?: HelpTaxonomySelectionReader,
     private readonly storage: ObjectStorage | null = null,
     private readonly requesters: RequestRequesterReader | null = null,
+    private readonly imageValidator: RequestImageValidator | null = null,
   ) {}
 
   async create(userId: string, input: HelpRequestCreateInput): Promise<HelpRequest> {
@@ -360,12 +365,16 @@ export class RequestService {
         "Request photo must be between 1 byte and 5 MiB",
       );
     }
-    if (!this.storage) {
+    if (!this.storage || !this.imageValidator) {
       throw new RequestError(
         "REQUEST_IMAGE_STORAGE_UNAVAILABLE",
         "Request photo storage is not configured",
       );
     }
+
+    // Declared type and length are not proof: the bytes must decode as the
+    // declared image type before they are stored.
+    await this.imageValidator.validate(input.body, contentType);
 
     const objectKey = requestImageObjectKey(requestId);
     const stored = await this.storage.put(objectKey, input.body, contentType);

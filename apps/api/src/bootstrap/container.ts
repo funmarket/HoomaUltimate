@@ -54,6 +54,7 @@ import { PrismaPlayPlayerListingRepository } from "../modules/play/infrastructur
 import { RequestService } from "../modules/requests/application/request.service.js";
 import { PrismaRequestRepository } from "../modules/requests/infrastructure/prisma-request.repository.js";
 import { PrismaRequestRequesterReader } from "../modules/requests/infrastructure/prisma-request-requester.reader.js";
+import { SharpRequestImageValidator } from "../modules/requests/infrastructure/sharp-request-image-validator.js";
 import { HelpTaxonomyService } from "../modules/help-taxonomy/application/help-taxonomy.service.js";
 import { PrismaHelpTaxonomyRepository } from "../modules/help-taxonomy/infrastructure/prisma-help-taxonomy.repository.js";
 import { RideCommunityInteractionService } from "../modules/rides/application/ride-community-interaction.service.js";
@@ -246,6 +247,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     helpTaxonomyRepository,
     storage,
     new PrismaRequestRequesterReader(database),
+    new SharpRequestImageValidator(),
   );
   const helpTaxonomyService = new HelpTaxonomyService(helpTaxonomyRepository);
   const rideOfferRepository = new PrismaRideOfferRepository(database);

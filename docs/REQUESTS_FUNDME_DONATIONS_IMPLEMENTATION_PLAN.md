@@ -920,40 +920,6 @@ Scope after proof:
 - prove responses/lifecycle/expiry survive migration
 - never rewrite historical migrations
 
-### RQ-FIX-8 - Requests taxonomy root, community needs, Request photo, locked card
-
-Status: `IN_FLIGHT` (open PR, not merged; foundation truth until merge is unchanged)
-
-Scope delivered by this slice:
-
-- canonical Request root `requestType: SPORT | COMMUNITY`, chosen before taxonomy selection;
-  a community Request never asks for a sport
-- community taxonomy groups/needs served from the one shared taxonomy engine, root-discriminated
-  (`sports` and `community` in the taxonomy response)
-- free text only where the selected need sets `allowsCustomText`, persisted as `HelpRequest.customNeed`
-- one photo capability: requester-supplied `imageUrl` **or** one server-stored uploaded image behind a
-  private `imageObjectKey`, delivered by the canonical Requests image route, surfaced as `hasUploadedImage`
-- optional `HelpRequest.fullAddress`, projected only to the requester
-- requester identity projection (`requester`) read from the Identity module, never fabricated by the card
-- Request display card rebuilt as the locked poster: hero, eyebrow + right-aligned requester identity,
-  two-weight uppercase headline, role/activity/intent outlined chips, one hairline, 3-line description,
-  icon metadata row
-- obsolete removal: the card footer composer stub (the Whistle domain has no Request context)
-
-Migrations (forward-only, no historical migration edited):
-
-- `20260922020000_requests_request_type_root`
-- `20260922023000_requests_image`
-
-Decision record: `docs/adr/ADR-060-requests-taxonomy-root-and-photo-capability.md`.
-
-Not in this slice: Whistle-on-Request (needs an explicit Whistle context decision), the removal of the
-legacy category-only Request path, and any Play/Athletes projection change.
-
-Note for the ledger: `RQ-FIX-3` above is recorded `NOT_STARTED` while the merged foundation already
-contains the sport-first Requests frontend. That drift predates this slice and is reported rather than
-silently rewritten.
-
 ### RQ-FIX global exclusions
 
 Until a slice explicitly names its narrow integration point, do not change:
