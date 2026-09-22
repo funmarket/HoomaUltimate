@@ -113,7 +113,9 @@ export function RequestCreatePage() {
 
   function audienceInput(): HelpRequestCreateInput["audience"] {
     const [kind, id] = audience.split(":");
-    if (kind === "community" && id) return { scope: "HOOMA_COMMUNITY", communityId: id };
+    if (kind === "community" && id) {
+      return { scope: "HOOMA_COMMUNITY", communityId: id };
+    }
     if (kind === "athletes" && id) {
       return { scope: "ATHLETES_COMMUNITY", athletesCommunityId: id };
     }
@@ -123,6 +125,7 @@ export function RequestCreatePage() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (saving) return;
+
     setError("");
     const parsed = helpRequestCreateSchema.safeParse({
       publisher: publisherInput(),
@@ -142,10 +145,12 @@ export function RequestCreatePage() {
       neededByAt: optionalIso(neededByAt),
       expiresAt: optionalIso(expiresAt),
     });
+
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? "Check the Request details");
       return;
     }
+
     setSaving(true);
     try {
       const created = await requestsApi.create(parsed.data);
@@ -178,7 +183,11 @@ export function RequestCreatePage() {
   }
 
   if (!taxonomy) {
-    return <p className="status request-error">{error || "Request categories are unavailable"}</p>;
+    return (
+      <p className="status request-error">
+        {error || "Request categories are unavailable"}
+      </p>
+    );
   }
 
   if (createdId) {
@@ -214,22 +223,47 @@ export function RequestCreatePage() {
       <form className="request-form panel" onSubmit={submit}>
         <div className="request-form__grid">
           <div className="request-field">
-            <label className="request-field__label" htmlFor="request-create-publisher">Publish as</label>
-            <select id="request-create-publisher" className="request-field__control" value={publisher} onChange={(event) => setPublisher(event.target.value)}>
+            <label className="request-field__label" htmlFor="request-create-publisher">
+              Publish as
+            </label>
+            <select
+              id="request-create-publisher"
+              className="request-field__control"
+              value={publisher}
+              onChange={(event) => setPublisher(event.target.value)}
+            >
               <option value="personal">Myself</option>
-              {publisherOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </select>
-          </div>
-          <div className="request-field">
-            <label className="request-field__label" htmlFor="request-create-audience">Audience</label>
-            <select id="request-create-audience" className="request-field__control" value={audience} onChange={(event) => setAudience(event.target.value)}>
-              <option value="public">Everyone</option>
-              {audienceOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              {publisherOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
 
           <div className="request-field">
-            <label className="request-field__label" htmlFor="request-create-sport">Sport</label>
+            <label className="request-field__label" htmlFor="request-create-audience">
+              Audience
+            </label>
+            <select
+              id="request-create-audience"
+              className="request-field__control"
+              value={audience}
+              onChange={(event) => setAudience(event.target.value)}
+            >
+              <option value="public">Everyone</option>
+              {audienceOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="request-field">
+            <label className="request-field__label" htmlFor="request-create-sport">
+              Sport
+            </label>
             <select
               id="request-create-sport"
               className="request-field__control"
@@ -243,11 +277,18 @@ export function RequestCreatePage() {
               }}
             >
               <option value="">Choose sport</option>
-              {taxonomy.sports.map((entry) => <option key={entry.sport} value={entry.sport}>{entry.label}</option>)}
+              {taxonomy.sports.map((entry) => (
+                <option key={entry.sport} value={entry.sport}>
+                  {entry.label}
+                </option>
+              ))}
             </select>
           </div>
+
           <div className="request-field">
-            <label className="request-field__label" htmlFor="request-create-subcategory">Subcategory</label>
+            <label className="request-field__label" htmlFor="request-create-subcategory">
+              Subcategory
+            </label>
             <select
               id="request-create-subcategory"
               className="request-field__control"
@@ -261,11 +302,18 @@ export function RequestCreatePage() {
               }}
             >
               <option value="">Choose subcategory</option>
-              {(selectedSport?.subcategories ?? []).map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}
+              {(selectedSport?.subcategories ?? []).map((entry) => (
+                <option key={entry.id} value={entry.id}>
+                  {entry.label}
+                </option>
+              ))}
             </select>
           </div>
+
           <div className="request-field">
-            <label className="request-field__label" htmlFor="request-create-need">Specific item / need</label>
+            <label className="request-field__label" htmlFor="request-create-need">
+              Specific item / need
+            </label>
             <select
               id="request-create-need"
               className="request-field__control"
@@ -278,44 +326,117 @@ export function RequestCreatePage() {
               }}
             >
               <option value="">Choose need</option>
-              {(selectedSubcategory?.needs ?? []).map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}
+              {(selectedSubcategory?.needs ?? []).map((entry) => (
+                <option key={entry.id} value={entry.id}>
+                  {entry.label}
+                </option>
+              ))}
             </select>
           </div>
+
           {selectedNeed?.allowsCustomText ? (
             <div className="request-field">
-              <label className="request-field__label" htmlFor="request-create-custom-need">Describe the need</label>
-              <input id="request-create-custom-need" className="request-field__control" maxLength={120} value={customNeed} onChange={(event) => setCustomNeed(event.target.value)} />
+              <label className="request-field__label" htmlFor="request-create-custom-need">
+                Describe the need
+              </label>
+              <input
+                id="request-create-custom-need"
+                className="request-field__control"
+                maxLength={120}
+                value={customNeed}
+                onChange={(event) => setCustomNeed(event.target.value)}
+              />
             </div>
           ) : null}
+
           <div className="request-field">
-            <label className="request-field__label" htmlFor="request-create-city">City</label>
-            <input id="request-create-city" className="request-field__control" maxLength={100} value={city} onChange={(event) => setCity(event.target.value)} />
+            <label className="request-field__label" htmlFor="request-create-city">
+              City
+            </label>
+            <input
+              id="request-create-city"
+              className="request-field__control"
+              maxLength={100}
+              value={city}
+              onChange={(event) => setCity(event.target.value)}
+            />
           </div>
+
           <div className="request-field">
-            <label className="request-field__label" htmlFor="request-create-houma">Houma</label>
-            <input id="request-create-houma" className="request-field__control" maxLength={100} value={houma} onChange={(event) => setHouma(event.target.value)} />
+            <label className="request-field__label" htmlFor="request-create-houma">
+              Houma
+            </label>
+            <input
+              id="request-create-houma"
+              className="request-field__control"
+              maxLength={100}
+              value={houma}
+              onChange={(event) => setHouma(event.target.value)}
+            />
           </div>
         </div>
 
-        <label className="request-field__label" htmlFor="request-create-title">Title</label>
-        <input id="request-create-title" className="request-field__control" maxLength={120} value={title} onChange={(event) => setTitle(event.target.value)} />
+        <label className="request-field__label" htmlFor="request-create-title">
+          Title
+        </label>
+        <input
+          id="request-create-title"
+          className="request-field__control"
+          maxLength={120}
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+        />
 
-        <label className="request-field__label" htmlFor="request-create-description">Description</label>
-        <textarea id="request-create-description" maxLength={1200} rows={5} value={description} onChange={(event) => setDescription(event.target.value)} />
+        <label className="request-field__label" htmlFor="request-create-description">
+          Description
+        </label>
+        <textarea
+          id="request-create-description"
+          maxLength={1200}
+          rows={5}
+          value={description}
+          onChange={(event) => setDescription(event.target.value)}
+        />
 
         {productNeed ? (
           <div className="request-form__grid">
             <div className="request-field">
-              <label className="request-field__label" htmlFor="request-create-quantity">Quantity</label>
-              <input id="request-create-quantity" className="request-field__control" type="number" min="1" value={quantity} onChange={(event) => setQuantity(event.target.value)} />
+              <label className="request-field__label" htmlFor="request-create-quantity">
+                Quantity
+              </label>
+              <input
+                id="request-create-quantity"
+                className="request-field__control"
+                type="number"
+                min="1"
+                value={quantity}
+                onChange={(event) => setQuantity(event.target.value)}
+              />
             </div>
+
             <div className="request-field">
-              <label className="request-field__label" htmlFor="request-create-size">Size / label</label>
-              <input id="request-create-size" className="request-field__control" maxLength={40} value={sizeLabel} onChange={(event) => setSizeLabel(event.target.value)} />
+              <label className="request-field__label" htmlFor="request-create-size">
+                Size / label
+              </label>
+              <input
+                id="request-create-size"
+                className="request-field__control"
+                maxLength={40}
+                value={sizeLabel}
+                onChange={(event) => setSizeLabel(event.target.value)}
+              />
             </div>
+
             <div className="request-field">
-              <label className="request-field__label" htmlFor="request-create-condition">Condition</label>
-              <select id="request-create-condition" className="request-field__control" value={conditionPreference} onChange={(event) => setConditionPreference(event.target.value)}>
+              <label className="request-field__label" htmlFor="request-create-condition">
+                Condition
+              </label>
+              <select
+                id="request-create-condition"
+                className="request-field__control"
+                value={conditionPreference}
+                onChange={(event) => setConditionPreference(event.target.value)}
+              >
                 <option value="">Any</option>
                 <option value="ANY">Any condition</option>
                 <option value="NEW_ONLY">New only</option>
@@ -327,17 +448,42 @@ export function RequestCreatePage() {
 
         <div className="request-form__grid">
           <div className="request-field">
-            <label className="request-field__label" htmlFor="request-create-needed-by">Needed by</label>
-            <input id="request-create-needed-by" className="request-field__control" type="datetime-local" value={neededByAt} onChange={(event) => setNeededByAt(event.target.value)} />
+            <label className="request-field__label" htmlFor="request-create-needed-by">
+              Needed by
+            </label>
+            <input
+              id="request-create-needed-by"
+              className="request-field__control"
+              type="datetime-local"
+              value={neededByAt}
+              onChange={(event) => setNeededByAt(event.target.value)}
+            />
           </div>
+
           <div className="request-field">
-            <label className="request-field__label" htmlFor="request-create-expires">Expires at</label>
-            <input id="request-create-expires" className="request-field__control" type="datetime-local" value={expiresAt} onChange={(event) => setExpiresAt(event.target.value)} />
+            <label className="request-field__label" htmlFor="request-create-expires">
+              Expires at
+            </label>
+            <input
+              id="request-create-expires"
+              className="request-field__control"
+              type="datetime-local"
+              value={expiresAt}
+              onChange={(event) => setExpiresAt(event.target.value)}
+            />
           </div>
         </div>
 
-        <label className="request-field__label" htmlFor="request-create-location-note">Location note</label>
-        <input id="request-create-location-note" className="request-field__control" maxLength={240} value={locationNote} onChange={(event) => setLocationNote(event.target.value)} />
+        <label className="request-field__label" htmlFor="request-create-location-note">
+          Location note
+        </label>
+        <input
+          id="request-create-location-note"
+          className="request-field__control"
+          maxLength={240}
+          value={locationNote}
+          onChange={(event) => setLocationNote(event.target.value)}
+        />
 
         {error ? <p className="status request-error">{error}</p> : null}
 
@@ -346,7 +492,9 @@ export function RequestCreatePage() {
             <PlusIcon />
             <span>{saving ? "Publishing…" : "Publish Request"}</span>
           </button>
-          <a className="help-action help-action--quiet" href="/requests">Cancel</a>
+          <a className="help-action help-action--quiet" href="/requests">
+            Cancel
+          </a>
         </div>
       </form>
     </section>
