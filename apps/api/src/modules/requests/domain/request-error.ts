@@ -10,7 +10,10 @@ export type RequestErrorCode =
   | "REQUEST_RESPONSE_NOT_PENDING"
   | "REQUEST_RESPONSE_NOT_WITHDRAWABLE"
   | "REQUEST_STATUS_CONFLICT"
-  | "REQUEST_NOT_MUTABLE";
+  | "REQUEST_NOT_MUTABLE"
+  | "REQUEST_TAXONOMY_INVALID"
+  | "REQUEST_PRODUCT_METADATA_FORBIDDEN"
+  | "REQUEST_CUSTOM_NEED_FORBIDDEN";
 
 export class RequestError extends Error {
   override readonly name = "RequestError";
