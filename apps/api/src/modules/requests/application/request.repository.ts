@@ -4,9 +4,10 @@ import type {
   HelpRequestResponseStatus,
   HelpRequestStatus,
   RequestConditionPreference,
+  RequestRequesterPresentation,
 } from "@hooma/contracts/requests";
 import type { HelpAudienceScope, HelpCategory, HelpItemKind } from "@hooma/contracts/help";
-import type { HelpTaxonomyNeedKind } from "@hooma/contracts/help-taxonomy";
+import type { HelpRequestType, HelpTaxonomyNeedKind } from "@hooma/contracts/help-taxonomy";
 import type { AthletesSport } from "@hooma/contracts/athletes";
 
 export interface HelpRequestRecord {
@@ -18,6 +19,7 @@ export interface HelpRequestRecord {
   readonly audienceScope: HelpAudienceScope;
   readonly audienceCommunityId: string | null;
   readonly audienceAthletesCommunityId: string | null;
+  readonly requestType: HelpRequestType | null;
   readonly category: HelpCategory;
   readonly itemKind: HelpItemKind | null;
   readonly sport: AthletesSport | null;
@@ -44,7 +46,13 @@ export interface HelpRequestRecord {
   readonly placeId: string | null;
   readonly city: string | null;
   readonly houma: string | null;
+  readonly fullAddress: string | null;
   readonly locationNote: string | null;
+  readonly imageUrl: string | null;
+  /** Private object-storage key for an uploaded photo; never serialized to clients. */
+  readonly imageObjectKey: string | null;
+  readonly imageContentType: string | null;
+  readonly imageSizeBytes: number | null;
   readonly neededByAt: Date | null;
   readonly expiresAt: Date | null;
   readonly status: HelpRequestStatus;
@@ -70,6 +78,25 @@ export interface HelpRequestResponseRecord {
 export interface HelpRequestPage {
   readonly items: readonly HelpRequestRecord[];
   readonly nextCursor: string | null;
+}
+
+export interface HelpRequestImageMetadata {
+  readonly objectKey: string;
+  readonly contentType: string;
+  readonly sizeBytes: number;
+}
+
+/**
+ * Identity read model owned by the Identity module. Requests only reads it:
+ * it never stores a second copy of a display name or avatar.
+ */
+export interface RequestRequesterReader {
+  findPresentations(userIds: readonly string[]): Promise<readonly RequestRequesterPresentation[]>;
+}
+
+/** The previously stored object key, returned so the caller can clean up the replaced bytes. */
+export interface HelpRequestImageMutationResult {
+  readonly previousObjectKey: string | null;
 }
 
 export type HelpRequestCreatePersistenceInput = Omit<
@@ -112,6 +139,14 @@ export interface RequestRepository {
     from: readonly HelpRequestStatus[],
     to: HelpRequestStatus,
   ): Promise<HelpRequestRecord | null>;
+  /** Stores uploaded-image metadata and clears any requester-supplied image URL. */
+  setUploadedImage(
+    id: string,
+    metadata: HelpRequestImageMetadata,
+  ): Promise<HelpRequestImageMutationResult | null>;
+  /** Clears both the uploaded image metadata and the requester-supplied image URL. */
+  clearImage(id: string): Promise<HelpRequestImageMutationResult | null>;
+  getImageMetadata(id: string): Promise<HelpRequestImageMetadata | null>;
   expireDue(now: Date): Promise<number>;
 }
 

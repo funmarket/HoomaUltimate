@@ -2,6 +2,8 @@ import { expireDueHelpRequests, Prisma, type PrismaClient } from "@hooma/databas
 import type { HelpRequestListQuery, HelpRequestStatus } from "@hooma/contracts/requests";
 import type {
   HelpRequestCreatePersistenceInput,
+  HelpRequestImageMetadata,
+  HelpRequestImageMutationResult,
   HelpRequestPage,
   HelpRequestRecord,
   HelpRequestResponseRecord,
@@ -18,6 +20,7 @@ const helpRequestSelect = Prisma.validator<Prisma.HelpRequestSelect>()({
   audienceScope: true,
   audienceCommunityId: true,
   audienceAthletesCommunityId: true,
+  requestType: true,
   category: true,
   itemKind: true,
   sport: true,
@@ -38,7 +41,12 @@ const helpRequestSelect = Prisma.validator<Prisma.HelpRequestSelect>()({
   placeId: true,
   city: true,
   houma: true,
+  fullAddress: true,
   locationNote: true,
+  imageUrl: true,
+  imageObjectKey: true,
+  imageContentType: true,
+  imageSizeBytes: true,
   neededByAt: true,
   expiresAt: true,
   status: true,
@@ -80,6 +88,7 @@ function responseRecord(row: HelpRequestResponseRow): HelpRequestResponseRecord 
 
 function filters(input: HelpRequestListQuery): Prisma.HelpRequestWhereInput {
   return {
+    ...(input.requestType ? { requestType: input.requestType } : {}),
     ...(input.category ? { category: input.category } : {}),
     ...(input.sport ? { sport: input.sport } : {}),
     ...(input.subcategoryId ? { subcategoryId: input.subcategoryId } : {}),
@@ -129,6 +138,7 @@ export class PrismaRequestRepository implements RequestRepository, RequestVisibi
           audienceScope: input.audience.scope,
           audienceCommunityId,
           audienceAthletesCommunityId,
+          requestType: input.requestType ?? null,
           category: input.category,
           itemKind: input.itemKind ?? null,
           sport: input.sport ?? null,
@@ -143,7 +153,9 @@ export class PrismaRequestRepository implements RequestRepository, RequestVisibi
           placeId: input.placeId ?? null,
           city: input.city ?? null,
           houma: input.houma ?? null,
+          fullAddress: input.fullAddress ?? null,
           locationNote: input.locationNote ?? null,
+          imageUrl: input.imageUrl ?? null,
           neededByAt: input.neededByAt ? new Date(input.neededByAt) : null,
           expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
         },
@@ -373,6 +385,66 @@ export class PrismaRequestRepository implements RequestRepository, RequestVisibi
 
   async expireDue(now: Date): Promise<number> {
     return expireDueHelpRequests(this.db, now);
+  }
+
+  async setUploadedImage(
+    id: string,
+    metadata: HelpRequestImageMetadata,
+  ): Promise<HelpRequestImageMutationResult | null> {
+    return this.db.$transaction(async (tx) => {
+      const current = await tx.helpRequest.findUnique({
+        where: { id },
+        select: { imageObjectKey: true },
+      });
+      if (!current) return null;
+      const updated = await tx.helpRequest.updateMany({
+        where: { id },
+        data: {
+          imageObjectKey: metadata.objectKey,
+          imageContentType: metadata.contentType,
+          imageSizeBytes: metadata.sizeBytes,
+          // An uploaded photo replaces a requester-supplied image URL: a Request
+          // never carries two image sources.
+          imageUrl: null,
+        },
+      });
+      if (updated.count !== 1) return null;
+      return { previousObjectKey: current.imageObjectKey };
+    });
+  }
+
+  async clearImage(id: string): Promise<HelpRequestImageMutationResult | null> {
+    return this.db.$transaction(async (tx) => {
+      const current = await tx.helpRequest.findUnique({
+        where: { id },
+        select: { imageObjectKey: true },
+      });
+      if (!current) return null;
+      const updated = await tx.helpRequest.updateMany({
+        where: { id },
+        data: {
+          imageObjectKey: null,
+          imageContentType: null,
+          imageSizeBytes: null,
+          imageUrl: null,
+        },
+      });
+      if (updated.count !== 1) return null;
+      return { previousObjectKey: current.imageObjectKey };
+    });
+  }
+
+  async getImageMetadata(id: string): Promise<HelpRequestImageMetadata | null> {
+    const row = await this.db.helpRequest.findUnique({
+      where: { id },
+      select: { imageObjectKey: true, imageContentType: true, imageSizeBytes: true },
+    });
+    if (!row?.imageObjectKey || !row.imageContentType || row.imageSizeBytes === null) return null;
+    return {
+      objectKey: row.imageObjectKey,
+      contentType: row.imageContentType,
+      sizeBytes: row.imageSizeBytes,
+    };
   }
 
   async communityRole(communityId: string, userId: string) {

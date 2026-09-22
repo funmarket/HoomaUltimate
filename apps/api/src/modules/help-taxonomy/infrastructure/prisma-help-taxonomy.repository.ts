@@ -1,21 +1,26 @@
-import type { AthletesSport } from "@hooma/contracts/athletes";
 import type { HelpTaxonomySurface } from "@hooma/contracts/help-taxonomy";
 import type { PrismaClient } from "@hooma/database";
 import type {
   HelpTaxonomyRepository,
+  HelpTaxonomySelectionQuery,
   HelpTaxonomySubcategoryRecord,
 } from "../application/help-taxonomy.repository.js";
 
 export class PrismaHelpTaxonomyRepository implements HelpTaxonomyRepository {
   constructor(private readonly db: PrismaClient) {}
 
-  async findActiveSelection(sport: AthletesSport, subcategoryId: string, needId: string) {
+  async findActiveSelection(query: HelpTaxonomySelectionQuery) {
     const need = await this.db.helpTaxonomyNeed.findFirst({
       where: {
-        id: needId,
+        id: query.needId,
         active: true,
-        subcategoryId,
-        subcategory: { id: subcategoryId, sport, active: true },
+        subcategoryId: query.subcategoryId,
+        subcategory: {
+          id: query.subcategoryId,
+          requestType: query.requestType,
+          active: true,
+          ...(query.sport === null ? { sport: null } : { sport: query.sport }),
+        },
       },
       select: {
         id: true,
@@ -27,6 +32,7 @@ export class PrismaHelpTaxonomyRepository implements HelpTaxonomyRepository {
         subcategory: {
           select: {
             id: true,
+            requestType: true,
             sport: true,
             slug: true,
             label: true,
@@ -51,32 +57,33 @@ export class PrismaHelpTaxonomyRepository implements HelpTaxonomyRepository {
   async listActiveBySurface(
     surface: HelpTaxonomySurface,
   ): Promise<readonly HelpTaxonomySubcategoryRecord[]> {
-    const kind = surface === "DONATIONS" ? "PRODUCT" : undefined;
+    const needFilter =
+      surface === "DONATIONS"
+        ? {
+            active: true as const,
+            kind: "PRODUCT" as const,
+            surfaces: { some: { surface } },
+          }
+        : {
+            active: true as const,
+            surfaces: { some: { surface } },
+          };
 
     return this.db.helpTaxonomySubcategory.findMany({
       where: {
         active: true,
-        needs: {
-          some: {
-            active: true,
-            ...(kind ? { kind } : {}),
-            surfaces: { some: { surface } },
-          },
-        },
+        needs: { some: needFilter },
       },
       orderBy: [{ sortOrder: "asc" }, { label: "asc" }, { id: "asc" }],
       select: {
         id: true,
+        requestType: true,
         sport: true,
         slug: true,
         label: true,
         sortOrder: true,
         needs: {
-          where: {
-            active: true,
-            ...(kind ? { kind } : {}),
-            surfaces: { some: { surface } },
-          },
+          where: needFilter,
           orderBy: [{ sortOrder: "asc" }, { label: "asc" }, { id: "asc" }],
           select: {
             id: true,

@@ -29,6 +29,7 @@ test("Help taxonomy response keeps sport, subcategory and need semantics explici
         subcategories: [
           {
             id: "hts-football-footwear",
+            requestType: "SPORT",
             slug: "footwear-boots",
             label: "Footwear & Boots",
             sortOrder: 10,
@@ -46,8 +47,30 @@ test("Help taxonomy response keeps sport, subcategory and need semantics explici
         ],
       },
     ],
+    community: [
+      {
+        id: "hts-community-lost-found",
+        requestType: "COMMUNITY",
+        slug: "lost-found",
+        label: "Lost & Found",
+        sortOrder: 10,
+        needs: [
+          {
+            id: "htn-community-other",
+            slug: "other",
+            label: "Other",
+            kind: "COMMUNITY_SUPPORT",
+            allowsCustomText: true,
+            sortOrder: 90,
+          },
+        ],
+      },
+    ],
   });
 
   assert.equal(parsed.sports[0]?.sport, "FOOTBALL");
+  assert.equal(parsed.sports[0]?.subcategories[0]?.requestType, "SPORT");
   assert.equal(parsed.sports[0]?.subcategories[0]?.needs[0]?.kind, "PRODUCT");
+  assert.equal(parsed.community[0]?.requestType, "COMMUNITY");
+  assert.equal(parsed.community[0]?.needs[0]?.allowsCustomText, true);
 });

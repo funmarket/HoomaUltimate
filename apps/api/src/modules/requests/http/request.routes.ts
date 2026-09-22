@@ -1,8 +1,9 @@
-import { Router } from "express";
+import { Router, raw } from "express";
 import {
   helpRequestCreateSchema,
   helpRequestListQuerySchema,
   helpRequestRespondSchema,
+  requestImageUploadSchema,
 } from "@hooma/contracts/requests";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import { getAuth } from "../../identity/http/auth-request.js";
@@ -15,6 +16,17 @@ export function createRequestPublicRouter(service: RequestService): Router {
     "/",
     asyncHandler(async (request, response) => {
       response.json(await service.listPublic(helpRequestListQuerySchema.parse(request.query)));
+    }),
+  );
+
+  router.get(
+    "/:requestId/image",
+    asyncHandler(async (request, response) => {
+      const image = await service.getPublicImage(String(request.params.requestId));
+      response
+        .type(image.contentType)
+        .set("content-length", String(image.sizeBytes))
+        .send(Buffer.from(image.body));
     }),
   );
 
@@ -54,6 +66,46 @@ export function createRequestMemberRouter(service: RequestService): Router {
             helpRequestCreateSchema.parse(request.body),
           ),
         );
+    }),
+  );
+
+  router.put(
+    "/:requestId/image",
+    raw({ type: "*/*", limit: "5mb" }),
+    asyncHandler(async (request, response) => {
+      const body = Buffer.isBuffer(request.body) ? new Uint8Array(request.body) : new Uint8Array();
+      response.json(
+        await service.replaceImage(
+          getAuth(request).userId,
+          String(request.params.requestId),
+          requestImageUploadSchema.parse({
+            contentType: request.header("content-type") ?? "application/octet-stream",
+            body,
+          }),
+        ),
+      );
+    }),
+  );
+
+  router.delete(
+    "/:requestId/image",
+    asyncHandler(async (request, response) => {
+      await service.deleteImage(getAuth(request).userId, String(request.params.requestId));
+      response.status(204).end();
+    }),
+  );
+
+  router.get(
+    "/:requestId/image",
+    asyncHandler(async (request, response) => {
+      const image = await service.getMemberImage(
+        getAuth(request).userId,
+        String(request.params.requestId),
+      );
+      response
+        .type(image.contentType)
+        .set("content-length", String(image.sizeBytes))
+        .send(Buffer.from(image.body));
     }),
   );
 

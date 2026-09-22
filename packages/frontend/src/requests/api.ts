@@ -8,7 +8,7 @@ import type {
   HelpRequestResponse,
   HelpRequestResponseList,
 } from "@hooma/contracts/requests";
-import { request, type HoomaTransport } from "../http";
+import { request, requestBinary, type HoomaTransport } from "../http";
 
 const MEMBER_BASE = "/api/v1/requests";
 const PUBLIC_BASE = "/api/public/v1/requests";
@@ -93,6 +93,24 @@ export function createRequestsApi(transport: HoomaTransport) {
     cancel: (requestId: string) =>
       request<HelpRequest>(transport, `${MEMBER_BASE}/${encodeURIComponent(requestId)}/cancel`, {
         method: "POST",
+      }),
+    /**
+     * Replaces the Request photo with one server-authorized uploaded image.
+     * The raw bytes go through the same transport boundary as every other call;
+     * the API validates MIME type, size, ownership and Request mutability.
+     */
+    uploadImage: (requestId: string, file: Blob, contentType?: string) =>
+      requestBinary<HelpRequest>(
+        transport,
+        `${MEMBER_BASE}/${encodeURIComponent(requestId)}/image`,
+        file,
+        contentType || "application/octet-stream",
+        { method: "PUT" },
+      ),
+    /** Clears both the uploaded photo and any requester-supplied image URL. */
+    deleteImage: (requestId: string) =>
+      request<void>(transport, `${MEMBER_BASE}/${encodeURIComponent(requestId)}/image`, {
+        method: "DELETE",
       }),
   };
 }

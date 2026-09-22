@@ -11,21 +11,31 @@ enum HelpTaxonomySurface {
   DONATIONS
 }
 
+/// Root discriminator of the shared Requests taxonomy.
+/// SPORT subcategories belong to an AthletesSport; COMMUNITY subcategories do not.
+enum HelpRequestType {
+  SPORT
+  COMMUNITY
+}
+
 model HelpTaxonomySubcategory {
-  id        String         @id
-  sport     AthletesSport
-  slug      String
-  label     String
-  sortOrder Int
-  active    Boolean        @default(true)
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  id          String          @id
+  requestType HelpRequestType @default(SPORT)
+  sport       AthletesSport?
+  slug        String
+  label       String
+  sortOrder   Int
+  active      Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
   needs        HelpTaxonomyNeed[]
   helpRequests HelpRequest[] @relation("HelpRequestTaxonomySubcategory")
+  helpRequestTypes HelpRequest[] @relation("HelpRequestTaxonomySubcategoryType")
 
   @@unique([sport, slug])
   @@unique([id, sport])
-  @@index([sport, active, sortOrder])
+  @@unique([id, requestType])
+  @@index([requestType, sport, active, sortOrder])
 }
 
 model HelpTaxonomyNeed {

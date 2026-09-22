@@ -24,8 +24,10 @@ export function RequestCreatePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [createdId, setCreatedId] = useState("");
+  const [uploadNote, setUploadNote] = useState("");
   const [publisher, setPublisher] = useState("personal");
   const [audience, setAudience] = useState("public");
+  const [requestType, setRequestType] = useState<"SPORT" | "COMMUNITY">("SPORT");
   const [sport, setSport] = useState("");
   const [subcategoryId, setSubcategoryId] = useState("");
   const [needId, setNeedId] = useState("");
@@ -37,7 +39,10 @@ export function RequestCreatePage() {
   const [conditionPreference, setConditionPreference] = useState("");
   const [city, setCity] = useState("");
   const [houma, setHouma] = useState("");
+  const [fullAddress, setFullAddress] = useState("");
   const [locationNote, setLocationNote] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [neededByAt, setNeededByAt] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
 
@@ -95,10 +100,19 @@ export function RequestCreatePage() {
     ];
   }, [me]);
 
-  const selectedSport = taxonomy?.sports.find((entry) => entry.sport === sport);
-  const selectedSubcategory = selectedSport?.subcategories.find(
-    (entry) => entry.id === subcategoryId,
-  );
+  /**
+   * Progressive disclosure: the root choice decides which taxonomy branch is
+   * shown and whether a sport is part of the Request at all. Community needs
+   * never ask a person to pick a sport first.
+   */
+  const communityRequest = requestType === "COMMUNITY";
+  const selectedSport = communityRequest
+    ? undefined
+    : taxonomy?.sports.find((entry) => entry.sport === sport);
+  const subcategoryOptions = communityRequest
+    ? (taxonomy?.community ?? [])
+    : (selectedSport?.subcategories ?? []);
+  const selectedSubcategory = subcategoryOptions.find((entry) => entry.id === subcategoryId);
   const selectedNeed = selectedSubcategory?.needs.find((entry) => entry.id === needId);
   const productNeed = selectedNeed?.kind === "PRODUCT";
 
@@ -130,7 +144,8 @@ export function RequestCreatePage() {
     const parsed = helpRequestCreateSchema.safeParse({
       publisher: publisherInput(),
       audience: audienceInput(),
-      sport: sport || undefined,
+      requestType,
+      sport: communityRequest ? undefined : sport || undefined,
       subcategoryId: subcategoryId || undefined,
       needId: needId || undefined,
       customNeed: selectedNeed?.allowsCustomText ? optionalText(customNeed) : undefined,
@@ -141,7 +156,9 @@ export function RequestCreatePage() {
       conditionPreference: productNeed ? optionalText(conditionPreference) : undefined,
       city: optionalText(city),
       houma: optionalText(houma),
+      fullAddress: optionalText(fullAddress),
       locationNote: optionalText(locationNote),
+      imageUrl: optionalText(imageUrl),
       neededByAt: optionalIso(neededByAt),
       expiresAt: optionalIso(expiresAt),
     });
@@ -154,6 +171,20 @@ export function RequestCreatePage() {
     setSaving(true);
     try {
       const created = await requestsApi.create(parsed.data);
+      if (imageFile && imageFile.size > 0) {
+        try {
+          await requestsApi.uploadImage(created.id, imageFile, imageFile.type);
+        } catch (reason) {
+          // The Request is already published: report the photo failure without
+          // pretending the whole publish failed, or that the photo landed.
+          setUploadNote(
+            protectedError(
+              reason,
+              "Your Request was published, but the photo did not upload. You can add it from the Request page.",
+            ),
+          );
+        }
+      }
       setCreatedId(created.id);
     } catch (reason) {
       setError(protectedError(reason, "Unable to create Request"));
@@ -183,11 +214,7 @@ export function RequestCreatePage() {
   }
 
   if (!taxonomy) {
-    return (
-      <p className="status request-error">
-        {error || "Request categories are unavailable"}
-      </p>
-    );
+    return <p className="status request-error">{error || "Request categories are unavailable"}</p>;
   }
 
   if (createdId) {
@@ -197,6 +224,7 @@ export function RequestCreatePage() {
           <span className="eyebrow">REQUEST PUBLISHED</span>
           <h1>Your Request is live.</h1>
           <p className="muted">Everyone in its audience can now respond.</p>
+          {uploadNote ? <p className="status request-error">{uploadNote}</p> : null}
           <div className="request-action-row">
             <a className="help-action" href={`/requests/${encodeURIComponent(createdId)}`}>
               View Request
@@ -216,11 +244,25 @@ export function RequestCreatePage() {
         <div className="help-hero__copy">
           <span className="eyebrow">HOOMA HELP</span>
           <h1>Create a Request</h1>
-          <p>Choose the sport and exact need first, then tell the community where help is needed.</p>
+          <p>
+            Choose the sport and exact need first, then tell the community where help is needed.
+          </p>
         </div>
       </header>
 
       <form className="request-form panel" onSubmit={submit}>
+        <label className="request-field__label" htmlFor="request-create-title">
+          Title
+        </label>
+        <input
+          id="request-create-title"
+          className="request-field__control"
+          maxLength={120}
+          required
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+        />
+
         <div className="request-form__grid">
           <div className="request-field">
             <label className="request-field__label" htmlFor="request-create-publisher">
@@ -261,40 +303,63 @@ export function RequestCreatePage() {
           </div>
 
           <div className="request-field">
-            <label className="request-field__label" htmlFor="request-create-sport">
-              Sport
+            <label className="request-field__label" htmlFor="request-create-type">
+              Request type
             </label>
             <select
-              id="request-create-sport"
+              id="request-create-type"
               className="request-field__control"
-              value={sport}
-              required
+              value={requestType}
               onChange={(event) => {
-                setSport(event.target.value);
+                setRequestType(event.target.value === "COMMUNITY" ? "COMMUNITY" : "SPORT");
+                setSport("");
                 setSubcategoryId("");
                 setNeedId("");
                 setCustomNeed("");
               }}
             >
-              <option value="">Choose sport</option>
-              {taxonomy.sports.map((entry) => (
-                <option key={entry.sport} value={entry.sport}>
-                  {entry.label}
-                </option>
-              ))}
+              <option value="SPORT">Sport</option>
+              <option value="COMMUNITY">Community</option>
             </select>
           </div>
 
+          {communityRequest ? null : (
+            <div className="request-field">
+              <label className="request-field__label" htmlFor="request-create-sport">
+                Sport
+              </label>
+              <select
+                id="request-create-sport"
+                className="request-field__control"
+                value={sport}
+                required
+                onChange={(event) => {
+                  setSport(event.target.value);
+                  setSubcategoryId("");
+                  setNeedId("");
+                  setCustomNeed("");
+                }}
+              >
+                <option value="">Choose sport</option>
+                {taxonomy.sports.map((entry) => (
+                  <option key={entry.sport} value={entry.sport}>
+                    {entry.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="request-field">
             <label className="request-field__label" htmlFor="request-create-subcategory">
-              Subcategory
+              {communityRequest ? "Community subcategory" : "Subcategory"}
             </label>
             <select
               id="request-create-subcategory"
               className="request-field__control"
               value={subcategoryId}
               required
-              disabled={!selectedSport}
+              disabled={communityRequest ? false : !selectedSport}
               onChange={(event) => {
                 setSubcategoryId(event.target.value);
                 setNeedId("");
@@ -302,7 +367,7 @@ export function RequestCreatePage() {
               }}
             >
               <option value="">Choose subcategory</option>
-              {(selectedSport?.subcategories ?? []).map((entry) => (
+              {subcategoryOptions.map((entry) => (
                 <option key={entry.id} value={entry.id}>
                   {entry.label}
                 </option>
@@ -374,18 +439,54 @@ export function RequestCreatePage() {
               onChange={(event) => setHouma(event.target.value)}
             />
           </div>
+
+          <div className="request-field">
+            <label className="request-field__label" htmlFor="request-create-full-address">
+              Full address (optional)
+            </label>
+            <input
+              id="request-create-full-address"
+              className="request-field__control"
+              maxLength={240}
+              value={fullAddress}
+              onChange={(event) => setFullAddress(event.target.value)}
+            />
+          </div>
         </div>
 
-        <label className="request-field__label" htmlFor="request-create-title">
-          Title
+        <label className="request-field__label" htmlFor="request-create-image-url">
+          Photo link (optional)
         </label>
         <input
-          id="request-create-title"
+          id="request-create-image-url"
           className="request-field__control"
-          maxLength={120}
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
+          inputMode="url"
+          maxLength={2000}
+          placeholder="https://…"
+          value={imageUrl}
+          onChange={(event) => {
+            setImageUrl(event.target.value);
+            if (event.target.value.trim()) setImageFile(null);
+          }}
         />
+
+        <label className="request-field__label" htmlFor="request-create-image-file">
+          …or upload a photo
+        </label>
+        <input
+          id="request-create-image-file"
+          className="request-field__control"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={(event) => {
+            const file = event.target.files?.[0] ?? null;
+            setImageFile(file);
+            if (file) setImageUrl("");
+          }}
+        />
+        <p className="muted">
+          One photo per Request: a link or an uploaded JPEG/PNG/WebP up to 5 MB.
+        </p>
 
         <label className="request-field__label" htmlFor="request-create-description">
           Description

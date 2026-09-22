@@ -440,7 +440,13 @@ The dedicated decision record is `docs/adr/ADR-058-athletes-calendar-rsvp.md`.
 
 **Reason:** Private Athletes attendance intent has different lifecycle semantics from Play/Event capacity and waitlist RSVP, so it remains Athletes-owned.
 
-## ADR-059 — Athletes Calendar RSVP concurrency and active-member counts
+## ADR-060 — Requests taxonomy root and the single Request photo capability
+
+**Decision:** Requests carry one canonical root, `requestType: SPORT | COMMUNITY`, chosen before taxonomy selection. A `SPORT` Request follows `sport → subcategory → need`; a `COMMUNITY` Request selects community groups/needs from the same shared taxonomy and requires no sport. Free text is allowed only where the selected need sets `allowsCustomText` (stored as `customNeed`), and the user-entered Request `title` stays first class. A Request carries at most one photo: either a requester-supplied `imageUrl` or one server-stored uploaded image held privately behind `imageObjectKey` (never serialized) with `imageContentType`/`imageSizeBytes`, exposed to surfaces through `hasUploadedImage`. `fullAddress` is optional and projected only to the requester.
+
+The dedicated decision record is `docs/adr/ADR-060-requests-taxonomy-root-and-photo-capability.md`.
+
+**Reason:** Community-only needs had no canonical expression while the sport was the mandatory entry point, and a photo is one capability with two sources — neither needed a second taxonomy engine, a synthetic sport, or a second media pipeline.
 
 **Decision:** RSVP writes use a shared Athletes community `FOR SHARE` lifecycle guard in the same transaction as active-membership, same-community entry, cancellation, and upsert checks. Independent RSVP writers may therefore proceed concurrently. Existing archive/member-removal/Founder Calendar mutations retain their exclusive `FOR UPDATE` guard and conflict with in-flight shared RSVP guards. RSVP rows remain durable when membership ends, while current aggregate counts include only Users with an active same-community AthletesMembership; cancelled entries use the same current-active-member count semantics and are not treated as cancellation-time snapshots.
 

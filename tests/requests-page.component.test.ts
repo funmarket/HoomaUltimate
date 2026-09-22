@@ -151,6 +151,65 @@ type StubOptions = {
   readonly memberItems?: readonly unknown[];
 };
 
+/**
+ * The canonical shared taxonomy the Requests surfaces load. Both roots are
+ * served: `sports` for SPORT requests and `community` for COMMUNITY requests.
+ */
+const taxonomyFixture = {
+  sports: [
+    {
+      sport: "RUNNING",
+      label: "Running",
+      subcategories: [
+        {
+          id: "hts-running-gear",
+          requestType: "SPORT",
+          slug: "gear",
+          label: "Gear",
+          sortOrder: 10,
+          needs: [
+            {
+              id: "htn-running-shoes",
+              slug: "shoes",
+              label: "Running shoes",
+              kind: "PRODUCT",
+              allowsCustomText: false,
+              sortOrder: 10,
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  community: [
+    {
+      id: "hts-community-lost-found",
+      requestType: "COMMUNITY",
+      slug: "lost-found",
+      label: "Lost & Found",
+      sortOrder: 10,
+      needs: [
+        {
+          id: "htn-community-lost-item",
+          slug: "lost-item",
+          label: "Lost item",
+          kind: "COMMUNITY_SUPPORT",
+          allowsCustomText: false,
+          sortOrder: 10,
+        },
+        {
+          id: "htn-community-other",
+          slug: "other",
+          label: "Other",
+          kind: "COMMUNITY_SUPPORT",
+          allowsCustomText: true,
+          sortOrder: 90,
+        },
+      ],
+    },
+  ],
+};
+
 function installApiStub(options: StubOptions) {
   const calls: string[] = [];
   const originalFetch = globalThis.fetch;
@@ -159,6 +218,7 @@ function installApiStub(options: StubOptions) {
     const key = `${init?.method ?? "GET"} ${url.pathname}${url.search}`;
     calls.push(key);
     if (url.pathname === "/api/public/v1/auth/session") return json(options.me ?? null);
+    if (url.pathname === "/api/public/v1/help/taxonomy") return json(taxonomyFixture);
     if (url.pathname === "/api/public/v1/requests") {
       if (url.searchParams.get("cursor")) {
         return json({ items: options.publicPageTwoItems ?? [], nextCursor: null });
@@ -184,15 +244,26 @@ function installApiStub(options: StubOptions) {
 const publicRequest = {
   id: "request-1",
   createdByUserId: "user-2",
+  requester: {
+    userId: "user-2",
+    username: "sami",
+    displayName: "Sami B",
+    photoUrl: null,
+  },
   publisherCommunityId: null,
   publisherTeamId: null,
   publisherAthletesCommunityId: null,
   audienceScope: "PUBLIC",
   audienceCommunityId: null,
   audienceAthletesCommunityId: null,
+  requestType: "SPORT",
   category: "ITEM",
   itemKind: "FOOTWEAR",
   sport: "RUNNING",
+  subcategoryId: null,
+  needId: null,
+  customNeed: null,
+  taxonomy: null,
   title: "Need size 43 running shoes",
   description: "Looking for used or new running shoes for training.",
   quantityNeeded: 1,
@@ -201,7 +272,10 @@ const publicRequest = {
   placeId: null,
   city: "La Marsa",
   houma: null,
+  fullAddress: null,
   locationNote: null,
+  imageUrl: null,
+  hasUploadedImage: false,
   neededByAt: null,
   expiresAt: null,
   status: "OPEN",
@@ -258,10 +332,26 @@ async function renderRequestsPage(options: StubOptions) {
   };
 }
 
+/**
+ * The locked card renders the headline as a two-weight split (accent word plus
+ * the remainder), so an exact whole-string `getByText` can never match: the
+ * fitted text lives in two child elements. Read the headline element instead.
+ */
+function requestTitles(view: { container: HTMLElement }): string[] {
+  return Array.from(view.container.querySelectorAll(".request-card__title")).map((node) =>
+    (node.textContent ?? "").replace(/\s+/g, " ").trim(),
+  );
+}
+
 test("anonymous /requests loads the real public Requests feed", async () => {
   const page = await renderRequestsPage({ me: null, publicItems: [publicRequest] });
   try {
-    await page.waitFor(() => assert.ok(page.view.getByText("Need size 43 running shoes")));
+    await page.waitFor(() =>
+      assert.ok(
+        requestTitles(page.view).includes("Need size 43 running shoes"),
+        `titles=${JSON.stringify(requestTitles(page.view))} calls=${page.calls.join(" | ")} body=${(page.view.container.textContent ?? "").slice(0, 300)}`,
+      ),
+    );
     assert.equal(page.view.queryByText("No Requests are listed yet."), null);
     assert.ok(page.view.getByRole("link", { name: /Create request/i }));
     assert.ok(page.view.getByRole("link", { name: /FundMe/i }));
@@ -274,7 +364,7 @@ test("anonymous /requests loads the real public Requests feed", async () => {
     assert.ok(cardView.getByText("La Marsa"));
     assert.deepEqual(
       page.calls.filter((call) => call.includes("/requests")),
-      ["GET /api/public/v1/requests"],
+      ["GET /api/public/v1/requests?surface=REQUESTS"],
     );
   } finally {
     page.close();
@@ -310,10 +400,12 @@ test("Load more appends the next cursor page without replacing existing Requests
     publicPageTwoItems: [secondPublicRequest],
   });
   try {
-    await page.waitFor(() => assert.ok(page.view.getByText("Need size 43 running shoes")));
+    await page.waitFor(() =>
+      assert.ok(requestTitles(page.view).includes("Need size 43 running shoes")),
+    );
     page.fireEvent.click(page.view.getByRole("button", { name: /Load more/i }));
-    await page.waitFor(() => assert.ok(page.view.getByText("Need training cones")));
-    assert.ok(page.view.getByText("Need size 43 running shoes"));
+    await page.waitFor(() => assert.ok(requestTitles(page.view).includes("Need training cones")));
+    assert.ok(requestTitles(page.view).includes("Need size 43 running shoes"));
     assert.ok(
       page.calls.includes("GET /api/public/v1/requests?cursor=cursor-2"),
       `expected cursor request, saw ${page.calls.join(" | ")}`,
@@ -355,12 +447,16 @@ test("City filter debounces list reloads and does not repeat identity lookup", a
 test("filters call the existing list query model", async () => {
   const page = await renderRequestsPage({ me: null, publicItems: [publicRequest] });
   try {
-    await page.waitFor(() => assert.ok(page.view.getByText("Need size 43 running shoes")));
-    page.fireEvent.change(page.view.getByLabelText("Category"), { target: { value: "ITEM" } });
+    await page.waitFor(() =>
+      assert.ok(requestTitles(page.view).includes("Need size 43 running shoes")),
+    );
+    // The canonical Requests filters are taxonomy-first: the legacy free-standing
+    // "Category" select no longer exists on the page.
+    page.fireEvent.change(page.view.getByLabelText("Sport"), { target: { value: "RUNNING" } });
     page.fireEvent.change(page.view.getByLabelText("City"), { target: { value: "La Marsa" } });
     await page.waitFor(() =>
       assert.ok(
-        page.calls.some((call) => call.includes("category=ITEM") && call.includes("city=La+Marsa")),
+        page.calls.some((call) => call.includes("sport=RUNNING") && call.includes("city=La+Marsa")),
         `expected filtered public list call, saw ${page.calls.join(" | ")}`,
       ),
     );

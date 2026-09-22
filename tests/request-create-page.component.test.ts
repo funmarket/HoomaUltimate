@@ -78,6 +78,62 @@ const meResponse = {
 
 const createdRequest = { id: "request-9" };
 
+/** The canonical shared taxonomy: the SPORT root and the COMMUNITY root. */
+const taxonomyFixture = {
+  sports: [
+    {
+      sport: "RUNNING",
+      label: "Running",
+      subcategories: [
+        {
+          id: "hts-running-gear",
+          requestType: "SPORT",
+          slug: "gear",
+          label: "Gear",
+          sortOrder: 10,
+          needs: [
+            {
+              id: "htn-running-shoes",
+              slug: "shoes",
+              label: "Running shoes",
+              kind: "PRODUCT",
+              allowsCustomText: false,
+              sortOrder: 10,
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  community: [
+    {
+      id: "hts-community-lost-found",
+      requestType: "COMMUNITY",
+      slug: "lost-found",
+      label: "Lost & Found",
+      sortOrder: 10,
+      needs: [
+        {
+          id: "htn-community-lost-item",
+          slug: "lost-item",
+          label: "Lost item",
+          kind: "COMMUNITY_SUPPORT",
+          allowsCustomText: false,
+          sortOrder: 10,
+        },
+        {
+          id: "htn-community-other",
+          slug: "other",
+          label: "Other",
+          kind: "COMMUNITY_SUPPORT",
+          allowsCustomText: true,
+          sortOrder: 90,
+        },
+      ],
+    },
+  ],
+};
+
 function installApiStub(options: { readonly me?: unknown }) {
   const calls: RecordedCall[] = [];
   const originalFetch = globalThis.fetch;
@@ -90,6 +146,7 @@ function installApiStub(options: { readonly me?: unknown }) {
       body: init?.body ? JSON.parse(String(init.body)) : null,
     });
     if (url.pathname === "/api/public/v1/auth/session") return json(options.me ?? null);
+    if (url.pathname === "/api/public/v1/help/taxonomy") return json(taxonomyFixture);
     if (url.pathname === "/api/v1/requests" && method === "POST") return json(createdRequest, 201);
     return json(
       { error: { code: "NOT_FOUND", message: `Unexpected ${method} ${url.pathname}` } },
@@ -169,6 +226,14 @@ test("a signed-in member can publish a Request and is linked to it", async () =>
     page.fireEvent.change(page.view.getByLabelText("Description"), {
       target: { value: "Looking for used or new running shoes for training sessions." },
     });
+    // Sport-first taxonomy: the need is chosen from the canonical taxonomy, not typed freely.
+    page.fireEvent.change(page.view.getByLabelText("Sport"), { target: { value: "RUNNING" } });
+    page.fireEvent.change(page.view.getByLabelText("Subcategory"), {
+      target: { value: "hts-running-gear" },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Specific item / need"), {
+      target: { value: "htn-running-shoes" },
+    });
     page.fireEvent.submit(page.view.getByRole("button", { name: /Publish Request/i }));
 
     await page.waitFor(() => assert.ok(page.view.getByRole("link", { name: /View Request/i })));
@@ -182,13 +247,110 @@ test("a signed-in member can publish a Request and is linked to it", async () =>
     assert.deepEqual(post.body, {
       publisher: {},
       audience: { scope: "PUBLIC" },
-      category: "ITEM",
+      requestType: "SPORT",
+      sport: "RUNNING",
+      subcategoryId: "hts-running-gear",
+      needId: "htn-running-shoes",
       title: "Need size 43 running shoes",
       description: "Looking for used or new running shoes for training sessions.",
     });
 
     const viewLink = page.view.getByRole("link", { name: /View Request/i });
     assert.equal(viewLink.getAttribute("href"), "/requests/request-9");
+  } finally {
+    page.close();
+  }
+});
+
+test("a community Request is published without any sport selection", async () => {
+  const page = await renderCreatePage({ me: meResponse });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByLabelText("Title")));
+
+    // The SPORT root asks for a sport; the COMMUNITY root must not.
+    assert.ok(page.view.getByLabelText("Sport"));
+
+    page.fireEvent.change(page.view.getByLabelText("Request type"), {
+      target: { value: "COMMUNITY" },
+    });
+    assert.equal(page.view.queryByLabelText("Sport"), null);
+
+    page.fireEvent.change(page.view.getByLabelText("Title"), {
+      target: { value: "Lost wallet near the stadium" },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Description"), {
+      target: { value: "Lost a brown wallet after the match and asking the local community." },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Community subcategory"), {
+      target: { value: "hts-community-lost-found" },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Specific item / need"), {
+      target: { value: "htn-community-lost-item" },
+    });
+    page.fireEvent.submit(page.view.getByRole("button", { name: /Publish Request/i }));
+
+    await page.waitFor(() => assert.ok(page.view.getByRole("link", { name: /View Request/i })));
+
+    const post = page.calls.find((call) => call.method === "POST");
+    assert.ok(
+      post,
+      `expected a POST, saw ${page.calls.map((c) => `${c.method} ${c.path}`).join(" | ")}`,
+    );
+    assert.deepEqual(post.body, {
+      publisher: {},
+      audience: { scope: "PUBLIC" },
+      requestType: "COMMUNITY",
+      subcategoryId: "hts-community-lost-found",
+      needId: "htn-community-lost-item",
+      title: "Lost wallet near the stadium",
+      description: "Lost a brown wallet after the match and asking the local community.",
+    });
+  } finally {
+    page.close();
+  }
+});
+
+test("a need that allows the requester's own words asks for them and carries them", async () => {
+  const page = await renderCreatePage({ me: meResponse });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByLabelText("Title")));
+    page.fireEvent.change(page.view.getByLabelText("Request type"), {
+      target: { value: "COMMUNITY" },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Community subcategory"), {
+      target: { value: "hts-community-lost-found" },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Specific item / need"), {
+      target: { value: "htn-community-other" },
+    });
+
+    // "Other" reveals the manual input; choosing a fixed need does not show it.
+    const manual = page.view.getByLabelText("Describe the need");
+    page.fireEvent.change(manual, { target: { value: "Lost my keys at the gate" } });
+    page.fireEvent.change(page.view.getByLabelText("Title"), {
+      target: { value: "Lost my keys at the gate" },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Description"), {
+      target: { value: "Lost a set of keys with a blue fob near the main gate tonight." },
+    });
+    page.fireEvent.submit(page.view.getByRole("button", { name: /Publish Request/i }));
+
+    await page.waitFor(() => assert.ok(page.view.getByRole("link", { name: /View Request/i })));
+    const post = page.calls.find((call) => call.method === "POST");
+    assert.ok(
+      post,
+      `expected a POST, saw ${page.calls.map((c) => `${c.method} ${c.path}`).join(" | ")}`,
+    );
+    assert.deepEqual(post.body, {
+      publisher: {},
+      audience: { scope: "PUBLIC" },
+      requestType: "COMMUNITY",
+      subcategoryId: "hts-community-lost-found",
+      needId: "htn-community-other",
+      customNeed: "Lost my keys at the gate",
+      title: "Lost my keys at the gate",
+      description: "Lost a set of keys with a blue fob near the main gate tonight.",
+    });
   } finally {
     page.close();
   }

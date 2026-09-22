@@ -152,6 +152,7 @@
 .help-tab:focus-visible,
 .help-action:focus-visible,
 .request-card:focus-visible,
+.request-card__link:focus-visible,
 .request-back-link:focus-visible,
 .request-filters select:focus-visible,
 .request-filters input:focus-visible,
@@ -242,62 +243,322 @@
   gap: 14px;
 }
 
+/* --- request card (poster) ------------------------------------------- */
+
 .request-card {
   display: grid;
-  gap: 12px;
-  padding: 18px;
+  gap: 0;
+  overflow: hidden;
   border: 1px solid var(--app-outline);
   border-radius: 16px;
   background: var(--app-surface);
   color: inherit;
   text-decoration: none;
-  box-shadow:
-    var(--app-elevate),
-    inset 0 0 0 1px var(--app-outline-gold);
   transition:
     border-color 160ms ease,
-    transform 140ms ease,
-    box-shadow 160ms ease;
+    transform 140ms ease;
 }
 
 .request-card:hover {
   border-color: var(--app-line-strong);
-  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.4);
   transform: translateY(-2px);
 }
 
-.request-card__topline {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.request-card__body {
+.request-card__link {
   display: grid;
-  gap: 7px;
+  color: inherit;
+  text-decoration: none;
 }
 
-.request-card__body h2 {
-  margin: 0;
-  font-size: 19px;
+/* --- hero ------------------------------------------------------------- */
+
+.request-card__hero {
+  position: relative;
+  display: grid;
+  min-height: 208px;
+  aspect-ratio: 3 / 2;
+  background:
+    radial-gradient(
+      120% 92% at 14% 6%,
+      color-mix(in srgb, var(--app-gold) 17%, transparent),
+      transparent 62%
+    ),
+    linear-gradient(158deg, var(--app-bg-raised), var(--app-bg));
+}
+
+.request-card--community .request-card__hero {
+  background:
+    radial-gradient(
+      120% 92% at 14% 6%,
+      color-mix(in srgb, var(--app-people-blue) 19%, transparent),
+      transparent 62%
+    ),
+    linear-gradient(158deg, var(--app-bg-raised), var(--app-bg));
+}
+
+.request-card__hero-image {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.request-card__hero-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  /* The reference keeps the photo readable rather than graded: a light scrim
+     confined to the edges where the pills and the badge sit. */
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--app-bg) 34%, transparent) 0%,
+    transparent 34%,
+    transparent 62%,
+    color-mix(in srgb, var(--app-bg) 40%, transparent) 100%
+  );
+}
+
+.request-card__hero .request-status {
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  left: 12px;
+  backdrop-filter: blur(6px);
+}
+
+.request-card__location {
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 62%;
+  padding: 7px 12px;
+  border: 1px solid var(--app-line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--app-bg) 74%, transparent);
   color: var(--app-text-strong);
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
 }
 
-.request-card__body p {
-  margin: 0;
+.request-card__location svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  color: var(--app-gold);
+}
+
+.request-card__type {
+  position: absolute;
+  z-index: 2;
+  bottom: 12px;
+  left: 12px;
+  padding: 6px 12px;
+  border: 1px solid var(--app-outline-gold);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--app-bg) 70%, transparent);
+  color: var(--app-gold);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+}
+
+/* --- content ---------------------------------------------------------- */
+
+.request-card__content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "eyebrow identity"
+    "title identity"
+    "chips identity"
+    "divider divider"
+    "description description"
+    "meta meta";
+  align-items: start;
+  gap: 11px;
+  padding: 16px 16px 18px;
+}
+
+.request-card__eyebrow {
+  grid-area: eyebrow;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--app-text-caption);
+  font-size: 11px;
+  font-weight: 650;
+  font-style: italic;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.request-card__eyebrow-bar {
+  width: 22px;
+  height: 3px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--app-people-blue);
+}
+
+.request-card__identity {
+  grid-area: identity;
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  text-align: center;
+}
+
+.request-card__avatar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 2px solid var(--app-people-blue);
+  border-radius: 50%;
+  background: var(--app-bg-raised);
+}
+
+.request-card__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.request-card__avatar-fallback {
+  color: var(--app-gold);
   font-size: 15px;
-  line-height: 1.5;
+  font-weight: 700;
+}
+
+.request-card__identity-copy {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  min-width: 0;
+}
+
+.request-card__identity-copy strong {
+  color: var(--app-text-strong);
+  font-size: 14px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.request-card__identity-copy small {
+  color: var(--app-people-blue);
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.request-card__title {
+  grid-area: title;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--type-section);
+  line-height: 0.98;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--app-text-strong);
+  overflow-wrap: anywhere;
+}
+
+.request-card__title-accent {
+  display: block;
+  color: var(--app-gold);
+  font-style: italic;
+}
+
+.request-card__title-rest {
+  display: block;
+}
+
+.request-card__divider {
+  grid-area: divider;
+  height: 1px;
+  background: var(--app-line);
+}
+
+.request-card__chips {
+  grid-area: chips;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Outlined pills whose colour carries the chip's role: identity, activity and
+   intent. The reference fills none of them. */
+.request-card__chip {
+  padding: 4px 11px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.request-card__chip--identity {
+  color: var(--app-positive);
+}
+
+.request-card__chip--category {
+  color: var(--app-people-blue);
+}
+
+.request-card__chip--need {
+  color: var(--app-warning);
+}
+
+.request-card__description {
+  grid-area: description;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
   color: var(--app-text-secondary);
 }
 
 .request-card__meta {
+  grid-area: meta;
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 6px 14px;
   color: var(--app-text-caption);
   font-size: 14px;
   font-weight: 600;
+}
+
+/* The reference separates the metadata pairs with a plain vertical hairline. */
+.request-card__meta span + span {
+  padding-left: 14px;
+  border-left: 1px solid var(--app-line);
 }
 
 .request-card__meta span {
@@ -313,6 +574,15 @@
 }
 
 /* --- chips ------------------------------------------------------------ */
+
+/* Shared with RequestDetailPage and RequestResponses: the card headline row
+   keeps this class so the detail surfaces are unaffected by the poster body. */
+.request-card__topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
 
 .request-chip,
 .request-status {
@@ -549,7 +819,22 @@
     box-sizing: border-box;
   }
 
+  .request-card__hero {
+    aspect-ratio: 4 / 3;
+    min-height: 188px;
+  }
+
+  .request-card__location {
+    max-width: 56%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
   .request-card {
-    padding: 16px;
+    transition: none;
+  }
+
+  .request-card:hover {
+    transform: none;
   }
 }

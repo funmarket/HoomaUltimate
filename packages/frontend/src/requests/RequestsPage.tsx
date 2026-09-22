@@ -201,6 +201,7 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
             error={error}
             nextCursor={nextCursor}
             loadingMore={loadingMore}
+            memberView={memberViewer !== null}
             onLoadMore={() => void loadMore()}
           />
         </>

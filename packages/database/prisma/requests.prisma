@@ -57,6 +57,8 @@ model HelpRequest {
   audienceScope                HelpAudienceScope
   audienceCommunityId          String?
   audienceAthletesCommunityId  String?
+  /// Root of the taxonomy selection. Null on legacy rows created before the taxonomy root existed.
+  requestType                  HelpRequestType?
   category                     HelpCategory
   itemKind                     HelpItemKind?
   sport                        AthletesSport?
@@ -64,6 +66,7 @@ model HelpRequest {
   needId                       String?
   customNeed                   String?
   taxonomySubcategory          HelpTaxonomySubcategory? @relation("HelpRequestTaxonomySubcategory", fields: [subcategoryId, sport], references: [id, sport], onDelete: Restrict)
+  taxonomySubcategoryType      HelpTaxonomySubcategory? @relation("HelpRequestTaxonomySubcategoryType", fields: [subcategoryId, requestType], references: [id, requestType], onDelete: Restrict)
   taxonomyNeed                 HelpTaxonomyNeed?        @relation("HelpRequestTaxonomyNeed", fields: [needId, subcategoryId], references: [id, subcategoryId], onDelete: Restrict)
   title                        String
   description                  String
@@ -73,7 +76,13 @@ model HelpRequest {
   placeId                      String?
   city                         String?
   houma                        String?
+  fullAddress                  String?
   locationNote                 String?
+  imageUrl                     String?
+  /// Private object-storage key for an uploaded photo. Never exposed by the API.
+  imageObjectKey               String?  @unique
+  imageContentType             String?
+  imageSizeBytes               Int?
   neededByAt                   DateTime?
   expiresAt                    DateTime?
   status                       HelpRequestStatus          @default(OPEN)
@@ -91,6 +100,7 @@ model HelpRequest {
   @@index([publisherTeamId, status, createdAt])
   @@index([publisherAthletesCommunityId, status, createdAt])
   @@index([category, status, createdAt])
+  @@index([requestType, status, createdAt])
   @@index([sport, status, createdAt])
   @@index([subcategoryId, status, createdAt])
   @@index([needId, status, createdAt])

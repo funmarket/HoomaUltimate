@@ -9,6 +9,7 @@ export function RequestFeed({
   nextCursor,
   loadingMore,
   onLoadMore,
+  memberView = false,
 }: {
   readonly items: readonly HelpRequest[];
   readonly loading: boolean;
@@ -16,6 +17,8 @@ export function RequestFeed({
   readonly nextCursor: string | null;
   readonly loadingMore: boolean;
   readonly onLoadMore: () => void;
+  /** True when this feed is the authenticated member list, where scoped Requests are rendered. */
+  readonly memberView?: boolean;
 }) {
   if (error) return <p className="status request-error">{error}</p>;
   if (loading) return <p className="status">Loading Requests…</p>;
@@ -34,16 +37,11 @@ export function RequestFeed({
     <>
       <section className="request-list" aria-label="Requests">
         {items.map((item) => (
-          <RequestCard key={item.id} item={item} />
+          <RequestCard key={item.id} item={item} memberView={memberView} />
         ))}
       </section>
       {nextCursor ? (
-        <button
-          type="button"
-          className="help-action"
-          disabled={loadingMore}
-          onClick={onLoadMore}
-        >
+        <button type="button" className="help-action" disabled={loadingMore} onClick={onLoadMore}>
           {loadingMore ? "Loading…" : "Load more"}
         </button>
       ) : null}
