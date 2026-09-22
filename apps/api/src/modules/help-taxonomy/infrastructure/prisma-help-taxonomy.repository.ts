@@ -1,3 +1,4 @@
+import type { AthletesSport } from "@hooma/contracts/athletes";
 import type { HelpTaxonomySurface } from "@hooma/contracts/help-taxonomy";
 import type { PrismaClient } from "@hooma/database";
 import type {
@@ -7,6 +8,45 @@ import type {
 
 export class PrismaHelpTaxonomyRepository implements HelpTaxonomyRepository {
   constructor(private readonly db: PrismaClient) {}
+
+  async findActiveSelection(sport: AthletesSport, subcategoryId: string, needId: string) {
+    const need = await this.db.helpTaxonomyNeed.findFirst({
+      where: {
+        id: needId,
+        active: true,
+        subcategoryId,
+        subcategory: { id: subcategoryId, sport, active: true },
+      },
+      select: {
+        id: true,
+        subcategoryId: true,
+        slug: true,
+        label: true,
+        kind: true,
+        allowsCustomText: true,
+        subcategory: {
+          select: {
+            id: true,
+            sport: true,
+            slug: true,
+            label: true,
+          },
+        },
+      },
+    });
+    if (!need) return null;
+    return {
+      subcategory: need.subcategory,
+      need: {
+        id: need.id,
+        subcategoryId: need.subcategoryId,
+        slug: need.slug,
+        label: need.label,
+        kind: need.kind,
+        allowsCustomText: need.allowsCustomText,
+      },
+    };
+  }
 
   async listActiveBySurface(
     surface: HelpTaxonomySurface,
