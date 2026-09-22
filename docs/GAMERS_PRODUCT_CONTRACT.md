@@ -328,24 +328,23 @@ Community, Event, Athletes, Ride, direct Gamer and direct User Whistles consume 
 
 ## 12. Persistence target
 
-The bounded Gamers implementation may introduce durable models as their vertical slices begin. The target concepts are:
+Current merged Gamers persistence includes:
 
 ```text
 GamerGame
 GamerProfile
 GamerChallenge
-GamerResultSubmission
-GamerRanking
-GamerRatingHistory
-GamerSquad
-GamerSquadMembership
+GamerMatchSession
+GamerMatchSubmission
 ```
 
-Do not create an `Arena` table; both the selected-game Arena and global Arena are projections of `GamerChallenge` lifecycle.
+The accepted `GamerChallenge` remains the canonical challenge/Match Card identity. ADR-047 subsequently proved that EA FC execution/verification needs separate one-to-one `GamerMatchSession` state plus per-side `GamerMatchSubmission` evidence; those records do not create a second Gamer account, Arena, or Match Card presentation.
+
+Future ranking/rating/Squad concepts remain product direction until their owning slices actually implement durable models. Do not report planned `GamerRanking`, `GamerRatingHistory`, `GamerSquad` or `GamerSquadMembership` as current persistence merely because they appear in the roadmap.
+
+Do not create an `Arena` table; both the selected-game Arena and global Arena are projections over Gamers-owned challenge/match state.
 
 Do not create Gamer chat/message tables for this product direction. `GAMER_DIRECT` Whistle uses existing Whistle metadata plus Redis body storage and does not create a durable conversation entity.
-
-Do not create a separate `GamerMatch` merely because the UI says Match Card unless implementation proves Challenge and Match require separate durable identities. In the current direction, the accepted GamerChallenge can remain the canonical match identity.
 
 ---
 

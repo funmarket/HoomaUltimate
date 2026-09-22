@@ -182,19 +182,20 @@ Temporary event chat access is scoped to the mature event-participation rules ca
 
 ## 12. Whistle authorization
 
-A user may Whistle only through an allowed relationship/context:
+Whistle context enum values are not permission by themselves. A context is usable only when its owning domain/direct-pair path has an implemented server-side authorizer.
 
-- same active Event;
-- same Team;
-- accepted Ride;
-- same HOOMA Community;
-- same ULTRAS;
-- same Gamer Squad/approved Gamer context;
-- mutual or explicit player contact.
+Current enabled authorization paths are:
 
-A public profile lookup alone is insufficient.
+- `COMMUNITY` for active HOOMA Community members;
+- `EVENT` through Event member-content authorization;
+- `ATHLETES` through active Athletes member-content authorization;
+- `RIDE` through Ride-owned read/post authorization for the valid Ride relationship/context;
+- `GAMER_DIRECT` through the server-derived same-game Gamer pair contract;
+- `USER_DIRECT` through the server-derived canonical User pair contract.
 
-On reveal, authorization is checked again before transient body access. Persistent notification possession alone does not authorize body retrieval.
+`TEAM`, `ULTRAS` and `GAMER_SQUAD` are reserved context values but remain closed until their own authorization slices are implemented. Do not treat the enum as evidence that those contexts are live.
+
+A public profile lookup alone is insufficient to authorize a protected context. The server must derive/verify the relationship at every list/send boundary. Persistent notification possession never substitutes for Whistle authorization, and durable notification data must never contain Whistle body content.
 
 ## 13. Ride privacy authorization
 
