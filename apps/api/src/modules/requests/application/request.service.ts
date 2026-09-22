@@ -128,6 +128,7 @@ export class RequestService {
       await this.repository.create(userId, {
         ...input,
         category: input.category,
+        itemKind: input.itemKind ?? null,
       }),
     );
   }
