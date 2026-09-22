@@ -43,7 +43,6 @@ export function RequestCard({
   const detailHref = `/requests/${encodeURIComponent(item.id)}`;
   const communityRequest =
     item.taxonomy?.requestType === "COMMUNITY" || item.requestType === "COMMUNITY";
-  const [firstWord, ...remainingWords] = item.title.trim().split(/\s+/);
   const audienceLabel = AUDIENCE_LABELS[item.audienceScope] ?? "Everyone";
 
   return (
@@ -55,12 +54,7 @@ export function RequestCard({
             <span className="request-card__eyebrow-bar" aria-hidden="true" />
             {audienceLabel}
           </span>
-          <h2 className="request-card__title">
-            <span className="request-card__title-accent">{firstWord}</span>{" "}
-            {remainingWords.length > 0 ? (
-              <span className="request-card__title-rest">{remainingWords.join(" ")}</span>
-            ) : null}
-          </h2>
+          <h2 className="request-card__title">{item.title}</h2>
           <RequestCardIdentity requester={item.requester} />
           <RequestCardChips item={item} />
           <span className="request-card__divider" aria-hidden="true" />
