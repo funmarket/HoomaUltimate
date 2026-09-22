@@ -19,7 +19,32 @@ export interface HelpTaxonomySubcategoryRecord {
   readonly needs: readonly HelpTaxonomyNeedRecord[];
 }
 
-export interface HelpTaxonomyRepository {
+export interface HelpTaxonomySelection {
+  readonly subcategory: {
+    readonly id: string;
+    readonly sport: AthletesSport;
+    readonly slug: string;
+    readonly label: string;
+  };
+  readonly need: {
+    readonly id: string;
+    readonly subcategoryId: string;
+    readonly slug: string;
+    readonly label: string;
+    readonly kind: HelpTaxonomyNeedKind;
+    readonly allowsCustomText: boolean;
+  };
+}
+
+export interface HelpTaxonomySelectionReader {
+  findActiveSelection(
+    sport: AthletesSport,
+    subcategoryId: string,
+    needId: string,
+  ): Promise<HelpTaxonomySelection | null>;
+}
+
+export interface HelpTaxonomyRepository extends HelpTaxonomySelectionReader {
   listActiveBySurface(
     surface: HelpTaxonomySurface,
   ): Promise<readonly HelpTaxonomySubcategoryRecord[]>;
