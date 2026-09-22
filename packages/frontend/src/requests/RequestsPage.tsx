@@ -24,8 +24,7 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
   const surface = useMemo(resolveRequestSurface, []);
   // The Requests surface keeps its canonical URL; other surfaces carry the
   // context so the canonical create page classifies with the right taxonomy.
-  const createHref =
-    surface === "REQUESTS" ? "/requests/new" : `/requests/new?surface=${surface}`;
+  const createHref = surface === "REQUESTS" ? "/requests/new" : `/requests/new?surface=${surface}`;
   const [items, setItems] = useState<HelpRequest[]>([]);
   const [taxonomy, setTaxonomy] = useState<HelpTaxonomyResponse | null>(null);
   const [filters, setFilters] = useState<RequestsListQuery>({ surface });
