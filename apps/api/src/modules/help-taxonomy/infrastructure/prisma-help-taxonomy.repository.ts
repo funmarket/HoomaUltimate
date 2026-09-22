@@ -15,41 +15,54 @@ export class PrismaHelpTaxonomyRepository implements HelpTaxonomyRepository {
     readonly subcategoryId: string;
     readonly needId: string;
   }) {
-    const need = await this.db.helpTaxonomyNeed.findFirst({
+    const subcategory = await this.db.helpTaxonomySubcategory.findFirst({
       where: {
-        id: input.needId,
+        id: input.subcategoryId,
+        requestType: input.requestType,
         active: true,
-        subcategoryId: input.subcategoryId,
-        subcategory: {
-          id: input.subcategoryId,
-          requestType: input.requestType,
-          active: true,
-          ...(input.requestType === "SPORT"
-            ? { sport: input.sport ?? undefined }
-            : { sport: null }),
+        ...(input.requestType === "SPORT"
+          ? { sport: input.sport ?? null }
+          : { sport: null }),
+        needs: {
+          some: {
+            id: input.needId,
+            active: true,
+          },
         },
       },
       select: {
         id: true,
-        subcategoryId: true,
+        requestType: true,
+        sport: true,
         slug: true,
         label: true,
-        kind: true,
-        allowsCustomText: true,
-        subcategory: {
+        needs: {
+          where: {
+            id: input.needId,
+            active: true,
+          },
+          take: 1,
           select: {
             id: true,
-            requestType: true,
-            sport: true,
+            subcategoryId: true,
             slug: true,
             label: true,
+            kind: true,
+            allowsCustomText: true,
           },
         },
       },
     });
-    if (!need) return null;
+    const need = subcategory?.needs[0];
+    if (!subcategory || !need) return null;
     return {
-      subcategory: need.subcategory,
+      subcategory: {
+        id: subcategory.id,
+        requestType: subcategory.requestType,
+        sport: subcategory.sport,
+        slug: subcategory.slug,
+        label: subcategory.label,
+      },
       need: {
         id: need.id,
         subcategoryId: need.subcategoryId,

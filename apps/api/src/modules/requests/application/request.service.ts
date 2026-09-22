@@ -88,7 +88,7 @@ export class RequestService {
     if (requestType && input.subcategoryId && input.needId) {
       const selection = await this.taxonomy?.findActiveSelection({
         requestType,
-        sport: input.sport,
+        sport: input.sport ?? null,
         subcategoryId: input.subcategoryId,
         needId: input.needId,
       });

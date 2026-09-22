@@ -13,7 +13,8 @@ export type RequestErrorCode =
   | "REQUEST_NOT_MUTABLE"
   | "REQUEST_TAXONOMY_INVALID"
   | "REQUEST_PRODUCT_METADATA_FORBIDDEN"
-  | "REQUEST_CUSTOM_NEED_FORBIDDEN";
+  | "REQUEST_CUSTOM_NEED_FORBIDDEN"
+  | "REQUEST_CUSTOM_NEED_REQUIRED";
 
 export class RequestError extends Error {
   override readonly name = "RequestError";
