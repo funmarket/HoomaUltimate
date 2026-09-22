@@ -481,15 +481,6 @@
   overflow-wrap: anywhere;
 }
 
-.request-card__title-accent {
-  display: block;
-  color: var(--app-gold);
-  font-style: italic;
-}
-
-.request-card__title-rest {
-  display: block;
-}
 
 .request-card__divider {
   grid-area: divider;
