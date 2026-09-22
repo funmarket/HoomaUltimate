@@ -15,8 +15,9 @@ import {
   type PublicPlayPlayerListing,
 } from "./play-api";
 import { PlayPlayerCard } from "./PlayPlayerCard";
+import { PlayRequestsPane } from "./PlayRequestsPane";
 
-type PlayView = "games" | "players" | "mine";
+type PlayView = "games" | "players" | "requests" | "mine";
 
 const emptyActionState: PlayActionState = { teamOffers: [], eventInvites: [] };
 
@@ -343,12 +344,15 @@ export function PlayPage() {
     <section className="play-page">
       <PlayHero />
 
-      <div className="play-view-tabs play-view-tabs--three" role="tablist" aria-label="Play sections">
+      <div className="play-view-tabs play-view-tabs--four" role="tablist" aria-label="Play sections">
         <button className={`play-view-tab${activeView === "games" ? " is-active" : ""}`} type="button" role="tab" aria-selected={activeView === "games"} onClick={() => setActiveView("games")}>
           Games
         </button>
         <button className={`play-view-tab${activeView === "players" ? " is-active" : ""}`} type="button" role="tab" aria-selected={activeView === "players"} onClick={() => setActiveView("players")}>
           Players
+        </button>
+        <button className={`play-view-tab${activeView === "requests" ? " is-active" : ""}`} type="button" role="tab" aria-selected={activeView === "requests"} onClick={() => setActiveView("requests")}>
+          Requests
         </button>
         <button className={`play-view-tab${activeView === "mine" ? " is-active" : ""}`} type="button" role="tab" aria-selected={activeView === "mine"} onClick={() => setActiveView("mine")}>
           Mine
@@ -519,6 +523,8 @@ export function PlayPage() {
           ) : null}
         </section>
       ) : null}
+
+      {activeView === "requests" ? <PlayRequestsPane /> : null}
 
       {activeView === "mine" ? (
         <section className="play-section play-mine" aria-labelledby="mine-title">
