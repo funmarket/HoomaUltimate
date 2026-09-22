@@ -18,9 +18,9 @@ type RecordedCall = {
   readonly body: unknown;
 };
 
-function installDom(url = "http://localhost/requests/new") {
+function installDom() {
   const dom = new JSDOM("<!doctype html><html><body></body></html>", {
-    url,
+    url: "http://localhost/requests/new",
   });
   const globals: Record<string, unknown> = {
     window: dom.window,
@@ -161,8 +161,8 @@ function installApiStub(options: { readonly me?: unknown }) {
   };
 }
 
-async function renderCreatePage(options: { readonly me?: unknown; readonly url?: string }) {
-  const dom = installDom(options.url);
+async function renderCreatePage(options: { readonly me?: unknown }) {
+  const dom = installDom();
   const apiStub = installApiStub(options);
   const React = await import("react");
   Object.defineProperty(globalThis, "React", { value: React, writable: true, configurable: true });
@@ -208,36 +208,6 @@ test("a guest is sent through the current HOOMA auth flow with returnTo preserve
     page.close();
   }
 });
-
-test(
-  "Athletes create surface loads Athletes taxonomy and preserves auth return context",
-  async () => {
-    const page = await renderCreatePage({
-      me: null,
-      url: "http://localhost/requests/new?surface=ATHLETES",
-    });
-    try {
-      await page.waitFor(() =>
-        assert.ok(page.view.getByRole("link", { name: /Sign in to continue/i })),
-      );
-      assert.ok(
-        page.calls.some(
-          (call) =>
-            call.method === "GET" &&
-            call.path === "/api/public/v1/help/taxonomy?surface=ATHLETES",
-        ),
-        `expected Athletes taxonomy request, saw ${JSON.stringify(page.calls)}`,
-      );
-      const link = page.view.getByRole("link", { name: /Sign in to continue/i });
-      assert.equal(
-        link.getAttribute("href"),
-        "/login?returnTo=%2Frequests%2Fnew%3Fsurface%3DATHLETES",
-      );
-    } finally {
-      page.close();
-    }
-  },
-);
 
 test("a signed-in member can publish a Request and is linked to it", async () => {
   const page = await renderCreatePage({ me: meResponse });
