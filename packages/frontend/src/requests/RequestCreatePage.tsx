@@ -21,6 +21,8 @@ export function RequestCreatePage() {
   const requestsApi = useMemo(() => createRequestsApi(transport), [transport]);
   const surface = useMemo(resolveRequestSurface, []);
   const { returnHref, returnLabel } = REQUEST_SURFACES[surface];
+  const createHref =
+    surface === "REQUESTS" ? "/requests/new" : `/requests/new?surface=${surface}`;
   const [me, setMe] = useState<MeResponse | null>(null);
   const [taxonomy, setTaxonomy] = useState<HelpTaxonomyResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -199,7 +201,7 @@ export function RequestCreatePage() {
   if (loading) return <p className="status">Loading Request setup…</p>;
 
   if (!me) {
-    const href = authenticationHref("/requests/new");
+    const href = authenticationHref(createHref);
     return (
       <section className="page requests-page">
         <section className="requests-empty panel">
@@ -248,7 +250,7 @@ export function RequestCreatePage() {
           <span className="eyebrow">HOOMA HELP</span>
           <h1>Create a Request</h1>
           <p>
-            Choose the sport and exact need first, then tell the community where help is needed.
+            Choose Sport or Community, select the exact need, then tell people where help is needed.
           </p>
         </div>
       </header>
