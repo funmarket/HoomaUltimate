@@ -28,13 +28,7 @@ const helpRequestSelect = Prisma.validator<Prisma.HelpRequestSelect>()({
     select: { id: true, slug: true, label: true },
   },
   taxonomyNeed: {
-    select: {
-      id: true,
-      slug: true,
-      label: true,
-      kind: true,
-      allowsCustomText: true,
-    },
+    select: { id: true, slug: true, label: true, kind: true, allowsCustomText: true },
   },
   title: true,
   description: true,
