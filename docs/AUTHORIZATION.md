@@ -1,4 +1,4 @@
-# HOOMA ULTIMATE — Authorization
+# HOOMA — Authorization
 
 Status: **Locked authorization model**
 

@@ -1,4 +1,4 @@
-# HOOMA ULTIMATE — CANONICAL MODEL
+# HOOMA — CANONICAL MODEL
 
 Status: **ACTIVE DATA + AUTHORITY CONTRACT**  
 Scope: domains already implemented or currently being normalized.  
@@ -8,7 +8,7 @@ Do not add frozen future-domain models here until their vertical slice begins.
 
 ## 0. Purpose
 
-This document is the canonical contract for the current HOOMA ULTIMATE implementation.
+This document is the canonical contract for the current HOOMA implementation.
 
 During normalization, the following must agree with this file:
 
@@ -1202,16 +1202,28 @@ Ride waypoints are ordered `RideOfferWaypoint` records with optional canonical P
 
 Ride vehicle-photo bytes belong in object storage. `RideOfferVehiclePhoto` is a single-purpose Ride-owned metadata record for the managed object key, content type, size and lifecycle fields until a separately authorized generic Media domain exists. PostgreSQL must not store photo bytes, base64 payloads, storage credentials or polymorphic generic media ownership for this slice.
 
-Requests-owned canonical concepts may include:
+Current Requests-owned canonical persistence is:
 
 ```text
-Request
-RequestClaim
+HelpRequest
+HelpRequestResponse
+
+HelpTaxonomySubcategory
+HelpTaxonomyNeed
+HelpTaxonomyNeedSurface
 ```
 
-Requests use quantity-based partial claims. More than one active claimer is allowed while unclaimed quantity remains, and persistence must enforce that accepted/active claim quantities cannot exceed the requested quantity. Quantity-one requests behave as single-claim requests through the same rule, not through a second exclusive-only model.
+`HelpRequest` is the single Request lifecycle record. It owns the authenticated creator/audit actor, optional official publisher references, audience scope/targets, current sport/taxonomy references, optional custom need, user-entered title/description, supported location/product metadata, needed-by/expiry state and lifecycle timestamps.
 
-Requests do not own Ride, Fundraising, Payment or generic action state. FundMe remains grouped under Requests in navigation, but durable Fundraising and Payments state stays separately governed.
+The sport-first transition currently retains legacy `category` / `itemKind` compatibility columns while corrected taxonomy references are in use. Those legacy fields are removed only through a later forward migration after production/source proof shows no required Request depends on them.
+
+`HelpRequestResponse` stores one responder/request message and response status (`PENDING | ACCEPTED | DECLINED | WITHDRAWN`). It is not a quantity-allocation `RequestClaim` model. Do not describe partial-claim accounting as current Requests behavior unless a newer explicit product decision replaces this response workflow.
+
+Help Taxonomy is a separate shared boundary. Subcategory -> Need -> NeedSurface defines server-side eligibility for `REQUESTS | PLAY | ATHLETES | DONATIONS` projections. Main Requests, Play and Athletes consume the same canonical Request IDs; no projection owns copied Request persistence.
+
+Approved next Requests product direction adds `Request Type = Sport | Community`, with Community independent from Sport, broader sport-specific needs, manual Other values, optional Request image and optional full address. These additions remain Requests-owned product data while storage bytes, geolocation/Stadia capability, Identity presentation and Whistle keep their existing owners.
+
+Requests do not own Ride, Fundraising, Payments or generic action state. FundMe remains grouped under Requests in presentation, but durable Fundraising and Payments state stays separately governed.
 
 ---
 
@@ -1237,9 +1249,9 @@ Foundation interfaces/packages may exist, but a speculative schema is not implem
 
 # 23. Migration requirement
 
-Before first HOOMA ULTIMATE release, all pre-release current migrations are replaced with one reviewed initial migration generated from the reconciled schema and augmented with intentional PostgreSQL constraints where required.
+Current merged/applied HOOMA migration history is forward-only during normal feature work. Every schema correction uses a committed forward migration; historical applied migrations are not rewritten.
 
-After first release, migration history becomes forward-only.
+Any future pre-release baseline/squash of migration history requires a separate explicit product/operations decision plus clean-database and deployed-state reconciliation. It must never be performed opportunistically inside a feature slice.
 
 ---
 

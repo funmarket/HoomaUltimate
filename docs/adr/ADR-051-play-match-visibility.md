@@ -1,6 +1,8 @@
 # ADR-051: Play Match Visibility Is Match-Owned
 
-Status: Proposed in PR #206; not foundation truth until merged.
+Status: **Accepted and merged**  
+Implementation PR: #206  
+Merged: 2026-09-01 as `29fea304dec96b5d2e35513ec2e57d76a4a1173f`.
 
 ## Context
 

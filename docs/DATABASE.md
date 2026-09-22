@@ -1,4 +1,4 @@
-# HOOMA ULTIMATE — Database
+# HOOMA — Database
 
 Status: **Target data architecture and migration policy**
 
@@ -8,20 +8,19 @@ PostgreSQL is the durable source of business truth. Redis/Valkey is transient. O
 
 The final schema is normalized from both sources; it is not a concatenation of their Prisma files.
 
-## 2. Greenfield migration baseline
+## 2. Migration policy
 
-HOOMA ULTIMATE owns a fresh database schema and migration history.
+HOOMA owns its database schema and migration history.
 
 Rules:
 
-- design the target schema from the final domain requirements, not from donor table compatibility;
-- create and commit a real initial Prisma migration for HOOMA ULTIMATE;
-- Source A migrations and Source B schema are read-only reference evidence only;
-- do not copy Source A migration directories into the target history;
-- do not repeat Source B's zero-migration/fresh-schema-without-SQL state;
+- current merged/applied migration history is treated as forward-only;
+- every durable schema change uses a committed forward Prisma migration;
+- never rewrite an applied historical migration to make a new feature fit;
 - never use `prisma db push` as the production migration strategy;
-- once HOOMA ULTIMATE ships, every schema change gets a committed forward migration;
 - clean-database migration from zero is a required CI/release check;
+- donor migrations/schemas remain read-only reference evidence and are never copied into HOOMA history;
+- any future pre-release baseline/squash operation is a separate explicitly authorized migration-history task with clean-database and deployed-state proof; it is not routine feature work;
 - historical donor data, if ever imported, uses explicit ETL/import scripts and reconciliation rather than application migration compatibility.
 
 ## 3. Core model ownership
@@ -120,10 +119,19 @@ Independent models:
 
 ### Requests
 
-- `Request`
-- `RequestClaim`
+Current canonical Requests persistence is owned by Requests:
 
-Claiming must preserve concurrency-safe database invariants/locking behavior.
+- `HelpRequest`
+- `HelpRequestResponse`
+- `HelpTaxonomySubcategory`
+- `HelpTaxonomyNeed`
+- `HelpTaxonomyNeedSurface`
+
+`HelpRequest` owns publisher/audience references, lifecycle, user-entered title/description, sport/taxonomy links, optional custom need, location metadata, product metadata where allowed, needed-by/expiry state, and the legacy category/itemKind compatibility fields that remain during the sport-taxonomy transition.
+
+`HelpRequestResponse` owns one responder/request message and status. The current implementation does **not** use a `RequestClaim` quantity-allocation model; do not reintroduce that older target description as current persistence truth.
+
+The Help Taxonomy boundary owns sport subcategory/need/surface eligibility. Main Requests, Play Requests and Athletes Requests query the same canonical Request rows through server-side surface policy; they never create copied Request tables.
 
 ### Ride
 
@@ -139,16 +147,15 @@ Current canonical Ride persistence is single-purpose and owned by Rides:
 
 Public projections must not expose exact private pickup or meeting-point data. Future matching, location-ping and rating concepts require their own explicit slices before models such as `RideMatch`, `RideLocationPing`, or `RideRating` are added or reported as implemented.
 
-### FundMe
+### FundMe / Fundraising — future owner
 
-- `Fundraiser`
-- `FundContribution`
+Fundraising remains a separate future domain. Do not report fundraiser/contribution persistence as implemented until its authorized vertical slice creates and verifies it.
 
-Payment execution belongs to Payments, not FundMe.
+Payment execution belongs to Payments, not Fundraising.
 
-### Payments
+### Payments — future owner
 
-Design the payment models to support the verified mature runtime needs for:
+Payments is not implemented merely because Requests or Ride exist. When explicitly authorized, design its models to support the required provider/runtime needs for:
 
 - PaymentIntent;
 - provider attempts/charges where present;
@@ -170,16 +177,11 @@ Body lives in Redis/Valkey and expires by the locked TTL rules.
 
 ### Media
 
-- `MediaAsset`
-
-PostgreSQL stores status, ownership, storage key, type, metadata and variant references. Object storage stores bytes.
+There is no generic `MediaAsset` persistence authority in the current foundation. Implemented domains own their managed media metadata where required, while shared object storage owns bytes. A generic Media domain/model requires separate authorization.
 
 ### Replay
 
-- `Replay`
-- `ReplayPhoto`
-
-Replay references completed Event state rather than duplicating Event lifecycle.
+Replay remains a future separately authorized product/read model. Do not add or report `Replay` / `ReplayPhoto` persistence as implemented until its vertical slice begins. Any future Replay must reference completed Event state rather than duplicate Event lifecycle.
 
 ### Operations
 
@@ -251,7 +253,7 @@ Mutations exposed to retries/provider callbacks use scoped idempotency records o
 
 Migration tests must prove:
 
-- the entire HOOMA ULTIMATE chain builds a clean database from zero;
+- the entire HOOMA chain builds a clean database from zero;
 - the generated schema matches the expected target architecture;
 - required unique/FK/check constraints hold;
 - seed/dev fixtures do not weaken production invariants;
