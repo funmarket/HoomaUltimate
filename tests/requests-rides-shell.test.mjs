@@ -21,10 +21,7 @@ const rideApi = await readFile("packages/frontend/src/rides/api.ts", "utf8");
 const rideCss = await readFile("packages/frontend/src/rides/rides.css", "utf8");
 
 test("Requests shell composes the current Help surface without payment pretence", () => {
-  assert.match(
-    requestsPage,
-    /export type RequestsPageTab = "requests" \| "fundme" \| "donations"/,
-  );
+  assert.match(requestsPage, /export type RequestsPageTab = "requests" \| "fundme" \| "donations"/);
   assert.match(requestsPage, /<HelpTabs tab=\{tab\}/);
   assert.match(requestsPage, /FundMe is not taking contributions yet/i);
 
