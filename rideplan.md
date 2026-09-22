@@ -1,13 +1,13 @@
 # HOOMA — RIDE / REQUESTS / FUNDME LIVE IMPLEMENTATION PLAN
 
-Status: **ACTIVE SCOPED EXECUTION PLAN**  
+Status: **ACTIVE RIDE EXECUTION PLAN — REQUESTS/FUNDME SECTIONS SUPERSEDED**  
 Repository: `funmarket/HoomaUltimate`  
 Target branch: `phase-0-foundation`  
 Plan refreshed: **2026-09-01**  
 Foundation HEAD at refresh: `6ca765128aa4576d02af787374684575d11d35ed`  
 Product name: **HOOMA**
 
-> This is the live execution ledger for Ride, Requests, and later FundMe/Payments work. It does not replace `AGENTS.md`, `docs/LIVING_BUILD_PLAN.md`, `requirements.md`, `structure.md`, `docs/CANONICAL_MODEL.md`, `docs/DECISIONS.md`, or accepted ADRs. Merged `phase-0-foundation` is current product truth. Open PRs are **in-flight only** until merged and read back.
+> This file remains the Ride execution ledger. Its old Requests/FundMe planning sections are retained only as historical evidence and are **superseded** by `docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md`, current `requirements.md`, `structure.md`, `docs/CANONICAL_MODEL.md`, and merged source. Do not execute REQ-001 through REQ-005 from this file. Merged `phase-0-foundation` is current product truth; open PRs are in-flight only until merged and read back.
 
 ---
 
@@ -448,173 +448,29 @@ Read-back anchors in current foundation:
 
 ---
 
-# 5. Requests product — current state and execution plan
+# 5. Requests product — historical plan, superseded
 
-The top-level Requests product remains an honest shell in foundation.
+Status: **SUPERSEDED — DO NOT EXECUTE**
 
-Current truth:
+The REQ-001 through REQ-005 sequence formerly recorded here described a planned `Request` / `RequestClaim` quantity-claim model before the current Requests implementation existed.
 
-- `/requests` exists;
-- `/requests/fundme` exists as a tab/shell;
-- there is no completed Requests domain vertical slice;
-- there is no canonical `apps/api/src/modules/requests` implementation yet;
-- Request creation, claiming, quantity allocation, fulfillment, and persistence must not be faked in frontend state;
-- FundMe remains separate from Requests persistence.
+That plan is no longer current.
 
-Requests should begin only after `RIDE-007C` closeout and `RIDE-007D` map work are resolved or explicitly deferred. Do not mix Requests implementation into remaining Ride closeout/map work.
-
----
-
-## REQ-001 — Requests governance + contracts/domain policy
-
-Status: **[ ] TODO**
-
-Goal: establish the exact Requests product contract before persistence.
-
-Required work:
+Current merged Requests truth is owned by:
 
 ```text
+requirements.md
+structure.md
+docs/CANONICAL_MODEL.md
+docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md
 packages/contracts/src/requests.ts
-apps/api/src/modules/requests/domain/*
-apps/api/src/modules/requests/application/*
+packages/database/prisma/requests.prisma
+current Requests source/tests
 ```
 
-Required decisions/proof:
+The merged foundation now has a real `HelpRequest` / `HelpRequestResponse` domain, shared relational Help Taxonomy, standalone sport-first Requests frontend, server-side audience/visibility and surface filtering, lifecycle/response/expiry behavior, and ongoing Play/Athletes projection work.
 
-- Request means help/resource support, not transportation and not fundraising;
-- define canonical lifecycle/status vocabulary;
-- define quantity/unit/expiry behavior;
-- confirm whether partial claims are allowed under current governance;
-- define privacy-safe public projection;
-- define requester/claimer capabilities and terminal transitions;
-- Community/Event/Place references only where current product behavior truly requires them;
-- no generic post/feed model;
-- no Ride/Fundraising/Payments imports.
-
-DONE gate:
-
-- contracts and policies compile/test;
-- governing docs agree;
-- no persistence is added unless separately authorized with REQ-002.
-
----
-
-## REQ-002 — Requests Prisma schema + committed migration
-
-Status: **[ ] TODO**
-
-Dependencies: `REQ-001`
-
-Goal: create only canonical Requests persistence.
-
-Expected canonical concepts:
-
-```text
-Request
-RequestClaim
-```
-
-Required work:
-
-- canonical User references;
-- approved optional Community/Event/Place references only if governed;
-- quantity/unit/expiry/lifecycle fields;
-- claim relationship and idempotency/concurrency constraints;
-- deliberate indexes for public/member/owner/claim reads;
-- bounded committed migration;
-- docs/schema/migration consistency.
-
-Forbidden:
-
-- Ride tables;
-- Fundraising tables;
-- Payment tables;
-- generic JSON action/request blobs.
-
-DONE gate:
-
-- clean disposable PostgreSQL migration deploy/status/readback;
-- schema tests and canonical-model docs agree.
-
----
-
-## REQ-003 — Requests repository + concurrency-safe claim lifecycle
-
-Status: **[ ] TODO**
-
-Dependencies: `REQ-002`
-
-Goal: implement canonical Request/RequestClaim persistence with database-safe allocation.
-
-Required PostgreSQL proof:
-
-- concurrent claims cannot exceed remaining quantity;
-- release restores availability where policy permits;
-- expired/cancelled/terminal Requests reject new claims;
-- duplicate retries do not create uncontrolled duplicate state;
-- remaining quantity derives from canonical RequestClaim state;
-- terminal transitions cannot be rewritten for convenience.
-
-No frontend counter may be the authority for remaining quantity.
-
----
-
-## REQ-004 — Requests application/authz + HTTP APIs
-
-Status: **[ ] TODO**
-
-Dependencies: `REQ-003`
-
-Goal: expose Requests through the established public/member boundary.
-
-Required work:
-
-- actor identity from canonical auth;
-- privacy-safe public list/detail;
-- authenticated create/edit/cancel;
-- claim/release/complete according to REQ-001 policy;
-- stable Requests-owned error codes;
-- bounded Requests router/container wiring;
-- server-side owner/claimer authorization;
-- API -> service -> repository -> PostgreSQL readback tests.
-
-No FundMe backend belongs here.
-
----
-
-## REQ-005 — Requests frontend real vertical slice
-
-Status: **[ ] TODO**
-
-Dependencies: `REQ-004`
-
-Goal: replace only the Requests tab shell with the real Requests product.
-
-Required work:
-
-```text
-packages/frontend/src/requests/api.ts
-Requests feed
-Request detail
-Create Request
-claim / release / complete UI per policy
-quantity remaining
-loading / empty / error / pending / success / terminal states
-```
-
-Preserve:
-
-```text
-Requests | FundMe
-```
-
-Opening Requests must not load Fundraising/Payments merely because the FundMe tab is visible.
-
-DONE gate:
-
-- phone/Web action -> Requests API -> authz -> service -> repo -> PostgreSQL -> readback proven;
-- 360/390/430 mobile and Telegram-safe behavior checked;
-- FundMe remains an honest shell until its own owning domains are authorized.
+Do not recreate the obsolete `Request` / `RequestClaim` plan or its old TODO sequence from this file.
 
 ---
 
@@ -720,19 +576,15 @@ Current order:
    - reconcile A/B/C/D/E/F
    - final Ride vertical-slice proof
 
-4. REQ-001
-5. REQ-002
-6. REQ-003
-7. REQ-004
-8. REQ-005
+4. Requests work follows `docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md` and current owner priority; do not execute the historical REQ-001..005 sequence from this file.
 
-9. RIDE-008 matching
-10. RIDE-009 media hardening
-11. RIDE-010 reliability
-12. DISC-001
-13. PAY-001 when authorized
-14. FUND-001 when authorized
-15. WHISTLE-RIDE-001 when separately authorized
+5. RIDE-008 matching
+6. RIDE-009 media hardening
+7. RIDE-010 reliability
+8. DISC-001 when its owning dependencies are current
+9. PAY-001 when authorized
+10. FUND-001 when authorized
+11. WHISTLE-RIDE-001 when separately authorized
 ```
 
 Independent later tasks may be reordered only after checking file/domain overlap and product-owner priority. Do not infer permission to run simultaneous schema/router/frontend changes against the same sources.
@@ -815,8 +667,8 @@ Community-scoped RideRequests work through one canonical RideRequest and HOOMA N
 PR #210 corrective interaction/mobile/manage behavior remains merged and verified.
 RIDE-007C acceptance is closed without stale-plan reimplementation.
 Privacy-safe Ride maps are complete or explicitly deferred by the product owner.
-Requests owns a real Request + RequestClaim vertical slice.
-Requests claims are concurrency-safe in PostgreSQL.
+Requests remains governed by its current `HelpRequest` / `HelpRequestResponse` + Help Taxonomy implementation and dedicated living plan.
+This Ride plan does not define Requests response/claim semantics.
 Fundraising and Payments remain separately owned.
 Discovery remains projection-only.
 Whistle remains one shared transient engine.

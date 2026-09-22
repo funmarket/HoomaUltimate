@@ -6,15 +6,14 @@ This file is the repository living plan for the Requests | FundMe | Donations im
 
 Authoritative repository: `funmarket/HoomaUltimate`
 Authoritative branch: `phase-0-foundation`
-Working branch: `feat/requests-rq-fix-1-taxonomy` from integrated RQ-FIX-0 foundation `36fa68ac28e0b7f600cc230a6578a90dda08f547`.
+Current merged foundation at this reconciliation: `eda53dda71c5ae6d6a4f52d72151bd10edfeb9fd` (PR #346).
+Current in-flight Requests work at this reconciliation: PR #347, `feat(play): add canonical Requests projection`, head `43db0974c6926ac7392a80e64cce047cd01b3c82`, based on the current foundation.
 Original attached-plan baseline: `c304fed4c925cbcd578fdbafb21926f927e400f5`
-Slice 1 base foundation HEAD: `b07167f9beb0003eceddb3fd73bfbff53417a618`
-Slice 2 base foundation HEAD: `a5bd502f58a746a1a89d33ba4afb28506c2e35b3`
-Slice 3 base foundation HEAD: `e885c34d1de3027871f3845e9c7a57fbed28a981`
-Slice 4R recovery base foundation HEAD: `0e2b80c714324efc41afc8138e080a19b5f0a69a`
-Stranded Slice 4 branch (SOURCE MATERIAL ONLY - never merged, rebased into, or cherry-picked as a batch): `feat/help-slice-4-requests-frontend` at `e7124f04af798f21fd9b8be7d001cd28da5643d1` (9 commits ahead / 15 behind its merge base `3033dce8e1ff1c4d7c5a4e54a51fdda0e83df523`).
-Current task: `RQ-FIX-1 - shared sports taxonomy foundation complete and awaiting integration`
-Exact next task after RQ-FIX-1 integration: `RQ-FIX-2A - Request schema expansion + legacy data reconciliation`.
+Stranded Slice 4 branch (SOURCE MATERIAL ONLY - never merged, rebased into, or cherry-picked as a batch): `feat/help-slice-4-requests-frontend` at `e7124f04af798f21fd9b8be7d001cd28da5643d1`.
+Current task: `RQ-FIX-4 - Play Requests projection is in-flight in PR #347`.
+Next planned projection after RQ-FIX-4 integration: `RQ-FIX-5 - Athletes Requests projection`.
+
+Newer explicit product-owner direction approved on 2026-09-22 extends the post-RQ-FIX Requests program with `Request Type = Sport | Community`, Community taxonomy independent from Sport, broader sport-specific needs, manual Other values, optional Request image (managed upload or validated URL), optional full address, and the approved premium Request-card presentation. These additions must extend the canonical Requests/taxonomy/media/location/Whistle owners and must not duplicate the merged RQ-FIX architecture.
 
 ## Execution loop
 
@@ -131,8 +130,8 @@ Fresh-verified on 2026-09-21 before RQ-FIX-0 mutation:
 - Current `HelpRequest` persistence stores `category`, optional `itemKind`, optional `sport`, publisher/audience FKs, lifecycle timestamps, location metadata, and product-like metadata.
 - Existing Request lifecycle, publisher/audience authorization, response privacy/actions, compare-and-set mutation safety, cursor repository ordering, and expiry Worker are foundations to preserve rather than redesign.
 - `ATHLETES_SPORTS` / `AthletesSport` is the existing canonical sport authority. No second sport table or parallel enum is authorized.
-- Current Play has only `games | players | mine`; it has no Requests projection.
-- Current Athletes hub is the Communities directory with sport filtering; it has no `Communities | Requests` hub tabs.
+- On merged foundation through PR #346, Play still has no Requests projection. PR #347 is currently the in-flight canonical Play projection and is not foundation truth until merged.
+- Current Athletes hub remains the Communities directory with sport filtering; `Communities | Requests` remains planned RQ-FIX-5 work.
 - `placeId` is a real optional Request FK today. RQ-FIX keeps it untouched unless later evidence explicitly justifies removal.
 - Historical Requests migrations are applied history and must not be rewritten. All schema correction uses forward migrations.
 
@@ -819,8 +818,8 @@ Verification evidence:
 - both runs passed database generation/validation/migration deploy, architecture check, changed-file formatting, changed-source lint, typecheck, package build, unit tests, full build, integration tests, deploy preflight, security check, and migration status
 - the diff remained confined to the authorized RQ-FIX-1 targets listed above
 - no `HelpRequest` field, lifecycle behavior, response behavior, Play ownership, Athletes ownership, Rides, FundMe, or Donations implementation was changed
-- PR #342 remains unmerged until the owner explicitly authorizes merge
-- RQ-FIX-2A must not start before RQ-FIX-1 is integrated
+- PR #342 merged on 2026-09-21 as `c6c95657c0b6b4ccffa2cd7c2d5eeb437623c91d` after its exact-head verification.
+- RQ-FIX-1 is integrated and no longer blocks later slices.
 
 Score: **9.4/10**
 
@@ -830,46 +829,55 @@ RQ-FIX-1 establishes the shared taxonomy as a separate contracts/database/API bo
 
 ### RQ-FIX-2A - Request schema expansion + legacy data reconciliation
 
-Status: `NOT_STARTED`
+Status: `COMPLETE`
 
-Scope:
+Merged PR: #344 -> `86e93bd6b4e419290f9cd22a53449cf593c5f332`
 
-- inspect actual production legacy Request classification combinations read-only before backfill
-- add nullable `subcategoryId` / `needId` using a forward migration
-- preserve legacy `category` / `itemKind` during transition
-- add relational hierarchy integrity and focused indexes
-- backfill only deterministic mappings
-- preserve ambiguous rows; never delete or guess
+Implemented outcome:
+
+- added nullable `subcategoryId` / `needId` references through forward migration;
+- preserved legacy `category` / `itemKind` compatibility during transition;
+- added relational hierarchy integrity and focused indexes;
+- added schema/integration coverage;
+- historical migrations were not rewritten.
 
 ### RQ-FIX-2B - corrected Request backend + projections
 
-Status: `NOT_STARTED`
+Status: `COMPLETE`
 
-Scope:
+Merged PR: #345 -> `f7666f1bd71815503a308701294e9e5a1d1896dc`
 
-- canonical sport/subcategory/need validation
-- Request surface filter applied before pagination
-- taxonomy presentation in Request DTOs
-- product/custom metadata validation from selected Need policy
-- preserve existing publisher/audience/lifecycle/response/expiry semantics
-- keep deployment compatibility until the corrected frontend is live
+Implemented outcome:
+
+- canonical sport/subcategory/need validation;
+- Request surface filtering in the repository before pagination;
+- resolved taxonomy presentation in Request DTOs;
+- product/custom metadata validation from selected Need policy;
+- existing publisher/audience/lifecycle/response/expiry semantics preserved;
+- legacy category/itemKind compatibility retained during transition.
 
 ### RQ-FIX-3 - sport-first standalone Requests frontend
 
-Status: `NOT_STARTED`
+Status: `COMPLETE`
 
-Scope:
+Merged PR: #346 -> `eda53dda71c5ae6d6a4f52d72151bd10edfeb9fd`
 
-- Sport -> Subcategory -> Specific Item/Need cascading creation flow
-- remove generic Category / Item Kind UI
-- reusable `RequestFeed` and `RequestTaxonomyFilters`
-- taxonomy-driven filters/cards/detail
-- conditional product metadata UI
-- main `/requests` surface uses `surface=REQUESTS`
+Implemented outcome:
+
+- Sport -> Subcategory -> Specific Item/Need cascading creation flow;
+- standalone UI switched away from generic Category / Item Kind controls;
+- reusable `RequestFeed` and `RequestTaxonomyFilters`;
+- taxonomy-driven filters/cards/detail;
+- conditional product metadata UI;
+- main `/requests` surface uses `surface=REQUESTS`.
 
 ### RQ-FIX-4 - Play Requests projection
 
-Status: `NOT_STARTED`
+Status: `IN_PROGRESS`
+
+In-flight PR: #347, head `43db0974c6926ac7392a80e64cce047cd01b3c82`, base `eda53dda71c5ae6d6a4f52d72151bd10edfeb9fd`.
+
+This PR is not foundation truth until merged. Current changed files include the Play page/pane/styles, Request-create return-flow handling, and focused Play projection coverage.
 
 Scope:
 
@@ -877,6 +885,34 @@ Scope:
 - Requests pane consumes canonical Requests using `surface=PLAY`
 - creation delegates to canonical `/requests/new`
 - no Request persistence/service ownership moves into Play
+
+### Post-RQ-FIX approved Requests enhancement — 2026-09-22
+
+Status: `AUTHORIZED_NOT_YET_IN_FOUNDATION`
+
+Locked product direction:
+
+```text
+Request Type
+├── Sport
+└── Community
+```
+
+Rules:
+
+- Community does not require a Sport;
+- sport taxonomy must expand to realistic sport-specific player/partner/coach/training/advice/equipment needs;
+- appropriate branches retain an explicit Other/manual-need escape hatch;
+- the existing canonical user-entered Request title remains first-class and separate from taxonomy/custom need;
+- add one optional Request image capability supporting managed upload or validated image URL without creating duplicate media infrastructure;
+- add optional full address while preserving city/Houma/location-note and future integration with the existing location/Stadia owner;
+- a stored full address is not automatically a public exact-address projection;
+- the supplied Request-card design is the locked presentation source of truth: pitch-black canvas, hero image, top-right location pill, sport/community identity, large user title, requester identity, taxonomy chips, description, real metadata, and canonical Whistle composer;
+- dark-mode app canvas remains pitch black; blue/yellow/gold are controlled accents, not page backgrounds;
+- Play/Athletes/Main Requests continue to project the same canonical `HelpRequest` IDs;
+- no duplicate Request, taxonomy, media, location/geocoder, Identity or Whistle systems.
+
+Implementation must first reconcile overlap with in-flight PR #347 and extend the canonical merged RQ-FIX source rather than restarting Requests from an older plan.
 
 ### RQ-FIX-5 - Athletes Requests projection
 
