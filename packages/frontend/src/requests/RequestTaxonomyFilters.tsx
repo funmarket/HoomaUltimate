@@ -89,52 +89,52 @@ export function RequestTaxonomyFilters({
         ) : null}
 
         {value.requestType ? (
-        <div className="request-field">
-          <label className="request-field__label" htmlFor="request-filter-subcategory">
-            Subcategory
-          </label>
-          <select
-            id="request-filter-subcategory"
-            className={FIELD_CLASS}
-            value={value.subcategoryId ?? ""}
-            disabled={value.requestType === "SPORT" && !selectedSport}
-            onChange={(event) =>
-              patch({
-                subcategoryId: event.target.value || undefined,
-                needId: undefined,
-              })
-            }
-          >
-            <option value="">All subcategories</option>
-            {availableSubcategories.map((entry) => (
-              <option key={entry.id} value={entry.id}>
-                {entry.label}
-              </option>
-            ))}
-          </select>
-        </div>
+          <div className="request-field">
+            <label className="request-field__label" htmlFor="request-filter-subcategory">
+              Subcategory
+            </label>
+            <select
+              id="request-filter-subcategory"
+              className={FIELD_CLASS}
+              value={value.subcategoryId ?? ""}
+              disabled={value.requestType === "SPORT" && !selectedSport}
+              onChange={(event) =>
+                patch({
+                  subcategoryId: event.target.value || undefined,
+                  needId: undefined,
+                })
+              }
+            >
+              <option value="">All subcategories</option>
+              {availableSubcategories.map((entry) => (
+                <option key={entry.id} value={entry.id}>
+                  {entry.label}
+                </option>
+              ))}
+            </select>
+          </div>
         ) : null}
 
         {value.requestType ? (
-        <div className="request-field">
-          <label className="request-field__label" htmlFor="request-filter-need">
-            Specific need
-          </label>
-          <select
-            id="request-filter-need"
-            className={FIELD_CLASS}
-            value={value.needId ?? ""}
-            disabled={!selectedSubcategory}
-            onChange={(event) => patch({ needId: event.target.value || undefined })}
-          >
-            <option value="">All needs</option>
-            {(selectedSubcategory?.needs ?? []).map((entry) => (
-              <option key={entry.id} value={entry.id}>
-                {entry.label}
-              </option>
-            ))}
-          </select>
-        </div>
+          <div className="request-field">
+            <label className="request-field__label" htmlFor="request-filter-need">
+              Specific need
+            </label>
+            <select
+              id="request-filter-need"
+              className={FIELD_CLASS}
+              value={value.needId ?? ""}
+              disabled={!selectedSubcategory}
+              onChange={(event) => patch({ needId: event.target.value || undefined })}
+            >
+              <option value="">All needs</option>
+              {(selectedSubcategory?.needs ?? []).map((entry) => (
+                <option key={entry.id} value={entry.id}>
+                  {entry.label}
+                </option>
+              ))}
+            </select>
+          </div>
         ) : null}
 
         <div className="request-field">
