@@ -178,15 +178,15 @@ test(
   "corrected PRODUCT Requests validate taxonomy and write compatibility legacy fields",
   async () => {
     let persisted: HelpRequestCreatePersistenceInput | null = null;
-  const service = new RequestService(
-    repository((input) => (persisted = input)),
-    visibility(),
-    taxonomy("PRODUCT"),
-  );
+    const service = new RequestService(
+      repository((input) => (persisted = input)),
+      visibility(),
+      taxonomy("PRODUCT"),
+    );
 
-  const result = await service.create("user-1", { ...corrected, quantityNeeded: 2 });
-  assert.equal(persisted?.category, "ITEM");
-  assert.equal(persisted?.itemKind, null);
+    const result = await service.create("user-1", { ...corrected, quantityNeeded: 2 });
+    assert.equal(persisted?.category, "ITEM");
+    assert.equal(persisted?.itemKind, null);
     assert.equal(result.taxonomy?.need.kind, "PRODUCT");
   },
 );
