@@ -213,19 +213,24 @@ Feature-specific child routes are added only when their actual vertical slice re
 
 ## 3.1 Brand language
 
-HOOMA uses a classy vintage-football identity:
+HOOMA dark mode uses **pitch black as the app-wide canvas**. The page background is black, not navy or blue-black. Neutral graphite surfaces create elevation while football photography, crests, tickets and other owned content provide most of the visual color.
 
-- almost-black/deep-black primary backgrounds;
-- warm cream typography;
-- muted aged-gold borders/separators;
-- lime-green accents for action/status emphasis;
-- strong white football iconography;
-- real football, venue, supporter and player photography where appropriate;
-- subtle paper/print/heritage texture;
-- restrained glow/distress treatment;
-- modern mobile usability despite the vintage styling.
+Semantic/accent color is restrained:
 
-The product must not drift into a generic SaaS/dashboard aesthetic.
+- primary dark canvas: pitch black;
+- containers: neutral graphite/near-black layers;
+- primary text: white/off-white;
+- secondary text and dividers: neutral grays;
+- football/system blue: occasional navigation, link, selected-keyline and Requests-domain accent;
+- green: positive/healthy/confirmed/available state and affirmative interaction signal;
+- amber/gold: restrained eyebrow, premium/specialty, attention or decorative micro-accent where it cannot be confused with success;
+- red: destructive/error/rejected/cancelled state.
+
+Accent colors are normally **ink, icon, keyline, focus or state indicators rather than large filled slabs**. A feature-specific approved artwork/card may use stronger color, but it must not turn the app canvas into that feature color.
+
+Light mode is not a white inversion of dark mode. It uses a soft light-gray canvas, white grouped surfaces, deep graphite text, quiet gray borders and darker readable versions of the same semantic accents.
+
+The product must remain football-first, premium, mobile-first and content-led without drifting into a generic SaaS/dashboard aesthetic or a neon/gaming panel system.
 
 ## 3.2 Mobile first
 
@@ -877,19 +882,129 @@ Detailed active behavior is recorded in `docs/GAMERS_PRODUCT_CONTRACT.md` and AD
 
 # 17. Requests
 
-Requests support community help/resources/actions.
+Requests is the canonical help/need domain: a person or authorized publisher asks the HOOMA community for something they need. Requests does not own Ride, Fundraising, Payments, Whistle, identity/profile, or generic action state.
 
-Approved requirements include:
+## 17.1 Current merged foundation
 
-- privacy-safe public discovery where appropriate;
-- create request;
-- claim request quantities until the requested quantity is fulfilled;
-- concurrency-safe partial claims that prevent over-claiming while allowing more than one claimer when quantity remains;
-- release/complete lifecycle that restores uncompleted released quantity and records completed claim quantity without transferring ownership to another domain;
-- server-side authorization;
-- clear requester/claimer identity boundaries.
+The merged Requests domain currently uses:
 
-Requests are explicitly authorized for a durable Requests-owned domain, persistence, API and frontend vertical slice. Requests does not own Ride, Fundraising, Payment or generic action state. If a request has a quantity of one, the partial-claim rule naturally behaves as a single active claim; this replaces the older exclusive-claim wording without creating a separate exclusive-only model.
+- one canonical `HelpRequest` record;
+- one `HelpRequestResponse` per responder/request pair;
+- publisher contexts for User, HOOMA Community, Team and Athletes Community;
+- audience scopes `PUBLIC | HOOMA_COMMUNITY | ATHLETES_COMMUNITY`;
+- server-authoritative public/member visibility;
+- lifecycle `OPEN | IN_PROGRESS | FULFILLED | CANCELLED | EXPIRED`;
+- response lifecycle `PENDING | ACCEPTED | DECLINED | WITHDRAWN`;
+- shared sport taxonomy through `HelpTaxonomySubcategory`, `HelpTaxonomyNeed` and `HelpTaxonomyNeedSurface`;
+- server-side surface projection before pagination for `REQUESTS | PLAY | ATHLETES`;
+- canonical user-entered `title` and `description`;
+- optional location metadata, product metadata, needed-by time and expiry;
+- Worker-owned expiry execution.
+
+The current sport-first transition still retains legacy `category` / `itemKind` compatibility fields until their later safe removal is proven. Historical Requests migrations remain immutable; corrections use forward migrations.
+
+Responses are message/status records. Do not describe the current implementation as quantity-based `RequestClaim` persistence or partial-claim accounting unless a newer explicit product decision implements that model.
+
+## 17.2 Approved Request Type direction
+
+The next approved creation hierarchy is:
+
+```text
+Request Type
+├── Sport
+└── Community
+```
+
+This is a product requirement even when a particular field has not yet landed in the merged foundation.
+
+### Sport
+
+Sport Requests use sport-appropriate taxonomy:
+
+```text
+Sport
+-> category/subcategory
+-> specific item / need
+-> Other + manual need where appropriate
+```
+
+Each supported sport must offer realistic community needs for that sport rather than a tiny generic role list. Examples may include players/partners, coaches, referees, training sessions/groups, advice and equipment where meaningful.
+
+### Community
+
+Community is parallel to Sport and **does not require choosing a sport**.
+
+Community Requests cover general local/community needs such as:
+
+- Lost & Found;
+- Questions & Advice;
+- Personal / People Needs;
+- Local Help / Services;
+- Community Activities;
+- Borrow / Share;
+- Information / Notice;
+- Other.
+
+The taxonomy must remain concise and extensible rather than becoming an uncontrolled catch-all list.
+
+## 17.3 Other / manual need
+
+Where taxonomy cannot reasonably predict every real need, an `Other` leaf must allow manual text.
+
+The manual value is canonical Request data. Presentation must show the meaningful custom value rather than prominently presenting only the generic label `Other`. One-off custom values do not become global taxonomy rows.
+
+## 17.4 Request content
+
+A Request keeps these concepts separate:
+
+- taxonomy/classification;
+- specific need or custom need;
+- user-entered Title;
+- user-entered Description.
+
+The user-entered Title is the primary card headline. Do not duplicate it into a second `cardTitle`/display-title source of truth.
+
+Requests must support one optional display image through either a managed upload or a validated image URL. Downstream presentation consumes one canonical Request-image representation; Requests must reuse existing storage/media ownership rather than creating a parallel object-storage stack.
+
+Requests must also support an optional full address alongside city, Houma/neighborhood and location note. The address is stored so the domain can later integrate with the app's existing location/Stadia capability. A stored full address is not automatically public; precise-address exposure requires an explicit visibility rule.
+
+## 17.5 Audience and projections
+
+User-facing `Everyone` maps to `PUBLIC`.
+
+Public Requests use the same canonical Request IDs when projected into:
+
+```text
+Main Requests
+Play -> Requests
+Athletes -> Requests
+```
+
+Surface eligibility belongs to taxonomy/server policy and must be applied before pagination. Do not create `PlayRequest`, `AthletesRequest`, copied Request rows, or frontend-only visibility filtering.
+
+Community-scoped audiences remain private to their authorized membership and must not leak through public projections.
+
+## 17.6 Request card presentation
+
+The approved Request card is a premium mobile-first request poster, not a generic dashboard tile. Dark-mode page canvas remains pitch black.
+
+The card hierarchy is:
+
+```text
+hero image
+top-right location pill
+sport/community identity
+large user-entered title
+requester avatar + display name + username
+taxonomy/context chips
+description
+compact location/time/quantity metadata where real data exists
+Whistle composer
+```
+
+Blue and yellow/gold are controlled accents over black/graphite surfaces; the page itself is never blue. Do not invent requester ratings, positions, counts or other profile facts merely to imitate a mockup.
+
+Whistle integration must reuse the canonical Whistle engine and its authorization/quota/retention rules. It must not create a second comments/chat system.
 
 ---
 

@@ -220,7 +220,11 @@ This rule exists for scalability and user experience as well as code cleanliness
 
 Physical `Place` is the venue source of truth. Pitch extends Place through Pitch-owned capability/application behavior. Watch references canonical Place; it does not require a duplicate Watch venue entity or a generic capability model merely for symmetry.
 
-ADR-050 explicitly unfreezes durable Ride and Requests vertical slices. Rides owns ride offers, ride requests, participation, private meeting-point policy and Ride vehicle-photo metadata. Requests owns help/resource requests and quantity-based partial claims. Fundraising, Payments and generic Media remain separate owners and are not implemented merely because Ride or Requests begins.
+ADR-050 explicitly unfreezes durable Ride and Requests vertical slices. Rides owns ride offers, ride requests, participation, private meeting-point policy and Ride vehicle-photo metadata. Requests owns the canonical HelpRequest lifecycle and HelpRequestResponse workflow. Fundraising, Payments and generic Media remain separate owners and are not implemented merely because Ride or Requests begins.
+
+Current merged Requests persistence uses `HelpRequest` / `HelpRequestResponse` plus the separate Help Taxonomy boundary (`HelpTaxonomySubcategory`, `HelpTaxonomyNeed`, `HelpTaxonomyNeedSurface`). Taxonomy surface eligibility is server/data policy. Main Requests, Play Requests and Athletes Requests are projections of the same canonical Request records; no `PlayRequest`, `AthletesRequest` or copied lifecycle is allowed.
+
+The approved next Requests product direction adds a root `Sport | Community` Request Type, with Community independent from Sport, broader sport-appropriate needs, explicit Other/manual-need support, an optional canonical Request image and optional full address. These requirements extend Requests; they do not transfer media/storage, geolocation/Stadia, Identity/Profile or Whistle ownership into Requests. Existing owner capabilities must be reused through narrow boundaries rather than duplicated.
 
 ADR-052 authorizes Community-scoped RideRequest audience projection into HOOMA NOW without changing ownership. Ride owns the canonical request, audience scope and exact `RideRequestCommunityAudience` target rows. Community owns membership facts used for requester and viewer authorization. HOOMA NOW is presentation/composition only and must not create copied RideRequest payloads, a second lifecycle, a second status field, or a Community-owned Ride request table.
 

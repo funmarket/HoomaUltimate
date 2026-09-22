@@ -16,16 +16,25 @@ No Home gateway may create a second source of business truth for an existing dom
 
 ## 1. Canonical visual identity
 
-HOOMA uses restrained vintage football/matchday heritage with modern mobile ergonomics:
+HOOMA uses restrained football/matchday heritage with modern mobile ergonomics.
 
-- near-black primary surfaces;
-- aged cream and antique/muted gold heritage details;
-- lime for actions and active states;
-- strong white functional copy/icons;
-- approved football imagery;
+Dark-mode Home follows the app-wide visual contract:
+
+- **pitch-black page canvas**; never navy/blue as the primary background;
+- neutral graphite/near-black containers for elevation;
+- strong white/off-white functional copy/icons and neutral gray metadata;
+- football/system blue only as a controlled navigation/link/keyline/accent signal;
+- green for positive/healthy/confirmed/available state and affirmative interaction signal;
+- amber/gold only as restrained heritage/premium/eyebrow or attention micro-accent;
+- approved football imagery supplies most of the visual color;
+- accent colors are normally ink, icon, keyline and state indicators rather than large filled slabs;
 - clean touch targets and readable phone typography;
-- no generic dashboard treatment;
+- no generic dashboard or neon gaming-panel treatment;
 - Watch may use collector-ticket language contextually, but Home is not a ticket layout.
+
+Light mode uses a soft gray canvas, white grouped surfaces, deep graphite text, quiet borders and darker readable semantic accents.
+
+Existing approved Home artwork may retain its governed composition/colors; the shell and surrounding surfaces still follow the app-wide semantic contract.
 
 The primary HOOMA wordmark is a governed graphic asset, not plain text used as a replacement logo. Core Home/brand artwork must be recorded in `docs/ASSET_MANIFEST.md`.
 
