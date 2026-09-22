@@ -1,10 +1,11 @@
-import { FundMeIcon, RequestIcon } from "../help/HelpIcons";
+import { DonationIcon, FundMeIcon, RequestIcon } from "../help/HelpIcons";
 
-export type HelpTab = "requests" | "fundme";
+export type HelpTab = "requests" | "fundme" | "donations";
 
 const HELP_TABS = [
   { key: "requests", label: "Requests", href: "/requests", Icon: RequestIcon },
   { key: "fundme", label: "FundMe", href: "/requests/fundme", Icon: FundMeIcon },
+  { key: "donations", label: "Donations", href: "/requests/donations", Icon: DonationIcon },
 ] as const;
 
 /**
