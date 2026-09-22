@@ -178,7 +178,9 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
 
       <article className="request-detail panel">
         <div className="request-card__topline">
-          <span className="request-chip">{titleCase(item.category)}</span>
+          <span className="request-chip">
+            {item.taxonomy?.need.label ?? titleCase(item.category)}
+          </span>
           <span className={`request-status request-status--${item.status.toLowerCase()}`}>
             <span className="request-status__dot" aria-hidden="true" />
             {titleCase(item.status)}
@@ -201,8 +203,16 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
               Needed {new Date(item.neededByAt).toLocaleDateString()}
             </span>
           ) : null}
-          {item.sport ? <span>Sport · {titleCase(item.sport)}</span> : null}
-          {item.itemKind ? <span>Item · {titleCase(item.itemKind)}</span> : null}
+          {item.taxonomy ? (
+            <>
+              <span>Sport · {item.taxonomy.sportLabel}</span>
+              <span>Subcategory · {item.taxonomy.subcategory.label}</span>
+              <span>Need · {item.taxonomy.need.label}</span>
+            </>
+          ) : item.sport ? (
+            <span>Sport · {titleCase(item.sport)}</span>
+          ) : null}
+          {item.customNeed ? <span>Need details · {item.customNeed}</span> : null}
           {item.quantityNeeded ? <span>Quantity · {item.quantityNeeded}</span> : null}
           {item.sizeLabel ? <span>Size · {item.sizeLabel}</span> : null}
           {item.conditionPreference ? (
