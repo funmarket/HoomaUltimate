@@ -209,11 +209,13 @@ test("a guest is sent through the current HOOMA auth flow with returnTo preserve
   }
 });
 
-test("Athletes create surface loads Athletes taxonomy and preserves auth return context", async () => {
-  const page = await renderCreatePage({
-    me: null,
-    url: "http://localhost/requests/new?surface=ATHLETES",
-  });
+test(
+  "Athletes create surface loads Athletes taxonomy and preserves auth return context",
+  async () => {
+    const page = await renderCreatePage({
+      me: null,
+      url: "http://localhost/requests/new?surface=ATHLETES",
+    });
   try {
     await page.waitFor(() =>
       assert.ok(page.view.getByRole("link", { name: /Sign in to continue/i })),
@@ -231,10 +233,11 @@ test("Athletes create surface loads Athletes taxonomy and preserves auth return 
       link.getAttribute("href"),
       "/login?returnTo=%2Frequests%2Fnew%3Fsurface%3DATHLETES",
     );
-  } finally {
-    page.close();
-  }
-});
+    } finally {
+      page.close();
+    }
+  },
+);
 
 test("a signed-in member can publish a Request and is linked to it", async () => {
   const page = await renderCreatePage({ me: meResponse });
