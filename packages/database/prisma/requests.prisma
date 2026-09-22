@@ -62,6 +62,7 @@ model HelpRequest {
   sport                        AthletesSport?
   subcategoryId                String?
   needId                       String?
+  customNeed                   String?
   taxonomySubcategory          HelpTaxonomySubcategory? @relation("HelpRequestTaxonomySubcategory", fields: [subcategoryId, sport], references: [id, sport], onDelete: Restrict)
   taxonomyNeed                 HelpTaxonomyNeed?        @relation("HelpRequestTaxonomyNeed", fields: [needId, subcategoryId], references: [id, subcategoryId], onDelete: Restrict)
   title                        String
