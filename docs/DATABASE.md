@@ -1,6 +1,6 @@
 # HOOMA — Database
 
-Status: **Target data architecture and migration policy**
+Status: **ACTIVE DATABASE OWNERSHIP + MIGRATION POLICY**
 
 ## 1. Source of durable truth
 
@@ -23,41 +23,67 @@ Rules:
 - any future pre-release baseline/squash operation is a separate explicitly authorized migration-history task with clean-database and deployed-state proof; it is not routine feature work;
 - historical donor data, if ever imported, uses explicit ETL/import scripts and reconciliation rather than application migration compatibility.
 
-## 3. Core model ownership
+## 3. Current persistence ownership
 
-### Identity
+The model names below describe the merged foundation. Prisma is split across the root schema and bounded domain schema files; the generated client is one database contract.
 
-Target concepts:
+### Identity / security
+
+Current durable models:
 
 - `User`
+- `UserPresentation`
+- `PlayerProfile`
 - `TelegramIdentity`
 - `WebCredential`
+- `PasswordRecoveryChallenge`
 - `WebSession`
-- `UserPresentation`
-- `UserProfileIdentity`
-- `PlayerProfile`
-- `PublicContact`
+- `UserSanction`
 
-`User` is canonical identity. Authentication transports are separate records. Presentation is not authorization.
+`User` is canonical identity. Authentication transports are separate records. Presentation is not authorization. Password-recovery secrets are never stored in plaintext.
 
-### Global authority
+### Global authority / operations
+
+Current durable models include:
 
 - `PlatformRoleAssignment`
+- `AppManagerGrant`
+- `AuditLog`
+- `OutboxEvent`
+- `UserNotification`
 
-Only global role: `PLATFORM_ADMIN`.
+Only global platform authority uses `PLATFORM_ADMIN`. App-manager capabilities are explicit grants and do not create another generic Admin role.
 
 ### HOOMA Communities
 
+Current durable models:
+
 - `Community`
 - `CommunityMembership`
-- `CommunityInvite`
+- `CommunityJoinRequest`
 
-Target roles: FOUNDER, COACH, MEMBER. No scoped ADMIN value exists in the new target schema.
+Current roles are `FOUNDER | COACH | MEMBER`. No scoped Community `ADMIN` or `OWNER` role is authoritative.
+
+### Athletes
+
+Current durable models:
+
+- `AthletesCommunity`
+- `AthletesMembership`
+- `AthletesJoinRequest`
+- `AthletesPhoto`
+- `AthletesCalendarEntry`
+- `AthletesCalendarRsvp`
+
+Athletes is independent from HOOMA Communities and Teams while reusing canonical User identity.
 
 ### Teams
 
+Current durable models:
+
 - `Team`
 - `TeamPlayer`
+- `TeamPlayerOffer`
 - `TeamResponsibilityAssignment`
 - `TeamCapabilityGrant`
 - `TeamLineup`
@@ -66,58 +92,61 @@ Target roles: FOUNDER, COACH, MEMBER. No scoped ADMIN value exists in the new ta
 - `TeamChallengeMessage`
 - `TeamGame`
 
-Do not replace mature Team state with generic Community membership.
+Team management remains Team-owned. Do not replace Team responsibilities/capabilities with generic Community membership.
 
-### Events
+### Events / Play / Watch
+
+Current durable models include:
 
 - `Event`
+- `PlayEventDetails`
+- `WatchEventDetails`
+- `WatchCulturalEventDetails`
 - `EventRsvp`
+- `EventPlayerInvite`
 - `Formation`
 - `FormationSlot`
-- `CheckIn`
+- `EventCheckIn`
 - `EventChatRoom`
 - `EventChatMessage`
 
-Keep mature capacity/waitlist/completion semantics from Source A.
+Events owns canonical lifecycle. Play/Watch add their own bounded projections/details rather than duplicating Event.
 
-### Places
+### Places / Pitch
+
+Current durable models:
 
 - `Place`
-- `PlaceSuggestion`
-- `PlaceOwnerClaim`
+- `PlaceMenuItem`
+- `PlaceImage`
+- `PlaceOwnershipClaim`
 - `PlaceOwnership`
-- `PlacePhoto`
+- `PlaceCapability`
+- `PlaceCapabilityApplication`
 
-Capability/profile records attach to `Place`, including Lounge/Cafe representation, `WatchVenueApplication`, `WatchVenueProfile`, `PitchApplication`, `PitchProfile`.
-
-FanHub uses canonical Place plus discovery/publication metadata rather than a duplicate physical venue table.
-
-### ULTRAS
-
-Independent models:
-
-- `UltrasGroup`
-- `UltrasMembership`
-- `UltrasInvite`
-- `UltrasJoinRequest`
-- `UltrasGameDay`
-- `UltrasGameDayAttendance`
-
-Every group references a canonical football entity of type CLUB or NATIONAL_TEAM.
+One canonical Place is reused by Places, Watch and Pitch. Pitch uses the canonical `PITCH` capability/application path rather than a duplicate venue table.
 
 ### Gamers
 
-Independent models:
+Current durable models:
 
 - `GamerGame`
 - `GamerProfile`
-- `GamerHandle`
-- `GamerSquad`
-- `GamerSquadMembership`
 - `GamerChallenge`
-- `GamerResultSubmission`
+- `GamerMatchSession`
+- `GamerMatchSubmission`
 
-### Requests
+Do not report unimplemented Gamer Squad/handle/result models as current persistence merely because older plans described them.
+
+### Play player discovery
+
+Current durable model:
+
+- `PlayPlayerListing`
+
+This remains Play-owned discovery state and is not a Team/Community membership record.
+
+### Requests / Help Taxonomy
 
 Current canonical Requests persistence is owned by Requests:
 
@@ -127,74 +156,52 @@ Current canonical Requests persistence is owned by Requests:
 - `HelpTaxonomyNeed`
 - `HelpTaxonomyNeedSurface`
 
-`HelpRequest` owns publisher/audience references, lifecycle, user-entered title/description, sport/taxonomy links, optional custom need, location metadata, product metadata where allowed, needed-by/expiry state, and the legacy category/itemKind compatibility fields that remain during the sport-taxonomy transition.
+`HelpRequest` owns publisher/audience references, lifecycle, user-entered title/description, sport/taxonomy links, optional custom need, location metadata, supported product metadata, needed-by/expiry state, and the legacy `category`/`itemKind` compatibility fields that remain during the taxonomy transition.
 
-`HelpRequestResponse` owns one responder/request message and status. The current implementation does **not** use a `RequestClaim` quantity-allocation model; do not reintroduce that older target description as current persistence truth.
+`HelpRequestResponse` owns one responder/request message and status. The current implementation does **not** use a `RequestClaim` quantity-allocation model.
 
-The Help Taxonomy boundary owns sport subcategory/need/surface eligibility. Main Requests, Play Requests and Athletes Requests query the same canonical Request rows through server-side surface policy; they never create copied Request tables.
+Help Taxonomy owns subcategory/need/surface eligibility. Main Requests, Play Requests and Athletes Requests query the same canonical Request rows through server-side surface policy; projections never create copied Request tables.
 
 ### Ride
 
-Current canonical Ride persistence is single-purpose and owned by Rides:
+Current canonical Ride persistence is owned by Rides:
 
 - `RideOffer`
+- `RideOfferVehiclePhoto`
 - `RideRequest`
 - `RideRequestCommunityAudience`
 - `RideParticipation`
 - `RideMeetingPoint`
 - `RideOfferWaypoint`
-- `RideOfferVehiclePhoto`
 
-Public projections must not expose exact private pickup or meeting-point data. Future matching, location-ping and rating concepts require their own explicit slices before models such as `RideMatch`, `RideLocationPing`, or `RideRating` are added or reported as implemented.
-
-### FundMe / Fundraising — future owner
-
-Fundraising remains a separate future domain. Do not report fundraiser/contribution persistence as implemented until its authorized vertical slice creates and verifies it.
-
-Payment execution belongs to Payments, not Fundraising.
-
-### Payments — future owner
-
-Payments is not implemented merely because Requests or Ride exist. When explicitly authorized, design its models to support the required provider/runtime needs for:
-
-- PaymentIntent;
-- provider attempts/charges where present;
-- CashSettlement;
-- Telegram Stars provider state;
-- provider webhook receipt/processing;
-- DigitalEntitlement where used;
-- idempotency.
-
-Do not simplify the final model to only `TelegramStarPayment` if doing so loses mature runtime semantics.
+Public projections must not expose exact private pickup or meeting-point data.
 
 ### Whistle
 
-`Whistle` stores metadata only.
+Current durable model:
 
-**Forbidden:** any durable Whistle message-body column.
+- `WhistleMetadata`
 
-Body lives in Redis/Valkey and expires by the locked TTL rules.
+Whistle body content is Redis-only. PostgreSQL may store metadata/context/quota/expiry truth according to the Whistle contract but must never store the Whistle message body.
 
-### Media
+### Future owners, not current persistence
 
-There is no generic `MediaAsset` persistence authority in the current foundation. Implemented domains own their managed media metadata where required, while shared object storage owns bytes. A generic Media domain/model requires separate authorization.
+These remain separate future or partially frozen domains unless a newer explicit slice implements them:
 
-### Replay
+- ULTRAS supporter-community persistence;
+- Fundraising / FundMe persistence;
+- Payments provider/settlement persistence;
+- generic MediaAsset persistence;
+- Replay persistence/read models;
+- additional HOOMA NOW durable read models.
 
-Replay remains a future separately authorized product/read model. Do not add or report `Replay` / `ReplayPhoto` persistence as implemented until its vertical slice begins. Any future Replay must reference completed Event state rather than duplicate Event lifecycle.
+Do not document future target model names as though they already exist.
 
-### Operations
+## 4. Future canonical football entity direction
 
-- `AuditLog`
-- `IdempotencyRecord`
-- `OutboxEvent`
-- `AdminNotification`
+The current merged Prisma model set does not yet contain a standalone canonical football-entity table. Older plans require a future catalog capable of representing at least CLUB and NATIONAL_TEAM for product areas that need it.
 
-Every model must have a runtime owner or be explicitly documented as foundational; schema-only models are never reported as feature completion.
-
-## 4. Canonical football entity
-
-Create/normalize a canonical football entity model capable of representing at least CLUB and NATIONAL_TEAM. ULTRAS official identity must reference it. Player favorites and Watch match identity should migrate toward the same catalog where practical without breaking historical data.
+Do not report such a model as implemented and do not add it opportunistically. When explicitly authorized, preserve existing Team/Watch/Gamers ownership and migrate consumers deliberately rather than creating another duplicate football catalog.
 
 ## 5. Key constraints
 
@@ -217,21 +224,21 @@ Required examples:
 - foreign keys for Event/Watch/Pitch -> Place associations;
 - useful query indexes on public discovery and active-status paths.
 
-## 6. Greenfield canonical Place design
+## 6. Current canonical Place design
 
-The target schema must model one canonical physical `Place` from the first migration. Watch, Pitch, FanHub and Lounge/Cafe capabilities attach to that Place through explicit profile/application relationships. No legacy duplicate venue tables are required in the target.
+The merged schema uses one canonical physical `Place`. Place ownership, images/menu data and capability/application records attach to that same Place. Watch and Pitch consume canonical Place identity rather than creating duplicate venue tables.
 
-If donor data is imported later, duplicate detection and deterministic reconciliation belong to a separate import tool with review output; they are not part of the target schema migration chain.
+If donor data is ever imported, duplicate detection/reconciliation belongs to a separate import tool with review output; it is not normal migration compatibility.
 
-## 7. Greenfield identity design
+## 7. Current identity design
 
-Create the final identity model directly: canonical User, TelegramIdentity, WebCredential, WebSession and profile/presentation records. No legacy auth columns or dual-read transition is required in the new application.
+The merged identity model uses canonical `User` plus `TelegramIdentity`, `WebCredential`, `WebSession`, `UserPresentation`, `PlayerProfile` and related Identity-owned security records.
 
-No automatic Web/Telegram account merge is permitted.
+No heuristic Web/Telegram account merge is permitted.
 
 ## 8. Scoped role vocabulary
 
-The target schema must never introduce legacy scoped `ADMIN` terminology. Communities use `FOUNDER/COACH/MEMBER`; Teams use `COACH/ASSISTANT/PLAYER`; ULTRAS use `LEADER/MODERATOR/MEMBER`; global application authority uses `PLATFORM_ADMIN`.
+Current schema must not reintroduce legacy scoped `ADMIN` terminology. Communities use `FOUNDER/COACH/MEMBER`; Teams use `COACH/ASSISTANT/PLAYER`; Athletes uses `FOUNDER/MODERATOR/MEMBER`; global application authority uses `PLATFORM_ADMIN`. Future domains define their own scoped vocabulary only when implemented.
 
 ## 9. Whistle transactional design
 

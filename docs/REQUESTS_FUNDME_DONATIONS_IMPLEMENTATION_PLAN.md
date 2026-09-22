@@ -116,24 +116,22 @@ ATHLETES COMMUNITY
 
 Persistence must use concrete foreign keys, not polymorphic strings. `createdByUserId` is the audit actor. The publisher entity controls current management authority.
 
-## Current verified facts
+## Current verified snapshot — 2026-09-22
 
-Fresh-verified on 2026-09-21 before RQ-FIX-0 mutation:
+Fresh foundation/source state at this reconciliation:
 
-- RQ-FIX-0 originally inspected `phase-0-foundation` at `e359e3ab665d4690f62ac943a93c4037a12c9e12` (`docs(help): close Request expiry Worker slice (#339)`).
-- On 2026-09-21 the owner explicitly authorized reconciling and merging PR #340. Its old broad Slice 4.6 scope was narrowed to taxonomy-independent hardening only: cursor Load more with Request-id deduplication, 300ms City/Houma debounce, and one-time optional identity resolution. Safe responder presentation remains deferred to RQ-FIX-6.
-- PR #340 passed the complete repository CI gate on exact head `0e0d4b986ce37284b84551227977300988f269e5` in run `35658317380` and merged as `ef620542c0fba9dc950f3d2491ea67a4057c73ab`.
-- Current `phase-0-foundation` HEAD is therefore `ef620542c0fba9dc950f3d2491ea67a4057c73ab` before final RQ-FIX-0 branch synchronization.
-- Current Requests frontend is real, not a placeholder: `RequestsPage`, `RequestCreatePage`, `RequestDetailPage`, cards, filters, responses, and the single Requests API client are present under `packages/frontend/src/requests/`.
-- The current Help classification is the wrong flat marketplace-style model: `HELP_CATEGORIES` plus `HELP_ITEM_KINDS`, with optional `AthletesSport`.
-- Current Request contracts require `category`, allow optional `itemKind` and optional `sport`, and list by category/sport/city/houma/status.
-- Current `HelpRequest` persistence stores `category`, optional `itemKind`, optional `sport`, publisher/audience FKs, lifecycle timestamps, location metadata, and product-like metadata.
-- Existing Request lifecycle, publisher/audience authorization, response privacy/actions, compare-and-set mutation safety, cursor repository ordering, and expiry Worker are foundations to preserve rather than redesign.
-- `ATHLETES_SPORTS` / `AthletesSport` is the existing canonical sport authority. No second sport table or parallel enum is authorized.
-- On merged foundation through PR #346, Play still has no Requests projection. PR #347 is currently the in-flight canonical Play projection and is not foundation truth until merged.
-- Current Athletes hub remains the Communities directory with sport filtering; `Communities | Requests` remains planned RQ-FIX-5 work.
-- `placeId` is a real optional Request FK today. RQ-FIX keeps it untouched unless later evidence explicitly justifies removal.
-- Historical Requests migrations are applied history and must not be rewritten. All schema correction uses forward migrations.
+- `phase-0-foundation` is `eda53dda71c5ae6d6a4f52d72151bd10edfeb9fd` through merged PR #346.
+- Requests hardening PR #340 and RQ-FIX PRs #341 through #346 are merged; their historical details remain in the ledger below.
+- PR #347 (`feat(play): add canonical Requests projection`) is currently open, head `43db0974c6926ac7392a80e64cce047cd01b3c82`, base `eda53dda71c5ae6d6a4f52d72151bd10edfeb9fd`. Its behavior is in-flight, not foundation truth.
+- The Requests frontend is real: `RequestsPage`, `RequestCreatePage`, `RequestDetailPage`, `RequestFeed`, `RequestCard`, taxonomy filters, response flows and one Requests API client are present under `packages/frontend/src/requests/`.
+- Current merged taxonomy persistence is `HelpTaxonomySubcategory -> HelpTaxonomyNeed -> HelpTaxonomyNeedSurface`, using canonical `AthletesSport` for the sport-first baseline and server-owned surface eligibility.
+- Current `HelpRequest` persistence includes `sport`, `subcategoryId`, `needId` and `customNeed` plus legacy `category` / `itemKind` compatibility fields retained during the transition.
+- Current Request contracts/service accept and validate the corrected sport/subcategory/need selection, project resolved taxonomy presentation, enforce custom/product metadata policy and apply surface filtering before pagination.
+- Existing publisher/audience authorization, response privacy/actions, lifecycle, cursor ordering and Worker expiry remain foundations to preserve.
+- Main Requests uses `surface=REQUESTS`. Play projection remains in-flight in PR #347. Athletes projection remains planned RQ-FIX-5 work.
+- `placeId` remains a real optional Request FK/location reference and must not be removed by assumption.
+- Historical Requests migrations are applied history and are forward-only; new corrections use new migrations.
+- The newer 2026-09-22 owner-approved `Request Type = Sport | Community`, broader taxonomy, manual Other, image, full-address and premium-card direction is authorized product work but is **not yet merged foundation behavior**.
 
 ## Slice ledger
 
@@ -617,19 +615,27 @@ This section supersedes the former flat Requests taxonomy and former Slice 4.6-n
 
 ### Product authority
 
-Requests is one sports-first local-needs domain.
+Requests is one canonical local-needs domain.
 
-Canonical hierarchy:
+The **current merged baseline** is sport-first:
 
 ```text
 AthletesSport
   -> HelpTaxonomySubcategory
       -> HelpTaxonomyNeed
-          -> city
-              -> houma
 ```
 
-Tier 1 sport authority is the existing `ATHLETES_SPORTS` / `AthletesSport` contract. No duplicate Sport table or enum is allowed.
+For that existing Sport branch, `ATHLETES_SPORTS` / `AthletesSport` remains the canonical sport authority; no duplicate Sport table or enum is allowed.
+
+The **approved next product root** is:
+
+```text
+Request Type
+├── Sport
+└── Community
+```
+
+Community does not require a Sport. The existing shared taxonomy boundary must be extended cleanly for Community rather than replaced or duplicated. The exact relational extension is an implementation decision to make after inspecting existing constraints/migration safety; this plan does not authorize a parallel Community taxonomy system.
 
 The same canonical `HelpRequest` domain powers:
 
@@ -682,9 +688,9 @@ Inactive nodes are unavailable for new creation but remain resolvable for histor
 
 The initial taxonomy must be inserted by the forward migration/data migration with deterministic stable IDs/slugs; the repository currently has no canonical seed command that deployment can rely on.
 
-### Corrected Request contract target
+### Corrected Request contract — current baseline and approved extension
 
-Canonical Request classification becomes:
+Current merged sport classification is:
 
 ```text
 sport
@@ -692,6 +698,8 @@ subcategoryId
 needId
 customNeed?
 ```
+
+The approved next contract adds an explicit Request Type so Community classification can exist without a Sport while preserving the current Sport path.
 
 Preserve publisher/audience, title/description, place/city/houma/locationNote, neededByAt/expiresAt, lifecycle state, responses, and Worker expiry behavior.
 

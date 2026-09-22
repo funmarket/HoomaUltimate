@@ -107,9 +107,15 @@ Rules:
 
 ## 6. Community authorization
 
-Community scoped authorization must migrate away from legacy `OWNER/ADMIN/MEMBER` semantics. Do not merely relabel strings in UI.
+Community authorization currently uses `FOUNDER | COACH | MEMBER`.
 
-Founder/Coach/Member permissions are defined in domain policy and verified against existing mature Source A behavior before migration SQL is written.
+Rules:
+
+- active membership/role is resolved server-side from current Community membership;
+- Founder is the ultimate Community authority;
+- Coach receives only Community-scoped management allowed by current domain policy;
+- Member has normal member authority only;
+- legacy `OWNER` / scoped `ADMIN` values are not authoritative and must not be reintroduced through UI labels or client flags.
 
 ## 7. Place authorization
 
@@ -141,9 +147,9 @@ App Admin controls global moderation such as:
 
 Approval actions must be idempotent/transaction-safe and audited.
 
-## 9. ULTRAS authorization
+## 9. ULTRAS authorization — future contract
 
-Public discovery/detail contains public projection only.
+ULTRAS persistence/product is not current merged foundation behavior. When the independent ULTRAS domain is explicitly implemented, public discovery/detail contains public projection only.
 
 Private HQ requires active membership.
 
@@ -198,9 +204,9 @@ Exact meeting/live-location information is available only to explicitly authoriz
 
 Live tracking defaults OFF.
 
-## 14. Payment authorization
+## 14. Payment authorization — future contract
 
-Payment mutation/read/refund permissions must preserve Source A's mature ownership/provider/admin boundaries.
+Payments is not current merged foundation behavior. When explicitly implemented, payment mutation/read/refund permissions must preserve the approved ownership/provider/admin boundaries.
 
 Provider webhook endpoints authenticate provider authenticity/idempotency, not end-user sessions.
 
