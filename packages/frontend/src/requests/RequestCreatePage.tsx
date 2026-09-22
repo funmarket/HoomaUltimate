@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type { MeResponse } from "@hooma/contracts";
-import type { HelpTaxonomyResponse } from "@hooma/contracts/help-taxonomy";
+import type { HelpTaxonomyResponse, HelpTaxonomySurface } from "@hooma/contracts/help-taxonomy";
 import { helpRequestCreateSchema, type HelpRequestCreateInput } from "@hooma/contracts/requests";
 import { useHoomaFrontend } from "../context";
 import { PlusIcon } from "../help/HelpIcons";
@@ -18,6 +18,13 @@ function optionalIso(value: string): string | undefined {
 export function RequestCreatePage() {
   const { api, transport, protectedError, authenticationHref } = useHoomaFrontend();
   const requestsApi = useMemo(() => createRequestsApi(transport), [transport]);
+  const taxonomySurface = useMemo<HelpTaxonomySurface>(() => {
+    if (typeof window === "undefined") return "REQUESTS";
+    return new URLSearchParams(window.location.search).get("surface") === "PLAY"
+      ? "PLAY"
+      : "REQUESTS";
+  }, []);
+  const returnHref = taxonomySurface === "PLAY" ? "/play" : "/requests";
   const [me, setMe] = useState<MeResponse | null>(null);
   const [taxonomy, setTaxonomy] = useState<HelpTaxonomyResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,7 +50,7 @@ export function RequestCreatePage() {
 
   useEffect(() => {
     let active = true;
-    void Promise.all([api.identity.meOptional(), requestsApi.taxonomy("REQUESTS")])
+    void Promise.all([api.identity.meOptional(), requestsApi.taxonomy(taxonomySurface)])
       .then(([current, currentTaxonomy]) => {
         if (!active) return;
         setMe(current);
@@ -58,7 +65,7 @@ export function RequestCreatePage() {
     return () => {
       active = false;
     };
-  }, [api, protectedError, requestsApi]);
+  }, [api, protectedError, requestsApi, taxonomySurface]);
 
   const publisherOptions = useMemo(() => {
     if (!me) return [];
@@ -201,8 +208,8 @@ export function RequestCreatePage() {
             <a className="help-action" href={`/requests/${encodeURIComponent(createdId)}`}>
               View Request
             </a>
-            <a className="help-action help-action--quiet" href="/requests">
-              Back to Requests
+            <a className="help-action help-action--quiet" href={returnHref}>
+              {taxonomySurface === "PLAY" ? "Back to Play" : "Back to Requests"}
             </a>
           </div>
         </section>
@@ -492,7 +499,7 @@ export function RequestCreatePage() {
             <PlusIcon />
             <span>{saving ? "Publishing…" : "Publish Request"}</span>
           </button>
-          <a className="help-action help-action--quiet" href="/requests">
+          <a className="help-action help-action--quiet" href={returnHref}>
             Cancel
           </a>
         </div>
