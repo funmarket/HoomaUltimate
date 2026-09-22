@@ -89,8 +89,9 @@ function visibility(): RequestVisibilityReader {
 }
 
 type StoredUpload = { key: string; contentType: string; sizeBytes: number };
+type PersistedImage = { objectKey: string; contentType: string; sizeBytes: number };
 
-function repository(stored: HelpRequestRecord, uploads: StoredUpload[]) {
+function repository(stored: HelpRequestRecord, uploads: PersistedImage[]) {
   const calls: string[] = [];
   // Mirrors the persistence effect of an upload so a re-read after
   // `setUploadedImage` reflects the stored photo, like the real repository.
@@ -119,10 +120,10 @@ function repository(stored: HelpRequestRecord, uploads: StoredUpload[]) {
     async getById() {
       return current;
     },
-    async setUploadedImage(_id: string, image: StoredUpload) {
+    async setUploadedImage(_id: string, image: PersistedImage) {
       calls.push(`setUploadedImage:${JSON.stringify(image)}`);
       uploads.push(image);
-      current.imageObjectKey = image.key;
+      current.imageObjectKey = image.objectKey;
       current.imageContentType = image.contentType;
       current.imageSizeBytes = image.sizeBytes;
       return { previousObjectKey: null };
@@ -243,7 +244,7 @@ test("an upload without a wired decoder is refused instead of trusted", async ()
 
 test("an upload stores validated bytes and never exposes the private object key", async () => {
   const stored = record();
-  const uploads: StoredUpload[] = [];
+  const uploads: PersistedImage[] = [];
   const objects: StoredUpload[] = [];
   const repo = repository(stored, uploads);
   const service = new RequestService(
@@ -266,7 +267,11 @@ test("an upload stores validated bytes and never exposes the private object key"
   assert.equal(result.hasUploadedImage, true);
   assert.equal(Object.hasOwn(result, "imageObjectKey"), false, "the object key stays private");
   assert.equal(Object.hasOwn(result, "imageSizeBytes"), false, "stored metadata stays private");
-  assert.equal(JSON.stringify(result).includes(uploads[0].key), false, "the key never serializes");
+  assert.equal(
+    JSON.stringify(result).includes(uploads[0].objectKey),
+    false,
+    "the key never serializes",
+  );
 });
 
 test("invalid bytes never reach object storage", async () => {
