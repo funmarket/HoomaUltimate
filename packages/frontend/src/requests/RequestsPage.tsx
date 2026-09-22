@@ -40,6 +40,7 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
   const effectiveFilters = useMemo<RequestsListQuery>(
     () => ({
       surface,
+      ...(filters.requestType ? { requestType: filters.requestType } : {}),
       ...(filters.sport ? { sport: filters.sport } : {}),
       ...(filters.subcategoryId ? { subcategoryId: filters.subcategoryId } : {}),
       ...(filters.needId ? { needId: filters.needId } : {}),
@@ -53,6 +54,7 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
       debouncedHouma,
       filters.limit,
       filters.needId,
+      filters.requestType,
       filters.sport,
       filters.status,
       filters.subcategoryId,
@@ -82,7 +84,7 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
     return () => {
       active = false;
     };
-  }, [protectedError, requestsApi, tab]);
+  }, [protectedError, requestsApi, surface, tab]);
 
   useEffect(() => {
     if (tab !== "requests") return;
@@ -210,7 +212,7 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
             error={error}
             nextCursor={nextCursor}
             loadingMore={loadingMore}
-            memberView={memberViewer !== null}
+            memberView={memberViewer === true}
             onLoadMore={() => void loadMore()}
           />
         </>
