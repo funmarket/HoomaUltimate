@@ -1,10 +1,7 @@
 import { expireDueHelpRequests, Prisma, type PrismaClient } from "@hooma/database";
+import type { HelpRequestListQuery, HelpRequestStatus } from "@hooma/contracts/requests";
 import type {
-  HelpRequestCreateInput,
-  HelpRequestListQuery,
-  HelpRequestStatus,
-} from "@hooma/contracts/requests";
-import type {
+  HelpRequestCreatePersistenceInput,
   HelpRequestPage,
   HelpRequestRecord,
   HelpRequestResponseRecord,
@@ -31,7 +28,13 @@ const helpRequestSelect = Prisma.validator<Prisma.HelpRequestSelect>()({
     select: { id: true, slug: true, label: true },
   },
   taxonomyNeed: {
-    select: { id: true, slug: true, label: true, kind: true, allowsCustomText: true },
+    select: {
+      id: true,
+      slug: true,
+      label: true,
+      kind: true,
+      allowsCustomText: true,
+    },
   },
   title: true,
   description: true,
@@ -115,7 +118,10 @@ function isUniqueConstraintError(error: unknown): boolean {
 export class PrismaRequestRepository implements RequestRepository, RequestVisibilityReader {
   constructor(private readonly db: PrismaClient) {}
 
-  async create(createdByUserId: string, input: HelpRequestCreateInput): Promise<HelpRequestRecord> {
+  async create(
+    createdByUserId: string,
+    input: HelpRequestCreatePersistenceInput,
+  ): Promise<HelpRequestRecord> {
     const audienceCommunityId =
       input.audience.scope === "HOOMA_COMMUNITY" ? input.audience.communityId : null;
     const audienceAthletesCommunityId =
