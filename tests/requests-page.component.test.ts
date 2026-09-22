@@ -444,22 +444,60 @@ test("City filter debounces list reloads and does not repeat identity lookup", a
   }
 });
 
-test("filters call the existing list query model", async () => {
+test("filters call the canonical Sport root query model", async () => {
   const page = await renderRequestsPage({ me: null, publicItems: [publicRequest] });
   try {
     await page.waitFor(() =>
       assert.ok(requestTitles(page.view).includes("Need size 43 running shoes")),
     );
-    // The canonical Requests filters are taxonomy-first: the legacy free-standing
-    // "Category" select no longer exists on the page.
+    // The corrected taxonomy is root-first: Request type selects the Sport branch
+    // before a sport-specific taxonomy choice is available.
+    page.fireEvent.change(page.view.getByLabelText("Request type"), {
+      target: { value: "SPORT" },
+    });
     page.fireEvent.change(page.view.getByLabelText("Sport"), { target: { value: "RUNNING" } });
     page.fireEvent.change(page.view.getByLabelText("City"), { target: { value: "La Marsa" } });
     await page.waitFor(() =>
       assert.ok(
-        page.calls.some((call) => call.includes("sport=RUNNING") && call.includes("city=La+Marsa")),
+        page.calls.some(
+          (call) =>
+            call.includes("requestType=SPORT") &&
+            call.includes("sport=RUNNING") &&
+            call.includes("city=La+Marsa"),
+        ),
         `expected filtered public list call, saw ${page.calls.join(" | ")}`,
       ),
     );
+  } finally {
+    page.close();
+  }
+});
+
+test("Community root filters without requiring a sport", async () => {
+  const page = await renderRequestsPage({ me: null, publicItems: [] });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByText("No Requests match these filters.")));
+    page.calls.length = 0;
+
+    page.fireEvent.change(page.view.getByLabelText("Request type"), {
+      target: { value: "COMMUNITY" },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Subcategory"), {
+      target: { value: "hts-community-lost-found" },
+    });
+
+    await page.waitFor(() =>
+      assert.ok(
+        page.calls.some(
+          (call) =>
+            call.includes("requestType=COMMUNITY") &&
+            call.includes("subcategoryId=hts-community-lost-found") &&
+            !call.includes("sport="),
+        ),
+        `expected Community filter without sport, saw ${page.calls.join(" | ")}`,
+      ),
+    );
+    assert.equal(page.view.queryByLabelText("Sport"), null);
   } finally {
     page.close();
   }
