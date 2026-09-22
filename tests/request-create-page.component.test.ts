@@ -18,9 +18,9 @@ type RecordedCall = {
   readonly body: unknown;
 };
 
-function installDom() {
+function installDom(url = "http://localhost/requests/new") {
   const dom = new JSDOM("<!doctype html><html><body></body></html>", {
-    url: "http://localhost/requests/new",
+    url,
   });
   const globals: Record<string, unknown> = {
     window: dom.window,
@@ -161,8 +161,8 @@ function installApiStub(options: { readonly me?: unknown }) {
   };
 }
 
-async function renderCreatePage(options: { readonly me?: unknown }) {
-  const dom = installDom();
+async function renderCreatePage(options: { readonly me?: unknown; readonly url?: string }) {
+  const dom = installDom(options.url);
   const apiStub = installApiStub(options);
   const React = await import("react");
   Object.defineProperty(globalThis, "React", { value: React, writable: true, configurable: true });
@@ -204,6 +204,33 @@ test("a guest is sent through the current HOOMA auth flow with returnTo preserve
     const link = page.view.getByRole("link", { name: /Sign in to continue/i });
     assert.equal(link.getAttribute("href"), "/login?returnTo=%2Frequests%2Fnew");
     assert.equal(page.view.queryByLabelText("Title"), null);
+  } finally {
+    page.close();
+  }
+});
+
+test("Athletes create surface loads Athletes taxonomy and preserves auth return context", async () => {
+  const page = await renderCreatePage({
+    me: null,
+    url: "http://localhost/requests/new?surface=ATHLETES",
+  });
+  try {
+    await page.waitFor(() =>
+      assert.ok(page.view.getByRole("link", { name: /Sign in to continue/i })),
+    );
+    assert.ok(
+      page.calls.some(
+        (call) =>
+          call.method === "GET" &&
+          call.path === "/api/public/v1/help/taxonomy?surface=ATHLETES",
+      ),
+      `expected Athletes taxonomy request, saw ${JSON.stringify(page.calls)}`,
+    );
+    const link = page.view.getByRole("link", { name: /Sign in to continue/i });
+    assert.equal(
+      link.getAttribute("href"),
+      "/login?returnTo=%2Frequests%2Fnew%3Fsurface%3DATHLETES",
+    );
   } finally {
     page.close();
   }
