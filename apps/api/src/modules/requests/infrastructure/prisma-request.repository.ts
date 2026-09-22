@@ -24,6 +24,15 @@ const helpRequestSelect = Prisma.validator<Prisma.HelpRequestSelect>()({
   category: true,
   itemKind: true,
   sport: true,
+  subcategoryId: true,
+  needId: true,
+  customNeed: true,
+  taxonomySubcategory: {
+    select: { id: true, slug: true, label: true },
+  },
+  taxonomyNeed: {
+    select: { id: true, slug: true, label: true, kind: true, allowsCustomText: true },
+  },
   title: true,
   description: true,
   quantityNeeded: true,
@@ -76,6 +85,11 @@ function filters(input: HelpRequestListQuery): Prisma.HelpRequestWhereInput {
   return {
     ...(input.category ? { category: input.category } : {}),
     ...(input.sport ? { sport: input.sport } : {}),
+    ...(input.subcategoryId ? { subcategoryId: input.subcategoryId } : {}),
+    ...(input.needId ? { needId: input.needId } : {}),
+    ...(input.surface
+      ? { taxonomyNeed: { surfaces: { some: { surface: input.surface } } } }
+      : {}),
     ...(input.city ? { city: input.city } : {}),
     ...(input.houma ? { houma: input.houma } : {}),
   };
@@ -120,6 +134,9 @@ export class PrismaRequestRepository implements RequestRepository, RequestVisibi
           category: input.category,
           itemKind: input.itemKind ?? null,
           sport: input.sport ?? null,
+          subcategoryId: input.subcategoryId ?? null,
+          needId: input.needId ?? null,
+          customNeed: input.customNeed ?? null,
           title: input.title,
           description: input.description,
           quantityNeeded: input.quantityNeeded ?? null,
