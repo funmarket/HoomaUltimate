@@ -17,8 +17,8 @@ export function RequestFeed({
   readonly loadingMore: boolean;
   readonly onLoadMore: () => void;
 }) {
-  if (loading) return <p className="status">Loading Requests…</p>;
   if (error) return <p className="status request-error">{error}</p>;
+  if (loading) return <p className="status">Loading Requests…</p>;
 
   if (items.length === 0) {
     return (
