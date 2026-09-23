@@ -30,32 +30,29 @@ test("Request contracts accept the planned broad request shape", () => {
   assert.equal(parsed.audience.scope, "PUBLIC");
 });
 
-test(
-  "Request contracts enforce title, description, quantity, publisher, and audience invariants",
-  () => {
-    assert.throws(() => helpRequestCreateSchema.parse({ ...validInput, title: "x" }));
-    assert.throws(() => helpRequestCreateSchema.parse({ ...validInput, description: "short" }));
-    assert.throws(() => helpRequestCreateSchema.parse({ ...validInput, quantityNeeded: 0 }));
-    assert.throws(() =>
-      helpRequestCreateSchema.parse({
-        ...validInput,
-        publisher: { publisherCommunityId: "community-1", publisherTeamId: "team-1" },
-      }),
-    );
-    assert.throws(() =>
-      helpRequestCreateSchema.parse({
-        ...validInput,
-        audience: { scope: "HOOMA_COMMUNITY" },
-      }),
-    );
-    assert.throws(() =>
-      helpRequestCreateSchema.parse({
-        ...validInput,
-        audience: { scope: "PUBLIC", communityId: "community-1" },
-      }),
-    );
-  },
-);
+test("Request contracts enforce title, description, quantity, publisher, and audience invariants", () => {
+  assert.throws(() => helpRequestCreateSchema.parse({ ...validInput, title: "x" }));
+  assert.throws(() => helpRequestCreateSchema.parse({ ...validInput, description: "short" }));
+  assert.throws(() => helpRequestCreateSchema.parse({ ...validInput, quantityNeeded: 0 }));
+  assert.throws(() =>
+    helpRequestCreateSchema.parse({
+      ...validInput,
+      publisher: { publisherCommunityId: "community-1", publisherTeamId: "team-1" },
+    }),
+  );
+  assert.throws(() =>
+    helpRequestCreateSchema.parse({
+      ...validInput,
+      audience: { scope: "HOOMA_COMMUNITY" },
+    }),
+  );
+  assert.throws(() =>
+    helpRequestCreateSchema.parse({
+      ...validInput,
+      audience: { scope: "PUBLIC", communityId: "community-1" },
+    }),
+  );
+});
 
 test("Request status and condition contracts expose only the planned values", () => {
   for (const status of ["OPEN", "IN_PROGRESS", "FULFILLED", "CANCELLED", "EXPIRED"] as const) {
@@ -69,18 +66,15 @@ test("Request status and condition contracts expose only the planned values", ()
   assert.throws(() => requestConditionPreferenceSchema.parse("FOR_SALE"));
 });
 
-test(
-  "Request create input rejects requester presentation because Identity projection is read-only",
-  () => {
-    assert.throws(() =>
-      helpRequestCreateSchema.parse({
-        ...validInput,
-        requester: {
-          displayName: "Amine",
-          username: "amine",
-          photoUrl: "https://cdn.example.test/amine.jpg",
-        },
-      }),
-    );
-  },
-);
+test("Request create input rejects requester presentation because Identity projection is read-only", () => {
+  assert.throws(() =>
+    helpRequestCreateSchema.parse({
+      ...validInput,
+      requester: {
+        displayName: "Amine",
+        username: "amine",
+        photoUrl: "https://cdn.example.test/amine.jpg",
+      },
+    }),
+  );
+});
