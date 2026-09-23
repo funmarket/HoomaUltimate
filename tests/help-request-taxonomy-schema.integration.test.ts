@@ -32,6 +32,7 @@ test("HelpRequest taxonomy constraints preserve legacy rows and reject mismatche
     const valid = await db.helpRequest.create({
       data: {
         ...requestData(user.id),
+        requestType: "SPORT",
         sport: "FOOTBALL",
         subcategoryId: "hts-football-equipment",
         needId: "htn-football-ball",
@@ -44,6 +45,7 @@ test("HelpRequest taxonomy constraints preserve legacy rows and reject mismatche
       db.helpRequest.create({
         data: {
           ...requestData(user.id),
+          requestType: "SPORT",
           sport: "RUNNING",
           subcategoryId: "hts-football-equipment",
           needId: "htn-football-ball",
@@ -55,7 +57,8 @@ test("HelpRequest taxonomy constraints preserve legacy rows and reject mismatche
       db.helpRequest.create({
         data: {
           ...requestData(user.id),
-          sport: "FOOTBALL",
+          requestType: "SPORT",
+        sport: "FOOTBALL",
           subcategoryId: "hts-football-footwear",
           needId: "htn-football-ball",
         },

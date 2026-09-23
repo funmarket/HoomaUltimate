@@ -45,6 +45,7 @@ test("Help taxonomy database constraints reject duplicate sport/subcategory and 
     await db.helpTaxonomySubcategory.create({
       data: {
         id: subcategoryId,
+        requestType: "SPORT",
         sport: "FOOTBALL",
         slug: `constraint-${suffix}`,
         label: "Constraint Test",
@@ -56,6 +57,7 @@ test("Help taxonomy database constraints reject duplicate sport/subcategory and 
       db.helpTaxonomySubcategory.create({
         data: {
           id: `test-sub-duplicate-${suffix}`,
+          requestType: "SPORT",
           sport: "FOOTBALL",
           slug: `constraint-${suffix}`,
           label: "Duplicate",
