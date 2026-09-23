@@ -58,7 +58,7 @@ test("HelpRequest taxonomy constraints preserve legacy rows and reject mismatche
         data: {
           ...requestData(user.id),
           requestType: "SPORT",
-        sport: "FOOTBALL",
+          sport: "FOOTBALL",
           subcategoryId: "hts-football-footwear",
           needId: "htn-football-ball",
         },
