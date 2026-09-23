@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { registerHooks } from "node:module";
 import test from "node:test";
 import { JSDOM } from "jsdom";
+import { requestsTaxonomy } from "./fixtures/requests-taxonomy.js";
 
 registerHooks({
   load(url, context, nextLoad) {
@@ -90,6 +91,7 @@ function installApiStub(options: { readonly me?: unknown }) {
       body: init?.body ? JSON.parse(String(init.body)) : null,
     });
     if (url.pathname === "/api/public/v1/auth/session") return json(options.me ?? null);
+    if (url.pathname === "/api/public/v1/help/taxonomy") return json(requestsTaxonomy);
     if (url.pathname === "/api/v1/requests" && method === "POST") return json(createdRequest, 201);
     return json(
       { error: { code: "NOT_FOUND", message: `Unexpected ${method} ${url.pathname}` } },
@@ -163,6 +165,15 @@ test("a signed-in member can publish a Request and is linked to it", async () =>
     assert.ok(page.view.getByRole("option", { name: /Athletes · Athletes Tunis/ }));
     assert.ok(page.view.getByRole("option", { name: /Everyone/ }));
 
+    page.fireEvent.change(page.view.getByLabelText("Sport"), {
+      target: { value: "RUNNING" },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Subcategory"), {
+      target: { value: "hts-running-footwear" },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Specific item / need"), {
+      target: { value: "htn-running-shoes" },
+    });
     page.fireEvent.change(page.view.getByLabelText("Title"), {
       target: { value: "Need size 43 running shoes" },
     });
@@ -182,7 +193,9 @@ test("a signed-in member can publish a Request and is linked to it", async () =>
     assert.deepEqual(post.body, {
       publisher: {},
       audience: { scope: "PUBLIC" },
-      category: "ITEM",
+      sport: "RUNNING",
+      subcategoryId: "hts-running-footwear",
+      needId: "htn-running-shoes",
       title: "Need size 43 running shoes",
       description: "Looking for used or new running shoes for training sessions.",
     });
@@ -198,6 +211,15 @@ test("invalid input is rejected by the shared contract without any write", async
   const page = await renderCreatePage({ me: meResponse });
   try {
     await page.waitFor(() => assert.ok(page.view.getByLabelText("Title")));
+    page.fireEvent.change(page.view.getByLabelText("Sport"), {
+      target: { value: "RUNNING" },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Subcategory"), {
+      target: { value: "hts-running-footwear" },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Specific item / need"), {
+      target: { value: "htn-running-shoes" },
+    });
     page.fireEvent.change(page.view.getByLabelText("Title"), { target: { value: "ok" } });
     page.fireEvent.submit(page.view.getByRole("button", { name: /Publish Request/i }));
 

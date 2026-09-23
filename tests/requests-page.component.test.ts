@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { registerHooks } from "node:module";
 import test from "node:test";
 import { JSDOM } from "jsdom";
+import { requestsTaxonomy } from "./fixtures/requests-taxonomy.js";
 
 registerHooks({
   load(url, context, nextLoad) {
@@ -159,6 +160,7 @@ function installApiStub(options: StubOptions) {
     const key = `${init?.method ?? "GET"} ${url.pathname}${url.search}`;
     calls.push(key);
     if (url.pathname === "/api/public/v1/auth/session") return json(options.me ?? null);
+    if (url.pathname === "/api/public/v1/help/taxonomy") return json(requestsTaxonomy);
     if (url.pathname === "/api/public/v1/requests") {
       if (url.searchParams.get("cursor")) {
         return json({ items: options.publicPageTwoItems ?? [], nextCursor: null });
@@ -265,7 +267,7 @@ test("anonymous /requests loads the real public Requests feed", async () => {
     assert.equal(page.view.queryByText("No Requests are listed yet."), null);
     assert.ok(page.view.getByRole("link", { name: /Create request/i }));
     assert.ok(page.view.getByRole("link", { name: /FundMe/i }));
-    assert.equal(page.view.queryByText("Donations"), null);
+    assert.ok(page.view.getByRole("link", { name: /Donations/i }));
     const card = page.view.getByRole("link", { name: /Need size 43 running shoes/i });
     assert.equal(card.getAttribute("href"), "/requests/request-1");
     const cardView = page.within(card);
@@ -356,11 +358,11 @@ test("filters call the existing list query model", async () => {
   const page = await renderRequestsPage({ me: null, publicItems: [publicRequest] });
   try {
     await page.waitFor(() => assert.ok(page.view.getByText("Need size 43 running shoes")));
-    page.fireEvent.change(page.view.getByLabelText("Category"), { target: { value: "ITEM" } });
+    page.fireEvent.change(page.view.getByLabelText("Sport"), { target: { value: "RUNNING" } });
     page.fireEvent.change(page.view.getByLabelText("City"), { target: { value: "La Marsa" } });
     await page.waitFor(() =>
       assert.ok(
-        page.calls.some((call) => call.includes("category=ITEM") && call.includes("city=La+Marsa")),
+        page.calls.some((call) => call.includes("sport=RUNNING") && call.includes("city=La+Marsa")),
         `expected filtered public list call, saw ${page.calls.join(" | ")}`,
       ),
     );
