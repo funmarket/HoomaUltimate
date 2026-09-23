@@ -281,7 +281,6 @@ test("invalid input is rejected by the shared contract without any write", async
   }
 });
 
-
 test("signed-in Request creation exposes an optional Image URL control", async () => {
   const page = await renderCreatePage({ me: meResponse });
   try {
