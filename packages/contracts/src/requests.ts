@@ -216,6 +216,14 @@ export const helpRequestSchema = z.object({
   subcategoryId: idSchema.nullable().optional(),
   needId: idSchema.nullable().optional(),
   customNeed: z.string().nullable().optional(),
+  requester: z
+    .object({
+      displayName: z.string(),
+      username: z.string(),
+      photoUrl: z.string().nullable(),
+    })
+    .nullable()
+    .optional(),
   taxonomy: z
     .object({
       requestType: helpRequestTypeSchema,

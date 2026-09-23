@@ -10,6 +10,10 @@ import type {
 import type { AthletesSport } from "@hooma/contracts/athletes";
 import type { HelpCategory } from "@hooma/contracts/help";
 import type { HelpTaxonomySelectionReader } from "../../help-taxonomy/application/help-taxonomy.repository.js";
+import type {
+  UserPresentationReader,
+  UserPresentationSummary,
+} from "../../identity/application/user-presentation.reader.js";
 import { RequestError } from "../domain/request-error.js";
 import { canManageRequest, requireManageRequest } from "./request-authorization.js";
 import type {
@@ -31,11 +35,21 @@ const sportLabels: Record<AthletesSport, string> = {
   OTHER: "Other",
 };
 
-function serialize(record: HelpRequestRecord): HelpRequest {
+function serialize(
+  record: HelpRequestRecord,
+  requester: UserPresentationSummary | null = null,
+): HelpRequest {
   const { taxonomySubcategory, taxonomyNeed, fullAddress, image, ...rest } = record;
   void fullAddress;
   return {
     ...rest,
+    requester: requester
+      ? {
+          displayName: requester.displayName,
+          username: requester.username,
+          photoUrl: requester.photoUrl,
+        }
+      : null,
     image: image
       ? {
           ...image,
@@ -72,19 +86,41 @@ function serializeResponse(record: HelpRequestResponseRecord): HelpRequestRespon
   };
 }
 
-function serializePage(page: {
-  readonly items: readonly HelpRequestRecord[];
-  readonly nextCursor: string | null;
-}): HelpRequestList {
-  return { items: page.items.map(serialize), nextCursor: page.nextCursor };
-}
-
 export class RequestService {
   constructor(
     private readonly repository: RequestRepository,
     private readonly visibility: RequestVisibilityReader,
     private readonly taxonomy?: HelpTaxonomySelectionReader,
+    private readonly userPresentations?: UserPresentationReader,
   ) {}
+
+  private async requesterMap(
+    records: readonly HelpRequestRecord[],
+  ): Promise<ReadonlyMap<string, UserPresentationSummary>> {
+    if (!this.userPresentations || !records.length) return new Map();
+
+    const userIds = [...new Set(records.map((record) => record.createdByUserId))];
+    const summaries = await this.userPresentations.findByUserIds(userIds);
+    return new Map(summaries.map((summary) => [summary.userId, summary]));
+  }
+
+  private async serializePage(page: {
+    readonly items: readonly HelpRequestRecord[];
+    readonly nextCursor: string | null;
+  }): Promise<HelpRequestList> {
+    const requesters = await this.requesterMap(page.items);
+    return {
+      items: page.items.map((record) =>
+        serialize(record, requesters.get(record.createdByUserId) ?? null),
+      ),
+      nextCursor: page.nextCursor,
+    };
+  }
+
+  private async serializeOne(record: HelpRequestRecord): Promise<HelpRequest> {
+    const requesters = await this.requesterMap([record]);
+    return serialize(record, requesters.get(record.createdByUserId) ?? null);
+  }
 
   async create(userId: string, input: HelpRequestCreateInput): Promise<HelpRequest> {
     await this.requirePublisherAuthority(userId, input);
@@ -155,23 +191,23 @@ export class RequestService {
   }
 
   async listPublic(input: HelpRequestListQuery): Promise<HelpRequestList> {
-    return serializePage(await this.repository.listPublic(input));
+    return this.serializePage(await this.repository.listPublic(input));
   }
 
   async getPublic(id: string): Promise<HelpRequest> {
     const request = await this.repository.getPublic(id);
     if (!request) throw new RequestError("REQUEST_NOT_FOUND", "Request not found");
-    return serialize(request);
+    return this.serializeOne(request);
   }
 
   async listForMember(userId: string, input: HelpRequestListQuery): Promise<HelpRequestList> {
-    return serializePage(await this.repository.listVisibleToMember(userId, input));
+    return this.serializePage(await this.repository.listVisibleToMember(userId, input));
   }
 
   async getForMember(userId: string, id: string): Promise<HelpRequest> {
     const request = await this.repository.getVisibleToMember(userId, id);
     if (!request) throw new RequestError("REQUEST_NOT_FOUND", "Request not found");
-    return serialize(request);
+    return this.serializeOne(request);
   }
 
   async respond(

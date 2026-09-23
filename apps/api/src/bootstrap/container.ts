@@ -247,6 +247,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     requestRepository,
     requestRepository,
     helpTaxonomyRepository,
+    userPresentationReader,
   );
   const requestMediaService = new RequestMediaService(
     requestRepository,

@@ -6,6 +6,7 @@ import type {
   RequestRepository,
   RequestVisibilityReader,
 } from "../apps/api/src/modules/requests/application/request.repository.js";
+import type { UserPresentationReader } from "../apps/api/src/modules/identity/application/user-presentation.reader.js";
 import { RequestError } from "../apps/api/src/modules/requests/domain/request-error.js";
 
 function requestRecord(overrides: Partial<HelpRequestRecord> = {}): HelpRequestRecord {
@@ -211,4 +212,105 @@ test("Requests hide private scoped objects from nonmembers with not-found semant
     service.getForMember("outsider", "private-request"),
     (error: unknown) => error instanceof RequestError && error.code === "REQUEST_NOT_FOUND",
   );
+});
+
+
+test("Request list requester presentation is one deduplicated Identity batch read", async () => {
+  const calls: string[][] = [];
+  const presentations: UserPresentationReader = {
+    async findByUserIds(userIds) {
+      calls.push([...userIds]);
+      return [
+        {
+          userId: "user-1",
+          displayName: "Amine",
+          username: "amine",
+          photoUrl: "https://cdn.example.test/amine.jpg",
+        },
+        {
+          userId: "user-2",
+          displayName: "Bashir",
+          username: "bashir",
+          photoUrl: null,
+        },
+      ];
+    },
+  };
+  const repo = repository();
+  const service = new RequestService(
+    {
+      ...repo,
+      async listPublic() {
+        return {
+          items: [
+            requestRecord({ id: "request-1", createdByUserId: "user-1" }),
+            requestRecord({ id: "request-2", createdByUserId: "user-1" }),
+            requestRecord({ id: "request-3", createdByUserId: "user-2" }),
+          ],
+          nextCursor: null,
+        };
+      },
+    },
+    visibility(),
+    undefined,
+    presentations,
+  );
+
+  const page = await service.listPublic({ limit: 30 });
+
+  assert.deepEqual(calls, [["user-1", "user-2"]]);
+  assert.deepEqual(page.items[0]?.requester, {
+    displayName: "Amine",
+    username: "amine",
+    photoUrl: "https://cdn.example.test/amine.jpg",
+  });
+  assert.deepEqual(page.items[1]?.requester, page.items[0]?.requester);
+  assert.deepEqual(page.items[2]?.requester, {
+    displayName: "Bashir",
+    username: "bashir",
+    photoUrl: null,
+  });
+  assert.equal(
+    page.items.some((item) => item.requester && "userId" in item.requester),
+    false,
+    "Request DTO must expose only safe requester presentation fields",
+  );
+});
+
+test("Request detail resolves its creator through the canonical Identity reader once", async () => {
+  const calls: string[][] = [];
+  const presentations: UserPresentationReader = {
+    async findByUserIds(userIds) {
+      calls.push([...userIds]);
+      return [
+        {
+          userId: "user-2",
+          displayName: "Bashir",
+          username: "bashir",
+          photoUrl: null,
+        },
+      ];
+    },
+  };
+  const repo = repository();
+  const service = new RequestService(
+    {
+      ...repo,
+      async getPublic() {
+        return requestRecord({ createdByUserId: "user-2" });
+      },
+    },
+    visibility(),
+    undefined,
+    presentations,
+  );
+
+  const item = await service.getPublic("request-1");
+
+  assert.deepEqual(calls, [["user-2"]]);
+  assert.deepEqual(item.requester, {
+    displayName: "Bashir",
+    username: "bashir",
+    photoUrl: null,
+  });
 });
