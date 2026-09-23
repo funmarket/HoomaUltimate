@@ -40,7 +40,8 @@ export function RequestCard({ item }: { readonly item: HelpRequest }) {
         ) : null}
         {item.taxonomy ? (
           <span>
-            {item.taxonomy.sportLabel} · {item.taxonomy.subcategory.label}
+            {item.taxonomy.sportLabel ?? titleCase(item.taxonomy.requestType)} ·{" "}
+            {item.taxonomy.subcategory.label}
           </span>
         ) : item.sport ? (
           <span>{titleCase(item.sport)}</span>

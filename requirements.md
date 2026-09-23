@@ -888,6 +888,8 @@ Approved requirements include:
 - `COMMUNITY` Requests are a parallel root and must not require or fake a Sport;
 - selecting a Need that allows custom text requires validated `customNeed`; custom text remains under its selected taxonomy parent and never creates a new global taxonomy row;
 - corrected taxonomy selections must reject cross-root, cross-sport, and cross-subcategory combinations at the service/database boundary;
+- create and discovery filters follow the same progressive root: Request Type -> Sport (SPORT only) -> Category -> Specific Need;
+- an optional precise `fullAddress` may be submitted and persisted for a Request, but current public/member Request read DTOs must not expose it until an explicit precise-location viewer policy is authorized; city/Houma remain the privacy-safe location projection;
 - legacy classification fields remain transitional compatibility only until retained production rows are safely inspected and mapped; title/description text must never be guessed into taxonomy during backfill;
 - claim request quantities until the requested quantity is fulfilled;
 - concurrency-safe partial claims that prevent over-claiming while allowing more than one claimer when quantity remains;
@@ -897,7 +899,7 @@ Approved requirements include:
 
 Requests are explicitly authorized for a durable Requests-owned domain, persistence, API and frontend vertical slice. Requests does not own Ride, Fundraising, Payment or generic action state. If a request has a quantity of one, the partial-claim rule naturally behaves as a single active claim; this replaces the older exclusive-claim wording without creating a separate exclusive-only model.
 
-The clean Request Type/taxonomy correction is currently in-flight on draft PR `#351`; it is not merged `phase-0-foundation` truth until that PR is explicitly authorized and merged.
+The clean Request Type/taxonomy correction is currently in-flight on draft PR `#351`; the branch also carries the progressive root create/filter slice and private `fullAddress` persistence described above. It is not merged `phase-0-foundation` truth until that PR is explicitly authorized and merged.
 
 ---
 

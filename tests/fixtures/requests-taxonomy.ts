@@ -27,6 +27,31 @@ export const requestsTaxonomy = {
   ],
   community: {
     label: "Community",
-    subcategories: [],
+    subcategories: [
+      {
+        id: "hts-community-lost-found",
+        slug: "lost-found",
+        label: "Lost & Found",
+        sortOrder: 10,
+        needs: [
+          {
+            id: "htn-community-lost-item",
+            slug: "lost-item",
+            label: "Lost item",
+            kind: "COMMUNITY_SUPPORT",
+            allowsCustomText: false,
+            sortOrder: 10,
+          },
+          {
+            id: "htn-community-lost-found-other",
+            slug: "other",
+            label: "Other",
+            kind: "COMMUNITY_SUPPORT",
+            allowsCustomText: true,
+            sortOrder: 90,
+          },
+        ],
+      },
+    ],
   },
 } satisfies HelpTaxonomyResponse;

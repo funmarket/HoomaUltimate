@@ -205,8 +205,9 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
           ) : null}
           {item.taxonomy ? (
             <>
-              <span>Sport · {item.taxonomy.sportLabel}</span>
-              <span>Subcategory · {item.taxonomy.subcategory.label}</span>
+              <span>Type · {titleCase(item.taxonomy.requestType)}</span>
+              {item.taxonomy.sportLabel ? <span>Sport · {item.taxonomy.sportLabel}</span> : null}
+              <span>Category · {item.taxonomy.subcategory.label}</span>
               <span>Need · {item.taxonomy.need.label}</span>
             </>
           ) : item.sport ? (

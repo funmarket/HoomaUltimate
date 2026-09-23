@@ -53,14 +53,20 @@ test("Requests API client uses the existing public and member endpoint families"
     const { createRequestsApi } = await import("../packages/frontend/src/requests/api");
     const api = createRequestsApi({ baseUrl: "http://api.test" });
 
-    await api.publicList({ limit: 30, category: "ITEM", city: "La Marsa" });
+    await api.publicList({
+      limit: 30,
+      category: "ITEM",
+      requestType: "SPORT",
+      city: "La Marsa",
+    });
     await api.memberList();
     await api.create(createInput);
     await api.respond("request-1", { message: "I can help with a spare pair." });
 
     assert.deepEqual(calls, [
       {
-        path: "/api/public/v1/requests?limit=30&category=ITEM&city=La+Marsa",
+        path:
+          "/api/public/v1/requests?limit=30&category=ITEM&requestType=SPORT&city=La+Marsa",
         method: "GET",
         body: null,
       },
@@ -354,10 +360,46 @@ test("City filter debounces list reloads and does not repeat identity lookup", a
   }
 });
 
+test("Community filters use the same canonical Request list query", async () => {
+  const page = await renderRequestsPage({ me: null, publicItems: [] });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByText("No Requests match these filters.")));
+    page.calls.length = 0;
+
+    page.fireEvent.change(page.view.getByLabelText("Request Type"), {
+      target: { value: "COMMUNITY" },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Category"), {
+      target: { value: "hts-community-lost-found" },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Specific need"), {
+      target: { value: "htn-community-lost-item" },
+    });
+
+    await page.waitFor(() =>
+      assert.ok(
+        page.calls.some(
+          (call) =>
+            call.includes("requestType=COMMUNITY") &&
+            call.includes("subcategoryId=hts-community-lost-found") &&
+            call.includes("needId=htn-community-lost-item"),
+        ),
+        `expected Community filtered Request call, saw ${page.calls.join(" | ")}`,
+      ),
+    );
+    assert.equal(page.view.queryByLabelText("Sport"), null);
+  } finally {
+    page.close();
+  }
+});
+
 test("filters call the existing list query model", async () => {
   const page = await renderRequestsPage({ me: null, publicItems: [publicRequest] });
   try {
     await page.waitFor(() => assert.ok(page.view.getByText("Need size 43 running shoes")));
+    page.fireEvent.change(page.view.getByLabelText("Request Type"), {
+      target: { value: "SPORT" },
+    });
     page.fireEvent.change(page.view.getByLabelText("Sport"), { target: { value: "RUNNING" } });
     page.fireEvent.change(page.view.getByLabelText("City"), { target: { value: "La Marsa" } });
     await page.waitFor(() =>

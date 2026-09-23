@@ -26,6 +26,7 @@ export function RequestCreatePage() {
   const [createdId, setCreatedId] = useState("");
   const [publisher, setPublisher] = useState("personal");
   const [audience, setAudience] = useState("public");
+  const [requestType, setRequestType] = useState("");
   const [sport, setSport] = useState("");
   const [subcategoryId, setSubcategoryId] = useState("");
   const [needId, setNeedId] = useState("");
@@ -37,6 +38,7 @@ export function RequestCreatePage() {
   const [conditionPreference, setConditionPreference] = useState("");
   const [city, setCity] = useState("");
   const [houma, setHouma] = useState("");
+  const [fullAddress, setFullAddress] = useState("");
   const [locationNote, setLocationNote] = useState("");
   const [neededByAt, setNeededByAt] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
@@ -95,10 +97,13 @@ export function RequestCreatePage() {
     ];
   }, [me]);
 
-  const selectedSport = taxonomy?.sports.find((entry) => entry.sport === sport);
-  const selectedSubcategory = selectedSport?.subcategories.find(
-    (entry) => entry.id === subcategoryId,
-  );
+  const selectedSport =
+    requestType === "SPORT" ? taxonomy?.sports.find((entry) => entry.sport === sport) : undefined;
+  const selectedSubcategories =
+    requestType === "COMMUNITY"
+      ? (taxonomy?.community.subcategories ?? [])
+      : (selectedSport?.subcategories ?? []);
+  const selectedSubcategory = selectedSubcategories.find((entry) => entry.id === subcategoryId);
   const selectedNeed = selectedSubcategory?.needs.find((entry) => entry.id === needId);
   const productNeed = selectedNeed?.kind === "PRODUCT";
 
@@ -130,7 +135,8 @@ export function RequestCreatePage() {
     const parsed = helpRequestCreateSchema.safeParse({
       publisher: publisherInput(),
       audience: audienceInput(),
-      sport: sport || undefined,
+      requestType: requestType || undefined,
+      sport: requestType === "SPORT" ? sport || undefined : undefined,
       subcategoryId: subcategoryId || undefined,
       needId: needId || undefined,
       customNeed: selectedNeed?.allowsCustomText ? optionalText(customNeed) : undefined,
@@ -141,6 +147,7 @@ export function RequestCreatePage() {
       conditionPreference: productNeed ? optionalText(conditionPreference) : undefined,
       city: optionalText(city),
       houma: optionalText(houma),
+      fullAddress: optionalText(fullAddress),
       locationNote: optionalText(locationNote),
       neededByAt: optionalIso(neededByAt),
       expiresAt: optionalIso(expiresAt),
@@ -216,7 +223,7 @@ export function RequestCreatePage() {
         <div className="help-hero__copy">
           <span className="eyebrow">HOOMA HELP</span>
           <h1>Create a Request</h1>
-          <p>Choose the sport and exact need first, then tell the community where help is needed.</p>
+          <p>Choose Sport or Community, then narrow the exact need before adding Request details.</p>
         </div>
       </header>
 
@@ -261,48 +268,73 @@ export function RequestCreatePage() {
           </div>
 
           <div className="request-field">
-            <label className="request-field__label" htmlFor="request-create-sport">
-              Sport
+            <label className="request-field__label" htmlFor="request-create-type">
+              Request Type
             </label>
             <select
-              id="request-create-sport"
+              id="request-create-type"
               className="request-field__control"
-              value={sport}
+              value={requestType}
               required
               onChange={(event) => {
-                setSport(event.target.value);
+                setRequestType(event.target.value);
+                setSport("");
                 setSubcategoryId("");
                 setNeedId("");
                 setCustomNeed("");
               }}
             >
-              <option value="">Choose sport</option>
-              {taxonomy.sports.map((entry) => (
-                <option key={entry.sport} value={entry.sport}>
-                  {entry.label}
-                </option>
-              ))}
+              <option value="">Choose request type</option>
+              <option value="SPORT">Sport</option>
+              <option value="COMMUNITY">Community</option>
             </select>
           </div>
 
+          {requestType === "SPORT" ? (
+            <div className="request-field">
+              <label className="request-field__label" htmlFor="request-create-sport">
+                Sport
+              </label>
+              <select
+                id="request-create-sport"
+                className="request-field__control"
+                value={sport}
+                required
+                onChange={(event) => {
+                  setSport(event.target.value);
+                  setSubcategoryId("");
+                  setNeedId("");
+                  setCustomNeed("");
+                }}
+              >
+                <option value="">Choose sport</option>
+                {taxonomy.sports.map((entry) => (
+                  <option key={entry.sport} value={entry.sport}>
+                    {entry.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+
           <div className="request-field">
             <label className="request-field__label" htmlFor="request-create-subcategory">
-              Subcategory
+              Category
             </label>
             <select
               id="request-create-subcategory"
               className="request-field__control"
               value={subcategoryId}
               required
-              disabled={!selectedSport}
+              disabled={requestType === "SPORT" ? !selectedSport : requestType !== "COMMUNITY"}
               onChange={(event) => {
                 setSubcategoryId(event.target.value);
                 setNeedId("");
                 setCustomNeed("");
               }}
             >
-              <option value="">Choose subcategory</option>
-              {(selectedSport?.subcategories ?? []).map((entry) => (
+              <option value="">Choose category</option>
+              {selectedSubcategories.map((entry) => (
                 <option key={entry.id} value={entry.id}>
                   {entry.label}
                 </option>
@@ -312,7 +344,7 @@ export function RequestCreatePage() {
 
           <div className="request-field">
             <label className="request-field__label" htmlFor="request-create-need">
-              Specific item / need
+              Specific need
             </label>
             <select
               id="request-create-need"
@@ -343,6 +375,7 @@ export function RequestCreatePage() {
                 id="request-create-custom-need"
                 className="request-field__control"
                 maxLength={120}
+                required
                 value={customNeed}
                 onChange={(event) => setCustomNeed(event.target.value)}
               />
@@ -372,6 +405,19 @@ export function RequestCreatePage() {
               maxLength={100}
               value={houma}
               onChange={(event) => setHouma(event.target.value)}
+            />
+          </div>
+
+          <div className="request-field">
+            <label className="request-field__label" htmlFor="request-create-full-address">
+              Full address
+            </label>
+            <input
+              id="request-create-full-address"
+              className="request-field__control"
+              maxLength={240}
+              value={fullAddress}
+              onChange={(event) => setFullAddress(event.target.value)}
             />
           </div>
         </div>

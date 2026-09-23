@@ -24,6 +24,7 @@ function queryPath(base: string, input: RequestsListQuery = {}): string {
   if (input.cursor) params.set("cursor", input.cursor);
   if (input.limit) params.set("limit", String(input.limit));
   if (input.category) params.set("category", input.category);
+  if (input.requestType) params.set("requestType", input.requestType);
   if (input.sport) params.set("sport", input.sport);
   if (input.subcategoryId) params.set("subcategoryId", input.subcategoryId);
   if (input.needId) params.set("needId", input.needId);

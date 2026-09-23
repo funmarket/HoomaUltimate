@@ -13,10 +13,15 @@ export function RequestTaxonomyFilters({
   readonly value: RequestsListQuery;
   readonly onChange: (next: RequestsListQuery) => void;
 }) {
-  const selectedSport = taxonomy.sports.find((entry) => entry.sport === value.sport);
-  const selectedSubcategory = selectedSport?.subcategories.find(
-    (entry) => entry.id === value.subcategoryId,
-  );
+  const selectedSport =
+    value.requestType === "SPORT"
+      ? taxonomy.sports.find((entry) => entry.sport === value.sport)
+      : undefined;
+  const subcategories =
+    value.requestType === "COMMUNITY"
+      ? taxonomy.community.subcategories
+      : (selectedSport?.subcategories ?? []);
+  const selectedSubcategory = subcategories.find((entry) => entry.id === value.subcategoryId);
 
   function patch(change: RequestsListQuery) {
     onChange({ ...value, ...change });
@@ -30,39 +35,66 @@ export function RequestTaxonomyFilters({
       </div>
       <div className="request-filters__fields">
         <div className="request-field">
-          <label className="request-field__label" htmlFor="request-filter-sport">
-            Sport
+          <label className="request-field__label" htmlFor="request-filter-type">
+            Request Type
           </label>
           <select
-            id="request-filter-sport"
+            id="request-filter-type"
             className={FIELD_CLASS}
-            value={value.sport ?? ""}
+            value={value.requestType ?? ""}
             onChange={(event) =>
               patch({
-                sport: (event.target.value || undefined) as RequestsListQuery["sport"],
+                requestType: (event.target.value || undefined) as RequestsListQuery["requestType"],
+                sport: undefined,
                 subcategoryId: undefined,
                 needId: undefined,
               })
             }
           >
-            <option value="">All sports</option>
-            {taxonomy.sports.map((entry) => (
-              <option key={entry.sport} value={entry.sport}>
-                {entry.label}
-              </option>
-            ))}
+            <option value="">All request types</option>
+            <option value="SPORT">Sport</option>
+            <option value="COMMUNITY">Community</option>
           </select>
         </div>
 
+        {value.requestType === "SPORT" ? (
+          <div className="request-field">
+            <label className="request-field__label" htmlFor="request-filter-sport">
+              Sport
+            </label>
+            <select
+              id="request-filter-sport"
+              className={FIELD_CLASS}
+              value={value.sport ?? ""}
+              onChange={(event) =>
+                patch({
+                  sport: (event.target.value || undefined) as RequestsListQuery["sport"],
+                  subcategoryId: undefined,
+                  needId: undefined,
+                })
+              }
+            >
+              <option value="">All sports</option>
+              {taxonomy.sports.map((entry) => (
+                <option key={entry.sport} value={entry.sport}>
+                  {entry.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
+
         <div className="request-field">
           <label className="request-field__label" htmlFor="request-filter-subcategory">
-            Subcategory
+            Category
           </label>
           <select
             id="request-filter-subcategory"
             className={FIELD_CLASS}
             value={value.subcategoryId ?? ""}
-            disabled={!selectedSport}
+            disabled={
+              value.requestType === "SPORT" ? !selectedSport : value.requestType !== "COMMUNITY"
+            }
             onChange={(event) =>
               patch({
                 subcategoryId: event.target.value || undefined,
@@ -70,8 +102,8 @@ export function RequestTaxonomyFilters({
               })
             }
           >
-            <option value="">All subcategories</option>
-            {(selectedSport?.subcategories ?? []).map((entry) => (
+            <option value="">All categories</option>
+            {subcategories.map((entry) => (
               <option key={entry.id} value={entry.id}>
                 {entry.label}
               </option>

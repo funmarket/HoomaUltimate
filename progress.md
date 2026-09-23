@@ -24,7 +24,8 @@ Contaminated Hermes checkpoint/salvage PRs `#349` and `#350` are reference-only 
   - repairs inherited Requests component/integration tests from merged PR `#346` without weakening production behavior
   - exact-head CI run `#2311` (`35805103611`) passed the complete repository verification ladder
   - PR `#351` remains draft/unmerged; this entry records in-flight proof, not merged foundation completion
-- [NOT VERIFIED] Remaining Requests program — sport taxonomy expansion, optional full address, root/type filters and progressive create UI, Request media, premium Request card/requester presentation, Play reconciliation, Athletes projection, canonical Whistle integration decision, final cleanup/provenance/final exact-head verification.
+- [IN FLIGHT] Clean Slice 2 — progressive SPORT/COMMUNITY create and filters plus private `fullAddress` persistence; current branch keeps precise address out of Request read DTOs and adds focused contract/service/component/integration coverage.
+- [NOT VERIFIED] Remaining Requests program — sport taxonomy expansion, Request media, premium Request card/requester presentation, Play reconciliation, Athletes projection, canonical Whistle integration decision, final cleanup/provenance/final exact-head verification.
 
 ## Athletes hardening sequence
 

@@ -1212,6 +1212,7 @@ HelpRequest
   subcategoryId?
   needId?
   customNeed?
+  fullAddress?         precise write/persistence data; not exposed by current Request read DTO
   title
   description
   audience / publisher
@@ -1221,6 +1222,10 @@ HelpRequest
 `HelpTaxonomySubcategory` belongs to exactly one Request root. SPORT subcategories carry canonical `AthletesSport`; COMMUNITY subcategories carry no Sport. A corrected HelpRequest taxonomy selection requires a matching Request Type/subcategory and matching Need/subcategory relationship. SPORT additionally requires the request Sport to match the selected SPORT subcategory at the database boundary. COMMUNITY corrected taxonomy must remain valid with `sport == null`.
 
 Current Community categories in the clean branch include Lost & Found, Questions & Advice, Personal & People Needs, Local Help & Services, Community Activities, Borrow & Share, Information & Notice, and Other. Custom Need text is stored on the HelpRequest only when the selected Need allows it; user text never creates a new global taxonomy row.
+
+The current create/discovery path is progressive: Request Type -> Sport only for SPORT -> Category -> Specific Need. The same `requestType` is forwarded through the canonical Requests list query before pagination.
+
+`fullAddress` is optional precise location input owned by HelpRequest persistence. Current public/member HelpRequest read DTOs deliberately omit it; city and Houma remain the privacy-safe location projection until a later explicit policy defines who may read precise addresses.
 
 Legacy `category`/`itemKind` compatibility remains transitional. Ambiguous retained production rows are not backfilled by guessing from title or description, and legacy fields are not removed until production mapping is proven safe.
 

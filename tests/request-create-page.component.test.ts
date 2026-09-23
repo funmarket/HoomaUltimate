@@ -165,6 +165,9 @@ test("a signed-in member can publish a Request and is linked to it", async () =>
     assert.ok(page.view.getByRole("option", { name: /Athletes · Athletes Tunis/ }));
     assert.ok(page.view.getByRole("option", { name: /Everyone/ }));
 
+    page.fireEvent.change(page.view.getByLabelText("Request Type"), {
+      target: { value: "SPORT" },
+    });
     page.fireEvent.change(page.view.getByLabelText("Sport"), {
       target: { value: "RUNNING" },
     });
@@ -180,6 +183,9 @@ test("a signed-in member can publish a Request and is linked to it", async () =>
     page.fireEvent.change(page.view.getByLabelText("Description"), {
       target: { value: "Looking for used or new running shoes for training sessions." },
     });
+    page.fireEvent.change(page.view.getByLabelText("Full address"), {
+      target: { value: "12 Avenue Habib Bourguiba" },
+    });
     page.fireEvent.submit(page.view.getByRole("button", { name: /Publish Request/i }));
 
     await page.waitFor(() => assert.ok(page.view.getByRole("link", { name: /View Request/i })));
@@ -193,11 +199,13 @@ test("a signed-in member can publish a Request and is linked to it", async () =>
     assert.deepEqual(post.body, {
       publisher: {},
       audience: { scope: "PUBLIC" },
+      requestType: "SPORT",
       sport: "RUNNING",
       subcategoryId: "hts-running-footwear",
       needId: "htn-running-shoes",
       title: "Need size 43 running shoes",
       description: "Looking for used or new running shoes for training sessions.",
+      fullAddress: "12 Avenue Habib Bourguiba",
     });
 
     const viewLink = page.view.getByRole("link", { name: /View Request/i });
@@ -207,10 +215,52 @@ test("a signed-in member can publish a Request and is linked to it", async () =>
   }
 });
 
+test("a signed-in member can publish a Community Request without Sport", async () => {
+  const page = await renderCreatePage({ me: meResponse });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByLabelText("Request Type")));
+    page.fireEvent.change(page.view.getByLabelText("Request Type"), {
+      target: { value: "COMMUNITY" },
+    });
+    assert.equal(page.view.queryByLabelText("Sport"), null);
+    page.fireEvent.change(page.view.getByLabelText("Category"), {
+      target: { value: "hts-community-lost-found" },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Specific need"), {
+      target: { value: "htn-community-lost-item" },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Title"), {
+      target: { value: "Lost wallet near the station" },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Description"), {
+      target: { value: "I lost a wallet nearby and need help checking the area." },
+    });
+    page.fireEvent.submit(page.view.getByRole("button", { name: /Publish Request/i }));
+
+    await page.waitFor(() => assert.ok(page.view.getByRole("link", { name: /View Request/i })));
+    const post = page.calls.find((call) => call.method === "POST");
+    assert.ok(post);
+    assert.deepEqual(post.body, {
+      publisher: {},
+      audience: { scope: "PUBLIC" },
+      requestType: "COMMUNITY",
+      subcategoryId: "hts-community-lost-found",
+      needId: "htn-community-lost-item",
+      title: "Lost wallet near the station",
+      description: "I lost a wallet nearby and need help checking the area.",
+    });
+  } finally {
+    page.close();
+  }
+});
+
 test("invalid input is rejected by the shared contract without any write", async () => {
   const page = await renderCreatePage({ me: meResponse });
   try {
     await page.waitFor(() => assert.ok(page.view.getByLabelText("Title")));
+    page.fireEvent.change(page.view.getByLabelText("Request Type"), {
+      target: { value: "SPORT" },
+    });
     page.fireEvent.change(page.view.getByLabelText("Sport"), {
       target: { value: "RUNNING" },
     });
