@@ -297,7 +297,7 @@ test("Request cards link requester identity to the canonical public profile", as
   const page = await renderRequestsPage({ me: null, publicItems: [publicRequest] });
   try {
     await page.waitFor(() => assert.ok(page.view.getByText("Need size 43 running shoes")));
-    const requester = page.view.getByRole("link", { name: "Yassine K." });
+    const requester = page.view.getByRole("link", { name: /Yassine K\./ });
     assert.equal(requester.getAttribute("href"), "/profile/yassine.k");
     assert.equal(
       requester.querySelector("img")?.getAttribute("src"),
