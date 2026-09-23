@@ -42,7 +42,10 @@ test("Help taxonomy deterministic seed exposes sport-first Requests, Play, Athle
       "training-group",
       "training-partner",
     ]) {
-      assert.ok(footballRoles?.needs.some((need) => need.slug === slug), `missing ${slug}`);
+      assert.ok(
+        footballRoles?.needs.some((need) => need.slug === slug),
+        `missing ${slug}`,
+      );
     }
     const requestOnlyExpansionIds = new Set([
       "htn-football-player",
