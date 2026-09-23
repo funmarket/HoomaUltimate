@@ -12,10 +12,7 @@ import type { ObjectStorage, ObjectStorageReadUrlSigner } from "@hooma/storage";
 import { RequestError } from "../domain/request-error.js";
 import { requireManageRequest } from "./request-authorization.js";
 import type { RequestImageProcessor } from "./request-image-processor.js";
-import type {
-  HelpRequestImageRecord,
-  RequestImageRepository,
-} from "./request-image.repository.js";
+import type { HelpRequestImageRecord, RequestImageRepository } from "./request-image.repository.js";
 import type { RequestRepository, RequestVisibilityReader } from "./request.repository.js";
 
 const REQUEST_IMAGE_READ_URL_TTL_SECONDS = 5 * 60;
@@ -52,10 +49,7 @@ export class RequestMediaService {
       throw new RequestError("REQUEST_IMAGE_REQUIRED", "Request image bytes are required");
     }
     if (input.body.byteLength > REQUEST_IMAGE_MAX_BYTES) {
-      throw new RequestError(
-        "REQUEST_IMAGE_TOO_LARGE",
-        "Request image must be 5 MiB or smaller",
-      );
+      throw new RequestError("REQUEST_IMAGE_TOO_LARGE", "Request image must be 5 MiB or smaller");
     }
     if (!this.storage) {
       throw new RequestError(
@@ -168,9 +162,7 @@ export class RequestMediaService {
           image.objectKey,
           REQUEST_IMAGE_READ_URL_TTL_SECONDS,
         ),
-        expiresAt: new Date(
-          issuedAt + REQUEST_IMAGE_READ_URL_TTL_SECONDS * 1000,
-        ).toISOString(),
+        expiresAt: new Date(issuedAt + REQUEST_IMAGE_READ_URL_TTL_SECONDS * 1000).toISOString(),
       };
     } catch {
       throw new RequestError("REQUEST_IMAGE_UNAVAILABLE", "Request image is unavailable");

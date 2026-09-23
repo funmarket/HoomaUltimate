@@ -1,6 +1,4 @@
-import {
-  helpRequestImageCleanupPayloadSchema,
-} from "@hooma/contracts/requests";
+import { helpRequestImageCleanupPayloadSchema } from "@hooma/contracts/requests";
 import type { PrismaClient } from "@hooma/database";
 import type { ObjectStorage } from "@hooma/storage";
 import type { OutboxHandler } from "../outbox/outbox.runner.js";

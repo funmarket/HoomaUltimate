@@ -1,7 +1,4 @@
-import type {
-  HelpRequestImageSource,
-  RequestImageContentType,
-} from "@hooma/contracts/requests";
+import type { HelpRequestImageSource, RequestImageContentType } from "@hooma/contracts/requests";
 
 export interface HelpRequestImageRecord {
   readonly id: string;

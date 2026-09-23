@@ -56,7 +56,10 @@ export class PrismaRequestImageRepository implements RequestImageRepository {
         where: { id: input.mediaId, topic: REQUEST_IMAGE_RECONCILE_TOPIC, status: "PENDING" },
       });
       if (intent.count !== 1) {
-        throw new RequestError("REQUEST_IMAGE_UPLOAD_FAILED", "Request image upload expired; retry");
+        throw new RequestError(
+          "REQUEST_IMAGE_UPLOAD_FAILED",
+          "Request image upload expired; retry",
+        );
       }
 
       const previous = await tx.helpRequestImage.findUnique({

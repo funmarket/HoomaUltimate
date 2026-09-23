@@ -70,7 +70,8 @@ function requestRepository(record = requestRecord()): RequestRepository {
   return {
     create: async () => record,
     listPublic: async () => ({ items: [record], nextCursor: null }),
-    getPublic: async (id) => (id === record.id && record.audienceScope === "PUBLIC" ? record : null),
+    getPublic: async (id) =>
+      id === record.id && record.audienceScope === "PUBLIC" ? record : null,
     listVisibleToMember: async () => ({ items: [record], nextCursor: null }),
     getVisibleToMember: async (_userId, id) => (id === record.id ? record : null),
     getById: async (id) => (id === record.id ? record : null),
@@ -147,7 +148,13 @@ function imageRepository() {
       return deleted;
     },
   };
-  return { repository, prepared, get current() { return current; } };
+  return {
+    repository,
+    prepared,
+    get current() {
+      return current;
+    },
+  };
 }
 
 function storageStub() {
@@ -214,7 +221,11 @@ test("Request media supports safe external URLs through the same metadata capabi
     visibility(),
     images.repository,
     null,
-    { process: async () => { throw new Error("not used"); } },
+    {
+      process: async () => {
+        throw new Error("not used");
+      },
+    },
   );
 
   const image = await service.replaceExternalUrl("owner", "request-1", {
@@ -270,8 +281,7 @@ test("Request media rejects non-owner mutation and invalid upload envelopes", as
         contentType: "image/png",
         body: new Uint8Array(),
       }),
-    (error: unknown) =>
-      error instanceof RequestError && error.code === "REQUEST_IMAGE_REQUIRED",
+    (error: unknown) => error instanceof RequestError && error.code === "REQUEST_IMAGE_REQUIRED",
   );
   assert.equal(objects.puts.length, 0);
 });
@@ -292,7 +302,6 @@ test("Request media deletion removes metadata and later delivery reports missing
   await service.delete("owner", "request-1");
   await assert.rejects(
     () => service.deliveryPublic("request-1"),
-    (error: unknown) =>
-      error instanceof RequestError && error.code === "REQUEST_IMAGE_NOT_FOUND",
+    (error: unknown) => error instanceof RequestError && error.code === "REQUEST_IMAGE_NOT_FOUND",
   );
 });

@@ -160,10 +160,7 @@ export function createRequestMemberRouter(
     asyncHandler(async (request, response) => {
       response.setHeader("cache-control", "private, no-store");
       response.json(
-        await media.deliveryForMember(
-          getAuth(request).userId,
-          String(request.params.requestId),
-        ),
+        await media.deliveryForMember(getAuth(request).userId, String(request.params.requestId)),
       );
     }),
   );

@@ -6,8 +6,5 @@ export interface ProcessedRequestImage {
 }
 
 export interface RequestImageProcessor {
-  process(
-    body: Uint8Array,
-    contentType: RequestImageContentType,
-  ): Promise<ProcessedRequestImage>;
+  process(body: Uint8Array, contentType: RequestImageContentType): Promise<ProcessedRequestImage>;
 }

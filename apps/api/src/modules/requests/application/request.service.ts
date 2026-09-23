@@ -184,7 +184,10 @@ export class RequestService {
     if (request.status !== "OPEN" && request.status !== "IN_PROGRESS") {
       throw new RequestError("REQUEST_NOT_RESPONDABLE", "Request is not accepting responses");
     }
-    if (request.createdByUserId === userId || (await canManageRequest(this.visibility, userId, request))) {
+    if (
+      request.createdByUserId === userId ||
+      (await canManageRequest(this.visibility, userId, request))
+    ) {
       throw new RequestError("REQUEST_SELF_RESPONSE_FORBIDDEN", "Request managers cannot respond");
     }
     const created = await this.repository.createResponse(requestId, userId, input.message);
