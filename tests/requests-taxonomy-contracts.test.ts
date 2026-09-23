@@ -27,6 +27,14 @@ test("Request contracts accept corrected sport-first creation without legacy cat
   assert.equal(parsed.category, undefined);
 });
 
+test("Request create contract accepts an optional precise full address", () => {
+  const parsed = helpRequestCreateSchema.parse({
+    ...correctedInput,
+    fullAddress: "12 Avenue Habib Bourguiba",
+  });
+  assert.equal(parsed.fullAddress, "12 Avenue Habib Bourguiba");
+});
+
 test("Request contracts accept Community taxonomy without Sport", () => {
   const parsed = helpRequestCreateSchema.parse({
     publisher: {},

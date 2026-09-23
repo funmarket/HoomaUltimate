@@ -68,6 +68,7 @@ export const helpRequestCreateSchema = z
     placeId: optionalIdSchema,
     city: optionalText(100),
     houma: optionalText(100),
+    fullAddress: optionalText(240),
     locationNote: optionalText(240),
     neededByAt: z.string().datetime().optional().nullable(),
     expiresAt: z.string().datetime().optional().nullable(),

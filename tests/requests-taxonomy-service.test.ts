@@ -46,6 +46,7 @@ function record(overrides: Partial<HelpRequestRecord> = {}): HelpRequestRecord {
     placeId: null,
     city: null,
     houma: null,
+    fullAddress: null,
     locationNote: null,
     neededByAt: null,
     expiresAt: null,
@@ -72,6 +73,7 @@ function repository(
         subcategoryId: input.subcategoryId ?? null,
         needId: input.needId ?? null,
         customNeed: input.customNeed ?? null,
+        fullAddress: input.fullAddress ?? null,
       });
     },
     async listPublic() {
@@ -186,10 +188,16 @@ test("corrected PRODUCT creation writes compatibility fields", async () => {
     taxonomy("PRODUCT"),
   );
 
-  const result = await service.create("user-1", { ...corrected, quantityNeeded: 2 });
+  const result = await service.create("user-1", {
+    ...corrected,
+    quantityNeeded: 2,
+    fullAddress: "12 Avenue Habib Bourguiba",
+  });
   assert.equal(persisted?.requestType, "SPORT");
   assert.equal(persisted?.category, "ITEM");
   assert.equal(persisted?.itemKind, null);
+  assert.equal(persisted?.fullAddress, "12 Avenue Habib Bourguiba");
+  assert.equal("fullAddress" in result, false);
   assert.equal(result.taxonomy?.need.kind, "PRODUCT");
 });
 

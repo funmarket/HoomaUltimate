@@ -31,7 +31,8 @@ const sportLabels: Record<AthletesSport, string> = {
 };
 
 function serialize(record: HelpRequestRecord): HelpRequest {
-  const { taxonomySubcategory, taxonomyNeed, ...rest } = record;
+  const { taxonomySubcategory, taxonomyNeed, fullAddress, ...rest } = record;
+  void fullAddress;
   return {
     ...rest,
     taxonomy:

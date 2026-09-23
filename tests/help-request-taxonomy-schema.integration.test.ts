@@ -36,10 +36,12 @@ test("HelpRequest taxonomy constraints preserve legacy rows and reject mismatche
         sport: "FOOTBALL",
         subcategoryId: "hts-football-equipment",
         needId: "htn-football-ball",
+        fullAddress: "12 Avenue Habib Bourguiba",
       },
     });
     assert.equal(valid.subcategoryId, "hts-football-equipment");
     assert.equal(valid.needId, "htn-football-ball");
+    assert.equal(valid.fullAddress, "12 Avenue Habib Bourguiba");
 
     await assert.rejects(
       db.helpRequest.create({

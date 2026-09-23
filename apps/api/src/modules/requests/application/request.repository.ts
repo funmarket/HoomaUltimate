@@ -45,6 +45,7 @@ export interface HelpRequestRecord {
   readonly placeId: string | null;
   readonly city: string | null;
   readonly houma: string | null;
+  readonly fullAddress: string | null;
   readonly locationNote: string | null;
   readonly neededByAt: Date | null;
   readonly expiresAt: Date | null;

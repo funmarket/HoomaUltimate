@@ -74,6 +74,7 @@ model HelpRequest {
   placeId                      String?
   city                         String?
   houma                        String?
+  fullAddress                  String?
   locationNote                 String?
   neededByAt                   DateTime?
   expiresAt                    DateTime?
