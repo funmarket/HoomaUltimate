@@ -151,7 +151,8 @@
 
 .help-tab:focus-visible,
 .help-action:focus-visible,
-.request-card:focus-visible,
+.request-card__primary:focus-visible,
+.request-requester:focus-visible,
 .request-back-link:focus-visible,
 .request-filters select:focus-visible,
 .request-filters input:focus-visible,
@@ -249,8 +250,6 @@
   border: 1px solid var(--app-outline);
   border-radius: 16px;
   background: var(--app-surface);
-  color: inherit;
-  text-decoration: none;
   box-shadow:
     var(--app-elevate),
     inset 0 0 0 1px var(--app-outline-gold);
@@ -264,6 +263,59 @@
   border-color: var(--app-line-strong);
   box-shadow: 0 12px 26px rgba(0, 0, 0, 0.4);
   transform: translateY(-2px);
+}
+
+.request-card__primary {
+  display: grid;
+  gap: 12px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.request-requester {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 9px;
+  color: var(--app-text-strong);
+  text-decoration: none;
+}
+
+.request-requester__avatar {
+  display: inline-flex;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid var(--app-line);
+  border-radius: 50%;
+  background: var(--app-bg-raised);
+  color: var(--app-text-strong);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.request-requester__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.request-requester__copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.request-requester__copy strong {
+  font-size: 15px;
+}
+
+.request-requester__copy > span {
+  color: var(--app-text-caption);
+  font-size: 13px;
 }
 
 .request-card__topline {

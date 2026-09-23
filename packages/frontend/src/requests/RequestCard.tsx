@@ -1,5 +1,6 @@
 import type { HelpRequest } from "@hooma/contracts/requests";
 import { ClockIcon, LocationIcon } from "../help/HelpIcons";
+import { RequestRequester } from "./RequestRequester";
 
 function titleCase(value: string): string {
   return value
@@ -13,8 +14,9 @@ export function RequestCard({ item }: { readonly item: HelpRequest }) {
   const place = [item.houma, item.city].filter(Boolean).join(", ");
 
   return (
-    <a className="request-card" href={`/requests/${encodeURIComponent(item.id)}`}>
-      <div className="request-card__topline">
+    <article className="request-card">
+      <a className="request-card__primary" href={`/requests/${encodeURIComponent(item.id)}`}>
+        <div className="request-card__topline">
         <span className="request-chip">
           {item.taxonomy?.need.label ?? titleCase(item.category)}
         </span>
@@ -23,11 +25,11 @@ export function RequestCard({ item }: { readonly item: HelpRequest }) {
           {titleCase(item.status)}
         </span>
       </div>
-      <div className="request-card__body">
-        <h2>{item.title}</h2>
-        <p>{item.description}</p>
-      </div>
-      <div className="request-card__meta">
+        <div className="request-card__body">
+          <h2>{item.title}</h2>
+          <p>{item.description}</p>
+        </div>
+        <div className="request-card__meta">
         {place ? (
           <span>
             <LocationIcon />
@@ -49,8 +51,10 @@ export function RequestCard({ item }: { readonly item: HelpRequest }) {
           <span>{titleCase(item.sport)}</span>
         ) : null}
         {item.customNeed ? <span>{item.customNeed}</span> : null}
-        {item.quantityNeeded ? <span>Qty {item.quantityNeeded}</span> : null}
-      </div>
-    </a>
+          {item.quantityNeeded ? <span>Qty {item.quantityNeeded}</span> : null}
+        </div>
+      </a>
+      <RequestRequester requester={item.requester} />
+    </article>
   );
 }

@@ -5,6 +5,7 @@ import { useHoomaFrontend } from "../context";
 import { HoomaApiError } from "../http";
 import { ClockIcon, LocationIcon } from "../help/HelpIcons";
 import { createRequestsApi } from "./api";
+import { RequestRequester } from "./RequestRequester";
 import { RequestResponses } from "./RequestResponses";
 
 function titleCase(value: string): string {
@@ -204,6 +205,7 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
             {titleCase(item.status)}
           </span>
         </div>
+        <RequestRequester requester={item.requester} />
         <div>
           <h1>{item.title}</h1>
           <p>{item.description}</p>
