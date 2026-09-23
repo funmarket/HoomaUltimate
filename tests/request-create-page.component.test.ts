@@ -88,10 +88,12 @@ function installApiStub(options: { readonly me?: unknown; readonly mediaStatus?:
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input));
     const method = init?.method ?? "GET";
+    let body: unknown = init?.body ?? null;
+    if (typeof init?.body === "string") body = JSON.parse(init.body);
     calls.push({
       path: `${url.pathname}${url.search}`,
       method,
-      body: typeof init?.body === "string" ? JSON.parse(init.body) : (init?.body ?? null),
+      body,
       contentType: new Headers(init?.headers).get("content-type"),
     });
     if (url.pathname === "/api/public/v1/auth/session") return json(options.me ?? null);
@@ -348,7 +350,9 @@ test("Request creation attaches an external image only after the Request exists"
   }
 });
 
-test("Request creation uploads selected image bytes through the binary Request media endpoint", async () => {
+test(
+  "Request creation uploads selected image bytes through the binary Request media endpoint",
+  async () => {
   const page = await renderCreatePage({ me: meResponse });
   try {
     await fillValidRunningRequest(page);
@@ -366,10 +370,11 @@ test("Request creation uploads selected image bytes through the binary Request m
     assert.ok(upload);
     assert.ok(upload.body instanceof Blob);
     assert.equal(upload.contentType, "image/png");
-  } finally {
-    page.close();
-  }
-});
+    } finally {
+      page.close();
+    }
+  },
+);
 
 test("image failure preserves the created Request and offers a media retry", async () => {
   const page = await renderCreatePage({ me: meResponse, mediaStatus: 500 });
