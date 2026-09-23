@@ -91,10 +91,7 @@ function installApiStub(options: { readonly me?: unknown; readonly mediaStatus?:
     calls.push({
       path: `${url.pathname}${url.search}`,
       method,
-      body:
-        typeof init?.body === "string"
-          ? JSON.parse(init.body)
-          : (init?.body ?? null),
+      body: typeof init?.body === "string" ? JSON.parse(init.body) : (init?.body ?? null),
       contentType: new Headers(init?.headers).get("content-type"),
     });
     if (url.pathname === "/api/public/v1/auth/session") return json(options.me ?? null);
@@ -306,7 +303,6 @@ test("invalid input is rejected by the shared contract without any write", async
     page.close();
   }
 });
-
 
 async function fillValidRunningRequest(
   page: Awaited<ReturnType<typeof renderCreatePage>>,
