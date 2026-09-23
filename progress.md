@@ -24,7 +24,15 @@ Contaminated Hermes checkpoint/salvage PRs `#349` and `#350` are reference-only 
   - repairs inherited Requests component/integration tests from merged PR `#346` without weakening production behavior
   - exact-head CI run `#2311` (`35805103611`) passed the complete repository verification ladder
   - PR `#351` remains draft/unmerged; this entry records in-flight proof, not merged foundation completion
-- [IN FLIGHT] Clean Slice 2 — progressive SPORT/COMMUNITY create and filters plus private `fullAddress` persistence; current branch keeps precise address out of Request read DTOs and adds focused contract/service/component/integration coverage.
+- [PASS] Clean Slice 2 — progressive SPORT/COMMUNITY create and filters plus private `fullAddress` persistence
+  - exact verified head: `486deb4b851ea0f2739f040907da5fb0b5769e6c`
+  - create flow branches from Request Type into SPORT or COMMUNITY without duplicating the Request domain
+  - standalone Requests filters forward canonical `requestType`, sport/category/Need, city and Houma through the existing list query
+  - Community creation and filtering do not require or synthesize Sport
+  - optional `fullAddress` persists privately and is intentionally omitted from current public/member Request read DTOs
+  - focused contract/service/component/integration coverage is included
+  - exact-head CI run `#2319` (`35809647452`) passed formatting, lint, typecheck, package build, unit tests, app build, integration tests, deploy preflight, security check and migration status
+  - PR `#351` remains draft/unmerged; this entry records in-flight proof, not merged foundation completion
 - [NOT VERIFIED] Remaining Requests program — sport taxonomy expansion, Request media, premium Request card/requester presentation, Play reconciliation, Athletes projection, canonical Whistle integration decision, final cleanup/provenance/final exact-head verification.
 
 ## Athletes hardening sequence
