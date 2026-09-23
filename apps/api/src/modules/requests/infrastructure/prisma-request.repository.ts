@@ -41,6 +41,15 @@ const helpRequestSelect = Prisma.validator<Prisma.HelpRequestSelect>()({
   houma: true,
   fullAddress: true,
   locationNote: true,
+  image: {
+    select: {
+      id: true,
+      source: true,
+      contentType: true,
+      sizeBytes: true,
+      updatedAt: true,
+    },
+  },
   neededByAt: true,
   expiresAt: true,
   status: true,

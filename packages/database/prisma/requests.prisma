@@ -48,6 +48,11 @@ enum HelpRequestResponseStatus {
   WITHDRAWN
 }
 
+enum HelpRequestImageSource {
+  UPLOAD
+  EXTERNAL_URL
+}
+
 model HelpRequest {
   id                           String                     @id @default(cuid())
   createdByUserId              String
@@ -81,6 +86,7 @@ model HelpRequest {
   status                       HelpRequestStatus          @default(OPEN)
   fulfilledAt                  DateTime?
   cancelledAt                  DateTime?
+  image                        HelpRequestImage?
   createdAt                    DateTime                   @default(now())
   updatedAt                    DateTime                   @updatedAt
 
@@ -115,4 +121,20 @@ model HelpRequestResponse {
   @@unique([requestId, responderUserId])
   @@index([requestId, status, createdAt])
   @@index([responderUserId, status, createdAt])
+}
+
+
+model HelpRequestImage {
+  id          String                 @id @default(cuid())
+  requestId   String                 @unique
+  source      HelpRequestImageSource
+  objectKey   String?                @unique
+  externalUrl String?
+  contentType String?
+  sizeBytes   Int?
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  request     HelpRequest            @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
 }

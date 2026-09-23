@@ -7,6 +7,56 @@ const idSchema = z.string().trim().min(1);
 const optionalIdSchema = idSchema.optional().nullable();
 const optionalText = (max: number) => z.string().trim().min(1).max(max).optional().nullable();
 
+export const REQUEST_IMAGE_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+export const REQUEST_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+export const REQUEST_IMAGE_RECONCILE_TOPIC = "request.image.reconcile-object";
+export const helpRequestImageContentTypeSchema = z.enum(REQUEST_IMAGE_CONTENT_TYPES);
+export const helpRequestImageSourceSchema = z.enum(["UPLOAD", "EXTERNAL_URL"]);
+
+const requestExternalImageUrlSchema = z
+  .string()
+  .trim()
+  .url()
+  .superRefine((value, context) => {
+    const url = new URL(value);
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Request image links must use http or https",
+      });
+    }
+    if (url.username || url.password) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Request image links cannot contain credentials",
+      });
+    }
+  });
+
+export const helpRequestExternalImageInputSchema = z
+  .object({ url: requestExternalImageUrlSchema })
+  .strict();
+
+export const helpRequestImageSchema = z.object({
+  id: idSchema,
+  source: helpRequestImageSourceSchema,
+  contentType: helpRequestImageContentTypeSchema.nullable(),
+  sizeBytes: z.number().int().positive().nullable(),
+  updatedAt: z.string().datetime(),
+});
+
+export const helpRequestImageDeliverySchema = z.object({
+  contentUrl: z.string().url(),
+  expiresAt: z.string().datetime().nullable(),
+});
+
+export const helpRequestImageCleanupPayloadSchema = z
+  .object({
+    requestId: idSchema,
+    objectKey: z.string().trim().min(1),
+  })
+  .strict();
+
 export const requestConditionPreferenceSchema = z.enum(["ANY", "NEW_ONLY", "USED_OK"]);
 export const helpRequestStatusSchema = z.enum([
   "OPEN",
@@ -190,6 +240,7 @@ export const helpRequestSchema = z.object({
   city: z.string().nullable(),
   houma: z.string().nullable(),
   locationNote: z.string().nullable(),
+  image: helpRequestImageSchema.nullable().optional(),
   neededByAt: z.string().datetime().nullable(),
   expiresAt: z.string().datetime().nullable(),
   status: helpRequestStatusSchema,
@@ -234,3 +285,9 @@ export type HelpRequest = z.infer<typeof helpRequestSchema>;
 export type HelpRequestResponse = z.infer<typeof helpRequestResponseSchema>;
 export type HelpRequestResponseList = z.infer<typeof helpRequestResponseListSchema>;
 export type HelpRequestList = z.infer<typeof helpRequestListSchema>;
+
+export type RequestImageContentType = z.infer<typeof helpRequestImageContentTypeSchema>;
+export type HelpRequestImageSource = z.infer<typeof helpRequestImageSourceSchema>;
+export type HelpRequestExternalImageInput = z.infer<typeof helpRequestExternalImageInputSchema>;
+export type HelpRequestImage = z.infer<typeof helpRequestImageSchema>;
+export type HelpRequestImageDelivery = z.infer<typeof helpRequestImageDeliverySchema>;

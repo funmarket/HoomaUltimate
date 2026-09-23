@@ -47,6 +47,13 @@ export interface HelpRequestRecord {
   readonly houma: string | null;
   readonly fullAddress: string | null;
   readonly locationNote: string | null;
+  readonly image: {
+    readonly id: string;
+    readonly source: "UPLOAD" | "EXTERNAL_URL";
+    readonly contentType: "image/jpeg" | "image/png" | "image/webp" | null;
+    readonly sizeBytes: number | null;
+    readonly updatedAt: Date;
+  } | null;
   readonly neededByAt: Date | null;
   readonly expiresAt: Date | null;
   readonly status: HelpRequestStatus;

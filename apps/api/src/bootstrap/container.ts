@@ -51,8 +51,11 @@ import { PrismaGamerMatchRepository } from "../modules/gamers/infrastructure/pri
 import { PrismaGamerProfileRepository } from "../modules/gamers/infrastructure/prisma-gamer-profile.repository.js";
 import { PlayService } from "../modules/play/application/play.service.js";
 import { PrismaPlayPlayerListingRepository } from "../modules/play/infrastructure/prisma-play.repository.js";
+import { RequestMediaService } from "../modules/requests/application/request-media.service.js";
 import { RequestService } from "../modules/requests/application/request.service.js";
+import { PrismaRequestImageRepository } from "../modules/requests/infrastructure/prisma-request-image.repository.js";
 import { PrismaRequestRepository } from "../modules/requests/infrastructure/prisma-request.repository.js";
+import { SharpRequestImageProcessor } from "../modules/requests/infrastructure/sharp-request-image-processor.js";
 import { HelpTaxonomyService } from "../modules/help-taxonomy/application/help-taxonomy.service.js";
 import { PrismaHelpTaxonomyRepository } from "../modules/help-taxonomy/infrastructure/prisma-help-taxonomy.repository.js";
 import { RideCommunityInteractionService } from "../modules/rides/application/ride-community-interaction.service.js";
@@ -238,11 +241,19 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
   const playRepository = new PrismaPlayPlayerListingRepository(database);
   const playService = new PlayService(playRepository, teamService, eventService);
   const requestRepository = new PrismaRequestRepository(database);
+  const requestImageRepository = new PrismaRequestImageRepository(database);
   const helpTaxonomyRepository = new PrismaHelpTaxonomyRepository(database);
   const requestService = new RequestService(
     requestRepository,
     requestRepository,
     helpTaxonomyRepository,
+  );
+  const requestMediaService = new RequestMediaService(
+    requestRepository,
+    requestRepository,
+    requestImageRepository,
+    storage,
+    new SharpRequestImageProcessor(),
   );
   const helpTaxonomyService = new HelpTaxonomyService(helpTaxonomyRepository);
   const rideOfferRepository = new PrismaRideOfferRepository(database);
@@ -315,6 +326,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     gamerMatchService,
     playService,
     requestService,
+    requestMediaService,
     helpTaxonomyService,
     rideService,
     rideCommunityInteractionService,

@@ -55,7 +55,10 @@ export function createPublicV1Router(container: AppContainer, config: ApiConfig)
   );
   router.use("/gamers", createGamerPublicRouter(container.gamerService));
   router.use("/play", createPlayPublicRouter(container.playService));
-  router.use("/requests", createRequestPublicRouter(container.requestService));
+  router.use(
+    "/requests",
+    createRequestPublicRouter(container.requestService, container.requestMediaService),
+  );
   router.use("/help/taxonomy", createHelpTaxonomyPublicRouter(container.helpTaxonomyService));
   router.use("/rides", createRidePublicRouter(container.rideService));
   router.use(
