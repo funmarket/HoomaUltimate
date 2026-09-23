@@ -11,6 +11,7 @@ import type { AthletesSport } from "@hooma/contracts/athletes";
 import type { HelpCategory } from "@hooma/contracts/help";
 import type { HelpTaxonomySelectionReader } from "../../help-taxonomy/application/help-taxonomy.repository.js";
 import { RequestError } from "../domain/request-error.js";
+import { canManageRequest, requireManageRequest } from "./request-authorization.js";
 import type {
   HelpRequestRecord,
   HelpRequestResponseRecord,
@@ -183,7 +184,7 @@ export class RequestService {
     if (request.status !== "OPEN" && request.status !== "IN_PROGRESS") {
       throw new RequestError("REQUEST_NOT_RESPONDABLE", "Request is not accepting responses");
     }
-    if (request.createdByUserId === userId || (await this.canManage(userId, request))) {
+    if (request.createdByUserId === userId || (await canManageRequest(this.visibility, userId, request))) {
       throw new RequestError("REQUEST_SELF_RESPONSE_FORBIDDEN", "Request managers cannot respond");
     }
     const created = await this.repository.createResponse(requestId, userId, input.message);
@@ -196,7 +197,7 @@ export class RequestService {
   async listResponses(userId: string, requestId: string): Promise<HelpRequestResponseList> {
     const request = await this.repository.getById(requestId);
     if (!request) throw new RequestError("REQUEST_NOT_FOUND", "Request not found");
-    if (await this.canManage(userId, request)) {
+    if (await canManageRequest(this.visibility, userId, request)) {
       return { items: (await this.repository.listResponses(requestId)).map(serializeResponse) };
     }
     const own = await this.repository.getResponseByResponder(requestId, userId);
@@ -209,7 +210,7 @@ export class RequestService {
     requestId: string,
     responseId: string,
   ): Promise<HelpRequestResponse> {
-    const request = await this.requireManage(userId, requestId);
+    const request = await requireManageRequest(this.repository, this.visibility, userId, requestId);
     this.requireMutable(request);
     const response = await this.repository.acceptResponse(requestId, responseId);
     if (!response) {
@@ -223,7 +224,7 @@ export class RequestService {
     requestId: string,
     responseId: string,
   ): Promise<HelpRequestResponse> {
-    const request = await this.requireManage(userId, requestId);
+    const request = await requireManageRequest(this.repository, this.visibility, userId, requestId);
     this.requireMutable(request);
     const response = await this.repository.declineResponse(requestId, responseId);
     if (!response) {
@@ -249,7 +250,7 @@ export class RequestService {
   }
 
   async fulfill(userId: string, requestId: string): Promise<HelpRequest> {
-    const request = await this.requireManage(userId, requestId);
+    const request = await requireManageRequest(this.repository, this.visibility, userId, requestId);
     this.requireMutable(request);
     const updated = await this.repository.transitionRequestStatus(
       requestId,
@@ -261,7 +262,7 @@ export class RequestService {
   }
 
   async cancel(userId: string, requestId: string): Promise<HelpRequest> {
-    const request = await this.requireManage(userId, requestId);
+    const request = await requireManageRequest(this.repository, this.visibility, userId, requestId);
     this.requireMutable(request);
     const updated = await this.repository.transitionRequestStatus(
       requestId,
@@ -274,37 +275,6 @@ export class RequestService {
 
   async expireDue(now: Date): Promise<number> {
     return this.repository.expireDue(now);
-  }
-
-  private async requireManage(userId: string, requestId: string): Promise<HelpRequestRecord> {
-    const request = await this.repository.getById(requestId);
-    if (!request || !(await this.canManage(userId, request))) {
-      throw new RequestError("REQUEST_NOT_FOUND", "Request not found");
-    }
-    return request;
-  }
-
-  private requireMutable(request: HelpRequestRecord): void {
-    if (request.status !== "OPEN" && request.status !== "IN_PROGRESS") {
-      throw new RequestError("REQUEST_NOT_MUTABLE", "Request is not mutable");
-    }
-  }
-
-  private async canManage(userId: string, request: HelpRequestRecord): Promise<boolean> {
-    if (request.publisherCommunityId) {
-      const role = await this.visibility.communityRole(request.publisherCommunityId, userId);
-      return role === "FOUNDER" || role === "COACH";
-    }
-    if (request.publisherTeamId) {
-      return (
-        (await this.visibility.teamResponsibility(request.publisherTeamId, userId)) === "COACH"
-      );
-    }
-    if (request.publisherAthletesCommunityId) {
-      const role = await this.visibility.athletesRole(request.publisherAthletesCommunityId, userId);
-      return role === "FOUNDER" || role === "MODERATOR";
-    }
-    return request.createdByUserId === userId;
   }
 
   private async requirePublisherAuthority(userId: string, input: HelpRequestCreateInput) {
