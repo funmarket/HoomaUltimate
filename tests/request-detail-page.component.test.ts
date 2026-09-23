@@ -51,6 +51,11 @@ const baseRequest = {
   category: "ITEM",
   itemKind: "FOOTWEAR",
   sport: "RUNNING",
+  requester: {
+    displayName: "Yassine K.",
+    username: "yassine.k",
+    photoUrl: "https://cdn.example.test/yassine.jpg",
+  },
   title: "Need size 43 running shoes",
   description: "Looking for used or new running shoes for training.",
   quantityNeeded: 1,
@@ -202,6 +207,21 @@ test("a guest reads the public detail and is routed through auth to respond", as
     const link = page.view.getByRole("link", { name: /Sign in to respond/i });
     assert.equal(link.getAttribute("href"), "/login?returnTo=%2Frequests%2Frequest-1");
     assert.equal(page.view.queryByRole("button", { name: /Send response/i }), null);
+  } finally {
+    page.close();
+  }
+});
+
+test("Request detail links requester identity to the canonical public profile", async () => {
+  const page = await renderDetail({ me: null });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByText("Need size 43 running shoes")));
+    const requester = page.view.getByRole("link", { name: "Yassine K." });
+    assert.equal(requester.getAttribute("href"), "/profile/yassine.k");
+    assert.equal(
+      requester.querySelector("img")?.getAttribute("src"),
+      "https://cdn.example.test/yassine.jpg",
+    );
   } finally {
     page.close();
   }

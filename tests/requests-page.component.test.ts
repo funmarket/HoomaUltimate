@@ -200,6 +200,11 @@ const publicRequest = {
   category: "ITEM",
   itemKind: "FOOTWEAR",
   sport: "RUNNING",
+  requester: {
+    displayName: "Yassine K.",
+    username: "yassine.k",
+    photoUrl: "https://cdn.example.test/yassine.jpg",
+  },
   title: "Need size 43 running shoes",
   description: "Looking for used or new running shoes for training.",
   quantityNeeded: 1,
@@ -282,6 +287,21 @@ test("anonymous /requests loads the real public Requests feed", async () => {
     assert.deepEqual(
       page.calls.filter((call) => call.includes("/requests")),
       ["GET /api/public/v1/requests?surface=REQUESTS"],
+    );
+  } finally {
+    page.close();
+  }
+});
+
+test("Request cards link requester identity to the canonical public profile", async () => {
+  const page = await renderRequestsPage({ me: null, publicItems: [publicRequest] });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByText("Need size 43 running shoes")));
+    const requester = page.view.getByRole("link", { name: "Yassine K." });
+    assert.equal(requester.getAttribute("href"), "/profile/yassine.k");
+    assert.equal(
+      requester.querySelector("img")?.getAttribute("src"),
+      "https://cdn.example.test/yassine.jpg",
     );
   } finally {
     page.close();
