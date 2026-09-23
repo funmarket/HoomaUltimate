@@ -6,15 +6,25 @@ This file is the repository living plan for the Requests | FundMe | Donations im
 
 Authoritative repository: `funmarket/HoomaUltimate`
 Authoritative branch: `phase-0-foundation`
-Working branch: `feat/requests-rq-fix-1-taxonomy` from integrated RQ-FIX-0 foundation `36fa68ac28e0b7f600cc230a6578a90dda08f547`.
+Working branch: `feat/requests-clean-completion` from `phase-0-foundation` foundation `eda53dda71c5ae6d6a4f52d72151bd10edfeb9fd`.
 Original attached-plan baseline: `c304fed4c925cbcd578fdbafb21926f927e400f5`
 Slice 1 base foundation HEAD: `b07167f9beb0003eceddb3fd73bfbff53417a618`
 Slice 2 base foundation HEAD: `a5bd502f58a746a1a89d33ba4afb28506c2e35b3`
 Slice 3 base foundation HEAD: `e885c34d1de3027871f3845e9c7a57fbed28a981`
 Slice 4R recovery base foundation HEAD: `0e2b80c714324efc41afc8138e080a19b5f0a69a`
 Stranded Slice 4 branch (SOURCE MATERIAL ONLY - never merged, rebased into, or cherry-picked as a batch): `feat/help-slice-4-requests-frontend` at `e7124f04af798f21fd9b8be7d001cd28da5643d1` (9 commits ahead / 15 behind its merge base `3033dce8e1ff1c4d7c5a4e54a51fdda0e83df523`).
-Current task: `RQ-FIX-1 - shared sports taxonomy foundation complete and awaiting integration`
-Exact next task after RQ-FIX-1 integration: `RQ-FIX-2A - Request schema expansion + legacy data reconciliation`.
+Current task: `Clean Slice 4 - Request media`
+Exact next task after Clean Slice 4 verification: `premium Request card + requester presentation`.
+
+Clean recovery overlay (2026-09-23):
+
+- draft PR `#351` is the only clean continuation branch;
+- contaminated checkpoint/salvage PRs `#349` and `#350` are reference-only and are not implementation ancestry;
+- Clean Slice 1 (SPORT | COMMUNITY Request root, Community taxonomy, integrity) passed exact-head CI on `cfe56f4cd0eb77db84f50c6a997532d279efbd7b`;
+- Clean Slice 2 (progressive root-aware create/filters plus private `fullAddress`) passed exact-head CI #2319 on `486deb4b851ea0f2739f040907da5fb0b5769e6c`;
+- Clean Slice 2 ledger reconciliation passed exact-head CI #2320 on `fd89a65d14c8f5b1933af2b8e4b193279333639d`;
+- Clean Slice 3A (governed SPORT Request taxonomy expansion) passed exact-head CI #2322 on `c559bfa6574ab516b2abb60b30fbd63e0a547593`;
+- the historical RQ-FIX sections below remain execution evidence for the work that produced the merged foundation and must not be read as the current continuation status when they conflict with this clean-recovery overlay or `progress.md`.
 
 ## Execution loop
 
