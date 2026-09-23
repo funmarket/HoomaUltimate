@@ -2,6 +2,30 @@
 
 This file is a non-authoritative execution and verification log. Product behavior and architecture truth remain in `requirements.md`, `structure.md`, `docs/CANONICAL_MODEL.md`, `docs/DECISIONS.md`, and the applicable ADRs.
 
+## Requests clean recovery
+
+Target base: `phase-0-foundation`
+
+Clean branch: `feat/requests-clean-completion`
+
+Draft pull request: `#351`
+
+Contaminated Hermes checkpoint/salvage PRs `#349` and `#350` are reference-only and are not implementation ancestry for the clean branch.
+
+- [PASS] Clean Slice 1 — Request Type / Community taxonomy foundation and database integrity
+  - foundation base: `eda53dda71c5ae6d6a4f52d72151bd10edfeb9fd`
+  - exact verified head: `cfe56f4cd0eb77db84f50c6a997532d279efbd7b`
+  - introduces canonical `SPORT | COMMUNITY` Request Type on the clean branch
+  - keeps `AthletesSport` as the only Sport authority
+  - adds Community taxonomy independent of Sport
+  - keeps legacy classification fields transitional and leaves ambiguous legacy-only rows untouched
+  - requires custom Need text when the selected Need allows custom text
+  - restores database-level SPORT sport/subcategory integrity with a forward migration
+  - repairs inherited Requests component/integration tests from merged PR `#346` without weakening production behavior
+  - exact-head CI run `#2311` (`35805103611`) passed the complete repository verification ladder
+  - PR `#351` remains draft/unmerged; this entry records in-flight proof, not merged foundation completion
+- [NOT VERIFIED] Remaining Requests program — sport taxonomy expansion, optional full address, root/type filters and progressive create UI, Request media, premium Request card/requester presentation, Play reconciliation, Athletes projection, canonical Whistle integration decision, final cleanup/provenance/final exact-head verification.
+
 ## Athletes hardening sequence
 
 Target base: `phase-0-foundation`

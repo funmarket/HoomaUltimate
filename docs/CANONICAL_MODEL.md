@@ -1202,16 +1202,31 @@ Ride waypoints are ordered `RideOfferWaypoint` records with optional canonical P
 
 Ride vehicle-photo bytes belong in object storage. `RideOfferVehiclePhoto` is a single-purpose Ride-owned metadata record for the managed object key, content type, size and lifecycle fields until a separately authorized generic Media domain exists. PostgreSQL must not store photo bytes, base64 payloads, storage credentials or polymorphic generic media ownership for this slice.
 
-Requests-owned canonical concepts may include:
+Requests owns one canonical HelpRequest domain. The current clean correction is in-flight on draft PR `#351`; the model below describes that in-flight branch and must not be treated as merged `phase-0-foundation` truth until the PR is authorized and merged.
 
 ```text
-Request
-RequestClaim
+HelpRequest
+  legacy compatibility: category, itemKind
+  requestType          SPORT | COMMUNITY
+  sport?               canonical AthletesSport; required only for SPORT corrected taxonomy
+  subcategoryId?
+  needId?
+  customNeed?
+  title
+  description
+  audience / publisher
+  lifecycle / response fields
 ```
 
-Requests use quantity-based partial claims. More than one active claimer is allowed while unclaimed quantity remains, and persistence must enforce that accepted/active claim quantities cannot exceed the requested quantity. Quantity-one requests behave as single-claim requests through the same rule, not through a second exclusive-only model.
+`HelpTaxonomySubcategory` belongs to exactly one Request root. SPORT subcategories carry canonical `AthletesSport`; COMMUNITY subcategories carry no Sport. A corrected HelpRequest taxonomy selection requires a matching Request Type/subcategory and matching Need/subcategory relationship. SPORT additionally requires the request Sport to match the selected SPORT subcategory at the database boundary. COMMUNITY corrected taxonomy must remain valid with `sport == null`.
 
-Requests do not own Ride, Fundraising, Payment or generic action state. FundMe remains grouped under Requests in navigation, but durable Fundraising and Payments state stays separately governed.
+Current Community categories in the clean branch include Lost & Found, Questions & Advice, Personal & People Needs, Local Help & Services, Community Activities, Borrow & Share, Information & Notice, and Other. Custom Need text is stored on the HelpRequest only when the selected Need allows it; user text never creates a new global taxonomy row.
+
+Legacy `category`/`itemKind` compatibility remains transitional. Ambiguous retained production rows are not backfilled by guessing from title or description, and legacy fields are not removed until production mapping is proven safe.
+
+Future quantity-based claim work remains Requests-owned. More than one active claimer may exist while unclaimed quantity remains, and persistence must prevent accepted/active claim quantities from exceeding the requested quantity. Quantity-one requests behave as single-claim requests through the same rule, not through a second exclusive-only model.
+
+Requests does not own Ride, Fundraising, Payment or generic action state. FundMe remains grouped under Requests in navigation, but durable Fundraising and Payments state stays separately governed.
 
 ---
 

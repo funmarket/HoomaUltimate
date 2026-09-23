@@ -220,7 +220,7 @@ This rule exists for scalability and user experience as well as code cleanliness
 
 Physical `Place` is the venue source of truth. Pitch extends Place through Pitch-owned capability/application behavior. Watch references canonical Place; it does not require a duplicate Watch venue entity or a generic capability model merely for symmetry.
 
-ADR-050 explicitly unfreezes durable Ride and Requests vertical slices. Rides owns ride offers, ride requests, participation, private meeting-point policy and Ride vehicle-photo metadata. Requests owns help/resource requests and quantity-based partial claims. Fundraising, Payments and generic Media remain separate owners and are not implemented merely because Ride or Requests begins.
+ADR-050 explicitly unfreezes durable Ride and Requests vertical slices. Rides owns ride offers, ride requests, participation, private meeting-point policy and Ride vehicle-photo metadata. Requests owns the single canonical HelpRequest domain, its Request Type/taxonomy selection, lifecycle/response behavior, and quantity-based partial claims. Request projections for Requests, Play, and Athletes must remain views over that same HelpRequest owner rather than creating `PlayRequest`, `AthletesRequest`, or another request persistence model. Fundraising, Payments and generic Media remain separate owners and are not implemented merely because Ride or Requests begins.
 
 ADR-052 authorizes Community-scoped RideRequest audience projection into HOOMA NOW without changing ownership. Ride owns the canonical request, audience scope and exact `RideRequestCommunityAudience` target rows. Community owns membership facts used for requester and viewer authorization. HOOMA NOW is presentation/composition only and must not create copied RideRequest payloads, a second lifecycle, a second status field, or a Community-owned Ride request table.
 
@@ -357,11 +357,13 @@ Current availability on `phase-0-foundation`:
 - Pitch -> `/pitch`
 - Places -> `/places`
 - Ride -> `/rides` Ride-owned gateway with current child routes `/rides/matchday`, `/rides/anywhere`, `/rides/request`, `/rides/requests/:requestId/edit`, `/rides/offers`, `/rides/offers/new`, `/rides/offers/:offerId`, `/rides/offers/:offerId/edit`, and `/rides/mine`
-- Requests -> `/requests` honest frontend shell, with `/requests/fundme` tab and `/fundme` compatibility redirect
+- Requests -> `/requests` current foundation Requests surface, with `/requests/fundme` tab and `/fundme` compatibility redirect; foundation already includes the Requests API/domain and sport-first taxonomy work merged through PR `#346`
+
+Draft PR `#351` is the in-flight clean Requests correction/completion branch. It adds the canonical `SPORT | COMMUNITY` Request Type root, Community taxonomy independent of Sport, requestType-aware persistence/contracts, and restored SPORT sport/subcategory database integrity. This in-flight state must not be described as merged foundation truth until `#351` is explicitly authorized and merged.
 
 Gamers remains an independent implemented route family at `/gamers`, but it is no longer listed from the Home gateway. Athletes is an independent implemented route family at `/athletes` and is reached from permanent navigation. ULTRAS remains an independent future domain and is not routed from Home. FundMe is grouped under Requests as `/requests/fundme`; `/fundme` redirects there as a compatibility navigation route only.
 
-This section records current application state. Product-owner changes update both the source and this contract in the same task.
+This section records current application state and clearly separates merged foundation behavior from in-flight PR behavior. Product-owner changes update both the source and this contract in the same task.
 
 HOOMA creation is Communities-owned and creates only canonical HOOMA neighborhood/local Communities. Teams and future supporter-community domains keep their own creation surfaces and select any required HOOMA context inside their own flows. The only current cross-flow continuation is the literal Team handoff from `/hooma/new?after=team-create` back to `/teams/new?communityId=<created-id>` after successful HOOMA creation.
 

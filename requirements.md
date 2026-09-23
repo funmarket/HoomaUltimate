@@ -883,6 +883,12 @@ Approved requirements include:
 
 - privacy-safe public discovery where appropriate;
 - create request;
+- root Request Type exactly `SPORT | COMMUNITY`;
+- `SPORT` Requests use the canonical `AthletesSport` authority and require a valid sport -> subcategory -> Need hierarchy;
+- `COMMUNITY` Requests are a parallel root and must not require or fake a Sport;
+- selecting a Need that allows custom text requires validated `customNeed`; custom text remains under its selected taxonomy parent and never creates a new global taxonomy row;
+- corrected taxonomy selections must reject cross-root, cross-sport, and cross-subcategory combinations at the service/database boundary;
+- legacy classification fields remain transitional compatibility only until retained production rows are safely inspected and mapped; title/description text must never be guessed into taxonomy during backfill;
 - claim request quantities until the requested quantity is fulfilled;
 - concurrency-safe partial claims that prevent over-claiming while allowing more than one claimer when quantity remains;
 - release/complete lifecycle that restores uncompleted released quantity and records completed claim quantity without transferring ownership to another domain;
@@ -890,6 +896,8 @@ Approved requirements include:
 - clear requester/claimer identity boundaries.
 
 Requests are explicitly authorized for a durable Requests-owned domain, persistence, API and frontend vertical slice. Requests does not own Ride, Fundraising, Payment or generic action state. If a request has a quantity of one, the partial-claim rule naturally behaves as a single active claim; this replaces the older exclusive-claim wording without creating a separate exclusive-only model.
+
+The clean Request Type/taxonomy correction is currently in-flight on draft PR `#351`; it is not merged `phase-0-foundation` truth until that PR is explicitly authorized and merged.
 
 ---
 
