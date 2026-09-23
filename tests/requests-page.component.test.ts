@@ -288,22 +288,19 @@ test("anonymous /requests loads the real public Requests feed", async () => {
   }
 });
 
-test(
-  "signed-in visitor uses the member list endpoint and an empty result is a legitimate state",
-  async () => {
-    const page = await renderRequestsPage({ me: meResponse, memberItems: [] });
-    try {
-      await page.waitFor(() => assert.ok(page.view.getByText("No Requests match these filters.")));
-      assert.deepEqual(
-        page.calls.filter((call) => call.includes("/requests")),
-        ["GET /api/v1/requests?surface=REQUESTS"],
-      );
-      assert.equal(page.view.queryByText("No Requests are listed yet."), null);
-    } finally {
-      page.close();
-    }
-  },
-);
+test("signed-in visitor uses the member list endpoint and an empty result is a legitimate state", async () => {
+  const page = await renderRequestsPage({ me: meResponse, memberItems: [] });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByText("No Requests match these filters.")));
+    assert.deepEqual(
+      page.calls.filter((call) => call.includes("/requests")),
+      ["GET /api/v1/requests?surface=REQUESTS"],
+    );
+    assert.equal(page.view.queryByText("No Requests are listed yet."), null);
+  } finally {
+    page.close();
+  }
+});
 
 const secondPublicRequest = {
   ...publicRequest,

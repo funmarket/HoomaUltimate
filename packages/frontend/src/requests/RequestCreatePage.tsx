@@ -101,8 +101,8 @@ export function RequestCreatePage() {
     requestType === "SPORT" ? taxonomy?.sports.find((entry) => entry.sport === sport) : undefined;
   const selectedSubcategories =
     requestType === "COMMUNITY"
-      ? taxonomy?.community.subcategories ?? []
-      : selectedSport?.subcategories ?? [];
+      ? (taxonomy?.community.subcategories ?? [])
+      : (selectedSport?.subcategories ?? []);
   const selectedSubcategory = selectedSubcategories.find((entry) => entry.id === subcategoryId);
   const selectedNeed = selectedSubcategory?.needs.find((entry) => entry.id === needId);
   const productNeed = selectedNeed?.kind === "PRODUCT";
@@ -190,11 +190,7 @@ export function RequestCreatePage() {
   }
 
   if (!taxonomy) {
-    return (
-      <p className="status request-error">
-        {error || "Request categories are unavailable"}
-      </p>
-    );
+    return <p className="status request-error">{error || "Request categories are unavailable"}</p>;
   }
 
   if (createdId) {
