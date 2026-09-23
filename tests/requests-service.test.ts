@@ -3,6 +3,7 @@ import test from "node:test";
 import { RequestService } from "../apps/api/src/modules/requests/application/request.service.js";
 import type {
   HelpRequestRecord,
+  HelpRequestResponseRecord,
   RequestRepository,
   RequestVisibilityReader,
 } from "../apps/api/src/modules/requests/application/request.repository.js";
@@ -43,6 +44,24 @@ function requestRecord(overrides: Partial<HelpRequestRecord> = {}): HelpRequestR
     cancelledAt: null,
     createdAt: new Date("2026-09-17T00:00:00.000Z"),
     updatedAt: new Date("2026-09-17T00:00:00.000Z"),
+    ...overrides,
+  };
+}
+
+function responseRecord(
+  overrides: Partial<HelpRequestResponseRecord> = {},
+): HelpRequestResponseRecord {
+  return {
+    id: "response-1",
+    requestId: "request-1",
+    responderUserId: "user-2",
+    message: "I can help.",
+    status: "PENDING",
+    createdAt: new Date("2026-09-17T01:00:00.000Z"),
+    updatedAt: new Date("2026-09-17T01:00:00.000Z"),
+    acceptedAt: null,
+    declinedAt: null,
+    withdrawnAt: null,
     ...overrides,
   };
 }
@@ -308,6 +327,112 @@ test("Request detail resolves its creator through the canonical Identity reader 
 
   assert.deepEqual(calls, [["user-2"]]);
   assert.deepEqual(item.requester, {
+    displayName: "Bashir",
+    username: "bashir",
+    photoUrl: null,
+  });
+});
+
+
+test("Request response lists batch responder presentation through canonical Identity", async () => {
+  const calls: string[][] = [];
+  const presentations: UserPresentationReader = {
+    async findByUserIds(userIds) {
+      calls.push([...userIds]);
+      return [
+        {
+          userId: "user-2",
+          displayName: "Bashir",
+          username: "bashir",
+          photoUrl: "https://cdn.example.test/bashir.jpg",
+        },
+        {
+          userId: "user-3",
+          displayName: "Amine",
+          username: "amine",
+          photoUrl: null,
+        },
+      ];
+    },
+  };
+  const repo = repository();
+  const service = new RequestService(
+    {
+      ...repo,
+      async listResponses() {
+        return [
+          responseRecord({ id: "response-1", responderUserId: "user-2" }),
+          responseRecord({ id: "response-2", responderUserId: "user-2" }),
+          responseRecord({ id: "response-3", responderUserId: "user-3" }),
+        ];
+      },
+    },
+    visibility(),
+    undefined,
+    presentations,
+  );
+
+  const page = await service.listResponses("user-1", "request-1");
+  const responders = page.items.map(
+    (item) => (item as unknown as { responder?: unknown }).responder,
+  );
+
+  assert.deepEqual(calls, [["user-2", "user-3"]]);
+  assert.deepEqual(responders, [
+    {
+      displayName: "Bashir",
+      username: "bashir",
+      photoUrl: "https://cdn.example.test/bashir.jpg",
+    },
+    {
+      displayName: "Bashir",
+      username: "bashir",
+      photoUrl: "https://cdn.example.test/bashir.jpg",
+    },
+    {
+      displayName: "Amine",
+      username: "amine",
+      photoUrl: null,
+    },
+  ]);
+  assert.equal(
+    responders.some((responder) => Boolean(responder && "userId" in (responder as object))),
+    false,
+  );
+});
+
+test("Request response mutations preserve responder presentation", async () => {
+  const calls: string[][] = [];
+  const presentations: UserPresentationReader = {
+    async findByUserIds(userIds) {
+      calls.push([...userIds]);
+      return [
+        {
+          userId: "user-2",
+          displayName: "Bashir",
+          username: "bashir",
+          photoUrl: null,
+        },
+      ];
+    },
+  };
+  const repo = repository();
+  const service = new RequestService(
+    {
+      ...repo,
+      async acceptResponse() {
+        return responseRecord({ status: "ACCEPTED", acceptedAt: new Date("2026-09-17T03:00:00.000Z") });
+      },
+    },
+    visibility(),
+    undefined,
+    presentations,
+  );
+
+  const response = await service.acceptResponse("user-1", "request-1", "response-1");
+
+  assert.deepEqual(calls, [["user-2"]]);
+  assert.deepEqual((response as unknown as { responder?: unknown }).responder, {
     displayName: "Bashir",
     username: "bashir",
     photoUrl: null,

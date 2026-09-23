@@ -101,6 +101,11 @@ const otherResponse = {
   responderUserId: "user-2",
   message: "I have a spare pair.",
   status: "PENDING",
+  responder: {
+    displayName: "Bashir",
+    username: "bashir",
+    photoUrl: "https://cdn.example.test/bashir.jpg",
+  },
   createdAt: "2026-09-17T13:00:00.000Z",
   updatedAt: "2026-09-17T13:00:00.000Z",
   acceptedAt: null,
@@ -146,7 +151,27 @@ function installApiStub(options: {
     if (url.pathname === "/api/v1/requests/request-1/responses" && method === "POST") {
       if (options.actionStatus && options.actionStatus >= 400)
         return json(options.actionBody, options.actionStatus);
-      return json({ ...otherResponse, id: "response-own", responderUserId: "user-1" }, 201);
+      return json(
+        {
+          ...otherResponse,
+          id: "response-own",
+          responderUserId: "user-1",
+          responder: { displayName: "U", username: "u", photoUrl: null },
+        },
+        201,
+      );
+    }
+    if (
+      url.pathname === "/api/v1/requests/request-1/responses/response-1/accept" &&
+      method === "POST"
+    ) {
+      if (options.actionStatus && options.actionStatus >= 400)
+        return json(options.actionBody, options.actionStatus);
+      return json({
+        ...otherResponse,
+        status: "ACCEPTED",
+        acceptedAt: "2026-09-17T14:00:00.000Z",
+      });
     }
     if (method === "POST") {
       if (options.actionStatus && options.actionStatus >= 400)
@@ -244,15 +269,22 @@ test("an eligible signed-in member sends one response and may withdraw it", asyn
   }
 });
 
-test("a manager sees player responses, can accept, fulfil, and never fakes success on conflict", async () => {
+test("a manager sees responder presentation, can accept, fulfil, and never fakes success on conflict", async () => {
   const ok = await renderDetail({ me: me("user-1", "FOUNDER"), responses: [otherResponse] });
   try {
-    await ok.waitFor(() => assert.ok(ok.view.getByText("Player response")));
+    const responder = await ok.view.findByRole("link", { name: /Bashir/ });
+    assert.equal(responder.getAttribute("href"), "/profile/bashir");
+    assert.equal(
+      responder.querySelector("img")?.getAttribute("src"),
+      "https://cdn.example.test/bashir.jpg",
+    );
     assert.equal(ok.view.queryByText(/user-2/), null);
     ok.fireEvent.click(ok.view.getByRole("button", { name: /^Accept$/i }));
-    await ok.waitFor(() =>
-      assert.ok(ok.calls.includes("POST /api/v1/requests/request-1/responses/response-1/accept")),
-    );
+    await ok.waitFor(() => {
+      assert.ok(ok.calls.includes("POST /api/v1/requests/request-1/responses/response-1/accept"));
+      assert.ok(ok.view.getByRole("link", { name: /Bashir/ }));
+      assert.ok(ok.view.getByText("Accepted"));
+    });
     ok.fireEvent.click(ok.view.getByRole("button", { name: /Mark fulfilled/i }));
     await ok.waitFor(() => assert.ok(ok.calls.includes("POST /api/v1/requests/request-1/fulfill")));
   } finally {
@@ -266,7 +298,7 @@ test("a manager sees player responses, can accept, fulfil, and never fakes succe
     actionBody: { error: { code: "CONFLICT", message: "Request state changed" } },
   });
   try {
-    await conflict.waitFor(() => assert.ok(conflict.view.getByText("Player response")));
+    await conflict.waitFor(() => assert.ok(conflict.view.getByRole("link", { name: /Bashir/ })));
     conflict.fireEvent.click(conflict.view.getByRole("button", { name: /^Accept$/i }));
     await conflict.waitFor(() =>
       assert.ok(conflict.view.container.querySelector(".request-error")),
