@@ -65,8 +65,7 @@ test("Requests API client uses the existing public and member endpoint families"
 
     assert.deepEqual(calls, [
       {
-        path:
-          "/api/public/v1/requests?limit=30&category=ITEM&requestType=SPORT&city=La+Marsa",
+        path: "/api/public/v1/requests?limit=30&category=ITEM&requestType=SPORT&city=La+Marsa",
         method: "GET",
         body: null,
       },
