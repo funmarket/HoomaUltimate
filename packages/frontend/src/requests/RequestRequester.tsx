@@ -12,10 +12,7 @@ export function RequestRequester({
   const initial = requester.displayName.trim().charAt(0).toUpperCase() || "H";
 
   return (
-    <a
-      className="request-requester"
-      href={`/profile/${encodeURIComponent(requester.username)}`}
-    >
+    <a className="request-requester" href={`/profile/${encodeURIComponent(requester.username)}`}>
       <span className="request-requester__avatar" aria-hidden="true">
         {requester.photoUrl ? (
           <img src={requester.photoUrl} alt="" loading="lazy" />
