@@ -79,7 +79,7 @@ const meResponse = {
 
 const createdRequest = { id: "request-9" };
 
-function installApiStub(options: { readonly me?: unknown }) {
+function installApiStub(options: { readonly me?: unknown; readonly failMedia?: boolean }) {
   const calls: RecordedCall[] = [];
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -94,6 +94,12 @@ function installApiStub(options: { readonly me?: unknown }) {
     if (url.pathname === "/api/public/v1/help/taxonomy") return json(requestsTaxonomy);
     if (url.pathname === "/api/v1/requests" && method === "POST") return json(createdRequest, 201);
     if (url.pathname === "/api/v1/requests/request-9/image/external" && method === "PUT") {
+      if (options.failMedia) {
+        return json(
+          { error: { code: "REQUEST_IMAGE_UPLOAD_FAILED", message: "Image upload failed" } },
+          500,
+        );
+      }
       return json({
         id: "image-1",
         source: "EXTERNAL_URL",
@@ -115,7 +121,7 @@ function installApiStub(options: { readonly me?: unknown }) {
   };
 }
 
-async function renderCreatePage(options: { readonly me?: unknown }) {
+async function renderCreatePage(options: { readonly me?: unknown; readonly failMedia?: boolean }) {
   const dom = installDom();
   const apiStub = installApiStub(options);
   const React = await import("react");
@@ -323,6 +329,48 @@ test("a created Request attaches an external image only after creation", async (
     assert.equal(writes[0]?.path, "/api/v1/requests");
     assert.equal(writes[1]?.path, "/api/v1/requests/request-9/image/external");
     assert.deepEqual(writes[1]?.body, { url: "https://images.example.test/request.jpg" });
+  } finally {
+    page.close();
+  }
+});
+
+test("image failure keeps the created Request and offers image retry", async () => {
+  const page = await renderCreatePage({ me: meResponse, failMedia: true });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByLabelText("Title")));
+    page.fireEvent.change(page.view.getByLabelText("Request Type"), {
+      target: { value: "SPORT" },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Sport"), {
+      target: { value: "RUNNING" },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Category"), {
+      target: { value: "hts-running-footwear" },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Specific need"), {
+      target: { value: "htn-running-shoes" },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Title"), {
+      target: { value: "Need size 43 running shoes" },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Description"), {
+      target: { value: "Looking for used or new running shoes for training sessions." },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Image URL"), {
+      target: { value: "https://images.example.test/request.jpg" },
+    });
+    page.fireEvent.submit(page.view.getByRole("button", { name: /Publish Request/i }));
+
+    await page.waitFor(() =>
+      assert.ok(page.view.getByText(/Request created, but the image could not be uploaded/i)),
+    );
+    assert.ok(page.view.getByRole("link", { name: /View Request/i }));
+    assert.ok(page.view.getByRole("button", { name: /Retry image/i }));
+    assert.equal(
+      page.calls.filter((call) => call.method === "POST").length,
+      1,
+      "media retry state must not recreate the Request",
+    );
   } finally {
     page.close();
   }
