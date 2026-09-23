@@ -171,10 +171,10 @@ test("a signed-in member can publish a Request and is linked to it", async () =>
     page.fireEvent.change(page.view.getByLabelText("Sport"), {
       target: { value: "RUNNING" },
     });
-    page.fireEvent.change(page.view.getByLabelText("Subcategory"), {
+    page.fireEvent.change(page.view.getByLabelText("Category"), {
       target: { value: "hts-running-footwear" },
     });
-    page.fireEvent.change(page.view.getByLabelText("Specific item / need"), {
+    page.fireEvent.change(page.view.getByLabelText("Specific need"), {
       target: { value: "htn-running-shoes" },
     });
     page.fireEvent.change(page.view.getByLabelText("Title"), {
@@ -264,10 +264,10 @@ test("invalid input is rejected by the shared contract without any write", async
     page.fireEvent.change(page.view.getByLabelText("Sport"), {
       target: { value: "RUNNING" },
     });
-    page.fireEvent.change(page.view.getByLabelText("Subcategory"), {
+    page.fireEvent.change(page.view.getByLabelText("Category"), {
       target: { value: "hts-running-footwear" },
     });
-    page.fireEvent.change(page.view.getByLabelText("Specific item / need"), {
+    page.fireEvent.change(page.view.getByLabelText("Specific need"), {
       target: { value: "htn-running-shoes" },
     });
     page.fireEvent.change(page.view.getByLabelText("Title"), { target: { value: "ok" } });
