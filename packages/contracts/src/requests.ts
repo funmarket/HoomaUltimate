@@ -18,7 +18,12 @@ const requestExternalImageUrlSchema = z
   .trim()
   .url()
   .superRefine((value, context) => {
-    const url = new URL(value);
+    let url: URL;
+    try {
+      url = new URL(value);
+    } catch {
+      return;
+    }
     if (url.protocol !== "http:" && url.protocol !== "https:") {
       context.addIssue({
         code: z.ZodIssueCode.custom,
