@@ -223,7 +223,9 @@ export function RequestCreatePage() {
         <div className="help-hero__copy">
           <span className="eyebrow">HOOMA HELP</span>
           <h1>Create a Request</h1>
-          <p>Choose Sport or Community, then narrow the exact need before adding Request details.</p>
+          <p>
+            Choose Sport or Community, then narrow the exact need before adding Request details.
+          </p>
         </div>
       </header>
 

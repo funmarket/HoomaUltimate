@@ -289,7 +289,9 @@ test("anonymous /requests loads the real public Requests feed", async () => {
   }
 });
 
-test("signed-in visitor uses the member list endpoint and an empty result is a legitimate state", async () => {
+test(
+  "signed-in visitor uses the member list endpoint and an empty result is a legitimate state",
+  async () => {
   const page = await renderRequestsPage({ me: meResponse, memberItems: [] });
   try {
     await page.waitFor(() => assert.ok(page.view.getByText("No Requests match these filters.")));
@@ -301,7 +303,8 @@ test("signed-in visitor uses the member list endpoint and an empty result is a l
   } finally {
     page.close();
   }
-});
+  },
+);
 
 const secondPublicRequest = {
   ...publicRequest,

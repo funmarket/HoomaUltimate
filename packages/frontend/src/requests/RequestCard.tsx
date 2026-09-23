@@ -15,7 +15,9 @@ export function RequestCard({ item }: { readonly item: HelpRequest }) {
   return (
     <a className="request-card" href={`/requests/${encodeURIComponent(item.id)}`}>
       <div className="request-card__topline">
-        <span className="request-chip">{item.taxonomy?.need.label ?? titleCase(item.category)}</span>
+        <span className="request-chip">
+          {item.taxonomy?.need.label ?? titleCase(item.category)}
+        </span>
         <span className={`request-status request-status--${item.status.toLowerCase()}`}>
           <span className="request-status__dot" aria-hidden="true" />
           {titleCase(item.status)}
