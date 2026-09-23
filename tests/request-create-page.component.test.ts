@@ -391,7 +391,9 @@ test("image failure preserves the created Request and offers a media retry", asy
     assert.ok(page.view.getByRole("link", { name: /View Request/i }));
     assert.ok(page.view.getByRole("button", { name: /Retry image/i }));
     assert.equal(
-      page.calls.filter((call) => call.method === "POST" && call.path === "/api/v1/requests").length,
+      page.calls.filter(
+        (call) => call.method === "POST" && call.path === "/api/v1/requests",
+      ).length,
       1,
       "media failure must not recreate or delete the successfully-created Request",
     );
