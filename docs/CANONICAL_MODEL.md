@@ -1223,6 +1223,8 @@ HelpRequest
 
 Current Community categories in the clean branch include Lost & Found, Questions & Advice, Personal & People Needs, Local Help & Services, Community Activities, Borrow & Share, Information & Notice, and Other. Custom Need text is stored on the HelpRequest only when the selected Need allows it; user text never creates a new global taxonomy row.
 
+SPORT taxonomy stays under canonical `AthletesSport`. Every SPORT subcategory exposed on the Requests surface carries an `Other` Need with `allowsCustomText = true`. The first governed sport-specific expansion adds Football Community Role Needs for Player, Assistant Coach, Training Session, Training Group and Training Partner alongside the already-seeded Goalkeeper, Referee and Coach. These new expansion rows are Requests-surface eligible only until another projection explicitly authorizes them.
+
 The current create/discovery path is progressive: Request Type -> Sport only for SPORT -> Category -> Specific Need. The same `requestType` is forwarded through the canonical Requests list query before pagination.
 
 `fullAddress` is optional precise location input owned by HelpRequest persistence. Current public/member HelpRequest read DTOs deliberately omit it; city and Houma remain the privacy-safe location projection until a later explicit policy defines who may read precise addresses.

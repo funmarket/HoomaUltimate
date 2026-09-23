@@ -885,6 +885,8 @@ Approved requirements include:
 - create request;
 - root Request Type exactly `SPORT | COMMUNITY`;
 - `SPORT` Requests use the canonical `AthletesSport` authority and require a valid sport -> subcategory -> Need hierarchy;
+- every SPORT taxonomy branch exposed to Requests must include an `Other` Need that allows validated manual `customNeed` text rather than creating a user-defined global taxonomy row;
+- Football Community Roles include Player, Goalkeeper, Coach, Assistant Coach, Referee, Training Session, Training Group and Training Partner; newer sport-specific expansions must remain sport-appropriate rather than cloning one generic list across all sports;
 - `COMMUNITY` Requests are a parallel root and must not require or fake a Sport;
 - selecting a Need that allows custom text requires validated `customNeed`; custom text remains under its selected taxonomy parent and never creates a new global taxonomy row;
 - corrected taxonomy selections must reject cross-root, cross-sport, and cross-subcategory combinations at the service/database boundary;
@@ -899,7 +901,7 @@ Approved requirements include:
 
 Requests are explicitly authorized for a durable Requests-owned domain, persistence, API and frontend vertical slice. Requests does not own Ride, Fundraising, Payment or generic action state. If a request has a quantity of one, the partial-claim rule naturally behaves as a single active claim; this replaces the older exclusive-claim wording without creating a separate exclusive-only model.
 
-The clean Request Type/taxonomy correction is currently in-flight on draft PR `#351`; the branch also carries the progressive root create/filter slice and private `fullAddress` persistence described above. It is not merged `phase-0-foundation` truth until that PR is explicitly authorized and merged.
+The clean Request Type/taxonomy correction is currently in-flight on draft PR `#351`; the branch also carries the progressive root create/filter slice, private `fullAddress` persistence, and the first governed sport-taxonomy expansion described above. It is not merged `phase-0-foundation` truth until that PR is explicitly authorized and merged.
 
 ---
 

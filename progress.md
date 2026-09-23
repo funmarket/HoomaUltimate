@@ -33,7 +33,8 @@ Contaminated Hermes checkpoint/salvage PRs `#349` and `#350` are reference-only 
   - focused contract/service/component/integration coverage is included
   - exact-head CI run `#2319` (`35809647452`) passed formatting, lint, typecheck, package build, unit tests, app build, integration tests, deploy preflight, security check and migration status
   - PR `#351` remains draft/unmerged; this entry records in-flight proof, not merged foundation completion
-- [NOT VERIFIED] Remaining Requests program — sport taxonomy expansion, Request media, premium Request card/requester presentation, Play reconciliation, Athletes projection, canonical Whistle integration decision, final cleanup/provenance/final exact-head verification.
+- [IN FLIGHT] Clean Slice 3A — governed sport taxonomy expansion: add Other/manual Need to every existing SPORT Request branch and add the explicitly locked Football Community Role Needs without granting new Play/Athletes/Donations eligibility.
+- [NOT VERIFIED] Remaining Requests program — remaining sport-specific taxonomy labels/mappings not yet canonically specified, Request media, premium Request card/requester presentation, Play reconciliation, Athletes projection, canonical Whistle integration decision, final cleanup/provenance/final exact-head verification.
 
 ## Athletes hardening sequence
 
