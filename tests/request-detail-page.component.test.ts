@@ -109,6 +109,7 @@ function installApiStub(options: {
   readonly responses?: readonly unknown[];
   readonly actionStatus?: number;
   readonly actionBody?: unknown;
+  readonly imageDelivery?: unknown;
 }) {
   const calls: string[] = [];
   const originalFetch = globalThis.fetch;
@@ -118,6 +119,20 @@ function installApiStub(options: {
     const key = `${method} ${url.pathname}`;
     calls.push(key);
     if (url.pathname === "/api/public/v1/auth/session") return json(options.me ?? null);
+    if (url.pathname === "/api/public/v1/requests/request-1/image/delivery")
+      return json(
+        options.imageDelivery ?? {
+          contentUrl: "https://cdn.example.test/request.webp",
+          expiresAt: null,
+        },
+      );
+    if (url.pathname === "/api/v1/requests/request-1/image/delivery")
+      return json(
+        options.imageDelivery ?? {
+          contentUrl: "https://cdn.example.test/request.webp",
+          expiresAt: "2026-09-23T13:05:00.000Z",
+        },
+      );
     if (url.pathname === "/api/public/v1/requests/request-1")
       return json(options.request ?? baseRequest);
     if (url.pathname === "/api/v1/requests/request-1") return json(options.request ?? baseRequest);
@@ -241,5 +256,58 @@ test("a manager sees player responses, can accept, fulfil, and never fakes succe
     assert.ok(text.includes("Open"), "lifecycle must not be forced to a new state on failure");
   } finally {
     conflict.close();
+  }
+});
+
+
+test("Request detail resolves public image delivery only when media exists", async () => {
+  const page = await renderDetail({
+    me: null,
+    request: {
+      ...baseRequest,
+      image: {
+        id: "image-1",
+        source: "EXTERNAL_URL",
+        contentType: null,
+        sizeBytes: null,
+        updatedAt: "2026-09-23T13:00:00.000Z",
+      },
+    },
+  });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByRole("img", { name: /Request image/i })));
+    assert.ok(page.calls.includes("GET /api/public/v1/requests/request-1/image/delivery"));
+    assert.equal(
+      page.view.getByRole("img", { name: /Request image/i }).getAttribute("src"),
+      "https://cdn.example.test/request.webp",
+    );
+  } finally {
+    page.close();
+  }
+});
+
+test("signed-in Request detail uses the member image delivery path", async () => {
+  const page = await renderDetail({
+    me: me("user-1", "MEMBER"),
+    request: {
+      ...baseRequest,
+      image: {
+        id: "image-1",
+        source: "UPLOAD",
+        contentType: "image/webp",
+        sizeBytes: 1200,
+        updatedAt: "2026-09-23T13:00:00.000Z",
+      },
+    },
+  });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByRole("img", { name: /Request image/i })));
+    assert.ok(page.calls.includes("GET /api/v1/requests/request-1/image/delivery"));
+    assert.equal(
+      page.calls.includes("GET /api/public/v1/requests/request-1/image/delivery"),
+      false,
+    );
+  } finally {
+    page.close();
   }
 });
