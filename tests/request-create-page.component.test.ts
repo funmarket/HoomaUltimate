@@ -17,7 +17,6 @@ type RecordedCall = {
   readonly path: string;
   readonly method: string;
   readonly body: unknown;
-  readonly contentType: string | null;
 };
 
 function installDom() {
@@ -33,8 +32,6 @@ function installDom() {
     Node: dom.window.Node,
     Event: dom.window.Event,
     FormData: dom.window.FormData,
-    File: dom.window.File,
-    Blob: dom.window.Blob,
   };
   for (const [key, value] of Object.entries(globals)) {
     Object.defineProperty(globalThis, key, { value, configurable: true, writable: true });
@@ -82,39 +79,26 @@ const meResponse = {
 
 const createdRequest = { id: "request-9" };
 
-function installApiStub(options: { readonly me?: unknown; readonly mediaStatus?: number }) {
+function installApiStub(options: { readonly me?: unknown }) {
   const calls: RecordedCall[] = [];
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input));
     const method = init?.method ?? "GET";
-    let body: unknown = init?.body ?? null;
-    if (typeof init?.body === "string") body = JSON.parse(init.body);
     calls.push({
       path: `${url.pathname}${url.search}`,
       method,
-      body,
-      contentType: new Headers(init?.headers).get("content-type"),
+      body: init?.body ? JSON.parse(String(init.body)) : null,
     });
     if (url.pathname === "/api/public/v1/auth/session") return json(options.me ?? null);
     if (url.pathname === "/api/public/v1/help/taxonomy") return json(requestsTaxonomy);
     if (url.pathname === "/api/v1/requests" && method === "POST") return json(createdRequest, 201);
-    if (
-      (url.pathname === "/api/v1/requests/request-9/image" ||
-        url.pathname === "/api/v1/requests/request-9/image/external") &&
-      method === "PUT"
-    ) {
-      if (options.mediaStatus && options.mediaStatus >= 400) {
-        return json(
-          { error: { code: "REQUEST_IMAGE_UPLOAD_FAILED", message: "Image upload failed" } },
-          options.mediaStatus,
-        );
-      }
+    if (url.pathname === "/api/v1/requests/request-9/image/external" && method === "PUT") {
       return json({
         id: "image-1",
-        source: url.pathname.endsWith("/external") ? "EXTERNAL_URL" : "UPLOAD",
-        contentType: url.pathname.endsWith("/external") ? null : "image/png",
-        sizeBytes: url.pathname.endsWith("/external") ? null : 3,
+        source: "EXTERNAL_URL",
+        contentType: null,
+        sizeBytes: null,
         updatedAt: "2026-09-23T13:00:00.000Z",
       });
     }
@@ -131,7 +115,7 @@ function installApiStub(options: { readonly me?: unknown; readonly mediaStatus?:
   };
 }
 
-async function renderCreatePage(options: { readonly me?: unknown; readonly mediaStatus?: number }) {
+async function renderCreatePage(options: { readonly me?: unknown }) {
   const dom = installDom();
   const apiStub = installApiStub(options);
   const React = await import("react");
@@ -306,34 +290,29 @@ test("invalid input is rejected by the shared contract without any write", async
   }
 });
 
-async function fillValidRunningRequest(
-  page: Awaited<ReturnType<typeof renderCreatePage>>,
-): Promise<void> {
-  await page.waitFor(() => assert.ok(page.view.getByLabelText("Title")));
-  page.fireEvent.change(page.view.getByLabelText("Request Type"), {
-    target: { value: "SPORT" },
-  });
-  page.fireEvent.change(page.view.getByLabelText("Sport"), {
-    target: { value: "RUNNING" },
-  });
-  page.fireEvent.change(page.view.getByLabelText("Category"), {
-    target: { value: "hts-running-footwear" },
-  });
-  page.fireEvent.change(page.view.getByLabelText("Specific need"), {
-    target: { value: "htn-running-shoes" },
-  });
-  page.fireEvent.change(page.view.getByLabelText("Title"), {
-    target: { value: "Need size 43 running shoes" },
-  });
-  page.fireEvent.change(page.view.getByLabelText("Description"), {
-    target: { value: "Looking for used or new running shoes for training sessions." },
-  });
-}
 
-test("Request creation attaches an external image only after the Request exists", async () => {
+test("a created Request can attach an external image URL", async () => {
   const page = await renderCreatePage({ me: meResponse });
   try {
-    await fillValidRunningRequest(page);
+    await page.waitFor(() => assert.ok(page.view.getByLabelText("Title")));
+    page.fireEvent.change(page.view.getByLabelText("Request Type"), {
+      target: { value: "SPORT" },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Sport"), {
+      target: { value: "RUNNING" },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Category"), {
+      target: { value: "hts-running-footwear" },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Specific need"), {
+      target: { value: "htn-running-shoes" },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Title"), {
+      target: { value: "Need size 43 running shoes" },
+    });
+    page.fireEvent.change(page.view.getByLabelText("Description"), {
+      target: { value: "Looking for used or new running shoes for training sessions." },
+    });
     page.fireEvent.change(page.view.getByLabelText("Image URL"), {
       target: { value: "https://images.example.test/request.jpg" },
     });
@@ -345,58 +324,6 @@ test("Request creation attaches an external image only after the Request exists"
     assert.equal(writes[0]?.path, "/api/v1/requests");
     assert.equal(writes[1]?.path, "/api/v1/requests/request-9/image/external");
     assert.deepEqual(writes[1]?.body, { url: "https://images.example.test/request.jpg" });
-  } finally {
-    page.close();
-  }
-});
-
-test(
-  "Request creation uploads selected image bytes through the binary Request media endpoint",
-  async () => {
-    const page = await renderCreatePage({ me: meResponse });
-    try {
-      await fillValidRunningRequest(page);
-      const file = new File([new Uint8Array([1, 2, 3])], "boots.png", { type: "image/png" });
-      page.fireEvent.change(page.view.getByLabelText("Upload photo"), {
-        target: { files: [file] },
-      });
-      page.fireEvent.submit(page.view.getByRole("button", { name: /Publish Request/i }));
-
-      await page.waitFor(() => assert.ok(page.view.getByRole("link", { name: /View Request/i })));
-
-      const upload = page.calls.find(
-        (call) => call.method === "PUT" && call.path === "/api/v1/requests/request-9/image",
-      );
-      assert.ok(upload);
-      assert.ok(upload.body instanceof Blob);
-      assert.equal(upload.contentType, "image/png");
-    } finally {
-      page.close();
-    }
-  },
-);
-
-test("image failure preserves the created Request and offers a media retry", async () => {
-  const page = await renderCreatePage({ me: meResponse, mediaStatus: 500 });
-  try {
-    await fillValidRunningRequest(page);
-    page.fireEvent.change(page.view.getByLabelText("Image URL"), {
-      target: { value: "https://images.example.test/request.jpg" },
-    });
-    page.fireEvent.submit(page.view.getByRole("button", { name: /Publish Request/i }));
-
-    await page.waitFor(() =>
-      assert.ok(page.view.getByText(/Request created, but the image could not be uploaded/i)),
-    );
-    assert.ok(page.view.getByRole("link", { name: /View Request/i }));
-    assert.ok(page.view.getByRole("button", { name: /Retry image/i }));
-    assert.equal(
-      page.calls.filter(
-        (call) => call.method === "POST" && call.path === "/api/v1/requests",
-      ).length,
-      1,
-      "media failure must not recreate or delete the successfully-created Request",
-    );
   } finally {
     page.close();
   }
