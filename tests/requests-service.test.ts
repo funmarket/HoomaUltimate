@@ -214,7 +214,6 @@ test("Requests hide private scoped objects from nonmembers with not-found semant
   );
 });
 
-
 test("Request list requester presentation is one deduplicated Identity batch read", async () => {
   const calls: string[][] = [];
   const presentations: UserPresentationReader = {
