@@ -37,7 +37,6 @@ test("Request response DTO keeps coordination state explicit", () => {
   assert.equal(parsed.status, "PENDING");
 });
 
-
 test("Request response DTO exposes safe responder presentation", () => {
   const parsed = helpRequestResponseSchema.parse({
     id: "response-2",

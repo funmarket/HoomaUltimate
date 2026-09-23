@@ -333,7 +333,6 @@ test("Request detail resolves its creator through the canonical Identity reader 
   });
 });
 
-
 test("Request response lists batch responder presentation through canonical Identity", async () => {
   const calls: string[][] = [];
   const presentations: UserPresentationReader = {
@@ -421,7 +420,10 @@ test("Request response mutations preserve responder presentation", async () => {
     {
       ...repo,
       async acceptResponse() {
-        return responseRecord({ status: "ACCEPTED", acceptedAt: new Date("2026-09-17T03:00:00.000Z") });
+        return responseRecord({
+          status: "ACCEPTED",
+          acceptedAt: new Date("2026-09-17T03:00:00.000Z"),
+        });
       },
     },
     visibility(),
