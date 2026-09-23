@@ -131,7 +131,10 @@ function installApiStub(options: { readonly me?: unknown; readonly mediaStatus?:
   };
 }
 
-async function renderCreatePage(options: { readonly me?: unknown }) {
+async function renderCreatePage(options: {
+  readonly me?: unknown;
+  readonly mediaStatus?: number;
+}) {
   const dom = installDom();
   const apiStub = installApiStub(options);
   const React = await import("react");
@@ -353,23 +356,23 @@ test("Request creation attaches an external image only after the Request exists"
 test(
   "Request creation uploads selected image bytes through the binary Request media endpoint",
   async () => {
-  const page = await renderCreatePage({ me: meResponse });
-  try {
-    await fillValidRunningRequest(page);
-    const file = new File([new Uint8Array([1, 2, 3])], "boots.png", { type: "image/png" });
-    page.fireEvent.change(page.view.getByLabelText("Upload photo"), {
-      target: { files: [file] },
-    });
-    page.fireEvent.submit(page.view.getByRole("button", { name: /Publish Request/i }));
+    const page = await renderCreatePage({ me: meResponse });
+    try {
+      await fillValidRunningRequest(page);
+      const file = new File([new Uint8Array([1, 2, 3])], "boots.png", { type: "image/png" });
+      page.fireEvent.change(page.view.getByLabelText("Upload photo"), {
+        target: { files: [file] },
+      });
+      page.fireEvent.submit(page.view.getByRole("button", { name: /Publish Request/i }));
 
-    await page.waitFor(() => assert.ok(page.view.getByRole("link", { name: /View Request/i })));
+      await page.waitFor(() => assert.ok(page.view.getByRole("link", { name: /View Request/i })));
 
-    const upload = page.calls.find(
-      (call) => call.method === "PUT" && call.path === "/api/v1/requests/request-9/image",
-    );
-    assert.ok(upload);
-    assert.ok(upload.body instanceof Blob);
-    assert.equal(upload.contentType, "image/png");
+      const upload = page.calls.find(
+        (call) => call.method === "PUT" && call.path === "/api/v1/requests/request-9/image",
+      );
+      assert.ok(upload);
+      assert.ok(upload.body instanceof Blob);
+      assert.equal(upload.contentType, "image/png");
     } finally {
       page.close();
     }
