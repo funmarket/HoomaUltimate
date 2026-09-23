@@ -1,5 +1,10 @@
 import { expireDueHelpRequests, Prisma, type PrismaClient } from "@hooma/database";
-import type { HelpRequestListQuery, HelpRequestStatus } from "@hooma/contracts/requests";
+import type {
+  HelpRequestImageSource,
+  HelpRequestListQuery,
+  HelpRequestStatus,
+  RequestImageContentType,
+} from "@hooma/contracts/requests";
 import type {
   HelpRequestCreatePersistenceInput,
   HelpRequestPage,
@@ -82,7 +87,16 @@ const publicStatuses: HelpRequestStatus[] = ["OPEN", "IN_PROGRESS", "FULFILLED"]
 class RequestMutationConflict extends Error {}
 
 function record(row: HelpRequestRow): HelpRequestRecord {
-  return row;
+  return {
+    ...row,
+    image: row.image
+      ? {
+          ...row.image,
+          source: row.image.source as HelpRequestImageSource,
+          contentType: row.image.contentType as RequestImageContentType | null,
+        }
+      : null,
+  };
 }
 
 function responseRecord(row: HelpRequestResponseRow): HelpRequestResponseRecord {

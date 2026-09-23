@@ -280,6 +280,12 @@ export class RequestService {
     return this.repository.expireDue(now);
   }
 
+  private requireMutable(request: HelpRequestRecord): void {
+    if (request.status !== "OPEN" && request.status !== "IN_PROGRESS") {
+      throw new RequestError("REQUEST_NOT_MUTABLE", "Request is not mutable");
+    }
+  }
+
   private async requirePublisherAuthority(userId: string, input: HelpRequestCreateInput) {
     const publisher = input.publisher;
     if (publisher.publisherCommunityId) {
