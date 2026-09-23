@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type { MeResponse } from "@hooma/contracts";
 import type { HelpTaxonomyResponse } from "@hooma/contracts/help-taxonomy";
-import { helpRequestCreateSchema, type HelpRequestCreateInput } from "@hooma/contracts/requests";
+import {
+  helpRequestCreateSchema,
+  helpRequestExternalImageInputSchema,
+  type HelpRequestCreateInput,
+} from "@hooma/contracts/requests";
 import { useHoomaFrontend } from "../context";
 import { PlusIcon } from "../help/HelpIcons";
 import { createRequestsApi } from "./api";
@@ -24,6 +28,9 @@ export function RequestCreatePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [createdId, setCreatedId] = useState("");
+  const [mediaError, setMediaError] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageUrl, setImageUrl] = useState("");
   const [publisher, setPublisher] = useState("personal");
   const [audience, setAudience] = useState("public");
   const [requestType, setRequestType] = useState("");
@@ -127,11 +134,36 @@ export function RequestCreatePage() {
     return { scope: "PUBLIC" };
   }
 
+  async function attachSelectedImage(requestId: string): Promise<void> {
+    if (imageFile) {
+      await requestsApi.uploadImage(requestId, imageFile, imageFile.type);
+      return;
+    }
+    const externalUrl = optionalText(imageUrl);
+    if (externalUrl) {
+      await requestsApi.setExternalImage(requestId, { url: externalUrl });
+    }
+  }
+
+  async function retryImage(): Promise<void> {
+    if (!createdId || saving) return;
+    setSaving(true);
+    setMediaError("");
+    try {
+      await attachSelectedImage(createdId);
+    } catch {
+      setMediaError("Request created, but the image could not be uploaded.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (saving) return;
 
     setError("");
+    setMediaError("");
     const parsed = helpRequestCreateSchema.safeParse({
       publisher: publisherInput(),
       audience: audienceInput(),
@@ -158,10 +190,26 @@ export function RequestCreatePage() {
       return;
     }
 
+    const externalImage = optionalText(imageUrl);
+    if (externalImage) {
+      const parsedImage = helpRequestExternalImageInputSchema.safeParse({ url: externalImage });
+      if (!parsedImage.success) {
+        setError(parsedImage.error.issues[0]?.message ?? "Check the image URL");
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       const created = await requestsApi.create(parsed.data);
       setCreatedId(created.id);
+      if (imageFile || externalImage) {
+        try {
+          await attachSelectedImage(created.id);
+        } catch {
+          setMediaError("Request created, but the image could not be uploaded.");
+        }
+      }
     } catch (reason) {
       setError(protectedError(reason, "Unable to create Request"));
     } finally {
@@ -200,7 +248,18 @@ export function RequestCreatePage() {
           <span className="eyebrow">REQUEST PUBLISHED</span>
           <h1>Your Request is live.</h1>
           <p className="muted">Everyone in its audience can now respond.</p>
+          {mediaError ? <p className="status request-error">{mediaError}</p> : null}
           <div className="request-action-row">
+            {mediaError ? (
+              <button
+                className="help-action"
+                type="button"
+                disabled={saving}
+                onClick={() => void retryImage()}
+              >
+                {saving ? "Retrying…" : "Retry image"}
+              </button>
+            ) : null}
             <a className="help-action" href={`/requests/${encodeURIComponent(createdId)}`}>
               View Request
             </a>
@@ -441,6 +500,41 @@ export function RequestCreatePage() {
           value={description}
           onChange={(event) => setDescription(event.target.value)}
         />
+
+        <div className="request-form__grid">
+          <div className="request-field">
+            <label className="request-field__label" htmlFor="request-create-image-file">
+              Upload photo
+            </label>
+            <input
+              id="request-create-image-file"
+              className="request-field__control"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(event) => {
+                const file = event.currentTarget.files?.[0] ?? null;
+                setImageFile(file);
+                if (file) setImageUrl("");
+              }}
+            />
+          </div>
+
+          <div className="request-field">
+            <label className="request-field__label" htmlFor="request-create-image-url">
+              Image URL
+            </label>
+            <input
+              id="request-create-image-url"
+              className="request-field__control"
+              type="url"
+              value={imageUrl}
+              onChange={(event) => {
+                setImageUrl(event.target.value);
+                if (event.target.value.trim()) setImageFile(null);
+              }}
+            />
+          </div>
+        </div>
 
         {productNeed ? (
           <div className="request-form__grid">

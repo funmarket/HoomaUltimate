@@ -48,6 +48,7 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
   const requestsApi = useMemo(() => createRequestsApi(transport), [transport]);
   const [me, setMe] = useState<MeResponse | null>(null);
   const [item, setItem] = useState<HelpRequest | null>(null);
+  const [imageUrl, setImageUrl] = useState("");
   const [responses, setResponses] = useState<HelpRequestResponse[]>([]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -65,6 +66,19 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
         const detail = current
           ? await requestsApi.memberDetail(requestId)
           : await requestsApi.publicDetail(requestId);
+        let deliveredImageUrl = "";
+        if (detail.image) {
+          try {
+            const delivery = current
+              ? await requestsApi.memberImageDelivery(requestId)
+              : await requestsApi.publicImageDelivery(requestId);
+            deliveredImageUrl = delivery.contentUrl;
+          } catch (reason) {
+            if (active) {
+              setActionError(protectedError(reason, "Unable to load Request image"));
+            }
+          }
+        }
         let visible: HelpRequestResponse[] = [];
         if (current) {
           try {
@@ -76,6 +90,7 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
         if (active) {
           setMe(current);
           setItem(detail);
+          setImageUrl(deliveredImageUrl);
           setResponses(visible);
         }
       } catch (reason) {
@@ -177,6 +192,9 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
       </a>
 
       <article className="request-detail panel">
+        {imageUrl ? (
+          <img className="request-detail__image" src={imageUrl} alt="Request image" />
+        ) : null}
         <div className="request-card__topline">
           <span className="request-chip">
             {item.taxonomy?.need.label ?? titleCase(item.category)}
