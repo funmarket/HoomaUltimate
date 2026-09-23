@@ -259,7 +259,6 @@ test("a manager sees player responses, can accept, fulfil, and never fakes succe
   }
 });
 
-
 test("Request detail resolves public image delivery only when media exists", async () => {
   const page = await renderDetail({
     me: null,
@@ -303,10 +302,7 @@ test("signed-in Request detail uses the member image delivery path", async () =>
   try {
     await page.waitFor(() => assert.ok(page.view.getByRole("img", { name: /Request image/i })));
     assert.ok(page.calls.includes("GET /api/v1/requests/request-1/image/delivery"));
-    assert.equal(
-      page.calls.includes("GET /api/public/v1/requests/request-1/image/delivery"),
-      false,
-    );
+    assert.equal(page.calls.includes("GET /api/public/v1/requests/request-1/image/delivery"), false);
   } finally {
     page.close();
   }
