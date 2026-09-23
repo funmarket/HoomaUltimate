@@ -131,10 +131,7 @@ function installApiStub(options: { readonly me?: unknown; readonly mediaStatus?:
   };
 }
 
-async function renderCreatePage(options: {
-  readonly me?: unknown;
-  readonly mediaStatus?: number;
-}) {
+async function renderCreatePage(options: { readonly me?: unknown; readonly mediaStatus?: number }) {
   const dom = installDom();
   const apiStub = installApiStub(options);
   const React = await import("react");
