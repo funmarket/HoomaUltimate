@@ -33,8 +33,15 @@ Contaminated Hermes checkpoint/salvage PRs `#349` and `#350` are reference-only 
   - focused contract/service/component/integration coverage is included
   - exact-head CI run `#2319` (`35809647452`) passed formatting, lint, typecheck, package build, unit tests, app build, integration tests, deploy preflight, security check and migration status
   - PR `#351` remains draft/unmerged; this entry records in-flight proof, not merged foundation completion
-- [IN FLIGHT] Clean Slice 3A — governed sport taxonomy expansion: add Other/manual Need to every existing SPORT Request branch and add the explicitly locked Football Community Role Needs without granting new Play/Athletes/Donations eligibility.
-- [NOT VERIFIED] Remaining Requests program — remaining sport-specific taxonomy labels/mappings not yet canonically specified, Request media, premium Request card/requester presentation, Play reconciliation, Athletes projection, canonical Whistle integration decision, final cleanup/provenance/final exact-head verification.
+- [PASS] Clean Slice 3A — governed sport taxonomy expansion
+  - exact verified head: `c559bfa6574ab516b2abb60b30fbd63e0a547593`
+  - adds an explicit Other/manual Need with `allowsCustomText = true` to every existing SPORT Request taxonomy branch
+  - adds the locked Football Community Role Needs Player, Assistant Coach, Training Session, Training Group and Training Partner alongside the existing Goalkeeper, Coach and Referee
+  - new expansion Needs remain Requests-surface only; no new Play/Athletes/Donations eligibility is granted by this slice
+  - exact-head CI run `#2322` (`35811297127`) passed database generation/validation/migration deploy, architecture check, formatting, lint, typecheck, package build, unit tests, app build, integration tests, deploy preflight, security check and migration status
+  - PR `#351` remains draft/unmerged; this entry records in-flight proof, not merged foundation completion
+- [IN FLIGHT] Clean Slice 4 — Request media: optional device upload or http/https image URL, one normalized Request image capability, existing object storage/signed delivery, actual image validation, replacement/deletion ownership, no Request-specific storage architecture.
+- [NOT VERIFIED] Remaining Requests program — remaining sport-specific taxonomy labels/mappings not yet canonically specified, premium Request card/requester presentation, Play reconciliation, Athletes projection, canonical Whistle integration decision, final cleanup/provenance/final exact-head verification.
 
 ## Athletes hardening sequence
 
