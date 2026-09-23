@@ -35,6 +35,16 @@ const sportLabels: Record<AthletesSport, string> = {
   OTHER: "Other",
 };
 
+function serializePresentation(presentation: UserPresentationSummary | null) {
+  return presentation
+    ? {
+        displayName: presentation.displayName,
+        username: presentation.username,
+        photoUrl: presentation.photoUrl,
+      }
+    : null;
+}
+
 function serialize(
   record: HelpRequestRecord,
   requester: UserPresentationSummary | null = null,
@@ -43,13 +53,7 @@ function serialize(
   void fullAddress;
   return {
     ...rest,
-    requester: requester
-      ? {
-          displayName: requester.displayName,
-          username: requester.username,
-          photoUrl: requester.photoUrl,
-        }
-      : null,
+    requester: serializePresentation(requester),
     image: image
       ? {
           ...image,
@@ -75,9 +79,13 @@ function serialize(
   };
 }
 
-function serializeResponse(record: HelpRequestResponseRecord): HelpRequestResponse {
+function serializeResponse(
+  record: HelpRequestResponseRecord,
+  responder: UserPresentationSummary | null = null,
+): HelpRequestResponse {
   return {
     ...record,
+    responder: serializePresentation(responder),
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
     acceptedAt: record.acceptedAt?.toISOString() ?? null,
@@ -94,13 +102,13 @@ export class RequestService {
     private readonly userPresentations?: UserPresentationReader,
   ) {}
 
-  private async requesterMap(
-    records: readonly HelpRequestRecord[],
+  private async presentationMap(
+    userIds: readonly string[],
   ): Promise<ReadonlyMap<string, UserPresentationSummary>> {
-    if (!this.userPresentations || !records.length) return new Map();
+    if (!this.userPresentations || !userIds.length) return new Map();
 
-    const userIds = [...new Set(records.map((record) => record.createdByUserId))];
-    const summaries = await this.userPresentations.findByUserIds(userIds);
+    const uniqueUserIds = [...new Set(userIds)];
+    const summaries = await this.userPresentations.findByUserIds(uniqueUserIds);
     return new Map(summaries.map((summary) => [summary.userId, summary]));
   }
 
@@ -108,7 +116,9 @@ export class RequestService {
     readonly items: readonly HelpRequestRecord[];
     readonly nextCursor: string | null;
   }): Promise<HelpRequestList> {
-    const requesters = await this.requesterMap(page.items);
+    const requesters = await this.presentationMap(
+      page.items.map((record) => record.createdByUserId),
+    );
     return {
       items: page.items.map((record) =>
         serialize(record, requesters.get(record.createdByUserId) ?? null),
@@ -118,8 +128,26 @@ export class RequestService {
   }
 
   private async serializeOne(record: HelpRequestRecord): Promise<HelpRequest> {
-    const requesters = await this.requesterMap([record]);
+    const requesters = await this.presentationMap([record.createdByUserId]);
     return serialize(record, requesters.get(record.createdByUserId) ?? null);
+  }
+
+  private async serializeResponses(
+    records: readonly HelpRequestResponseRecord[],
+  ): Promise<HelpRequestResponse[]> {
+    const responders = await this.presentationMap(
+      records.map((record) => record.responderUserId),
+    );
+    return records.map((record) =>
+      serializeResponse(record, responders.get(record.responderUserId) ?? null),
+    );
+  }
+
+  private async serializeResponseOne(
+    record: HelpRequestResponseRecord,
+  ): Promise<HelpRequestResponse> {
+    const responders = await this.presentationMap([record.responderUserId]);
+    return serializeResponse(record, responders.get(record.responderUserId) ?? null);
   }
 
   async create(userId: string, input: HelpRequestCreateInput): Promise<HelpRequest> {
@@ -230,18 +258,18 @@ export class RequestService {
     if (!created) {
       throw new RequestError("REQUEST_RESPONSE_ALREADY_EXISTS", "Response already exists");
     }
-    return serializeResponse(created);
+    return this.serializeResponseOne(created);
   }
 
   async listResponses(userId: string, requestId: string): Promise<HelpRequestResponseList> {
     const request = await this.repository.getById(requestId);
     if (!request) throw new RequestError("REQUEST_NOT_FOUND", "Request not found");
     if (await canManageRequest(this.visibility, userId, request)) {
-      return { items: (await this.repository.listResponses(requestId)).map(serializeResponse) };
+      return { items: await this.serializeResponses(await this.repository.listResponses(requestId)) };
     }
     const own = await this.repository.getResponseByResponder(requestId, userId);
     if (!own) throw new RequestError("REQUEST_NOT_FOUND", "Request not found");
-    return { items: [serializeResponse(own)] };
+    return { items: [await this.serializeResponseOne(own)] };
   }
 
   async acceptResponse(
@@ -255,7 +283,7 @@ export class RequestService {
     if (!response) {
       throw new RequestError("REQUEST_RESPONSE_NOT_PENDING", "Response is not pending");
     }
-    return serializeResponse(response);
+    return this.serializeResponseOne(response);
   }
 
   async declineResponse(
@@ -285,7 +313,7 @@ export class RequestService {
     if (!withdrawn) {
       throw new RequestError("REQUEST_RESPONSE_NOT_WITHDRAWABLE", "Response cannot be withdrawn");
     }
-    return serializeResponse(withdrawn);
+    return this.serializeResponseOne(withdrawn);
   }
 
   async fulfill(userId: string, requestId: string): Promise<HelpRequest> {

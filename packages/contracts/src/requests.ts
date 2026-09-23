@@ -200,6 +200,12 @@ export const helpRequestListQuerySchema = z.object({
   status: helpRequestStatusSchema.optional(),
 });
 
+const helpRequestUserPresentationSchema = z.object({
+  displayName: z.string(),
+  username: z.string(),
+  photoUrl: z.string().nullable(),
+});
+
 export const helpRequestSchema = z.object({
   id: idSchema,
   createdByUserId: idSchema,
@@ -216,14 +222,7 @@ export const helpRequestSchema = z.object({
   subcategoryId: idSchema.nullable().optional(),
   needId: idSchema.nullable().optional(),
   customNeed: z.string().nullable().optional(),
-  requester: z
-    .object({
-      displayName: z.string(),
-      username: z.string(),
-      photoUrl: z.string().nullable(),
-    })
-    .nullable()
-    .optional(),
+  requester: helpRequestUserPresentationSchema.nullable().optional(),
   taxonomy: z
     .object({
       requestType: helpRequestTypeSchema,
@@ -267,6 +266,7 @@ export const helpRequestResponseSchema = z.object({
   id: idSchema,
   requestId: idSchema,
   responderUserId: idSchema,
+  responder: helpRequestUserPresentationSchema.nullable().optional(),
   message: z.string().min(1),
   status: helpRequestResponseStatusSchema,
   createdAt: z.string().datetime(),

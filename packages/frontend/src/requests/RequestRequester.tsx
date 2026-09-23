@@ -2,28 +2,39 @@ import type { HelpRequest } from "@hooma/contracts/requests";
 
 type RequesterPresentation = NonNullable<HelpRequest["requester"]>;
 
-export function RequestRequester({
-  requester,
+export function RequestProfileLink({
+  presentation,
 }: {
-  readonly requester: RequesterPresentation | null | undefined;
+  readonly presentation: RequesterPresentation | null | undefined;
 }) {
-  if (!requester) return null;
+  if (!presentation) return null;
 
-  const initial = requester.displayName.trim().charAt(0).toUpperCase() || "H";
+  const initial = presentation.displayName.trim().charAt(0).toUpperCase() || "H";
 
   return (
-    <a className="request-requester" href={`/profile/${encodeURIComponent(requester.username)}`}>
+    <a
+      className="request-requester"
+      href={`/profile/${encodeURIComponent(presentation.username)}`}
+    >
       <span className="request-requester__avatar" aria-hidden="true">
-        {requester.photoUrl ? (
-          <img src={requester.photoUrl} alt="" loading="lazy" />
+        {presentation.photoUrl ? (
+          <img src={presentation.photoUrl} alt="" loading="lazy" />
         ) : (
           <span>{initial}</span>
         )}
       </span>
       <span className="request-requester__copy">
-        <strong>{requester.displayName}</strong>
-        <span>@{requester.username}</span>
+        <strong>{presentation.displayName}</strong>
+        <span>@{presentation.username}</span>
       </span>
     </a>
   );
+}
+
+export function RequestRequester({
+  requester,
+}: {
+  readonly requester: RequesterPresentation | null | undefined;
+}) {
+  return <RequestProfileLink presentation={requester} />;
 }
