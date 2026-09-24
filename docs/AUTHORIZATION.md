@@ -198,13 +198,49 @@ Exact meeting/live-location information is available only to explicitly authoriz
 
 Live tracking defaults OFF.
 
+## 14A. HOOMA Help authorization
+
+Requests, FundMe and Donations share presentation and selected access primitives but retain independent business authorization.
+
+### Shared publisher/audience facts
+
+Help-domain services may depend on a narrow shared access reader for live canonical facts such as:
+
+- HOOMA Community role/membership;
+- Team responsibility;
+- Athletes Community role/membership.
+
+Do not cache a generic `ownerType/ownerId` authority snapshot inside Help business records. Current authority is derived from owning domains at action time.
+
+Current Request publisher management continues to derive from canonical source roles, including HOOMA Community Founder/Coach, Team Coach, and Athletes Community Founder/Moderator where the Request policy grants management. Personal publication is managed by the canonical creator.
+
+Audience values remain server-authoritative. Public list/detail projections must never reveal private Community/Athletes records to unauthorized viewers.
+
+### Requests
+
+- requester/managers may perform only the transitions authorized by RequestService;
+- response messages are private coordination visible only to the responder and authorized Request manager;
+- accepting/declining/withdrawing/fulfilling/cancelling is server-authorized and conditionally persisted;
+- public/member DTOs must not expose Request `fullAddress` under the current policy.
+
+### FundMe / Fundraising
+
+- campaign creation/management uses the same live publisher-context facts through Fundraising policy, not RequestRepository;
+- contribution confirmation/decline/void is manager-authorized and auditable;
+- supporter public anonymity never removes the canonical internal actor where Identity is required for authorization/audit;
+- Crypto fields contain public receiving destinations only; private keys, seed phrases and wallet passwords are forbidden.
+
+### Donations
+
+- donor/authorized publisher manager owns offer lifecycle and claim accept/decline actions;
+- claimant owns their own pending/accepted withdrawal where policy permits;
+- donor cannot claim their own offer;
+- exact pickup/full-address data is backend-protected and available only to the donor/manager and accepted claimant where required;
+- claim acceptance must recheck quantity availability transactionally; UI-visible availability is never authority.
+
+Financial contribution belongs to FundMe and does not grant Donation-manager authority. Donation claims do not create a generic direct-message entitlement.
+
 ## 14. Payment authorization
-
-Payment mutation/read/refund permissions must preserve Source A's mature ownership/provider/admin boundaries.
-
-Provider webhook endpoints authenticate provider authenticity/idempotency, not end-user sessions.
-
-Stars refunds and sensitive settlement actions require explicit policy checks and audit/operational evidence where appropriate.
 
 ## 15. Authorization implementation pattern
 
