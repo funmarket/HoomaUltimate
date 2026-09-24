@@ -2,48 +2,58 @@
 
 This file is a non-authoritative execution and verification log. Product behavior and architecture truth remain in `requirements.md`, `structure.md`, `docs/CANONICAL_MODEL.md`, `docs/DECISIONS.md`, and the applicable ADRs.
 
-## Requests clean recovery
+## Requests / Help current program
 
 Target base: `phase-0-foundation`
 
-Clean branch: `feat/requests-clean-completion`
+Clean Requests branch: `feat/requests-clean-completion`
 
 Draft pull request: `#351`
 
-Contaminated Hermes checkpoint/salvage PRs `#349` and `#350` are reference-only and are not implementation ancestry for the clean branch.
+Contaminated Hermes checkpoint/salvage PRs `#349` and `#350` remain reference-only and are not implementation ancestry. PR `#347` remains a separate Play -> Requests reference branch and must not be merged/cherry-picked wholesale over the clean Requests branch.
 
-- [PASS] Clean Slice 1 — Request Type / Community taxonomy foundation and database integrity
-  - foundation base: `eda53dda71c5ae6d6a4f52d72151bd10edfeb9fd`
-  - exact verified head: `cfe56f4cd0eb77db84f50c6a997532d279efbd7b`
-  - introduces canonical `SPORT | COMMUNITY` Request Type on the clean branch
-  - keeps `AthletesSport` as the only Sport authority
-  - adds Community taxonomy independent of Sport
-  - keeps legacy classification fields transitional and leaves ambiguous legacy-only rows untouched
-  - requires custom Need text when the selected Need allows custom text
-  - restores database-level SPORT sport/subcategory integrity with a forward migration
-  - repairs inherited Requests component/integration tests from merged PR `#346` without weakening production behavior
-  - exact-head CI run `#2311` (`35805103611`) passed the complete repository verification ladder
-  - PR `#351` remains draft/unmerged; this entry records in-flight proof, not merged foundation completion
-- [PASS] Clean Slice 2 — progressive SPORT/COMMUNITY create and filters plus private `fullAddress` persistence
-  - exact verified head: `486deb4b851ea0f2739f040907da5fb0b5769e6c`
-  - create flow branches from Request Type into SPORT or COMMUNITY without duplicating the Request domain
-  - standalone Requests filters forward canonical `requestType`, sport/category/Need, city and Houma through the existing list query
-  - Community creation and filtering do not require or synthesize Sport
-  - optional `fullAddress` persists privately and is intentionally omitted from current public/member Request read DTOs
-  - focused contract/service/component/integration coverage is included
-  - exact-head CI run `#2319` (`35809647452`) passed formatting, lint, typecheck, package build, unit tests, app build, integration tests, deploy preflight, security check and migration status
-  - PR `#351` remains draft/unmerged; this entry records in-flight proof, not merged foundation completion
-- [PASS] Clean Slice 3A — governed sport taxonomy expansion
-  - exact verified head: `c559bfa6574ab516b2abb60b30fbd63e0a547593`
-  - adds an explicit Other/manual Need with `allowsCustomText = true` to every existing SPORT Request taxonomy branch
-  - adds the locked Football Community Role Needs Player, Assistant Coach, Training Session, Training Group and Training Partner alongside the existing Goalkeeper, Coach and Referee
-  - new expansion Needs remain Requests-surface only; no new Play/Athletes/Donations eligibility is granted by this slice
-  - exact-head CI run `#2322` (`35811297127`) passed database generation/validation/migration deploy, architecture check, formatting, lint, typecheck, package build, unit tests, app build, integration tests, deploy preflight, security check and migration status
-  - PR `#351` remains draft/unmerged; this entry records in-flight proof, not merged foundation completion
-- [IN FLIGHT] Clean Slice 4 — Request media: optional device upload or http/https image URL, one normalized Request image capability, existing object storage/signed delivery, actual image validation, replacement/deletion ownership, no Request-specific storage architecture.
-- [NOT VERIFIED] Remaining Requests program — remaining sport-specific taxonomy labels/mappings not yet canonically specified, premium Request card/requester presentation, Play reconciliation, Athletes projection, canonical Whistle integration decision, final cleanup/provenance/final exact-head verification.
+### Verified clean Requests evidence
 
-## Athletes hardening sequence
+- [PASS] Clean Slice 1 — canonical `SPORT | COMMUNITY` Request root, Community taxonomy, and database integrity.
+- [PASS] Clean Slice 2 — progressive root-aware create/filters plus private persisted `fullAddress`, intentionally omitted from current Request read DTOs.
+- [PASS] Clean Slice 3A — governed SPORT taxonomy expansion and explicit Other/manual Needs.
+- [PASS] Clean Slice 4 — Request media and requester/lifecycle continuation through application baseline `9f558264cf2125f178a0cdc5625c623a871f263a`.
+  - one optional Request image with upload or validated external URL;
+  - Request-owned image metadata with shared object storage and signed delivery;
+  - actual-byte image validation/normalization and Worker/outbox cleanup;
+  - requester presentation and current Request response/detail integration;
+  - exact-head CI run `#2361` (`35992814011`) passed on `9f558264cf2125f178a0cdc5625c623a871f263a`.
+
+That SHA is the last verified application-code baseline before the 2026-09-24 documentation reconciliation. Documentation commits after it do not turn draft PR `#351` into merged foundation truth and require their own exact-head CI before merge.
+
+### Authorized next sequence
+
+The product owner has replaced the older placeholder-only FundMe/Donations assumption with the ordered Help program governed by ADR-060 and `docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md`:
+
+```text
+H0 shared Help access extraction
+R1 Requests server-side search
+R2 Requests Sport | Community + quick taxonomy + advanced filters
+R3 readable Request cards + feed media + accessible expansion
+R4 Request create-flow redesign without changing canonical ownership
+R5 Request detail/response/lifecycle UI completion
+R6 Play -> Requests projection
+R7 Athletes -> Requests projection
+R8 Requests browser/mobile/final gate
+then FundMe
+then Donations
+then visibility-aware Help overview
+```
+
+FundMe target is now a real Fundraising-owned domain using **Cash and Crypto only** for its initial contribution coordination. No credit/debit-card or Telegram-Stars checkout is part of this FundMe program.
+
+Donations target is now a real Donations-owned reverse-Requests physical-item domain with `Sport | Community`, real search/filter discovery, private claim coordination, concurrency-safe quantities, backend-protected pickup data and up to four images. Financial donations remain FundMe; a generic service marketplace is not part of the Donation slice.
+
+- [NOT STARTED] H0 and R1-R8 have not been implemented by this documentation task.
+- [NOT STARTED] Durable Fundraising/FundMe persistence/API/frontend has not been implemented by this documentation task.
+- [NOT STARTED] Durable Donations persistence/API/frontend has not been implemented by this documentation task.
+
+## Athletes hardening sequence## Athletes hardening sequence
 
 Target base: `phase-0-foundation`
 
