@@ -135,9 +135,7 @@ export class RequestService {
   private async serializeResponses(
     records: readonly HelpRequestResponseRecord[],
   ): Promise<HelpRequestResponse[]> {
-    const responders = await this.presentationMap(
-      records.map((record) => record.responderUserId),
-    );
+    const responders = await this.presentationMap(records.map((record) => record.responderUserId));
     return records.map((record) =>
       serializeResponse(record, responders.get(record.responderUserId) ?? null),
     );
