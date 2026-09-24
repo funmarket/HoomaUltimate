@@ -1202,62 +1202,119 @@ Ride waypoints are ordered `RideOfferWaypoint` records with optional canonical P
 
 Ride vehicle-photo bytes belong in object storage. `RideOfferVehiclePhoto` is a single-purpose Ride-owned metadata record for the managed object key, content type, size and lifecycle fields until a separately authorized generic Media domain exists. PostgreSQL must not store photo bytes, base64 payloads, storage credentials or polymorphic generic media ownership for this slice.
 
-Requests owns one canonical HelpRequest domain. The current clean correction is in-flight on draft PR `#351`; the model below describes that in-flight branch and must not be treated as merged `phase-0-foundation` truth until the PR is authorized and merged.
+Requests owns one canonical `HelpRequest` domain. The current clean correction/completion remains in-flight on draft PR `#351`; the model below describes that in-flight branch and must not be treated as merged `phase-0-foundation` truth until the PR is authorized and merged.
 
 ```text
 HelpRequest
-  legacy compatibility: category, itemKind
-  requestType          SPORT | COMMUNITY
-  sport?               canonical AthletesSport; required only for SPORT corrected taxonomy
+  createdByUserId
+  publisherCommunityId?
+  publisherTeamId?
+  publisherAthletesCommunityId?
+  audienceScope                 PUBLIC | HOOMA_COMMUNITY | ATHLETES_COMMUNITY
+  audienceCommunityId?
+  audienceAthletesCommunityId?
+  legacy compatibility          category, itemKind
+  requestType?                  SPORT | COMMUNITY
+  sport?                        canonical AthletesSport; SPORT corrected taxonomy only
   subcategoryId?
   needId?
   customNeed?
-  fullAddress?         precise write/persistence data; not exposed by current Request read DTO
   title
   description
-  audience / publisher
-  lifecycle / response fields
+  quantityNeeded?
+  sizeLabel?
+  conditionPreference?          ANY | NEW_ONLY | USED_OK
+  placeId?
+  city?
+  houma?
+  fullAddress?                  private write/persistence data
+  locationNote?
+  neededByAt?
+  expiresAt?
+  status                        OPEN | IN_PROGRESS | FULFILLED | CANCELLED | EXPIRED
+  fulfilledAt?
+  cancelledAt?
+  image?                        one HelpRequestImage
+  createdAt
+  updatedAt
+
+HelpRequestResponse
+  requestId
+  responderUserId
+  message
+  status                        PENDING | ACCEPTED | DECLINED | WITHDRAWN
+  acceptedAt?
+  declinedAt?
+  withdrawnAt?
+  createdAt
+  updatedAt
+  UNIQUE(requestId, responderUserId)
+
+HelpRequestImage
+  requestId                     UNIQUE
+  source                        UPLOAD | EXTERNAL_URL
+  objectKey?
+  externalUrl?
+  contentType?
+  sizeBytes?
+  createdAt
+  updatedAt
 ```
 
-`HelpTaxonomySubcategory` belongs to exactly one Request root. SPORT subcategories carry canonical `AthletesSport`; COMMUNITY subcategories carry no Sport. A corrected HelpRequest taxonomy selection requires a matching Request Type/subcategory and matching Need/subcategory relationship. SPORT additionally requires the request Sport to match the selected SPORT subcategory at the database boundary. COMMUNITY corrected taxonomy must remain valid with `sport == null`.
+`HelpTaxonomySubcategory` belongs to exactly one Request root. SPORT subcategories carry canonical `AthletesSport`; COMMUNITY subcategories carry no Sport. Corrected selections require matching Request Type/subcategory and Need/subcategory relationships; SPORT additionally requires the Request sport to match the selected SPORT subcategory at the database boundary.
 
 Current Community categories in the clean branch include Lost & Found, Questions & Advice, Personal & People Needs, Local Help & Services, Community Activities, Borrow & Share, Information & Notice, and Other. Custom Need text is stored on the HelpRequest only when the selected Need allows it; user text never creates a new global taxonomy row.
 
-SPORT taxonomy stays under canonical `AthletesSport`. Every SPORT subcategory exposed on the Requests surface carries an `Other` Need with `allowsCustomText = true`. The first governed sport-specific expansion adds Football Community Role Needs for Player, Assistant Coach, Training Session, Training Group and Training Partner alongside the already-seeded Goalkeeper, Referee and Coach. These new expansion rows are Requests-surface eligible only until another projection explicitly authorizes them.
+`fullAddress` is optional precise location owned by HelpRequest persistence and remains omitted from current public/member Request DTOs. City and Houma are the privacy-safe location projection until an explicit precise-location viewer policy is authorized.
 
-The current create/discovery path is progressive: Request Type -> Sport only for SPORT -> Category -> Specific Need. The same `requestType` is forwarded through the canonical Requests list query before pagination.
+Request coordination is private `HelpRequestResponse` state, not a public comment thread. Accepting a response moves an OPEN Request to `IN_PROGRESS`; fulfillment/cancellation remain Request-owned service transitions. Requester/responder display data comes from canonical Identity presentation readers rather than copied profile columns.
 
-`fullAddress` is optional precise location input owned by HelpRequest persistence. Current public/member HelpRequest read DTOs deliberately omit it; city and Houma remain the privacy-safe location projection until a later explicit policy defines who may read precise addresses.
+Current Request media is one optional Request-owned metadata record. Uploaded bytes live in shared object storage; external URLs remain explicitly validated Request media input. Media delivery remains authorization-aware and cleanup uses the existing Worker/outbox pattern.
 
-Legacy `category`/`itemKind` compatibility remains transitional. Ambiguous retained production rows are not backfilled by guessing from title or description, and legacy fields are not removed until production mapping is proven safe.
-
-Future quantity-based claim work remains Requests-owned. More than one active claimer may exist while unclaimed quantity remains, and persistence must prevent accepted/active claim quantities from exceeding the requested quantity. Quantity-one requests behave as single-claim requests through the same rule, not through a second exclusive-only model.
-
-Requests does not own Ride, Fundraising, Payment or generic action state. FundMe remains grouped under Requests in navigation, but durable Fundraising and Payments state stays separately governed.
+Requests does not own Ride, Fundraising, Donations, Payments or generic action state. FundMe and Donations remain Help navigation siblings but their durable state is owned independently.
 
 ---
 
-# 22. Frozen future concepts
+# 22. Authorized next Help domains (not current persistence)
 
-The normalized initial schema must not add durable product tables for these until their vertical slice begins:
+ADR-060 authorizes the ordered Help implementation program after Requests completion:
 
 ```text
-Place/Watch capability work outside the already-implemented Pitch model
-ULTRAS
-FundMe
-Payments
-MediaAsset beyond any truly required current foundation
-Replay
-HOOMA NOW read models
+Fundraising
+  Fundraiser
+  FundraiserContribution
+  FundraiserBudgetItem
+  FundraiserUpdate
+  FundraiserMedia
+  FundraiserCryptoDestination
+
+Donations
+  DonationOffer
+  DonationClaim
+  DonationImage (plural, up to four per offer by service policy)
 ```
 
-Whistle is explicitly unfrozen by ADR-039/ADR-040. Gamers is explicitly unfrozen by ADR-041. Pitch is explicitly implemented under ADR-042 and is therefore no longer in this list. Ride and Requests are explicitly unfrozen by ADR-050 and are therefore no longer in this frozen list.
+These names describe authorized target ownership only. They are **not current schema truth** until the corresponding slice adds contracts, migrations, repositories, services and verification. Do not pre-create speculative tables ahead of the ordered slices.
 
-Foundation interfaces/packages may exist, but a speculative schema is not implementation.
+FundMe support methods in this program are Cash and Crypto only. Cash/Crypto contribution records are Fundraising-owned coordination/accounting state; only confirmed contributions affect campaign progress. No credit/debit-card or Telegram-Stars flow is implied by this authorization.
+
+Donations is a physical-item-giving domain, not a financial or service marketplace. Sport and Community donation discovery reuse governed product taxonomy without creating a duplicate sports/category universe. Exact pickup data remains backend-protected.
+
+Other still-future concepts remain frozen until their own explicit slice begins:
+
+```text
+Place/Watch capability work outside already-implemented Place/Pitch/Watch ownership
+ULTRAS
+generic MediaAsset beyond current domain-owned media metadata
+Replay
+additional HOOMA NOW read models outside already authorized projections
+```
+
+Whistle, Gamers, Pitch, Ride, Requests, FundMe/Fundraising and Donations follow their explicit current decisions/programs rather than this frozen list.
 
 ---
 
-# 23. Migration requirement
+# 23. Migration requirement# 23. Migration requirement
 
 Before first HOOMA ULTIMATE release, all pre-release current migrations are replaced with one reviewed initial migration generated from the reconciled schema and augmented with intentional PostgreSQL constraints where required.
 
