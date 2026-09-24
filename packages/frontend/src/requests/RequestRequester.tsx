@@ -12,10 +12,7 @@ export function RequestProfileLink({
   const initial = presentation.displayName.trim().charAt(0).toUpperCase() || "H";
 
   return (
-    <a
-      className="request-requester"
-      href={`/profile/${encodeURIComponent(presentation.username)}`}
-    >
+    <a className="request-requester" href={`/profile/${encodeURIComponent(presentation.username)}`}>
       <span className="request-requester__avatar" aria-hidden="true">
         {presentation.photoUrl ? (
           <img src={presentation.photoUrl} alt="" loading="lazy" />

@@ -265,7 +265,9 @@ export class RequestService {
     const request = await this.repository.getById(requestId);
     if (!request) throw new RequestError("REQUEST_NOT_FOUND", "Request not found");
     if (await canManageRequest(this.visibility, userId, request)) {
-      return { items: await this.serializeResponses(await this.repository.listResponses(requestId)) };
+      return {
+        items: await this.serializeResponses(await this.repository.listResponses(requestId)),
+      };
     }
     const own = await this.repository.getResponseByResponder(requestId, userId);
     if (!own) throw new RequestError("REQUEST_NOT_FOUND", "Request not found");
