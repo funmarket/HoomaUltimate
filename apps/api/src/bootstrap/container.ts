@@ -53,6 +53,7 @@ import { PlayService } from "../modules/play/application/play.service.js";
 import { PrismaPlayPlayerListingRepository } from "../modules/play/infrastructure/prisma-play.repository.js";
 import { RequestMediaService } from "../modules/requests/application/request-media.service.js";
 import { RequestService } from "../modules/requests/application/request.service.js";
+import { PrismaHelpAccessReader } from "../modules/help/infrastructure/prisma-help-access.reader.js";
 import { PrismaRequestImageRepository } from "../modules/requests/infrastructure/prisma-request-image.repository.js";
 import { PrismaRequestRepository } from "../modules/requests/infrastructure/prisma-request.repository.js";
 import { SharpRequestImageProcessor } from "../modules/requests/infrastructure/sharp-request-image-processor.js";
@@ -241,17 +242,18 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
   const playRepository = new PrismaPlayPlayerListingRepository(database);
   const playService = new PlayService(playRepository, teamService, eventService);
   const requestRepository = new PrismaRequestRepository(database);
+  const helpAccessReader = new PrismaHelpAccessReader(database);
   const requestImageRepository = new PrismaRequestImageRepository(database);
   const helpTaxonomyRepository = new PrismaHelpTaxonomyRepository(database);
   const requestService = new RequestService(
     requestRepository,
-    requestRepository,
+    helpAccessReader,
     helpTaxonomyRepository,
     userPresentationReader,
   );
   const requestMediaService = new RequestMediaService(
     requestRepository,
-    requestRepository,
+    helpAccessReader,
     requestImageRepository,
     storage,
     new SharpRequestImageProcessor(),

@@ -10,6 +10,7 @@ import type {
 import type { AthletesSport } from "@hooma/contracts/athletes";
 import type { HelpCategory } from "@hooma/contracts/help";
 import type { HelpTaxonomySelectionReader } from "../../help-taxonomy/application/help-taxonomy.repository.js";
+import type { HelpAccessReader } from "../../help/application/help-access.reader.js";
 import type {
   UserPresentationReader,
   UserPresentationSummary,
@@ -20,7 +21,6 @@ import type {
   HelpRequestRecord,
   HelpRequestResponseRecord,
   RequestRepository,
-  RequestVisibilityReader,
 } from "./request.repository.js";
 
 const sportLabels: Record<AthletesSport, string> = {
@@ -97,7 +97,7 @@ function serializeResponse(
 export class RequestService {
   constructor(
     private readonly repository: RequestRepository,
-    private readonly visibility: RequestVisibilityReader,
+    private readonly visibility: HelpAccessReader,
     private readonly taxonomy?: HelpTaxonomySelectionReader,
     private readonly userPresentations?: UserPresentationReader,
   ) {}

@@ -4,8 +4,8 @@ import type {
   HelpRequestCreatePersistenceInput,
   HelpRequestRecord,
   RequestRepository,
-  RequestVisibilityReader,
 } from "../apps/api/src/modules/requests/application/request.repository.js";
+import type { HelpAccessReader } from "../apps/api/src/modules/help/application/help-access.reader.js";
 import { RequestService } from "../apps/api/src/modules/requests/application/request.service.js";
 import { RequestError } from "../apps/api/src/modules/requests/domain/request-error.js";
 
@@ -121,7 +121,7 @@ function repository(
   };
 }
 
-function visibility(): RequestVisibilityReader {
+function visibility(): HelpAccessReader {
   return {
     async communityRole() {
       return null;

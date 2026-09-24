@@ -9,8 +9,8 @@ import { RequestMediaService } from "../apps/api/src/modules/requests/applicatio
 import type {
   HelpRequestRecord,
   RequestRepository,
-  RequestVisibilityReader,
 } from "../apps/api/src/modules/requests/application/request.repository.js";
+import type { HelpAccessReader } from "../apps/api/src/modules/help/application/help-access.reader.js";
 import { RequestError } from "../apps/api/src/modules/requests/domain/request-error.js";
 
 const now = new Date("2026-09-23T12:00:00.000Z");
@@ -87,7 +87,7 @@ function requestRepository(record = requestRecord()): RequestRepository {
   };
 }
 
-function visibility(): RequestVisibilityReader {
+function visibility(): HelpAccessReader {
   return {
     communityRole: async () => null,
     teamResponsibility: async () => null,

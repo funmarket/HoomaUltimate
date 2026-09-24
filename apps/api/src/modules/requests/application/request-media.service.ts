@@ -10,10 +10,11 @@ import {
 } from "@hooma/contracts/requests";
 import type { ObjectStorage, ObjectStorageReadUrlSigner } from "@hooma/storage";
 import { RequestError } from "../domain/request-error.js";
+import type { HelpAccessReader } from "../../help/application/help-access.reader.js";
 import { requireManageRequest } from "./request-authorization.js";
 import type { RequestImageProcessor } from "./request-image-processor.js";
 import type { HelpRequestImageRecord, RequestImageRepository } from "./request-image.repository.js";
-import type { RequestRepository, RequestVisibilityReader } from "./request.repository.js";
+import type { RequestRepository } from "./request.repository.js";
 
 const REQUEST_IMAGE_READ_URL_TTL_SECONDS = 5 * 60;
 const REQUEST_IMAGE_TYPES = new Set<string>(REQUEST_IMAGE_CONTENT_TYPES);
@@ -26,7 +27,7 @@ export interface RequestImageUploadInput {
 export class RequestMediaService {
   constructor(
     private readonly requests: RequestRepository,
-    private readonly visibility: RequestVisibilityReader,
+    private readonly visibility: HelpAccessReader,
     private readonly images: RequestImageRepository,
     private readonly storage: ObjectStorage | null,
     private readonly processor: RequestImageProcessor,

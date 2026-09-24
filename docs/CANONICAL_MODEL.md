@@ -1204,6 +1204,8 @@ Ride vehicle-photo bytes belong in object storage. `RideOfferVehiclePhoto` is a 
 
 Requests owns one canonical HelpRequest domain. The current clean correction is in-flight on draft PR `#351`; the model below describes that in-flight branch and must not be treated as merged `phase-0-foundation` truth until the PR is authorized and merged.
 
+Publisher and audience authority for the in-flight HelpRequest branch is read through the narrow shared `HelpAccessReader`. Requests still owns HelpRequest behavior, persistence, lifecycle and response policy; the shared reader only centralizes Community, Team and Athletes access facts needed by Requests now and future Help domains later. Requests must not own or copy those access lookups in its repository.
+
 ```text
 HelpRequest
   legacy compatibility: category, itemKind

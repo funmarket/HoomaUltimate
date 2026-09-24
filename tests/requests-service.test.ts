@@ -5,8 +5,8 @@ import type {
   HelpRequestRecord,
   HelpRequestResponseRecord,
   RequestRepository,
-  RequestVisibilityReader,
 } from "../apps/api/src/modules/requests/application/request.repository.js";
+import type { HelpAccessReader } from "../apps/api/src/modules/help/application/help-access.reader.js";
 import type { UserPresentationReader } from "../apps/api/src/modules/identity/application/user-presentation.reader.js";
 import { RequestError } from "../apps/api/src/modules/requests/domain/request-error.js";
 
@@ -116,7 +116,7 @@ function repository(): RequestRepository {
   };
 }
 
-function visibility(overrides: Partial<RequestVisibilityReader> = {}): RequestVisibilityReader {
+function visibility(overrides: Partial<HelpAccessReader> = {}): HelpAccessReader {
   return {
     async communityRole() {
       return null;

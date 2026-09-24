@@ -123,17 +123,3 @@ export interface RequestRepository {
   ): Promise<HelpRequestRecord | null>;
   expireDue(now: Date): Promise<number>;
 }
-
-export interface RequestVisibilityReader {
-  communityRole(
-    communityId: string,
-    userId: string,
-  ): Promise<"FOUNDER" | "COACH" | "MEMBER" | null>;
-  teamResponsibility(teamId: string, userId: string): Promise<"COACH" | "ASSISTANT" | null>;
-  athletesRole(
-    athletesCommunityId: string,
-    userId: string,
-  ): Promise<"FOUNDER" | "MODERATOR" | "MEMBER" | null>;
-  isCommunityMember(communityId: string, userId: string): Promise<boolean>;
-  isAthletesMember(athletesCommunityId: string, userId: string): Promise<boolean>;
-}

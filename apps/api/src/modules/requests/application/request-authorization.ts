@@ -1,12 +1,9 @@
 import { RequestError } from "../domain/request-error.js";
-import type {
-  HelpRequestRecord,
-  RequestRepository,
-  RequestVisibilityReader,
-} from "./request.repository.js";
+import type { HelpAccessReader } from "../../help/application/help-access.reader.js";
+import type { HelpRequestRecord, RequestRepository } from "./request.repository.js";
 
 export async function canManageRequest(
-  visibility: RequestVisibilityReader,
+  visibility: HelpAccessReader,
   userId: string,
   request: HelpRequestRecord,
 ): Promise<boolean> {
@@ -26,7 +23,7 @@ export async function canManageRequest(
 
 export async function requireManageRequest(
   repository: RequestRepository,
-  visibility: RequestVisibilityReader,
+  visibility: HelpAccessReader,
   userId: string,
   requestId: string,
 ): Promise<HelpRequestRecord> {
