@@ -102,6 +102,16 @@ function responseRecord(row: HelpRequestResponseRow): HelpRequestResponseRecord 
   return row;
 }
 
+function searchFilter(q: string): Prisma.HelpRequestWhereInput {
+  return {
+    OR: [
+      { title: { contains: q, mode: "insensitive" } },
+      { description: { contains: q, mode: "insensitive" } },
+      { customNeed: { contains: q, mode: "insensitive" } },
+    ],
+  };
+}
+
 function filters(input: HelpRequestListQuery): Prisma.HelpRequestWhereInput {
   return {
     ...(input.category ? { category: input.category } : {}),
@@ -112,6 +122,7 @@ function filters(input: HelpRequestListQuery): Prisma.HelpRequestWhereInput {
     ...(input.surface ? { taxonomyNeed: { surfaces: { some: { surface: input.surface } } } } : {}),
     ...(input.city ? { city: input.city } : {}),
     ...(input.houma ? { houma: input.houma } : {}),
+    ...(input.q ? { AND: [searchFilter(input.q)] } : {}),
   };
 }
 

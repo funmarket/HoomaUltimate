@@ -106,6 +106,13 @@ test("Request list contracts expose only Request projection surfaces and taxonom
   assert.throws(() => helpRequestListQuerySchema.parse({ surface: "DONATIONS" }));
 });
 
+test("Request list search contract trims, normalizes blanks and stays bounded", () => {
+  const parsed = helpRequestListQuerySchema.parse({ q: "  Goalkeeper gloves  " });
+  assert.equal(parsed.q, "Goalkeeper gloves");
+  assert.equal(helpRequestListQuerySchema.parse({ q: "   " }).q, undefined);
+  assert.throws(() => helpRequestListQuerySchema.parse({ q: "a".repeat(121) }));
+});
+
 test("Request read DTO carries resolved taxonomy presentation while retaining legacy fields", () => {
   const parsed = helpRequestSchema.parse({
     id: "request-1",

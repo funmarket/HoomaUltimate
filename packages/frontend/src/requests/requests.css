@@ -235,6 +235,10 @@
   min-width: 0;
 }
 
+.request-field--wide {
+  grid-column: 1 / -1;
+}
+
 .request-field__label,
 .request-form label {
   color: var(--hooma-ui-text);
