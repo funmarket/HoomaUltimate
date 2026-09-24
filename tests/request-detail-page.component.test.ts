@@ -173,10 +173,15 @@ function installApiStub(options: {
         acceptedAt: "2026-09-17T14:00:00.000Z",
       });
     }
-    if (method === "POST") {
+    if (url.pathname === "/api/v1/requests/request-1/fulfill" && method === "POST") {
       if (options.actionStatus && options.actionStatus >= 400)
         return json(options.actionBody, options.actionStatus);
-      return json({ ...(options.request ?? baseRequest), status: "IN_PROGRESS" });
+      return json({ ...(options.request ?? baseRequest), status: "FULFILLED" });
+    }
+    if (url.pathname === "/api/v1/requests/request-1/cancel" && method === "POST") {
+      if (options.actionStatus && options.actionStatus >= 400)
+        return json(options.actionBody, options.actionStatus);
+      return json({ ...(options.request ?? baseRequest), status: "CANCELLED" });
     }
     return json({ error: { code: "NOT_FOUND", message: `Unexpected ${key}` } }, 404);
   }) as typeof fetch;
@@ -194,7 +199,8 @@ async function renderDetail(options: Parameters<typeof installApiStub>[0]) {
   const React = await import("react");
   Object.defineProperty(globalThis, "React", { value: React, writable: true, configurable: true });
   const { cleanup, fireEvent, render, waitFor } = await import("@testing-library/react");
-  const { HoomaFrontendProvider, RequestDetailPage } = await import("@hooma/frontend");
+  const { HoomaFrontendProvider } = await import("../packages/frontend/src/context");
+  const { RequestDetailPage } = await import("../packages/frontend/src/requests/RequestDetailPage");
   const view = render(
     React.createElement(
       HoomaFrontendProvider,
@@ -261,6 +267,8 @@ test("an eligible signed-in member sends one response and may withdraw it", asyn
     });
     page.fireEvent.submit(page.view.getByRole("button", { name: /Send response/i }));
     await page.waitFor(() => assert.ok(page.view.getByText("Your response")));
+    assert.ok(page.view.getByText("Pending"));
+    assert.ok(page.view.container.querySelector("time[datetime='2026-09-17T13:00:00.000Z']"));
     assert.ok(page.calls.includes("POST /api/v1/requests/request-1/responses"));
     assert.ok(page.view.getByRole("button", { name: /Withdraw response/i }));
     assert.equal(page.view.queryByText(/user-1|user-2/), null);
@@ -282,11 +290,16 @@ test("a manager sees responder presentation, can accept, fulfil, and never fakes
     ok.fireEvent.click(ok.view.getByRole("button", { name: /^Accept$/i }));
     await ok.waitFor(() => {
       assert.ok(ok.calls.includes("POST /api/v1/requests/request-1/responses/response-1/accept"));
-      assert.ok(ok.view.getByRole("link", { name: /Bashir/ }));
+      assert.equal(ok.view.getAllByRole("link", { name: /Bashir/ }).length, 2);
       assert.ok(ok.view.getByText("Accepted"));
+      assert.equal(ok.view.getAllByText("In Progress").length, 2);
+      assert.ok(ok.view.getByText("Accepted responder"));
     });
     ok.fireEvent.click(ok.view.getByRole("button", { name: /Mark fulfilled/i }));
-    await ok.waitFor(() => assert.ok(ok.calls.includes("POST /api/v1/requests/request-1/fulfill")));
+    await ok.waitFor(() => {
+      assert.ok(ok.calls.includes("POST /api/v1/requests/request-1/fulfill"));
+      assert.ok(ok.view.getByText("Request fulfilled"));
+    });
   } finally {
     ok.close();
   }
@@ -310,6 +323,24 @@ test("a manager sees responder presentation, can accept, fulfil, and never fakes
     conflict.close();
   }
 });
+
+for (const [status, heading] of [
+  ["FULFILLED", "Request fulfilled"],
+  ["CANCELLED", "Request cancelled"],
+  ["EXPIRED", "Request expired"],
+] as const) {
+  test(`${status} Request detail is a clear read-only terminal state`, async () => {
+    const page = await renderDetail({ me: null, request: { ...baseRequest, status } });
+    try {
+      await page.waitFor(() => assert.ok(page.view.getByText(heading)));
+      assert.equal(page.view.queryByRole("link", { name: /Sign in to respond/i }), null);
+      assert.equal(page.view.queryByRole("button", { name: /Send response/i }), null);
+      assert.equal(page.view.queryByRole("button", { name: /Mark fulfilled/i }), null);
+    } finally {
+      page.close();
+    }
+  });
+}
 
 test("Request detail resolves public image delivery only when media exists", async () => {
   const page = await renderDetail({

@@ -36,7 +36,7 @@ export function RequestResponses({
   return (
     <section className="request-responses panel">
       <div className="request-responses__heading">
-        <h2>{manager ? "Responses" : "Your responses"}</h2>
+        <h2>{manager ? "Responses" : "Your Response"}</h2>
         <span className="request-responses__count">{responses.length}</span>
       </div>
       <div className="request-responses__list">
@@ -59,6 +59,9 @@ export function RequestResponses({
                 </span>
               </div>
               <p>{response.message}</p>
+              <time className="request-response__time" dateTime={response.createdAt}>
+                {new Date(response.createdAt).toLocaleString()}
+              </time>
               {manager && response.status === "PENDING" ? (
                 <div className="request-action-row">
                   <button

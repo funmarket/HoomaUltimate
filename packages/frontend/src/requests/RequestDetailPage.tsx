@@ -140,6 +140,9 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
       setResponses((current) =>
         current.map((response) => (response.id === responseId ? updated : response)),
       );
+      if (decision === "accept") {
+        setItem((current) => (current ? { ...current, status: "IN_PROGRESS" } : current));
+      }
     } catch (reason) {
       setActionError(protectedError(reason, `Unable to ${decision} response`));
     } finally {
@@ -185,6 +188,24 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
 
   const place = [item.houma, item.city].filter(Boolean).join(", ");
   const loginHref = authenticationHref(`/requests/${requestId}`);
+  const acceptedResponse = responses.find((response) => response.status === "ACCEPTED");
+  const terminalCopy =
+    item.status === "FULFILLED"
+      ? {
+          heading: "Request fulfilled",
+          body: "This Request has been completed and is now read-only.",
+        }
+      : item.status === "CANCELLED"
+        ? {
+            heading: "Request cancelled",
+            body: "This Request was cancelled and is now read-only.",
+          }
+        : item.status === "EXPIRED"
+          ? {
+              heading: "Request expired",
+              body: "This Request reached its expiry time and is now read-only.",
+            }
+          : null;
 
   return (
     <section className="page requests-page">
@@ -263,6 +284,35 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
           </div>
         ) : null}
       </article>
+
+      {item.status === "IN_PROGRESS" ? (
+        <section className="request-lifecycle panel" aria-label="Request in progress">
+          <span className="request-status request-status--in_progress">
+            <span className="request-status__dot" aria-hidden="true" />
+            In Progress
+          </span>
+          <h2>Request in progress</h2>
+          <p>The Request manager accepted a private response.</p>
+          {acceptedResponse?.responder ? (
+            <div className="request-lifecycle__responder">
+              <span className="eyebrow">Accepted responder</span>
+              <RequestRequester requester={acceptedResponse.responder} />
+            </div>
+          ) : null}
+        </section>
+      ) : terminalCopy ? (
+        <section
+          className={`request-lifecycle request-lifecycle--${item.status.toLowerCase()} panel`}
+          aria-label={terminalCopy.heading}
+        >
+          <span className={`request-status request-status--${item.status.toLowerCase()}`}>
+            <span className="request-status__dot" aria-hidden="true" />
+            {titleCase(item.status)}
+          </span>
+          <h2>{terminalCopy.heading}</h2>
+          <p>{terminalCopy.body}</p>
+        </section>
+      ) : null}
 
       {actionError ? <p className="status request-error">{actionError}</p> : null}
 

@@ -675,9 +675,36 @@
 
 .request-detail p,
 .request-response p {
-  color: var(--hooma-ui-text-secondary);
+  color: #f7f7f7;
   font-size: var(--hooma-ui-body);
   line-height: 1.55;
+}
+
+.request-lifecycle {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+}
+
+.request-lifecycle h2,
+.request-lifecycle p {
+  margin: 0;
+}
+
+.request-lifecycle h2 {
+  color: var(--hooma-ui-text);
+  font-size: var(--hooma-ui-section-title);
+}
+
+.request-lifecycle p {
+  color: #f7f7f7;
+  font-size: var(--hooma-ui-body);
+  line-height: 1.55;
+}
+
+.request-lifecycle__responder {
+  display: grid;
+  gap: 8px;
 }
 
 .request-detail__image {
@@ -818,7 +845,12 @@
 .request-response {
   display: grid;
   gap: 12px;
-  padding: 14px;
+  padding: 18px;
+}
+
+.request-response__time {
+  color: var(--hooma-ui-text-secondary);
+  font-size: var(--hooma-ui-meta);
 }
 
 .request-responses {
