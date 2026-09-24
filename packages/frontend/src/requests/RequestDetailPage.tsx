@@ -246,7 +246,7 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
           <div className="request-action-row">
             <button
               type="button"
-              className="help-action"
+              className="help-action help-action--primary"
               disabled={Boolean(pendingAction)}
               onClick={() => void transition("fulfill")}
             >
@@ -273,7 +273,7 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
             Sign in to send a private coordination response to the Request manager.
           </p>
           {loginHref ? (
-            <a className="help-action" href={loginHref}>
+            <a className="help-action help-action--primary" href={loginHref}>
               Sign in to respond
             </a>
           ) : null}
@@ -295,7 +295,7 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
             onChange={(event) => setMessage(event.target.value)}
           />
           <div className="request-action-row">
-            <button className="help-action" type="submit" disabled={pendingAction === "respond"}>
+            <button className="help-action help-action--primary" type="submit" disabled={pendingAction === "respond"}>
               {pendingAction === "respond" ? "Sending…" : "Send response"}
             </button>
           </div>

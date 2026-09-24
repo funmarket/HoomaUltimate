@@ -63,7 +63,7 @@ export function RequestResponses({
                 <div className="request-action-row">
                   <button
                     type="button"
-                    className="help-action"
+                    className="help-action help-action--primary"
                     disabled={Boolean(pendingAction)}
                     onClick={() => onAccept(response.id)}
                   >

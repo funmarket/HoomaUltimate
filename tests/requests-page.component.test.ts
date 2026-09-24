@@ -275,7 +275,8 @@ test("anonymous /requests loads the real public Requests feed", async () => {
   try {
     await page.waitFor(() => assert.ok(page.view.getByText("Need size 43 running shoes")));
     assert.equal(page.view.queryByText("No Requests are listed yet."), null);
-    assert.ok(page.view.getByRole("link", { name: /Create request/i }));
+    assert.ok(page.view.getByRole("link", { name: /New Request/i }));
+    assert.ok(page.view.getByText("Players help players. Stronger together."));
     assert.ok(page.view.getByRole("link", { name: /FundMe/i }));
     assert.ok(page.view.getByRole("link", { name: /Donations/i }));
     const card = page.view.getByRole("link", { name: /Need size 43 running shoes/i });
