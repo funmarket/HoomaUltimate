@@ -35,3 +35,10 @@ test("Requests primary interaction state uses remix green without filled-green b
   assert.ok(requestsCss.includes("color: var(--hooma-ui-accent);"));
   assert.equal(requestsCss.includes("background: var(--hooma-ui-accent);"), false);
 });
+
+test("Requests keeps mobile Help tabs readable instead of shrinking text", () => {
+  assert.ok(requestsCss.includes("overflow-x: auto;"));
+  assert.ok(requestsCss.includes("flex: 1 0 132px;"));
+  assert.ok(requestsCss.includes("font-size: var(--hooma-ui-body);"));
+  assert.equal(requestsCss.includes("font-size: 15px;"), false);
+});

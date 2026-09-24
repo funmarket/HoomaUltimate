@@ -675,13 +675,24 @@
   }
 
   .help-tabs {
+    display: flex;
     gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .help-tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .help-tab {
     min-width: 0;
-    padding-inline: 8px;
-    font-size: 15px;
+    flex: 1 0 132px;
+    padding-inline: 12px;
+    font-size: var(--hooma-ui-body);
+    scroll-snap-align: start;
   }
 
   .request-card,
@@ -694,9 +705,5 @@
 @media (max-width: 360px) {
   .requests-page {
     gap: 16px;
-  }
-
-  .help-tabs {
-    grid-template-columns: 1fr;
   }
 }
