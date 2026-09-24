@@ -451,6 +451,7 @@ The dedicated decision record is `docs/adr/ADR-058-athletes-calendar-rsvp.md`.
 The dedicated decision record is `docs/adr/ADR-059-athletes-calendar-rsvp-concurrency-and-counts.md`.
 
 **Reason:** Remove unnecessary community-wide RSVP serialization without weakening lifecycle correctness, and keep historical responses from inflating current participation counts after membership ends.
+
 ## ADR-060 — Ordered HOOMA Help program: Requests, FundMe and Donations
 
 **Decision:** HOOMA Help is one product family with three independent owning domains presented through `Requests | FundMe | Donations`. The implementation order is strict: complete canonical Requests first, then FundMe in Fundraising, then physical-item Donations, then visibility-aware Help overview/read-model work.
@@ -462,6 +463,8 @@ FundMe is Fundraising-owned. Its initial support methods are **Cash and Crypto o
 Donations is Donations-owned and means free physical-item giving. It mirrors Requests at the discovery/UI level with `Sport | Community`, search, taxonomy filters, readable cards and detail/claim lifecycle, but it does not reuse HelpRequest persistence. Donation offers may have up to four photos. Financial donations belong to FundMe; a generic service marketplace is not created by this decision. Community donation taxonomy remains physical PRODUCT taxonomy and must not copy non-item Request concepts.
 
 Shared Help concerns may be extracted only as narrow reusable boundaries: live publisher/audience authority, canonical taxonomy where semantically shared, Identity presentation, object-storage transport, image-processing primitives, outbox/Worker and visibility-aware overview read ports. Shared infrastructure must never collapse the three business domains.
+
+The dedicated decision record is `docs/adr/ADR-060-help-requests-fundme-donations-program.md`.
 
 The dedicated execution plan is `docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md`. Open PR work remains in-flight and must be distinguished from merged `phase-0-foundation` truth.
 
