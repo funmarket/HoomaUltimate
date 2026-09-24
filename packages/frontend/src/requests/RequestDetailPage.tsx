@@ -295,7 +295,11 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
             onChange={(event) => setMessage(event.target.value)}
           />
           <div className="request-action-row">
-            <button className="help-action help-action--primary" type="submit" disabled={pendingAction === "respond"}>
+            <button
+              className="help-action help-action--primary"
+              type="submit"
+              disabled={pendingAction === "respond"}
+            >
               {pendingAction === "respond" ? "Sending…" : "Send response"}
             </button>
           </div>

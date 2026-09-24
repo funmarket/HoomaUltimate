@@ -260,7 +260,10 @@ export function RequestCreatePage() {
                 {saving ? "Retrying…" : "Retry image"}
               </button>
             ) : null}
-            <a className="help-action help-action--primary" href={`/requests/${encodeURIComponent(createdId)}`}>
+            <a
+              className="help-action help-action--primary"
+              href={`/requests/${encodeURIComponent(createdId)}`}
+            >
               View Request
             </a>
             <a className="help-action help-action--quiet" href="/requests">
