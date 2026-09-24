@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type { MeResponse } from "@hooma/contracts";
-import type { HelpTaxonomyResponse } from "@hooma/contracts/help-taxonomy";
+import type { HelpTaxonomyResponse, HelpTaxonomySurface } from "@hooma/contracts/help-taxonomy";
 import {
   helpRequestCreateSchema,
   helpRequestExternalImageInputSchema,
@@ -19,9 +19,41 @@ function optionalIso(value: string): string | undefined {
   return value ? new Date(value).toISOString() : undefined;
 }
 
+function entryContext(): {
+  readonly surface: HelpTaxonomySurface;
+  readonly requestType: "SPORT" | "COMMUNITY";
+  readonly createHref: string;
+  readonly returnHref: string;
+  readonly returnLabel: string;
+} {
+  const params =
+    typeof window === "undefined"
+      ? new URLSearchParams()
+      : new URLSearchParams(window.location.search);
+  const surfaceParam = params.get("surface");
+  const surface: HelpTaxonomySurface =
+    surfaceParam === "PLAY" || surfaceParam === "ATHLETES" ? surfaceParam : "REQUESTS";
+  return {
+    surface,
+    requestType: params.get("requestType") === "COMMUNITY" ? "COMMUNITY" : "SPORT",
+    createHref:
+      typeof window === "undefined"
+        ? "/requests/new"
+        : `${window.location.pathname}${window.location.search}`,
+    returnHref: surface === "PLAY" ? "/play" : surface === "ATHLETES" ? "/athletes" : "/requests",
+    returnLabel:
+      surface === "PLAY"
+        ? "Back to Play"
+        : surface === "ATHLETES"
+          ? "Back to Athletes"
+          : "Back to Requests",
+  };
+}
+
 export function RequestCreatePage() {
   const { api, transport, protectedError, authenticationHref } = useHoomaFrontend();
   const requestsApi = useMemo(() => createRequestsApi(transport), [transport]);
+  const entry = useMemo(entryContext, []);
   const [me, setMe] = useState<MeResponse | null>(null);
   const [taxonomy, setTaxonomy] = useState<HelpTaxonomyResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,7 +65,7 @@ export function RequestCreatePage() {
   const [imageUrl, setImageUrl] = useState("");
   const [publisher, setPublisher] = useState("personal");
   const [audience, setAudience] = useState("public");
-  const [requestType, setRequestType] = useState("");
+  const [requestType, setRequestType] = useState<"SPORT" | "COMMUNITY">(entry.requestType);
   const [sport, setSport] = useState("");
   const [subcategoryId, setSubcategoryId] = useState("");
   const [needId, setNeedId] = useState("");
@@ -52,7 +84,7 @@ export function RequestCreatePage() {
 
   useEffect(() => {
     let active = true;
-    void Promise.all([api.identity.meOptional(), requestsApi.taxonomy("REQUESTS")])
+    void Promise.all([api.identity.meOptional(), requestsApi.taxonomy(entry.surface)])
       .then(([current, currentTaxonomy]) => {
         if (!active) return;
         setMe(current);
@@ -67,7 +99,7 @@ export function RequestCreatePage() {
     return () => {
       active = false;
     };
-  }, [api, protectedError, requestsApi]);
+  }, [api, entry.surface, protectedError, requestsApi]);
 
   const publisherOptions = useMemo(() => {
     if (!me) return [];
@@ -113,6 +145,15 @@ export function RequestCreatePage() {
   const selectedSubcategory = selectedSubcategories.find((entry) => entry.id === subcategoryId);
   const selectedNeed = selectedSubcategory?.needs.find((entry) => entry.id === needId);
   const productNeed = selectedNeed?.kind === "PRODUCT";
+
+  function selectRequestType(next: "SPORT" | "COMMUNITY") {
+    if (requestType === next) return;
+    setRequestType(next);
+    setSport("");
+    setSubcategoryId("");
+    setNeedId("");
+    setCustomNeed("");
+  }
 
   function publisherInput(): HelpRequestCreateInput["publisher"] {
     const [kind, id] = publisher.split(":");
@@ -220,7 +261,7 @@ export function RequestCreatePage() {
   if (loading) return <p className="status">Loading Request setup…</p>;
 
   if (!me) {
-    const href = authenticationHref("/requests/new");
+    const href = authenticationHref(entry.createHref);
     return (
       <section className="page requests-page">
         <section className="requests-empty panel">
@@ -248,6 +289,25 @@ export function RequestCreatePage() {
           <span className="eyebrow">REQUEST PUBLISHED</span>
           <h1>Your Request is live.</h1>
           <p className="muted">Everyone in its audience can now respond.</p>
+          <article className="request-success-preview" aria-label="Published Request preview">
+            <div className="request-card__topline">
+              <span className="request-chip">Request preview</span>
+              <span className="request-status request-status--open">
+                <span className="request-status__dot" aria-hidden="true" />
+                Open
+              </span>
+            </div>
+            <div className="request-card__body">
+              <strong>{title}</strong>
+              <span>{description}</span>
+            </div>
+            <div className="request-card__meta">
+              {[houma, city].filter(Boolean).join(", ") ? (
+                <span>{[houma, city].filter(Boolean).join(", ")}</span>
+              ) : null}
+              <span>{me.presentation.displayName}</span>
+            </div>
+          </article>
           {mediaError ? <p className="status request-error">{mediaError}</p> : null}
           <div className="request-action-row">
             {mediaError ? (
@@ -266,8 +326,11 @@ export function RequestCreatePage() {
             >
               View Request
             </a>
-            <a className="help-action help-action--quiet" href="/requests">
-              Back to Requests
+            <a className="help-action" href={entry.createHref}>
+              Create Another
+            </a>
+            <a className="help-action help-action--quiet" href={entry.returnHref}>
+              {entry.returnLabel}
             </a>
           </div>
         </section>
@@ -286,79 +349,75 @@ export function RequestCreatePage() {
       </header>
 
       <form className="request-form" onSubmit={submit}>
-        <section className="request-form__section">
-          <div className="request-form__section-header">
-            <h2>Publishing</h2>
-            <p>Choose who is asking and who can see the Request.</p>
-          </div>
-          <div className="request-form__grid">
-            <div className="request-field">
-              <label className="request-field__label" htmlFor="request-create-publisher">
-                Publish as
-              </label>
-              <select
-                id="request-create-publisher"
-                className="request-field__control"
-                value={publisher}
-                onChange={(event) => setPublisher(event.target.value)}
-              >
-                <option value="personal">Myself</option>
-                {publisherOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+        {selectedNeed ? (
+          <section className="request-form__section request-form__section--publishing">
+            <div className="request-form__section-header">
+              <h2>Publishing</h2>
+              <p>Choose who is asking and who can see the Request.</p>
             </div>
+            <div className="request-form__grid">
+              <div className="request-field">
+                <label className="request-field__label" htmlFor="request-create-publisher">
+                  Publish as
+                </label>
+                <select
+                  id="request-create-publisher"
+                  className="request-field__control"
+                  value={publisher}
+                  onChange={(event) => setPublisher(event.target.value)}
+                >
+                  <option value="personal">Myself</option>
+                  {publisherOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="request-field">
-              <label className="request-field__label" htmlFor="request-create-audience">
-                Audience
-              </label>
-              <select
-                id="request-create-audience"
-                className="request-field__control"
-                value={audience}
-                onChange={(event) => setAudience(event.target.value)}
-              >
-                <option value="public">Everyone</option>
-                {audienceOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+              <div className="request-field">
+                <label className="request-field__label" htmlFor="request-create-audience">
+                  Audience
+                </label>
+                <select
+                  id="request-create-audience"
+                  className="request-field__control"
+                  value={audience}
+                  onChange={(event) => setAudience(event.target.value)}
+                >
+                  <option value="public">Everyone</option>
+                  {audienceOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        ) : null}
 
-        <section className="request-form__section">
+        <section className="request-form__section request-form__section--taxonomy">
           <div className="request-form__section-header">
             <h2>Request type</h2>
             <p>Use the canonical Sport or Community taxonomy.</p>
           </div>
           <div className="request-form__grid">
-            <div className="request-field">
-              <label className="request-field__label" htmlFor="request-create-type">
-                Request Type
-              </label>
-              <select
-                id="request-create-type"
-                className="request-field__control"
-                value={requestType}
-                required
-                onChange={(event) => {
-                  setRequestType(event.target.value);
-                  setSport("");
-                  setSubcategoryId("");
-                  setNeedId("");
-                  setCustomNeed("");
-                }}
+            <div className="request-root-switch request-form__root" aria-label="Request Type">
+              <button
+                type="button"
+                aria-pressed={requestType === "SPORT"}
+                onClick={() => selectRequestType("SPORT")}
               >
-                <option value="">Choose request type</option>
-                <option value="SPORT">Sport</option>
-                <option value="COMMUNITY">Community</option>
-              </select>
+                Sport
+              </button>
+              <button
+                type="button"
+                aria-pressed={requestType === "COMMUNITY"}
+                onClick={() => selectRequestType("COMMUNITY")}
+              >
+                Community
+              </button>
             </div>
 
             {requestType === "SPORT" ? (
@@ -388,54 +447,56 @@ export function RequestCreatePage() {
               </div>
             ) : null}
 
-            <div className="request-field">
-              <label className="request-field__label" htmlFor="request-create-subcategory">
-                Category
-              </label>
-              <select
-                id="request-create-subcategory"
-                className="request-field__control"
-                value={subcategoryId}
-                required
-                disabled={requestType === "SPORT" ? !selectedSport : requestType !== "COMMUNITY"}
-                onChange={(event) => {
-                  setSubcategoryId(event.target.value);
-                  setNeedId("");
-                  setCustomNeed("");
-                }}
-              >
-                <option value="">Choose category</option>
-                {selectedSubcategories.map((entry) => (
-                  <option key={entry.id} value={entry.id}>
-                    {entry.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {requestType === "COMMUNITY" || selectedSport ? (
+              <div className="request-field">
+                <label className="request-field__label" htmlFor="request-create-subcategory">
+                  Category
+                </label>
+                <select
+                  id="request-create-subcategory"
+                  className="request-field__control"
+                  value={subcategoryId}
+                  required
+                  onChange={(event) => {
+                    setSubcategoryId(event.target.value);
+                    setNeedId("");
+                    setCustomNeed("");
+                  }}
+                >
+                  <option value="">Choose category</option>
+                  {selectedSubcategories.map((entry) => (
+                    <option key={entry.id} value={entry.id}>
+                      {entry.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
 
-            <div className="request-field">
-              <label className="request-field__label" htmlFor="request-create-need">
-                Specific need
-              </label>
-              <select
-                id="request-create-need"
-                className="request-field__control"
-                value={needId}
-                required
-                disabled={!selectedSubcategory}
-                onChange={(event) => {
-                  setNeedId(event.target.value);
-                  setCustomNeed("");
-                }}
-              >
-                <option value="">Choose need</option>
-                {(selectedSubcategory?.needs ?? []).map((entry) => (
-                  <option key={entry.id} value={entry.id}>
-                    {entry.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {selectedSubcategory ? (
+              <div className="request-field">
+                <label className="request-field__label" htmlFor="request-create-need">
+                  Specific need
+                </label>
+                <select
+                  id="request-create-need"
+                  className="request-field__control"
+                  value={needId}
+                  required
+                  onChange={(event) => {
+                    setNeedId(event.target.value);
+                    setCustomNeed("");
+                  }}
+                >
+                  <option value="">Choose need</option>
+                  {(selectedSubcategory?.needs ?? []).map((entry) => (
+                    <option key={entry.id} value={entry.id}>
+                      {entry.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
 
             {selectedNeed?.allowsCustomText ? (
               <div className="request-field">
@@ -455,7 +516,10 @@ export function RequestCreatePage() {
           </div>
         </section>
 
-        <section className="request-form__section">
+        <section
+          className="request-form__section request-form__section--details"
+          hidden={!selectedNeed}
+        >
           <div className="request-form__section-header">
             <h2>Details</h2>
             <p>Keep the title clear and give enough context to help someone respond.</p>
@@ -487,7 +551,10 @@ export function RequestCreatePage() {
           </div>
         </section>
 
-        <section className="request-form__section">
+        <section
+          className="request-form__section request-form__section--location"
+          hidden={!selectedNeed}
+        >
           <div className="request-form__section-header">
             <h2>Location</h2>
             <p>Add only the location detail that is useful to the Request.</p>
@@ -547,7 +614,10 @@ export function RequestCreatePage() {
           </div>
         </section>
 
-        <section className="request-form__section">
+        <section
+          className="request-form__section request-form__section--photo"
+          hidden={!selectedNeed}
+        >
           <div className="request-form__section-header">
             <h2>Photo</h2>
             <p>Optional. Upload a photo or use one external image URL.</p>
@@ -589,7 +659,7 @@ export function RequestCreatePage() {
         </section>
 
         {productNeed ? (
-          <section className="request-form__section">
+          <section className="request-form__section request-form__section--product">
             <div className="request-form__section-header">
               <h2>Gear details</h2>
               <p>These fields appear only for product needs.</p>
@@ -642,7 +712,10 @@ export function RequestCreatePage() {
           </section>
         ) : null}
 
-        <section className="request-form__section">
+        <section
+          className="request-form__section request-form__section--timing"
+          hidden={!selectedNeed}
+        >
           <div className="request-form__section-header">
             <h2>Timing</h2>
             <p>Optional dates help people understand urgency and availability.</p>
@@ -676,17 +749,49 @@ export function RequestCreatePage() {
           </div>
         </section>
 
+        <section
+          className="request-form__section request-form__section--review"
+          hidden={!selectedNeed}
+        >
+          <div className="request-form__section-header">
+            <h2>Review</h2>
+            <p>Check the audience and Request details before publishing.</p>
+          </div>
+          <dl className="request-review">
+            <div>
+              <dt>Type</dt>
+              <dd>{requestType === "SPORT" ? selectedSport?.label : taxonomy.community.label}</dd>
+            </div>
+            <div>
+              <dt>Need</dt>
+              <dd>{selectedNeed?.label}</dd>
+            </div>
+            <div>
+              <dt>Title</dt>
+              <dd>{title || "Add a clear title"}</dd>
+            </div>
+            <div>
+              <dt>Audience</dt>
+              <dd>{audience === "public" ? "Everyone" : "Selected community"}</dd>
+            </div>
+          </dl>
+        </section>
+
         {error ? <p className="status request-error">{error}</p> : null}
 
-        <div className="request-form__actions">
-          <button className="help-action help-action--primary" type="submit" disabled={saving}>
-            <PlusIcon />
-            <span>{saving ? "Publishing…" : "Publish Request"}</span>
-          </button>
-          <a className="help-action help-action--quiet" href="/requests">
-            Cancel
-          </a>
-        </div>
+        {selectedNeed ? (
+          <div className="request-form__actions">
+            <button className="help-action help-action--primary" type="submit" disabled={saving}>
+              <PlusIcon />
+              <span>{saving ? "Publishing…" : "Publish Request"}</span>
+            </button>
+            <a className="help-action help-action--quiet" href={entry.returnHref}>
+              Cancel
+            </a>
+          </div>
+        ) : (
+          <p className="request-form__prompt">Choose a specific need to continue.</p>
+        )}
       </form>
     </section>
   );

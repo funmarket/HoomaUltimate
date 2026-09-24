@@ -19,9 +19,9 @@ type RecordedCall = {
   readonly body: unknown;
 };
 
-function installDom() {
+function installDom(url = "http://localhost/requests/new") {
   const dom = new JSDOM("<!doctype html><html><body></body></html>", {
-    url: "http://localhost/requests/new",
+    url,
   });
   const globals: Record<string, unknown> = {
     window: dom.window,
@@ -79,7 +79,11 @@ const meResponse = {
 
 const createdRequest = { id: "request-9" };
 
-function installApiStub(options: { readonly me?: unknown; readonly failMedia?: boolean }) {
+function installApiStub(options: {
+  readonly me?: unknown;
+  readonly failMedia?: boolean;
+  readonly url?: string;
+}) {
   const calls: RecordedCall[] = [];
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -121,13 +125,18 @@ function installApiStub(options: { readonly me?: unknown; readonly failMedia?: b
   };
 }
 
-async function renderCreatePage(options: { readonly me?: unknown; readonly failMedia?: boolean }) {
-  const dom = installDom();
+async function renderCreatePage(options: {
+  readonly me?: unknown;
+  readonly failMedia?: boolean;
+  readonly url?: string;
+}) {
+  const dom = installDom(options.url);
   const apiStub = installApiStub(options);
   const React = await import("react");
   Object.defineProperty(globalThis, "React", { value: React, writable: true, configurable: true });
   const { cleanup, fireEvent, render, waitFor, within } = await import("@testing-library/react");
-  const { HoomaFrontendProvider, RequestCreatePage } = await import("@hooma/frontend");
+  const { HoomaFrontendProvider } = await import("../packages/frontend/src/context");
+  const { RequestCreatePage } = await import("../packages/frontend/src/requests/RequestCreatePage");
   const view = render(
     React.createElement(
       HoomaFrontendProvider,
@@ -155,6 +164,24 @@ async function renderCreatePage(options: { readonly me?: unknown; readonly failM
   };
 }
 
+async function chooseSportNeed(page: Awaited<ReturnType<typeof renderCreatePage>>) {
+  await page.waitFor(() => assert.ok(page.view.getByRole("button", { name: "Sport" })));
+  assert.equal(
+    page.view.getByRole("button", { name: "Sport" }).getAttribute("aria-pressed"),
+    "true",
+  );
+  assert.equal(page.view.queryByLabelText("Category"), null);
+  page.fireEvent.change(page.view.getByLabelText("Sport"), {
+    target: { value: "RUNNING" },
+  });
+  page.fireEvent.change(page.view.getByLabelText("Category"), {
+    target: { value: "hts-running-footwear" },
+  });
+  page.fireEvent.change(page.view.getByLabelText("Specific need"), {
+    target: { value: "htn-running-shoes" },
+  });
+}
+
 test("a guest is sent through the current HOOMA auth flow with returnTo preserved", async () => {
   const page = await renderCreatePage({ me: null });
   try {
@@ -172,7 +199,7 @@ test("a guest is sent through the current HOOMA auth flow with returnTo preserve
 test("a signed-in member can publish a Request and is linked to it", async () => {
   const page = await renderCreatePage({ me: meResponse });
   try {
-    await page.waitFor(() => assert.ok(page.view.getByLabelText("Title")));
+    await chooseSportNeed(page);
 
     // Publisher choices come from the current MeResponse only.
     assert.ok(page.view.getByRole("option", { name: /Team · Etoile/ }));
@@ -180,23 +207,14 @@ test("a signed-in member can publish a Request and is linked to it", async () =>
     assert.ok(page.view.getByRole("option", { name: /Athletes · Athletes Tunis/ }));
     assert.ok(page.view.getByRole("option", { name: /Everyone/ }));
 
-    page.fireEvent.change(page.view.getByLabelText("Request Type"), {
-      target: { value: "SPORT" },
-    });
-    page.fireEvent.change(page.view.getByLabelText("Sport"), {
-      target: { value: "RUNNING" },
-    });
-    page.fireEvent.change(page.view.getByLabelText("Category"), {
-      target: { value: "hts-running-footwear" },
-    });
-    page.fireEvent.change(page.view.getByLabelText("Specific need"), {
-      target: { value: "htn-running-shoes" },
-    });
     page.fireEvent.change(page.view.getByLabelText("Title"), {
       target: { value: "Need size 43 running shoes" },
     });
     page.fireEvent.change(page.view.getByLabelText("Description"), {
       target: { value: "Looking for used or new running shoes for training sessions." },
+    });
+    page.fireEvent.change(page.view.getByLabelText("City"), {
+      target: { value: "La Marsa" },
     });
     page.fireEvent.change(page.view.getByLabelText("Full address"), {
       target: { value: "12 Avenue Habib Bourguiba" },
@@ -220,23 +238,33 @@ test("a signed-in member can publish a Request and is linked to it", async () =>
       needId: "htn-running-shoes",
       title: "Need size 43 running shoes",
       description: "Looking for used or new running shoes for training sessions.",
+      city: "La Marsa",
       fullAddress: "12 Avenue Habib Bourguiba",
     });
 
     const viewLink = page.view.getByRole("link", { name: /View Request/i });
     assert.equal(viewLink.getAttribute("href"), "/requests/request-9");
+    assert.ok(page.view.getByRole("link", { name: /Create Another/i }));
+    assert.ok(page.view.getByRole("article", { name: /Published Request preview/i }));
+    assert.ok(page.view.getByText("Open"));
+    assert.ok(page.view.getByText("Coach Amine"));
+    assert.ok(page.view.getByText("La Marsa"));
   } finally {
     page.close();
   }
 });
 
 test("a signed-in member can publish a Community Request without Sport", async () => {
-  const page = await renderCreatePage({ me: meResponse });
+  const page = await renderCreatePage({
+    me: meResponse,
+    url: "http://localhost/requests/new?requestType=COMMUNITY&surface=PLAY",
+  });
   try {
-    await page.waitFor(() => assert.ok(page.view.getByLabelText("Request Type")));
-    page.fireEvent.change(page.view.getByLabelText("Request Type"), {
-      target: { value: "COMMUNITY" },
-    });
+    await page.waitFor(() => assert.ok(page.view.getByRole("button", { name: "Community" })));
+    assert.equal(
+      page.view.getByRole("button", { name: "Community" }).getAttribute("aria-pressed"),
+      "true",
+    );
     assert.equal(page.view.queryByLabelText("Sport"), null);
     page.fireEvent.change(page.view.getByLabelText("Category"), {
       target: { value: "hts-community-lost-found" },
@@ -244,6 +272,8 @@ test("a signed-in member can publish a Community Request without Sport", async (
     page.fireEvent.change(page.view.getByLabelText("Specific need"), {
       target: { value: "htn-community-lost-item" },
     });
+    assert.equal(page.view.queryByLabelText("Quantity"), null);
+    assert.equal(page.view.queryByLabelText("Size / label"), null);
     page.fireEvent.change(page.view.getByLabelText("Title"), {
       target: { value: "Lost wallet near the station" },
     });
@@ -253,6 +283,16 @@ test("a signed-in member can publish a Community Request without Sport", async (
     page.fireEvent.submit(page.view.getByRole("button", { name: /Publish Request/i }));
 
     await page.waitFor(() => assert.ok(page.view.getByRole("link", { name: /View Request/i })));
+    assert.ok(
+      page.calls.some(
+        (call) =>
+          call.path === "/api/public/v1/help/taxonomy?surface=PLAY" && call.method === "GET",
+      ),
+    );
+    assert.equal(
+      page.view.getByRole("link", { name: "Back to Play" }).getAttribute("href"),
+      "/play",
+    );
     const post = page.calls.find((call) => call.method === "POST");
     assert.ok(post);
     assert.deepEqual(post.body, {
@@ -272,19 +312,7 @@ test("a signed-in member can publish a Community Request without Sport", async (
 test("invalid input is rejected by the shared contract without any write", async () => {
   const page = await renderCreatePage({ me: meResponse });
   try {
-    await page.waitFor(() => assert.ok(page.view.getByLabelText("Title")));
-    page.fireEvent.change(page.view.getByLabelText("Request Type"), {
-      target: { value: "SPORT" },
-    });
-    page.fireEvent.change(page.view.getByLabelText("Sport"), {
-      target: { value: "RUNNING" },
-    });
-    page.fireEvent.change(page.view.getByLabelText("Category"), {
-      target: { value: "hts-running-footwear" },
-    });
-    page.fireEvent.change(page.view.getByLabelText("Specific need"), {
-      target: { value: "htn-running-shoes" },
-    });
+    await chooseSportNeed(page);
     page.fireEvent.change(page.view.getByLabelText("Title"), { target: { value: "ok" } });
     page.fireEvent.submit(page.view.getByRole("button", { name: /Publish Request/i }));
 
@@ -299,19 +327,7 @@ test("invalid input is rejected by the shared contract without any write", async
 test("a created Request attaches an external image only after creation", async () => {
   const page = await renderCreatePage({ me: meResponse });
   try {
-    await page.waitFor(() => assert.ok(page.view.getByLabelText("Title")));
-    page.fireEvent.change(page.view.getByLabelText("Request Type"), {
-      target: { value: "SPORT" },
-    });
-    page.fireEvent.change(page.view.getByLabelText("Sport"), {
-      target: { value: "RUNNING" },
-    });
-    page.fireEvent.change(page.view.getByLabelText("Category"), {
-      target: { value: "hts-running-footwear" },
-    });
-    page.fireEvent.change(page.view.getByLabelText("Specific need"), {
-      target: { value: "htn-running-shoes" },
-    });
+    await chooseSportNeed(page);
     page.fireEvent.change(page.view.getByLabelText("Title"), {
       target: { value: "Need size 43 running shoes" },
     });
@@ -337,19 +353,7 @@ test("a created Request attaches an external image only after creation", async (
 test("image failure keeps the created Request and offers image retry", async () => {
   const page = await renderCreatePage({ me: meResponse, failMedia: true });
   try {
-    await page.waitFor(() => assert.ok(page.view.getByLabelText("Title")));
-    page.fireEvent.change(page.view.getByLabelText("Request Type"), {
-      target: { value: "SPORT" },
-    });
-    page.fireEvent.change(page.view.getByLabelText("Sport"), {
-      target: { value: "RUNNING" },
-    });
-    page.fireEvent.change(page.view.getByLabelText("Category"), {
-      target: { value: "hts-running-footwear" },
-    });
-    page.fireEvent.change(page.view.getByLabelText("Specific need"), {
-      target: { value: "htn-running-shoes" },
-    });
+    await chooseSportNeed(page);
     page.fireEvent.change(page.view.getByLabelText("Title"), {
       target: { value: "Need size 43 running shoes" },
     });
@@ -371,6 +375,11 @@ test("image failure keeps the created Request and offers image retry", async () 
       1,
       "media retry state must not recreate the Request",
     );
+    page.fireEvent.click(page.view.getByRole("button", { name: /Retry image/i }));
+    await page.waitFor(() =>
+      assert.equal(page.calls.filter((call) => call.path.endsWith("/image/external")).length, 2),
+    );
+    assert.equal(page.calls.filter((call) => call.method === "POST").length, 1);
   } finally {
     page.close();
   }
