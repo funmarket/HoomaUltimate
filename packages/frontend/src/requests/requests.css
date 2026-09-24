@@ -392,7 +392,7 @@
 .request-card {
   display: grid;
   gap: 14px;
-  padding: 16px;
+  padding: 18px;
   transition:
     border-color 160ms ease,
     background 160ms ease;
@@ -405,9 +405,15 @@
 
 .request-card__primary {
   display: grid;
+  width: 100%;
   gap: 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: inherit;
-  text-decoration: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
 .request-card__topline {
@@ -422,7 +428,7 @@
   gap: 7px;
 }
 
-.request-card__body h2 {
+.request-card__body strong {
   margin: 0;
   color: var(--hooma-ui-text);
   font-size: var(--hooma-ui-card-title);
@@ -430,11 +436,36 @@
   line-height: 1.3;
 }
 
-.request-card__body p {
+.request-card__body > span {
   margin: 0;
   color: #f7f7f7;
   font-size: var(--hooma-ui-body);
   line-height: 1.5;
+}
+
+.request-card__image {
+  width: 100%;
+  max-height: 300px;
+  border-radius: 14px;
+  object-fit: cover;
+  aspect-ratio: 16 / 9;
+}
+
+.request-card__expand-label {
+  color: var(--hooma-ui-accent);
+  font-size: var(--hooma-ui-meta);
+  font-weight: 800;
+}
+
+.request-card__details {
+  display: grid;
+  gap: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--hooma-ui-outline);
+}
+
+.request-card__details .help-action {
+  width: fit-content;
 }
 
 .request-card__meta,

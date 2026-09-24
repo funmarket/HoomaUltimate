@@ -9,6 +9,7 @@ export function RequestFeed({
   nextCursor,
   loadingMore,
   filtered,
+  loadImage,
   onLoadMore,
 }: {
   readonly items: readonly HelpRequest[];
@@ -17,6 +18,7 @@ export function RequestFeed({
   readonly nextCursor: string | null;
   readonly loadingMore: boolean;
   readonly filtered: boolean;
+  readonly loadImage?: (requestId: string) => Promise<string>;
   readonly onLoadMore: () => void;
 }) {
   if (error) return <p className="status request-error">{error}</p>;
@@ -36,7 +38,7 @@ export function RequestFeed({
     <>
       <section className="request-list" aria-label="Requests">
         {items.map((item) => (
-          <RequestCard key={item.id} item={item} />
+          <RequestCard key={item.id} item={item} loadImage={loadImage} />
         ))}
       </section>
       {nextCursor ? (

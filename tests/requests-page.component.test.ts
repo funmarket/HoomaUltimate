@@ -180,6 +180,12 @@ function installApiStub(options: StubOptions) {
         nextCursor: options.publicNextCursor ?? null,
       });
     }
+    if (url.pathname === "/api/public/v1/requests/request-1/image/delivery") {
+      return json({ contentUrl: "https://cdn.example.test/request.webp", expiresAt: null });
+    }
+    if (url.pathname === "/api/v1/requests/request-1/image/delivery") {
+      return json({ contentUrl: "https://cdn.example.test/request.webp", expiresAt: null });
+    }
     if (url.pathname === "/api/v1/requests") {
       return json({ items: options.memberItems ?? [], nextCursor: null });
     }
@@ -285,8 +291,8 @@ test("anonymous /requests loads the real public Requests feed", async () => {
     assert.ok(page.view.getByText("Players help players. Stronger together."));
     assert.ok(page.view.getByRole("link", { name: /FundMe/i }));
     assert.ok(page.view.getByRole("link", { name: /Donations/i }));
-    const card = page.view.getByRole("link", { name: /Need size 43 running shoes/i });
-    assert.equal(card.getAttribute("href"), "/requests/request-1");
+    const card = page.view.getByRole("button", { name: /Need size 43 running shoes/i });
+    assert.equal(card.getAttribute("aria-expanded"), "false");
     const cardView = page.within(card);
     assert.ok(cardView.getByText("Item"));
     assert.ok(cardView.getByText("Open"));
@@ -312,6 +318,100 @@ test("Request cards link requester identity to the canonical public profile", as
     );
   } finally {
     page.close();
+  }
+});
+
+test("Request cards expand inline without nesting profile or detail links in the toggle", async () => {
+  const page = await renderRequestsPage({ me: null, publicItems: [publicRequest] });
+  try {
+    const toggle = await page.view.findByRole("button", { name: /Need size 43 running shoes/i });
+    assert.equal(toggle.getAttribute("aria-expanded"), "false");
+    assert.equal(toggle.querySelector("a"), null);
+    assert.equal(page.view.queryByText("Size · 43"), null);
+
+    page.fireEvent.click(toggle);
+
+    assert.equal(toggle.getAttribute("aria-expanded"), "true");
+    assert.ok(page.view.getByText("Size · 43"));
+    assert.ok(page.view.getByText("Condition · Used Ok"));
+    assert.equal(
+      page.view.getByRole("link", { name: "View full Request" }).getAttribute("href"),
+      "/requests/request-1",
+    );
+    assert.equal(
+      page.view.getByRole("link", { name: /Yassine K\./ }).getAttribute("href"),
+      "/profile/yassine.k",
+    );
+  } finally {
+    page.close();
+  }
+});
+
+test("Request feed lazily resolves canonical image delivery only for cards with media", async () => {
+  const originalObserver = globalThis.IntersectionObserver;
+  let reveal = () => {};
+  class IntersectionObserverStub {
+    readonly root = null;
+    readonly rootMargin = "240px";
+    readonly thresholds = [0];
+    constructor(private readonly callback: IntersectionObserverCallback) {}
+    observe(target: Element) {
+      reveal = () =>
+        this.callback(
+          [{ isIntersecting: true, target } as IntersectionObserverEntry],
+          this as unknown as IntersectionObserver,
+        );
+    }
+    disconnect() {}
+    unobserve() {}
+    takeRecords() {
+      return [];
+    }
+  }
+  Object.defineProperty(globalThis, "IntersectionObserver", {
+    value: IntersectionObserverStub,
+    configurable: true,
+    writable: true,
+  });
+  const page = await renderRequestsPage({
+    me: null,
+    publicItems: [
+      {
+        ...publicRequest,
+        image: {
+          id: "image-1",
+          source: "EXTERNAL_URL",
+          contentType: null,
+          sizeBytes: null,
+          updatedAt: "2026-09-23T13:00:00.000Z",
+        },
+      },
+    ],
+  });
+  try {
+    await page.view.findByRole("button", { name: /Need size 43 running shoes/i });
+    assert.equal(
+      page.calls.filter((call) => call.endsWith("/requests/request-1/image/delivery")).length,
+      0,
+    );
+    reveal();
+    const image = await page.view.findByRole("img", { name: /Need size 43 running shoes/i });
+    assert.equal(image.getAttribute("src"), "https://cdn.example.test/request.webp");
+    assert.equal(
+      page.calls.filter((call) => call.endsWith("/requests/request-1/image/delivery")).length,
+      1,
+    );
+  } finally {
+    page.close();
+    if (originalObserver) {
+      Object.defineProperty(globalThis, "IntersectionObserver", {
+        value: originalObserver,
+        configurable: true,
+        writable: true,
+      });
+    } else {
+      Reflect.deleteProperty(globalThis, "IntersectionObserver");
+    }
   }
 });
 

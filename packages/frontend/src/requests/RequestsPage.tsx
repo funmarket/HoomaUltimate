@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { HelpTaxonomyResponse } from "@hooma/contracts/help-taxonomy";
 import type { HelpRequest } from "@hooma/contracts/requests";
 import { useHoomaFrontend } from "../context";
@@ -152,6 +152,16 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
     }
   }
 
+  const loadCardImage = useCallback(
+    async (requestId: string) => {
+      const delivery = memberViewer
+        ? await requestsApi.memberImageDelivery(requestId)
+        : await requestsApi.publicImageDelivery(requestId);
+      return delivery.contentUrl;
+    },
+    [memberViewer, requestsApi],
+  );
+
   const fundmeActive = tab === "fundme";
   const donationsActive = tab === "donations";
   const hasActiveDiscoveryFilters = Boolean(
@@ -220,6 +230,7 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
             nextCursor={nextCursor}
             loadingMore={loadingMore}
             filtered={hasActiveDiscoveryFilters}
+            loadImage={loadCardImage}
             onLoadMore={() => void loadMore()}
           />
         </>
