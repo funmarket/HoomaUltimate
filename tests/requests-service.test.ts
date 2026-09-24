@@ -419,10 +419,28 @@ test("Request response mutations preserve responder presentation", async () => {
   const service = new RequestService(
     {
       ...repo,
+      async createResponse() {
+        return responseRecord();
+      },
       async acceptResponse() {
         return responseRecord({
           status: "ACCEPTED",
           acceptedAt: new Date("2026-09-17T03:00:00.000Z"),
+        });
+      },
+      async declineResponse() {
+        return responseRecord({
+          status: "DECLINED",
+          declinedAt: new Date("2026-09-17T03:05:00.000Z"),
+        });
+      },
+      async getResponseById() {
+        return responseRecord();
+      },
+      async withdrawResponse() {
+        return responseRecord({
+          status: "WITHDRAWN",
+          withdrawnAt: new Date("2026-09-17T03:10:00.000Z"),
         });
       },
     },
@@ -431,12 +449,18 @@ test("Request response mutations preserve responder presentation", async () => {
     presentations,
   );
 
-  const response = await service.acceptResponse("user-1", "request-1", "response-1");
+  const created = await service.respond("user-2", "request-1", { message: "I can help." });
+  const accepted = await service.acceptResponse("user-1", "request-1", "response-1");
+  const declined = await service.declineResponse("user-1", "request-1", "response-1");
+  const withdrawn = await service.withdrawResponse("user-2", "request-1", "response-1");
 
-  assert.deepEqual(calls, [["user-2"]]);
-  assert.deepEqual((response as unknown as { responder?: unknown }).responder, {
-    displayName: "Bashir",
-    username: "bashir",
-    photoUrl: null,
-  });
+  assert.deepEqual(calls, [["user-2"], ["user-2"], ["user-2"], ["user-2"]]);
+  for (const response of [created, accepted, declined, withdrawn]) {
+    assert.deepEqual(response.responder, {
+      displayName: "Bashir",
+      username: "bashir",
+      photoUrl: null,
+    });
+  }
 });
+

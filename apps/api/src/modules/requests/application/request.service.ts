@@ -299,7 +299,7 @@ export class RequestService {
     if (!response) {
       throw new RequestError("REQUEST_RESPONSE_NOT_PENDING", "Response is not pending");
     }
-    return serializeResponse(response);
+    return this.serializeResponseOne(response);
   }
 
   async withdrawResponse(
