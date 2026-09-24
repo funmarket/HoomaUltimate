@@ -184,10 +184,14 @@ export function RequestTaxonomyFilters({
       {filtersOpen ? (
         <div id="request-advanced-filters" className="request-filters panel">
           <div className="request-filters__heading">
-            <div>
-              <span className="eyebrow">DISCOVERY</span>
-              <h2>Advanced filters</h2>
-            </div>
+            <span className="request-filters__title">
+              <FilterIcon />
+              <h2>Filters</h2>
+            </span>
+            <button type="button" className="request-filters__close" onClick={openFilters}>
+              <span aria-hidden="true">×</span>
+              <span className="sr-only">Close filters</span>
+            </button>
           </div>
           <div className="request-filters__fields">
             <div className="request-field">

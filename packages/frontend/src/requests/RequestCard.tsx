@@ -59,7 +59,10 @@ export function RequestCard({
   }, [item.id, item.image, loadImage]);
 
   return (
-    <article ref={cardRef} className="request-card">
+    <article
+      ref={cardRef}
+      className={`request-card${imageUrl ? " request-card--with-image" : ""}${expanded ? " request-card--expanded" : ""}`}
+    >
       {imageUrl ? (
         <img
           className="request-card__image"
@@ -113,7 +116,8 @@ export function RequestCard({
           {item.quantityNeeded ? <span>Qty {item.quantityNeeded}</span> : null}
         </span>
         <span className="request-card__expand-label">
-          {expanded ? "Hide details" : "Show details"}
+          <span className="sr-only">{expanded ? "Hide details" : "Show details"}</span>
+          <span aria-hidden="true">{expanded ? "⌃" : "›"}</span>
         </span>
       </button>
 
@@ -143,7 +147,9 @@ export function RequestCard({
         </section>
       ) : null}
 
-      <RequestRequester requester={item.requester} />
+      <div className="request-card__requester">
+        <RequestRequester requester={item.requester} />
+      </div>
     </article>
   );
 }

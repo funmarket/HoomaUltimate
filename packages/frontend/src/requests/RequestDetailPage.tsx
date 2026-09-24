@@ -226,8 +226,10 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
             {titleCase(item.status)}
           </span>
         </div>
-        <RequestRequester requester={item.requester} />
-        <div>
+        <div className="request-detail__requester">
+          <RequestRequester requester={item.requester} />
+        </div>
+        <div className="request-detail__copy">
           <h1>{item.title}</h1>
           <p>{item.description}</p>
         </div>

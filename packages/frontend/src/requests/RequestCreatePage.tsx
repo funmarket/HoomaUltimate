@@ -343,8 +343,8 @@ export function RequestCreatePage() {
       <header className="help-hero">
         <div className="help-hero__copy">
           <span className="eyebrow">REQUESTS</span>
-          <h1>New Request</h1>
-          <p>Ask the community for help around sport or community needs.</p>
+          <h1>Create Request</h1>
+          <p>Get help. Give support. Stronger together.</p>
         </div>
       </header>
 
