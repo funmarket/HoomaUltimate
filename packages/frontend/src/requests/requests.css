@@ -184,6 +184,9 @@
 
 .help-tab:focus-visible,
 .help-action:focus-visible,
+.request-root-switch button:focus-visible,
+.request-filter-trigger:focus-visible,
+.request-quick-rail button:focus-visible,
 .request-card__primary:focus-visible,
 .request-requester:focus-visible,
 .request-back-link:focus-visible,
@@ -198,6 +201,92 @@
 }
 
 /* --- filters ---------------------------------------------------------- */
+
+.request-discovery {
+  display: grid;
+  gap: 14px;
+}
+
+.request-root-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.request-root-switch button,
+.request-filter-trigger,
+.request-quick-rail button {
+  min-height: 48px;
+  border: 1px solid var(--hooma-ui-outline);
+  border-radius: var(--hooma-ui-radius-control);
+  background: #090a08;
+  color: var(--hooma-ui-text-secondary);
+  font: inherit;
+  font-size: var(--hooma-ui-body);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.request-root-switch button[aria-pressed="true"],
+.request-quick-rail button.is-active {
+  border-color: var(--hooma-ui-accent);
+  color: var(--hooma-ui-accent);
+}
+
+.request-search-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.request-search {
+  min-width: 0;
+}
+
+.request-filter-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-inline: 14px;
+  color: var(--hooma-ui-text);
+}
+
+.request-filter-trigger svg {
+  width: 20px;
+  height: 20px;
+}
+
+.request-filter-trigger__count {
+  display: inline-flex;
+  min-width: 24px;
+  min-height: 24px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--hooma-ui-accent) 14%, #090a08);
+  color: var(--hooma-ui-accent);
+  font-size: var(--hooma-ui-meta);
+}
+
+.request-quick-rail {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 3px;
+  scrollbar-width: none;
+}
+
+.request-quick-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.request-quick-rail button {
+  min-height: 44px;
+  flex: 0 0 auto;
+  padding-inline: 16px;
+  white-space: nowrap;
+}
 
 .request-filters {
   display: grid;
@@ -220,6 +309,12 @@
   margin: 0;
   color: var(--hooma-ui-text);
   font-size: var(--hooma-ui-section-title);
+}
+
+.request-filters__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .request-filters__fields,
@@ -337,7 +432,7 @@
 
 .request-card__body p {
   margin: 0;
-  color: var(--hooma-ui-text-secondary);
+  color: #f7f7f7;
   font-size: var(--hooma-ui-body);
   line-height: 1.5;
 }
