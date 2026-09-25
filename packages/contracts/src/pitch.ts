@@ -16,7 +16,7 @@ export const pitchSuggestionSchema = z.object({
 });
 
 export const pitchPlaceSuggestionSchema = z.object({
-  place: placeSuggestionSchema.omit({ submissionOrigin: true }),
+  place: placeSuggestionSchema,
   pitch: pitchSuggestionSchema,
 });
 
