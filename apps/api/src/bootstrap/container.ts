@@ -78,6 +78,14 @@ import { PrismaDiscoveryRepository } from "../modules/discovery/infrastructure/p
 import { ReadinessService } from "../modules/system/application/readiness.service.js";
 import { PrismaReadinessProbe } from "../modules/system/infrastructure/prisma-readiness.probe.js";
 import { RedisReadinessProbe } from "../modules/system/infrastructure/redis-readiness.probe.js";
+import { GearUpService } from "../modules/gear-up/application/gear-up.service.js";
+import { GearUpProductService } from "../modules/gear-up/application/gear-up-product.service.js";
+import { GearUpProductMediaService } from "../modules/gear-up/application/gear-up-product-media.service.js";
+import { GearUpSettingsService } from "../modules/gear-up/application/gear-up-settings.service.js";
+import { PrismaGearUpRepository } from "../modules/gear-up/infrastructure/prisma-gear-up.repository.js";
+import { PrismaGearUpProductRepository } from "../modules/gear-up/infrastructure/prisma-gear-up-product.repository.js";
+import { PrismaGearUpProductMediaRepository } from "../modules/gear-up/infrastructure/prisma-gear-up-product-media.repository.js";
+import { SharpGearUpProductImageProcessor } from "../modules/gear-up/infrastructure/sharp-gear-up-product-image-processor.js";
 
 interface ContainerOverrides {
   readonly objectStorage?: ObjectStorage | null;
@@ -181,6 +189,33 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     platformAdminService,
   );
   const pitchModerationService = new PitchModerationService(pitchRepository, platformAdminService);
+
+  const gearUpRepository = new PrismaGearUpRepository(database);
+  const gearUpProductRepository = new PrismaGearUpProductRepository(database);
+  const gearUpProductMediaRepository = new PrismaGearUpProductMediaRepository(database);
+  const gearUpService = new GearUpService(
+    gearUpRepository,
+    placeRepository,
+    platformAdminService,
+    placeImageResolver,
+  );
+  const gearUpProductService = new GearUpProductService(
+    gearUpProductRepository,
+    placeRepository,
+    platformAdminService,
+  );
+  const gearUpProductMediaService = new GearUpProductMediaService(
+    gearUpProductMediaRepository,
+    gearUpProductRepository,
+    placeRepository,
+    platformAdminService,
+    storage,
+    new SharpGearUpProductImageProcessor(),
+  );
+  const gearUpSettingsService = new GearUpSettingsService(
+    gearUpProductMediaRepository,
+    platformAdminService,
+  );
 
   const communityRepository = new PrismaCommunityRepository(database);
   const communityService = new CommunityService(communityRepository, platformAdminService);
@@ -317,6 +352,10 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     pitchSuggestionService,
     pitchOwnerService,
     pitchModerationService,
+    gearUpService,
+    gearUpProductService,
+    gearUpProductMediaService,
+    gearUpSettingsService,
     communityService,
     athletesService,
     athletesCalendarService,

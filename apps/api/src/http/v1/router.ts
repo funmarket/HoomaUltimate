@@ -18,6 +18,7 @@ import { createRideCommunityInteractionRouter } from "../../modules/rides/http/r
 import { createRideMemberRouter } from "../../modules/rides/http/ride.routes.js";
 import { createWhistleRouter } from "../../modules/whistle/http/whistle.routes.js";
 import { createUserNotificationRouter } from "../../modules/notifications/http/user-notification.routes.js";
+import { createGearUpMemberRouter } from "../../modules/gear-up/http/gear-up.routes.js";
 
 export function createMemberV1Router(container: AppContainer, config: ApiConfig): Router {
   const router = Router();
@@ -43,12 +44,23 @@ export function createMemberV1Router(container: AppContainer, config: ApiConfig)
       container.placeService,
       container.pitchModerationService,
       container.gamerMatchService,
+      container.gearUpService,
+      container.gearUpSettingsService,
     ),
   );
   router.use("/places", createPlacesMemberRouter(container.placeService));
   router.use(
     "/pitch",
     createPitchMemberRouter(container.pitchSuggestionService, container.pitchOwnerService),
+  );
+  router.use(
+    "/gear-up",
+    createGearUpMemberRouter(
+      container.gearUpService,
+      container.gearUpProductService,
+      container.gearUpProductMediaService,
+      container.gearUpSettingsService,
+    ),
   );
   router.use("/communities", createCommunityMemberRouter(container.communityService));
   router.use(

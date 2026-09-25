@@ -22,6 +22,7 @@ import {
   type RequestErrorCode,
 } from "../../modules/requests/domain/request-error.js";
 import { RideError, type RideErrorCode } from "../../modules/rides/domain/ride-error.js";
+import { GearUpError, type GearUpErrorCode } from "../../modules/gear-up/domain/gear-up-error.js";
 import { AppError } from "./app-error.js";
 
 const EVENT_STATUS: Record<EventErrorCode, number> = {
@@ -153,6 +154,24 @@ const REQUEST_STATUS: Record<RequestErrorCode, number> = {
   REQUEST_IMAGE_UNAVAILABLE: 503,
 };
 
+const GEAR_UP_STATUS: Record<GearUpErrorCode, number> = {
+  GEAR_UP_SHOP_NOT_FOUND: 404,
+  GEAR_UP_MANAGE_FORBIDDEN: 403,
+  GEAR_UP_REVIEW_NOT_PENDING: 409,
+  GEAR_UP_PRODUCT_NOT_FOUND: 404,
+  GEAR_UP_PRODUCT_MANAGE_FORBIDDEN: 403,
+  GEAR_UP_PRODUCT_MEDIA_MANAGE_FORBIDDEN: 403,
+  GEAR_UP_PRODUCT_IMAGE_TYPE_INVALID: 415,
+  GEAR_UP_PRODUCT_IMAGE_REQUIRED: 400,
+  GEAR_UP_PRODUCT_IMAGE_TOO_LARGE: 413,
+  GEAR_UP_PRODUCT_IMAGE_STORAGE_NOT_CONFIGURED: 503,
+  GEAR_UP_PRODUCT_IMAGE_UPLOAD_FAILED: 503,
+  GEAR_UP_PRODUCT_IMAGE_NOT_FOUND: 404,
+  GEAR_UP_PRODUCT_IMAGE_UNAVAILABLE: 503,
+  GEAR_UP_PRODUCT_IMAGE_LIMIT_REACHED: 409,
+  GEAR_UP_PRODUCT_IMAGE_ORDER_INVALID: 400,
+};
+
 const IDENTITY_ADMIN_STATUS: Record<IdentityAdminErrorCode, number> = {
   USER_SEARCH_QUERY_REQUIRED: 400,
   USER_NOT_FOUND: 404,
@@ -196,6 +215,12 @@ export const errorHandler: ErrorRequestHandler = (error, _request, response, _ne
   if (error instanceof RequestError) {
     response
       .status(REQUEST_STATUS[error.code])
+      .json({ error: { code: error.code, message: error.message } });
+    return;
+  }
+  if (error instanceof GearUpError) {
+    response
+      .status(GEAR_UP_STATUS[error.code])
       .json({ error: { code: error.code, message: error.message } });
     return;
   }
