@@ -1,0 +1,31 @@
+name: Gear Up formatter diagnostic
+
+on:
+  pull_request:
+    paths:
+      - "apps/api/src/modules/gear-up/**"
+      - "tests/gear-up.integration.test.ts"
+      - ".github/workflows/gear-up-formatter-diagnostic.yml"
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: >
+          npx prettier --write
+          apps/api/src/modules/gear-up/application/gear-up.repository.ts
+          apps/api/src/modules/gear-up/application/gear-up.service.ts
+          apps/api/src/modules/gear-up/domain/gear-up-error.ts
+          tests/gear-up.integration.test.ts
+      - run: >
+          git diff --
+          apps/api/src/modules/gear-up/application/gear-up.repository.ts
+          apps/api/src/modules/gear-up/application/gear-up.service.ts
+          apps/api/src/modules/gear-up/domain/gear-up-error.ts
+          tests/gear-up.integration.test.ts
