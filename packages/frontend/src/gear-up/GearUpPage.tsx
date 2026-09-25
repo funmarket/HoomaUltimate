@@ -112,15 +112,35 @@ export function GearUpPage() {
 
   return (
     <section className="gear-up-page">
+      <WatchSectionNavigation active="gear-up" />
+
       <header className="gear-up-hero">
         <p className="gear-up-hero__eyebrow">GEAR UP</p>
-        <h1 className="gear-up-page__title">Discover sports shops near you.</h1>
+        <h1 className="gear-up-page__title">Discover shops offering gear and sportswear.</h1>
         <p className="gear-up-hero__description">
-          Find sportswear, gear and more from local shops. Support real places in your community.
+          Find sportswear, equipment and more from local shops. Support real places in your
+          community.
         </p>
       </header>
 
-      <WatchSectionNavigation active="gear-up" />
+      <div className="gear-up-discovery-mode" role="group" aria-label="Gear Up discovery mode">
+        <button
+          type="button"
+          className="gear-up-discovery-mode__option is-active"
+          aria-pressed="true"
+        >
+          Stores
+        </button>
+        <button
+          type="button"
+          className="gear-up-discovery-mode__option"
+          aria-disabled="true"
+          disabled
+          title="Product discovery will be enabled in the Gear Up product slice"
+        >
+          Products
+        </button>
+      </div>
 
       <GearUpFilters value={filters} cities={cities} houmas={houmas} onChange={setFilters} />
 
@@ -146,11 +166,14 @@ export function GearUpPage() {
           <div className="gear-up-empty-state__mark" aria-hidden="true">
             GU
           </div>
-          <h2>No Gear Up shops match these filters.</h2>
-          <p>Try clearing filters to see more sports shops in HOOMA.</p>
-          <button type="button" onClick={() => setFilters(CLEARED_FILTERS)}>
-            Clear filters
-          </button>
+          <h2>No shops match these filters yet.</h2>
+          <p>Try adjusting your search or filters, or help the community by adding a place.</p>
+          <div className="gear-up-empty-state__actions">
+            <button type="button" onClick={() => setFilters(CLEARED_FILTERS)}>
+              Clear filters
+            </button>
+            <a href="/places/new">Add a Place</a>
+          </div>
         </section>
       ) : null}
     </section>
