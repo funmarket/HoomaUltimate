@@ -81,3 +81,31 @@ test("Place submission discovery preserves Spots while Pitch stays independent",
   assert.match(migration, backfill);
   assert.match(migration, excludesPitch);
 });
+
+test("Gear Up catalogue migration adds missing cross-sport product families", () => {
+  const schema = source("packages/database/prisma/gear-up.prisma");
+  const migrationPath =
+    "packages/database/prisma/migrations/20260925123000_gear_up_catalog_taxonomy/migration.sql";
+  const migrationUrl = new URL(`../${migrationPath}`, import.meta.url);
+
+  for (const category of [
+    "HOODIES_SWEATSHIRTS",
+    "JACKETS_OUTERWEAR",
+    "BASE_LAYERS_COMPRESSION",
+    "SOCKS",
+    "SWIMWEAR",
+    "RACKETS_PADDLES",
+    "GOALS_NETS_HOOPS",
+    "REFEREE_OFFICIALS_EQUIPMENT",
+    "SWIMMING_EQUIPMENT",
+    "SUPPORTS_STRAPS_TAPE",
+    "HYDRATION_BOTTLES",
+  ]) {
+    assert.match(schema, new RegExp(`\\b${category}\\b`));
+  }
+
+  assert.equal(existsSync(migrationUrl), true, "Gear Up catalogue taxonomy migration must exist");
+  const migration = source(migrationPath);
+  assert.match(migration, /ALTER TYPE "GearUpProductCategory" ADD VALUE IF NOT EXISTS/);
+  assert.doesNotMatch(migration, /DROP TYPE|DROP COLUMN|DELETE FROM "GearUpProduct"/);
+});
