@@ -16,10 +16,7 @@ export class GearUpSettingsService {
     return this.repository.getSettings();
   }
 
-  async update(
-    userId: string,
-    input: GearUpSettingsUpdateInput,
-  ): Promise<GearUpSettings> {
+  async update(userId: string, input: GearUpSettingsUpdateInput): Promise<GearUpSettings> {
     await this.platformAdmin.requirePlatformAdmin(userId);
     return this.repository.updateSettings(userId, gearUpSettingsUpdateSchema.parse(input));
   }
