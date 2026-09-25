@@ -1,8 +1,5 @@
 import type { AthletesSport } from "@hooma/contracts/athletes";
-import {
-  GEAR_UP_PRODUCT_CATEGORY_LABELS,
-  type PublicGearUpShop,
-} from "@hooma/contracts/gear-up";
+import { GEAR_UP_PRODUCT_CATEGORY_LABELS, type PublicGearUpShop } from "@hooma/contracts/gear-up";
 import { PinIcon } from "../ui/HoomaIcons";
 
 const SPORT_LABELS: Readonly<Record<AthletesSport, string>> = {
