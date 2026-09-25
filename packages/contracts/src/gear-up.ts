@@ -43,10 +43,12 @@ export const gearUpShopSuggestionSchema = z
   })
   .strict();
 
-export const gearUpShopUpdateSchema = gearUpShopInputSchema.partial().refine(
-  (input) => Object.keys(input).length > 0,
-  "At least one Gear Up shop field is required",
-);
+export const gearUpShopUpdateSchema = gearUpShopInputSchema
+  .partial()
+  .refine(
+    (input) => Object.keys(input).length > 0,
+    "At least one Gear Up shop field is required",
+  );
 
 export const gearUpProductCreateSchema = z
   .object({
@@ -60,10 +62,12 @@ export const gearUpProductCreateSchema = z
   })
   .strict();
 
-export const gearUpProductUpdateSchema = gearUpProductCreateSchema.partial().refine(
-  (input) => Object.keys(input).length > 0,
-  "At least one Gear Up product field is required",
-);
+export const gearUpProductUpdateSchema = gearUpProductCreateSchema
+  .partial()
+  .refine(
+    (input) => Object.keys(input).length > 0,
+    "At least one Gear Up product field is required",
+  );
 
 export const gearUpSettingsUpdateSchema = z
   .object({
