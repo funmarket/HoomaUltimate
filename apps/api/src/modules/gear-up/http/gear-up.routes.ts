@@ -26,14 +26,18 @@ export function createGearUpPublicRouter(
   router.get(
     "/",
     asyncHandler(async (request, response) => {
-      response.json(await shops.listPublic(gearUpListQuerySchema.parse(request.query)));
+      response.json(
+        await shops.listPublic(gearUpListQuerySchema.parse(request.query)),
+      );
     }),
   );
 
   router.get(
     "/shops/:placeId/products",
     asyncHandler(async (request, response) => {
-      response.json(await products.listPublicByShop(String(request.params.placeId)));
+      response.json(
+        await products.listPublicByShop(String(request.params.placeId)),
+      );
     }),
   );
 
@@ -49,7 +53,10 @@ export function createGearUpPublicRouter(
     asyncHandler(async (request, response) => {
       response.setHeader("cache-control", "private, no-store");
       response.json(
-        await media.deliveryPublic(String(request.params.productId), String(request.params.imageId)),
+        await media.deliveryPublic(
+          String(request.params.productId),
+          String(request.params.imageId),
+        ),
       );
     }),
   );
@@ -101,7 +108,10 @@ export function createGearUpMemberRouter(
     "/shops/:placeId/manage",
     asyncHandler(async (request, response) => {
       response.json(
-        await shops.getManaged(getAuth(request).userId, String(request.params.placeId)),
+        await shops.getManaged(
+          getAuth(request).userId,
+          String(request.params.placeId),
+        ),
       );
     }),
   );
@@ -123,7 +133,10 @@ export function createGearUpMemberRouter(
     "/shops/:placeId/products/manage",
     asyncHandler(async (request, response) => {
       response.json(
-        await products.listManagedByShop(getAuth(request).userId, String(request.params.placeId)),
+        await products.listManagedByShop(
+          getAuth(request).userId,
+          String(request.params.placeId),
+        ),
       );
     }),
   );
@@ -242,7 +255,9 @@ export function createGearUpMemberRouter(
     "/shops/:placeId/products/:productId/images/upload",
     raw({ type: "*/*", limit: "5mb" }),
     asyncHandler(async (request, response) => {
-      const body = Buffer.isBuffer(request.body) ? request.body : Buffer.alloc(0);
+      const body = Buffer.isBuffer(request.body)
+        ? request.body
+        : Buffer.alloc(0);
       response
         .status(201)
         .json(
