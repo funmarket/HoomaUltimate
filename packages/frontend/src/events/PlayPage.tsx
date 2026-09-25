@@ -344,17 +344,45 @@ export function PlayPage() {
     <section className="play-page">
       <PlayHero />
 
-      <div className="play-view-tabs play-view-tabs--four" role="tablist" aria-label="Play sections">
-        <button className={`play-view-tab${activeView === "games" ? " is-active" : ""}`} type="button" role="tab" aria-selected={activeView === "games"} onClick={() => setActiveView("games")}>
+      <div
+        className="play-view-tabs play-view-tabs--four"
+        role="tablist"
+        aria-label="Play sections"
+      >
+        <button
+          className={`play-view-tab${activeView === "games" ? " is-active" : ""}`}
+          type="button"
+          role="tab"
+          aria-selected={activeView === "games"}
+          onClick={() => setActiveView("games")}
+        >
           Games
         </button>
-        <button className={`play-view-tab${activeView === "players" ? " is-active" : ""}`} type="button" role="tab" aria-selected={activeView === "players"} onClick={() => setActiveView("players")}>
+        <button
+          className={`play-view-tab${activeView === "players" ? " is-active" : ""}`}
+          type="button"
+          role="tab"
+          aria-selected={activeView === "players"}
+          onClick={() => setActiveView("players")}
+        >
           Players
         </button>
-        <button className={`play-view-tab${activeView === "requests" ? " is-active" : ""}`} type="button" role="tab" aria-selected={activeView === "requests"} onClick={() => setActiveView("requests")}>
+        <button
+          className={`play-view-tab${activeView === "requests" ? " is-active" : ""}`}
+          type="button"
+          role="tab"
+          aria-selected={activeView === "requests"}
+          onClick={() => setActiveView("requests")}
+        >
           Requests
         </button>
-        <button className={`play-view-tab${activeView === "mine" ? " is-active" : ""}`} type="button" role="tab" aria-selected={activeView === "mine"} onClick={() => setActiveView("mine")}>
+        <button
+          className={`play-view-tab${activeView === "mine" ? " is-active" : ""}`}
+          type="button"
+          role="tab"
+          aria-selected={activeView === "mine"}
+          onClick={() => setActiveView("mine")}
+        >
           Mine
         </button>
       </div>
