@@ -25,10 +25,7 @@ export interface GearUpProductMediaRepository {
   list(productId: string): Promise<readonly GearUpProductImageRecord[]>;
   get(productId: string, imageId: string): Promise<GearUpProductImageRecord | null>;
   getSettings(): Promise<GearUpSettingsRecord>;
-  updateSettings(
-    userId: string,
-    input: GearUpSettingsUpdateInput,
-  ): Promise<GearUpSettingsRecord>;
+  updateSettings(userId: string, input: GearUpSettingsUpdateInput): Promise<GearUpSettingsRecord>;
   addExternalUrl(productId: string, url: string): Promise<GearUpProductImageRecord>;
   prepareUpload(imageId: string, productId: string, objectKey: string): Promise<void>;
   addPreparedUpload(input: {
