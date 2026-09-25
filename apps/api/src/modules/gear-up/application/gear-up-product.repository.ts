@@ -1,7 +1,4 @@
-import type {
-  GearUpProductCreateInput,
-  GearUpProductUpdateInput,
-} from "@hooma/contracts/gear-up";
+import type { GearUpProductCreateInput, GearUpProductUpdateInput } from "@hooma/contracts/gear-up";
 
 export interface GearUpProductRecord {
   readonly id: string;
