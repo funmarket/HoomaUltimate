@@ -4,6 +4,91 @@ import { placeSubmissionOriginSchema, placeSuggestionSchema } from "./places.js"
 
 export const gearUpOfferTypeSchema = z.enum(["SPORTSWEAR", "GEAR"]);
 
+export const GEAR_UP_PRODUCT_IMAGE_CONTENT_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+] as const;
+export const GEAR_UP_PRODUCT_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+export const GEAR_UP_PRODUCT_IMAGE_RECONCILE_TOPIC =
+  "gear-up.product-image.reconcile-object";
+
+export const gearUpProductImageContentTypeSchema = z.enum(
+  GEAR_UP_PRODUCT_IMAGE_CONTENT_TYPES,
+);
+export const gearUpProductImageSourceSchema = z.enum(["UPLOAD", "EXTERNAL_URL"]);
+
+const gearUpProductExternalImageUrlSchema = z
+  .string()
+  .trim()
+  .url()
+  .superRefine((value, context) => {
+    let url: URL;
+    try {
+      url = new URL(value);
+    } catch {
+      return;
+    }
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Gear Up product image links must use http or https",
+      });
+    }
+    if (url.username || url.password) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Gear Up product image links cannot contain credentials",
+      });
+    }
+  });
+
+export const gearUpProductExternalImageInputSchema = z
+  .object({ url: gearUpProductExternalImageUrlSchema })
+  .strict();
+
+export const gearUpProductImageOrderSchema = z
+  .object({
+    imageIds: z
+      .array(z.string().trim().min(1))
+      .min(1)
+      .max(10)
+      .superRefine((value, context) => {
+        if (new Set(value).size !== value.length) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Gear Up product image order cannot contain duplicate images",
+          });
+        }
+      }),
+  })
+  .strict();
+
+export const gearUpProductImageSchema = z.object({
+  id: z.string().trim().min(1),
+  source: gearUpProductImageSourceSchema,
+  contentType: gearUpProductImageContentTypeSchema.nullable(),
+  sizeBytes: z.number().int().positive().nullable(),
+  sortOrder: z.number().int().min(0),
+  updatedAt: z.string().datetime(),
+});
+
+export const gearUpProductImageDeliverySchema = z.object({
+  contentUrl: z.string().url(),
+  expiresAt: z.string().datetime().nullable(),
+});
+
+export const gearUpProductImageCleanupPayloadSchema = z
+  .object({
+    productId: z.string().trim().min(1),
+    objectKey: z.string().trim().min(1),
+  })
+  .strict();
+
+export const gearUpSettingsSchema = z.object({
+  productImageLimit: z.number().int().min(1).max(10),
+});
+
 export const GEAR_UP_SPORTSWEAR_CATEGORIES = [
   "JERSEYS_KITS",
   "TRAINING_WEAR",
@@ -131,6 +216,17 @@ export const gearUpSettingsUpdateSchema = z
   })
   .strict();
 
+export type GearUpProductImageContentType = z.infer<
+  typeof gearUpProductImageContentTypeSchema
+>;
+export type GearUpProductImageSource = z.infer<typeof gearUpProductImageSourceSchema>;
+export type GearUpProductExternalImageInput = z.infer<
+  typeof gearUpProductExternalImageInputSchema
+>;
+export type GearUpProductImageOrderInput = z.infer<typeof gearUpProductImageOrderSchema>;
+export type GearUpProductImage = z.infer<typeof gearUpProductImageSchema>;
+export type GearUpProductImageDelivery = z.infer<typeof gearUpProductImageDeliverySchema>;
+export type GearUpSettings = z.infer<typeof gearUpSettingsSchema>;
 export type GearUpListQueryInput = z.infer<typeof gearUpListQuerySchema>;
 export type GearUpOfferType = z.infer<typeof gearUpOfferTypeSchema>;
 export type GearUpProductCategory = z.infer<typeof gearUpProductCategorySchema>;
