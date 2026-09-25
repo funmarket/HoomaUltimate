@@ -111,9 +111,7 @@ function filters(input: HelpRequestListQuery): Prisma.HelpRequestWhereInput {
     ...(input.subcategoryId ? { subcategoryId: input.subcategoryId } : {}),
     ...(input.needId ? { needId: input.needId } : {}),
     ...(input.surface ? { taxonomyNeed: { surfaces: { some: { surface: input.surface } } } } : {}),
-    ...(input.surface === "ATHLETES"
-      ? { requestType: "SPORT", NOT: { sport: "FOOTBALL" } }
-      : {}),
+    ...(input.surface === "ATHLETES" ? { requestType: "SPORT", NOT: { sport: "FOOTBALL" } } : {}),
     ...(input.city ? { city: input.city } : {}),
     ...(input.houma ? { houma: input.houma } : {}),
   };
