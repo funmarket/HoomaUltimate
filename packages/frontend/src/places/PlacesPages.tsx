@@ -9,8 +9,8 @@ import { useHoomaFrontend } from "../context";
 import type { PublicEvent } from "../events/api";
 import { useEventApi } from "../events/useEventApi";
 import { createPitchApi } from "../pitch/api";
+import { WatchSectionNavigation } from "../watch/WatchSectionNavigation";
 import { pitchRateToMinor } from "../pitch/pricing";
-import { CalendarIcon, PinIcon } from "../ui/HoomaIcons";
 import { createPlacesApi } from "./api";
 import { PlaceForm } from "./PlaceForm";
 
@@ -147,24 +147,7 @@ export function PlacesPage() {
         </div>
       </header>
 
-      <nav className="watch-section-actions" aria-label="Watch sections">
-        <a className="watch-section-action" href="/watch">
-          <CalendarIcon size={28} className="watch-section-action__icon" />
-          <span>Events</span>
-        </a>
-        <a className="watch-section-action" href="/places" aria-current="page">
-          <PinIcon size={28} className="watch-section-action__icon" />
-          <span>Spots</span>
-        </a>
-        <a className="watch-section-action" href="/events/new?type=WATCH&kind=MATCH">
-          <CalendarIcon size={28} className="watch-section-action__icon" />
-          <span>Create Event</span>
-        </a>
-        <a className="watch-section-action" href="/places/new">
-          <PinIcon size={28} className="watch-section-action__icon" />
-          <span>Add a Place</span>
-        </a>
-      </nav>
+      <WatchSectionNavigation active="spots" />
 
       <div className="place-source-tabs" role="tablist" aria-label="Spot source">
         <button
