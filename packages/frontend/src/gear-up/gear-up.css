@@ -47,6 +47,34 @@
   line-height: 1.5;
 }
 
+.gear-up-discovery-mode {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.gear-up-discovery-mode__option {
+  min-height: var(--hooma-ui-control-min-height);
+  border: 1px solid var(--hooma-ui-outline);
+  border-radius: var(--hooma-ui-radius-control);
+  color: var(--hooma-ui-text);
+  background: var(--hooma-ui-surface);
+  font: inherit;
+  font-size: var(--hooma-ui-body);
+  font-weight: 800;
+}
+
+.gear-up-discovery-mode__option.is-active {
+  border-color: color-mix(in srgb, var(--hooma-ui-accent) 65%, transparent);
+  color: var(--hooma-ui-accent);
+  background: color-mix(in srgb, var(--hooma-ui-accent) 6%, var(--hooma-ui-surface));
+}
+
+.gear-up-discovery-mode__option:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
 .gear-up-filters {
   display: grid;
   gap: 16px;
@@ -333,6 +361,21 @@
   font-size: var(--hooma-ui-meta);
 }
 
+.gear-up-shop-card__link {
+  min-height: var(--hooma-ui-control-min-height);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border: 1px solid color-mix(in srgb, var(--hooma-ui-accent) 65%, transparent);
+  border-radius: var(--hooma-ui-radius-control);
+  color: var(--hooma-ui-accent);
+  background: transparent;
+  font-size: var(--hooma-ui-meta);
+  font-weight: 800;
+  text-decoration: none;
+}
+
 .gear-up-shop-card__status {
   color: var(--hooma-ui-accent);
   font-weight: 800;
@@ -375,17 +418,34 @@
   font-size: var(--hooma-ui-body);
 }
 
-.gear-up-empty-state button {
+.gear-up-empty-state__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.gear-up-empty-state button,
+.gear-up-empty-state a {
   min-height: var(--hooma-ui-control-min-height);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0 16px;
-  border: 1px solid color-mix(in srgb, var(--hooma-ui-accent) 55%, transparent);
+  border: 1px solid var(--hooma-ui-outline);
   border-radius: var(--hooma-ui-radius-control);
-  color: var(--hooma-ui-accent);
+  color: var(--hooma-ui-text);
   background: transparent;
   font: inherit;
   font-size: var(--hooma-ui-meta);
   font-weight: 800;
+  text-decoration: none;
   cursor: pointer;
+}
+
+.gear-up-empty-state a {
+  border-color: color-mix(in srgb, var(--hooma-ui-accent) 65%, transparent);
+  color: var(--hooma-ui-accent);
 }
 
 .gear-up-visually-hidden {
