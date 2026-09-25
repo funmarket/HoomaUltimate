@@ -36,7 +36,7 @@ function dependencies(overrides = {}) {
     listPublicByShop: async () => [],
     getPublic: async () => null,
     listManagedByShop: async () => [],
-    getManaged: async () => null,
+    getManaged: async () => ({ id: "product-1", shopPlaceId: "place-1" }),
     create: async (placeId, input) => {
       calls.create.push({ placeId, input });
       return { id: "product-1", shopPlaceId: placeId, ...input };
