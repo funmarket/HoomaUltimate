@@ -1,4 +1,8 @@
-import type { GearUpShopSuggestionInput, GearUpShopUpdateInput } from "@hooma/contracts/gear-up";
+import type {
+  GearUpListQueryInput,
+  GearUpShopSuggestionInput,
+  GearUpShopUpdateInput,
+} from "@hooma/contracts/gear-up";
 import type { PlaceSuggestionResult } from "@hooma/contracts/places";
 
 export interface GearUpModerationDecision {
@@ -7,7 +11,7 @@ export interface GearUpModerationDecision {
 }
 
 export interface GearUpRepository {
-  listPublic(input: Readonly<Record<string, unknown>>): Promise<readonly unknown[]>;
+  listPublic(input: GearUpListQueryInput): Promise<readonly unknown[]>;
   getPublic(placeId: string): Promise<unknown | null>;
   suggest(userId: string, input: GearUpShopSuggestionInput): Promise<PlaceSuggestionResult>;
   getManaged(placeId: string): Promise<unknown | null>;

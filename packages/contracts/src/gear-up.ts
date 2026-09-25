@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { athletesSportSchema } from "./athletes.js";
-import { placeSuggestionSchema } from "./places.js";
+import { placeSubmissionOriginSchema, placeSuggestionSchema } from "./places.js";
 
 export const gearUpOfferTypeSchema = z.enum(["SPORTSWEAR", "GEAR"]);
 
@@ -24,6 +24,19 @@ export const GEAR_UP_PRODUCT_CATEGORIES = [
 ] as const;
 
 export const gearUpProductCategorySchema = z.enum(GEAR_UP_PRODUCT_CATEGORIES);
+
+export const gearUpListQuerySchema = z
+  .object({
+    q: z.string().trim().max(120).optional(),
+    source: placeSubmissionOriginSchema.optional(),
+    offer: gearUpOfferTypeSchema.optional(),
+    sport: athletesSportSchema.optional(),
+    category: gearUpProductCategorySchema.optional(),
+    city: z.string().trim().max(100).optional(),
+    houma: z.string().trim().max(100).optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(30),
+  })
+  .strict();
 
 const gearUpShopInputSchema = z
   .object({
@@ -69,6 +82,7 @@ export const gearUpSettingsUpdateSchema = z
   })
   .strict();
 
+export type GearUpListQueryInput = z.infer<typeof gearUpListQuerySchema>;
 export type GearUpOfferType = z.infer<typeof gearUpOfferTypeSchema>;
 export type GearUpProductCategory = z.infer<typeof gearUpProductCategorySchema>;
 export type GearUpShopSuggestionInput = z.infer<typeof gearUpShopSuggestionSchema>;
