@@ -1026,3 +1026,70 @@
 .athletes-member-row .athletes-request-actions > button {
   flex: 1 1 10rem;
 }
+
+
+.athletes-view-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  width: 100%;
+}
+
+.athletes-view-tab {
+  min-width: 0;
+  min-height: 48px;
+  border: 1px solid rgba(190, 180, 145, 0.22);
+  border-radius: 14px;
+  background: #0b0c0a;
+  color: #f5f4ef;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.athletes-view-tab.is-active {
+  border-color: #aef02f;
+  color: #aef02f;
+}
+
+.athletes-view-tab:focus-visible {
+  outline: 2px solid #a9b0b4;
+  outline-offset: 2px;
+}
+
+.athletes-requests {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.athletes-requests__heading {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.athletes-requests__heading h2 {
+  margin: 0.2rem 0 0;
+  color: #f5f4ef;
+  font-size: 20px;
+}
+
+.athletes-requests__heading .athletes-action {
+  width: auto;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 430px) {
+  .athletes-requests__heading {
+    flex-direction: column;
+  }
+
+  .athletes-requests__heading .athletes-action {
+    width: 100%;
+  }
+}

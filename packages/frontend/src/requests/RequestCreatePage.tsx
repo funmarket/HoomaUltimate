@@ -24,11 +24,17 @@ export function RequestCreatePage() {
   const requestsApi = useMemo(() => createRequestsApi(transport), [transport]);
   const taxonomySurface = useMemo<HelpTaxonomySurface>(() => {
     if (typeof window === "undefined") return "REQUESTS";
-    return new URLSearchParams(window.location.search).get("surface") === "PLAY"
-      ? "PLAY"
-      : "REQUESTS";
+    const surface = new URLSearchParams(window.location.search).get("surface");
+    return surface === "PLAY" || surface === "ATHLETES" ? surface : "REQUESTS";
   }, []);
-  const returnHref = taxonomySurface === "PLAY" ? "/play" : "/requests";
+  const returnHref =
+    taxonomySurface === "PLAY" ? "/play" : taxonomySurface === "ATHLETES" ? "/athletes" : "/requests";
+  const returnLabel =
+    taxonomySurface === "PLAY"
+      ? "Back to Play"
+      : taxonomySurface === "ATHLETES"
+        ? "Back to Athletes"
+        : "Back to Requests";
   const [me, setMe] = useState<MeResponse | null>(null);
   const [taxonomy, setTaxonomy] = useState<HelpTaxonomyResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -274,7 +280,7 @@ export function RequestCreatePage() {
               View Request
             </a>
             <a className="help-action help-action--quiet" href={returnHref}>
-              {taxonomySurface === "PLAY" ? "Back to Play" : "Back to Requests"}
+              {returnLabel}
             </a>
           </div>
         </section>

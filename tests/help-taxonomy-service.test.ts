@@ -73,3 +73,25 @@ test("Help taxonomy service does not invent or post-filter repository eligibilit
   assert.equal(result.sports[0]?.subcategories[0]?.needs[0]?.label, "Goalkeeper");
   assert.deepEqual(result.community.subcategories, []);
 });
+
+
+test("Athletes taxonomy projection excludes football so Play remains the soccer surface", async () => {
+  const repository: HelpTaxonomyRepository = {
+    async listActiveBySurface() {
+      return [
+        subcategory("SPORT", "FOOTBALL", "goalkeeper", "Goalkeeper", "COMMUNITY_ROLE"),
+        subcategory("SPORT", "RUNNING", "pace-partner", "Pace Partner", "COMMUNITY_ROLE"),
+        subcategory("SPORT", "TENNIS", "training-partner", "Training Partner", "COMMUNITY_ROLE"),
+      ];
+    },
+    async findActiveSelection() {
+      return null;
+    },
+  };
+
+  const result = await new HelpTaxonomyService(repository).list({ surface: "ATHLETES" });
+  assert.deepEqual(
+    result.sports.map((sport) => sport.sport),
+    ["RUNNING", "TENNIS"],
+  );
+});
