@@ -39,6 +39,7 @@ function input(name: string, address: string) {
       offerTypes: ["SPORTSWEAR", "GEAR"],
       sports: ["FOOTBALL"],
       categories: ["JERSEYS_KITS", "BALLS"],
+      paymentMethods: [],
     },
   };
 }
@@ -109,6 +110,13 @@ test("Gear Up repository reuses canonical Place and approves Place plus shop ato
       (await repository.listPublic({ offer: "GEAR" })).some((item) => item.place.id === placeId),
       true,
     );
+
+
+    const updated = await repository.updateShop(placeId, {
+      paymentMethods: ["CASH", "CRYPTO"],
+    });
+    assert.deepEqual(updated?.paymentMethods, ["CASH", "CRYPTO"]);
+    assert.deepEqual((await repository.getPublic(placeId))?.paymentMethods, ["CASH", "CRYPTO"]);
   } finally {
     await db.place.deleteMany({ where: { suggestedByUserId: submitter.id } });
     await db.user.deleteMany({ where: { id: { in: [submitter.id, admin.id] } } });
