@@ -277,6 +277,25 @@ test("Pitch rental pricing is canonical from contract through Prisma and reposit
   assert.doesNotMatch(repository, /\$executeRaw/);
 });
 
+test("Pitch source selection reuses canonical Place provenance end to end", () => {
+  const contracts = source("packages/contracts/src/pitch.ts");
+  const repository = source("apps/api/src/modules/pitch/infrastructure/prisma-pitch.repository.ts");
+  const pitch = source("packages/frontend/src/pitch/PitchPage.tsx");
+  const places = source("packages/frontend/src/places/PlacesPages.tsx");
+
+  assert.match(contracts, /place: placeSuggestionSchema,/);
+  assert.doesNotMatch(contracts, /omit\(\{ submissionOrigin: true \}\)/);
+  assert.match(repository, /input\.place\.submissionOrigin/);
+  assert.doesNotMatch(repository, /input\.place, "FANHUB", null/);
+  assert.match(pitch, /Add a Pitch/);
+  assert.match(pitch, /aria-label="Pitch source"/);
+  assert.match(pitch, /pitchOrigin === "OWNER"/);
+  assert.match(pitch, /pitchOrigin === "FANHUB"/);
+  assert.match(places, /WHO IS ADDING THIS PITCH\?/);
+  assert.match(places, /place: \{ \.\.\.input, submissionOrigin \}/);
+  assert.match(places, /Claim this Pitch/);
+});
+
 test("Pitch owns its discovery page and does not live inside generic PlacesPages", () => {
   const pitch = source("packages/frontend/src/pitch/PitchPage.tsx");
   const ticket = source("packages/frontend/src/pitch/PitchTicket.tsx");
