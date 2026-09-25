@@ -1,9 +1,10 @@
-import type { GearUpProductCreateInput, GearUpProductUpdateInput } from "@hooma/contracts/gear-up";
-import { Prisma, type PrismaClient } from "@hooma/database";
 import type {
-  GearUpProductRecord,
-  GearUpProductRepository,
-} from "../application/gear-up-product.repository.js";
+  GearUpProduct,
+  GearUpProductCreateInput,
+  GearUpProductUpdateInput,
+} from "@hooma/contracts/gear-up";
+import { Prisma, type PrismaClient } from "@hooma/database";
+import type { GearUpProductRepository } from "../application/gear-up-product.repository.js";
 
 const productSelect = Prisma.validator<Prisma.GearUpProductSelect>()({
   id: true,
@@ -19,11 +20,16 @@ const productSelect = Prisma.validator<Prisma.GearUpProductSelect>()({
   archivedAt: true,
   createdAt: true,
   updatedAt: true,
+  images: {
+    orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+    select: { id: true },
+    take: 1,
+  },
 });
 
 type ProductRow = Prisma.GearUpProductGetPayload<{ select: typeof productSelect }>;
 
-function productRecord(row: ProductRow): GearUpProductRecord {
+function productRecord(row: ProductRow): GearUpProduct {
   return {
     id: row.id,
     shopPlaceId: row.shopPlaceId,
@@ -34,6 +40,7 @@ function productRecord(row: ProductRow): GearUpProductRecord {
     category: row.category,
     price: row.price?.toNumber() ?? null,
     currency: row.currency,
+    coverImageId: row.images[0]?.id ?? null,
     featuredAt: row.featuredAt?.toISOString() ?? null,
     archivedAt: row.archivedAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
@@ -44,7 +51,7 @@ function productRecord(row: ProductRow): GearUpProductRecord {
 export class PrismaGearUpProductRepository implements GearUpProductRepository {
   constructor(private readonly db: PrismaClient) {}
 
-  async listPublicByShop(placeId: string): Promise<readonly GearUpProductRecord[]> {
+  async listPublicByShop(placeId: string): Promise<readonly GearUpProduct[]> {
     const rows = await this.db.gearUpProduct.findMany({
       where: {
         shopPlaceId: placeId,
@@ -64,7 +71,7 @@ export class PrismaGearUpProductRepository implements GearUpProductRepository {
     return rows.map(productRecord);
   }
 
-  async getPublic(productId: string): Promise<GearUpProductRecord | null> {
+  async getPublic(productId: string): Promise<GearUpProduct | null> {
     const row = await this.db.gearUpProduct.findFirst({
       where: {
         id: productId,
@@ -83,7 +90,7 @@ export class PrismaGearUpProductRepository implements GearUpProductRepository {
     return row ? productRecord(row) : null;
   }
 
-  async listManagedByShop(placeId: string): Promise<readonly GearUpProductRecord[]> {
+  async listManagedByShop(placeId: string): Promise<readonly GearUpProduct[]> {
     const rows = await this.db.gearUpProduct.findMany({
       where: { shopPlaceId: placeId },
       select: productSelect,
@@ -92,7 +99,7 @@ export class PrismaGearUpProductRepository implements GearUpProductRepository {
     return rows.map(productRecord);
   }
 
-  async getManaged(productId: string): Promise<GearUpProductRecord | null> {
+  async getManaged(productId: string): Promise<GearUpProduct | null> {
     const row = await this.db.gearUpProduct.findUnique({
       where: { id: productId },
       select: productSelect,
@@ -100,7 +107,7 @@ export class PrismaGearUpProductRepository implements GearUpProductRepository {
     return row ? productRecord(row) : null;
   }
 
-  async create(placeId: string, input: GearUpProductCreateInput): Promise<GearUpProductRecord> {
+  async create(placeId: string, input: GearUpProductCreateInput): Promise<GearUpProduct> {
     const row = await this.db.gearUpProduct.create({
       data: {
         shopPlaceId: placeId,
@@ -117,7 +124,7 @@ export class PrismaGearUpProductRepository implements GearUpProductRepository {
     return productRecord(row);
   }
 
-  async update(productId: string, input: GearUpProductUpdateInput): Promise<GearUpProductRecord> {
+  async update(productId: string, input: GearUpProductUpdateInput): Promise<GearUpProduct> {
     const row = await this.db.gearUpProduct.update({
       where: { id: productId },
       data: {
@@ -136,7 +143,7 @@ export class PrismaGearUpProductRepository implements GearUpProductRepository {
     return productRecord(row);
   }
 
-  async feature(productId: string): Promise<GearUpProductRecord> {
+  async feature(productId: string): Promise<GearUpProduct> {
     const existing = await this.db.gearUpProduct.findUniqueOrThrow({
       where: { id: productId },
       select: { featuredAt: true },
@@ -154,7 +161,7 @@ export class PrismaGearUpProductRepository implements GearUpProductRepository {
     return productRecord(row);
   }
 
-  async unfeature(productId: string): Promise<GearUpProductRecord> {
+  async unfeature(productId: string): Promise<GearUpProduct> {
     const row = await this.db.gearUpProduct.update({
       where: { id: productId },
       data: { featuredAt: null },
@@ -163,7 +170,7 @@ export class PrismaGearUpProductRepository implements GearUpProductRepository {
     return productRecord(row);
   }
 
-  async archive(productId: string): Promise<GearUpProductRecord> {
+  async archive(productId: string): Promise<GearUpProduct> {
     const existing = await this.db.gearUpProduct.findUniqueOrThrow({
       where: { id: productId },
       select: { archivedAt: true },
@@ -181,7 +188,7 @@ export class PrismaGearUpProductRepository implements GearUpProductRepository {
     return productRecord(row);
   }
 
-  async restore(productId: string): Promise<GearUpProductRecord> {
+  async restore(productId: string): Promise<GearUpProduct> {
     const row = await this.db.gearUpProduct.update({
       where: { id: productId },
       data: { archivedAt: null },
