@@ -46,7 +46,7 @@ export function RequestCreatePage() {
   const [imageUrl, setImageUrl] = useState("");
   const [publisher, setPublisher] = useState("personal");
   const [audience, setAudience] = useState("public");
-  const [requestType, setRequestType] = useState("");
+  const [requestType, setRequestType] = useState(taxonomySurface === "ATHLETES" ? "SPORT" : "");
   const [sport, setSport] = useState("");
   const [subcategoryId, setSubcategoryId] = useState("");
   const [needId, setNeedId] = useState("");
@@ -360,6 +360,7 @@ export function RequestCreatePage() {
                 className="request-field__control"
                 value={requestType}
                 required
+                disabled={taxonomySurface === "ATHLETES"}
                 onChange={(event) => {
                   setRequestType(event.target.value);
                   setSport("");
@@ -368,9 +369,13 @@ export function RequestCreatePage() {
                   setCustomNeed("");
                 }}
               >
-                <option value="">Choose request type</option>
+                {taxonomySurface === "ATHLETES" ? null : (
+                  <option value="">Choose request type</option>
+                )}
                 <option value="SPORT">Sport</option>
-                <option value="COMMUNITY">Community</option>
+                {taxonomySurface === "ATHLETES" ? null : (
+                  <option value="COMMUNITY">Community</option>
+                )}
               </select>
             </div>
 

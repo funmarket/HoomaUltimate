@@ -43,7 +43,10 @@ export class HelpTaxonomyService {
     const community: HelpTaxonomySubcategoryRecord[] = [];
 
     for (const row of rows) {
-      if (input.surface === "ATHLETES" && row.requestType === "SPORT" && row.sport === "FOOTBALL") {
+      if (
+        input.surface === "ATHLETES" &&
+        (row.requestType !== "SPORT" || row.sport === "FOOTBALL")
+      ) {
         continue;
       }
       if (row.requestType === "COMMUNITY") {

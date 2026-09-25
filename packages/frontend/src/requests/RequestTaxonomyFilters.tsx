@@ -8,10 +8,12 @@ export function RequestTaxonomyFilters({
   taxonomy,
   value,
   onChange,
+  sportOnly = false,
 }: {
   readonly taxonomy: HelpTaxonomyResponse;
   readonly value: RequestsListQuery;
   readonly onChange: (next: RequestsListQuery) => void;
+  readonly sportOnly?: boolean;
 }) {
   const selectedSport =
     value.requestType === "SPORT"
@@ -34,28 +36,30 @@ export function RequestTaxonomyFilters({
         <h2>Find a need</h2>
       </div>
       <div className="request-filters__fields">
-        <div className="request-field">
-          <label className="request-field__label" htmlFor="request-filter-type">
-            Request Type
-          </label>
-          <select
-            id="request-filter-type"
-            className={FIELD_CLASS}
-            value={value.requestType ?? ""}
-            onChange={(event) =>
-              patch({
-                requestType: (event.target.value || undefined) as RequestsListQuery["requestType"],
-                sport: undefined,
-                subcategoryId: undefined,
-                needId: undefined,
-              })
-            }
-          >
-            <option value="">All request types</option>
-            <option value="SPORT">Sport</option>
-            <option value="COMMUNITY">Community</option>
-          </select>
-        </div>
+        {sportOnly ? null : (
+          <div className="request-field">
+            <label className="request-field__label" htmlFor="request-filter-type">
+              Request Type
+            </label>
+            <select
+              id="request-filter-type"
+              className={FIELD_CLASS}
+              value={value.requestType ?? ""}
+              onChange={(event) =>
+                patch({
+                  requestType: (event.target.value || undefined) as RequestsListQuery["requestType"],
+                  sport: undefined,
+                  subcategoryId: undefined,
+                  needId: undefined,
+                })
+              }
+            >
+              <option value="">All request types</option>
+              <option value="SPORT">Sport</option>
+              <option value="COMMUNITY">Community</option>
+            </select>
+          </div>
+        )}
 
         {value.requestType === "SPORT" ? (
           <div className="request-field">

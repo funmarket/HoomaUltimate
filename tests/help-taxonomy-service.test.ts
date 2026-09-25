@@ -80,6 +80,7 @@ test("Athletes taxonomy projection excludes football so Play remains the soccer 
     async listActiveBySurface() {
       return [
         subcategory("SPORT", "FOOTBALL", "goalkeeper", "Goalkeeper", "COMMUNITY_ROLE"),
+        subcategory("COMMUNITY", null, "lost-found", "Lost & Found", "COMMUNITY_SUPPORT"),
         subcategory("SPORT", "RUNNING", "pace-partner", "Pace Partner", "COMMUNITY_ROLE"),
         subcategory("SPORT", "TENNIS", "training-partner", "Training Partner", "COMMUNITY_ROLE"),
       ];
@@ -94,4 +95,5 @@ test("Athletes taxonomy projection excludes football so Play remains the soccer 
     result.sports.map((sport) => sport.sport),
     ["RUNNING", "TENNIS"],
   );
+  assert.deepEqual(result.community.subcategories, []);
 });

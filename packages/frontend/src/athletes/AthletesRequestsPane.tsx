@@ -11,7 +11,10 @@ export function AthletesRequestsPane() {
   const requestsApi = useMemo(() => createRequestsApi(transport), [transport]);
   const [taxonomy, setTaxonomy] = useState<HelpTaxonomyResponse | null>(null);
   const [items, setItems] = useState<HelpRequest[]>([]);
-  const [filters, setFilters] = useState<RequestsListQuery>({ surface: "ATHLETES" });
+  const [filters, setFilters] = useState<RequestsListQuery>({
+    surface: "ATHLETES",
+    requestType: "SPORT",
+  });
   const [debouncedCity, setDebouncedCity] = useState<string | undefined>();
   const [debouncedHouma, setDebouncedHouma] = useState<string | undefined>();
   const [memberViewer, setMemberViewer] = useState<boolean | null>(null);
@@ -23,6 +26,7 @@ export function AthletesRequestsPane() {
   const effectiveFilters = useMemo<RequestsListQuery>(
     () => ({
       surface: "ATHLETES",
+      requestType: "SPORT",
       ...(filters.sport ? { sport: filters.sport } : {}),
       ...(filters.subcategoryId ? { subcategoryId: filters.subcategoryId } : {}),
       ...(filters.needId ? { needId: filters.needId } : {}),
@@ -120,7 +124,14 @@ export function AthletesRequestsPane() {
         </a>
       </div>
 
-      {taxonomy ? <RequestTaxonomyFilters taxonomy={taxonomy} value={filters} onChange={setFilters} /> : null}
+      {taxonomy ? (
+        <RequestTaxonomyFilters
+          taxonomy={taxonomy}
+          value={filters}
+          onChange={(next) => setFilters({ ...next, surface: "ATHLETES", requestType: "SPORT" })}
+          sportOnly
+        />
+      ) : null}
 
       <RequestFeed
         items={items}
