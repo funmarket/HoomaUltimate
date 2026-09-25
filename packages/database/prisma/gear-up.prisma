@@ -1,0 +1,105 @@
+enum PlaceDiscoveryKind {
+  WATCH_SPOT
+  GEAR_UP
+}
+
+enum GearUpOfferType {
+  SPORTSWEAR
+  GEAR
+}
+
+enum GearUpProductCategory {
+  JERSEYS_KITS
+  TRAINING_WEAR
+  TOPS
+  SPORTS_BOTTOMS
+  TRACKSUITS
+  FOOTWEAR_BOOTS
+  FANWEAR
+  BALLS
+  GOALKEEPER_GEAR
+  PROTECTIVE_GEAR
+  TRAINING_EQUIPMENT
+  BAGS
+  GYM_EQUIPMENT
+  CYCLING_GEAR
+  ACCESSORIES
+  OTHER
+}
+
+enum GearUpProductImageSource {
+  UPLOAD
+  EXTERNAL_URL
+}
+
+model PlaceDiscovery {
+  placeId   String
+  kind      PlaceDiscoveryKind
+  createdAt DateTime           @default(now())
+  place     Place              @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  @@id([placeId, kind])
+  @@index([kind, createdAt])
+}
+
+model GearUpShop {
+  placeId          String                  @id
+  moderationStatus ModerationStatus        @default(PENDING)
+  offerTypes       GearUpOfferType[]
+  sports           AthletesSport[]
+  categories       GearUpProductCategory[]
+  reviewedByUserId String?
+  reviewedAt       DateTime?
+  reviewNote       String?
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+  place            Place                   @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  products         GearUpProduct[]
+
+  @@index([moderationStatus, updatedAt])
+}
+
+model GearUpProduct {
+  id          String                @id @default(cuid())
+  shopPlaceId String
+  title       String
+  brand       String?
+  description String
+  sports      AthletesSport[]
+  category    GearUpProductCategory
+  price       Decimal?              @db.Decimal(10, 3)
+  currency    String                @default("TND") @db.VarChar(3)
+  featuredAt  DateTime?
+  archivedAt  DateTime?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  shop        GearUpShop            @relation(fields: [shopPlaceId], references: [placeId], onDelete: Cascade)
+  images      GearUpProductImage[]
+
+  @@index([shopPlaceId, archivedAt, featuredAt])
+  @@index([category, archivedAt])
+}
+
+model GearUpProductImage {
+  id          String                   @id @default(cuid())
+  productId   String
+  source      GearUpProductImageSource
+  objectKey   String?                  @unique
+  externalUrl String?
+  contentType String?
+  sizeBytes   Int?
+  sortOrder   Int
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+  product     GearUpProduct            @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, sortOrder])
+  @@index([productId, sortOrder])
+}
+
+model GearUpSettings {
+  id                String   @id
+  productImageLimit Int      @default(3)
+  updatedByUserId   String?
+  updatedAt         DateTime @updatedAt
+}

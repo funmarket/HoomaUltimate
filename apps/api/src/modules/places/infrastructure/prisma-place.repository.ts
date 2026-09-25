@@ -55,7 +55,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
 
   async suggest(userId: string, input: PlaceSuggestionInput): Promise<PlaceSuggestionResult> {
     return this.db.$transaction((tx) =>
-      suggestCanonicalPlace(tx, userId, input, input.submissionOrigin),
+      suggestCanonicalPlace(tx, userId, input, input.submissionOrigin, "WATCH_SPOT"),
     );
   }
 
