@@ -83,7 +83,10 @@ test("Gear Up discovery presents the approved filters and truthful canonical sho
   assert.match(card, /shop\.sports/);
   assert.match(card, /shop\.categories/);
   assert.doesNotMatch(card, /distance|km away|nearest/i);
-  assert.doesNotMatch(card, /verifiedOwner\s*=\s*.*submissionOrigin|submissionOrigin\s*===.*verified/i);
+  assert.doesNotMatch(
+    card,
+    /verifiedOwner\s*=\s*.*submissionOrigin|submissionOrigin\s*===.*verified/i,
+  );
 });
 
 test("Gear Up discovery uses the canonical HOOMA structural tokens instead of a feature-local visual system", () => {
