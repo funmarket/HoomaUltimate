@@ -19,7 +19,10 @@
   --hooma-ui-outline: rgba(190, 180, 145, 0.22);
   --hooma-ui-outline-hover: rgba(195, 188, 163, 0.3);
   --hooma-ui-text: #f5f4ef;
-  --hooma-ui-text-secondary: #aaa9a4;
+  --hooma-ui-text-description: #d8d4ca;
+  --hooma-ui-text-meta: #b8b5ad;
+  --hooma-ui-text-placeholder: #858780;
+  --hooma-ui-text-secondary: var(--hooma-ui-text-meta);
   --hooma-ui-accent: #aef02f;
   --hooma-ui-radius-card: 18px;
   --hooma-ui-radius-control: 14px;
@@ -30,6 +33,13 @@
   --hooma-ui-body-large: 17px;
   --hooma-ui-meta: 14px;
   --hooma-ui-eyebrow: 12px;
+  --hooma-ui-readable-min: 12px;
+  --hooma-ui-page-inline: 16px;
+  --hooma-ui-card-padding: 16px;
+  --hooma-ui-card-gap: 16px;
+  --hooma-ui-section-gap: 20px;
+  --hooma-ui-control-min-height: 48px;
+  --hooma-ui-touch-target: 48px;
 
   --app-bg: #070808;
   --app-bg-raised: #121212;
