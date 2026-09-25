@@ -95,6 +95,10 @@
     "./help-taxonomy": {
       "types": "./src/help-taxonomy.ts",
       "default": "./dist/help-taxonomy.js"
+    },
+    "./gear-up": {
+      "types": "./src/gear-up.ts",
+      "default": "./dist/gear-up.js"
     }
   }
 }

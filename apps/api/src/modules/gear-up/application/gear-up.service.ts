@@ -34,7 +34,7 @@ export class GearUpService {
   async getManaged(userId: string, placeId: string) {
     await this.requireManage(userId, placeId);
     const shop = await this.repository.getManaged(placeId);
-    if (!shop) throw new AppError(404, "GEAR_UP_SHOP_NOT_FOUND", "Gear Up shop not found");
+    if (!shop) throw new GearUpError("GEAR_UP_SHOP_NOT_FOUND", "Gear Up shop not found");
     return shop;
   }
 
