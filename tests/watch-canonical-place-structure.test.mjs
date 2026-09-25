@@ -16,11 +16,25 @@ function cssRule(css, selector) {
   return bodyEnd < 0 ? "" : css.slice(bodyStart, bodyEnd);
 }
 
-test("Watch page exposes only the four product functions and no business onboarding", () => {
+test("Watch separates primary destinations from secondary creation actions", () => {
   const watch = source("packages/frontend/src/watch/WatchPage.tsx");
-  for (const label of ["Events", "Spots", "Create Event", "Add a Place"]) {
+  const actionsCss = source("packages/frontend/src/watch/watch-section-actions.css");
+
+  for (const label of ["Events", "Spots", "Gear Up", "Create Event", "Add a Place"]) {
     assert.match(watch, new RegExp(`>\\s*${label}\\s*<`));
   }
+
+  assert.match(watch, /className="watch-section-actions"/);
+  assert.match(watch, /className="watch-section-utilities"/);
+  assert.match(watch, /href="\/places\/new"/);
+  assert.match(watch, /aria-disabled="true"/);
+  assert.doesNotMatch(watch, /href="\/gear-up"/);
+
+  assert.match(actionsCss, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
+  assert.match(actionsCss, /grid-template-columns: repeat\(2, minmax\(0, 220px\)\)/);
+  assert.match(actionsCss, /\.watch-section-action--utility/);
+  assert.match(actionsCss, /min-height: 48px/);
+
   assert.doesNotMatch(watch, />\s*Places\s*</);
   assert.doesNotMatch(
     watch,
