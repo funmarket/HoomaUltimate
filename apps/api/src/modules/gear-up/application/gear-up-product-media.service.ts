@@ -81,10 +81,7 @@ export class GearUpProductMediaService {
       );
     }
     if (!input.body.byteLength) {
-      throw new GearUpError(
-        "GEAR_UP_PRODUCT_IMAGE_REQUIRED",
-        "Product image bytes are required",
-      );
+      throw new GearUpError("GEAR_UP_PRODUCT_IMAGE_REQUIRED", "Product image bytes are required");
     }
     if (input.body.byteLength > GEAR_UP_PRODUCT_IMAGE_MAX_BYTES) {
       throw new GearUpError(
@@ -143,19 +140,11 @@ export class GearUpProductMediaService {
         }
       }
       if (error instanceof GearUpError) throw error;
-      throw new GearUpError(
-        "GEAR_UP_PRODUCT_IMAGE_UPLOAD_FAILED",
-        "Product image upload failed",
-      );
+      throw new GearUpError("GEAR_UP_PRODUCT_IMAGE_UPLOAD_FAILED", "Product image upload failed");
     }
   }
 
-  async delete(
-    userId: string,
-    placeId: string,
-    productId: string,
-    imageId: string,
-  ): Promise<void> {
+  async delete(userId: string, placeId: string, productId: string, imageId: string): Promise<void> {
     await this.requireManage(userId, placeId, productId);
     if (!(await this.images.delete(productId, imageId))) {
       throw new GearUpError("GEAR_UP_PRODUCT_IMAGE_NOT_FOUND", "Product image not found");
@@ -173,10 +162,7 @@ export class GearUpProductMediaService {
     return (await this.images.reorder(productId, parsed.imageIds)).map(publicImage);
   }
 
-  async deliveryPublic(
-    productId: string,
-    imageId: string,
-  ): Promise<GearUpProductImageDelivery> {
+  async deliveryPublic(productId: string, imageId: string): Promise<GearUpProductImageDelivery> {
     if (!(await this.products.getPublic(productId))) {
       throw new GearUpError("GEAR_UP_PRODUCT_NOT_FOUND", "Gear Up product not found");
     }
@@ -193,20 +179,14 @@ export class GearUpProductMediaService {
     return this.delivery(productId, imageId);
   }
 
-  private async delivery(
-    productId: string,
-    imageId: string,
-  ): Promise<GearUpProductImageDelivery> {
+  private async delivery(productId: string, imageId: string): Promise<GearUpProductImageDelivery> {
     const image = await this.images.get(productId, imageId);
     if (!image) {
       throw new GearUpError("GEAR_UP_PRODUCT_IMAGE_NOT_FOUND", "Product image not found");
     }
     if (image.source === "EXTERNAL_URL") {
       if (!image.externalUrl) {
-        throw new GearUpError(
-          "GEAR_UP_PRODUCT_IMAGE_UNAVAILABLE",
-          "Product image is unavailable",
-        );
+        throw new GearUpError("GEAR_UP_PRODUCT_IMAGE_UNAVAILABLE", "Product image is unavailable");
       }
       return { contentUrl: image.externalUrl, expiresAt: null };
     }
@@ -219,25 +199,15 @@ export class GearUpProductMediaService {
     const issuedAt = Date.now();
     try {
       return {
-        contentUrl: await this.storage.createReadUrl(
-          image.objectKey,
-          IMAGE_READ_URL_TTL_SECONDS,
-        ),
+        contentUrl: await this.storage.createReadUrl(image.objectKey, IMAGE_READ_URL_TTL_SECONDS),
         expiresAt: new Date(issuedAt + IMAGE_READ_URL_TTL_SECONDS * 1000).toISOString(),
       };
     } catch {
-      throw new GearUpError(
-        "GEAR_UP_PRODUCT_IMAGE_UNAVAILABLE",
-        "Product image is unavailable",
-      );
+      throw new GearUpError("GEAR_UP_PRODUCT_IMAGE_UNAVAILABLE", "Product image is unavailable");
     }
   }
 
-  private async requireManage(
-    userId: string,
-    placeId: string,
-    productId: string,
-  ): Promise<void> {
+  private async requireManage(userId: string, placeId: string, productId: string): Promise<void> {
     if (
       !(await this.places.hasVerifiedOwnership(placeId, userId)) &&
       !(await this.platformAdmin.isPlatformAdmin(userId))
