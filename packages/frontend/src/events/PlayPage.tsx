@@ -710,11 +710,13 @@ export function PlayPage() {
                         Update
                       </button>
                       <button
-                    className="play-action play-action--danger"
-                    type="button"
-                    disabled={saving}
-                    onClick={() => void removeListing()}
-                  >Remove</button>
+                        className="play-action play-action--danger"
+                        type="button"
+                        disabled={saving}
+                        onClick={() => void removeListing()}
+                      >
+                        Remove
+                      </button>
                     </div>
                   </>
                 ) : (
