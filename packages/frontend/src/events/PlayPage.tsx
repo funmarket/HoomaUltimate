@@ -326,17 +326,17 @@ export function PlayPage() {
   const signInHref = authenticationHref("/play");
   const selectedOfferPending = Boolean(
     offerListing &&
-      offerTeamId &&
-      actionState.teamOffers.some(
-        (offer) => offer.listingId === offerListing.id && offer.teamId === offerTeamId,
-      ),
+    offerTeamId &&
+    actionState.teamOffers.some(
+      (offer) => offer.listingId === offerListing.id && offer.teamId === offerTeamId,
+    ),
   );
   const selectedInvitePending = Boolean(
     inviteListing &&
-      inviteEventId &&
-      actionState.eventInvites.some(
-        (invite) => invite.listingId === inviteListing.id && invite.eventId === inviteEventId,
-      ),
+    inviteEventId &&
+    actionState.eventInvites.some(
+      (invite) => invite.listingId === inviteListing.id && invite.eventId === inviteEventId,
+    ),
   );
   const actionBusy = accountLoading || offerLoading || inviteLoading;
 
@@ -454,7 +454,9 @@ export function PlayPage() {
       {activeView === "players" ? (
         <section className="play-section" aria-labelledby="players-looking-title">
           {!accountLoading && !me && signInHref ? (
-            <a className="play-player-publish" href={signInHref}>Sign in to publish</a>
+            <a className="play-player-publish" href={signInHref}>
+              Sign in to publish
+            </a>
           ) : null}
           {!accountLoading && me ? (
             <form className="play-player-editor panel" onSubmit={saveListing}>
@@ -560,11 +562,7 @@ export function PlayPage() {
                 type="submit"
                 disabled={offerLoading || !offerTeamId || selectedOfferPending}
               >
-                {offerLoading
-                  ? "Sending…"
-                  : selectedOfferPending
-                    ? "Offer pending"
-                    : "Send offer"}
+                {offerLoading ? "Sending…" : selectedOfferPending ? "Offer pending" : "Send offer"}
               </button>
               <button
                 className="play-action play-action--quiet"
@@ -646,7 +644,9 @@ export function PlayPage() {
               </button>
             </form>
           ) : null}
-          <h2 id="players-looking-title" className="play-list-title">Looking to play</h2>
+          <h2 id="players-looking-title" className="play-list-title">
+            Looking to play
+          </h2>
           {playersLoading ? <div className="play-state panel">Loading players…</div> : null}
           {!playersLoading && playersError ? (
             <div className="play-state panel error">{playersError}</div>
