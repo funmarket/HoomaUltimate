@@ -19,6 +19,7 @@ import { createRequestPublicRouter } from "../../modules/requests/http/request.r
 import { createHelpTaxonomyPublicRouter } from "../../modules/help-taxonomy/http/help-taxonomy.routes.js";
 import { createRidePublicRouter } from "../../modules/rides/http/ride.routes.js";
 import { createTeamPublicRouter } from "../../modules/teams/http/team.routes.js";
+import { createGearUpPublicRouter } from "../../modules/gear-up/http/gear-up.routes.js";
 
 export function createPublicV1Router(container: AppContainer, config: ApiConfig): Router {
   const router = Router();
@@ -46,6 +47,14 @@ export function createPublicV1Router(container: AppContainer, config: ApiConfig)
   router.use("/profiles", createIdentityProfilePublicRouter(container.identityService));
   router.use("/places", createPlacesPublicRouter(container.placeService));
   router.use("/pitch", createPitchPublicRouter(container.approvedPitchReader));
+  router.use(
+    "/gear-up",
+    createGearUpPublicRouter(
+      container.gearUpService,
+      container.gearUpProductService,
+      container.gearUpProductMediaService,
+    ),
+  );
   router.use("/communities", createCommunityPublicRouter(container.communityService));
   router.use("/athletes", createAthletesPublicRouter(container.athletesService));
   router.use("/teams", createTeamPublicRouter(container.teamService));

@@ -19,6 +19,8 @@ import type { PitchModerationService } from "../../pitch/application/pitch-moder
 import type { PlaceService } from "../../places/application/place.service.js";
 import type { IdentityAdminService } from "../../identity/application/identity-admin.service.js";
 import type { PlatformAdminService } from "../application/platform-admin.service.js";
+import type { GearUpService } from "../../gear-up/application/gear-up.service.js";
+import type { GearUpSettingsService } from "../../gear-up/application/gear-up-settings.service.js";
 
 type ModerationDecision = {
   readonly decision: "APPROVE" | "REJECT";
@@ -38,6 +40,8 @@ export function createPlatformAdminRouter(
   places: PlaceService,
   pitchModeration: PitchModerationService,
   gamerMatches: GamerMatchService,
+  gearUp: GearUpService,
+  gearUpSettings: GearUpSettingsService,
 ): Router {
   const router = Router();
 
@@ -248,6 +252,40 @@ export function createPlatformAdminRouter(
           String(request.params.reviewId),
           parseModerationDecision(request.body),
         ),
+      );
+    }),
+  );
+
+  router.get(
+    "/queues/gear-up",
+    asyncHandler(async (request, response) => {
+      response.json(await gearUp.pending(getAuth(request).userId));
+    }),
+  );
+  router.post(
+    "/queues/gear-up/:placeId/decision",
+    asyncHandler(async (request, response) => {
+      response.json(
+        await gearUp.review(
+          getAuth(request).userId,
+          String(request.params.placeId),
+          parseModerationDecision(request.body),
+        ),
+      );
+    }),
+  );
+
+  router.get(
+    "/gear-up/settings",
+    asyncHandler(async (_request, response) => {
+      response.json(await gearUpSettings.get());
+    }),
+  );
+  router.patch(
+    "/gear-up/settings",
+    asyncHandler(async (request, response) => {
+      response.json(
+        await gearUpSettings.update(getAuth(request).userId, request.body),
       );
     }),
   );
