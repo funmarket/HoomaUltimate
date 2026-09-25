@@ -58,3 +58,24 @@ test("Gear Up image limit is bounded from 1 through 10", () => {
   assert.equal(succeeds(schema, { productImageLimit: 0 }), false);
   assert.equal(succeeds(schema, { productImageLimit: 11 }), false);
 });
+
+test("Gear Up discovery query governs source, offer, sport and category filters", () => {
+  const schema = runtimeSchema("gearUpListQuerySchema");
+  assert.equal(
+    succeeds(schema, {
+      source: "FANHUB",
+      offer: "GEAR",
+      sport: "FOOTBALL",
+      category: "BALLS",
+      q: "football",
+      city: "Tunis",
+      houma: "Centre",
+      limit: 30,
+    }),
+    true,
+  );
+  assert.equal(succeeds(schema, { source: "OTHER" }), false);
+  assert.equal(succeeds(schema, { offer: "BOTH" }), false);
+  assert.equal(succeeds(schema, { sport: "SOCCER" }), false);
+  assert.equal(succeeds(schema, { limit: 101 }), false);
+});
