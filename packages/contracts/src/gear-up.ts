@@ -1,8 +1,17 @@
 import { z } from "zod";
-import { athletesSportSchema } from "./athletes.js";
-import { placeSubmissionOriginSchema, placeSuggestionSchema } from "./places.js";
+import { athletesSportSchema, type AthletesSport } from "./athletes.js";
+import {
+  placeSubmissionOriginSchema,
+  placeSuggestionSchema,
+  type PlaceModerationStatus,
+  type PlaceReviewApplicant,
+  type PublicPlaceSummary,
+} from "./places.js";
 
 export const gearUpOfferTypeSchema = z.enum(["SPORTSWEAR", "GEAR"]);
+
+export const GEAR_UP_PAYMENT_METHODS = ["CASH", "CRYPTO", "CARD_BY_PHONE"] as const;
+export const gearUpPaymentMethodSchema = z.enum(GEAR_UP_PAYMENT_METHODS);
 
 export const GEAR_UP_PRODUCT_IMAGE_CONTENT_TYPES = [
   "image/jpeg",
@@ -174,6 +183,10 @@ const gearUpShopInputSchema = z
     offerTypes: z.array(gearUpOfferTypeSchema).min(1).max(2),
     sports: z.array(athletesSportSchema).min(1).max(9),
     categories: z.array(gearUpProductCategorySchema).min(1).max(GEAR_UP_PRODUCT_CATEGORIES.length),
+    paymentMethods: z
+      .array(gearUpPaymentMethodSchema)
+      .max(GEAR_UP_PAYMENT_METHODS.length)
+      .default([]),
   })
   .strict();
 
@@ -182,11 +195,29 @@ export const gearUpShopSuggestionSchema = z
     place: placeSuggestionSchema,
     shop: gearUpShopInputSchema,
   })
-  .strict();
+  .strict()
+  .superRefine((input, context) => {
+    if (input.place.submissionOrigin === "OWNER" && input.shop.paymentMethods.length === 0) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["shop", "paymentMethods"],
+        message: "Owner-submitted Gear Up shops must accept at least one payment method",
+      });
+    }
+  });
 
 export const gearUpShopUpdateSchema = gearUpShopInputSchema
   .partial()
-  .refine((input) => Object.keys(input).length > 0, "At least one Gear Up shop field is required");
+  .refine((input) => Object.keys(input).length > 0, "At least one Gear Up shop field is required")
+  .superRefine((input, context) => {
+    if (input.paymentMethods !== undefined && input.paymentMethods.length === 0) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["paymentMethods"],
+        message: "Gear Up payment methods cannot be empty when provided",
+      });
+    }
+  });
 
 export const gearUpProductCreateSchema = z
   .object({
@@ -213,6 +244,48 @@ export const gearUpSettingsUpdateSchema = z
   })
   .strict();
 
+export interface PublicGearUpShop {
+  readonly place: PublicPlaceSummary;
+  readonly offerTypes: readonly GearUpOfferType[];
+  readonly sports: readonly AthletesSport[];
+  readonly categories: readonly GearUpProductCategory[];
+  readonly paymentMethods: readonly GearUpPaymentMethod[];
+  readonly verifiedOwner: boolean;
+}
+
+export interface ManagedGearUpShop extends PublicGearUpShop {
+  readonly moderationStatus: PlaceModerationStatus;
+  readonly reviewedAt: string | null;
+  readonly reviewNote: string | null;
+}
+
+export interface GearUpReviewQueueItem {
+  readonly placeId: string;
+  readonly status: PlaceModerationStatus;
+  readonly createdAt: string;
+  readonly reviewedAt: string | null;
+  readonly reviewNote: string | null;
+  readonly applicant: PlaceReviewApplicant;
+  readonly shop: PublicGearUpShop;
+}
+
+export interface GearUpProduct {
+  readonly id: string;
+  readonly shopPlaceId: string;
+  readonly title: string;
+  readonly brand: string | null;
+  readonly description: string;
+  readonly sports: readonly AthletesSport[];
+  readonly category: GearUpProductCategory;
+  readonly price: number | null;
+  readonly currency: string;
+  readonly coverImageId: string | null;
+  readonly featuredAt: string | null;
+  readonly archivedAt: string | null;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
 export type GearUpProductImageContentType = z.infer<typeof gearUpProductImageContentTypeSchema>;
 export type GearUpProductImageSource = z.infer<typeof gearUpProductImageSourceSchema>;
 export type GearUpProductExternalImageInput = z.infer<typeof gearUpProductExternalImageInputSchema>;
@@ -222,6 +295,7 @@ export type GearUpProductImageDelivery = z.infer<typeof gearUpProductImageDelive
 export type GearUpSettings = z.infer<typeof gearUpSettingsSchema>;
 export type GearUpListQueryInput = z.infer<typeof gearUpListQuerySchema>;
 export type GearUpOfferType = z.infer<typeof gearUpOfferTypeSchema>;
+export type GearUpPaymentMethod = z.infer<typeof gearUpPaymentMethodSchema>;
 export type GearUpProductCategory = z.infer<typeof gearUpProductCategorySchema>;
 export type GearUpShopSuggestionInput = z.infer<typeof gearUpShopSuggestionSchema>;
 export type GearUpShopUpdateInput = z.infer<typeof gearUpShopUpdateSchema>;

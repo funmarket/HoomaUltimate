@@ -19,6 +19,7 @@ test("Gear Up shop accepts Sportswear, Gear, or both", () => {
   const shop = {
     sports: ["FOOTBALL"],
     categories: ["JERSEYS_KITS"],
+    paymentMethods: ["CASH"],
   };
   const sportswear = { place, shop: { ...shop, offerTypes: ["SPORTSWEAR"] } };
   const gear = { place, shop: { ...shop, offerTypes: ["GEAR"] } };

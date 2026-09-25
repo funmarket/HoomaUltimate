@@ -8,6 +8,12 @@ enum GearUpOfferType {
   GEAR
 }
 
+enum GearUpPaymentMethod {
+  CASH
+  CRYPTO
+  CARD_BY_PHONE
+}
+
 enum GearUpProductCategory {
   JERSEYS_KITS
   TRAINING_WEAR
@@ -59,6 +65,7 @@ model GearUpShop {
   offerTypes       GearUpOfferType[]
   sports           AthletesSport[]
   categories       GearUpProductCategory[]
+  paymentMethods   GearUpPaymentMethod[]    @default([])
   reviewedByUserId String?
   reviewedAt       DateTime?
   reviewNote       String?
