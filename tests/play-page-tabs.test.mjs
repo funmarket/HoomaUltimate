@@ -4,7 +4,7 @@ import test from "node:test";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("Play presents Games, Players, and Mine as sibling local views", async () => {
+test("Play presents Games, Players, Requests, and Mine as sibling local views", async () => {
   const [page, router] = await Promise.all([
     read("packages/frontend/src/events/PlayPage.tsx"),
     read("apps/web/src/app/router/HoomaRouter.tsx"),
@@ -14,7 +14,7 @@ test("Play presents Games, Players, and Mine as sibling local views", async () =
   assert.match(page, /useState<PlayView>\("games"\)/);
   assert.match(
     page,
-    /className="play-view-tabs play-view-tabs--three" role="tablist" aria-label="Play sections"/,
+    /className="play-view-tabs play-view-tabs--four"[\\s\\S]*role="tablist"[\\s\\S]*aria-label="Play sections"/,
   );
   assert.match(page, />\s*Games\s*<\/button>/);
   assert.match(page, />\s*Players\s*<\/button>/);
