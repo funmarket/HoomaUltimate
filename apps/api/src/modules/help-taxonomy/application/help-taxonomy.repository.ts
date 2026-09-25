@@ -1,5 +1,9 @@
 import type { AthletesSport } from "@hooma/contracts/athletes";
-import type { HelpTaxonomyNeedKind, HelpTaxonomySurface } from "@hooma/contracts/help-taxonomy";
+import type {
+  HelpRequestType,
+  HelpTaxonomyNeedKind,
+  HelpTaxonomySurface,
+} from "@hooma/contracts/help-taxonomy";
 
 export interface HelpTaxonomyNeedRecord {
   readonly id: string;
@@ -12,7 +16,8 @@ export interface HelpTaxonomyNeedRecord {
 
 export interface HelpTaxonomySubcategoryRecord {
   readonly id: string;
-  readonly sport: AthletesSport;
+  readonly requestType: HelpRequestType;
+  readonly sport: AthletesSport | null;
   readonly slug: string;
   readonly label: string;
   readonly sortOrder: number;
@@ -22,7 +27,8 @@ export interface HelpTaxonomySubcategoryRecord {
 export interface HelpTaxonomySelection {
   readonly subcategory: {
     readonly id: string;
-    readonly sport: AthletesSport;
+    readonly requestType: HelpRequestType;
+    readonly sport: AthletesSport | null;
     readonly slug: string;
     readonly label: string;
   };
@@ -37,11 +43,12 @@ export interface HelpTaxonomySelection {
 }
 
 export interface HelpTaxonomySelectionReader {
-  findActiveSelection(
-    sport: AthletesSport,
-    subcategoryId: string,
-    needId: string,
-  ): Promise<HelpTaxonomySelection | null>;
+  findActiveSelection(input: {
+    readonly requestType: HelpRequestType;
+    readonly sport?: AthletesSport | null;
+    readonly subcategoryId: string;
+    readonly needId: string;
+  }): Promise<HelpTaxonomySelection | null>;
 }
 
 export interface HelpTaxonomyRepository extends HelpTaxonomySelectionReader {

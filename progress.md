@@ -2,7 +2,58 @@
 
 This file is a non-authoritative execution and verification log. Product behavior and architecture truth remain in `requirements.md`, `structure.md`, `docs/CANONICAL_MODEL.md`, `docs/DECISIONS.md`, and the applicable ADRs.
 
-## Athletes hardening sequence
+## Requests / Help current program
+
+Target base: `phase-0-foundation`
+
+Clean Requests branch: `feat/requests-clean-completion`
+
+Draft pull request: `#351`
+
+Contaminated Hermes checkpoint/salvage PRs `#349` and `#350` remain reference-only and are not implementation ancestry. PR `#347` remains a separate Play -> Requests reference branch and must not be merged/cherry-picked wholesale over the clean Requests branch.
+
+### Verified clean Requests evidence
+
+- [PASS] Clean Slice 1 — canonical `SPORT | COMMUNITY` Request root, Community taxonomy, and database integrity.
+- [PASS] Clean Slice 2 — progressive root-aware create/filters plus private persisted `fullAddress`, intentionally omitted from current Request read DTOs.
+- [PASS] Clean Slice 3A — governed SPORT taxonomy expansion and explicit Other/manual Needs.
+- [PASS] Clean Slice 4 — Request media and requester/lifecycle continuation through application baseline `9f558264cf2125f178a0cdc5625c623a871f263a`.
+  - one optional Request image with upload or validated external URL;
+  - Request-owned image metadata with shared object storage and signed delivery;
+  - actual-byte image validation/normalization and Worker/outbox cleanup;
+  - requester presentation and current Request response/detail integration;
+  - exact-head CI run `#2361` (`35992814011`) passed on `9f558264cf2125f178a0cdc5625c623a871f263a`.
+
+That SHA is the last verified application-code baseline before the 2026-09-24 documentation reconciliation. Documentation commits after it do not turn draft PR `#351` into merged foundation truth and require their own exact-head CI before merge.
+
+### Authorized next sequence
+
+The product owner has replaced the older placeholder-only FundMe/Donations assumption with the ordered Help program governed by ADR-060 and `docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md`:
+
+```text
+H0 shared Help access extraction
+R1 Requests server-side search
+R2 Requests Sport | Community + quick taxonomy + advanced filters
+R3 readable Request cards + feed media + accessible expansion
+R4 Request create-flow redesign without changing canonical ownership
+R5 Request detail/response/lifecycle UI completion
+R6 Play -> Requests projection
+R7 Athletes -> Requests projection
+R8 Requests browser/mobile/final gate
+then FundMe
+then Donations
+then visibility-aware Help overview
+```
+
+FundMe target is now a real Fundraising-owned domain using **Cash and Crypto only** for its initial contribution coordination. No credit/debit-card or Telegram-Stars checkout is part of this FundMe program.
+
+Donations target is now a real Donations-owned reverse-Requests physical-item domain with `Sport | Community`, real search/filter discovery, private claim coordination, concurrency-safe quantities, backend-protected pickup data and up to four images. Financial donations remain FundMe; a generic service marketplace is not part of the Donation slice.
+
+- [NOT STARTED] H0 and R1-R8 have not been implemented by this documentation task.
+- [NOT STARTED] Durable Fundraising/FundMe persistence/API/frontend has not been implemented by this documentation task.
+- [NOT STARTED] Durable Donations persistence/API/frontend has not been implemented by this documentation task.
+
+## Athletes hardening sequence## Athletes hardening sequence
 
 Target base: `phase-0-foundation`
 

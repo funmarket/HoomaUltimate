@@ -3,6 +3,7 @@ import {
   ATHLETES_PHOTO_RECONCILE_TOPIC,
 } from "@hooma/contracts/athletes";
 import { loadObjectStorageConfig, type ObjectStorageConfig } from "@hooma/config";
+import { REQUEST_IMAGE_RECONCILE_TOPIC } from "@hooma/contracts/requests";
 import { disconnectDatabase, getDatabaseClient, type PrismaClient } from "@hooma/database";
 import {
   S3ObjectStorage,
@@ -15,6 +16,7 @@ import { cleanupExpiredEventChat } from "./events/event-chat-cleanup.js";
 import { reconcileGamerMatches } from "./gamers/match-reconciliation.js";
 import { createWorkerHealthServer } from "./health/worker-health.js";
 import { OutboxRepository } from "./outbox/outbox.repository.js";
+import { createRequestImageCleanupHandler } from "./requests/request-image-cleanup.js";
 import { expireDueRequests } from "./requests/request-expiry.js";
 import { type OutboxHandler, OutboxRunner } from "./outbox/outbox.runner.js";
 import {
@@ -60,6 +62,10 @@ if (storage) {
   outboxHandlers.set(
     RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC,
     createRideVehiclePhotoCleanupHandler(storage),
+  );
+  outboxHandlers.set(
+    REQUEST_IMAGE_RECONCILE_TOPIC,
+    createRequestImageCleanupHandler(database, storage),
   );
 }
 const outbox = new OutboxRunner(new OutboxRepository(database), outboxHandlers);

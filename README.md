@@ -56,6 +56,7 @@ Current authority is intentionally centralized:
 - `docs/CANONICAL_MODEL.md` — canonical data and authority;
 - `docs/DECISIONS.md` — architectural decisions;
 - `AGENTS.md` and `docs/LIVING_BUILD_PLAN.md` — execution discipline.
+- `docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md` — active scoped execution program for the authorized Help sequence (complete Requests first, then FundMe, then Donations, then Help overview); it does not override the governing product/architecture documents above.
 
 Do not create duplicate architecture/status documents when an authoritative file already owns the subject. Open PR behavior is in-flight and must not be documented as merged foundation truth.
 

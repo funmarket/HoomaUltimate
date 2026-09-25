@@ -49,3 +49,22 @@ Gold is not a state color and must not replace green, people blue, orange, or re
 ## Implementation rule
 
 Shared semantic tokens live in `apps/web/src/theme.css`. Feature CSS should reference those tokens instead of inventing new state colors. Existing feature-specific aliases may remain temporarily for compatibility, but new active/success/member/warning/error rules should use the shared tokens directly.
+
+## 6. Readable descriptive copy = `#F7F7F7`
+
+Important descriptive/body copy on dark HOOMA surfaces uses `#F7F7F7` unless a stronger semantic state color is required. This applies especially to Requests, FundMe and Donations card descriptions, detail descriptions, form helper copy that carries meaningful information, and other user-facing descriptive text.
+
+Do not use dim grey such as `#AAA9A4` for primary descriptive content. Metadata may use lower emphasis when contrast remains accessible, but hierarchy must come mainly from size/weight/layout rather than making core text hard to read.
+
+## 7. Structural outlines and Help cards
+
+Normal Help containers/cards use a 1px structural outline. The current target token is:
+
+```css
+--hooma-ui-outline: rgba(190, 180, 145, 0.22);
+```
+
+The outline should almost disappear against the graphite/near-black card surface. Do not use thick brown-gold borders, container glow, or green as a structural border. Green remains active/status/action emphasis.
+
+Help surfaces are scrollable. Do not shrink readable typography or card geometry merely to fit more cards above the fold. Horizontal rails are appropriate for quick taxonomy/filter controls and selected embedded card rails where specified.
+

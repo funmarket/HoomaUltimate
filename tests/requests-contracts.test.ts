@@ -65,3 +65,16 @@ test("Request status and condition contracts expose only the planned values", ()
   }
   assert.throws(() => requestConditionPreferenceSchema.parse("FOR_SALE"));
 });
+
+test("Request create input rejects requester presentation because Identity projection is read-only", () => {
+  assert.throws(() =>
+    helpRequestCreateSchema.parse({
+      ...validInput,
+      requester: {
+        displayName: "Amine",
+        username: "amine",
+        photoUrl: "https://cdn.example.test/amine.jpg",
+      },
+    }),
+  );
+});

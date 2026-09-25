@@ -134,9 +134,9 @@ HOOMA | Teams | Pitch | Places | Ride | Requests
 
 The visible Home label is `Places` for canonical Places discovery at `/places`. The source may retain an internal `spots` identifier for that gateway; that internal id does not create a second venue domain and does not make `Spots` the current visible Home label. Watch may still use `Spots` as Watch-owned product language independently.
 
-Gamers, ULTRAS and FundMe are not Home discovery gateways in the current IA, but this does not delete those product concepts or their independent ownership.
+Gamers, ULTRAS, FundMe and Donations are not separate Home discovery gateways in the current IA. FundMe and Donations live inside the HOOMA Help/Requests family at `/requests/fundme` and `/requests/donations`; their richer domain behavior must still come only from their own authorized slices and must never be faked by frontend-only state.
 
-Ride exposes its Ride-owned gateway and real frontend routes through its current vertical slice. Requests may expose only behavior actually implemented by its Requests-owned slices. Neither surface may fake backend completion, listings, matching, claims, payments or persistence.
+Ride exposes its Ride-owned gateway and real frontend routes through its current vertical slice. Requests may expose only behavior actually implemented by its Requests-owned slices. FundMe and Donations may expose only behavior actually implemented by their Fundraising- and Donations-owned slices. No Help surface may fake backend completion, listings, matching, claims, contributions, payments or persistence.
 
 ## 2.3 HOOMA creation
 
@@ -198,6 +198,8 @@ At minimum, the product routing contract supports:
 /teams
 /gamers
 /requests
+/requests/fundme
+/requests/donations
 /rides
 /fundme
 /profile
@@ -877,19 +879,31 @@ Detailed active behavior is recorded in `docs/GAMERS_PRODUCT_CONTRACT.md` and AD
 
 # 17. Requests
 
-Requests support community help/resources/actions.
+Requests are the canonical HOOMA Help domain for **I need something / I need help**.
 
 Approved requirements include:
 
-- privacy-safe public discovery where appropriate;
-- create request;
-- claim request quantities until the requested quantity is fulfilled;
-- concurrency-safe partial claims that prevent over-claiming while allowing more than one claimer when quantity remains;
-- release/complete lifecycle that restores uncompleted released quantity and records completed claim quantity without transferring ownership to another domain;
-- server-side authorization;
-- clear requester/claimer identity boundaries.
+- one canonical `HelpRequest` domain owned by Requests;
+- root Request Type exactly `SPORT | COMMUNITY`;
+- `SPORT` Requests reuse canonical `AthletesSport`; `COMMUNITY` Requests are a parallel root and must never fake a Sport;
+- SPORT taxonomy follows Sport -> Category/Subcategory -> Specific Need; Community follows Community Category -> Specific Need;
+- governed `Other` Needs may allow validated per-Request `customNeed`; user text never creates a global taxonomy row;
+- standalone Requests presents `Sport | Community` as the primary selector, with Sport default only when no stronger incoming context exists;
+- discovery provides real server-side text search, quick taxonomy rails and advanced filters; search/filtering must execute before cursor pagination rather than filtering a fetched page in React;
+- advanced filters may include category, specific Need, city, Houma and canonical Request status where the backend query supports them;
+- readable mobile cards use normal body sizes and vertical scrolling rather than compressing content; important descriptive/body text uses `#F7F7F7`;
+- displayed Request cards support accessible inline expansion for fuller Request information while `/requests/:requestId` remains the canonical deep-link/full-management route;
+- optional Request media remains Requests-owned metadata plus shared object-storage bytes; feed delivery must avoid eager per-card media-request storms;
+- create flow preserves `Publish as`, audience, taxonomy, location privacy, optional media, timing and conditional product fields rather than dropping canonical fields for visual simplicity;
+- an optional precise `fullAddress` may be submitted and persisted, but public/member Request read DTOs must not expose it until an explicit viewer policy authorizes precise-location readback;
+- current lifecycle statuses are `OPEN | IN_PROGRESS | FULFILLED | CANCELLED | EXPIRED`;
+- Request coordination uses one private `HelpRequestResponse` per responder with `PENDING | ACCEPTED | DECLINED | WITHDRAWN`; it is not a public comment/chat thread;
+- accepting a canonical response moves an OPEN Request into `IN_PROGRESS`; managers may accept/decline responses and later fulfill/cancel according to service policy;
+- requester/responder identity presentation comes from canonical Identity readers rather than copied profile fields;
+- Play and Athletes projections must read the same canonical HelpRequest records through `surface=PLAY` and `surface=ATHLETES`; never create `PlayRequest` or `AthletesRequest` persistence;
+- server-side authorization and audience visibility remain authoritative for every Request read/write.
 
-Requests are explicitly authorized for a durable Requests-owned domain, persistence, API and frontend vertical slice. Requests does not own Ride, Fundraising, Payment or generic action state. If a request has a quantity of one, the partial-claim rule naturally behaves as a single active claim; this replaces the older exclusive-claim wording without creating a separate exclusive-only model.
+Current implementation state must be described separately from target requirements. Draft PR `#351` remains the clean in-flight Requests branch at the time of this documentation reconciliation; open-PR behavior is not merged `phase-0-foundation` truth until explicitly merged. The active Help execution program is `docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md`.
 
 ---
 
@@ -935,32 +949,57 @@ Current Ride Whistle authorization is implemented through the shared Whistle eng
 
 # 19. FundMe
 
-FundMe provides community fundraising.
+FundMe is the canonical Fundraising-owned HOOMA Help domain for **I need financial support for a campaign/project/community purpose**.
 
-Approved requirements include:
+Approved target requirements include:
 
-- campaign creation;
-- public campaign detail;
-- contributions;
-- Cash and/or Telegram Stars according to supported context;
-- correct accounting/idempotency;
-- cancellation/completion;
-- reconciliation/audit where payments are involved.
+- real fundraiser feed, search, filters, empty state, create flow, detail, supporter presentation, updates and lifecycle;
+- Fundraising-owned persistence such as `Fundraiser`, `FundraiserContribution`, `FundraiserUpdate`, `FundraiserBudgetItem`, `FundraiserMedia` and network-aware `FundraiserCryptoDestination`; exact fields/migrations land only in the ordered FundMe slices;
+- bounded Fundraising-owned categories such as Equipment/Gear, Infrastructure, Events, Travel and Other; do not force fundraiser categories into Request taxonomy;
+- campaign goal/currency stored in integer minor units, optional deadline, organizer/publisher context and audience;
+- one primary campaign cover image initially, using shared object storage through Fundraising-owned media metadata/authorization;
+- support methods for this FundMe implementation are **Cash and Crypto only**;
+- no credit/debit-card rail, Stripe-style checkout, Visa/Mastercard/Amex flow or fake payment-success state;
+- Cash contributions are coordination/accounting records and affect progress only after authorized confirmation;
+- Crypto contributions use public receiving destinations that include network, token code and wallet address (plus optional memo/tag where required); HOOMA never stores seed phrases/private keys/wallet passwords;
+- only `CONFIRMED` contributions affect raised amount/progress; progress is derived from confirmed contributions rather than an independently editable raised-total column;
+- contribution creation is idempotent and correction/void history is auditable;
+- public supporter visibility may be PUBLIC or ANONYMOUS while canonical internal actor identity remains available where needed for authorization/audit;
+- campaign updates are organizer-authored records, not public threaded comments;
+- manager authority follows the same live publisher/community/team/Athletes facts used by the shared Help access boundary; no generic ownerType/ownerId persistence.
+
+FundMe currently exists in the repository as a Help route/tab placeholder; durable Fundraising state is authorized by the active Help program but must not be reported as implemented until its ordered slices land and are verified.
+
+## 19A. Donations
+
+Donations is the canonical Donations-owned HOOMA Help domain for **I have a physical item to give away for free**.
+
+Approved target requirements include:
+
+- Donations visually mirrors Requests for discovery: `Sport | Community`, real search, quick taxonomy rail, advanced filters, readable feed cards and accessible detail/expansion patterns;
+- Sport is the default only when no stronger incoming context exists;
+- Donations remains physical-item giving only in this implementation; money support belongs to FundMe and a separate service marketplace is not created;
+- canonical persistence is independent from Requests and is expected to use `DonationOffer`, `DonationClaim` and plural `DonationImage` metadata;
+- Sport Donations reuse canonical `AthletesSport` and governed PRODUCT taxonomy; Community Donations use governed Community physical-product categories/Needs and never copy non-item Request concepts such as Coach, Advice or Training Partner;
+- offer fields include title, description, quantity, optional size/label, actual item condition, audience/publisher context, privacy-safe location and optional exact pickup data protected by backend policy;
+- item condition is actual offer condition (for example NEW/LIKE_NEW/GOOD/FAIR), not Request preference values such as ANY/NEW_ONLY/USED_OK;
+- up to **four** Donation photos are supported; the server enforces the limit and the first ordered image may be used as the primary feed image;
+- claims are private coordination records with requested quantity/message and lifecycle `PENDING | ACCEPTED | DECLINED | WITHDRAWN | FULFILLED`; there is no public comment thread;
+- accepted/fulfilled claim quantity reserves stock; available quantity is derived transactionally and concurrent accepts must never over-reserve;
+- accepted handoffs may still be fulfilled after an offer expires; expiry blocks new claims but does not erase a legitimate accepted handoff;
+- exact pickup/full-address data is never public and is revealed only to authorized manager/donor and accepted claimant where the product requires it;
+- Donation detail may show other visible active offers from the same donor without creating another domain/table;
+- Donations does not use HOOMA tokens. `houma` continues to mean the neighborhood/location field.
+
+Donations currently exists in the repository as a Help route/tab placeholder plus a canonical `DONATIONS` Help-taxonomy surface. The durable Donations domain is authorized by the active Help program but must not be reported as implemented until its ordered slices land and are verified.
 
 ---
 
 # 20. Payments
 
-Initial payment rails are:
+The independent Payments domain remains separately governed for product contexts that explicitly invoke payment execution. Its historical initial rails are `CASH | TELEGRAM_STARS` unless a later Payments decision changes them.
 
-```text
-CASH
-TELEGRAM_STARS
-```
-
-No credit-card rail is part of the initial requirement.
-
-Crypto/Flouci or other payment methods are separate future decisions and must not be silently added.
+FundMe in the active Help program does **not** use the Payments domain for an in-app card/provider checkout. FundMe supports manual/confirmed **Cash and Crypto** contribution coordination inside Fundraising. No credit-card rail is part of the current FundMe requirement, and no generated reference image may introduce one.
 
 ## 20.1 Cash
 

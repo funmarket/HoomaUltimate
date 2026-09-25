@@ -66,7 +66,10 @@ export function createMemberV1Router(container: AppContainer, config: ApiConfig)
     createGamerMemberRouter(container.gamerService, container.gamerMatchService),
   );
   router.use("/play", createPlayMemberRouter(container.playService));
-  router.use("/requests", createRequestMemberRouter(container.requestService));
+  router.use(
+    "/requests",
+    createRequestMemberRouter(container.requestService, container.requestMediaService),
+  );
   router.use("/rides", createRideMemberRouter(container.rideService));
   router.use(
     "/rides",

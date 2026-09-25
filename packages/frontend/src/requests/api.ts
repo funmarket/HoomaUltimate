@@ -2,13 +2,16 @@ import type { HelpTaxonomyResponse, HelpTaxonomySurface } from "@hooma/contracts
 import type {
   HelpRequest,
   HelpRequestCreateInput,
+  HelpRequestExternalImageInput,
+  HelpRequestImage,
+  HelpRequestImageDelivery,
   HelpRequestList,
   HelpRequestListQuery,
   HelpRequestRespondInput,
   HelpRequestResponse,
   HelpRequestResponseList,
 } from "@hooma/contracts/requests";
-import { request, type HoomaTransport } from "../http";
+import { request, requestBinary, type HoomaTransport } from "../http";
 
 const MEMBER_BASE = "/api/v1/requests";
 const PUBLIC_BASE = "/api/public/v1/requests";
@@ -24,6 +27,7 @@ function queryPath(base: string, input: RequestsListQuery = {}): string {
   if (input.cursor) params.set("cursor", input.cursor);
   if (input.limit) params.set("limit", String(input.limit));
   if (input.category) params.set("category", input.category);
+  if (input.requestType) params.set("requestType", input.requestType);
   if (input.sport) params.set("sport", input.sport);
   if (input.subcategoryId) params.set("subcategoryId", input.subcategoryId);
   if (input.needId) params.set("needId", input.needId);
@@ -67,6 +71,37 @@ export function createRequestsApi(transport: HoomaTransport) {
         method: "POST",
         body: JSON.stringify(input),
       }),
+    uploadImage: (requestId: string, image: Blob, contentType: string) =>
+      requestBinary<HelpRequestImage>(
+        transport,
+        `${MEMBER_BASE}/${encodeURIComponent(requestId)}/image`,
+        image,
+        contentType,
+        { method: "PUT" },
+      ),
+    setExternalImage: (requestId: string, input: HelpRequestExternalImageInput) =>
+      request<HelpRequestImage>(
+        transport,
+        `${MEMBER_BASE}/${encodeURIComponent(requestId)}/image/external`,
+        {
+          method: "PUT",
+          body: JSON.stringify(input),
+        },
+      ),
+    deleteImage: (requestId: string) =>
+      request<{ ok: true }>(transport, `${MEMBER_BASE}/${encodeURIComponent(requestId)}/image`, {
+        method: "DELETE",
+      }),
+    publicImageDelivery: (requestId: string) =>
+      request<HelpRequestImageDelivery>(
+        transport,
+        `${PUBLIC_BASE}/${encodeURIComponent(requestId)}/image/delivery`,
+      ),
+    memberImageDelivery: (requestId: string) =>
+      request<HelpRequestImageDelivery>(
+        transport,
+        `${MEMBER_BASE}/${encodeURIComponent(requestId)}/image/delivery`,
+      ),
     respond: (requestId: string, input: HelpRequestRespondInput) =>
       request<HelpRequestResponse>(transport, responsePath(requestId), {
         method: "POST",

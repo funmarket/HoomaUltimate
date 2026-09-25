@@ -48,6 +48,11 @@ enum HelpRequestResponseStatus {
   WITHDRAWN
 }
 
+enum HelpRequestImageSource {
+  UPLOAD
+  EXTERNAL_URL
+}
+
 model HelpRequest {
   id                           String                     @id @default(cuid())
   createdByUserId              String
@@ -59,11 +64,12 @@ model HelpRequest {
   audienceAthletesCommunityId  String?
   category                     HelpCategory
   itemKind                     HelpItemKind?
+  requestType                  HelpRequestType?
   sport                        AthletesSport?
   subcategoryId                String?
   needId                       String?
   customNeed                   String?
-  taxonomySubcategory          HelpTaxonomySubcategory? @relation("HelpRequestTaxonomySubcategory", fields: [subcategoryId, sport], references: [id, sport], onDelete: Restrict)
+  taxonomySubcategory          HelpTaxonomySubcategory? @relation("HelpRequestTaxonomySubcategory", fields: [subcategoryId, requestType], references: [id, requestType], onDelete: Restrict)
   taxonomyNeed                 HelpTaxonomyNeed?        @relation("HelpRequestTaxonomyNeed", fields: [needId, subcategoryId], references: [id, subcategoryId], onDelete: Restrict)
   title                        String
   description                  String
@@ -73,12 +79,14 @@ model HelpRequest {
   placeId                      String?
   city                         String?
   houma                        String?
+  fullAddress                  String?
   locationNote                 String?
   neededByAt                   DateTime?
   expiresAt                    DateTime?
   status                       HelpRequestStatus          @default(OPEN)
   fulfilledAt                  DateTime?
   cancelledAt                  DateTime?
+  image                        HelpRequestImage?
   createdAt                    DateTime                   @default(now())
   updatedAt                    DateTime                   @updatedAt
 
@@ -91,6 +99,7 @@ model HelpRequest {
   @@index([publisherTeamId, status, createdAt])
   @@index([publisherAthletesCommunityId, status, createdAt])
   @@index([category, status, createdAt])
+  @@index([requestType, status, createdAt])
   @@index([sport, status, createdAt])
   @@index([subcategoryId, status, createdAt])
   @@index([needId, status, createdAt])
@@ -112,4 +121,20 @@ model HelpRequestResponse {
   @@unique([requestId, responderUserId])
   @@index([requestId, status, createdAt])
   @@index([responderUserId, status, createdAt])
+}
+
+
+model HelpRequestImage {
+  id          String                 @id @default(cuid())
+  requestId   String                 @unique
+  source      HelpRequestImageSource
+  objectKey   String?                @unique
+  externalUrl String?
+  contentType String?
+  sizeBytes   Int?
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  request     HelpRequest            @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
 }

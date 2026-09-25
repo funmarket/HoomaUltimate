@@ -1,5 +1,6 @@
 import type { MeResponse } from "@hooma/contracts";
 import type { HelpRequestResponse } from "@hooma/contracts/requests";
+import { RequestProfileLink } from "./RequestRequester";
 
 function titleCase(value: string): string {
   return value
@@ -45,7 +46,12 @@ export function RequestResponses({
             <article className="request-response" key={response.id}>
               <div className="request-card__topline">
                 <span className="request-response__author">
-                  {own ? "Your response" : "Player response"}
+                  {own ? <span>Your response</span> : null}
+                  {response.responder ? (
+                    <RequestProfileLink presentation={response.responder} />
+                  ) : own ? null : (
+                    <span>Player response</span>
+                  )}
                 </span>
                 <span className={`request-status request-status--${response.status.toLowerCase()}`}>
                   <span className="request-status__dot" aria-hidden="true" />
@@ -57,7 +63,7 @@ export function RequestResponses({
                 <div className="request-action-row">
                   <button
                     type="button"
-                    className="help-action"
+                    className="help-action help-action--primary"
                     disabled={Boolean(pendingAction)}
                     onClick={() => onAccept(response.id)}
                   >

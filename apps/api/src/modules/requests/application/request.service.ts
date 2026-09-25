@@ -10,7 +10,12 @@ import type {
 import type { AthletesSport } from "@hooma/contracts/athletes";
 import type { HelpCategory } from "@hooma/contracts/help";
 import type { HelpTaxonomySelectionReader } from "../../help-taxonomy/application/help-taxonomy.repository.js";
+import type {
+  UserPresentationReader,
+  UserPresentationSummary,
+} from "../../identity/application/user-presentation.reader.js";
 import { RequestError } from "../domain/request-error.js";
+import { canManageRequest, requireManageRequest } from "./request-authorization.js";
 import type {
   HelpRequestRecord,
   HelpRequestResponseRecord,
@@ -30,15 +35,37 @@ const sportLabels: Record<AthletesSport, string> = {
   OTHER: "Other",
 };
 
-function serialize(record: HelpRequestRecord): HelpRequest {
-  const { taxonomySubcategory, taxonomyNeed, ...rest } = record;
+function serializePresentation(presentation: UserPresentationSummary | null) {
+  return presentation
+    ? {
+        displayName: presentation.displayName,
+        username: presentation.username,
+        photoUrl: presentation.photoUrl,
+      }
+    : null;
+}
+
+function serialize(
+  record: HelpRequestRecord,
+  requester: UserPresentationSummary | null = null,
+): HelpRequest {
+  const { taxonomySubcategory, taxonomyNeed, fullAddress, image, ...rest } = record;
+  void fullAddress;
   return {
     ...rest,
+    requester: serializePresentation(requester),
+    image: image
+      ? {
+          ...image,
+          updatedAt: image.updatedAt.toISOString(),
+        }
+      : null,
     taxonomy:
-      record.sport && taxonomySubcategory && taxonomyNeed
+      record.requestType && taxonomySubcategory && taxonomyNeed
         ? {
+            requestType: record.requestType,
             sport: record.sport,
-            sportLabel: sportLabels[record.sport],
+            sportLabel: record.sport ? sportLabels[record.sport] : null,
             subcategory: taxonomySubcategory,
             need: taxonomyNeed,
           }
@@ -52,9 +79,13 @@ function serialize(record: HelpRequestRecord): HelpRequest {
   };
 }
 
-function serializeResponse(record: HelpRequestResponseRecord): HelpRequestResponse {
+function serializeResponse(
+  record: HelpRequestResponseRecord,
+  responder: UserPresentationSummary | null = null,
+): HelpRequestResponse {
   return {
     ...record,
+    responder: serializePresentation(responder),
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
     acceptedAt: record.acceptedAt?.toISOString() ?? null,
@@ -63,30 +94,74 @@ function serializeResponse(record: HelpRequestResponseRecord): HelpRequestRespon
   };
 }
 
-function serializePage(page: {
-  readonly items: readonly HelpRequestRecord[];
-  readonly nextCursor: string | null;
-}): HelpRequestList {
-  return { items: page.items.map(serialize), nextCursor: page.nextCursor };
-}
-
 export class RequestService {
   constructor(
     private readonly repository: RequestRepository,
     private readonly visibility: RequestVisibilityReader,
     private readonly taxonomy?: HelpTaxonomySelectionReader,
+    private readonly userPresentations?: UserPresentationReader,
   ) {}
+
+  private async presentationMap(
+    userIds: readonly string[],
+  ): Promise<ReadonlyMap<string, UserPresentationSummary>> {
+    if (!this.userPresentations || !userIds.length) return new Map();
+
+    const uniqueUserIds = [...new Set(userIds)];
+    const summaries = await this.userPresentations.findByUserIds(uniqueUserIds);
+    return new Map(summaries.map((summary) => [summary.userId, summary]));
+  }
+
+  private async serializePage(page: {
+    readonly items: readonly HelpRequestRecord[];
+    readonly nextCursor: string | null;
+  }): Promise<HelpRequestList> {
+    const requesters = await this.presentationMap(
+      page.items.map((record) => record.createdByUserId),
+    );
+    return {
+      items: page.items.map((record) =>
+        serialize(record, requesters.get(record.createdByUserId) ?? null),
+      ),
+      nextCursor: page.nextCursor,
+    };
+  }
+
+  private async serializeOne(record: HelpRequestRecord): Promise<HelpRequest> {
+    const requesters = await this.presentationMap([record.createdByUserId]);
+    return serialize(record, requesters.get(record.createdByUserId) ?? null);
+  }
+
+  private async serializeResponses(
+    records: readonly HelpRequestResponseRecord[],
+  ): Promise<HelpRequestResponse[]> {
+    const responders = await this.presentationMap(records.map((record) => record.responderUserId));
+    return records.map((record) =>
+      serializeResponse(record, responders.get(record.responderUserId) ?? null),
+    );
+  }
+
+  private async serializeResponseOne(
+    record: HelpRequestResponseRecord,
+  ): Promise<HelpRequestResponse> {
+    const responders = await this.presentationMap([record.responderUserId]);
+    return serializeResponse(record, responders.get(record.responderUserId) ?? null);
+  }
 
   async create(userId: string, input: HelpRequestCreateInput): Promise<HelpRequest> {
     await this.requirePublisherAuthority(userId, input);
     await this.requireAudienceMembership(userId, input);
 
-    if (input.sport && input.subcategoryId && input.needId) {
-      const selection = await this.taxonomy?.findActiveSelection(
-        input.sport,
-        input.subcategoryId,
-        input.needId,
-      );
+    const requestType =
+      input.requestType ?? (input.sport && input.subcategoryId && input.needId ? "SPORT" : null);
+
+    if (requestType && input.subcategoryId && input.needId) {
+      const selection = await this.taxonomy?.findActiveSelection({
+        requestType,
+        sport: input.sport ?? null,
+        subcategoryId: input.subcategoryId,
+        needId: input.needId,
+      });
       if (!selection) {
         throw new RequestError("REQUEST_TAXONOMY_INVALID", "Request taxonomy selection is invalid");
       }
@@ -106,6 +181,12 @@ export class RequestService {
           "Custom need text is not allowed for this need",
         );
       }
+      if (selection.need.allowsCustomText && !input.customNeed) {
+        throw new RequestError(
+          "REQUEST_CUSTOM_NEED_REQUIRED",
+          "Custom need text is required for this need",
+        );
+      }
 
       const categoryByKind: Record<typeof selection.need.kind, HelpCategory> = {
         PRODUCT: "ITEM",
@@ -115,6 +196,8 @@ export class RequestService {
       return serialize(
         await this.repository.create(userId, {
           ...input,
+          requestType,
+          sport: requestType === "SPORT" ? input.sport : null,
           category: categoryByKind[selection.need.kind],
           itemKind: null,
         }),
@@ -134,23 +217,23 @@ export class RequestService {
   }
 
   async listPublic(input: HelpRequestListQuery): Promise<HelpRequestList> {
-    return serializePage(await this.repository.listPublic(input));
+    return this.serializePage(await this.repository.listPublic(input));
   }
 
   async getPublic(id: string): Promise<HelpRequest> {
     const request = await this.repository.getPublic(id);
     if (!request) throw new RequestError("REQUEST_NOT_FOUND", "Request not found");
-    return serialize(request);
+    return this.serializeOne(request);
   }
 
   async listForMember(userId: string, input: HelpRequestListQuery): Promise<HelpRequestList> {
-    return serializePage(await this.repository.listVisibleToMember(userId, input));
+    return this.serializePage(await this.repository.listVisibleToMember(userId, input));
   }
 
   async getForMember(userId: string, id: string): Promise<HelpRequest> {
     const request = await this.repository.getVisibleToMember(userId, id);
     if (!request) throw new RequestError("REQUEST_NOT_FOUND", "Request not found");
-    return serialize(request);
+    return this.serializeOne(request);
   }
 
   async respond(
@@ -163,25 +246,30 @@ export class RequestService {
     if (request.status !== "OPEN" && request.status !== "IN_PROGRESS") {
       throw new RequestError("REQUEST_NOT_RESPONDABLE", "Request is not accepting responses");
     }
-    if (request.createdByUserId === userId || (await this.canManage(userId, request))) {
+    if (
+      request.createdByUserId === userId ||
+      (await canManageRequest(this.visibility, userId, request))
+    ) {
       throw new RequestError("REQUEST_SELF_RESPONSE_FORBIDDEN", "Request managers cannot respond");
     }
     const created = await this.repository.createResponse(requestId, userId, input.message);
     if (!created) {
       throw new RequestError("REQUEST_RESPONSE_ALREADY_EXISTS", "Response already exists");
     }
-    return serializeResponse(created);
+    return this.serializeResponseOne(created);
   }
 
   async listResponses(userId: string, requestId: string): Promise<HelpRequestResponseList> {
     const request = await this.repository.getById(requestId);
     if (!request) throw new RequestError("REQUEST_NOT_FOUND", "Request not found");
-    if (await this.canManage(userId, request)) {
-      return { items: (await this.repository.listResponses(requestId)).map(serializeResponse) };
+    if (await canManageRequest(this.visibility, userId, request)) {
+      return {
+        items: await this.serializeResponses(await this.repository.listResponses(requestId)),
+      };
     }
     const own = await this.repository.getResponseByResponder(requestId, userId);
     if (!own) throw new RequestError("REQUEST_NOT_FOUND", "Request not found");
-    return { items: [serializeResponse(own)] };
+    return { items: [await this.serializeResponseOne(own)] };
   }
 
   async acceptResponse(
@@ -189,13 +277,13 @@ export class RequestService {
     requestId: string,
     responseId: string,
   ): Promise<HelpRequestResponse> {
-    const request = await this.requireManage(userId, requestId);
+    const request = await requireManageRequest(this.repository, this.visibility, userId, requestId);
     this.requireMutable(request);
     const response = await this.repository.acceptResponse(requestId, responseId);
     if (!response) {
       throw new RequestError("REQUEST_RESPONSE_NOT_PENDING", "Response is not pending");
     }
-    return serializeResponse(response);
+    return this.serializeResponseOne(response);
   }
 
   async declineResponse(
@@ -203,13 +291,13 @@ export class RequestService {
     requestId: string,
     responseId: string,
   ): Promise<HelpRequestResponse> {
-    const request = await this.requireManage(userId, requestId);
+    const request = await requireManageRequest(this.repository, this.visibility, userId, requestId);
     this.requireMutable(request);
     const response = await this.repository.declineResponse(requestId, responseId);
     if (!response) {
       throw new RequestError("REQUEST_RESPONSE_NOT_PENDING", "Response is not pending");
     }
-    return serializeResponse(response);
+    return this.serializeResponseOne(response);
   }
 
   async withdrawResponse(
@@ -225,11 +313,11 @@ export class RequestService {
     if (!withdrawn) {
       throw new RequestError("REQUEST_RESPONSE_NOT_WITHDRAWABLE", "Response cannot be withdrawn");
     }
-    return serializeResponse(withdrawn);
+    return this.serializeResponseOne(withdrawn);
   }
 
   async fulfill(userId: string, requestId: string): Promise<HelpRequest> {
-    const request = await this.requireManage(userId, requestId);
+    const request = await requireManageRequest(this.repository, this.visibility, userId, requestId);
     this.requireMutable(request);
     const updated = await this.repository.transitionRequestStatus(
       requestId,
@@ -241,7 +329,7 @@ export class RequestService {
   }
 
   async cancel(userId: string, requestId: string): Promise<HelpRequest> {
-    const request = await this.requireManage(userId, requestId);
+    const request = await requireManageRequest(this.repository, this.visibility, userId, requestId);
     this.requireMutable(request);
     const updated = await this.repository.transitionRequestStatus(
       requestId,
@@ -256,35 +344,10 @@ export class RequestService {
     return this.repository.expireDue(now);
   }
 
-  private async requireManage(userId: string, requestId: string): Promise<HelpRequestRecord> {
-    const request = await this.repository.getById(requestId);
-    if (!request || !(await this.canManage(userId, request))) {
-      throw new RequestError("REQUEST_NOT_FOUND", "Request not found");
-    }
-    return request;
-  }
-
   private requireMutable(request: HelpRequestRecord): void {
     if (request.status !== "OPEN" && request.status !== "IN_PROGRESS") {
       throw new RequestError("REQUEST_NOT_MUTABLE", "Request is not mutable");
     }
-  }
-
-  private async canManage(userId: string, request: HelpRequestRecord): Promise<boolean> {
-    if (request.publisherCommunityId) {
-      const role = await this.visibility.communityRole(request.publisherCommunityId, userId);
-      return role === "FOUNDER" || role === "COACH";
-    }
-    if (request.publisherTeamId) {
-      return (
-        (await this.visibility.teamResponsibility(request.publisherTeamId, userId)) === "COACH"
-      );
-    }
-    if (request.publisherAthletesCommunityId) {
-      const role = await this.visibility.athletesRole(request.publisherAthletesCommunityId, userId);
-      return role === "FOUNDER" || role === "MODERATOR";
-    }
-    return request.createdByUserId === userId;
   }
 
   private async requirePublisherAuthority(userId: string, input: HelpRequestCreateInput) {
