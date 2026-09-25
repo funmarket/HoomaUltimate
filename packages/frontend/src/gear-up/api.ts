@@ -20,9 +20,6 @@ function queryString(input: GearUpPublicListFilters): string {
 export function createGearUpApi(transport: HoomaTransport) {
   return {
     listShops: (input: GearUpPublicListFilters = {}) =>
-      request<PublicGearUpShop[]>(
-        transport,
-        `/api/public/v1/gear-up${queryString(input)}`,
-      ),
+      request<PublicGearUpShop[]>(transport, `/api/public/v1/gear-up${queryString(input)}`),
   };
 }
