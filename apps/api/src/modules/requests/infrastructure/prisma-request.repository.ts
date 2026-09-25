@@ -1,5 +1,10 @@
 import { expireDueHelpRequests, Prisma, type PrismaClient } from "@hooma/database";
-import type { HelpRequestListQuery, HelpRequestStatus } from "@hooma/contracts/requests";
+import type {
+  HelpRequestImageSource,
+  HelpRequestListQuery,
+  HelpRequestStatus,
+  RequestImageContentType,
+} from "@hooma/contracts/requests";
 import type {
   HelpRequestCreatePersistenceInput,
   HelpRequestPage,
@@ -20,6 +25,7 @@ const helpRequestSelect = Prisma.validator<Prisma.HelpRequestSelect>()({
   audienceAthletesCommunityId: true,
   category: true,
   itemKind: true,
+  requestType: true,
   sport: true,
   subcategoryId: true,
   needId: true,
@@ -38,7 +44,17 @@ const helpRequestSelect = Prisma.validator<Prisma.HelpRequestSelect>()({
   placeId: true,
   city: true,
   houma: true,
+  fullAddress: true,
   locationNote: true,
+  image: {
+    select: {
+      id: true,
+      source: true,
+      contentType: true,
+      sizeBytes: true,
+      updatedAt: true,
+    },
+  },
   neededByAt: true,
   expiresAt: true,
   status: true,
@@ -71,7 +87,16 @@ const publicStatuses: HelpRequestStatus[] = ["OPEN", "IN_PROGRESS", "FULFILLED"]
 class RequestMutationConflict extends Error {}
 
 function record(row: HelpRequestRow): HelpRequestRecord {
-  return row;
+  return {
+    ...row,
+    image: row.image
+      ? {
+          ...row.image,
+          source: row.image.source as HelpRequestImageSource,
+          contentType: row.image.contentType as RequestImageContentType | null,
+        }
+      : null,
+  };
 }
 
 function responseRecord(row: HelpRequestResponseRow): HelpRequestResponseRecord {
@@ -81,6 +106,7 @@ function responseRecord(row: HelpRequestResponseRow): HelpRequestResponseRecord 
 function filters(input: HelpRequestListQuery): Prisma.HelpRequestWhereInput {
   return {
     ...(input.category ? { category: input.category } : {}),
+    ...(input.requestType ? { requestType: input.requestType } : {}),
     ...(input.sport ? { sport: input.sport } : {}),
     ...(input.subcategoryId ? { subcategoryId: input.subcategoryId } : {}),
     ...(input.needId ? { needId: input.needId } : {}),
@@ -131,6 +157,7 @@ export class PrismaRequestRepository implements RequestRepository, RequestVisibi
           audienceAthletesCommunityId,
           category: input.category,
           itemKind: input.itemKind ?? null,
+          requestType: input.requestType ?? null,
           sport: input.sport ?? null,
           subcategoryId: input.subcategoryId ?? null,
           needId: input.needId ?? null,
@@ -143,6 +170,7 @@ export class PrismaRequestRepository implements RequestRepository, RequestVisibi
           placeId: input.placeId ?? null,
           city: input.city ?? null,
           houma: input.houma ?? null,
+          fullAddress: input.fullAddress ?? null,
           locationNote: input.locationNote ?? null,
           neededByAt: input.neededByAt ? new Date(input.neededByAt) : null,
           expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,

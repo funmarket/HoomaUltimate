@@ -1,13 +1,21 @@
-# HOOMA — RIDE / REQUESTS / FUNDME LIVE IMPLEMENTATION PLAN
+# HOOMA — RIDE HISTORICAL EXECUTION LEDGER
 
-Status: **ACTIVE SCOPED EXECUTION PLAN**  
+Status: **ACTIVE RIDE HISTORY / REQUESTS + FUNDME SECTIONS SUPERSEDED**  
 Repository: `funmarket/HoomaUltimate`  
-Target branch: `phase-0-foundation`  
-Plan refreshed: **2026-09-01**  
-Foundation HEAD at refresh: `6ca765128aa4576d02af787374684575d11d35ed`  
+Current Ride owner: **Rides**  
 Product name: **HOOMA**
 
-> This is the live execution ledger for Ride, Requests, and later FundMe/Payments work. It does not replace `AGENTS.md`, `docs/LIVING_BUILD_PLAN.md`, `requirements.md`, `structure.md`, `docs/CANONICAL_MODEL.md`, `docs/DECISIONS.md`, or accepted ADRs. Merged `phase-0-foundation` is current product truth. Open PRs are **in-flight only** until merged and read back.
+> This file remains useful as the execution/history ledger for the completed and remaining Ride-specific work recorded below. Its old Requests/FundMe sequencing is **not current Help authority**. Requests, FundMe and Donations now follow ADR-060 and `docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md`. Do not use this file to start, reorder, freeze or redesign current Help work. Merged `phase-0-foundation` remains current foundation truth; open PR behavior remains in-flight until merged/read back.
+
+---
+
+## Current Help supersession — 2026-09-24
+
+- Requests is being completed on the clean Requests program before FundMe/Donations work begins.
+- FundMe is now explicitly authorized as a separate Fundraising-owned domain using Cash/Crypto contribution coordination only; the older Telegram-Stars/Payments sequence in this Ride ledger is historical for Help work.
+- Donations is now explicitly authorized as a separate physical-item-giving domain with `Sport | Community`, up to four images and its own claim lifecycle.
+- The current ordered Help program is `H0 -> R1 -> R2 -> R3 -> R4 -> R5 -> R6 -> R7 -> R8 -> FundMe -> Donations -> Help overview`.
+- Any Requests/FundMe task IDs below are retained only as historical evidence and must not override the dedicated Help plan.
 
 ---
 

@@ -120,12 +120,17 @@ Independent models:
 
 ### Requests
 
-- `Request`
-- `RequestClaim`
+Current Requests persistence is domain-owned and uses:
 
-Claiming must preserve concurrency-safe database invariants/locking behavior.
+- `HelpRequest`
+- `HelpRequestResponse`
+- `HelpRequestImage`
 
-### Ride
+`HelpRequest` owns Request Type/taxonomy, audience/publisher references, title/description, optional product fields, privacy-safe location plus optional private `fullAddress`, lifecycle and one optional image relation. `HelpRequestResponse` enforces one canonical private response per Request/responder and uses `PENDING | ACCEPTED | DECLINED | WITHDRAWN`. `HelpRequestImage` stores metadata only; shared object storage owns uploaded bytes.
+
+Current Request lifecycle values are `OPEN | IN_PROGRESS | FULFILLED | CANCELLED | EXPIRED`. Database/query indexes must support status, audience/publisher, Request Type, sport/taxonomy and expiry discovery paths. Request search/filter work remains server-side before cursor pagination.
+
+### Ride### Ride
 
 Current canonical Ride persistence is single-purpose and owned by Rides:
 
@@ -139,28 +144,34 @@ Current canonical Ride persistence is single-purpose and owned by Rides:
 
 Public projections must not expose exact private pickup or meeting-point data. Future matching, location-ping and rating concepts require their own explicit slices before models such as `RideMatch`, `RideLocationPing`, or `RideRating` are added or reported as implemented.
 
-### FundMe
+### Donations
+
+Donations is an authorized next Help domain but is not current persistence until its ordered slice lands. Its canonical target ownership is independent from Requests:
+
+- `DonationOffer`
+- `DonationClaim`
+- plural `DonationImage` metadata (maximum four images per offer enforced by application policy and database-safe ordering/uniqueness)
+
+`DonationOffer` reuses canonical sport/taxonomy identifiers where appropriate and owns quantity, actual item condition, audience/publisher references, privacy-safe location and optional protected pickup data. `DonationClaim` owns private claimant coordination and quantity reservation/fulfillment. Available quantity is derived from accepted/fulfilled claims and claim acceptance must be transactionally concurrency-safe.
+
+### FundMe / Fundraising
+
+FundMe is an authorized next Help domain but is not current persistence until its ordered slice lands. Fundraising owns:
 
 - `Fundraiser`
-- `FundContribution`
+- `FundraiserContribution`
+- `FundraiserBudgetItem`
+- `FundraiserUpdate`
+- `FundraiserMedia`
+- `FundraiserCryptoDestination`
 
-Payment execution belongs to Payments, not FundMe.
+Fundraising uses integer minor-unit campaign accounting. Raised progress is derived from `CONFIRMED` contributions rather than a drifting stored total. Contribution creation requires a real idempotency boundary. Initial FundMe support methods are **Cash and Crypto only**; Crypto destinations are public network/token/address tuples (plus optional memo/tag) and never custody secrets. FundMe does not introduce card-processing state.
 
 ### Payments
 
-Design the payment models to support the verified mature runtime needs for:
+Payments remains a separate domain for product contexts that explicitly invoke payment execution. Historical payment-provider concepts such as PaymentIntent, CashSettlement and Telegram Stars provider state must not be reused merely to implement the current FundMe Cash/Crypto coordination flow. The active FundMe program does not require credit/debit cards, Stripe-style checkout or Telegram Stars.
 
-- PaymentIntent;
-- provider attempts/charges where present;
-- CashSettlement;
-- Telegram Stars provider state;
-- provider webhook receipt/processing;
-- DigitalEntitlement where used;
-- idempotency.
-
-Do not simplify the final model to only `TelegramStarPayment` if doing so loses mature runtime semantics.
-
-### Whistle
+### Whistle### Whistle
 
 `Whistle` stores metadata only.
 

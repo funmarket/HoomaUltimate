@@ -36,3 +36,29 @@ test("Request response DTO keeps coordination state explicit", () => {
   assert.equal(parsed.responderUserId, "user-2");
   assert.equal(parsed.status, "PENDING");
 });
+
+test("Request response DTO exposes safe responder presentation", () => {
+  const parsed = helpRequestResponseSchema.parse({
+    id: "response-2",
+    requestId: "request-1",
+    responderUserId: "user-2",
+    message: "I can help tomorrow.",
+    status: "PENDING",
+    responder: {
+      displayName: "Bashir",
+      username: "bashir",
+      photoUrl: "https://cdn.example.test/bashir.jpg",
+    },
+    createdAt: "2026-09-17T02:00:00.000Z",
+    updatedAt: "2026-09-17T02:00:00.000Z",
+    acceptedAt: null,
+    declinedAt: null,
+    withdrawnAt: null,
+  });
+
+  assert.deepEqual((parsed as unknown as { responder?: unknown }).responder, {
+    displayName: "Bashir",
+    username: "bashir",
+    photoUrl: "https://cdn.example.test/bashir.jpg",
+  });
+});

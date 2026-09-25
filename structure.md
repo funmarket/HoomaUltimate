@@ -208,7 +208,8 @@ This rule exists for scalability and user experience as well as code cleanliness
 | FanHub discovery classification                         | Places/Watch projection, never a role       |
 | ULTRAS supporter community                              | ULTRAS                                      |
 | Gamer profile/squad/challenge                           | Gamers                                      |
-| Help/request + claims                                   | Requests                                    |
+| Help/request + private responses                        | Requests                                    |
+| Physical donation offers/claims                         | Donations                                   |
 | Ride coordination/location privacy                      | Rides                                       |
 | Fundraiser/contribution                                 | Fundraising                                 |
 | Payment rails/intents/settlement                        | Payments                                    |
@@ -220,7 +221,9 @@ This rule exists for scalability and user experience as well as code cleanliness
 
 Physical `Place` is the venue source of truth. Pitch extends Place through Pitch-owned capability/application behavior. Watch references canonical Place; it does not require a duplicate Watch venue entity or a generic capability model merely for symmetry.
 
-ADR-050 explicitly unfreezes durable Ride and Requests vertical slices. Rides owns ride offers, ride requests, participation, private meeting-point policy and Ride vehicle-photo metadata. Requests owns help/resource requests and quantity-based partial claims. Fundraising, Payments and generic Media remain separate owners and are not implemented merely because Ride or Requests begins.
+ADR-050 explicitly unfreezes durable Ride and Requests vertical slices. Rides owns ride offers, ride requests, participation, private meeting-point policy and Ride vehicle-photo metadata. Requests owns the single canonical `HelpRequest` domain, its Request Type/taxonomy selection, lifecycle/private-response behavior and Request media metadata. Request projections for Requests, Play and Athletes must remain views over that same HelpRequest owner rather than creating `PlayRequest`, `AthletesRequest` or another request persistence model.
+
+ADR-060 authorizes the ordered HOOMA Help program: finish canonical Requests first, then build FundMe in the independent Fundraising domain, then build physical-item Donations in the independent Donations domain, then add visibility-aware Help overview composition. This authorization does not merge the domains: Fundraising never owns HelpRequest, Donations never reuses HelpRequest persistence, and Payments remains separately governed. Shared Help access/taxonomy/media transport may be reused only through narrow explicit boundaries.
 
 ADR-052 authorizes Community-scoped RideRequest audience projection into HOOMA NOW without changing ownership. Ride owns the canonical request, audience scope and exact `RideRequestCommunityAudience` target rows. Community owns membership facts used for requester and viewer authorization. HOOMA NOW is presentation/composition only and must not create copied RideRequest payloads, a second lifecycle, a second status field, or a Community-owned Ride request table.
 
@@ -357,15 +360,17 @@ Current availability on `phase-0-foundation`:
 - Pitch -> `/pitch`
 - Places -> `/places`
 - Ride -> `/rides` Ride-owned gateway with current child routes `/rides/matchday`, `/rides/anywhere`, `/rides/request`, `/rides/requests/:requestId/edit`, `/rides/offers`, `/rides/offers/new`, `/rides/offers/:offerId`, `/rides/offers/:offerId/edit`, and `/rides/mine`
-- Requests -> `/requests` honest frontend shell, with `/requests/fundme` tab and `/fundme` compatibility redirect
+- Requests -> `/requests` current foundation Requests surface, with current Help child routes `/requests/fundme` and `/requests/donations`; `/fundme` remains a compatibility redirect to the FundMe tab. The merged foundation includes the Requests API/domain and earlier Requests work, while the richer Help program remains ordered and domain-owned.
 
-Gamers remains an independent implemented route family at `/gamers`, but it is no longer listed from the Home gateway. Athletes is an independent implemented route family at `/athletes` and is reached from permanent navigation. ULTRAS remains an independent future domain and is not routed from Home. FundMe is grouped under Requests as `/requests/fundme`; `/fundme` redirects there as a compatibility navigation route only.
+Draft PR `#351` is the in-flight clean Requests correction/completion branch. At the verified handoff baseline it contains the canonical `SPORT | COMMUNITY` Request Type root, Community taxonomy independent of Sport, requestType-aware persistence/contracts, restored SPORT sport/subcategory integrity, progressive create/filter behavior, private persisted `fullAddress`, one optional normalized Request image capability using shared object storage, requester presentation and the current Request response/lifecycle implementation. It still requires the ordered R1-R8 completion program (server search, primary Sport/Community discovery controls, quick/advanced filters, readable feed/media/expansion, create/detail lifecycle polish, Play projection, Athletes projection and final QA). Open PR behavior is not merged foundation truth until explicitly merged.
 
-This section records current application state. Product-owner changes update both the source and this contract in the same task.
+Gamers remains an independent implemented route family at `/gamers`, but it is no longer listed from the Home gateway. Athletes is an independent implemented route family at `/athletes` and is reached from permanent navigation. ULTRAS remains an independent future domain and is not routed from Home. FundMe and Donations are grouped inside the Help/Requests family at `/requests/fundme` and `/requests/donations`; their current placeholders must be replaced only by their independent ordered domain slices. `/fundme` remains a compatibility navigation redirect.
+
+This section records current application state and clearly separates merged foundation behavior from in-flight PR behavior. Product-owner changes update both the source and this contract in the same task.
 
 HOOMA creation is Communities-owned and creates only canonical HOOMA neighborhood/local Communities. Teams and future supporter-community domains keep their own creation surfaces and select any required HOOMA context inside their own flows. The only current cross-flow continuation is the literal Team handoff from `/hooma/new?after=team-create` back to `/teams/new?communityId=<created-id>` after successful HOOMA creation.
 
-Ride may grow only through its own domain-owned vertical slices under ADR-050. Requests may grow only through its own Requests-owned slices. Those authorizations do not change the current Home gateway, permanent navigation, FundMe tab grouping, Gamers independence, ULTRAS unavailability, or the rule that Fundraising and Payments require separate authorization.
+Ride may grow only through its own domain-owned vertical slices under ADR-050. Requests, FundMe and Donations now follow the dedicated ordered Help program in `docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md` under ADR-060. Requests remains Requests-owned; FundMe is Fundraising-owned; Donations is Donations-owned; Payments remains separately governed and is not pulled in merely because FundMe records Cash/Crypto contribution coordination.
 
 The current HOOMA creation action is:
 
@@ -391,6 +396,7 @@ Core routes include:
 /gamers
 /requests
 /requests/fundme
+/requests/donations
 /rides
 /fundme
 /profile

@@ -147,9 +147,11 @@ MANAGE_TEAM_EVENTS
 
 ## ADR-022 — Cash and Telegram Stars are the initial payment rails
 
-**Decision:** When Payments is implemented, initial methods are CASH and TELEGRAM_STARS only. No credit-card rail is introduced by implication.
+**Decision:** When the independent Payments domain is implemented for a context that invokes payment execution, the historical initial methods are CASH and TELEGRAM_STARS only unless a later Payments decision changes them. No credit-card rail is introduced by implication.
 
-**Reason:** This is the product contract.
+**Current-state note:** ADR-060 separately authorizes FundMe's initial contribution coordination as **Cash and Crypto only inside Fundraising**. That FundMe flow is manual/confirmed accounting and does not mean the Payments domain executes cards, Telegram Stars or custodial crypto.
+
+**Reason:** Keep payment-provider execution separate from the currently authorized FundMe contribution model.
 
 ## ADR-023 — ULTRAS is independent
 
@@ -255,7 +257,7 @@ Production runtimes that can create or clean up managed media require complete `
 
 **Superseded in part by ADR-048:** Requests/Ride route registration and honest frontend shells were narrowly authorized.
 
-**Superseded in part by ADR-050:** Ride and Requests backend/domain/persistence/API/frontend vertical slices are explicitly unfrozen for their own bounded implementation tasks. Fundraising, FundMe durable state, Payments, ULTRAS and generic Media remain separately governed unless authorized.
+**Superseded in part by ADR-050:** Ride and Requests backend/domain/persistence/API/frontend vertical slices are explicitly unfrozen for their own bounded implementation tasks. Fundraising and physical-item Donations are now explicitly authorized by ADR-060 in the ordered Help program. Payments, ULTRAS and generic Media remain separately governed unless separately authorized.
 
 ## ADR-039 — Whistle vertical slice is explicitly unfrozen
 
@@ -358,7 +360,9 @@ Ride vehicle-photo bytes belong in object storage. Until a separate generic Medi
 
 Requests owns help/resource requests and quantity-based partial claims. Active/accepted claim quantities must be concurrency-safe and must not exceed the requested quantity. More than one claimer is allowed while quantity remains; quantity-one requests naturally behave as single-claim requests through the same partial-claim rule. The older exclusive-claim wording is replaced by this governed quantity rule.
 
-FundMe remains a Requests-page tab only. Durable Fundraising and Payments remain separately owned and are not authorized by this Ride/Requests unfreeze.
+The product owner's later Requests correction further fixes the taxonomy root as exactly `SPORT | COMMUNITY`. SPORT reuses canonical `AthletesSport`; COMMUNITY is a parallel root and never requires a fake Sport. Corrected taxonomy must preserve root/subcategory/Need integrity, and SPORT must additionally preserve sport/subcategory integrity. Every SPORT branch exposed to Requests has a governed Other/manual Need using per-Request `customNeed`, never a new global taxonomy row. Football Community Roles explicitly include Player, Goalkeeper, Coach, Assistant Coach, Referee, Training Session, Training Group and Training Partner. New sport-specific Needs stay Requests-only unless another surface is explicitly granted eligibility. Request create/filter UX follows the same progressive root, and optional precise `fullAddress` is persisted without being exposed in current Request read DTOs. Draft PR `#351` is the clean in-flight implementation of this correction and is not merged foundation truth until authorized and merged.
+
+This ADR does not itself authorize FundMe persistence. ADR-060 now separately authorizes the ordered FundMe/Fundraising and Donations implementation program after Requests completion while preserving their independent ownership. Payments remains separately governed.
 
 The dedicated decision record is `docs/adr/ADR-050-ride-requests-unfreeze.md`.
 
@@ -447,3 +451,21 @@ The dedicated decision record is `docs/adr/ADR-058-athletes-calendar-rsvp.md`.
 The dedicated decision record is `docs/adr/ADR-059-athletes-calendar-rsvp-concurrency-and-counts.md`.
 
 **Reason:** Remove unnecessary community-wide RSVP serialization without weakening lifecycle correctness, and keep historical responses from inflating current participation counts after membership ends.
+
+## ADR-060 — Ordered HOOMA Help program: Requests, FundMe and Donations
+
+**Decision:** HOOMA Help is one product family with three independent owning domains presented through `Requests | FundMe | Donations`. The implementation order is strict: complete canonical Requests first, then FundMe in Fundraising, then physical-item Donations, then visibility-aware Help overview/read-model work.
+
+Requests remains the only owner of `HelpRequest`, private `HelpRequestResponse` coordination and Request media. The Requests UI target uses `Sport | Community`, real server-side search, taxonomy-driven quick/advanced filters, readable `#F7F7F7` descriptive copy, accessible expandable feed cards, canonical detail/response/lifecycle states, and later Play/Athletes projections over the same HelpRequest records. No `PlayRequest` or `AthletesRequest` persistence is created.
+
+FundMe is Fundraising-owned. Its initial support methods are **Cash and Crypto only**. Cash/Crypto are manual/confirmed contribution coordination and accounting records; only confirmed contributions affect campaign progress. Crypto destinations are public network/token/address tuples and never private keys or seed phrases. No credit/debit-card, Stripe-style, Visa/Mastercard/Amex or Telegram-Stars checkout is part of this FundMe program.
+
+Donations is Donations-owned and means free physical-item giving. It mirrors Requests at the discovery/UI level with `Sport | Community`, search, taxonomy filters, readable cards and detail/claim lifecycle, but it does not reuse HelpRequest persistence. Donation offers may have up to four photos. Financial donations belong to FundMe; a generic service marketplace is not created by this decision. Community donation taxonomy remains physical PRODUCT taxonomy and must not copy non-item Request concepts.
+
+Shared Help concerns may be extracted only as narrow reusable boundaries: live publisher/audience authority, canonical taxonomy where semantically shared, Identity presentation, object-storage transport, image-processing primitives, outbox/Worker and visibility-aware overview read ports. Shared infrastructure must never collapse the three business domains.
+
+The dedicated decision record is `docs/adr/ADR-060-help-requests-fundme-donations-program.md`.
+
+The dedicated execution plan is `docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md`. Open PR work remains in-flight and must be distinguished from merged `phase-0-foundation` truth.
+
+**Reason:** The product owner explicitly authorized the full Help program while requiring clean domain ownership, no duplicate schemas/services, no fake payment or donation mechanics, readable mobile-first UI and strict current-source/no-drift execution.

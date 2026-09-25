@@ -16,6 +16,7 @@ test("Request surface eligibility is applied before cursor pagination", async ()
   await db.helpTaxonomySubcategory.create({
     data: {
       id: subcategoryId,
+      requestType: "SPORT",
       sport: "OTHER",
       slug: `rq2b-${suffix}`,
       label: "RQ2B Test",
@@ -51,6 +52,7 @@ test("Request surface eligibility is applied before cursor pagination", async ()
         createdByUserId: user.id,
         audienceScope: "PUBLIC",
         category: "COMMUNITY",
+        requestType: "SPORT",
         sport: "OTHER",
         subcategoryId,
         needId: playNeedId,
@@ -64,6 +66,7 @@ test("Request surface eligibility is applied before cursor pagination", async ()
         createdByUserId: user.id,
         audienceScope: "PUBLIC",
         category: "COMMUNITY",
+        requestType: "SPORT",
         sport: "OTHER",
         subcategoryId,
         needId: requestsNeedId,

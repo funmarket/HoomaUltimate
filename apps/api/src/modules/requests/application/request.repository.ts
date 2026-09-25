@@ -6,7 +6,7 @@ import type {
   RequestConditionPreference,
 } from "@hooma/contracts/requests";
 import type { HelpAudienceScope, HelpCategory, HelpItemKind } from "@hooma/contracts/help";
-import type { HelpTaxonomyNeedKind } from "@hooma/contracts/help-taxonomy";
+import type { HelpRequestType, HelpTaxonomyNeedKind } from "@hooma/contracts/help-taxonomy";
 import type { AthletesSport } from "@hooma/contracts/athletes";
 
 export interface HelpRequestRecord {
@@ -20,6 +20,7 @@ export interface HelpRequestRecord {
   readonly audienceAthletesCommunityId: string | null;
   readonly category: HelpCategory;
   readonly itemKind: HelpItemKind | null;
+  readonly requestType: HelpRequestType | null;
   readonly sport: AthletesSport | null;
   readonly subcategoryId: string | null;
   readonly needId: string | null;
@@ -44,7 +45,15 @@ export interface HelpRequestRecord {
   readonly placeId: string | null;
   readonly city: string | null;
   readonly houma: string | null;
+  readonly fullAddress: string | null;
   readonly locationNote: string | null;
+  readonly image: {
+    readonly id: string;
+    readonly source: "UPLOAD" | "EXTERNAL_URL";
+    readonly contentType: "image/jpeg" | "image/png" | "image/webp" | null;
+    readonly sizeBytes: number | null;
+    readonly updatedAt: Date;
+  } | null;
   readonly neededByAt: Date | null;
   readonly expiresAt: Date | null;
   readonly status: HelpRequestStatus;

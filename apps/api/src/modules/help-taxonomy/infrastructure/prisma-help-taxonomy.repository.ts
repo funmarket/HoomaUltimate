@@ -1,5 +1,5 @@
 import type { AthletesSport } from "@hooma/contracts/athletes";
-import type { HelpTaxonomySurface } from "@hooma/contracts/help-taxonomy";
+import type { HelpRequestType, HelpTaxonomySurface } from "@hooma/contracts/help-taxonomy";
 import type { PrismaClient } from "@hooma/database";
 import type {
   HelpTaxonomyRepository,
@@ -9,34 +9,58 @@ import type {
 export class PrismaHelpTaxonomyRepository implements HelpTaxonomyRepository {
   constructor(private readonly db: PrismaClient) {}
 
-  async findActiveSelection(sport: AthletesSport, subcategoryId: string, needId: string) {
-    const need = await this.db.helpTaxonomyNeed.findFirst({
+  async findActiveSelection(input: {
+    readonly requestType: HelpRequestType;
+    readonly sport?: AthletesSport | null;
+    readonly subcategoryId: string;
+    readonly needId: string;
+  }) {
+    const subcategory = await this.db.helpTaxonomySubcategory.findFirst({
       where: {
-        id: needId,
+        id: input.subcategoryId,
+        requestType: input.requestType,
         active: true,
-        subcategoryId,
-        subcategory: { id: subcategoryId, sport, active: true },
+        ...(input.requestType === "SPORT" ? { sport: input.sport ?? null } : { sport: null }),
+        needs: {
+          some: {
+            id: input.needId,
+            active: true,
+          },
+        },
       },
       select: {
         id: true,
-        subcategoryId: true,
+        requestType: true,
+        sport: true,
         slug: true,
         label: true,
-        kind: true,
-        allowsCustomText: true,
-        subcategory: {
+        needs: {
+          where: {
+            id: input.needId,
+            active: true,
+          },
+          take: 1,
           select: {
             id: true,
-            sport: true,
+            subcategoryId: true,
             slug: true,
             label: true,
+            kind: true,
+            allowsCustomText: true,
           },
         },
       },
     });
-    if (!need) return null;
+    const need = subcategory?.needs[0];
+    if (!subcategory || !need) return null;
     return {
-      subcategory: need.subcategory,
+      subcategory: {
+        id: subcategory.id,
+        requestType: subcategory.requestType,
+        sport: subcategory.sport,
+        slug: subcategory.slug,
+        label: subcategory.label,
+      },
       need: {
         id: need.id,
         subcategoryId: need.subcategoryId,
@@ -67,6 +91,7 @@ export class PrismaHelpTaxonomyRepository implements HelpTaxonomyRepository {
       orderBy: [{ sortOrder: "asc" }, { label: "asc" }, { id: "asc" }],
       select: {
         id: true,
+        requestType: true,
         sport: true,
         slug: true,
         label: true,

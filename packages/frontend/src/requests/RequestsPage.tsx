@@ -32,6 +32,7 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
   const effectiveFilters = useMemo<RequestsListQuery>(
     () => ({
       surface: "REQUESTS",
+      ...(filters.requestType ? { requestType: filters.requestType } : {}),
       ...(filters.sport ? { sport: filters.sport } : {}),
       ...(filters.subcategoryId ? { subcategoryId: filters.subcategoryId } : {}),
       ...(filters.needId ? { needId: filters.needId } : {}),
@@ -45,6 +46,7 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
       debouncedHouma,
       filters.limit,
       filters.needId,
+      filters.requestType,
       filters.sport,
       filters.status,
       filters.subcategoryId,
@@ -148,7 +150,7 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
 
   return (
     <section className="page requests-page">
-      <header className="help-hero panel">
+      <header className="help-hero">
         <div className="help-hero__copy">
           <span className="eyebrow">HOOMA HELP</span>
           <h1>{fundmeActive ? "FundMe" : donationsActive ? "Donations" : "Requests"}</h1>
@@ -157,13 +159,13 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
               ? "FundMe will carry contributions for community needs once its own slice exists."
               : donationsActive
                 ? "Give useful sports gear locally once the Donations domain is ready."
-                : "Ask for sports gear, community roles, or local support around real HOOMA activity."}
+                : "Players help players. Stronger together."}
           </p>
         </div>
         {tab === "requests" ? (
-          <a className="help-action" href="/requests/new">
+          <a className="help-action help-action--primary" href="/requests/new">
             <PlusIcon />
-            <span>Create request</span>
+            <span>New Request</span>
           </a>
         ) : null}
       </header>

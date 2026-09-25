@@ -3,9 +3,11 @@ import test from "node:test";
 import { RequestService } from "../apps/api/src/modules/requests/application/request.service.js";
 import type {
   HelpRequestRecord,
+  HelpRequestResponseRecord,
   RequestRepository,
   RequestVisibilityReader,
 } from "../apps/api/src/modules/requests/application/request.repository.js";
+import type { UserPresentationReader } from "../apps/api/src/modules/identity/application/user-presentation.reader.js";
 import { RequestError } from "../apps/api/src/modules/requests/domain/request-error.js";
 
 function requestRecord(overrides: Partial<HelpRequestRecord> = {}): HelpRequestRecord {
@@ -42,6 +44,24 @@ function requestRecord(overrides: Partial<HelpRequestRecord> = {}): HelpRequestR
     cancelledAt: null,
     createdAt: new Date("2026-09-17T00:00:00.000Z"),
     updatedAt: new Date("2026-09-17T00:00:00.000Z"),
+    ...overrides,
+  };
+}
+
+function responseRecord(
+  overrides: Partial<HelpRequestResponseRecord> = {},
+): HelpRequestResponseRecord {
+  return {
+    id: "response-1",
+    requestId: "request-1",
+    responderUserId: "user-2",
+    message: "I can help.",
+    status: "PENDING",
+    createdAt: new Date("2026-09-17T01:00:00.000Z"),
+    updatedAt: new Date("2026-09-17T01:00:00.000Z"),
+    acceptedAt: null,
+    declinedAt: null,
+    withdrawnAt: null,
     ...overrides,
   };
 }
@@ -211,4 +231,235 @@ test("Requests hide private scoped objects from nonmembers with not-found semant
     service.getForMember("outsider", "private-request"),
     (error: unknown) => error instanceof RequestError && error.code === "REQUEST_NOT_FOUND",
   );
+});
+
+test("Request list requester presentation is one deduplicated Identity batch read", async () => {
+  const calls: string[][] = [];
+  const presentations: UserPresentationReader = {
+    async findByUserIds(userIds) {
+      calls.push([...userIds]);
+      return [
+        {
+          userId: "user-1",
+          displayName: "Amine",
+          username: "amine",
+          photoUrl: "https://cdn.example.test/amine.jpg",
+        },
+        {
+          userId: "user-2",
+          displayName: "Bashir",
+          username: "bashir",
+          photoUrl: null,
+        },
+      ];
+    },
+  };
+  const repo = repository();
+  const service = new RequestService(
+    {
+      ...repo,
+      async listPublic() {
+        return {
+          items: [
+            requestRecord({ id: "request-1", createdByUserId: "user-1" }),
+            requestRecord({ id: "request-2", createdByUserId: "user-1" }),
+            requestRecord({ id: "request-3", createdByUserId: "user-2" }),
+          ],
+          nextCursor: null,
+        };
+      },
+    },
+    visibility(),
+    undefined,
+    presentations,
+  );
+
+  const page = await service.listPublic({ limit: 30 });
+
+  assert.deepEqual(calls, [["user-1", "user-2"]]);
+  assert.deepEqual(page.items[0]?.requester, {
+    displayName: "Amine",
+    username: "amine",
+    photoUrl: "https://cdn.example.test/amine.jpg",
+  });
+  assert.deepEqual(page.items[1]?.requester, page.items[0]?.requester);
+  assert.deepEqual(page.items[2]?.requester, {
+    displayName: "Bashir",
+    username: "bashir",
+    photoUrl: null,
+  });
+  assert.equal(
+    page.items.some((item) => item.requester && "userId" in item.requester),
+    false,
+    "Request DTO must expose only safe requester presentation fields",
+  );
+});
+
+test("Request detail resolves its creator through the canonical Identity reader once", async () => {
+  const calls: string[][] = [];
+  const presentations: UserPresentationReader = {
+    async findByUserIds(userIds) {
+      calls.push([...userIds]);
+      return [
+        {
+          userId: "user-2",
+          displayName: "Bashir",
+          username: "bashir",
+          photoUrl: null,
+        },
+      ];
+    },
+  };
+  const repo = repository();
+  const service = new RequestService(
+    {
+      ...repo,
+      async getPublic() {
+        return requestRecord({ createdByUserId: "user-2" });
+      },
+    },
+    visibility(),
+    undefined,
+    presentations,
+  );
+
+  const item = await service.getPublic("request-1");
+
+  assert.deepEqual(calls, [["user-2"]]);
+  assert.deepEqual(item.requester, {
+    displayName: "Bashir",
+    username: "bashir",
+    photoUrl: null,
+  });
+});
+
+test("Request response lists batch responder presentation through canonical Identity", async () => {
+  const calls: string[][] = [];
+  const presentations: UserPresentationReader = {
+    async findByUserIds(userIds) {
+      calls.push([...userIds]);
+      return [
+        {
+          userId: "user-2",
+          displayName: "Bashir",
+          username: "bashir",
+          photoUrl: "https://cdn.example.test/bashir.jpg",
+        },
+        {
+          userId: "user-3",
+          displayName: "Amine",
+          username: "amine",
+          photoUrl: null,
+        },
+      ];
+    },
+  };
+  const repo = repository();
+  const service = new RequestService(
+    {
+      ...repo,
+      async listResponses() {
+        return [
+          responseRecord({ id: "response-1", responderUserId: "user-2" }),
+          responseRecord({ id: "response-2", responderUserId: "user-2" }),
+          responseRecord({ id: "response-3", responderUserId: "user-3" }),
+        ];
+      },
+    },
+    visibility(),
+    undefined,
+    presentations,
+  );
+
+  const page = await service.listResponses("user-1", "request-1");
+  const responders = page.items.map(
+    (item) => (item as unknown as { responder?: unknown }).responder,
+  );
+
+  assert.deepEqual(calls, [["user-2", "user-3"]]);
+  assert.deepEqual(responders, [
+    {
+      displayName: "Bashir",
+      username: "bashir",
+      photoUrl: "https://cdn.example.test/bashir.jpg",
+    },
+    {
+      displayName: "Bashir",
+      username: "bashir",
+      photoUrl: "https://cdn.example.test/bashir.jpg",
+    },
+    {
+      displayName: "Amine",
+      username: "amine",
+      photoUrl: null,
+    },
+  ]);
+  assert.equal(
+    responders.some((responder) => Boolean(responder && "userId" in (responder as object))),
+    false,
+  );
+});
+
+test("Request response mutations preserve responder presentation", async () => {
+  const calls: string[][] = [];
+  const presentations: UserPresentationReader = {
+    async findByUserIds(userIds) {
+      calls.push([...userIds]);
+      return [
+        {
+          userId: "user-2",
+          displayName: "Bashir",
+          username: "bashir",
+          photoUrl: null,
+        },
+      ];
+    },
+  };
+  const repo = repository();
+  const service = new RequestService(
+    {
+      ...repo,
+      async createResponse() {
+        return responseRecord();
+      },
+      async acceptResponse() {
+        return responseRecord({
+          status: "ACCEPTED",
+          acceptedAt: new Date("2026-09-17T03:00:00.000Z"),
+        });
+      },
+      async declineResponse() {
+        return responseRecord({
+          status: "DECLINED",
+          declinedAt: new Date("2026-09-17T03:05:00.000Z"),
+        });
+      },
+      async getResponseById() {
+        return responseRecord();
+      },
+      async withdrawResponse() {
+        return responseRecord({
+          status: "WITHDRAWN",
+          withdrawnAt: new Date("2026-09-17T03:10:00.000Z"),
+        });
+      },
+    },
+    visibility(),
+    undefined,
+    presentations,
+  );
+
+  const created = await service.respond("user-2", "request-1", { message: "I can help." });
+  const accepted = await service.acceptResponse("user-1", "request-1", "response-1");
+  const declined = await service.declineResponse("user-1", "request-1", "response-1");
+  const withdrawn = await service.withdrawResponse("user-2", "request-1", "response-1");
+
+  assert.deepEqual(calls, [["user-2"], ["user-2"], ["user-2"], ["user-2"]]);
+  for (const response of [created, accepted, declined, withdrawn]) {
+    assert.deepEqual(response.responder, {
+      displayName: "Bashir",
+      username: "bashir",
+      photoUrl: null,
+    });
+  }
 });

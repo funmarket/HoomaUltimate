@@ -51,6 +51,11 @@ const baseRequest = {
   category: "ITEM",
   itemKind: "FOOTWEAR",
   sport: "RUNNING",
+  requester: {
+    displayName: "Yassine K.",
+    username: "yassine.k",
+    photoUrl: "https://cdn.example.test/yassine.jpg",
+  },
   title: "Need size 43 running shoes",
   description: "Looking for used or new running shoes for training.",
   quantityNeeded: 1,
@@ -96,6 +101,11 @@ const otherResponse = {
   responderUserId: "user-2",
   message: "I have a spare pair.",
   status: "PENDING",
+  responder: {
+    displayName: "Bashir",
+    username: "bashir",
+    photoUrl: "https://cdn.example.test/bashir.jpg",
+  },
   createdAt: "2026-09-17T13:00:00.000Z",
   updatedAt: "2026-09-17T13:00:00.000Z",
   acceptedAt: null,
@@ -109,6 +119,7 @@ function installApiStub(options: {
   readonly responses?: readonly unknown[];
   readonly actionStatus?: number;
   readonly actionBody?: unknown;
+  readonly imageDelivery?: unknown;
 }) {
   const calls: string[] = [];
   const originalFetch = globalThis.fetch;
@@ -118,6 +129,20 @@ function installApiStub(options: {
     const key = `${method} ${url.pathname}`;
     calls.push(key);
     if (url.pathname === "/api/public/v1/auth/session") return json(options.me ?? null);
+    if (url.pathname === "/api/public/v1/requests/request-1/image/delivery")
+      return json(
+        options.imageDelivery ?? {
+          contentUrl: "https://cdn.example.test/request.webp",
+          expiresAt: null,
+        },
+      );
+    if (url.pathname === "/api/v1/requests/request-1/image/delivery")
+      return json(
+        options.imageDelivery ?? {
+          contentUrl: "https://cdn.example.test/request.webp",
+          expiresAt: "2026-09-23T13:05:00.000Z",
+        },
+      );
     if (url.pathname === "/api/public/v1/requests/request-1")
       return json(options.request ?? baseRequest);
     if (url.pathname === "/api/v1/requests/request-1") return json(options.request ?? baseRequest);
@@ -126,7 +151,27 @@ function installApiStub(options: {
     if (url.pathname === "/api/v1/requests/request-1/responses" && method === "POST") {
       if (options.actionStatus && options.actionStatus >= 400)
         return json(options.actionBody, options.actionStatus);
-      return json({ ...otherResponse, id: "response-own", responderUserId: "user-1" }, 201);
+      return json(
+        {
+          ...otherResponse,
+          id: "response-own",
+          responderUserId: "user-1",
+          responder: { displayName: "U", username: "u", photoUrl: null },
+        },
+        201,
+      );
+    }
+    if (
+      url.pathname === "/api/v1/requests/request-1/responses/response-1/accept" &&
+      method === "POST"
+    ) {
+      if (options.actionStatus && options.actionStatus >= 400)
+        return json(options.actionBody, options.actionStatus);
+      return json({
+        ...otherResponse,
+        status: "ACCEPTED",
+        acceptedAt: "2026-09-17T14:00:00.000Z",
+      });
     }
     if (method === "POST") {
       if (options.actionStatus && options.actionStatus >= 400)
@@ -192,6 +237,21 @@ test("a guest reads the public detail and is routed through auth to respond", as
   }
 });
 
+test("Request detail links requester identity to the canonical public profile", async () => {
+  const page = await renderDetail({ me: null });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByText("Need size 43 running shoes")));
+    const requester = page.view.getByRole("link", { name: /Yassine K\./ });
+    assert.equal(requester.getAttribute("href"), "/profile/yassine.k");
+    assert.equal(
+      requester.querySelector("img")?.getAttribute("src"),
+      "https://cdn.example.test/yassine.jpg",
+    );
+  } finally {
+    page.close();
+  }
+});
+
 test("an eligible signed-in member sends one response and may withdraw it", async () => {
   const page = await renderDetail({ me: me("user-1", "MEMBER") });
   try {
@@ -209,15 +269,22 @@ test("an eligible signed-in member sends one response and may withdraw it", asyn
   }
 });
 
-test("a manager sees player responses, can accept, fulfil, and never fakes success on conflict", async () => {
+test("a manager sees responder presentation, can accept, fulfil, and never fakes success on conflict", async () => {
   const ok = await renderDetail({ me: me("user-1", "FOUNDER"), responses: [otherResponse] });
   try {
-    await ok.waitFor(() => assert.ok(ok.view.getByText("Player response")));
+    const responder = await ok.view.findByRole("link", { name: /Bashir/ });
+    assert.equal(responder.getAttribute("href"), "/profile/bashir");
+    assert.equal(
+      responder.querySelector("img")?.getAttribute("src"),
+      "https://cdn.example.test/bashir.jpg",
+    );
     assert.equal(ok.view.queryByText(/user-2/), null);
     ok.fireEvent.click(ok.view.getByRole("button", { name: /^Accept$/i }));
-    await ok.waitFor(() =>
-      assert.ok(ok.calls.includes("POST /api/v1/requests/request-1/responses/response-1/accept")),
-    );
+    await ok.waitFor(() => {
+      assert.ok(ok.calls.includes("POST /api/v1/requests/request-1/responses/response-1/accept"));
+      assert.ok(ok.view.getByRole("link", { name: /Bashir/ }));
+      assert.ok(ok.view.getByText("Accepted"));
+    });
     ok.fireEvent.click(ok.view.getByRole("button", { name: /Mark fulfilled/i }));
     await ok.waitFor(() => assert.ok(ok.calls.includes("POST /api/v1/requests/request-1/fulfill")));
   } finally {
@@ -231,7 +298,7 @@ test("a manager sees player responses, can accept, fulfil, and never fakes succe
     actionBody: { error: { code: "CONFLICT", message: "Request state changed" } },
   });
   try {
-    await conflict.waitFor(() => assert.ok(conflict.view.getByText("Player response")));
+    await conflict.waitFor(() => assert.ok(conflict.view.getByRole("link", { name: /Bashir/ })));
     conflict.fireEvent.click(conflict.view.getByRole("button", { name: /^Accept$/i }));
     await conflict.waitFor(() =>
       assert.ok(conflict.view.container.querySelector(".request-error")),
@@ -241,5 +308,57 @@ test("a manager sees player responses, can accept, fulfil, and never fakes succe
     assert.ok(text.includes("Open"), "lifecycle must not be forced to a new state on failure");
   } finally {
     conflict.close();
+  }
+});
+
+test("Request detail resolves public image delivery only when media exists", async () => {
+  const page = await renderDetail({
+    me: null,
+    request: {
+      ...baseRequest,
+      image: {
+        id: "image-1",
+        source: "EXTERNAL_URL",
+        contentType: null,
+        sizeBytes: null,
+        updatedAt: "2026-09-23T13:00:00.000Z",
+      },
+    },
+  });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByRole("img", { name: /Request image/i })));
+    assert.ok(page.calls.includes("GET /api/public/v1/requests/request-1/image/delivery"));
+    assert.equal(
+      page.view.getByRole("img", { name: /Request image/i }).getAttribute("src"),
+      "https://cdn.example.test/request.webp",
+    );
+  } finally {
+    page.close();
+  }
+});
+
+test("signed-in Request detail uses the member image delivery path", async () => {
+  const page = await renderDetail({
+    me: me("user-1", "MEMBER"),
+    request: {
+      ...baseRequest,
+      image: {
+        id: "image-1",
+        source: "UPLOAD",
+        contentType: "image/webp",
+        sizeBytes: 1200,
+        updatedAt: "2026-09-23T13:00:00.000Z",
+      },
+    },
+  });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByRole("img", { name: /Request image/i })));
+    assert.ok(page.calls.includes("GET /api/v1/requests/request-1/image/delivery"));
+    assert.equal(
+      page.calls.includes("GET /api/public/v1/requests/request-1/image/delivery"),
+      false,
+    );
+  } finally {
+    page.close();
   }
 });

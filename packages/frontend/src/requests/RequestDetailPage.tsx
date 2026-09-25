@@ -5,6 +5,7 @@ import { useHoomaFrontend } from "../context";
 import { HoomaApiError } from "../http";
 import { ClockIcon, LocationIcon } from "../help/HelpIcons";
 import { createRequestsApi } from "./api";
+import { RequestRequester } from "./RequestRequester";
 import { RequestResponses } from "./RequestResponses";
 
 function titleCase(value: string): string {
@@ -48,6 +49,7 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
   const requestsApi = useMemo(() => createRequestsApi(transport), [transport]);
   const [me, setMe] = useState<MeResponse | null>(null);
   const [item, setItem] = useState<HelpRequest | null>(null);
+  const [imageUrl, setImageUrl] = useState("");
   const [responses, setResponses] = useState<HelpRequestResponse[]>([]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -65,6 +67,19 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
         const detail = current
           ? await requestsApi.memberDetail(requestId)
           : await requestsApi.publicDetail(requestId);
+        let deliveredImageUrl = "";
+        if (detail.image) {
+          try {
+            const delivery = current
+              ? await requestsApi.memberImageDelivery(requestId)
+              : await requestsApi.publicImageDelivery(requestId);
+            deliveredImageUrl = delivery.contentUrl;
+          } catch (reason) {
+            if (active) {
+              setActionError(protectedError(reason, "Unable to load Request image"));
+            }
+          }
+        }
         let visible: HelpRequestResponse[] = [];
         if (current) {
           try {
@@ -76,6 +91,7 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
         if (active) {
           setMe(current);
           setItem(detail);
+          setImageUrl(deliveredImageUrl);
           setResponses(visible);
         }
       } catch (reason) {
@@ -177,6 +193,9 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
       </a>
 
       <article className="request-detail panel">
+        {imageUrl ? (
+          <img className="request-detail__image" src={imageUrl} alt="Request image" />
+        ) : null}
         <div className="request-card__topline">
           <span className="request-chip">
             {item.taxonomy?.need.label ?? titleCase(item.category)}
@@ -186,6 +205,7 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
             {titleCase(item.status)}
           </span>
         </div>
+        <RequestRequester requester={item.requester} />
         <div>
           <h1>{item.title}</h1>
           <p>{item.description}</p>
@@ -205,8 +225,9 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
           ) : null}
           {item.taxonomy ? (
             <>
-              <span>Sport · {item.taxonomy.sportLabel}</span>
-              <span>Subcategory · {item.taxonomy.subcategory.label}</span>
+              <span>Type · {titleCase(item.taxonomy.requestType)}</span>
+              {item.taxonomy.sportLabel ? <span>Sport · {item.taxonomy.sportLabel}</span> : null}
+              <span>Category · {item.taxonomy.subcategory.label}</span>
               <span>Need · {item.taxonomy.need.label}</span>
             </>
           ) : item.sport ? (
@@ -225,7 +246,7 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
           <div className="request-action-row">
             <button
               type="button"
-              className="help-action"
+              className="help-action help-action--primary"
               disabled={Boolean(pendingAction)}
               onClick={() => void transition("fulfill")}
             >
@@ -252,7 +273,7 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
             Sign in to send a private coordination response to the Request manager.
           </p>
           {loginHref ? (
-            <a className="help-action" href={loginHref}>
+            <a className="help-action help-action--primary" href={loginHref}>
               Sign in to respond
             </a>
           ) : null}
@@ -274,7 +295,11 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
             onChange={(event) => setMessage(event.target.value)}
           />
           <div className="request-action-row">
-            <button className="help-action" type="submit" disabled={pendingAction === "respond"}>
+            <button
+              className="help-action help-action--primary"
+              type="submit"
+              disabled={pendingAction === "respond"}
+            >
               {pendingAction === "respond" ? "Sending…" : "Send response"}
             </button>
           </div>
