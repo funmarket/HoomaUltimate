@@ -560,7 +560,11 @@ export function PlayPage() {
                 type="submit"
                 disabled={offerLoading || !offerTeamId || selectedOfferPending}
               >
-                {offerLoading ? "Sending…" : selectedOfferPending ? "Offer pending" : "Send offer"}
+                {offerLoading
+                  ? "Sending…"
+                  : selectedOfferPending
+                    ? "Offer pending"
+                    : "Send offer"}
               </button>
               <button
                 className="play-action play-action--quiet"
