@@ -481,3 +481,5 @@ export type EventFormationInput = z.infer<typeof eventFormationSchema>;
 export * from "./rides.js";
 
 export * from "./athletes.js";
+
+export * from "./gear-up.js";

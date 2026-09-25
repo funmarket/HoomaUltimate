@@ -7,7 +7,7 @@ import type {
   PublicPlaceImage,
   PublicPlaceSummary,
 } from "@hooma/contracts/places";
-import { Prisma } from "@hooma/database";
+import { Prisma, type PlaceDiscoveryKind } from "@hooma/database";
 import { normalizeExternalPlaceImageUrl } from "./external-place-image-url.js";
 
 const OWNER_SUBMISSION_CLAIM_EVIDENCE = "Ownership asserted during Place submission";
@@ -265,10 +265,18 @@ export async function suggestCanonicalPlace(
   userId: string,
   input: PlaceCreateInput,
   submissionOrigin: PlaceSubmissionOrigin,
+  discoveryKind: PlaceDiscoveryKind | null,
 ): Promise<PlaceSuggestionResult> {
   await lockCanonicalPlaceIdentity(tx, input);
   const duplicate = await findCanonicalPlaceDuplicate(tx, input);
   if (duplicate) {
+    if (discoveryKind) {
+      await tx.placeDiscovery.upsert({
+        where: { placeId_kind: { placeId: duplicate.id, kind: discoveryKind } },
+        create: { placeId: duplicate.id, kind: discoveryKind },
+        update: {},
+      });
+    }
     const existing = await tx.place.findUniqueOrThrow({
       where: { id: duplicate.id },
       select: { ...canonicalPlaceSelect, moderationStatus: true, archivedAt: true },
@@ -317,6 +325,13 @@ export async function suggestCanonicalPlace(
     },
     select: { ...canonicalPlaceSelect, moderationStatus: true },
   });
+  if (discoveryKind) {
+    await tx.placeDiscovery.upsert({
+      where: { placeId_kind: { placeId: place.id, kind: discoveryKind } },
+      create: { placeId: place.id, kind: discoveryKind },
+      update: {},
+    });
+  }
   if (imageUrls.length) {
     await tx.placeImage.createMany({
       data: canonicalPlaceImageCreate(imageUrls).map((image) => ({ ...image, placeId: place.id })),

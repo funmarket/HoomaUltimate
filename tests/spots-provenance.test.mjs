@@ -126,7 +126,9 @@ test("Owner submission persists provenance and creates its pending ownership cla
   assert.ok(suggest.includes("OWNER_SUBMISSION_CLAIM_EVIDENCE"));
   assert.ok(placeRepository.includes("return this.db.$transaction"));
   assert.ok(
-    placeRepository.includes("suggestCanonicalPlace(tx, userId, input, input.submissionOrigin)"),
+    placeRepository.includes(
+      'suggestCanonicalPlace(tx, userId, input, input.submissionOrigin, "WATCH_SPOT")',
+    ),
   );
 
   const reviewPlace = section(placeRepository, "async reviewPlace(", "async reviewOwnershipClaim(");

@@ -525,6 +525,8 @@ model Place {
   applications        PlaceCapabilityApplication[]
   menuItems           PlaceMenuItem[]
   images              PlaceImage[]
+  discoveries         PlaceDiscovery[]
+  gearUpShop           GearUpShop?
   events              Event[]
   teamChallengeVenues TeamChallenge[]              @relation("TeamChallengePlace")
   teamGameVenues      TeamGame[]                   @relation("TeamGamePlace")

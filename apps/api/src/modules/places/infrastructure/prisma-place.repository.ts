@@ -39,7 +39,11 @@ export class PrismaPlaceRepository implements PlaceRepository {
 
   async listPublic(): Promise<readonly PublicPlaceSummary[]> {
     const places = await this.db.place.findMany({
-      where: { moderationStatus: "APPROVED", archivedAt: null },
+      where: {
+        moderationStatus: "APPROVED",
+        archivedAt: null,
+        discoveries: { some: { kind: "WATCH_SPOT" } },
+      },
       select: canonicalPlaceSelect,
       orderBy: [{ city: "asc" }, { name: "asc" }],
     });
@@ -55,7 +59,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
 
   async suggest(userId: string, input: PlaceSuggestionInput): Promise<PlaceSuggestionResult> {
     return this.db.$transaction((tx) =>
-      suggestCanonicalPlace(tx, userId, input, input.submissionOrigin),
+      suggestCanonicalPlace(tx, userId, input, input.submissionOrigin, "WATCH_SPOT"),
     );
   }
 
@@ -222,7 +226,11 @@ export class PrismaPlaceRepository implements PlaceRepository {
 
   async pendingPlaces(): Promise<readonly PlaceReviewQueueItem[]> {
     const rows = await this.db.place.findMany({
-      where: { moderationStatus: "PENDING", archivedAt: null },
+      where: {
+        moderationStatus: "PENDING",
+        archivedAt: null,
+        gearUpShop: { is: null },
+      },
       select: {
         ...canonicalPlaceSelect,
         moderationStatus: true,
