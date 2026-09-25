@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type { MeResponse } from "@hooma/contracts";
-import type {
-  HelpTaxonomyResponse,
-  HelpTaxonomySurface,
-} from "@hooma/contracts/help-taxonomy";
+import type { HelpTaxonomyResponse, HelpTaxonomySurface } from "@hooma/contracts/help-taxonomy";
 import {
   helpRequestCreateSchema,
   helpRequestExternalImageInputSchema,
@@ -53,9 +50,7 @@ export function RequestCreatePage() {
   const [imageUrl, setImageUrl] = useState("");
   const [publisher, setPublisher] = useState("personal");
   const [audience, setAudience] = useState("public");
-  const [requestType, setRequestType] = useState(
-    taxonomySurface === "ATHLETES" ? "SPORT" : "",
-  );
+  const [requestType, setRequestType] = useState(taxonomySurface === "ATHLETES" ? "SPORT" : "");
   const [sport, setSport] = useState("");
   const [subcategoryId, setSubcategoryId] = useState("");
   const [needId, setNeedId] = useState("");
