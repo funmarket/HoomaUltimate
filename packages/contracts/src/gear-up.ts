@@ -29,10 +29,7 @@ const gearUpShopInputSchema = z
   .object({
     offerTypes: z.array(gearUpOfferTypeSchema).min(1).max(2),
     sports: z.array(athletesSportSchema).min(1).max(9),
-    categories: z
-      .array(gearUpProductCategorySchema)
-      .min(1)
-      .max(GEAR_UP_PRODUCT_CATEGORIES.length),
+    categories: z.array(gearUpProductCategorySchema).min(1).max(GEAR_UP_PRODUCT_CATEGORIES.length),
   })
   .strict();
 
@@ -45,10 +42,7 @@ export const gearUpShopSuggestionSchema = z
 
 export const gearUpShopUpdateSchema = gearUpShopInputSchema
   .partial()
-  .refine(
-    (input) => Object.keys(input).length > 0,
-    "At least one Gear Up shop field is required",
-  );
+  .refine((input) => Object.keys(input).length > 0, "At least one Gear Up shop field is required");
 
 export const gearUpProductCreateSchema = z
   .object({
