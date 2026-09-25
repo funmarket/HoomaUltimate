@@ -385,43 +385,43 @@ export function AddPlacePage() {
       </header>
 
       <section className="panel">
-          <p className="eyebrow">
-            {isPitchSuggestion ? "WHO IS ADDING THIS PITCH?" : "WHO IS ADDING THIS SPOT?"}
-          </p>
-          <div className="place-source-tabs" role="tablist" aria-label="Place submission source">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={submissionOrigin === "OWNER"}
-              className={
-                submissionOrigin === "OWNER" ? "place-source-tab is-active" : "place-source-tab"
-              }
-              onClick={() => setSubmissionOrigin("OWNER")}
-            >
-              By Owner
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={submissionOrigin === "FANHUB"}
-              className={
-                submissionOrigin === "FANHUB" ? "place-source-tab is-active" : "place-source-tab"
-              }
-              onClick={() => setSubmissionOrigin("FANHUB")}
-            >
-              FanHub
-            </button>
-          </div>
-          <p className="muted">
-            {submissionOrigin === "OWNER"
-              ? isPitchSuggestion
-                ? "Choose By Owner only when you own or manage this Pitch. This creates an ownership claim on the same canonical Place; verification remains a separate Admin decision."
-                : "Choose By Owner only when you own or manage this business. This creates an ownership claim on the same Place; verification remains a separate Admin decision."
-              : isPitchSuggestion
-                ? "FanHub is for any registered HOOMA member adding a Pitch for the community. Adding it does not make you its owner."
-                : "FanHub is for any registered HOOMA member suggesting a Spot for the community. Suggesting it does not make you its owner."}
-          </p>
-        </section>
+        <p className="eyebrow">
+          {isPitchSuggestion ? "WHO IS ADDING THIS PITCH?" : "WHO IS ADDING THIS SPOT?"}
+        </p>
+        <div className="place-source-tabs" role="tablist" aria-label="Place submission source">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={submissionOrigin === "OWNER"}
+            className={
+              submissionOrigin === "OWNER" ? "place-source-tab is-active" : "place-source-tab"
+            }
+            onClick={() => setSubmissionOrigin("OWNER")}
+          >
+            By Owner
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={submissionOrigin === "FANHUB"}
+            className={
+              submissionOrigin === "FANHUB" ? "place-source-tab is-active" : "place-source-tab"
+            }
+            onClick={() => setSubmissionOrigin("FANHUB")}
+          >
+            FanHub
+          </button>
+        </div>
+        <p className="muted">
+          {submissionOrigin === "OWNER"
+            ? isPitchSuggestion
+              ? "Choose By Owner only when you own or manage this Pitch. This creates an ownership claim on the same canonical Place; verification remains a separate Admin decision."
+              : "Choose By Owner only when you own or manage this business. This creates an ownership claim on the same Place; verification remains a separate Admin decision."
+            : isPitchSuggestion
+              ? "FanHub is for any registered HOOMA member adding a Pitch for the community. Adding it does not make you its owner."
+              : "FanHub is for any registered HOOMA member suggesting a Spot for the community. Suggesting it does not make you its owner."}
+        </p>
+      </section>
 
       <PlaceForm
         submitLabel={isPitchSuggestion ? "Submit Pitch" : "Submit Place"}
