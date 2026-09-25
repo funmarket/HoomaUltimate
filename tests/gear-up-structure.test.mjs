@@ -68,7 +68,8 @@ test("Place submission discovery preserves Spots while Pitch stays independent",
   const pitchRepository = source(
     "apps/api/src/modules/pitch/infrastructure/prisma-pitch.repository.ts",
   );
-  const watchSpotCall = /suggestCanonicalPlace\([\s\S]*?input\.submissionOrigin,[\s\S]*?"WATCH_SPOT"/;
+  const watchSpotCall =
+    /suggestCanonicalPlace\([\s\S]*?input\.submissionOrigin,[\s\S]*?"WATCH_SPOT"/;
   const pitchCall = /suggestCanonicalPlace\([\s\S]*?"FANHUB",[\s\S]*?null/;
   const backfill = /INSERT INTO "PlaceDiscovery"[\s\S]*?'WATCH_SPOT'/;
   const excludesPitch = /NOT EXISTS[\s\S]*?"PlaceCapability"[\s\S]*?'PITCH'/;
