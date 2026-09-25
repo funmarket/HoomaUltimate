@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
 function source(path) {
@@ -7,20 +7,29 @@ function source(path) {
 }
 
 test("Gear Up has explicit Place discovery without duplicating canonical Place", () => {
-  const schema = source("packages/database/prisma/schema.prisma");
+  const gearUpSchemaPath = "packages/database/prisma/gear-up.prisma";
+  const gearUpSchemaUrl = new URL(`../${gearUpSchemaPath}`, import.meta.url);
+  const canonicalSchema = source("packages/database/prisma/schema.prisma");
+
+  assert.equal(existsSync(gearUpSchemaUrl), true, "Gear Up must own a Prisma schema module");
+  const gearUpSchema = source(gearUpSchemaPath);
   const discoveryEnum = /enum PlaceDiscoveryKind \{[\s\S]*?WATCH_SPOT[\s\S]*?GEAR_UP[\s\S]*?\}/;
   const placeDiscoveries = /model Place \{[\s\S]*?discoveries\s+PlaceDiscovery\[\]/;
   const gearUpShop = /model Place \{[\s\S]*?gearUpShop\s+GearUpShop\?/;
   const duplicatePlaceModel = /model (?:SportStore|ShopPlace|GearUpPlace)\s+\{/;
 
-  assert.match(schema, discoveryEnum);
-  assert.match(schema, placeDiscoveries);
-  assert.match(schema, gearUpShop);
-  assert.doesNotMatch(schema, duplicatePlaceModel);
+  assert.match(gearUpSchema, discoveryEnum);
+  assert.match(canonicalSchema, placeDiscoveries);
+  assert.match(canonicalSchema, gearUpShop);
+  assert.doesNotMatch(gearUpSchema, duplicatePlaceModel);
 });
 
 test("Gear Up persistence owns shop, products, images and bounded settings", () => {
-  const schema = source("packages/database/prisma/schema.prisma");
+  const gearUpSchemaPath = "packages/database/prisma/gear-up.prisma";
+  const gearUpSchemaUrl = new URL(`../${gearUpSchemaPath}`, import.meta.url);
+
+  assert.equal(existsSync(gearUpSchemaUrl), true, "Gear Up must own a Prisma schema module");
+  const schema = source(gearUpSchemaPath);
 
   assert.match(schema, /model PlaceDiscovery \{/);
   assert.match(schema, /@@id\(\[placeId, kind\]\)/);
