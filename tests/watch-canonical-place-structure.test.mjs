@@ -34,6 +34,12 @@ test("Watch separates primary destinations from secondary creation actions", () 
   assert.match(actionsCss, /grid-template-columns: repeat\(2, minmax\(0, 220px\)\)/);
   assert.match(actionsCss, /\.watch-section-action--utility/);
   assert.match(actionsCss, /min-height: 48px/);
+  assert.match(
+    actionsCss,
+    /@media \(max-width: 760px\) \{[\s\S]*?\.watch-section-actions \{[\s\S]*?grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/,
+  );
+  assert.doesNotMatch(actionsCss, /min-width: min\(78vw, 280px\)/);
+  assert.doesNotMatch(actionsCss, /overflow-x: auto/);
 
   assert.doesNotMatch(watch, />\s*Places\s*</);
   assert.doesNotMatch(

@@ -1,7 +1,7 @@
 .watch-section-actions {
   --watch-menu-gold: #f0d400;
   --watch-menu-cream: #f2e5c9;
-  --watch-menu-silver: #eee6d6;
+  --watch-menu-silver: #a9b0b4;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
@@ -125,20 +125,22 @@
 
 @media (max-width: 760px) {
   .watch-section-actions {
-    display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x proximity;
-    scrollbar-width: none;
-  }
-
-  .watch-section-actions::-webkit-scrollbar {
-    display: none;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .watch-section-actions .watch-section-action {
-    min-width: min(78vw, 280px);
-    flex: 0 0 min(78vw, 280px);
-    scroll-snap-align: start;
+    min-width: 0;
+    min-height: 62px;
+    gap: 6px;
+    padding: 10px 6px;
+    font-size: 0.875rem;
+  }
+
+  .watch-section-actions .watch-section-action__icon {
+    width: 22px;
+    height: 22px;
+    flex-basis: 22px;
   }
 
   .watch-section-utilities {
@@ -149,21 +151,21 @@
 
 @media (max-width: 430px) {
   .watch-section-action {
-    min-height: 70px;
-    gap: 9px;
-    padding: 12px 10px;
-    font-size: 1rem;
+    min-height: 62px;
+    gap: 6px;
+    padding: 10px 6px;
+    font-size: 0.875rem;
   }
 
   .watch-section-action--utility {
     min-height: 48px;
     padding: 10px 8px;
-    font-size: 0.9rem;
+    font-size: 0.875rem;
   }
 
   .watch-section-action__icon {
-    width: 28px;
-    height: 28px;
-    flex-basis: 28px;
+    width: 22px;
+    height: 22px;
+    flex-basis: 22px;
   }
 }
