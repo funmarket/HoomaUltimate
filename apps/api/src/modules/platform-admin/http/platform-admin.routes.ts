@@ -284,9 +284,7 @@ export function createPlatformAdminRouter(
   router.patch(
     "/gear-up/settings",
     asyncHandler(async (request, response) => {
-      response.json(
-        await gearUpSettings.update(getAuth(request).userId, request.body),
-      );
+      response.json(await gearUpSettings.update(getAuth(request).userId, request.body));
     }),
   );
 

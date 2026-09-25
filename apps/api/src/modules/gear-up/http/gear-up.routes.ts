@@ -49,10 +49,7 @@ export function createGearUpPublicRouter(
     asyncHandler(async (request, response) => {
       response.setHeader("cache-control", "private, no-store");
       response.json(
-        await media.deliveryPublic(
-          String(request.params.productId),
-          String(request.params.imageId),
-        ),
+        await media.deliveryPublic(String(request.params.productId), String(request.params.imageId)),
       );
     }),
   );
@@ -126,10 +123,7 @@ export function createGearUpMemberRouter(
     "/shops/:placeId/products/manage",
     asyncHandler(async (request, response) => {
       response.json(
-        await products.listManagedByShop(
-          getAuth(request).userId,
-          String(request.params.placeId),
-        ),
+        await products.listManagedByShop(getAuth(request).userId, String(request.params.placeId)),
       );
     }),
   );
