@@ -139,9 +139,7 @@ export function AthletesRequestsPane() {
         <RequestTaxonomyFilters
           taxonomy={taxonomy}
           value={filters}
-          onChange={(next) =>
-            setFilters({ ...next, surface: "ATHLETES", requestType: "SPORT" })
-          }
+          onChange={(next) => setFilters({ ...next, surface: "ATHLETES", requestType: "SPORT" })}
           sportOnly
         />
       ) : null}
