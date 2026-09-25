@@ -607,7 +607,9 @@ export function PlayPage() {
                     type="button"
                     role="option"
                     aria-selected={inviteEventId === managedEvent.id}
-                    className={`play-sheet__choice${inviteEventId === managedEvent.id ? " is-selected" : ""}`}
+                    className={`play-sheet__choice${
+                      inviteEventId === managedEvent.id ? " is-selected" : ""
+                    }`}
                     disabled={inviteLoading}
                     onClick={() => setInviteEventId(managedEvent.id)}
                   >
