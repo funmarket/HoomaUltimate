@@ -326,17 +326,17 @@ export function PlayPage() {
   const signInHref = authenticationHref("/play");
   const selectedOfferPending = Boolean(
     offerListing &&
-    offerTeamId &&
-    actionState.teamOffers.some(
-      (offer) => offer.listingId === offerListing.id && offer.teamId === offerTeamId,
-    ),
+      offerTeamId &&
+      actionState.teamOffers.some(
+        (offer) => offer.listingId === offerListing.id && offer.teamId === offerTeamId,
+      ),
   );
   const selectedInvitePending = Boolean(
     inviteListing &&
-    inviteEventId &&
-    actionState.eventInvites.some(
-      (invite) => invite.listingId === inviteListing.id && invite.eventId === inviteEventId,
-    ),
+      inviteEventId &&
+      actionState.eventInvites.some(
+        (invite) => invite.listingId === inviteListing.id && invite.eventId === inviteEventId,
+      ),
   );
   const actionBusy = accountLoading || offerLoading || inviteLoading;
 
