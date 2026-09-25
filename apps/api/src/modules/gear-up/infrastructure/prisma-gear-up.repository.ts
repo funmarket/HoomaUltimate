@@ -1,7 +1,10 @@
 import type {
   GearUpListQueryInput,
+  GearUpReviewQueueItem,
   GearUpShopSuggestionInput,
   GearUpShopUpdateInput,
+  ManagedGearUpShop,
+  PublicGearUpShop,
 } from "@hooma/contracts/gear-up";
 import type { PlaceSuggestionResult } from "@hooma/contracts/places";
 import { Prisma, type PrismaClient } from "@hooma/database";
@@ -21,6 +24,7 @@ const publicShopSelect = Prisma.validator<Prisma.GearUpShopSelect>()({
   offerTypes: true,
   sports: true,
   categories: true,
+  paymentMethods: true,
   moderationStatus: true,
   reviewedAt: true,
   reviewNote: true,
@@ -55,12 +59,13 @@ function publicShop(
     imageUrl: string;
     sortOrder: number;
   }[],
-) {
+): PublicGearUpShop {
   return {
     place: canonicalPlaceSummary(row.place, images),
     offerTypes: row.offerTypes,
     sports: row.sports,
     categories: row.categories,
+    paymentMethods: row.paymentMethods,
     verifiedOwner: row.place.ownerships.length > 0,
   };
 }
@@ -136,6 +141,7 @@ export class PrismaGearUpRepository implements GearUpRepository {
           offerTypes: input.shop.offerTypes,
           sports: input.shop.sports,
           categories: input.shop.categories,
+          paymentMethods: input.shop.paymentMethods,
         },
         update: {},
       });
@@ -143,7 +149,7 @@ export class PrismaGearUpRepository implements GearUpRepository {
     });
   }
 
-  async getManaged(placeId: string) {
+  async getManaged(placeId: string): Promise<ManagedGearUpShop | null> {
     const row = await this.db.gearUpShop.findUnique({
       where: { placeId },
       select: publicShopSelect,
@@ -165,12 +171,13 @@ export class PrismaGearUpRepository implements GearUpRepository {
         ...(input.offerTypes !== undefined ? { offerTypes: input.offerTypes } : {}),
         ...(input.sports !== undefined ? { sports: input.sports } : {}),
         ...(input.categories !== undefined ? { categories: input.categories } : {}),
+        ...(input.paymentMethods !== undefined ? { paymentMethods: input.paymentMethods } : {}),
       },
     });
     return this.getManaged(placeId);
   }
 
-  async pending() {
+  async pending(): Promise<readonly GearUpReviewQueueItem[]> {
     const rows = await this.db.gearUpShop.findMany({
       where: {
         moderationStatus: "PENDING",
