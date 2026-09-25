@@ -16,11 +16,38 @@ function cssRule(css, selector) {
   return bodyEnd < 0 ? "" : css.slice(bodyStart, bodyEnd);
 }
 
-test("Watch page exposes only the four product functions and no business onboarding", () => {
+test("Watch separates primary destinations from secondary creation actions", () => {
   const watch = source("packages/frontend/src/watch/WatchPage.tsx");
-  for (const label of ["Events", "Spots", "Create Event", "Add a Place"]) {
+  const actionsCss = source("packages/frontend/src/watch/watch-section-actions.css");
+
+  for (const label of ["Events", "Spots", "Gear Up", "Create Event", "Add a Place"]) {
     assert.match(watch, new RegExp(`>\\s*${label}\\s*<`));
   }
+
+  assert.match(
+    watch,
+    /<nav className="watch-section-actions"[^>]*>[\s\S]*Events[\s\S]*Spots[\s\S]*Gear Up[\s\S]*<\/nav>/,
+  );
+  assert.match(
+    watch,
+    /<div className="watch-section-utilities">[\s\S]*Create Event[\s\S]*Add a Place[\s\S]*<\/div>/,
+  );
+  assert.match(watch, /href="\/places\/new"[\s\S]*>\s*<span>Add a Place<\/span>/);
+  assert.match(watch, /aria-disabled="true"[\s\S]*>\s*<span>Gear Up<\/span>/);
+  assert.doesNotMatch(watch, /href="\/gear-up"/);
+
+  assert.match(
+    actionsCss,
+    /\.watch-section-actions \{[\s\S]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/,
+  );
+  assert.match(
+    actionsCss,
+    /\.watch-section-utilities \{[\s\S]*grid-template-columns:\s*repeat\(2, minmax\(0, 220px\)\)/,
+  );
+  assert.match(
+    actionsCss,
+    /\.watch-section-action--utility \{[\s\S]*min-height:\s*48px/,
+  );
   assert.doesNotMatch(watch, />\s*Places\s*</);
   assert.doesNotMatch(
     watch,
