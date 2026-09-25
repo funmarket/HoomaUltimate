@@ -166,9 +166,7 @@ export function GearUpFilters({
               key={sport}
               className={chipClass(value.sport === sport)}
               aria-pressed={value.sport === sport}
-              onClick={() =>
-                onChange({ ...value, sport: value.sport === sport ? null : sport })
-              }
+              onClick={() => onChange({ ...value, sport: value.sport === sport ? null : sport })}
             >
               {SPORT_LABELS[sport]}
             </button>
