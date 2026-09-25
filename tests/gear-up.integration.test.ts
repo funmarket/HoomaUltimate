@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import test from "node:test";
 import { getDatabaseClient } from "@hooma/database";
+import { PrismaPlaceRepository } from "../apps/api/src/modules/places/infrastructure/prisma-place.repository.js";
 
 const repositoryUrl = new URL(
   "../apps/api/src/modules/gear-up/infrastructure/prisma-gear-up.repository.ts",
@@ -60,6 +61,12 @@ test("Gear Up repository reuses canonical Place and approves Place plus shop ato
     const placeId = first.place.id;
     assert.equal(await db.placeDiscovery.count({ where: { placeId, kind: "GEAR_UP" } }), 1);
     assert.equal(await db.gearUpShop.count({ where: { placeId } }), 1);
+    const genericPlaces = new PrismaPlaceRepository(db);
+    assert.equal(
+      (await genericPlaces.pendingPlaces()).some((item) => item.place.id === placeId),
+      false,
+      "Initial Gear Up submissions must not also enter the generic Place review queue",
+    );
 
     const duplicate = await repository.suggest(
       submitter.id,
