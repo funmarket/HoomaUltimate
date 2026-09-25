@@ -11,7 +11,7 @@ import type { PlaceSubmissionOrigin } from "@hooma/contracts/places";
 
 export interface GearUpDiscoveryFilters {
   readonly query: string;
-  readonly source: PlaceSubmissionOrigin;
+  readonly source: PlaceSubmissionOrigin | null;
   readonly offer: GearUpOfferType | null;
   readonly sport: AthletesSport | null;
   readonly category: GearUpProductCategory | null;
@@ -97,7 +97,9 @@ export function GearUpFilters({
               type="button"
               className={chipClass(value.source === "OWNER")}
               aria-pressed={value.source === "OWNER"}
-              onClick={() => onChange({ ...value, source: "OWNER" })}
+              onClick={() =>
+                onChange({ ...value, source: value.source === "OWNER" ? null : "OWNER" })
+              }
             >
               By Owner
             </button>
@@ -105,7 +107,9 @@ export function GearUpFilters({
               type="button"
               className={chipClass(value.source === "FANHUB")}
               aria-pressed={value.source === "FANHUB"}
-              onClick={() => onChange({ ...value, source: "FANHUB" })}
+              onClick={() =>
+                onChange({ ...value, source: value.source === "FANHUB" ? null : "FANHUB" })
+              }
             >
               FanHub
             </button>
