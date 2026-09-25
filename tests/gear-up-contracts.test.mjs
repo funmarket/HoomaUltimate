@@ -122,3 +122,43 @@ test("Gear Up exposes retailer-familiar Sportswear and Gear catalogue groups", (
   assert.equal(labels.SUPPORTS_STRAPS_TAPE, "Supports, Straps & Tape");
   assert.equal(labels.HYDRATION_BOTTLES, "Water Bottles & Hydration");
 });
+
+test("Gear Up product media accepts upload metadata and safe external image links", () => {
+  assert.deepEqual(Contracts.GEAR_UP_PRODUCT_IMAGE_CONTENT_TYPES, [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+  ]);
+  assert.equal(Contracts.GEAR_UP_PRODUCT_IMAGE_MAX_BYTES, 5 * 1024 * 1024);
+  assert.equal(
+    Contracts.gearUpProductExternalImageInputSchema.safeParse({
+      url: "https://images.example.com/ball.webp",
+    }).success,
+    true,
+  );
+  assert.equal(
+    Contracts.gearUpProductExternalImageInputSchema.safeParse({
+      url: "ftp://images.example.com/ball.webp",
+    }).success,
+    false,
+  );
+  assert.equal(
+    Contracts.gearUpProductExternalImageInputSchema.safeParse({
+      url: "https://user:pass@images.example.com/ball.webp",
+    }).success,
+    false,
+  );
+});
+
+test("Gear Up product image ordering is explicit and bounded", () => {
+  const schema = Contracts.gearUpProductImageOrderSchema;
+  assert.equal(schema.safeParse({ imageIds: ["one", "two", "three"] }).success, true);
+  assert.equal(schema.safeParse({ imageIds: [] }).success, false);
+  assert.equal(schema.safeParse({ imageIds: ["one", "one"] }).success, false);
+  assert.equal(
+    schema.safeParse({
+      imageIds: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"],
+    }).success,
+    false,
+  );
+});

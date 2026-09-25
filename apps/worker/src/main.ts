@@ -3,6 +3,7 @@ import {
   ATHLETES_PHOTO_RECONCILE_TOPIC,
 } from "@hooma/contracts/athletes";
 import { loadObjectStorageConfig, type ObjectStorageConfig } from "@hooma/config";
+import { GEAR_UP_PRODUCT_IMAGE_RECONCILE_TOPIC } from "@hooma/contracts/gear-up";
 import { REQUEST_IMAGE_RECONCILE_TOPIC } from "@hooma/contracts/requests";
 import { disconnectDatabase, getDatabaseClient, type PrismaClient } from "@hooma/database";
 import {
@@ -13,6 +14,7 @@ import {
 import { createAthletesCalendarMediaCleanupHandler } from "./athletes/athletes-calendar-media-cleanup.js";
 import { createAthletesPhotoCleanupHandler } from "./athletes/athletes-photo-cleanup.js";
 import { cleanupExpiredEventChat } from "./events/event-chat-cleanup.js";
+import { createGearUpProductImageCleanupHandler } from "./gear-up/gear-up-product-image-cleanup.js";
 import { reconcileGamerMatches } from "./gamers/match-reconciliation.js";
 import { createWorkerHealthServer } from "./health/worker-health.js";
 import { OutboxRepository } from "./outbox/outbox.repository.js";
@@ -66,6 +68,10 @@ if (storage) {
   outboxHandlers.set(
     REQUEST_IMAGE_RECONCILE_TOPIC,
     createRequestImageCleanupHandler(database, storage),
+  );
+  outboxHandlers.set(
+    GEAR_UP_PRODUCT_IMAGE_RECONCILE_TOPIC,
+    createGearUpProductImageCleanupHandler(database, storage),
   );
 }
 const outbox = new OutboxRunner(new OutboxRepository(database), outboxHandlers);
