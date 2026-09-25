@@ -47,7 +47,8 @@ export function RequestTaxonomyFilters({
               value={value.requestType ?? ""}
               onChange={(event) =>
                 patch({
-                  requestType: (event.target.value || undefined) as RequestsListQuery["requestType"],
+                  requestType: (event.target.value ||
+                    undefined) as RequestsListQuery["requestType"],
                   sport: undefined,
                   subcategoryId: undefined,
                   needId: undefined,

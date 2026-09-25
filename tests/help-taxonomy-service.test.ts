@@ -74,7 +74,6 @@ test("Help taxonomy service does not invent or post-filter repository eligibilit
   assert.deepEqual(result.community.subcategories, []);
 });
 
-
 test("Athletes taxonomy projection excludes football so Play remains the soccer surface", async () => {
   const repository: HelpTaxonomyRepository = {
     async listActiveBySurface() {
