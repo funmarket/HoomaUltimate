@@ -138,33 +138,33 @@ export function AthletesPage({
       </div>
 
       {activeView === "communities" ? (
-      <section className="athletes-surface athletes-filter" aria-label="Filter Athletes by sport">
-        <div className="athletes-section-heading">
-          <span className="eyebrow">SPORT</span>
-          <span className="athletes-section-heading__hint">Find your pace</span>
-        </div>
-        <div className="athletes-sport-chips">
-          <button
-            className={sport === "ALL" ? "is-active" : ""}
-            type="button"
-            aria-pressed={sport === "ALL"}
-            onClick={() => setSport("ALL")}
-          >
-            All
-          </button>
-          {sports.map((option) => (
+        <section className="athletes-surface athletes-filter" aria-label="Filter Athletes by sport">
+          <div className="athletes-section-heading">
+            <span className="eyebrow">SPORT</span>
+            <span className="athletes-section-heading__hint">Find your pace</span>
+          </div>
+          <div className="athletes-sport-chips">
             <button
-              key={option.value}
-              className={sport === option.value ? "is-active" : ""}
+              className={sport === "ALL" ? "is-active" : ""}
               type="button"
-              aria-pressed={sport === option.value}
-              onClick={() => setSport(option.value)}
+              aria-pressed={sport === "ALL"}
+              onClick={() => setSport("ALL")}
             >
-              {option.label}
+              All
             </button>
-          ))}
-        </div>
-      </section>
+            {sports.map((option) => (
+              <button
+                key={option.value}
+                className={sport === option.value ? "is-active" : ""}
+                type="button"
+                aria-pressed={sport === option.value}
+                onClick={() => setSport(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </section>
       ) : null}
 
       {activeView === "communities" && error ? (
@@ -172,7 +172,9 @@ export function AthletesPage({
           {error} <button onClick={() => void load(nextCursor ?? undefined)}>Retry</button>
         </div>
       ) : null}
-      {activeView === "communities" && loading ? <div className="state-card">Loading Athletes communities…</div> : null}
+      {activeView === "communities" && loading ? (
+        <div className="state-card">Loading Athletes communities…</div>
+      ) : null}
       {activeView === "communities" && !loading && !items.length && !error ? (
         <div className="state-card">
           No Athletes communities yet. Start the first real training circle.

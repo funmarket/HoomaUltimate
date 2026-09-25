@@ -35,7 +35,15 @@ export function AthletesRequestsPane() {
       ...(filters.status ? { status: filters.status } : {}),
       ...(filters.limit ? { limit: filters.limit } : {}),
     }),
-    [debouncedCity, debouncedHouma, filters.limit, filters.needId, filters.sport, filters.status, filters.subcategoryId],
+    [
+      debouncedCity,
+      debouncedHouma,
+      filters.limit,
+      filters.needId,
+      filters.sport,
+      filters.status,
+      filters.subcategoryId,
+    ],
   );
 
   useEffect(() => {
@@ -119,7 +127,10 @@ export function AthletesRequestsPane() {
           <p className="eyebrow">Requests</p>
           <h2 id="athletes-requests-title">What athletes need</h2>
         </div>
-        <a className="button athletes-action athletes-action--primary" href="/requests/new?surface=ATHLETES">
+        <a
+          className="button athletes-action athletes-action--primary"
+          href="/requests/new?surface=ATHLETES"
+        >
           Create Request
         </a>
       </div>
@@ -128,7 +139,9 @@ export function AthletesRequestsPane() {
         <RequestTaxonomyFilters
           taxonomy={taxonomy}
           value={filters}
-          onChange={(next) => setFilters({ ...next, surface: "ATHLETES", requestType: "SPORT" })}
+          onChange={(next) =>
+            setFilters({ ...next, surface: "ATHLETES", requestType: "SPORT" })
+          }
           sportOnly
         />
       ) : null}

@@ -1027,7 +1027,6 @@
   flex: 1 1 10rem;
 }
 
-
 .athletes-view-tabs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

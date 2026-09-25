@@ -28,7 +28,11 @@ export function RequestCreatePage() {
     return surface === "PLAY" || surface === "ATHLETES" ? surface : "REQUESTS";
   }, []);
   const returnHref =
-    taxonomySurface === "PLAY" ? "/play" : taxonomySurface === "ATHLETES" ? "/athletes" : "/requests";
+    taxonomySurface === "PLAY"
+      ? "/play"
+      : taxonomySurface === "ATHLETES"
+        ? "/athletes"
+        : "/requests";
   const returnLabel =
     taxonomySurface === "PLAY"
       ? "Back to Play"
@@ -46,7 +50,9 @@ export function RequestCreatePage() {
   const [imageUrl, setImageUrl] = useState("");
   const [publisher, setPublisher] = useState("personal");
   const [audience, setAudience] = useState("public");
-  const [requestType, setRequestType] = useState(taxonomySurface === "ATHLETES" ? "SPORT" : "");
+  const [requestType, setRequestType] = useState(
+    taxonomySurface === "ATHLETES" ? "SPORT" : "",
+  );
   const [sport, setSport] = useState("");
   const [subcategoryId, setSubcategoryId] = useState("");
   const [needId, setNeedId] = useState("");
