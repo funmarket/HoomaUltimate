@@ -80,11 +80,7 @@ test("FanHub and pending owner-submitters cannot publish official Gear Up produc
       canManage: async () => true,
     },
   });
-  const service = new GearUpProductService(
-    deps.repository,
-    deps.places,
-    deps.platformAdmin,
-  );
+  const service = new GearUpProductService(deps.repository, deps.places, deps.platformAdmin);
 
   await assert.rejects(
     () => service.create("pending-owner", "place-1", productInput()),
@@ -98,11 +94,7 @@ test("verified Place owner can create and manage Gear Up products", async () => 
   const deps = dependencies({
     places: { hasVerifiedOwnership: async () => true },
   });
-  const service = new GearUpProductService(
-    deps.repository,
-    deps.places,
-    deps.platformAdmin,
-  );
+  const service = new GearUpProductService(deps.repository, deps.places, deps.platformAdmin);
 
   const created = await service.create("owner-1", "place-1", productInput());
   assert.equal(created.id, "product-1");
@@ -124,11 +116,7 @@ test("App Admin can manage official Gear Up products without Place ownership", a
   const deps = dependencies({
     platformAdmin: { isPlatformAdmin: async () => true },
   });
-  const service = new GearUpProductService(
-    deps.repository,
-    deps.places,
-    deps.platformAdmin,
-  );
+  const service = new GearUpProductService(deps.repository, deps.places, deps.platformAdmin);
 
   const created = await service.create("admin-1", "place-1", productInput());
   assert.equal(created.id, "product-1");
