@@ -896,7 +896,7 @@ Approved requirements include:
 - optional Request media remains Requests-owned metadata plus shared object-storage bytes; feed delivery must avoid eager per-card media-request storms;
 - create flow preserves `Publish as`, audience, taxonomy, location privacy, optional media, timing and conditional product fields rather than dropping canonical fields for visual simplicity;
 - an optional precise `fullAddress` may be submitted and persisted, but public/member Request read DTOs must not expose it until an explicit viewer policy authorizes precise-location readback;
-- current lifecycle statuses are `OPEN | IN_PROGRESS | FULFILLED | CANCELLED | EXPIRED`; 
+- current lifecycle statuses are `OPEN | IN_PROGRESS | FULFILLED | CANCELLED | EXPIRED`;
 - Request coordination uses one private `HelpRequestResponse` per responder with `PENDING | ACCEPTED | DECLINED | WITHDRAWN`; it is not a public comment/chat thread;
 - accepting a canonical response moves an OPEN Request into `IN_PROGRESS`; managers may accept/decline responses and later fulfill/cancel according to service policy;
 - requester/responder identity presentation comes from canonical Identity readers rather than copied profile fields;
@@ -907,7 +907,7 @@ Current implementation state must be described separately from target requiremen
 
 ---
 
-# 18. Ride# 18. Ride
+# 18. Ride
 
 Ride supports community transport coordination.
 
@@ -995,7 +995,7 @@ Donations currently exists in the repository as a Help route/tab placeholder plu
 
 ---
 
-# 20. Payments# 20. Payments
+# 20. Payments
 
 The independent Payments domain remains separately governed for product contexts that explicitly invoke payment execution. Its historical initial rails are `CASH | TELEGRAM_STARS` unless a later Payments decision changes them.
 
