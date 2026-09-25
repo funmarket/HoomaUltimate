@@ -215,7 +215,5 @@ test("only App Admin can change the product image limit", async () => {
     productImageLimit: 5,
   });
   assert.equal(deps.calls.adminChecks, 1);
-  assert.deepEqual(deps.calls.settings, [
-    { userId: "admin-1", input: { productImageLimit: 5 } },
-  ]);
+  assert.deepEqual(deps.calls.settings, [{ userId: "admin-1", input: { productImageLimit: 5 } }]);
 });

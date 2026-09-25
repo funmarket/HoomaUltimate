@@ -55,10 +55,7 @@ test("Gear Up product media enforces the configured limit and preserves ordering
     await repository.updateSettings(user.id, { productImageLimit: 3 });
     assert.deepEqual(await repository.getSettings(), { productImageLimit: 3 });
 
-    const first = await repository.addExternalUrl(
-      productId,
-      "https://images.example.com/one.webp",
-    );
+    const first = await repository.addExternalUrl(productId, "https://images.example.com/one.webp");
     const second = await repository.addExternalUrl(
       productId,
       "https://images.example.com/two.webp",
