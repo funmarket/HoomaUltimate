@@ -13,9 +13,15 @@ test("Gear Up has explicit Place discovery without duplicating canonical Place",
     schema,
     /enum PlaceDiscoveryKind \{[\s\S]*?WATCH_SPOT[\s\S]*?GEAR_UP[\s\S]*?\}/,
   );
-  assert.match(schema, /model Place \{[\s\S]*?discoveries\s+PlaceDiscovery\[\]/);
+  assert.match(
+    schema,
+    /model Place \{[\s\S]*?discoveries\s+PlaceDiscovery\[\]/,
+  );
   assert.match(schema, /model Place \{[\s\S]*?gearUpShop\s+GearUpShop\?/);
-  assert.doesNotMatch(schema, /model (?:SportStore|ShopPlace|GearUpPlace)\s+\{/);
+  assert.doesNotMatch(
+    schema,
+    /model (?:SportStore|ShopPlace|GearUpPlace)\s+\{/,
+  );
 });
 
 test("Gear Up persistence owns shop, products, images and bounded settings", () => {
