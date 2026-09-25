@@ -29,7 +29,10 @@ const gearUpShopInputSchema = z
   .object({
     offerTypes: z.array(gearUpOfferTypeSchema).min(1).max(2),
     sports: z.array(athletesSportSchema).min(1).max(9),
-    categories: z.array(gearUpProductCategorySchema).min(1).max(GEAR_UP_PRODUCT_CATEGORIES.length),
+    categories: z
+      .array(gearUpProductCategorySchema)
+      .min(1)
+      .max(GEAR_UP_PRODUCT_CATEGORIES.length),
   })
   .strict();
 
