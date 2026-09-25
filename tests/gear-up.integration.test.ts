@@ -58,10 +58,7 @@ test("Gear Up repository reuses canonical Place and approves Place plus shop ato
     assert.equal(first.status, "PENDING");
 
     const placeId = first.place.id;
-    assert.equal(
-      await db.placeDiscovery.count({ where: { placeId, kind: "GEAR_UP" } }),
-      1,
-    );
+    assert.equal(await db.placeDiscovery.count({ where: { placeId, kind: "GEAR_UP" } }), 1);
     assert.equal(await db.gearUpShop.count({ where: { placeId } }), 1);
 
     const duplicate = await repository.suggest(
@@ -102,9 +99,7 @@ test("Gear Up repository reuses canonical Place and approves Place plus shop ato
     assert.equal(approvedPlace.moderationStatus, "APPROVED");
     assert.equal(approvedShop.moderationStatus, "APPROVED");
     assert.equal(
-      (await repository.listPublic({ offer: "GEAR" })).some(
-        (item) => item.place.id === placeId,
-      ),
+      (await repository.listPublic({ offer: "GEAR" })).some((item) => item.place.id === placeId),
       true,
     );
   } finally {

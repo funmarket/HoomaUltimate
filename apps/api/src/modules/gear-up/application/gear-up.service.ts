@@ -1,7 +1,4 @@
-import type {
-  GearUpShopSuggestionInput,
-  GearUpShopUpdateInput,
-} from "@hooma/contracts/gear-up";
+import type { GearUpShopSuggestionInput, GearUpShopUpdateInput } from "@hooma/contracts/gear-up";
 import type { PlatformAdminAccessPort } from "../../../application/platform-admin-access.port.js";
 import {
   resolvePlaceImageFields,
@@ -9,10 +6,7 @@ import {
 } from "../../places/application/external-place-image-resolver.js";
 import type { PlaceRepository } from "../../places/application/place.repository.js";
 import { GearUpError } from "../domain/gear-up-error.js";
-import type {
-  GearUpModerationDecision,
-  GearUpRepository,
-} from "./gear-up.repository.js";
+import type { GearUpModerationDecision, GearUpRepository } from "./gear-up.repository.js";
 
 export class GearUpService {
   constructor(
@@ -70,9 +64,6 @@ export class GearUpService {
   private async requireManage(userId: string, placeId: string): Promise<void> {
     if (await this.places.canManage(placeId, userId)) return;
     if (await this.platformAdmin.isPlatformAdmin(userId)) return;
-    throw new GearUpError(
-      "GEAR_UP_MANAGE_FORBIDDEN",
-      "Place manager or App Admin access required",
-    );
+    throw new GearUpError("GEAR_UP_MANAGE_FORBIDDEN", "Place manager or App Admin access required");
   }
 }
