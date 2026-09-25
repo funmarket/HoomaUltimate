@@ -9,6 +9,28 @@
   --type-caption: 12px;
   --type-nav: 11px;
 
+  /*
+   * Canonical HOOMA UI foundation. New surfaces consume these tokens first;
+   * existing surfaces migrate deliberately instead of inventing page-local systems.
+   */
+  --hooma-ui-bg: #050605;
+  --hooma-ui-surface: #0b0c0a;
+  --hooma-ui-surface-raised: #0e0f0d;
+  --hooma-ui-outline: rgba(190, 180, 145, 0.22);
+  --hooma-ui-outline-hover: rgba(195, 188, 163, 0.3);
+  --hooma-ui-text: #f5f4ef;
+  --hooma-ui-text-secondary: #aaa9a4;
+  --hooma-ui-accent: #aef02f;
+  --hooma-ui-radius-card: 18px;
+  --hooma-ui-radius-control: 14px;
+  --hooma-ui-page-title: 24px;
+  --hooma-ui-section-title: 20px;
+  --hooma-ui-card-title: 17px;
+  --hooma-ui-body: 16px;
+  --hooma-ui-body-large: 17px;
+  --hooma-ui-meta: 14px;
+  --hooma-ui-eyebrow: 12px;
+
   --app-bg: #070808;
   --app-bg-raised: #121212;
   --app-surface: #121212;
