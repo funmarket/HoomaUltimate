@@ -110,9 +110,7 @@ export function AthletesRequestsPane() {
         : await requestsApi.publicList(input);
       setItems((current) => [
         ...current,
-        ...result.items.filter(
-          (item) => !current.some((existing) => existing.id === item.id),
-        ),
+        ...result.items.filter((item) => !current.some((existing) => existing.id === item.id)),
       ]);
       setNextCursor(result.nextCursor);
     } catch (reason) {
