@@ -208,7 +208,7 @@ This rule exists for scalability and user experience as well as code cleanliness
 | FanHub discovery classification                         | Places/Watch projection, never a role       |
 | ULTRAS supporter community                              | ULTRAS                                      |
 | Gamer profile/squad/challenge                           | Gamers                                      |
-| Help/request + private responses                       | Requests                                    |
+| Help/request + private responses                        | Requests                                    |
 | Physical donation offers/claims                         | Donations                                   |
 | Ride coordination/location privacy                      | Rides                                       |
 | Fundraiser/contribution                                 | Fundraising                                 |
