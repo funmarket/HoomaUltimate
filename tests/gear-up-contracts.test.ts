@@ -53,7 +53,7 @@ test("Gear Up shop contract accepts Sportswear, Gear, or both with governed taxo
   );
 });
 
-test("Gear Up product contract supports optional price and requires governed sport/category", () => {
+test("Gear Up product contract supports optional price and governed taxonomy", () => {
   const schema = runtimeSchema("gearUpProductCreateSchema");
   const product = {
     title: "Club Jersey 2026",
