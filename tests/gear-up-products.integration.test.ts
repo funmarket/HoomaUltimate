@@ -52,11 +52,30 @@ test("Gear Up product catalog keeps archived products private but manageable", a
     });
     assert.equal(created.price, null);
     assert.equal(created.archivedAt, null);
+    assert.equal(created.coverImageId, null);
 
-    assert.equal(
-      (await repository.listPublicByShop(place.id)).some((item) => item.id === created.id),
-      true,
+    const laterImage = await db.gearUpProductImage.create({
+      data: {
+        productId: created.id,
+        source: "EXTERNAL_URL",
+        externalUrl: "https://images.example.com/later.webp",
+        sortOrder: 1,
+      },
+    });
+    const coverImage = await db.gearUpProductImage.create({
+      data: {
+        productId: created.id,
+        source: "EXTERNAL_URL",
+        externalUrl: "https://images.example.com/cover.webp",
+        sortOrder: 0,
+      },
+    });
+
+    const publicProduct = (await repository.listPublicByShop(place.id)).find(
+      (item) => item.id === created.id,
     );
+    assert.equal(publicProduct?.coverImageId, coverImage.id);
+    assert.notEqual(publicProduct?.coverImageId, laterImage.id);
 
     const featured = await repository.feature(created.id);
     const featuredAgain = await repository.feature(created.id);
