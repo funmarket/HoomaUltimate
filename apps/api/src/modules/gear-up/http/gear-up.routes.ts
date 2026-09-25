@@ -49,10 +49,7 @@ export function createGearUpPublicRouter(
     asyncHandler(async (request, response) => {
       response.setHeader("cache-control", "private, no-store");
       response.json(
-        await media.deliveryPublic(
-          String(request.params.productId),
-          String(request.params.imageId),
-        ),
+        await media.deliveryPublic(String(request.params.productId), String(request.params.imageId)),
       );
     }),
   );
