@@ -4,23 +4,25 @@ import test from "node:test";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("Play presents Games, Players, and Mine as sibling local views", async () => {
+test("Play presents Games, Players, Requests, and Mine as sibling local views", async () => {
   const [page, router] = await Promise.all([
     read("packages/frontend/src/events/PlayPage.tsx"),
     read("apps/web/src/app/router/HoomaRouter.tsx"),
   ]);
 
-  assert.match(page, /type PlayView = "games" \| "players" \| "mine";/);
+  assert.match(page, /type PlayView = "games" \| "players" \| "requests" \| "mine";/);
   assert.match(page, /useState<PlayView>\("games"\)/);
   assert.match(
     page,
-    /className="play-view-tabs play-view-tabs--three" role="tablist" aria-label="Play sections"/,
+    /className="play-view-tabs play-view-tabs--four"[\s\S]*role="tablist"[\s\S]*aria-label="Play sections"/,
   );
   assert.match(page, />\s*Games\s*<\/button>/);
   assert.match(page, />\s*Players\s*<\/button>/);
+  assert.match(page, />\s*Requests\s*<\/button>/);
   assert.match(page, />\s*Mine\s*<\/button>/);
   assert.match(page, /aria-selected=\{activeView === "games"\}/);
   assert.match(page, /aria-selected=\{activeView === "players"\}/);
+  assert.match(page, /aria-selected=\{activeView === "requests"\}/);
   assert.match(page, /aria-selected=\{activeView === "mine"\}/);
   assert.match(
     page,
@@ -30,13 +32,14 @@ test("Play presents Games, Players, and Mine as sibling local views", async () =
     page,
     /\{activeView === "players" \? \(\s*<section className="play-section" aria-labelledby="players-looking-title">/s,
   );
+  assert.match(page, /\{activeView === "requests" \? <PlayRequestsPane \/> : null\}/);
   assert.match(
     page,
     /\{activeView === "mine" \? \(\s*<section className="play-section play-mine" aria-labelledby="mine-title">/s,
   );
   assert.doesNotMatch(page, /hidden=\{activeView/);
   assert.match(router, /path="\/play" element=\{<PlayPage \/>\}/);
-  assert.doesNotMatch(router, /path="\/play\/(?:games|players|mine|open-matches)"/);
+  assert.doesNotMatch(router, /path="\/play\/(?:games|players|requests|mine|open-matches)"/);
 });
 
 test("Play detail and Open Matches use the authenticated Play API authority", async () => {

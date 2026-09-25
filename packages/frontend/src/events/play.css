@@ -12,6 +12,10 @@
   overflow: hidden;
   background: #0b0c09;
 }
+.play-view-tabs--four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .play-view-tab {
   min-width: 0;
   min-height: 48px;
@@ -659,6 +663,12 @@
 .hooma-whistle-board--event .whistle-card.is-revealed {
   box-shadow: inset 3px 0 0 rgba(34, 227, 90, 0.65);
 }
+@media (max-width: 620px) {
+  .play-view-tabs--four {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 520px) {
   .pickup-match-card-pro {
     min-height: 156px;
