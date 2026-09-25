@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type { MeResponse } from "@hooma/contracts";
-import type {
-  HelpTaxonomyResponse,
-  HelpTaxonomySurface,
-} from "@hooma/contracts/help-taxonomy";
+import type { HelpTaxonomyResponse, HelpTaxonomySurface } from "@hooma/contracts/help-taxonomy";
 import { helpRequestCreateSchema, type HelpRequestCreateInput } from "@hooma/contracts/requests";
 import { useHoomaFrontend } from "../context";
 import { PlusIcon } from "../help/HelpIcons";
@@ -226,7 +223,9 @@ export function RequestCreatePage() {
         <div className="help-hero__copy">
           <span className="eyebrow">HOOMA HELP</span>
           <h1>Create a Request</h1>
-          <p>Choose the sport and exact need first, then tell the community where help is needed.</p>
+          <p>
+            Choose the sport and exact need first, then tell the community where help is needed.
+          </p>
         </div>
       </header>
 
