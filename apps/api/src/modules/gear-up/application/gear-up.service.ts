@@ -3,12 +3,12 @@ import type {
   GearUpShopUpdateInput,
 } from "@hooma/contracts/gear-up";
 import type { PlatformAdminAccessPort } from "../../../application/platform-admin-access.port.js";
-import { AppError } from "../../../http/errors/app-error.js";
 import {
   resolvePlaceImageFields,
   type ExternalPlaceImageResolver,
 } from "../../places/application/external-place-image-resolver.js";
 import type { PlaceRepository } from "../../places/application/place.repository.js";
+import { GearUpError } from "../domain/gear-up-error.js";
 import type {
   GearUpModerationDecision,
   GearUpRepository,
@@ -28,7 +28,7 @@ export class GearUpService {
 
   async getPublic(placeId: string) {
     const shop = await this.repository.getPublic(placeId);
-    if (!shop) throw new AppError(404, "GEAR_UP_SHOP_NOT_FOUND", "Gear Up shop not found");
+    if (!shop) throw new GearUpError("GEAR_UP_SHOP_NOT_FOUND", "Gear Up shop not found");
     return shop;
   }
 
@@ -59,8 +59,7 @@ export class GearUpService {
   async review(userId: string, placeId: string, input: GearUpModerationDecision) {
     await this.platformAdmin.requirePlatformAdmin(userId);
     if (!(await this.repository.review(userId, placeId, input))) {
-      throw new AppError(
-        409,
+      throw new GearUpError(
         "GEAR_UP_REVIEW_NOT_PENDING",
         "This Gear Up review is no longer pending",
       );
@@ -71,8 +70,7 @@ export class GearUpService {
   private async requireManage(userId: string, placeId: string): Promise<void> {
     if (await this.places.canManage(placeId, userId)) return;
     if (await this.platformAdmin.isPlatformAdmin(userId)) return;
-    throw new AppError(
-      403,
+    throw new GearUpError(
       "GEAR_UP_MANAGE_FORBIDDEN",
       "Place manager or App Admin access required",
     );
