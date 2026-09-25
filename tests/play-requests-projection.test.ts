@@ -18,7 +18,7 @@ test("Play exposes canonical Requests without owning Request persistence", async
   assert.match(pane, /RequestFeed/);
   assert.match(pane, /RequestTaxonomyFilters/);
   assert.match(pane, /href="\/requests\/new\?surface=PLAY"/);
-  assert.doesNotMatch(pane, /(?:interface|type|class)\\s+PlayRequest\\b|createPlayApi/);
+  assert.doesNotMatch(pane, /(?:interface|type|class)\s+PlayRequest\b|createPlayApi/);
 
   assert.match(createPage, /taxonomySurface === "PLAY"/);
   assert.match(createPage, /requestsApi\.taxonomy\(taxonomySurface\)/);
