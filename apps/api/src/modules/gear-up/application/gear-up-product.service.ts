@@ -1,7 +1,4 @@
-import type {
-  GearUpProductCreateInput,
-  GearUpProductUpdateInput,
-} from "@hooma/contracts/gear-up";
+import type { GearUpProductCreateInput, GearUpProductUpdateInput } from "@hooma/contracts/gear-up";
 import type { PlatformAdminAccessPort } from "../../../application/platform-admin-access.port.js";
 import type { PlaceRepository } from "../../places/application/place.repository.js";
 import { GearUpError } from "../domain/gear-up-error.js";
