@@ -1,4 +1,8 @@
-import type { GearUpShopSuggestionInput, GearUpShopUpdateInput } from "@hooma/contracts/gear-up";
+import type {
+  GearUpListQueryInput,
+  GearUpShopSuggestionInput,
+  GearUpShopUpdateInput,
+} from "@hooma/contracts/gear-up";
 import type { PlatformAdminAccessPort } from "../../../application/platform-admin-access.port.js";
 import {
   resolvePlaceImageFields,
@@ -16,7 +20,7 @@ export class GearUpService {
     private readonly imageResolver: ExternalPlaceImageResolver,
   ) {}
 
-  listPublic(input: Readonly<Record<string, unknown>> = {}) {
+  listPublic(input: GearUpListQueryInput) {
     return this.repository.listPublic(input);
   }
 
