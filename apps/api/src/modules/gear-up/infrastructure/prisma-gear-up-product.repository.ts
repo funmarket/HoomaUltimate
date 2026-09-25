@@ -1,7 +1,4 @@
-import type {
-  GearUpProductCreateInput,
-  GearUpProductUpdateInput,
-} from "@hooma/contracts/gear-up";
+import type { GearUpProductCreateInput, GearUpProductUpdateInput } from "@hooma/contracts/gear-up";
 import { Prisma, type PrismaClient } from "@hooma/database";
 import type {
   GearUpProductRecord,
@@ -103,10 +100,7 @@ export class PrismaGearUpProductRepository implements GearUpProductRepository {
     return row ? productRecord(row) : null;
   }
 
-  async create(
-    placeId: string,
-    input: GearUpProductCreateInput,
-  ): Promise<GearUpProductRecord> {
+  async create(placeId: string, input: GearUpProductCreateInput): Promise<GearUpProductRecord> {
     const row = await this.db.gearUpProduct.create({
       data: {
         shopPlaceId: placeId,
@@ -123,10 +117,7 @@ export class PrismaGearUpProductRepository implements GearUpProductRepository {
     return productRecord(row);
   }
 
-  async update(
-    productId: string,
-    input: GearUpProductUpdateInput,
-  ): Promise<GearUpProductRecord> {
+  async update(productId: string, input: GearUpProductUpdateInput): Promise<GearUpProductRecord> {
     const row = await this.db.gearUpProduct.update({
       where: { id: productId },
       data: {
