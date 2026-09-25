@@ -12,6 +12,14 @@ function sourceLabel(shop: PublicGearUpShop): string {
     : "FanHub — Added by the HOOMA community";
 }
 
+function offerLabel(shop: PublicGearUpShop): string {
+  const hasSportswear = shop.offerTypes.includes("SPORTSWEAR");
+  const hasGear = shop.offerTypes.includes("GEAR");
+  if (hasSportswear && hasGear) return "SPORTSWEAR · GEAR";
+  if (hasGear) return "GEAR";
+  return "SPORTSWEAR";
+}
+
 export function GearUpShopCard({ shop }: { readonly shop: PublicGearUpShop }) {
   const tags = [
     ...shop.sports.map((sport) => GEAR_UP_SPORT_LABELS[sport]),
@@ -34,7 +42,7 @@ export function GearUpShopCard({ shop }: { readonly shop: PublicGearUpShop }) {
       <div className="gear-up-shop-card__body">
         <div className="gear-up-shop-card__heading">
           <div>
-            <p className="gear-up-shop-card__eyebrow">SPORT SHOP</p>
+            <p className="gear-up-shop-card__eyebrow">{offerLabel(shop)}</p>
             <h2>{shop.place.name}</h2>
           </div>
           <p className="gear-up-shop-card__location">
@@ -57,6 +65,9 @@ export function GearUpShopCard({ shop }: { readonly shop: PublicGearUpShop }) {
 
         <div className="gear-up-shop-card__source">
           <span>{sourceLabel(shop)}</span>
+          <a className="gear-up-shop-card__link" href={`/places/${shop.place.id}`}>
+            View Shop
+          </a>
         </div>
       </div>
     </article>
