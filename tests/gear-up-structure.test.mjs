@@ -57,3 +57,26 @@ test("canonical Place suggestion accepts explicit discovery classification", () 
   assert.match(canonicalPlace, /discoveryKind/);
   assert.match(canonicalPlace, /placeDiscovery\.upsert/);
 });
+
+test("Place submission discovery preserves Spots while Pitch stays independent", () => {
+  const migrationPath =
+    "packages/database/prisma/migrations/20260925030000_gear_up_v1/migration.sql";
+  const migrationUrl = new URL(`../${migrationPath}`, import.meta.url);
+  const placeRepository = source(
+    "apps/api/src/modules/places/infrastructure/prisma-place.repository.ts",
+  );
+  const pitchRepository = source(
+    "apps/api/src/modules/pitch/infrastructure/prisma-pitch.repository.ts",
+  );
+  const watchSpotCall = /suggestCanonicalPlace\([\s\S]*?input\.submissionOrigin,[\s\S]*?"WATCH_SPOT"/;
+  const pitchCall = /suggestCanonicalPlace\([\s\S]*?"FANHUB",[\s\S]*?null/;
+  const backfill = /INSERT INTO "PlaceDiscovery"[\s\S]*?'WATCH_SPOT'/;
+  const excludesPitch = /NOT EXISTS[\s\S]*?"PlaceCapability"[\s\S]*?'PITCH'/;
+
+  assert.match(placeRepository, watchSpotCall);
+  assert.match(pitchRepository, pitchCall);
+  assert.equal(existsSync(migrationUrl), true, "Gear Up migration must exist");
+  const migration = source(migrationPath);
+  assert.match(migration, backfill);
+  assert.match(migration, excludesPitch);
+});
