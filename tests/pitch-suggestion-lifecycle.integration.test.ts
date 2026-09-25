@@ -62,12 +62,19 @@ test("an approved suggested Pitch preserves immutable owner moderation history",
         description: "A real local football ground suggested by the community.",
         category: "Football pitch",
         menuItems: [],
+        submissionOrigin: "FANHUB",
       },
       pitch: { hourlyRateMinor: 45_000, currency: "TND" },
     });
     assert.equal(suggested.outcome, "CREATED");
     placeId = suggested.place.id;
     assert.equal(suggested.status, "PENDING");
+    assert.equal(suggested.place.submissionOrigin, "FANHUB");
+    assert.equal(
+      await db.placeOwnershipClaim.count({ where: { placeId } }),
+      0,
+      "FanHub Pitch submission must not create an ownership claim",
+    );
 
     const pendingCapability = await db.placeCapability.findUnique({
       where: { placeId_kind: { placeId, kind: "PITCH" } },
@@ -239,5 +246,72 @@ test("an approved suggested Pitch preserves immutable owner moderation history",
     await db.user.deleteMany({
       where: { id: { in: [suggester.id, claimant.id, admin.id] } },
     });
+  }
+});
+
+
+test("an owner-submitted Pitch preserves provenance and creates only a pending ownership claim", async () => {
+  const suffix = `owner_${Date.now().toString(36)}`;
+  const owner = await db.user.create({ data: {} });
+  const pitchRepository = new PrismaPitchRepository(db);
+  const pitchSuggestions = new PitchSuggestionService(pitchRepository);
+  const places = new PrismaPlaceRepository(db);
+  let placeId: string | null = null;
+
+  try {
+    const submitted = await pitchSuggestions.suggest(owner.id, {
+      place: {
+        name: `Owner Pitch ${suffix}`,
+        address: "27 Owner Football Road",
+        city: "Tunis",
+        houma: "El Menzah",
+        latitude: null,
+        longitude: null,
+        phone: null,
+        email: null,
+        websiteUrl: null,
+        imageUrl: null,
+        imageUrls: [],
+        description: "A football pitch submitted by its operator.",
+        category: "Football pitch",
+        menuItems: [],
+        submissionOrigin: "OWNER",
+      },
+      pitch: { hourlyRateMinor: 70_000, currency: "TND" },
+    });
+
+    assert.equal(submitted.outcome, "CREATED");
+    placeId = submitted.place.id;
+    assert.equal(submitted.status, "PENDING");
+    assert.equal(submitted.place.submissionOrigin, "OWNER");
+
+    const claims = await db.placeOwnershipClaim.findMany({
+      where: { placeId, claimantUserId: owner.id },
+      select: { status: true },
+    });
+    assert.deepEqual(claims, [{ status: "PENDING" }]);
+    assert.equal(
+      await places.hasVerifiedOwnership(placeId, owner.id),
+      false,
+      "By Owner submission must not auto-verify ownership",
+    );
+
+    const capability = await db.placeCapability.findUnique({
+      where: { placeId_kind: { placeId, kind: "PITCH" } },
+      select: { status: true, hourlyRateMinor: true, currency: true },
+    });
+    assert.deepEqual(capability, {
+      status: "PENDING",
+      hourlyRateMinor: 70_000,
+      currency: "TND",
+    });
+  } finally {
+    if (placeId) {
+      await db.placeCapability.deleteMany({ where: { placeId } });
+      await db.placeOwnershipClaim.deleteMany({ where: { placeId } });
+      await db.placeOwnership.deleteMany({ where: { placeId } });
+      await db.place.deleteMany({ where: { id: placeId } });
+    }
+    await db.user.deleteMany({ where: { id: owner.id } });
   }
 });
