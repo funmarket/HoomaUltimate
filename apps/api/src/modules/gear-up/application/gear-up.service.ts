@@ -41,7 +41,7 @@ export class GearUpService {
   async updateShop(userId: string, placeId: string, input: GearUpShopUpdateInput) {
     await this.requireManage(userId, placeId);
     const shop = await this.repository.getManaged(placeId);
-    if (!shop) throw new AppError(404, "GEAR_UP_SHOP_NOT_FOUND", "Gear Up shop not found");
+    if (!shop) throw new GearUpError("GEAR_UP_SHOP_NOT_FOUND", "Gear Up shop not found");
     return this.repository.updateShop(placeId, input);
   }
 
