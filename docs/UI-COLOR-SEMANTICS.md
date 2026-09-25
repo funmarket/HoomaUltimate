@@ -50,21 +50,72 @@ Gold is not a state color and must not replace green, people blue, orange, or re
 
 Shared semantic tokens live in `apps/web/src/theme.css`. Feature CSS should reference those tokens instead of inventing new state colors. Existing feature-specific aliases may remain temporarily for compatibility, but new active/success/member/warning/error rules should use the shared tokens directly.
 
-## 6. Readable descriptive copy = `#F7F7F7`
+## 6. Readable text roles
 
-Important descriptive/body copy on dark HOOMA surfaces uses `#F7F7F7` unless a stronger semantic state color is required. This applies especially to Requests, FundMe and Donations card descriptions, detail descriptions, form helper copy that carries meaningful information, and other user-facing descriptive text.
+HOOMA uses warm text roles on dark surfaces. Descriptions must not drift into cold blue-grey or washed-out disabled-looking grey.
 
-Do not use dim grey such as `#AAA9A4` for primary descriptive content. Metadata may use lower emphasis when contrast remains accessible, but hierarchy must come mainly from size/weight/layout rather than making core text hard to read.
+- Primary titles and important labels: `#F5F4EF` or `#F7F7F7`.
+- Descriptions and supporting body copy: `#D8D4CA`.
+- Lower-priority metadata: `#B8B5AD`.
+- Placeholder and genuinely de-emphasized content: `#858780`.
 
-## 7. Structural outlines and Help cards
+Descriptions should read as a soft warm beige/silver-beige against the near-black surface. People blue remains an identity/membership semantic color and must not be reused for ordinary descriptive copy.
 
-Normal Help containers/cards use a 1px structural outline. The current target token is:
+Typography hierarchy should come mainly from size, weight, spacing, grouping, and position rather than making important text hard to read.
+
+Canonical mobile baselines remain:
 
 ```css
---hooma-ui-outline: rgba(190, 180, 145, 0.22);
+--hooma-ui-page-title: 24px;
+--hooma-ui-section-title: 20px;
+--hooma-ui-card-title: 17px;
+--hooma-ui-body: 16px;
+--hooma-ui-body-large: 17px;
+--hooma-ui-meta: 14px;
+--hooma-ui-eyebrow: 12px;
+--hooma-ui-readable-min: 12px;
 ```
 
-The outline should almost disappear against the graphite/near-black card surface. Do not use thick brown-gold borders, container glow, or green as a structural border. Green remains active/status/action emphasis.
+The 12px token is a hard readability floor, not the normal description size. Ordinary descriptions should normally use the 16px body baseline, with 17px available for larger/expanded body copy. Do not shrink meaningful descriptions below 12px to fit a screen.
 
-Help surfaces are scrollable. Do not shrink readable typography or card geometry merely to fit more cards above the fold. Horizontal rails are appropriate for quick taxonomy/filter controls and selected embedded card rails where specified.
+## 7. Structural outlines, cards, and readable sizing
 
+Normal HOOMA containers/cards use the shared near-black/graphite foundation:
+
+```css
+--hooma-ui-bg: #050605;
+--hooma-ui-surface: #0b0c0a;
+--hooma-ui-surface-raised: #0e0f0d;
+--hooma-ui-outline: rgba(190, 180, 145, 0.22);
+--hooma-ui-radius-card: 18px;
+```
+
+The normal card language is:
+
+```css
+.hooma-ui-card {
+  background: var(--hooma-ui-surface);
+  border: 1px solid var(--hooma-ui-outline);
+  border-radius: var(--hooma-ui-radius-card);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+```
+
+The outline should almost disappear against the card surface. Do not use thick brown-gold borders, container glow, green structural borders, inner gold rings, or bevel effects.
+
+Readable shared sizing tokens are:
+
+```css
+--hooma-ui-page-inline: 16px;
+--hooma-ui-card-padding: 16px;
+--hooma-ui-card-gap: 16px;
+--hooma-ui-section-gap: 20px;
+--hooma-ui-control-min-height: 48px;
+--hooma-ui-touch-target: 48px;
+```
+
+These are foundation baselines, not fixed one-phone dimensions. Feature layouts may need more height or width according to their real content, but they should not solve space pressure by shrinking typography, controls, cards, or touch targets below readable sizes.
+
+Mobile pages are expected to scroll. When substantial information is present, make the page or card taller instead of compressing the content. Horizontal scrolling is appropriate for repeatable rails such as categories, dates, featured cards, and similar multi-item presentation where it preserves readability.
+
+The preferred result is the same across Home, Play, Watch, Requests, Teams, Gear Up, Ride, Places, Athletes, Profile, Coach, Settings, Admin, Pitch, and other HOOMA surfaces: readable cards with comfortable spacing, warm descriptive text, subtle structure, and one consistent visual system.
