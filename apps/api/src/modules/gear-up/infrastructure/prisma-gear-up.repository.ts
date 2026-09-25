@@ -47,12 +47,15 @@ const publicShopSelect = Prisma.validator<Prisma.GearUpShopSelect>()({
 
 type GearUpShopRow = Prisma.GearUpShopGetPayload<{ select: typeof publicShopSelect }>;
 
-function publicShop(row: GearUpShopRow, images: readonly {
-  id: string;
-  placeId: string;
-  imageUrl: string;
-  sortOrder: number;
-}[]) {
+function publicShop(
+  row: GearUpShopRow,
+  images: readonly {
+    id: string;
+    placeId: string;
+    imageUrl: string;
+    sortOrder: number;
+  }[],
+) {
   return {
     place: canonicalPlaceSummary(row.place, images),
     offerTypes: row.offerTypes,
@@ -117,10 +120,7 @@ export class PrismaGearUpRepository implements GearUpRepository {
     return publicShop(row, images.get(placeId) ?? []);
   }
 
-  async suggest(
-    userId: string,
-    input: GearUpShopSuggestionInput,
-  ): Promise<PlaceSuggestionResult> {
+  async suggest(userId: string, input: GearUpShopSuggestionInput): Promise<PlaceSuggestionResult> {
     return this.db.$transaction(async (tx) => {
       const place = await suggestCanonicalPlace(
         tx,
