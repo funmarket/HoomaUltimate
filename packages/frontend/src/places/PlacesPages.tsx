@@ -230,7 +230,7 @@ export function AddPlacePage() {
   const placesApi = useMemo(() => createPlacesApi(transport), [transport]);
   const pitchApi = useMemo(() => createPitchApi(transport), [transport]);
   const isPitchSuggestion = new URLSearchParams(window.location.search).get("kind") === "PITCH";
-  const [submissionOrigin, setSubmissionOrigin] = useState<PlaceSubmissionOrigin>("FANHUB");
+  const [submissionOrigin, setSubmissionOrigin] = useState<PlaceSubmissionOrigin>("OWNER");
   const [pitchHourlyRate, setPitchHourlyRate] = useState("");
   const [pitchCurrency, setPitchCurrency] = useState<PitchRentalCurrency>("TND");
   const [error, setError] = useState("");
@@ -243,7 +243,7 @@ export function AddPlacePage() {
     try {
       const result = isPitchSuggestion
         ? await pitchApi.suggestPlace({
-            place: input,
+            place: { ...input, submissionOrigin },
             pitch: {
               hourlyRateMinor: pitchRateToMinor(Number(pitchHourlyRate), pitchCurrency),
               currency: pitchCurrency,
@@ -285,8 +285,10 @@ export function AddPlacePage() {
                   View existing Place
                 </a>
               ) : null}
-              {activeApproved && !isPitchSuggestion && submissionOrigin === "OWNER" ? (
-                <a href={`/places/${placeId}?claim=1`}>Claim this Place</a>
+              {activeApproved && submissionOrigin === "OWNER" ? (
+                <a href={`/places/${placeId}?claim=1`}>
+                  {isPitchSuggestion ? "Claim this Pitch" : "Claim this Place"}
+                </a>
               ) : null}
               <a href={isPitchSuggestion ? "/pitch" : "/places"}>
                 {isPitchSuggestion ? "Back to Pitch" : "Back to Spots"}
@@ -301,10 +303,12 @@ export function AddPlacePage() {
       <section className="place-page">
         <div className="place-submitted panel">
           <p className="eyebrow">SUBMITTED</p>
-          <h1>{isPitchSuggestion ? "Pitch suggested" : "Place submitted"}</h1>
+          <h1>{isPitchSuggestion ? "Pitch submitted" : "Place submitted"}</h1>
           <p>
             {isPitchSuggestion
-              ? "The App Admin will review this football pitch and its hourly rental price. Once approved, it can appear in Pitch and the real owner can claim it."
+              ? submissionOrigin === "OWNER"
+                ? "The App Admin will review this Pitch and its hourly rental price. Your ownership claim stays separate and requires verification before owner-only Pitch management is available."
+                : "The App Admin will review this Pitch and its hourly rental price. FanHub submissions do not create ownership; the real owner can claim the same canonical Place later."
               : submissionOrigin === "OWNER"
                 ? "The App Admin will review this Spot first. Your ownership claim stays separate and can be verified after the Place itself is approved."
                 : "The App Admin will review this Spot. Community suggestions appear in FanHub. If the real owner claims it later, the same canonical Place is kept and the FanHub source remains unchanged."}
@@ -370,19 +374,20 @@ export function AddPlacePage() {
     <section className="place-page place-form-page">
       <header className="place-page__header place-form-page__header">
         <div>
-          <p className="eyebrow">{isPitchSuggestion ? "SUGGEST A PITCH" : "ADD A PLACE"}</p>
-          <h1>{isPitchSuggestion ? "Suggest a football pitch" : "Add a Watch Spot"}</h1>
+          <p className="eyebrow">{isPitchSuggestion ? "ADD A PITCH" : "ADD A PLACE"}</p>
+          <h1>{isPitchSuggestion ? "Add a football pitch" : "Add a Watch Spot"}</h1>
           <p>
             {isPitchSuggestion
-              ? "Add the real venue details and hourly rental price. Suggesting a pitch does not make you its owner."
+              ? "Add the real venue details and hourly rental price, then choose whether you own or manage the Pitch or are adding it for FanHub."
               : "Add a café, lounge, restaurant or other place where people can watch together."}
           </p>
         </div>
       </header>
 
-      {!isPitchSuggestion ? (
-        <section className="panel">
-          <p className="eyebrow">WHO IS ADDING THIS SPOT?</p>
+      <section className="panel">
+          <p className="eyebrow">
+            {isPitchSuggestion ? "WHO IS ADDING THIS PITCH?" : "WHO IS ADDING THIS SPOT?"}
+          </p>
           <div className="place-source-tabs" role="tablist" aria-label="Place submission source">
             <button
               type="button"
@@ -409,14 +414,17 @@ export function AddPlacePage() {
           </div>
           <p className="muted">
             {submissionOrigin === "OWNER"
-              ? "Choose By Owner only when you own or manage this business. This creates an ownership claim on the same Place; verification remains a separate Admin decision."
-              : "FanHub is for any registered HOOMA member suggesting a Spot for the community. Suggesting it does not make you its owner."}
+              ? isPitchSuggestion
+                ? "Choose By Owner only when you own or manage this Pitch. This creates an ownership claim on the same canonical Place; verification remains a separate Admin decision."
+                : "Choose By Owner only when you own or manage this business. This creates an ownership claim on the same Place; verification remains a separate Admin decision."
+              : isPitchSuggestion
+                ? "FanHub is for any registered HOOMA member adding a Pitch for the community. Adding it does not make you its owner."
+                : "FanHub is for any registered HOOMA member suggesting a Spot for the community. Suggesting it does not make you its owner."}
           </p>
         </section>
-      ) : null}
 
       <PlaceForm
-        submitLabel={isPitchSuggestion ? "Suggest Pitch" : "Submit Place"}
+        submitLabel={isPitchSuggestion ? "Submit Pitch" : "Submit Place"}
         pending={pending}
         showMenu={!isPitchSuggestion}
         extraSection={pitchPricingSection}
