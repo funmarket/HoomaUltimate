@@ -183,7 +183,10 @@ const gearUpShopInputSchema = z
     offerTypes: z.array(gearUpOfferTypeSchema).min(1).max(2),
     sports: z.array(athletesSportSchema).min(1).max(9),
     categories: z.array(gearUpProductCategorySchema).min(1).max(GEAR_UP_PRODUCT_CATEGORIES.length),
-    paymentMethods: z.array(gearUpPaymentMethodSchema).max(GEAR_UP_PAYMENT_METHODS.length).default([]),
+    paymentMethods: z
+      .array(gearUpPaymentMethodSchema)
+      .max(GEAR_UP_PAYMENT_METHODS.length)
+      .default([]),
   })
   .strict();
 
