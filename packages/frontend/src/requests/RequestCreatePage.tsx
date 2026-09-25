@@ -24,11 +24,21 @@ export function RequestCreatePage() {
   const requestsApi = useMemo(() => createRequestsApi(transport), [transport]);
   const taxonomySurface = useMemo<HelpTaxonomySurface>(() => {
     if (typeof window === "undefined") return "REQUESTS";
-    return new URLSearchParams(window.location.search).get("surface") === "PLAY"
-      ? "PLAY"
-      : "REQUESTS";
+    const surface = new URLSearchParams(window.location.search).get("surface");
+    return surface === "PLAY" || surface === "ATHLETES" ? surface : "REQUESTS";
   }, []);
-  const returnHref = taxonomySurface === "PLAY" ? "/play" : "/requests";
+  const returnHref =
+    taxonomySurface === "PLAY"
+      ? "/play"
+      : taxonomySurface === "ATHLETES"
+        ? "/athletes"
+        : "/requests";
+  const returnLabel =
+    taxonomySurface === "PLAY"
+      ? "Back to Play"
+      : taxonomySurface === "ATHLETES"
+        ? "Back to Athletes"
+        : "Back to Requests";
   const [me, setMe] = useState<MeResponse | null>(null);
   const [taxonomy, setTaxonomy] = useState<HelpTaxonomyResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,7 +50,7 @@ export function RequestCreatePage() {
   const [imageUrl, setImageUrl] = useState("");
   const [publisher, setPublisher] = useState("personal");
   const [audience, setAudience] = useState("public");
-  const [requestType, setRequestType] = useState("");
+  const [requestType, setRequestType] = useState(taxonomySurface === "ATHLETES" ? "SPORT" : "");
   const [sport, setSport] = useState("");
   const [subcategoryId, setSubcategoryId] = useState("");
   const [needId, setNeedId] = useState("");
@@ -274,7 +284,7 @@ export function RequestCreatePage() {
               View Request
             </a>
             <a className="help-action help-action--quiet" href={returnHref}>
-              {taxonomySurface === "PLAY" ? "Back to Play" : "Back to Requests"}
+              {returnLabel}
             </a>
           </div>
         </section>
@@ -354,6 +364,7 @@ export function RequestCreatePage() {
                 className="request-field__control"
                 value={requestType}
                 required
+                disabled={taxonomySurface === "ATHLETES"}
                 onChange={(event) => {
                   setRequestType(event.target.value);
                   setSport("");
@@ -362,9 +373,13 @@ export function RequestCreatePage() {
                   setCustomNeed("");
                 }}
               >
-                <option value="">Choose request type</option>
+                {taxonomySurface === "ATHLETES" ? null : (
+                  <option value="">Choose request type</option>
+                )}
                 <option value="SPORT">Sport</option>
-                <option value="COMMUNITY">Community</option>
+                {taxonomySurface === "ATHLETES" ? null : (
+                  <option value="COMMUNITY">Community</option>
+                )}
               </select>
             </div>
 

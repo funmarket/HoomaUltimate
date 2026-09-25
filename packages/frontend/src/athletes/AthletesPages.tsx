@@ -12,6 +12,9 @@ import { AthletesWhistleBoard } from "../whistle/HoomaWhistleBoard";
 import { AthletesCalendar } from "./AthletesCalendar";
 import { AthletesPhotoBoard } from "./AthletesPhotoBoard";
 import { ActiveAthletesList } from "./ActiveAthletesList";
+import { AthletesRequestsPane } from "./AthletesRequestsPane";
+
+type AthletesView = "communities" | "requests";
 
 function report(reason: unknown, fallback: string): string {
   return reason instanceof Error ? reason.message : fallback;
@@ -31,6 +34,7 @@ export function AthletesPage({
   const { api } = useHoomaFrontend();
   const navigate = useNavigate();
   const [items, setItems] = useState<PublicAthletesSummary[]>([]);
+  const [activeView, setActiveView] = useState<AthletesView>("communities");
   const [sport, setSport] = useState<AthletesSport | "ALL">("ALL");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -112,46 +116,71 @@ export function AthletesPage({
         <span className="athletes-hero__motion" aria-hidden="true" />
       </section>
 
-      <section className="athletes-surface athletes-filter" aria-label="Filter Athletes by sport">
-        <div className="athletes-section-heading">
-          <span className="eyebrow">SPORT</span>
-          <span className="athletes-section-heading__hint">Find your pace</span>
-        </div>
-        <div className="athletes-sport-chips">
-          <button
-            className={sport === "ALL" ? "is-active" : ""}
-            type="button"
-            aria-pressed={sport === "ALL"}
-            onClick={() => setSport("ALL")}
-          >
-            All
-          </button>
-          {sports.map((option) => (
-            <button
-              key={option.value}
-              className={sport === option.value ? "is-active" : ""}
-              type="button"
-              aria-pressed={sport === option.value}
-              onClick={() => setSport(option.value)}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      </section>
+      <div className="athletes-view-tabs" role="tablist" aria-label="Athletes sections">
+        <button
+          className={`athletes-view-tab${activeView === "communities" ? " is-active" : ""}`}
+          type="button"
+          role="tab"
+          aria-selected={activeView === "communities"}
+          onClick={() => setActiveView("communities")}
+        >
+          Communities
+        </button>
+        <button
+          className={`athletes-view-tab${activeView === "requests" ? " is-active" : ""}`}
+          type="button"
+          role="tab"
+          aria-selected={activeView === "requests"}
+          onClick={() => setActiveView("requests")}
+        >
+          Requests
+        </button>
+      </div>
 
-      {error ? (
+      {activeView === "communities" ? (
+        <section className="athletes-surface athletes-filter" aria-label="Filter Athletes by sport">
+          <div className="athletes-section-heading">
+            <span className="eyebrow">SPORT</span>
+            <span className="athletes-section-heading__hint">Find your pace</span>
+          </div>
+          <div className="athletes-sport-chips">
+            <button
+              className={sport === "ALL" ? "is-active" : ""}
+              type="button"
+              aria-pressed={sport === "ALL"}
+              onClick={() => setSport("ALL")}
+            >
+              All
+            </button>
+            {sports.map((option) => (
+              <button
+                key={option.value}
+                className={sport === option.value ? "is-active" : ""}
+                type="button"
+                aria-pressed={sport === option.value}
+                onClick={() => setSport(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {activeView === "communities" && error ? (
         <div className="error-box" role="alert">
           {error} <button onClick={() => void load(nextCursor ?? undefined)}>Retry</button>
         </div>
       ) : null}
-      {loading ? <div className="state-card">Loading Athletes communities…</div> : null}
-      {!loading && !items.length && !error ? (
+      {activeView === "communities" && loading ? (
+        <div className="state-card">Loading Athletes communities…</div>
+      ) : null}
+      {activeView === "communities" && !loading && !items.length && !error ? (
         <div className="state-card">
           No Athletes communities yet. Start the first real training circle.
         </div>
       ) : null}
-      {items.length ? (
+      {activeView === "communities" && items.length ? (
         <section className="athletes-grid" aria-label="Athletes communities">
           {items.map((item) => (
             <button
@@ -190,7 +219,7 @@ export function AthletesPage({
           ))}
         </section>
       ) : null}
-      {nextCursor ? (
+      {activeView === "communities" && nextCursor ? (
         <button
           className="button athletes-action athletes-action--secondary"
           disabled={loadingMore}
@@ -199,6 +228,8 @@ export function AthletesPage({
           {loadingMore ? "Loading…" : "Load more communities"}
         </button>
       ) : null}
+
+      {activeView === "requests" ? <AthletesRequestsPane /> : null}
     </div>
   );
 }

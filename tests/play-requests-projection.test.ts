@@ -22,7 +22,10 @@ test("Play exposes canonical Requests without owning Request persistence", async
 
   assert.match(createPage, /taxonomySurface === "PLAY"/);
   assert.match(createPage, /requestsApi\.taxonomy\(taxonomySurface\)/);
-  assert.match(createPage, /returnHref = taxonomySurface === "PLAY" \? "\/play" : "\/requests"/);
+  assert.match(
+    createPage,
+    /const returnHref =[\s\S]*taxonomySurface === "PLAY"[\s\S]*\? "\/play"[\s\S]*taxonomySurface === "ATHLETES"[\s\S]*\? "\/athletes"[\s\S]*: "\/requests"/,
+  );
 
   assert.match(playCss, /\.play-view-tabs--four/);
   assert.match(
