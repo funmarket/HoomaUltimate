@@ -10,12 +10,9 @@ export const GEAR_UP_PRODUCT_IMAGE_CONTENT_TYPES = [
   "image/webp",
 ] as const;
 export const GEAR_UP_PRODUCT_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
-export const GEAR_UP_PRODUCT_IMAGE_RECONCILE_TOPIC =
-  "gear-up.product-image.reconcile-object";
+export const GEAR_UP_PRODUCT_IMAGE_RECONCILE_TOPIC = "gear-up.product-image.reconcile-object";
 
-export const gearUpProductImageContentTypeSchema = z.enum(
-  GEAR_UP_PRODUCT_IMAGE_CONTENT_TYPES,
-);
+export const gearUpProductImageContentTypeSchema = z.enum(GEAR_UP_PRODUCT_IMAGE_CONTENT_TYPES);
 export const gearUpProductImageSourceSchema = z.enum(["UPLOAD", "EXTERNAL_URL"]);
 
 const gearUpProductExternalImageUrlSchema = z
@@ -216,13 +213,9 @@ export const gearUpSettingsUpdateSchema = z
   })
   .strict();
 
-export type GearUpProductImageContentType = z.infer<
-  typeof gearUpProductImageContentTypeSchema
->;
+export type GearUpProductImageContentType = z.infer<typeof gearUpProductImageContentTypeSchema>;
 export type GearUpProductImageSource = z.infer<typeof gearUpProductImageSourceSchema>;
-export type GearUpProductExternalImageInput = z.infer<
-  typeof gearUpProductExternalImageInputSchema
->;
+export type GearUpProductExternalImageInput = z.infer<typeof gearUpProductExternalImageInputSchema>;
 export type GearUpProductImageOrderInput = z.infer<typeof gearUpProductImageOrderSchema>;
 export type GearUpProductImage = z.infer<typeof gearUpProductImageSchema>;
 export type GearUpProductImageDelivery = z.infer<typeof gearUpProductImageDeliverySchema>;
