@@ -60,8 +60,8 @@ export function GearUpShopCard({ shop }: { readonly shop: PublicGearUpShop }) {
 
         {tags.length ? (
           <div className="gear-up-shop-card__tags" aria-label="Sports and categories">
-            {tags.map((tag) => (
-              <span key={tag}>{tag}</span>
+            {tags.map((tag, index) => (
+              <span key={`${tag}:${index}`}>{tag}</span>
             ))}
           </div>
         ) : null}
@@ -72,7 +72,6 @@ export function GearUpShopCard({ shop }: { readonly shop: PublicGearUpShop }) {
 
         <div className="gear-up-shop-card__source">
           <span>{sourceLabel(shop)}</span>
-          {shop.verifiedOwner ? <span className="gear-up-shop-card__status">Verified</span> : null}
         </div>
       </div>
     </article>
