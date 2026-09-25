@@ -54,7 +54,9 @@ export function PitchPage() {
           type="button"
           role="tab"
           aria-selected={pitchOrigin === "OWNER"}
-          className={pitchOrigin === "OWNER" ? "place-source-tab is-active" : "place-source-tab"}
+          className={
+            pitchOrigin === "OWNER" ? "place-source-tab is-active" : "place-source-tab"
+          }
           onClick={() => setPitchOrigin("OWNER")}
         >
           By Owner
@@ -63,7 +65,9 @@ export function PitchPage() {
           type="button"
           role="tab"
           aria-selected={pitchOrigin === "FANHUB"}
-          className={pitchOrigin === "FANHUB" ? "place-source-tab is-active" : "place-source-tab"}
+          className={
+            pitchOrigin === "FANHUB" ? "place-source-tab is-active" : "place-source-tab"
+          }
           onClick={() => setPitchOrigin("FANHUB")}
         >
           FanHub
@@ -80,9 +84,7 @@ export function PitchPage() {
         {!visiblePitches.length && !error ? (
           <div className="pitch-empty panel">
             <h2>
-              {pitchOrigin === "OWNER"
-                ? "No owner-submitted pitches yet"
-                : "No FanHub pitches yet"}
+              {pitchOrigin === "OWNER" ? "No owner-submitted pitches yet" : "No FanHub pitches yet"}
             </h2>
             <p className="muted">Approved football venues will appear here.</p>
           </div>
