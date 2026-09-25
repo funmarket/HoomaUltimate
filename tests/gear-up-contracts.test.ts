@@ -9,7 +9,10 @@ type RuntimeSchema = {
 function runtimeSchema(name: string): RuntimeSchema {
   const exports = Contracts as unknown as Record<string, unknown>;
   const value = exports[name];
-  assert.ok(value && typeof value === "object" && "safeParse" in value, `${name} is exported`);
+  assert.ok(
+    value && typeof value === "object" && "safeParse" in value,
+    `${name} is exported`,
+  );
   return value as RuntimeSchema;
 }
 
@@ -36,8 +39,10 @@ test("Gear Up shop contract accepts Sportswear, Gear, or both with governed taxo
     false,
   );
   assert.equal(
-    schema.safeParse({ ...base, shop: { ...base.shop, offerTypes: ["SPORTSWEAR"], categories: [] } })
-      .success,
+    schema.safeParse({
+      ...base,
+      shop: { ...base.shop, offerTypes: ["SPORTSWEAR"], categories: [] },
+    }).success,
     false,
   );
 });
