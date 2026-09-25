@@ -39,10 +39,7 @@ export class PrismaGearUpProductMediaRepository implements GearUpProductMediaRep
     return rows.map(record);
   }
 
-  async get(
-    productId: string,
-    imageId: string,
-  ): Promise<GearUpProductImageRecord | null> {
+  async get(productId: string, imageId: string): Promise<GearUpProductImageRecord | null> {
     const row = await this.db.gearUpProductImage.findFirst({
       where: { id: imageId, productId },
       select: imageSelect,
@@ -79,10 +76,7 @@ export class PrismaGearUpProductMediaRepository implements GearUpProductMediaRep
     });
   }
 
-  async addExternalUrl(
-    productId: string,
-    url: string,
-  ): Promise<GearUpProductImageRecord> {
+  async addExternalUrl(productId: string, url: string): Promise<GearUpProductImageRecord> {
     return this.db.$transaction(async (tx) => {
       const sortOrder = await nextImageSlot(tx, productId);
       const row = await tx.gearUpProductImage.create({
@@ -101,11 +95,7 @@ export class PrismaGearUpProductMediaRepository implements GearUpProductMediaRep
     });
   }
 
-  async prepareUpload(
-    imageId: string,
-    productId: string,
-    objectKey: string,
-  ): Promise<void> {
+  async prepareUpload(imageId: string, productId: string, objectKey: string): Promise<void> {
     await this.db.outboxEvent.upsert({
       where: { id: imageId },
       create: {
@@ -160,10 +150,7 @@ export class PrismaGearUpProductMediaRepository implements GearUpProductMediaRep
     });
   }
 
-  async delete(
-    productId: string,
-    imageId: string,
-  ): Promise<GearUpProductImageRecord | null> {
+  async delete(productId: string, imageId: string): Promise<GearUpProductImageRecord | null> {
     return this.db.$transaction(async (tx) => {
       await lockProduct(tx, productId);
       const previous = await tx.gearUpProductImage.findFirst({
@@ -225,10 +212,7 @@ export class PrismaGearUpProductMediaRepository implements GearUpProductMediaRep
   }
 }
 
-async function nextImageSlot(
-  tx: Prisma.TransactionClient,
-  productId: string,
-): Promise<number> {
+async function nextImageSlot(tx: Prisma.TransactionClient, productId: string): Promise<number> {
   await lockProduct(tx, productId);
   const [settings, count] = await Promise.all([
     tx.gearUpSettings.upsert({
@@ -248,10 +232,7 @@ async function nextImageSlot(
   return count;
 }
 
-async function lockProduct(
-  tx: Prisma.TransactionClient,
-  productId: string,
-): Promise<void> {
+async function lockProduct(tx: Prisma.TransactionClient, productId: string): Promise<void> {
   const rows = await tx.$queryRaw<{ id: string }[]>(
     Prisma.sql`SELECT "id" FROM "GearUpProduct" WHERE "id" = ${productId} FOR UPDATE`,
   );
@@ -260,10 +241,7 @@ async function lockProduct(
   }
 }
 
-async function compactImageOrder(
-  tx: Prisma.TransactionClient,
-  productId: string,
-): Promise<void> {
+async function compactImageOrder(tx: Prisma.TransactionClient, productId: string): Promise<void> {
   const rows = await tx.gearUpProductImage.findMany({
     where: { productId },
     select: { id: true, sortOrder: true },
