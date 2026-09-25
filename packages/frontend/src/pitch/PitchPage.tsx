@@ -54,7 +54,9 @@ export function PitchPage() {
           type="button"
           role="tab"
           aria-selected={pitchOrigin === "OWNER"}
-          className={pitchOrigin === "OWNER" ? "place-source-tab is-active" : "place-source-tab"}
+          className={
+            pitchOrigin === "OWNER" ? "place-source-tab is-active" : "place-source-tab"
+          }
           onClick={() => setPitchOrigin("OWNER")}
         >
           By Owner
@@ -63,7 +65,9 @@ export function PitchPage() {
           type="button"
           role="tab"
           aria-selected={pitchOrigin === "FANHUB"}
-          className={pitchOrigin === "FANHUB" ? "place-source-tab is-active" : "place-source-tab"}
+          className={
+            pitchOrigin === "FANHUB" ? "place-source-tab is-active" : "place-source-tab"
+          }
           onClick={() => setPitchOrigin("FANHUB")}
         >
           FanHub
