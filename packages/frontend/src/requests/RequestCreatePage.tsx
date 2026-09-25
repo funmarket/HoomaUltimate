@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type { MeResponse } from "@hooma/contracts";
-import type { HelpTaxonomyResponse, HelpTaxonomySurface } from "@hooma/contracts/help-taxonomy";
+import type {
+  HelpTaxonomyResponse,
+  HelpTaxonomySurface,
+} from "@hooma/contracts/help-taxonomy";
 import { helpRequestCreateSchema, type HelpRequestCreateInput } from "@hooma/contracts/requests";
 import { useHoomaFrontend } from "../context";
 import { PlusIcon } from "../help/HelpIcons";
