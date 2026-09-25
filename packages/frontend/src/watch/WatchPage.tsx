@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import type { WatchEventKind } from "@hooma/contracts";
 import type { PublicEvent } from "../events/api";
 import { useEventApi } from "../events/useEventApi";
-import { CalendarIcon, CalendarPlusIcon, MenuIcon, PinIcon } from "../ui/HoomaIcons";
 import { CulturalEventCard } from "./CulturalEventCard";
+import { WatchSectionNavigation } from "./WatchSectionNavigation";
 import { WatchTicket } from "./WatchTicket";
 
 function normalize(value: string | null | undefined): string {
@@ -168,38 +168,10 @@ export function WatchPage() {
         </div>
       </header>
 
-      <nav className="watch-section-actions" aria-label="Watch destinations">
-        <a className="watch-section-action" href="/watch" aria-current="page">
-          <CalendarIcon size={28} className="watch-section-action__icon" />
-          <span>Events</span>
-        </a>
-        <a className="watch-section-action" href="/places">
-          <PinIcon size={28} className="watch-section-action__icon" />
-          <span>Spots</span>
-        </a>
-        <span
-          className="watch-section-action watch-section-action--disabled"
-          aria-disabled="true"
-          title="Gear Up is coming next"
-        >
-          <MenuIcon size={28} className="watch-section-action__icon" />
-          <span>Gear Up</span>
-        </span>
-      </nav>
-
-      <div className="watch-section-utilities" role="group" aria-label="Watch actions">
-        <a
-          className="watch-section-action watch-section-action--utility"
-          href={`/events/new?type=WATCH&kind=${kind}`}
-        >
-          <CalendarPlusIcon size={22} className="watch-section-action__icon" />
-          <span>Create Event</span>
-        </a>
-        <a className="watch-section-action watch-section-action--utility" href="/places/new">
-          <PinIcon size={22} className="watch-section-action__icon" />
-          <span>Add a Place</span>
-        </a>
-      </div>
+      <WatchSectionNavigation
+        active="events"
+        createEventHref={`/events/new?type=WATCH&kind=${kind}`}
+      />
 
       <div className="watch-kind-tabs" role="tablist" aria-label="Watch event categories">
         <button
