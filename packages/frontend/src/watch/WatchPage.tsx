@@ -195,10 +195,7 @@ export function WatchPage() {
           <CalendarPlusIcon size={22} className="watch-section-action__icon" />
           <span>Create Event</span>
         </a>
-        <a
-          className="watch-section-action watch-section-action--utility"
-          href="/places/new"
-        >
+        <a className="watch-section-action watch-section-action--utility" href="/places/new">
           <PinIcon size={22} className="watch-section-action__icon" />
           <span>Add a Place</span>
         </a>
