@@ -1,18 +1,6 @@
-import type { AthletesSport } from "@hooma/contracts/athletes";
 import { GEAR_UP_PRODUCT_CATEGORY_LABELS, type PublicGearUpShop } from "@hooma/contracts/gear-up";
 import { PinIcon } from "../ui/HoomaIcons";
-
-const SPORT_LABELS: Readonly<Record<AthletesSport, string>> = {
-  CYCLING: "Cycling",
-  RUNNING: "Running",
-  SWIMMING: "Swimming",
-  FOOTBALL: "Football",
-  BASKETBALL: "Basketball",
-  TENNIS: "Tennis",
-  PADEL: "Padel",
-  GYM_FITNESS: "Gym & Fitness",
-  OTHER: "Other",
-};
+import { GEAR_UP_SPORT_LABELS } from "./presentation";
 
 function locationLabel(shop: PublicGearUpShop): string {
   return [shop.place.houma, shop.place.city].filter(Boolean).join(" · ") || shop.place.address;
@@ -26,7 +14,7 @@ function sourceLabel(shop: PublicGearUpShop): string {
 
 export function GearUpShopCard({ shop }: { readonly shop: PublicGearUpShop }) {
   const tags = [
-    ...shop.sports.map((sport) => SPORT_LABELS[sport]),
+    ...shop.sports.map((sport) => GEAR_UP_SPORT_LABELS[sport]),
     ...shop.categories.map((category) => GEAR_UP_PRODUCT_CATEGORY_LABELS[category]),
   ].slice(0, 4);
 
