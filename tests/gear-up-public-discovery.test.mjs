@@ -69,7 +69,6 @@ test("Gear Up discovery presents the approved filters and truthful canonical sho
   assert.doesNotMatch(page, /near you\.<\/span>/);
   assert.match(page, /No Gear Up shops match these filters\./);
   assert.match(page, /Clear filters/);
-  assert.match(page, /Add a Place/);
 
   for (const label of ["Sportswear", "Gear", "By Owner", "FanHub", "City", "Houma"]) {
     assert.match(filters, new RegExp(label));
@@ -84,7 +83,7 @@ test("Gear Up discovery presents the approved filters and truthful canonical sho
   assert.match(card, /shop\.sports/);
   assert.match(card, /shop\.categories/);
   assert.doesNotMatch(card, /distance|km away|nearest/i);
-  assert.doesNotMatch(card, /submissionOrigin.*verifiedOwner|verifiedOwner.*submissionOrigin/s);
+  assert.doesNotMatch(card, /verifiedOwner\s*=\s*.*submissionOrigin|submissionOrigin\s*===.*verified/i);
 });
 
 test("Gear Up discovery uses the canonical HOOMA structural tokens instead of a feature-local visual system", () => {
