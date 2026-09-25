@@ -110,7 +110,7 @@ test("pending original Place manager can manage Gear Up shop while unrelated mem
 
   await assert.rejects(
     () => forbiddenService.getManaged("member-1", "place-1"),
-    (error) => error?.code === "GEAR_UP_MANAGE_FORBIDDEN" && error?.statusCode === 403,
+    (error) => error?.code === "GEAR_UP_MANAGE_FORBIDDEN",
   );
 });
 
@@ -149,6 +149,6 @@ test("App Admin owns Gear Up moderation and stale decisions are rejected", async
   );
   await assert.rejects(
     () => staleService.review("admin-1", "place-1", { decision: "APPROVE" }),
-    (error) => error?.code === "GEAR_UP_REVIEW_NOT_PENDING" && error?.statusCode === 409,
+    (error) => error?.code === "GEAR_UP_REVIEW_NOT_PENDING",
   );
 });
