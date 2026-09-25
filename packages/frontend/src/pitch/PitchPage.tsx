@@ -80,7 +80,9 @@ export function PitchPage() {
         {!visiblePitches.length && !error ? (
           <div className="pitch-empty panel">
             <h2>
-              {pitchOrigin === "OWNER" ? "No owner-submitted pitches yet" : "No FanHub pitches yet"}
+              {pitchOrigin === "OWNER"
+                ? "No owner-submitted pitches yet"
+                : "No FanHub pitches yet"}
             </h2>
             <p className="muted">Approved football venues will appear here.</p>
           </div>
