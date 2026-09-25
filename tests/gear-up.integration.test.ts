@@ -111,7 +111,6 @@ test("Gear Up repository reuses canonical Place and approves Place plus shop ato
       true,
     );
 
-
     const updated = await repository.updateShop(placeId, {
       paymentMethods: ["CASH", "CRYPTO"],
     });
