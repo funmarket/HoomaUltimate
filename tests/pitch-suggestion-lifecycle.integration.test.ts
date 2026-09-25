@@ -249,8 +249,9 @@ test("an approved suggested Pitch preserves immutable owner moderation history",
   }
 });
 
-
-test("an owner-submitted Pitch preserves provenance and creates only a pending ownership claim", async () => {
+test(
+  "an owner-submitted Pitch preserves provenance and creates only a pending ownership claim",
+  async () => {
   const suffix = `owner_${Date.now().toString(36)}`;
   const owner = await db.user.create({ data: {} });
   const pitchRepository = new PrismaPitchRepository(db);
@@ -314,4 +315,5 @@ test("an owner-submitted Pitch preserves provenance and creates only a pending o
     }
     await db.user.deleteMany({ where: { id: owner.id } });
   }
-});
+  },
+);
