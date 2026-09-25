@@ -8,14 +8,15 @@ function source(path) {
 
 test("Gear Up has explicit Place discovery without duplicating canonical Place", () => {
   const schema = source("packages/database/prisma/schema.prisma");
+  const discoveryEnum = /enum PlaceDiscoveryKind \{[\s\S]*?WATCH_SPOT[\s\S]*?GEAR_UP[\s\S]*?\}/;
+  const placeDiscoveries = /model Place \{[\s\S]*?discoveries\s+PlaceDiscovery\[\]/;
+  const gearUpShop = /model Place \{[\s\S]*?gearUpShop\s+GearUpShop\?/;
+  const duplicatePlaceModel = /model (?:SportStore|ShopPlace|GearUpPlace)\s+\{/;
 
-  assert.match(
-    schema,
-    /enum PlaceDiscoveryKind \{[\s\S]*?WATCH_SPOT[\s\S]*?GEAR_UP[\s\S]*?\}/,
-  );
-  assert.match(schema, /model Place \{[\s\S]*?discoveries\s+PlaceDiscovery\[\]/);
-  assert.match(schema, /model Place \{[\s\S]*?gearUpShop\s+GearUpShop\?/);
-  assert.doesNotMatch(schema, /model (?:SportStore|ShopPlace|GearUpPlace)\s+\{/);
+  assert.match(schema, discoveryEnum);
+  assert.match(schema, placeDiscoveries);
+  assert.match(schema, gearUpShop);
+  assert.doesNotMatch(schema, duplicatePlaceModel);
 });
 
 test("Gear Up persistence owns shop, products, images and bounded settings", () => {
@@ -40,9 +41,8 @@ test("Gear Up contracts are exported from the contracts package", () => {
 });
 
 test("canonical Place suggestion accepts explicit discovery classification", () => {
-  const canonicalPlace = source(
-    "apps/api/src/modules/places/boundary/canonical-place.persistence.ts",
-  );
+  const path = "apps/api/src/modules/places/boundary/canonical-place.persistence.ts";
+  const canonicalPlace = source(path);
 
   assert.match(canonicalPlace, /PlaceDiscoveryKind/);
   assert.match(canonicalPlace, /discoveryKind/);
