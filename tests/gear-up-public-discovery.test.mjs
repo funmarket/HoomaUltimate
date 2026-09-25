@@ -65,10 +65,14 @@ test("Gear Up discovery presents the approved filters and truthful canonical sho
   const filters = source("packages/frontend/src/gear-up/GearUpFilters.tsx");
   const card = source("packages/frontend/src/gear-up/GearUpShopCard.tsx");
 
-  assert.match(page, /Discover sports shops near you\./);
-  assert.doesNotMatch(page, /near you\.<\/span>/);
-  assert.match(page, /No Gear Up shops match these filters\./);
+  assert.match(page, /Discover shops offering gear and sportswear\./);
+  assert.match(page, /gear-up-discovery-mode/);
+  assert.match(page, />\s*Stores\s*</);
+  assert.match(page, />\s*Products\s*</);
+  assert.match(page, /aria-disabled="true"/);
+  assert.match(page, /No shops match these filters yet\./);
   assert.match(page, /Clear filters/);
+  assert.match(page, /href="\/places\/new"/);
 
   for (const label of ["Sportswear", "Gear", "By Owner", "FanHub", "City", "Houma"]) {
     assert.match(filters, new RegExp(label));
@@ -82,6 +86,9 @@ test("Gear Up discovery presents the approved filters and truthful canonical sho
   assert.match(card, /shop\.verifiedOwner/);
   assert.match(card, /shop\.sports/);
   assert.match(card, /shop\.categories/);
+  assert.match(card, /shop\.offerTypes/);
+  assert.match(card, /View Shop/);
+  assert.match(card, /\/places\/\$\{shop\.place\.id\}/);
   assert.doesNotMatch(card, /distance|km away|nearest/i);
   assert.doesNotMatch(
     card,
