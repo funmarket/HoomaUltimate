@@ -14,7 +14,7 @@ test("Gear Up HTTP routers expose public discovery and member management surface
   const routes = source(routePath);
 
   for (const route of [
-    'router.get("\/")',
+    'router\\.get\\(\\s*"/"',
     '"\/shops\/:placeId"',
     '"\/shops\/:placeId\/products"',
     '"\/products\/:productId"',
@@ -57,9 +57,9 @@ test("Gear Up services are composed once in the API container and mounted in bot
   }
 
   assert.match(publicRouter, /createGearUpPublicRouter/);
-  assert.match(publicRouter, /router\.use\("\/gear-up"/);
+  assert.match(publicRouter, /router\.use\(\s*"\/gear-up"/);
   assert.match(memberRouter, /createGearUpMemberRouter/);
-  assert.match(memberRouter, /router\.use\("\/gear-up"/);
+  assert.match(memberRouter, /router\.use\(\s*"\/gear-up"/);
 });
 
 test("Gear Up moderation stays inside the canonical platform Admin queue surface", () => {
