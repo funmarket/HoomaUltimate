@@ -8,6 +8,7 @@ import {
   type GearUpProductCategory,
 } from "@hooma/contracts/gear-up";
 import type { PlaceSubmissionOrigin } from "@hooma/contracts/places";
+import { GEAR_UP_SPORT_LABELS } from "./presentation";
 
 export interface GearUpDiscoveryFilters {
   readonly query: string;
@@ -18,18 +19,6 @@ export interface GearUpDiscoveryFilters {
   readonly city: string;
   readonly houma: string;
 }
-
-const SPORT_LABELS: Readonly<Record<AthletesSport, string>> = {
-  CYCLING: "Cycling",
-  RUNNING: "Running",
-  SWIMMING: "Swimming",
-  FOOTBALL: "Football",
-  BASKETBALL: "Basketball",
-  TENNIS: "Tennis",
-  PADEL: "Padel",
-  GYM_FITNESS: "Gym & Fitness",
-  OTHER: "Other",
-};
 
 function categoriesForOffer(offer: GearUpOfferType | null): readonly GearUpProductCategory[] {
   if (offer === "SPORTSWEAR") return GEAR_UP_SPORTSWEAR_CATEGORIES;
@@ -168,7 +157,7 @@ export function GearUpFilters({
               aria-pressed={value.sport === sport}
               onClick={() => onChange({ ...value, sport: value.sport === sport ? null : sport })}
             >
-              {SPORT_LABELS[sport]}
+              {GEAR_UP_SPORT_LABELS[sport]}
             </button>
           ))}
         </div>
