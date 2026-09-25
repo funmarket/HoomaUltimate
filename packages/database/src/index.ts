@@ -1,6 +1,12 @@
 import { PrismaClient } from "@prisma/client";
 
-export { Prisma, PrismaClient, PlatformRole, OutboxStatus, PlaceDiscoveryKind } from "@prisma/client";
+export {
+  Prisma,
+  PrismaClient,
+  PlatformRole,
+  OutboxStatus,
+  PlaceDiscoveryKind,
+} from "@prisma/client";
 
 let singleton: PrismaClient | undefined;
 
