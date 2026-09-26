@@ -44,7 +44,6 @@ test("Pitch ticket presents the canonical hourly rental rate without fallback pr
   assert.doesNotMatch(pricing, /Contact for price/);
 });
 
-
 test("Pitch ticket preserves supplied side artwork and reserves the black resource strip without fabricated facts", () => {
   const ticket = source("packages/frontend/src/pitch/PitchTicket.tsx");
   const css = source("packages/frontend/src/pitch/pitch.css");
