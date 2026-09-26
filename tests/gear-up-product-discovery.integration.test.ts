@@ -133,18 +133,27 @@ test("cross-store product discovery filters approved canonical shops and paginat
       city: "Tunis",
       limit: 10,
     });
-    assert.deepEqual(
-      tunisFootball.items.map((item) => item.id).sort(),
-      [boots.id, ball.id].sort(),
+    assert.deepEqual(tunisFootball.items.map((item) => item.id).sort(), [boots.id, ball.id].sort());
+    assert.equal(
+      tunisFootball.items.every((item) => item.shop.placeId === shopOne.id),
+      true,
     );
-    assert.equal(tunisFootball.items.every((item) => item.shop.placeId === shopOne.id), true);
 
     const featured = await repository.listPublic({ featured: true, limit: 10 });
-    assert.deepEqual(featured.items.map((item) => item.id), [boots.id]);
+    assert.deepEqual(
+      featured.items.map((item) => item.id),
+      [boots.id],
+    );
 
     const gear = await repository.listPublic({ offer: "GEAR", limit: 10 });
-    assert.equal(gear.items.some((item) => item.id === ball.id), true);
-    assert.equal(gear.items.some((item) => item.id === running.id), false);
+    assert.equal(
+      gear.items.some((item) => item.id === ball.id),
+      true,
+    );
+    assert.equal(
+      gear.items.some((item) => item.id === running.id),
+      false,
+    );
 
     const firstPage = await repository.listPublic({ limit: 1 });
     assert.equal(firstPage.items.length, 1);
@@ -157,7 +166,10 @@ test("cross-store product discovery filters approved canonical shops and paginat
     assert.notEqual(secondPage.items[0]?.id, firstPage.items[0]?.id);
 
     const searched = await repository.listPublic({ q: `Boot House ${suffix}`, limit: 10 });
-    assert.equal(searched.items.some((item) => item.id === boots.id), true);
+    assert.equal(
+      searched.items.some((item) => item.id === boots.id),
+      true,
+    );
   } finally {
     await db.place.deleteMany({ where: { id: { in: [shopOne.id, shopTwo.id, hiddenShop.id] } } });
     await db.user.delete({ where: { id: user.id } });
