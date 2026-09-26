@@ -44,15 +44,21 @@ test("Pitch ticket presents the canonical hourly rental rate without fallback pr
   assert.doesNotMatch(pricing, /Contact for price/);
 });
 
-test("Pitch ticket preserves supplied side artwork and reserves the black resource strip without fabricated facts", () => {
-  const ticket = source("packages/frontend/src/pitch/PitchTicket.tsx");
-  const css = source("packages/frontend/src/pitch/pitch.css");
+test(
+  "Pitch ticket preserves supplied side artwork and reserves the black resource strip without fabricated facts",
+  () => {
+    const ticket = source("packages/frontend/src/pitch/PitchTicket.tsx");
+    const css = source("packages/frontend/src/pitch/pitch.css");
 
-  assert.match(ticket, /\/brand\/hooma-pitch-stub\.svg/);
-  assert.match(ticket, /pitch-ticket__resource-strip/);
-  assert.doesNotMatch(ticket, />\s*7v7\s*</);
-  assert.doesNotMatch(ticket, />\s*Artificial\s*</);
-  assert.doesNotMatch(ticket, />\s*Outdoor\s*</);
-  assert.match(css, /\.pitch-ticket__resource-strip/);
-  assert.match(css, /@media \(max-width: 719px\)[\s\S]*?\.pitch-directory \{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/);
-});
+    assert.match(ticket, /\/brand\/hooma-pitch-stub\.svg/);
+    assert.match(ticket, /pitch-ticket__resource-strip/);
+    assert.doesNotMatch(ticket, />\s*7v7\s*</);
+    assert.doesNotMatch(ticket, />\s*Artificial\s*</);
+    assert.doesNotMatch(ticket, />\s*Outdoor\s*</);
+    assert.match(css, /\.pitch-ticket__resource-strip/);
+    assert.match(
+      css,
+      /@media \(max-width: 719px\)[\s\S]*?\.pitch-directory \{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/,
+    );
+  },
+);
