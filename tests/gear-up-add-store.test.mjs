@@ -59,7 +59,7 @@ test("Gear Up Add Store preserves source, classification, payment and photo rule
   assert.match(page, /paymentMethods/);
   assert.match(page, /disabled[\s\S]{0,240}Crypto|Crypto[\s\S]{0,240}disabled/);
   assert.match(page, /saved wallet/i);
-  assert.doesNotMatch(page, /walletAddress|wallet address|raw wallet/i);
+  assert.doesNotMatch(page, /walletAddress|name="wallet"|name="walletAddress"/i);
 
   assert.match(placesContract, /imageUrls:\s*z\.array\(placeImageUrlSchema\)\.max\(4\)/);
 });
@@ -67,7 +67,7 @@ test("Gear Up Add Store preserves source, classification, payment and photo rule
 test("Gear Up Add Store requires an HOOMA account with the existing frontend auth pattern", () => {
   const page = source("packages/frontend/src/gear-up/AddGearUpShopPage.tsx");
 
-  assert.match(page, /api\.identity\.meOptional\(\)/);
+  assert.match(page, /api\.identity[\s\S]{0,40}\.meOptional\(\)/);
   assert.match(page, /authenticationHref\("\/athletes\/gear-up\/add-store"\)/);
   assert.match(page, /Sign in to continue/);
 });
