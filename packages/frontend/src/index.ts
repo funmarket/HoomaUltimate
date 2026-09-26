@@ -43,6 +43,7 @@ export * from "./teams/team-offer-api";
 export * from "./teams/TeamOffersPanel";
 export * from "./game-location/GameLocationPicker";
 export * from "./gear-up/GearUpPage";
+export * from "./gear-up/GearUpShopDetailPage";
 export * from "./events/api";
 export * from "./events/PlayPage";
 export * from "./events/CreateEventPage";
