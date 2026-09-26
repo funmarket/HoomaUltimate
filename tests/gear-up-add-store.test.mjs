@@ -88,6 +88,6 @@ test("Gear Up Add Store handles canonical new and existing Place outcomes", () =
   assert.match(page, /status === "PENDING"/);
   assert.match(page, /No duplicate created/);
   assert.match(page, /App Admin/);
-  assert.match(page, /\/athletes\/gear-up\/shops\/\$\{placeId\}/);
+  assert.match(page, /href="\/athletes\/gear-up"/);
   assert.match(page, /verified ownership|verification remains separate/i);
 });

@@ -128,6 +128,11 @@ export function GearUpPage() {
             ? "Find sportswear, equipment and more from local shops. Support real places in your community."
             : "Browse products across approved Gear Up shops while keeping every product connected to its real store."}
         </p>
+        <div className="gear-up-hero__actions">
+          <a className="gear-up-add-store-link" href="/athletes/gear-up/add-store">
+            Add Store
+          </a>
+        </div>
       </header>
 
       <div className="gear-up-discovery-mode" role="group" aria-label="Gear Up discovery mode">
@@ -178,12 +183,12 @@ export function GearUpPage() {
                 GU
               </div>
               <h2>No shops match these filters yet.</h2>
-              <p>Try adjusting your search or filters, or help the community by adding a place.</p>
+              <p>Try adjusting your search or filters, or help the community by adding a Store.</p>
               <div className="gear-up-empty-state__actions">
                 <button type="button" onClick={() => setFilters(CLEARED_FILTERS)}>
                   Clear filters
                 </button>
-                <a href="/places/new">Add a Place</a>
+                <a href="/athletes/gear-up/add-store">Add Store</a>
               </div>
             </section>
           ) : null}

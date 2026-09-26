@@ -5,8 +5,10 @@ import type {
   GearUpProductDiscoveryQueryInput,
   GearUpProductImage,
   GearUpProductImageDelivery,
+  type GearUpShopSuggestionInput,
   PublicGearUpShop,
 } from "@hooma/contracts/gear-up";
+import type { PlaceSuggestionResult } from "@hooma/contracts/places";
 import { request, type HoomaTransport } from "../http";
 
 export type GearUpPublicListFilters = Partial<GearUpListQueryInput>;
@@ -43,6 +45,11 @@ function queryString(input: GearUpPublicListFilters): string {
 
 export function createGearUpApi(transport: HoomaTransport) {
   return {
+    suggestShop: (input: GearUpShopSuggestionInput) =>
+      request<PlaceSuggestionResult>(transport, "/api/v1/gear-up/shops", {
+        method: "POST",
+        body: JSON.stringify(input),
+      }),
     listShops: (input: GearUpPublicListFilters = {}) =>
       request<PublicGearUpShop[]>(transport, `/api/public/v1/gear-up${queryString(input)}`),
     getShop: (placeId: string) =>
