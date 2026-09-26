@@ -110,7 +110,7 @@ test("Athletes hub banner is phone-scaled, borderless, and keeps only semantic h
     athletesCss.match(/\.athletes-hero--hub \.athletes-hero__semantic-title\s*\{[\s\S]*?\}/)?.[0] ??
     "";
 
-  assert.match(hubRule, /aspect-ratio:\s*1280\s*\/\s*431/);
+  assert.match(hubRule, /aspect-ratio:\s*720\s*\/\s*520/);
   assert.match(hubRule, /min-height:\s*0/);
   assert.match(hubRule, /padding:\s*0/);
   assert.match(hubRule, /border:\s*0/);
