@@ -183,24 +183,14 @@ function GearUpProductDetailRoute() {
 
 function LegacyGearUpShopRoute() {
   const { placeId } = useParams();
-  return (
-    <Navigate
-      to={`/athletes/gear-up/shops/${encodeURIComponent(requiredParam("placeId", placeId))}`}
-      replace
-    />
-  );
+  const encodedPlaceId = encodeURIComponent(requiredParam("placeId", placeId));
+  return <Navigate to={`/athletes/gear-up/shops/${encodedPlaceId}`} replace />;
 }
 
 function LegacyGearUpProductRoute() {
   const { productId } = useParams();
-  return (
-    <Navigate
-      to={`/athletes/gear-up/products/${encodeURIComponent(
-        requiredParam("productId", productId),
-      )}`}
-      replace
-    />
-  );
+  const encodedProductId = encodeURIComponent(requiredParam("productId", productId));
+  return <Navigate to={`/athletes/gear-up/products/${encodedProductId}`} replace />;
 }
 
 function PlaceEditRoute() {
