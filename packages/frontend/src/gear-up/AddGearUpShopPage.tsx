@@ -18,11 +18,15 @@ import { useHoomaFrontend } from "../context";
 import { PlaceForm } from "../places/PlaceForm";
 import { createGearUpApi } from "./api";
 
-type PlaceFormInput = Parameters<Parameters<typeof PlaceForm>[0]["onSubmit"]>[0];
+type PlaceFormInput = Parameters<
+  Parameters<typeof PlaceForm>[0]["onSubmit"]
+>[0];
 type AccountState = "loading" | "signed-in" | "signed-out";
 
 function toggleValue<T extends string>(values: readonly T[], value: T): T[] {
-  return values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
+  return values.includes(value)
+    ? values.filter((item) => item !== value)
+    : [...values, value];
 }
 
 function categoryLabel(category: GearUpProductCategory): string {
@@ -30,18 +34,22 @@ function categoryLabel(category: GearUpProductCategory): string {
 }
 
 export function AddGearUpShopPage() {
-  const { api, transport, protectedError, authenticationHref } = useHoomaFrontend();
+  const { api, transport, protectedError, authenticationHref } =
+    useHoomaFrontend();
   const gearUpApi = useMemo(() => createGearUpApi(transport), [transport]);
   const [accountState, setAccountState] = useState<AccountState>("loading");
   const [accountError, setAccountError] = useState("");
-  const [submissionOrigin, setSubmissionOrigin] = useState<PlaceSubmissionOrigin>("OWNER");
+  const [submissionOrigin, setSubmissionOrigin] =
+    useState<PlaceSubmissionOrigin>("OWNER");
   const [offerTypes, setOfferTypes] = useState<GearUpOfferType[]>([]);
   const [sports, setSports] = useState<AthletesSport[]>([]);
   const [categories, setCategories] = useState<GearUpProductCategory[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<GearUpPaymentMethod[]>([]);
+  const [paymentMethods, setPaymentMethods] =
+    useState<GearUpPaymentMethod[]>([]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
-  const [submissionResult, setSubmissionResult] = useState<PlaceSuggestionResult | null>(null);
+  const [submissionResult, setSubmissionResult] =
+    useState<PlaceSuggestionResult | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -52,7 +60,9 @@ export function AddGearUpShopPage() {
       })
       .catch((reason) => {
         if (!active) return;
-        setAccountError(protectedError(reason, "Unable to verify your HOOMA account"));
+        setAccountError(
+          protectedError(reason, "Unable to verify your HOOMA account"),
+        );
         setAccountState("signed-out");
       });
     return () => {
@@ -88,7 +98,10 @@ export function AddGearUpShopPage() {
     });
 
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Check the Store details and try again.");
+      setError(
+        parsed.error.issues[0]?.message ??
+          "Check the Store details and try again.",
+      );
       return;
     }
 
@@ -115,7 +128,9 @@ export function AddGearUpShopPage() {
         <section className="gear-up-empty-state">
           <p className="gear-up-hero__eyebrow">ADD STORE</p>
           <h1>Sign in to add a Gear Up Store.</h1>
-          <p>An HOOMA account is required before a Store can be submitted for review.</p>
+          <p>
+            An HOOMA account is required before a Store can be submitted for review.
+          </p>
           {href ? (
             <a className="gear-up-add-store-link" href={href}>
               Sign in to continue
@@ -137,7 +152,9 @@ export function AddGearUpShopPage() {
       <section className="gear-up-page gear-up-add-store">
         <AthletesHubTabs active="gear-up" />
         <section className="gear-up-empty-state">
-          <p className="gear-up-hero__eyebrow">{existing ? "EXISTING PLACE" : "SUBMITTED"}</p>
+          <p className="gear-up-hero__eyebrow">
+            {existing ? "EXISTING PLACE" : "SUBMITTED"}
+          </p>
           <h1>{existing ? "No duplicate created" : "Store submitted"}</h1>
           <p>
             {existing
@@ -148,7 +165,9 @@ export function AddGearUpShopPage() {
             App Admin review remains required for Gear Up publication. If you submitted By Owner,
             verified ownership remains separate and is not granted by this Store submission.
           </p>
-          {reviewPending ? <p className="muted">The canonical Place is still pending review.</p> : null}
+          {reviewPending ? (
+            <p className="muted">The canonical Place is still pending review.</p>
+          ) : null}
           {approved ? (
             <p className="muted">
               The canonical Place is approved; Gear Up Store moderation is still handled separately.
@@ -157,7 +176,9 @@ export function AddGearUpShopPage() {
           <a className="gear-up-add-store-link" href="/athletes/gear-up">
             Back to Gear Up
           </a>
-          <span className="gear-up-visually-hidden">Store Place ID: {placeId}</span>
+          <span className="gear-up-visually-hidden">
+            Store Place ID: {placeId}
+          </span>
         </section>
       </section>
     );
@@ -182,7 +203,9 @@ export function AddGearUpShopPage() {
               type="button"
               className={`gear-up-chip${offerTypes.includes(offer) ? " is-active" : ""}`}
               aria-pressed={offerTypes.includes(offer)}
-              onClick={() => setOfferTypes((values) => toggleValue(values, offer))}
+              onClick={() =>
+                setOfferTypes((values) => toggleValue(values, offer))
+              }
             >
               {offer === "SPORTSWEAR" ? "Sportswear" : "Gear"}
             </button>
@@ -216,7 +239,9 @@ export function AddGearUpShopPage() {
               type="button"
               className={`gear-up-chip${categories.includes(category) ? " is-active" : ""}`}
               aria-pressed={categories.includes(category)}
-              onClick={() => setCategories((values) => toggleValue(values, category))}
+              onClick={() =>
+                setCategories((values) => toggleValue(values, category))
+              }
             >
               {categoryLabel(category)}
             </button>
@@ -231,18 +256,27 @@ export function AddGearUpShopPage() {
             type="button"
             className={`gear-up-chip${paymentMethods.includes("CASH") ? " is-active" : ""}`}
             aria-pressed={paymentMethods.includes("CASH")}
-            onClick={() => setPaymentMethods((values) => toggleValue(values, "CASH"))}
+            onClick={() =>
+              setPaymentMethods((values) => toggleValue(values, "CASH"))
+            }
           >
             Cash
           </button>
-          <button type="button" className="gear-up-chip" disabled aria-disabled="true">
+          <button
+            type="button"
+            className="gear-up-chip"
+            disabled
+            aria-disabled="true"
+          >
             Crypto
           </button>
           <button
             type="button"
             className={`gear-up-chip${paymentMethods.includes("CARD_BY_PHONE") ? " is-active" : ""}`}
             aria-pressed={paymentMethods.includes("CARD_BY_PHONE")}
-            onClick={() => setPaymentMethods((values) => toggleValue(values, "CARD_BY_PHONE"))}
+            onClick={() =>
+              setPaymentMethods((values) => toggleValue(values, "CARD_BY_PHONE"))
+            }
           >
             Card by phone
           </button>
@@ -269,12 +303,20 @@ export function AddGearUpShopPage() {
 
       <section className="gear-up-add-store__source">
         <p className="gear-up-hero__eyebrow">WHO IS ADDING THIS STORE?</p>
-        <div className="place-source-tabs" role="tablist" aria-label="Gear Up Store submission source">
+        <div
+          className="place-source-tabs"
+          role="tablist"
+          aria-label="Gear Up Store submission source"
+        >
           <button
             type="button"
             role="tab"
             aria-selected={submissionOrigin === "OWNER"}
-            className={submissionOrigin === "OWNER" ? "place-source-tab is-active" : "place-source-tab"}
+            className={
+              submissionOrigin === "OWNER"
+                ? "place-source-tab is-active"
+                : "place-source-tab"
+            }
             onClick={() => setSubmissionOrigin("OWNER")}
           >
             By Owner
@@ -283,7 +325,11 @@ export function AddGearUpShopPage() {
             type="button"
             role="tab"
             aria-selected={submissionOrigin === "FANHUB"}
-            className={submissionOrigin === "FANHUB" ? "place-source-tab is-active" : "place-source-tab"}
+            className={
+              submissionOrigin === "FANHUB"
+                ? "place-source-tab is-active"
+                : "place-source-tab"
+            }
             onClick={() => setSubmissionOrigin("FANHUB")}
           >
             FanHub
