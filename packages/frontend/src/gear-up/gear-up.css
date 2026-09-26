@@ -47,6 +47,49 @@
   line-height: 1.5;
 }
 
+.gear-up-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.gear-up-add-store-link {
+  min-height: var(--hooma-ui-control-min-height);
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border: 1px solid color-mix(in srgb, var(--hooma-ui-accent) 65%, transparent);
+  border-radius: var(--hooma-ui-radius-control);
+  color: var(--hooma-ui-accent);
+  background: transparent;
+  font-size: var(--hooma-ui-meta);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.gear-up-add-store__source,
+.gear-up-add-store__shop-fields {
+  display: grid;
+  gap: 14px;
+}
+
+.gear-up-add-store__category-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gear-up-add-store__note {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--hooma-ui-text-description);
+  font-size: var(--hooma-ui-meta);
+  line-height: 1.5;
+}
+
 .gear-up-discovery-mode {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -1,6 +1,7 @@
 import { lazy, Suspense, useMemo } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
 import {
+  AddGearUpShopPage,
   AddPlacePage,
   AthletesDetailPage,
   AthletesPage,
@@ -341,6 +342,7 @@ function HoomaRoutes() {
               <Route path="/athletes" element={<AthletesHubRoute />} />
               <Route path="/athletes/new" element={<CreateAthletesRoute />} />
               <Route path="/athletes/gear-up" element={<GearUpPage />} />
+              <Route path="/athletes/gear-up/add-store" element={<AddGearUpShopPage />} />
               <Route
                 path="/athletes/gear-up/products/:productId"
                 element={<GearUpProductDetailRoute />}
