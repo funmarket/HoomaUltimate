@@ -274,9 +274,7 @@ export function AddPlacePage() {
               {activeApproved && submissionOrigin === "OWNER" ? (
                 <a
                   href={
-                    isPitchSuggestion
-                      ? `/pitch/${placeId}?claim=1`
-                      : `/places/${placeId}?claim=1`
+                    isPitchSuggestion ? `/pitch/${placeId}?claim=1` : `/places/${placeId}?claim=1`
                   }
                 >
                   {isPitchSuggestion ? "Claim this Pitch" : "Claim this Place"}
