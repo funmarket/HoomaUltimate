@@ -58,7 +58,6 @@ export function PitchDetailPage({ placeId }: { readonly placeId: string }) {
       await placesApi.claimOwnership(placeId, {
         evidence: String(data.get("evidence") ?? ""),
       });
-      event.currentTarget.reset();
       setClaimOpen(false);
       setMessage("Ownership claim submitted for App review.");
     } catch (reason) {
