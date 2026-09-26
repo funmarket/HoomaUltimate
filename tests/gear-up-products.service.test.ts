@@ -33,6 +33,7 @@ function dependencies(overrides = {}) {
     restore: [],
   };
   const repository = {
+    listPublic: async () => ({ items: [], nextCursor: null }),
     listPublicByShop: async () => [],
     getPublic: async () => null,
     listManagedByShop: async () => [],
