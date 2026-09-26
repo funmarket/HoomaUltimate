@@ -6,14 +6,14 @@ function source(path) {
   return readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 }
 
-test("Pitch discovery exposes the Pitch action bar", () => {
+test("Pitch discovery keeps navigation outside the page body and exposes only Add a Pitch", () => {
   const page = source("packages/frontend/src/pitch/PitchPage.tsx");
 
-  assert.match(page, /aria-label="Pitch sections"/);
-  assert.match(page, /href="\/pitch"/);
   assert.match(page, /href="\/places\/new\?kind=PITCH"/);
-  assert.match(page, /\bPitches\b/);
-  assert.match(page, /Suggest a Pitch/);
+  assert.match(page, /PITCHES/);
+  assert.match(page, /Add a Pitch/);
+  assert.doesNotMatch(page, /aria-label="Pitch sections"/);
+  assert.doesNotMatch(page, /className="pitch-actions"/);
 });
 
 test("Pitch detail follows the shared Place detail composition", () => {

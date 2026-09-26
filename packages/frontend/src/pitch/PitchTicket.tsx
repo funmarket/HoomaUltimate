@@ -82,6 +82,8 @@ export function PitchTicket({ item }: { readonly item: PublicPitch }) {
           </aside>
         </div>
 
+        <div className="pitch-ticket__resource-strip" aria-hidden="true" />
+
         <div className="pitch-ticket__photo">
           {cover ? (
             <img
