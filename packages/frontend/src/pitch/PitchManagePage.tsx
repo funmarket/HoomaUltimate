@@ -3,6 +3,7 @@ import type { PitchManagementState } from "@hooma/contracts/pitch";
 import { useHoomaFrontend } from "../context";
 import { createPitchApi } from "./api";
 import { PitchCapabilityOnboarding } from "./PitchCapabilityOnboarding";
+import { PitchPhotoManager } from "./PitchPhotoManager";
 import { formatPitchHourlyRate } from "./pricing";
 
 function priceLabel(hourlyRateMinor: number | null, currency: string | null) {
@@ -89,6 +90,12 @@ export function PitchManagePage() {
               ) : null}
             </section>
           ) : null}
+
+          <PitchPhotoManager
+            place={management.place}
+            maxImages={management.verifiedOwnership ? 3 : 6}
+            onChanged={loadManagement}
+          />
 
           <PitchCapabilityOnboarding
             key={`${approved?.id ?? "none"}:${pending?.id ?? "none"}`}
