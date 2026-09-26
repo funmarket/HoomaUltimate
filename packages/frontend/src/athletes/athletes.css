@@ -59,12 +59,15 @@
     radial-gradient(circle at 8% 100%, rgba(243, 207, 98, 0.065), transparent 36%);
 }
 
-.athletes-hero--hub {
-  min-height: 20rem;
+.athletes-hero.athletes-hero--hub {
+  min-height: 0;
   aspect-ratio: 1280 / 431;
   display: flex;
   align-items: flex-end;
+  padding: 0;
+  border: 0;
   background: #050605;
+  box-shadow: none;
 }
 
 .athletes-hero__banner {
@@ -80,7 +83,21 @@
 }
 
 .athletes-hero--hub .athletes-hero__content {
-  max-width: 34rem;
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 2;
+  width: 100%;
+  max-width: none;
+  padding: 0.65rem;
+}
+
+.athletes-hero--hub .athletes-actions {
+  margin-top: 0;
+}
+
+.athletes-hero--hub .athletes-action--primary {
+  width: min(100%, 22rem);
+  margin-inline: auto;
 }
 
 .athletes-hero--hub .athletes-hero__semantic-title {
