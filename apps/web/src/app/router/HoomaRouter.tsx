@@ -345,10 +345,7 @@ function HoomaRoutes() {
                 path="/athletes/gear-up/products/:productId"
                 element={<GearUpProductDetailRoute />}
               />
-              <Route
-                path="/athletes/gear-up/shops/:placeId"
-                element={<GearUpShopDetailRoute />}
-              />
+              <Route path="/athletes/gear-up/shops/:placeId" element={<GearUpShopDetailRoute />} />
               <Route path="/athletes/:athletesCommunityId" element={<AthletesDetailRoute />} />
               <Route path="/teams" element={<TeamsPage />} />
               <Route path="/teams/new" element={<CreateTeamPage />} />
