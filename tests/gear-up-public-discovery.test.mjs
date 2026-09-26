@@ -88,7 +88,7 @@ test("Gear Up discovery presents the approved filters and truthful canonical sho
   assert.match(card, /shop\.categories/);
   assert.match(card, /shop\.offerTypes/);
   assert.match(card, /View Shop/);
-  assert.match(card, /\/places\/\$\{shop\.place\.id\}/);
+  assert.match(card, /\/gear-up\/shops\/\$\{shop\.place\.id\}/);
   assert.doesNotMatch(card, /distance|km away|nearest/i);
   assert.doesNotMatch(
     card,
