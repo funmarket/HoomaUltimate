@@ -104,10 +104,8 @@ test("Athletes hub keeps the real Create community control without visible app c
 
 test("Athletes hub banner is phone-scaled, borderless, and keeps only semantic hidden copy", () => {
   const hubRule =
-    athletesCss.match(/\.athletes-hero(?:\.athletes-hero--hub|--hub)\s*\{[\s\S]*?\}/)?.[0] ??
-    "";
-  const bannerRule =
-    athletesCss.match(/\.athletes-hero__banner\s*\{[\s\S]*?\}/)?.[0] ?? "";
+    athletesCss.match(/\.athletes-hero(?:\.athletes-hero--hub|--hub)\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const bannerRule = athletesCss.match(/\.athletes-hero__banner\s*\{[\s\S]*?\}/)?.[0] ?? "";
   const hiddenRule =
     athletesCss.match(/\.athletes-hero--hub \.athletes-hero__semantic-title\s*\{[\s\S]*?\}/)?.[0] ??
     "";
