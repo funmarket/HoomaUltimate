@@ -37,11 +37,7 @@ test("Place image input accepts ordinary CDN and signed HTTP/HTTPS URLs", () => 
 });
 
 test("Place image input rejects unsafe and local URL schemes", () => {
-  for (const value of [
-    "javascript:alert(1)",
-    "file:///etc/passwd",
-    "data:image/png;base64,AAAA",
-  ]) {
+  for (const value of ["javascript:alert(1)", "file:///etc/passwd", "data:image/png;base64,AAAA"]) {
     assert.equal(placeImageUrlSchema.safeParse(value).success, false);
   }
 });
