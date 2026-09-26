@@ -18,17 +18,19 @@ function cssRule(css, selector) {
 
 test("Watch separates primary destinations from secondary creation actions", () => {
   const watch = source("packages/frontend/src/watch/WatchPage.tsx");
+  const navigation = source("packages/frontend/src/watch/WatchSectionNavigation.tsx");
   const actionsCss = source("packages/frontend/src/watch/watch-section-actions.css");
 
   for (const label of ["Events", "Spots", "Gear Up", "Create Event", "Add a Place"]) {
-    assert.match(watch, new RegExp(`>\\s*${label}\\s*<`));
+    assert.match(navigation, new RegExp(`>\\s*${label}\\s*<`));
   }
 
-  assert.match(watch, /className="watch-section-actions"/);
-  assert.match(watch, /className="watch-section-utilities"/);
-  assert.match(watch, /href="\/places\/new"/);
-  assert.match(watch, /aria-disabled="true"/);
-  assert.doesNotMatch(watch, /href="\/gear-up"/);
+  assert.match(watch, /<WatchSectionNavigation[\s\S]*?active="events"/);
+  assert.match(navigation, /className="watch-section-actions"/);
+  assert.match(navigation, /className="watch-section-utilities"/);
+  assert.match(navigation, /href="\/places\/new"/);
+  assert.match(navigation, /href="\/gear-up"/);
+  assert.doesNotMatch(navigation, /aria-disabled="true"|watch-section-action--disabled/);
 
   assert.match(actionsCss, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
   assert.match(actionsCss, /grid-template-columns: repeat\(2, minmax\(0, 220px\)\)/);
@@ -54,14 +56,16 @@ test("Watch separates primary destinations from secondary creation actions", () 
 
 test("Watch Spots reuse canonical Places and exclude canonical Pitch capabilities", () => {
   const places = source("packages/frontend/src/places/PlacesPages.tsx");
+  const navigation = source("packages/frontend/src/watch/WatchSectionNavigation.tsx");
   assert.match(places, /<h1>Spots<\/h1>/);
   assert.match(places, /pitchApi\.list\(\)/);
   assert.match(places, /pitchPlaceIds/);
   assert.match(places, /!pitchPlaceIds\.has\(place\.id\)/);
-  assert.match(places, />\s*Events\s*</);
-  assert.match(places, />\s*Spots\s*</);
-  assert.match(places, /href="\/events\/new\?type=WATCH&kind=MATCH"/);
-  assert.match(places, /href="\/places\/new"/);
+  assert.match(places, /<WatchSectionNavigation active="spots" \/>/);
+  assert.match(navigation, />\s*Events\s*</);
+  assert.match(navigation, />\s*Spots\s*</);
+  assert.match(navigation, /\/events\/new\?type=WATCH&kind=MATCH/);
+  assert.match(navigation, /href="\/places\/new"/);
   assert.doesNotMatch(places, /SpotService|SpotRepository|SpotVenue/);
 });
 

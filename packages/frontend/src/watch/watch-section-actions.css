@@ -1,10 +1,7 @@
 .watch-section-actions {
-  --watch-menu-gold: #f0d400;
-  --watch-menu-cream: #f2e5c9;
-  --watch-menu-silver: #a9b0b4;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: 8px;
   padding: 0;
   border-top: 0;
   font-size: inherit;
@@ -12,114 +9,89 @@
 }
 
 .watch-section-action {
-  min-height: 82px;
+  min-height: 62px;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 14px 18px;
-  border: 1px solid rgb(240 212 0 / 72%);
-  border-radius: 18px;
-  color: var(--watch-menu-cream);
-  background: linear-gradient(145deg, #18191b 0%, #111214 48%, #0c0d0f 100%);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 6%),
-    inset 0 -1px 0 rgb(0 0 0 / 75%),
-    0 4px 12px rgb(0 0 0 / 35%);
-  font-size: clamp(1.05rem, 2.4vw, 1.4rem);
-  font-weight: 600;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--hooma-ui-outline);
+  border-radius: var(--hooma-ui-radius-card);
+  color: var(--hooma-ui-text);
+  background: var(--hooma-ui-surface);
+  font-size: var(--hooma-ui-meta);
+  font-weight: 700;
   line-height: 1.1;
   text-align: center;
   text-decoration: none;
   transition:
-    transform 150ms ease,
     border-color 150ms ease,
-    box-shadow 150ms ease,
-    background 150ms ease;
+    background 150ms ease,
+    color 150ms ease;
 }
 
 .watch-section-action:hover {
-  transform: translateY(-1px);
-  border-color: var(--watch-menu-gold);
-  color: var(--watch-menu-cream);
-  background: linear-gradient(145deg, #1c1d20 0%, #131416 48%, #0d0e10 100%);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 8%),
-    inset 0 -1px 0 rgb(0 0 0 / 75%),
-    0 5px 16px rgb(0 0 0 / 45%);
+  border-color: var(--hooma-ui-outline-hover);
+  background: var(--hooma-ui-surface-raised);
 }
 
 .watch-section-action:focus-visible {
-  outline: 2px solid var(--watch-menu-gold);
+  outline: 2px solid var(--hooma-ui-accent);
   outline-offset: 3px;
 }
 
+.watch-section-action.is-active {
+  border-color: color-mix(in srgb, var(--hooma-ui-accent) 55%, transparent);
+  color: var(--hooma-ui-accent);
+  background: color-mix(in srgb, var(--hooma-ui-accent) 7%, var(--hooma-ui-surface));
+}
+
 .watch-section-action__icon {
-  width: 32px;
-  height: 32px;
-  flex: 0 0 32px;
-  color: var(--watch-menu-silver);
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  color: #a9b0b4;
 }
 
 .watch-section-action__icon path,
 .watch-section-action__icon rect,
 .watch-section-action__icon circle {
   stroke: currentColor;
-  stroke-width: 1.9;
   vector-effect: non-scaling-stroke;
   shape-rendering: geometricPrecision;
 }
 
 .watch-section-action > span {
-  color: var(--watch-menu-cream);
-}
-
-.watch-section-action--disabled {
-  cursor: default;
-  opacity: 0.72;
-}
-
-.watch-section-action--disabled:hover {
-  transform: none;
-  border-color: rgb(240 212 0 / 72%);
-  background: linear-gradient(145deg, #18191b 0%, #111214 48%, #0c0d0f 100%);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 6%),
-    inset 0 -1px 0 rgb(0 0 0 / 75%),
-    0 4px 12px rgb(0 0 0 / 35%);
+  color: inherit;
 }
 
 .watch-section-utilities {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 220px));
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .watch-section-action--utility {
   min-height: 48px;
-  gap: 9px;
-  padding: 10px 14px;
-  border-color: var(--app-line-strong);
-  border-radius: 14px;
-  font-size: 0.95rem;
+  gap: 7px;
+  padding: 8px 12px;
+  border-radius: var(--hooma-ui-radius-control);
+  color: var(--hooma-ui-text);
+  font-size: var(--hooma-ui-meta);
   font-weight: 700;
-  box-shadow: 0 3px 10px rgb(0 0 0 / 24%);
 }
 
 .watch-section-action--utility .watch-section-action__icon {
-  width: 22px;
-  height: 22px;
-  flex-basis: 22px;
+  width: 20px;
+  height: 20px;
+  flex-basis: 20px;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .watch-section-action {
     transition: none;
-  }
-
-  .watch-section-action:hover {
-    transform: none;
   }
 }
 
@@ -130,17 +102,16 @@
   }
 
   .watch-section-actions .watch-section-action {
-    min-width: 0;
-    min-height: 62px;
-    gap: 6px;
-    padding: 10px 6px;
-    font-size: 0.875rem;
+    min-height: 58px;
+    gap: 5px;
+    padding: 8px 6px;
+    font-size: var(--hooma-ui-meta);
   }
 
   .watch-section-actions .watch-section-action__icon {
-    width: 22px;
-    height: 22px;
-    flex-basis: 22px;
+    width: 21px;
+    height: 21px;
+    flex-basis: 21px;
   }
 
   .watch-section-utilities {
@@ -151,21 +122,12 @@
 
 @media (max-width: 430px) {
   .watch-section-action {
-    min-height: 62px;
-    gap: 6px;
-    padding: 10px 6px;
-    font-size: 0.875rem;
+    min-height: 56px;
+    padding: 8px 5px;
   }
 
   .watch-section-action--utility {
     min-height: 48px;
-    padding: 10px 8px;
-    font-size: 0.875rem;
-  }
-
-  .watch-section-action__icon {
-    width: 22px;
-    height: 22px;
-    flex-basis: 22px;
+    padding: 8px 7px;
   }
 }
