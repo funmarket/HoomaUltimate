@@ -124,7 +124,6 @@ test("Athletes hero uses a public signed-delivery endpoint and no local Git-host
   assert.doesNotMatch(combined, /\/athletes\/athletes-hero\.webp/);
   assert.doesNotMatch(combined, /\/assets\/athletes-hero\.webp/);
   assert.doesNotMatch(combined, /apps\/web\/public/);
-
 });
 
 test("Athletes section navigation remains Communities, Gear Up, Requests", () => {
