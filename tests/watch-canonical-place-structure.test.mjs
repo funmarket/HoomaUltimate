@@ -21,7 +21,7 @@ test("Watch separates primary destinations from secondary creation actions", () 
   const navigation = source("packages/frontend/src/watch/WatchSectionNavigation.tsx");
   const actionsCss = source("packages/frontend/src/watch/watch-section-actions.css");
 
-  for (const label of ["Events", "Spots", "Gear Up", "Create Event", "Add a Place"]) {
+  for (const label of ["Events", "Spots", "Create Event", "Add a Place"]) {
     assert.match(navigation, new RegExp(`>\\s*${label}\\s*<`));
   }
 
@@ -29,16 +29,17 @@ test("Watch separates primary destinations from secondary creation actions", () 
   assert.match(navigation, /className="watch-section-actions"/);
   assert.match(navigation, /className="watch-section-utilities"/);
   assert.match(navigation, /href="\/places\/new"/);
-  assert.match(navigation, /href="\/gear-up"/);
+  assert.doesNotMatch(navigation, />\s*Gear Up\s*</);
+  assert.doesNotMatch(navigation, /href="\/gear-up"/);
   assert.doesNotMatch(navigation, /aria-disabled="true"|watch-section-action--disabled/);
 
-  assert.match(actionsCss, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
+  assert.match(actionsCss, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
   assert.match(actionsCss, /grid-template-columns: repeat\(2, minmax\(0, 220px\)\)/);
   assert.match(actionsCss, /\.watch-section-action--utility/);
   assert.match(actionsCss, /min-height: 48px/);
   assert.match(
     actionsCss,
-    /@media \(max-width: 760px\) \{[\s\S]*?\.watch-section-actions \{[\s\S]*?grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/,
+    /@media \(max-width: 760px\) \{[\s\S]*?\.watch-section-actions \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/,
   );
   assert.doesNotMatch(actionsCss, /min-width: min\(78vw, 280px\)/);
   assert.doesNotMatch(actionsCss, /overflow-x: auto/);

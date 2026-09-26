@@ -65,7 +65,7 @@ export function GearUpShopCard({ shop }: { readonly shop: PublicGearUpShop }) {
 
         <div className="gear-up-shop-card__source">
           <span>{sourceLabel(shop)}</span>
-          <a className="gear-up-shop-card__link" href={`/gear-up/shops/${shop.place.id}`}>
+          <a className="gear-up-shop-card__link" href={`/athletes/gear-up/shops/${shop.place.id}`}>
             View Shop
           </a>
         </div>

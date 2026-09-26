@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { PublicGearUpShop } from "@hooma/contracts/gear-up";
 import { useHoomaFrontend } from "../context";
-import { WatchSectionNavigation } from "../watch/WatchSectionNavigation";
+import { AthletesHubTabs } from "../athletes/AthletesHubTabs";
 import { createGearUpApi } from "./api";
 import { GearUpFilters, type GearUpDiscoveryFilters } from "./GearUpFilters";
 import { GearUpProductsPane } from "./GearUpProductsPane";
@@ -114,7 +114,7 @@ export function GearUpPage() {
 
   return (
     <section className="gear-up-page">
-      <WatchSectionNavigation active="gear-up" />
+      <AthletesHubTabs active="gear-up" />
 
       <header className="gear-up-hero">
         <p className="gear-up-hero__eyebrow">GEAR UP</p>

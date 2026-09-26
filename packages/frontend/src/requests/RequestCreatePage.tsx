@@ -31,7 +31,7 @@ export function RequestCreatePage() {
     taxonomySurface === "PLAY"
       ? "/play"
       : taxonomySurface === "ATHLETES"
-        ? "/athletes"
+        ? "/athletes?tab=requests"
         : "/requests";
   const returnLabel =
     taxonomySurface === "PLAY"

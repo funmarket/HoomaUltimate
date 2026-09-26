@@ -4,7 +4,7 @@ import { sports, sportLabel } from "./sports";
 import { AthletesCommunityForm } from "./AthletesCommunityForm";
 import type { AthletesSport } from "@hooma/contracts/athletes";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import type { PublicAthletesSummary } from "../api";
 import { useHoomaFrontend } from "../context";
 import { successNavigationState } from "../interaction-feedback";
@@ -13,8 +13,8 @@ import { AthletesCalendar } from "./AthletesCalendar";
 import { AthletesPhotoBoard } from "./AthletesPhotoBoard";
 import { ActiveAthletesList } from "./ActiveAthletesList";
 import { AthletesRequestsPane } from "./AthletesRequestsPane";
+import { AthletesHubTabs } from "./AthletesHubTabs";
 
-type AthletesView = "communities" | "requests";
 
 function report(reason: unknown, fallback: string): string {
   return reason instanceof Error ? reason.message : fallback;
@@ -34,7 +34,8 @@ export function AthletesPage({
   const { api } = useHoomaFrontend();
   const navigate = useNavigate();
   const [items, setItems] = useState<PublicAthletesSummary[]>([]);
-  const [activeView, setActiveView] = useState<AthletesView>("communities");
+  const [searchParams] = useSearchParams();
+  const activeView = searchParams.get("tab") === "requests" ? "requests" : "communities";
   const [sport, setSport] = useState<AthletesSport | "ALL">("ALL");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -116,26 +117,7 @@ export function AthletesPage({
         <span className="athletes-hero__motion" aria-hidden="true" />
       </section>
 
-      <div className="athletes-view-tabs" role="tablist" aria-label="Athletes sections">
-        <button
-          className={`athletes-view-tab${activeView === "communities" ? " is-active" : ""}`}
-          type="button"
-          role="tab"
-          aria-selected={activeView === "communities"}
-          onClick={() => setActiveView("communities")}
-        >
-          Communities
-        </button>
-        <button
-          className={`athletes-view-tab${activeView === "requests" ? " is-active" : ""}`}
-          type="button"
-          role="tab"
-          aria-selected={activeView === "requests"}
-          onClick={() => setActiveView("requests")}
-        >
-          Requests
-        </button>
-      </div>
+      <AthletesHubTabs active={activeView} />
 
       {activeView === "communities" ? (
         <section className="athletes-surface athletes-filter" aria-label="Filter Athletes by sport">
