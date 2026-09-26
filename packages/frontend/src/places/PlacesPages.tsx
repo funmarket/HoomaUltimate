@@ -214,8 +214,9 @@ export function AddPlacePage() {
   const pitchApi = useMemo(() => createPitchApi(transport), [transport]);
   const isPitchSuggestion = new URLSearchParams(window.location.search).get("kind") === "PITCH";
   const initialSubmissionOrigin = isPitchSuggestion ? "OWNER" : "FANHUB";
-  const [submissionOrigin, setSubmissionOrigin] =
-    useState<PlaceSubmissionOrigin>(initialSubmissionOrigin);
+  const [submissionOrigin, setSubmissionOrigin] = useState<PlaceSubmissionOrigin>(
+    initialSubmissionOrigin,
+  );
   const [pitchHourlyRate, setPitchHourlyRate] = useState("");
   const [pitchCurrency, setPitchCurrency] = useState<PitchRentalCurrency>("TND");
   const [error, setError] = useState("");
