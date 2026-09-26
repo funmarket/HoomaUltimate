@@ -15,7 +15,7 @@ export function RequestTaxonomyFilters({
   readonly onChange: (next: RequestsListQuery) => void;
   readonly sportOnly?: boolean;
 }) {
-  const root = sportOnly ? "SPORT" : (value.requestType ?? "SPORT");
+  const root = sportOnly ? "SPORT" : value.requestType;
   const selectedSport =
     root === "SPORT" ? taxonomy.sports.find((entry) => entry.sport === value.sport) : undefined;
   const subcategories =
@@ -26,7 +26,7 @@ export function RequestTaxonomyFilters({
     onChange({ ...value, ...change });
   }
 
-  function selectRoot(nextRoot: "SPORT" | "COMMUNITY") {
+  function selectRoot(nextRoot?: "SPORT" | "COMMUNITY") {
     if (sportOnly || root === nextRoot) return;
     patch({
       requestType: nextRoot,
@@ -37,6 +37,7 @@ export function RequestTaxonomyFilters({
   }
 
   function selectQuick(valueId?: string) {
+    if (!root) return;
     if (root === "SPORT") {
       patch({
         requestType: "SPORT",
@@ -49,16 +50,20 @@ export function RequestTaxonomyFilters({
     patch({ subcategoryId: valueId, needId: undefined });
   }
 
-  const quickOptions =
-    root === "SPORT"
+  const quickOptions = root
+    ? root === "SPORT"
       ? taxonomy.sports.map((entry) => ({ id: entry.sport, label: entry.label }))
-      : taxonomy.community.subcategories.map((entry) => ({ id: entry.id, label: entry.label }));
+      : taxonomy.community.subcategories.map((entry) => ({ id: entry.id, label: entry.label }))
+    : [];
   const quickValue = root === "SPORT" ? value.sport : value.subcategoryId;
 
   return (
     <section className="request-discovery" aria-label="Request discovery">
       {sportOnly ? null : (
         <div className="request-root-switch" aria-label="Request type">
+          <button type="button" aria-pressed={!root} onClick={() => selectRoot()}>
+            All Requests
+          </button>
           <button type="button" aria-pressed={root === "SPORT"} onClick={() => selectRoot("SPORT")}>
             Sport
           </button>
@@ -86,30 +91,32 @@ export function RequestTaxonomyFilters({
         </label>
       </div>
 
-      <div
-        className="request-quick-rail"
-        aria-label={`${root === "SPORT" ? "Sport" : "Community"} categories`}
-      >
-        <button
-          type="button"
-          className={!quickValue ? "is-active" : undefined}
-          aria-pressed={!quickValue}
-          onClick={() => selectQuick()}
+      {root ? (
+        <div
+          className="request-quick-rail"
+          aria-label={`${root === "SPORT" ? "Sport" : "Community"} categories`}
         >
-          All
-        </button>
-        {quickOptions.map((entry) => (
           <button
-            key={entry.id}
             type="button"
-            className={quickValue === entry.id ? "is-active" : undefined}
-            aria-pressed={quickValue === entry.id}
-            onClick={() => selectQuick(entry.id)}
+            className={!quickValue ? "is-active" : undefined}
+            aria-pressed={!quickValue}
+            onClick={() => selectQuick()}
           >
-            {entry.label}
+            All
           </button>
-        ))}
-      </div>
+          {quickOptions.map((entry) => (
+            <button
+              key={entry.id}
+              type="button"
+              className={quickValue === entry.id ? "is-active" : undefined}
+              aria-pressed={quickValue === entry.id}
+              onClick={() => selectQuick(entry.id)}
+            >
+              {entry.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       <div className="request-filters panel" aria-label="Request filters">
         <div className="request-filters__heading">
@@ -125,7 +132,7 @@ export function RequestTaxonomyFilters({
               id="request-filter-subcategory"
               className={FIELD_CLASS}
               value={value.subcategoryId ?? ""}
-              disabled={root === "SPORT" && !selectedSport}
+              disabled={!root || (root === "SPORT" && !selectedSport)}
               onChange={(event) =>
                 patch({ subcategoryId: event.target.value || undefined, needId: undefined })
               }

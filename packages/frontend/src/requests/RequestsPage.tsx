@@ -20,10 +20,7 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
   const requestsApi = useMemo(() => createRequestsApi(transport), [transport]);
   const [items, setItems] = useState<HelpRequest[]>([]);
   const [taxonomy, setTaxonomy] = useState<HelpTaxonomyResponse | null>(null);
-  const [filters, setFilters] = useState<RequestsListQuery>({
-    surface: "REQUESTS",
-    requestType: "SPORT",
-  });
+  const [filters, setFilters] = useState<RequestsListQuery>({ surface: "REQUESTS" });
   const [debouncedCity, setDebouncedCity] = useState<string | undefined>();
   const [debouncedHouma, setDebouncedHouma] = useState<string | undefined>();
   const [debouncedQuery, setDebouncedQuery] = useState<string | undefined>();

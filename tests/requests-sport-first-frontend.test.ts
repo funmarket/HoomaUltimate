@@ -2,17 +2,22 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-test("standalone Requests uses one SPORT or COMMUNITY taxonomy flow", async () => {
+test("standalone Requests truthfully defaults to all canonical Request roots", async () => {
   const page = await readFile("packages/frontend/src/requests/RequestsPage.tsx", "utf8");
   const create = await readFile("packages/frontend/src/requests/RequestCreatePage.tsx", "utf8");
   const filters = await readFile(
     "packages/frontend/src/requests/RequestTaxonomyFilters.tsx",
     "utf8",
   );
+  const styles = await readFile("packages/frontend/src/requests/requests.css", "utf8");
   const api = await readFile("packages/frontend/src/requests/api.ts", "utf8");
 
   assert.match(page, /RequestTaxonomyFilters/);
-  assert.match(page, /surface: "REQUESTS"/);
+  assert.match(page, /useState<RequestsListQuery>\(\{\s*surface: "REQUESTS",?\s*\}\)/);
+  assert.doesNotMatch(
+    page,
+    /useState<RequestsListQuery>\(\{[\s\S]*?surface: "REQUESTS",[\s\S]*?requestType: "SPORT"/,
+  );
   assert.match(page, /filters\.requestType/);
   assert.match(page, /RequestFeed/);
 
@@ -28,6 +33,12 @@ test("standalone Requests uses one SPORT or COMMUNITY taxonomy flow", async () =
   assert.doesNotMatch(create, />Item kind</);
 
   assert.match(filters, /request-root-switch/);
+  assert.match(filters, />\s*All Requests\s*</);
+  assert.match(
+    styles,
+    /\.request-root-switch\s*\{[\s\S]*?grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/,
+  );
+  assert.doesNotMatch(filters, /value\.requestType \?\? "SPORT"/);
   assert.match(filters, /selectRoot\("SPORT"\)/);
   assert.match(filters, /selectRoot\("COMMUNITY"\)/);
   assert.match(filters, /request-quick-rail/);
