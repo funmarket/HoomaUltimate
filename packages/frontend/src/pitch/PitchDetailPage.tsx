@@ -24,7 +24,7 @@ export function PitchDetailPage({ placeId }: { readonly placeId: string }) {
   const [item, setItem] = useState<PublicPitch | null>(null);
   const [loading, setLoading] = useState(true);
   const [verifiedOwner, setVerifiedOwner] = useState(false);
-  const [claimOpen, setClaimOpen] = useState(false);
+  const claimRequested = new URLSearchParams(window.location.search).get("claim") === "1";\n  const [claimOpen, setClaimOpen] = useState(claimRequested);
   const [claimPending, setClaimPending] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -96,7 +96,7 @@ export function PitchDetailPage({ placeId }: { readonly placeId: string }) {
           Pitches
         </a>
         <a className="pitch-action pitch-action--primary" href="/places/new?kind=PITCH">
-          Suggest a Pitch
+          Add a Pitch
         </a>
       </nav>
 

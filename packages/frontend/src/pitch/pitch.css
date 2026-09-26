@@ -679,6 +679,73 @@
   background: #050605;
 }
 
+
+.pitch-form-page .pitch-source-choice,
+.pitch-form-page .hooma-form__section {
+  border: 1px solid rgba(190, 180, 145, 0.22);
+  border-radius: 18px;
+  background: #0b0c0a;
+}
+
+.pitch-form-page .pitch-source-choice {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.pitch-form-page .place-source-tabs {
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+}
+
+.pitch-form-page .place-source-tab {
+  min-height: 48px;
+  border: 1px solid rgba(190, 180, 145, 0.22);
+  border-radius: 14px;
+  color: #f5f4ef;
+  background: #0e0f0d;
+  font-size: 14px;
+}
+
+.pitch-form-page .place-source-tab.is-active {
+  border-color: #aef02f;
+  color: #aef02f;
+  box-shadow: none;
+}
+
+.pitch-form-page .hooma-form__section-heading > span {
+  border-color: rgba(190, 180, 145, 0.22);
+  color: #b8b5ad;
+}
+
+.pitch-form-page .hooma-field input,
+.pitch-form-page .hooma-field select,
+.pitch-form-page .hooma-field textarea {
+  min-height: 48px;
+  border-color: rgba(190, 180, 145, 0.22);
+  border-radius: 14px;
+  background: #0e0f0d;
+}
+
+.pitch-form-page .hooma-form__submit,
+.pitch-form-page .hooma-form__secondary-action {
+  min-height: 48px;
+  border-radius: 14px;
+  background: #0b0c0a;
+}
+
+.pitch-form-page .hooma-form__submit {
+  border: 1px solid #aef02f;
+  color: #aef02f;
+}
+
+.pitch-form-page .hooma-form__secondary-action {
+  border: 1px solid rgba(190, 180, 145, 0.22);
+  color: #f5f4ef;
+}
+
 @media (max-width: 719px) {
   .pitch-discovery-hero {
     grid-template-columns: 1fr;
