@@ -57,6 +57,12 @@ function calendarListPath(id: string, from: string, to: string, cursor?: string)
 
 export function createAthletesApi(transport: HoomaTransport) {
   return {
+    heroDelivery: (signal?: AbortSignal) =>
+      request<{ contentUrl: string; expiresAt: string }>(
+        transport,
+        "/api/public/v1/athletes/hero/delivery",
+        signal ? { signal } : undefined,
+      ),
     publicList: (filters?: { sport?: AthletesSport; cursor?: string; limit?: number }) =>
       request<PublicAthletesList>(transport, athletesPublicListPath(filters)),
     publicDetail: (id: string) =>
