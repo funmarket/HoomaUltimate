@@ -1,4 +1,9 @@
-import type { GearUpListQueryInput, PublicGearUpShop } from "@hooma/contracts/gear-up";
+import type {
+  GearUpListQueryInput,
+  GearUpProduct,
+  GearUpProductImageDelivery,
+  PublicGearUpShop,
+} from "@hooma/contracts/gear-up";
 import { request, type HoomaTransport } from "../http";
 
 export type GearUpPublicListFilters = Partial<GearUpListQueryInput>;
@@ -21,5 +26,20 @@ export function createGearUpApi(transport: HoomaTransport) {
   return {
     listShops: (input: GearUpPublicListFilters = {}) =>
       request<PublicGearUpShop[]>(transport, `/api/public/v1/gear-up${queryString(input)}`),
+    getShop: (placeId: string) =>
+      request<PublicGearUpShop>(
+        transport,
+        `/api/public/v1/gear-up/shops/${encodeURIComponent(placeId)}`,
+      ),
+    listShopProducts: (placeId: string) =>
+      request<GearUpProduct[]>(
+        transport,
+        `/api/public/v1/gear-up/shops/${encodeURIComponent(placeId)}/products`,
+      ),
+    productImageDelivery: (productId: string, imageId: string) =>
+      request<GearUpProductImageDelivery>(
+        transport,
+        `/api/public/v1/gear-up/products/${encodeURIComponent(productId)}/images/${encodeURIComponent(imageId)}/delivery`,
+      ),
   };
 }
