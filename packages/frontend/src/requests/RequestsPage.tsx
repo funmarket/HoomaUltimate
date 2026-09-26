@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { HelpTaxonomyResponse } from "@hooma/contracts/help-taxonomy";
 import type { HelpRequest } from "@hooma/contracts/requests";
 import { useHoomaFrontend } from "../context";
@@ -20,7 +20,10 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
   const requestsApi = useMemo(() => createRequestsApi(transport), [transport]);
   const [items, setItems] = useState<HelpRequest[]>([]);
   const [taxonomy, setTaxonomy] = useState<HelpTaxonomyResponse | null>(null);
-  const [filters, setFilters] = useState<RequestsListQuery>({ surface: "REQUESTS" });
+  const [filters, setFilters] = useState<RequestsListQuery>({
+    surface: "REQUESTS",
+    requestType: "SPORT",
+  });
   const [debouncedCity, setDebouncedCity] = useState<string | undefined>();
   const [debouncedHouma, setDebouncedHouma] = useState<string | undefined>();
   const [debouncedQuery, setDebouncedQuery] = useState<string | undefined>();
@@ -149,8 +152,27 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
     }
   }
 
+  const loadCardImage = useCallback(
+    async (requestId: string) => {
+      const delivery = memberViewer
+        ? await requestsApi.memberImageDelivery(requestId)
+        : await requestsApi.publicImageDelivery(requestId);
+      return delivery.contentUrl;
+    },
+    [memberViewer, requestsApi],
+  );
+
   const fundmeActive = tab === "fundme";
   const donationsActive = tab === "donations";
+  const hasActiveDiscoveryFilters = Boolean(
+    filters.q ||
+    filters.sport ||
+    filters.subcategoryId ||
+    filters.needId ||
+    filters.city ||
+    filters.houma ||
+    filters.status,
+  );
 
   return (
     <section className="page requests-page">
@@ -207,6 +229,8 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
             error={error}
             nextCursor={nextCursor}
             loadingMore={loadingMore}
+            filtered={hasActiveDiscoveryFilters}
+            loadImage={loadCardImage}
             onLoadMore={() => void loadMore()}
           />
         </>
