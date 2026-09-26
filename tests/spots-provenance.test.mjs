@@ -82,7 +82,9 @@ test("Spots expose only By Owner and FanHub source tabs without hiding unclassif
 
 test("Add Place defaults to FanHub and sends explicit source intent", () => {
   assert.ok(contracts.includes('placeSubmissionOriginSchema.default("FANHUB")'));
-  assert.ok(placesPage.includes('const initialSubmissionOrigin = isPitchSuggestion ? "OWNER" : "FANHUB"'));
+  assert.ok(
+    placesPage.includes('const initialSubmissionOrigin = isPitchSuggestion ? "OWNER" : "FANHUB"'),
+  );
   assert.ok(placesPage.includes("placesApi.suggest({ ...input, submissionOrigin })"));
   assert.ok(placesPage.includes("pitchApi.suggestPlace"));
   assert.ok(placesPage.includes("WHO IS ADDING THIS SPOT?"));
