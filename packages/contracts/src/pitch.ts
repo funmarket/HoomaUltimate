@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { cashCurrencySchema } from "./money.js";
 import {
+  PLACE_OWNER_IMAGE_LIMIT,
   placeSuggestionSchema,
   type PlaceSuggestionResult,
   type PublicPlaceSummary,
@@ -15,10 +16,25 @@ export const pitchSuggestionSchema = z.object({
   currency: pitchRentalCurrencySchema,
 });
 
-export const pitchPlaceSuggestionSchema = z.object({
-  place: placeSuggestionSchema,
-  pitch: pitchSuggestionSchema,
-});
+export const pitchPlaceSuggestionSchema = z
+  .object({
+    place: placeSuggestionSchema,
+    pitch: pitchSuggestionSchema,
+  })
+  .superRefine((input, context) => {
+    const images = input.place.imageUrls.length
+      ? input.place.imageUrls
+      : input.place.imageUrl
+        ? [input.place.imageUrl]
+        : [];
+    if (input.place.submissionOrigin === "OWNER" && images.length > PLACE_OWNER_IMAGE_LIMIT) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["place", "imageUrls"],
+        message: `Owner Pitch submissions support up to ${PLACE_OWNER_IMAGE_LIMIT} photos`,
+      });
+    }
+  });
 
 export const pitchApplicationSchema = z.object({
   summary: z.string().trim().min(10).max(1500),

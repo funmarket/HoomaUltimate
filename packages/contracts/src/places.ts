@@ -8,7 +8,44 @@ export const placeMenuItemSchema = z.object({
   currency: z.string().trim().length(3).default("TND"),
 });
 
-export const placeImageUrlSchema = z.string().trim().url().max(4000);
+export const PLACE_OWNER_IMAGE_LIMIT = 3;
+export const PLACE_APP_ADMIN_IMAGE_LIMIT = 6;
+export const PLACE_IMAGE_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+export const PLACE_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+
+export const placeImageUrlSchema = z
+  .string()
+  .trim()
+  .url()
+  .max(4000)
+  .superRefine((value, context) => {
+    let url: URL;
+    try {
+      url = new URL(value);
+    } catch {
+      return;
+    }
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Place photo links must use http or https",
+      });
+    }
+    if (url.username || url.password) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Place photo links cannot contain credentials",
+      });
+    }
+  });
+
+export const placeExternalImageInputSchema = z.object({ url: placeImageUrlSchema }).strict();
+export const placeImageOrderSchema = z
+  .object({
+    imageIds: z.array(z.string().trim().min(1)).min(1).max(PLACE_APP_ADMIN_IMAGE_LIMIT),
+  })
+  .strict();
+export const placeImageContentTypeSchema = z.enum(PLACE_IMAGE_CONTENT_TYPES);
 
 const placeSuggestionBaseSchema = z.object({
   name: z.string().trim().min(2).max(160),
@@ -45,6 +82,9 @@ export const placeOwnershipClaimSchema = z.object({
 });
 
 export type PlaceSubmissionOrigin = z.infer<typeof placeSubmissionOriginSchema>;
+export type PlaceExternalImageInput = z.infer<typeof placeExternalImageInputSchema>;
+export type PlaceImageOrderInput = z.infer<typeof placeImageOrderSchema>;
+export type PlaceImageContentType = z.infer<typeof placeImageContentTypeSchema>;
 export type PlaceMenuItemInput = z.infer<typeof placeMenuItemSchema>;
 export type PlaceSuggestionInput = z.infer<typeof placeSuggestionSchema>;
 export type PlaceUpdateInput = z.infer<typeof placeUpdateSchema>;
