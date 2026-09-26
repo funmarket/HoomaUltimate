@@ -1,0 +1,35 @@
+name: Temporary Router Formatter
+
+on:
+  push:
+    branches:
+      - codex/gear-up-athletes-relocation
+
+permissions:
+  contents: write
+
+jobs:
+  format-router:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/gear-up-athletes-relocation
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - run: npm exec -- prettier --write apps/web/src/app/router/HoomaRouter.tsx
+      - name: Commit exact formatter output
+        run: |
+          if git diff --quiet -- apps/web/src/app/router/HoomaRouter.tsx; then
+            echo "Router already formatted."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/src/app/router/HoomaRouter.tsx
+          git commit -m "style(gear-up): apply exact router formatting"
+          git push origin HEAD:codex/gear-up-athletes-relocation
