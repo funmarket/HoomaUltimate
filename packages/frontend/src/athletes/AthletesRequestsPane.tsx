@@ -17,6 +17,7 @@ export function AthletesRequestsPane() {
   });
   const [debouncedCity, setDebouncedCity] = useState<string | undefined>();
   const [debouncedHouma, setDebouncedHouma] = useState<string | undefined>();
+  const [debouncedQuery, setDebouncedQuery] = useState<string | undefined>();
   const [memberViewer, setMemberViewer] = useState<boolean | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,12 +33,14 @@ export function AthletesRequestsPane() {
       ...(filters.needId ? { needId: filters.needId } : {}),
       ...(debouncedCity ? { city: debouncedCity } : {}),
       ...(debouncedHouma ? { houma: debouncedHouma } : {}),
+      ...(debouncedQuery ? { q: debouncedQuery } : {}),
       ...(filters.status ? { status: filters.status } : {}),
       ...(filters.limit ? { limit: filters.limit } : {}),
     }),
     [
       debouncedCity,
       debouncedHouma,
+      debouncedQuery,
       filters.limit,
       filters.needId,
       filters.sport,
@@ -50,9 +53,10 @@ export function AthletesRequestsPane() {
     const handle = setTimeout(() => {
       setDebouncedCity(filters.city);
       setDebouncedHouma(filters.houma);
+      setDebouncedQuery(filters.q?.trim() || undefined);
     }, 300);
     return () => clearTimeout(handle);
-  }, [filters.city, filters.houma]);
+  }, [filters.city, filters.houma, filters.q]);
 
   useEffect(() => {
     let active = true;

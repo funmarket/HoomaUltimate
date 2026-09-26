@@ -58,6 +58,7 @@ test("Requests API client uses the existing public and member endpoint families"
       category: "ITEM",
       requestType: "SPORT",
       city: "La Marsa",
+      q: "goalkeeper gloves",
     });
     await api.memberList();
     await api.create(createInput);
@@ -65,7 +66,7 @@ test("Requests API client uses the existing public and member endpoint families"
 
     assert.deepEqual(calls, [
       {
-        path: "/api/public/v1/requests?limit=30&category=ITEM&requestType=SPORT&city=La+Marsa",
+        path: "/api/public/v1/requests?limit=30&category=ITEM&requestType=SPORT&city=La+Marsa&q=goalkeeper+gloves",
         method: "GET",
         body: null,
       },
@@ -213,6 +214,7 @@ const publicRequest = {
   placeId: null,
   city: "La Marsa",
   houma: null,
+  fullAddress: "12 Private Street",
   locationNote: null,
   neededByAt: null,
   expiresAt: null,
@@ -285,6 +287,7 @@ test("anonymous /requests loads the real public Requests feed", async () => {
     assert.ok(cardView.getByText("Item"));
     assert.ok(cardView.getByText("Open"));
     assert.ok(cardView.getByText("La Marsa"));
+    assert.equal(page.view.queryByText("12 Private Street"), null);
     assert.deepEqual(
       page.calls.filter((call) => call.includes("/requests")),
       ["GET /api/public/v1/requests?surface=REQUESTS"],
@@ -375,6 +378,33 @@ test("City filter debounces list reloads and does not repeat identity lookup", a
       { timeout: 1000 },
     );
     assert.equal(page.calls.filter((call) => call.includes("/auth/session")).length, 0);
+  } finally {
+    page.close();
+  }
+});
+
+test("Search Requests debounces q through the canonical list endpoint", async () => {
+  const page = await renderRequestsPage({ me: null, publicItems: [] });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByText("No Requests match these filters.")));
+    page.calls.length = 0;
+
+    const search = page.view.getByLabelText("Search Requests");
+    page.fireEvent.change(search, { target: { value: "goal" } });
+    page.fireEvent.change(search, { target: { value: "goalkeeper gloves" } });
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    assert.equal(page.calls.filter((call) => call.includes("/requests")).length, 0);
+
+    await page.waitFor(
+      () => {
+        assert.deepEqual(
+          page.calls.filter((call) => call.includes("/requests")),
+          ["GET /api/public/v1/requests?surface=REQUESTS&q=goalkeeper+gloves"],
+        );
+      },
+      { timeout: 1000 },
+    );
   } finally {
     page.close();
   }

@@ -36,6 +36,20 @@ export function RequestTaxonomyFilters({
         <h2>Find a need</h2>
       </div>
       <div className="request-filters__fields">
+        <div className="request-field request-field--wide">
+          <label className="request-field__label" htmlFor="request-filter-search">
+            Search Requests
+          </label>
+          <input
+            id="request-filter-search"
+            className={FIELD_CLASS}
+            type="search"
+            value={value.q ?? ""}
+            placeholder="Search title, description or need"
+            onChange={(event) => patch({ q: event.target.value || undefined })}
+          />
+        </div>
+
         {sportOnly ? null : (
           <div className="request-field">
             <label className="request-field__label" htmlFor="request-filter-type">
