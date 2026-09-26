@@ -36,9 +36,14 @@ export function RequestResponses({
   return (
     <section className="request-responses panel">
       <div className="request-responses__heading">
-        <h2>{manager ? "Responses" : "Your responses"}</h2>
-        <span className="request-responses__count">{responses.length}</span>
+        <h2>{manager ? "Responses" : "Your response"}</h2>
+        {manager ? <span className="request-responses__count">{responses.length}</span> : null}
       </div>
+      <p className="request-responses__privacy">
+        {manager
+          ? "Private responses visible to the authorized Request manager."
+          : "Your private coordination response and its current status."}
+      </p>
       <div className="request-responses__list">
         {responses.map((response) => {
           const own = response.responderUserId === me.id;
@@ -46,7 +51,6 @@ export function RequestResponses({
             <article className="request-response" key={response.id}>
               <div className="request-card__topline">
                 <span className="request-response__author">
-                  {own ? <span>Your response</span> : null}
                   {response.responder ? (
                     <RequestProfileLink presentation={response.responder} />
                   ) : own ? null : (
@@ -67,7 +71,7 @@ export function RequestResponses({
                     disabled={Boolean(pendingAction)}
                     onClick={() => onAccept(response.id)}
                   >
-                    Accept
+                    {pendingAction === `accept:${response.id}` ? "Accepting…" : "Accept"}
                   </button>
                   <button
                     type="button"
@@ -75,7 +79,7 @@ export function RequestResponses({
                     disabled={Boolean(pendingAction)}
                     onClick={() => onDecline(response.id)}
                   >
-                    Decline
+                    {pendingAction === `decline:${response.id}` ? "Declining…" : "Decline"}
                   </button>
                 </div>
               ) : null}
@@ -87,7 +91,9 @@ export function RequestResponses({
                     disabled={Boolean(pendingAction)}
                     onClick={() => onWithdraw(response.id)}
                   >
-                    Withdraw response
+                    {pendingAction === `withdraw:${response.id}`
+                      ? "Withdrawing…"
+                      : "Withdraw response"}
                   </button>
                 </div>
               ) : null}
