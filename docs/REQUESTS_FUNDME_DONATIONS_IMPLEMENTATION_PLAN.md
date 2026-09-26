@@ -356,7 +356,13 @@ SPORT flow is progressive: Sport -> Category -> Need -> Request fields.
 
 COMMUNITY flow is Community Category -> Need -> Request fields.
 
-If launched from Community/Sport or a projection surface, preserve that context. SPORT is only the fallback default.
+Standalone `/requests/new` starts without a selected taxonomy root and requires the user to choose SPORT or COMMUNITY.
+
+`/requests/new?surface=PLAY` is an explicit locked SPORT + FOOTBALL creation context. It must not offer Community or an unrelated sport chooser, and successful creation returns to `/play`.
+
+`/requests/new?surface=ATHLETES` is an explicit locked SPORT creation context. Its sport choices come from the canonical ATHLETES taxonomy, which excludes Football, and successful creation returns to `/athletes?tab=requests`.
+
+Guest authentication must retain the exact projection-specific create URL so the same context resumes after sign-in.
 
 Do not silently reduce the current Request description contract because a generated mockup shows `0/500`.
 

@@ -30,8 +30,9 @@ test("Athletes exposes canonical non-football Requests without owning Request pe
   assert.doesNotMatch(pane, /(?:interface|type|class)\s+AthleteRequest\b|createAthletesRequestApi/);
   assert.match(createPage, /surface === "PLAY" \|\| surface === "ATHLETES"/);
   assert.match(createPage, /taxonomySurface === "ATHLETES"[\s\S]*\? "\/athletes\?tab=requests"/);
-  assert.match(createPage, /taxonomySurface === "ATHLETES"[\s\S]*\? "SPORT"[\s\S]*: ""/);
-  assert.match(createPage, /disabled=\{taxonomySurface === "ATHLETES"\}/);
+  assert.match(createPage, /taxonomySurface === "REQUESTS" \? "" : "SPORT"/);
+  assert.match(createPage, /Athletes Sport Request/);
+  assert.match(createPage, /taxonomySurface !== "PLAY"/);
   assert.match(filters, /readonly sportOnly\?: boolean/);
   assert.match(
     requestRepo,

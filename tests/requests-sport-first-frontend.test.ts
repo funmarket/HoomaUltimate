@@ -21,7 +21,9 @@ test("standalone Requests truthfully defaults to all canonical Request roots", a
   assert.match(page, /filters\.requestType/);
   assert.match(page, /RequestFeed/);
 
-  assert.match(create, /Request Type/);
+  assert.match(create, /request-create-root-switch/);
+  assert.match(create, /selectRequestType\("SPORT"\)/);
+  assert.match(create, /selectRequestType\("COMMUNITY"\)/);
   assert.match(create, /SPORT/);
   assert.match(create, /COMMUNITY/);
   assert.match(create, /Category/);

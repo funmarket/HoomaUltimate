@@ -897,6 +897,7 @@ Approved requirements include:
 - displayed Request cards support accessible inline expansion for fuller Request information while `/requests/:requestId` remains the canonical deep-link/full-management route;
 - optional Request media remains Requests-owned metadata plus shared object-storage bytes; feed delivery must avoid eager per-card media-request storms;
 - create flow preserves `Publish as`, audience, taxonomy, location privacy, optional media, timing and conditional product fields rather than dropping canonical fields for visual simplicity;
+- standalone `/requests/new` requires the user to choose `SPORT` or `COMMUNITY`; `/requests/new?surface=PLAY` explicitly locks creation to `SPORT` + `FOOTBALL`, while `/requests/new?surface=ATHLETES` explicitly locks the root to `SPORT` and offers only the non-Football sports returned by the canonical ATHLETES taxonomy; authentication continuation and success navigation must preserve those projection contexts;
 - an optional precise `fullAddress` may be submitted and persisted, but public/member Request read DTOs must not expose it until an explicit viewer policy authorizes precise-location readback;
 - current lifecycle statuses are `OPEN | IN_PROGRESS | FULFILLED | CANCELLED | EXPIRED`;
 - Request coordination uses one private `HelpRequestResponse` per responder with `PENDING | ACCEPTED | DECLINED | WITHDRAWN`; it is not a public comment/chat thread;
