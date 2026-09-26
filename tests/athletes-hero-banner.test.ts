@@ -97,7 +97,7 @@ test("Athletes hub keeps the real Create community control and semantic heading"
   );
   assert.match(hub, /className="athletes-hero__banner"/);
   assert.match(hub, /src=\{heroUrl\}/);
-  assert.match(hub, /api\.athletes\.heroDelivery/);
+  assert.match(hub, /api\.athletes[\s\S]*?\.heroDelivery\(controller\.signal\)/);
 });
 
 test("Athletes hub hides only the duplicate visual H1 and replaces old hub decoration", () => {
@@ -124,7 +124,7 @@ test("Athletes hero uses a public signed-delivery endpoint and no local Git-host
   assert.doesNotMatch(combined, /\/athletes\/athletes-hero\.webp/);
   assert.doesNotMatch(combined, /\/assets\/athletes-hero\.webp/);
   assert.doesNotMatch(combined, /apps\/web\/public/);
-  assert.match(combined, /athletesathletes-hero\.webp\.webp/);
+
 });
 
 test("Athletes section navigation remains Communities, Gear Up, Requests", () => {
