@@ -1,7 +1,4 @@
-import {
-  GEAR_UP_PRODUCT_CATEGORY_LABELS,
-  type GearUpProduct,
-} from "@hooma/contracts/gear-up";
+import { GEAR_UP_PRODUCT_CATEGORY_LABELS, type GearUpProduct } from "@hooma/contracts/gear-up";
 import { GEAR_UP_SPORT_LABELS } from "./presentation";
 
 function priceLabel(product: GearUpProduct): string {
@@ -24,7 +21,9 @@ export function GearUpProductPreviewCard({
     <article className="gear-up-product-preview">
       <div className="gear-up-product-preview__media">
         {imageUrl ? <img src={imageUrl} alt="" /> : <span>HOOMA</span>}
-        {product.featuredAt ? <strong className="gear-up-product-preview__featured">Featured</strong> : null}
+        {product.featuredAt ? (
+          <strong className="gear-up-product-preview__featured">Featured</strong>
+        ) : null}
       </div>
       <div className="gear-up-product-preview__body">
         {product.brand ? <p className="gear-up-product-preview__brand">{product.brand}</p> : null}
