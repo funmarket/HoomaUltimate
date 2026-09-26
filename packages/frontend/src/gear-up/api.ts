@@ -5,7 +5,7 @@ import type {
   GearUpProductDiscoveryQueryInput,
   GearUpProductImage,
   GearUpProductImageDelivery,
-  type GearUpShopSuggestionInput,
+  GearUpShopSuggestionInput,
   PublicGearUpShop,
 } from "@hooma/contracts/gear-up";
 import type { PlaceSuggestionResult } from "@hooma/contracts/places";
