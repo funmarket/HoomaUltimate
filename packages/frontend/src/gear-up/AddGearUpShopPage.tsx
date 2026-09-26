@@ -22,7 +22,6 @@ type PlaceFormProps = Parameters<typeof PlaceForm>[0];
 type PlaceFormInput = Parameters<PlaceFormProps["onSubmit"]>[0];
 type AccountState = "loading" | "signed-in" | "signed-out";
 
-const CREATE_HREF = "/athletes/gear-up/add-store";
 const OWNER_NOTE =
   "Choose By Owner only when you own or manage this Store. Verification remains separate from submission.";
 const FANHUB_NOTE =
@@ -161,7 +160,7 @@ export function AddGearUpShopPage() {
   }
 
   if (accountState === "signed-out") {
-    const href = authenticationHref(CREATE_HREF);
+    const href = authenticationHref("/athletes/gear-up/add-store");
     return (
       <section className="gear-up-page gear-up-add-store">
         <AthletesHubTabs active="gear-up" />
