@@ -37,7 +37,6 @@ test("Pitch discovery body uses the approved HOOMA body shell without fake futur
   assert.match(css, /\.pitch-source-tabs/);
 });
 
-
 test("Pitch add flow exposes provenance choice and the required owner-review notice", () => {
   const add = source("packages/frontend/src/places/PlacesPages.tsx");
 

@@ -40,7 +40,6 @@ test("Pitch detail keeps Pitch-only navigation and ownership actions", () => {
   assert.doesNotMatch(detail, /Back to Watch|Upcoming Watch events|WatchTicket|CulturalEventCard/);
 });
 
-
 test("Pitch detail uses Add a Pitch wording and dark outlined primary actions", () => {
   const detail = source("packages/frontend/src/pitch/PitchDetailPage.tsx");
   const css = source("packages/frontend/src/pitch/pitch-detail.css");
