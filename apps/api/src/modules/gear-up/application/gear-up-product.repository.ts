@@ -1,10 +1,13 @@
 import type {
   GearUpProduct,
   GearUpProductCreateInput,
+  GearUpProductDiscoveryPage,
+  GearUpProductDiscoveryQueryInput,
   GearUpProductUpdateInput,
 } from "@hooma/contracts/gear-up";
 
 export interface GearUpProductRepository {
+  listPublic(input: GearUpProductDiscoveryQueryInput): Promise<GearUpProductDiscoveryPage>;
   listPublicByShop(placeId: string): Promise<readonly GearUpProduct[]>;
   getPublic(productId: string): Promise<GearUpProduct | null>;
   listManagedByShop(placeId: string): Promise<readonly GearUpProduct[]>;

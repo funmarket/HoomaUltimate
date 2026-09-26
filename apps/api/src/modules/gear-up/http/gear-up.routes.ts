@@ -3,6 +3,7 @@ import { Router, raw } from "express";
 import {
   gearUpListQuerySchema,
   gearUpProductCreateSchema,
+  gearUpProductDiscoveryQuerySchema,
   gearUpProductExternalImageInputSchema,
   gearUpProductImageOrderSchema,
   gearUpProductUpdateSchema,
@@ -27,6 +28,15 @@ export function createGearUpPublicRouter(
     "/",
     asyncHandler(async (request, response) => {
       response.json(await shops.listPublic(gearUpListQuerySchema.parse(request.query)));
+    }),
+  );
+
+  router.get(
+    "/products",
+    asyncHandler(async (request, response) => {
+      response.json(
+        await products.listPublic(gearUpProductDiscoveryQuerySchema.parse(request.query)),
+      );
     }),
   );
 
