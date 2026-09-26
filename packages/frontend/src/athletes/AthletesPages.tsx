@@ -119,9 +119,7 @@ export function AthletesPage({
           <img className="athletes-hero__banner" src={heroUrl} alt="" aria-hidden="true" />
         ) : null}
         <div className="athletes-hero__content">
-          <span className="eyebrow">ATHLETES</span>
           <h1 className="athletes-hero__semantic-title">Move together. Train together.</h1>
-          <p>Find local sports communities built around the way you move.</p>
           <div className="athletes-actions">
             <button
               className="button athletes-action athletes-action--primary"
