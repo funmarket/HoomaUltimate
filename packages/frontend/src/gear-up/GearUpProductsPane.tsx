@@ -140,8 +140,8 @@ export function GearUpProductsPane({
                 product={product}
                 imageUrl={imageUrls[product.id] ?? null}
                 shop={product.shop}
-                productHref={`/gear-up/products/${product.id}`}
-                shopHref={`/gear-up/shops/${product.shop.placeId}`}
+                productHref={`/athletes/gear-up/products/${product.id}`}
+                shopHref={`/athletes/gear-up/shops/${product.shop.placeId}`}
               />
             ))}
           </div>

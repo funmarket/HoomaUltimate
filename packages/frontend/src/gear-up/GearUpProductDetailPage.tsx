@@ -76,7 +76,7 @@ export function GearUpProductDetailPage({ productId }: { readonly productId: str
 
   return (
     <section className="gear-up-product-detail">
-      <a className="gear-up-shop-detail__back" href="/gear-up">
+      <a className="gear-up-shop-detail__back" href="/athletes/gear-up">
         ← Back to Products
       </a>
 
@@ -127,7 +127,7 @@ export function GearUpProductDetailPage({ productId }: { readonly productId: str
           <p className="gear-up-product-detail__description">{product.description}</p>
 
           <div className="gear-up-product-detail__actions">
-            <a href={`/gear-up/shops/${shop.place.id}`}>View Shop</a>
+            <a href={`/athletes/gear-up/shops/${shop.place.id}`}>View Shop</a>
             {shop.place.phone ? <a href={`tel:${shop.place.phone}`}>Call Shop</a> : null}
           </div>
         </section>

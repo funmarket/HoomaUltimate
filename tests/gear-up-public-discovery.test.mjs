@@ -13,7 +13,7 @@ test("Gear Up public discovery owns a real frontend route and exported feature b
     "packages/frontend/src/gear-up/GearUpFilters.tsx",
     "packages/frontend/src/gear-up/GearUpShopCard.tsx",
     "packages/frontend/src/gear-up/gear-up.css",
-    "packages/frontend/src/watch/WatchSectionNavigation.tsx",
+    "packages/frontend/src/athletes/AthletesHubTabs.tsx",
   ]) {
     assert.equal(existsSync(new URL(`../${path}`, import.meta.url)), true, `${path} must exist`);
   }
@@ -23,21 +23,35 @@ test("Gear Up public discovery owns a real frontend route and exported feature b
   assert.match(entry, /\.\/gear-up\/gear-up\.css/);
   assert.match(entry, /export \* from "\.\/gear-up\/GearUpPage"/);
   assert.match(router, /GearUpPage/);
-  assert.match(router, /<Route path="\/gear-up" element=\{<GearUpPage \/>\} \/>/);
+  assert.match(router, /path="\/athletes\/gear-up" element=\{<GearUpPage \/>\}/);
+  assert.match(
+    router,
+    /path="\/gear-up" element=\{<Navigate to="\/athletes\/gear-up" replace \/>\}/,
+  );
 });
 
-test("Watch, Spots and Gear Up share one destination/action navigation without changing Watch mechanics", () => {
-  const shared = source("packages/frontend/src/watch/WatchSectionNavigation.tsx");
+test("Athletes owns Gear Up presentation navigation while Watch remains Events and Spots", () => {
+  const athletesTabs = source("packages/frontend/src/athletes/AthletesHubTabs.tsx");
+  const athletes = source("packages/frontend/src/athletes/AthletesPages.tsx");
+  const gearUp = source("packages/frontend/src/gear-up/GearUpPage.tsx");
+  const watchNav = source("packages/frontend/src/watch/WatchSectionNavigation.tsx");
   const watch = source("packages/frontend/src/watch/WatchPage.tsx");
   const places = source("packages/frontend/src/places/PlacesPages.tsx");
 
-  for (const label of ["Events", "Spots", "Gear Up", "Create Event", "Add a Place"]) {
-    assert.match(shared, new RegExp(`>\\s*${label}\\s*<`));
+  for (const label of ["Communities", "Gear Up", "Requests"]) {
+    assert.match(athletesTabs, new RegExp(`>\\s*${label}\\s*<`));
   }
-  for (const href of ["/watch", "/places", "/gear-up", "/places/new"]) {
-    assert.match(shared, new RegExp(`href="${href.replaceAll("/", "\\/")}`));
-  }
+  assert.match(athletesTabs, /to="\/athletes"/);
+  assert.match(athletesTabs, /to="\/athletes\/gear-up"/);
+  assert.match(athletesTabs, /to="\/athletes\?tab=requests"/);
+  assert.match(athletes, /<AthletesHubTabs active=\{activeView\} \/>/);
+  assert.match(gearUp, /<AthletesHubTabs active="gear-up" \/>/);
 
+  for (const label of ["Events", "Spots", "Create Event", "Add a Place"]) {
+    assert.match(watchNav, new RegExp(`>\\s*${label}\\s*<`));
+  }
+  assert.doesNotMatch(watchNav, />\\s*Gear Up\\s*</);
+  assert.doesNotMatch(watchNav, /href="\/gear-up"/);
   assert.match(watch, /<WatchSectionNavigation[\s\S]*active="events"/);
   assert.match(places, /<WatchSectionNavigation[\s\S]*active="spots"/);
   assert.doesNotMatch(watch, /aria-disabled="true"/);
@@ -88,7 +102,7 @@ test("Gear Up discovery presents the approved filters and truthful canonical sho
   assert.match(card, /shop\.categories/);
   assert.match(card, /shop\.offerTypes/);
   assert.match(card, /View Shop/);
-  assert.match(card, /\/gear-up\/shops\/\$\{shop\.place\.id\}/);
+  assert.match(card, /\/athletes\/gear-up\/shops\/\$\{shop\.place\.id\}/);
   assert.doesNotMatch(card, /distance|km away|nearest/i);
   assert.doesNotMatch(
     card,

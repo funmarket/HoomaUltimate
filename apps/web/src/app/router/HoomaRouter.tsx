@@ -181,6 +181,18 @@ function GearUpProductDetailRoute() {
   return <GearUpProductDetailPage productId={requiredParam("productId", productId)} />;
 }
 
+function LegacyGearUpShopRoute() {
+  const { placeId } = useParams();
+  const encodedPlaceId = encodeURIComponent(requiredParam("placeId", placeId));
+  return <Navigate to={`/athletes/gear-up/shops/${encodedPlaceId}`} replace />;
+}
+
+function LegacyGearUpProductRoute() {
+  const { productId } = useParams();
+  const encodedProductId = encodeURIComponent(requiredParam("productId", productId));
+  return <Navigate to={`/athletes/gear-up/products/${encodedProductId}`} replace />;
+}
+
 function PlaceEditRoute() {
   const { placeId } = useParams();
   return <PlaceEditPage placeId={requiredParam("placeId", placeId)} />;
@@ -290,9 +302,9 @@ function HoomaRoutes() {
               <Route path="/admin/*" element={<AdminApp />} />
               <Route path="/play" element={<PlayPage />} />
               <Route path="/watch" element={<WatchPage />} />
-              <Route path="/gear-up" element={<GearUpPage />} />
-              <Route path="/gear-up/products/:productId" element={<GearUpProductDetailRoute />} />
-              <Route path="/gear-up/shops/:placeId" element={<GearUpShopDetailRoute />} />
+              <Route path="/gear-up" element={<Navigate to="/athletes/gear-up" replace />} />
+              <Route path="/gear-up/products/:productId" element={<LegacyGearUpProductRoute />} />
+              <Route path="/gear-up/shops/:placeId" element={<LegacyGearUpShopRoute />} />
               <Route path="/pitch" element={<PitchPage />} />
               <Route path="/pitch/manage" element={<PitchManagePage />} />
               <Route path="/pitch/:placeId" element={<PitchDetailRoute />} />
@@ -328,6 +340,12 @@ function HoomaRoutes() {
               <Route path="/hooma/:communityId" element={<HoomaDetailRoute />} />
               <Route path="/athletes" element={<AthletesHubRoute />} />
               <Route path="/athletes/new" element={<CreateAthletesRoute />} />
+              <Route path="/athletes/gear-up" element={<GearUpPage />} />
+              <Route
+                path="/athletes/gear-up/products/:productId"
+                element={<GearUpProductDetailRoute />}
+              />
+              <Route path="/athletes/gear-up/shops/:placeId" element={<GearUpShopDetailRoute />} />
               <Route path="/athletes/:athletesCommunityId" element={<AthletesDetailRoute />} />
               <Route path="/teams" element={<TeamsPage />} />
               <Route path="/teams/new" element={<CreateTeamPage />} />

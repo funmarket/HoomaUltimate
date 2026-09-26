@@ -73,8 +73,8 @@ test("cross-store product cards retain originating shop identity and both naviga
   assert.match(card, /shop/);
   assert.match(card, /View Product/);
   assert.match(card, /View Shop/);
-  assert.match(pane, /\/gear-up\/products\//);
-  assert.match(pane, /\/gear-up\/shops\//);
+  assert.match(pane, /\/athletes\/gear-up\/products\//);
+  assert.match(pane, /\/athletes\/gear-up\/shops\//);
   assert.match(card, /Ask shop for current price/);
   assert.doesNotMatch(card, /Buy Now|Add to Cart|stock|shipping/i);
 });
@@ -93,7 +93,11 @@ test("Product Detail uses the existing canonical product shop and image APIs", (
   assert.match(api, /listProducts/);
   assert.match(api, /getProduct/);
   assert.match(api, /listProductImages/);
-  assert.match(router, /path="\/gear-up\/products\/:productId"/);
+  assert.match(router, /path="\/athletes\/gear-up\/products\/:productId"/);
+  assert.match(
+    router,
+    /path="\/gear-up\/products\/:productId" element=\{<LegacyGearUpProductRoute \/>\}/,
+  );
 
   assert.doesNotMatch(page, /checkout|Buy Now|Add to Cart|stock|shipping/i);
 });

@@ -10,6 +10,9 @@ const api = readFileSync("packages/frontend/src/athletes/api.ts", "utf8");
 test("Athletes routes are registered without changing Home or bottom navigation", () => {
   assert.match(router, /path="\/athletes"/);
   assert.match(router, /path="\/athletes\/new"/);
+  assert.match(router, /path="\/athletes\/gear-up"/);
+  assert.match(router, /path="\/athletes\/gear-up\/shops\/:placeId"/);
+  assert.match(router, /path="\/athletes\/gear-up\/products\/:productId"/);
   assert.match(router, /path="\/athletes\/:athletesCommunityId"/);
   assert.doesNotMatch(router, /bottom.*Athletes|Athletes.*bottom/i);
 });

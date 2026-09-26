@@ -1029,7 +1029,7 @@
 
 .athletes-view-tabs {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.65rem;
   width: 100%;
 }
@@ -1037,6 +1037,9 @@
 .athletes-view-tab {
   min-width: 0;
   min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid rgba(190, 180, 145, 0.22);
   border-radius: 14px;
   background: #0b0c0a;
@@ -1044,6 +1047,8 @@
   font: inherit;
   font-size: 16px;
   font-weight: 700;
+  text-align: center;
+  text-decoration: none;
   cursor: pointer;
 }
 

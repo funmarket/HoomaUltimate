@@ -1,6 +1,6 @@
-import { CalendarIcon, CalendarPlusIcon, MenuIcon, PinIcon } from "../ui/HoomaIcons";
+import { CalendarIcon, CalendarPlusIcon, PinIcon } from "../ui/HoomaIcons";
 
-export type WatchSectionDestination = "events" | "spots" | "gear-up";
+export type WatchSectionDestination = "events" | "spots";
 
 function destinationClass(active: boolean): string {
   return active ? "watch-section-action is-active" : "watch-section-action";
@@ -31,14 +31,6 @@ export function WatchSectionNavigation({
         >
           <PinIcon size={28} className="watch-section-action__icon" />
           <span>Spots</span>
-        </a>
-        <a
-          className={destinationClass(active === "gear-up")}
-          href="/gear-up"
-          aria-current={active === "gear-up" ? "page" : undefined}
-        >
-          <MenuIcon size={28} className="watch-section-action__icon" />
-          <span>Gear Up</span>
         </a>
       </nav>
 

@@ -3,8 +3,9 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("Athletes exposes canonical non-football Requests without owning Request persistence", async () => {
-  const [page, pane, createPage, requestRepo, taxonomyService, filters] = await Promise.all([
+  const [page, tabs, pane, createPage, requestRepo, taxonomyService, filters] = await Promise.all([
     readFile("packages/frontend/src/athletes/AthletesPages.tsx", "utf8"),
+    readFile("packages/frontend/src/athletes/AthletesHubTabs.tsx", "utf8"),
     readFile("packages/frontend/src/athletes/AthletesRequestsPane.tsx", "utf8"),
     readFile("packages/frontend/src/requests/RequestCreatePage.tsx", "utf8"),
     readFile("apps/api/src/modules/requests/infrastructure/prisma-request.repository.ts", "utf8"),
@@ -12,8 +13,11 @@ test("Athletes exposes canonical non-football Requests without owning Request pe
     readFile("packages/frontend/src/requests/RequestTaxonomyFilters.tsx", "utf8"),
   ]);
 
-  assert.match(page, /type AthletesView = "communities" \| "requests"/);
-  assert.match(page, />\s*Requests\s*<\/button>/);
+  assert.match(page, /searchParams\.get\("tab"\) === "requests"/);
+  assert.match(tabs, />\s*Communities\s*</);
+  assert.match(tabs, />\s*Gear Up\s*</);
+  assert.match(tabs, />\s*Requests\s*</);
+  assert.match(tabs, /to="\/athletes\?tab=requests"/);
   assert.match(page, /<AthletesRequestsPane \/>/);
   assert.match(pane, /surface: "ATHLETES"/);
   assert.match(pane, /requestType: "SPORT"/);
@@ -25,7 +29,7 @@ test("Athletes exposes canonical non-football Requests without owning Request pe
   assert.match(pane, /href="\/requests\/new\?surface=ATHLETES"/);
   assert.doesNotMatch(pane, /(?:interface|type|class)\s+AthleteRequest\b|createAthletesRequestApi/);
   assert.match(createPage, /surface === "PLAY" \|\| surface === "ATHLETES"/);
-  assert.match(createPage, /taxonomySurface === "ATHLETES"[\s\S]*\? "\/athletes"/);
+  assert.match(createPage, /taxonomySurface === "ATHLETES"[\s\S]*\? "\/athletes\?tab=requests"/);
   assert.match(createPage, /taxonomySurface === "ATHLETES"[\s\S]*\? "SPORT"[\s\S]*: ""/);
   assert.match(createPage, /disabled=\{taxonomySurface === "ATHLETES"\}/);
   assert.match(filters, /readonly sportOnly\?: boolean/);

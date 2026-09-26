@@ -16,7 +16,8 @@ test("Gear Up shop detail has a dedicated route and exported frontend page", () 
   const router = source("apps/web/src/app/router/HoomaRouter.tsx");
   assert.match(entry, /GearUpShopDetailPage/);
   assert.match(router, /GearUpShopDetailPage/);
-  assert.match(router, /path="\/gear-up\/shops\/:placeId"/);
+  assert.match(router, /path="\/athletes\/gear-up\/shops\/:placeId"/);
+  assert.match(router, /path="\/gear-up\/shops\/:placeId" element=\{<LegacyGearUpShopRoute \/>\}/);
 });
 
 test("Gear Up public API exposes canonical shop detail, shop products and product cover delivery", () => {
@@ -30,7 +31,7 @@ test("Gear Up public API exposes canonical shop detail, shop products and produc
 
 test("shop discovery cards now enter the dedicated Gear Up shop detail", () => {
   const card = source("packages/frontend/src/gear-up/GearUpShopCard.tsx");
-  assert.match(card, /\/gear-up\/shops\//);
+  assert.match(card, /\/athletes\/gear-up\/shops\//);
   assert.doesNotMatch(card, /href=.*\/places\//);
 });
 

@@ -93,7 +93,7 @@ export function GearUpShopDetailPage({ placeId }: { readonly placeId: string }) 
 
   return (
     <section className="gear-up-shop-detail">
-      <a className="gear-up-shop-detail__back" href="/gear-up">
+      <a className="gear-up-shop-detail__back" href="/athletes/gear-up">
         ← Back to Gear Up
       </a>
 
