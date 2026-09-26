@@ -366,7 +366,6 @@ test("City filter debounces list reloads and does not repeat identity lookup", a
     await page.waitFor(() => assert.ok(page.view.getByText("No Requests are listed yet.")));
     page.calls.length = 0;
 
-    page.fireEvent.click(page.view.getByRole("button", { name: "Filters" }));
     const city = page.view.getByLabelText("City");
     page.fireEvent.change(city, { target: { value: "T" } });
     page.fireEvent.change(city, { target: { value: "Tu" } });
@@ -374,7 +373,6 @@ test("City filter debounces list reloads and does not repeat identity lookup", a
 
     await new Promise((resolve) => setTimeout(resolve, 100));
     assert.equal(page.calls.filter((call) => call.includes("/requests")).length, 0);
-    page.fireEvent.click(page.view.getByRole("button", { name: "Apply" }));
 
     await page.waitFor(
       () => {
@@ -425,14 +423,12 @@ test("Community filters use the same canonical Request list query", async () => 
     page.calls.length = 0;
 
     page.fireEvent.click(page.view.getByRole("button", { name: "Community" }));
-    page.fireEvent.click(page.view.getByRole("button", { name: "Filters" }));
     page.fireEvent.change(page.view.getByLabelText("Category"), {
       target: { value: "hts-community-lost-found" },
     });
     page.fireEvent.change(page.view.getByLabelText("Specific need"), {
       target: { value: "htn-community-lost-item" },
     });
-    page.fireEvent.click(page.view.getByRole("button", { name: "Apply" }));
 
     await page.waitFor(() =>
       assert.ok(
@@ -456,15 +452,31 @@ test("filters call the existing list query model", async () => {
   try {
     await page.waitFor(() => assert.ok(page.view.getByText("Need size 43 running shoes")));
     page.fireEvent.click(page.view.getByRole("button", { name: "Running" }));
-    page.fireEvent.click(page.view.getByRole("button", { name: "Filters" }));
     page.fireEvent.change(page.view.getByLabelText("City"), { target: { value: "La Marsa" } });
-    page.fireEvent.click(page.view.getByRole("button", { name: "Apply" }));
     await page.waitFor(() =>
       assert.ok(
         page.calls.some((call) => call.includes("sport=RUNNING") && call.includes("city=La+Marsa")),
         `expected filtered public list call, saw ${page.calls.join(" | ")}`,
       ),
     );
+  } finally {
+    page.close();
+  }
+});
+
+test("foundation filters stay live without the VR4 advanced workflow", async () => {
+  const page = await renderRequestsPage({ me: null, publicItems: [] });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByText("No Requests are listed yet.")));
+
+    assert.ok(page.view.getByLabelText("Category"));
+    assert.ok(page.view.getByLabelText("Specific need"));
+    assert.ok(page.view.getByLabelText("City"));
+    assert.ok(page.view.getByLabelText("Houma"));
+    assert.equal(page.view.queryByLabelText("Status"), null);
+    assert.equal(page.view.queryByRole("button", { name: "Filters" }), null);
+    assert.equal(page.view.queryByRole("button", { name: "Apply" }), null);
+    assert.equal(page.view.queryByRole("button", { name: "Reset" }), null);
   } finally {
     page.close();
   }

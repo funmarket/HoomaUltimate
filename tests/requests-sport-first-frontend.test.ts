@@ -33,6 +33,9 @@ test("standalone Requests uses one SPORT or COMMUNITY taxonomy flow", async () =
   assert.match(filters, /request-quick-rail/);
   assert.match(filters, /All categories/);
   assert.match(filters, /All needs/);
+  assert.match(filters, /function patch/);
+  assert.doesNotMatch(filters, /AdvancedFilters|advancedFrom|filtersOpen|activeAdvancedCount/);
+  assert.doesNotMatch(filters, /applyFilters|resetFilters|request-filter-status/);
   assert.doesNotMatch(filters, /HELP_CATEGORIES/);
 
   assert.match(api, /requestType/);

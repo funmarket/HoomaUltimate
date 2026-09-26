@@ -71,3 +71,13 @@ test("collapsed and expanded Request cards preserve accepted text and layout rol
     /\.request-card-detail__facts\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:/s,
   );
 });
+
+test("Requests CSS does not include the deferred VR4 advanced-filter workflow", () => {
+  assert.doesNotMatch(requestsCss, /request-filter-trigger__count/);
+  assert.doesNotMatch(requestsCss, /request-filters__close/);
+  assert.doesNotMatch(requestsCss, /request-filters__actions/);
+});
+
+test("shared Request cards keep accessible-only expansion copy visually hidden", () => {
+  assert.match(requestsCss, /\.request-card \.sr-only\s*\{/);
+});
