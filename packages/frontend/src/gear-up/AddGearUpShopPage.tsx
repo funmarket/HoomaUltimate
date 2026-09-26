@@ -64,7 +64,8 @@ export function AddGearUpShopPage() {
   const [offerTypes, setOfferTypes] = useState<GearUpOfferType[]>([]);
   const [sports, setSports] = useState<AthletesSport[]>([]);
   const [categories, setCategories] = useState<GearUpProductCategory[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<GearUpPaymentMethod[]>([]);
+  const [paymentMethods, setPaymentMethods] =
+    useState<GearUpPaymentMethod[]>([]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<PlaceSuggestionResult | null>(null);
@@ -78,7 +79,10 @@ export function AddGearUpShopPage() {
       })
       .catch((reason) => {
         if (!active) return;
-        const message = protectedError(reason, "Unable to verify your HOOMA account");
+        const message = protectedError(
+          reason,
+          "Unable to verify your HOOMA account",
+        );
         setAccountError(message);
         setAccountState("signed-out");
       });
