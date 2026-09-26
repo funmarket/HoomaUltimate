@@ -213,7 +213,9 @@ export function AddPlacePage() {
   const placesApi = useMemo(() => createPlacesApi(transport), [transport]);
   const pitchApi = useMemo(() => createPitchApi(transport), [transport]);
   const isPitchSuggestion = new URLSearchParams(window.location.search).get("kind") === "PITCH";
-  const [submissionOrigin, setSubmissionOrigin] = useState<PlaceSubmissionOrigin>("FANHUB");
+  const initialSubmissionOrigin = isPitchSuggestion ? "OWNER" : "FANHUB";
+  const [submissionOrigin, setSubmissionOrigin] =
+    useState<PlaceSubmissionOrigin>(initialSubmissionOrigin);
   const [pitchHourlyRate, setPitchHourlyRate] = useState("");
   const [pitchCurrency, setPitchCurrency] = useState<PitchRentalCurrency>("TND");
   const [error, setError] = useState("");
@@ -268,8 +270,14 @@ export function AddPlacePage() {
                   View existing Place
                 </a>
               ) : null}
-              {activeApproved && !isPitchSuggestion && submissionOrigin === "OWNER" ? (
-                <a href={`/places/${placeId}?claim=1`}>Claim this Place</a>
+              {activeApproved && submissionOrigin === "OWNER" ? (
+                <a
+                  href={
+                    isPitchSuggestion ? `/pitch/${placeId}?claim=1` : `/places/${placeId}?claim=1`
+                  }
+                >
+                  {isPitchSuggestion ? "Claim this Pitch" : "Claim this Place"}
+                </a>
               ) : null}
               <a href={isPitchSuggestion ? "/pitch" : "/places"}>
                 {isPitchSuggestion ? "Back to Pitch" : "Back to Spots"}
@@ -284,10 +292,12 @@ export function AddPlacePage() {
       <section className="place-page">
         <div className="place-submitted panel">
           <p className="eyebrow">SUBMITTED</p>
-          <h1>{isPitchSuggestion ? "Pitch suggested" : "Place submitted"}</h1>
+          <h1>{isPitchSuggestion ? "Pitch submitted" : "Place submitted"}</h1>
           <p>
             {isPitchSuggestion
-              ? "The App Admin will review this football pitch and its hourly rental price. Once approved, it can appear in Pitch and the real owner can claim it."
+              ? submissionOrigin === "OWNER"
+                ? "The App Admin will review this Pitch and its ownership claim separately. No verified ownership or management authority is granted until approval."
+                : "The App Admin will review this FanHub Pitch submission. If the real owner claims it later, the same canonical Place is kept and the FanHub source remains unchanged."
               : submissionOrigin === "OWNER"
                 ? "The App Admin will review this Spot first. Your ownership claim stays separate and can be verified after the Place itself is approved."
                 : "The App Admin will review this Spot. Community suggestions appear in FanHub. If the real owner claims it later, the same canonical Place is kept and the FanHub source remains unchanged."}
@@ -350,56 +360,66 @@ export function AddPlacePage() {
   ) : null;
 
   return (
-    <section className="place-page place-form-page">
+    <section
+      className={
+        isPitchSuggestion
+          ? "place-page place-form-page pitch-form-page"
+          : "place-page place-form-page"
+      }
+    >
       <header className="place-page__header place-form-page__header">
         <div>
-          <p className="eyebrow">{isPitchSuggestion ? "SUGGEST A PITCH" : "ADD A PLACE"}</p>
-          <h1>{isPitchSuggestion ? "Suggest a football pitch" : "Add a Watch Spot"}</h1>
+          <p className="eyebrow">{isPitchSuggestion ? "ADD A PITCH" : "ADD A PLACE"}</p>
+          <h1>{isPitchSuggestion ? "Add a football pitch" : "Add a Watch Spot"}</h1>
           <p>
             {isPitchSuggestion
-              ? "Add the real venue details and hourly rental price. Suggesting a pitch does not make you its owner."
+              ? "Add the real venue details and hourly rental price, then choose whether this is submitted By Owner or through FanHub."
               : "Add a café, lounge, restaurant or other place where people can watch together."}
           </p>
         </div>
       </header>
 
-      {!isPitchSuggestion ? (
-        <section className="panel">
-          <p className="eyebrow">WHO IS ADDING THIS SPOT?</p>
-          <div className="place-source-tabs" role="tablist" aria-label="Place submission source">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={submissionOrigin === "OWNER"}
-              className={
-                submissionOrigin === "OWNER" ? "place-source-tab is-active" : "place-source-tab"
-              }
-              onClick={() => setSubmissionOrigin("OWNER")}
-            >
-              By Owner
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={submissionOrigin === "FANHUB"}
-              className={
-                submissionOrigin === "FANHUB" ? "place-source-tab is-active" : "place-source-tab"
-              }
-              onClick={() => setSubmissionOrigin("FANHUB")}
-            >
-              FanHub
-            </button>
-          </div>
-          <p className="muted">
-            {submissionOrigin === "OWNER"
-              ? "Choose By Owner only when you own or manage this business. This creates an ownership claim on the same Place; verification remains a separate Admin decision."
+      <section className="panel pitch-source-choice">
+        <p className="eyebrow">
+          {isPitchSuggestion ? "WHO IS ADDING THIS PITCH?" : "WHO IS ADDING THIS SPOT?"}
+        </p>
+        <div className="place-source-tabs" role="tablist" aria-label="Place submission source">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={submissionOrigin === "OWNER"}
+            className={
+              submissionOrigin === "OWNER" ? "place-source-tab is-active" : "place-source-tab"
+            }
+            onClick={() => setSubmissionOrigin("OWNER")}
+          >
+            By Owner
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={submissionOrigin === "FANHUB"}
+            className={
+              submissionOrigin === "FANHUB" ? "place-source-tab is-active" : "place-source-tab"
+            }
+            onClick={() => setSubmissionOrigin("FANHUB")}
+          >
+            FanHub
+          </button>
+        </div>
+        <p className="muted">
+          {submissionOrigin === "OWNER"
+            ? isPitchSuggestion
+              ? "Admin review required — A Pitch submitted By Owner and its ownership claim are reviewed separately. Submitting as owner does not grant verified ownership or management access until approved."
+              : "Choose By Owner only when you own or manage this business. This creates an ownership claim on the same Place; verification remains a separate Admin decision."
+            : isPitchSuggestion
+              ? "FanHub is for a registered HOOMA member adding a Pitch for the community. This does not grant ownership or management authority."
               : "FanHub is for any registered HOOMA member suggesting a Spot for the community. Suggesting it does not make you its owner."}
-          </p>
-        </section>
-      ) : null}
+        </p>
+      </section>
 
       <PlaceForm
-        submitLabel={isPitchSuggestion ? "Suggest Pitch" : "Submit Place"}
+        submitLabel={isPitchSuggestion ? "Add Pitch" : "Submit Place"}
         pending={pending}
         showMenu={!isPitchSuggestion}
         extraSection={pitchPricingSection}

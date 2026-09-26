@@ -82,11 +82,13 @@ test("Spots expose only By Owner and FanHub source tabs without hiding unclassif
 
 test("Add Place defaults to FanHub and sends explicit source intent", () => {
   assert.ok(contracts.includes('placeSubmissionOriginSchema.default("FANHUB")'));
-  assert.ok(placesPage.includes('useState<PlaceSubmissionOrigin>("FANHUB")'));
+  assert.ok(
+    placesPage.includes('const initialSubmissionOrigin = isPitchSuggestion ? "OWNER" : "FANHUB"'),
+  );
   assert.ok(placesPage.includes("placesApi.suggest({ ...input, submissionOrigin })"));
   assert.ok(placesPage.includes("pitchApi.suggestPlace"));
   assert.ok(placesPage.includes("WHO IS ADDING THIS SPOT?"));
-  assert.ok(placesPage.includes("Suggesting a pitch does not make you its owner"));
+  assert.ok(placesPage.includes("Suggesting it does not make you its owner."));
 });
 
 test("Place provenance is a first-class immutable source fact shared with Pitch through the canonical Place boundary", () => {

@@ -39,3 +39,13 @@ test("Pitch detail keeps Pitch-only navigation and ownership actions", () => {
   assert.match(detail, /CLAIM THIS PITCH/);
   assert.doesNotMatch(detail, /Back to Watch|Upcoming Watch events|WatchTicket|CulturalEventCard/);
 });
+
+test("Pitch detail uses Add a Pitch wording and dark outlined primary actions", () => {
+  const detail = source("packages/frontend/src/pitch/PitchDetailPage.tsx");
+  const css = source("packages/frontend/src/pitch/pitch-detail.css");
+
+  assert.match(detail, />\s*Add a Pitch\s*</);
+  assert.doesNotMatch(detail, />\s*Suggest a Pitch\s*</);
+  assert.match(css, /\.pitch-action--primary[\s\S]*?background:\s*#0b0c0a/);
+  assert.match(css, /\.pitch-detail-action--primary[\s\S]*?background:\s*#0b0c0a/);
+});
