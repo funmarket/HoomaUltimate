@@ -83,7 +83,7 @@ test("Athletes hero maps missing or failed storage to safe Athletes errors", asy
   );
 });
 
-test("Athletes hub keeps the real Create community control and semantic heading", () => {
+test("Athletes hub keeps the real Create community control without visible app copy", () => {
   const hub = athletesPage.slice(
     athletesPage.indexOf("export function AthletesPage"),
     athletesPage.indexOf("export function CreateAthletesPage"),
@@ -95,15 +95,34 @@ test("Athletes hub keeps the real Create community control and semantic heading"
     hub,
     /<h1 className="athletes-hero__semantic-title">\s*Move together\. Train together\.\s*<\/h1>/,
   );
+  assert.doesNotMatch(hub, /<span className="eyebrow">ATHLETES<\/span>/);
+  assert.doesNotMatch(hub, /Find local sports communities built around the way you move\./);
   assert.match(hub, /className="athletes-hero__banner"/);
   assert.match(hub, /src=\{heroUrl\}/);
   assert.match(hub, /api\.athletes[\s\S]*?\.heroDelivery\(controller\.signal\)/);
 });
 
-test("Athletes hub hides only the duplicate visual H1 and replaces old hub decoration", () => {
+test("Athletes hub banner is phone-scaled, borderless, and keeps only semantic hidden copy", () => {
+  const hubRule =
+    athletesCss.match(/\.athletes-hero(?:\.athletes-hero--hub|--hub)\s*\{[\s\S]*?\}/)?.[0] ??
+    "";
+  const bannerRule =
+    athletesCss.match(/\.athletes-hero__banner\s*\{[\s\S]*?\}/)?.[0] ?? "";
   const hiddenRule =
     athletesCss.match(/\.athletes-hero--hub \.athletes-hero__semantic-title\s*\{[\s\S]*?\}/)?.[0] ??
     "";
+
+  assert.match(hubRule, /aspect-ratio:\s*1280\s*\/\s*431/);
+  assert.match(hubRule, /min-height:\s*0/);
+  assert.match(hubRule, /padding:\s*0/);
+  assert.match(hubRule, /border:\s*0/);
+  assert.match(hubRule, /box-shadow:\s*none/);
+  assert.doesNotMatch(hubRule, /min-height:\s*20rem/);
+
+  assert.match(bannerRule, /width:\s*100%/);
+  assert.match(bannerRule, /height:\s*100%/);
+  assert.match(bannerRule, /object-fit:\s*contain/);
+
   assert.match(hiddenRule, /width:\s*1px/);
   assert.match(hiddenRule, /height:\s*1px/);
   assert.match(hiddenRule, /clip:/);
