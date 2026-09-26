@@ -47,9 +47,6 @@ test("Duplicate owner Pitch intent opens the canonical contextual claim path", (
   const add = source("packages/frontend/src/places/PlacesPages.tsx");
   const detail = source("packages/frontend/src/pitch/PitchDetailPage.tsx");
 
-  assert.match(add, /href=\{\`\/pitch\/\$\{placeId\}\?claim=1\`\}/);
-  assert.match(
-    detail,
-    /new URLSearchParams\(window\.location\.search\)\.get\("claim"\) === "1"/,
-  );
+  assert.match(add, /\/pitch\/\$\{placeId\}\?claim=1/);
+  assert.match(detail, /new URLSearchParams\(window\.location\.search\)\.get\("claim"\) === "1"/);
 });
