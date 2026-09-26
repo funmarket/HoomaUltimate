@@ -96,7 +96,13 @@ export class PrismaPitchRepository implements PitchRepository {
     input: PitchPlaceSuggestionInput,
   ): Promise<PitchPlaceSuggestionResult> {
     return this.db.$transaction(async (tx) => {
-      const result = await suggestCanonicalPlace(tx, userId, input.place, "FANHUB", null);
+      const result = await suggestCanonicalPlace(
+        tx,
+        userId,
+        input.place,
+        input.place.submissionOrigin,
+        null,
+      );
       if (result.outcome === "EXISTING") return result;
 
       await tx.placeCapability.create({

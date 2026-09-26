@@ -62,6 +62,7 @@ test("an approved suggested Pitch preserves immutable owner moderation history",
         description: "A real local football ground suggested by the community.",
         category: "Football pitch",
         menuItems: [],
+        submissionOrigin: "FANHUB",
       },
       pitch: { hourlyRateMinor: 45_000, currency: "TND" },
     });
@@ -122,6 +123,16 @@ test("an approved suggested Pitch preserves immutable owner moderation history",
       true,
     );
     assert.equal(await places.hasVerifiedOwnership(placeId, claimant.id), true);
+    assert.equal(
+      (
+        await db.place.findUniqueOrThrow({
+          where: { id: placeId },
+          select: { submissionOrigin: true },
+        })
+      ).submissionOrigin,
+      "FANHUB",
+      "a later verified owner claim must not rewrite immutable Pitch submission provenance",
+    );
 
     const firstRevision = await pitchOwner.submitRevision(claimant.id, placeId, {
       summary: "Floodlit five-a-side pitch with changing rooms.",

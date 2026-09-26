@@ -763,6 +763,8 @@ Do not duplicate the physical Place for each capability.
 
 Pitch is a permanent standalone route/product and a current Home gateway.
 
+Pitch submission provenance is explicit and immutable. A new Pitch submission carries `OWNER` or `FANHUB` provenance on the canonical Place; provenance does not itself grant management authority. A new `OWNER` submission creates one pending canonical ownership claim for the submitter but no verified ownership, while a new `FANHUB` submission creates no ownership claim and remains available to the explicit claim-later flow. Canonical duplicate detection reuses the existing Place without rewriting its provenance or silently creating verified ownership/authority, and later ownership approval does not rewrite the original submission provenance.
+
 Requirements include:
 
 - `/pitch` permanent route;
