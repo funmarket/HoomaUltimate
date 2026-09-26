@@ -17,6 +17,7 @@ import {
   GamerGamePage,
   GamersPage,
   GearUpPage,
+  GearUpProductDetailPage,
   GearUpShopDetailPage,
   HoomaDetailPage,
   HoomaEditPage,
@@ -175,6 +176,11 @@ function GearUpShopDetailRoute() {
   return <GearUpShopDetailPage placeId={requiredParam("placeId", placeId)} />;
 }
 
+function GearUpProductDetailRoute() {
+  const { productId } = useParams();
+  return <GearUpProductDetailPage productId={requiredParam("productId", productId)} />;
+}
+
 function PlaceEditRoute() {
   const { placeId } = useParams();
   return <PlaceEditPage placeId={requiredParam("placeId", placeId)} />;
@@ -285,6 +291,7 @@ function HoomaRoutes() {
               <Route path="/play" element={<PlayPage />} />
               <Route path="/watch" element={<WatchPage />} />
               <Route path="/gear-up" element={<GearUpPage />} />
+              <Route path="/gear-up/products/:productId" element={<GearUpProductDetailRoute />} />
               <Route path="/gear-up/shops/:placeId" element={<GearUpShopDetailRoute />} />
               <Route path="/pitch" element={<PitchPage />} />
               <Route path="/pitch/manage" element={<PitchManagePage />} />
