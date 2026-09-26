@@ -18,15 +18,37 @@ import { useHoomaFrontend } from "../context";
 import { PlaceForm } from "../places/PlaceForm";
 import { createGearUpApi } from "./api";
 
-type PlaceFormInput = Parameters<
-  Parameters<typeof PlaceForm>[0]["onSubmit"]
->[0];
+type PlaceFormProps = Parameters<typeof PlaceForm>[0];
+type PlaceFormInput = Parameters<PlaceFormProps["onSubmit"]>[0];
 type AccountState = "loading" | "signed-in" | "signed-out";
 
+const CREATE_HREF = "/athletes/gear-up/add-store";
+const OWNER_NOTE =
+  "Choose By Owner only when you own or manage this Store. Verification remains separate from submission.";
+const FANHUB_NOTE =
+  "FanHub lets a registered HOOMA member suggest a Store for the community without gaining ownership or management authority.";
+const REVIEW_NOTE =
+  "App Admin review remains required for Gear Up publication. If you submitted By Owner, verified ownership remains separate and is not granted by this Store submission.";
+
+const OFFER_OPTIONS: readonly {
+  value: GearUpOfferType;
+  label: string;
+}[] = [
+  { value: "SPORTSWEAR", label: "Sportswear" },
+  { value: "GEAR", label: "Gear" },
+];
+
 function toggleValue<T extends string>(values: readonly T[], value: T): T[] {
-  return values.includes(value)
-    ? values.filter((item) => item !== value)
-    : [...values, value];
+  if (values.includes(value)) return values.filter((item) => item !== value);
+  return [...values, value];
+}
+
+function chipClass(active: boolean): string {
+  return active ? "gear-up-chip is-active" : "gear-up-chip";
+}
+
+function sourceTabClass(active: boolean): string {
+  return active ? "place-source-tab is-active" : "place-source-tab";
 }
 
 function categoryLabel(category: GearUpProductCategory): string {
@@ -34,22 +56,22 @@ function categoryLabel(category: GearUpProductCategory): string {
 }
 
 export function AddGearUpShopPage() {
-  const { api, transport, protectedError, authenticationHref } =
-    useHoomaFrontend();
+  const frontend = useHoomaFrontend();
+  const api = frontend.api;
+  const transport = frontend.transport;
+  const protectedError = frontend.protectedError;
+  const authenticationHref = frontend.authenticationHref;
   const gearUpApi = useMemo(() => createGearUpApi(transport), [transport]);
   const [accountState, setAccountState] = useState<AccountState>("loading");
   const [accountError, setAccountError] = useState("");
-  const [submissionOrigin, setSubmissionOrigin] =
-    useState<PlaceSubmissionOrigin>("OWNER");
+  const [origin, setOrigin] = useState<PlaceSubmissionOrigin>("OWNER");
   const [offerTypes, setOfferTypes] = useState<GearUpOfferType[]>([]);
   const [sports, setSports] = useState<AthletesSport[]>([]);
   const [categories, setCategories] = useState<GearUpProductCategory[]>([]);
-  const [paymentMethods, setPaymentMethods] =
-    useState<GearUpPaymentMethod[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<GearUpPaymentMethod[]>([]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
-  const [submissionResult, setSubmissionResult] =
-    useState<PlaceSuggestionResult | null>(null);
+  const [result, setResult] = useState<PlaceSuggestionResult | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -60,15 +82,33 @@ export function AddGearUpShopPage() {
       })
       .catch((reason) => {
         if (!active) return;
-        setAccountError(
-          protectedError(reason, "Unable to verify your HOOMA account"),
+        const message = protectedError(
+          reason,
+          "Unable to verify your HOOMA account",
         );
+        setAccountError(message);
         setAccountState("signed-out");
       });
     return () => {
       active = false;
     };
   }, [api, protectedError]);
+
+  function toggleOffer(value: GearUpOfferType) {
+    setOfferTypes((current) => toggleValue(current, value));
+  }
+
+  function toggleSport(value: AthletesSport) {
+    setSports((current) => toggleValue(current, value));
+  }
+
+  function toggleCategory(value: GearUpProductCategory) {
+    setCategories((current) => toggleValue(current, value));
+  }
+
+  function togglePayment(value: GearUpPaymentMethod) {
+    setPaymentMethods((current) => toggleValue(current, value));
+  }
 
   async function submit(input: PlaceFormInput) {
     const parsed = gearUpShopSuggestionSchema.safeParse({
@@ -87,7 +127,7 @@ export function AddGearUpShopPage() {
         category: input.category,
         email: input.email,
         menuItems: input.menuItems,
-        submissionOrigin,
+        submissionOrigin: origin,
       },
       shop: {
         offerTypes,
@@ -98,17 +138,17 @@ export function AddGearUpShopPage() {
     });
 
     if (!parsed.success) {
-      setError(
+      const message =
         parsed.error.issues[0]?.message ??
-          "Check the Store details and try again.",
-      );
+        "Check the Store details and try again.";
+      setError(message);
       return;
     }
 
     setPending(true);
     setError("");
     try {
-      setSubmissionResult(await gearUpApi.suggestShop(parsed.data));
+      setResult(await gearUpApi.suggestShop(parsed.data));
     } catch (reason) {
       setError(protectedError(reason, "Unable to submit Gear Up Store"));
     } finally {
@@ -121,7 +161,7 @@ export function AddGearUpShopPage() {
   }
 
   if (accountState === "signed-out") {
-    const href = authenticationHref("/athletes/gear-up/add-store");
+    const href = authenticationHref(CREATE_HREF);
     return (
       <section className="gear-up-page gear-up-add-store">
         <AthletesHubTabs active="gear-up" />
@@ -129,7 +169,8 @@ export function AddGearUpShopPage() {
           <p className="gear-up-hero__eyebrow">ADD STORE</p>
           <h1>Sign in to add a Gear Up Store.</h1>
           <p>
-            An HOOMA account is required before a Store can be submitted for review.
+            An HOOMA account is required before a Store can be submitted for
+            review.
           </p>
           {href ? (
             <a className="gear-up-add-store-link" href={href}>
@@ -142,11 +183,16 @@ export function AddGearUpShopPage() {
     );
   }
 
-  if (submissionResult) {
-    const placeId = submissionResult.place.id;
-    const existing = submissionResult.outcome === "EXISTING";
-    const approved = submissionResult.status === "APPROVED";
-    const reviewPending = submissionResult.status === "PENDING";
+  if (result) {
+    const placeId = result.place.id;
+    const existing = result.outcome === "EXISTING";
+    const approved = result.status === "APPROVED";
+    const reviewPending = result.status === "PENDING";
+    const statusNote = reviewPending
+      ? "The canonical Place is still pending review."
+      : approved
+        ? "The canonical Place is approved; Gear Up Store moderation is still handled separately."
+        : "";
 
     return (
       <section className="gear-up-page gear-up-add-store">
@@ -161,18 +207,8 @@ export function AddGearUpShopPage() {
               ? "HOOMA kept the existing canonical Place and attached the Gear Up submission to it."
               : "Your Store is now in the Gear Up review flow."}
           </p>
-          <p>
-            App Admin review remains required for Gear Up publication. If you submitted By Owner,
-            verified ownership remains separate and is not granted by this Store submission.
-          </p>
-          {reviewPending ? (
-            <p className="muted">The canonical Place is still pending review.</p>
-          ) : null}
-          {approved ? (
-            <p className="muted">
-              The canonical Place is approved; Gear Up Store moderation is still handled separately.
-            </p>
-          ) : null}
+          <p>{REVIEW_NOTE}</p>
+          {statusNote ? <p className="muted">{statusNote}</p> : null}
           <a className="gear-up-add-store-link" href="/athletes/gear-up">
             Back to Gear Up
           </a>
@@ -197,17 +233,15 @@ export function AddGearUpShopPage() {
       <fieldset className="gear-up-filter-group">
         <legend>What does this Store offer?</legend>
         <div className="gear-up-filter-row">
-          {(["SPORTSWEAR", "GEAR"] as const).map((offer) => (
+          {OFFER_OPTIONS.map((option) => (
             <button
-              key={offer}
+              key={option.value}
               type="button"
-              className={`gear-up-chip${offerTypes.includes(offer) ? " is-active" : ""}`}
-              aria-pressed={offerTypes.includes(offer)}
-              onClick={() =>
-                setOfferTypes((values) => toggleValue(values, offer))
-              }
+              className={chipClass(offerTypes.includes(option.value))}
+              aria-pressed={offerTypes.includes(option.value)}
+              onClick={() => toggleOffer(option.value)}
             >
-              {offer === "SPORTSWEAR" ? "Sportswear" : "Gear"}
+              {option.label}
             </button>
           ))}
         </div>
@@ -220,9 +254,9 @@ export function AddGearUpShopPage() {
             <button
               key={sport}
               type="button"
-              className={`gear-up-chip${sports.includes(sport) ? " is-active" : ""}`}
+              className={chipClass(sports.includes(sport))}
               aria-pressed={sports.includes(sport)}
-              onClick={() => setSports((values) => toggleValue(values, sport))}
+              onClick={() => toggleSport(sport)}
             >
               {sportLabel(sport)}
             </button>
@@ -237,11 +271,9 @@ export function AddGearUpShopPage() {
             <button
               key={category}
               type="button"
-              className={`gear-up-chip${categories.includes(category) ? " is-active" : ""}`}
+              className={chipClass(categories.includes(category))}
               aria-pressed={categories.includes(category)}
-              onClick={() =>
-                setCategories((values) => toggleValue(values, category))
-              }
+              onClick={() => toggleCategory(category)}
             >
               {categoryLabel(category)}
             </button>
@@ -254,11 +286,9 @@ export function AddGearUpShopPage() {
         <div className="gear-up-filter-row">
           <button
             type="button"
-            className={`gear-up-chip${paymentMethods.includes("CASH") ? " is-active" : ""}`}
+            className={chipClass(paymentMethods.includes("CASH"))}
             aria-pressed={paymentMethods.includes("CASH")}
-            onClick={() =>
-              setPaymentMethods((values) => toggleValue(values, "CASH"))
-            }
+            onClick={() => togglePayment("CASH")}
           >
             Cash
           </button>
@@ -272,18 +302,16 @@ export function AddGearUpShopPage() {
           </button>
           <button
             type="button"
-            className={`gear-up-chip${paymentMethods.includes("CARD_BY_PHONE") ? " is-active" : ""}`}
+            className={chipClass(paymentMethods.includes("CARD_BY_PHONE"))}
             aria-pressed={paymentMethods.includes("CARD_BY_PHONE")}
-            onClick={() =>
-              setPaymentMethods((values) => toggleValue(values, "CARD_BY_PHONE"))
-            }
+            onClick={() => togglePayment("CARD_BY_PHONE")}
           >
             Card by phone
           </button>
         </div>
         <p className="gear-up-add-store__note">
-          Crypto stays unavailable until an HOOMA saved wallet can be selected. No raw wallet address
-          is collected here.
+          Crypto stays unavailable until an HOOMA saved wallet can be selected.
+          No raw wallet address is collected here.
         </p>
       </fieldset>
     </section>
@@ -297,7 +325,8 @@ export function AddGearUpShopPage() {
         <p className="gear-up-hero__eyebrow">ADD STORE</p>
         <h1 className="gear-up-page__title">Add a Store to Gear Up.</h1>
         <p className="gear-up-hero__description">
-          Keep one canonical HOOMA Place while adding the Store details Gear Up needs.
+          Keep one canonical HOOMA Place while adding the Store details Gear Up
+          needs.
         </p>
       </header>
 
@@ -311,34 +340,24 @@ export function AddGearUpShopPage() {
           <button
             type="button"
             role="tab"
-            aria-selected={submissionOrigin === "OWNER"}
-            className={
-              submissionOrigin === "OWNER"
-                ? "place-source-tab is-active"
-                : "place-source-tab"
-            }
-            onClick={() => setSubmissionOrigin("OWNER")}
+            aria-selected={origin === "OWNER"}
+            className={sourceTabClass(origin === "OWNER")}
+            onClick={() => setOrigin("OWNER")}
           >
             By Owner
           </button>
           <button
             type="button"
             role="tab"
-            aria-selected={submissionOrigin === "FANHUB"}
-            className={
-              submissionOrigin === "FANHUB"
-                ? "place-source-tab is-active"
-                : "place-source-tab"
-            }
-            onClick={() => setSubmissionOrigin("FANHUB")}
+            aria-selected={origin === "FANHUB"}
+            className={sourceTabClass(origin === "FANHUB")}
+            onClick={() => setOrigin("FANHUB")}
           >
             FanHub
           </button>
         </div>
         <p className="gear-up-add-store__note">
-          {submissionOrigin === "OWNER"
-            ? "Choose By Owner only when you own or manage this Store. Verification remains separate from submission."
-            : "FanHub lets a registered HOOMA member suggest a Store for the community without gaining ownership or management authority."}
+          {origin === "OWNER" ? OWNER_NOTE : FANHUB_NOTE}
         </p>
       </section>
 
