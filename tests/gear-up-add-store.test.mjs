@@ -8,7 +8,11 @@ function source(path) {
 
 test("Gear Up Add Store has a dedicated frontend page and Athletes route", () => {
   const pagePath = "packages/frontend/src/gear-up/AddGearUpShopPage.tsx";
-  assert.equal(\n    existsSync(new URL(`../${pagePath}`, import.meta.url)),\n    true,\n    `${pagePath} must exist`,\n  );
+  assert.equal(
+    existsSync(new URL(`../${pagePath}`, import.meta.url)),
+    true,
+    `${pagePath} must exist`,
+  );
 
   const entry = source("packages/frontend/src/index.ts");
   const router = source("apps/web/src/app/router/HoomaRouter.tsx");
@@ -38,7 +42,15 @@ test("Gear Up Add Store preserves source, classification, payment and photo rule
   const page = source("packages/frontend/src/gear-up/AddGearUpShopPage.tsx");
   const placesContract = source("packages/contracts/src/places.ts");
 
-  for (const label of [\n    "By Owner",\n    "FanHub",\n    "Sportswear",\n    "Gear",\n    "Cash",\n    "Card by phone",\n    "Crypto",\n  ]) {
+  for (const label of [
+    "By Owner",
+    "FanHub",
+    "Sportswear",
+    "Gear",
+    "Cash",
+    "Card by phone",
+    "Crypto",
+  ]) {
     assert.match(page, new RegExp(label));
   }
   assert.match(page, /ATHLETES_SPORTS/);
