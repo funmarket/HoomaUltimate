@@ -57,7 +57,7 @@ test("Gear Up shop detail renders only canonical fields supported by live contra
   assert.match(page, /shop\.paymentMethods/);
   assert.match(page, /shop\.categories/);
   assert.match(page, /shop\.sports/);
-  assert.doesNotMatch(page, /Instagram|Opening hours|rating|review|stock|checkout|Buy Now/i);
+  assert.doesNotMatch(page, /Instagram|Opening hours|rating|\breviews?\b|stock|checkout|Buy Now/i);
 });
 
 test("shop detail previews canonical products without inventing the later product-detail route", () => {
