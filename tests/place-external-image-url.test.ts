@@ -1,9 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { placeImageUrlSchema } from "../packages/contracts/src/places.js";
-import {
-  normalizeExternalPlaceImageUrl,
-} from "../apps/api/src/modules/places/boundary/external-place-image-url.js";
+import { normalizeExternalPlaceImageUrl } from "../apps/api/src/modules/places/boundary/external-place-image-url.js";
 
 test("keeps ordinary direct image URLs unchanged", () => {
   const image = "https://example.com/photos/cafe-thirteen.jpg?size=large&token=a%2Fb";
@@ -12,9 +10,7 @@ test("keeps ordinary direct image URLs unchanged", () => {
 
 test("unwraps Google imgres image targets", () => {
   const image = "https://cdn.example.com/cafe-thirteen.webp?width=1200";
-  const google = `https://www.google.com/imgres?imgurl=${encodeURIComponent(
-    image,
-  )}&imgrefurl=https%3A%2F%2Fexample.com`;
+  const google = `https://www.google.com/imgres?imgurl=${encodeURIComponent(image)}&imgrefurl=https%3A%2F%2Fexample.com`;
   assert.equal(normalizeExternalPlaceImageUrl(google), image);
 });
 

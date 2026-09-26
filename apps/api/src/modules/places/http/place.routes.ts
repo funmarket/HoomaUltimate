@@ -45,13 +45,15 @@ export function createPlacesMemberRouter(service: PlaceService, media: PlaceMedi
   router.post(
     "/:placeId/images/external",
     asyncHandler(async (request, response) => {
-      response.status(201).json(
-        await media.addExternal(
-          getAuth(request).userId,
-          String(request.params.placeId),
-          placeExternalImageInputSchema.parse(request.body),
-        ),
-      );
+      response
+        .status(201)
+        .json(
+          await media.addExternal(
+            getAuth(request).userId,
+            String(request.params.placeId),
+            placeExternalImageInputSchema.parse(request.body),
+          ),
+        );
     }),
   );
   router.post(
