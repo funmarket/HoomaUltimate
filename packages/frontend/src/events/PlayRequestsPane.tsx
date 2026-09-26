@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { HelpTaxonomyResponse } from "@hooma/contracts/help-taxonomy";
 import type { HelpRequest } from "@hooma/contracts/requests";
 import { useHoomaFrontend } from "../context";
@@ -20,6 +20,16 @@ export function PlayRequestsPane() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
+
+  const loadCardImage = useCallback(
+    async (requestId: string) => {
+      const delivery = memberViewer
+        ? await requestsApi.memberImageDelivery(requestId)
+        : await requestsApi.publicImageDelivery(requestId);
+      return delivery.contentUrl;
+    },
+    [memberViewer, requestsApi],
+  );
 
   const effectiveFilters = useMemo<RequestsListQuery>(
     () => ({
@@ -133,15 +143,30 @@ export function PlayRequestsPane() {
       </div>
 
       {taxonomy ? (
-        <RequestTaxonomyFilters taxonomy={taxonomy} value={filters} onChange={setFilters} />
+        <RequestTaxonomyFilters
+          taxonomy={taxonomy}
+          value={filters}
+          onChange={setFilters}
+          sportOnly
+        />
       ) : null}
 
       <RequestFeed
         items={items}
+        loadImage={loadCardImage}
         loading={loading || !taxonomy}
         error={error}
         nextCursor={nextCursor}
         loadingMore={loadingMore}
+        filtered={Boolean(
+          filters.q ||
+          filters.sport ||
+          filters.subcategoryId ||
+          filters.needId ||
+          filters.city ||
+          filters.houma ||
+          filters.status,
+        )}
         onLoadMore={() => void loadMore()}
       />
     </section>

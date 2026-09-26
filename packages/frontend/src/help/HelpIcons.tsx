@@ -80,3 +80,28 @@ export function FilterIcon(props: HelpIconProps) {
     </HelpIcon>
   );
 }
+
+export function SearchIcon(props: HelpIconProps) {
+  return (
+    <HelpIcon {...props}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-4-4" />
+    </HelpIcon>
+  );
+}
+
+export function ChevronRightIcon(props: HelpIconProps) {
+  return (
+    <HelpIcon {...props}>
+      <path d="m9 18 6-6-6-6" />
+    </HelpIcon>
+  );
+}
+
+export function ChevronUpIcon(props: HelpIconProps) {
+  return (
+    <HelpIcon {...props}>
+      <path d="m18 15-6-6-6 6" />
+    </HelpIcon>
+  );
+}

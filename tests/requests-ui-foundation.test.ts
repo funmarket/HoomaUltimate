@@ -36,9 +36,49 @@ test("Requests primary interaction state uses remix green without filled-green b
   assert.equal(requestsCss.includes("background: var(--hooma-ui-accent);"), false);
 });
 
-test("Requests keeps mobile Help tabs readable instead of shrinking text", () => {
-  assert.ok(requestsCss.includes("overflow-x: auto;"));
-  assert.ok(requestsCss.includes("flex: 1 0 132px;"));
-  assert.ok(requestsCss.includes("font-size: var(--hooma-ui-body);"));
-  assert.equal(requestsCss.includes("font-size: 15px;"), false);
+test("Requests fits all three Help tabs in one responsive mobile row", () => {
+  assert.match(requestsCss, /\.help-tabs\s*\{[^}]*grid-template-columns:[^}]*1\.14fr/s);
+  assert.match(requestsCss, /\.help-tabs\s*\{[^}]*gap:\s*clamp\(/s);
+  assert.match(requestsCss, /\.help-tab\s*\{[^}]*padding-inline:\s*clamp\(/s);
+  assert.match(requestsCss, /\.help-tab svg\s*\{[^}]*width:\s*clamp\(/s);
+});
+
+test("Requests ordinary SVG icons use Brilliant Silver with semantic exceptions", () => {
+  assert.match(requestsCss, /\.requests-page svg\s*\{[^}]*color:\s*#a9b0b4;/s);
+  assert.match(requestsCss, /\.help-tab\.is-active\s*\{[^}]*color:\s*#aef02f;/s);
+  assert.match(
+    requestsCss,
+    /\.request-root-switch button\[aria-pressed="true"\]\s*\{[^}]*color:\s*#ffae42;/s,
+  );
+});
+
+test("collapsed and expanded Request cards preserve accepted text and layout roles", () => {
+  assert.match(
+    requestsCss,
+    /\.request-card:not\(\.request-card--expanded\)\.request-card--with-image\s+\.request-card__image\s*\{[^}]*aspect-ratio:\s*4\s*\/\s*5;/s,
+  );
+  assert.match(
+    requestsCss,
+    /\.request-card__body\s*>\s*span\s*\{[^}]*color:\s*#d8d4ca;[^}]*font-size:\s*16px;/s,
+  );
+  assert.match(requestsCss, /\.request-card__meta\s*\{[^}]*color:\s*#b8b5ad;/s);
+  assert.match(
+    requestsCss,
+    /\.request-card--expanded\s+\.request-card__details\s*\{[^}]*grid-row:\s*4;/s,
+  );
+  assert.match(
+    requestsCss,
+    /\.request-card-detail__facts\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:/s,
+  );
+});
+
+test("Requests CSS does not include the deferred VR4 advanced-filter workflow", () => {
+  assert.doesNotMatch(requestsCss, /request-filter-affordance/);
+  assert.doesNotMatch(requestsCss, /request-filter-trigger__count/);
+  assert.doesNotMatch(requestsCss, /request-filters__close/);
+  assert.doesNotMatch(requestsCss, /request-filters__actions/);
+});
+
+test("shared Request cards keep accessible-only expansion copy visually hidden", () => {
+  assert.match(requestsCss, /\.request-card \.sr-only\s*\{/);
 });

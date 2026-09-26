@@ -226,7 +226,7 @@ export function AddPlacePage() {
     try {
       const result = isPitchSuggestion
         ? await pitchApi.suggestPlace({
-            place: input,
+            place: { ...input, submissionOrigin },
             pitch: {
               hourlyRateMinor: pitchRateToMinor(Number(pitchHourlyRate), pitchCurrency),
               currency: pitchCurrency,

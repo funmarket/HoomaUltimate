@@ -310,7 +310,7 @@ The dedicated decision record is `docs/adr/ADR-041-gamers-human-match-system.md`
 
 ## ADR-042 — Pitch suggestion and claim lifecycle
 
-**Decision:** Pitch is an implemented dedicated product over canonical `Place`. A Pitch suggestion creates the Place and pending `PITCH` capability with real hourly pricing for App Admin review. Suggestion does not imply ownership. Verified owners use `PlaceCapabilityApplication` for later Pitch profile/pricing updates, while canonical Place contact and `PlaceImage[]` remain the single contact/media authorities.
+**Decision:** Pitch is an implemented dedicated product over canonical `Place`. A Pitch submission creates the Place and pending `PITCH` capability with real hourly pricing for App Admin review and carries immutable `OWNER | FANHUB` Place submission provenance. A new `OWNER` submission creates one pending canonical ownership claim for the submitter but never grants verified `PlaceOwnership`; a new `FANHUB` submission creates no ownership claim and retains the existing explicit claim-later path. Duplicate detection reuses the existing Place without rewriting provenance or silently creating ownership authority, and later ownership approval does not rewrite the original provenance. Verified owners use `PlaceCapabilityApplication` for later Pitch profile/pricing updates, while canonical Place contact and `PlaceImage[]` remain the single contact/media authorities.
 
 The dedicated decision record is `docs/adr/ADR-042-pitch-suggestion-claim-lifecycle.md`.
 
