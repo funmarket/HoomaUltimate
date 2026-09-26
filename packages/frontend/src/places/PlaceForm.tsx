@@ -21,10 +21,16 @@ function menuDrafts(place?: PublicPlaceSummary | null): MenuDraft[] {
   ];
 }
 
-function imageDrafts(place: PublicPlaceSummary | null | undefined, maxImages: number): string[] {
+function imageDrafts(
+  place: PublicPlaceSummary | null | undefined,
+  maxImages: number,
+): string[] {
   const existing = place?.images.map((image) => image.imageUrl) ?? [];
   const source = existing.length ? existing : place?.imageUrl ? [place.imageUrl] : [];
-  return Array.from({ length: Math.max(maxImages, source.length) }, (_, index) => source[index] ?? "");
+  return Array.from(
+    { length: Math.max(maxImages, source.length) },
+    (_, index) => source[index] ?? "",
+  );
 }
 
 export function PlaceForm({
@@ -47,7 +53,9 @@ export function PlaceForm({
   readonly onSubmit: (input: PlaceFormInput) => Promise<void>;
 }) {
   const [menu, setMenu] = useState<MenuDraft[]>(() => menuDrafts(initialPlace));
-  const [imageUrls, setImageUrls] = useState<string[]>(() => imageDrafts(initialPlace, maxImages));
+  const [imageUrls, setImageUrls] = useState<string[]>(() =>
+    imageDrafts(initialPlace, maxImages),
+  );
   const [imageFiles, setImageFiles] = useState<readonly File[]>([]);
   const [imageError, setImageError] = useState("");
   const [latitude, setLatitude] = useState(initialPlace?.latitude?.toString() ?? "");

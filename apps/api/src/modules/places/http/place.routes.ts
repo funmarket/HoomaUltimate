@@ -12,7 +12,10 @@ import { getAuth } from "../../identity/http/auth-request.js";
 import type { PlaceMediaService } from "../application/place-media.service.js";
 import type { PlaceService } from "../application/place.service.js";
 
-export function createPlacesPublicRouter(service: PlaceService, media: PlaceMediaService): Router {
+export function createPlacesPublicRouter(
+  service: PlaceService,
+  media: PlaceMediaService,
+): Router {
   const router = Router();
   router.get(
     "/:placeId/images/:imageId/content",
@@ -40,7 +43,10 @@ export function createPlacesPublicRouter(service: PlaceService, media: PlaceMedi
   return router;
 }
 
-export function createPlacesMemberRouter(service: PlaceService, media: PlaceMediaService): Router {
+export function createPlacesMemberRouter(
+  service: PlaceService,
+  media: PlaceMediaService,
+): Router {
   const router = Router();
   router.post(
     "/:placeId/images/external",

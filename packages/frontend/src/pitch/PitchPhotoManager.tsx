@@ -68,7 +68,11 @@ export function PitchPhotoManager({
           <article key={image.id}>
             <img src={image.imageUrl} alt={`${place.name} photo ${index + 1}`} />
             <div>
-              <button type="button" disabled={busy || index === 0} onClick={() => void move(index, -1)}>
+              <button
+                type="button"
+                disabled={busy || index === 0}
+                onClick={() => void move(index, -1)}
+              >
                 Move up
               </button>
               <button

@@ -63,21 +63,33 @@ export class PlaceMediaService {
     const maxImages = await this.requireMediaAccess(userId, placeId);
     const contentType = normalizeContentType(input.contentType);
     if (!PLACE_IMAGE_TYPES.has(contentType)) {
-      throw new PlaceMediaError("PLACE_IMAGE_TYPE_INVALID", "Place photo must be JPEG, PNG, or WebP");
+      throw new PlaceMediaError(
+        "PLACE_IMAGE_TYPE_INVALID",
+        "Place photo must be JPEG, PNG, or WebP",
+      );
     }
     if (!input.body.byteLength) {
       throw new PlaceMediaError("PLACE_IMAGE_REQUIRED", "Place photo bytes are required");
     }
     if (input.body.byteLength > PLACE_IMAGE_MAX_BYTES) {
-      throw new PlaceMediaError("PLACE_IMAGE_TOO_LARGE", "Place photo must be 5 MiB or smaller");
+      throw new PlaceMediaError(
+        "PLACE_IMAGE_TOO_LARGE",
+        "Place photo must be 5 MiB or smaller",
+      );
     }
     if (!this.storage) {
-      throw new PlaceMediaError("PLACE_IMAGE_STORAGE_NOT_CONFIGURED", "Place photo storage is not configured");
+      throw new PlaceMediaError(
+        "PLACE_IMAGE_STORAGE_NOT_CONFIGURED",
+        "Place photo storage is not configured",
+      );
     }
 
     const imageId = randomUUID();
     const key = objectKey(placeId, imageId);
-    const processed = await this.processor.process(input.body, contentType as PlaceImageContentType);
+    const processed = await this.processor.process(
+      input.body,
+      contentType as PlaceImageContentType,
+    );
     let uploaded = false;
     try {
       await this.storage.put(key, processed.body, processed.contentType);
@@ -116,7 +128,10 @@ export class PlaceMediaService {
       return await this.places.reorderImages(placeId, parsed.imageIds);
     } catch (error) {
       if (error instanceof Error && error.message === "PLACE_IMAGE_ORDER_INVALID") {
-        throw new PlaceMediaError("PLACE_IMAGE_ORDER_INVALID", "Photo order must contain every photo once");
+        throw new PlaceMediaError(
+          "PLACE_IMAGE_ORDER_INVALID",
+          "Photo order must contain every photo once",
+        );
       }
       throw error;
     }
@@ -131,9 +146,15 @@ export class PlaceMediaService {
       throw new PlaceMediaError("PLACE_IMAGE_NOT_FOUND", "Place photo not found");
     }
     if (!this.storage || !supportsReadUrlSigning(this.storage)) {
-      throw new PlaceMediaError("PLACE_IMAGE_STORAGE_NOT_CONFIGURED", "Place photo storage is not configured");
+      throw new PlaceMediaError(
+        "PLACE_IMAGE_STORAGE_NOT_CONFIGURED",
+        "Place photo storage is not configured",
+      );
     }
-    return this.storage.createReadUrl(objectKey(placeId, imageId), PLACE_IMAGE_READ_URL_TTL_SECONDS);
+    return this.storage.createReadUrl(
+      objectKey(placeId, imageId),
+      PLACE_IMAGE_READ_URL_TTL_SECONDS,
+    );
   }
 
   private async requireMediaAccess(userId: string, placeId: string): Promise<number> {

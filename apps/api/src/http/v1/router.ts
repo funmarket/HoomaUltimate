@@ -48,7 +48,10 @@ export function createMemberV1Router(container: AppContainer, config: ApiConfig)
       container.gearUpSettingsService,
     ),
   );
-  router.use("/places", createPlacesMemberRouter(container.placeService, container.placeMediaService));
+  router.use(
+    "/places",
+    createPlacesMemberRouter(container.placeService, container.placeMediaService),
+  );
   router.use(
     "/pitch",
     createPitchMemberRouter(container.pitchSuggestionService, container.pitchOwnerService),

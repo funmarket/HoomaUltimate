@@ -27,7 +27,6 @@ test("unwraps nested Google redirect links without altering the final image URL"
   assert.equal(normalizeExternalPlaceImageUrl(outer), image);
 });
 
-
 test("Place image input accepts ordinary CDN and signed HTTP/HTTPS URLs", () => {
   for (const value of [
     "https://cdn.example.com/pitch.webp?width=1600&sig=a%2Fb",
