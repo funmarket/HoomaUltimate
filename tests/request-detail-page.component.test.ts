@@ -114,15 +114,35 @@ const otherResponse = {
   withdrawnAt: null,
 };
 
+const ownResponse = {
+  ...otherResponse,
+  id: "response-1",
+  responderUserId: "user-1",
+  responder: {
+    displayName: "U",
+    username: "u",
+    photoUrl: null,
+  },
+};
+
 function installApiStub(options: {
   readonly me?: unknown;
   readonly request?: unknown;
   readonly responses?: readonly unknown[];
+  readonly refreshedRequest?: unknown;
+  readonly refreshedResponses?: readonly unknown[];
   readonly actionStatus?: number;
   readonly actionBody?: unknown;
   readonly imageDelivery?: unknown;
+  readonly imageStatus?: number;
+  readonly detailStatus?: number;
+  readonly detailBody?: unknown;
 }) {
   const calls: string[] = [];
+  let requestState = options.request ?? baseRequest;
+  let responseState = [...(options.responses ?? [])];
+  let memberDetailReads = 0;
+  let responseReads = 0;
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input));
@@ -130,6 +150,11 @@ function installApiStub(options: {
     const key = `${method} ${url.pathname}`;
     calls.push(key);
     if (url.pathname === "/api/public/v1/auth/session") return json(options.me ?? null);
+    if (url.pathname.endsWith("/requests/request-1/image/delivery") && options.imageStatus)
+      return json(
+        { error: { code: "MEDIA_UNAVAILABLE", message: "Request image is unavailable" } },
+        options.imageStatus,
+      );
     if (url.pathname === "/api/public/v1/requests/request-1/image/delivery")
       return json(
         options.imageDelivery ?? {
@@ -144,23 +169,34 @@ function installApiStub(options: {
           expiresAt: "2026-09-23T13:05:00.000Z",
         },
       );
-    if (url.pathname === "/api/public/v1/requests/request-1")
-      return json(options.request ?? baseRequest);
-    if (url.pathname === "/api/v1/requests/request-1") return json(options.request ?? baseRequest);
-    if (url.pathname === "/api/v1/requests/request-1/responses" && method === "GET")
-      return json({ items: options.responses ?? [] });
+    if (url.pathname.endsWith("/requests/request-1") && method === "GET") {
+      if (options.detailStatus) return json(options.detailBody, options.detailStatus);
+      if (url.pathname.startsWith("/api/v1/")) {
+        memberDetailReads += 1;
+        if (memberDetailReads > 1 && options.refreshedRequest) {
+          requestState = options.refreshedRequest;
+        }
+      }
+      return json(requestState);
+    }
+    if (url.pathname === "/api/v1/requests/request-1/responses" && method === "GET") {
+      responseReads += 1;
+      if (responseReads > 1 && options.refreshedResponses) {
+        responseState = [...options.refreshedResponses];
+      }
+      return json({ items: responseState });
+    }
     if (url.pathname === "/api/v1/requests/request-1/responses" && method === "POST") {
       if (options.actionStatus && options.actionStatus >= 400)
         return json(options.actionBody, options.actionStatus);
-      return json(
-        {
-          ...otherResponse,
-          id: "response-own",
-          responderUserId: "user-1",
-          responder: { displayName: "U", username: "u", photoUrl: null },
-        },
-        201,
-      );
+      const created = {
+        ...otherResponse,
+        id: "response-own",
+        responderUserId: "user-1",
+        responder: { displayName: "U", username: "u", photoUrl: null },
+      };
+      responseState = [created];
+      return json(created, 201);
     }
     if (
       url.pathname === "/api/v1/requests/request-1/responses/response-1/accept" &&
@@ -168,11 +204,56 @@ function installApiStub(options: {
     ) {
       if (options.actionStatus && options.actionStatus >= 400)
         return json(options.actionBody, options.actionStatus);
-      return json({
+      const accepted = {
         ...otherResponse,
         status: "ACCEPTED",
         acceptedAt: "2026-09-17T14:00:00.000Z",
-      });
+      };
+      requestState = { ...(requestState as typeof baseRequest), status: "IN_PROGRESS" };
+      responseState = responseState.map((response) =>
+        (response as { id?: string }).id === "response-1" ? accepted : response,
+      );
+      return json(accepted);
+    }
+    if (
+      url.pathname === "/api/v1/requests/request-1/responses/response-1/decline" &&
+      method === "POST"
+    ) {
+      if (options.actionStatus && options.actionStatus >= 400)
+        return json(options.actionBody, options.actionStatus);
+      const declined = {
+        ...otherResponse,
+        status: "DECLINED",
+        declinedAt: "2026-09-17T14:00:00.000Z",
+      };
+      responseState = responseState.map((response) =>
+        (response as { id?: string }).id === "response-1" ? declined : response,
+      );
+      return json(declined);
+    }
+    if (url.pathname.endsWith("/responses/response-1/withdraw") && method === "POST") {
+      const current = responseState.find(
+        (response) => (response as { id?: string }).id === "response-1",
+      );
+      const withdrawn = {
+        ...(current ?? otherResponse),
+        status: "WITHDRAWN",
+        withdrawnAt: "2026-09-17T14:00:00.000Z",
+      };
+      responseState = [withdrawn];
+      return json(withdrawn);
+    }
+    if (url.pathname.endsWith("/fulfill") && method === "POST") {
+      if (options.actionStatus && options.actionStatus >= 400)
+        return json(options.actionBody, options.actionStatus);
+      requestState = { ...(requestState as typeof baseRequest), status: "FULFILLED" };
+      return json(requestState);
+    }
+    if (url.pathname.endsWith("/cancel") && method === "POST") {
+      if (options.actionStatus && options.actionStatus >= 400)
+        return json(options.actionBody, options.actionStatus);
+      requestState = { ...(requestState as typeof baseRequest), status: "CANCELLED" };
+      return json(requestState);
     }
     if (method === "POST") {
       if (options.actionStatus && options.actionStatus >= 400)
@@ -360,6 +441,301 @@ test("signed-in Request detail uses the member image delivery path", async () =>
       page.calls.includes("GET /api/public/v1/requests/request-1/image/delivery"),
       false,
     );
+  } finally {
+    page.close();
+  }
+});
+
+test("an entity Request historical creator sees neither manager controls nor a response composer", async () => {
+  const page = await renderDetail({
+    me: me("user-1", "MEMBER"),
+    request: {
+      ...baseRequest,
+      createdByUserId: "user-1",
+      publisherCommunityId: "community-1",
+    },
+  });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByText("Need size 43 running shoes")));
+    assert.equal(Boolean(page.view.queryByRole("button", { name: /Send response/i })), false);
+    assert.equal(Boolean(page.view.queryByRole("button", { name: /Mark fulfilled/i })), false);
+    assert.equal(Boolean(page.view.queryByRole("button", { name: /Cancel Request/i })), false);
+  } finally {
+    page.close();
+  }
+});
+
+test("an eligible unrelated member can respond while a current manager never sees the composer", async () => {
+  const member = await renderDetail({ me: me("user-1", "MEMBER") });
+  try {
+    await member.waitFor(() =>
+      assert.ok(member.view.getByRole("button", { name: /Send response/i })),
+    );
+  } finally {
+    member.close();
+  }
+
+  const manager = await renderDetail({ me: me("user-1", "FOUNDER") });
+  try {
+    await manager.waitFor(() => assert.ok(manager.view.getByText("Need size 43 running shoes")));
+    assert.equal(manager.view.queryByRole("button", { name: /Send response/i }), null);
+  } finally {
+    manager.close();
+  }
+});
+
+test("a responder sees one singular private response rather than a message history", async () => {
+  const page = await renderDetail({ me: me("user-1", "MEMBER"), responses: [ownResponse] });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByRole("heading", { name: "Your response" })));
+    assert.equal(page.view.queryByRole("heading", { name: "Your responses" }), null);
+    assert.equal(page.view.queryByRole("heading", { name: /chat|thread|conversation/i }), null);
+    assert.equal(page.view.queryByText(/message history|send another message/i), null);
+  } finally {
+    page.close();
+  }
+});
+
+test("manager acceptance reloads canonical detail and authorized responses", async () => {
+  const accepted = { ...otherResponse, status: "ACCEPTED", acceptedAt: "2026-09-17T14:00:00.000Z" };
+  const page = await renderDetail({
+    me: me("user-1", "FOUNDER"),
+    responses: [otherResponse],
+    refreshedRequest: { ...baseRequest, status: "IN_PROGRESS" },
+    refreshedResponses: [accepted],
+  });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByRole("heading", { name: "Responses" })));
+    assert.equal(page.view.queryByRole("button", { name: /Send response/i }), null);
+    page.fireEvent.click(page.view.getByRole("button", { name: /^Accept$/i }));
+    await page.waitFor(() => assert.ok(page.view.getByText("In Progress")));
+    assert.ok(page.view.getByText("Accepted"));
+    assert.equal(page.calls.filter((call) => call === "GET /api/v1/requests/request-1").length, 2);
+    assert.equal(
+      page.calls.filter((call) => call === "GET /api/v1/requests/request-1/responses").length,
+      2,
+    );
+  } finally {
+    page.close();
+  }
+});
+
+test("a manager can decline a pending response", async () => {
+  const page = await renderDetail({ me: me("user-1", "FOUNDER"), responses: [otherResponse] });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByRole("button", { name: /^Decline$/i })));
+    page.fireEvent.click(page.view.getByRole("button", { name: /^Decline$/i }));
+    await page.waitFor(() => assert.ok(page.view.getByText("Declined")));
+    assert.ok(page.calls.includes("POST /api/v1/requests/request-1/responses/response-1/decline"));
+  } finally {
+    page.close();
+  }
+});
+
+test("a responder can withdraw a pending response", async () => {
+  const page = await renderDetail({ me: me("user-1", "MEMBER"), responses: [ownResponse] });
+  try {
+    await page.waitFor(() =>
+      assert.ok(page.view.getByRole("button", { name: /Withdraw response/i })),
+    );
+    page.fireEvent.click(page.view.getByRole("button", { name: /Withdraw response/i }));
+    await page.waitFor(() => assert.ok(page.view.getByText("Withdrawn")));
+    assert.ok(page.calls.includes("POST /api/v1/requests/request-1/responses/response-1/withdraw"));
+  } finally {
+    page.close();
+  }
+});
+
+test("withdrawing an accepted response preserves the canonical IN_PROGRESS Request", async () => {
+  const page = await renderDetail({
+    me: me("user-1", "MEMBER"),
+    request: { ...baseRequest, status: "IN_PROGRESS" },
+    responses: [{ ...ownResponse, status: "ACCEPTED", acceptedAt: "2026-09-17T14:00:00.000Z" }],
+  });
+  try {
+    await page.waitFor(() =>
+      assert.ok(page.view.getByRole("button", { name: /Withdraw response/i })),
+    );
+    page.fireEvent.click(page.view.getByRole("button", { name: /Withdraw response/i }));
+    await page.waitFor(() => assert.ok(page.view.getByText("Withdrawn")));
+    assert.ok(page.view.getByText("In Progress"));
+  } finally {
+    page.close();
+  }
+});
+
+test("manager lifecycle actions render canonical fulfilled and cancelled terminal states", async () => {
+  const fulfilled = await renderDetail({ me: me("user-1", "FOUNDER") });
+  try {
+    await fulfilled.waitFor(() =>
+      assert.ok(fulfilled.view.getByRole("button", { name: /Mark fulfilled/i })),
+    );
+    fulfilled.fireEvent.click(fulfilled.view.getByRole("button", { name: /Mark fulfilled/i }));
+    await fulfilled.waitFor(() => assert.ok(fulfilled.view.getByText("Fulfilled")));
+    assert.equal(fulfilled.view.queryByRole("button", { name: /Cancel Request/i }), null);
+  } finally {
+    fulfilled.close();
+  }
+
+  const cancelled = await renderDetail({ me: me("user-1", "FOUNDER") });
+  try {
+    await cancelled.waitFor(() =>
+      assert.ok(cancelled.view.getByRole("button", { name: /Cancel Request/i })),
+    );
+    cancelled.fireEvent.click(cancelled.view.getByRole("button", { name: /Cancel Request/i }));
+    await cancelled.waitFor(() => assert.ok(cancelled.view.getByText("Cancelled")));
+    assert.equal(cancelled.view.queryByRole("button", { name: /Mark fulfilled/i }), null);
+  } finally {
+    cancelled.close();
+  }
+});
+
+test("terminal Requests explain their state and expose no mutation controls", async () => {
+  const expectations = [
+    ["FULFILLED", /This Request has been fulfilled/i],
+    ["CANCELLED", /This Request was cancelled/i],
+    ["EXPIRED", /This Request has expired/i],
+  ] as const;
+
+  for (const [status, explanation] of expectations) {
+    const page = await renderDetail({
+      me: me("user-1", "FOUNDER"),
+      request: { ...baseRequest, status },
+    });
+    try {
+      await page.waitFor(() => assert.ok(page.view.getByText(explanation)));
+      assert.equal(page.view.queryByRole("button", { name: /Mark fulfilled/i }), null);
+      assert.equal(page.view.queryByRole("button", { name: /Cancel Request/i }), null);
+      assert.equal(page.view.queryByRole("button", { name: /Send response/i }), null);
+    } finally {
+      page.close();
+    }
+  }
+});
+
+test("detail presents canonical taxonomy, product, safe location and timing facts without fullAddress", async () => {
+  const page = await renderDetail({
+    me: null,
+    request: {
+      ...baseRequest,
+      houma: "Sidi Bou Said",
+      city: "Tunis",
+      locationNote: "Meet by the public library",
+      neededByAt: "2026-10-01T12:00:00.000Z",
+      expiresAt: "2026-10-05T12:00:00.000Z",
+      customNeed: "Adult size with road sole",
+      taxonomy: {
+        requestType: "SPORT",
+        sport: "RUNNING",
+        sportLabel: "Running",
+        subcategory: { id: "subcategory-1", slug: "footwear", label: "Footwear" },
+        need: {
+          id: "need-1",
+          slug: "running-shoes",
+          label: "Running shoes",
+          kind: "PRODUCT",
+          allowsCustomText: true,
+        },
+      },
+    },
+  });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByText("Need size 43 running shoes")));
+    const text = page.view.container.textContent ?? "";
+    for (const expected of [
+      "Sport",
+      "Running",
+      "Footwear",
+      "Running shoes",
+      "Adult size with road sole",
+      "Sidi Bou Said",
+      "Tunis",
+      "Meet by the public library",
+      "Needed by",
+      "Expires",
+      "Quantity",
+      "Size",
+      "Condition",
+    ]) {
+      assert.ok(text.includes(expected), `missing detail fact: ${expected}`);
+    }
+    assert.equal(text.includes("12 Private Street"), false);
+  } finally {
+    page.close();
+  }
+});
+
+test("detail load errors remain explicit", async () => {
+  const page = await renderDetail({
+    me: null,
+    detailStatus: 404,
+    detailBody: { error: { code: "REQUEST_NOT_FOUND", message: "Request not found" } },
+  });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByText("Request not found")));
+    assert.ok(page.view.container.querySelector(".request-error"));
+  } finally {
+    page.close();
+  }
+});
+
+test("image delivery failure preserves Request content and shows bounded media feedback", async () => {
+  const page = await renderDetail({
+    me: null,
+    imageStatus: 503,
+    request: {
+      ...baseRequest,
+      image: {
+        id: "image-1",
+        source: "UPLOAD",
+        contentType: "image/webp",
+        sizeBytes: 1200,
+        updatedAt: "2026-09-23T13:00:00.000Z",
+      },
+    },
+  });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByText("Request image is unavailable")));
+    assert.ok(page.view.getByText("Need size 43 running shoes"));
+    assert.equal(page.view.queryByRole("img", { name: /Request image/i }), null);
+  } finally {
+    page.close();
+  }
+});
+
+test("a 409 preserves its error while refreshing canonical detail and responses", async () => {
+  const page = await renderDetail({
+    me: me("user-1", "FOUNDER"),
+    responses: [otherResponse],
+    actionStatus: 409,
+    actionBody: { error: { code: "CONFLICT", message: "Request state changed" } },
+    refreshedRequest: { ...baseRequest, status: "IN_PROGRESS" },
+    refreshedResponses: [
+      { ...otherResponse, status: "ACCEPTED", acceptedAt: "2026-09-17T14:00:00.000Z" },
+    ],
+  });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByRole("button", { name: /^Accept$/i })));
+    page.fireEvent.click(page.view.getByRole("button", { name: /^Accept$/i }));
+    await page.waitFor(() => assert.ok(page.view.getByText("Request state changed")));
+    assert.ok(page.view.getByText("In Progress"));
+    assert.ok(page.view.getByText("Accepted"));
+    assert.equal(page.calls.filter((call) => call === "GET /api/v1/requests/request-1").length, 2);
+    assert.equal(
+      page.calls.filter((call) => call === "GET /api/v1/requests/request-1/responses").length,
+      2,
+    );
+  } finally {
+    page.close();
+  }
+});
+
+test("detail back navigation uses the established SVG icon language", async () => {
+  const page = await renderDetail({ me: null });
+  try {
+    const back = await page.view.findByRole("link", { name: /Requests/i });
+    assert.equal(back.textContent?.includes("←"), false);
+    assert.ok(back.querySelector("svg"));
   } finally {
     page.close();
   }

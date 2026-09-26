@@ -3,7 +3,7 @@ import type { MeResponse } from "@hooma/contracts";
 import type { HelpRequest, HelpRequestResponse } from "@hooma/contracts/requests";
 import { useHoomaFrontend } from "../context";
 import { HoomaApiError } from "../http";
-import { ClockIcon, LocationIcon } from "../help/HelpIcons";
+import { ChevronRightIcon } from "../help/HelpIcons";
 import { createRequestsApi } from "./api";
 import { RequestRequester } from "./RequestRequester";
 import { RequestResponses } from "./RequestResponses";
@@ -14,6 +14,17 @@ function titleCase(value: string): string {
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+function formatDate(value: string): string {
+  return new Date(value).toLocaleDateString();
+}
+
+function terminalMessage(status: HelpRequest["status"]): string | null {
+  if (status === "FULFILLED") return "This Request has been fulfilled.";
+  if (status === "CANCELLED") return "This Request was cancelled.";
+  if (status === "EXPIRED") return "This Request has expired.";
+  return null;
 }
 
 /**
@@ -50,6 +61,7 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
   const [me, setMe] = useState<MeResponse | null>(null);
   const [item, setItem] = useState<HelpRequest | null>(null);
   const [imageUrl, setImageUrl] = useState("");
+  const [mediaError, setMediaError] = useState("");
   const [responses, setResponses] = useState<HelpRequestResponse[]>([]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -62,6 +74,8 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
     void (async () => {
       setLoading(true);
       setError("");
+      setMediaError("");
+      setImageUrl("");
       try {
         const current = await api.identity.meOptional();
         const detail = current
@@ -76,7 +90,7 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
             deliveredImageUrl = delivery.contentUrl;
           } catch (reason) {
             if (active) {
-              setActionError(protectedError(reason, "Unable to load Request image"));
+              setMediaError(protectedError(reason, "Unable to load Request image"));
             }
           }
         }
@@ -105,12 +119,33 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
     };
   }, [api, protectedError, requestId, requestsApi]);
 
+  async function refreshMemberState(): Promise<void> {
+    const [detail, visible] = await Promise.all([
+      requestsApi.memberDetail(requestId),
+      requestsApi.responses(requestId),
+    ]);
+    setItem(detail);
+    setResponses(visible.items);
+  }
+
+  async function reconcileConflict(reason: unknown, fallback: string): Promise<void> {
+    const originalError = protectedError(reason, fallback);
+    setActionError(originalError);
+    if (!(reason instanceof HoomaApiError && reason.status === 409)) return;
+    try {
+      await refreshMemberState();
+    } catch {
+      // Preserve the original conflict. A failed readback must not hide its cause.
+    }
+  }
+
   const manager = canManage(me, item);
   const ownResponse = me
     ? responses.find((response) => response.responderUserId === me.id)
     : undefined;
   const mutable = item?.status === "OPEN" || item?.status === "IN_PROGRESS";
-  const canRespond = Boolean(me && item && mutable && !manager && !ownResponse);
+  const originalCreator = Boolean(me && item && item.createdByUserId === me.id);
+  const canRespond = Boolean(me && item && mutable && !manager && !originalCreator && !ownResponse);
 
   async function submitResponse(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -122,7 +157,7 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
       setResponses((current) => [...current, created]);
       setMessage("");
     } catch (reason) {
-      setActionError(protectedError(reason, "Unable to send response"));
+      await reconcileConflict(reason, "Unable to send response");
     } finally {
       setPendingAction("");
     }
@@ -140,8 +175,17 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
       setResponses((current) =>
         current.map((response) => (response.id === responseId ? updated : response)),
       );
+      if (decision === "accept") {
+        try {
+          await refreshMemberState();
+        } catch (reason) {
+          setActionError(
+            protectedError(reason, "Response accepted, but unable to refresh Request"),
+          );
+        }
+      }
     } catch (reason) {
-      setActionError(protectedError(reason, `Unable to ${decision} response`));
+      await reconcileConflict(reason, `Unable to ${decision} response`);
     } finally {
       setPendingAction("");
     }
@@ -157,7 +201,7 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
         current.map((response) => (response.id === responseId ? updated : response)),
       );
     } catch (reason) {
-      setActionError(protectedError(reason, "Unable to withdraw response"));
+      await reconcileConflict(reason, "Unable to withdraw response");
     } finally {
       setPendingAction("");
     }
@@ -174,7 +218,7 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
           : await requestsApi.cancel(requestId);
       setItem(updated);
     } catch (reason) {
-      setActionError(protectedError(reason, `Unable to ${next} Request`));
+      await reconcileConflict(reason, `Unable to ${next} Request`);
     } finally {
       setPendingAction("");
     }
@@ -183,88 +227,177 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
   if (loading) return <p className="status">Loading Request…</p>;
   if (error || !item) return <p className="status request-error">{error || "Request not found"}</p>;
 
-  const place = [item.houma, item.city].filter(Boolean).join(", ");
   const loginHref = authenticationHref(`/requests/${requestId}`);
+  const terminal = terminalMessage(item.status);
 
   return (
     <section className="page requests-page">
       <a className="request-back-link" href="/requests">
-        ← Requests
+        <ChevronRightIcon className="request-back-link__icon" />
+        <span>Requests</span>
       </a>
 
       <article className="request-detail panel">
+        <header className="request-detail__header">
+          <div className="request-card__topline">
+            <span className="request-chip">
+              {item.taxonomy?.need.label ?? titleCase(item.category)}
+            </span>
+            <span className={`request-status request-status--${item.status.toLowerCase()}`}>
+              <span className="request-status__dot" aria-hidden="true" />
+              {titleCase(item.status)}
+            </span>
+          </div>
+          <RequestRequester requester={item.requester} />
+        </header>
+
         {imageUrl ? (
           <img className="request-detail__image" src={imageUrl} alt="Request image" />
+        ) : mediaError ? (
+          <p className="request-media-feedback" role="status">
+            {mediaError}
+          </p>
         ) : null}
-        <div className="request-card__topline">
-          <span className="request-chip">
-            {item.taxonomy?.need.label ?? titleCase(item.category)}
-          </span>
-          <span className={`request-status request-status--${item.status.toLowerCase()}`}>
-            <span className="request-status__dot" aria-hidden="true" />
-            {titleCase(item.status)}
-          </span>
-        </div>
-        <RequestRequester requester={item.requester} />
-        <div>
+
+        <div className="request-detail__copy">
           <h1>{item.title}</h1>
           <p>{item.description}</p>
         </div>
-        <div className="request-detail__facts">
-          {place ? (
-            <span>
-              <LocationIcon />
-              {place}
-            </span>
-          ) : null}
-          {item.neededByAt ? (
-            <span>
-              <ClockIcon />
-              Needed {new Date(item.neededByAt).toLocaleDateString()}
-            </span>
-          ) : null}
-          {item.taxonomy ? (
-            <>
-              <span>Type · {titleCase(item.taxonomy.requestType)}</span>
-              {item.taxonomy.sportLabel ? <span>Sport · {item.taxonomy.sportLabel}</span> : null}
-              <span>Category · {item.taxonomy.subcategory.label}</span>
-              <span>Need · {item.taxonomy.need.label}</span>
-            </>
-          ) : item.sport ? (
-            <span>Sport · {titleCase(item.sport)}</span>
-          ) : null}
-          {item.customNeed ? <span>Need details · {item.customNeed}</span> : null}
-          {item.quantityNeeded ? <span>Quantity · {item.quantityNeeded}</span> : null}
-          {item.sizeLabel ? <span>Size · {item.sizeLabel}</span> : null}
-          {item.conditionPreference ? (
-            <span>Condition · {titleCase(item.conditionPreference)}</span>
-          ) : null}
-          {item.locationNote ? <span>Location · {item.locationNote}</span> : null}
-        </div>
+
+        <section className="request-detail__section" aria-labelledby="request-detail-facts">
+          <h2 id="request-detail-facts">Request details</h2>
+          <dl className="request-detail__facts">
+            {item.taxonomy ? (
+              <>
+                <div>
+                  <dt>Request Type</dt>
+                  <dd>{titleCase(item.taxonomy.requestType)}</dd>
+                </div>
+                {item.taxonomy.sportLabel ? (
+                  <div>
+                    <dt>Sport</dt>
+                    <dd>{item.taxonomy.sportLabel}</dd>
+                  </div>
+                ) : null}
+                <div>
+                  <dt>Category</dt>
+                  <dd>{item.taxonomy.subcategory.label}</dd>
+                </div>
+                <div>
+                  <dt>Specific Need</dt>
+                  <dd>{item.taxonomy.need.label}</dd>
+                </div>
+              </>
+            ) : (
+              <>
+                <div>
+                  <dt>Category</dt>
+                  <dd>{titleCase(item.category)}</dd>
+                </div>
+                {item.sport ? (
+                  <div>
+                    <dt>Sport</dt>
+                    <dd>{titleCase(item.sport)}</dd>
+                  </div>
+                ) : null}
+              </>
+            )}
+            {item.customNeed ? (
+              <div className="request-detail__fact-wide">
+                <dt>Custom Need</dt>
+                <dd>{item.customNeed}</dd>
+              </div>
+            ) : null}
+            {item.houma ? (
+              <div>
+                <dt>Houma</dt>
+                <dd>{item.houma}</dd>
+              </div>
+            ) : null}
+            {item.city ? (
+              <div>
+                <dt>City</dt>
+                <dd>{item.city}</dd>
+              </div>
+            ) : null}
+            {item.locationNote ? (
+              <div className="request-detail__fact-wide">
+                <dt>Location note</dt>
+                <dd>{item.locationNote}</dd>
+              </div>
+            ) : null}
+            {item.neededByAt ? (
+              <div>
+                <dt>Needed by</dt>
+                <dd>{formatDate(item.neededByAt)}</dd>
+              </div>
+            ) : null}
+            {item.expiresAt ? (
+              <div>
+                <dt>Expires</dt>
+                <dd>{formatDate(item.expiresAt)}</dd>
+              </div>
+            ) : null}
+            {item.quantityNeeded ? (
+              <div>
+                <dt>Quantity</dt>
+                <dd>{item.quantityNeeded}</dd>
+              </div>
+            ) : null}
+            {item.sizeLabel ? (
+              <div>
+                <dt>Size</dt>
+                <dd>{item.sizeLabel}</dd>
+              </div>
+            ) : null}
+            {item.conditionPreference ? (
+              <div>
+                <dt>Condition</dt>
+                <dd>{titleCase(item.conditionPreference)}</dd>
+              </div>
+            ) : null}
+          </dl>
+        </section>
+
+        {terminal ? (
+          <p className="request-terminal-note" role="status">
+            {terminal}
+          </p>
+        ) : null}
 
         {manager && mutable ? (
-          <div className="request-action-row">
-            <button
-              type="button"
-              className="help-action help-action--primary"
-              disabled={Boolean(pendingAction)}
-              onClick={() => void transition("fulfill")}
-            >
-              Mark fulfilled
-            </button>
-            <button
-              type="button"
-              className="help-action help-action--danger"
-              disabled={Boolean(pendingAction)}
-              onClick={() => void transition("cancel")}
-            >
-              Cancel Request
-            </button>
-          </div>
+          <section className="request-detail__section request-detail__management">
+            <div>
+              <h2>Manage Request</h2>
+              <p>Update the Request only when its real-world coordination changes.</p>
+            </div>
+            <div className="request-action-row">
+              <button
+                type="button"
+                className="help-action help-action--primary"
+                disabled={Boolean(pendingAction)}
+                onClick={() => void transition("fulfill")}
+              >
+                {pendingAction === "fulfill" ? "Marking fulfilled…" : "Mark fulfilled"}
+              </button>
+              <button
+                type="button"
+                className="help-action help-action--danger"
+                disabled={Boolean(pendingAction)}
+                onClick={() => void transition("cancel")}
+              >
+                {pendingAction === "cancel" ? "Cancelling…" : "Cancel Request"}
+              </button>
+            </div>
+          </section>
         ) : null}
       </article>
 
-      {actionError ? <p className="status request-error">{actionError}</p> : null}
+      {actionError ? (
+        <p className="status request-error" role="alert">
+          {actionError}
+        </p>
+      ) : null}
 
       {!me && mutable ? (
         <section className="request-response-panel panel">
@@ -284,10 +417,10 @@ export function RequestDetailPage({ requestId }: { readonly requestId: string })
         <form className="request-response-panel panel" onSubmit={submitResponse}>
           <h2>Respond privately</h2>
           <p className="muted">
-            Visible to you and the current Request manager. One response at a time.
+            Visible only to you and the current Request manager. You can send one response.
           </p>
           <label className="request-field__label" htmlFor="request-response-message">
-            Your message
+            Your response message
           </label>
           <textarea
             id="request-response-message"
