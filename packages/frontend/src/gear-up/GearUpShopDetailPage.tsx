@@ -71,7 +71,8 @@ export function GearUpShopDetailPage({ placeId }: { readonly placeId: string }) 
         }
       })
       .catch((reason) => {
-        if (active) setError(reason instanceof Error ? reason.message : "Unable to load Gear Up shop");
+        if (active)
+          setError(reason instanceof Error ? reason.message : "Unable to load Gear Up shop");
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -100,9 +101,7 @@ export function GearUpShopDetailPage({ placeId }: { readonly placeId: string }) 
 
       <header className="gear-up-shop-detail__hero">
         <div className="gear-up-shop-detail__heading">
-          <p className="gear-up-shop-detail__eyebrow">
-            {shop.offerTypes.join(" · ")}
-          </p>
+          <p className="gear-up-shop-detail__eyebrow">{shop.offerTypes.join(" · ")}</p>
           <div className="gear-up-shop-detail__title-row">
             <h1>{shop.place.name}</h1>
             {shop.verifiedOwner ? <span>Verified Owner</span> : null}
