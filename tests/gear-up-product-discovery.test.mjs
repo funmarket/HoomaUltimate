@@ -13,7 +13,17 @@ test("Gear Up products expose one global public discovery contract without a sec
   assert.match(contracts, /gearUpProductDiscoveryQuerySchema/);
   assert.match(contracts, /PublicGearUpProductListing/);
   assert.match(contracts, /GearUpProductDiscoveryPage/);
-  for (const field of ["q", "offer", "sport", "category", "city", "houma", "featured", "cursor", "limit"]) {
+  for (const field of [
+    "q",
+    "offer",
+    "sport",
+    "category",
+    "city",
+    "houma",
+    "featured",
+    "cursor",
+    "limit",
+  ]) {
     assert.match(contracts, new RegExp(field));
   }
 
