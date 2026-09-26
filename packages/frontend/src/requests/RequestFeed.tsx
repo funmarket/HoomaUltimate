@@ -8,6 +8,8 @@ export function RequestFeed({
   error,
   nextCursor,
   loadingMore,
+  filtered = false,
+  loadImage,
   onLoadMore,
 }: {
   readonly items: readonly HelpRequest[];
@@ -15,6 +17,8 @@ export function RequestFeed({
   readonly error: string;
   readonly nextCursor: string | null;
   readonly loadingMore: boolean;
+  readonly filtered?: boolean;
+  readonly loadImage?: (requestId: string) => Promise<string>;
   readonly onLoadMore: () => void;
 }) {
   if (error) return <p className="status request-error">{error}</p>;
@@ -24,7 +28,7 @@ export function RequestFeed({
     return (
       <section className="requests-empty panel">
         <RequestIcon className="requests-empty__icon" />
-        <h2>No Requests match these filters.</h2>
+        <h2>{filtered ? "No Requests match these filters." : "No Requests are listed yet."}</h2>
         <p className="muted">Create one if there is something your sports community needs.</p>
       </section>
     );
@@ -34,16 +38,11 @@ export function RequestFeed({
     <>
       <section className="request-list" aria-label="Requests">
         {items.map((item) => (
-          <RequestCard key={item.id} item={item} />
+          <RequestCard key={item.id} item={item} loadImage={loadImage} />
         ))}
       </section>
       {nextCursor ? (
-        <button
-          type="button"
-          className="help-action"
-          disabled={loadingMore}
-          onClick={onLoadMore}
-        >
+        <button type="button" className="help-action" disabled={loadingMore} onClick={onLoadMore}>
           {loadingMore ? "Loading…" : "Load more"}
         </button>
       ) : null}

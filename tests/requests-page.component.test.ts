@@ -281,16 +281,20 @@ test("anonymous /requests loads the real public Requests feed", async () => {
     assert.ok(page.view.getByText("Players help players. Stronger together."));
     assert.ok(page.view.getByRole("link", { name: /FundMe/i }));
     assert.ok(page.view.getByRole("link", { name: /Donations/i }));
-    const card = page.view.getByRole("link", { name: /Need size 43 running shoes/i });
-    assert.equal(card.getAttribute("href"), "/requests/request-1");
+    const card = page.view.getByRole("button", { name: /Need size 43 running shoes/i });
     const cardView = page.within(card);
     assert.ok(cardView.getByText("Item"));
     assert.ok(cardView.getByText("Open"));
     assert.ok(cardView.getByText("La Marsa"));
     assert.equal(page.view.queryByText("12 Private Street"), null);
+    page.fireEvent.click(card);
+    assert.equal(
+      page.view.getByRole("link", { name: "View full Request" }).getAttribute("href"),
+      "/requests/request-1",
+    );
     assert.deepEqual(
       page.calls.filter((call) => call.includes("/requests")),
-      ["GET /api/public/v1/requests?surface=REQUESTS"],
+      ["GET /api/public/v1/requests?requestType=SPORT&surface=REQUESTS"],
     );
   } finally {
     page.close();
@@ -315,12 +319,12 @@ test("Request cards link requester identity to the canonical public profile", as
 test("signed-in visitor uses the member list endpoint and an empty result is a legitimate state", async () => {
   const page = await renderRequestsPage({ me: meResponse, memberItems: [] });
   try {
-    await page.waitFor(() => assert.ok(page.view.getByText("No Requests match these filters.")));
+    await page.waitFor(() => assert.ok(page.view.getByText("No Requests are listed yet.")));
     assert.deepEqual(
       page.calls.filter((call) => call.includes("/requests")),
-      ["GET /api/v1/requests?surface=REQUESTS"],
+      ["GET /api/v1/requests?requestType=SPORT&surface=REQUESTS"],
     );
-    assert.equal(page.view.queryByText("No Requests are listed yet."), null);
+    assert.equal(page.view.queryByText("No Requests match these filters."), null);
   } finally {
     page.close();
   }
@@ -346,7 +350,9 @@ test("Load more appends the next cursor page without replacing existing Requests
     await page.waitFor(() => assert.ok(page.view.getByText("Need training cones")));
     assert.ok(page.view.getByText("Need size 43 running shoes"));
     assert.ok(
-      page.calls.includes("GET /api/public/v1/requests?cursor=cursor-2&surface=REQUESTS"),
+      page.calls.includes(
+        "GET /api/public/v1/requests?cursor=cursor-2&requestType=SPORT&surface=REQUESTS",
+      ),
       `expected cursor request, saw ${page.calls.join(" | ")}`,
     );
   } finally {
@@ -357,9 +363,10 @@ test("Load more appends the next cursor page without replacing existing Requests
 test("City filter debounces list reloads and does not repeat identity lookup", async () => {
   const page = await renderRequestsPage({ me: null, publicItems: [] });
   try {
-    await page.waitFor(() => assert.ok(page.view.getByText("No Requests match these filters.")));
+    await page.waitFor(() => assert.ok(page.view.getByText("No Requests are listed yet.")));
     page.calls.length = 0;
 
+    page.fireEvent.click(page.view.getByRole("button", { name: "Filters" }));
     const city = page.view.getByLabelText("City");
     page.fireEvent.change(city, { target: { value: "T" } });
     page.fireEvent.change(city, { target: { value: "Tu" } });
@@ -367,12 +374,13 @@ test("City filter debounces list reloads and does not repeat identity lookup", a
 
     await new Promise((resolve) => setTimeout(resolve, 100));
     assert.equal(page.calls.filter((call) => call.includes("/requests")).length, 0);
+    page.fireEvent.click(page.view.getByRole("button", { name: "Apply" }));
 
     await page.waitFor(
       () => {
         assert.deepEqual(
           page.calls.filter((call) => call.includes("/requests")),
-          ["GET /api/public/v1/requests?surface=REQUESTS&city=Tunis"],
+          ["GET /api/public/v1/requests?requestType=SPORT&surface=REQUESTS&city=Tunis"],
         );
       },
       { timeout: 1000 },
@@ -386,7 +394,7 @@ test("City filter debounces list reloads and does not repeat identity lookup", a
 test("Search Requests debounces q through the canonical list endpoint", async () => {
   const page = await renderRequestsPage({ me: null, publicItems: [] });
   try {
-    await page.waitFor(() => assert.ok(page.view.getByText("No Requests match these filters.")));
+    await page.waitFor(() => assert.ok(page.view.getByText("No Requests are listed yet.")));
     page.calls.length = 0;
 
     const search = page.view.getByLabelText("Search Requests");
@@ -400,7 +408,7 @@ test("Search Requests debounces q through the canonical list endpoint", async ()
       () => {
         assert.deepEqual(
           page.calls.filter((call) => call.includes("/requests")),
-          ["GET /api/public/v1/requests?surface=REQUESTS&q=goalkeeper+gloves"],
+          ["GET /api/public/v1/requests?requestType=SPORT&surface=REQUESTS&q=goalkeeper+gloves"],
         );
       },
       { timeout: 1000 },
@@ -413,18 +421,18 @@ test("Search Requests debounces q through the canonical list endpoint", async ()
 test("Community filters use the same canonical Request list query", async () => {
   const page = await renderRequestsPage({ me: null, publicItems: [] });
   try {
-    await page.waitFor(() => assert.ok(page.view.getByText("No Requests match these filters.")));
+    await page.waitFor(() => assert.ok(page.view.getByText("No Requests are listed yet.")));
     page.calls.length = 0;
 
-    page.fireEvent.change(page.view.getByLabelText("Request Type"), {
-      target: { value: "COMMUNITY" },
-    });
+    page.fireEvent.click(page.view.getByRole("button", { name: "Community" }));
+    page.fireEvent.click(page.view.getByRole("button", { name: "Filters" }));
     page.fireEvent.change(page.view.getByLabelText("Category"), {
       target: { value: "hts-community-lost-found" },
     });
     page.fireEvent.change(page.view.getByLabelText("Specific need"), {
       target: { value: "htn-community-lost-item" },
     });
+    page.fireEvent.click(page.view.getByRole("button", { name: "Apply" }));
 
     await page.waitFor(() =>
       assert.ok(
@@ -447,11 +455,10 @@ test("filters call the existing list query model", async () => {
   const page = await renderRequestsPage({ me: null, publicItems: [publicRequest] });
   try {
     await page.waitFor(() => assert.ok(page.view.getByText("Need size 43 running shoes")));
-    page.fireEvent.change(page.view.getByLabelText("Request Type"), {
-      target: { value: "SPORT" },
-    });
-    page.fireEvent.change(page.view.getByLabelText("Sport"), { target: { value: "RUNNING" } });
+    page.fireEvent.click(page.view.getByRole("button", { name: "Running" }));
+    page.fireEvent.click(page.view.getByRole("button", { name: "Filters" }));
     page.fireEvent.change(page.view.getByLabelText("City"), { target: { value: "La Marsa" } });
+    page.fireEvent.click(page.view.getByRole("button", { name: "Apply" }));
     await page.waitFor(() =>
       assert.ok(
         page.calls.some((call) => call.includes("sport=RUNNING") && call.includes("city=La+Marsa")),

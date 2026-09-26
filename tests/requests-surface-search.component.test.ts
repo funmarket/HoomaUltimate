@@ -70,7 +70,7 @@ async function exerciseSurfaceSearch(surface: "PLAY" | "ATHLETES") {
   );
 
   try {
-    await waitFor(() => assert.ok(view.getByText("No Requests match these filters.")));
+    await waitFor(() => assert.ok(view.getByText("No Requests are listed yet.")));
     calls.length = 0;
     fireEvent.change(view.getByLabelText("Search Requests"), {
       target: { value: "racket partner" },

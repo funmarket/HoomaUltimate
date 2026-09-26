@@ -154,6 +154,15 @@ export function AthletesRequestsPane() {
         error={error}
         nextCursor={nextCursor}
         loadingMore={loadingMore}
+        filtered={Boolean(
+          filters.q ||
+          filters.sport ||
+          filters.subcategoryId ||
+          filters.needId ||
+          filters.city ||
+          filters.houma ||
+          filters.status,
+        )}
         onLoadMore={() => void loadMore()}
       />
     </section>
