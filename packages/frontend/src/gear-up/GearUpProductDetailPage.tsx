@@ -17,11 +17,7 @@ function priceLabel(product: GearUpProduct): string {
   }).format(product.price);
 }
 
-export function GearUpProductDetailPage({
-  productId,
-}: {
-  readonly productId: string;
-}) {
+export function GearUpProductDetailPage({ productId }: { readonly productId: string }) {
   const { transport } = useHoomaFrontend();
   const api = useMemo(() => createGearUpApi(transport), [transport]);
   const [product, setProduct] = useState<GearUpProduct | null>(null);
