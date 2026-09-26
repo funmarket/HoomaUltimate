@@ -557,3 +557,144 @@
     grid-auto-columns: minmax(54%, 1fr);
   }
 }
+
+
+/* Pitch discovery body — navigation remains owned by the app shell. */
+.pitch-discovery-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 16px;
+}
+
+.pitch-discovery-hero__copy {
+  display: grid;
+  gap: 6px;
+}
+
+.pitch-discovery-hero__copy h1,
+.pitch-discovery-hero__copy p {
+  margin: 0;
+}
+
+.pitch-discovery-hero__eyebrow {
+  color: #b8b5ad;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.pitch-discovery-hero__copy h1 {
+  color: #f5f4ef;
+  font-family: var(--font-ui, system-ui, sans-serif);
+  font-size: 24px;
+  line-height: 1.08;
+}
+
+.pitch-discovery-hero__copy > p:last-child {
+  color: #d8d4ca;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.pitch-add-action {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 16px;
+  border: 1px solid #aef02f;
+  border-radius: 14px;
+  background: #0b0c0a;
+  color: #aef02f;
+  font-size: 16px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.pitch-add-action > span {
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.pitch-source-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pitch-source-tab {
+  min-width: 0;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 14px;
+  border: 1px solid rgba(190, 180, 145, 0.22);
+  border-radius: 14px;
+  background: #0b0c0a;
+  color: #f5f4ef;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.pitch-source-tab small {
+  min-width: 24px;
+  min-height: 24px;
+  display: inline-grid;
+  place-items: center;
+  padding-inline: 6px;
+  border-radius: 999px;
+  background: #0e0f0d;
+  color: #b8b5ad;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.pitch-source-tab.is-active {
+  border-color: #aef02f;
+  color: #aef02f;
+}
+
+.pitch-source-tab.is-active small {
+  color: #aef02f;
+}
+
+.pitch-directory-heading {
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  color: #f5f4ef;
+  font-size: 16px;
+}
+
+.pitch-ticket__resource-strip {
+  min-height: 52px;
+  border-top: 1px solid rgba(190, 180, 145, 0.22);
+  border-bottom: 1px solid rgba(190, 180, 145, 0.22);
+  background: #050605;
+}
+
+@media (max-width: 719px) {
+  .pitch-discovery-hero {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .pitch-add-action {
+    width: fit-content;
+  }
+
+  .pitch-source-tabs {
+    grid-template-columns: 1fr;
+  }
+
+  .pitch-directory {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
