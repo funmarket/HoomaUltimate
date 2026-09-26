@@ -23,6 +23,10 @@ import {
 } from "../../modules/requests/domain/request-error.js";
 import { RideError, type RideErrorCode } from "../../modules/rides/domain/ride-error.js";
 import { GearUpError, type GearUpErrorCode } from "../../modules/gear-up/domain/gear-up-error.js";
+import {
+  PlaceMediaError,
+  type PlaceMediaErrorCode,
+} from "../../modules/places/domain/place-media-error.js";
 import { AppError } from "./app-error.js";
 
 const EVENT_STATUS: Record<EventErrorCode, number> = {
@@ -193,6 +197,18 @@ const PASSWORD_RECOVERY_STATUS: Record<PasswordRecoveryErrorCode, number> = {
   PASSWORD_RECOVERY_INVALID: 400,
 };
 
+const PLACE_MEDIA_STATUS: Record<PlaceMediaErrorCode, number> = {
+  PLACE_NOT_FOUND: 404,
+  PLACE_IMAGE_NOT_FOUND: 404,
+  PLACE_IMAGE_REQUIRED: 422,
+  PLACE_IMAGE_TYPE_INVALID: 422,
+  PLACE_IMAGE_TOO_LARGE: 413,
+  PLACE_IMAGE_STORAGE_NOT_CONFIGURED: 503,
+  PLACE_IMAGE_MANAGE_FORBIDDEN: 403,
+  PLACE_IMAGE_LIMIT_REACHED: 409,
+  PLACE_IMAGE_ORDER_INVALID: 422,
+};
+
 export const errorHandler: ErrorRequestHandler = (error, _request, response, _next) => {
   void _next;
 
@@ -241,6 +257,12 @@ export const errorHandler: ErrorRequestHandler = (error, _request, response, _ne
   if (error instanceof PasswordRecoveryError) {
     response
       .status(PASSWORD_RECOVERY_STATUS[error.code])
+      .json({ error: { code: error.code, message: error.message } });
+    return;
+  }
+  if (error instanceof PlaceMediaError) {
+    response
+      .status(PLACE_MEDIA_STATUS[error.code])
       .json({ error: { code: error.code, message: error.message } });
     return;
   }

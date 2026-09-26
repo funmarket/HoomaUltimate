@@ -1,6 +1,6 @@
 import sharp from "sharp";
 import type { PlaceImageContentType } from "@hooma/contracts/places";
-import { AppError } from "../../../http/errors/app-error.js";
+import { PlaceMediaError } from "../domain/place-media-error.js";
 import type {
   PlaceImageProcessor,
   ProcessedPlaceImage,
@@ -32,8 +32,7 @@ export class SharpPlaceImageProcessor implements PlaceImageProcessor {
       if (!optimized.byteLength) throw new Error("Optimized image is empty");
       return { body: optimized, contentType: "image/webp" };
     } catch {
-      throw new AppError(
-        422,
+      throw new PlaceMediaError(
         "PLACE_IMAGE_TYPE_INVALID",
         "Choose a valid JPEG, PNG, or WebP Place photo up to 40 megapixels.",
       );

@@ -12,7 +12,7 @@ import {
 } from "@hooma/contracts/places";
 import type { ObjectStorage, ObjectStorageReadUrlSigner } from "@hooma/storage";
 import type { PlatformAdminAccessPort } from "../../../application/platform-admin-access.port.js";
-import { AppError } from "../../../http/errors/app-error.js";
+import { PlaceMediaError } from "../domain/place-media-error.js";
 import type { ExternalPlaceImageResolver } from "./external-place-image-resolver.js";
 import type { PlaceImageProcessor } from "./place-image-processor.js";
 import type { PlaceRepository } from "./place.repository.js";
@@ -63,16 +63,16 @@ export class PlaceMediaService {
     const maxImages = await this.requireMediaAccess(userId, placeId);
     const contentType = normalizeContentType(input.contentType);
     if (!PLACE_IMAGE_TYPES.has(contentType)) {
-      throw new AppError(422, "PLACE_IMAGE_TYPE_INVALID", "Place photo must be JPEG, PNG, or WebP");
+      throw new PlaceMediaError("PLACE_IMAGE_TYPE_INVALID", "Place photo must be JPEG, PNG, or WebP");
     }
     if (!input.body.byteLength) {
-      throw new AppError(422, "PLACE_IMAGE_REQUIRED", "Place photo bytes are required");
+      throw new PlaceMediaError("PLACE_IMAGE_REQUIRED", "Place photo bytes are required");
     }
     if (input.body.byteLength > PLACE_IMAGE_MAX_BYTES) {
-      throw new AppError(413, "PLACE_IMAGE_TOO_LARGE", "Place photo must be 5 MiB or smaller");
+      throw new PlaceMediaError("PLACE_IMAGE_TOO_LARGE", "Place photo must be 5 MiB or smaller");
     }
     if (!this.storage) {
-      throw new AppError(503, "PLACE_IMAGE_STORAGE_NOT_CONFIGURED", "Place photo storage is not configured");
+      throw new PlaceMediaError("PLACE_IMAGE_STORAGE_NOT_CONFIGURED", "Place photo storage is not configured");
     }
 
     const imageId = randomUUID();
@@ -98,7 +98,7 @@ export class PlaceMediaService {
   async delete(userId: string, placeId: string, imageId: string) {
     await this.requireMediaAccess(userId, placeId);
     const deleted = await this.places.deleteImage(placeId, imageId);
-    if (!deleted) throw new AppError(404, "PLACE_IMAGE_NOT_FOUND", "Place photo not found");
+    if (!deleted) throw new PlaceMediaError("PLACE_IMAGE_NOT_FOUND", "Place photo not found");
     if (deleted.imageUrl === managedImagePath(placeId, imageId) && this.storage) {
       try {
         await this.storage.remove(objectKey(placeId, imageId));
@@ -116,7 +116,7 @@ export class PlaceMediaService {
       return await this.places.reorderImages(placeId, parsed.imageIds);
     } catch (error) {
       if (error instanceof Error && error.message === "PLACE_IMAGE_ORDER_INVALID") {
-        throw new AppError(422, "PLACE_IMAGE_ORDER_INVALID", "Photo order must contain every photo once");
+        throw new PlaceMediaError("PLACE_IMAGE_ORDER_INVALID", "Photo order must contain every photo once");
       }
       throw error;
     }
@@ -124,14 +124,14 @@ export class PlaceMediaService {
 
   async deliveryUrlPublic(placeId: string, imageId: string): Promise<string> {
     if (!(await this.places.getApproved(placeId))) {
-      throw new AppError(404, "PLACE_NOT_FOUND", "Approved Place not found");
+      throw new PlaceMediaError("PLACE_NOT_FOUND", "Approved Place not found");
     }
     const image = await this.places.getImage(placeId, imageId);
     if (!image || image.imageUrl !== managedImagePath(placeId, imageId)) {
-      throw new AppError(404, "PLACE_IMAGE_NOT_FOUND", "Place photo not found");
+      throw new PlaceMediaError("PLACE_IMAGE_NOT_FOUND", "Place photo not found");
     }
     if (!this.storage || !supportsReadUrlSigning(this.storage)) {
-      throw new AppError(503, "PLACE_IMAGE_STORAGE_NOT_CONFIGURED", "Place photo storage is not configured");
+      throw new PlaceMediaError("PLACE_IMAGE_STORAGE_NOT_CONFIGURED", "Place photo storage is not configured");
     }
     return this.storage.createReadUrl(objectKey(placeId, imageId), PLACE_IMAGE_READ_URL_TTL_SECONDS);
   }
@@ -139,8 +139,7 @@ export class PlaceMediaService {
   private async requireMediaAccess(userId: string, placeId: string): Promise<number> {
     if (await this.platformAdmin.isPlatformAdmin(userId)) return PLACE_APP_ADMIN_IMAGE_LIMIT;
     if (await this.places.canManageOwnerMedia(placeId, userId)) return PLACE_OWNER_IMAGE_LIMIT;
-    throw new AppError(
-      403,
+    throw new PlaceMediaError(
       "PLACE_IMAGE_MANAGE_FORBIDDEN",
       "Verified owner, pending owner submitter, or App Admin access required",
     );
@@ -151,8 +150,7 @@ export class PlaceMediaService {
       return await this.places.addImage(placeId, imageId, imageUrl, maxImages);
     } catch (error) {
       if (error instanceof Error && error.message === "PLACE_IMAGE_LIMIT_REACHED") {
-        throw new AppError(
-          409,
+        throw new PlaceMediaError(
           "PLACE_IMAGE_LIMIT_REACHED",
           `This gallery is already at its ${maxImages}-photo limit`,
         );
