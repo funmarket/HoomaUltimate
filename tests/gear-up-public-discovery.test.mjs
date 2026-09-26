@@ -51,6 +51,14 @@ test("Athletes owns Gear Up presentation navigation while Watch remains Events a
   assert.doesNotMatch(watchNav, /href="\/gear-up"/);
   assert.match(watch, /<WatchSectionNavigation[\s\S]*active="events"/);
   assert.match(places, /<WatchSectionNavigation[\s\S]*active="spots"/);
+  assert.doesNotMatch(watch, /aria-disabled="true"/);
+  assert.doesNotMatch(watch, /watch-section-action--disabled/);
+  assert.doesNotMatch(places, /<nav className="watch-section-actions"/);
+
+  assert.match(watch, /watch-kind-tabs/);
+  assert.match(watch, /publicWatch\(\)/);
+  assert.match(watch, /Search matches, teams or venues/);
+  assert.match(watch, /Search cultural events or venues/);
 });
 
 test("Gear Up API maps canonical public filter fields to the real public HTTP surface", () => {
