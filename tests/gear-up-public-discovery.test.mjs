@@ -69,7 +69,7 @@ test("Gear Up discovery presents the approved filters and truthful canonical sho
   assert.match(page, /gear-up-discovery-mode/);
   assert.match(page, />\s*Stores\s*</);
   assert.match(page, />\s*Products\s*</);
-  assert.match(page, /aria-disabled="true"/);
+  assert.doesNotMatch(page, /aria-disabled="true"/);
   assert.match(page, /No shops match these filters yet\./);
   assert.match(page, /Clear filters/);
   assert.match(page, /href="\/places\/new"/);

@@ -33,6 +33,7 @@ function dependencies(overrides = {}) {
     restore: [],
   };
   const repository = {
+    listPublic: async () => ({ items: [], nextCursor: null }),
     listPublicByShop: async () => [],
     getPublic: async () => null,
     listManagedByShop: async () => [],
@@ -71,6 +72,30 @@ function dependencies(overrides = {}) {
   };
   return { calls, repository, places, platformAdmin };
 }
+
+test("public product discovery forwards one server-side query to the repository", async () => {
+  const { GearUpProductService } = await loadService();
+  const calls = [];
+  const deps = dependencies({
+    repository: {
+      listPublic: async (input) => {
+        calls.push(input);
+        return { items: [], nextCursor: null };
+      },
+    },
+  });
+  const service = new GearUpProductService(deps.repository, deps.places, deps.platformAdmin);
+
+  const result = await service.listPublic({
+    q: "boots",
+    sport: "FOOTBALL",
+    featured: true,
+    limit: 24,
+  });
+
+  assert.deepEqual(result, { items: [], nextCursor: null });
+  assert.deepEqual(calls, [{ q: "boots", sport: "FOOTBALL", featured: true, limit: 24 }]);
+});
 
 test("FanHub and pending owner-submitters cannot publish official Gear Up products", async () => {
   const { GearUpProductService } = await loadService();

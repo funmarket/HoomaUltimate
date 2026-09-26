@@ -1,7 +1,12 @@
-import type {
-  GearUpProduct,
-  GearUpProductCreateInput,
-  GearUpProductUpdateInput,
+import {
+  GEAR_UP_GEAR_CATEGORIES,
+  GEAR_UP_SPORTSWEAR_CATEGORIES,
+  type GearUpProduct,
+  type GearUpProductCreateInput,
+  type GearUpProductDiscoveryPage,
+  type GearUpProductDiscoveryQueryInput,
+  type GearUpProductUpdateInput,
+  type PublicGearUpProductListing,
 } from "@hooma/contracts/gear-up";
 import { Prisma, type PrismaClient } from "@hooma/database";
 import type { GearUpProductRepository } from "../application/gear-up-product.repository.js";
@@ -29,6 +34,27 @@ const productSelect = Prisma.validator<Prisma.GearUpProductSelect>()({
 
 type ProductRow = Prisma.GearUpProductGetPayload<{ select: typeof productSelect }>;
 
+const productDiscoverySelect = Prisma.validator<Prisma.GearUpProductSelect>()({
+  ...productSelect,
+  shop: {
+    select: {
+      place: {
+        select: {
+          id: true,
+          name: true,
+          address: true,
+          city: true,
+          houma: true,
+        },
+      },
+    },
+  },
+});
+
+type ProductDiscoveryRow = Prisma.GearUpProductGetPayload<{
+  select: typeof productDiscoverySelect;
+}>;
+
 function productRecord(row: ProductRow): GearUpProduct {
   return {
     id: row.id,
@@ -48,8 +74,74 @@ function productRecord(row: ProductRow): GearUpProduct {
   };
 }
 
+function productListing(row: ProductDiscoveryRow): PublicGearUpProductListing {
+  return {
+    ...productRecord(row),
+    shop: {
+      placeId: row.shop.place.id,
+      name: row.shop.place.name,
+      address: row.shop.place.address,
+      city: row.shop.place.city,
+      houma: row.shop.place.houma,
+    },
+  };
+}
+
 export class PrismaGearUpProductRepository implements GearUpProductRepository {
   constructor(private readonly db: PrismaClient) {}
+
+  async listPublic(input: GearUpProductDiscoveryQueryInput): Promise<GearUpProductDiscoveryPage> {
+    const offerCategories =
+      input.offer === "SPORTSWEAR"
+        ? GEAR_UP_SPORTSWEAR_CATEGORIES
+        : input.offer === "GEAR"
+          ? GEAR_UP_GEAR_CATEGORIES
+          : null;
+
+    const rows = await this.db.gearUpProduct.findMany({
+      where: {
+        archivedAt: null,
+        ...(input.q
+          ? {
+              OR: [
+                { title: { contains: input.q, mode: "insensitive" } },
+                { brand: { contains: input.q, mode: "insensitive" } },
+                { description: { contains: input.q, mode: "insensitive" } },
+                { shop: { place: { name: { contains: input.q, mode: "insensitive" } } } },
+              ],
+            }
+          : {}),
+        ...(input.sport ? { sports: { has: input.sport } } : {}),
+        ...(input.category
+          ? { category: input.category }
+          : offerCategories
+            ? { category: { in: [...offerCategories] } }
+            : {}),
+        ...(input.featured ? { featuredAt: { not: null } } : {}),
+        shop: {
+          moderationStatus: "APPROVED",
+          place: {
+            moderationStatus: "APPROVED",
+            archivedAt: null,
+            discoveries: { some: { kind: "GEAR_UP" } },
+            ...(input.city ? { city: { equals: input.city, mode: "insensitive" } } : {}),
+            ...(input.houma ? { houma: { equals: input.houma, mode: "insensitive" } } : {}),
+          },
+        },
+      },
+      select: productDiscoverySelect,
+      orderBy: [{ featuredAt: "desc" }, { createdAt: "desc" }, { id: "asc" }],
+      ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
+      take: input.limit + 1,
+    });
+
+    const hasMore = rows.length > input.limit;
+    const items = rows.slice(0, input.limit).map(productListing);
+    return {
+      items,
+      nextCursor: hasMore ? (items.at(-1)?.id ?? null) : null,
+    };
+  }
 
   async listPublicByShop(placeId: string): Promise<readonly GearUpProduct[]> {
     const rows = await this.db.gearUpProduct.findMany({

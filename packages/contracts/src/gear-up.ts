@@ -178,6 +178,23 @@ export const gearUpListQuerySchema = z
   })
   .strict();
 
+export const gearUpProductDiscoveryQuerySchema = z
+  .object({
+    q: z.string().trim().max(120).optional(),
+    offer: gearUpOfferTypeSchema.optional(),
+    sport: athletesSportSchema.optional(),
+    category: gearUpProductCategorySchema.optional(),
+    city: z.string().trim().max(100).optional(),
+    houma: z.string().trim().max(100).optional(),
+    featured: z
+      .enum(["true", "false"])
+      .transform((value) => value === "true")
+      .optional(),
+    cursor: z.string().trim().min(1).optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(30),
+  })
+  .strict();
+
 const gearUpShopInputSchema = z
   .object({
     offerTypes: z.array(gearUpOfferTypeSchema).min(1).max(2),
@@ -269,6 +286,23 @@ export interface GearUpReviewQueueItem {
   readonly shop: PublicGearUpShop;
 }
 
+export interface GearUpProductShopContext {
+  readonly placeId: string;
+  readonly name: string;
+  readonly address: string;
+  readonly city: string | null;
+  readonly houma: string | null;
+}
+
+export interface PublicGearUpProductListing extends GearUpProduct {
+  readonly shop: GearUpProductShopContext;
+}
+
+export interface GearUpProductDiscoveryPage {
+  readonly items: readonly PublicGearUpProductListing[];
+  readonly nextCursor: string | null;
+}
+
 export interface GearUpProduct {
   readonly id: string;
   readonly shopPlaceId: string;
@@ -294,6 +328,7 @@ export type GearUpProductImage = z.infer<typeof gearUpProductImageSchema>;
 export type GearUpProductImageDelivery = z.infer<typeof gearUpProductImageDeliverySchema>;
 export type GearUpSettings = z.infer<typeof gearUpSettingsSchema>;
 export type GearUpListQueryInput = z.infer<typeof gearUpListQuerySchema>;
+export type GearUpProductDiscoveryQueryInput = z.infer<typeof gearUpProductDiscoveryQuerySchema>;
 export type GearUpOfferType = z.infer<typeof gearUpOfferTypeSchema>;
 export type GearUpPaymentMethod = z.infer<typeof gearUpPaymentMethodSchema>;
 export type GearUpProductCategory = z.infer<typeof gearUpProductCategorySchema>;
