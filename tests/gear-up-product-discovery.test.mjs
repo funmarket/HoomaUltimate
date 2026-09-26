@@ -94,7 +94,10 @@ test("Product Detail uses the existing canonical product shop and image APIs", (
   assert.match(api, /getProduct/);
   assert.match(api, /listProductImages/);
   assert.match(router, /path="\/athletes\/gear-up\/products\/:productId"/);
-  assert.match(router, /path="\/gear-up\/products\/:productId" element=\{<LegacyGearUpProductRoute \/>\}/);
+  assert.match(
+    router,
+    /path="\/gear-up\/products\/:productId" element=\{<LegacyGearUpProductRoute \/>\}/,
+  );
 
   assert.doesNotMatch(page, /checkout|Buy Now|Add to Cart|stock|shipping/i);
 });

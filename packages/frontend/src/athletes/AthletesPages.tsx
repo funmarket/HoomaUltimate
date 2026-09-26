@@ -15,7 +15,6 @@ import { ActiveAthletesList } from "./ActiveAthletesList";
 import { AthletesRequestsPane } from "./AthletesRequestsPane";
 import { AthletesHubTabs } from "./AthletesHubTabs";
 
-
 function report(reason: unknown, fallback: string): string {
   return reason instanceof Error ? reason.message : fallback;
 }

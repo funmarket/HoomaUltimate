@@ -24,7 +24,10 @@ test("Gear Up public discovery owns a real frontend route and exported feature b
   assert.match(entry, /export \* from "\.\/gear-up\/GearUpPage"/);
   assert.match(router, /GearUpPage/);
   assert.match(router, /path="\/athletes\/gear-up" element=\{<GearUpPage \/>\}/);
-  assert.match(router, /path="\/gear-up" element=\{<Navigate to="\/athletes\/gear-up" replace \/>\}/);
+  assert.match(
+    router,
+    /path="\/gear-up" element=\{<Navigate to="\/athletes\/gear-up" replace \/>\}/,
+  );
 });
 
 test("Athletes owns Gear Up presentation navigation while Watch remains Events and Spots", () => {

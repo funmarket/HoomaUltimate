@@ -195,7 +195,9 @@ function LegacyGearUpProductRoute() {
   const { productId } = useParams();
   return (
     <Navigate
-      to={`/athletes/gear-up/products/${encodeURIComponent(requiredParam("productId", productId))}`}
+      to={`/athletes/gear-up/products/${encodeURIComponent(
+        requiredParam("productId", productId),
+      )}`}
       replace
     />
   );
