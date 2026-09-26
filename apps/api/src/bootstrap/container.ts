@@ -264,7 +264,6 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     eventRepository,
     communityService,
     placeService,
-    placeMediaService,
     approvedPitchReader,
   );
   const gamerGameRepository = new PrismaGamerGameRepository(database);
@@ -360,6 +359,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     identityAdminService,
     platformAdminService,
     placeService,
+    placeMediaService,
     approvedPitchReader,
     pitchSuggestionService,
     pitchOwnerService,
