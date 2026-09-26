@@ -85,7 +85,7 @@ test("Add Place defaults to FanHub and sends explicit source intent", () => {
   assert.ok(
     placesPage.includes('const initialSubmissionOrigin = isPitchSuggestion ? "OWNER" : "FANHUB"'),
   );
-  assert.ok(placesPage.includes("placesApi.suggest({ ...input, submissionOrigin })"));
+  assert.ok(placesPage.includes("placesApi.suggest({ ...placeInput, submissionOrigin })"));
   assert.ok(placesPage.includes("pitchApi.suggestPlace"));
   assert.ok(placesPage.includes("WHO IS ADDING THIS SPOT?"));
   assert.ok(placesPage.includes("Suggesting it does not make you its owner."));
