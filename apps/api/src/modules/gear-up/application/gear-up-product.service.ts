@@ -1,4 +1,8 @@
-import type { GearUpProductCreateInput, GearUpProductUpdateInput } from "@hooma/contracts/gear-up";
+import type {
+  GearUpProductCreateInput,
+  GearUpProductDiscoveryQueryInput,
+  GearUpProductUpdateInput,
+} from "@hooma/contracts/gear-up";
 import type { PlatformAdminAccessPort } from "../../../application/platform-admin-access.port.js";
 import type { PlaceRepository } from "../../places/application/place.repository.js";
 import { GearUpError } from "../domain/gear-up-error.js";
@@ -10,6 +14,10 @@ export class GearUpProductService {
     private readonly places: PlaceRepository,
     private readonly platformAdmin: PlatformAdminAccessPort,
   ) {}
+
+  listPublic(input: GearUpProductDiscoveryQueryInput) {
+    return this.repository.listPublic(input);
+  }
 
   listPublicByShop(placeId: string) {
     return this.repository.listPublicByShop(placeId);
