@@ -21,9 +21,11 @@ import { PrismaUserLastSeenReader } from "../modules/identity/infrastructure/pri
 import { PrismaWebSessionActivity } from "../modules/identity/infrastructure/prisma-web-session-activity.js";
 import { PrismaPlatformAdminRepository } from "../modules/platform-admin/infrastructure/prisma-platform-admin.repository.js";
 import { PlatformAdminService } from "../modules/platform-admin/application/platform-admin.service.js";
+import { PlaceMediaService } from "../modules/places/application/place-media.service.js";
 import { PlaceService } from "../modules/places/application/place.service.js";
 import { HttpExternalPlaceImageResolver } from "../modules/places/infrastructure/http-external-place-image-resolver.js";
 import { PrismaPlaceRepository } from "../modules/places/infrastructure/prisma-place.repository.js";
+import { SharpPlaceImageProcessor } from "../modules/places/infrastructure/sharp-place-image-processor.js";
 import { ApprovedPitchReader } from "../modules/pitch/application/approved-pitch.reader.js";
 import { PitchOwnerService } from "../modules/pitch/application/pitch-owner.service.js";
 import { PitchModerationService } from "../modules/pitch/application/pitch-moderation.service.js";
@@ -181,6 +183,13 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
   const placeRepository = new PrismaPlaceRepository(database);
   const placeImageResolver = new HttpExternalPlaceImageResolver();
   const placeService = new PlaceService(placeRepository, platformAdminService, placeImageResolver);
+  const placeMediaService = new PlaceMediaService(
+    placeRepository,
+    platformAdminService,
+    placeImageResolver,
+    storage,
+    new SharpPlaceImageProcessor(),
+  );
   const pitchRepository = new PrismaPitchRepository(database);
   const approvedPitchReader = new ApprovedPitchReader(pitchRepository);
   const pitchSuggestionService = new PitchSuggestionService(pitchRepository, placeImageResolver);
@@ -350,6 +359,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     identityAdminService,
     platformAdminService,
     placeService,
+    placeMediaService,
     approvedPitchReader,
     pitchSuggestionService,
     pitchOwnerService,

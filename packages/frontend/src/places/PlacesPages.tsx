@@ -223,18 +223,27 @@ export function AddPlacePage() {
   const [pending, setPending] = useState(false);
 
   async function submit(input: PlaceFormInput) {
+    const { imageFiles, ...placeInput } = input;
     setPending(true);
     setError("");
     try {
       const result = isPitchSuggestion
         ? await pitchApi.suggestPlace({
-            place: { ...input, submissionOrigin },
+            place: { ...placeInput, submissionOrigin },
             pitch: {
               hourlyRateMinor: pitchRateToMinor(Number(pitchHourlyRate), pitchCurrency),
               currency: pitchCurrency,
             },
           })
-        : await placesApi.suggest({ ...input, submissionOrigin });
+        : await placesApi.suggest({ ...placeInput, submissionOrigin });
+      if (
+        isPitchSuggestion &&
+        submissionOrigin === "OWNER" &&
+        result.outcome === "CREATED" &&
+        imageFiles.length
+      ) {
+        for (const file of imageFiles) await placesApi.uploadImage(result.place.id, file);
+      }
       setSubmissionResult(result);
     } catch (reason) {
       setError(protectedError(reason, "Unable to submit Place"));
@@ -422,6 +431,8 @@ export function AddPlacePage() {
         submitLabel={isPitchSuggestion ? "Add Pitch" : "Submit Place"}
         pending={pending}
         showMenu={!isPitchSuggestion}
+        maxImages={isPitchSuggestion && submissionOrigin === "OWNER" ? 3 : 4}
+        allowUploads={isPitchSuggestion && submissionOrigin === "OWNER"}
         extraSection={pitchPricingSection}
         onSubmit={submit}
       />

@@ -48,7 +48,7 @@ test("Pitch add flow exposes provenance choice and the required owner-review not
     add,
     /Admin review required — A Pitch submitted By Owner and its ownership claim are reviewed separately\. Submitting as owner does not grant verified ownership or management access until approved\./,
   );
-  assert.match(add, /place: \{ \.\.\.input, submissionOrigin \}/);
+  assert.match(add, /place: \{ \.\.\.placeInput, submissionOrigin \}/);
   assert.match(add, /ADD A PITCH/);
   assert.match(add, /Add a football pitch/);
   assert.match(add, /submitLabel=\{isPitchSuggestion \? "Add Pitch" : "Submit Place"\}/);

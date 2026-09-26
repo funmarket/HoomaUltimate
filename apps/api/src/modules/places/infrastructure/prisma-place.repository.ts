@@ -6,6 +6,7 @@ import type {
   PlaceSuggestionInput,
   PlaceSuggestionResult,
   PlaceUpdateInput,
+  PublicPlaceImage,
   PublicPlaceSummary,
 } from "@hooma/contracts/places";
 import { Prisma, type PrismaClient } from "@hooma/database";
@@ -207,6 +208,103 @@ export class PrismaPlaceRepository implements PlaceRepository {
         select: { id: true },
       }),
     );
+  }
+
+  async canManageOwnerMedia(placeId: string, userId: string): Promise<boolean> {
+    if (await this.hasVerifiedOwnership(placeId, userId)) return true;
+    return Boolean(
+      await this.db.place.findFirst({
+        where: {
+          id: placeId,
+          suggestedByUserId: userId,
+          submissionOrigin: "OWNER",
+          moderationStatus: "PENDING",
+          archivedAt: null,
+        },
+        select: { id: true },
+      }),
+    );
+  }
+
+  async getImage(placeId: string, imageId: string): Promise<PublicPlaceImage | null> {
+    return this.db.placeImage.findFirst({
+      where: { id: imageId, placeId },
+      select: { id: true, imageUrl: true, sortOrder: true },
+    });
+  }
+
+  async addImage(
+    placeId: string,
+    imageId: string,
+    imageUrl: string,
+    maxImages: number,
+  ): Promise<PublicPlaceImage> {
+    return this.db.$transaction(async (tx) => {
+      const count = await tx.placeImage.count({ where: { placeId } });
+      if (count >= maxImages) throw new Error("PLACE_IMAGE_LIMIT_REACHED");
+      return tx.placeImage.create({
+        data: { id: imageId, placeId, imageUrl, sortOrder: count },
+        select: { id: true, imageUrl: true, sortOrder: true },
+      });
+    });
+  }
+
+  async deleteImage(placeId: string, imageId: string): Promise<PublicPlaceImage | null> {
+    return this.db.$transaction(async (tx) => {
+      const existing = await tx.placeImage.findFirst({
+        where: { id: imageId, placeId },
+        select: { id: true, imageUrl: true, sortOrder: true },
+      });
+      if (!existing) return null;
+      await tx.placeImage.delete({ where: { id: imageId } });
+      const remaining = await tx.placeImage.findMany({
+        where: { placeId },
+        orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+        select: { id: true },
+      });
+      for (const [index, image] of remaining.entries()) {
+        await tx.placeImage.update({
+          where: { id: image.id },
+          data: { sortOrder: 1000 + index },
+        });
+      }
+      for (const [index, image] of remaining.entries()) {
+        await tx.placeImage.update({ where: { id: image.id }, data: { sortOrder: index } });
+      }
+      return existing;
+    });
+  }
+
+  async reorderImages(
+    placeId: string,
+    imageIds: readonly string[],
+  ): Promise<readonly PublicPlaceImage[]> {
+    return this.db.$transaction(async (tx) => {
+      const existing = await tx.placeImage.findMany({
+        where: { placeId },
+        orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+        select: { id: true },
+      });
+      const expected = new Set(existing.map((image) => image.id));
+      if (
+        imageIds.length !== existing.length ||
+        new Set(imageIds).size !== imageIds.length ||
+        imageIds.some((id) => !expected.has(id))
+      ) {
+        throw new Error("PLACE_IMAGE_ORDER_INVALID");
+      }
+      for (const [index, id] of imageIds.entries()) {
+        await tx.placeImage.update({ where: { id }, data: { sortOrder: 1000 + index } });
+      }
+      for (const [index, id] of imageIds.entries()) {
+        await tx.placeImage.update({ where: { id }, data: { sortOrder: index } });
+      }
+      return tx.placeImage.findMany({
+        where: { placeId },
+        orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+        select: { id: true, imageUrl: true, sortOrder: true },
+      });
+    });
   }
 
   async claimOwnership(userId: string, placeId: string, input: PlaceOwnershipClaimInput) {

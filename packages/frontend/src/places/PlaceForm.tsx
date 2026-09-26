@@ -1,7 +1,9 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import type { PlaceSuggestionInput, PublicPlaceSummary } from "@hooma/contracts/places";
 
-type PlaceFormInput = Omit<PlaceSuggestionInput, "submissionOrigin">;
+export type PlaceFormInput = Omit<PlaceSuggestionInput, "submissionOrigin"> & {
+  readonly imageFiles: readonly File[];
+};
 type MenuDraft = { id: string; name: string; price: string };
 
 function menuDrafts(place?: PublicPlaceSummary | null): MenuDraft[] {
@@ -19,10 +21,13 @@ function menuDrafts(place?: PublicPlaceSummary | null): MenuDraft[] {
   ];
 }
 
-function imageDrafts(place?: PublicPlaceSummary | null): string[] {
+function imageDrafts(place: PublicPlaceSummary | null | undefined, maxImages: number): string[] {
   const existing = place?.images.map((image) => image.imageUrl) ?? [];
   const source = existing.length ? existing : place?.imageUrl ? [place.imageUrl] : [];
-  return Array.from({ length: 4 }, (_, index) => source[index] ?? "");
+  return Array.from(
+    { length: Math.max(maxImages, source.length) },
+    (_, index) => source[index] ?? "",
+  );
 }
 
 export function PlaceForm({
@@ -30,6 +35,8 @@ export function PlaceForm({
   submitLabel,
   pending,
   showMenu = true,
+  maxImages = 4,
+  allowUploads = false,
   extraSection,
   onSubmit,
 }: {
@@ -37,11 +44,15 @@ export function PlaceForm({
   readonly submitLabel: string;
   readonly pending: boolean;
   readonly showMenu?: boolean;
+  readonly maxImages?: number;
+  readonly allowUploads?: boolean;
   readonly extraSection?: ReactNode;
   readonly onSubmit: (input: PlaceFormInput) => Promise<void>;
 }) {
   const [menu, setMenu] = useState<MenuDraft[]>(() => menuDrafts(initialPlace));
-  const [imageUrls, setImageUrls] = useState<string[]>(() => imageDrafts(initialPlace));
+  const [imageUrls, setImageUrls] = useState<string[]>(() => imageDrafts(initialPlace, maxImages));
+  const [imageFiles, setImageFiles] = useState<readonly File[]>([]);
+  const [imageError, setImageError] = useState("");
   const [latitude, setLatitude] = useState(initialPlace?.latitude?.toString() ?? "");
   const [longitude, setLongitude] = useState(initialPlace?.longitude?.toString() ?? "");
   const [locationError, setLocationError] = useState("");
@@ -98,10 +109,12 @@ export function PlaceForm({
           .map((item) => ({ name: item.name.trim(), price: Number(item.price), currency: "TND" }))
           .filter((item) => item.name && Number.isFinite(item.price) && item.price >= 0)
       : [];
-    const canonicalImages = imageUrls
-      .map((value) => value.trim())
-      .filter(Boolean)
-      .slice(0, 4);
+    const canonicalImages = imageUrls.map((value) => value.trim()).filter(Boolean);
+    if (canonicalImages.length + imageFiles.length > maxImages) {
+      setImageError(`Choose no more than ${maxImages} photos in total.`);
+      return;
+    }
+    setImageError("");
 
     await onSubmit({
       name: String(data.get("name") ?? "").trim(),
@@ -118,6 +131,7 @@ export function PlaceForm({
       email: optionalText("email"),
       websiteUrl: optionalText("websiteUrl"),
       menuItems,
+      imageFiles,
     });
   }
 
@@ -148,7 +162,10 @@ export function PlaceForm({
         <div className="place-photo-editor">
           <div className="place-photo-editor__heading">
             <strong>Place photos</strong>
-            <small>Up to 4 external image links. The first photo is the Place cover.</small>
+            <small>
+              Up to {maxImages} photos. The first photo is the Place cover.
+              {allowUploads ? " Add links or upload files." : " Add external image links."}
+            </small>
           </div>
           {imageUrls.map((imageUrl, index) => (
             <div className="place-photo-editor__row" key={index}>
@@ -182,6 +199,23 @@ export function PlaceForm({
               </div>
             </div>
           ))}
+          {allowUploads ? (
+            <label className="hooma-field">
+              <span>Upload photos</span>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                multiple
+                onChange={(event) =>
+                  setImageFiles(Array.from(event.currentTarget.files ?? []).slice(0, maxImages))
+                }
+              />
+              <small>
+                JPEG, PNG or WebP. URL and upload photos share the same {maxImages}-photo limit.
+              </small>
+            </label>
+          ) : null}
+          {imageError ? <p className="error">{imageError}</p> : null}
         </div>
         <label className="hooma-field">
           <span>About</span>

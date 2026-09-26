@@ -6,6 +6,7 @@ import type {
   PlaceSuggestionInput,
   PlaceSuggestionResult,
   PlaceUpdateInput,
+  PublicPlaceImage,
   PublicPlaceSummary,
 } from "@hooma/contracts/places";
 
@@ -23,6 +24,16 @@ export interface PlaceRepository {
   update(placeId: string, input: PlaceUpdateInput): Promise<ManagedPlaceSummary>;
   archive(placeId: string): Promise<void>;
   hasVerifiedOwnership(placeId: string, userId: string): Promise<boolean>;
+  canManageOwnerMedia(placeId: string, userId: string): Promise<boolean>;
+  getImage(placeId: string, imageId: string): Promise<PublicPlaceImage | null>;
+  addImage(
+    placeId: string,
+    imageId: string,
+    imageUrl: string,
+    maxImages: number,
+  ): Promise<PublicPlaceImage>;
+  deleteImage(placeId: string, imageId: string): Promise<PublicPlaceImage | null>;
+  reorderImages(placeId: string, imageIds: readonly string[]): Promise<readonly PublicPlaceImage[]>;
   claimOwnership(
     userId: string,
     placeId: string,

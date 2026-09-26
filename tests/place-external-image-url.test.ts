@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { placeImageUrlSchema } from "../packages/contracts/src/places.js";
 import { normalizeExternalPlaceImageUrl } from "../apps/api/src/modules/places/boundary/external-place-image-url.js";
 
 test("keeps ordinary direct image URLs unchanged", () => {
@@ -24,4 +25,19 @@ test("unwraps nested Google redirect links without altering the final image URL"
   const inner = `https://www.google.com/imgres?imgurl=${encodeURIComponent(image)}`;
   const outer = `https://www.google.com/url?url=${encodeURIComponent(inner)}`;
   assert.equal(normalizeExternalPlaceImageUrl(outer), image);
+});
+
+test("Place image input accepts ordinary CDN and signed HTTP/HTTPS URLs", () => {
+  for (const value of [
+    "https://cdn.example.com/pitch.webp?width=1600&sig=a%2Fb",
+    "http://images.example.org/pitch.jpg?token=abc123",
+  ]) {
+    assert.equal(placeImageUrlSchema.parse(value), value);
+  }
+});
+
+test("Place image input rejects unsafe and local URL schemes", () => {
+  for (const value of ["javascript:alert(1)", "file:///etc/passwd", "data:image/png;base64,AAAA"]) {
+    assert.equal(placeImageUrlSchema.safeParse(value).success, false);
+  }
 });

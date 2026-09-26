@@ -45,7 +45,10 @@ export function createPublicV1Router(container: AppContainer, config: ApiConfig)
   );
   router.use("/auth", createIdentityPublicRouter(container.identityService, config));
   router.use("/profiles", createIdentityProfilePublicRouter(container.identityService));
-  router.use("/places", createPlacesPublicRouter(container.placeService));
+  router.use(
+    "/places",
+    createPlacesPublicRouter(container.placeService, container.placeMediaService),
+  );
   router.use("/pitch", createPitchPublicRouter(container.approvedPitchReader));
   router.use(
     "/gear-up",
