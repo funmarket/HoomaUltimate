@@ -4,6 +4,7 @@ import { useHoomaFrontend } from "../context";
 import { WatchSectionNavigation } from "../watch/WatchSectionNavigation";
 import { createGearUpApi } from "./api";
 import { GearUpFilters, type GearUpDiscoveryFilters } from "./GearUpFilters";
+import { GearUpProductsPane } from "./GearUpProductsPane";
 import { GearUpShopCard } from "./GearUpShopCard";
 
 const INITIAL_FILTERS: GearUpDiscoveryFilters = {
@@ -28,6 +29,7 @@ const CLEARED_FILTERS: GearUpDiscoveryFilters = {
 
 export function GearUpPage() {
   const { transport } = useHoomaFrontend();
+  const [mode, setMode] = useState<"stores" | "products">("stores");
   const api = useMemo(() => createGearUpApi(transport), [transport]);
   const [filters, setFilters] = useState<GearUpDiscoveryFilters>(INITIAL_FILTERS);
   const [optionSeed, setOptionSeed] = useState<PublicGearUpShop[]>([]);
@@ -116,66 +118,82 @@ export function GearUpPage() {
 
       <header className="gear-up-hero">
         <p className="gear-up-hero__eyebrow">GEAR UP</p>
-        <h1 className="gear-up-page__title">Discover shops offering gear and sportswear.</h1>
+        <h1 className="gear-up-page__title">
+          {mode === "stores"
+            ? "Discover shops offering gear and sportswear."
+            : "Discover sports products from local shops."}
+        </h1>
         <p className="gear-up-hero__description">
-          Find sportswear, equipment and more from local shops. Support real places in your
-          community.
+          {mode === "stores"
+            ? "Find sportswear, equipment and more from local shops. Support real places in your community."
+            : "Browse products across approved Gear Up shops while keeping every product connected to its real store."}
         </p>
       </header>
 
       <div className="gear-up-discovery-mode" role="group" aria-label="Gear Up discovery mode">
         <button
           type="button"
-          className="gear-up-discovery-mode__option is-active"
-          aria-pressed="true"
+          className={`gear-up-discovery-mode__option${mode === "stores" ? " is-active" : ""}`}
+          aria-pressed={mode === "stores"}
+          onClick={() => setMode("stores")}
         >
           Stores
         </button>
         <button
           type="button"
-          className="gear-up-discovery-mode__option"
-          aria-disabled="true"
-          disabled
-          title="Product discovery will be enabled in the Gear Up product slice"
+          className={`gear-up-discovery-mode__option${mode === "products" ? " is-active" : ""}`}
+          aria-pressed={mode === "products"}
+          onClick={() => setMode("products")}
         >
           Products
         </button>
       </div>
 
-      <GearUpFilters value={filters} cities={cities} houmas={houmas} onChange={setFilters} />
-
-      {error ? <p className="error">{error}</p> : null}
-      {loading ? <p className="status">Loading Gear Up shops…</p> : null}
-
-      {!loading && !error && shops.length ? (
-        <section className="gear-up-results" aria-label="Gear Up shops">
-          <div className="gear-up-results__heading">
-            <h2>Shops</h2>
-            <span>{shops.length} found</span>
-          </div>
-          <div className="gear-up-shop-list">
-            {shops.map((shop) => (
-              <GearUpShopCard key={shop.place.id} shop={shop} />
-            ))}
-          </div>
-        </section>
+      {mode === "stores" ? (
+        <GearUpFilters value={filters} cities={cities} houmas={houmas} onChange={setFilters} />
       ) : null}
 
-      {!loading && !error && !shops.length ? (
-        <section className="gear-up-empty-state">
-          <div className="gear-up-empty-state__mark" aria-hidden="true">
-            GU
-          </div>
-          <h2>No shops match these filters yet.</h2>
-          <p>Try adjusting your search or filters, or help the community by adding a place.</p>
-          <div className="gear-up-empty-state__actions">
-            <button type="button" onClick={() => setFilters(CLEARED_FILTERS)}>
-              Clear filters
-            </button>
-            <a href="/places/new">Add a Place</a>
-          </div>
-        </section>
-      ) : null}
+      {mode === "stores" ? (
+        <>
+          {error ? <p className="error">{error}</p> : null}
+          {loading ? <p className="status">Loading Gear Up shops…</p> : null}
+
+          {!loading && !error && shops.length ? (
+            <section className="gear-up-results" aria-label="Gear Up shops">
+              <div className="gear-up-results__heading">
+                <h2>Shops</h2>
+                <span>{shops.length} found</span>
+              </div>
+              <div className="gear-up-shop-list">
+                {shops.map((shop) => (
+                  <GearUpShopCard key={shop.place.id} shop={shop} />
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {!loading && !error && !shops.length ? (
+            <section className="gear-up-empty-state">
+              <div className="gear-up-empty-state__mark" aria-hidden="true">
+                GU
+              </div>
+              <h2>No shops match these filters yet.</h2>
+              <p>Try adjusting your search or filters, or help the community by adding a place.</p>
+              <div className="gear-up-empty-state__actions">
+                <button type="button" onClick={() => setFilters(CLEARED_FILTERS)}>
+                  Clear filters
+                </button>
+                <a href="/places/new">Add a Place</a>
+              </div>
+            </section>
+          ) : null}
+        </>
+      ) : (
+        <GearUpProductsPane
+          cities={cities}
+          houmas={[...new Set(optionSeed.map((shop) => shop.place.houma).filter((value): value is string => Boolean(value)))].sort()}
+        />
+      )}
     </section>
   );
 }
