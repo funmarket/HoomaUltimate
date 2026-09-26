@@ -8,10 +8,7 @@ import {
   type GearUpPaymentMethod,
   type GearUpProductCategory,
 } from "@hooma/contracts/gear-up";
-import type {
-  PlaceSubmissionOrigin,
-  PlaceSuggestionResult,
-} from "@hooma/contracts/places";
+import type { PlaceSubmissionOrigin, PlaceSuggestionResult } from "@hooma/contracts/places";
 import { AthletesHubTabs } from "../athletes/AthletesHubTabs";
 import { sportLabel } from "../athletes/sports";
 import { useHoomaFrontend } from "../context";
@@ -64,8 +61,7 @@ export function AddGearUpShopPage() {
   const [offerTypes, setOfferTypes] = useState<GearUpOfferType[]>([]);
   const [sports, setSports] = useState<AthletesSport[]>([]);
   const [categories, setCategories] = useState<GearUpProductCategory[]>([]);
-  const [paymentMethods, setPaymentMethods] =
-    useState<GearUpPaymentMethod[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<GearUpPaymentMethod[]>([]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<PlaceSuggestionResult | null>(null);
@@ -79,10 +75,7 @@ export function AddGearUpShopPage() {
       })
       .catch((reason) => {
         if (!active) return;
-        const message = protectedError(
-          reason,
-          "Unable to verify your HOOMA account",
-        );
+        const message = protectedError(reason, "Unable to verify your HOOMA account");
         setAccountError(message);
         setAccountState("signed-out");
       });
@@ -135,9 +128,7 @@ export function AddGearUpShopPage() {
     });
 
     if (!parsed.success) {
-      const message =
-        parsed.error.issues[0]?.message ??
-        "Check the Store details and try again.";
+      const message = parsed.error.issues[0]?.message ?? "Check the Store details and try again.";
       setError(message);
       return;
     }
@@ -165,10 +156,7 @@ export function AddGearUpShopPage() {
         <section className="gear-up-empty-state">
           <p className="gear-up-hero__eyebrow">ADD STORE</p>
           <h1>Sign in to add a Gear Up Store.</h1>
-          <p>
-            An HOOMA account is required before a Store can be submitted for
-            review.
-          </p>
+          <p>An HOOMA account is required before a Store can be submitted for review.</p>
           {href ? (
             <a className="gear-up-add-store-link" href={href}>
               Sign in to continue
@@ -195,9 +183,7 @@ export function AddGearUpShopPage() {
       <section className="gear-up-page gear-up-add-store">
         <AthletesHubTabs active="gear-up" />
         <section className="gear-up-empty-state">
-          <p className="gear-up-hero__eyebrow">
-            {existing ? "EXISTING PLACE" : "SUBMITTED"}
-          </p>
+          <p className="gear-up-hero__eyebrow">{existing ? "EXISTING PLACE" : "SUBMITTED"}</p>
           <h1>{existing ? "No duplicate created" : "Store submitted"}</h1>
           <p>
             {existing
@@ -209,9 +195,7 @@ export function AddGearUpShopPage() {
           <a className="gear-up-add-store-link" href="/athletes/gear-up">
             Back to Gear Up
           </a>
-          <span className="gear-up-visually-hidden">
-            Store Place ID: {placeId}
-          </span>
+          <span className="gear-up-visually-hidden">Store Place ID: {placeId}</span>
         </section>
       </section>
     );
@@ -289,12 +273,7 @@ export function AddGearUpShopPage() {
           >
             Cash
           </button>
-          <button
-            type="button"
-            className="gear-up-chip"
-            disabled
-            aria-disabled="true"
-          >
+          <button type="button" className="gear-up-chip" disabled aria-disabled="true">
             Crypto
           </button>
           <button
@@ -307,8 +286,8 @@ export function AddGearUpShopPage() {
           </button>
         </div>
         <p className="gear-up-add-store__note">
-          Crypto stays unavailable until an HOOMA saved wallet can be selected.
-          No raw wallet address is collected here.
+          Crypto stays unavailable until an HOOMA saved wallet can be selected. No raw wallet
+          address is collected here.
         </p>
       </fieldset>
     </section>
@@ -322,8 +301,7 @@ export function AddGearUpShopPage() {
         <p className="gear-up-hero__eyebrow">ADD STORE</p>
         <h1 className="gear-up-page__title">Add a Store to Gear Up.</h1>
         <p className="gear-up-hero__description">
-          Keep one canonical HOOMA Place while adding the Store details Gear Up
-          needs.
+          Keep one canonical HOOMA Place while adding the Store details Gear Up needs.
         </p>
       </header>
 
@@ -353,9 +331,7 @@ export function AddGearUpShopPage() {
             FanHub
           </button>
         </div>
-        <p className="gear-up-add-store__note">
-          {origin === "OWNER" ? OWNER_NOTE : FANHUB_NOTE}
-        </p>
+        <p className="gear-up-add-store__note">{origin === "OWNER" ? OWNER_NOTE : FANHUB_NOTE}</p>
       </section>
 
       <PlaceForm
