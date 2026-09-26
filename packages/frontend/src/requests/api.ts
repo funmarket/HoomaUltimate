@@ -35,6 +35,7 @@ function queryPath(base: string, input: RequestsListQuery = {}): string {
   if (input.city) params.set("city", input.city);
   if (input.houma) params.set("houma", input.houma);
   if (input.status) params.set("status", input.status);
+  if (input.q) params.set("q", input.q);
   const query = params.toString();
   return query ? `${base}?${query}` : base;
 }

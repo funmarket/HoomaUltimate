@@ -36,6 +36,7 @@ function requestRecord(overrides: Partial<HelpRequestRecord> = {}): HelpRequestR
     placeId: null,
     city: "Tunis",
     houma: "La Marsa",
+    fullAddress: "12 Private Street",
     locationNote: null,
     neededByAt: null,
     expiresAt: null,
@@ -47,6 +48,19 @@ function requestRecord(overrides: Partial<HelpRequestRecord> = {}): HelpRequestR
     ...overrides,
   };
 }
+
+test("Request list and detail projections omit fullAddress from every read path", async () => {
+  const service = new RequestService(repository(), visibility());
+
+  const publicPage = await service.listPublic({ limit: 30 });
+  const memberPage = await service.listForMember("user-1", { limit: 30 });
+  const publicDetail = await service.getPublic("request-1");
+  const memberDetail = await service.getForMember("user-1", "request-1");
+
+  for (const item of [publicPage.items[0], memberPage.items[0], publicDetail, memberDetail]) {
+    assert.equal(Boolean(item && "fullAddress" in item), false);
+  }
+});
 
 function responseRecord(
   overrides: Partial<HelpRequestResponseRecord> = {},

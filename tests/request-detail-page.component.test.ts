@@ -64,6 +64,7 @@ const baseRequest = {
   placeId: null,
   city: "La Marsa",
   houma: null,
+  fullAddress: "12 Private Street",
   locationNote: null,
   neededByAt: null,
   expiresAt: null,
@@ -232,6 +233,7 @@ test("a guest reads the public detail and is routed through auth to respond", as
     const link = page.view.getByRole("link", { name: /Sign in to respond/i });
     assert.equal(link.getAttribute("href"), "/login?returnTo=%2Frequests%2Frequest-1");
     assert.equal(page.view.queryByRole("button", { name: /Send response/i }), null);
+    assert.equal(page.view.queryByText("12 Private Street"), null);
   } finally {
     page.close();
   }

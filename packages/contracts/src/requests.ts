@@ -6,6 +6,12 @@ import { helpRequestTypeSchema, helpTaxonomyNeedKindSchema } from "./help-taxono
 const idSchema = z.string().trim().min(1);
 const optionalIdSchema = idSchema.optional().nullable();
 const optionalText = (max: number) => z.string().trim().min(1).max(max).optional().nullable();
+const optionalSearchText = (max: number) =>
+  z.preprocess((value) => {
+    if (typeof value !== "string") return value;
+    const trimmed = value.trim();
+    return trimmed.length ? trimmed : undefined;
+  }, z.string().min(1).max(max).optional());
 
 export const REQUEST_IMAGE_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 export const REQUEST_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
@@ -198,6 +204,7 @@ export const helpRequestListQuerySchema = z.object({
   city: z.string().trim().min(1).max(100).optional(),
   houma: z.string().trim().min(1).max(100).optional(),
   status: helpRequestStatusSchema.optional(),
+  q: optionalSearchText(120),
 });
 
 const helpRequestUserPresentationSchema = z.object({
