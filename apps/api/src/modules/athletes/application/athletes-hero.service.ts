@@ -27,9 +27,7 @@ export class AthletesHeroService {
           ATHLETES_HERO_OBJECT_KEY,
           ATHLETES_HERO_READ_URL_TTL_SECONDS,
         ),
-        expiresAt: new Date(
-          issuedAt + ATHLETES_HERO_READ_URL_TTL_SECONDS * 1000,
-        ).toISOString(),
+        expiresAt: new Date(issuedAt + ATHLETES_HERO_READ_URL_TTL_SECONDS * 1000).toISOString(),
       };
     } catch {
       throw new AthletesError("ATHLETES_HERO_UNAVAILABLE", "Athletes hero is unavailable");
