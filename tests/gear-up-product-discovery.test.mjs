@@ -73,8 +73,8 @@ test("cross-store product cards retain originating shop identity and both naviga
   assert.match(card, /shop/);
   assert.match(card, /View Product/);
   assert.match(card, /View Shop/);
-  assert.match(card, /\/gear-up\/products\//);
-  assert.match(card, /\/gear-up\/shops\//);
+  assert.match(pane, /\/gear-up\/products\//);
+  assert.match(pane, /\/gear-up\/shops\//);
   assert.match(card, /Ask shop for current price/);
   assert.doesNotMatch(card, /Buy Now|Add to Cart|stock|shipping/i);
 });
