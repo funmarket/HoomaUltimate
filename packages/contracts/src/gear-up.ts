@@ -328,9 +328,7 @@ export type GearUpProductImage = z.infer<typeof gearUpProductImageSchema>;
 export type GearUpProductImageDelivery = z.infer<typeof gearUpProductImageDeliverySchema>;
 export type GearUpSettings = z.infer<typeof gearUpSettingsSchema>;
 export type GearUpListQueryInput = z.infer<typeof gearUpListQuerySchema>;
-export type GearUpProductDiscoveryQueryInput = z.infer<
-  typeof gearUpProductDiscoveryQuerySchema
->;
+export type GearUpProductDiscoveryQueryInput = z.infer<typeof gearUpProductDiscoveryQuerySchema>;
 export type GearUpOfferType = z.infer<typeof gearUpOfferTypeSchema>;
 export type GearUpPaymentMethod = z.infer<typeof gearUpPaymentMethodSchema>;
 export type GearUpProductCategory = z.infer<typeof gearUpProductCategorySchema>;
