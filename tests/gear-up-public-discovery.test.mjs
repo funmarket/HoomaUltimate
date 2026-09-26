@@ -86,7 +86,8 @@ test("Gear Up discovery presents the approved filters and truthful canonical sho
   assert.doesNotMatch(page, /aria-disabled="true"/);
   assert.match(page, /No shops match these filters yet\./);
   assert.match(page, /Clear filters/);
-  assert.match(page, /href="\/athletes\/gear-up\/add-store"/);\n  assert.doesNotMatch(page, /href="\/places\/new"/);
+  assert.match(page, /href="\/athletes\/gear-up\/add-store"/);
+  assert.doesNotMatch(page, /href="\/places\/new"/);
 
   for (const label of ["Sportswear", "Gear", "By Owner", "FanHub", "City", "Houma"]) {
     assert.match(filters, new RegExp(label));
