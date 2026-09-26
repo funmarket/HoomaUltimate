@@ -26,7 +26,9 @@ export interface PlaceImageUploadInput {
 }
 
 function managedImagePath(placeId: string, imageId: string): string {
-  return `/api/public/v1/places/${encodeURIComponent(placeId)}/images/${encodeURIComponent(imageId)}/content`;
+  return `/api/public/v1/places/${encodeURIComponent(placeId)}/images/${encodeURIComponent(
+    imageId,
+  )}/content`;
 }
 
 function objectKey(placeId: string, imageId: string): string {
@@ -72,10 +74,7 @@ export class PlaceMediaService {
       throw new PlaceMediaError("PLACE_IMAGE_REQUIRED", "Place photo bytes are required");
     }
     if (input.body.byteLength > PLACE_IMAGE_MAX_BYTES) {
-      throw new PlaceMediaError(
-        "PLACE_IMAGE_TOO_LARGE",
-        "Place photo must be 5 MiB or smaller",
-      );
+      throw new PlaceMediaError("PLACE_IMAGE_TOO_LARGE", "Place photo must be 5 MiB or smaller");
     }
     if (!this.storage) {
       throw new PlaceMediaError(
