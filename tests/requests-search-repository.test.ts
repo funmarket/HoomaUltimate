@@ -120,6 +120,8 @@ test("surface search preserves Play and Athletes server-side projection constrai
 
   const play = calls[0] as { readonly where: Record<string, unknown> };
   assert.deepEqual(play.where.taxonomyNeed, { surfaces: { some: { surface: "PLAY" } } });
+  assert.equal(play.where.requestType, "SPORT");
+  assert.equal(play.where.sport, "FOOTBALL");
   assert.deepEqual(play.where.AND, searchClause("keeper"));
 
   const athletes = calls[1] as { readonly where: Record<string, unknown> };

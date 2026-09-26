@@ -56,12 +56,16 @@ test("Help taxonomy service preserves canonical sport order and projects Communi
   assert.equal(result.community.subcategories[0]?.label, "Lost & Found");
 });
 
-test("Help taxonomy service does not invent or post-filter repository eligibility", async () => {
+test("Play taxonomy projection exposes only Football SPORT taxonomy", async () => {
   let requestedSurface = "";
   const repository: HelpTaxonomyRepository = {
     async listActiveBySurface(surface) {
       requestedSurface = surface;
-      return [subcategory("SPORT", "FOOTBALL", "goalkeeper", "Goalkeeper", "COMMUNITY_ROLE")];
+      return [
+        subcategory("SPORT", "FOOTBALL", "goalkeeper", "Goalkeeper", "COMMUNITY_ROLE"),
+        subcategory("SPORT", "RUNNING", "pace-partner", "Pace Partner", "COMMUNITY_ROLE"),
+        subcategory("COMMUNITY", null, "lost-found", "Lost & Found", "COMMUNITY_SUPPORT"),
+      ];
     },
     async findActiveSelection() {
       return null;
@@ -70,6 +74,10 @@ test("Help taxonomy service does not invent or post-filter repository eligibilit
 
   const result = await new HelpTaxonomyService(repository).list({ surface: "PLAY" });
   assert.equal(requestedSurface, "PLAY");
+  assert.deepEqual(
+    result.sports.map((sport) => sport.sport),
+    ["FOOTBALL"],
+  );
   assert.equal(result.sports[0]?.subcategories[0]?.needs[0]?.label, "Goalkeeper");
   assert.deepEqual(result.community.subcategories, []);
 });

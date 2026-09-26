@@ -24,7 +24,7 @@ H1+ visibility-aware Help overview and later explicitly authorized matching/hard
 
 ### Requests
 
-Requests remains the only owner of `HelpRequest`, `HelpRequestResponse` and `HelpRequestImage`. Standalone Requests uses `Sport | Community` with Sport default only when there is no stronger incoming context. Discovery adds real server-side search, taxonomy-driven quick rails and advanced filters before cursor pagination. Cards remain readable on mobile, use `#F7F7F7` for important descriptive copy, support accessible inline expansion, and keep `/requests/:requestId` as the canonical deep-link/full-management route. Play and Athletes projections read the same HelpRequest records; no `PlayRequest` or `AthletesRequest` persistence is permitted.
+Requests remains the only owner of `HelpRequest`, `HelpRequestResponse` and `HelpRequestImage`. Canonical Request taxonomy roots remain exactly `SPORT | COMMUNITY`. Standalone Requests defaults to All Requests, meaning no `requestType` filter; All Requests is a presentation/query state, not a third taxonomy root. Discovery adds real server-side search, taxonomy-driven quick rails and advanced filters before cursor pagination. Cards remain readable on mobile, use `#F7F7F7` for important descriptive copy, support accessible inline expansion, and keep `/requests/:requestId` as the canonical deep-link/full-management route. Play and Athletes projections read the same HelpRequest records; no `PlayRequest` or `AthletesRequest` persistence is permitted.
 
 ### FundMe
 

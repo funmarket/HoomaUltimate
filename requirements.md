@@ -890,7 +890,7 @@ Approved requirements include:
 - `SPORT` Requests reuse canonical `AthletesSport`; `COMMUNITY` Requests are a parallel root and must never fake a Sport;
 - SPORT taxonomy follows Sport -> Category/Subcategory -> Specific Need; Community follows Community Category -> Specific Need;
 - governed `Other` Needs may allow validated per-Request `customNeed`; user text never creates a global taxonomy row;
-- standalone Requests presents `Sport | Community` as the primary selector, with Sport default only when no stronger incoming context exists;
+- canonical Request taxonomy roots remain exactly `SPORT | COMMUNITY`; standalone Requests presents `All Requests | Sport | Community` and defaults to All Requests, meaning no `requestType` filter; All Requests is a presentation/query state, not a third taxonomy root;
 - discovery provides real server-side text search, quick taxonomy rails and advanced filters; search/filtering must execute before cursor pagination rather than filtering a fetched page in React;
 - advanced filters may include category, specific Need, city, Houma and canonical Request status where the backend query supports them;
 - readable mobile cards use normal body sizes and vertical scrolling rather than compressing content; important descriptive/body text uses `#F7F7F7`;

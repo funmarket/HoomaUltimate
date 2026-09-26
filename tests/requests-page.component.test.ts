@@ -171,9 +171,19 @@ function installApiStub(options: StubOptions) {
       if (url.searchParams.get("cursor")) {
         return json({ items: options.publicPageTwoItems ?? [], nextCursor: null });
       }
+      const projectionChanged = [
+        "requestType",
+        "sport",
+        "subcategoryId",
+        "needId",
+        "city",
+        "houma",
+        "status",
+        "q",
+      ].some((key) => url.searchParams.has(key));
       return json({
         items: options.publicItems ?? [],
-        nextCursor: options.publicNextCursor ?? null,
+        nextCursor: projectionChanged ? null : (options.publicNextCursor ?? null),
       });
     }
     if (url.pathname === "/api/v1/requests") {
@@ -200,6 +210,7 @@ const publicRequest = {
   audienceAthletesCommunityId: null,
   category: "ITEM",
   itemKind: "FOOTWEAR",
+  requestType: "SPORT",
   sport: "RUNNING",
   requester: {
     displayName: "Yassine K.",
@@ -294,10 +305,97 @@ test("anonymous /requests loads the real public Requests feed", async () => {
     );
     assert.deepEqual(
       page.calls.filter((call) => call.includes("/requests")),
-      ["GET /api/public/v1/requests?requestType=SPORT&surface=REQUESTS"],
+      ["GET /api/public/v1/requests?surface=REQUESTS"],
+    );
+    assert.equal(
+      page.view.getByRole("button", { name: "All Requests" }).getAttribute("aria-pressed"),
+      "true",
+    );
+    assert.equal(
+      page.view.getByRole("button", { name: "Sport" }).getAttribute("aria-pressed"),
+      "false",
     );
   } finally {
     page.close();
+  }
+});
+
+test("standalone Requests can render Community, Football, and non-Football Sport records together", async () => {
+  const footballRequest = {
+    ...publicRequest,
+    id: "football-request",
+    sport: "FOOTBALL",
+    title: "Need a goalkeeper",
+  };
+  const communityRequest = {
+    ...publicRequest,
+    id: "community-request",
+    category: "COMMUNITY",
+    itemKind: null,
+    requestType: "COMMUNITY",
+    sport: null,
+    title: "Need neighbourhood advice",
+  };
+  const page = await renderRequestsPage({
+    me: null,
+    publicItems: [communityRequest, footballRequest, publicRequest],
+  });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByText("Need neighbourhood advice")));
+    assert.ok(page.view.getByText("Need a goalkeeper"));
+    assert.ok(page.view.getByText("Need size 43 running shoes"));
+    assert.ok(page.calls.includes("GET /api/public/v1/requests?surface=REQUESTS"));
+  } finally {
+    page.close();
+  }
+});
+
+test("All Requests clears only taxonomy selections", async () => {
+  const dom = installDom();
+  const React = await import("react");
+  Object.defineProperty(globalThis, "React", { value: React, writable: true, configurable: true });
+  const { cleanup, fireEvent, render } = await import("@testing-library/react");
+  const { RequestTaxonomyFilters } =
+    await import("../packages/frontend/src/requests/RequestTaxonomyFilters");
+  let changed: Record<string, unknown> | undefined;
+  const view = render(
+    React.createElement(RequestTaxonomyFilters, {
+      taxonomy: requestsTaxonomy,
+      value: {
+        surface: "REQUESTS",
+        requestType: "SPORT",
+        sport: "RUNNING",
+        subcategoryId: "hts-running-footwear",
+        needId: "htn-running-shoes",
+        q: "pace partner",
+        city: "Tunis",
+        houma: "Medina",
+        status: "OPEN",
+        limit: 12,
+      },
+      onChange: (next: Record<string, unknown>) => {
+        changed = next;
+      },
+    }),
+  );
+
+  try {
+    fireEvent.click(view.getByRole("button", { name: "All Requests" }));
+    assert.deepEqual(changed, {
+      surface: "REQUESTS",
+      requestType: undefined,
+      sport: undefined,
+      subcategoryId: undefined,
+      needId: undefined,
+      q: "pace partner",
+      city: "Tunis",
+      houma: "Medina",
+      status: "OPEN",
+      limit: 12,
+    });
+  } finally {
+    cleanup();
+    dom.window.close();
   }
 });
 
@@ -322,7 +420,7 @@ test("signed-in visitor uses the member list endpoint and an empty result is a l
     await page.waitFor(() => assert.ok(page.view.getByText("No Requests are listed yet.")));
     assert.deepEqual(
       page.calls.filter((call) => call.includes("/requests")),
-      ["GET /api/v1/requests?requestType=SPORT&surface=REQUESTS"],
+      ["GET /api/v1/requests?surface=REQUESTS"],
     );
     assert.equal(page.view.queryByText("No Requests match these filters."), null);
   } finally {
@@ -350,10 +448,35 @@ test("Load more appends the next cursor page without replacing existing Requests
     await page.waitFor(() => assert.ok(page.view.getByText("Need training cones")));
     assert.ok(page.view.getByText("Need size 43 running shoes"));
     assert.ok(
-      page.calls.includes(
-        "GET /api/public/v1/requests?cursor=cursor-2&requestType=SPORT&surface=REQUESTS",
-      ),
+      page.calls.includes("GET /api/public/v1/requests?cursor=cursor-2&surface=REQUESTS"),
       `expected cursor request, saw ${page.calls.join(" | ")}`,
+    );
+  } finally {
+    page.close();
+  }
+});
+
+test("changing the Request projection invalidates the previous cursor", async () => {
+  const page = await renderRequestsPage({
+    me: null,
+    publicItems: [publicRequest],
+    publicNextCursor: "cursor-2",
+  });
+  try {
+    await page.waitFor(() => assert.ok(page.view.getByRole("button", { name: /Load more/i })));
+    page.calls.length = 0;
+
+    page.fireEvent.click(page.view.getByRole("button", { name: "Sport" }));
+
+    await page.waitFor(() =>
+      assert.equal(page.view.queryByRole("button", { name: /Load more/i }), null),
+    );
+    assert.ok(
+      page.calls.includes("GET /api/public/v1/requests?requestType=SPORT&surface=REQUESTS"),
+    );
+    assert.equal(
+      page.calls.some((call) => call.includes("cursor=cursor-2")),
+      false,
     );
   } finally {
     page.close();
@@ -378,7 +501,7 @@ test("City filter debounces list reloads and does not repeat identity lookup", a
       () => {
         assert.deepEqual(
           page.calls.filter((call) => call.includes("/requests")),
-          ["GET /api/public/v1/requests?requestType=SPORT&surface=REQUESTS&city=Tunis"],
+          ["GET /api/public/v1/requests?surface=REQUESTS&city=Tunis"],
         );
       },
       { timeout: 1000 },
@@ -406,7 +529,7 @@ test("Search Requests debounces q through the canonical list endpoint", async ()
       () => {
         assert.deepEqual(
           page.calls.filter((call) => call.includes("/requests")),
-          ["GET /api/public/v1/requests?requestType=SPORT&surface=REQUESTS&q=goalkeeper+gloves"],
+          ["GET /api/public/v1/requests?surface=REQUESTS&q=goalkeeper+gloves"],
         );
       },
       { timeout: 1000 },
@@ -451,6 +574,7 @@ test("filters call the existing list query model", async () => {
   const page = await renderRequestsPage({ me: null, publicItems: [publicRequest] });
   try {
     await page.waitFor(() => assert.ok(page.view.getByText("Need size 43 running shoes")));
+    page.fireEvent.click(page.view.getByRole("button", { name: "Sport" }));
     page.fireEvent.click(page.view.getByRole("button", { name: "Running" }));
     page.fireEvent.change(page.view.getByLabelText("City"), { target: { value: "La Marsa" } });
     await page.waitFor(() =>

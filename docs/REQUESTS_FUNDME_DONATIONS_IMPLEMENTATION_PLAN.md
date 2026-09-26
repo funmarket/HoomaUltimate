@@ -274,14 +274,14 @@ Standalone Requests information architecture:
 ```text
 Requests | FundMe | Donations
 
-Sport | Community
+All Requests | Sport | Community
 
 [ Search requests... ] [ Filters N ]
 
 [ All ][ Football ][ Basketball ][ Tennis ] ...
 ```
 
-`Sport` is default only when there is no stronger incoming context. It does not mean Football is automatically selected.
+Canonical Request taxonomy roots remain exactly `SPORT | COMMUNITY`. Standalone Requests defaults to All Requests, meaning no `requestType` filter. All Requests is a presentation/query state, not a third taxonomy root. Selecting Sport or Community applies the corresponding canonical taxonomy root; selecting All Requests clears only taxonomy-specific selections.
 
 Sport quick rail derives from canonical taxonomy/sports. Community quick rail derives from canonical Community categories.
 

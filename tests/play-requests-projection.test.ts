@@ -6,6 +6,14 @@ test("Play exposes canonical Requests without owning Request persistence", async
   const playPage = await readFile("packages/frontend/src/events/PlayPage.tsx", "utf8");
   const pane = await readFile("packages/frontend/src/events/PlayRequestsPane.tsx", "utf8");
   const createPage = await readFile("packages/frontend/src/requests/RequestCreatePage.tsx", "utf8");
+  const requestRepo = await readFile(
+    "apps/api/src/modules/requests/infrastructure/prisma-request.repository.ts",
+    "utf8",
+  );
+  const taxonomyService = await readFile(
+    "apps/api/src/modules/help-taxonomy/application/help-taxonomy.service.ts",
+    "utf8",
+  );
   const playCss = await readFile("packages/frontend/src/events/play.css", "utf8");
 
   assert.match(playPage, /type PlayView = "games" \| "players" \| "requests" \| "mine"/);
@@ -19,6 +27,14 @@ test("Play exposes canonical Requests without owning Request persistence", async
   assert.match(pane, /RequestTaxonomyFilters/);
   assert.match(pane, /href="\/requests\/new\?surface=PLAY"/);
   assert.doesNotMatch(pane, /(?:interface|type|class)\s+PlayRequest\b|createPlayApi/);
+  assert.match(
+    requestRepo,
+    /input\.surface === "PLAY"[\s\S]*requestType: "SPORT"[\s\S]*sport: "FOOTBALL"/,
+  );
+  assert.match(
+    taxonomyService,
+    /input\.surface === "PLAY"[\s\S]*row\.requestType !== "SPORT"[\s\S]*row\.sport !== "FOOTBALL"/,
+  );
 
   assert.match(createPage, /taxonomySurface === "PLAY"/);
   assert.match(createPage, /requestsApi\.taxonomy\(taxonomySurface\)/);
