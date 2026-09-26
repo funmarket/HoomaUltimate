@@ -84,10 +84,6 @@ export function RequestTaxonomyFilters({
             onChange={(event) => patch({ q: event.target.value || undefined })}
           />
         </label>
-        <span className="request-filter-affordance" aria-hidden="true">
-          <FilterIcon />
-          <span>Filters</span>
-        </span>
       </div>
 
       <div

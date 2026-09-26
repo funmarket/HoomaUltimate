@@ -73,6 +73,7 @@ test("collapsed and expanded Request cards preserve accepted text and layout rol
 });
 
 test("Requests CSS does not include the deferred VR4 advanced-filter workflow", () => {
+  assert.doesNotMatch(requestsCss, /request-filter-affordance/);
   assert.doesNotMatch(requestsCss, /request-filter-trigger__count/);
   assert.doesNotMatch(requestsCss, /request-filters__close/);
   assert.doesNotMatch(requestsCss, /request-filters__actions/);

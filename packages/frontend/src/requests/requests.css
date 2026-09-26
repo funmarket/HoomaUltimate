@@ -265,8 +265,7 @@
 
 .request-search-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .request-search {
@@ -290,26 +289,6 @@
   min-height: 52px;
   padding-inline: 48px 16px;
   font-size: 16px;
-}
-
-.request-filter-affordance {
-  display: inline-flex;
-  min-width: 56px;
-  min-height: 52px;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding-inline: 14px;
-  border: 1px solid var(--hooma-ui-outline);
-  border-radius: var(--hooma-ui-radius-control);
-  color: var(--hooma-ui-text-secondary);
-  font-size: var(--hooma-ui-body);
-  font-weight: 700;
-}
-
-.request-filter-affordance svg {
-  width: 20px;
-  height: 20px;
 }
 
 .request-quick-rail {

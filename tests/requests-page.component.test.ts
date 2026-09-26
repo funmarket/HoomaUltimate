@@ -473,6 +473,7 @@ test("foundation filters stay live without the VR4 advanced workflow", async () 
     assert.ok(page.view.getByLabelText("Specific need"));
     assert.ok(page.view.getByLabelText("City"));
     assert.ok(page.view.getByLabelText("Houma"));
+    assert.equal(page.view.queryByText("Filters"), null);
     assert.equal(page.view.queryByLabelText("Status"), null);
     assert.equal(page.view.queryByRole("button", { name: "Filters" }), null);
     assert.equal(page.view.queryByRole("button", { name: "Apply" }), null);
