@@ -191,7 +191,13 @@ export function GearUpPage() {
       ) : (
         <GearUpProductsPane
           cities={cities}
-          houmas={[...new Set(optionSeed.map((shop) => shop.place.houma).filter((value): value is string => Boolean(value)))].sort()}
+          houmas={[
+            ...new Set(
+              optionSeed
+                .map((shop) => shop.place.houma)
+                .filter((value): value is string => Boolean(value)),
+            ),
+          ].sort()}
         />
       )}
     </section>
