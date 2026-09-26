@@ -2,10 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { PublicGearUpProductListing } from "@hooma/contracts/gear-up";
 import { useHoomaFrontend } from "../context";
 import { createGearUpApi } from "./api";
-import {
-  GearUpProductFilters,
-  type GearUpProductDiscoveryFilters,
-} from "./GearUpProductFilters";
+import { GearUpProductFilters, type GearUpProductDiscoveryFilters } from "./GearUpProductFilters";
 import { GearUpProductPreviewCard } from "./GearUpProductPreviewCard";
 
 const INITIAL_FILTERS: GearUpProductDiscoveryFilters = {
