@@ -33,11 +33,31 @@ export function AthletesPage({
   const { api } = useHoomaFrontend();
   const navigate = useNavigate();
   const [items, setItems] = useState<PublicAthletesSummary[]>([]);
+  const [heroUrl, setHeroUrl] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
   const activeView = searchParams.get("tab") === "requests" ? "requests" : "communities";
   const [sport, setSport] = useState<AthletesSport | "ALL">("ALL");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+
+    void api.athletes
+      .heroDelivery(controller.signal)
+      .then((delivery) => {
+        if (active) setHeroUrl(delivery.contentUrl);
+      })
+      .catch(() => {
+        if (active) setHeroUrl(null);
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [api]);
 
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -95,9 +115,12 @@ export function AthletesPage({
   return (
     <div className="page athletes-page">
       <section className="athletes-surface athletes-hero athletes-hero--hub">
+        {heroUrl ? (
+          <img className="athletes-hero__banner" src={heroUrl} alt="" aria-hidden="true" />
+        ) : null}
         <div className="athletes-hero__content">
           <span className="eyebrow">ATHLETES</span>
-          <h1>Move together. Train together.</h1>
+          <h1 className="athletes-hero__semantic-title">Move together. Train together.</h1>
           <p>Find local sports communities built around the way you move.</p>
           <div className="athletes-actions">
             <button

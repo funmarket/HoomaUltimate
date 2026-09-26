@@ -32,6 +32,7 @@ import { PrismaPitchRepository } from "../modules/pitch/infrastructure/prisma-pi
 import { CommunityService } from "../modules/communities/application/community.service.js";
 import { PrismaCommunityRepository } from "../modules/communities/infrastructure/prisma-community.repository.js";
 import { AthletesCalendarService } from "../modules/athletes/application/athletes-calendar.service.js";
+import { AthletesHeroService } from "../modules/athletes/application/athletes-hero.service.js";
 import { AthletesPhotoService } from "../modules/athletes/application/athletes-photo.service.js";
 import { AthletesService } from "../modules/athletes/application/athletes.service.js";
 import { PrismaAthletesCalendarRepository } from "../modules/athletes/infrastructure/prisma-athletes-calendar.repository.js";
@@ -221,6 +222,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
   const communityService = new CommunityService(communityRepository, platformAdminService);
   const athletesRepository = new PrismaAthletesRepository(database);
   const athletesService = new AthletesService(athletesRepository, userLastSeenReader);
+  const athletesHeroService = new AthletesHeroService(storage);
   const athletesCalendarRepository = new PrismaAthletesCalendarRepository(database);
   const athletesCalendarService = new AthletesCalendarService(
     athletesService,
@@ -358,6 +360,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     gearUpSettingsService,
     communityService,
     athletesService,
+    athletesHeroService,
     athletesCalendarService,
     athletesPhotoService,
     teamService,

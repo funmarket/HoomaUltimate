@@ -60,9 +60,45 @@
 }
 
 .athletes-hero--hub {
-  min-height: 15.5rem;
+  min-height: 20rem;
+  aspect-ratio: 1280 / 431;
   display: flex;
   align-items: flex-end;
+  background: #050605;
+}
+
+.athletes-hero__banner {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center top;
+  pointer-events: none;
+}
+
+.athletes-hero--hub .athletes-hero__content {
+  max-width: 34rem;
+}
+
+.athletes-hero--hub .athletes-hero__semantic-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.athletes-hero--hub::after,
+.athletes-hero--hub::before,
+.athletes-hero--hub .athletes-hero__motion {
+  display: none;
 }
 
 .athletes-hero--hub::before,
