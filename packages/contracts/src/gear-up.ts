@@ -186,7 +186,10 @@ export const gearUpProductDiscoveryQuerySchema = z
     category: gearUpProductCategorySchema.optional(),
     city: z.string().trim().max(100).optional(),
     houma: z.string().trim().max(100).optional(),
-    featured: z.coerce.boolean().optional(),
+    featured: z
+      .enum(["true", "false"])
+      .transform((value) => value === "true")
+      .optional(),
     cursor: z.string().trim().min(1).optional(),
     limit: z.coerce.number().int().min(1).max(100).default(30),
   })
