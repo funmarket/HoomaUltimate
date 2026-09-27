@@ -1,3 +1,4 @@
+import { MediaProcessingAthletesPhotoOptimizer } from "../modules/athletes/infrastructure/media-processing-athletes-photo-optimizer.js";
 import { SharpAthletesPhotoOptimizer } from "../modules/athletes/infrastructure/sharp-athletes-photo-optimizer.js";
 import { SharpAthletesPhotoValidator } from "../modules/athletes/infrastructure/sharp-athletes-photo-validator.js";
 import type { ApiConfig } from "@hooma/config";
@@ -136,6 +137,10 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     windowSeconds: config.API_RATE_LIMIT_WINDOW_SECONDS,
   });
   const storage = objectStorage(config, overrides);
+  const mediaStorageScope = storage ? config.MEDIA_STORAGE_SCOPE : undefined;
+  if (storage && !mediaStorageScope) {
+    throw new Error("MEDIA_STORAGE_SCOPE is required when object storage is configured");
+  }
   const readinessService = new ReadinessService(
     new PrismaReadinessProbe(database),
     new RedisReadinessProbe(redis),
@@ -247,8 +252,9 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     athletesPhotoRepository,
     athletesPhotoRepository,
     storage,
+    mediaStorageScope ?? null,
     new SharpAthletesPhotoValidator(),
-    new SharpAthletesPhotoOptimizer(),
+    new MediaProcessingAthletesPhotoOptimizer(),
   );
   const teamRepository = new PrismaTeamRepository(database);
   const teamLifecycleRepository = new PrismaTeamLifecycleRepository(database);
