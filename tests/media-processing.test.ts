@@ -517,7 +517,6 @@ test("writeMediaVariants exposes deterministic recovery info after partial varia
   );
 });
 
-
 test("writeMediaVariants fails closed on returned-key mismatch with canonical recovery authority", async () => {
   const processed = await processMedia({
     body: await createRaster("jpeg", 900, 450),
