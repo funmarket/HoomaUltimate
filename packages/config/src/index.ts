@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const nodeEnvironmentSchema = z.enum(["development", "test", "production"]);
+const mediaStorageScopeSchema = z.enum(["production", "staging", "development"]);
 const portSchema = z.coerce.number().int().positive().max(65535);
 const telegramUserIdSchema = z
   .string()
@@ -13,6 +14,7 @@ const objectStorageShape = {
   OBJECT_STORAGE_BUCKET: z.string().min(1).optional(),
   OBJECT_STORAGE_ACCESS_KEY_ID: z.string().min(1).optional(),
   OBJECT_STORAGE_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+  MEDIA_STORAGE_SCOPE: mediaStorageScopeSchema.optional(),
   OBJECT_STORAGE_URL_STYLE: z.enum(["path", "virtual"]).default("path"),
 };
 
@@ -102,6 +104,13 @@ function validateCompleteObjectStorageConfig(
     value.OBJECT_STORAGE_SECRET_ACCESS_KEY,
   ];
   const configured = storageValues.filter(Boolean).length;
+  if (configured === storageValues.length && !value.MEDIA_STORAGE_SCOPE) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["MEDIA_STORAGE_SCOPE"],
+      message: "MEDIA_STORAGE_SCOPE is required when object storage is configured",
+    });
+  }
   if (value.NODE_ENV === "production" && configured === 0) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
