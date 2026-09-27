@@ -18,10 +18,6 @@ export interface MediaWriteResult {
   readonly cleanupKeys: readonly string[];
 }
 
-type MediaVariantWriteErrorOptions = ErrorOptions & {
-  readonly cleanupKeys?: readonly string[];
-};
-
 export class MediaVariantWriteError extends Error {
   readonly cleanupKeys: readonly string[];
 
@@ -29,11 +25,11 @@ export class MediaVariantWriteError extends Error {
     readonly failedVariant: MediaVariant,
     readonly plannedKeys: readonly string[],
     readonly writtenDescriptors: readonly MediaVariantDescriptor[],
-    options?: MediaVariantWriteErrorOptions,
+    options?: ErrorOptions,
   ) {
     super(`Failed to write media variant: ${failedVariant}`, options);
     this.name = "MediaVariantWriteError";
-    this.cleanupKeys = options?.cleanupKeys ?? writtenDescriptors.map(({ objectKey }) => objectKey);
+    this.cleanupKeys = writtenDescriptors.map(({ objectKey }) => objectKey);
   }
 }
 
@@ -61,37 +57,26 @@ export async function writeMediaVariants(
         `Processed media is missing planned variant ${planned.variant}`,
       );
     }
-    let stored;
     try {
-      stored = await input.storage.put(
+      await input.storage.put(
         planned.objectKey,
         processedVariant.body,
         processedVariant.contentType,
       );
+      writtenDescriptors.push({
+        ...input.identity,
+        variant: processedVariant.variant,
+        objectKey: planned.objectKey,
+        contentType: processedVariant.contentType,
+        sizeBytes: processedVariant.sizeBytes,
+        widthPx: processedVariant.widthPx,
+        heightPx: processedVariant.heightPx,
+      });
     } catch (error) {
       throw new MediaVariantWriteError(planned.variant, plannedKeys, writtenDescriptors, {
         cause: error,
       });
     }
-
-    if (stored.key !== planned.objectKey) {
-      throw new MediaVariantWriteError(planned.variant, plannedKeys, writtenDescriptors, {
-        cause: new Error(
-          `Object storage returned unexpected key for media variant ${planned.variant}`,
-        ),
-        cleanupKeys: [...writtenDescriptors.map(({ objectKey }) => objectKey), planned.objectKey],
-      });
-    }
-
-    writtenDescriptors.push({
-      ...input.identity,
-      variant: processedVariant.variant,
-      objectKey: planned.objectKey,
-      contentType: processedVariant.contentType,
-      sizeBytes: processedVariant.sizeBytes,
-      widthPx: processedVariant.widthPx,
-      heightPx: processedVariant.heightPx,
-    });
   }
 
   return {
