@@ -26,17 +26,21 @@ test("Athletes recovery survives failed publication and never deletes a publishe
   const publishedId = randomUUID();
   const failedId = randomUUID();
   const removed: string[] = [];
-  const cleanup = createAthletesPhotoCleanupHandler(db, {
-    put: async () => {
-      throw new Error("not used");
+  const cleanup = createAthletesPhotoCleanupHandler(
+    db,
+    {
+      put: async () => {
+        throw new Error("not used");
+      },
+      get: async () => {
+        throw new Error("not used");
+      },
+      remove: async (key) => {
+        removed.push(key);
+      },
     },
-    get: async () => {
-      throw new Error("not used");
-    },
-    remove: async (key) => {
-      removed.push(key);
-    },
-  }, "development");
+    "development",
+  );
   const key = (id: string) => `athletes-photos/${community.id}/${id}`;
   const metadata = (id: string) => ({
     id,
@@ -134,7 +138,12 @@ test("Athletes recovery survives failed publication and never deletes a publishe
       mediaId: typedId,
       variant: "thumb",
     });
-    for (const objectKey of [wrongScopeKey, wrongNamespaceKey, wrongVariantKey, "malformed-key"]) {
+    for (const objectKey of [
+      wrongScopeKey,
+      wrongNamespaceKey,
+      wrongVariantKey,
+      "malformed-key",
+    ]) {
       await assert.rejects(
         () =>
           cleanup({
