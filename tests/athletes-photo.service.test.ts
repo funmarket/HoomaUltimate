@@ -264,7 +264,6 @@ function photoService(
     unitOfWork,
     storage,
     mediaStorageScope,
-    { validate: async () => undefined },
     { optimize },
   );
 }

@@ -253,7 +253,6 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     athletesPhotoRepository,
     storage,
     mediaStorageScope ?? null,
-    new SharpAthletesPhotoValidator(),
     new MediaProcessingAthletesPhotoOptimizer(),
   );
   const teamRepository = new PrismaTeamRepository(database);

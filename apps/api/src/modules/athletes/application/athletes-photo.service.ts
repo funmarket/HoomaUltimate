@@ -17,7 +17,6 @@ import {
 import type { AthletesPhotoOptimizer } from "./athletes-photo-optimizer.js";
 import type { AthletesPhotoRecord, AthletesPhotoRepository } from "./athletes-photo.repository.js";
 import type { AthletesPhotoUnitOfWork } from "./athletes-photo.unit-of-work.js";
-import type { AthletesPhotoValidator } from "./athletes-photo-validator.js";
 
 const ATHLETES_PHOTO_READ_URL_TTL_SECONDS = 5 * 60;
 
@@ -33,7 +32,6 @@ export class AthletesPhotoService {
     private readonly photoUnitOfWork: AthletesPhotoUnitOfWork,
     private readonly storage: ObjectStorage | null,
     private readonly mediaStorageScope: MediaStorageScope | null,
-    private readonly validator: AthletesPhotoValidator,
     private readonly optimizer: AthletesPhotoOptimizer,
   ) {}
 
@@ -68,7 +66,6 @@ export class AthletesPhotoService {
       );
     }
 
-    await this.validator.validate(input.body, parsedContentType.data);
     const optimized = await this.optimizer.optimize(input.body, parsedContentType.data);
 
     const photoId = randomUUID();
