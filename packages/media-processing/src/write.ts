@@ -33,7 +33,8 @@ export class MediaVariantWriteError extends Error {
   ) {
     super(`Failed to write media variant: ${failedVariant}`, options);
     this.name = "MediaVariantWriteError";
-    this.cleanupKeys = options?.cleanupKeys ?? writtenDescriptors.map(({ objectKey }) => objectKey);
+    this.cleanupKeys =
+      options?.cleanupKeys ?? writtenDescriptors.map(({ objectKey }) => objectKey);
   }
 }
 
