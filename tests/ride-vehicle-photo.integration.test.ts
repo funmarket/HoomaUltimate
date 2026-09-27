@@ -22,6 +22,7 @@ const config = loadApiConfig({
   WEB_ORIGIN: "http://localhost:5173",
   TELEGRAM_ORIGIN: "http://localhost:5174",
   TELEGRAM_BOT_TOKEN: "integration-test-token",
+  MEDIA_STORAGE_SCOPE: "development",
 });
 const db = getDatabaseClient();
 

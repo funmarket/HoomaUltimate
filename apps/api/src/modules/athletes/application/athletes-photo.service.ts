@@ -7,6 +7,7 @@ import {
   type AthletesPhotoMetadata,
   type AthletesPhotoUploadResponse,
 } from "@hooma/contracts/athletes";
+import { buildMediaObjectKey, type MediaStorageScope } from "@hooma/media-processing";
 import type { ObjectStorage, ObjectStorageReadUrlSigner } from "@hooma/storage";
 import { AthletesError } from "../domain/athletes-error.js";
 import {
@@ -16,7 +17,6 @@ import {
 import type { AthletesPhotoOptimizer } from "./athletes-photo-optimizer.js";
 import type { AthletesPhotoRecord, AthletesPhotoRepository } from "./athletes-photo.repository.js";
 import type { AthletesPhotoUnitOfWork } from "./athletes-photo.unit-of-work.js";
-import type { AthletesPhotoValidator } from "./athletes-photo-validator.js";
 
 const ATHLETES_PHOTO_READ_URL_TTL_SECONDS = 5 * 60;
 
@@ -31,7 +31,7 @@ export class AthletesPhotoService {
     private readonly photos: AthletesPhotoRepository,
     private readonly photoUnitOfWork: AthletesPhotoUnitOfWork,
     private readonly storage: ObjectStorage | null,
-    private readonly validator: AthletesPhotoValidator,
+    private readonly mediaStorageScope: MediaStorageScope | null,
     private readonly optimizer: AthletesPhotoOptimizer,
   ) {}
 
@@ -59,18 +59,23 @@ export class AthletesPhotoService {
         "Athletes photo must be 5 MiB or smaller",
       );
     }
-    if (!this.storage) {
+    if (!this.storage || !this.mediaStorageScope) {
       throw new AthletesError(
         "ATHLETES_PHOTO_STORAGE_NOT_CONFIGURED",
         "Athletes photo storage is not configured",
       );
     }
 
-    await this.validator.validate(input.body, parsedContentType.data);
     const optimized = await this.optimizer.optimize(input.body, parsedContentType.data);
 
     const photoId = randomUUID();
-    const requestedObjectKey = athletesPhotoObjectKey(athletesCommunityId, photoId);
+    const requestedObjectKey = buildMediaObjectKey({
+      scope: this.mediaStorageScope,
+      namespace: "ATHLETES_PHOTO",
+      ownerId: athletesCommunityId,
+      mediaId: photoId,
+      variant: "master",
+    });
     // Persist recovery intent before writing bytes so a crash cannot erase the
     // only record of a pending upload. Successful metadata commits consume it.
     await this.photos.prepareUpload(photoId, athletesCommunityId, requestedObjectKey);
@@ -82,9 +87,9 @@ export class AthletesPhotoService {
         optimized.body,
         optimized.contentType,
       );
-      uploadedObjectKey = stored.key;
+      uploadedObjectKey = requestedObjectKey;
       if (stored.key !== requestedObjectKey) {
-        await this.photos.prepareUpload(photoId, athletesCommunityId, stored.key);
+        throw new AthletesError("ATHLETES_PHOTO_UPLOAD_FAILED", "Athletes photo upload failed");
       }
       const storedContentType = athletesPhotoContentTypeSchema.parse(stored.contentType);
 
@@ -96,7 +101,7 @@ export class AthletesPhotoService {
           return scope.photos.createPrepared({
             id: photoId,
             athletesCommunityId,
-            objectKey: stored.key,
+            objectKey: requestedObjectKey,
             contentType: storedContentType,
             sizeBytes: stored.sizeBytes,
             uploadedByUserId: userId,
@@ -186,10 +191,6 @@ function supportsReadUrlSigning(
 
 function normalizeContentType(contentType: string): string {
   return contentType.split(";")[0]?.trim().toLowerCase() ?? "";
-}
-
-function athletesPhotoObjectKey(athletesCommunityId: string, photoId: string): string {
-  return `athletes-photos/${athletesCommunityId}/${photoId}`;
 }
 
 function publicPhotoMetadata(metadata: AthletesPhotoRecord): AthletesPhotoMetadata {

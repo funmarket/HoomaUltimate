@@ -53,9 +53,13 @@ const outboxHandlers = new Map<string, OutboxHandler>();
 const storage = objectStorage(objectStorageConfig);
 const storageReadiness = objectStorageReadinessProbe(storage);
 if (storage) {
+  const mediaStorageScope = objectStorageConfig.MEDIA_STORAGE_SCOPE;
+  if (!mediaStorageScope) {
+    throw new Error("MEDIA_STORAGE_SCOPE is required when object storage is configured");
+  }
   outboxHandlers.set(
     ATHLETES_PHOTO_RECONCILE_TOPIC,
-    createAthletesPhotoCleanupHandler(database, storage),
+    createAthletesPhotoCleanupHandler(database, storage, mediaStorageScope),
   );
   outboxHandlers.set(
     ATHLETES_CALENDAR_MEDIA_RECONCILE_TOPIC,
