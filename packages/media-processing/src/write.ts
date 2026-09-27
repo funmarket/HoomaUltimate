@@ -33,8 +33,7 @@ export class MediaVariantWriteError extends Error {
   ) {
     super(`Failed to write media variant: ${failedVariant}`, options);
     this.name = "MediaVariantWriteError";
-    this.cleanupKeys =
-      options?.cleanupKeys ?? writtenDescriptors.map(({ objectKey }) => objectKey);
+    this.cleanupKeys = options?.cleanupKeys ?? writtenDescriptors.map(({ objectKey }) => objectKey);
   }
 }
 
@@ -80,10 +79,7 @@ export async function writeMediaVariants(
         cause: new Error(
           `Object storage returned unexpected key for media variant ${planned.variant}`,
         ),
-        cleanupKeys: [
-          ...writtenDescriptors.map(({ objectKey }) => objectKey),
-          planned.objectKey,
-        ],
+        cleanupKeys: [...writtenDescriptors.map(({ objectKey }) => objectKey), planned.objectKey],
       });
     }
 
