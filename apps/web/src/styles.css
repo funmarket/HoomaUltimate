@@ -41,6 +41,10 @@ body {
   gap: 32px;
 }
 
+.foundation-shell--media-first {
+  row-gap: 0;
+}
+
 .eyebrow {
   color: var(--app-gold);
   text-transform: uppercase;

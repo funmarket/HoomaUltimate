@@ -118,24 +118,23 @@ export function AthletesPage({
         {heroUrl ? (
           <img className="athletes-hero__banner" src={heroUrl} alt="" aria-hidden="true" />
         ) : null}
-        <div className="athletes-hero__content">
-          <h1 className="athletes-hero__semantic-title">Move together. Train together.</h1>
-          <div className="athletes-actions">
-            <button
-              className="button athletes-action athletes-action--primary"
-              type="button"
-              onClick={onCreateCommunity}
-              disabled={createCommunityDisabled}
-            >
-              <span className="athletes-action__icon" aria-hidden="true">
-                +
-              </span>
-              Create community
-            </button>
-          </div>
-        </div>
+        <h1 className="athletes-hero__semantic-title">Move together. Train together.</h1>
         <span className="athletes-hero__motion" aria-hidden="true" />
       </section>
+
+      <div className="athletes-actions athletes-hub-create">
+        <button
+          className="button athletes-action athletes-action--primary"
+          type="button"
+          onClick={onCreateCommunity}
+          disabled={createCommunityDisabled}
+        >
+          <span className="athletes-action__icon" aria-hidden="true">
+            +
+          </span>
+          Create community
+        </button>
+      </div>
 
       <AthletesHubTabs active={activeView} />
 
