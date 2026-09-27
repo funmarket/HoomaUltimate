@@ -517,71 +517,68 @@ test("writeMediaVariants exposes deterministic recovery info after partial varia
   );
 });
 
-test(
-  "writeMediaVariants fails closed on returned-key mismatch with canonical recovery authority",
-  async () => {
-    const processed = await processMedia({
-      body: await createRaster("jpeg", 900, 450),
-      contentType: "image/jpeg",
-      profile: PHOTO_STANDARD,
-    });
-    const attemptedKeys: string[] = [];
-    const mismatchedReturnedKey = "provider/remapped/place-photo/place-1/media-1/card.webp";
+test("writeMediaVariants fails closed on returned-key mismatch with canonical recovery authority", async () => {
+  const processed = await processMedia({
+    body: await createRaster("jpeg", 900, 450),
+    contentType: "image/jpeg",
+    profile: PHOTO_STANDARD,
+  });
+  const attemptedKeys: string[] = [];
+  const mismatchedReturnedKey = "provider/remapped/place-photo/place-1/media-1/card.webp";
 
-    const storage = {
-      async put(key: string, body: Uint8Array, contentType: string) {
-        attemptedKeys.push(key);
-        if (key.endsWith("/card.webp")) {
-          return {
-            key: mismatchedReturnedKey,
-            contentType,
-            sizeBytes: body.byteLength,
-          };
-        }
-        return { key, contentType, sizeBytes: body.byteLength };
-      },
-      async get() {
-        throw new Error("not used");
-      },
-      async remove() {},
-    };
+  const storage = {
+    async put(key: string, body: Uint8Array, contentType: string) {
+      attemptedKeys.push(key);
+      if (key.endsWith("/card.webp")) {
+        return {
+          key: mismatchedReturnedKey,
+          contentType,
+          sizeBytes: body.byteLength,
+        };
+      }
+      return { key, contentType, sizeBytes: body.byteLength };
+    },
+    async get() {
+      throw new Error("not used");
+    },
+    async remove() {},
+  };
 
-    await assert.rejects(
-      () =>
-        writeMediaVariants({
-          storage,
-          identity: {
-            scope: "production",
-            namespace: "PLACE_PHOTO",
-            ownerId: "place-1",
-            mediaId: "media-1",
-          },
-          processed,
-        }),
-      (error: unknown) => {
-        assert.ok(error instanceof MediaVariantWriteError);
-        assert.equal(error.failedVariant, "card");
-        assert.deepEqual(
-          error.writtenDescriptors.map(({ objectKey }) => objectKey),
-          ["production/media/v1/place-photo/place-1/media-1/master.webp"],
-        );
-        assert.deepEqual(error.cleanupKeys, [
-          "production/media/v1/place-photo/place-1/media-1/master.webp",
-          "production/media/v1/place-photo/place-1/media-1/card.webp",
-        ]);
-        assert.ok(!error.cleanupKeys.includes(mismatchedReturnedKey));
-        assert.deepEqual(error.plannedKeys, [
-          "production/media/v1/place-photo/place-1/media-1/master.webp",
-          "production/media/v1/place-photo/place-1/media-1/card.webp",
-          "production/media/v1/place-photo/place-1/media-1/thumb.webp",
-        ]);
-        return true;
-      },
-    );
+  await assert.rejects(
+    () =>
+      writeMediaVariants({
+        storage,
+        identity: {
+          scope: "production",
+          namespace: "PLACE_PHOTO",
+          ownerId: "place-1",
+          mediaId: "media-1",
+        },
+        processed,
+      }),
+    (error: unknown) => {
+      assert.ok(error instanceof MediaVariantWriteError);
+      assert.equal(error.failedVariant, "card");
+      assert.deepEqual(
+        error.writtenDescriptors.map(({ objectKey }) => objectKey),
+        ["production/media/v1/place-photo/place-1/media-1/master.webp"],
+      );
+      assert.deepEqual(error.cleanupKeys, [
+        "production/media/v1/place-photo/place-1/media-1/master.webp",
+        "production/media/v1/place-photo/place-1/media-1/card.webp",
+      ]);
+      assert.ok(!error.cleanupKeys.includes(mismatchedReturnedKey));
+      assert.deepEqual(error.plannedKeys, [
+        "production/media/v1/place-photo/place-1/media-1/master.webp",
+        "production/media/v1/place-photo/place-1/media-1/card.webp",
+        "production/media/v1/place-photo/place-1/media-1/thumb.webp",
+      ]);
+      return true;
+    },
+  );
 
-    assert.deepEqual(attemptedKeys, [
-      "production/media/v1/place-photo/place-1/media-1/master.webp",
-      "production/media/v1/place-photo/place-1/media-1/card.webp",
-    ]);
-  },
-);
+  assert.deepEqual(attemptedKeys, [
+    "production/media/v1/place-photo/place-1/media-1/master.webp",
+    "production/media/v1/place-photo/place-1/media-1/card.webp",
+  ]);
+});
