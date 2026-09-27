@@ -431,8 +431,8 @@ test("writeMediaVariants returns descriptors and exact cleanup keys for later do
     profile: PHOTO_STANDARD,
   });
   const puts: string[] = [];
-  const storage = {
-    async put(key: string, body: Uint8Array, contentType: string) {
+    const storage = {
+      async put(key: string, body: Uint8Array, contentType: string) {
       puts.push(key);
       return { key, contentType, sizeBytes: body.byteLength };
     },
@@ -481,13 +481,13 @@ test("writeMediaVariants exposes deterministic recovery info after partial varia
       writes.push(key);
       return { key, contentType, sizeBytes: body.byteLength };
     },
-    async get() {
-      throw new Error("not used");
-    },
-    async remove() {},
-  };
+      async get() {
+        throw new Error("not used");
+      },
+      async remove() {},
+    };
 
-  await assert.rejects(
+    await assert.rejects(
     () =>
       writeMediaVariants({
         storage,
@@ -517,15 +517,16 @@ test("writeMediaVariants exposes deterministic recovery info after partial varia
   );
 });
 
-test("writeMediaVariants fails closed on returned-key mismatch with canonical recovery authority", async () => {
-  const processed = await processMedia({
+test(
+  "writeMediaVariants fails closed on returned-key mismatch with canonical recovery authority",
+  async () => {
+    const processed = await processMedia({
     body: await createRaster("jpeg", 900, 450),
     contentType: "image/jpeg",
     profile: PHOTO_STANDARD,
   });
-  const attemptedKeys: string[] = [];
-  const mismatchedReturnedKey =
-    "provider/remapped/place-photo/place-1/media-1/card.webp";
+    const attemptedKeys: string[] = [];
+    const mismatchedReturnedKey = "provider/remapped/place-photo/place-1/media-1/card.webp";
 
   const storage = {
     async put(key: string, body: Uint8Array, contentType: string) {
@@ -578,8 +579,9 @@ test("writeMediaVariants fails closed on returned-key mismatch with canonical re
     },
   );
 
-  assert.deepEqual(attemptedKeys, [
-    "production/media/v1/place-photo/place-1/media-1/master.webp",
-    "production/media/v1/place-photo/place-1/media-1/card.webp",
-  ]);
-});
+    assert.deepEqual(attemptedKeys, [
+      "production/media/v1/place-photo/place-1/media-1/master.webp",
+      "production/media/v1/place-photo/place-1/media-1/card.webp",
+    ]);
+  },
+);
