@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { randomUUID } from "node:crypto";
 import { getDatabaseClient } from "@hooma/database";
+import { buildMediaObjectKey } from "@hooma/media-processing";
 import { ATHLETES_PHOTO_RECONCILE_TOPIC } from "@hooma/contracts/athletes";
 import { AthletesContentAuthorization } from "../apps/api/src/modules/athletes/application/athletes-content-authorizer.js";
 import { AthletesService } from "../apps/api/src/modules/athletes/application/athletes.service.js";
@@ -35,7 +36,7 @@ test("Athletes recovery survives failed publication and never deletes a publishe
     remove: async (key) => {
       removed.push(key);
     },
-  });
+  }, "development");
   const key = (id: string) => `athletes-photos/${community.id}/${id}`;
   const metadata = (id: string) => ({
     id,
@@ -97,6 +98,53 @@ test("Athletes recovery survives failed publication and never deletes a publishe
         }),
       /ownership boundary/,
     );
+    const typedId = randomUUID();
+    const typedKey = buildMediaObjectKey({
+      scope: "development",
+      namespace: "ATHLETES_PHOTO",
+      ownerId: community.id,
+      mediaId: typedId,
+      variant: "master",
+    });
+    await cleanup({
+      id: typedId,
+      topic: ATHLETES_PHOTO_RECONCILE_TOPIC,
+      payload: { photoId: typedId, athletesCommunityId: community.id, objectKey: typedKey },
+    });
+    assert.equal(removed.includes(typedKey), true);
+
+    const wrongScopeKey = buildMediaObjectKey({
+      scope: "production",
+      namespace: "ATHLETES_PHOTO",
+      ownerId: community.id,
+      mediaId: typedId,
+      variant: "master",
+    });
+    const wrongNamespaceKey = buildMediaObjectKey({
+      scope: "development",
+      namespace: "REQUEST_PHOTO",
+      ownerId: community.id,
+      mediaId: typedId,
+      variant: "master",
+    });
+    const wrongVariantKey = buildMediaObjectKey({
+      scope: "development",
+      namespace: "ATHLETES_PHOTO",
+      ownerId: community.id,
+      mediaId: typedId,
+      variant: "thumb",
+    });
+    for (const objectKey of [wrongScopeKey, wrongNamespaceKey, wrongVariantKey, "malformed-key"]) {
+      await assert.rejects(
+        () =>
+          cleanup({
+            id: typedId,
+            topic: ATHLETES_PHOTO_RECONCILE_TOPIC,
+            payload: { photoId: typedId, athletesCommunityId: community.id, objectKey },
+          }),
+        /ownership boundary/,
+      );
+    }
   } finally {
     await db.outboxEvent.deleteMany({ where: { id: { in: [publishedId, failedId] } } });
     await db.athletesPhoto.deleteMany({ where: { athletesCommunityId: community.id } });
