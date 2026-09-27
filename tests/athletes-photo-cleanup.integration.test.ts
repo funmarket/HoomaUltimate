@@ -138,12 +138,7 @@ test("Athletes recovery survives failed publication and never deletes a publishe
       mediaId: typedId,
       variant: "thumb",
     });
-    for (const objectKey of [
-      wrongScopeKey,
-      wrongNamespaceKey,
-      wrongVariantKey,
-      "malformed-key",
-    ]) {
+    for (const objectKey of [wrongScopeKey, wrongNamespaceKey, wrongVariantKey, "malformed-key"]) {
       await assert.rejects(
         () =>
           cleanup({
