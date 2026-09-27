@@ -42,6 +42,14 @@ export type { TeamBadgeProps, TeamBannerProps } from "./teams/TeamMedia.js";
 export { PlayHero } from "./play/PlayHero.js";
 export { PickupMatchCard } from "./play/PickupMatchCard.js";
 export { WATCH_COLLECTOR_TICKET_MASTER } from "./brand/watch-assets.js";
+export { MediaUploadField } from "./media/MediaUploadField.js";
+export type { MediaPreview, MediaUploadFieldProps } from "./media/MediaUploadField.js";
+export { MediaGalleryEditor } from "./media/MediaGalleryEditor.js";
+export type {
+  MediaGalleryEditorProps,
+  MediaGalleryItem,
+  MediaReorderDirection,
+} from "./media/MediaGalleryEditor.js";
 
 const HOME_GATEWAY_TYPOGRAPHY = `
 .home-gateway-title {
