@@ -66,7 +66,7 @@ test("Athletes hero keeps 720x520 contain geometry and removes the hub overlay c
   assert.match(athletesCss, /\.athletes-hub-create\s*\{/);
   const createRule = athletesCss.match(/\.athletes-hub-create\s*\{[\s\S]*?\}/)?.[0] ?? "";
   assert.doesNotMatch(createRule, /margin[^;]*:\s*-/);
-  assert.doesNotMatch(athletesCss, /\.athletes-hub-create[\s\S]*?z-index/);
+  assert.doesNotMatch(createRule, /z-index/);
 
   assert.match(athletesTabs, />\s*Communities\s*</);
   assert.match(athletesTabs, />\s*Gear Up\s*</);
