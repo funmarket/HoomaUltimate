@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { loadApiConfig } from "@hooma/config";
 import { getDatabaseClient } from "@hooma/database";
+import { buildMediaObjectKey } from "@hooma/media-processing";
 import type {
   ObjectStorage,
   ObjectStorageReadUrlSigner,
@@ -22,6 +23,7 @@ const config = loadApiConfig({
   WEB_ORIGIN: "http://localhost:5173",
   TELEGRAM_ORIGIN: "http://localhost:5174",
   TELEGRAM_BOT_TOKEN: "integration-test-token",
+  MEDIA_STORAGE_SCOPE: "development",
 });
 const db = getDatabaseClient();
 
@@ -196,12 +198,22 @@ test("Athletes Photo Board HTTP routes keep curation Founder-only and delivery m
     assert.equal(persisted.athletesCommunityId, athletesCommunityId);
     assert.equal(persisted.uploadedByUserId, founder.userId);
     assert.equal(persisted.contentType, "image/webp");
+    assert.equal(
+      persisted.objectKey,
+      buildMediaObjectKey({
+        scope: "development",
+        namespace: "ATHLETES_PHOTO",
+        ownerId: persisted.athletesCommunityId,
+        mediaId: uploaded.id,
+        variant: "master",
+      }),
+    );
     const stored = storage.objects.get(persisted.objectKey);
     assert.ok(stored);
     const storedMetadata = await sharp(stored.body).metadata();
     assert.equal(storedMetadata.format, "webp");
-    assert.equal(storedMetadata.width, 1600);
-    assert.equal(storedMetadata.height, 800);
+    assert.equal(storedMetadata.width, 2048);
+    assert.equal(storedMetadata.height, 1024);
 
     const memberList = await fetch(`${base}/api/v1/athletes/${athletesCommunityId}/photos`, {
       headers: jsonHeaders(member.cookie),
