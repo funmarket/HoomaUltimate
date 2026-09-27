@@ -19,6 +19,7 @@ packages/
   database/
   domain/
   frontend/
+  media-processing/
   storage/
   testing/
   ui/
