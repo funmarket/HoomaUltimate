@@ -16,6 +16,25 @@ test("API production config rejects missing object storage", () => {
   );
 });
 
+test("repository deployment contract documents and preflights object storage scope", () => {
+  const envExample = readFileSync(".env.example", "utf8");
+  const deployPreflight = readFileSync("scripts/deploy-preflight.mjs", "utf8");
+  const storageKeys = [
+    "OBJECT_STORAGE_ENDPOINT",
+    "OBJECT_STORAGE_REGION",
+    "OBJECT_STORAGE_BUCKET",
+    "OBJECT_STORAGE_ACCESS_KEY_ID",
+    "OBJECT_STORAGE_SECRET_ACCESS_KEY",
+    "MEDIA_STORAGE_SCOPE",
+    "OBJECT_STORAGE_URL_STYLE",
+  ];
+
+  for (const key of storageKeys) {
+    assert.match(envExample, new RegExp(`^${key}=`, "m"));
+    assert.match(deployPreflight, new RegExp(`"${key}"`));
+  }
+});
+
 test("production storage readiness stays on the shared object storage authority", () => {
   const config = readFileSync("packages/config/src/index.ts", "utf8");
   const apiContainer = readFileSync("apps/api/src/bootstrap/container.ts", "utf8");

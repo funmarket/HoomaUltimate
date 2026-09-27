@@ -50,7 +50,20 @@ for (const directory of migrationDirectories) {
 }
 
 const envExample = await readFile(path.join(root, ".env.example"), "utf8");
-for (const key of ["TELEGRAM_BOT_TOKEN", "MINI_APP_URL", "DATABASE_URL", "REDIS_URL"]) {
+const requiredEnvExampleKeys = [
+  "TELEGRAM_BOT_TOKEN",
+  "MINI_APP_URL",
+  "DATABASE_URL",
+  "REDIS_URL",
+  "OBJECT_STORAGE_ENDPOINT",
+  "OBJECT_STORAGE_REGION",
+  "OBJECT_STORAGE_BUCKET",
+  "OBJECT_STORAGE_ACCESS_KEY_ID",
+  "OBJECT_STORAGE_SECRET_ACCESS_KEY",
+  "MEDIA_STORAGE_SCOPE",
+  "OBJECT_STORAGE_URL_STYLE",
+];
+for (const key of requiredEnvExampleKeys) {
   if (!envExample.includes(`${key}=`)) {
     console.error(`Deploy preflight failed. .env.example is missing ${key}.`);
     process.exit(1);
