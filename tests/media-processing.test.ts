@@ -306,22 +306,22 @@ test("PHOTO_STANDARD preserves ratio, applies max edges, and never enlarges sour
   }
 });
 
-test("PAGE_BANNER_STANDARD uses exact 18:13 contain frames, #050605 padding, and no crop", async () => {
+test("PAGE_BANNER_STANDARD uses fixed canvases and contains oversized artwork without crop", async () => {
   const left = await sharp({
-    create: { width: 500, height: 200, channels: 3, background: "#ff0000" },
+    create: { width: 1500, height: 1000, channels: 3, background: "#ff0000" },
   })
     .png()
     .toBuffer();
   const right = await sharp({
-    create: { width: 500, height: 200, channels: 3, background: "#0000ff" },
+    create: { width: 1500, height: 1000, channels: 3, background: "#0000ff" },
   })
     .png()
     .toBuffer();
   const artwork = new Uint8Array(
-    await sharp({ create: { width: 1000, height: 200, channels: 3, background: "#000000" } })
+    await sharp({ create: { width: 3000, height: 1000, channels: 3, background: "#000000" } })
       .composite([
         { input: left, left: 0, top: 0 },
-        { input: right, left: 500, top: 0 },
+        { input: right, left: 1500, top: 0 },
       ])
       .png()
       .toBuffer(),
@@ -336,49 +336,91 @@ test("PAGE_BANNER_STANDARD uses exact 18:13 contain frames, #050605 padding, and
     result.variants.map(({ variant }) => variant),
     ["master", "display", "mobile"],
   );
-  const limits = {
+
+  const expected = {
+    master: { width: 2160, height: 1560, artworkHeight: 720 },
+    display: { width: 1440, height: 1040, artworkHeight: 480 },
+    mobile: { width: 720, height: 520, artworkHeight: 240 },
+  } as const;
+
+  for (const variant of result.variants) {
+    const frame = expected[variant.variant as keyof typeof expected];
+    const metadata = await sharp(variant.body).metadata();
+    assert.deepEqual([metadata.width, metadata.height], [frame.width, frame.height]);
+    assert.equal(metadata.format, "webp");
+
+    const { data, info } = await sharp(variant.body)
+      .removeAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    const pixel = (x: number, y: number) => {
+      const offset = (y * info.width + x) * info.channels;
+      return [data[offset] ?? 0, data[offset + 1] ?? 0, data[offset + 2] ?? 0] as const;
+    };
+    const isBackground = ([r, g, b]: readonly number[]) =>
+      Math.abs(r - 5) <= 10 && Math.abs(g - 6) <= 10 && Math.abs(b - 5) <= 10;
+    const middleY = Math.floor(frame.height / 2);
+    const artworkTop = (frame.height - frame.artworkHeight) / 2;
+
+    const leftEdge = pixel(12, middleY);
+    const rightEdge = pixel(frame.width - 13, middleY);
+    assert.ok(leftEdge[0] > 150 && leftEdge[1] < 100 && leftEdge[2] < 100);
+    assert.ok(rightEdge[2] > 150 && rightEdge[0] < 100 && rightEdge[1] < 100);
+    assert.ok(isBackground(pixel(Math.floor(frame.width / 2), artworkTop - 12)));
+    assert.ok(
+      isBackground(pixel(Math.floor(frame.width / 2), artworkTop + frame.artworkHeight + 11)),
+    );
+    assert.ok(isBackground(pixel(0, 0)));
+  }
+});
+
+test("PAGE_BANNER_STANDARD keeps fixed canvases while small artwork remains natural size", async () => {
+  const sourceWidth = 180;
+  const sourceHeight = 130;
+  const result = await processMedia({
+    body: await createRaster("png", sourceWidth, sourceHeight, "#00ff00"),
+    contentType: "image/png",
+    profile: PAGE_BANNER_STANDARD,
+  });
+
+  const expected = {
     master: [2160, 1560],
     display: [1440, 1040],
     mobile: [720, 520],
   } as const;
-  for (const variant of result.variants) {
-    const [maxWidth, maxHeight] = limits[variant.variant as keyof typeof limits];
-    assert.ok(variant.widthPx <= maxWidth);
-    assert.ok(variant.heightPx <= maxHeight);
-    assert.equal(variant.widthPx * 13, variant.heightPx * 18);
-    assert.equal((await sharp(variant.body).metadata()).format, "webp");
-  }
 
-  const mobile = result.variants.find(({ variant }) => variant === "mobile");
-  assert.ok(mobile);
-  const { data, info } = await sharp(mobile.body)
-    .removeAlpha()
-    .raw()
-    .toBuffer({ resolveWithObject: true });
-  const pixel = (x: number, y: number) => {
-    const offset = (y * info.width + x) * info.channels;
-    return [data[offset] ?? 0, data[offset + 1] ?? 0, data[offset + 2] ?? 0] as const;
-  };
-  const corner = pixel(0, 0);
-  assert.ok(
-    Math.abs(corner[0] - 5) <= 4 && Math.abs(corner[1] - 6) <= 4 && Math.abs(corner[2] - 5) <= 4,
-  );
-  const middleY = Math.floor(info.height / 2);
-  const leftPixel = pixel(3, middleY);
-  const rightPixel = pixel(info.width - 4, middleY);
-  assert.ok(leftPixel[0] > 180 && leftPixel[2] < 80);
-  assert.ok(rightPixel[2] > 180 && rightPixel[0] < 80);
-});
-
-test("PAGE_BANNER_STANDARD does not enlarge small source artwork", async () => {
-  const result = await processMedia({
-    body: await createRaster("png", 180, 130, "#00ff00"),
-    contentType: "image/png",
-    profile: PAGE_BANNER_STANDARD,
-  });
   for (const variant of result.variants) {
-    assert.equal(variant.widthPx, 180);
-    assert.equal(variant.heightPx, 130);
+    const [canvasWidth, canvasHeight] = expected[variant.variant as keyof typeof expected];
+    const metadata = await sharp(variant.body).metadata();
+    assert.deepEqual([metadata.width, metadata.height], [canvasWidth, canvasHeight]);
+
+    const { data, info } = await sharp(variant.body)
+      .removeAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    const pixel = (x: number, y: number) => {
+      const offset = (y * info.width + x) * info.channels;
+      return [data[offset] ?? 0, data[offset + 1] ?? 0, data[offset + 2] ?? 0] as const;
+    };
+    const isGreen = ([r, g, b]: readonly number[]) => g > 150 && r < 100 && b < 100;
+    const isBackground = ([r, g, b]: readonly number[]) =>
+      Math.abs(r - 5) <= 10 && Math.abs(g - 6) <= 10 && Math.abs(b - 5) <= 10;
+
+    const left = (canvasWidth - sourceWidth) / 2;
+    const top = (canvasHeight - sourceHeight) / 2;
+    const right = left + sourceWidth - 1;
+    const bottom = top + sourceHeight - 1;
+    const centerX = Math.floor(canvasWidth / 2);
+    const centerY = Math.floor(canvasHeight / 2);
+
+    assert.ok(isGreen(pixel(left + 8, top + 8)));
+    assert.ok(isGreen(pixel(right - 8, bottom - 8)));
+    assert.ok(isGreen(pixel(centerX, centerY)));
+    assert.ok(isBackground(pixel(left - 8, centerY)));
+    assert.ok(isBackground(pixel(right + 8, centerY)));
+    assert.ok(isBackground(pixel(centerX, top - 8)));
+    assert.ok(isBackground(pixel(centerX, bottom + 8)));
+    assert.ok(isBackground(pixel(0, 0)));
   }
 });
 

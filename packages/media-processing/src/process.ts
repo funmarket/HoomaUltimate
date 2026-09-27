@@ -168,30 +168,18 @@ async function processPhotoVariant(
   }
 }
 
-function bannerCanvasDimensions(
-  sourceWidth: number,
-  sourceHeight: number,
-  spec: PageBannerVariantSpec,
-): { width: number; height: number } {
-  const maxK = Math.max(
-    1,
-    Math.min(Math.floor(spec.maxWidthPx / 18), Math.floor(spec.maxHeightPx / 13)),
-  );
-  const idealK = Math.max(1, Math.ceil(Math.max(sourceWidth / 18, sourceHeight / 13)));
-  const k = Math.min(maxK, idealK);
-  return { width: 18 * k, height: 13 * k };
+function bannerCanvasDimensions(spec: PageBannerVariantSpec): { width: number; height: number } {
+  return { width: spec.maxWidthPx, height: spec.maxHeightPx };
 }
 
 async function processBannerVariant(
   body: Uint8Array,
   maxDecodedPixels: number,
-  sourceWidth: number,
-  sourceHeight: number,
   background: string,
   spec: PageBannerVariantSpec,
 ): Promise<ProcessedMediaVariant> {
   try {
-    const canvas = bannerCanvasDimensions(sourceWidth, sourceHeight, spec);
+    const canvas = bannerCanvasDimensions(spec);
     const artwork = await sharp(body, { failOn: "warning", limitInputPixels: maxDecodedPixels })
       .rotate()
       .resize({
@@ -239,8 +227,6 @@ export async function processMedia(input: ProcessMediaInput): Promise<ProcessedM
         await processBannerVariant(
           input.body,
           input.profile.maxDecodedPixels,
-          source.width,
-          source.height,
           input.profile.background,
           spec,
         ),
