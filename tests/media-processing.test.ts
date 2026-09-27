@@ -431,8 +431,8 @@ test("writeMediaVariants returns descriptors and exact cleanup keys for later do
     profile: PHOTO_STANDARD,
   });
   const puts: string[] = [];
-    const storage = {
-      async put(key: string, body: Uint8Array, contentType: string) {
+  const storage = {
+    async put(key: string, body: Uint8Array, contentType: string) {
       puts.push(key);
       return { key, contentType, sizeBytes: body.byteLength };
     },
@@ -481,13 +481,13 @@ test("writeMediaVariants exposes deterministic recovery info after partial varia
       writes.push(key);
       return { key, contentType, sizeBytes: body.byteLength };
     },
-      async get() {
-        throw new Error("not used");
-      },
-      async remove() {},
-    };
+    async get() {
+      throw new Error("not used");
+    },
+    async remove() {},
+  };
 
-    await assert.rejects(
+  await assert.rejects(
     () =>
       writeMediaVariants({
         storage,
@@ -526,7 +526,8 @@ test(
       profile: PHOTO_STANDARD,
     });
     const attemptedKeys: string[] = [];
-    const mismatchedReturnedKey = "provider/remapped/place-photo/place-1/media-1/card.webp";
+    const mismatchedReturnedKey =
+      "provider/remapped/place-photo/place-1/media-1/card.webp";
 
     const storage = {
       async put(key: string, body: Uint8Array, contentType: string) {
