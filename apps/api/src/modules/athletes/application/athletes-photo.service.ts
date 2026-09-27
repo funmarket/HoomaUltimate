@@ -196,7 +196,6 @@ function normalizeContentType(contentType: string): string {
   return contentType.split(";")[0]?.trim().toLowerCase() ?? "";
 }
 
-
 function publicPhotoMetadata(metadata: AthletesPhotoRecord): AthletesPhotoMetadata {
   return {
     id: metadata.id,
