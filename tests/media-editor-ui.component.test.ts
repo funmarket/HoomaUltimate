@@ -85,7 +85,9 @@ test("MediaUploadField shows caller-provided preview, URL choice, replace and de
     });
     assert.equal(url, "https://example.com/photo.webp");
 
-    context.fireEvent.click(view.getByRole("button", { name: "Delete photo: Current listing photo" }));
+    context.fireEvent.click(
+      view.getByRole("button", { name: "Delete photo: Current listing photo" }),
+    );
     assert.equal(deleted, 1);
   } finally {
     context.cleanup();
@@ -107,7 +109,11 @@ test("MediaUploadField exposes busy and error semantics and disables mutations",
       }),
     );
     assert.equal((view.getByLabelText("Replace photo") as HTMLInputElement).disabled, true);
-    assert.equal((view.getByRole("button", { name: "Delete photo: Current photo" }) as HTMLButtonElement).disabled, true);
+    assert.equal(
+      (view.getByRole("button", { name: "Delete photo: Current photo" }) as HTMLButtonElement)
+        .disabled,
+      true,
+    );
     assert.equal(view.getByRole("status").textContent, "Saving photo…");
     assert.equal(view.getByRole("alert").textContent, "Upload failed.");
   } finally {

@@ -133,7 +133,10 @@ export function MediaGalleryEditor({
 
                 <div className="hooma-media-gallery__actions">
                   {canReorder && onReorder ? (
-                    <div className="hooma-media-gallery__reorder" aria-label={`Reorder ${item.alt}`}>
+                    <div
+                      className="hooma-media-gallery__reorder"
+                      aria-label={`Reorder ${item.alt}`}
+                    >
                       <button
                         className="hooma-media-button"
                         type="button"
