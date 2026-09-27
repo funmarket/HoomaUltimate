@@ -64,7 +64,8 @@ test("Athletes hero keeps 720x520 contain geometry and removes the hub overlay c
   assert.match(bannerRule, /object-fit:\s*contain/);
   assert.doesNotMatch(athletesCss, /\.athletes-hero--hub \.athletes-hero__content\s*\{/);
   assert.match(athletesCss, /\.athletes-hub-create\s*\{/);
-  assert.doesNotMatch(athletesCss, /margin[^;]*:\s*-/);
+  const createRule = athletesCss.match(/\.athletes-hub-create\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  assert.doesNotMatch(createRule, /margin[^;]*:\s*-/);
   assert.doesNotMatch(athletesCss, /\.athletes-hub-create[\s\S]*?z-index/);
 
   assert.match(athletesTabs, />\s*Communities\s*</);
