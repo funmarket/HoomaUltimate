@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { ATHLETES_PHOTO_MAX_BYTES } from "@hooma/contracts/athletes";
+import type { MediaStorageScope } from "@hooma/media-processing";
 import type { ObjectStorage, ObjectStorageReadUrlSigner } from "@hooma/storage";
 import { AthletesContentAuthorization } from "../apps/api/src/modules/athletes/application/athletes-content-authorizer.js";
 import type {
@@ -130,12 +131,15 @@ function photoRecord(overrides: Partial<AthletesPhotoRecord> = {}): AthletesPhot
 }
 
 function photoRepositoryStub(records: AthletesPhotoRecord[] = []) {
+  const prepared: Array<{ photoId: string; athletesCommunityId: string; objectKey: string }> = [];
   const created: AthletesPhotoCreateInput[] = [];
   const deleted: Array<{ athletesCommunityId: string; photoId: string }> = [];
   let createFailure: Error | null = null;
 
   const repository: TestPhotoRepository = {
-    prepareUpload: async () => undefined,
+    prepareUpload: async (photoId, athletesCommunityId, objectKey) => {
+      prepared.push({ photoId, athletesCommunityId, objectKey });
+    },
     createPrepared: async (input) => {
       created.push(input);
       if (createFailure) throw createFailure;
@@ -157,6 +161,7 @@ function photoRepositoryStub(records: AthletesPhotoRecord[] = []) {
 
   return {
     repository,
+    prepared,
     created,
     deleted,
     failCreate(error: Error) {
@@ -245,6 +250,7 @@ function photoService(
   }> = async (body, contentType) => ({ body, contentType }),
   lockedRoles: RoleMap = roles,
   lockedStatuses: Record<string, CommunityStatus> = statuses,
+  mediaStorageScope: MediaStorageScope = "development",
 ) {
   const athletes = athletesRepositoryStub(roles, statuses);
   const lockedAthletes = athletesRepositoryStub(lockedRoles, lockedStatuses);
@@ -257,6 +263,7 @@ function photoService(
     photos,
     unitOfWork,
     storage,
+    mediaStorageScope,
     { validate: async () => undefined },
     { optimize },
   );
@@ -285,7 +292,11 @@ test("Founder upload accepts every allowed MIME", async () => {
     });
 
     assert.equal(objects.puts.length, 1);
-    assert.match(objects.puts[0]!.key, /^athletes-photos\/ath-1\//);
+    assert.match(
+      objects.puts[0]!.key,
+      /^development\/media\/v1\/athletes-photo\/ath-1\/[A-Za-z0-9_-]+\/master\.webp$/,
+    );
+    assert.equal(photos.prepared[0]!.objectKey, objects.puts[0]!.key);
     assert.equal(objects.puts[0]!.contentType, contentType);
     assert.deepEqual(objects.puts[0]!.body, body);
     assert.equal(photos.created.length, 1);
@@ -329,18 +340,33 @@ test("Upload stores the optimized descriptor instead of original bytes", async (
   assert.equal(result.sizeBytes, 2);
 });
 
-test("Upload persists the descriptor returned by ObjectStorage", async () => {
+test("Upload fails closed when ObjectStorage returns a different key", async () => {
   const photos = photoRepositoryStub();
   const objects = storageStub();
-  objects.returnKey("stored/ath-1/provider-photo-key");
+  const returnedMismatchKey = "stored/ath-1/provider-photo-key";
+  objects.returnKey(returnedMismatchKey);
   const service = photoService({ "ath-1:founder": "FOUNDER" }, photos.repository, objects.storage);
 
-  await service.upload("founder", "ath-1", {
-    contentType: "image/jpeg",
-    body: new Uint8Array([1, 2, 3]),
-  });
+  await assert.rejects(
+    () =>
+      service.upload("founder", "ath-1", {
+        contentType: "image/jpeg",
+        body: new Uint8Array([1, 2, 3]),
+      }),
+    expectAthletesCode("ATHLETES_PHOTO_UPLOAD_FAILED"),
+  );
 
-  assert.equal(photos.created[0]!.objectKey, "stored/ath-1/provider-photo-key");
+  assert.equal(photos.prepared.length, 1);
+  const requestedObjectKey = photos.prepared[0]!.objectKey;
+  assert.equal(objects.puts[0]!.key, requestedObjectKey);
+  assert.match(
+    requestedObjectKey,
+    /^development\/media\/v1\/athletes-photo\/ath-1\/[A-Za-z0-9_-]+\/master\.webp$/,
+  );
+  assert.equal(photos.created.length, 0);
+  assert.deepEqual(objects.removes, [requestedObjectKey]);
+  assert.notEqual(requestedObjectKey, returnedMismatchKey);
+  assert.equal(objects.removes.includes(returnedMismatchKey), false);
 });
 
 test("Upload denies non-Founders and a Founder from another community", async () => {
@@ -481,7 +507,6 @@ test("Metadata failure removes the exact uploaded object", async () => {
   const photos = photoRepositoryStub();
   const objects = storageStub();
   const metadataFailure = new Error("database unavailable");
-  objects.returnKey("stored/ath-1/orphan-key");
   photos.failCreate(metadataFailure);
   const service = photoService({ "ath-1:founder": "FOUNDER" }, photos.repository, objects.storage);
 
@@ -493,7 +518,7 @@ test("Metadata failure removes the exact uploaded object", async () => {
       }),
     (error: unknown) => error === metadataFailure,
   );
-  assert.deepEqual(objects.removes, ["stored/ath-1/orphan-key"]);
+  assert.deepEqual(objects.removes, [objects.puts[0]!.key]);
 });
 
 test("Cleanup failure surfaces an unreconciled orphan error", async () => {
@@ -677,13 +702,14 @@ test("Founder delete reports a missing photo", async () => {
 test("Photo upload records recovery intent before any object write", async () => {
   const photos = photoRepositoryStub();
   const objects = storageStub();
-  let prepared = false;
-  photos.repository.prepareUpload = async () => {
-    prepared = true;
+  let preparedKey: string | null = null;
+  photos.repository.prepareUpload = async (_photoId, _athletesCommunityId, objectKey) => {
+    preparedKey = objectKey;
   };
   const put = objects.storage.put;
   objects.storage.put = async (...args) => {
-    assert.equal(prepared, true);
+    assert.ok(preparedKey);
+    assert.equal(args[0], preparedKey);
     return put(...args);
   };
   await photoService({ "ath-1:founder": "FOUNDER" }, photos.repository, objects.storage).upload(
@@ -691,7 +717,7 @@ test("Photo upload records recovery intent before any object write", async () =>
     "ath-1",
     { contentType: "image/png", body: new Uint8Array([1]) },
   );
-  prepared = false;
+  preparedKey = null;
   photos.repository.prepareUpload = async () => {
     throw new Error("database unavailable");
   };
