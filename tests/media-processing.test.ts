@@ -526,8 +526,7 @@ test(
       profile: PHOTO_STANDARD,
     });
     const attemptedKeys: string[] = [];
-    const mismatchedReturnedKey =
-      "provider/remapped/place-photo/place-1/media-1/card.webp";
+    const mismatchedReturnedKey = "provider/remapped/place-photo/place-1/media-1/card.webp";
 
     const storage = {
       async put(key: string, body: Uint8Array, contentType: string) {
