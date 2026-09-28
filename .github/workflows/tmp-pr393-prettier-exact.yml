@@ -1,0 +1,45 @@
+name: PR393 Prettier Exact
+
+on:
+  push:
+    branches:
+      - tmp/pr393-prettier-exact
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - name: Run exact repository Prettier and emit formatted bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm exec -- prettier --version
+          npm exec -- prettier --write \
+            apps/api/src/modules/events/application/event.service.ts \
+            tests/event-service.test.ts
+
+          echo "EVENT_SERVICE_BASE64_BEGIN"
+          base64 -w0 apps/api/src/modules/events/application/event.service.ts
+          echo
+          echo "EVENT_SERVICE_BASE64_END"
+
+          echo "EVENT_TEST_BASE64_BEGIN"
+          base64 -w0 tests/event-service.test.ts
+          echo
+          echo "EVENT_TEST_BASE64_END"
+
+          echo "PRETTIER_DIFF_BEGIN"
+          git diff -- \
+            apps/api/src/modules/events/application/event.service.ts \
+            tests/event-service.test.ts
+          echo "PRETTIER_DIFF_END"
