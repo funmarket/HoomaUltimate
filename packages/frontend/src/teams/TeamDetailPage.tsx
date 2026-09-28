@@ -81,7 +81,7 @@ export function TeamDetailPage({ teamId }: { readonly teamId: string }) {
         </div>
       </section>
 
-      <section className="panel">
+      <section className="team-profile-lineup-section">
         <span className="eyebrow">MATCHDAY XI</span>
         <h2>Published lineup</h2>
         <TeamLineupPitch teamName={team.name} lineup={publishedLineup} roster={team.players} />
