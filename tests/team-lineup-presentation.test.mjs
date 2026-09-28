@@ -4,17 +4,18 @@ import test from "node:test";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("Team lineup keeps normalized slot coordinates inside a dedicated player layer", async () => {
+test("Team lineup applies normalized slot coordinates directly to the full responsive field", async () => {
   const [source, css] = await Promise.all([
     read("packages/frontend/src/teams/TeamLineupPitch.tsx"),
     read("packages/frontend/src/teams/TeamLineupPitch.css"),
   ]);
 
-  assert.match(source, /className="team-lineup-player-layer"/);
+  assert.doesNotMatch(source, /className="team-lineup-player-layer"/);
+  assert.doesNotMatch(css, /\.team-lineup-player-layer\s*\{/);
   assert.match(source, /left: `\$\{slot\.x\}%`/);
   assert.match(source, /top: `\$\{slot\.y\}%`/);
-  assert.match(css, /\.team-lineup-player-layer\s*\{/);
-  assert.match(css, /position:\s*absolute;/);
+  assert.match(css, /min-height:\s*clamp\(22rem,\s*72vw,\s*34rem\);/);
+  assert.doesNotMatch(css, /aspect-ratio:\s*4\s*\/\s*3/);
 });
 
 test("Team lineup preserves intentional empty slots without duplicating their position label", async () => {
@@ -38,7 +39,7 @@ test("Team lineup distinguishes resolved players from unresolved assigned slots"
   assert.match(source, /team-lineup-player--unresolved/);
 });
 
-test("Team lineup presentation uses the HOOMA stadium treatment and canonical UI tokens", async () => {
+test("Team lineup keeps the stadium as presentation while using canonical UI tokens", async () => {
   const [source, css] = await Promise.all([
     read("packages/frontend/src/teams/TeamLineupPitch.tsx"),
     read("packages/frontend/src/teams/TeamLineupPitch.css"),
@@ -55,12 +56,12 @@ test("Team lineup presentation uses the HOOMA stadium treatment and canonical UI
   );
 });
 
-test("Team lineup protects formation markers on narrow viewports", async () => {
+test("Team lineup restores the proven mobile field height instead of compressing formations", async () => {
   const css = await read("packages/frontend/src/teams/TeamLineupPitch.css");
 
   assert.match(css, /@media \(max-width: 560px\)/);
   assert.match(css, /\.team-lineup-field\s*\{[\s\S]*?min-height:\s*24rem;/);
-  assert.match(css, /\.team-lineup-player-layer\s*\{[\s\S]*?inset:/);
+  assert.doesNotMatch(css, /inset:\s*15%\s+12%\s+17%/);
 });
 
 test("Team lineup status distinguishes published lineups from drafts", async () => {
