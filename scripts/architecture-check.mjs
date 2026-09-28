@@ -47,6 +47,20 @@ function getImportSpecifiers(source) {
 function isHttpTransportImport(specifier) {
   return /^(?:\.\.\/)+http\//.test(specifier) || specifier.includes("apps/api/src/http/");
 }
+function resolveRepositoryImport(file, specifier) {
+  if (specifier.startsWith(".")) {
+    return relative(path.resolve(path.dirname(file), specifier));
+  }
+  if (specifier.startsWith("apps/api/src/modules/")) return specifier;
+  return null;
+}
+function isForeignInfrastructureImport(rel, file, specifier) {
+  const source = rel.match(/^apps\/api\/src\/modules\/([^/]+)\/(?:application|domain)\//);
+  if (!source) return false;
+  const resolved = resolveRepositoryImport(file, specifier);
+  const target = resolved?.match(/^apps\/api\/src\/modules\/([^/]+)\/infrastructure\//);
+  return Boolean(target && target[1] !== source[1]);
+}
 
 for (const file of await walk(root)) {
   const rel = relative(file);
@@ -95,12 +109,21 @@ for (const file of await walk(root)) {
     forbid(file, source, /from ["']express["']/, "application layer must not depend on Express");
   }
   if (/^apps\/api\/src\/modules\/[^/]+\/(application|domain)\//.test(rel)) {
+    const importSpecifiers = getImportSpecifiers(source);
     const allowedLegacyImports = legacyApplicationHttpImports.get(rel);
-    const forbiddenHttpImports = getImportSpecifiers(source).filter(
+    const forbiddenHttpImports = importSpecifiers.filter(
       (specifier) => isHttpTransportImport(specifier) && !allowedLegacyImports?.has(specifier),
     );
     if (forbiddenHttpImports.length > 0) {
       violations.push(`${rel}: application/domain layer must not import API HTTP transport`);
+    }
+    const forbiddenInfrastructureImports = importSpecifiers.filter((specifier) =>
+      isForeignInfrastructureImport(rel, file, specifier),
+    );
+    if (forbiddenInfrastructureImports.length > 0) {
+      violations.push(
+        `${rel}: application/domain layer must not import another domain's infrastructure`,
+      );
     }
   }
   if (/^apps\/api\/src\/modules\/[^/]+\/http\//.test(rel)) {

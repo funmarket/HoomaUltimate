@@ -175,6 +175,48 @@ lower-level canonical domain -> higher-level product domain
 
 Cross-domain collaboration uses explicit application interfaces or orchestrators.
 
+### Cross-domain ownership model
+
+**PORTS FOR ASKING. ORCHESTRATORS FOR COORDINATING. DOMAINS FOR OWNING.**
+
+Simple cross-domain fact or authorization:
+
+```text
+Domain A
+   |
+   v
+Narrow application port
+   |
+   v
+Domain B
+```
+
+Multi-domain write workflow:
+
+```text
+          Orchestrator
+              |
+      +-------+-------+
+      |       |       |
+      v       v       v
+   Domain A Domain B Domain C
+      |       |       |
+    owns A  owns B  owns C
+```
+
+Forbidden catch-all ownership:
+
+```text
+EverythingService
+   |
+   +-- Domain A
+   +-- Domain B
+   +-- Domain C
+   +-- Domain D
+```
+
+The canonical owner keeps business rules, lifecycle, domain authorization, canonical state, and persistence mutations. A consumer uses the narrowest practical application boundary for a foreign fact or authority; multi-domain writes use explicit orchestration. Foreign keys do not transfer ownership, shared packages do not become hidden business owners, and unclear ownership is a stop condition. See ADR-061.
+
 ### No monolithic authorities
 
 HOOMA must not create or expand monolithic scripts, contract files, services, repositories, frontend clients/stores, controllers, or modules that own unrelated domains.

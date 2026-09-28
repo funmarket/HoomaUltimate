@@ -49,6 +49,46 @@ test("architecture check keeps exact legacy AppError debt passing", async () => 
   assert.equal(result.status, 0, result.stderr);
 });
 
+test("architecture check allows a consumer application to import a foreign application port", async () => {
+  const root = await createArchitectureFixture({
+    "apps/api/src/modules/teams/application/team.service.ts": `
+      import type { CommunityCoachAuthorizer } from "../../communities/application/community-coach.authorizer.js";
+      export type TeamDependency = CommunityCoachAuthorizer;
+    `,
+  });
+
+  const result = runArchitectureCheck(root);
+
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test("architecture check rejects a consumer application importing foreign infrastructure", async () => {
+  const root = await createArchitectureFixture({
+    "apps/api/src/modules/teams/application/team.service.ts": `
+      import { PrismaPlaceRepository } from "../../places/infrastructure/prisma-place.repository.js";
+      export const dependency = PrismaPlaceRepository;
+    `,
+  });
+
+  const result = runArchitectureCheck(root);
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /must not import another domain's infrastructure/);
+});
+
+test("architecture check allows the composition root to wire concrete domain infrastructure", async () => {
+  const root = await createArchitectureFixture({
+    "apps/api/src/bootstrap/container.ts": `
+      import { PrismaPlaceRepository } from "../modules/places/infrastructure/prisma-place.repository.js";
+      export const dependency = PrismaPlaceRepository;
+    `,
+  });
+
+  const result = runArchitectureCheck(root);
+
+  assert.equal(result.status, 0, result.stderr);
+});
+
 async function createArchitectureFixture(files) {
   const root = await mkdtemp(path.join(tmpdir(), "hooma-architecture-"));
   await writeFixtureFile(

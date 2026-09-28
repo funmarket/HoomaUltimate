@@ -469,3 +469,14 @@ The dedicated decision record is `docs/adr/ADR-060-help-requests-fundme-donation
 The dedicated execution plan is `docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md`. Open PR work remains in-flight and must be distinguished from merged `phase-0-foundation` truth.
 
 **Reason:** The product owner explicitly authorized the full Help program while requiring clean domain ownership, no duplicate schemas/services, no fake payment or donation mechanics, readable mobile-first UI and strict current-source/no-drift execution.
+
+## ADR-061 — Cross-domain ownership boundaries
+
+**Decision:** HOOMA standardizes the existing narrow-boundary pattern: **ports for asking, orchestrators for coordinating, domains for owning**. A domain needing a narrow foreign fact or authority depends on a consumer-specific application reader/authorizer/resolver/publisher/capability port rather than the foreign domain's whole service or repository. A domain may not import another domain's infrastructure or directly mutate another domain's canonical persistence. Multi-domain writes use explicit orchestration while each owning domain retains its policy and persistence authority. Transaction requirements do not transfer ownership.
+
+The dedicated decision record is `docs/adr/ADR-061-cross-domain-ownership-boundaries.md`.
+
+AuditLog transaction-local persistence remains explicitly unresolved by this decision and must not be changed without separate ownership evidence.
+
+**Reason:** Existing HOOMA code already proves narrow boundaries can preserve ownership and testability, while remaining broad dependencies and direct foreign persistence writes need an incremental migration rule that does not create a new generic cross-domain framework.
+

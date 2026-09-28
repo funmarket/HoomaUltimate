@@ -104,6 +104,26 @@ Mandatory:
 - Global App Admin is `PLATFORM_ADMIN`; scoped Team/Community/product roles must not be renamed to generic Admin.
 - Public browsing stays public where product rules require it; authentication belongs at protected-action/private-data boundaries.
 
+### Cross-domain ownership rule
+
+**PORTS FOR ASKING. ORCHESTRATORS FOR COORDINATING. DOMAINS FOR OWNING.**
+
+Mandatory:
+
+- Every durable product concept has exactly one canonical owning domain.
+- The owning domain owns its business rules, lifecycle, domain authorization, canonical state, repositories, and persistence mutations.
+- When one domain needs a narrow fact or authority from another, depend on the narrowest practical explicit application boundary: reader, authorizer, resolver, publisher, or capability port.
+- Do not inject another domain's complete service when only a narrow capability is required.
+- Do not inject another domain's repository when only application-level information or authority is required.
+- A domain must not import another domain's infrastructure repository.
+- A domain must not directly mutate another domain's canonical persistence. A foreign key or reference never transfers ownership.
+- Multi-domain write workflows use explicit application orchestration. An orchestrator coordinates owning domains; it must not absorb their policy, persistence, or lifecycle or become an `EverythingService`.
+- Shared packages may provide genuinely shared technical/value primitives, but they must not become hidden owners of business policy.
+- Prefer consumer-specific narrow boundaries over universal cross-domain interfaces.
+- Before adding a cross-domain dependency, identify the consumer, canonical owner, exact capability, read/authorization/write nature, port vs. orchestrator choice, persistence owner, and transaction requirement.
+- Transaction requirements do not transfer ownership. Preserve atomicity with a domain-owned transaction-capable operation or explicit orchestration that keeps canonical writes with their owners.
+- If ownership cannot be stated clearly, **STOP. Do not guess or code through the ambiguity.**
+
 ### No monolithic authorities
 
 Do **not** create or expand monolithic files, scripts, services, repositories, clients, contracts, state stores, controllers, components, or catch-all modules that own unrelated domains.
