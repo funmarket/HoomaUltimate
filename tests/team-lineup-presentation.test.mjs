@@ -29,6 +29,8 @@ test("Team lineup presentation uses the HOOMA stadium treatment and canonical UI
   );
   assert.match(source, /className="team-lineup-player-layer"/);
   assert.match(css, /\.team-lineup-player-layer/);
+  assert.match(css, /inset: 8% 4% 10%;/);
+  assert.match(css, /inset: 15% 12% 17%;/);
 });
 
 test("Team lineup status distinguishes published lineups from drafts", async () => {
