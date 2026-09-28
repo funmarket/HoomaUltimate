@@ -1,18 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { EventCreateInput } from "@hooma/contracts";
-import type {
-  CommunityCoachAuthorizer,
-} from "../apps/api/src/modules/communities/application/community-coach.authorizer.js";
+import type { CommunityCoachAuthorizer } from "../apps/api/src/modules/communities/application/community-coach.authorizer.js";
 import type {
   EventAccessRecord,
   EventRepository,
 } from "../apps/api/src/modules/events/application/event.repository.js";
 import { EventService } from "../apps/api/src/modules/events/application/event.service.js";
 import { EventError } from "../apps/api/src/modules/events/domain/event-error.js";
-import type {
-  ApprovedPitchReader,
-} from "../apps/api/src/modules/pitch/application/approved-pitch.reader.js";
+import type { ApprovedPitchReader } from "../apps/api/src/modules/pitch/application/approved-pitch.reader.js";
 import type { PlaceService } from "../apps/api/src/modules/places/application/place.service.js";
 
 function repositoryStub(onCreate: () => void): EventRepository {
@@ -168,46 +164,42 @@ test("EventService still creates free PLAY events through community coach author
   assert.equal(createCalled, true);
 });
 
-test(
-  "EventService preserves PLAY create ordering through the narrow Community coach authorizer",
-  async () => {
-    const order: string[] = [];
-    let createCalled = false;
-    const communities: CommunityCoachAuthorizer = {
-      requireCoach: async (communityId, userId) => {
-        assert.equal(communityId, "community-1");
-        assert.equal(userId, "user-1");
-        order.push("community-coach");
-      },
-    };
-    const service = new EventService(
-      repositoryStub(() => {
-        createCalled = true;
-        order.push("repository-create");
-      }),
-      communities,
-      approvedPlaces(),
-      approvedPitch((placeId) => {
-        assert.equal(placeId, "pitch-place-1");
-        order.push("approved-pitch");
-      }),
-    );
+test("EventService preserves PLAY create ordering through the narrow Community coach authorizer", async () => {
+  const order: string[] = [];
+  let createCalled = false;
+  const communities: CommunityCoachAuthorizer = {
+    requireCoach: async (communityId, userId) => {
+      assert.equal(communityId, "community-1");
+      assert.equal(userId, "user-1");
+      order.push("community-coach");
+    },
+  };
+  const service = new EventService(
+    repositoryStub(() => {
+      createCalled = true;
+      order.push("repository-create");
+    }),
+    communities,
+    approvedPlaces(),
+    approvedPitch((placeId) => {
+      assert.equal(placeId, "pitch-place-1");
+      order.push("approved-pitch");
+    }),
+  );
 
-    await assert.rejects(
-      () =>
-        service.create("user-1", {
-          ...playInput,
-          placeId: "pitch-place-1",
-          entryFeeMinor: 100,
-        }),
-      (error: unknown) =>
-        error instanceof EventError && error.code === "EVENT_PAYMENTS_NOT_ENABLED",
-    );
+  await assert.rejects(
+    () =>
+      service.create("user-1", {
+        ...playInput,
+        placeId: "pitch-place-1",
+        entryFeeMinor: 100,
+      }),
+    (error: unknown) => error instanceof EventError && error.code === "EVENT_PAYMENTS_NOT_ENABLED",
+  );
 
-    assert.deepEqual(order, ["community-coach", "approved-pitch"]);
-    assert.equal(createCalled, false);
-  },
-);
+  assert.deepEqual(order, ["community-coach", "approved-pitch"]);
+  assert.equal(createCalled, false);
+});
 
 test("EventService validates an optional PLAY placeId as an approved Pitch", async () => {
   let pitchCheckCalled = false;
@@ -320,32 +312,29 @@ test("EventService allows authorized users to open an OPEN PLAY event", async ()
   assert.equal(event.id, "event-1");
 });
 
-test(
-  "EventService keeps public Event detail non-Play and routes Play through authenticated access",
-  async () => {
-    const repository = repositoryStub(() => {});
-    const service = new EventService(repository, {} as CommunityCoachAuthorizer, approvedPlaces());
+test("EventService keeps public Event detail non-Play and routes Play through authenticated access", async () => {
+  const repository = repositoryStub(() => {});
+  const service = new EventService(repository, {} as CommunityCoachAuthorizer, approvedPlaces());
 
-    repository.getPublic = async (eventId) => ({ id: eventId, type: "WATCH" }) as never;
-    assert.equal((await service.getPublicEvent("watch-1")).id, "watch-1");
+  repository.getPublic = async (eventId) => ({ id: eventId, type: "WATCH" }) as never;
+  assert.equal((await service.getPublicEvent("watch-1")).id, "watch-1");
 
-    repository.getPublic = async (eventId) => ({ id: eventId, type: "PLAY" }) as never;
-    await assert.rejects(
-      () => service.getPublicEvent("play-1"),
-      (error: unknown) => error instanceof EventError && error.code === "EVENT_NOT_FOUND",
-    );
+  repository.getPublic = async (eventId) => ({ id: eventId, type: "PLAY" }) as never;
+  await assert.rejects(
+    () => service.getPublicEvent("play-1"),
+    (error: unknown) => error instanceof EventError && error.code === "EVENT_NOT_FOUND",
+  );
 
-    repository.access = async () => playAccess({ playVisibility: "OPEN" });
-    repository.canAccessPlay = async (eventId, userId) => eventId === "play-1" && userId === "viewer";
-    const play = await service.getVisiblePlay("play-1", "viewer");
-    assert.equal(play.id, "play-1");
+  repository.access = async () => playAccess({ playVisibility: "OPEN" });
+  repository.canAccessPlay = async (eventId, userId) => eventId === "play-1" && userId === "viewer";
+  const play = await service.getVisiblePlay("play-1", "viewer");
+  assert.equal(play.id, "play-1");
 
-    await assert.rejects(
-      () => service.getVisiblePlay("play-1", "outsider"),
-      (error: unknown) => error instanceof EventError && error.code === "EVENT_NOT_FOUND",
-    );
-  },
-);
+  await assert.rejects(
+    () => service.getVisiblePlay("play-1", "outsider"),
+    (error: unknown) => error instanceof EventError && error.code === "EVENT_NOT_FOUND",
+  );
+});
 
 test("EventService rejects formation players outside the confirmed event roster", async () => {
   const repository = repositoryStub(() => {});
