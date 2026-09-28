@@ -10,7 +10,15 @@ type TeamLineupPitchProps = {
 export function TeamLineupPitch({ teamName, lineup, roster = [] }: TeamLineupPitchProps) {
   const rosterByTeamPlayerId = new Map(roster.map((player) => [player.id, player]));
   const slots = lineup?.slots ?? [];
-  const hasStarters = slots.some((slot) => Boolean(slot.teamPlayerId));
+  const starterCount = slots.filter((slot) => slot.teamPlayerId && slot.isStarter).length;
+  const hasStarters = starterCount > 0;
+  const statusLabel = lineup?.published
+    ? "Published"
+    : hasStarters
+      ? `${starterCount} starters`
+      : lineup
+        ? "Draft"
+        : "Awaiting lineup";
 
   return (
     <section className="team-lineup-pitch" aria-label={`${teamName} lineup`}>
@@ -20,23 +28,12 @@ export function TeamLineupPitch({ teamName, lineup, roster = [] }: TeamLineupPit
           <strong>{teamName}</strong>
         </div>
         <div className="team-lineup-status">
-          <span className={hasStarters ? "is-live" : "is-pending"}>
-            {hasStarters
-              ? `${slots.filter((slot) => slot.teamPlayerId && slot.isStarter).length} starters`
-              : "Awaiting lineup"}
-          </span>
+          <span className={lineup?.published ? "is-published" : "is-pending"}>{statusLabel}</span>
           <b>{lineup?.formation ?? "Unpublished"}</b>
         </div>
       </header>
 
       <div className="team-lineup-field">
-        <div className="team-lineup-floodlight team-lineup-floodlight-left" aria-hidden="true" />
-        <div className="team-lineup-floodlight team-lineup-floodlight-right" aria-hidden="true" />
-        <div className="team-lineup-goal team-lineup-goal-top" aria-hidden="true" />
-        <div className="team-lineup-goal team-lineup-goal-bottom" aria-hidden="true" />
-        <div className="team-lineup-center-circle" aria-hidden="true" />
-        <div className="team-lineup-center-spot" aria-hidden="true" />
-
         {slots.map((slot) => {
           const rosterPlayer = slot.teamPlayerId
             ? rosterByTeamPlayerId.get(slot.teamPlayerId)
@@ -45,8 +42,6 @@ export function TeamLineupPitch({ teamName, lineup, roster = [] }: TeamLineupPit
             rosterPlayer?.user.presentation?.displayName ??
             rosterPlayer?.user.presentation?.username ??
             slot.position;
-          const photoUrl = rosterPlayer?.user.presentation?.photoUrl ?? null;
-          const avatar = photoUrl ? <img src={photoUrl} alt="" /> : <b>{slot.sortOrder + 1}</b>;
 
           return (
             <span
@@ -55,8 +50,9 @@ export function TeamLineupPitch({ teamName, lineup, roster = [] }: TeamLineupPit
               style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
               title={displayName}
             >
-              <span className="team-lineup-player-glow" aria-hidden="true" />
-              <span className="team-lineup-avatar">{avatar}</span>
+              <span className="team-lineup-avatar" aria-hidden="true">
+                <b>{slot.sortOrder + 1}</b>
+              </span>
               <span className="team-lineup-nameplate">
                 <small>{displayName}</small>
                 <em>{slot.position}</em>
