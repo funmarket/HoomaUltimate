@@ -7,7 +7,7 @@ import {
   type TeamUpdateInput,
 } from "@hooma/contracts";
 import { AppError } from "../../../http/errors/app-error.js";
-import type { CommunityService } from "../../communities/application/community.service.js";
+import type { CommunityCoachAuthorizer } from "../../communities/application/community-coach.authorizer.js";
 import type { ApprovedPitchReader } from "../../pitch/application/approved-pitch.reader.js";
 import type { PlatformAdminAuthorizer } from "../../platform-admin/application/platform-admin.authorizer.js";
 import { directResponsibilityHasCapability } from "../domain/team-access.js";
@@ -17,7 +17,7 @@ import type { TeamAccessRecord, TeamListInput, TeamRepository } from "./team.rep
 export class TeamService {
   constructor(
     private readonly repository: TeamRepository,
-    private readonly communities: CommunityService,
+    private readonly communityCoachAuthorizer: CommunityCoachAuthorizer,
     private readonly lifecycle: TeamLifecycleRepository,
     private readonly platformAdmin: PlatformAdminAuthorizer,
     private readonly pitch?: ApprovedPitchReader,
@@ -97,7 +97,7 @@ export class TeamService {
   }
 
   async create(userId: string, input: TeamCreateInput) {
-    await this.communities.requireCoach(input.communityId, userId);
+    await this.communityCoachAuthorizer.requireCoach(input.communityId, userId);
     return this.repository.create(userId, input);
   }
 
