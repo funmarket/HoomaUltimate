@@ -102,6 +102,7 @@
   min-height: clamp(22rem, 72vw, 34rem);
   overflow: hidden;
   background:
+    url("/teams/lineup-stadium.webp") center / cover no-repeat,
     radial-gradient(ellipse at 50% 48%, rgba(196, 220, 67, 0.055), transparent 48%),
     linear-gradient(180deg, rgba(6, 34, 14, 0.92), rgba(2, 15, 7, 0.98));
 }
