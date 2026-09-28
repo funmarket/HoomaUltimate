@@ -33,8 +33,7 @@ export function TeamLineupPitch({ teamName, lineup, roster = [] }: TeamLineupPit
       </header>
 
       <div className="team-lineup-field">
-        <div className="team-lineup-player-layer">
-          {slots.map((slot) => {
+        {slots.map((slot) => {
             const isEmptySlot = slot.teamPlayerId === null;
             const rosterPlayer = slot.teamPlayerId
               ? rosterByTeamPlayerId.get(slot.teamPlayerId)
@@ -56,8 +55,8 @@ export function TeamLineupPitch({ teamName, lineup, roster = [] }: TeamLineupPit
                 ? `${displayName} · ${slot.position}`
                 : `Open ${slot.position} slot`;
 
-            return (
-              <span
+          return (
+            <span
                 key={slot.id ?? `${slot.position}-${slot.sortOrder}`}
                 className={`team-lineup-player${playerStateClass}`}
                 style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
