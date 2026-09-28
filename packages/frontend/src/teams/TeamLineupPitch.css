@@ -109,6 +109,12 @@
   );
 }
 
+.team-lineup-player-layer {
+  position: absolute;
+  inset: 4% 4% 8%;
+  z-index: 2;
+}
+
 .team-lineup-player {
   position: absolute;
   z-index: 3;
@@ -283,6 +289,10 @@
 @media (max-width: 560px) {
   .team-lineup-header {
     align-items: flex-start;
+  }
+
+  .team-lineup-player-layer {
+    inset: 7% 12% 13%;
   }
 
   .team-lineup-player {
