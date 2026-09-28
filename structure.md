@@ -51,6 +51,7 @@ HoomaUltimate/
     database/
     domain/
     frontend/
+    media-processing/
     storage/
     testing/
     ui/
@@ -119,6 +120,10 @@ Only genuinely cross-domain value primitives. It is not a dumping ground for fea
 ### `packages/frontend`
 
 Shared Web/Telegram product feature UI and domain API integration.
+
+### `packages/media-processing`
+
+Mechanical shared image-processing primitives only: decode/format verification, decoded-pixel protection, EXIF/orientation normalization, metadata stripping, approved profile/variant transforms, typed media namespaces, and deterministic object-key/descriptor planning. It owns no product authorization, domain lifecycle, persistence policy, moderation, or media metadata authority.
 
 ### `packages/storage`
 

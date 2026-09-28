@@ -339,7 +339,7 @@ Rules:
 - AthletesPhoto belongs to one AthletesCommunity; PostgreSQL stores Photo Board metadata and shared object storage stores image bytes;
 - only an active same-community FOUNDER may upload or delete Photo Board images;
 - active same-community FOUNDER, MODERATOR, and MEMBER memberships may list/read Photo Board content; MODERATOR and MEMBER may not upload or delete; outsiders, cross-community memberships, and archived Athletes communities are denied active Photo Board access;
-- accepted JPEG/PNG/WebP uploads up to 5 MiB are normalized server-side to WebP with a maximum 1600px edge and no enlargement before object persistence, and AthletesPhoto metadata records the stored optimized descriptor;
+- accepted JPEG/PNG/WebP uploads up to 5 MiB are normalized server-side through the shared `PHOTO_STANDARD` profile to the WebP `master` variant with a maximum 2048px edge and no enlargement before object persistence, and AthletesPhoto metadata records that stored optimized descriptor;
 - Founder deletion removes the canonical AthletesPhoto metadata under the Athletes lifecycle lock and creates the existing Athletes object-reconciliation OutboxEvent so Worker cleanup owns eventual object removal;
 - Photo Board API metadata does not expose internal `objectKey` or `uploadedByUserId`;
 - Photo Board is separate from Whistle; Photo Board bytes are never stored in Redis and Whistle body/storage behavior is unchanged;

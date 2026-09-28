@@ -52,12 +52,13 @@ A visual refresh of the shared Whistle action may be applied across its existing
 
 ### Data and storage ownership
 
-Athletes owns Photo Board business policy and durable photo metadata. The shared `packages/storage` / `ObjectStorage` abstraction owns binary-object transport; it does not own Athletes authorization or photo lifecycle policy.
+Athletes owns Photo Board business policy and durable photo metadata. The shared `packages/media-processing` package owns only mechanical image processing and canonical media-key planning; the shared `packages/storage` / `ObjectStorage` abstraction owns binary-object transport. Neither shared package owns Athletes authorization, lifecycle policy, moderation, or durable Photo Board metadata.
 
 The persistence split remains:
 
 ```text
 Athletes domain -> durable Photo Board metadata -> PostgreSQL
+Athletes application -> @hooma/media-processing PHOTO_STANDARD + ATHLETES_PHOTO key planning
 Athletes application/infrastructure -> ObjectStorage -> S3-compatible object bytes
 ```
 
@@ -74,16 +75,18 @@ Incoming Photo Board uploads remain:
 - maximum decoded input: **40 megapixels**;
 - binary upload parsing is route-scoped.
 
-After successful validation, the API normalizes the durable stored object before persistence:
+After successful validation, the Photo Board upload path uses the shared `PHOTO_STANDARD` profile and persists its `master` WebP variant:
 
-- auto-orient from source orientation;
+- auto-orient from source orientation and strip source metadata;
 - preserve aspect ratio;
-- maximum width/height envelope **1600 × 1600 px** with no enlargement;
-- encode durable object bytes as **WebP quality 82, effort 4**;
+- maximum width/height envelope **2048 × 2048 px** with no enlargement;
+- encode the `master` variant as **WebP quality 88, effort 4**;
+- plan the canonical object key through the typed `ATHLETES_PHOTO` namespace and explicit media-storage scope;
 - do not keep a second original object;
+- the current Photo Board slice persists only the `master` variant; it does not introduce multi-variant Photo Board persistence;
 - metadata records the stored descriptor returned by `ObjectStorage`, including stored `contentType` and `sizeBytes`.
 
-This optimization is server-owned so Web and Telegram uploads receive the same durable-storage policy and clients cannot bypass it.
+This processing is server-owned so Web and Telegram uploads receive the same durable-storage policy and clients cannot bypass it. Athletes Calendar media remains on its existing Sharp validator/optimizer path and is not changed by the Photo Board media-processing migration.
 
 ### Founder deletion and consistency
 
@@ -126,3 +129,5 @@ The original governance phase was documentation-only. Subsequent phases implemen
 The 2026-09-10 extension added bounded server-side WebP normalization and Founder-only deletion using the existing Athletes metadata + outbox + Worker architecture.
 
 PR #268 implements the 2026-09-11 Step A hardening: it narrows cross-domain Athletes authorization dependencies and moves final Photo write policy orchestration out of Prisma infrastructure while preserving the existing transaction, row-lock, upload-recovery, and deletion-outbox behavior. Repository CI verifies the final source before merge; production runtime deployment remains a separate verification step.
+
+PR #382 introduced the shared mechanical `@hooma/media-processing` foundation, including `PHOTO_STANDARD`, typed media namespaces, explicit storage scopes, deterministic object-key planning, decode/pixel protection, orientation normalization, metadata stripping, and WebP variants. PR #383 then migrated **Athletes Photo Board uploads only** to that shared foundation, using the `PHOTO_STANDARD` `master` variant and typed `ATHLETES_PHOTO` object key while preserving Photo Board authorization, metadata ownership, cleanup/outbox behavior, and single-variant persistence. Athletes Calendar intentionally remained on its existing Sharp media path.
