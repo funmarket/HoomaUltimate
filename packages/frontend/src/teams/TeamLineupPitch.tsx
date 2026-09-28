@@ -34,32 +34,34 @@ export function TeamLineupPitch({ teamName, lineup, roster = [] }: TeamLineupPit
       </header>
 
       <div className="team-lineup-field">
-        {slots.map((slot) => {
-          const rosterPlayer = slot.teamPlayerId
-            ? rosterByTeamPlayerId.get(slot.teamPlayerId)
-            : undefined;
-          const displayName =
-            rosterPlayer?.user.presentation?.displayName ??
-            rosterPlayer?.user.presentation?.username ??
-            slot.position;
+        <div className="team-lineup-player-layer">
+          {slots.map((slot) => {
+            const rosterPlayer = slot.teamPlayerId
+              ? rosterByTeamPlayerId.get(slot.teamPlayerId)
+              : undefined;
+            const displayName =
+              rosterPlayer?.user.presentation?.displayName ??
+              rosterPlayer?.user.presentation?.username ??
+              slot.position;
 
-          return (
-            <span
-              key={slot.id ?? `${slot.position}-${slot.sortOrder}`}
-              className="team-lineup-player"
-              style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
-              title={displayName}
-            >
-              <span className="team-lineup-avatar" aria-hidden="true">
-                <b>{slot.sortOrder + 1}</b>
+            return (
+              <span
+                key={slot.id ?? `${slot.position}-${slot.sortOrder}`}
+                className="team-lineup-player"
+                style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
+                title={displayName}
+              >
+                <span className="team-lineup-avatar" aria-hidden="true">
+                  <b>{slot.sortOrder + 1}</b>
+                </span>
+                <span className="team-lineup-nameplate">
+                  <small>{displayName}</small>
+                  <em>{slot.position}</em>
+                </span>
               </span>
-              <span className="team-lineup-nameplate">
-                <small>{displayName}</small>
-                <em>{slot.position}</em>
-              </span>
-            </span>
-          );
-        })}
+            );
+          })}
+        </div>
 
         {!slots.length ? (
           <div className="team-lineup-empty">
