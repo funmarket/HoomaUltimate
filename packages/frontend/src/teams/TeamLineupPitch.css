@@ -111,7 +111,7 @@
 
 .team-lineup-player-layer {
   position: absolute;
-  inset: 4% 4% 8%;
+  inset: 8% 4% 10%;
   z-index: 2;
 }
 
@@ -292,7 +292,7 @@
   }
 
   .team-lineup-player-layer {
-    inset: 7% 12% 13%;
+    inset: 15% 12% 17%;
   }
 
   .team-lineup-player {
