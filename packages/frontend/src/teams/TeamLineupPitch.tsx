@@ -10,7 +10,14 @@ type TeamLineupPitchProps = {
 export function TeamLineupPitch({ teamName, lineup, roster = [] }: TeamLineupPitchProps) {
   const rosterByTeamPlayerId = new Map(roster.map((player) => [player.id, player]));
   const slots = lineup?.slots ?? [];
-  const hasStarters = slots.some((slot) => Boolean(slot.teamPlayerId));
+  const starterCount = slots.filter((slot) => slot.teamPlayerId && slot.isStarter).length;
+  const statusLabel = lineup?.published
+    ? "Published"
+    : lineup
+      ? starterCount > 0
+        ? `${starterCount} starters`
+        : "Draft"
+      : "Awaiting lineup";
 
   return (
     <section className="team-lineup-pitch" aria-label={`${teamName} lineup`}>
@@ -20,43 +27,62 @@ export function TeamLineupPitch({ teamName, lineup, roster = [] }: TeamLineupPit
           <strong>{teamName}</strong>
         </div>
         <div className="team-lineup-status">
-          <span className={hasStarters ? "is-live" : "is-pending"}>
-            {hasStarters
-              ? `${slots.filter((slot) => slot.teamPlayerId && slot.isStarter).length} starters`
-              : "Awaiting lineup"}
-          </span>
+          <span className={lineup?.published ? "is-published" : "is-pending"}>{statusLabel}</span>
           <b>{lineup?.formation ?? "Unpublished"}</b>
         </div>
       </header>
 
       <div className="team-lineup-field">
+        <div className="team-lineup-player-layer">
+          {slots.map((slot) => {
+            const isEmptySlot = slot.teamPlayerId === null;
+            const rosterPlayer = slot.teamPlayerId
+              ? rosterByTeamPlayerId.get(slot.teamPlayerId)
+              : undefined;
+            const isUnresolvedSlot = Boolean(slot.teamPlayerId) && !rosterPlayer;
+            const displayName =
+              rosterPlayer?.user.presentation?.displayName ??
+              rosterPlayer?.user.presentation?.username ??
+              null;
+            const photoUrl = rosterPlayer?.user.presentation?.photoUrl ?? null;
+            const playerStateClass = isUnresolvedSlot
+              ? " team-lineup-player--unresolved"
+              : isEmptySlot
+                ? " team-lineup-player--empty"
+                : " team-lineup-player--assigned";
+            const title = isUnresolvedSlot
+              ? `Unavailable player · ${slot.position}`
+              : displayName
+                ? `${displayName} · ${slot.position}`
+                : `Open ${slot.position} slot`;
 
-        {slots.map((slot) => {
-          const rosterPlayer = slot.teamPlayerId
-            ? rosterByTeamPlayerId.get(slot.teamPlayerId)
-            : undefined;
-          const displayName =
-            rosterPlayer?.user.presentation?.displayName ??
-            rosterPlayer?.user.presentation?.username ??
-            slot.position;
-          const photoUrl = rosterPlayer?.user.presentation?.photoUrl ?? null;
-          const avatar = photoUrl ? <img src={photoUrl} alt="" /> : <b>{slot.sortOrder + 1}</b>;
-
-          return (
-            <span
-              key={slot.id ?? `${slot.position}-${slot.sortOrder}`}
-              className="team-lineup-player"
-              style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
-              title={displayName}
-            >
-              <span className="team-lineup-avatar">{avatar}</span>
-              <span className="team-lineup-nameplate">
-                <small>{displayName}</small>
-                <em>{slot.position}</em>
+            return (
+              <span
+                key={slot.id ?? `${slot.position}-${slot.sortOrder}`}
+                className={`team-lineup-player${playerStateClass}`}
+                style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
+                title={title}
+              >
+                <span className="team-lineup-avatar">
+                  {isUnresolvedSlot ? (
+                    <b aria-hidden="true">!</b>
+                  ) : photoUrl ? (
+                    <img src={photoUrl} alt="" />
+                  ) : (
+                    <b>{slot.sortOrder + 1}</b>
+                  )}
+                </span>
+                <span className="team-lineup-nameplate">
+                  {isUnresolvedSlot ? <small>Unavailable player</small> : null}
+                  {!isEmptySlot && !isUnresolvedSlot && displayName ? (
+                    <small>{displayName}</small>
+                  ) : null}
+                  <em>{slot.position}</em>
+                </span>
               </span>
-            </span>
-          );
-        })}
+            );
+          })}
+        </div>
 
         {!slots.length ? (
           <div className="team-lineup-empty">
@@ -69,4 +95,3 @@ export function TeamLineupPitch({ teamName, lineup, roster = [] }: TeamLineupPit
     </section>
   );
 }
-
