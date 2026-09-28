@@ -33,7 +33,7 @@ test("Team lineup distinguishes resolved players from unresolved assigned slots"
   const source = await read("packages/frontend/src/teams/TeamLineupPitch.tsx");
 
   assert.match(source, /const isUnresolvedSlot = Boolean\(slot\.teamPlayerId\) && !rosterPlayer;/);
-  assert.match(source, /photoUrl \? <img/);
+  assert.match(source, /<img src=\{photoUrl\}/);
   assert.match(source, /Unavailable player/);
   assert.match(source, /team-lineup-player--unresolved/);
 });
