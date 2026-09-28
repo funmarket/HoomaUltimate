@@ -4,7 +4,7 @@ import {
   type EventFormationInput,
   type EventUpdateInput,
 } from "@hooma/contracts";
-import type { CommunityService } from "../../communities/application/community.service.js";
+import type { CommunityCoachAuthorizer } from "../../communities/application/community-coach.authorizer.js";
 import type { ApprovedPitchReader } from "../../pitch/application/approved-pitch.reader.js";
 import type { PlaceService } from "../../places/application/place.service.js";
 import { EventError } from "../domain/event-error.js";
@@ -24,7 +24,7 @@ function hasErrorCode(error: unknown, code: string): boolean {
 export class EventService {
   constructor(
     private readonly repository: EventRepository,
-    private readonly communities: CommunityService,
+    private readonly communities: CommunityCoachAuthorizer,
     private readonly places: PlaceService,
     private readonly pitch?: ApprovedPitchReader,
   ) {}
