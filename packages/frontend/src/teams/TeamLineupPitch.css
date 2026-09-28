@@ -109,7 +109,6 @@
   );
 }
 
-
 .team-lineup-player {
   position: absolute;
   z-index: 3;
@@ -308,7 +307,6 @@
   .team-lineup-field {
     min-height: 24rem;
   }
-
 
   .team-lineup-player {
     min-width: 64px;
