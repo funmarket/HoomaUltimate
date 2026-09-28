@@ -172,3 +172,4 @@ export function TeamDetailPage({ teamId }: { readonly teamId: string }) {
     </div>
   );
 }
+
