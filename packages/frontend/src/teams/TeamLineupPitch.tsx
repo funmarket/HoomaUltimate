@@ -34,54 +34,53 @@ export function TeamLineupPitch({ teamName, lineup, roster = [] }: TeamLineupPit
 
       <div className="team-lineup-field">
         {slots.map((slot) => {
-            const isEmptySlot = slot.teamPlayerId === null;
-            const rosterPlayer = slot.teamPlayerId
-              ? rosterByTeamPlayerId.get(slot.teamPlayerId)
-              : undefined;
-            const isUnresolvedSlot = Boolean(slot.teamPlayerId) && !rosterPlayer;
-            const displayName =
-              rosterPlayer?.user.presentation?.displayName ??
-              rosterPlayer?.user.presentation?.username ??
-              null;
-            const photoUrl = rosterPlayer?.user.presentation?.photoUrl ?? null;
-            const playerStateClass = isUnresolvedSlot
-              ? " team-lineup-player--unresolved"
-              : isEmptySlot
-                ? " team-lineup-player--empty"
-                : " team-lineup-player--assigned";
-            const title = isUnresolvedSlot
-              ? `Unavailable player · ${slot.position}`
-              : displayName
-                ? `${displayName} · ${slot.position}`
-                : `Open ${slot.position} slot`;
+          const isEmptySlot = slot.teamPlayerId === null;
+          const rosterPlayer = slot.teamPlayerId
+            ? rosterByTeamPlayerId.get(slot.teamPlayerId)
+            : undefined;
+          const isUnresolvedSlot = Boolean(slot.teamPlayerId) && !rosterPlayer;
+          const displayName =
+            rosterPlayer?.user.presentation?.displayName ??
+            rosterPlayer?.user.presentation?.username ??
+            null;
+          const photoUrl = rosterPlayer?.user.presentation?.photoUrl ?? null;
+          const playerStateClass = isUnresolvedSlot
+            ? " team-lineup-player--unresolved"
+            : isEmptySlot
+              ? " team-lineup-player--empty"
+              : " team-lineup-player--assigned";
+          const title = isUnresolvedSlot
+            ? `Unavailable player - ${slot.position}`
+            : displayName
+              ? `${displayName} - ${slot.position}`
+              : `Open ${slot.position} slot`;
 
           return (
             <span
-                key={slot.id ?? `${slot.position}-${slot.sortOrder}`}
-                className={`team-lineup-player${playerStateClass}`}
-                style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
-                title={title}
-              >
-                <span className="team-lineup-avatar">
-                  {isUnresolvedSlot ? (
-                    <b aria-hidden="true">!</b>
-                  ) : photoUrl ? (
-                    <img src={photoUrl} alt="" />
-                  ) : (
-                    <b>{slot.sortOrder + 1}</b>
-                  )}
-                </span>
-                <span className="team-lineup-nameplate">
-                  {isUnresolvedSlot ? <small>Unavailable player</small> : null}
-                  {!isEmptySlot && !isUnresolvedSlot && displayName ? (
-                    <small>{displayName}</small>
-                  ) : null}
-                  <em>{slot.position}</em>
-                </span>
+              key={slot.id ?? `${slot.position}-${slot.sortOrder}`}
+              className={`team-lineup-player${playerStateClass}`}
+              style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
+              title={title}
+            >
+              <span className="team-lineup-avatar">
+                {isUnresolvedSlot ? (
+                  <b aria-hidden="true">!</b>
+                ) : photoUrl ? (
+                  <img src={photoUrl} alt="" />
+                ) : (
+                  <b>{slot.sortOrder + 1}</b>
+                )}
               </span>
-            );
-          })}
-        </div>
+              <span className="team-lineup-nameplate">
+                {isUnresolvedSlot ? <small>Unavailable player</small> : null}
+                {!isEmptySlot && !isUnresolvedSlot && displayName ? (
+                  <small>{displayName}</small>
+                ) : null}
+                <em>{slot.position}</em>
+              </span>
+            </span>
+          );
+        })}
 
         {!slots.length ? (
           <div className="team-lineup-empty">
