@@ -1,0 +1,59 @@
+name: PR393 Packet3B Exact
+
+on:
+  push:
+    branches:
+      - tmp/pr393-packet3b-exact
+
+permissions:
+  contents: read
+
+jobs:
+  format-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Pin repository npm version
+        run: npm install --global npm@10.9.2
+      - run: npm ci
+      - name: Show Prettier version
+        run: npm exec -- prettier --version
+      - name: Apply repository Prettier to Packet 3B files
+        run: |
+          npm exec -- prettier --write \
+            apps/api/src/modules/events/application/event-place-access.ts \
+            apps/api/src/modules/events/application/event.service.ts \
+            tests/event-service.test.ts
+      - name: Verify repository Prettier on Packet 3B files
+        run: |
+          npm exec -- prettier --check \
+            apps/api/src/modules/events/application/event-place-access.ts \
+            apps/api/src/modules/events/application/event.service.ts \
+            tests/event-service.test.ts
+      - name: Emit exact formatter diff
+        run: |
+          git diff -- \
+            apps/api/src/modules/events/application/event-place-access.ts \
+            apps/api/src/modules/events/application/event.service.ts \
+            tests/event-service.test.ts
+      - name: Emit exact formatted file bytes
+        shell: bash
+        run: |
+          for file in \
+            apps/api/src/modules/events/application/event-place-access.ts \
+            apps/api/src/modules/events/application/event.service.ts \
+            tests/event-service.test.ts
+          do
+            echo "BEGIN_FILE_BASE64:${file}"
+            base64 -w0 "${file}"
+            echo
+            echo "END_FILE_BASE64:${file}"
+          done
+      - name: Run focused EventService test
+        run: npm exec -- tsx --test tests/event-service.test.ts
