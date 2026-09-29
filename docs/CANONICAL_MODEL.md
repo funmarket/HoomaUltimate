@@ -968,7 +968,7 @@ Current rules:
 - clients never supply `senderUserId`, `targetUserId`, raw `contextId`, `pairKey`, or `contextType` for `USER_DIRECT` construction;
 - `USER_DIRECT` is not accepted through `/api/v1/whistles/contexts/:contextType/:contextId`;
 - no pair table, DirectMessage, Conversation, inbox, or second Whistle-body store exists for User Direct;
-- `TEAM`, `RIDE`, `ULTRAS`, and `GAMER_SQUAD` remain disabled until their context-specific authorization slices are deliberately implemented;
+- `RIDE` is enabled through Ride-owned server-side read/post authorization injected into the shared Whistle service; `TEAM`, `ULTRAS`, and `GAMER_SQUAD` remain disabled until their context-specific authorization slices are deliberately implemented;
 - Whistle body content must never be copied into PostgreSQL, AuditLog metadata, OutboxEvent payloads, durable notifications, analytics, URLs, query strings, or server logs;
 - Redis is disposable transient infrastructure; PostgreSQL metadata remains the durable source for quota/context indexes and expiry projections.
 
@@ -1202,7 +1202,7 @@ Ride waypoints are ordered `RideOfferWaypoint` records with optional canonical P
 
 Ride vehicle-photo bytes belong in object storage. `RideOfferVehiclePhoto` is a single-purpose Ride-owned metadata record for the managed object key, content type, size and lifecycle fields until a separately authorized generic Media domain exists. PostgreSQL must not store photo bytes, base64 payloads, storage credentials or polymorphic generic media ownership for this slice.
 
-Requests owns one canonical `HelpRequest` domain. The current clean correction/completion remains in-flight on draft PR `#351`; the model below describes that in-flight branch and must not be treated as merged `phase-0-foundation` truth until the PR is authorized and merged.
+Requests owns one canonical `HelpRequest` domain. PR `#351` and subsequent Requests correction/presentation/projection slices are merged into current `phase-0-foundation`; the model below describes merged foundation truth. FundMe/Fundraising and Donations remain separate owners and are not implied by the Requests model.
 
 ```text
 HelpRequest
@@ -1348,6 +1348,6 @@ public/private UI projection
 
 Any mismatch is a blocker, not a reason for a compatibility patch.
 
-## In-flight Athletes consistency — Step C
+## Current Athletes WebSession activity projection
 
-PR `#274` keeps `WebSession.lastSeenAt` under Identity ownership and exposes only the narrow batched `UserLastSeenReader` to Athletes. Athletes preserves its canonical active membership list and projects nullable Identity activity alongside canonical UserPresentation fields; a missing active WebSession produces `lastSeenAt == null` rather than removing the member or fabricating online/offline state. No schema migration, presence table, Redis presence layer, Telegram fallback, or duplicate user identity model is introduced by this slice.
+The merged foundation keeps `WebSession.lastSeenAt` under Identity ownership and exposes only the narrow batched `UserLastSeenReader` to Athletes. Athletes preserves its canonical active membership list and projects nullable Identity activity alongside canonical UserPresentation fields; a missing active WebSession produces `lastSeenAt == null` rather than removing the member or fabricating online/offline state. No presence table, Redis presence layer, Telegram fallback, or duplicate user identity model is introduced by this slice.

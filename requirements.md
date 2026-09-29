@@ -573,9 +573,9 @@ Teams support:
 
 ## 8.7 Team challenges and games
 
-Requirements include:
+Current foundation requirements include:
 
-- challenge another eligible Team;
+- challenge another Team;
 - never challenge the same Team as itself;
 - incoming/outgoing challenge state;
 - detail;
@@ -586,6 +586,21 @@ Requirements include:
 - accepted challenge produces/associates one canonical TeamGame;
 - leader coordination appears only under its accepted-match authorization rules;
 - public Game data never leaks private leader conversation.
+
+### Locked Team challenge correction — future Teams slice
+
+The current foundation does **not yet** enforce the complete match-readiness/tactical-board contract below. It is a locked future Teams requirement to implement only after the current architecture-hardening program is complete:
+
+- a Team remains discoverable/recruitable even when it is not match-ready;
+- creating or accepting a challenge requires at least **5 active TeamPlayers**;
+- creating or accepting also requires an active **published TeamLineup** compatible with the challenge football format;
+- challenge creation validates both challenger and challenged Team readiness;
+- acceptance re-checks both Teams immediately before transition so stale roster/lineup state cannot slip through;
+- Team lineup authoring remains one-Team ownership; private drafts remain private;
+- accepted TeamGame match presentation reads two independent Team authorities: home Team roster + published lineup and away Team roster + published lineup;
+- never build both Team sides from one Event RSVP roster or copy Team rosters into Event Formation as canonical match state;
+- opponent published lineup is read-only and may refresh/revalidate after republish; opponent draft state is never exposed;
+- Event Formation Builder remains Event-owned for pickup/community Play events and must not be repurposed into Team-vs-Team persistence.
 
 ---
 
@@ -906,7 +921,7 @@ Approved requirements include:
 - Play and Athletes projections must read the same canonical HelpRequest records through `surface=PLAY` and `surface=ATHLETES`; never create `PlayRequest` or `AthletesRequest` persistence;
 - server-side authorization and audience visibility remain authoritative for every Request read/write.
 
-Current implementation state must be described separately from target requirements. Draft PR `#351` remains the clean in-flight Requests branch at the time of this documentation reconciliation; open-PR behavior is not merged `phase-0-foundation` truth until explicitly merged. The active Help execution program is `docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md`.
+Current implementation state must be described separately from target requirements. PR `#351` and the later Requests correction/presentation/projection PRs are merged into `phase-0-foundation`; Requests is current foundation behavior. FundMe and Donations remain separately owned future domains under `docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md` and must not be reported as durable backend completion until their own slices land.
 
 ---
 
@@ -1000,7 +1015,7 @@ Donations currently exists in the repository as a Help route/tab placeholder plu
 
 # 20. Payments
 
-The independent Payments domain remains separately governed for product contexts that explicitly invoke payment execution. Its historical initial rails are `CASH | TELEGRAM_STARS` unless a later Payments decision changes them.
+The independent Payments domain remains separately governed for product contexts that explicitly invoke payment execution. The current owner-approved near-term methods for **HOOMA services/fees** are **Cash, Crypto and Telegram Stars**. No credit/debit-card rail is active now; Stripe is planned later when the app is running. Telegram Stars are for eligible HOOMA digital services/fees, not a generic settlement rail for real-world rentals or user-to-user obligations. Domain terms such as Ride/Pitch advertised cash terms remain domain-owned until Payments is explicitly integrated.
 
 FundMe in the active Help program does **not** use the Payments domain for an in-app card/provider checkout. FundMe supports manual/confirmed **Cash and Crypto** contribution coordination inside Fundraising. No credit-card rail is part of the current FundMe requirement, and no generated reference image may introduce one.
 

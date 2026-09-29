@@ -9,13 +9,13 @@ Product name: **HOOMA**
 
 ---
 
-## Current Help supersession — 2026-09-24
+## Current Help supersession — reconciled 2026-09-29
 
-- Requests is being completed on the clean Requests program before FundMe/Donations work begins.
-- FundMe is now explicitly authorized as a separate Fundraising-owned domain using Cash/Crypto contribution coordination only; the older Telegram-Stars/Payments sequence in this Ride ledger is historical for Help work.
-- Donations is now explicitly authorized as a separate physical-item-giving domain with `Sport | Community`, up to four images and its own claim lifecycle.
-- The current ordered Help program is `H0 -> R1 -> R2 -> R3 -> R4 -> R5 -> R6 -> R7 -> R8 -> FundMe -> Donations -> Help overview`.
-- Any Requests/FundMe task IDs below are retained only as historical evidence and must not override the dedicated Help plan.
+- Canonical Requests core and later Requests search/presentation/projection/create/detail slices are merged into `phase-0-foundation`; do not describe Requests as waiting on PR #351 or R1-R5.
+- FundMe remains explicitly authorized as a separate Fundraising-owned domain using manual Cash/Crypto contribution coordination.
+- Donations remains a separate physical-item-giving domain.
+- The current Help program is governed only by ADR-060 and `docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md`.
+- Any Requests/FundMe task IDs retained later in this Ride ledger are historical evidence and must not be used as current execution order.
 
 ---
 
@@ -63,56 +63,25 @@ Status notation:
 
 ## Foundation truth
 
-`phase-0-foundation` is:
+Verified 2026-09-29 reconciliation evidence:
 
 ```text
-6ca765128aa4576d02af787374684575d11d35ed
+application/source baseline before doc rebaseline:
+3cafb5c78bf78df0935f7a6b3849ba8c5bbc1fd4
+CI 36504854292 — SUCCESS
+
+documentation rebaseline proof point:
+79aec96bc09a4fabcd2a2b0215c1f501cea51cc7
+CI 36623002165 — SUCCESS
 ```
 
-That commit merged PR #209:
+These are dated proof points, not a permanent current-HEAD declaration. Every Ride task must read the live `phase-0-foundation` ref before mutation.
 
-```text
-feat(rides): project community Ride requests into HOOMA NOW
-```
+Current foundation contains the real Rides API/frontend domain, Ride Request/Offer flows, participation, meeting-point privacy, Community RideRequest projection, Ride vehicle-photo metadata, and Ride-context Whistle authorization through the shared Whistle service.
 
-PR #209 head:
+The foundation has advanced far beyond the old PR #209/#210 snapshot retained in Git history. Those PRs remain historical evidence only; they are not current branch/head instructions.
 
-```text
-10c143a6424975b86fc722634ea8f744faf2e83f
-```
-
-PR #209 exact-head CI passed before merge.
-
-## Active overlapping work
-
-At this refresh there are no open PRs targeting `phase-0-foundation`.
-
-PR #210 has merged and is now foundation truth:
-
-```text
-PR #210
-fix(rides): repair community interaction, mobile audience, and owner edits
-branch: fix/rides-community-interaction-mobile-manage
-final head: c0670bd10f35bacd315727d792e3a93c0458fdcd
-merge commit: 43dde47b9ce4466a52e01faf3a1dc4f5a592e818
-state: MERGED
-exact-head check: verify SUCCESS
-```
-
-PR #231 has also merged and moved `phase-0-foundation` forward:
-
-```text
-PR #231
-feat(play): upgrade formation builder pitch without changing two-team flow
-final head: 05b9ad8869fb031dcae2dadf4b9c8559b86013bf
-merge commit: 525b3b6b842bca5892c74cf213e982e3a0385fa0
-state: MERGED
-exact-head check: verify SUCCESS
-```
-
-Do not reopen PR #210 or rebuild its Ride work. Current Ride work resumes from the merged foundation state.
-
----
+Current cross-program gate: architecture hardening is in open/draft PR #393 and is not merged foundation truth.
 
 # 2. Locked domain ownership
 
@@ -699,53 +668,30 @@ Dependencies: `PAY-001` plus explicit product-owner authorization.
 
 ## WHISTLE-RIDE-001 — Ride-context Whistle authorization bridge
 
-Status: **[ ] TODO**
+Status: **[x] DONE IN CURRENT FOUNDATION**
 
-This future task is distinct from PR #210's direct-user Whistle reuse.
+Current source enables `RIDE` through the shared Whistle engine. `WhistleService` delegates Ride context authorization to Ride-owned `requireWhistleRead` / `requireWhistlePost`, and API composition injects the canonical `RideService` into Whistle.
 
-PR #210 may reuse the already-existing direct-user Whistle capability to let a Community member contact a Ride requester. That does **not** authorize a new Ride chat, Ride message table, or a general Ride-context Whistle board.
-
-Any future Ride-context Whistle bridge still requires explicit authorization and must preserve shared Whistle quota/retention/transient-body rules.
+This does **not** create a Ride chat/message table, second Whistle engine, or duplicate Ride relationship authority. The shared global Whistle quota, transient Redis body storage and expiry rules remain authoritative.
 
 ---
 
 # 7. Current recommended execution order
 
-PR #210 is merged. Do not start a second overlapping correction for the same scope unless a new failing proof identifies a real source defect.
+Do not run the historical Ride/Requests sequence below from old snapshots.
 
-Current order:
+Current owner-level sequence:
 
 ```text
-1. RIDE-007C closeout audit
-   - no rewrite of already-merged My Rides/mobile work
-   - run final 360/390/430 route/mobile acceptance after #210
-   - mark DONE only if its existing gate passes
-
-2. RIDE-007D
-   - privacy-safe static maps
-
-3. RIDE-007 umbrella closeout
-   - reconcile A/B/C/D/E/F
-   - final Ride vertical-slice proof
-
-4. REQ-001
-5. REQ-002
-6. REQ-003
-7. REQ-004
-8. REQ-005
-
-9. RIDE-008 matching
-10. RIDE-009 media hardening
-11. RIDE-010 reliability
-12. DISC-001
-13. PAY-001 when authorized
-14. FUND-001 when authorized
-15. WHISTLE-RIDE-001 when separately authorized
+1. Finish architecture hardening / PR #393 final gate.
+2. Reinspect current foundation and overlapping PRs.
+3. Resume the existing product-completion programs for Gear Up, Teams and Ride in an overlap-safe order chosen by the Product Owner.
+4. When Ride resumes, rebaseline the remaining Ride-specific work from live source rather than replaying old PR #209/#210 tasks.
+5. Keep Requests/FundMe/Donations under the dedicated Help program, not this Ride ledger.
+6. Payments remains a later canonical owner; Ride advertised FREE/CASH terms do not become settlement state.
 ```
 
-Independent later tasks may be reordered only after checking file/domain overlap and product-owner priority. Do not infer permission to run simultaneous schema/router/frontend changes against the same sources.
-
----
+Within Ride, privacy-safe maps, remaining vertical-slice proof, matching/media/reliability work may be resumed only after fresh source inspection confirms which historical task IDs are still genuinely incomplete.
 
 # 8. Verification ladder for every remaining task
 

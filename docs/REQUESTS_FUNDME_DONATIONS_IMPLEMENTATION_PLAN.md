@@ -1,7 +1,7 @@
 # HOOMA Requests | FundMe | Donations Implementation Plan
 
-Status: **ACTIVE ORDERED EXECUTION PROGRAM**  
-Last reconciled: **2026-09-24**
+Status: **ACTIVE REMAINING HELP PROGRAM — REQUESTS CORE MERGED**  
+Last reconciled: **2026-09-29**
 
 This file is the scoped implementation program for HOOMA Help. It must be used together with `AGENTS.md`, `docs/LIVING_BUILD_PLAN.md`, root `requirements.md`, root `structure.md`, `docs/CANONICAL_MODEL.md`, `docs/DECISIONS.md`, ADR-060, and the current repository/database/runtime evidence.
 
@@ -9,17 +9,18 @@ Open-PR behavior is in-flight only. Merged `phase-0-foundation` remains current 
 
 ## 0. Current verified baseline
 
-At the time of this reconciliation:
+At this reconciliation:
 
 - target base: `phase-0-foundation`;
-- clean Requests branch: `feat/requests-clean-completion`;
-- draft PR: `#351`;
-- last verified application-code baseline before documentation-only reconciliation: `9f558264cf2125f178a0cdc5625c623a871f263a`;
-- exact-head CI on that application baseline: run `#2361` (`35992814011`) — **SUCCESS**;
-- contaminated PRs `#349` and `#350` remain reference-only and are not implementation ancestry;
-- PR `#347` is a separate Play -> Requests reference branch and is not safe to merge/cherry-pick wholesale over the clean branch without fresh reconciliation;
-- FundMe and Donations have Help navigation/routes/placeholders, but no durable owning backend domains yet;
-- canonical Help taxonomy already contains a `DONATIONS` surface that must be extended/reused rather than replaced.
+- application/source baseline before the documentation rebaseline: `3cafb5c78bf78df0935f7a6b3849ba8c5bbc1fd4`, CI `36504854292` — **SUCCESS**;
+- documentation rebaseline proof point: `79aec96bc09a4fabcd2a2b0215c1f501cea51cc7`, CI `36623002165` — **SUCCESS**;
+- these SHAs are dated evidence only; re-read the live `phase-0-foundation` head before every implementation mutation;
+- PR `#351` is merged, not draft;
+- PR `#347` Play -> Requests projection is merged;
+- later merged Requests slices include canonical server search and current presentation/projection/create/detail work through PRs `#367`, `#368`, `#373`, `#375`, and `#379`;
+- PRs `#349` and `#350` remain closed, unmerged contamination/reference history and are not implementation ancestry;
+- FundMe and Donations still have no durable owning backend modules in the current foundation and must not be reported as implemented merely because Help routes/tabs exist;
+- current architecture hardening is separate in open/draft PR `#393` and is not foundation truth.
 
 Every new execution session must re-verify these mutable facts before mutation.
 
@@ -775,11 +776,13 @@ Matching is a read/projection feature over shared taxonomy/location/size compati
 
 `rideplan.md` is Ride history for Help purposes; its old Requests/FundMe ordering is superseded by this plan.
 
-PRs #349/#350 are reference-only contamination history.
+PRs `#349`/`#350` are closed, unmerged contamination/reference history.
 
-PR #347 is read-only Play projection reference until explicitly reconciled.
+PR `#347` is **merged foundation history**; do not call it reference-only or pending.
 
-Do not use stale branches as implementation ancestry. Adapt only proven behavior file-by-file into current canonical source.
+PR `#351` is **merged foundation history**; do not call it draft/in-flight.
+
+Do not use stale branches as implementation ancestry. Adapt only proven behavior file-by-file into current canonical source. Active plan/status sections must be reconciled whenever their referenced PR/branch/SHA state changes.
 
 ## 32. Verification rule per slice
 
@@ -816,18 +819,10 @@ Before merge:
 
 Green CI alone is not merge authorization.
 
-## 34. Current next command
+## 34. Current execution position
 
-After a fresh repository/PR state capture, the next authorized implementation command is:
+Canonical Requests core is merged foundation behavior; do not restart H0/R1 or replay the old clean-branch sequence.
 
-```text
-H0 — extract the narrow shared Help access reader with zero Request behavior change
-```
-
-After H0 passes its gate:
-
-```text
-R1 — canonical Requests server-side search
-```
+No Help implementation slice is currently authorized to auto-start from this document. The current owner sequence is to finish the architecture-hardening program first, then preserve/resume the existing Gear Up, Teams and Ride completion programs according to fresh overlap checks. When Help is explicitly resumed, re-audit the current Requests foundation first and continue only the still-missing Help work (FundMe -> Donations -> visibility-aware Help overview) without rebuilding already-merged Requests behavior.
 
 Do not start later work early.

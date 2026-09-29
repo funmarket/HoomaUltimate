@@ -147,9 +147,9 @@ MANAGE_TEAM_EVENTS
 
 ## ADR-022 — Cash and Telegram Stars are the initial payment rails
 
-**Decision:** When the independent Payments domain is implemented for a context that invokes payment execution, the historical initial methods are CASH and TELEGRAM_STARS only unless a later Payments decision changes them. No credit-card rail is introduced by implication.
+**Decision:** When the independent Payments domain is implemented for a context that invokes payment execution, the current owner-approved near-term methods for **HOOMA services/fees** are **Cash, Crypto and Telegram Stars**. No credit/debit-card rail is active now; Stripe is intentionally deferred until the app is running. Telegram Stars apply only where platform rules permit HOOMA digital services/fees and are not a generic rail for real-world rental/user obligations.
 
-**Current-state note:** ADR-060 separately authorizes FundMe's initial contribution coordination as **Cash and Crypto only inside Fundraising**. That FundMe flow is manual/confirmed accounting and does not mean the Payments domain executes cards, Telegram Stars or custodial crypto.
+**Current-state note:** ADR-060 separately authorizes FundMe's initial contribution coordination as **Cash and Crypto only inside Fundraising**. That FundMe flow is manual/confirmed accounting and does not mean the Payments domain executes cards, Telegram Stars or custodial crypto. Ride/Pitch cash terms remain owning-domain terms until Payments is explicitly integrated.
 
 **Reason:** Keep payment-provider execution separate from the currently authorized FundMe contribution model.
 
@@ -360,7 +360,7 @@ Ride vehicle-photo bytes belong in object storage. Until a separate generic Medi
 
 Requests owns help/resource requests and quantity-based partial claims. Active/accepted claim quantities must be concurrency-safe and must not exceed the requested quantity. More than one claimer is allowed while quantity remains; quantity-one requests naturally behave as single-claim requests through the same partial-claim rule. The older exclusive-claim wording is replaced by this governed quantity rule.
 
-The product owner's later Requests correction further fixes the taxonomy root as exactly `SPORT | COMMUNITY`. SPORT reuses canonical `AthletesSport`; COMMUNITY is a parallel root and never requires a fake Sport. Standalone Requests defaults to All Requests, meaning no `requestType` filter; All Requests is a presentation/query state, not a third taxonomy root. Corrected taxonomy must preserve root/subcategory/Need integrity, and SPORT must additionally preserve sport/subcategory integrity. Every SPORT branch exposed to Requests has a governed Other/manual Need using per-Request `customNeed`, never a new global taxonomy row. Football Community Roles explicitly include Player, Goalkeeper, Coach, Assistant Coach, Referee, Training Session, Training Group and Training Partner. New sport-specific Needs stay Requests-only unless another surface is explicitly granted eligibility. Request create/filter UX follows the same progressive root, and optional precise `fullAddress` is persisted without being exposed in current Request read DTOs. Draft PR `#351` is the clean in-flight implementation of this correction and is not merged foundation truth until authorized and merged.
+The product owner's later Requests correction further fixes the taxonomy root as exactly `SPORT | COMMUNITY`. SPORT reuses canonical `AthletesSport`; COMMUNITY is a parallel root and never requires a fake Sport. Standalone Requests defaults to All Requests, meaning no `requestType` filter; All Requests is a presentation/query state, not a third taxonomy root. Corrected taxonomy must preserve root/subcategory/Need integrity, and SPORT must additionally preserve sport/subcategory integrity. Every SPORT branch exposed to Requests has a governed Other/manual Need using per-Request `customNeed`, never a new global taxonomy row. Football Community Roles explicitly include Player, Goalkeeper, Coach, Assistant Coach, Referee, Training Session, Training Group and Training Partner. New sport-specific Needs stay Requests-only unless another surface is explicitly granted eligibility. Request create/filter UX follows the same progressive root, and optional precise `fullAddress` is persisted without being exposed in current Request read DTOs. PR `#351` is merged foundation history. Subsequent merged Requests slices added canonical server search, REQUESTS/PLAY/ATHLETES projection reconciliation, mobile discovery/card presentation, projection-aware creation and Request detail/lifecycle presentation without transferring Requests ownership.
 
 This ADR does not itself authorize FundMe persistence. ADR-060 now separately authorizes the ordered FundMe/Fundraising and Donations implementation program after Requests completion while preserving their independent ownership. Payments remains separately governed.
 
@@ -466,7 +466,7 @@ Shared Help concerns may be extracted only as narrow reusable boundaries: live p
 
 The dedicated decision record is `docs/adr/ADR-060-help-requests-fundme-donations-program.md`.
 
-The dedicated execution plan is `docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md`. Open PR work remains in-flight and must be distinguished from merged `phase-0-foundation` truth.
+The dedicated execution plan is `docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md`. Canonical Requests is now merged foundation behavior; FundMe and Donations remain future independent-domain work. Any open PR work remains in-flight and must be distinguished from merged `phase-0-foundation` truth.
 
 **Reason:** The product owner explicitly authorized the full Help program while requiring clean domain ownership, no duplicate schemas/services, no fake payment or donation mechanics, readable mobile-first UI and strict current-source/no-drift execution.
 

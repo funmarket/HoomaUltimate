@@ -402,6 +402,8 @@ Places | Ride | Requests
 
 Current availability on `phase-0-foundation`:
 
+> Reconciliation evidence verified 2026-09-29: application/source baseline `3cafb5c78bf78df0935f7a6b3849ba8c5bbc1fd4` passed CI `36504854292`; documentation rebaseline `79aec96bc09a4fabcd2a2b0215c1f501cea51cc7` passed CI `36623002165`. These are historical proof points, not a hard-coded current-HEAD claim. Agents must read `phase-0-foundation` live before mutation.
+
 - HOOMA -> `/hooma`
 - Teams -> `/teams`
 - Pitch -> `/pitch`
@@ -409,7 +411,9 @@ Current availability on `phase-0-foundation`:
 - Ride -> `/rides` Ride-owned gateway with current child routes `/rides/matchday`, `/rides/anywhere`, `/rides/request`, `/rides/requests/:requestId/edit`, `/rides/offers`, `/rides/offers/new`, `/rides/offers/:offerId`, `/rides/offers/:offerId/edit`, and `/rides/mine`
 - Requests -> `/requests` current foundation Requests surface, with current Help child routes `/requests/fundme` and `/requests/donations`; `/fundme` remains a compatibility redirect to the FundMe tab. The merged foundation includes the Requests API/domain and earlier Requests work, while the richer Help program remains ordered and domain-owned.
 
-Draft PR `#351` is the in-flight clean Requests correction/completion branch. At the verified handoff baseline it contains the canonical `SPORT | COMMUNITY` Request Type root, Community taxonomy independent of Sport, requestType-aware persistence/contracts, restored SPORT sport/subcategory integrity, progressive create/filter behavior, private persisted `fullAddress`, one optional normalized Request image capability using shared object storage, requester presentation and the current Request response/lifecycle implementation. It still requires the ordered R1-R8 completion program (server search, primary Sport/Community discovery controls, quick/advanced filters, readable feed/media/expansion, create/detail lifecycle polish, Play projection, Athletes projection and final QA). Open PR behavior is not merged foundation truth until explicitly merged.
+PR `#351` is merged foundation history, not an in-flight branch. Subsequent merged Requests work includes PRs `#347`, `#367`, `#368`, `#373`, `#375`, and `#379`: canonical server-backed search, REQUESTS/PLAY/ATHLETES projection reconciliation, accepted mobile discovery/card presentation, projection-aware create flow, and Request detail/lifecycle presentation are current foundation behavior. FundMe and Donations remain separate future owning domains and must not be inferred from their Help navigation placeholders.
+
+PR `#393` is the current cumulative architecture-hardening candidate and remains open/draft/unmerged. Its cross-domain ownership changes are **in-flight candidate behavior**, not current `phase-0-foundation` truth until explicitly merged and read back.
 
 Gamers remains an independent implemented route family at `/gamers`, but it is no longer listed from the Home gateway. Athletes is an independent implemented route family at `/athletes` and is reached from permanent navigation. ULTRAS remains an independent future domain and is not routed from Home. FundMe and Donations are grouped inside the Help/Requests family at `/requests/fundme` and `/requests/donations`; their current placeholders must be replaced only by their independent ordered domain slices. `/fundme` remains a compatibility navigation redirect.
 
