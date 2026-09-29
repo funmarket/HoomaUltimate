@@ -118,7 +118,7 @@ export function CoachControlRoomPage() {
     }
   }
 
-  if (!teams.length && !error) return <p className="status">Loading your managed Teamsâ¦</p>;
+  if (!teams.length && !error) return <p className="status">Loading your managed Teams…</p>;
 
   return (
     <section className="control-room">
@@ -154,7 +154,7 @@ export function CoachControlRoomPage() {
             </div>
             <div>
               <span>Houma</span>
-              <strong>{team.houma || team.city || "â"}</strong>
+              <strong>{team.houma || team.city || "—"}</strong>
             </div>
             <a href={`/teams/${team.id}`}>Open public Team profile</a>
           </section>
@@ -535,7 +535,7 @@ function ChallengeRow({
     <article className="challenge-row">
       <div>
         <strong>
-          {challenge.challengerTeam.name} â {challenge.challengedTeam.name}
+          {challenge.challengerTeam.name} → {challenge.challengedTeam.name}
         </strong>
         <span>{challenge.status}</span>
         {location ? <span>{location}</span> : null}
