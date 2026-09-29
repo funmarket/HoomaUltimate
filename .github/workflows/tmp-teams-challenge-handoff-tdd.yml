@@ -1,0 +1,23 @@
+name: Teams Challenge Handoff TDD
+
+on:
+  push:
+    branches:
+      - tmp/teams-challenge-handoff-tdd
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - name: Run opponent handoff regression test
+        run: node --test tests/team-challenge-opponent-handoff.test.mjs
