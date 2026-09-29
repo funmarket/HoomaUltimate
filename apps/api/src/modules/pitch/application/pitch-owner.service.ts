@@ -31,7 +31,7 @@ export class PitchOwnerService {
   }
 
   async submitRevision(userId: string, placeId: string, input: PitchApplicationInput) {
-    const place = await this.places.getPublic(placeId);
+    await this.places.getPublic(placeId);
     if (!(await this.places.isVerifiedOwner(placeId, userId))) {
       throw new AppError(
         403,
