@@ -109,6 +109,10 @@ Do not create a new overlapping document merely because updating the authoritati
 
 Open/draft PR behavior is **in-flight**, not current foundation truth. Documentation must say which is which.
 
+### Current-state reconciliation gate
+
+Every task that reads a mutable implementation/status document must re-check its branch/PR/SHA/status claims against the live repository before relying on them. If a current-state statement has become stale, correcting that statement is part of the task; do not leave it for a later cleanup. Historical ledgers stay historical, but active guidance must never describe a merged PR as open, completed work as not started, or an old foundation SHA as current.
+
 ### G. Verify
 
 Use evidence appropriate to the changed layer. Prefer real behavior over static inspection when possible.

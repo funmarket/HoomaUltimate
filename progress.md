@@ -2,58 +2,45 @@
 
 This file is a non-authoritative execution and verification log. Product behavior and architecture truth remain in `requirements.md`, `structure.md`, `docs/CANONICAL_MODEL.md`, `docs/DECISIONS.md`, and the applicable ADRs.
 
-## Requests / Help current program
+## Current live foundation snapshot — 2026-09-29
 
-Target base: `phase-0-foundation`
+Target branch: `phase-0-foundation`
 
-Clean Requests branch: `feat/requests-clean-completion`
+Verified foundation HEAD: `3cafb5c78bf78df0935f7a6b3849ba8c5bbc1fd4`
 
-Draft pull request: `#351`
+Exact-head CI: run `36504854292` — **SUCCESS**
 
-Contaminated Hermes checkpoint/salvage PRs `#349` and `#350` remain reference-only and are not implementation ancestry. PR `#347` remains a separate Play -> Requests reference branch and must not be merged/cherry-picked wholesale over the clean Requests branch.
+Latest merged foundation change: PR `#394`, Team challenge opponent handoff.
 
-### Verified clean Requests evidence
+### Current merged domain state
 
-- [PASS] Clean Slice 1 — canonical `SPORT | COMMUNITY` Request root, Community taxonomy, and database integrity.
-- [PASS] Clean Slice 2 — progressive root-aware create/filters plus private persisted `fullAddress`, intentionally omitted from current Request read DTOs.
-- [PASS] Clean Slice 3A — governed SPORT taxonomy expansion and explicit Other/manual Needs.
-- [PASS] Clean Slice 4 — Request media and requester/lifecycle continuation through application baseline `9f558264cf2125f178a0cdc5625c623a871f263a`.
-  - one optional Request image with upload or validated external URL;
-  - Request-owned image metadata with shared object storage and signed delivery;
-  - actual-byte image validation/normalization and Worker/outbox cleanup;
-  - requester presentation and current Request response/detail integration;
-  - exact-head CI run `#2361` (`35992814011`) passed on `9f558264cf2125f178a0cdc5625c623a871f263a`.
+- **Requests / Help:** PR `#351` is merged, not draft. Later Requests work also merged through PRs `#347`, `#367`, `#368`, `#373`, `#375`, and `#379`. Current foundation owns one canonical Requests domain with `SPORT | COMMUNITY`, server-backed `q` search, canonical REQUESTS/PLAY/ATHLETES projections, current mobile discovery/card/create/detail/response/lifecycle presentation, Request media, requester presentation, and private `fullAddress` persistence. FundMe and Donations remain separate future owning domains; their current Help routes must not be mistaken for durable Fundraising/Donations completion.
+- **Ride:** the Rides domain, Requests/Offers, participation, privacy policy, Community audience projection, vehicle-photo metadata and shared Ride-context Whistle authorization are implemented. Remaining Ride completion work must resume from fresh source; do not execute the old Requests/FundMe sequence in `rideplan.md`.
+- **Gear Up:** Gear Up is a real API/frontend domain under Athletes with Add Store, shops/products and product discovery in current foundation. The broader Gear Up completion program remains future work after the architecture gate.
+- **Teams:** Team lineup/published-lineup mechanics are live; the stadium/slot regression was repaired by PR `#392`, and Team challenge opponent handoff was repaired by PR `#394`. The later match-readiness + two-Team TeamGame tactical-board correction is a **future Teams slice**, not current foundation behavior.
+- **Media processing:** shared media-processing/UI foundations and Athletes Photo Board adoption are merged. Generic business-media ownership is still domain-owned rather than a generic Media business domain.
 
-That SHA is the last verified application-code baseline before the 2026-09-24 documentation reconciliation. Documentation commits after it do not turn draft PR `#351` into merged foundation truth and require their own exact-head CI before merge.
+### In-flight architecture program — not foundation truth
 
-### Authorized next sequence
+PR `#393` remains **OPEN / DRAFT / UNMERGED** on `arch/packet-1-cross-domain-ownership`.
 
-The product owner has replaced the older placeholder-only FundMe/Donations assumption with the ordered Help program governed by ADR-060 and `docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md`:
+Last independently verified architecture head before this documentation rebaseline: `3b1507b3365df6eb26d777a1cd8c34d8fdccf80c`.
 
-```text
-H0 shared Help access extraction
-R1 Requests server-side search
-R2 Requests Sport | Community + quick taxonomy + advanced filters
-R3 readable Request cards + feed media + accessible expansion
-R4 Request create-flow redesign without changing canonical ownership
-R5 Request detail/response/lifecycle UI completion
-R6 Play -> Requests projection
-R7 Athletes -> Requests projection
-R8 Requests browser/mobile/final gate
-then FundMe
-then Donations
-then visibility-aware Help overview
-```
+ARCH-1 through ARCH-5A are verified on that candidate. ARCH-5B has a temp candidate/provenance path but is not yet applied to PR #393 and must not be described as merged. ARCH-6 and later packets have not started.
 
-FundMe target is now a real Fundraising-owned domain using **Cash and Crypto only** for its initial contribution coordination. No credit/debit-card or Telegram-Stars checkout is part of this FundMe program.
+### Locked product sequencing
 
-Donations target is now a real Donations-owned reverse-Requests physical-item domain with `Sport | Community`, real search/filter discovery, private claim coordination, concurrency-safe quantities, backend-protected pickup data and up to four images. Financial donations remain FundMe; a generic service marketplace is not part of the Donation slice.
+Do not let historical ledgers override the current owner sequence:
 
-- [NOT STARTED] H0 and R1-R8 have not been implemented by this documentation task.
-- [NOT STARTED] Durable Fundraising/FundMe persistence/API/frontend has not been implemented by this documentation task.
-- [NOT STARTED] Durable Donations persistence/API/frontend has not been implemented by this documentation task.
+1. finish architecture hardening and its final exact-head/merge gate;
+2. preserve and later resume the existing **Gear Up**, **Teams**, and **Ride** completion programs;
+3. within Teams, preserve the Team Challenge/TeamGame correction: 5+ active players, valid published lineup matching challenge format, readiness on create and re-check on accept, and a dedicated two-Team tactical board sourced from each Team's own roster/published lineup;
+4. Payments remains a later canonical owner; near-term HOOMA service/fee methods are Cash, Crypto and Telegram Stars, with no card rail now and Stripe planned later;
+5. FundMe remains manual Cash/Crypto contribution coordination inside Fundraising; Donations remains a separate physical-item domain.
 
-## Athletes hardening sequence## Athletes hardening sequence
+Older detailed entries below are historical execution evidence. They do not override this current snapshot.
+
+## Athletes hardening sequence
 
 Target base: `phase-0-foundation`
 

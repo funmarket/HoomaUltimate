@@ -178,6 +178,20 @@ Do not duplicate an authoritative document just to record the same truth in anot
 
 Documentation updates must describe **merged/current truth** separately from **in-flight PR work**. An open PR is not current foundation truth until merged.
 
+### Stale-document gate
+
+Active documentation must never be allowed to become a second source of drift.
+
+Before starting consequential work and again before reporting completion:
+
+- re-verify mutable branch, PR, SHA, CI, deployment and implementation-status claims that the task depends on;
+- if an active document still calls a merged/closed PR open, a completed slice not started, or an old SHA current, update or remove that stale claim in the same task;
+- keep historical execution/audit documents explicitly labeled **historical**, **archived** or **reference-only** rather than silently rewriting history;
+- distinguish live `phase-0-foundation` truth from open architecture/feature candidates;
+- never use a stale document, old CI run or historical branch status as authorization to change current source.
+
+If current source and an active document disagree, current source/runtime proves what exists now; reconcile the document before another agent builds on the stale statement.
+
 ---
 
 ## 8. Verification is part of the implementation
