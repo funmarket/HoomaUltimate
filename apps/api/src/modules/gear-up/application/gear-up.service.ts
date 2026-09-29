@@ -8,14 +8,14 @@ import {
   resolvePlaceImageFields,
   type ExternalPlaceImageResolver,
 } from "../../places/application/external-place-image-resolver.js";
-import type { PlaceRepository } from "../../places/application/place.repository.js";
+import type { GearUpPlaceAccess } from "./gear-up-place-access.js";
 import { GearUpError } from "../domain/gear-up-error.js";
 import type { GearUpModerationDecision, GearUpRepository } from "./gear-up.repository.js";
 
 export class GearUpService {
   constructor(
     private readonly repository: GearUpRepository,
-    private readonly places: PlaceRepository,
+    private readonly places: GearUpPlaceAccess,
     private readonly platformAdmin: PlatformAdminAccessPort,
     private readonly imageResolver: ExternalPlaceImageResolver,
   ) {}
