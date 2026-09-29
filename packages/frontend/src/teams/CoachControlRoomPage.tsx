@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useSearchParams } from "react-router-dom";
 import type { TeamCapabilityInput, TeamChallengeCreateInput } from "@hooma/contracts";
 import type { PublicPitch } from "@hooma/contracts/pitch";
 import type { ManagedTeam, TeamChallengeSummary, TeamControlDetail, createHoomaApi } from "../api";
@@ -17,8 +18,11 @@ const CAPABILITIES: readonly TeamCapabilityInput[] = [
 
 export function CoachControlRoomPage() {
   const { api, transport, protectedError } = useHoomaFrontend();
+  const [searchParams] = useSearchParams();
+  const challengedTeamId = searchParams.get("challengedTeamId")?.trim() || "";
   const pitchApi = useMemo(() => createPitchApi(transport), [transport]);
   const [teams, setTeams] = useState<ManagedTeam[]>([]);
+  const [opponents, setOpponents] = useState<Array<{ id: string; name: string }>>([]);
   const [pitches, setPitches] = useState<PublicPitch[]>([]);
   const [selectedTeamId, setSelectedTeamId] = useState("");
   const [team, setTeam] = useState<TeamControlDetail | null>(null);
@@ -33,12 +37,13 @@ export function CoachControlRoomPage() {
 
   useEffect(() => {
     void reloadManagedTeams();
+    void reloadOpponentTeams();
     void reloadChallenges();
     void pitchApi
       .list()
       .then(setPitches)
       .catch(() => setPitches([]));
-  }, [api, pitchApi]);
+  }, [api, challengedTeamId, pitchApi]);
 
   useEffect(() => {
     if (!selectedTeamId) {
@@ -52,7 +57,27 @@ export function CoachControlRoomPage() {
     try {
       const rows = await api.teams.managed();
       setTeams(rows);
-      setSelectedTeamId((current) => current || rows[0]?.id || "");
+      setSelectedTeamId((current) => {
+        if (current && current !== challengedTeamId) return current;
+        if (challengedTeamId) {
+          return rows.find((candidate) => candidate.id !== challengedTeamId)?.id || "";
+        }
+        return rows[0]?.id || "";
+      });
+    } catch (reason) {
+      reportError(reason);
+    }
+  }
+
+  async function reloadOpponentTeams() {
+    try {
+      const response = await api.teams.publicList({ limit: 100 });
+      const rows = response.items.map(({ id, name }) => ({ id, name }));
+      if (challengedTeamId && !rows.some((candidate) => candidate.id === challengedTeamId)) {
+        const target = await api.teams.publicDetail(challengedTeamId);
+        rows.push({ id: target.id, name: target.name });
+      }
+      setOpponents(rows);
     } catch (reason) {
       reportError(reason);
     }
@@ -146,6 +171,8 @@ export function CoachControlRoomPage() {
               api={api.teams}
               team={team}
               managedTeams={teams}
+              opponents={opponents}
+              initialOpponentTeamId={challengedTeamId}
               pitches={pitches}
               onRun={runAction}
             />
@@ -304,9 +331,36 @@ function CreateChallengeCard({
   api,
   team,
   managedTeams,
+  opponents,
+  initialOpponentTeamId,
   pitches,
   onRun,
-}: CardProps & { managedTeams: ManagedTeam[]; pitches: PublicPitch[] }) {
+}: CardProps & {
+  managedTeams: ManagedTeam[];
+  opponents: Array<{ id: string; name: string }>;
+  initialOpponentTeamId: string;
+  pitches: PublicPitch[];
+}) {
+  const eligibleOpponents = useMemo(
+    () => opponents.filter((candidate) => candidate.id !== team.id),
+    [opponents, team.id],
+  );
+  const [opponentTeamId, setOpponentTeamId] = useState("");
+
+  useEffect(() => {
+    setOpponentTeamId((current) => {
+      if (
+        initialOpponentTeamId &&
+        eligibleOpponents.some((candidate) => candidate.id === initialOpponentTeamId)
+      ) {
+        return initialOpponentTeamId;
+      }
+      if (current && eligibleOpponents.some((candidate) => candidate.id === current))
+        return current;
+      return "";
+    });
+  }, [eligibleOpponents, initialOpponentTeamId]);
+
   return (
     <section className="panel">
       <h3>Create Challenge</h3>
@@ -339,8 +393,20 @@ function CreateChallengeCard({
         }}
       >
         <label>
-          Opponent Team ID
-          <input name="challengedTeamId" required />
+          Opponent Team
+          <select
+            name="challengedTeamId"
+            required
+            value={opponentTeamId}
+            onChange={(event) => setOpponentTeamId(event.target.value)}
+          >
+            <option value="">Choose a Team</option>
+            {eligibleOpponents.map((candidate) => (
+              <option key={candidate.id} value={candidate.id}>
+                {candidate.name}
+              </option>
+            ))}
+          </select>
         </label>
         <label>
           Format
