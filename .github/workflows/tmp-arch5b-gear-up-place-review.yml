@@ -1,0 +1,60 @@
+name: ARCH5B Gear Up Place Review Exact
+
+on:
+  push:
+    branches:
+      - tmp/arch5b-gear-up-place-review
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hooma_ultimate_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hooma_ultimate_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hooma_ultimate_test
+      CI_BASE_SHA: 3b1507b3365df6eb26d777a1cd8c34d8fdccf80c
+      CI_HEAD_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Pin repository npm version
+        run: npm install --global npm@10.9.2
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npm run db:validate
+      - run: npm run db:migrate:deploy
+      - name: Check ARCH-5B formatting
+        run: |
+          npm exec -- prettier --check \
+            apps/api/src/modules/gear-up/infrastructure/prisma-gear-up.repository.ts \
+            tests/gear-up.integration.test.ts
+      - name: Lint changed source files
+        run: node scripts/check-changed-lint.mjs
+      - run: npm run architecture:check
+      - run: npm run typecheck
+      - run: npm run build:packages
+      - name: Run focused Gear Up integration test
+        run: npm exec -- tsx --test tests/gear-up.integration.test.ts
