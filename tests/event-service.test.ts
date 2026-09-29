@@ -6,10 +6,10 @@ import type {
   EventAccessRecord,
   EventRepository,
 } from "../apps/api/src/modules/events/application/event.repository.js";
+import type { EventPlaceAccess } from "../apps/api/src/modules/events/application/event-place-access.js";
 import { EventService } from "../apps/api/src/modules/events/application/event.service.js";
 import { EventError } from "../apps/api/src/modules/events/domain/event-error.js";
 import type { ApprovedPitchReader } from "../apps/api/src/modules/pitch/application/approved-pitch.reader.js";
-import type { PlaceService } from "../apps/api/src/modules/places/application/place.service.js";
 
 function repositoryStub(onCreate: () => void): EventRepository {
   return {
@@ -83,13 +83,14 @@ const playInput: EventCreateInput = {
   watch: null,
 };
 
-function approvedPlaces(onGet?: (placeId: string) => void): PlaceService {
+function approvedPlaces(onGet?: (placeId: string) => void): EventPlaceAccess {
   return {
     getPublic: async (placeId: string) => {
       onGet?.(placeId);
       return { id: placeId };
     },
-  } as unknown as PlaceService;
+    isVerifiedOwner: async () => true,
+  };
 }
 
 function approvedPitch(onGet?: (placeId: string) => void): ApprovedPitchReader {
@@ -140,6 +141,44 @@ test("EventService creates WATCH events through an approved canonical Place", as
   assert.equal(placeCheckCalled, true);
   assert.equal(coachCheckCalled, false);
   assert.equal(createCalled, true);
+});
+
+test("EventService rejects CULTURAL create after Place validation when ownership is not verified", async () => {
+  const order: string[] = [];
+  let createCalled = false;
+  const places: EventPlaceAccess = {
+    getPublic: async (placeId: string) => {
+      assert.equal(placeId, "place-1");
+      order.push("place");
+      return { id: placeId };
+    },
+    isVerifiedOwner: async (placeId: string, userId: string) => {
+      assert.equal(placeId, "place-1");
+      assert.equal(userId, "user-1");
+      order.push("owner");
+      return false;
+    },
+  };
+  const service = new EventService(
+    repositoryStub(() => {
+      createCalled = true;
+    }),
+    {} as CommunityCoachAuthorizer,
+    places,
+  );
+
+  await assert.rejects(
+    () =>
+      service.create("user-1", {
+        ...watchInput,
+        watch: { kind: "CULTURAL", culturalCategory: "MUSIC", imageUrl: null },
+      }),
+    (error: unknown) =>
+      error instanceof EventError && error.code === "WATCH_CULTURAL_OWNER_REQUIRED",
+  );
+
+  assert.deepEqual(order, ["place", "owner"]);
+  assert.equal(createCalled, false);
 });
 
 test("EventService still creates free PLAY events through community coach authority", async () => {
@@ -243,13 +282,14 @@ test("EventService checks persisted Cultural subtype on partial updates", async 
     updateCalled = true;
     return {} as never;
   };
-  const places = {
+  const places: EventPlaceAccess = {
+    getPublic: async (placeId: string) => ({ id: placeId }),
     isVerifiedOwner: async (placeId: string, userId: string) => {
       assert.equal(placeId, "place-1");
       assert.equal(userId, "user-1");
       return false;
     },
-  } as unknown as PlaceService;
+  };
   const service = new EventService(repository, {} as CommunityCoachAuthorizer, places);
 
   await assert.rejects(
