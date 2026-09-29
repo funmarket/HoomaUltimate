@@ -121,3 +121,69 @@ test("Gear Up repository reuses canonical Place and approves Place plus shop ato
     await db.user.deleteMany({ where: { id: { in: [submitter.id, admin.id] } } });
   }
 });
+
+
+test("Gear Up review preserves approved Place while approving pending shop", async () => {
+  const { PrismaGearUpRepository } = await loadRepository();
+  const repository = new PrismaGearUpRepository(db);
+  const suffix = Date.now().toString(36);
+  const submitter = await db.user.create({ data: {} });
+  const placeAdmin = await db.user.create({ data: {} });
+  const gearUpAdmin = await db.user.create({ data: {} });
+
+  try {
+    const created = await repository.suggest(
+      submitter.id,
+      input(`Gear Up Approved Place ${suffix}`, `20 Gear Street ${suffix}`),
+    );
+    assert.equal(created.outcome, "CREATED");
+    assert.equal(created.status, "PENDING");
+
+    const placeId = created.place.id;
+    const places = new PrismaPlaceRepository(db);
+    assert.equal(
+      await places.reviewPlace(placeAdmin.id, placeId, {
+        decision: "APPROVE",
+        note: "Canonical Place approved first",
+      }),
+      true,
+    );
+
+    const beforeShopReview = await db.place.findUniqueOrThrow({
+      where: { id: placeId },
+      select: { moderationStatus: true, reviewedByUserId: true, reviewNote: true },
+    });
+    assert.equal(beforeShopReview.moderationStatus, "APPROVED");
+    assert.equal(beforeShopReview.reviewedByUserId, placeAdmin.id);
+    assert.equal(beforeShopReview.reviewNote, "Canonical Place approved first");
+
+    assert.equal(
+      await repository.review(gearUpAdmin.id, placeId, {
+        decision: "APPROVE",
+        note: "Gear Up shop approved",
+      }),
+      true,
+    );
+
+    const afterPlace = await db.place.findUniqueOrThrow({
+      where: { id: placeId },
+      select: { moderationStatus: true, reviewedByUserId: true, reviewNote: true },
+    });
+    const reviewedShop = await db.gearUpShop.findUniqueOrThrow({
+      where: { placeId },
+      select: { moderationStatus: true, reviewedByUserId: true, reviewNote: true },
+    });
+
+    assert.equal(afterPlace.moderationStatus, "APPROVED");
+    assert.equal(afterPlace.reviewedByUserId, placeAdmin.id);
+    assert.equal(afterPlace.reviewNote, "Canonical Place approved first");
+    assert.equal(reviewedShop.moderationStatus, "APPROVED");
+    assert.equal(reviewedShop.reviewedByUserId, gearUpAdmin.id);
+    assert.equal(reviewedShop.reviewNote, "Gear Up shop approved");
+  } finally {
+    await db.place.deleteMany({ where: { suggestedByUserId: submitter.id } });
+    await db.user.deleteMany({
+      where: { id: { in: [submitter.id, placeAdmin.id, gearUpAdmin.id] } },
+    });
+  }
+});
