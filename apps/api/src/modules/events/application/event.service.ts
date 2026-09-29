@@ -6,7 +6,7 @@ import {
 } from "@hooma/contracts";
 import type { CommunityCoachAuthorizer } from "../../communities/application/community-coach.authorizer.js";
 import type { ApprovedPitchReader } from "../../pitch/application/approved-pitch.reader.js";
-import type { PlaceService } from "../../places/application/place.service.js";
+import type { EventPlaceAccess } from "./event-place-access.js";
 import { EventError } from "../domain/event-error.js";
 import { eventCheckInOpensAt } from "../domain/event-policy.js";
 import type {
@@ -25,7 +25,7 @@ export class EventService {
   constructor(
     private readonly repository: EventRepository,
     private readonly communities: CommunityCoachAuthorizer,
-    private readonly places: PlaceService,
+    private readonly places: EventPlaceAccess,
     private readonly pitch?: ApprovedPitchReader,
   ) {}
 
