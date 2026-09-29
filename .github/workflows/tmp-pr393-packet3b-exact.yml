@@ -55,6 +55,8 @@ jobs:
             echo
             echo "END_FILE_BASE64:${file}"
           done
+      - name: Generate Prisma client
+        run: npm run db:generate
       - name: Build workspace packages
         run: npm run build:packages
       - name: Run focused EventService test
