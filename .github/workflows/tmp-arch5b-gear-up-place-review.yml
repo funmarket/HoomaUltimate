@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   commit-exact-prettier-bytes:
-    if: github.event.head_commit.message != 'chore(tmp): commit exact ARCH-5B prettier bytes'
+    if: "${{ github.event.head_commit.message != 'chore(tmp): commit exact ARCH-5B prettier bytes' }}"
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
