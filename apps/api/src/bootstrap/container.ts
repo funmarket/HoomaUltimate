@@ -210,19 +210,19 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
   const gearUpProductMediaRepository = new PrismaGearUpProductMediaRepository(database);
   const gearUpService = new GearUpService(
     gearUpRepository,
-    placeRepository,
+    placeService,
     platformAdminService,
     placeImageResolver,
   );
   const gearUpProductService = new GearUpProductService(
     gearUpProductRepository,
-    placeRepository,
+    placeService,
     platformAdminService,
   );
   const gearUpProductMediaService = new GearUpProductMediaService(
     gearUpProductMediaRepository,
     gearUpProductRepository,
-    placeRepository,
+    placeService,
     platformAdminService,
     storage,
     new SharpGearUpProductImageProcessor(),
