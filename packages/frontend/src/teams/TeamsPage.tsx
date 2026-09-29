@@ -255,7 +255,7 @@ export function TeamsPage() {
 
           {loading && !teams.length ? (
             <div className="state-card">
-              <strong>Loading Teamsâ¦</strong>
+              <strong>Loading Teams…</strong>
             </div>
           ) : null}
           {!loading && !teams.length && !error ? (
@@ -293,7 +293,7 @@ export function TeamsPage() {
               disabled={loading}
               onClick={() => void loadMore()}
             >
-              {loading ? "Loadingâ¦" : "Load more Teams"}
+              {loading ? "Loading…" : "Load more Teams"}
             </button>
           ) : null}
         </>
@@ -312,7 +312,7 @@ export function TeamsPage() {
               </div>
             </div>
             {memberError ? <div className="error-box">{memberError}</div> : null}
-            {memberLoading ? <p className="muted">Loading your Teamsâ¦</p> : null}
+            {memberLoading ? <p className="muted">Loading your Teams…</p> : null}
             {!memberLoading && !myTeams.length ? <p className="muted">No Teams yet.</p> : null}
             {myTeams.length ? (
               <div className="team-discovery-grid">
@@ -353,7 +353,7 @@ export function TeamsPage() {
               </a>
             </div>
             {memberError ? <div className="error-box">{memberError}</div> : null}
-            {memberLoading ? <p className="muted">Loading requestsâ¦</p> : null}
+            {memberLoading ? <p className="muted">Loading requests…</p> : null}
             {!memberLoading && !challenges.length ? (
               <p className="muted">No Team requests yet.</p>
             ) : null}
@@ -366,13 +366,13 @@ export function TeamsPage() {
                   <article className="challenge-card" key={challenge.id}>
                     <div>
                       <span className="eyebrow">
-                        {incomingChallenge ? "INCOMING" : "OUTGOING"} Â· {challenge.status}
+                        {incomingChallenge ? "INCOMING" : "OUTGOING"} · {challenge.status}
                       </span>
                       <h3>
                         {challenge.challengerTeam.name} vs {challenge.challengedTeam.name}
                       </h3>
                       <p>
-                        {challenge.format.replaceAll("_", " ")} Â·{" "}
+                        {challenge.format.replaceAll("_", " ")} ·{" "}
                         {friendlyDate(challenge.proposedAt)}
                       </p>
                       {location ? <p className="team-game-location">{location}</p> : null}
@@ -443,7 +443,7 @@ export function TeamsPage() {
               </a>
             </div>
             {memberError ? <div className="error-box">{memberError}</div> : null}
-            {memberLoading ? <p className="muted">Loading gamesâ¦</p> : null}
+            {memberLoading ? <p className="muted">Loading games…</p> : null}
             {!memberLoading && !games.length ? (
               <p className="muted">No accepted Team games yet.</p>
             ) : null}
