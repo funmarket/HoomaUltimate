@@ -1,0 +1,50 @@
+name: Teams Challenge Handoff Green2
+
+on:
+  push:
+    branches:
+      - tmp/teams-challenge-handoff-green2
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - name: Show Prettier version
+        run: npm exec -- prettier --version
+      - name: Apply repository Prettier to Teams challenge files
+        run: |
+          npm exec -- prettier --write             packages/frontend/src/teams/TeamsPage.tsx             packages/frontend/src/teams/CoachControlRoomPage.tsx             tests/team-challenge-opponent-handoff.test.mjs
+      - name: Verify repository Prettier
+        run: |
+          npm exec -- prettier --check             packages/frontend/src/teams/TeamsPage.tsx             packages/frontend/src/teams/CoachControlRoomPage.tsx             tests/team-challenge-opponent-handoff.test.mjs
+      - name: Emit exact formatter diff
+        run: |
+          echo "FORMAT_DIFF_BEGIN"
+          git diff --             packages/frontend/src/teams/TeamsPage.tsx             packages/frontend/src/teams/CoachControlRoomPage.tsx             tests/team-challenge-opponent-handoff.test.mjs
+          echo "FORMAT_DIFF_END"
+      - name: Emit exact formatted bytes
+        run: |
+          echo "TEAMS_PAGE_BASE64_BEGIN"
+          base64 -w0 packages/frontend/src/teams/TeamsPage.tsx
+          echo
+          echo "TEAMS_PAGE_BASE64_END"
+          echo "CONTROL_ROOM_BASE64_BEGIN"
+          base64 -w0 packages/frontend/src/teams/CoachControlRoomPage.tsx
+          echo
+          echo "CONTROL_ROOM_BASE64_END"
+          echo "HANDOFF_TEST_BASE64_BEGIN"
+          base64 -w0 tests/team-challenge-opponent-handoff.test.mjs
+          echo
+          echo "HANDOFF_TEST_BASE64_END"
+      - name: Run opponent handoff regression test
+        run: node --test tests/team-challenge-opponent-handoff.test.mjs
