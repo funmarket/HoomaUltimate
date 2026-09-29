@@ -1,21 +1,20 @@
 import type { PitchApplicationInput, PitchManagementState } from "@hooma/contracts/pitch";
 import type { PlatformAdminAccessPort } from "../../../application/platform-admin-access.port.js";
 import { AppError } from "../../../http/errors/app-error.js";
-import type { PlaceRepository } from "../../places/application/place.repository.js";
+import type { PitchPlaceAccess } from "./pitch-place-access.js";
 import type { PitchRepository } from "./pitch.repository.js";
 
 export class PitchOwnerService {
   constructor(
     private readonly repository: PitchRepository,
-    private readonly places: PlaceRepository,
+    private readonly places: PitchPlaceAccess,
     private readonly platformAdmin: PlatformAdminAccessPort,
   ) {}
 
   async getManagementState(userId: string, placeId: string): Promise<PitchManagementState> {
-    const place = await this.places.getApproved(placeId);
-    if (!place) throw new AppError(404, "PLACE_NOT_FOUND", "Approved Place not found");
+    const place = await this.places.getPublic(placeId);
 
-    const verifiedOwnership = await this.places.hasVerifiedOwnership(placeId, userId);
+    const verifiedOwnership = await this.places.isVerifiedOwner(placeId, userId);
     if (!verifiedOwnership && !(await this.platformAdmin.isPlatformAdmin(userId))) {
       throw new AppError(
         403,
@@ -32,9 +31,8 @@ export class PitchOwnerService {
   }
 
   async submitRevision(userId: string, placeId: string, input: PitchApplicationInput) {
-    const place = await this.places.getApproved(placeId);
-    if (!place) throw new AppError(404, "PLACE_NOT_FOUND", "Approved Place not found");
-    if (!(await this.places.hasVerifiedOwnership(placeId, userId))) {
+    const place = await this.places.getPublic(placeId);
+    if (!(await this.places.isVerifiedOwner(placeId, userId))) {
       throw new AppError(
         403,
         "VERIFIED_PLACE_OWNER_REQUIRED",
