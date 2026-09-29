@@ -118,7 +118,7 @@ export function CoachControlRoomPage() {
     }
   }
 
-  if (!teams.length && !error) return <p className="status">Loading your managed Teams…</p>;
+  if (!teams.length && !error) return <p className="status">Loading your managed Teamsâ¦</p>;
 
   return (
     <section className="control-room">
@@ -154,7 +154,7 @@ export function CoachControlRoomPage() {
             </div>
             <div>
               <span>Houma</span>
-              <strong>{team.houma || team.city || "—"}</strong>
+              <strong>{team.houma || team.city || "â"}</strong>
             </div>
             <a href={`/teams/${team.id}`}>Open public Team profile</a>
           </section>
@@ -355,7 +355,8 @@ function CreateChallengeCard({
       ) {
         return initialOpponentTeamId;
       }
-      if (current && eligibleOpponents.some((candidate) => candidate.id === current)) return current;
+      if (current && eligibleOpponents.some((candidate) => candidate.id === current))
+        return current;
       return "";
     });
   }, [eligibleOpponents, initialOpponentTeamId]);
@@ -534,7 +535,7 @@ function ChallengeRow({
     <article className="challenge-row">
       <div>
         <strong>
-          {challenge.challengerTeam.name} → {challenge.challengedTeam.name}
+          {challenge.challengerTeam.name} â {challenge.challengedTeam.name}
         </strong>
         <span>{challenge.status}</span>
         {location ? <span>{location}</span> : null}
