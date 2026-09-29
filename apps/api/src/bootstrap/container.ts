@@ -200,7 +200,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
   const pitchSuggestionService = new PitchSuggestionService(pitchRepository, placeImageResolver);
   const pitchOwnerService = new PitchOwnerService(
     pitchRepository,
-    placeRepository,
+    placeService,
     platformAdminService,
   );
   const pitchModerationService = new PitchModerationService(pitchRepository, platformAdminService);
