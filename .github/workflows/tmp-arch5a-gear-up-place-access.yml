@@ -1,0 +1,53 @@
+name: ARCH5A Gear Up Place Access Exact
+
+on:
+  push:
+    branches:
+      - tmp/arch5a-gear-up-place-access
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NODE_ENV: test
+      CI_BASE_SHA: f7f9e4cf295de0928a8594a84f5e1918486baf8e
+      CI_HEAD_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Pin repository npm version
+        run: npm install --global npm@10.9.2
+      - run: npm ci
+      - run: npm run db:generate
+      - name: Check ARCH-5A candidate formatting
+        run: |
+          npm exec -- prettier --check \
+            apps/api/src/modules/gear-up/application/gear-up-place-access.ts \
+            apps/api/src/modules/gear-up/application/gear-up.service.ts \
+            apps/api/src/modules/gear-up/application/gear-up-product.service.ts \
+            apps/api/src/modules/gear-up/application/gear-up-product-media.service.ts \
+            apps/api/src/modules/places/application/place.service.ts \
+            apps/api/src/bootstrap/container.ts \
+            tests/gear-up-products.service.test.ts \
+            tests/gear-up-product-media.service.test.ts
+      - name: Lint changed source files
+        run: node scripts/check-changed-lint.mjs
+      - run: npm run architecture:check
+      - run: npm run typecheck
+      - run: npm run build:packages
+      - name: Run focused Gear Up tests
+        run: |
+          npm exec -- tsx --test \
+            tests/gear-up-service.test.mjs \
+            tests/gear-up-products.service.test.ts \
+            tests/gear-up-product-media.service.test.ts
