@@ -55,5 +55,7 @@ jobs:
             echo
             echo "END_FILE_BASE64:${file}"
           done
+      - name: Build workspace packages
+        run: npm run build:packages
       - name: Run focused EventService test
         run: npm exec -- tsx --test tests/event-service.test.ts
