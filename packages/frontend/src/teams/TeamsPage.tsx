@@ -279,7 +279,7 @@ export function TeamsPage() {
                   playerCount={team._count.players}
                   challengeHref={
                     me && managedTeams.some((managed) => managed.id !== team.id)
-                      ? "/teams/control"
+                      ? `/teams/control?challengedTeamId=${encodeURIComponent(team.id)}`
                       : null
                   }
                 />
