@@ -146,7 +146,7 @@ test("Gear Up review preserves approved Place while approving pending shop", asy
         note: "Canonical Place approved first",
       }),
       true,
-     );
+    );
 
     const beforeShopReview = await db.place.findUniqueOrThrow({
       where: { id: placeId },
