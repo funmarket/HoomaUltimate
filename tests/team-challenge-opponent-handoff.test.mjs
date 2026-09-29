@@ -17,10 +17,7 @@ test("Team discovery Challenge carries the selected opponent into Coach Control 
   );
   assert.match(controlRoom, /useSearchParams/);
   assert.match(controlRoom, /get\("challengedTeamId"\)/);
-  assert.match(
-    controlRoom,
-    /rows\.find\(\(candidate\) => candidate\.id !== challengedTeamId\)/,
-  );
+  assert.match(controlRoom, /rows\.find\(\(candidate\) => candidate\.id !== challengedTeamId\)/);
 });
 
 test("Coach Control Room chooses opponents by Team identity, never by a typed database id", async () => {
