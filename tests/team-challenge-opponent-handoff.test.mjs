@@ -28,7 +28,7 @@ test("Coach Control Room chooses opponents by Team identity, never by a typed da
 
   assert.match(controlRoom, />\s*Opponent Team\s*</);
   assert.match(controlRoom, /<select[\s\S]*name="challengedTeamId"/);
-  assert.match(controlRoom, /api\.publicList\(\{ limit: 100 \}\)/);
+  assert.match(controlRoom, /api\.teams\.publicList\(\{ limit: 100 \}\)/);
   assert.match(controlRoom, /<option[\s\S]*value=\{candidate\.id\}[\s\S]*candidate\.name/);
   assert.doesNotMatch(controlRoom, /Opponent Team ID/);
   assert.doesNotMatch(controlRoom, /<input name="challengedTeamId"/);
