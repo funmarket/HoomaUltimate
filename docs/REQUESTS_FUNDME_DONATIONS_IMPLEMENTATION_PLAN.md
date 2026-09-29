@@ -12,8 +12,9 @@ Open-PR behavior is in-flight only. Merged `phase-0-foundation` remains current 
 At this reconciliation:
 
 - target base: `phase-0-foundation`;
-- verified foundation HEAD: `3cafb5c78bf78df0935f7a6b3849ba8c5bbc1fd4`;
-- exact-head foundation CI: `36504854292` — **SUCCESS**;
+- application/source baseline before the documentation rebaseline: `3cafb5c78bf78df0935f7a6b3849ba8c5bbc1fd4`, CI `36504854292` — **SUCCESS**;
+- documentation rebaseline proof point: `79aec96bc09a4fabcd2a2b0215c1f501cea51cc7`, CI `36623002165` — **SUCCESS**;
+- these SHAs are dated evidence only; re-read the live `phase-0-foundation` head before every implementation mutation;
 - PR `#351` is merged, not draft;
 - PR `#347` Play -> Requests projection is merged;
 - later merged Requests slices include canonical server search and current presentation/projection/create/detail work through PRs `#367`, `#368`, `#373`, `#375`, and `#379`;

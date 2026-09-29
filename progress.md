@@ -6,11 +6,13 @@ This file is a non-authoritative execution and verification log. Product behavio
 
 Target branch: `phase-0-foundation`
 
-Verified foundation HEAD: `3cafb5c78bf78df0935f7a6b3849ba8c5bbc1fd4`
+Application/source baseline immediately before the documentation rebaseline: `3cafb5c78bf78df0935f7a6b3849ba8c5bbc1fd4` with CI `36504854292` — **SUCCESS**.
 
-Exact-head CI: run `36504854292` — **SUCCESS**
+Documentation rebaseline commit `79aec96bc09a4fabcd2a2b0215c1f501cea51cc7` also passed exact-head CI `36623002165` — **SUCCESS**.
 
-Latest merged foundation change: PR `#394`, Team challenge opponent handoff.
+These SHAs are dated evidence, **not a permanent claim about the live branch head**. Always read `phase-0-foundation` live before consequential work.
+
+Latest merged user-facing foundation change before the documentation rebaseline: PR `#394`, Team challenge opponent handoff.
 
 ### Current merged domain state
 

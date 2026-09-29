@@ -360,7 +360,7 @@ Places | Ride | Requests
 
 Current availability on `phase-0-foundation`:
 
-> Current-state snapshot verified 2026-09-29: foundation HEAD `3cafb5c78bf78df0935f7a6b3849ba8c5bbc1fd4`, exact-head CI `36504854292` SUCCESS. This SHA is evidence for this reconciliation, not a permanent hard-coded branch assumption; agents must re-read the branch before mutation.
+> Reconciliation evidence verified 2026-09-29: application/source baseline `3cafb5c78bf78df0935f7a6b3849ba8c5bbc1fd4` passed CI `36504854292`; documentation rebaseline `79aec96bc09a4fabcd2a2b0215c1f501cea51cc7` passed CI `36623002165`. These are historical proof points, not a hard-coded current-HEAD claim. Agents must read `phase-0-foundation` live before mutation.
 
 - HOOMA -> `/hooma`
 - Teams -> `/teams`

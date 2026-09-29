@@ -63,19 +63,19 @@ Status notation:
 
 ## Foundation truth
 
-Verified 2026-09-29:
-
-`phase-0-foundation` HEAD:
+Verified 2026-09-29 reconciliation evidence:
 
 ```text
+application/source baseline before doc rebaseline:
 3cafb5c78bf78df0935f7a6b3849ba8c5bbc1fd4
+CI 36504854292 — SUCCESS
+
+documentation rebaseline proof point:
+79aec96bc09a4fabcd2a2b0215c1f501cea51cc7
+CI 36623002165 — SUCCESS
 ```
 
-Exact-head CI:
-
-```text
-36504854292 — SUCCESS
-```
+These are dated proof points, not a permanent current-HEAD declaration. Every Ride task must read the live `phase-0-foundation` ref before mutation.
 
 Current foundation contains the real Rides API/frontend domain, Ride Request/Offer flows, participation, meeting-point privacy, Community RideRequest projection, Ride vehicle-photo metadata, and Ride-context Whistle authorization through the shared Whistle service.
 
