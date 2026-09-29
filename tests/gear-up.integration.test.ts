@@ -122,7 +122,6 @@ test("Gear Up repository reuses canonical Place and approves Place plus shop ato
   }
 });
 
-
 test("Gear Up review preserves approved Place while approving pending shop", async () => {
   const { PrismaGearUpRepository } = await loadRepository();
   const repository = new PrismaGearUpRepository(db);
@@ -147,7 +146,7 @@ test("Gear Up review preserves approved Place while approving pending shop", asy
         note: "Canonical Place approved first",
       }),
       true,
-    );
+     );
 
     const beforeShopReview = await db.place.findUniqueOrThrow({
       where: { id: placeId },
