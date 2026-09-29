@@ -28,7 +28,7 @@ PR `#393` remains **OPEN / DRAFT / UNMERGED** on `arch/packet-1-cross-domain-own
 
 Last independently verified architecture head before this documentation rebaseline: `3b1507b3365df6eb26d777a1cd8c34d8fdccf80c`.
 
-ARCH-1 through ARCH-5A are verified on that candidate. ARCH-5B has a temp candidate/provenance path but is not yet applied to PR #393 and must not be described as merged. ARCH-6 and later packets have not started.
+ARCH-1 through ARCH-5A are verified on that candidate. ARCH-5B now has a **clean exact-head verified temp candidate** at `f8ec4133518fa0b0057f6c8e5c3b78f2518b1f0f`: run `36623637771` passed database generation/validation/migration, Prettier check, changed-source lint, architecture check, typecheck, package build, and the focused Gear Up integration test. ARCH-5B is still **not applied to PR #393** and must not be described as merged. ARCH-6 and later packets have not started.
 
 ### Locked product sequencing
 
