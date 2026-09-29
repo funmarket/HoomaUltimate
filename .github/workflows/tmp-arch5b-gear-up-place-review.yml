@@ -1,4 +1,4 @@
-name: ARCH5B Exact Prettier Self Commit
+name: ARCH5B Gear Up Place Review Exact
 
 on:
   push:
@@ -6,108 +6,55 @@ on:
       - tmp/arch5b-gear-up-place-review
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  commit-exact-prettier-bytes:
-    if: "${{ github.event.head_commit.message != 'chore(tmp): commit exact ARCH-5B prettier bytes' }}"
+  validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hooma_ultimate_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hooma_ultimate_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hooma_ultimate_test
+      CI_BASE_SHA: 3b1507b3365df6eb26d777a1cd8c34d8fdccf80c
+      CI_HEAD_SHA: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-
       - name: Pin repository npm version
         run: npm install --global npm@10.9.2
-
-      - name: Install repository dependencies
-        run: npm ci
-
-      - name: Generate exact repository-Prettier bytes
-        run: npm exec -- prettier --write tests/gear-up.integration.test.ts
-
-      - name: Require exact formatted test SHA-256
-        shell: bash
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npm run db:validate
+      - run: npm run db:migrate:deploy
+      - name: Check ARCH-5B formatting
         run: |
-          expected="8598c4a1dd4cf25f9c2f5d25f4997ad4aa09cf591afa1c7b3583b65128cdfd86"
-          actual="$(sha256sum tests/gear-up.integration.test.ts | awk '{print $1}')"
-          echo "generated_sha256=$actual"
-          if [ "$actual" != "$expected" ]; then
-            echo "Formatted test SHA-256 mismatch"
-            exit 1
-          fi
-
-      - name: Require exact working-tree scope
-        shell: bash
-        run: |
-          changed="$(git diff --name-only)"
-          printf 'working_tree_files=%s\n' "$changed"
-          if [ "$changed" != "tests/gear-up.integration.test.ts" ]; then
-            echo "Unexpected working-tree changes"
-            exit 1
-          fi
-          git diff --check
-
-      - name: Require unchanged remote temp head
-        shell: bash
-        run: |
-          remote="$(git ls-remote origin refs/heads/tmp/arch5b-gear-up-place-review | awk '{print $1}')"
-          echo "remote_before=$remote"
-          echo "run_start=$GITHUB_SHA"
-          if [ "$remote" != "$GITHUB_SHA" ]; then
-            echo "Remote temp branch moved"
-            exit 1
-          fi
-
-      - name: Commit exact formatted test only
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- tests/gear-up.integration.test.ts
-
-          staged="$(git diff --cached --name-only)"
-          printf 'staged_files=%s\n' "$staged"
-          if [ "$staged" != "tests/gear-up.integration.test.ts" ]; then
-            echo "Unexpected staged paths"
-            exit 1
-          fi
-
-          git commit -m "chore(tmp): commit exact ARCH-5B prettier bytes"
-
-          committed_files="$(git show --name-only --format= HEAD | sed '/^$/d')"
-          printf 'commit_files=%s\n' "$committed_files"
-          if [ "$committed_files" != "tests/gear-up.integration.test.ts" ]; then
-            echo "Unexpected self-commit paths"
-            exit 1
-          fi
-
-          expected="8598c4a1dd4cf25f9c2f5d25f4997ad4aa09cf591afa1c7b3583b65128cdfd86"
-          actual="$(sha256sum tests/gear-up.integration.test.ts | awk '{print $1}')"
-          echo "committed_sha256=$actual"
-          if [ "$actual" != "$expected" ]; then
-            echo "Committed test SHA-256 mismatch"
-            exit 1
-          fi
-
-          echo "self_commit=$(git rev-parse HEAD)"
-
-      - name: Push temp self-commit and verify remote ref
-        shell: bash
-        run: |
-          self_commit="$(git rev-parse HEAD)"
-          git push origin HEAD:refs/heads/tmp/arch5b-gear-up-place-review
-          remote="$(git ls-remote origin refs/heads/tmp/arch5b-gear-up-place-review | awk '{print $1}')"
-          echo "remote_after=$remote"
-          echo "self_commit=$self_commit"
-          if [ "$remote" != "$self_commit" ]; then
-            echo "Remote temp ref does not match self-commit"
-            exit 1
-          fi
+          npm exec -- prettier --check \
+            apps/api/src/modules/gear-up/infrastructure/prisma-gear-up.repository.ts \
+            tests/gear-up.integration.test.ts
+      - name: Lint changed source files
+        run: node scripts/check-changed-lint.mjs
+      - run: npm run architecture:check
+      - run: npm run typecheck
+      - run: npm run build:packages
+      - name: Run focused Gear Up integration test
+        run: npm exec -- tsx --test tests/gear-up.integration.test.ts
