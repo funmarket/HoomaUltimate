@@ -77,21 +77,23 @@ test("Athletes Calendar uses the device-resolved IANA timezone and no geographic
   assert.match(component, /from this phone\/device/);
 });
 
-test("ADR-057 stays base, ADR-058 owns RSVP, and ADR-059 owns concurrency/count semantics", async () => {
-  const base = await source("docs/adr/ADR-057-athletes-calendar.md");
-  const rsvp = await source("docs/adr/ADR-058-athletes-calendar-rsvp.md");
-  const concurrency = await source(
-    "docs/adr/ADR-059-athletes-calendar-rsvp-concurrency-and-counts.md",
+test("consolidated ADR-057, ADR-058, and ADR-059 preserve Calendar ownership and RSVP semantics", async () => {
+  const decisions = await source("docs/DECISIONS.md");
+  const base = decisions.slice(decisions.indexOf("## ADR-057"), decisions.indexOf("## ADR-058"));
+  const rsvp = decisions.slice(decisions.indexOf("## ADR-058"), decisions.indexOf("## ADR-059"));
+  const concurrency = decisions.slice(
+    decisions.indexOf("## ADR-059"),
+    decisions.indexOf("## ADR-060"),
   );
 
-  assert.match(base, /reads do not acquire the Athletes lifecycle row lock/i);
-  assert.match(base, /Founder.*mutations.*FOR UPDATE/is);
+  assert.match(base, /do not acquire the Athletes lifecycle row lock/i);
+  assert.match(base, /Founder Calendar mutations.*FOR UPDATE/is);
   assert.match(base, /AthletesCalendarEntry/);
-  assert.match(rsvp, /Going.*Maybe.*Not going/is);
+  assert.match(rsvp, /GOING \| MAYBE \| NOT_GOING/);
   assert.match(rsvp, /AthletesCalendarRsvp/);
   assert.match(rsvp, /generic Event RSVP/i);
-  assert.match(rsvp, /active.*members/i);
+  assert.match(rsvp, /active same-community Athletes member/i);
   assert.match(concurrency, /FOR SHARE/);
-  assert.match(concurrency, /leftAt IS NULL/);
-  assert.match(concurrency, /rows remain durable/i);
+  assert.match(concurrency, /active same-community AthletesMembership/i);
+  assert.match(concurrency, /RSVP rows remain durable/i);
 });
