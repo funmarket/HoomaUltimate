@@ -247,11 +247,11 @@ Requirements include:
 
 ## 3.3 Shared visual semantics and assets
 
-The current shared theme defines the app-wide visual foundation. New or repaired surfaces should consume the shared tokens instead of inventing page-local systems:
+The product-owner-approved app-wide visual foundation is canonical here. New or repaired surfaces should consume shared tokens that implement these rules instead of inventing page-local systems:
 
 - background `#050605`, normal surface `#0b0c0a`, raised surface `#0e0f0d`;
 - structural outline `rgba(190, 180, 145, 0.22)`;
-- primary text `#F5F4EF`, supporting description token `#D8D4CA`, metadata `#B8B5AD`, placeholder `#858780`;
+- primary readable text uses the approved near-white role `#F5F4EF` / `#F7F7F7`; descriptive/body text uses `#F7F7F7`; metadata `#B8B5AD`; placeholder `#858780`; ordinary UI icons use Brilliant Silver `#A9B0B4` unless explicitly assigned another product/semantic color;
 - interactive accent `#AEF02F`;
 - semantic state colors remain shared: positive/active green, people identity blue, warning orange, destructive/error red, and restrained gold for brand/title emphasis rather than status;
 - normal mobile baselines use 24px page titles, 20px section titles, 17px card titles, 16px body text, 14px metadata, 12px eyebrows/readability floor, 48px controls/touch targets, 18px card radius, and 14px control radius;
@@ -1429,4 +1429,3 @@ Do not turn it into:
 For future-approved domains, this document may state product direction before implementation exists, but the text must make that distinction clear.
 
 When the product owner makes a newer explicit decision that conflicts with this file, implementation follows the newer decision and this contract should be updated promptly so later agents do not drift back to stale behavior.
-

@@ -96,6 +96,12 @@ Mandatory:
 - Preserve explicit one-way dependency direction and avoid circular dependencies.
 - A lower-level canonical domain must not import a higher-level product domain merely to make one workflow convenient.
 - Cross-domain workflows use explicit application ports/orchestrators while the owning domain retains its own business and persistence authority.
+- Cross-domain consumers depend on the narrowest sufficient consumer-specific application capability/port; do not inject a complete foreign application service when a smaller capability satisfies the need.
+- Application/domain code in one domain must not import another domain's infrastructure implementation; bootstrap/composition wiring may connect owner-provided implementations to explicit ports.
+- A domain must not directly mutate another domain's canonical persistence. Shared transaction or atomicity requirements do not transfer ownership; use an owner-controlled transaction-capable boundary.
+- An orchestrator may coordinate multiple domains but must not absorb their business rules, authorization, repositories, or canonical persistence ownership.
+- Do not create a universal cross-domain service, repository, permissions gateway, or generic business owner. Shared primitives are allowed; shared business ownership is not.
+- Do not create a second canonical service, persistence owner, parallel business model, or source of truth for an existing responsibility.
 - Keep HTTP/transport concerns out of domain/application policy.
 - Keep Prisma/database-specific behavior in infrastructure/repository boundaries.
 - Keep authorization server-side and capability-specific.

@@ -173,7 +173,15 @@ one domain -> another domain's Prisma repository
 lower-level canonical domain -> higher-level product domain
 ```
 
-Cross-domain collaboration uses explicit application interfaces or orchestrators.
+### Cross-domain ownership boundaries
+
+Cross-domain collaboration uses explicit application capabilities/ports or orchestrators. The owning domain keeps its business rules, lifecycle, authorization, repositories, and canonical persistence mutations.
+
+- A consumer uses the narrowest sufficient consumer-specific capability instead of depending on a complete foreign application service when a smaller boundary is sufficient.
+- Application/domain code in one domain must not import another domain's `infrastructure/` implementation. Bootstrap/composition wiring may connect owner-provided implementations to explicit application/domain ports.
+- No domain directly mutates another domain's canonical persistence. Shared transaction or atomicity requirements do not transfer ownership; the owning domain must expose an owner-controlled transaction-capable boundary when one is required.
+- Orchestration coordinates multiple owners without becoming a new generic business owner or absorbing their authorization, repositories, business rules, or persistence authority.
+- Universal cross-domain services, repositories, permissions gateways, duplicate canonical services, duplicate persistence owners, parallel business models, and competing sources of truth are forbidden. Shared packages may expose genuinely shared primitives but must not hide business ownership.
 
 ### No monolithic authorities
 
@@ -466,4 +474,3 @@ For every task:
 14. Report exact changed files, documentation updates, proof, current commit, remaining risk, and evidence-based score.
 
 No task is complete while affected governing documentation still describes the old source state.
-
