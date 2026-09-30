@@ -27,18 +27,18 @@ packages/
 
 ## Mandatory reading before implementation
 
-Every agent or developer must read:
+The project-control documentation is intentionally limited to these eight files:
 
-1. `AGENTS.md`
-2. `docs/LIVING_BUILD_PLAN.md`
-3. the relevant sections of `requirements.md`
-4. the relevant sections of `structure.md`
-5. the relevant ADRs in `docs/DECISIONS.md`
-6. the relevant data/authority contracts in `docs/CANONICAL_MODEL.md`
+1. `README.md` — repository entry point and document map;
+2. `AGENTS.md` — mandatory execution rules;
+3. `docs/LIVING_BUILD_PLAN.md` — implementation and verification discipline;
+4. `requirements.md` — product behavior and acceptance requirements;
+5. `structure.md` — repository/application architecture and current topology;
+6. `docs/DECISIONS.md` — consolidated architectural/product decisions;
+7. `docs/CANONICAL_MODEL.md` — canonical data and authority model;
+8. `progress.md` — historical implementation/verification evidence and durable progress notes.
 
-Then inspect the actual source, current branch HEAD, open overlapping PRs, and relevant runtime/database evidence before editing.
-
-The retired `docs/NORMALIZATION_PLAN.md` and `docs/IMPLEMENTATION_STATUS.md` are not active governance and must not be recreated unless the product owner explicitly asks for them.
+Read the relevant parts of those files, then inspect the actual source, current branch HEAD, overlapping work, and relevant runtime/database evidence before editing. Do not recreate retired, duplicate, scoped-plan, status, or standalone ADR Markdown files unless the product owner explicitly changes this eight-document rule.
 
 ## Domain ownership rule
 
@@ -50,16 +50,9 @@ This is a scalability and product-performance rule as well as a code-organizatio
 
 Documentation is part of each implementation task. When a task changes product behavior, architecture, canonical data ownership, routes, authorization, persistence, deployment/runtime topology, or current source state, the affected authoritative docs must be updated in that same task.
 
-Current authority is intentionally centralized:
+Current authority is intentionally centralized in the eight files above. Put product behavior in `requirements.md`, architecture/current topology in `structure.md`, canonical data/authority in `docs/CANONICAL_MODEL.md`, decisions in `docs/DECISIONS.md`, execution discipline in `AGENTS.md` / `docs/LIVING_BUILD_PLAN.md`, and durable historical evidence in `progress.md`.
 
-- `requirements.md` — product behavior;
-- `structure.md` — architecture/current topology;
-- `docs/CANONICAL_MODEL.md` — canonical data and authority;
-- `docs/DECISIONS.md` — architectural decisions;
-- `AGENTS.md` and `docs/LIVING_BUILD_PLAN.md` — execution discipline.
-- `docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md` — active scoped execution program for the authorized Help sequence (complete Requests first, then FundMe, then Donations, then Help overview); it does not override the governing product/architecture documents above.
-
-Do not create duplicate architecture/status documents when an authoritative file already owns the subject. Open PR behavior is in-flight and must not be documented as merged foundation truth.
+Do not create duplicate architecture, status, roadmap, scoped-plan, or standalone ADR documents when one of the eight authoritative files already owns the subject. In-flight work is evidence to inspect, not canonical product truth.
 
 ## First run
 

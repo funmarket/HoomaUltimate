@@ -8,7 +8,7 @@ These rules apply to every AI agent, developer, automation, and coding session w
 
 Before changing anything, read this file and `docs/LIVING_BUILD_PLAN.md`. For product and architecture truth, read the relevant parts of `structure.md`, `requirements.md`, `docs/CANONICAL_MODEL.md`, and `docs/DECISIONS.md`.
 
-The retired files `docs/NORMALIZATION_PLAN.md` and `docs/IMPLEMENTATION_STATUS.md` must not be recreated or treated as active governance unless the product owner explicitly asks for them again.
+Project-control documentation is limited to the eight files named in `README.md`. Do not recreate retired, duplicate, scoped-plan, status, or standalone ADR Markdown files unless the product owner explicitly changes that rule.
 
 ---
 
@@ -96,6 +96,12 @@ Mandatory:
 - Preserve explicit one-way dependency direction and avoid circular dependencies.
 - A lower-level canonical domain must not import a higher-level product domain merely to make one workflow convenient.
 - Cross-domain workflows use explicit application ports/orchestrators while the owning domain retains its own business and persistence authority.
+- Cross-domain consumers depend on the narrowest sufficient consumer-specific application capability/port; do not inject a complete foreign application service when a smaller capability satisfies the need.
+- Application/domain code in one domain must not import another domain's infrastructure implementation; bootstrap/composition wiring may connect owner-provided implementations to explicit ports.
+- A domain must not directly mutate another domain's canonical persistence. Shared transaction or atomicity requirements do not transfer ownership; use an owner-controlled transaction-capable boundary.
+- An orchestrator may coordinate multiple domains but must not absorb their business rules, authorization, repositories, or canonical persistence ownership.
+- Do not create a universal cross-domain service, repository, permissions gateway, or generic business owner. Shared primitives are allowed; shared business ownership is not.
+- Do not create a second canonical service, persistence owner, parallel business model, or source of truth for an existing responsibility.
 - Keep HTTP/transport concerns out of domain/application policy.
 - Keep Prisma/database-specific behavior in infrastructure/repository boundaries.
 - Keep authorization server-side and capability-specific.
@@ -170,27 +176,13 @@ Use the existing authoritative document for the subject instead of creating a ne
 - product behavior -> `requirements.md`;
 - repository/domain architecture -> `structure.md`;
 - canonical data/authority -> `docs/CANONICAL_MODEL.md`;
-- architectural decisions -> `docs/DECISIONS.md` and a dedicated ADR only when useful;
+- architectural decisions -> `docs/DECISIONS.md`;
 - execution discipline -> `AGENTS.md` / `docs/LIVING_BUILD_PLAN.md`;
-- current implementation history/evidence -> `progress.md` and scoped audit documents where already established.
+- durable implementation history/evidence -> `progress.md`.
 
-Do not duplicate an authoritative document just to record the same truth in another place. If an older document duplicates a newer authority, convert it to an explicit reference/retired pointer or update it so it cannot contradict the canonical source.
+Do not duplicate an authoritative document just to record the same truth in another place. Canonical project documents describe durable product, architecture, authority, execution rules, and durable progress; they must not embed mutable branch/PR/SHA/CI/deployment snapshots or execution roadmaps as current truth.
 
-Documentation updates must describe **merged/current truth** separately from **in-flight PR work**. An open PR is not current foundation truth until merged.
-
-### Stale-document gate
-
-Active documentation must never be allowed to become a second source of drift.
-
-Before starting consequential work and again before reporting completion:
-
-- re-verify mutable branch, PR, SHA, CI, deployment and implementation-status claims that the task depends on;
-- if an active document still calls a merged/closed PR open, a completed slice not started, or an old SHA current, update or remove that stale claim in the same task;
-- keep historical execution/audit documents explicitly labeled **historical**, **archived** or **reference-only** rather than silently rewriting history;
-- distinguish live `phase-0-foundation` truth from open architecture/feature candidates;
-- never use a stale document, old CI run or historical branch status as authorization to change current source.
-
-If current source and an active document disagree, current source/runtime proves what exists now; reconcile the document before another agent builds on the stale statement.
+Before consequential work, inspect the live repository and relevant runtime evidence directly. In-flight work may be inspected as evidence, but it does not override the eight canonical documents or become current product truth merely because it exists in a branch or pull request.
 
 ---
 

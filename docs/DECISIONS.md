@@ -147,7 +147,7 @@ MANAGE_TEAM_EVENTS
 
 ## ADR-022 — Cash and Telegram Stars are the initial payment rails
 
-**Decision:** When the independent Payments domain is implemented for a context that invokes payment execution, the current owner-approved near-term methods for **HOOMA services/fees** are **Cash, Crypto and Telegram Stars**. No credit/debit-card rail is active now; Stripe is intentionally deferred until the app is running. Telegram Stars apply only where platform rules permit HOOMA digital services/fees and are not a generic rail for real-world rental/user obligations.
+**Decision:** When the independent Payments domain is implemented for a context that invokes payment execution, its historical initial rails are `CASH | TELEGRAM_STARS` unless a later explicit Payments decision changes them. No credit-card rail is introduced by implication.
 
 **Current-state note:** ADR-060 separately authorizes FundMe's initial contribution coordination as **Cash and Crypto only inside Fundraising**. That FundMe flow is manual/confirmed accounting and does not mean the Payments domain executes cards, Telegram Stars or custodial crypto. Ride/Pitch cash terms remain owning-domain terms until Payments is explicitly integrated.
 
@@ -249,19 +249,15 @@ Production runtimes that can create or clean up managed media require complete `
 
 **Reason:** Product architecture and migration history remain greenfield.
 
-## ADR-038 — Normalization freeze precedes new domains
+## ADR-038 — Historical normalization freeze is retired
 
-**Decision:** While `docs/NORMALIZATION_PLAN.md` is active, new Places/Watch/Pitch/ULTRAS/Gamers/Requests/Ride/FundMe/Payments/Media/Replay/HOOMA NOW implementation remains frozen unless explicitly unfrozen by a newer product-owner decision.
+**Decision:** The old normalization execution hold is retired and has no current authority. Current domain authorization and product behavior are governed by the later decisions in this consolidated file, `requirements.md`, and the implemented source. Retired planning material must never control current work.
 
-**Reason:** Existing foundation inconsistencies must be corrected before dependency-heavy domains build on them.
+**Reason:** The project has moved beyond the temporary normalization phase; retaining its old gate as active authority would reintroduce stale execution control.
 
-**Superseded in part by ADR-048:** Requests/Ride route registration and honest frontend shells were narrowly authorized.
+## ADR-039 — Whistle vertical slice is explicitly authorized
 
-**Superseded in part by ADR-050:** Ride and Requests backend/domain/persistence/API/frontend vertical slices are explicitly unfrozen for their own bounded implementation tasks. Fundraising and physical-item Donations are now explicitly authorized by ADR-060 in the ordered Help program. Payments, ULTRAS and generic Media remain separately governed unless separately authorized.
-
-## ADR-039 — Whistle vertical slice is explicitly unfrozen
-
-**Decision:** The product owner explicitly authorized Whistle setup on 2026-08-23. Whistle is therefore removed from ADR-038's freeze and becomes a current vertical slice. The shared Whistle engine is implemented once and reused by approved contexts.
+**Decision:** The product owner explicitly authorized Whistle setup. Whistle is a current implemented vertical slice. The shared Whistle engine is implemented once and reused by approved contexts.
 
 **Superseded retention note:** The original ADR-039 text specified rolling 24-hour unread TTL and a 60-second Reveal window. ADR-040 supersedes those retention/visibility mechanics with UTC-day expiry and direct authorized visibility. Do not implement the older Reveal lifecycle.
 
@@ -298,21 +294,17 @@ Current enabled contexts include private `COMMUNITY`, authorized `EVENT`, author
 
 ## ADR-041 — Gamers human-first match system is explicitly authorized
 
-**Decision:** The product owner explicitly authorized the Gamers vertical slice on 2026-08-23. Gamers is therefore removed from ADR-038's freeze for the bounded Gamers work recorded in `docs/GAMERS_PRODUCT_CONTRACT.md`.
+**Decision:** The product owner explicitly authorized Gamers as an independent HOOMA domain. Its durable product rules are consolidated here and in `requirements.md`; implemented behavior is verified from the Gamers source/contracts/tests.
 
 Gamers remains an independent domain. One canonical HOOMA User owns game-specific GamerProfiles. The V1 competitive loop is human-confirmed: challenge -> accept -> HOOMA Match Card -> external gameplay -> result submission -> opponent confirm or contest -> completed human-confirmed result -> per-game ranking. HOOMA does not require external EA/Ludo gameplay APIs or pretend it observed gameplay it did not observe.
 
 Authenticated users may contribute missing games to the persisted Gamers catalog. Platform Admin is later curation/merge/deactivation authority, not the sole creator and not a blocker on legitimate game contribution. `GamerSquad` is the one gaming team/community concept. Squad Whistle uses the shared Whistle engine through `GAMER_SQUAD` only after explicit active Squad-membership authorization exists; there is no global Gamers Whistle feed or parallel Gamer chat system.
-
-The dedicated decision record is `docs/adr/ADR-041-gamers-human-match-system.md`.
 
 **Reason:** HOOMA should coordinate human gaming interaction, preserve what participants agree happened, and build game-specific reputation without duplicating identity/community/messaging systems or relying on opaque external automation.
 
 ## ADR-042 — Pitch suggestion and claim lifecycle
 
 **Decision:** Pitch is an implemented dedicated product over canonical `Place`. A Pitch submission creates the Place and pending `PITCH` capability with real hourly pricing for App Admin review and carries immutable `OWNER | FANHUB` Place submission provenance. A new `OWNER` submission creates one pending canonical ownership claim for the submitter but never grants verified `PlaceOwnership`; a new `FANHUB` submission creates no ownership claim and retains the existing explicit claim-later path. Duplicate detection reuses the existing Place without rewriting provenance or silently creating ownership authority, and later ownership approval does not rewrite the original provenance. Verified owners use `PlaceCapabilityApplication` for later Pitch profile/pricing updates, while canonical Place contact and `PlaceImage[]` remain the single contact/media authorities.
-
-The dedicated decision record is `docs/adr/ADR-042-pitch-suggestion-claim-lifecycle.md`.
 
 **Reason:** Preserve one physical venue/contact/media truth while allowing Pitch discovery, moderation, ownership claims, and reviewed rental-profile updates without duplicate venue data or fabricated pricing.
 
@@ -324,8 +316,6 @@ The dedicated decision record is `docs/adr/ADR-042-pitch-suggestion-claim-lifecy
 
 Gamers remains independent and is not a Home gateway. ULTRAS remains unavailable and independent; it must not create a Community row or use a generic `CommunityType`.
 
-The dedicated historical record is `docs/adr/ADR-048-home-create-flow-ia.md`.
-
 **Reason:** Preserve the valid simplification/domain-boundary decision without allowing obsolete IA labels to override current source.
 
 ## ADR-053 — HOOMA creates only HOOMA Communities
@@ -335,8 +325,6 @@ The dedicated historical record is `docs/adr/ADR-048-home-create-flow-ia.md`.
 Team creation remains owned by Teams at `/teams/new`. A Team creation flow selects one eligible HOOMA community context inside Teams before calling the Teams create API. When a Team creator lacks an eligible HOOMA, the only bounded continuation is `/hooma/new?after=team-create`; a successful HOOMA creation returns to `/teams/new?communityId=<created-id>`. Future ULTRAS creation remains unavailable until its independent domain ships and must not be implemented through Communities or a generic `CommunityType`.
 
 Home may continue to link to independent product gateways such as Teams, but those links are navigation, not HOOMA-owned creation.
-
-The dedicated decision record is `docs/adr/ADR-053-hooma-communities-only-creation.md`.
 
 **Reason:** HOOMA is the product/community umbrella, but durable concepts still need one owning domain. Keeping HOOMA Community creation, Team creation and future supporter-community creation in their own domains prevents duplicate flows, generic creation abstractions and hidden orphan states.
 
@@ -350,21 +338,19 @@ No new DirectMessage, Conversation, inbox, direct-pair, Whistle-preference, or W
 
 **Reason:** This is the smallest complete User-to-User Whistle slice: it preserves one canonical User and one Whistle engine, avoids a new messaging/privacy subsystem, prevents client-forged direct contexts, and keeps current working Whistle contexts isolated from unrelated refactoring.
 
-## ADR-050 — Ride and Requests vertical slices are explicitly unfrozen
+## ADR-050 — Ride and Requests are independent authorized vertical slices
 
-**Decision:** The product owner explicitly authorized durable Ride and Requests implementation through `rideplan.md`. Ride and Requests are therefore removed from ADR-038's freeze for their bounded, domain-owned vertical slices: contracts, persistence, APIs, application services and frontend may be implemented only in their numbered plan order and only inside their owning boundaries.
+**Decision:** The product owner explicitly authorized durable Ride and Requests as bounded, domain-owned vertical slices. Ride and Requests retain their own contracts, persistence, APIs, application services and frontend ownership; neither may absorb adjacent domains.
 
-Ride owns ride offers, ride requests, participation, meeting-point privacy, waypoints and Ride vehicle-photo metadata. Ride also owns product context and advertised compensation terms for those records. `MATCHDAY` and `GENERAL` are contexts of the same Ride domain, not separate tables, APIs, repositories or services. User-facing `GENERAL` wording is Anywhere Ride. Ride may advertise `FREE` or `CASH` compensation terms, but Ride does not process money; payment intents, checkout, settlement, wallet/card/provider state and paid/payment-received statuses remain future Payments/PAY-001 ownership. A Ride destination must use exactly one strategy: owning Event reference, canonical Place reference or Ride-owned custom destination label. Event and Place facts remain owned by those domains and are read through narrow reference ports. Ride participation requests require driver/owner acceptance before accepted capacity is consumed; drivers cannot join their own offers as passengers; cancellation rules must preserve terminal lifecycle history. Public Ride projections must never expose exact private pickup or meeting coordinates.
+Ride owns ride offers, ride requests, participation, meeting-point privacy, waypoints and Ride vehicle-photo metadata. Ride also owns product context and advertised compensation terms for those records. `MATCHDAY` and `GENERAL` are contexts of the same Ride domain, not separate tables, APIs, repositories or services. User-facing `GENERAL` wording is Anywhere Ride. Ride may advertise `FREE` or `CASH` compensation terms, but Ride does not process money; payment intents, checkout, settlement, wallet/card/provider state and paid/payment-received statuses belong to the separately governed Payments domain if implemented. A Ride destination must use exactly one strategy: owning Event reference, canonical Place reference or Ride-owned custom destination label. Event and Place facts remain owned by those domains and are read through narrow reference ports. Ride participation requests require driver/owner acceptance before accepted capacity is consumed; drivers cannot join their own offers as passengers; cancellation rules must preserve terminal lifecycle history. Public Ride projections must never expose exact private pickup or meeting coordinates.
 
 Ride vehicle-photo bytes belong in object storage. Until a separate generic Media domain is authorized, Ride vehicle-photo metadata belongs to a single-purpose Ride-owned model; PostgreSQL must not store binary photos, base64 payloads, storage credentials, outbox photo bytes or polymorphic generic media ownership for this work.
 
 Requests owns help/resource requests and quantity-based partial claims. Active/accepted claim quantities must be concurrency-safe and must not exceed the requested quantity. More than one claimer is allowed while quantity remains; quantity-one requests naturally behave as single-claim requests through the same partial-claim rule. The older exclusive-claim wording is replaced by this governed quantity rule.
 
-The product owner's later Requests correction further fixes the taxonomy root as exactly `SPORT | COMMUNITY`. SPORT reuses canonical `AthletesSport`; COMMUNITY is a parallel root and never requires a fake Sport. Standalone Requests defaults to All Requests, meaning no `requestType` filter; All Requests is a presentation/query state, not a third taxonomy root. Corrected taxonomy must preserve root/subcategory/Need integrity, and SPORT must additionally preserve sport/subcategory integrity. Every SPORT branch exposed to Requests has a governed Other/manual Need using per-Request `customNeed`, never a new global taxonomy row. Football Community Roles explicitly include Player, Goalkeeper, Coach, Assistant Coach, Referee, Training Session, Training Group and Training Partner. New sport-specific Needs stay Requests-only unless another surface is explicitly granted eligibility. Request create/filter UX follows the same progressive root, and optional precise `fullAddress` is persisted without being exposed in current Request read DTOs. PR `#351` is merged foundation history. Subsequent merged Requests slices added canonical server search, REQUESTS/PLAY/ATHLETES projection reconciliation, mobile discovery/card presentation, projection-aware creation and Request detail/lifecycle presentation without transferring Requests ownership.
+The product owner's later Requests correction fixes the taxonomy root as exactly `SPORT | COMMUNITY`. SPORT reuses canonical `AthletesSport`; COMMUNITY is a parallel root and never requires a fake Sport. Standalone Requests defaults to All Requests, meaning no `requestType` filter; All Requests is a presentation/query state, not a third taxonomy root. Corrected taxonomy preserves root/subcategory/Need integrity, and SPORT additionally preserves sport/subcategory integrity. Every SPORT branch exposed to Requests has a governed Other/manual Need using per-Request `customNeed`, never a new global taxonomy row. Football Community Roles include Player, Goalkeeper, Coach, Assistant Coach, Referee, Training Session, Training Group and Training Partner. New sport-specific Needs stay Requests-only unless another surface is explicitly granted eligibility. Request create/filter UX follows the same progressive root, optional precise `fullAddress` is persisted without exposure in current Request read DTOs, and current Requests behavior includes server search, REQUESTS/PLAY/ATHLETES projections, mobile discovery/card presentation, projection-aware creation and detail/lifecycle presentation without transferring Requests ownership.
 
-This ADR does not itself authorize FundMe persistence. ADR-060 now separately authorizes the ordered FundMe/Fundraising and Donations implementation program after Requests completion while preserving their independent ownership. Payments remains separately governed.
-
-The dedicated decision record is `docs/adr/ADR-050-ride-requests-unfreeze.md`.
+This decision does not merge FundMe or Donations into Requests. FundMe/Fundraising and Donations remain separately owned future domains. Payments remains separately governed.
 
 **Reason:** The product is ready to replace honest Ride/Requests shells with real bounded functionality, but adjacent UI placement must not collapse Ride, Requests, Fundraising, Payments and Media into one generic implementation.
 
@@ -373,8 +359,6 @@ The dedicated decision record is `docs/adr/ADR-050-ride-requests-unfreeze.md`.
 **Decision:** Play match discoverability is owned by `PlayEventDetails.visibility`, not by Community visibility and not by a generic Event visibility field. `OPEN` matches are discoverable through authenticated `/api/v1/play/open-matches` and viewable through authenticated `/api/v1/play/matches/:eventId`; `PRIVATE` matches are hidden from unrelated accounts and direct IDs cannot bypass the same Play access policy used for join, RSVP, cancellation, manager and invite lifecycle access.
 
 Public Event detail remains public for Watch/non-Play content only. The public Event detail endpoint must not expose Play match detail. Seeing or joining an OPEN Play match in a PRIVATE Community does not grant Community membership, member lists, admin controls, Whistle boards or other private Community resources.
-
-The dedicated decision record is `docs/adr/ADR-051-play-match-visibility.md`.
 
 **Reason:** Play match recruitment privacy and Community content privacy are distinct product concepts. Keeping match visibility on PlayEventDetails preserves Watch behavior, avoids Community-driven Play discovery bugs, and prevents a second Event-wide visibility model.
 
@@ -386,21 +370,17 @@ RideRequest audiences are `GLOBAL` or `COMMUNITY`. User-facing `Everyone` create
 
 Community-scoped RideRequests are excluded from public Ride request discovery and public exact-ID Ride request detail. They appear only in the selected Community page's HOOMA NOW surface for active members, while the canonical RideRequest is `OPEN`, unexpired, targets that Community, the requester still belongs to that Community, and the Community remains active. Whistle remains separate and does not store RideRequests.
 
-The dedicated decision record is `docs/adr/ADR-052-community-ride-requests-hooma-now.md`.
-
 **Reason:** HOOMA NOW needs live Community Ride coordination without creating a second Ride owner, lifecycle or feed table. Persisting exact targets keeps `All my HOOMAs` deterministic at write time while preserving one canonical RideRequest ID across every selected HOOMA.
 
 ## ADR-054 — Athletes is an independent HOOMA-connected domain
 
 **Decision:** Athletes is implemented as a separate HOOMA-connected domain inside the existing HOOMA application. Athletes reuses canonical `User` identity and owns its own `AthletesCommunity`, `AthletesMembership`, and `AthletesJoinRequest` persistence, contracts, API routes, application service, repository, authorization, and frontend routes.
 
-Athletes is not a HOOMA Community subtype, not a Team subtype, and not a generic creator/category abstraction. HOOMA Communities remain Communities-owned; Teams remain Teams-owned; ADR-053's Communities-only HOOMA creation rule remains unchanged. ULTRAS remains frozen.
+Athletes is not a HOOMA Community subtype, not a Team subtype, and not a generic creator/category abstraction. HOOMA Communities remain Communities-owned; Teams remain Teams-owned; ADR-053's Communities-only HOOMA creation rule remains unchanged. ULTRAS remains a separate unimplemented domain.
 
 **Current-state note:** Subsequent merged work added an Athletes member Whistle Board through the existing shared Whistle engine and moved Athletes into the fifth permanent bottom-navigation slot. Those changes extend Athletes without collapsing its independent domain. ADR-055 governs the current navigation state.
 
-The dedicated decision record is `docs/adr/ADR-054-athletes-independent-domain.md`.
-
-**Reason:** Athletes shares canonical HOOMA identity but has different sports-community lifecycle, authorization, and future product roadmap from neighborhood HOOMA Communities and football Teams. Independent ownership prevents recreating the Community-type hierarchy bug fixed by ADR-053.
+**Reason:** Athletes shares canonical HOOMA identity but has different sports-community lifecycle and authorization from neighborhood HOOMA Communities and football Teams. Independent ownership prevents recreating the Community-type hierarchy bug fixed by ADR-053.
 
 ## ADR-055 — Current navigation and Home information architecture
 
@@ -409,8 +389,6 @@ The dedicated decision record is `docs/adr/ADR-054-athletes-independent-domain.m
 The internal Home gateway identifier may retain the legacy `spots` name while the visible current label is `Places`; that implementation detail does not create a second Place domain. Watch may continue to use `Spots` as Watch-owned product language independently.
 
 This supersedes only the old navigation/Home-IA portions of ADR-011, ADR-036 and ADR-048, and the “bottom navigation unchanged” scope statement in the original ADR-054 implementation. It does not alter Pitch ownership, Places ownership, ADR-053 creation hierarchy, or Athletes domain independence.
-
-The dedicated decision record is `docs/adr/ADR-055-current-navigation-home-ia.md`.
 
 **Reason:** Merged source and navigation contract tests intentionally changed the current IA. Documentation must not direct later agents to revert those source-backed product decisions.
 
@@ -422,15 +400,11 @@ Athletes owns durable Photo Board metadata in PostgreSQL. Photo bytes use the sh
 
 The current product has no captions, likes/reactions, comments/replies, albums, manual ordering, moderator/member curation, or public board.
 
-The dedicated decision record is `docs/adr/ADR-056-athletes-founder-photo-board.md`.
-
 **Reason:** Keep durable Athletes member media inside Athletes ownership while reusing shared object transport, preserving least privilege, preventing cross-community access, and keeping Photo Board separate from Whistle and generic Media.
 
 ## ADR-057 — Athletes private Calendar ownership and lifecycle locking
 
 **Decision:** Athletes owns `AthletesCalendarEntry` as member-private durable schedule data separate from the canonical Event/Play/Watch lifecycle. Active same-community Athletes members may read bounded Calendar ranges with row-bounded stable cursor pagination. Only the active same-community Founder may create, edit, or cancel entries. Reads use ordinary member authorization and do not acquire the Athletes lifecycle row lock. Founder Calendar mutations reuse the existing Athletes community `FOR UPDATE` lifecycle lock and recheck active Founder authority in the same transaction. New-entry timezone defaults come from the phone/browser-resolved IANA timezone, with UTC fallback only when the runtime cannot provide a valid IANA timezone.
-
-The dedicated decision record is `docs/adr/ADR-057-athletes-calendar.md`.
 
 **Reason:** Keep private Athletes coordination in one owning domain, prevent Event/Play/Watch coupling, align documentation with the actual lock boundary, and make archive-versus-Founder-Calendar-write behavior deterministic.
 
@@ -440,21 +414,17 @@ The dedicated decision record is `docs/adr/ADR-057-athletes-calendar.md`.
 
 ADR-059 supersedes only ADR-058's original exclusive RSVP lifecycle-lock rule and defines how retained RSVP rows behave in current aggregates.
 
-The dedicated decision record is `docs/adr/ADR-058-athletes-calendar-rsvp.md`.
-
 **Reason:** Private Athletes attendance intent has different lifecycle semantics from Play/Event capacity and waitlist RSVP, so it remains Athletes-owned.
 
 ## ADR-059 — Athletes Calendar RSVP concurrency and active-member counts
 
 **Decision:** RSVP writes use a shared Athletes community `FOR SHARE` lifecycle guard in the same transaction as active-membership, same-community entry, cancellation, and upsert checks. Independent RSVP writers may therefore proceed concurrently. Existing archive/member-removal/Founder Calendar mutations retain their exclusive `FOR UPDATE` guard and conflict with in-flight shared RSVP guards. RSVP rows remain durable when membership ends, while current aggregate counts include only Users with an active same-community AthletesMembership; cancelled entries use the same current-active-member count semantics and are not treated as cancellation-time snapshots.
 
-The dedicated decision record is `docs/adr/ADR-059-athletes-calendar-rsvp-concurrency-and-counts.md`.
-
 **Reason:** Remove unnecessary community-wide RSVP serialization without weakening lifecycle correctness, and keep historical responses from inflating current participation counts after membership ends.
 
-## ADR-060 — Ordered HOOMA Help program: Requests, FundMe and Donations
+## ADR-060 — HOOMA Help domain ownership: Requests, FundMe and Donations
 
-**Decision:** HOOMA Help is one product family with three independent owning domains presented through `Requests | FundMe | Donations`. The implementation order is strict: complete canonical Requests first, then FundMe in Fundraising, then physical-item Donations, then visibility-aware Help overview/read-model work.
+**Decision:** HOOMA Help is one product family with three independent owning domains presented through `Requests | FundMe | Donations`. Requests is implemented; FundMe/Fundraising and Donations remain separate future domains. A Help overview may compose visibility-aware read models but never becomes a second business owner.
 
 Requests remains the only owner of `HelpRequest`, private `HelpRequestResponse` coordination and Request media. The Requests UI target uses `Sport | Community`, real server-side search, taxonomy-driven quick/advanced filters, readable `#F7F7F7` descriptive copy, accessible expandable feed cards, canonical detail/response/lifecycle states, and later Play/Athletes projections over the same HelpRequest records. No `PlayRequest` or `AthletesRequest` persistence is created.
 
@@ -464,8 +434,6 @@ Donations is Donations-owned and means free physical-item giving. It mirrors Req
 
 Shared Help concerns may be extracted only as narrow reusable boundaries: live publisher/audience authority, canonical taxonomy where semantically shared, Identity presentation, object-storage transport, image-processing primitives, outbox/Worker and visibility-aware overview read ports. Shared infrastructure must never collapse the three business domains.
 
-The dedicated decision record is `docs/adr/ADR-060-help-requests-fundme-donations-program.md`.
-
-The dedicated execution plan is `docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md`. Canonical Requests is now merged foundation behavior; FundMe and Donations remain future independent-domain work. Any open PR work remains in-flight and must be distinguished from merged `phase-0-foundation` truth.
+Canonical Requests is current implemented behavior. FundMe and Donations remain future independent-domain work and must not be represented as implemented before their source exists and is verified.
 
 **Reason:** The product owner explicitly authorized the full Help program while requiring clean domain ownership, no duplicate schemas/services, no fake payment or donation mechanics, readable mobile-first UI and strict current-source/no-drift execution.

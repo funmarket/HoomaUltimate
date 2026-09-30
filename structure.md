@@ -31,7 +31,7 @@ When sources conflict, use the order in `AGENTS.md`:
 
 Before creating a model, route, service, package, store, component, script, contract, migration, or API client, search for the existing owner of that concept.
 
-Documentation is part of the source contract. Every completed task must update the affected authoritative documents in the same task. Open PR behavior must be described as in-flight, never as merged foundation truth.
+Documentation is part of the source contract. Every completed task must update the affected authoritative documents in the same task. Mutable branch/PR/SHA/CI/deployment status belongs in live repository/runtime inspection, not in this architecture contract.
 
 ---
 
@@ -173,7 +173,15 @@ one domain -> another domain's Prisma repository
 lower-level canonical domain -> higher-level product domain
 ```
 
-Cross-domain collaboration uses explicit application interfaces or orchestrators.
+### Cross-domain ownership boundaries
+
+Cross-domain collaboration uses explicit application capabilities/ports or orchestrators. The owning domain keeps its business rules, lifecycle, authorization, repositories, and canonical persistence mutations.
+
+- A consumer uses the narrowest sufficient consumer-specific capability instead of depending on a complete foreign application service when a smaller boundary is sufficient.
+- Application/domain code in one domain must not import another domain's `infrastructure/` implementation. Bootstrap/composition wiring may connect owner-provided implementations to explicit application/domain ports.
+- No domain directly mutates another domain's canonical persistence. Shared transaction or atomicity requirements do not transfer ownership; the owning domain must expose an owner-controlled transaction-capable boundary when one is required.
+- Orchestration coordinates multiple owners without becoming a new generic business owner or absorbing their authorization, repositories, business rules, or persistence authority.
+- Universal cross-domain services, repositories, permissions gateways, duplicate canonical services, duplicate persistence owners, parallel business models, and competing sources of truth are forbidden. Shared packages may expose genuinely shared primitives but must not hide business ownership.
 
 ### No monolithic authorities
 
@@ -228,7 +236,7 @@ Physical `Place` is the venue source of truth. Pitch extends Place through Pitch
 
 ADR-050 explicitly unfreezes durable Ride and Requests vertical slices. Rides owns ride offers, ride requests, participation, private meeting-point policy and Ride vehicle-photo metadata. Requests owns the single canonical `HelpRequest` domain, its Request Type/taxonomy selection, lifecycle/private-response behavior and Request media metadata. Request projections for Requests, Play and Athletes must remain views over that same HelpRequest owner rather than creating `PlayRequest`, `AthletesRequest` or another request persistence model.
 
-ADR-060 authorizes the ordered HOOMA Help program: finish canonical Requests first, then build FundMe in the independent Fundraising domain, then build physical-item Donations in the independent Donations domain, then add visibility-aware Help overview composition. This authorization does not merge the domains: Fundraising never owns HelpRequest, Donations never reuses HelpRequest persistence, and Payments remains separately governed. Shared Help access/taxonomy/media transport may be reused only through narrow explicit boundaries.
+HOOMA Help presents Requests, FundMe and Donations as one product family while keeping three independent owning domains. Requests owns `HelpRequest`; Fundraising owns FundMe state when implemented; Donations owns physical-item giving when implemented; Payments remains separately governed. Shared Help access/taxonomy/media transport may be reused only through narrow explicit boundaries.
 
 ADR-052 authorizes Community-scoped RideRequest audience projection into HOOMA NOW without changing ownership. Ride owns the canonical request, audience scope and exact `RideRequestCommunityAudience` target rows. Community owns membership facts used for requester and viewer authorization. HOOMA NOW is presentation/composition only and must not create copied RideRequest payloads, a second lifecycle, a second status field, or a Community-owned Ride request table.
 
@@ -358,28 +366,22 @@ HOOMA | Teams | Pitch
 Places | Ride | Requests
 ```
 
-Current availability on `phase-0-foundation`:
-
-> Reconciliation evidence verified 2026-09-29: application/source baseline `3cafb5c78bf78df0935f7a6b3849ba8c5bbc1fd4` passed CI `36504854292`; documentation rebaseline `79aec96bc09a4fabcd2a2b0215c1f501cea51cc7` passed CI `36623002165`. These are historical proof points, not a hard-coded current-HEAD claim. Agents must read `phase-0-foundation` live before mutation.
+Current source-backed routes and ownership:
 
 - HOOMA -> `/hooma`
 - Teams -> `/teams`
 - Pitch -> `/pitch`
 - Places -> `/places`
-- Ride -> `/rides` Ride-owned gateway with current child routes `/rides/matchday`, `/rides/anywhere`, `/rides/request`, `/rides/requests/:requestId/edit`, `/rides/offers`, `/rides/offers/new`, `/rides/offers/:offerId`, `/rides/offers/:offerId/edit`, and `/rides/mine`
-- Requests -> `/requests` current foundation Requests surface, with current Help child routes `/requests/fundme` and `/requests/donations`; `/fundme` remains a compatibility redirect to the FundMe tab. The merged foundation includes the Requests API/domain and earlier Requests work, while the richer Help program remains ordered and domain-owned.
+- Ride -> `/rides` with Ride-owned child routes for Matchday, Anywhere, requests, offers, editing and My Rides
+- Requests -> `/requests`, with Help child routes `/requests/fundme` and `/requests/donations`; `/fundme` remains a compatibility redirect to the FundMe tab
 
-PR `#351` is merged foundation history, not an in-flight branch. Subsequent merged Requests work includes PRs `#347`, `#367`, `#368`, `#373`, `#375`, and `#379`: canonical server-backed search, REQUESTS/PLAY/ATHLETES projection reconciliation, accepted mobile discovery/card presentation, projection-aware create flow, and Request detail/lifecycle presentation are current foundation behavior. FundMe and Donations remain separate future owning domains and must not be inferred from their Help navigation placeholders.
+Requests currently owns canonical server-backed search, REQUESTS/PLAY/ATHLETES projections, mobile discovery/card presentation, projection-aware creation, detail/lifecycle behavior, responses and Request media. FundMe and Donations remain separate future owning domains; their current Help tabs are placeholders and do not imply durable Fundraising or Donations backend completion.
 
-PR `#393` is the current cumulative architecture-hardening candidate and remains open/draft/unmerged. Its cross-domain ownership changes are **in-flight candidate behavior**, not current `phase-0-foundation` truth until explicitly merged and read back.
+Gamers remains an independent implemented route family at `/gamers`, but it is not listed from the Home gateway. Athletes is an independent implemented route family at `/athletes` and is reached from permanent navigation. ULTRAS remains an independent future domain and is not routed from Home.
 
-Gamers remains an independent implemented route family at `/gamers`, but it is no longer listed from the Home gateway. Athletes is an independent implemented route family at `/athletes` and is reached from permanent navigation. ULTRAS remains an independent future domain and is not routed from Home. FundMe and Donations are grouped inside the Help/Requests family at `/requests/fundme` and `/requests/donations`; their current placeholders must be replaced only by their independent ordered domain slices. `/fundme` remains a compatibility navigation redirect.
+HOOMA creation is Communities-owned and creates only canonical HOOMA neighborhood/local Communities. Teams and future supporter-community domains keep their own creation surfaces and select any required HOOMA context inside their own flows. The current bounded Team continuation is `/hooma/new?after=team-create` back to `/teams/new?communityId=<created-id>` after successful HOOMA creation.
 
-This section records current application state and clearly separates merged foundation behavior from in-flight PR behavior. Product-owner changes update both the source and this contract in the same task.
-
-HOOMA creation is Communities-owned and creates only canonical HOOMA neighborhood/local Communities. Teams and future supporter-community domains keep their own creation surfaces and select any required HOOMA context inside their own flows. The only current cross-flow continuation is the literal Team handoff from `/hooma/new?after=team-create` back to `/teams/new?communityId=<created-id>` after successful HOOMA creation.
-
-Ride may grow only through its own domain-owned vertical slices under ADR-050. Requests, FundMe and Donations now follow the dedicated ordered Help program in `docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md` under ADR-060. Requests remains Requests-owned; FundMe is Fundraising-owned; Donations is Donations-owned; Payments remains separately governed and is not pulled in merely because FundMe records Cash/Crypto contribution coordination.
+Ride remains Ride-owned. Requests remains Requests-owned; FundMe is Fundraising-owned when implemented; Donations is Donations-owned when implemented; Payments remains separately governed and is not pulled in merely because FundMe targets Cash/Crypto contribution coordination.
 
 The current HOOMA creation action is:
 
@@ -467,12 +469,8 @@ For every task:
 9. Update this file when architecture/current topology changes.
 10. Update `docs/DECISIONS.md` when an architectural decision changes.
 11. Update `docs/CANONICAL_MODEL.md` when canonical data/authority changes.
-12. Update current-state/history documentation when implementation state changes.
+12. Update `progress.md` when a durable implementation milestone or verification fact should be retained.
 13. Verify with real infrastructure where concurrency, persistence, TTL, migrations, or deployment semantics matter.
 14. Report exact changed files, documentation updates, proof, current commit, remaining risk, and evidence-based score.
 
 No task is complete while affected governing documentation still describes the old source state.
-
-## In-flight Athletes hardening — Step C
-
-PR `#274` keeps Athletes membership authority inside Athletes while projecting Identity-owned web-session activity through the narrow `UserLastSeenReader`. The existing member list is preserved: avatar, display name, `@username`, role, canonical `/profile/:username` navigation, and nullable last-seen text are presentation only. A member with no active WebSession remains an Athletes member and renders `No recent web activity`; Athletes never invents online/offline state or queries Identity persistence directly.

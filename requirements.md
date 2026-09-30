@@ -245,7 +245,21 @@ Requirements include:
 - responsive images/media;
 - loading, empty, error, disabled, pending and success states for interactive flows.
 
-## 3.3 Telegram experience
+## 3.3 Shared visual semantics and assets
+
+The product-owner-approved app-wide visual foundation is canonical here. New or repaired surfaces should consume shared tokens that implement these rules instead of inventing page-local systems:
+
+- background `#050605`, normal surface `#0b0c0a`, raised surface `#0e0f0d`;
+- structural outline `rgba(190, 180, 145, 0.22)`;
+- primary readable text uses the approved near-white role `#F5F4EF` / `#F7F7F7`; descriptive/body text uses `#F7F7F7`; metadata `#B8B5AD`; placeholder `#858780`; ordinary UI icons use Brilliant Silver `#A9B0B4` unless explicitly assigned another product/semantic color;
+- interactive accent `#AEF02F`;
+- semantic state colors remain shared: positive/active green, people identity blue, warning orange, destructive/error red, and restrained gold for brand/title emphasis rather than status;
+- normal mobile baselines use 24px page titles, 20px section titles, 17px card titles, 16px body text, 14px metadata, 12px eyebrows/readability floor, 48px controls/touch targets, 18px card radius, and 14px control radius;
+- pages may scroll vertically and repeatable rails may scroll horizontally; meaningful copy, controls, and cards must not be shrunk merely to fit one viewport.
+
+Approved brand/home artwork is source-controlled product material. Reuse the exact approved asset or a faithful delivery derivative; do not replace it with guessed artwork. Runtime asset paths and current UI source are authoritative for what is actually shipped, while product acceptance rules belong in this file.
+
+## 3.4 Telegram experience
 
 Even though Web and Telegram currently share the HOOMA frontend tree, Telegram must still behave as a genuine Mini App where relevant:
 
@@ -587,21 +601,6 @@ Current foundation requirements include:
 - leader coordination appears only under its accepted-match authorization rules;
 - public Game data never leaks private leader conversation.
 
-### Locked Team challenge correction — future Teams slice
-
-The current foundation does **not yet** enforce the complete match-readiness/tactical-board contract below. It is a locked future Teams requirement to implement only after the current architecture-hardening program is complete:
-
-- a Team remains discoverable/recruitable even when it is not match-ready;
-- creating or accepting a challenge requires at least **5 active TeamPlayers**;
-- creating or accepting also requires an active **published TeamLineup** compatible with the challenge football format;
-- challenge creation validates both challenger and challenged Team readiness;
-- acceptance re-checks both Teams immediately before transition so stale roster/lineup state cannot slip through;
-- Team lineup authoring remains one-Team ownership; private drafts remain private;
-- accepted TeamGame match presentation reads two independent Team authorities: home Team roster + published lineup and away Team roster + published lineup;
-- never build both Team sides from one Event RSVP roster or copy Team rosters into Event Formation as canonical match state;
-- opponent published lineup is read-only and may refresh/revalidate after republish; opponent draft state is never exposed;
-- Event Formation Builder remains Event-owned for pickup/community Play events and must not be repurposed into Team-vs-Team persistence.
-
 ---
 
 # 9. Events and Play
@@ -890,7 +889,7 @@ Approved product direction includes:
 - there is no global Gamers Whistle feed and no parallel Gamer chat/message system;
 - Profile may later project real Gamer identities/Squad memberships from the Gamers domain rather than storing shadow copies in Identity.
 
-Detailed active behavior is recorded in `docs/GAMERS_PRODUCT_CONTRACT.md` and ADR-041.
+Current Gamers behavior is defined by this requirements contract, the consolidated decisions in `docs/DECISIONS.md`, the canonical model, and the implemented Gamers source/contracts/tests.
 
 ---
 
@@ -921,7 +920,7 @@ Approved requirements include:
 - Play and Athletes projections must read the same canonical HelpRequest records through `surface=PLAY` and `surface=ATHLETES`; never create `PlayRequest` or `AthletesRequest` persistence;
 - server-side authorization and audience visibility remain authoritative for every Request read/write.
 
-Current implementation state must be described separately from target requirements. PR `#351` and the later Requests correction/presentation/projection PRs are merged into `phase-0-foundation`; Requests is current foundation behavior. FundMe and Donations remain separately owned future domains under `docs/REQUESTS_FUNDME_DONATIONS_IMPLEMENTATION_PLAN.md` and must not be reported as durable backend completion until their own slices land.
+Requests is implemented current behavior. FundMe and Donations remain separately owned future domains and their current Help tabs are placeholders; neither may be reported as durable backend completion until its own domain is implemented and verified.
 
 ---
 
@@ -947,7 +946,7 @@ Approved requirements include:
 
 Ride is explicitly authorized for a durable Rides-owned domain, persistence, API and frontend vertical slice. Ride has exactly one canonical domain: Matchday Ride and Anywhere Ride are user-facing contexts over the same Ride offers, requests, participation, meeting-point, waypoint and vehicle-photo model. The canonical context values are `MATCHDAY` and `GENERAL`; user-facing `GENERAL` wording is Anywhere Ride.
 
-Ride compensation terms are advertised Ride terms only. A Ride can be advertised as `FREE` or `CASH`. Driver offers can advertise `FREE` or `CASH` with an integer minor-unit amount, ISO currency and basis such as per-seat or total. Passenger requests can advertise no cash offer (`FREE`) or a `CASH` offer with integer minor-unit amount and ISO currency. Human-entered Ride cash amounts must convert to integer minor units through a shared supported-currency exponent source; the current supported cash currency list is `TND`, `EUR` and `USD`, and `TND` uses three decimal minor-unit precision. Ride compensation terms must not create payment intents, checkout, settlement, wallet, card, provider callback, paid-status or payment-received state. Actual payment execution remains owned by future PAY-001.
+Ride compensation terms are advertised Ride terms only. A Ride can be advertised as `FREE` or `CASH`. Driver offers can advertise `FREE` or `CASH` with an integer minor-unit amount, ISO currency and basis such as per-seat or total. Passenger requests can advertise no cash offer (`FREE`) or a `CASH` offer with integer minor-unit amount and ISO currency. Human-entered Ride cash amounts must convert to integer minor units through a shared supported-currency exponent source; the current supported cash currency list is `TND`, `EUR` and `USD`, and `TND` uses three decimal minor-unit precision. Ride compensation terms must not create payment intents, checkout, settlement, wallet, card, provider callback, paid-status or payment-received state. Payment execution belongs to the separately governed Payments domain if implemented.
 
 A Ride destination must use exactly one destination strategy: an owning Event reference, a canonical Place reference, or a Ride-owned custom destination label. Event and Place presentation must be read from their owning domains through narrow reference readers and must not be duplicated into Ride as canonical Event or Place truth.
 
@@ -972,7 +971,7 @@ FundMe is the canonical Fundraising-owned HOOMA Help domain for **I need financi
 Approved target requirements include:
 
 - real fundraiser feed, search, filters, empty state, create flow, detail, supporter presentation, updates and lifecycle;
-- Fundraising-owned persistence such as `Fundraiser`, `FundraiserContribution`, `FundraiserUpdate`, `FundraiserBudgetItem`, `FundraiserMedia` and network-aware `FundraiserCryptoDestination`; exact fields/migrations land only in the ordered FundMe slices;
+- Fundraising-owned persistence such as `Fundraiser`, `FundraiserContribution`, `FundraiserUpdate`, `FundraiserBudgetItem`, `FundraiserMedia` and network-aware `FundraiserCryptoDestination`; exact fields/migrations belong to Fundraising when that domain is implemented;
 - bounded Fundraising-owned categories such as Equipment/Gear, Infrastructure, Events, Travel and Other; do not force fundraiser categories into Request taxonomy;
 - campaign goal/currency stored in integer minor units, optional deadline, organizer/publisher context and audience;
 - one primary campaign cover image initially, using shared object storage through Fundraising-owned media metadata/authorization;
@@ -986,7 +985,7 @@ Approved target requirements include:
 - campaign updates are organizer-authored records, not public threaded comments;
 - manager authority follows the same live publisher/community/team/Athletes facts used by the shared Help access boundary; no generic ownerType/ownerId persistence.
 
-FundMe currently exists in the repository as a Help route/tab placeholder; durable Fundraising state is authorized by the active Help program but must not be reported as implemented until its ordered slices land and are verified.
+FundMe currently exists in the repository as a Help route/tab placeholder. Durable Fundraising state must not be reported as implemented until the Fundraising domain exists and is verified.
 
 ## 19A. Donations
 
@@ -1009,15 +1008,15 @@ Approved target requirements include:
 - Donation detail may show other visible active offers from the same donor without creating another domain/table;
 - Donations does not use HOOMA tokens. `houma` continues to mean the neighborhood/location field.
 
-Donations currently exists in the repository as a Help route/tab placeholder plus a canonical `DONATIONS` Help-taxonomy surface. The durable Donations domain is authorized by the active Help program but must not be reported as implemented until its ordered slices land and are verified.
+Donations currently exists in the repository as a Help route/tab placeholder plus a canonical `DONATIONS` Help-taxonomy surface. Durable Donations state must not be reported as implemented until the Donations domain exists and is verified.
 
 ---
 
 # 20. Payments
 
-The independent Payments domain remains separately governed for product contexts that explicitly invoke payment execution. The current owner-approved near-term methods for **HOOMA services/fees** are **Cash, Crypto and Telegram Stars**. No credit/debit-card rail is active now; Stripe is planned later when the app is running. Telegram Stars are for eligible HOOMA digital services/fees, not a generic settlement rail for real-world rentals or user-to-user obligations. Domain terms such as Ride/Pitch advertised cash terms remain domain-owned until Payments is explicitly integrated.
+The independent Payments domain remains separately governed for product contexts that explicitly invoke payment execution. Its historical initial rails are `CASH | TELEGRAM_STARS` unless a later explicit Payments decision changes them. No credit-card rail is introduced by implication, and domain terms such as Ride/Pitch advertised cash terms remain domain-owned until Payments is explicitly integrated.
 
-FundMe in the active Help program does **not** use the Payments domain for an in-app card/provider checkout. FundMe supports manual/confirmed **Cash and Crypto** contribution coordination inside Fundraising. No credit-card rail is part of the current FundMe requirement, and no generated reference image may introduce one.
+FundMe does **not** use the Payments domain for an in-app card/provider checkout. Its target contribution coordination is Fundraising-owned Cash and Crypto accounting; that product direction does not make Crypto a Payments rail and does not authorize a card/provider checkout.
 
 ## 20.1 Cash
 
@@ -1430,7 +1429,3 @@ Do not turn it into:
 For future-approved domains, this document may state product direction before implementation exists, but the text must make that distinction clear.
 
 When the product owner makes a newer explicit decision that conflicts with this file, implementation follows the newer decision and this contract should be updated promptly so later agents do not drift back to stale behavior.
-
-## In-flight Athletes hardening — Step C
-
-PR `#274` adds Identity-owned WebSession activity projection to the existing Athletes member surface. The member list itself remains Athletes-owned and unchanged by session presence: active Athletes members remain visible even when they have no active WebSession, in which case `lastSeenAt` is null and the UI shows `No recent web activity`. The slice adds no real-time presence system, Telegram fallback, Redis presence state, new presence table, or duplicate user profile/card model. Exact-commit production runtime verification is still required before Step C can pass the progression gate.
