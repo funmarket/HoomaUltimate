@@ -84,7 +84,7 @@ Do not store current branch heads, pull-request state, commit SHAs, CI run IDs, 
 
 ### Payments boundary
 
-- There is no current live Payments domain that authorizes the documentation-only expansion to Cash + Crypto + Telegram Stars or a future Stripe rollout.
+- There is no current live Payments domain; documentation must not invent active rails, providers, rollout plans, or settlement behavior.
 - The retained historical Payments design names `CASH | TELEGRAM_STARS` as initial rails unless a later explicit Payments decision changes them.
 - FundMe's target Cash/Crypto contribution coordination is Fundraising-owned and does not make Crypto a Payments rail or authorize card/provider checkout.
 
