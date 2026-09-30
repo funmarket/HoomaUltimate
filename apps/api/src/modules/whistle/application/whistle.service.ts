@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { AppError } from "../../../http/errors/app-error.js";
 import type { AthletesMemberContentAuthorizer } from "../../athletes/application/athletes-content-authorizer.js";
-import type { CommunityService } from "../../communities/application/community.service.js";
+import type { CommunityMemberAuthorizer } from "../../communities/application/community-member.authorizer.js";
 import type { EventService } from "../../events/application/event.service.js";
 import type { GamerService } from "../../gamers/application/gamer.service.js";
 import type { CanonicalUserReader } from "../../identity/application/canonical-user.reader.js";
@@ -78,7 +78,7 @@ export class WhistleService {
   constructor(
     private readonly repository: WhistleRepository,
     private readonly transientStore: WhistleTransientStore,
-    private readonly communities: CommunityService,
+    private readonly communities: CommunityMemberAuthorizer,
     private readonly events: EventService,
     private readonly gamers: GamerService,
     private readonly users: CanonicalUserReader,

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { AthletesService } from "../apps/api/src/modules/athletes/application/athletes.service.js";
-import type { CommunityService } from "../apps/api/src/modules/communities/application/community.service.js";
+import type { CommunityMemberAuthorizer } from "../apps/api/src/modules/communities/application/community-member.authorizer.js";
 import type { EventService } from "../apps/api/src/modules/events/application/event.service.js";
 import type { GamerService } from "../apps/api/src/modules/gamers/application/gamer.service.js";
 import type { CanonicalUserReader } from "../apps/api/src/modules/identity/application/canonical-user.reader.js";
@@ -54,7 +54,7 @@ function storeStub(overrides: Partial<WhistleTransientStore> = {}): WhistleTrans
 function serviceWith(options: {
   repository?: Partial<WhistleRepository>;
   store?: Partial<WhistleTransientStore>;
-  communities?: Partial<CommunityService>;
+  communities?: Partial<CommunityMemberAuthorizer>;
   events?: Partial<EventService>;
   gamers?: Partial<GamerService>;
   users?: Partial<CanonicalUserReader>;
@@ -65,7 +65,7 @@ function serviceWith(options: {
   return new WhistleService(
     repositoryStub(options.repository),
     storeStub(options.store),
-    { requireMember: async () => undefined, ...options.communities } as unknown as CommunityService,
+    { requireMember: async () => undefined, ...options.communities } as unknown as CommunityMemberAuthorizer,
     { requireMemberContent: async () => undefined, ...options.events } as unknown as EventService,
     { ...options.gamers } as unknown as GamerService,
     { ...options.users } as unknown as CanonicalUserReader,
@@ -261,4 +261,38 @@ test("direct User Whistle remains USER_DIRECT and notifies only recipient withou
   assert.equal(notifications[0]?.contextType, "USER_DIRECT");
   assert.equal(notifications[0]?.contextId, "sender-user-id:target-user-id");
   assert.equal(Object.hasOwn(notifications[0] ?? {}, "body"), false);
+});
+
+test("Community Whistle read and post delegate membership authorization through the narrow boundary", async () => {
+  const calls: Array<[string, string]> = [];
+  const service = serviceWith({
+    communities: {
+      async requireMember(communityId: string, userId: string) {
+        calls.push([communityId, userId]);
+      },
+    },
+    repository: {
+      async createWithDailyQuota(input) {
+        return {
+          id: input.id,
+          authorUserId: input.authorUserId,
+          contextType: input.contextType,
+          contextId: input.contextId,
+          createdAt: input.createdAt,
+          expiresAt: input.expiresAt,
+        };
+      },
+      async quotaUsed() {
+        return 1;
+      },
+    },
+  });
+
+  await service.list("reader-1", "COMMUNITY", "community-read-1");
+  await service.create("poster-1", "COMMUNITY", "community-post-1", "hello");
+
+  assert.deepEqual(calls, [
+    ["community-read-1", "reader-1"],
+    ["community-post-1", "poster-1"],
+  ]);
 });
