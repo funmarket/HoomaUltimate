@@ -1362,7 +1362,7 @@ HOOMA owns its migration history. Every durable schema change uses a committed m
 
 ---
 
-# 23. Completion rule
+# 24. Completion rule
 
 A model is not considered correct because this file exists.
 
