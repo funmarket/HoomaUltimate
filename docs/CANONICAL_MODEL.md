@@ -202,11 +202,17 @@ Community
   description?
   city?
   houma?
+  logoUrl?
+  bannerUrl?
   status             ACTIVE | ARCHIVED
+  visibility         PUBLIC | PRIVATE
+  joinPolicy         OPEN | APPROVAL_REQUIRED
   createdByUserId
   createdAt
   updatedAt
 ```
+
+Privacy and join policy are Community-owned. A pending join request is not membership. Private Communities require approval; public Communities may use the configured join policy. Public discovery may expose only privacy-safe Community data and must not leak member-private child activity.
 
 ## CommunityMembership
 
@@ -228,6 +234,28 @@ Rules:
 - leaving/rejoining may reactivate the canonical membership record unless a future audit/history requirement explicitly changes that design;
 - Founder owns ultimate Community authority;
 - Coach is a Community-scoped manager, not App Admin.
+
+## CommunityJoinRequest
+
+```text
+CommunityJoinRequest
+  id
+  communityId
+  userId
+  status             PENDING | APPROVED | DECLINED | CANCELLED
+  requestedAt
+  resolvedAt?
+  resolvedByUserId?
+  updatedAt
+```
+
+Rules:
+
+- one canonical request identity per Community/User;
+- a pending request never grants membership or member-private access;
+- approval creates or reactivates canonical `CommunityMembership` under Communities-owned authorization;
+- decline/cancel leave membership unchanged;
+- Community membership remains the only active member/role truth.
 
 ---
 
@@ -1078,7 +1106,7 @@ G2/G3 profile rules:
 - the same User may have separate GamerProfiles and handles for different games;
 - only profiles with `openToChallenge == true` appear in public Challengers discovery;
 - public Challenger cards expose only GamerProfile `id`, game `handle`, and the canonical public presentation required by the card;
-- the public full Gamer profile deliberately exposes GamerProfile `id`, `handle`, `openToChallenge`, and canonical public presentation `username`, `displayName`, `photoUrl`, and `bio`;
+- Gamers discovery uses the shared Gamer HUD card rather than a second Gamer-specific public profile system; canonical HOOMA identity remains available through `/profile/:username` where navigation is provided;
 - neither public projection exposes canonical `userId`, internal `gameId`, GamerProfile timestamps, login credentials, email, sessions, or other private account data;
 - authenticated member routes may read/update only the current User’s GamerProfile for the requested game;
 - profile/discovery operations require an ACTIVE GamerGame; missing or inactive games are rejected rather than creating orphan/hidden profile state;
@@ -1112,7 +1140,7 @@ G3 challenge rules:
 - only the challenged GamerProfile’s canonical User may accept or decline a PENDING challenge;
 - only the challenger GamerProfile’s canonical User may cancel a PENDING challenge;
 - repeating the same already-completed action is idempotent; incompatible terminal rewrites are rejected;
-- G3 status transitions are `PENDING -> ACCEPTED | DECLINED | CANCELLED`; result submission/dispute/completion belongs to the later result slice.
+- G3 challenge status transitions remain `PENDING -> ACCEPTED | DECLINED | CANCELLED`. Accepted EA SPORTS FC Mobile challenges may additionally enter the implemented match-session verification bridge described below; this does not create a second challenge identity.
 
 ## Match Card and Arena
 
@@ -1120,9 +1148,54 @@ G3 challenge rules:
 - Arena is a member projection of the current User’s GamerChallenges for the selected game, not a persistence table;
 - incoming PENDING challenges expose Accept/Reject actions to the challenged User; outgoing PENDING challenges expose Cancel to the challenger;
 - accepted challenges render as Match Cards linking both public Gamer profiles;
-- actual gameplay remains external to HOOMA; G3 does not claim game-server integration, score telemetry, or presence;
+- actual gameplay remains external to HOOMA; HOOMA does not claim game-server telemetry or presence;
 - SQUADS and RANKINGS remain unavailable until their dedicated slices are implemented truthfully;
-- result confirmation/dispute, ranking calculation, GamerSquad, Gamer Squad Whistle authorization, global Gamer chat/feed, and gameplay APIs remain future work and are not implied by G3.
+- generic ranking calculation, GamerSquad, Gamer Squad Whistle authorization, and global Gamer chat/feed remain future work.
+
+## EA SPORTS FC Mobile match-session bridge
+
+For accepted EA SPORTS FC Mobile challenges only, the live implementation adds one `GamerMatchSession` keyed one-to-one by the canonical accepted `GamerChallenge`.
+
+```text
+GamerMatchSession
+  id
+  challengeId          unique
+  status               WAITING_FOR_CODE | IN_PROGRESS | PENDING_VERIFICATION | VERIFIED | DISPUTED | VOIDED
+  roomCode?
+  submissionDeadline?
+  finalChallengerScore?
+  finalChallengedScore?
+  winnerSide?
+  resolution?
+  resolvedAt?
+  moderatorNotes?
+  createdAt
+  updatedAt
+
+GamerMatchSubmission
+  id
+  matchSessionId
+  side                  CHALLENGER | CHALLENGED
+  challengerScore
+  challengedScore
+  proofObjectKey
+  proofContentType
+  proofSizeBytes
+  submittedAt
+  updatedAt
+
+Unique: (matchSessionId, side)
+```
+
+Rules:
+
+- only participants in the accepted EA FC challenge may access the match session;
+- the challenger is the room host and is the only participant allowed to publish the room code;
+- each participant submits a score from their own perspective; the API converts it to canonical challenger/challenged coordinates;
+- proof accepts JPEG/PNG/WebP up to 5 MiB and stores bytes in object storage, with only object metadata in PostgreSQL;
+- aligned scorecards reconcile to `VERIFIED`; conflicting scorecards become `DISPUTED`; a single scorecard may verify after the implemented timeout;
+- only `PLATFORM_ADMIN` may resolve or void disputes, with durable audit evidence;
+- the bridge does not claim to create the external game lobby or retrieve authoritative gameplay telemetry from EA.
 
 ---
 
