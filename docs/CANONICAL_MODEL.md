@@ -1155,7 +1155,7 @@ Rules:
 - pending/rejected owner applications never overwrite the last approved public Pitch profile;
 - public Pitch projection requires complete supported hourly pricing and never invents fallback pricing.
 
-The dedicated accepted decision is `docs/adr/ADR-042-pitch-suggestion-claim-lifecycle.md`.
+Pitch suggestion, provenance, pricing, and ownership-claim rules are consolidated in `docs/DECISIONS.md`.
 
 ---
 
@@ -1202,7 +1202,7 @@ Ride waypoints are ordered `RideOfferWaypoint` records with optional canonical P
 
 Ride vehicle-photo bytes belong in object storage. `RideOfferVehiclePhoto` is a single-purpose Ride-owned metadata record for the managed object key, content type, size and lifecycle fields until a separately authorized generic Media domain exists. PostgreSQL must not store photo bytes, base64 payloads, storage credentials or polymorphic generic media ownership for this slice.
 
-Requests owns one canonical `HelpRequest` domain. PR `#351` and subsequent Requests correction/presentation/projection slices are merged into current `phase-0-foundation`; the model below describes merged foundation truth. FundMe/Fundraising and Donations remain separate owners and are not implied by the Requests model.
+Requests owns one canonical `HelpRequest` domain. The model below describes current source-backed Request truth. FundMe/Fundraising and Donations remain separate owners and are not implied by the Requests model.
 
 ```text
 HelpRequest
