@@ -1,14 +1,14 @@
-# HOOMA ULTIMATE — CANONICAL MODEL
+# HOOMA — CANONICAL MODEL
 
 Status: **ACTIVE DATA + AUTHORITY CONTRACT**  
 Scope: domains already implemented or currently being normalized.  
-Do not add frozen future-domain models here until their vertical slice begins.
+Do not add speculative future-domain models here before their owning implementation exists.
 
 ---
 
 ## 0. Purpose
 
-This document is the canonical contract for the current HOOMA ULTIMATE implementation.
+This document is the canonical contract for the current HOOMA implementation.
 
 During normalization, the following must agree with this file:
 
@@ -1038,7 +1038,7 @@ Rules:
 
 # 19. Gamers current vertical-slice boundary
 
-Gamers is explicitly unfrozen by ADR-041. G1 established the persisted game catalog, G2 added game-specific GamerProfile identity plus privacy-safe Challengers discovery, and G3 adds the human challenge lifecycle, public full Gamer profiles, canonical Match Cards, and the Arena projection without coupling Gamers to football Team/Play challenge models.
+Gamers is an implemented independent domain. Current source includes the persisted game catalog, game-specific GamerProfile identity, privacy-safe discovery/HUD presentation, human challenge lifecycle, canonical Match Cards, global Arena projection, direct Gamer Whistle authorization, and the bounded EA SPORTS FC Mobile match-session bridge without coupling Gamers to football Team/Play challenge models.
 
 Current canonical ownership is:
 
@@ -1201,7 +1201,7 @@ Rules:
 
 # 20. Pitch canonical Place capability
 
-Pitch is implemented and is not a frozen future concept.
+Pitch is an implemented current product over canonical Place.
 
 Canonical Pitch ownership is:
 
