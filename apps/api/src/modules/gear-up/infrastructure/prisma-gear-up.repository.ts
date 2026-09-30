@@ -18,6 +18,7 @@ import {
   groupCanonicalPlaceImages,
   suggestCanonicalPlace,
 } from "../../places/boundary/canonical-place.persistence.js";
+import { reviewPendingPlace } from "../../places/boundary/place-moderation.persistence.js";
 
 const publicShopSelect = Prisma.validator<Prisma.GearUpShopSelect>()({
   placeId: true,
@@ -218,16 +219,9 @@ export class PrismaGearUpRepository implements GearUpRepository {
       if (!target) return false;
 
       if (target.place.moderationStatus === "PENDING") {
-        const placeResult = await tx.place.updateMany({
-          where: { id: placeId, moderationStatus: "PENDING", archivedAt: null },
-          data: {
-            moderationStatus: status,
-            reviewedByUserId: actorUserId,
-            reviewedAt: new Date(),
-            reviewNote: input.note ?? null,
-          },
-        });
-        if (!placeResult.count) return false;
+        if (!(await reviewPendingPlace(tx, actorUserId, placeId, input))) {
+          return false;
+        }
       }
 
       const reviewedAt = new Date();
