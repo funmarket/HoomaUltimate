@@ -1,14 +1,14 @@
-# HOOMA ULTIMATE — CANONICAL MODEL
+# HOOMA — CANONICAL MODEL
 
 Status: **ACTIVE DATA + AUTHORITY CONTRACT**  
 Scope: domains already implemented or currently being normalized.  
-Do not add frozen future-domain models here until their vertical slice begins.
+Do not add speculative future-domain models here before their owning implementation exists.
 
 ---
 
 ## 0. Purpose
 
-This document is the canonical contract for the current HOOMA ULTIMATE implementation.
+This document is the canonical contract for the current HOOMA implementation.
 
 During normalization, the following must agree with this file:
 
@@ -202,11 +202,17 @@ Community
   description?
   city?
   houma?
+  logoUrl?
+  bannerUrl?
   status             ACTIVE | ARCHIVED
+  visibility         PUBLIC | PRIVATE
+  joinPolicy         OPEN | APPROVAL_REQUIRED
   createdByUserId
   createdAt
   updatedAt
 ```
+
+Privacy and join policy are Community-owned. A pending join request is not membership. Private Communities require approval; public Communities may use the configured join policy. Public discovery may expose only privacy-safe Community data and must not leak member-private child activity.
 
 ## CommunityMembership
 
@@ -228,6 +234,28 @@ Rules:
 - leaving/rejoining may reactivate the canonical membership record unless a future audit/history requirement explicitly changes that design;
 - Founder owns ultimate Community authority;
 - Coach is a Community-scoped manager, not App Admin.
+
+## CommunityJoinRequest
+
+```text
+CommunityJoinRequest
+  id
+  communityId
+  userId
+  status             PENDING | APPROVED | DECLINED | CANCELLED
+  requestedAt
+  resolvedAt?
+  resolvedByUserId?
+  updatedAt
+```
+
+Rules:
+
+- one canonical request identity per Community/User;
+- a pending request never grants membership or member-private access;
+- approval creates or reactivates canonical `CommunityMembership` under Communities-owned authorization;
+- decline/cancel leave membership unchanged;
+- Community membership remains the only active member/role truth.
 
 ---
 
@@ -1010,7 +1038,7 @@ Rules:
 
 # 19. Gamers current vertical-slice boundary
 
-Gamers is explicitly unfrozen by ADR-041. G1 established the persisted game catalog, G2 added game-specific GamerProfile identity plus privacy-safe Challengers discovery, and G3 adds the human challenge lifecycle, public full Gamer profiles, canonical Match Cards, and the Arena projection without coupling Gamers to football Team/Play challenge models.
+Gamers is an implemented independent domain. Current source includes the persisted game catalog, game-specific GamerProfile identity, privacy-safe discovery/HUD presentation, human challenge lifecycle, canonical Match Cards, global Arena projection, direct Gamer Whistle authorization, and the bounded EA SPORTS FC Mobile match-session bridge without coupling Gamers to football Team/Play challenge models.
 
 Current canonical ownership is:
 
@@ -1078,7 +1106,7 @@ G2/G3 profile rules:
 - the same User may have separate GamerProfiles and handles for different games;
 - only profiles with `openToChallenge == true` appear in public Challengers discovery;
 - public Challenger cards expose only GamerProfile `id`, game `handle`, and the canonical public presentation required by the card;
-- the public full Gamer profile deliberately exposes GamerProfile `id`, `handle`, `openToChallenge`, and canonical public presentation `username`, `displayName`, `photoUrl`, and `bio`;
+- Gamers discovery uses the shared Gamer HUD card rather than a second Gamer-specific public profile system; canonical HOOMA identity remains available through `/profile/:username` where navigation is provided;
 - neither public projection exposes canonical `userId`, internal `gameId`, GamerProfile timestamps, login credentials, email, sessions, or other private account data;
 - authenticated member routes may read/update only the current User’s GamerProfile for the requested game;
 - profile/discovery operations require an ACTIVE GamerGame; missing or inactive games are rejected rather than creating orphan/hidden profile state;
@@ -1112,7 +1140,7 @@ G3 challenge rules:
 - only the challenged GamerProfile’s canonical User may accept or decline a PENDING challenge;
 - only the challenger GamerProfile’s canonical User may cancel a PENDING challenge;
 - repeating the same already-completed action is idempotent; incompatible terminal rewrites are rejected;
-- G3 status transitions are `PENDING -> ACCEPTED | DECLINED | CANCELLED`; result submission/dispute/completion belongs to the later result slice.
+- G3 challenge status transitions remain `PENDING -> ACCEPTED | DECLINED | CANCELLED`. Accepted EA SPORTS FC Mobile challenges may additionally enter the implemented match-session verification bridge described below; this does not create a second challenge identity.
 
 ## Match Card and Arena
 
@@ -1120,15 +1148,60 @@ G3 challenge rules:
 - Arena is a member projection of the current User’s GamerChallenges for the selected game, not a persistence table;
 - incoming PENDING challenges expose Accept/Reject actions to the challenged User; outgoing PENDING challenges expose Cancel to the challenger;
 - accepted challenges render as Match Cards linking both public Gamer profiles;
-- actual gameplay remains external to HOOMA; G3 does not claim game-server integration, score telemetry, or presence;
+- actual gameplay remains external to HOOMA; HOOMA does not claim game-server telemetry or presence;
 - SQUADS and RANKINGS remain unavailable until their dedicated slices are implemented truthfully;
-- result confirmation/dispute, ranking calculation, GamerSquad, Gamer Squad Whistle authorization, global Gamer chat/feed, and gameplay APIs remain future work and are not implied by G3.
+- generic ranking calculation, GamerSquad, Gamer Squad Whistle authorization, and global Gamer chat/feed remain future work.
+
+## EA SPORTS FC Mobile match-session bridge
+
+For accepted EA SPORTS FC Mobile challenges only, the live implementation adds one `GamerMatchSession` keyed one-to-one by the canonical accepted `GamerChallenge`.
+
+```text
+GamerMatchSession
+  id
+  challengeId          unique
+  status               WAITING_FOR_CODE | IN_PROGRESS | PENDING_VERIFICATION | VERIFIED | DISPUTED | VOIDED
+  roomCode?
+  submissionDeadline?
+  finalChallengerScore?
+  finalChallengedScore?
+  winnerSide?
+  resolution?
+  resolvedAt?
+  moderatorNotes?
+  createdAt
+  updatedAt
+
+GamerMatchSubmission
+  id
+  matchSessionId
+  side                  CHALLENGER | CHALLENGED
+  challengerScore
+  challengedScore
+  proofObjectKey
+  proofContentType
+  proofSizeBytes
+  submittedAt
+  updatedAt
+
+Unique: (matchSessionId, side)
+```
+
+Rules:
+
+- only participants in the accepted EA FC challenge may access the match session;
+- the challenger is the room host and is the only participant allowed to publish the room code;
+- each participant submits a score from their own perspective; the API converts it to canonical challenger/challenged coordinates;
+- proof accepts JPEG/PNG/WebP up to 5 MiB and stores bytes in object storage, with only object metadata in PostgreSQL;
+- aligned scorecards reconcile to `VERIFIED`; conflicting scorecards become `DISPUTED`; a single scorecard may verify after the implemented timeout;
+- only `PLATFORM_ADMIN` may resolve or void disputes, with durable audit evidence;
+- the bridge does not claim to create the external game lobby or retrieve authoritative gameplay telemetry from EA.
 
 ---
 
 # 20. Pitch canonical Place capability
 
-Pitch is implemented and is not a frozen future concept.
+Pitch is an implemented current product over canonical Place.
 
 Canonical Pitch ownership is:
 
@@ -1155,13 +1228,13 @@ Rules:
 - pending/rejected owner applications never overwrite the last approved public Pitch profile;
 - public Pitch projection requires complete supported hourly pricing and never invents fallback pricing.
 
-The dedicated accepted decision is `docs/adr/ADR-042-pitch-suggestion-claim-lifecycle.md`.
+Pitch suggestion, provenance, pricing, and ownership-claim rules are consolidated in `docs/DECISIONS.md`.
 
 ---
 
 # 21. Authorized Ride and Requests concepts
 
-ADR-050 begins the durable Ride and Requests vertical slices. Canonical schema work is authorized for these domains in their numbered implementation tasks, subject to the policies below. RIDE-002 adds core Ride persistence; RIDE-006 adds Ride-owned vehicle-photo metadata. RIDE-007A adds governed Ride context and advertised compensation contracts before persistence changes. Requests, Fundraising and Payments remain separately ordered.
+Ride and Requests are implemented as separate domain-owned vertical slices. The canonical models below describe current source-backed ownership. Fundraising, Donations and Payments remain separate owners and are not implied by Ride or Requests persistence.
 
 RIDE-002 establishes the core Ride-owned canonical persistence:
 
@@ -1190,7 +1263,7 @@ FREE
 CASH
 ```
 
-Driver offers may advertise `FREE` or `CASH` with positive integer minor-unit amount, ISO currency and basis. Passenger requests may advertise no cash offer (`FREE`) or a `CASH` offer with positive integer minor-unit amount and ISO currency. Human-entered cash amounts must convert through the shared supported cash-currency exponent source before becoming canonical minor units; current supported cash currencies are `TND`, `EUR` and `USD`, with `TND` using three decimal minor-unit precision. Ride contracts/domain policy must reject payment-processing state such as payment intents, checkout, settlement, wallet, card/provider callbacks, paid status or payment-received status; future PAY-001 owns payment execution.
+Driver offers may advertise `FREE` or `CASH` with positive integer minor-unit amount, ISO currency and basis. Passenger requests may advertise no cash offer (`FREE`) or a `CASH` offer with positive integer minor-unit amount and ISO currency. Human-entered cash amounts must convert through the shared supported cash-currency exponent source before becoming canonical minor units; current supported cash currencies are `TND`, `EUR` and `USD`, with `TND` using three decimal minor-unit precision. Ride contracts/domain policy reject payment-processing state such as payment intents, checkout, settlement, wallet, card/provider callbacks, paid status or payment-received status; payment execution belongs to the separately governed Payments domain if implemented.
 
 Ride destination uses exactly one strategy: owning Event reference, canonical Place reference, or Ride-owned custom destination label. The database enforces this for `RideOffer` and `RideRequest`. Event and Place display data remains owned by those domains and is read through narrow reference ports. Ride public projections must omit exact private pickup or meeting location.
 
@@ -1202,7 +1275,7 @@ Ride waypoints are ordered `RideOfferWaypoint` records with optional canonical P
 
 Ride vehicle-photo bytes belong in object storage. `RideOfferVehiclePhoto` is a single-purpose Ride-owned metadata record for the managed object key, content type, size and lifecycle fields until a separately authorized generic Media domain exists. PostgreSQL must not store photo bytes, base64 payloads, storage credentials or polymorphic generic media ownership for this slice.
 
-Requests owns one canonical `HelpRequest` domain. PR `#351` and subsequent Requests correction/presentation/projection slices are merged into current `phase-0-foundation`; the model below describes merged foundation truth. FundMe/Fundraising and Donations remain separate owners and are not implied by the Requests model.
+Requests owns one canonical `HelpRequest` domain. The model below describes current source-backed Request truth. FundMe/Fundraising and Donations remain separate owners and are not implied by the Requests model.
 
 ```text
 HelpRequest
@@ -1275,54 +1348,21 @@ Requests does not own Ride, Fundraising, Donations, Payments or generic action s
 
 ---
 
-# 22. Authorized next Help domains (not current persistence)
+# 22. Future Help ownership boundaries
 
-ADR-060 authorizes the ordered Help implementation program after Requests completion:
+FundMe/Fundraising and Donations are not current persistence in this model. If implemented, Fundraising owns fundraiser/contribution state and Donations owns physical-item offer/claim state; neither reuses `HelpRequest` persistence. FundMe's target Cash/Crypto contribution coordination is Fundraising-owned accounting state and does not create a Payments rail. Donations remains physical-item giving, with exact pickup data protected by backend authorization.
 
-```text
-Fundraising
-  Fundraiser
-  FundraiserContribution
-  FundraiserBudgetItem
-  FundraiserUpdate
-  FundraiserMedia
-  FundraiserCryptoDestination
-
-Donations
-  DonationOffer
-  DonationClaim
-  DonationImage (plural, up to four per offer by service policy)
-```
-
-These names describe authorized target ownership only. They are **not current schema truth** until the corresponding slice adds contracts, migrations, repositories, services and verification. Do not pre-create speculative tables ahead of the ordered slices.
-
-FundMe support methods in this program are Cash and Crypto only. Cash/Crypto contribution records are Fundraising-owned coordination/accounting state; only confirmed contributions affect campaign progress. No credit/debit-card or Telegram-Stars flow is implied by this authorization.
-
-Donations is a physical-item-giving domain, not a financial or service marketplace. Sport and Community donation discovery reuse governed product taxonomy without creating a duplicate sports/category universe. Exact pickup data remains backend-protected.
-
-Other still-future concepts remain frozen until their own explicit slice begins:
-
-```text
-Place/Watch capability work outside already-implemented Place/Pitch/Watch ownership
-ULTRAS
-generic MediaAsset beyond current domain-owned media metadata
-Replay
-additional HOOMA NOW read models outside already authorized projections
-```
-
-Whistle, Gamers, Pitch, Ride, Requests, FundMe/Fundraising and Donations follow their explicit current decisions/programs rather than this frozen list.
+Future domains or capabilities must be added only when their owning source, contracts, persistence and authorization are explicitly implemented. Do not pre-create speculative canonical models here.
 
 ---
 
-# 23. Migration requirement# 23. Migration requirement
+# 23. Migration requirement
 
-Before first HOOMA ULTIMATE release, all pre-release current migrations are replaced with one reviewed initial migration generated from the reconciled schema and augmented with intentional PostgreSQL constraints where required.
-
-After first release, migration history becomes forward-only.
+HOOMA owns its migration history. Every durable schema change uses a committed migration; production `prisma db push` is not a substitute. Before first public release, any migration-history consolidation is a separate explicit reviewed database task proven from a clean database rather than an automatic requirement. After release, shipped migration history is forward-only.
 
 ---
 
-# 23. Completion rule
+# 24. Completion rule
 
 A model is not considered correct because this file exists.
 

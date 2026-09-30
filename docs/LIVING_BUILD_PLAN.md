@@ -101,17 +101,13 @@ Before verification, reconcile the affected authoritative docs with the implemen
 - product behavior -> `requirements.md`;
 - architecture/domain ownership -> `structure.md`;
 - canonical durable model/authority -> `docs/CANONICAL_MODEL.md`;
-- architectural decision -> `docs/DECISIONS.md` / dedicated ADR when appropriate;
+- architectural decision -> `docs/DECISIONS.md`;
 - execution discipline -> `AGENTS.md` / this file;
-- implementation evidence/history -> `progress.md` or an established scoped audit document.
+- durable implementation evidence/history -> `progress.md`.
 
-Do not create a new overlapping document merely because updating the authoritative one is inconvenient.
+Do not create a new overlapping document merely because updating the authoritative one is inconvenient. Project-control documentation is limited to the eight files named in `README.md`.
 
-Open/draft PR behavior is **in-flight**, not current foundation truth. Documentation must say which is which.
-
-### Current-state reconciliation gate
-
-Every task that reads a mutable implementation/status document must re-check its branch/PR/SHA/status claims against the live repository before relying on them. If a current-state statement has become stale, correcting that statement is part of the task; do not leave it for a later cleanup. Historical ledgers stay historical, but active guidance must never describe a merged PR as open, completed work as not started, or an old foundation SHA as current.
+Canonical documents must not carry mutable branch, pull-request, commit-SHA, CI-run, deployment-status, or execution-roadmap snapshots as current truth. Inspect those facts directly from the live repository/runtime whenever a task depends on them.
 
 ### G. Verify
 
@@ -328,6 +324,6 @@ Do not turn it into another giant feature-status ledger.
 
 Do not add temporary issue lists, percentages, freeze tables, or per-feature progress tracking here.
 
-Product behavior belongs in `requirements.md`; architecture belongs in `structure.md`; decisions belong in `docs/DECISIONS.md`; canonical model changes belong in `docs/CANONICAL_MODEL.md`; implementation evidence/history belongs in the established current-state/history source.
+Product behavior belongs in `requirements.md`; architecture belongs in `structure.md`; decisions belong in `docs/DECISIONS.md`; canonical model changes belong in `docs/CANONICAL_MODEL.md`; durable implementation evidence/history belongs in `progress.md`.
 
 Every task must audit those sources and update the ones its work actually changes. This keeps the documentation alive without multiplying authorities.
