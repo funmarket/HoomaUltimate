@@ -251,13 +251,13 @@ Production runtimes that can create or clean up managed media require complete `
 
 ## ADR-038 — Historical normalization freeze is retired
 
-**Decision:** The old normalization freeze no longer has current execution authority. Current domain authorization and product behavior are governed by the later decisions in this consolidated file, `requirements.md`, and the implemented source. A retired planning document must never be used to freeze or unfreeze current work.
+**Decision:** The old normalization execution hold is retired and has no current authority. Current domain authorization and product behavior are governed by the later decisions in this consolidated file, `requirements.md`, and the implemented source. Retired planning material must never control current work.
 
 **Reason:** The project has moved beyond the temporary normalization phase; retaining its old gate as active authority would reintroduce stale execution control.
 
-## ADR-039 — Whistle vertical slice is explicitly unfrozen
+## ADR-039 — Whistle vertical slice is explicitly authorized
 
-**Decision:** The product owner explicitly authorized Whistle setup on 2026-08-23. Whistle is therefore removed from ADR-038's freeze and becomes a current vertical slice. The shared Whistle engine is implemented once and reused by approved contexts.
+**Decision:** The product owner explicitly authorized Whistle setup. Whistle is a current implemented vertical slice. The shared Whistle engine is implemented once and reused by approved contexts.
 
 **Superseded retention note:** The original ADR-039 text specified rolling 24-hour unread TTL and a 60-second Reveal window. ADR-040 supersedes those retention/visibility mechanics with UTC-day expiry and direct authorized visibility. Do not implement the older Reveal lifecycle.
 
@@ -338,11 +338,11 @@ No new DirectMessage, Conversation, inbox, direct-pair, Whistle-preference, or W
 
 **Reason:** This is the smallest complete User-to-User Whistle slice: it preserves one canonical User and one Whistle engine, avoids a new messaging/privacy subsystem, prevents client-forged direct contexts, and keeps current working Whistle contexts isolated from unrelated refactoring.
 
-## ADR-050 — Ride and Requests vertical slices are explicitly unfrozen
+## ADR-050 — Ride and Requests are independent authorized vertical slices
 
 **Decision:** The product owner explicitly authorized durable Ride and Requests as bounded, domain-owned vertical slices. Ride and Requests retain their own contracts, persistence, APIs, application services and frontend ownership; neither may absorb adjacent domains.
 
-Ride owns ride offers, ride requests, participation, meeting-point privacy, waypoints and Ride vehicle-photo metadata. Ride also owns product context and advertised compensation terms for those records. `MATCHDAY` and `GENERAL` are contexts of the same Ride domain, not separate tables, APIs, repositories or services. User-facing `GENERAL` wording is Anywhere Ride. Ride may advertise `FREE` or `CASH` compensation terms, but Ride does not process money; payment intents, checkout, settlement, wallet/card/provider state and paid/payment-received statuses remain future Payments/PAY-001 ownership. A Ride destination must use exactly one strategy: owning Event reference, canonical Place reference or Ride-owned custom destination label. Event and Place facts remain owned by those domains and are read through narrow reference ports. Ride participation requests require driver/owner acceptance before accepted capacity is consumed; drivers cannot join their own offers as passengers; cancellation rules must preserve terminal lifecycle history. Public Ride projections must never expose exact private pickup or meeting coordinates.
+Ride owns ride offers, ride requests, participation, meeting-point privacy, waypoints and Ride vehicle-photo metadata. Ride also owns product context and advertised compensation terms for those records. `MATCHDAY` and `GENERAL` are contexts of the same Ride domain, not separate tables, APIs, repositories or services. User-facing `GENERAL` wording is Anywhere Ride. Ride may advertise `FREE` or `CASH` compensation terms, but Ride does not process money; payment intents, checkout, settlement, wallet/card/provider state and paid/payment-received statuses belong to the separately governed Payments domain if implemented. A Ride destination must use exactly one strategy: owning Event reference, canonical Place reference or Ride-owned custom destination label. Event and Place facts remain owned by those domains and are read through narrow reference ports. Ride participation requests require driver/owner acceptance before accepted capacity is consumed; drivers cannot join their own offers as passengers; cancellation rules must preserve terminal lifecycle history. Public Ride projections must never expose exact private pickup or meeting coordinates.
 
 Ride vehicle-photo bytes belong in object storage. Until a separate generic Media domain is authorized, Ride vehicle-photo metadata belongs to a single-purpose Ride-owned model; PostgreSQL must not store binary photos, base64 payloads, storage credentials, outbox photo bytes or polymorphic generic media ownership for this work.
 
@@ -376,7 +376,7 @@ Community-scoped RideRequests are excluded from public Ride request discovery an
 
 **Decision:** Athletes is implemented as a separate HOOMA-connected domain inside the existing HOOMA application. Athletes reuses canonical `User` identity and owns its own `AthletesCommunity`, `AthletesMembership`, and `AthletesJoinRequest` persistence, contracts, API routes, application service, repository, authorization, and frontend routes.
 
-Athletes is not a HOOMA Community subtype, not a Team subtype, and not a generic creator/category abstraction. HOOMA Communities remain Communities-owned; Teams remain Teams-owned; ADR-053's Communities-only HOOMA creation rule remains unchanged. ULTRAS remains frozen.
+Athletes is not a HOOMA Community subtype, not a Team subtype, and not a generic creator/category abstraction. HOOMA Communities remain Communities-owned; Teams remain Teams-owned; ADR-053's Communities-only HOOMA creation rule remains unchanged. ULTRAS remains a separate unimplemented domain.
 
 **Current-state note:** Subsequent merged work added an Athletes member Whistle Board through the existing shared Whistle engine and moved Athletes into the fifth permanent bottom-navigation slot. Those changes extend Athletes without collapsing its independent domain. ADR-055 governs the current navigation state.
 
