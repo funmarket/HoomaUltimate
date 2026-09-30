@@ -1234,7 +1234,7 @@ Pitch suggestion, provenance, pricing, and ownership-claim rules are consolidate
 
 # 21. Authorized Ride and Requests concepts
 
-ADR-050 begins the durable Ride and Requests vertical slices. Canonical schema work is authorized for these domains in their numbered implementation tasks, subject to the policies below. RIDE-002 adds core Ride persistence; RIDE-006 adds Ride-owned vehicle-photo metadata. RIDE-007A adds governed Ride context and advertised compensation contracts before persistence changes. Requests, Fundraising and Payments remain separately ordered.
+Ride and Requests are implemented as separate domain-owned vertical slices. The canonical models below describe current source-backed ownership. Fundraising, Donations and Payments remain separate owners and are not implied by Ride or Requests persistence.
 
 RIDE-002 establishes the core Ride-owned canonical persistence:
 
@@ -1263,7 +1263,7 @@ FREE
 CASH
 ```
 
-Driver offers may advertise `FREE` or `CASH` with positive integer minor-unit amount, ISO currency and basis. Passenger requests may advertise no cash offer (`FREE`) or a `CASH` offer with positive integer minor-unit amount and ISO currency. Human-entered cash amounts must convert through the shared supported cash-currency exponent source before becoming canonical minor units; current supported cash currencies are `TND`, `EUR` and `USD`, with `TND` using three decimal minor-unit precision. Ride contracts/domain policy must reject payment-processing state such as payment intents, checkout, settlement, wallet, card/provider callbacks, paid status or payment-received status; future PAY-001 owns payment execution.
+Driver offers may advertise `FREE` or `CASH` with positive integer minor-unit amount, ISO currency and basis. Passenger requests may advertise no cash offer (`FREE`) or a `CASH` offer with positive integer minor-unit amount and ISO currency. Human-entered cash amounts must convert through the shared supported cash-currency exponent source before becoming canonical minor units; current supported cash currencies are `TND`, `EUR` and `USD`, with `TND` using three decimal minor-unit precision. Ride contracts/domain policy reject payment-processing state such as payment intents, checkout, settlement, wallet, card/provider callbacks, paid status or payment-received status; payment execution belongs to the separately governed Payments domain if implemented.
 
 Ride destination uses exactly one strategy: owning Event reference, canonical Place reference, or Ride-owned custom destination label. The database enforces this for `RideOffer` and `RideRequest`. Event and Place display data remains owned by those domains and is read through narrow reference ports. Ride public projections must omit exact private pickup or meeting location.
 
@@ -1348,50 +1348,17 @@ Requests does not own Ride, Fundraising, Donations, Payments or generic action s
 
 ---
 
-# 22. Authorized next Help domains (not current persistence)
+# 22. Future Help ownership boundaries
 
-ADR-060 authorizes the ordered Help implementation program after Requests completion:
+FundMe/Fundraising and Donations are not current persistence in this model. If implemented, Fundraising owns fundraiser/contribution state and Donations owns physical-item offer/claim state; neither reuses `HelpRequest` persistence. FundMe's target Cash/Crypto contribution coordination is Fundraising-owned accounting state and does not create a Payments rail. Donations remains physical-item giving, with exact pickup data protected by backend authorization.
 
-```text
-Fundraising
-  Fundraiser
-  FundraiserContribution
-  FundraiserBudgetItem
-  FundraiserUpdate
-  FundraiserMedia
-  FundraiserCryptoDestination
-
-Donations
-  DonationOffer
-  DonationClaim
-  DonationImage (plural, up to four per offer by service policy)
-```
-
-These names describe authorized target ownership only. They are **not current schema truth** until the corresponding slice adds contracts, migrations, repositories, services and verification. Do not pre-create speculative tables ahead of the ordered slices.
-
-FundMe support methods in this program are Cash and Crypto only. Cash/Crypto contribution records are Fundraising-owned coordination/accounting state; only confirmed contributions affect campaign progress. No credit/debit-card or Telegram-Stars flow is implied by this authorization.
-
-Donations is a physical-item-giving domain, not a financial or service marketplace. Sport and Community donation discovery reuse governed product taxonomy without creating a duplicate sports/category universe. Exact pickup data remains backend-protected.
-
-Other still-future concepts remain frozen until their own explicit slice begins:
-
-```text
-Place/Watch capability work outside already-implemented Place/Pitch/Watch ownership
-ULTRAS
-generic MediaAsset beyond current domain-owned media metadata
-Replay
-additional HOOMA NOW read models outside already authorized projections
-```
-
-Whistle, Gamers, Pitch, Ride, Requests, FundMe/Fundraising and Donations follow their explicit current decisions/programs rather than this frozen list.
+Future domains or capabilities must be added only when their owning source, contracts, persistence and authorization are explicitly implemented. Do not pre-create speculative canonical models here.
 
 ---
 
-# 23. Migration requirement# 23. Migration requirement
+# 23. Migration requirement
 
-Before first HOOMA ULTIMATE release, all pre-release current migrations are replaced with one reviewed initial migration generated from the reconciled schema and augmented with intentional PostgreSQL constraints where required.
-
-After first release, migration history becomes forward-only.
+HOOMA owns its migration history. Every durable schema change uses a committed migration; production `prisma db push` is not a substitute. Before first public release, any migration-history consolidation is a separate explicit reviewed database task proven from a clean database rather than an automatic requirement. After release, shipped migration history is forward-only.
 
 ---
 
