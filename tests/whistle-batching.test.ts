@@ -65,7 +65,10 @@ function serviceWith(options: {
   return new WhistleService(
     repositoryStub(options.repository),
     storeStub(options.store),
-    { requireMember: async () => undefined, ...options.communities } as unknown as CommunityMemberAuthorizer,
+    {
+      requireMember: async () => undefined,
+      ...options.communities,
+    } as unknown as CommunityMemberAuthorizer,
     { requireMemberContent: async () => undefined, ...options.events } as unknown as EventService,
     { ...options.gamers } as unknown as GamerService,
     { ...options.users } as unknown as CanonicalUserReader,
