@@ -62,6 +62,16 @@ TelegramIdentity         -> User
 
 No heuristic merge is allowed.
 
+## 1.2A Product-owner locked Web/Telegram equivalence
+
+**PRODUCT OWNER LOCK:** Agents may not change or weaken this requirement without explicit Product Owner approval.
+
+Browser HOOMA and Telegram Mini App HOOMA are two delivery/authentication contexts of the **same product implementation**. They must share the same product routes, feature behavior, business rules, canonical records, navigation model, visual design system and API/domain behavior.
+
+Allowed Telegram-specific differences are only host/runtime capabilities that the normal browser does not provide, including validated initData authentication transport, Telegram WebApp lifecycle, safe-area/viewport behavior, BackButton, haptics/native integration and other explicitly adopted Telegram host features.
+
+Telegram must not become a second product frontend, second router/shell, duplicate feature tree, duplicate canonical asset tree, alternate business workflow, or separate backend. A legacy Telegram deployment may exist only as a compatibility/runtime facade into the canonical Web application.
+
 ## 1.3 Admin means App Admin only
 
 The word **Admin** is reserved for global application authority only.

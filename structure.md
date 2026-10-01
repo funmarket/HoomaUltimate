@@ -87,6 +87,53 @@ Owns the canonical React application entry, browser routing, Web authentication 
 
 Acts as the Telegram deployment/runtime facade for the shared HOOMA frontend. Telegram-specific auth, viewport, safe-area, lifecycle, BackButton, haptics, and native interactions remain explicit runtime responsibilities.
 
+### Protected Web/Telegram product topology — Product Owner locked
+
+**PRODUCT OWNER LOCK:** The topology below may not be changed, weakened, or superseded by an agent without explicit Product Owner approval for that exact architectural change.
+
+HOOMA has one product frontend owner and two delivery contexts:
+
+```text
+                      HOOMA product
+                           |
+             +-------------+-------------+
+             |                           |
+       Normal browser               Telegram WebView
+       WebSession cookie            validated initData
+             |                           |
+             +-------------+-------------+
+                           |
+                       apps/web
+                           |
+                    HoomaRouter
+                           |
+                     HoomaShell
+                           |
+             @hooma/frontend + @hooma/ui
+                           |
+                        /api/*
+                           |
+                    Web API proxy
+                           |
+                 canonical API role
+                           |
+                   canonical User
+                           |
+          +----------------+----------------+
+          |                |                |
+      PostgreSQL          Redis        Object storage
+```
+
+Ownership consequences:
+
+- `apps/web` is the only product application source tree.
+- `apps/telegram` is a deployment/runtime compatibility facade, not a separate product frontend.
+- Telegram runtime adapters belong with the canonical Web application and may adapt host mechanics only; they must not fork routes, pages, components, styling, domain state or business rules.
+- `apps/telegram/src` is forbidden.
+- Telegram must not own duplicate product assets. Current active static product assets are resolved by the canonical Web build until a governed shared-asset source explicitly replaces that path.
+- Browser and Telegram share the same product API and durable business authorities. Only the authentication/runtime transport differs.
+- A legacy Telegram hostname may redirect to the canonical Web `/telegram` route for compatibility.
+
 ### `apps/worker`
 
 Owns asynchronous execution only: outbox consumption, retries/idempotent delivery, cleanup, media processing when implemented, Telegram delivery when configured, and Replay/background work when implemented.
@@ -420,6 +467,21 @@ A route may truthfully show coming-soon/unavailable state until its real vertica
 ---
 
 ## 12. Configuration and deployment
+
+### Canonical runtime/API authority
+
+Production topology is role/data-authority based, never name based.
+
+- Each environment has one canonical live API role for normal product traffic.
+- Production Web and Telegram explicitly target that canonical API through the Web `/api/*` proxy path.
+- A service named `staging` is not genuine staging merely because of its label. Genuine staging requires independently isolated runtime/data authority appropriate to its role; a service sharing production database/Outbox/storage authority is production/canary authority and must be treated/documented accordingly.
+- Production Web must use an explicit API origin. A missing production API origin must fail closed instead of silently selecting a legacy or staging-labelled service.
+- Production Web/Mini-App origins must be explicit HTTPS product origins. Localhost defaults are development-only.
+- The Telegram Mini App entry resolves to the canonical Web `/telegram` entry. There must be one configuration authority for that entry URL; duplicate or orphaned variables must not compete for ownership.
+- Exactly one process per Telegram bot/environment may own startup-time external Telegram menu configuration.
+- Runtime/service renames, routing changes and environment isolation are infrastructure migrations and require fresh live evidence plus bounded deployment verification.
+
+
 
 Replaceable configuration belongs in environment variables, including database/Redis/storage credentials, origins, Telegram bot configuration, and Mini App configuration.
 

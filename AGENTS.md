@@ -29,6 +29,46 @@ If a contradiction cannot be resolved from these sources, **stop and report it**
 
 ---
 
+## 1A. Product-owner locked Web/Telegram constitution
+
+**PRODUCT OWNER LOCK:** This section defines a never-break HOOMA product/runtime invariant. No agent, automation, refactor, hardening packet, documentation cleanup, or infrastructure task may delete, weaken, reinterpret, supersede, or replace this section unless the Product Owner gives explicit approval for that exact change in the current task.
+
+HOOMA has **one product frontend implementation** and **one business/backend behavior** delivered through two runtime contexts:
+
+```text
+Normal browser                         Telegram WebView
+WebCredential/WebSession               validated Telegram initData
+          \                           /
+           \                         /
+                    apps/web
+                       |
+                 HoomaRouter
+                       |
+                  HoomaShell
+                       |
+          @hooma/frontend + @hooma/ui
+                       |
+                    /api/*
+                       |
+              one canonical API role
+                       |
+                one canonical User
+```
+
+Permanent rules:
+
+- `apps/web` owns the canonical React application entry, router and shared application shell.
+- `packages/frontend` owns shared product feature UI/API integration; `packages/ui` owns platform-neutral presentation/tokens/governed shared assets.
+- `apps/telegram` may exist only as the Telegram deployment/runtime compatibility facade. It must not own a second product source tree.
+- Never create `apps/telegram/src`, a second Telegram router/provider/shell, Telegram-only copies of domain pages, a second product API client/state model, or different Telegram business behavior.
+- Browser and Telegram must expose the same HOOMA routes, features, business rules, product styling and canonical product data. Telegram-only differences are limited to host/runtime mechanics such as validated initData auth transport, WebApp lifecycle, viewport/safe-area behavior, BackButton, haptics/native integration and other explicit Telegram host capabilities.
+- Web and Telegram use distinct authentication transports but resolve to the same canonical HOOMA User. Credential conflict must fail closed; never create parallel Web/Telegram user authorities.
+- Shared product/brand assets have one governed source. Do not maintain Telegram binary copies merely because Telegram is a delivery surface.
+- Production Web and Telegram must traverse the same explicitly configured canonical API authority for that environment. Runtime authority is proved by actual traffic/data/resource ownership, never inferred from a Railway service name.
+- Exactly one runtime owner per Telegram bot/environment may perform replaceable external bot configuration such as the Mini App menu URL.
+- Production canonical origins/API targets must be explicit and fail closed when missing. Localhost development defaults and silent fallback to a staging-labelled/legacy service are not valid production authority.
+- A compatibility redirect may preserve an old Telegram URL, but it must redirect into the canonical Web `/telegram` entry and must never become a second product implementation.
+
 ## 2. Mandatory pre-build gate
 
 Before the first edit of every task:
