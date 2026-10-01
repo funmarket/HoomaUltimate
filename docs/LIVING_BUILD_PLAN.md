@@ -150,6 +150,37 @@ Scalability and user experience are part of architecture quality. A user opening
 
 ---
 
+## 3A. Protected Web/Telegram hardening gate
+
+**PRODUCT OWNER LOCK:** The Web/Telegram architecture below cannot be changed by an agent unless the Product Owner explicitly authorizes that architectural change.
+
+Every task touching Web, Telegram, API routing, runtime origins, Railway topology or Telegram bot configuration must preserve:
+
+- one canonical HOOMA product frontend;
+- one shared product/business behavior across Browser and Telegram;
+- one canonical User with WebSession and validated Telegram initData as separate authentication transports;
+- one canonical product asset authority with no Telegram binary-copy ownership;
+- one explicitly configured canonical API authority per environment;
+- runtime role classification from actual traffic/data/resource ownership rather than service names;
+- exactly one Telegram external-configuration owner per bot/environment;
+- production fail-closed behavior for missing canonical origins/API targets;
+- Telegram-specific code limited to host/runtime mechanics.
+
+### Hardening continuation order
+
+When existing runtime/document/source state violates those invariants, use this order:
+
+1. **Prove topology read-only** — identify real Web API target, API data/storage/Worker authority, bot ownership, origins and compatibility redirects from live evidence.
+2. **Lock/reconcile governing doctrine** — correct stale canonical documentation before source/runtime repair so implementation has one explicit target.
+3. **Harden source configuration ownership** — remove orphaned/duplicate configuration semantics and silent production fallbacks; preserve local development deliberately.
+4. **Correct runtime authority with bounded deployment changes** — one logical Railway mutation at a time, with before-state, health/log proof and real user-path smoke after each change.
+5. **Remove legacy facade residue only after consumer proof** — stale Telegram assets/dependencies may be removed; the facade itself remains if compatibility/deployment responsibility still exists.
+6. **Mechanically enforce the invariant** — architecture checks/regression tests must prevent a second Telegram product tree/router/shell and other high-confidence recurrence paths.
+7. **Prove both delivery contexts end to end** — Browser and Telegram WebView must reach the same product routes/API/domain data while Telegram host mechanics remain functional.
+8. **Only then close architecture hardening** — known runtime/config/document contradictions in this protected area cannot be waved away because a code-only PR is green.
+
+This is a durable hardening method, not a mutable PR/SHA/deployment ledger.
+
 ## 4. Parallel work rules
 
 Multiple agents may work on the repository. Parallel work is allowed; **interference is not**.

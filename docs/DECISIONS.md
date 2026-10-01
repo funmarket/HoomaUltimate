@@ -2,6 +2,22 @@
 
 Status: **Active ADR index**
 
+## Product-owner locked Web/Telegram runtime constitution
+
+**PRODUCT OWNER LOCK:** The current HOOMA Web/Telegram relationship defined here may not be deleted, weakened, reinterpreted or superseded by an agent without explicit Product Owner approval for that exact change.
+
+Current authority is one HOOMA product frontend and one backend/domain behavior:
+
+- `apps/web` owns the canonical React application/router/shell.
+- Browser and Telegram WebView are delivery/authentication contexts of that same frontend.
+- `apps/telegram` is a deployment/runtime compatibility facade only; it does not own product source.
+- Telegram runtime adapters may handle host mechanics only and may not fork product routes, styling, domain feature UI, state or business behavior.
+- Browser and Telegram converge on the same explicitly configured canonical API role and canonical User.
+- Shared approved product/brand assets have one governed source; Telegram binary duplication is not an architectural option.
+- Production runtime authority is determined from actual traffic/data/resource ownership, not Railway service names.
+- Exactly one owner per bot/environment may configure the Telegram Mini App/menu endpoint.
+- Production canonical API/origin configuration must fail closed rather than silently using localhost or a legacy/staging fallback.
+
 ## ADR-001 — Build a third clean repository
 
 **Decision:** `funmarket/HoomaUltimate` is the only implementation destination. Older applications remain read-only reference material only.
@@ -14,11 +30,13 @@ Status: **Active ADR index**
 
 **Reason:** Prevent drift back into legacy compromises.
 
-## ADR-003 — Four application runtimes with layered backend domains
+## ADR-003 — Product runtimes and delivery contexts
 
-**Decision:** Runtime apps are API, Web, Telegram and Worker. Substantial API domains use `domain/application/infrastructure/http` layering.
+**Historical decision:** HOOMA originally treated API, Web, Telegram and Worker as four independent runtime applications.
 
-**Reason:** Deployment/platform separation and domain boundaries are both required.
+**Current authority:** Product execution is the canonical Web frontend, API and Worker. Telegram WebView is a delivery/runtime context of the canonical Web application, while `apps/telegram` may remain only as a deployment/compatibility facade. Substantial API domains continue to use `domain/application/infrastructure/http` layering.
+
+**Reason:** Preserve explicit deployment/platform responsibilities without recreating a second Telegram product implementation.
 
 ## ADR-004 — One canonical User, two independent authentication transports
 
@@ -187,17 +205,21 @@ Production runtimes that can create or clean up managed media require complete `
 
 **Reason:** Avoid lost async work and inconsistent side effects.
 
-## ADR-028 — Separate frontend shells, share presentation selectively
+## ADR-028 — One canonical frontend, explicit Telegram runtime adapter
 
-**Decision:** Web and Telegram share contracts/design tokens/platform-neutral components where appropriate but maintain independent router/provider/shell ownership.
+**Historical decision:** Web and Telegram originally maintained independent router/provider/shell ownership.
 
-**Reason:** Telegram has lifecycle/navigation responsibilities that Web does not.
+**Current authority:** That model is superseded. `apps/web` owns the canonical React router/provider/shell for both normal browser and Telegram WebView delivery. Telegram-specific lifecycle/navigation/authentication mechanics remain explicit runtime adapters inside the canonical application and may not fork product UI, styling, routes, state or business behavior.
 
-## ADR-029 — Use real routers and route-level lazy loading
+**Reason:** Telegram host mechanics differ, but product ownership does not.
 
-**Decision:** Web and Telegram use explicit router configuration and lazy feature/page loading. Manual `window.location.pathname` routing is not a permanent architecture.
+## ADR-029 — One canonical router with route-level lazy loading
 
-**Reason:** The route count will expand substantially and needs testable ownership and loading boundaries.
+**Historical decision:** Web and Telegram previously had separate explicit router configurations.
+
+**Current authority:** HOOMA uses one canonical `HoomaRouter` under `apps/web`; `/telegram` is an entry route into that same route tree. Route-level lazy loading remains required where appropriate. A second Telegram router is forbidden.
+
+**Reason:** One route authority prevents product drift while retaining testable route ownership and loading boundaries.
 
 ## ADR-030 — Contracts are split by domain
 
@@ -207,9 +229,11 @@ Production runtimes that can create or clean up managed media require complete `
 
 ## ADR-031 — Shared approved brand assets have one governed source
 
-**Decision:** Approved HOOMA wordmarks, heritage crests, Match Day assets, collector-ticket masters and neutral fallbacks live under the shared UI/design asset ownership and are reused by Web/Telegram without binary duplication.
+**Decision:** Approved HOOMA wordmarks, heritage crests, Match Day assets, collector-ticket masters and neutral fallbacks have one governed asset authority and are reused by Browser/Telegram without binary duplication. Telegram must not maintain an independent product-asset copy merely because it is a delivery surface.
 
-**Reason:** Brand assets are product infrastructure, not page-local decoration.
+**Current-state reconciliation rule:** Existing duplicate files under a Telegram facade are migration residue to audit/remove only after consumer/provenance proof; they do not create a second canonical asset owner.
+
+**Reason:** Brand assets are product infrastructure, not page-local decoration, and one product frontend must not drift through duplicated binaries.
 
 ## ADR-032 — CI is read-only
 

@@ -3,6 +3,10 @@ import { z } from "zod";
 const nodeEnvironmentSchema = z.enum(["development", "test", "production"]);
 const mediaStorageScopeSchema = z.enum(["production", "staging", "development"]);
 const portSchema = z.coerce.number().int().positive().max(65535);
+const booleanEnvironmentSchema = z
+  .enum(["true", "false"])
+  .default("false")
+  .transform((value) => value === "true");
 const telegramUserIdSchema = z
   .string()
   .trim()
@@ -48,6 +52,7 @@ const apiEnvironmentSchema = z
       .max(24 * 365)
       .default(720),
     TELEGRAM_BOT_TOKEN: z.string().default(""),
+    TELEGRAM_CONFIGURE_MENU: booleanEnvironmentSchema,
     TELEGRAM_INIT_DATA_MAX_AGE_SECONDS: z.coerce.number().int().positive().default(86400),
     STADIA_MAPS_API_KEY: z.string().default(""),
     RIDE_STATIC_MAP_PROVIDER: z.enum(["svg", "stadiamaps"]).default("svg"),
@@ -68,6 +73,27 @@ const apiEnvironmentSchema = z
         code: z.ZodIssueCode.custom,
         path: ["REDIS_URL"],
         message: "REDIS_URL is required in production for Whistle transient state",
+      });
+    }
+    if (value.NODE_ENV === "production" && !value.WEB_ORIGIN.startsWith("https://")) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["WEB_ORIGIN"],
+        message: "WEB_ORIGIN must be an explicit HTTPS origin in production",
+      });
+    }
+    if (value.NODE_ENV === "production" && value.TELEGRAM_ORIGIN !== value.WEB_ORIGIN) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["TELEGRAM_ORIGIN"],
+        message: "TELEGRAM_ORIGIN must match WEB_ORIGIN for the canonical production frontend",
+      });
+    }
+    if (value.TELEGRAM_CONFIGURE_MENU && !value.TELEGRAM_BOT_TOKEN) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["TELEGRAM_CONFIGURE_MENU"],
+        message: "TELEGRAM_CONFIGURE_MENU requires TELEGRAM_BOT_TOKEN",
       });
     }
     validateCompleteObjectStorageConfig(value, context);
