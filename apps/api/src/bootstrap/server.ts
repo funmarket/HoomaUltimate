@@ -23,7 +23,7 @@ const listenPort = config.PORT ?? config.API_PORT;
 const server = app.listen(listenPort, "0.0.0.0", () => {
   console.log(`HOOMA API listening on ${listenPort}`);
 
-  if (config.TELEGRAM_BOT_TOKEN) {
+  if (config.TELEGRAM_CONFIGURE_MENU && config.TELEGRAM_BOT_TOKEN) {
     const telegramWebAppUrl = `${config.WEB_ORIGIN.replace(/\/$/, "")}/telegram`;
     void setTelegramChatMenuButton(config.TELEGRAM_BOT_TOKEN, telegramWebAppUrl)
       .then(() => console.log(`Telegram Web App menu configured for ${telegramWebAppUrl}`))

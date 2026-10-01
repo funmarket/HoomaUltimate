@@ -18,6 +18,7 @@ const required = [
   "packages/database/prisma/schema.prisma",
   "packages/database/prisma/migrations/migration_lock.toml",
   "packages/domain/package.json",
+  "packages/media-processing/package.json",
   "packages/storage/package.json",
   "packages/testing/package.json",
   "packages/ui/package.json",
@@ -52,7 +53,10 @@ for (const directory of migrationDirectories) {
 const envExample = await readFile(path.join(root, ".env.example"), "utf8");
 const requiredEnvExampleKeys = [
   "TELEGRAM_BOT_TOKEN",
-  "MINI_APP_URL",
+  "TELEGRAM_CONFIGURE_MENU",
+  "WEB_ORIGIN",
+  "TELEGRAM_ORIGIN",
+  "HOOMA_API_ORIGIN",
   "DATABASE_URL",
   "REDIS_URL",
   "OBJECT_STORAGE_ENDPOINT",

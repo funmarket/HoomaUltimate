@@ -3,15 +3,14 @@ import { access, stat } from "node:fs/promises";
 import http, { createServer } from "node:http";
 import https from "node:https";
 import path from "node:path";
+import { resolveWebApiOrigin } from "./runtime-config.mjs";
 
 const requestedRoot = process.argv[2];
 if (!requestedRoot) throw new Error("Usage: node scripts/serve-static.mjs <directory>");
 
 const root = path.resolve(process.cwd(), requestedRoot);
 const port = Number(process.env.PORT ?? 8080);
-const apiOrigin = normalizeOrigin(
-  process.env.HOOMA_API_ORIGIN ?? process.env.RAILWAY_SERVICE_HOOMAULTIMATE_STAGING_URL,
-);
+const apiOrigin = resolveWebApiOrigin(process.env);
 const mime = new Map([
   [".css", "text/css; charset=utf-8"],
   [".gif", "image/gif"],
@@ -28,11 +27,6 @@ const mime = new Map([
   [".woff", "font/woff"],
   [".woff2", "font/woff2"],
 ]);
-
-function normalizeOrigin(value) {
-  if (!value) return null;
-  return /^https?:\/\//i.test(value) ? value : `https://${value}`;
-}
 
 function isInsideRoot(candidate) {
   return candidate === root || candidate.startsWith(`${root}${path.sep}`);
