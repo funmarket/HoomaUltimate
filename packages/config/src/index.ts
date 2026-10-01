@@ -3,7 +3,10 @@ import { z } from "zod";
 const nodeEnvironmentSchema = z.enum(["development", "test", "production"]);
 const mediaStorageScopeSchema = z.enum(["production", "staging", "development"]);
 const portSchema = z.coerce.number().int().positive().max(65535);
-const booleanEnvironmentSchema = z.enum(["true", "false"]).transform((value) => value === "true");
+const booleanEnvironmentSchema = z
+  .enum(["true", "false"])
+  .default("false")
+  .transform((value) => value === "true");
 const telegramUserIdSchema = z
   .string()
   .trim()
@@ -49,7 +52,7 @@ const apiEnvironmentSchema = z
       .max(24 * 365)
       .default(720),
     TELEGRAM_BOT_TOKEN: z.string().default(""),
-    TELEGRAM_CONFIGURE_MENU: booleanEnvironmentSchema.default("false"),
+    TELEGRAM_CONFIGURE_MENU: booleanEnvironmentSchema,
     TELEGRAM_INIT_DATA_MAX_AGE_SECONDS: z.coerce.number().int().positive().default(86400),
     STADIA_MAPS_API_KEY: z.string().default(""),
     RIDE_STATIC_MAP_PROVIDER: z.enum(["svg", "stadiamaps"]).default("svg"),
