@@ -3,9 +3,7 @@ import { z } from "zod";
 const nodeEnvironmentSchema = z.enum(["development", "test", "production"]);
 const mediaStorageScopeSchema = z.enum(["production", "staging", "development"]);
 const portSchema = z.coerce.number().int().positive().max(65535);
-const booleanEnvironmentSchema = z
-  .enum(["true", "false"])
-  .transform((value) => value === "true");
+const booleanEnvironmentSchema = z.enum(["true", "false"]).transform((value) => value === "true");
 const telegramUserIdSchema = z
   .string()
   .trim()
