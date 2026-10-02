@@ -6,5 +6,7 @@ export const SHELL_PRESENTATION = {
 export type ShellPresentation = (typeof SHELL_PRESENTATION)[keyof typeof SHELL_PRESENTATION];
 
 export function shellPresentationForPath(pathname: string): ShellPresentation {
-  return pathname === "/athletes" ? SHELL_PRESENTATION.MEDIA_FIRST : SHELL_PRESENTATION.STANDARD;
+  return pathname === "/athletes" || pathname === "/athletes/"
+    ? SHELL_PRESENTATION.MEDIA_FIRST
+    : SHELL_PRESENTATION.STANDARD;
 }
