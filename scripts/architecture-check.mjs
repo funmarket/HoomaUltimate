@@ -21,6 +21,38 @@ const legacyApplicationHttpImports = new Map(
     "apps/api/src/modules/whistle/application/whistle.service.ts",
   ].map((file) => [file, new Set(["../../../http/errors/app-error.js"])]),
 );
+const hardenedApplicationImports = new Map(
+  [
+    ["teams/application/team.service.ts", ["../../communities/application/community.service.js"]],
+    [
+      "events/application/event.service.ts",
+      [
+        "../../communities/application/community.service.js",
+        "../../places/application/place.service.js",
+      ],
+    ],
+    ["pitch/application/pitch-owner.service.ts", ["../../places/application/place.repository.js"]],
+    ["gear-up/application/gear-up.service.ts", ["../../places/application/place.repository.js"]],
+    [
+      "gear-up/application/gear-up-product.service.ts",
+      ["../../places/application/place.repository.js"],
+    ],
+    [
+      "gear-up/application/gear-up-product-media.service.ts",
+      ["../../places/application/place.repository.js"],
+    ],
+    [
+      "whistle/application/whistle.service.ts",
+      [
+        "../../communities/application/community.service.js",
+        "../../events/application/event.service.js",
+        "../../gamers/application/gamer.service.js",
+        "../../notifications/application/user-notification.service.js",
+        "../../rides/application/ride.service.js",
+      ],
+    ],
+  ].map(([file, specifiers]) => [`apps/api/src/modules/${file}`, new Set(specifiers)]),
+);
 const importSpecifierPattern = /\bimport\b(?:[\s\S]*?\bfrom\s*)?["']([^"']+)["']/g;
 
 async function walk(directory) {
@@ -66,6 +98,25 @@ for (const file of await walk(root)) {
   const rel = relative(file);
   if (!sourceExtensions.has(path.extname(file))) continue;
   const source = await readFile(file, "utf8");
+
+  const forbiddenApplicationImports = hardenedApplicationImports.get(rel);
+  if (forbiddenApplicationImports) {
+    for (const specifier of getImportSpecifiers(source)) {
+      if (forbiddenApplicationImports.has(specifier)) {
+        violations.push(
+          `${rel}: must use its narrow application capability instead of ${specifier}`,
+        );
+      }
+    }
+  }
+  if (rel === "apps/api/src/modules/gear-up/infrastructure/prisma-gear-up.repository.ts") {
+    forbid(
+      file,
+      source,
+      /\btx\s*\.\s*place\s*\.\s*(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/,
+      "Gear Up must delegate canonical Place writes to the Places-owned persistence boundary",
+    );
+  }
 
   if (rel.startsWith("apps/web/") || rel.startsWith("apps/telegram/")) {
     forbid(
