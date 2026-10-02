@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { AthletesService } from "../apps/api/src/modules/athletes/application/athletes.service.js";
 import type { CommunityMemberAuthorizer } from "../apps/api/src/modules/communities/application/community-member.authorizer.js";
-import type { EventService } from "../apps/api/src/modules/events/application/event.service.js";
+import type { EventMemberContentAuthorizer } from "../apps/api/src/modules/events/application/event-member-content.authorizer.js";
 import type { GamerService } from "../apps/api/src/modules/gamers/application/gamer.service.js";
 import type { CanonicalUserReader } from "../apps/api/src/modules/identity/application/canonical-user.reader.js";
 import type { RideService } from "../apps/api/src/modules/rides/application/ride.service.js";
@@ -55,7 +55,7 @@ function serviceWith(options: {
   repository?: Partial<WhistleRepository>;
   store?: Partial<WhistleTransientStore>;
   communities?: Partial<CommunityMemberAuthorizer>;
-  events?: Partial<EventService>;
+  events?: Partial<EventMemberContentAuthorizer>;
   gamers?: Partial<GamerService>;
   users?: Partial<CanonicalUserReader>;
   athletes?: Partial<AthletesService>;
@@ -69,7 +69,7 @@ function serviceWith(options: {
       requireMember: async () => undefined,
       ...options.communities,
     } as unknown as CommunityMemberAuthorizer,
-    { requireMemberContent: async () => undefined, ...options.events } as unknown as EventService,
+    { requireMemberContent: async () => undefined, ...options.events },
     { ...options.gamers } as unknown as GamerService,
     { ...options.users } as unknown as CanonicalUserReader,
     {
@@ -297,5 +297,39 @@ test("Community Whistle read and post delegate membership authorization through 
   assert.deepEqual(calls, [
     ["community-read-1", "reader-1"],
     ["community-post-1", "poster-1"],
+  ]);
+});
+
+test("Event Whistle read and post delegate member-content authorization through the Events boundary", async () => {
+  const calls: Array<[string, string]> = [];
+  const service = serviceWith({
+    events: {
+      async requireMemberContent(userId: string, eventId: string) {
+        calls.push([userId, eventId]);
+      },
+    },
+    repository: {
+      async createWithDailyQuota(input) {
+        return {
+          id: input.id,
+          authorUserId: input.authorUserId,
+          contextType: input.contextType,
+          contextId: input.contextId,
+          createdAt: input.createdAt,
+          expiresAt: input.expiresAt,
+        };
+      },
+      async quotaUsed() {
+        return 1;
+      },
+    },
+  });
+
+  await service.list("reader-1", "EVENT", "event-read-1");
+  await service.create("poster-1", "EVENT", "event-post-1", "hello");
+
+  assert.deepEqual(calls, [
+    ["reader-1", "event-read-1"],
+    ["poster-1", "event-post-1"],
   ]);
 });
