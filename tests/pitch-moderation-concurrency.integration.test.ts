@@ -3,6 +3,7 @@ import test from "node:test";
 import { getDatabaseClient } from "@hooma/database";
 import type { PlatformAdminAccessPort } from "../apps/api/src/application/platform-admin-access.port.js";
 import { AppError } from "../apps/api/src/http/errors/app-error.js";
+import { PlaceService } from "../apps/api/src/modules/places/application/place.service.js";
 import { PrismaPlaceRepository } from "../apps/api/src/modules/places/infrastructure/prisma-place.repository.js";
 import { ApprovedPitchReader } from "../apps/api/src/modules/pitch/application/approved-pitch.reader.js";
 import { PitchModerationService } from "../apps/api/src/modules/pitch/application/pitch-moderation.service.js";
@@ -71,9 +72,12 @@ test("Pitch moderation concurrency is database-enforced", async () => {
   });
 
   const places = new PrismaPlaceRepository(db);
+  const placeService = new PlaceService(places, allowAdmin, {
+    resolve: async (value) => value,
+  });
   const pitchRepository = new PrismaPitchRepository(db);
   const pitchReader = new ApprovedPitchReader(pitchRepository);
-  const pitchOwner = new PitchOwnerService(pitchRepository, places, allowAdmin);
+  const pitchOwner = new PitchOwnerService(pitchRepository, placeService, allowAdmin);
   const pitchModeration = new PitchModerationService(pitchRepository, allowAdmin);
   let applicationId: string | null = null;
 

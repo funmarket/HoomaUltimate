@@ -461,3 +461,21 @@ Shared Help concerns may be extracted only as narrow reusable boundaries: live p
 Canonical Requests is current implemented behavior. FundMe and Donations remain future independent-domain work and must not be represented as implemented before their source exists and is verified.
 
 **Reason:** The product owner explicitly authorized the full Help program while requiring clean domain ownership, no duplicate schemas/services, no fake payment or donation mechanics, readable mobile-first UI and strict current-source/no-drift execution.
+
+## ADR-061 — Cross-domain ownership through narrow capabilities
+
+**Context:** HOOMA's owning domains sometimes need foreign facts, authorization or coordinated workflows. Broad service/repository dependencies and direct foreign persistence mutations blur ownership and couple otherwise independent domains.
+
+**Decision:** Domains own. Narrow capabilities ask. Orchestrators coordinate.
+
+- Every durable product concept has one canonical owner. That owner retains its business rules, lifecycle, domain authorization, repositories and canonical persistence writes. Foreign keys and references do not transfer ownership.
+- A consumer uses the narrowest sufficient explicit consumer-specific application capability for foreign facts or authority. Readers, authorizers, resolvers, notifiers and narrow access ports are valid shapes; no universal interface shape is required. Complete foreign application services or repositories must not be dependencies when a smaller capability satisfies the requirement.
+- Application/domain code must not import another domain's infrastructure implementation. A domain must not directly mutate another domain's canonical persistence.
+- Transaction or atomicity requirements do not transfer ownership. Multi-domain consistency uses an owner-controlled transaction-capable boundary or explicit orchestration, with canonical writes remaining under their owner's control.
+- Orchestrators coordinate participating domains without absorbing their policy, authorization, repositories, lifecycle or canonical persistence ownership.
+- Bootstrap/composition wiring may connect concrete owner implementations to narrow interfaces. Wiring does not confer business ownership.
+- Shared packages may provide genuinely shared primitives, but must not hide business ownership. EverythingService, universal cross-domain repositories, generic permissions gateways, duplicate canonical services, second persistence owners, parallel business models and competing sources of truth are prohibited.
+
+**Enforcement:** `scripts/architecture-check.mjs` detects specific source patterns; it does not automatically prove arbitrary semantic ownership. It rejects application/domain imports of foreign infrastructure and exact broad import regressions in the protected Teams, Events, Pitch, Gear Up and Whistle consumers. Its Gear Up repository guard rejects direct `tx.place` calls to `create`, `createMany`, `update`, `updateMany`, `upsert`, `delete` and `deleteMany` in `prisma-gear-up.repository.ts`; canonical Place moderation remains delegated to the Places-owned `reviewPendingPlace` transaction boundary. Legitimate narrow application ports, cross-domain readers/authorizers, explicit orchestration, composition-root wiring, Place reads and returned relation fields remain allowed. Existing exact AppError import grandfathering remains separate unresolved transport debt.
+
+**Consequences:** Future cross-domain work must identify the owner, consumer, exact capability, read/authorization/write nature, persistence owner and transaction requirements. Prefer consumer-specific interfaces over universal gateways. Migrate existing broad dependencies incrementally while preserving behavior rather than through a big-bang redesign. Unclear ownership is a stop condition, not permission to invent a shared business owner.

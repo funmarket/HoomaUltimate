@@ -196,3 +196,23 @@ test("CommunityService allows Founder to demote Coach to MEMBER", async () => {
   assert.deepEqual(await service.revokeCoach("founder", "community-1", "coach"), { ok: true });
   assert.equal(revoked, true);
 });
+
+test("CommunityService requireCoach preserves Founder/Coach policy and exact denial semantics", async () => {
+  const service = new CommunityService(
+    repositoryStub({ founder: "FOUNDER", coach: "COACH", member: "MEMBER" }),
+  );
+
+  await assert.doesNotReject(() => service.requireCoach("community-1", "founder"));
+  await assert.doesNotReject(() => service.requireCoach("community-1", "coach"));
+
+  for (const userId of ["member", "outsider"]) {
+    await assert.rejects(
+      () => service.requireCoach("community-1", userId),
+      (error: unknown) =>
+        error instanceof AppError &&
+        error.statusCode === 403 &&
+        error.code === "COMMUNITY_COACH_REQUIRED" &&
+        error.message === "Founder or Coach access required",
+    );
+  }
+});

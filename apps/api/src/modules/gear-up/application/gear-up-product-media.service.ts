@@ -12,7 +12,7 @@ import {
 } from "@hooma/contracts/gear-up";
 import type { ObjectStorage, ObjectStorageReadUrlSigner } from "@hooma/storage";
 import type { PlatformAdminAccessPort } from "../../../application/platform-admin-access.port.js";
-import type { PlaceRepository } from "../../places/application/place.repository.js";
+import type { GearUpPlaceAccess } from "./gear-up-place-access.js";
 import { GearUpError } from "../domain/gear-up-error.js";
 import type { GearUpProductRepository } from "./gear-up-product.repository.js";
 import type { GearUpProductImageProcessor } from "./gear-up-product-image-processor.js";
@@ -33,7 +33,7 @@ export class GearUpProductMediaService {
   constructor(
     private readonly images: GearUpProductMediaRepository,
     private readonly products: GearUpProductRepository,
-    private readonly places: PlaceRepository,
+    private readonly places: GearUpPlaceAccess,
     private readonly platformAdmin: PlatformAdminAccessPort,
     private readonly storage: ObjectStorage | null,
     private readonly processor: GearUpProductImageProcessor,
@@ -209,7 +209,7 @@ export class GearUpProductMediaService {
 
   private async requireManage(userId: string, placeId: string, productId: string): Promise<void> {
     if (
-      !(await this.places.hasVerifiedOwnership(placeId, userId)) &&
+      !(await this.places.isVerifiedOwner(placeId, userId)) &&
       !(await this.platformAdmin.isPlatformAdmin(userId))
     ) {
       throw new GearUpError(

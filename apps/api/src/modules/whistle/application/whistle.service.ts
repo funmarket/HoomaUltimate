@@ -1,12 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { AppError } from "../../../http/errors/app-error.js";
 import type { AthletesMemberContentAuthorizer } from "../../athletes/application/athletes-content-authorizer.js";
-import type { CommunityService } from "../../communities/application/community.service.js";
-import type { EventService } from "../../events/application/event.service.js";
-import type { GamerService } from "../../gamers/application/gamer.service.js";
+import type { CommunityMemberAuthorizer } from "../../communities/application/community-member.authorizer.js";
+import type { EventMemberContentAuthorizer } from "../../events/application/event-member-content.authorizer.js";
+import type { GamerDirectWhistleContextResolver } from "../../gamers/application/gamer-direct-whistle-context.resolver.js";
 import type { CanonicalUserReader } from "../../identity/application/canonical-user.reader.js";
-import type { UserNotificationService } from "../../notifications/application/user-notification.service.js";
-import type { RideService } from "../../rides/application/ride.service.js";
+import type { WhistleNotificationNotifier } from "../../notifications/application/whistle-notification.notifier.js";
+import type { RideWhistleAccessAuthorizer } from "../../rides/application/ride-whistle-access.authorizer.js";
 import type {
   WhistleContextType,
   WhistleListCursor,
@@ -78,13 +78,13 @@ export class WhistleService {
   constructor(
     private readonly repository: WhistleRepository,
     private readonly transientStore: WhistleTransientStore,
-    private readonly communities: CommunityService,
-    private readonly events: EventService,
-    private readonly gamers: GamerService,
+    private readonly communities: CommunityMemberAuthorizer,
+    private readonly events: EventMemberContentAuthorizer,
+    private readonly gamers: GamerDirectWhistleContextResolver,
     private readonly users: CanonicalUserReader,
     private readonly athletes: AthletesMemberContentAuthorizer,
-    private readonly rides?: RideService,
-    private readonly notifications?: UserNotificationService,
+    private readonly rides?: RideWhistleAccessAuthorizer,
+    private readonly notifications?: WhistleNotificationNotifier,
   ) {}
 
   private async authorizeContext(

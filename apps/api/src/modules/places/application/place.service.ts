@@ -79,6 +79,10 @@ export class PlaceService {
     return this.repository.claimOwnership(userId, placeId, input);
   }
 
+  canManage(placeId: string, userId: string) {
+    return this.repository.canManage(placeId, userId);
+  }
+
   isVerifiedOwner(placeId: string, userId: string) {
     return this.repository.hasVerifiedOwnership(placeId, userId);
   }
