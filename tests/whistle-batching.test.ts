@@ -6,7 +6,7 @@ import type { EventMemberContentAuthorizer } from "../apps/api/src/modules/event
 import type { GamerDirectWhistleContextResolver } from "../apps/api/src/modules/gamers/application/gamer-direct-whistle-context.resolver.js";
 import type { CanonicalUserReader } from "../apps/api/src/modules/identity/application/canonical-user.reader.js";
 import type { RideWhistleAccessAuthorizer } from "../apps/api/src/modules/rides/application/ride-whistle-access.authorizer.js";
-import type { UserNotificationService } from "../apps/api/src/modules/notifications/application/user-notification.service.js";
+import type { WhistleNotificationNotifier } from "../apps/api/src/modules/notifications/application/whistle-notification.notifier.js";
 import type {
   WhistleMetadataRecord,
   WhistleRepository,
@@ -60,7 +60,7 @@ function serviceWith(options: {
   users?: Partial<CanonicalUserReader>;
   athletes?: Partial<AthletesService>;
   rides?: Partial<RideWhistleAccessAuthorizer>;
-  notifications?: Partial<UserNotificationService>;
+  notifications?: Partial<WhistleNotificationNotifier>;
 }) {
   return new WhistleService(
     repositoryStub(options.repository),
@@ -89,7 +89,7 @@ function serviceWith(options: {
     {
       notifyWhistle: async () => undefined,
       ...options.notifications,
-    } as unknown as UserNotificationService,
+    },
   );
 }
 

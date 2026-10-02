@@ -5,7 +5,7 @@ import type { CommunityMemberAuthorizer } from "../../communities/application/co
 import type { EventMemberContentAuthorizer } from "../../events/application/event-member-content.authorizer.js";
 import type { GamerDirectWhistleContextResolver } from "../../gamers/application/gamer-direct-whistle-context.resolver.js";
 import type { CanonicalUserReader } from "../../identity/application/canonical-user.reader.js";
-import type { UserNotificationService } from "../../notifications/application/user-notification.service.js";
+import type { WhistleNotificationNotifier } from "../../notifications/application/whistle-notification.notifier.js";
 import type { RideWhistleAccessAuthorizer } from "../../rides/application/ride-whistle-access.authorizer.js";
 import type {
   WhistleContextType,
@@ -84,7 +84,7 @@ export class WhistleService {
     private readonly users: CanonicalUserReader,
     private readonly athletes: AthletesMemberContentAuthorizer,
     private readonly rides?: RideWhistleAccessAuthorizer,
-    private readonly notifications?: UserNotificationService,
+    private readonly notifications?: WhistleNotificationNotifier,
   ) {}
 
   private async authorizeContext(
