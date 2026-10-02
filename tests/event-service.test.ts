@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { EventCreateInput } from "@hooma/contracts";
+import type { PublicPlaceSummary } from "@hooma/contracts/places";
 import type { CommunityCoachAuthorizer } from "../apps/api/src/modules/communities/application/community-coach.authorizer.js";
 import type {
   EventAccessRecord,
@@ -83,11 +84,33 @@ const playInput: EventCreateInput = {
   watch: null,
 };
 
+function publicPlace(placeId: string): PublicPlaceSummary {
+  return {
+    id: placeId,
+    slug: `place-${placeId}`,
+    name: "Test Place",
+    address: "1 Test Street",
+    city: "Tunis",
+    houma: "Test",
+    latitude: null,
+    longitude: null,
+    phone: null,
+    websiteUrl: null,
+    imageUrl: null,
+    images: [],
+    description: null,
+    category: null,
+    email: null,
+    menuItems: [],
+    submissionOrigin: null,
+  };
+}
+
 function approvedPlaces(onGet?: (placeId: string) => void): EventPlaceAccess {
   return {
     getPublic: async (placeId: string) => {
       onGet?.(placeId);
-      return { id: placeId };
+      return publicPlace(placeId);
     },
     isVerifiedOwner: async () => true,
   };
@@ -150,7 +173,7 @@ test("EventService rejects CULTURAL create after Place validation when ownership
     getPublic: async (placeId: string) => {
       assert.equal(placeId, "place-1");
       order.push("place");
-      return { id: placeId };
+      return publicPlace(placeId);
     },
     isVerifiedOwner: async (placeId: string, userId: string) => {
       assert.equal(placeId, "place-1");
@@ -283,7 +306,7 @@ test("EventService checks persisted Cultural subtype on partial updates", async 
     return {} as never;
   };
   const places: EventPlaceAccess = {
-    getPublic: async (placeId: string) => ({ id: placeId }),
+    getPublic: async (placeId: string) => publicPlace(placeId),
     isVerifiedOwner: async (placeId: string, userId: string) => {
       assert.equal(placeId, "place-1");
       assert.equal(userId, "user-1");
