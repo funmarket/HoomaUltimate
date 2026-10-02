@@ -18,6 +18,7 @@ test("ordinary shell pages stay STANDARD while the Athletes hub explicitly selec
   assert.equal(shellPresentationForPath("/athletes/new"), SHELL_PRESENTATION.STANDARD);
   assert.equal(shellPresentationForPath("/athletes/community-1"), SHELL_PRESENTATION.STANDARD);
   assert.equal(shellPresentationForPath("/athletes"), SHELL_PRESENTATION.MEDIA_FIRST);
+  assert.equal(shellPresentationForPath("/athletes/"), SHELL_PRESENTATION.MEDIA_FIRST);
 
   assert.match(shell, /shellPresentationForPath\(location\.pathname\)/);
   assert.match(shell, /foundation-shell--\$\{shellPresentation\}/);
