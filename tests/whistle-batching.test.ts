@@ -5,7 +5,7 @@ import type { CommunityMemberAuthorizer } from "../apps/api/src/modules/communit
 import type { EventMemberContentAuthorizer } from "../apps/api/src/modules/events/application/event-member-content.authorizer.js";
 import type { GamerDirectWhistleContextResolver } from "../apps/api/src/modules/gamers/application/gamer-direct-whistle-context.resolver.js";
 import type { CanonicalUserReader } from "../apps/api/src/modules/identity/application/canonical-user.reader.js";
-import type { RideService } from "../apps/api/src/modules/rides/application/ride.service.js";
+import type { RideWhistleAccessAuthorizer } from "../apps/api/src/modules/rides/application/ride-whistle-access.authorizer.js";
 import type { UserNotificationService } from "../apps/api/src/modules/notifications/application/user-notification.service.js";
 import type {
   WhistleMetadataRecord,
@@ -59,7 +59,7 @@ function serviceWith(options: {
   gamers?: Partial<GamerDirectWhistleContextResolver>;
   users?: Partial<CanonicalUserReader>;
   athletes?: Partial<AthletesService>;
-  rides?: Partial<RideService>;
+  rides?: Partial<RideWhistleAccessAuthorizer>;
   notifications?: Partial<UserNotificationService>;
 }) {
   return new WhistleService(
@@ -85,7 +85,7 @@ function serviceWith(options: {
       requireWhistleRead: async () => ({ ownerUserId: "ride-owner-1" }),
       requireWhistlePost: async () => ({ ownerUserId: "ride-owner-1" }),
       ...options.rides,
-    } as unknown as RideService,
+    },
     {
       notifyWhistle: async () => undefined,
       ...options.notifications,
@@ -172,13 +172,17 @@ test("Athletes Whistle authorizes through active Athletes membership and uses sh
 });
 
 test("Ride Whistle authorizes through Ride domain and notifies owner without body", async () => {
-  const rideCalls: Array<[string, string]> = [];
+  const rideCalls: Array<["read" | "post", string, string]> = [];
   const created: Array<{ contextType: string; contextId: string; dailyLimit: number }> = [];
   const notifications: Array<Record<string, unknown>> = [];
   const service = serviceWith({
     rides: {
+      async requireWhistleRead(userId: string, rideRequestId: string) {
+        rideCalls.push(["read", userId, rideRequestId]);
+        return { ownerUserId: "ride-read-owner-1" };
+      },
       async requireWhistlePost(userId: string, rideRequestId: string) {
-        rideCalls.push([userId, rideRequestId]);
+        rideCalls.push(["post", userId, rideRequestId]);
         return { ownerUserId: "ride-owner-1" };
       },
     },
@@ -209,9 +213,13 @@ test("Ride Whistle authorizes through Ride domain and notifies owner without bod
     },
   });
 
+  await service.list("reader-1", "RIDE", "ride-request-read");
   await service.create("rider-1", "RIDE", "ride-request-1", "I can help");
 
-  assert.deepEqual(rideCalls, [["rider-1", "ride-request-1"]]);
+  assert.deepEqual(rideCalls, [
+    ["read", "reader-1", "ride-request-read"],
+    ["post", "rider-1", "ride-request-1"],
+  ]);
   assert.deepEqual(created, [{ contextType: "RIDE", contextId: "ride-request-1", dailyLimit: 11 }]);
   assert.equal(notifications.length, 1);
   assert.equal(notifications[0]?.recipientUserId, "ride-owner-1");

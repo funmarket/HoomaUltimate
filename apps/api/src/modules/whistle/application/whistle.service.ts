@@ -6,7 +6,7 @@ import type { EventMemberContentAuthorizer } from "../../events/application/even
 import type { GamerDirectWhistleContextResolver } from "../../gamers/application/gamer-direct-whistle-context.resolver.js";
 import type { CanonicalUserReader } from "../../identity/application/canonical-user.reader.js";
 import type { UserNotificationService } from "../../notifications/application/user-notification.service.js";
-import type { RideService } from "../../rides/application/ride.service.js";
+import type { RideWhistleAccessAuthorizer } from "../../rides/application/ride-whistle-access.authorizer.js";
 import type {
   WhistleContextType,
   WhistleListCursor,
@@ -83,7 +83,7 @@ export class WhistleService {
     private readonly gamers: GamerDirectWhistleContextResolver,
     private readonly users: CanonicalUserReader,
     private readonly athletes: AthletesMemberContentAuthorizer,
-    private readonly rides?: RideService,
+    private readonly rides?: RideWhistleAccessAuthorizer,
     private readonly notifications?: UserNotificationService,
   ) {}
 
