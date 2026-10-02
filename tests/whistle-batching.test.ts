@@ -3,7 +3,7 @@ import test from "node:test";
 import type { AthletesService } from "../apps/api/src/modules/athletes/application/athletes.service.js";
 import type { CommunityMemberAuthorizer } from "../apps/api/src/modules/communities/application/community-member.authorizer.js";
 import type { EventMemberContentAuthorizer } from "../apps/api/src/modules/events/application/event-member-content.authorizer.js";
-import type { GamerService } from "../apps/api/src/modules/gamers/application/gamer.service.js";
+import type { GamerDirectWhistleContextResolver } from "../apps/api/src/modules/gamers/application/gamer-direct-whistle-context.resolver.js";
 import type { CanonicalUserReader } from "../apps/api/src/modules/identity/application/canonical-user.reader.js";
 import type { RideService } from "../apps/api/src/modules/rides/application/ride.service.js";
 import type { UserNotificationService } from "../apps/api/src/modules/notifications/application/user-notification.service.js";
@@ -56,7 +56,7 @@ function serviceWith(options: {
   store?: Partial<WhistleTransientStore>;
   communities?: Partial<CommunityMemberAuthorizer>;
   events?: Partial<EventMemberContentAuthorizer>;
-  gamers?: Partial<GamerService>;
+  gamers?: Partial<GamerDirectWhistleContextResolver>;
   users?: Partial<CanonicalUserReader>;
   athletes?: Partial<AthletesService>;
   rides?: Partial<RideService>;
@@ -70,7 +70,12 @@ function serviceWith(options: {
       ...options.communities,
     } as unknown as CommunityMemberAuthorizer,
     { requireMemberContent: async () => undefined, ...options.events },
-    { ...options.gamers } as unknown as GamerService,
+    {
+      resolveDirectWhistleContext: async () => {
+        throw new Error("not used");
+      },
+      ...options.gamers,
+    },
     { ...options.users } as unknown as CanonicalUserReader,
     {
       requireMemberContent: async () => undefined,
@@ -332,4 +337,49 @@ test("Event Whistle read and post delegate member-content authorization through 
     ["reader-1", "event-read-1"],
     ["poster-1", "event-post-1"],
   ]);
+});
+
+test("direct Gamer Whistle read and post use the Gamers-resolved context", async () => {
+  const calls: Array<[string, string]> = [];
+  const listed: Array<[string, string]> = [];
+  const created: Array<[string, string]> = [];
+  const resolvedContexts: Record<string, string> = {
+    "target-profile-read": "game-read:profile-a:profile-b",
+    "target-profile-post": "game-post:profile-c:profile-d",
+  };
+  const service = serviceWith({
+    gamers: {
+      async resolveDirectWhistleContext(userId: string, otherProfileId: string) {
+        calls.push([userId, otherProfileId]);
+        return resolvedContexts[otherProfileId]!;
+      },
+    },
+    repository: {
+      async listActive(contextType, contextId) {
+        listed.push([contextType, contextId]);
+        return [];
+      },
+      async createWithDailyQuota(input) {
+        created.push([input.contextType, input.contextId]);
+        return {
+          id: input.id,
+          authorUserId: input.authorUserId,
+          contextType: input.contextType,
+          contextId: input.contextId,
+          createdAt: input.createdAt,
+          expiresAt: input.expiresAt,
+        };
+      },
+    },
+  });
+
+  await service.listDirectGamer("reader-1", "target-profile-read");
+  await service.createDirectGamer("poster-1", "target-profile-post", "hello");
+
+  assert.deepEqual(calls, [
+    ["reader-1", "target-profile-read"],
+    ["poster-1", "target-profile-post"],
+  ]);
+  assert.deepEqual(listed, [["GAMER_DIRECT", resolvedContexts["target-profile-read"]]]);
+  assert.deepEqual(created, [["GAMER_DIRECT", resolvedContexts["target-profile-post"]]]);
 });

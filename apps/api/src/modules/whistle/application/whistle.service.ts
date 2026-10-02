@@ -3,7 +3,7 @@ import { AppError } from "../../../http/errors/app-error.js";
 import type { AthletesMemberContentAuthorizer } from "../../athletes/application/athletes-content-authorizer.js";
 import type { CommunityMemberAuthorizer } from "../../communities/application/community-member.authorizer.js";
 import type { EventMemberContentAuthorizer } from "../../events/application/event-member-content.authorizer.js";
-import type { GamerService } from "../../gamers/application/gamer.service.js";
+import type { GamerDirectWhistleContextResolver } from "../../gamers/application/gamer-direct-whistle-context.resolver.js";
 import type { CanonicalUserReader } from "../../identity/application/canonical-user.reader.js";
 import type { UserNotificationService } from "../../notifications/application/user-notification.service.js";
 import type { RideService } from "../../rides/application/ride.service.js";
@@ -80,7 +80,7 @@ export class WhistleService {
     private readonly transientStore: WhistleTransientStore,
     private readonly communities: CommunityMemberAuthorizer,
     private readonly events: EventMemberContentAuthorizer,
-    private readonly gamers: GamerService,
+    private readonly gamers: GamerDirectWhistleContextResolver,
     private readonly users: CanonicalUserReader,
     private readonly athletes: AthletesMemberContentAuthorizer,
     private readonly rides?: RideService,
