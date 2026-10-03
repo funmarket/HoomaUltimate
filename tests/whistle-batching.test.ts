@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { AthletesService } from "../apps/api/src/modules/athletes/application/athletes.service.js";
-import type { CommunityService } from "../apps/api/src/modules/communities/application/community.service.js";
-import type { EventService } from "../apps/api/src/modules/events/application/event.service.js";
-import type { GamerService } from "../apps/api/src/modules/gamers/application/gamer.service.js";
+import type { CommunityMemberAuthorizer } from "../apps/api/src/modules/communities/application/community-member.authorizer.js";
+import type { EventMemberContentAuthorizer } from "../apps/api/src/modules/events/application/event-member-content.authorizer.js";
+import type { GamerDirectWhistleContextResolver } from "../apps/api/src/modules/gamers/application/gamer-direct-whistle-context.resolver.js";
 import type { CanonicalUserReader } from "../apps/api/src/modules/identity/application/canonical-user.reader.js";
-import type { RideService } from "../apps/api/src/modules/rides/application/ride.service.js";
-import type { UserNotificationService } from "../apps/api/src/modules/notifications/application/user-notification.service.js";
+import type { RideWhistleAccessAuthorizer } from "../apps/api/src/modules/rides/application/ride-whistle-access.authorizer.js";
+import type { WhistleNotificationNotifier } from "../apps/api/src/modules/notifications/application/whistle-notification.notifier.js";
 import type {
   WhistleMetadataRecord,
   WhistleRepository,
@@ -54,20 +54,28 @@ function storeStub(overrides: Partial<WhistleTransientStore> = {}): WhistleTrans
 function serviceWith(options: {
   repository?: Partial<WhistleRepository>;
   store?: Partial<WhistleTransientStore>;
-  communities?: Partial<CommunityService>;
-  events?: Partial<EventService>;
-  gamers?: Partial<GamerService>;
+  communities?: Partial<CommunityMemberAuthorizer>;
+  events?: Partial<EventMemberContentAuthorizer>;
+  gamers?: Partial<GamerDirectWhistleContextResolver>;
   users?: Partial<CanonicalUserReader>;
   athletes?: Partial<AthletesService>;
-  rides?: Partial<RideService>;
-  notifications?: Partial<UserNotificationService>;
+  rides?: Partial<RideWhistleAccessAuthorizer>;
+  notifications?: Partial<WhistleNotificationNotifier>;
 }) {
   return new WhistleService(
     repositoryStub(options.repository),
     storeStub(options.store),
-    { requireMember: async () => undefined, ...options.communities } as unknown as CommunityService,
-    { requireMemberContent: async () => undefined, ...options.events } as unknown as EventService,
-    { ...options.gamers } as unknown as GamerService,
+    {
+      requireMember: async () => undefined,
+      ...options.communities,
+    } as unknown as CommunityMemberAuthorizer,
+    { requireMemberContent: async () => undefined, ...options.events },
+    {
+      resolveDirectWhistleContext: async () => {
+        throw new Error("not used");
+      },
+      ...options.gamers,
+    },
     { ...options.users } as unknown as CanonicalUserReader,
     {
       requireMemberContent: async () => undefined,
@@ -77,11 +85,11 @@ function serviceWith(options: {
       requireWhistleRead: async () => ({ ownerUserId: "ride-owner-1" }),
       requireWhistlePost: async () => ({ ownerUserId: "ride-owner-1" }),
       ...options.rides,
-    } as unknown as RideService,
+    },
     {
       notifyWhistle: async () => undefined,
       ...options.notifications,
-    } as unknown as UserNotificationService,
+    },
   );
 }
 
@@ -164,13 +172,17 @@ test("Athletes Whistle authorizes through active Athletes membership and uses sh
 });
 
 test("Ride Whistle authorizes through Ride domain and notifies owner without body", async () => {
-  const rideCalls: Array<[string, string]> = [];
+  const rideCalls: Array<["read" | "post", string, string]> = [];
   const created: Array<{ contextType: string; contextId: string; dailyLimit: number }> = [];
   const notifications: Array<Record<string, unknown>> = [];
   const service = serviceWith({
     rides: {
+      async requireWhistleRead(userId: string, rideRequestId: string) {
+        rideCalls.push(["read", userId, rideRequestId]);
+        return { ownerUserId: "ride-read-owner-1" };
+      },
       async requireWhistlePost(userId: string, rideRequestId: string) {
-        rideCalls.push([userId, rideRequestId]);
+        rideCalls.push(["post", userId, rideRequestId]);
         return { ownerUserId: "ride-owner-1" };
       },
     },
@@ -201,9 +213,13 @@ test("Ride Whistle authorizes through Ride domain and notifies owner without bod
     },
   });
 
+  await service.list("reader-1", "RIDE", "ride-request-read");
   await service.create("rider-1", "RIDE", "ride-request-1", "I can help");
 
-  assert.deepEqual(rideCalls, [["rider-1", "ride-request-1"]]);
+  assert.deepEqual(rideCalls, [
+    ["read", "reader-1", "ride-request-read"],
+    ["post", "rider-1", "ride-request-1"],
+  ]);
   assert.deepEqual(created, [{ contextType: "RIDE", contextId: "ride-request-1", dailyLimit: 11 }]);
   assert.equal(notifications.length, 1);
   assert.equal(notifications[0]?.recipientUserId, "ride-owner-1");
@@ -261,4 +277,117 @@ test("direct User Whistle remains USER_DIRECT and notifies only recipient withou
   assert.equal(notifications[0]?.contextType, "USER_DIRECT");
   assert.equal(notifications[0]?.contextId, "sender-user-id:target-user-id");
   assert.equal(Object.hasOwn(notifications[0] ?? {}, "body"), false);
+});
+
+test("Community Whistle read and post delegate membership authorization through the narrow boundary", async () => {
+  const calls: Array<[string, string]> = [];
+  const service = serviceWith({
+    communities: {
+      async requireMember(communityId: string, userId: string) {
+        calls.push([communityId, userId]);
+      },
+    },
+    repository: {
+      async createWithDailyQuota(input) {
+        return {
+          id: input.id,
+          authorUserId: input.authorUserId,
+          contextType: input.contextType,
+          contextId: input.contextId,
+          createdAt: input.createdAt,
+          expiresAt: input.expiresAt,
+        };
+      },
+      async quotaUsed() {
+        return 1;
+      },
+    },
+  });
+
+  await service.list("reader-1", "COMMUNITY", "community-read-1");
+  await service.create("poster-1", "COMMUNITY", "community-post-1", "hello");
+
+  assert.deepEqual(calls, [
+    ["community-read-1", "reader-1"],
+    ["community-post-1", "poster-1"],
+  ]);
+});
+
+test("Event Whistle read and post delegate member-content authorization through the Events boundary", async () => {
+  const calls: Array<[string, string]> = [];
+  const service = serviceWith({
+    events: {
+      async requireMemberContent(userId: string, eventId: string) {
+        calls.push([userId, eventId]);
+      },
+    },
+    repository: {
+      async createWithDailyQuota(input) {
+        return {
+          id: input.id,
+          authorUserId: input.authorUserId,
+          contextType: input.contextType,
+          contextId: input.contextId,
+          createdAt: input.createdAt,
+          expiresAt: input.expiresAt,
+        };
+      },
+      async quotaUsed() {
+        return 1;
+      },
+    },
+  });
+
+  await service.list("reader-1", "EVENT", "event-read-1");
+  await service.create("poster-1", "EVENT", "event-post-1", "hello");
+
+  assert.deepEqual(calls, [
+    ["reader-1", "event-read-1"],
+    ["poster-1", "event-post-1"],
+  ]);
+});
+
+test("direct Gamer Whistle read and post use the Gamers-resolved context", async () => {
+  const calls: Array<[string, string]> = [];
+  const listed: Array<[string, string]> = [];
+  const created: Array<[string, string]> = [];
+  const resolvedContexts: Record<string, string> = {
+    "target-profile-read": "game-read:profile-a:profile-b",
+    "target-profile-post": "game-post:profile-c:profile-d",
+  };
+  const service = serviceWith({
+    gamers: {
+      async resolveDirectWhistleContext(userId: string, otherProfileId: string) {
+        calls.push([userId, otherProfileId]);
+        return resolvedContexts[otherProfileId]!;
+      },
+    },
+    repository: {
+      async listActive(contextType, contextId) {
+        listed.push([contextType, contextId]);
+        return [];
+      },
+      async createWithDailyQuota(input) {
+        created.push([input.contextType, input.contextId]);
+        return {
+          id: input.id,
+          authorUserId: input.authorUserId,
+          contextType: input.contextType,
+          contextId: input.contextId,
+          createdAt: input.createdAt,
+          expiresAt: input.expiresAt,
+        };
+      },
+    },
+  });
+
+  await service.listDirectGamer("reader-1", "target-profile-read");
+  await service.createDirectGamer("poster-1", "target-profile-post", "hello");
+
+  assert.deepEqual(calls, [
+    ["reader-1", "target-profile-read"],
+    ["poster-1", "target-profile-post"],
+  ]);
+  assert.deepEqual(listed, [["GAMER_DIRECT", resolvedContexts["target-profile-read"]]]);
+  assert.deepEqual(created, [["GAMER_DIRECT", resolvedContexts["target-profile-post"]]]);
 });

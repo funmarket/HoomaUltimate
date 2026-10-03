@@ -6,7 +6,7 @@ import type {
   TeamAccessRecord,
   TeamListInput,
 } from "../apps/api/src/modules/teams/application/team.repository.js";
-import type { CommunityService } from "../apps/api/src/modules/communities/application/community.service.js";
+import type { CommunityCoachAuthorizer } from "../apps/api/src/modules/communities/application/community-coach.authorizer.js";
 import type {
   TeamChallengeCreateInput,
   TeamCreateInput,
@@ -87,7 +87,7 @@ class FakeTeamRepository implements TeamRepository {
     return Promise.resolve({});
   }
 }
-const communities = { requireCoach: async () => undefined } as unknown as CommunityService;
+const communities: CommunityCoachAuthorizer = { requireCoach: async () => undefined };
 test("Community Founder/Coach fallback keeps mature Team management authority", async () => {
   const repo = new FakeTeamRepository();
   repo.accessRecord = {
@@ -132,4 +132,19 @@ test("Team cannot challenge itself before repository write", async () => {
     /cannot challenge itself/i,
   );
   assert.equal(repo.createdChallenges, 0);
+});
+
+test("Team creation delegates Community coach authorization through the narrow boundary", async () => {
+  const repo = new FakeTeamRepository();
+  const calls: Array<[communityId: string, userId: string]> = [];
+  const authorizer: CommunityCoachAuthorizer = {
+    requireCoach: async (communityId, userId) => {
+      calls.push([communityId, userId]);
+    },
+  };
+  const service = new TeamService(repo, authorizer);
+  const input: TeamCreateInput = { communityId: "c1", name: "Team One" };
+
+  assert.deepEqual(await service.create("u1", input), input);
+  assert.deepEqual(calls, [["c1", "u1"]]);
 });

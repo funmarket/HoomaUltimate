@@ -1,15 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { EventCreateInput } from "@hooma/contracts";
-import type { CommunityService } from "../apps/api/src/modules/communities/application/community.service.js";
+import type { PublicPlaceSummary } from "@hooma/contracts/places";
+import type { CommunityCoachAuthorizer } from "../apps/api/src/modules/communities/application/community-coach.authorizer.js";
 import type {
   EventAccessRecord,
   EventRepository,
 } from "../apps/api/src/modules/events/application/event.repository.js";
+import type { EventPlaceAccess } from "../apps/api/src/modules/events/application/event-place-access.js";
 import { EventService } from "../apps/api/src/modules/events/application/event.service.js";
 import { EventError } from "../apps/api/src/modules/events/domain/event-error.js";
 import type { ApprovedPitchReader } from "../apps/api/src/modules/pitch/application/approved-pitch.reader.js";
-import type { PlaceService } from "../apps/api/src/modules/places/application/place.service.js";
 
 function repositoryStub(onCreate: () => void): EventRepository {
   return {
@@ -83,13 +84,36 @@ const playInput: EventCreateInput = {
   watch: null,
 };
 
-function approvedPlaces(onGet?: (placeId: string) => void): PlaceService {
+function publicPlace(placeId: string): PublicPlaceSummary {
+  return {
+    id: placeId,
+    slug: `place-${placeId}`,
+    name: "Test Place",
+    address: "1 Test Street",
+    city: "Tunis",
+    houma: "Test",
+    latitude: null,
+    longitude: null,
+    phone: null,
+    websiteUrl: null,
+    imageUrl: null,
+    images: [],
+    description: null,
+    category: null,
+    email: null,
+    menuItems: [],
+    submissionOrigin: null,
+  };
+}
+
+function approvedPlaces(onGet?: (placeId: string) => void): EventPlaceAccess {
   return {
     getPublic: async (placeId: string) => {
       onGet?.(placeId);
-      return { id: placeId };
+      return publicPlace(placeId);
     },
-  } as unknown as PlaceService;
+    isVerifiedOwner: async () => true,
+  };
 }
 
 function approvedPitch(onGet?: (placeId: string) => void): ApprovedPitchReader {
@@ -125,7 +149,7 @@ test("EventService creates WATCH events through an approved canonical Place", as
     requireCoach: async () => {
       coachCheckCalled = true;
     },
-  } as unknown as CommunityService;
+  } as CommunityCoachAuthorizer;
   const service = new EventService(
     repositoryStub(() => {
       createCalled = true;
@@ -142,6 +166,44 @@ test("EventService creates WATCH events through an approved canonical Place", as
   assert.equal(createCalled, true);
 });
 
+test("EventService rejects CULTURAL create after Place validation when ownership is not verified", async () => {
+  const order: string[] = [];
+  let createCalled = false;
+  const places: EventPlaceAccess = {
+    getPublic: async (placeId: string) => {
+      assert.equal(placeId, "place-1");
+      order.push("place");
+      return publicPlace(placeId);
+    },
+    isVerifiedOwner: async (placeId: string, userId: string) => {
+      assert.equal(placeId, "place-1");
+      assert.equal(userId, "user-1");
+      order.push("owner");
+      return false;
+    },
+  };
+  const service = new EventService(
+    repositoryStub(() => {
+      createCalled = true;
+    }),
+    {} as CommunityCoachAuthorizer,
+    places,
+  );
+
+  await assert.rejects(
+    () =>
+      service.create("user-1", {
+        ...watchInput,
+        watch: { kind: "CULTURAL", culturalCategory: "MUSIC", imageUrl: null },
+      }),
+    (error: unknown) =>
+      error instanceof EventError && error.code === "WATCH_CULTURAL_OWNER_REQUIRED",
+  );
+
+  assert.deepEqual(order, ["place", "owner"]);
+  assert.equal(createCalled, false);
+});
+
 test("EventService still creates free PLAY events through community coach authority", async () => {
   let createCalled = false;
   let coachCheckCalled = false;
@@ -151,7 +213,7 @@ test("EventService still creates free PLAY events through community coach author
       assert.equal(userId, "user-1");
       coachCheckCalled = true;
     },
-  } as unknown as CommunityService;
+  } as CommunityCoachAuthorizer;
   const service = new EventService(
     repositoryStub(() => {
       createCalled = true;
@@ -164,12 +226,49 @@ test("EventService still creates free PLAY events through community coach author
   assert.equal(createCalled, true);
 });
 
+test("EventService preserves PLAY create ordering through the narrow Community coach authorizer", async () => {
+  const order: string[] = [];
+  let createCalled = false;
+  const communities: CommunityCoachAuthorizer = {
+    requireCoach: async (communityId, userId) => {
+      assert.equal(communityId, "community-1");
+      assert.equal(userId, "user-1");
+      order.push("community-coach");
+    },
+  };
+  const service = new EventService(
+    repositoryStub(() => {
+      createCalled = true;
+      order.push("repository-create");
+    }),
+    communities,
+    approvedPlaces(),
+    approvedPitch((placeId) => {
+      assert.equal(placeId, "pitch-place-1");
+      order.push("approved-pitch");
+    }),
+  );
+
+  await assert.rejects(
+    () =>
+      service.create("user-1", {
+        ...playInput,
+        placeId: "pitch-place-1",
+        entryFeeMinor: 100,
+      }),
+    (error: unknown) => error instanceof EventError && error.code === "EVENT_PAYMENTS_NOT_ENABLED",
+  );
+
+  assert.deepEqual(order, ["community-coach", "approved-pitch"]);
+  assert.equal(createCalled, false);
+});
+
 test("EventService validates an optional PLAY placeId as an approved Pitch", async () => {
   let pitchCheckCalled = false;
   let createCalled = false;
   const communities = {
     requireCoach: async () => undefined,
-  } as unknown as CommunityService;
+  } as CommunityCoachAuthorizer;
   const service = new EventService(
     repositoryStub(() => {
       createCalled = true;
@@ -206,14 +305,15 @@ test("EventService checks persisted Cultural subtype on partial updates", async 
     updateCalled = true;
     return {} as never;
   };
-  const places = {
+  const places: EventPlaceAccess = {
+    getPublic: async (placeId: string) => publicPlace(placeId),
     isVerifiedOwner: async (placeId: string, userId: string) => {
       assert.equal(placeId, "place-1");
       assert.equal(userId, "user-1");
       return false;
     },
-  } as unknown as PlaceService;
-  const service = new EventService(repository, {} as CommunityService, places);
+  };
+  const service = new EventService(repository, {} as CommunityCoachAuthorizer, places);
 
   await assert.rejects(
     () => service.update("user-1", "event-1", { title: "Updated Cultural title" }),
@@ -232,7 +332,7 @@ test("EventService returns only the authenticated user's RSVP state", async () =
     assert.equal(userId, "user-1");
     return { status: "WAITLISTED" };
   };
-  const service = new EventService(repository, {} as CommunityService, approvedPlaces());
+  const service = new EventService(repository, {} as CommunityCoachAuthorizer, approvedPlaces());
   assert.deepEqual(await service.getMyRsvp("user-1", "event-1"), {
     rsvp: { status: "WAITLISTED" },
     actions: {
@@ -252,7 +352,7 @@ test("EventService hides a private PLAY event from an unauthorized viewer and jo
   repository.access = async () => playAccess({ playVisibility: "PRIVATE" });
   repository.canAccessPlay = async () => false;
   repository.getPublic = async () => ({ id: "event-1" }) as never;
-  const service = new EventService(repository, {} as CommunityService, approvedPlaces());
+  const service = new EventService(repository, {} as CommunityCoachAuthorizer, approvedPlaces());
 
   await assert.rejects(
     () => service.getVisible("event-1", "outsider"),
@@ -269,7 +369,7 @@ test("EventService allows authorized users to open an OPEN PLAY event", async ()
   repository.access = async () => playAccess();
   repository.canAccessPlay = async () => true;
   repository.getPublic = async () => ({ id: "event-1", type: "PLAY" }) as never;
-  const service = new EventService(repository, {} as CommunityService, approvedPlaces());
+  const service = new EventService(repository, {} as CommunityCoachAuthorizer, approvedPlaces());
 
   const event = await service.getVisible("event-1", "viewer");
   assert.equal(event.id, "event-1");
@@ -277,7 +377,7 @@ test("EventService allows authorized users to open an OPEN PLAY event", async ()
 
 test("EventService keeps public Event detail non-Play and routes Play through authenticated access", async () => {
   const repository = repositoryStub(() => {});
-  const service = new EventService(repository, {} as CommunityService, approvedPlaces());
+  const service = new EventService(repository, {} as CommunityCoachAuthorizer, approvedPlaces());
 
   repository.getPublic = async (eventId) => ({ id: eventId, type: "WATCH" }) as never;
   assert.equal((await service.getPublicEvent("watch-1")).id, "watch-1");
@@ -305,7 +405,7 @@ test("EventService rejects formation players outside the confirmed event roster"
   repository.formationRoster = async () => [
     { userId: "player-1", status: "CONFIRMED", presentation: null },
   ];
-  const service = new EventService(repository, {} as CommunityService, approvedPlaces());
+  const service = new EventService(repository, {} as CommunityCoachAuthorizer, approvedPlaces());
   await assert.rejects(
     () =>
       service.createFormation("user-1", "event-1", {

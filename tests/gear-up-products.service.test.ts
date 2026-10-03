@@ -62,7 +62,7 @@ function dependencies(overrides = {}) {
     ...overrides.repository,
   };
   const places = {
-    hasVerifiedOwnership: async () => false,
+    isVerifiedOwner: async () => false,
     canManage: async () => false,
     ...overrides.places,
   };
@@ -101,7 +101,7 @@ test("FanHub and pending owner-submitters cannot publish official Gear Up produc
   const { GearUpProductService } = await loadService();
   const deps = dependencies({
     places: {
-      hasVerifiedOwnership: async () => false,
+      isVerifiedOwner: async () => false,
       canManage: async () => true,
     },
   });
@@ -117,7 +117,7 @@ test("FanHub and pending owner-submitters cannot publish official Gear Up produc
 test("verified Place owner can create and manage Gear Up products", async () => {
   const { GearUpProductService } = await loadService();
   const deps = dependencies({
-    places: { hasVerifiedOwnership: async () => true },
+    places: { isVerifiedOwner: async () => true },
   });
   const service = new GearUpProductService(deps.repository, deps.places, deps.platformAdmin);
 

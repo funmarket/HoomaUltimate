@@ -80,7 +80,8 @@ function dependencies(overrides = {}) {
     ...overrides.products,
   };
   const places = {
-    hasVerifiedOwnership: async () => false,
+    canManage: async () => false,
+    isVerifiedOwner: async () => false,
     ...overrides.places,
   };
   const platformAdmin = {
@@ -112,7 +113,7 @@ function dependencies(overrides = {}) {
 test("pending submitter access cannot manage official product media", async () => {
   const [{ GearUpProductMediaService }] = await loadServices();
   const deps = dependencies({
-    places: { hasVerifiedOwnership: async () => false },
+    places: { isVerifiedOwner: async () => false },
   });
   const service = new GearUpProductMediaService(
     deps.images,
@@ -136,7 +137,7 @@ test("pending submitter access cannot manage official product media", async () =
 test("verified Place owner can add external images and preserve product ownership", async () => {
   const [{ GearUpProductMediaService }] = await loadServices();
   const deps = dependencies({
-    places: { hasVerifiedOwnership: async () => true },
+    places: { isVerifiedOwner: async () => true },
   });
   const service = new GearUpProductMediaService(
     deps.images,
@@ -160,7 +161,7 @@ test("verified Place owner can add external images and preserve product ownershi
 test("verified Place owner upload uses validated storage and normalized image processor", async () => {
   const [{ GearUpProductMediaService }] = await loadServices();
   const deps = dependencies({
-    places: { hasVerifiedOwnership: async () => true },
+    places: { isVerifiedOwner: async () => true },
   });
   const service = new GearUpProductMediaService(
     deps.images,
@@ -186,7 +187,7 @@ test("verified Place owner upload uses validated storage and normalized image pr
 test("product image reorder stays within the selected product and shop", async () => {
   const [{ GearUpProductMediaService }] = await loadServices();
   const deps = dependencies({
-    places: { hasVerifiedOwnership: async () => true },
+    places: { isVerifiedOwner: async () => true },
   });
   const service = new GearUpProductMediaService(
     deps.images,

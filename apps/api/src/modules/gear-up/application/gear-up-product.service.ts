@@ -4,14 +4,14 @@ import type {
   GearUpProductUpdateInput,
 } from "@hooma/contracts/gear-up";
 import type { PlatformAdminAccessPort } from "../../../application/platform-admin-access.port.js";
-import type { PlaceRepository } from "../../places/application/place.repository.js";
+import type { GearUpPlaceAccess } from "./gear-up-place-access.js";
 import { GearUpError } from "../domain/gear-up-error.js";
 import type { GearUpProductRepository } from "./gear-up-product.repository.js";
 
 export class GearUpProductService {
   constructor(
     private readonly repository: GearUpProductRepository,
-    private readonly places: PlaceRepository,
+    private readonly places: GearUpPlaceAccess,
     private readonly platformAdmin: PlatformAdminAccessPort,
   ) {}
 
@@ -77,7 +77,7 @@ export class GearUpProductService {
   }
 
   private async requireProductManager(placeId: string, userId: string): Promise<void> {
-    if (await this.places.hasVerifiedOwnership(placeId, userId)) return;
+    if (await this.places.isVerifiedOwner(placeId, userId)) return;
     if (await this.platformAdmin.isPlatformAdmin(userId)) return;
     throw new GearUpError(
       "GEAR_UP_PRODUCT_MANAGE_FORBIDDEN",

@@ -4,9 +4,9 @@ import {
   type EventFormationInput,
   type EventUpdateInput,
 } from "@hooma/contracts";
-import type { CommunityService } from "../../communities/application/community.service.js";
+import type { CommunityCoachAuthorizer } from "../../communities/application/community-coach.authorizer.js";
 import type { ApprovedPitchReader } from "../../pitch/application/approved-pitch.reader.js";
-import type { PlaceService } from "../../places/application/place.service.js";
+import type { EventPlaceAccess } from "./event-place-access.js";
 import { EventError } from "../domain/event-error.js";
 import { eventCheckInOpensAt } from "../domain/event-policy.js";
 import type {
@@ -24,8 +24,8 @@ function hasErrorCode(error: unknown, code: string): boolean {
 export class EventService {
   constructor(
     private readonly repository: EventRepository,
-    private readonly communities: CommunityService,
-    private readonly places: PlaceService,
+    private readonly communities: CommunityCoachAuthorizer,
+    private readonly places: EventPlaceAccess,
     private readonly pitch?: ApprovedPitchReader,
   ) {}
 
@@ -269,10 +269,7 @@ export class EventService {
         throw new EventError("EVENT_FULL", "Event is full and waitlist is disabled");
       if (error instanceof Error && error.message === "EVENT_NOT_ACTIVE")
         throw new EventError("EVENT_NOT_ACTIVE", "Event is no longer open for RSVP");
-      if (
-        error instanceof Error &&
-        error.message === "EVENT_CREATOR_PARTICIPATION_FORBIDDEN"
-      )
+      if (error instanceof Error && error.message === "EVENT_CREATOR_PARTICIPATION_FORBIDDEN")
         throw new EventError(
           "EVENT_CREATOR_PARTICIPATION_FORBIDDEN",
           "Event creator does not join through participant RSVP",
@@ -314,10 +311,7 @@ export class EventService {
       throw new EventError("EVENT_INVITE_SELF", "You cannot invite yourself to your own event");
     }
     const existingRsvp = await this.repository.getRsvp(eventId, targetUserId);
-    if (
-      existingRsvp &&
-      ["CONFIRMED", "WAITLISTED", "ATTENDED"].includes(existingRsvp.status)
-    ) {
+    if (existingRsvp && ["CONFIRMED", "WAITLISTED", "ATTENDED"].includes(existingRsvp.status)) {
       throw new EventError("EVENT_INVITE_ALREADY_JOINED", "This player is already in the event");
     }
     try {
@@ -362,10 +356,7 @@ export class EventService {
       if (error instanceof Error && error.message === "EVENT_NOT_ACTIVE") {
         throw new EventError("EVENT_INVITE_CLOSED", "This event invitation is no longer active");
       }
-      if (
-        error instanceof Error &&
-        error.message === "EVENT_CREATOR_PARTICIPATION_FORBIDDEN"
-      ) {
+      if (error instanceof Error && error.message === "EVENT_CREATOR_PARTICIPATION_FORBIDDEN") {
         throw new EventError(
           "EVENT_CREATOR_PARTICIPATION_FORBIDDEN",
           "Event creator does not join through participant RSVP",
@@ -452,10 +443,7 @@ export class EventService {
     try {
       return await this.repository.checkIn(eventId, userId, latitude, longitude);
     } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message === "EVENT_CREATOR_PARTICIPATION_FORBIDDEN"
-      ) {
+      if (error instanceof Error && error.message === "EVENT_CREATOR_PARTICIPATION_FORBIDDEN") {
         throw new EventError(
           "EVENT_CREATOR_PARTICIPATION_FORBIDDEN",
           "Event creator does not use participant check-in",
@@ -470,10 +458,7 @@ export class EventService {
           "Check-in opens 60 minutes before the Event starts",
         );
       }
-      if (
-        error instanceof Error &&
-        error.message === "EVENT_CHECK_IN_REQUIRES_CONFIRMED_RSVP"
-      ) {
+      if (error instanceof Error && error.message === "EVENT_CHECK_IN_REQUIRES_CONFIRMED_RSVP") {
         throw new EventError(
           "EVENT_CHECK_IN_REQUIRES_CONFIRMED_RSVP",
           "Confirmed RSVP required for check-in",
