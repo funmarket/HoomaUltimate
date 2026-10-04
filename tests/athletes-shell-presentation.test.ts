@@ -24,6 +24,7 @@ test("ordinary shell pages stay STANDARD while the Athletes hub explicitly selec
   assert.match(shell, /foundation-shell--\$\{shellPresentation\}/);
   assert.match(shellCss, /\.foundation-shell\s*\{[\s\S]*?gap:\s*32px/);
   assert.match(shellCss, /\.foundation-shell--media-first\s*\{[\s\S]*?row-gap:\s*0/);
+  assert.match(shellCss, /\.foundation-shell--media-first\s*\{[\s\S]*?align-content:\s*start/);
   assert.doesNotMatch(shellCss, /pathname|data-path|\[href[*^$|~]?=/);
 });
 
