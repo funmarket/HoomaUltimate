@@ -42,6 +42,7 @@ body {
 }
 
 .foundation-shell--media-first {
+  align-content: start;
   row-gap: 0;
 }
 
