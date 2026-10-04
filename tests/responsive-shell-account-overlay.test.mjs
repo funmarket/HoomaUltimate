@@ -4,6 +4,52 @@ import test from "node:test";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
+for (const [lane, gutter] of [
+  ["media", "8px"],
+  ["nav", "8px"],
+  ["content", "var(--hooma-ui-page-inline)"],
+  ["bleed", "0px"],
+]) {
+  test(`${lane.toUpperCase()} lane has one canonical gutter and an opt-in padding container`, async () => {
+    const [theme, styles] = await Promise.all([
+      read("apps/web/src/theme.css"),
+      read("apps/web/src/styles.css"),
+    ]);
+    const token = `--hooma-ui-lane-${lane}-inline`;
+    const definitions = [
+      ...`${theme}\n${styles}`.matchAll(new RegExp(`${token}:\\s*([^;]+);`, "g")),
+    ];
+    assert.equal(definitions.length, 1, `${lane.toUpperCase()} needs one canonical lane token`);
+    assert.equal(definitions[0][1], gutter);
+    assert.ok(theme.includes(`${token}:`), "theme owns the lane tokens");
+
+    const containers = [
+      ...styles.matchAll(new RegExp(`\\.hooma-lane--${lane}\\s*\\{([^}]+)\\}`, "g")),
+    ];
+    assert.equal(containers.length, 1, `${lane.toUpperCase()} needs one opt-in lane container`);
+    assert.equal(containers[0][1].trim(), `padding-inline: var(${token});`);
+    assert.doesNotMatch(containers[0][1], /margin|!important|transform|100vw|calc\(/);
+  });
+}
+
+test("inactive lanes preserve the legacy shell inset and media-first vertical alignment", async () => {
+  const [theme, styles, shell] = await Promise.all([
+    read("apps/web/src/theme.css"),
+    read("apps/web/src/styles.css"),
+    read("apps/web/src/app/shell/HoomaShell.tsx"),
+  ]);
+  assert.match(theme, /--hooma-ui-page-inline:\s*16px;/);
+  assert.match(styles, /--shell-inline:\s*clamp\(12px, 6vw, 24px\);/);
+  const shellRule = styles.match(/(?:^|\n\s*\n)\.foundation-shell\s*\{([^}]+)\}/)?.[1];
+  assert.ok(shellRule);
+  assert.match(shellRule, /padding:\s*0 var\(--shell-inline\) 48px;/);
+  assert.match(
+    styles,
+    /\.foundation-shell--media-first\s*\{\s*align-content:\s*start;\s*row-gap:\s*0;/,
+  );
+  assert.doesNotMatch(shell, /hooma-lane/);
+});
+
 test("global shell adapts below 320px from one inline spacing source", async () => {
   const [styles, account] = await Promise.all([
     read("apps/web/src/styles.css"),
