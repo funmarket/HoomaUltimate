@@ -46,24 +46,6 @@ body {
   row-gap: 0;
 }
 
-/* Opt-in horizontal containers; routed surfaces retain the legacy shell inset. */
-.hooma-lane--media {
-  padding-inline: var(--hooma-ui-lane-media-inline);
-}
-
-.hooma-lane--nav {
-  padding-inline: var(--hooma-ui-lane-nav-inline);
-}
-
-.hooma-lane--content {
-  padding-inline: var(--hooma-ui-lane-content-inline);
-}
-
-/* Reserved for explicitly approved full-bleed surfaces. */
-.hooma-lane--bleed {
-  padding-inline: var(--hooma-ui-lane-bleed-inline);
-}
-
 .eyebrow {
   color: var(--app-gold);
   text-transform: uppercase;
