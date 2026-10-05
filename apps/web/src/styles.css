@@ -35,10 +35,34 @@ body {
   min-height: 100vh;
   max-width: 960px;
   margin: 0 auto;
-  padding: 0 var(--shell-inline) 48px;
+  padding: 0 0 48px;
   display: grid;
   align-content: space-between;
   gap: 32px;
+}
+
+.foundation-shell--inline-legacy {
+  padding-inline: var(--shell-inline);
+}
+
+.foundation-shell--inline-edge-capable {
+  padding-inline: 0;
+}
+
+.hooma-lane--media {
+  padding-inline: var(--hooma-ui-lane-media-inline);
+}
+
+.hooma-lane--nav {
+  padding-inline: var(--hooma-ui-lane-nav-inline);
+}
+
+.hooma-lane--content {
+  padding-inline: var(--hooma-ui-lane-content-inline);
+}
+
+.hooma-lane--bleed {
+  padding-inline: var(--hooma-ui-lane-bleed-inline);
 }
 
 .foundation-shell--media-first {
