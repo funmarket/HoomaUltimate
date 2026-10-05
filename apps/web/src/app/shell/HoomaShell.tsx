@@ -11,7 +11,10 @@ import { UserNotificationControl } from "../../notifications/UserNotificationCon
 import type { TelegramRuntime } from "../../telegram/runtime";
 import { useTelegramBackButton } from "../../telegram/useTelegramBackButton";
 import { buildAccountMenuSections } from "./account-menu-model";
-import { shellPresentationForPath } from "./page-presentation";
+import {
+  shellInlinePresentationForPath,
+  shellPresentationForPath,
+} from "./page-presentation";
 
 export function HoomaShell({
   children,
@@ -68,6 +71,7 @@ export function HoomaShell({
   const hasTelegramIdentity = Boolean(runtime.initData);
   const navPathname = location.pathname === "/telegram" ? "/" : location.pathname;
   const shellPresentation = shellPresentationForPath(location.pathname);
+  const shellInlinePresentation = shellInlinePresentationForPath(location.pathname);
   const shellError = error && !location.pathname.startsWith("/rides") ? error : null;
   const accountSections = buildAccountMenuSections({
     hasManagedTeams: managedTeams.length > 0,
@@ -78,7 +82,9 @@ export function HoomaShell({
   });
 
   return (
-    <main className={`foundation-shell foundation-shell--${shellPresentation}`}>
+    <main
+      className={`foundation-shell foundation-shell--${shellPresentation} foundation-shell--inline-${shellInlinePresentation}`}
+    >
       <HoomaAccountHeader
         user={user}
         loading={loading}
