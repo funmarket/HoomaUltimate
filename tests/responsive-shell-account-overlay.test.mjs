@@ -4,16 +4,22 @@ import test from "node:test";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("global shell adapts below 320px from one inline spacing source", async () => {
+test("base shell is horizontally neutral while LEGACY preserves the current inset", async () => {
   const [styles, account] = await Promise.all([
     read("apps/web/src/styles.css"),
     read("apps/web/src/account/account.css"),
   ]);
 
+  const baseShell = styles.match(/\.foundation-shell\s*\{([\s\S]*?)\}/)?.[1] ?? "";
+  const legacyShell =
+    styles.match(/\.foundation-shell--inline-legacy\s*\{([\s\S]*?)\}/)?.[1] ?? "";
+
   assert.doesNotMatch(styles, /min-width:\s*320px/);
   assert.match(styles, /--shell-inline:\s*clamp\(12px, 6vw, 24px\)/);
-  assert.match(styles, /\.foundation-shell\s*\{[\s\S]*width:\s*100%/);
-  assert.match(styles, /\.foundation-shell\s*\{[\s\S]*padding:\s*0 var\(--shell-inline\) 48px/);
+  assert.match(baseShell, /width:\s*100%/);
+  assert.match(baseShell, /padding:\s*0 0 48px/);
+  assert.doesNotMatch(baseShell, /--shell-inline/);
+  assert.match(legacyShell, /padding-inline:\s*var\(--shell-inline\)/);
   assert.match(account, /margin-inline:\s*calc\(-1 \* var\(--shell-inline\)\)/);
   assert.match(
     account,
