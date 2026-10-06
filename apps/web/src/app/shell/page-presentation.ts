@@ -19,6 +19,9 @@ export function shellPresentationForPath(pathname: string): ShellPresentation {
     : SHELL_PRESENTATION.STANDARD;
 }
 
-export function shellInlinePresentationForPath(_pathname: string): ShellInlinePresentation {
-  return SHELL_INLINE_PRESENTATION.LEGACY;
+export function shellInlinePresentationForPath(pathname: string): ShellInlinePresentation {
+  switch (pathname) {
+    default:
+      return SHELL_INLINE_PRESENTATION.LEGACY;
+  }
 }

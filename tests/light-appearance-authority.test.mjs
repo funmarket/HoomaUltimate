@@ -27,9 +27,8 @@ test("legacy global CSS no longer owns the application color scheme", async () =
   assert.match(css, /\.panel\s*\{[\s\S]*border:\s*1px solid var\(--app-line-strong\)/);
   assert.match(css, /\.panel\s*\{[\s\S]*background:\s*var\(--app-surface\)/);
   assert.doesNotMatch(css, /padding:\s*48px 24px/);
-  const baseShell = css.match(/\.foundation-shell\s*\{([\s\S]*?)\}/)?.[1] ?? "";
-  const legacyShell =
-    css.match(/\.foundation-shell--inline-legacy\s*\{([\s\S]*?)\}/)?.[1] ?? "";
+  const baseShell = css.match(/(?:^|\})\s*\.foundation-shell\s*\{([^{}]*)\}/)?.[1] ?? "";
+  const legacyShell = css.match(/\.foundation-shell--inline-legacy\s*\{([\s\S]*?)\}/)?.[1] ?? "";
 
   assert.match(baseShell, /padding:\s*0 0 48px/);
   assert.doesNotMatch(baseShell, /--shell-inline/);

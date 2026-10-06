@@ -11,10 +11,7 @@ import { UserNotificationControl } from "../../notifications/UserNotificationCon
 import type { TelegramRuntime } from "../../telegram/runtime";
 import { useTelegramBackButton } from "../../telegram/useTelegramBackButton";
 import { buildAccountMenuSections } from "./account-menu-model";
-import {
-  shellInlinePresentationForPath,
-  shellPresentationForPath,
-} from "./page-presentation";
+import { shellInlinePresentationForPath, shellPresentationForPath } from "./page-presentation";
 
 export function HoomaShell({
   children,

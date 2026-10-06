@@ -10,9 +10,8 @@ test("base shell is horizontally neutral while LEGACY preserves the current inse
     read("apps/web/src/account/account.css"),
   ]);
 
-  const baseShell = styles.match(/\.foundation-shell\s*\{([\s\S]*?)\}/)?.[1] ?? "";
-  const legacyShell =
-    styles.match(/\.foundation-shell--inline-legacy\s*\{([\s\S]*?)\}/)?.[1] ?? "";
+  const baseShell = styles.match(/(?:^|\})\s*\.foundation-shell\s*\{([^{}]*)\}/)?.[1] ?? "";
+  const legacyShell = styles.match(/\.foundation-shell--inline-legacy\s*\{([\s\S]*?)\}/)?.[1] ?? "";
 
   assert.doesNotMatch(styles, /min-width:\s*320px/);
   assert.match(styles, /--shell-inline:\s*clamp\(12px, 6vw, 24px\)/);
