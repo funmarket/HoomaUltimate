@@ -161,121 +161,143 @@ export function WatchPage() {
 
   return (
     <section className="watch-page">
-      <header className="watch-hero">
-        <div>
-          <h1>Watch</h1>
-          <p>Watch together. Find the match, the culture and the crowd.</p>
-        </div>
-      </header>
-
-      <WatchSectionNavigation
-        active="events"
-        createEventHref={`/events/new?type=WATCH&kind=${kind}`}
-      />
-
-      <div className="watch-kind-tabs" role="tablist" aria-label="Watch event categories">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={kind === "MATCH"}
-          className={kind === "MATCH" ? "watch-kind-tab is-active" : "watch-kind-tab"}
-          onClick={() => selectKind("MATCH")}
-        >
-          Match
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={kind === "CULTURAL"}
-          className={kind === "CULTURAL" ? "watch-kind-tab is-active" : "watch-kind-tab"}
-          onClick={() => selectKind("CULTURAL")}
-        >
-          Cultural
-        </button>
+      <div className="hooma-lane--media">
+        <header className="watch-hero">
+          <div>
+            <h1>Watch</h1>
+            <p>Watch together. Find the match, the culture and the crowd.</p>
+          </div>
+        </header>
       </div>
 
-      <div className="watch-discovery-controls">
-        <label className="watch-search">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.8" />
-            <path d="m16 16 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-          </svg>
-          <input
-            aria-label="Search Watch events or venues"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder={
-              kind === "MATCH"
-                ? "Search matches, teams or venues"
-                : "Search cultural events or venues"
-            }
-          />
-        </label>
-        <div className="watch-location-filters">
-          <label>
-            <span>City</span>
-            <select value={city} onChange={(event) => setCity(event.target.value)}>
-              <option value="">All cities</option>
-              {cities.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span>Houma</span>
-            <select value={houma} onChange={(event) => setHouma(event.target.value)}>
-              <option value="">All Houmas</option>
-              {houmas.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-          </label>
+      <div className="hooma-lane--nav">
+        <WatchSectionNavigation
+          active="events"
+          createEventHref={`/events/new?type=WATCH&kind=${kind}`}
+        />
+      </div>
+
+      <div className="hooma-lane--nav">
+        <div className="watch-kind-tabs" role="tablist" aria-label="Watch event categories">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={kind === "MATCH"}
+            className={kind === "MATCH" ? "watch-kind-tab is-active" : "watch-kind-tab"}
+            onClick={() => selectKind("MATCH")}
+          >
+            Match
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={kind === "CULTURAL"}
+            className={kind === "CULTURAL" ? "watch-kind-tab is-active" : "watch-kind-tab"}
+            onClick={() => selectKind("CULTURAL")}
+          >
+            Cultural
+          </button>
         </div>
       </div>
 
-      {error ? <p className="error">{error}</p> : null}
-      {loading ? <p className="status">Loading Watch events…</p> : null}
+      <div className="hooma-lane--content">
+        <div className="watch-discovery-controls">
+          <label className="watch-search">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.8" />
+              <path d="m16 16 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+            <input
+              aria-label="Search Watch events or venues"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={
+                kind === "MATCH"
+                  ? "Search matches, teams or venues"
+                  : "Search cultural events or venues"
+              }
+            />
+          </label>
+          <div className="watch-location-filters">
+            <label>
+              <span>City</span>
+              <select value={city} onChange={(event) => setCity(event.target.value)}>
+                <option value="">All cities</option>
+                {cities.map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>Houma</span>
+              <select value={houma} onChange={(event) => setHouma(event.target.value)}>
+                <option value="">All Houmas</option>
+                {houmas.map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      {error ? (
+        <div className="hooma-lane--content">
+          <p className="error">{error}</p>
+        </div>
+      ) : null}
+      {loading ? (
+        <div className="hooma-lane--content">
+          <p className="status">Loading Watch events…</p>
+        </div>
+      ) : null}
       {!loading && filteredEvents.length
         ? timeGroupOrder.map((label) => {
             const items = groups.get(label);
             if (!items?.length) return null;
             return (
-              <section className="watch-time-group" key={label}>
-                <h2 className="watch-time-group__heading">{label}</h2>
-                <div className="watch-time-group__items">
-                  {items.map((event) =>
-                    kind === "MATCH" ? (
-                      <WatchTicket key={event.id} event={event} />
-                    ) : (
-                      <CulturalEventCard key={event.id} event={event} />
-                    ),
-                  )}
-                </div>
-              </section>
+              <div className="hooma-lane--content" key={label}>
+                <section className="watch-time-group" key={label}>
+                  <h2 className="watch-time-group__heading">{label}</h2>
+                  <div className="watch-time-group__items">
+                    {items.map((event) =>
+                      kind === "MATCH" ? (
+                        <WatchTicket key={event.id} event={event} />
+                      ) : (
+                        <CulturalEventCard key={event.id} event={event} />
+                      ),
+                    )}
+                  </div>
+                </section>
+              </div>
             );
           })
         : null}
       {!loading && nextCursor ? (
-        <button
-          type="button"
-          className="watch-load-more"
-          disabled={loadingMore}
-          onClick={() => void loadMore()}
-        >
-          {loadingMore ? "Loading…" : "Load more events"}
-        </button>
+        <div className="hooma-lane--content">
+          <button
+            type="button"
+            className="watch-load-more"
+            disabled={loadingMore}
+            onClick={() => void loadMore()}
+          >
+            {loadingMore ? "Loading…" : "Load more events"}
+          </button>
+        </div>
       ) : null}
       {!loading && !filteredEvents.length && !error ? (
-        <div className="watch-empty-state">
-          <div className="watch-empty-state__icon" aria-hidden="true">
-            ◫
+        <div className="hooma-lane--content">
+          <div className="watch-empty-state">
+            <div className="watch-empty-state__icon" aria-hidden="true">
+              ◫
+            </div>
+            <strong>No {kind === "MATCH" ? "match" : "cultural"} events yet.</strong>
+            <p>New Watch events across HOOMA will appear here.</p>
           </div>
-          <strong>No {kind === "MATCH" ? "match" : "cultural"} events yet.</strong>
-          <p>New Watch events across HOOMA will appear here.</p>
         </div>
       ) : null}
     </section>

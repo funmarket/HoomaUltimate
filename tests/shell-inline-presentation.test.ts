@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   SHELL_INLINE_PRESENTATION,
@@ -98,13 +97,18 @@ test("global lanes have one shared 8/8/16/0 authority and matching primitives", 
     const token = `--hooma-ui-lane-${lane}-inline`;
     assert.equal(tokens[token], value);
     assert.equal([...`${theme}\n${styles}`.matchAll(new RegExp(`${token}\\s*:`, "g"))].length, 1);
-    assert.deepEqual(declarations(standaloneRule(styles, `.hooma-lane--${lane}`)), {
-      "padding-inline": `var(${token})`,
-    });
+    const rule = declarations(standaloneRule(styles, `.hooma-lane--${lane}`));
+    for (const side of ["left", "right"]) {
+      assert.ok(rule[`padding-${side}`], `${lane} must protect the ${side} safe area`);
+      assert.equal(
+        rule[`padding-${side}`].replace(/\s+/g, " "),
+        `max( var(${token}), calc(var(--hooma-safe-area-inset-${side}) + var(${token})), calc(var(--hooma-content-safe-area-inset-${side}) + var(${token})) )`,
+      );
+    }
   }
 });
 
-test("every registered route and representative resolved pathname remains LEGACY", () => {
+test("every registered route and representative resolved pathname is globally EDGE_CAPABLE", () => {
   assert.deepEqual(SHELL_INLINE_PRESENTATION, { LEGACY: "legacy", EDGE_CAPABLE: "edge-capable" });
   const patterns = [...router.matchAll(/\bpath="([^"]+)"/g)].map((match) => match[1]);
   assert.ok(patterns.length > 0, "Route census must come from the current router");
@@ -114,12 +118,16 @@ test("every registered route and representative resolved pathname remains LEGACY
       .replace(/:[^/]+/g, "contract-parameter")
       .replace(/\*/g, "contract-fallback");
     for (const path of [pattern, pathname, pathname === "/" ? "/" : `${pathname}/`]) {
-      assert.equal(shellInlinePresentationForPath(path), SHELL_INLINE_PRESENTATION.LEGACY, path);
+      assert.equal(
+        shellInlinePresentationForPath(path),
+        SHELL_INLINE_PRESENTATION.EDGE_CAPABLE,
+        path,
+      );
     }
   }
   assert.equal(
     shellInlinePresentationForPath("/__shell_contract_unregistered__"),
-    SHELL_INLINE_PRESENTATION.LEGACY,
+    SHELL_INLINE_PRESENTATION.EDGE_CAPABLE,
   );
 });
 
@@ -140,16 +148,10 @@ test("inline presentation composes globally without changing the vertical axis",
   );
 });
 
-test("no shipped frontend source adopts semantic lanes before route adoption", () => {
-  function inspect(directory: string): void {
-    for (const entry of readdirSync(directory, { withFileTypes: true })) {
-      const path = join(directory, entry.name);
-      if (entry.isDirectory()) inspect(path);
-      else if (/\.[cm]?[jt]sx?$/.test(entry.name)) {
-        assert.doesNotMatch(readFileSync(path, "utf8"), /hooma-lane--/, path);
-      }
-    }
-  }
-  for (const directory of ["apps/web/src", "packages/frontend/src", "packages/ui/src"])
-    inspect(directory);
+test("global horizontal adoption ignores pathname mechanically and retains compatibility definitions", () => {
+  const resolver = shellInlinePresentationForPath.toString();
+  assert.match(resolver, /void pathname/);
+  assert.match(resolver, /return .*EDGE_CAPABLE/);
+  assert.doesNotMatch(resolver, /switch|case|if\s*\(|pathname\s*===|LEGACY/);
+  assert.match(styles, /foundation-shell--inline-legacy/);
 });

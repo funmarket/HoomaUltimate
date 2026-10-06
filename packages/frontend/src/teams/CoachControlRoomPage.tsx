@@ -118,74 +118,81 @@ export function CoachControlRoomPage() {
     }
   }
 
-  if (!teams.length && !error) return <p className="status">Loading your managed Teams…</p>;
+  if (!teams.length && !error)
+    return (
+      <div className="hooma-lane--content">
+        <p className="status">Loading your managed Teams…</p>
+      </div>
+    );
 
   return (
-    <section className="control-room">
-      <header className="control-room__header">
-        <div>
-          <p className="eyebrow control-room__section-title">TEAM MANAGEMENT</p>
-          <h2>Coach Control Room</h2>
-          <p>Coach and delegated Assistant actions use the same protected Team API.</p>
-        </div>
-        <label>
-          Managed Team
-          <select
-            value={selectedTeamId}
-            onChange={(event) => setSelectedTeamId(event.target.value)}
-          >
-            {teams.map((candidate) => (
-              <option key={candidate.id} value={candidate.id}>
-                {candidate.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      </header>
-      {error ? <p className="error">{error}</p> : null}
-      {notice ? <p className="success">{notice}</p> : null}
-      {!selected ? <p className="status">You do not currently manage a Team.</p> : null}
-      {selected && team ? (
-        <>
-          <section className="panel control-room__summary">
-            <div>
-              <span>Team</span>
-              <strong>{team.name}</strong>
-            </div>
-            <div>
-              <span>Houma</span>
-              <strong>{team.houma || team.city || "—"}</strong>
-            </div>
-            <a href={`/teams/${team.id}`}>Open public Team profile</a>
-          </section>
-
-          <div className="control-room__priority-stack">
-            <TeamSettingsCard team={team} />
-            <LineupControlCard team={team} />
+    <div className="hooma-lane--content">
+      <section className="control-room">
+        <header className="control-room__header">
+          <div>
+            <p className="eyebrow control-room__section-title">TEAM MANAGEMENT</p>
+            <h2>Coach Control Room</h2>
+            <p>Coach and delegated Assistant actions use the same protected Team API.</p>
           </div>
+          <label>
+            Managed Team
+            <select
+              value={selectedTeamId}
+              onChange={(event) => setSelectedTeamId(event.target.value)}
+            >
+              {teams.map((candidate) => (
+                <option key={candidate.id} value={candidate.id}>
+                  {candidate.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </header>
+        {error ? <p className="error">{error}</p> : null}
+        {notice ? <p className="success">{notice}</p> : null}
+        {!selected ? <p className="status">You do not currently manage a Team.</p> : null}
+        {selected && team ? (
+          <>
+            <section className="panel control-room__summary">
+              <div>
+                <span>Team</span>
+                <strong>{team.name}</strong>
+              </div>
+              <div>
+                <span>Houma</span>
+                <strong>{team.houma || team.city || "—"}</strong>
+              </div>
+              <a href={`/teams/${team.id}`}>Open public Team profile</a>
+            </section>
 
-          <div className="control-room__grid">
-            <RosterCard api={api.teams} team={team} onRun={runAction} />
-            <AssistantCard api={api.teams} team={team} onRun={runAction} />
-            <CreateChallengeCard
+            <div className="control-room__priority-stack">
+              <TeamSettingsCard team={team} />
+              <LineupControlCard team={team} />
+            </div>
+
+            <div className="control-room__grid">
+              <RosterCard api={api.teams} team={team} onRun={runAction} />
+              <AssistantCard api={api.teams} team={team} onRun={runAction} />
+              <CreateChallengeCard
+                api={api.teams}
+                team={team}
+                managedTeams={teams}
+                opponents={opponents}
+                initialOpponentTeamId={challengedTeamId}
+                pitches={pitches}
+                onRun={runAction}
+              />
+            </div>
+            <ChallengeBoard
               api={api.teams}
-              team={team}
-              managedTeams={teams}
-              opponents={opponents}
-              initialOpponentTeamId={challengedTeamId}
-              pitches={pitches}
+              incoming={incoming}
+              outgoing={outgoing}
               onRun={runAction}
             />
-          </div>
-          <ChallengeBoard
-            api={api.teams}
-            incoming={incoming}
-            outgoing={outgoing}
-            onRun={runAction}
-          />
-        </>
-      ) : null}
-    </section>
+          </>
+        ) : null}
+      </section>
+    </div>
   );
 }
 

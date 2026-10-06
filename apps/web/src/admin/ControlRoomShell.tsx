@@ -132,35 +132,43 @@ export function ControlRoomShell({
 
   return (
     <section className="admin-control-room admin-workbench">
-      <header className="admin-hero admin-panel admin-workbench-header">
-        <div>
-          <p className="eyebrow">{isPlatformOwner ? "PLATFORM ADMIN" : "APP MANAGER"}</p>
-          <h1>Platform Control Room</h1>
-          <p className="muted">
-            {isPlatformOwner
-              ? "Operator console for live platform queues, user safety, access, and audit evidence."
-              : "Delegated platform authority is limited to the permissions assigned by a Platform Admin."}
-          </p>
-        </div>
-        <div className="admin-command-bar" aria-label="Current authority">
-          <span className="admin-chip admin-chip-success">
-            <AdminIcon name="check" />
-            {isPlatformOwner ? "Owner authority" : delegatedAuthority || "No delegated permissions"}
-          </span>
-          {message ? <span className="admin-chip admin-chip-success">{message}</span> : null}
-          {error ? <span className="admin-chip admin-chip-danger">{error}</span> : null}
-        </div>
-      </header>
+      <div className="hooma-lane--content">
+        <header className="admin-hero admin-panel admin-workbench-header">
+          <div>
+            <p className="eyebrow">{isPlatformOwner ? "PLATFORM ADMIN" : "APP MANAGER"}</p>
+            <h1>Platform Control Room</h1>
+            <p className="muted">
+              {isPlatformOwner
+                ? "Operator console for live platform queues, user safety, access, and audit evidence."
+                : "Delegated platform authority is limited to the permissions assigned by a Platform Admin."}
+            </p>
+          </div>
+          <div className="admin-command-bar" aria-label="Current authority">
+            <span className="admin-chip admin-chip-success">
+              <AdminIcon name="check" />
+              {isPlatformOwner
+                ? "Owner authority"
+                : delegatedAuthority || "No delegated permissions"}
+            </span>
+            {message ? <span className="admin-chip admin-chip-success">{message}</span> : null}
+            {error ? <span className="admin-chip admin-chip-danger">{error}</span> : null}
+          </div>
+        </header>
+      </div>
 
-      <ControlRoomNavigation
-        isPlatformOwner={isPlatformOwner}
-        canReviewPitch={canReviewPitch}
-        canViewAudit={canViewAudit}
-        canManageAdminIssues={canManageAdminIssues}
-        canManageUsers={canManageUsers}
-      />
+      <div className="hooma-lane--nav admin-navigation-lane">
+        <ControlRoomNavigation
+          isPlatformOwner={isPlatformOwner}
+          canReviewPitch={canReviewPitch}
+          canViewAudit={canViewAudit}
+          canManageAdminIssues={canManageAdminIssues}
+          canManageUsers={canManageUsers}
+        />
+      </div>
 
-      <div className="admin-workspace">{children}</div>
+      <div className="hooma-lane--content">
+        <div className="admin-workspace">{children}</div>
+      </div>
     </section>
   );
 }

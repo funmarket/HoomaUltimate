@@ -56,37 +56,48 @@ export function PlaceEditPage({ placeId }: { readonly placeId: string }) {
 
   if (!place)
     return error ? (
-      <p className="error">{error}</p>
+      <div className="hooma-lane--content">
+        <p className="error">{error}</p>
+      </div>
     ) : (
-      <p className="status">Loading Place settings…</p>
+      <div className="hooma-lane--content">
+        <p className="status">Loading Place settings…</p>
+      </div>
     );
 
   return (
-    <section className="place-page place-form-page">
-      <a
-        className="place-back-link"
-        href={place.moderationStatus === "APPROVED" ? `/places/${place.id}` : "/watch"}
-      >
-        ← {place.moderationStatus === "APPROVED" ? place.name : "Watch"}
-      </a>
-      <header className="place-page__header place-form-page__header">
-        <div>
-          <p className="eyebrow">PLACE SETTINGS</p>
-          <h1>Edit Place</h1>
-          <p>Update the same canonical Place shown across Watch and Places.</p>
-        </div>
-      </header>
-      <PlaceForm initialPlace={place} submitLabel="Save Place" pending={pending} onSubmit={save} />
-      {notice ? <p className="success">{notice}</p> : null}
-      {error ? <p className="error">{error}</p> : null}
-      <section className="entity-danger-zone place-danger-zone">
-        <p className="eyebrow">PLACE MANAGEMENT</p>
-        <h3>Delete Place</h3>
-        <p>Remove this Place from active discovery while preserving historical records.</p>
-        <button type="button" disabled={deleting || pending} onClick={() => void deletePlace()}>
-          {deleting ? "Deleting…" : "Delete Place"}
-        </button>
+    <div className="hooma-lane--content">
+      <section className="place-page place-form-page">
+        <a
+          className="place-back-link"
+          href={place.moderationStatus === "APPROVED" ? `/places/${place.id}` : "/watch"}
+        >
+          ← {place.moderationStatus === "APPROVED" ? place.name : "Watch"}
+        </a>
+        <header className="place-page__header place-form-page__header">
+          <div>
+            <p className="eyebrow">PLACE SETTINGS</p>
+            <h1>Edit Place</h1>
+            <p>Update the same canonical Place shown across Watch and Places.</p>
+          </div>
+        </header>
+        <PlaceForm
+          initialPlace={place}
+          submitLabel="Save Place"
+          pending={pending}
+          onSubmit={save}
+        />
+        {notice ? <p className="success">{notice}</p> : null}
+        {error ? <p className="error">{error}</p> : null}
+        <section className="entity-danger-zone place-danger-zone">
+          <p className="eyebrow">PLACE MANAGEMENT</p>
+          <h3>Delete Place</h3>
+          <p>Remove this Place from active discovery while preserving historical records.</p>
+          <button type="button" disabled={deleting || pending} onClick={() => void deletePlace()}>
+            {deleting ? "Deleting…" : "Delete Place"}
+          </button>
+        </section>
       </section>
-    </section>
+    </div>
   );
 }

@@ -139,70 +139,84 @@ export function PlacesPage() {
 
   return (
     <section className="place-page">
-      <header className="place-page__header">
-        <div>
-          <p className="eyebrow">SPOTS</p>
-          <h1>Spots</h1>
-          <p>Cafés, lounges, restaurants and other places to watch together.</p>
-        </div>
-      </header>
-
-      <WatchSectionNavigation active="spots" />
-
-      <div className="place-source-tabs" role="tablist" aria-label="Spot source">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={spotOrigin === "OWNER"}
-          className={spotOrigin === "OWNER" ? "place-source-tab is-active" : "place-source-tab"}
-          onClick={() => setSpotOrigin("OWNER")}
-        >
-          By Owner
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={spotOrigin === "FANHUB"}
-          className={spotOrigin === "FANHUB" ? "place-source-tab is-active" : "place-source-tab"}
-          onClick={() => setSpotOrigin("FANHUB")}
-        >
-          FanHub
-        </button>
+      <div className="hooma-lane--content">
+        <header className="place-page__header">
+          <div>
+            <p className="eyebrow">SPOTS</p>
+            <h1>Spots</h1>
+            <p>Cafés, lounges, restaurants and other places to watch together.</p>
+          </div>
+        </header>
       </div>
 
-      {error ? <p className="error">{error}</p> : null}
-      <div className="place-directory">
-        {visiblePlaces.map((place) => (
-          <PlaceDirectoryCard
-            key={place.id}
-            place={place}
-            nextEvent={nextEventByPlace.get(place.id)}
-          />
-        ))}
-        {!visiblePlaces.length && !error ? (
-          <p className="muted">
-            {spotOrigin === "OWNER" ? "No owner-submitted Spots yet." : "No FanHub Spots yet."}
-          </p>
-        ) : null}
+      <div className="hooma-lane--nav">
+        <WatchSectionNavigation active="spots" />
+      </div>
+
+      <div className="hooma-lane--nav">
+        <div className="place-source-tabs" role="tablist" aria-label="Spot source">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={spotOrigin === "OWNER"}
+            className={spotOrigin === "OWNER" ? "place-source-tab is-active" : "place-source-tab"}
+            onClick={() => setSpotOrigin("OWNER")}
+          >
+            By Owner
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={spotOrigin === "FANHUB"}
+            className={spotOrigin === "FANHUB" ? "place-source-tab is-active" : "place-source-tab"}
+            onClick={() => setSpotOrigin("FANHUB")}
+          >
+            FanHub
+          </button>
+        </div>
+      </div>
+
+      {error ? (
+        <div className="hooma-lane--content">
+          <p className="error">{error}</p>
+        </div>
+      ) : null}
+      <div className="hooma-lane--content">
+        <div className="place-directory">
+          {visiblePlaces.map((place) => (
+            <PlaceDirectoryCard
+              key={place.id}
+              place={place}
+              nextEvent={nextEventByPlace.get(place.id)}
+            />
+          ))}
+          {!visiblePlaces.length && !error ? (
+            <p className="muted">
+              {spotOrigin === "OWNER" ? "No owner-submitted Spots yet." : "No FanHub Spots yet."}
+            </p>
+          ) : null}
+        </div>
       </div>
 
       {unclassifiedPlaces.length ? (
-        <section className="panel">
-          <p className="eyebrow">SOURCE PENDING VERIFICATION</p>
-          <p className="muted">
-            These existing Places predate durable source tracking. HOOMA keeps them visible without
-            inventing whether they were added by an owner or FanHub.
-          </p>
-          <div className="place-directory">
-            {unclassifiedPlaces.map((place) => (
-              <PlaceDirectoryCard
-                key={place.id}
-                place={place}
-                nextEvent={nextEventByPlace.get(place.id)}
-              />
-            ))}
-          </div>
-        </section>
+        <div className="hooma-lane--content">
+          <section className="panel">
+            <p className="eyebrow">SOURCE PENDING VERIFICATION</p>
+            <p className="muted">
+              These existing Places predate durable source tracking. HOOMA keeps them visible
+              without inventing whether they were added by an owner or FanHub.
+            </p>
+            <div className="place-directory">
+              {unclassifiedPlaces.map((place) => (
+                <PlaceDirectoryCard
+                  key={place.id}
+                  place={place}
+                  nextEvent={nextEventByPlace.get(place.id)}
+                />
+              ))}
+            </div>
+          </section>
+        </div>
       ) : null}
     </section>
   );
@@ -257,72 +271,76 @@ export function AddPlacePage() {
     if (submissionResult.outcome === "EXISTING") {
       const activeApproved = submissionResult.status === "APPROVED" && !submissionResult.archivedAt;
       return (
-        <section className="place-page">
-          <div className="place-submitted panel">
-            <p className="eyebrow">EXISTING PLACE FOUND</p>
-            <h1>No duplicate created</h1>
-            <p>
-              HOOMA found {duplicateMatchLabel(submissionResult)} for {submissionResult.place.name}.
-              The existing canonical Place was kept.
-            </p>
-            {submissionResult.archivedAt ? (
-              <p className="muted">
-                This Place is archived. A new physical Place was not created because that would
-                duplicate the canonical venue record.
+        <div className="hooma-lane--content">
+          <section className="place-page">
+            <div className="place-submitted panel">
+              <p className="eyebrow">EXISTING PLACE FOUND</p>
+              <h1>No duplicate created</h1>
+              <p>
+                HOOMA found {duplicateMatchLabel(submissionResult)} for{" "}
+                {submissionResult.place.name}. The existing canonical Place was kept.
               </p>
-            ) : submissionResult.status === "PENDING" ? (
-              <p className="muted">This Place is already waiting for App Admin review.</p>
-            ) : null}
-            <div className="place-detail-actions">
-              {activeApproved ? (
-                <a className="place-primary-link" href={`/places/${placeId}`}>
-                  View existing Place
-                </a>
+              {submissionResult.archivedAt ? (
+                <p className="muted">
+                  This Place is archived. A new physical Place was not created because that would
+                  duplicate the canonical venue record.
+                </p>
+              ) : submissionResult.status === "PENDING" ? (
+                <p className="muted">This Place is already waiting for App Admin review.</p>
               ) : null}
-              {activeApproved && submissionOrigin === "OWNER" ? (
-                <a
-                  href={
-                    isPitchSuggestion ? `/pitch/${placeId}?claim=1` : `/places/${placeId}?claim=1`
-                  }
-                >
-                  {isPitchSuggestion ? "Claim this Pitch" : "Claim this Place"}
+              <div className="place-detail-actions">
+                {activeApproved ? (
+                  <a className="place-primary-link" href={`/places/${placeId}`}>
+                    View existing Place
+                  </a>
+                ) : null}
+                {activeApproved && submissionOrigin === "OWNER" ? (
+                  <a
+                    href={
+                      isPitchSuggestion ? `/pitch/${placeId}?claim=1` : `/places/${placeId}?claim=1`
+                    }
+                  >
+                    {isPitchSuggestion ? "Claim this Pitch" : "Claim this Place"}
+                  </a>
+                ) : null}
+                <a href={isPitchSuggestion ? "/pitch" : "/places"}>
+                  {isPitchSuggestion ? "Back to Pitch" : "Back to Spots"}
                 </a>
-              ) : null}
-              <a href={isPitchSuggestion ? "/pitch" : "/places"}>
-                {isPitchSuggestion ? "Back to Pitch" : "Back to Spots"}
-              </a>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </div>
       );
     }
 
     return (
-      <section className="place-page">
-        <div className="place-submitted panel">
-          <p className="eyebrow">SUBMITTED</p>
-          <h1>{isPitchSuggestion ? "Pitch submitted" : "Place submitted"}</h1>
-          <p>
-            {isPitchSuggestion
-              ? submissionOrigin === "OWNER"
-                ? "The App Admin will review this Pitch and its ownership claim separately. No verified ownership or management authority is granted until approval."
-                : "The App Admin will review this FanHub Pitch submission. If the real owner claims it later, the same canonical Place is kept and the FanHub source remains unchanged."
-              : submissionOrigin === "OWNER"
-                ? "The App Admin will review this Spot first. Your ownership claim stays separate and can be verified after the Place itself is approved."
-                : "The App Admin will review this Spot. Community suggestions appear in FanHub. If the real owner claims it later, the same canonical Place is kept and the FanHub source remains unchanged."}
-          </p>
-          <div className="place-detail-actions">
-            {!isPitchSuggestion ? (
-              <a className="place-primary-link" href={`/places/${placeId}/edit`}>
-                Manage submitted Place
+      <div className="hooma-lane--content">
+        <section className="place-page">
+          <div className="place-submitted panel">
+            <p className="eyebrow">SUBMITTED</p>
+            <h1>{isPitchSuggestion ? "Pitch submitted" : "Place submitted"}</h1>
+            <p>
+              {isPitchSuggestion
+                ? submissionOrigin === "OWNER"
+                  ? "The App Admin will review this Pitch and its ownership claim separately. No verified ownership or management authority is granted until approval."
+                  : "The App Admin will review this FanHub Pitch submission. If the real owner claims it later, the same canonical Place is kept and the FanHub source remains unchanged."
+                : submissionOrigin === "OWNER"
+                  ? "The App Admin will review this Spot first. Your ownership claim stays separate and can be verified after the Place itself is approved."
+                  : "The App Admin will review this Spot. Community suggestions appear in FanHub. If the real owner claims it later, the same canonical Place is kept and the FanHub source remains unchanged."}
+            </p>
+            <div className="place-detail-actions">
+              {!isPitchSuggestion ? (
+                <a className="place-primary-link" href={`/places/${placeId}/edit`}>
+                  Manage submitted Place
+                </a>
+              ) : null}
+              <a href={isPitchSuggestion ? "/pitch" : "/watch"}>
+                {isPitchSuggestion ? "Back to Pitch" : "Back to Watch"}
               </a>
-            ) : null}
-            <a href={isPitchSuggestion ? "/pitch" : "/watch"}>
-              {isPitchSuggestion ? "Back to Pitch" : "Back to Watch"}
-            </a>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     );
   }
 
@@ -369,74 +387,76 @@ export function AddPlacePage() {
   ) : null;
 
   return (
-    <section
-      className={
-        isPitchSuggestion
-          ? "place-page place-form-page pitch-form-page"
-          : "place-page place-form-page"
-      }
-    >
-      <header className="place-page__header place-form-page__header">
-        <div>
-          <p className="eyebrow">{isPitchSuggestion ? "ADD A PITCH" : "ADD A PLACE"}</p>
-          <h1>{isPitchSuggestion ? "Add a football pitch" : "Add a Watch Spot"}</h1>
-          <p>
-            {isPitchSuggestion
-              ? "Add the real venue details and hourly rental price, then choose whether this is submitted By Owner or through FanHub."
-              : "Add a café, lounge, restaurant or other place where people can watch together."}
+    <div className="hooma-lane--content">
+      <section
+        className={
+          isPitchSuggestion
+            ? "place-page place-form-page pitch-form-page"
+            : "place-page place-form-page"
+        }
+      >
+        <header className="place-page__header place-form-page__header">
+          <div>
+            <p className="eyebrow">{isPitchSuggestion ? "ADD A PITCH" : "ADD A PLACE"}</p>
+            <h1>{isPitchSuggestion ? "Add a football pitch" : "Add a Watch Spot"}</h1>
+            <p>
+              {isPitchSuggestion
+                ? "Add the real venue details and hourly rental price, then choose whether this is submitted By Owner or through FanHub."
+                : "Add a café, lounge, restaurant or other place where people can watch together."}
+            </p>
+          </div>
+        </header>
+
+        <section className="panel pitch-source-choice">
+          <p className="eyebrow">
+            {isPitchSuggestion ? "WHO IS ADDING THIS PITCH?" : "WHO IS ADDING THIS SPOT?"}
           </p>
-        </div>
-      </header>
+          <div className="place-source-tabs" role="tablist" aria-label="Place submission source">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={submissionOrigin === "OWNER"}
+              className={
+                submissionOrigin === "OWNER" ? "place-source-tab is-active" : "place-source-tab"
+              }
+              onClick={() => setSubmissionOrigin("OWNER")}
+            >
+              By Owner
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={submissionOrigin === "FANHUB"}
+              className={
+                submissionOrigin === "FANHUB" ? "place-source-tab is-active" : "place-source-tab"
+              }
+              onClick={() => setSubmissionOrigin("FANHUB")}
+            >
+              FanHub
+            </button>
+          </div>
+          <p className="muted">
+            {submissionOrigin === "OWNER"
+              ? isPitchSuggestion
+                ? "Admin review required — A Pitch submitted By Owner and its ownership claim are reviewed separately. Submitting as owner does not grant verified ownership or management access until approved."
+                : "Choose By Owner only when you own or manage this business. This creates an ownership claim on the same Place; verification remains a separate Admin decision."
+              : isPitchSuggestion
+                ? "FanHub is for a registered HOOMA member adding a Pitch for the community. This does not grant ownership or management authority."
+                : "FanHub is for any registered HOOMA member suggesting a Spot for the community. Suggesting it does not make you its owner."}
+          </p>
+        </section>
 
-      <section className="panel pitch-source-choice">
-        <p className="eyebrow">
-          {isPitchSuggestion ? "WHO IS ADDING THIS PITCH?" : "WHO IS ADDING THIS SPOT?"}
-        </p>
-        <div className="place-source-tabs" role="tablist" aria-label="Place submission source">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={submissionOrigin === "OWNER"}
-            className={
-              submissionOrigin === "OWNER" ? "place-source-tab is-active" : "place-source-tab"
-            }
-            onClick={() => setSubmissionOrigin("OWNER")}
-          >
-            By Owner
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={submissionOrigin === "FANHUB"}
-            className={
-              submissionOrigin === "FANHUB" ? "place-source-tab is-active" : "place-source-tab"
-            }
-            onClick={() => setSubmissionOrigin("FANHUB")}
-          >
-            FanHub
-          </button>
-        </div>
-        <p className="muted">
-          {submissionOrigin === "OWNER"
-            ? isPitchSuggestion
-              ? "Admin review required — A Pitch submitted By Owner and its ownership claim are reviewed separately. Submitting as owner does not grant verified ownership or management access until approved."
-              : "Choose By Owner only when you own or manage this business. This creates an ownership claim on the same Place; verification remains a separate Admin decision."
-            : isPitchSuggestion
-              ? "FanHub is for a registered HOOMA member adding a Pitch for the community. This does not grant ownership or management authority."
-              : "FanHub is for any registered HOOMA member suggesting a Spot for the community. Suggesting it does not make you its owner."}
-        </p>
+        <PlaceForm
+          submitLabel={isPitchSuggestion ? "Add Pitch" : "Submit Place"}
+          pending={pending}
+          showMenu={!isPitchSuggestion}
+          maxImages={isPitchSuggestion && submissionOrigin === "OWNER" ? 3 : 4}
+          allowUploads={isPitchSuggestion && submissionOrigin === "OWNER"}
+          extraSection={pitchPricingSection}
+          onSubmit={submit}
+        />
+        {error ? <p className="error">{error}</p> : null}
       </section>
-
-      <PlaceForm
-        submitLabel={isPitchSuggestion ? "Add Pitch" : "Submit Place"}
-        pending={pending}
-        showMenu={!isPitchSuggestion}
-        maxImages={isPitchSuggestion && submissionOrigin === "OWNER" ? 3 : 4}
-        allowUploads={isPitchSuggestion && submissionOrigin === "OWNER"}
-        extraSection={pitchPricingSection}
-        onSubmit={submit}
-      />
-      {error ? <p className="error">{error}</p> : null}
-    </section>
+    </div>
   );
 }

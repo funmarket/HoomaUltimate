@@ -85,10 +85,13 @@
   gap: 8px;
 }
 
-.admin-navigation {
+.admin-navigation-lane {
   position: sticky;
   top: 8px;
   z-index: 4;
+}
+
+.admin-navigation {
   box-sizing: border-box;
   max-width: 100%;
   display: flex;
@@ -776,8 +779,8 @@
 
 @media (max-width: 560px) {
   .admin-control-room {
-    width: calc(100vw - 64px);
-    max-width: calc(100vw - 64px);
+    width: 100%;
+    max-width: 100%;
     gap: 12px;
     padding-bottom: max(118px, calc(86px + env(safe-area-inset-bottom)));
   }
@@ -791,8 +794,11 @@
     border-radius: 16px;
   }
 
-  .admin-navigation {
+  .admin-navigation-lane {
     top: 4px;
+  }
+
+  .admin-navigation {
     padding: 8px;
     border-radius: 16px;
   }

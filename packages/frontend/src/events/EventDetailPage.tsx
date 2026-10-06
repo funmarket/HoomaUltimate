@@ -187,7 +187,15 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
   }
 
   if (!event)
-    return error ? <p className="error">{error}</p> : <p className="status">Loading event…</p>;
+    return error ? (
+      <div className="hooma-lane--content">
+        <p className="error">{error}</p>
+      </div>
+    ) : (
+      <div className="hooma-lane--content">
+        <p className="status">Loading event…</p>
+      </div>
+    );
 
   const isWatch = event.type === "WATCH";
   const location = isWatch
@@ -221,295 +229,297 @@ export function EventDetailPage({ eventId }: { readonly eventId: string }) {
       : "Community-published";
 
   return (
-    <div className="play-event-page">
-      {isWatch ? (
-        <section className="watch-event-detail">
-          <div className="watch-event-detail__kicker">Watch event</div>
+    <div className="hooma-lane--content">
+      <div className="play-event-page">
+        {isWatch ? (
+          <section className="watch-event-detail">
+            <div className="watch-event-detail__kicker">Watch event</div>
 
-          <div className="watch-event-detail__title-row">
-            <div className="watch-event-detail__title-copy">
-              <h1>{event.title}</h1>
-              {event.description ? (
-                <p className="watch-event-detail__subtitle">{event.description}</p>
+            <div className="watch-event-detail__title-row">
+              <div className="watch-event-detail__title-copy">
+                <h1>{event.title}</h1>
+                {event.description ? (
+                  <p className="watch-event-detail__subtitle">{event.description}</p>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="watch-event-detail__meta" aria-label="Event essentials">
+              <div className="watch-event-detail__meta-item watch-event-detail__meta-item--date">
+                <CalendarIcon />
+                <span>
+                  <strong>{watchDate}</strong>
+                  <small>{watchTime}</small>
+                </span>
+              </div>
+              <div className="watch-event-detail__meta-item watch-event-detail__meta-item--place">
+                <PinIcon />
+                <span>
+                  <strong>{location}</strong>
+                </span>
+              </div>
+              <div className="watch-event-detail__meta-item watch-event-detail__meta-item--going">
+                <UsersIcon />
+                <span>
+                  <strong>
+                    {event._count.rsvps}
+                    {event.capacity ? ` / ${event.capacity}` : ""} going
+                  </strong>
+                </span>
+              </div>
+            </div>
+
+            <div className="watch-event-detail__venue">
+              {event.place?.imageUrl ? (
+                <img
+                  className="watch-event-detail__venue-image"
+                  src={event.place.imageUrl}
+                  alt={event.place.name}
+                />
+              ) : (
+                <span className="watch-event-detail__venue-placeholder" aria-hidden="true">
+                  <PinIcon />
+                </span>
+              )}
+              <div className="watch-event-detail__venue-copy">
+                <span className="watch-event-detail__venue-label">Venue</span>
+                <strong>{event.place?.name || location}</strong>
+                {watchArea ? <small>{watchArea}</small> : null}
+              </div>
+              <span className="watch-event-detail__authority">{watchAuthority}</span>
+            </div>
+
+            <div className="watch-event-detail__actions" aria-label="Watch event actions">
+              {actions?.canJoin ? (
+                <button
+                  className="watch-event-detail__action watch-event-detail__action--primary"
+                  type="button"
+                  disabled={actionPending || participationLoading}
+                  onClick={() => void join()}
+                >
+                  <UsersIcon />
+                  {actionPending ? "Joining…" : "Join event"}
+                </button>
+              ) : null}
+              {event.place ? (
+                <Link
+                  className="watch-event-detail__action watch-event-detail__action--place"
+                  to={`/places/${event.place.id}?eventId=${encodeURIComponent(event.id)}`}
+                >
+                  <PinIcon />
+                  View place
+                </Link>
+              ) : null}
+              {canManage ? (
+                <a
+                  className="watch-event-detail__action watch-event-detail__action--edit"
+                  href={`/events/${event.id}/edit`}
+                >
+                  Edit event
+                </a>
               ) : null}
             </div>
-          </div>
 
-          <div className="watch-event-detail__meta" aria-label="Event essentials">
-            <div className="watch-event-detail__meta-item watch-event-detail__meta-item--date">
-              <CalendarIcon />
-              <span>
-                <strong>{watchDate}</strong>
-                <small>{watchTime}</small>
-              </span>
-            </div>
-            <div className="watch-event-detail__meta-item watch-event-detail__meta-item--place">
-              <PinIcon />
-              <span>
-                <strong>{location}</strong>
-              </span>
-            </div>
-            <div className="watch-event-detail__meta-item watch-event-detail__meta-item--going">
-              <UsersIcon />
-              <span>
-                <strong>
-                  {event._count.rsvps}
-                  {event.capacity ? ` / ${event.capacity}` : ""} going
-                </strong>
-              </span>
-            </div>
-          </div>
+            {rsvpLabel ? (
+              <div className="watch-event-detail__participation">
+                <span className="watch-event-detail__rsvp-state">{rsvpLabel}</span>
+                {actions?.canCancelRsvp ? (
+                  <button
+                    className="watch-event-detail__cancel"
+                    type="button"
+                    disabled={actionPending}
+                    onClick={() => void leave()}
+                  >
+                    {actionPending
+                      ? "Updating…"
+                      : rsvp === "WAITLISTED"
+                        ? "Leave waitlist"
+                        : "Cancel RSVP"}
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
 
-          <div className="watch-event-detail__venue">
-            {event.place?.imageUrl ? (
-              <img
-                className="watch-event-detail__venue-image"
-                src={event.place.imageUrl}
-                alt={event.place.name}
-              />
-            ) : (
-              <span className="watch-event-detail__venue-placeholder" aria-hidden="true">
-                <PinIcon />
-              </span>
-            )}
-            <div className="watch-event-detail__venue-copy">
-              <span className="watch-event-detail__venue-label">Venue</span>
-              <strong>{event.place?.name || location}</strong>
-              {watchArea ? <small>{watchArea}</small> : null}
+            {status ? <p className="success">{status}</p> : null}
+            {error ? <p className="error">{error}</p> : null}
+          </section>
+        ) : (
+          <section className="play-event-card play-event-card--matchday">
+            <span className="play-event-card__pitch-grid" aria-hidden="true" />
+            <div className="play-event-card__kicker-row">
+              <div className="play-event-card__kicker">Pickup match</div>
+              <span className="play-event-card__ticket-mark">Matchday</span>
             </div>
-            <span className="watch-event-detail__authority">{watchAuthority}</span>
-          </div>
+            <div className="play-event-card__title-row">
+              <span
+                className="play-event-card__ball"
+                style={{
+                  width: "auto",
+                  height: "auto",
+                  border: 0,
+                  borderRadius: 0,
+                  background: "transparent",
+                  boxShadow: "none",
+                  color: "#fff8e8",
+                }}
+              >
+                <BallIcon />
+              </span>
+              <div>
+                <h1>{event.title}</h1>
+                {event.description ? <p>{event.description}</p> : null}
+              </div>
+            </div>
+            <div className="play-event-card__meta" aria-label="Match essentials">
+              <span>
+                <CalendarIcon color={playYellow} />
+                {new Date(event.startsAt).toLocaleString()}
+              </span>
+              <span>
+                <PinIcon color={playYellow} />
+                {location}
+              </span>
+              <span>
+                <UsersIcon color={playYellow} />
+                {event._count.rsvps}
+                {event.capacity ? ` / ${event.capacity}` : ""} going
+              </span>
+            </div>
 
-          <div className="watch-event-detail__actions" aria-label="Watch event actions">
-            {actions?.canJoin ? (
+            {event.place ? (
+              <div className="play-event-card__tagged-pitch">
+                <span
+                  className="play-event-card__tagged-pitch-icon"
+                  aria-hidden="true"
+                  style={{
+                    width: "auto",
+                    height: "auto",
+                    borderRadius: 0,
+                    background: "transparent",
+                    color: playYellow,
+                  }}
+                >
+                  <PinIcon color={playYellow} />
+                </span>
+                <div>
+                  <small>HOOMA Pitch</small>
+                  <strong>{event.place.name}</strong>
+                  <span>{[event.place.city, event.place.houma].filter(Boolean).join(" · ")}</span>
+                </div>
+                <a href={`/pitch/${event.place.id}`}>View Pitch</a>
+              </div>
+            ) : null}
+
+            <div className="play-event-card__facts" aria-label="Match facts">
+              <div>
+                <span>Format</span>
+                <strong>{pretty(play?.format)}</strong>
+              </div>
+              <div>
+                <span>Pitch</span>
+                <strong>{pretty(play?.pitchType)}</strong>
+              </div>
+              <div>
+                <span>Level</span>
+                <strong>{pretty(play?.skillLevel)}</strong>
+              </div>
+              <div>
+                <span>Community</span>
+                <strong>{event.community?.name || "—"}</strong>
+              </div>
+            </div>
+
+            {rsvpLabel ? (
+              <div
+                className="play-event-rsvp-state"
+                style={
+                  rsvp === "CONFIRMED"
+                    ? {
+                        color: confirmedPistachio,
+                        fontSize: "15px",
+                      }
+                    : undefined
+                }
+              >
+                {rsvp === "CONFIRMED" ? "✓ " : ""}
+                {rsvpLabel}
+              </div>
+            ) : null}
+            {rsvp === "ATTENDED" ? (
+              <div className="play-event-primary-action play-event-primary-action--static">
+                Checked in
+              </div>
+            ) : actions?.canCancelRsvp ? (
               <button
-                className="watch-event-detail__action watch-event-detail__action--primary"
+                className="play-event-primary-action"
+                type="button"
+                disabled={actionPending}
+                onClick={() => void leave()}
+                style={
+                  rsvp === "CONFIRMED"
+                    ? {
+                        borderColor: "rgba(190, 92, 23, 0.45)",
+                        background: "rgba(255, 145, 61, 0.11)",
+                        color: "#c65a16",
+                        fontSize: "14px",
+                        boxShadow: "none",
+                      }
+                    : undefined
+                }
+              >
+                {actionPending
+                  ? "Updating…"
+                  : rsvp === "WAITLISTED"
+                    ? "Leave waitlist"
+                    : "Cancel RSVP"}
+              </button>
+            ) : actions?.canJoin ? (
+              <button
+                className="play-event-primary-action"
                 type="button"
                 disabled={actionPending || participationLoading}
                 onClick={() => void join()}
               >
-                <UsersIcon />
-                {actionPending ? "Joining…" : "Join event"}
+                {actionPending ? "Joining…" : "Join in one tap"}
               </button>
             ) : null}
-            {event.place ? (
-              <Link
-                className="watch-event-detail__action watch-event-detail__action--place"
-                to={`/places/${event.place.id}?eventId=${encodeURIComponent(event.id)}`}
-              >
-                <PinIcon />
-                View place
-              </Link>
-            ) : null}
-            {canManage ? (
-              <a
-                className="watch-event-detail__action watch-event-detail__action--edit"
-                href={`/events/${event.id}/edit`}
-              >
-                Edit event
-              </a>
-            ) : null}
-          </div>
+            {status ? <p className="success">{status}</p> : null}
+            {error ? <p className="error">{error}</p> : null}
+          </section>
+        )}
 
-          {rsvpLabel ? (
-            <div className="watch-event-detail__participation">
-              <span className="watch-event-detail__rsvp-state">{rsvpLabel}</span>
-              {actions?.canCancelRsvp ? (
-                <button
-                  className="watch-event-detail__cancel"
-                  type="button"
-                  disabled={actionPending}
-                  onClick={() => void leave()}
-                >
-                  {actionPending
-                    ? "Updating…"
-                    : rsvp === "WAITLISTED"
-                      ? "Leave waitlist"
-                      : "Cancel RSVP"}
-                </button>
+        <EventWhistleBoard eventId={eventId} />
+
+        {!isWatch ? (
+          <section className="play-matchday-hub" aria-labelledby="play-matchday-title">
+            <div>
+              <p className="eyebrow">Matchday hub</p>
+              <h2 id="play-matchday-title">Event actions</h2>
+            </div>
+            <div className="play-matchday-actions">
+              <a href={`/events/${eventId}/formation`}>
+                <strong>Formation builder</strong>
+                <span>{pretty(play?.format)} · build teams and positions</span>
+              </a>
+              <a href={`/events/${eventId}/chat`}>
+                <strong>Temporary event chat</strong>
+                <span>Available only to participants while the event chat window is open</span>
+              </a>
+              {actions?.canCheckIn ? (
+                <a href={`/events/${eventId}/check-in`}>
+                  <strong>Check in</strong>
+                  <span>Confirmed participants can mark attendance on matchday</span>
+                </a>
+              ) : actions?.checkInUnavailableReason === "TOO_EARLY" ? (
+                <div>
+                  <strong>Check in</strong>
+                  <span>Opens {new Date(actions.checkInOpensAt).toLocaleString()}</span>
+                </div>
               ) : null}
             </div>
-          ) : null}
-
-          {status ? <p className="success">{status}</p> : null}
-          {error ? <p className="error">{error}</p> : null}
-        </section>
-      ) : (
-        <section className="play-event-card play-event-card--matchday">
-          <span className="play-event-card__pitch-grid" aria-hidden="true" />
-          <div className="play-event-card__kicker-row">
-            <div className="play-event-card__kicker">Pickup match</div>
-            <span className="play-event-card__ticket-mark">Matchday</span>
-          </div>
-          <div className="play-event-card__title-row">
-            <span
-              className="play-event-card__ball"
-              style={{
-                width: "auto",
-                height: "auto",
-                border: 0,
-                borderRadius: 0,
-                background: "transparent",
-                boxShadow: "none",
-                color: "#fff8e8",
-              }}
-            >
-              <BallIcon />
-            </span>
-            <div>
-              <h1>{event.title}</h1>
-              {event.description ? <p>{event.description}</p> : null}
-            </div>
-          </div>
-          <div className="play-event-card__meta" aria-label="Match essentials">
-            <span>
-              <CalendarIcon color={playYellow} />
-              {new Date(event.startsAt).toLocaleString()}
-            </span>
-            <span>
-              <PinIcon color={playYellow} />
-              {location}
-            </span>
-            <span>
-              <UsersIcon color={playYellow} />
-              {event._count.rsvps}
-              {event.capacity ? ` / ${event.capacity}` : ""} going
-            </span>
-          </div>
-
-          {event.place ? (
-            <div className="play-event-card__tagged-pitch">
-              <span
-                className="play-event-card__tagged-pitch-icon"
-                aria-hidden="true"
-                style={{
-                  width: "auto",
-                  height: "auto",
-                  borderRadius: 0,
-                  background: "transparent",
-                  color: playYellow,
-                }}
-              >
-                <PinIcon color={playYellow} />
-              </span>
-              <div>
-                <small>HOOMA Pitch</small>
-                <strong>{event.place.name}</strong>
-                <span>{[event.place.city, event.place.houma].filter(Boolean).join(" · ")}</span>
-              </div>
-              <a href={`/pitch/${event.place.id}`}>View Pitch</a>
-            </div>
-          ) : null}
-
-          <div className="play-event-card__facts" aria-label="Match facts">
-            <div>
-              <span>Format</span>
-              <strong>{pretty(play?.format)}</strong>
-            </div>
-            <div>
-              <span>Pitch</span>
-              <strong>{pretty(play?.pitchType)}</strong>
-            </div>
-            <div>
-              <span>Level</span>
-              <strong>{pretty(play?.skillLevel)}</strong>
-            </div>
-            <div>
-              <span>Community</span>
-              <strong>{event.community?.name || "—"}</strong>
-            </div>
-          </div>
-
-          {rsvpLabel ? (
-            <div
-              className="play-event-rsvp-state"
-              style={
-                rsvp === "CONFIRMED"
-                  ? {
-                      color: confirmedPistachio,
-                      fontSize: "15px",
-                    }
-                  : undefined
-              }
-            >
-              {rsvp === "CONFIRMED" ? "✓ " : ""}
-              {rsvpLabel}
-            </div>
-          ) : null}
-          {rsvp === "ATTENDED" ? (
-            <div className="play-event-primary-action play-event-primary-action--static">
-              Checked in
-            </div>
-          ) : actions?.canCancelRsvp ? (
-            <button
-              className="play-event-primary-action"
-              type="button"
-              disabled={actionPending}
-              onClick={() => void leave()}
-              style={
-                rsvp === "CONFIRMED"
-                  ? {
-                      borderColor: "rgba(190, 92, 23, 0.45)",
-                      background: "rgba(255, 145, 61, 0.11)",
-                      color: "#c65a16",
-                      fontSize: "14px",
-                      boxShadow: "none",
-                    }
-                  : undefined
-              }
-            >
-              {actionPending
-                ? "Updating…"
-                : rsvp === "WAITLISTED"
-                  ? "Leave waitlist"
-                  : "Cancel RSVP"}
-            </button>
-          ) : actions?.canJoin ? (
-            <button
-              className="play-event-primary-action"
-              type="button"
-              disabled={actionPending || participationLoading}
-              onClick={() => void join()}
-            >
-              {actionPending ? "Joining…" : "Join in one tap"}
-            </button>
-          ) : null}
-          {status ? <p className="success">{status}</p> : null}
-          {error ? <p className="error">{error}</p> : null}
-        </section>
-      )}
-
-      <EventWhistleBoard eventId={eventId} />
-
-      {!isWatch ? (
-        <section className="play-matchday-hub" aria-labelledby="play-matchday-title">
-          <div>
-            <p className="eyebrow">Matchday hub</p>
-            <h2 id="play-matchday-title">Event actions</h2>
-          </div>
-          <div className="play-matchday-actions">
-            <a href={`/events/${eventId}/formation`}>
-              <strong>Formation builder</strong>
-              <span>{pretty(play?.format)} · build teams and positions</span>
-            </a>
-            <a href={`/events/${eventId}/chat`}>
-              <strong>Temporary event chat</strong>
-              <span>Available only to participants while the event chat window is open</span>
-            </a>
-            {actions?.canCheckIn ? (
-              <a href={`/events/${eventId}/check-in`}>
-                <strong>Check in</strong>
-                <span>Confirmed participants can mark attendance on matchday</span>
-              </a>
-            ) : actions?.checkInUnavailableReason === "TOO_EARLY" ? (
-              <div>
-                <strong>Check in</strong>
-                <span>Opens {new Date(actions.checkInOpensAt).toLocaleString()}</span>
-              </div>
-            ) : null}
-          </div>
-        </section>
-      ) : null}
+          </section>
+        ) : null}
+      </div>
     </div>
   );
 }

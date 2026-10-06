@@ -38,24 +38,26 @@ export function RideOffersPage() {
   const scopedQuery = contextQuery(rideContext);
 
   return (
-    <section className="ride-page">
-      <RideSectionHeader
-        eyebrow="RIDE OFFERS"
-        title="Drivers heading out"
-        body="Public Ride offers come from the Ride API. Exact meeting points stay private."
-        actionHref={`/rides/offers/new${scopedQuery}`}
-        actionLabel="Offer a Ride"
-      />
-      {loading ? <p className="ride-state panel">Loading Ride offers...</p> : null}
-      {error ? <p className="ride-state panel error">{error}</p> : null}
-      <div className="ride-offer-list">
-        {offers.map((offer) => (
-          <RideOfferCard key={offer.id} offer={offer} photoUrl={api.offerPhotoUrl(offer.id)} />
-        ))}
-      </div>
-      {!loading && !error && !offers.length ? (
-        <p className="ride-state panel muted">No public Ride offers are available yet.</p>
-      ) : null}
-    </section>
+    <div className="hooma-lane--content">
+      <section className="ride-page">
+        <RideSectionHeader
+          eyebrow="RIDE OFFERS"
+          title="Drivers heading out"
+          body="Public Ride offers come from the Ride API. Exact meeting points stay private."
+          actionHref={`/rides/offers/new${scopedQuery}`}
+          actionLabel="Offer a Ride"
+        />
+        {loading ? <p className="ride-state panel">Loading Ride offers...</p> : null}
+        {error ? <p className="ride-state panel error">{error}</p> : null}
+        <div className="ride-offer-list">
+          {offers.map((offer) => (
+            <RideOfferCard key={offer.id} offer={offer} photoUrl={api.offerPhotoUrl(offer.id)} />
+          ))}
+        </div>
+        {!loading && !error && !offers.length ? (
+          <p className="ride-state panel muted">No public Ride offers are available yet.</p>
+        ) : null}
+      </section>
+    </div>
   );
 }

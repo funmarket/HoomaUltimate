@@ -272,8 +272,10 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
   if (loading && !game) {
     return (
       <div className="page gamers-page gamer-game-page">
-        <div className="state-card">
-          <strong>Loading game…</strong>
+        <div className="hooma-lane--content">
+          <div className="state-card">
+            <strong>Loading game…</strong>
+          </div>
         </div>
       </div>
     );
@@ -282,256 +284,282 @@ export function GamerGamePage({ gameSlug }: { readonly gameSlug: string }) {
   if (!game) {
     return (
       <div className="page gamers-page gamer-game-page">
-        <div className="error-box">{error || "Game not found"}</div>
+        <div className="hooma-lane--content">
+          <div className="error-box">{error || "Game not found"}</div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="page gamers-page gamer-game-page">
-      <header className="gamer-game-hero panel">
-        <a className="gamer-back-link" href="/gamers">
-          ← Gamers
-        </a>
-        <span className="eyebrow">GAME HUB</span>
-        <h1>{game.name}</h1>
-        <p>
-          Build your game identity, find a real opponent, and take accepted challenges into Arena.
-        </p>
-      </header>
+      <div className="hooma-lane--media">
+        <header className="gamer-game-hero panel">
+          <a className="gamer-back-link" href="/gamers">
+            ← Gamers
+          </a>
+          <span className="eyebrow">GAME HUB</span>
+          <h1>{game.name}</h1>
+          <p>
+            Build your game identity, find a real opponent, and take accepted challenges into Arena.
+          </p>
+        </header>
+      </div>
 
-      <nav className="gamer-hub-tabs" aria-label={`${game.name} sections`}>
-        <button
-          className={`gamer-hub-tab${activeTab === "CHALLENGERS" ? " active" : ""}`}
-          type="button"
-          onClick={() => setActiveTab("CHALLENGERS")}
-        >
-          CHALLENGERS
-        </button>
-        <span className="gamer-hub-tab disabled" aria-disabled="true">
-          SQUADS
-        </span>
-        <button
-          className={`gamer-hub-tab${activeTab === "ARENA" ? " active" : ""}`}
-          type="button"
-          onClick={() => setActiveTab("ARENA")}
-        >
-          ARENA
-        </button>
-        <span className="gamer-hub-tab disabled" aria-disabled="true">
-          RANKINGS
-        </span>
-      </nav>
+      <div className="hooma-lane--nav">
+        <nav className="gamer-hub-tabs" aria-label={`${game.name} sections`}>
+          <button
+            className={`gamer-hub-tab${activeTab === "CHALLENGERS" ? " active" : ""}`}
+            type="button"
+            onClick={() => setActiveTab("CHALLENGERS")}
+          >
+            CHALLENGERS
+          </button>
+          <span className="gamer-hub-tab disabled" aria-disabled="true">
+            SQUADS
+          </span>
+          <button
+            className={`gamer-hub-tab${activeTab === "ARENA" ? " active" : ""}`}
+            type="button"
+            onClick={() => setActiveTab("ARENA")}
+          >
+            ARENA
+          </button>
+          <span className="gamer-hub-tab disabled" aria-disabled="true">
+            RANKINGS
+          </span>
+        </nav>
+      </div>
 
-      {notice ? <div className="success-box">{notice}</div> : null}
-      {error ? <div className="error-box">{error}</div> : null}
-      {memberError ? <div className="error-box">{memberError}</div> : null}
+      {notice ? (
+        <div className="hooma-lane--content">
+          <div className="success-box">{notice}</div>
+        </div>
+      ) : null}
+      {error ? (
+        <div className="hooma-lane--content">
+          <div className="error-box">{error}</div>
+        </div>
+      ) : null}
+      {memberError ? (
+        <div className="hooma-lane--content">
+          <div className="error-box">{memberError}</div>
+        </div>
+      ) : null}
 
       {activeTab === "CHALLENGERS" ? (
         <>
-          <section className="panel gamer-profile-editor" aria-labelledby="gamer-profile-heading">
-            <div>
-              <span className="eyebrow">YOUR GAME IDENTITY</span>
-              <h2 id="gamer-profile-heading">Your {game.name} profile</h2>
-              <p className="muted">
-                Your game handle belongs here. Your HOOMA name, photo and bio stay owned by your
-                main profile.
-              </p>
-            </div>
-            {accountLoading || identityLoading ? (
-              <p className="muted">Checking your HOOMA account…</p>
-            ) : null}
-            {!accountLoading && !identityLoading && me && !isGamer ? (
-              <div className="member-gate">
-                <strong>Gamer participation is enabled from the Gamers homepage.</strong>
-                <span className="muted">
-                  Join once on your canonical HOOMA identity, then add game-specific handles here.
-                </span>
-                <a className="button secondary" href="/gamers">
-                  Go to Gamers
-                </a>
-              </div>
-            ) : null}
-            {!accountLoading && !identityLoading && me && isGamer ? (
-              <form className="gamer-profile-form" onSubmit={saveProfile}>
-                <label className="field">
-                  <span>Game username / handle</span>
-                  <input
-                    value={handle}
-                    onChange={(event) => setHandle(event.target.value)}
-                    placeholder={`Your ${game.name} handle`}
-                    maxLength={100}
-                    required
-                  />
-                </label>
-                <label className="gamer-open-toggle">
-                  <input
-                    type="checkbox"
-                    checked={openToChallenge}
-                    onChange={(event) => setOpenToChallenge(event.target.checked)}
-                  />
-                  <span>
-                    <strong>OPEN TO CHALLENGE</strong>
-                    <small>Show this game profile in public Challengers.</small>
-                  </span>
-                </label>
-                <button className="button" type="submit" disabled={saving || !handle.trim()}>
-                  {saving ? "Saving…" : profile ? "Update Game Profile" : "Create Game Profile"}
-                </button>
-              </form>
-            ) : null}
-            {!accountLoading && !me ? (
-              <div className="member-gate">
-                <strong>Challengers are public. Gamer actions use your HOOMA account.</strong>
-                {signInHref ? (
-                  <a className="button secondary" href={signInHref}>
-                    Sign in
-                  </a>
-                ) : null}
-              </div>
-            ) : null}
-          </section>
-
-          <section className="gamers-section" aria-labelledby="challengers-heading">
-            <div className="gamers-section-heading">
+          <div className="hooma-lane--content">
+            <section className="panel gamer-profile-editor" aria-labelledby="gamer-profile-heading">
               <div>
-                <span className="eyebrow">CHALLENGERS</span>
-                <h2 id="challengers-heading">Players open to play</h2>
-              </div>
-              <span className="gamers-count">{challengers.length} open</span>
-            </div>
-            {!challengers.length ? (
-              <div className="state-card">
-                <strong>No challengers are open yet.</strong>
+                <span className="eyebrow">YOUR GAME IDENTITY</span>
+                <h2 id="gamer-profile-heading">Your {game.name} profile</h2>
                 <p className="muted">
-                  Players appear here only after explicitly switching on OPEN TO CHALLENGE.
+                  Your game handle belongs here. Your HOOMA name, photo and bio stay owned by your
+                  main profile.
                 </p>
               </div>
+              {accountLoading || identityLoading ? (
+                <p className="muted">Checking your HOOMA account…</p>
+              ) : null}
+              {!accountLoading && !identityLoading && me && !isGamer ? (
+                <div className="member-gate">
+                  <strong>Gamer participation is enabled from the Gamers homepage.</strong>
+                  <span className="muted">
+                    Join once on your canonical HOOMA identity, then add game-specific handles here.
+                  </span>
+                  <a className="button secondary" href="/gamers">
+                    Go to Gamers
+                  </a>
+                </div>
+              ) : null}
+              {!accountLoading && !identityLoading && me && isGamer ? (
+                <form className="gamer-profile-form" onSubmit={saveProfile}>
+                  <label className="field">
+                    <span>Game username / handle</span>
+                    <input
+                      value={handle}
+                      onChange={(event) => setHandle(event.target.value)}
+                      placeholder={`Your ${game.name} handle`}
+                      maxLength={100}
+                      required
+                    />
+                  </label>
+                  <label className="gamer-open-toggle">
+                    <input
+                      type="checkbox"
+                      checked={openToChallenge}
+                      onChange={(event) => setOpenToChallenge(event.target.checked)}
+                    />
+                    <span>
+                      <strong>OPEN TO CHALLENGE</strong>
+                      <small>Show this game profile in public Challengers.</small>
+                    </span>
+                  </label>
+                  <button className="button" type="submit" disabled={saving || !handle.trim()}>
+                    {saving ? "Saving…" : profile ? "Update Game Profile" : "Create Game Profile"}
+                  </button>
+                </form>
+              ) : null}
+              {!accountLoading && !me ? (
+                <div className="member-gate">
+                  <strong>Challengers are public. Gamer actions use your HOOMA account.</strong>
+                  {signInHref ? (
+                    <a className="button secondary" href={signInHref}>
+                      Sign in
+                    </a>
+                  ) : null}
+                </div>
+              ) : null}
+            </section>
+          </div>
+
+          <div className="hooma-lane--content">
+            <section className="gamers-section" aria-labelledby="challengers-heading">
+              <div className="gamers-section-heading">
+                <div>
+                  <span className="eyebrow">CHALLENGERS</span>
+                  <h2 id="challengers-heading">Players open to play</h2>
+                </div>
+                <span className="gamers-count">{challengers.length} open</span>
+              </div>
+              {!challengers.length ? (
+                <div className="state-card">
+                  <strong>No challengers are open yet.</strong>
+                  <p className="muted">
+                    Players appear here only after explicitly switching on OPEN TO CHALLENGE.
+                  </p>
+                </div>
+              ) : (
+                <div className="gamer-challenger-grid">
+                  {challengers.map((challenger) => {
+                    const isOwn = profile?.id === challenger.id;
+                    const alreadyPending = pendingProfileIds.has(challenger.id) && !isOwn;
+                    const whistleOpen = whistleProfileId === challenger.id;
+                    return (
+                      <GamerHudCard
+                        key={challenger.id}
+                        player={{ ...challenger, openToChallenge: true }}
+                        game={game}
+                        isOwn={isOwn}
+                        challengeLabel={profile && isGamer ? "Challenge" : "Set up to challenge"}
+                        challengeDisabled={actionId === challenger.id || alreadyPending}
+                        whistleOpen={whistleOpen}
+                        onChallenge={() => challengePlayer(challenger)}
+                        onToggleWhistle={() => toggleWhistle(challenger.id)}
+                        onCloseWhistle={() => setWhistleProfileId(null)}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          </div>
+        </>
+      ) : (
+        <div className="hooma-lane--content">
+          <section className="gamers-section gamer-arena" aria-labelledby="arena-heading">
+            <div className="gamers-section-heading">
+              <div>
+                <span className="eyebrow">ARENA</span>
+                <h2 id="arena-heading">Challenges & Match Cards</h2>
+              </div>
+              <span className="gamers-count">{challenges.length} total</span>
+            </div>
+            {!me ? (
+              <div className="state-card">
+                <strong>Sign in to enter your Arena.</strong>
+                <p className="muted">
+                  Public challenger browsing stays open; challenge activity belongs to your account.
+                </p>
+              </div>
+            ) : !challenges.length ? (
+              <div className="state-card">
+                <strong>No challenge activity yet.</strong>
+                <p className="muted">Send a challenge from a Gamer card.</p>
+              </div>
             ) : (
-              <div className="gamer-challenger-grid">
-                {challengers.map((challenger) => {
-                  const isOwn = profile?.id === challenger.id;
-                  const alreadyPending = pendingProfileIds.has(challenger.id) && !isOwn;
-                  const whistleOpen = whistleProfileId === challenger.id;
+              <div className="gamer-arena-grid">
+                {challenges.map((challenge) => {
+                  const incoming = profile?.id === challenge.challenged.id;
+                  const outgoing = profile?.id === challenge.challenger.id;
+                  const label =
+                    challenge.status === "ACCEPTED"
+                      ? "MATCH CARD"
+                      : incoming
+                        ? "INCOMING CHALLENGE"
+                        : "OUTGOING CHALLENGE";
+                  const actions =
+                    challenge.status === "PENDING" && incoming ? (
+                      <div className="gamer-match-actions">
+                        <button
+                          className="button"
+                          type="button"
+                          disabled={actionId === challenge.id}
+                          onClick={() => void updateChallenge(challenge, "accept")}
+                        >
+                          {isGamer ? "Accept" : "Rejoin & Accept"}
+                        </button>
+                        <button
+                          className="button secondary"
+                          type="button"
+                          disabled={actionId === challenge.id}
+                          onClick={() => void updateChallenge(challenge, "decline")}
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    ) : challenge.status === "PENDING" && outgoing ? (
+                      <button
+                        className="button secondary"
+                        type="button"
+                        disabled={actionId === challenge.id}
+                        onClick={() => void updateChallenge(challenge, "cancel")}
+                      >
+                        Cancel challenge
+                      </button>
+                    ) : challenge.status === "ACCEPTED" && game.slug === "ea-sports-fc-mobile" ? (
+                      <EaFcMatchBridge
+                        game={game}
+                        challenge={challenge}
+                        currentProfileId={profile?.id ?? null}
+                      />
+                    ) : null;
                   return (
-                    <GamerHudCard
-                      key={challenger.id}
-                      player={{ ...challenger, openToChallenge: true }}
-                      game={game}
-                      isOwn={isOwn}
-                      challengeLabel={profile && isGamer ? "Challenge" : "Set up to challenge"}
-                      challengeDisabled={actionId === challenger.id || alreadyPending}
-                      whistleOpen={whistleOpen}
-                      onChallenge={() => challengePlayer(challenger)}
-                      onToggleWhistle={() => toggleWhistle(challenger.id)}
-                      onCloseWhistle={() => setWhistleProfileId(null)}
+                    <GamerMatchCard
+                      key={challenge.id}
+                      status={challenge.status}
+                      challenger={challenge.challenger}
+                      challenged={challenge.challenged}
+                      label={label}
+                      actions={actions}
+                      showAcceptedNote={game.slug !== "ea-sports-fc-mobile"}
                     />
                   );
                 })}
               </div>
             )}
           </section>
-        </>
-      ) : (
-        <section className="gamers-section gamer-arena" aria-labelledby="arena-heading">
-          <div className="gamers-section-heading">
-            <div>
-              <span className="eyebrow">ARENA</span>
-              <h2 id="arena-heading">Challenges & Match Cards</h2>
-            </div>
-            <span className="gamers-count">{challenges.length} total</span>
-          </div>
-          {!me ? (
-            <div className="state-card">
-              <strong>Sign in to enter your Arena.</strong>
-              <p className="muted">
-                Public challenger browsing stays open; challenge activity belongs to your account.
-              </p>
-            </div>
-          ) : !challenges.length ? (
-            <div className="state-card">
-              <strong>No challenge activity yet.</strong>
-              <p className="muted">Send a challenge from a Gamer card.</p>
-            </div>
-          ) : (
-            <div className="gamer-arena-grid">
-              {challenges.map((challenge) => {
-                const incoming = profile?.id === challenge.challenged.id;
-                const outgoing = profile?.id === challenge.challenger.id;
-                const label =
-                  challenge.status === "ACCEPTED"
-                    ? "MATCH CARD"
-                    : incoming
-                      ? "INCOMING CHALLENGE"
-                      : "OUTGOING CHALLENGE";
-                const actions =
-                  challenge.status === "PENDING" && incoming ? (
-                    <div className="gamer-match-actions">
-                      <button
-                        className="button"
-                        type="button"
-                        disabled={actionId === challenge.id}
-                        onClick={() => void updateChallenge(challenge, "accept")}
-                      >
-                        {isGamer ? "Accept" : "Rejoin & Accept"}
-                      </button>
-                      <button
-                        className="button secondary"
-                        type="button"
-                        disabled={actionId === challenge.id}
-                        onClick={() => void updateChallenge(challenge, "decline")}
-                      >
-                        Reject
-                      </button>
-                    </div>
-                  ) : challenge.status === "PENDING" && outgoing ? (
-                    <button
-                      className="button secondary"
-                      type="button"
-                      disabled={actionId === challenge.id}
-                      onClick={() => void updateChallenge(challenge, "cancel")}
-                    >
-                      Cancel challenge
-                    </button>
-                  ) : challenge.status === "ACCEPTED" && game.slug === "ea-sports-fc-mobile" ? (
-                    <EaFcMatchBridge
-                      game={game}
-                      challenge={challenge}
-                      currentProfileId={profile?.id ?? null}
-                    />
-                  ) : null;
-                return (
-                  <GamerMatchCard
-                    key={challenge.id}
-                    status={challenge.status}
-                    challenger={challenge.challenger}
-                    challenged={challenge.challenged}
-                    label={label}
-                    actions={actions}
-                    showAcceptedNote={game.slug !== "ea-sports-fc-mobile"}
-                  />
-                );
-              })}
-            </div>
-          )}
-        </section>
+        </div>
       )}
 
       {challengeTarget ? (
-        <GamerChallengeSetupModal
-          game={game}
-          challengedProfileId={challengeTarget.id}
-          challengedName={challengeTarget.presentation.displayName}
-          returnTo={`/gamers/games/${encodeURIComponent(game.slug)}?challenge=${encodeURIComponent(challengeTarget.id)}`}
-          onClose={() => setChallengeTarget(null)}
-          onSent={async () => {
-            const account = await api.identity.meOptional();
-            if (account) await loadMemberState(game, account);
-            await loadChallengers(game.id);
-            setNotice("Challenge sent. It is now waiting for a response in Arena.");
-            setActiveTab("ARENA");
-          }}
-        />
+        <div className="hooma-lane--content">
+          <GamerChallengeSetupModal
+            game={game}
+            challengedProfileId={challengeTarget.id}
+            challengedName={challengeTarget.presentation.displayName}
+            returnTo={`/gamers/games/${encodeURIComponent(game.slug)}?challenge=${encodeURIComponent(challengeTarget.id)}`}
+            onClose={() => setChallengeTarget(null)}
+            onSent={async () => {
+              const account = await api.identity.meOptional();
+              if (account) await loadMemberState(game, account);
+              await loadChallengers(game.id);
+              setNotice("Challenge sent. It is now waiting for a response in Arena.");
+              setActiveTab("ARENA");
+            }}
+          />
+        </div>
       ) : null}
     </div>
   );

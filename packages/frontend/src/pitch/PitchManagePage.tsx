@@ -44,66 +44,75 @@ export function PitchManagePage() {
     void loadManagement().finally(() => setLoading(false));
   }, [loadManagement]);
 
-  if (loading) return <p className="status">Loading Pitch management…</p>;
+  if (loading)
+    return (
+      <div className="hooma-lane--content">
+        <p className="status">Loading Pitch management…</p>
+      </div>
+    );
 
   const approved = management?.approvedPitch ?? null;
   const pending = management?.pendingApplication ?? null;
   const rejected = management?.latestRejectedApplication ?? null;
 
   return (
-    <section className="pitch-manage-page">
-      <a className="pitch-back-link" href={placeId ? `/pitch/${placeId}` : "/pitch"}>
-        ← Pitch
-      </a>
-      {error ? <p className="error">{error}</p> : null}
-      {management ? (
-        <>
-          <section className="panel pitch-owner-state">
-            <p className="eyebrow">CURRENTLY PUBLIC</p>
-            <h2>{management.place.name}</h2>
-            {approved ? (
-              <>
-                <strong>{priceLabel(approved.hourlyRateMinor, approved.currency)}</strong>
-                {approved.summary ? <p>{approved.summary}</p> : null}
-              </>
-            ) : (
-              <p className="muted">No approved Pitch rental profile is currently public.</p>
-            )}
-          </section>
-
-          {pending ? (
+    <div className="hooma-lane--content">
+      <section className="pitch-manage-page">
+        <a className="pitch-back-link" href={placeId ? `/pitch/${placeId}` : "/pitch"}>
+          ← Pitch
+        </a>
+        {error ? <p className="error">{error}</p> : null}
+        {management ? (
+          <>
             <section className="panel pitch-owner-state">
-              <p className="eyebrow">PENDING REVIEW</p>
-              <strong>{priceLabel(pending.hourlyRateMinor, pending.currency)}</strong>
-              <p>{pending.summary}</p>
-              <p className="muted">Current public Pitch details remain unchanged until approval.</p>
+              <p className="eyebrow">CURRENTLY PUBLIC</p>
+              <h2>{management.place.name}</h2>
+              {approved ? (
+                <>
+                  <strong>{priceLabel(approved.hourlyRateMinor, approved.currency)}</strong>
+                  {approved.summary ? <p>{approved.summary}</p> : null}
+                </>
+              ) : (
+                <p className="muted">No approved Pitch rental profile is currently public.</p>
+              )}
             </section>
-          ) : null}
 
-          {!pending && rejected ? (
-            <section className="panel pitch-owner-state">
-              <p className="eyebrow">LATEST UPDATE REJECTED</p>
-              <strong>{priceLabel(rejected.hourlyRateMinor, rejected.currency)}</strong>
-              <p>{rejected.summary}</p>
-              {rejected.reviewNote ? (
-                <p className="muted">App review note: {rejected.reviewNote}</p>
-              ) : null}
-            </section>
-          ) : null}
+            {pending ? (
+              <section className="panel pitch-owner-state">
+                <p className="eyebrow">PENDING REVIEW</p>
+                <strong>{priceLabel(pending.hourlyRateMinor, pending.currency)}</strong>
+                <p>{pending.summary}</p>
+                <p className="muted">
+                  Current public Pitch details remain unchanged until approval.
+                </p>
+              </section>
+            ) : null}
 
-          <PitchPhotoManager
-            place={management.place}
-            maxImages={management.verifiedOwnership ? 3 : 6}
-            onChanged={loadManagement}
-          />
+            {!pending && rejected ? (
+              <section className="panel pitch-owner-state">
+                <p className="eyebrow">LATEST UPDATE REJECTED</p>
+                <strong>{priceLabel(rejected.hourlyRateMinor, rejected.currency)}</strong>
+                <p>{rejected.summary}</p>
+                {rejected.reviewNote ? (
+                  <p className="muted">App review note: {rejected.reviewNote}</p>
+                ) : null}
+              </section>
+            ) : null}
 
-          <PitchCapabilityOnboarding
-            key={`${approved?.id ?? "none"}:${pending?.id ?? "none"}`}
-            management={management}
-            onSubmitted={loadManagement}
-          />
-        </>
-      ) : null}
-    </section>
+            <PitchPhotoManager
+              place={management.place}
+              maxImages={management.verifiedOwnership ? 3 : 6}
+              onChanged={loadManagement}
+            />
+
+            <PitchCapabilityOnboarding
+              key={`${approved?.id ?? "none"}:${pending?.id ?? "none"}`}
+              management={management}
+              onSubmitted={loadManagement}
+            />
+          </>
+        ) : null}
+      </section>
+    </div>
   );
 }

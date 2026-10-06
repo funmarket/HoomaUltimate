@@ -72,9 +72,11 @@ export function CreateTeamPage() {
 
   if (loading) {
     return (
-      <div className="page teams-page">
-        <div className="state-card">
-          <strong>Loading Team creation…</strong>
+      <div className="hooma-lane--content">
+        <div className="page teams-page">
+          <div className="state-card">
+            <strong>Loading Team creation…</strong>
+          </div>
         </div>
       </div>
     );
@@ -83,24 +85,26 @@ export function CreateTeamPage() {
   if (!me) {
     const signInHref = authenticationHref("/teams/new");
     return (
-      <div className="page teams-page">
-        <section className="panel">
-          <span className="eyebrow">CREATE TEAM</span>
-          <h1>Create A Team</h1>
-          <p className="muted">Team creation is a protected member action.</p>
-        </section>
-        <div className="member-gate">
-          <strong>Sign in to create a Team.</strong>
-          {signInHref ? (
-            <a className="button" href={signInHref}>
-              Sign in
+      <div className="hooma-lane--content">
+        <div className="page teams-page">
+          <section className="panel">
+            <span className="eyebrow">CREATE TEAM</span>
+            <h1>Create A Team</h1>
+            <p className="muted">Team creation is a protected member action.</p>
+          </section>
+          <div className="member-gate">
+            <strong>Sign in to create a Team.</strong>
+            {signInHref ? (
+              <a className="button" href={signInHref}>
+                Sign in
+              </a>
+            ) : (
+              <span className="muted">Open HOOMA through Telegram to authenticate.</span>
+            )}
+            <a className="button secondary" href="/teams">
+              Back to Teams
             </a>
-          ) : (
-            <span className="muted">Open HOOMA through Telegram to authenticate.</span>
-          )}
-          <a className="button secondary" href="/teams">
-            Back to Teams
-          </a>
+          </div>
         </div>
       </div>
     );
@@ -111,94 +115,96 @@ export function CreateTeamPage() {
   );
 
   return (
-    <div className="page teams-page">
-      <section className="panel">
-        <span className="eyebrow">CREATE TEAM</span>
-        <h1>Create A Team</h1>
-        <p className="muted">
-          Build your football side from Teams, then attach it to one eligible HOOMA community.
-        </p>
-      </section>
-
-      {eligibleCommunities.length ? (
-        <form className="inline-form panel" onSubmit={submit}>
-          <label className="field">
-            <span>HOOMA community</span>
-            <select
-              value={communityId}
-              onChange={(event) => setCommunityId(event.target.value)}
-              required
-            >
-              {eligibleCommunities.map((community) => (
-                <option key={community.id} value={community.id}>
-                  {community.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="field">
-            <span>Team name</span>
-            <input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Team name"
-              required
-            />
-          </label>
-          <label className="field">
-            <span>City</span>
-            <input
-              value={city}
-              onChange={(event) => setCity(event.target.value)}
-              placeholder="City"
-            />
-          </label>
-          <label className="field">
-            <span>Team logo / crest URL</span>
-            <input
-              type="url"
-              maxLength={2000}
-              value={badgeUrl}
-              onChange={(event) => setBadgeUrl(event.target.value)}
-              placeholder="https://…/team-logo.png"
-            />
-          </label>
-          <label className="field">
-            <span>Banner image URL</span>
-            <input
-              type="url"
-              maxLength={2000}
-              value={bannerUrl}
-              onChange={(event) => setBannerUrl(event.target.value)}
-              placeholder="https://…/team-banner.jpg"
-            />
-          </label>
-          {error ? <div className="error-box">{error}</div> : null}
-          <div>
-            <a className="button secondary" href="/teams">
-              Cancel
-            </a>{" "}
-            <button className="button" disabled={creating || !name.trim()} aria-busy={creating}>
-              {creating ? "Creating…" : "Create Team"}
-            </button>
-          </div>
-        </form>
-      ) : (
-        <div className="state-card">
-          <strong>Team creation needs a HOOMA community.</strong>
+    <div className="hooma-lane--content">
+      <div className="page teams-page">
+        <section className="panel">
+          <span className="eyebrow">CREATE TEAM</span>
+          <h1>Create A Team</h1>
           <p className="muted">
-            You must be a HOOMA Community Founder or Coach before creating its Team.
+            Build your football side from Teams, then attach it to one eligible HOOMA community.
           </p>
-          <a className="button" href="/hooma/new?after=team-create">
-            Create a HOOMA community
-          </a>{" "}
-          <a className="button secondary" href="/hooma">
-            Browse HOOMA
-          </a>
-        </div>
-      )}
+        </section>
 
-      {error && !eligibleCommunities.length ? <div className="error-box">{error}</div> : null}
+        {eligibleCommunities.length ? (
+          <form className="inline-form panel" onSubmit={submit}>
+            <label className="field">
+              <span>HOOMA community</span>
+              <select
+                value={communityId}
+                onChange={(event) => setCommunityId(event.target.value)}
+                required
+              >
+                {eligibleCommunities.map((community) => (
+                  <option key={community.id} value={community.id}>
+                    {community.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <span>Team name</span>
+              <input
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="Team name"
+                required
+              />
+            </label>
+            <label className="field">
+              <span>City</span>
+              <input
+                value={city}
+                onChange={(event) => setCity(event.target.value)}
+                placeholder="City"
+              />
+            </label>
+            <label className="field">
+              <span>Team logo / crest URL</span>
+              <input
+                type="url"
+                maxLength={2000}
+                value={badgeUrl}
+                onChange={(event) => setBadgeUrl(event.target.value)}
+                placeholder="https://…/team-logo.png"
+              />
+            </label>
+            <label className="field">
+              <span>Banner image URL</span>
+              <input
+                type="url"
+                maxLength={2000}
+                value={bannerUrl}
+                onChange={(event) => setBannerUrl(event.target.value)}
+                placeholder="https://…/team-banner.jpg"
+              />
+            </label>
+            {error ? <div className="error-box">{error}</div> : null}
+            <div>
+              <a className="button secondary" href="/teams">
+                Cancel
+              </a>{" "}
+              <button className="button" disabled={creating || !name.trim()} aria-busy={creating}>
+                {creating ? "Creating…" : "Create Team"}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="state-card">
+            <strong>Team creation needs a HOOMA community.</strong>
+            <p className="muted">
+              You must be a HOOMA Community Founder or Coach before creating its Team.
+            </p>
+            <a className="button" href="/hooma/new?after=team-create">
+              Create a HOOMA community
+            </a>{" "}
+            <a className="button secondary" href="/hooma">
+              Browse HOOMA
+            </a>
+          </div>
+        )}
+
+        {error && !eligibleCommunities.length ? <div className="error-box">{error}</div> : null}
+      </div>
     </div>
   );
 }

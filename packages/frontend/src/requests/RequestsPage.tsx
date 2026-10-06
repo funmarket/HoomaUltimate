@@ -173,63 +173,76 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
 
   return (
     <section className="page requests-page">
-      <header className="help-hero">
-        <div className="help-hero__copy">
-          <span className="eyebrow">HOOMA HELP</span>
-          <h1>{fundmeActive ? "FundMe" : donationsActive ? "Donations" : "Requests"}</h1>
-          <p>
-            {fundmeActive
-              ? "FundMe will carry contributions for community needs once its own slice exists."
-              : donationsActive
-                ? "Give useful sports gear locally once the Donations domain is ready."
-                : "Players help players. Stronger together."}
-          </p>
-        </div>
-        {tab === "requests" ? (
-          <a className="help-action help-action--primary" href="/requests/new">
-            <PlusIcon />
-            <span>New Request</span>
-          </a>
-        ) : null}
-      </header>
+      <div className="hooma-lane--content">
+        <header className="help-hero">
+          <div className="help-hero__copy">
+            <span className="eyebrow">HOOMA HELP</span>
+            <h1>{fundmeActive ? "FundMe" : donationsActive ? "Donations" : "Requests"}</h1>
+            <p>
+              {fundmeActive
+                ? "FundMe will carry contributions for community needs once its own slice exists."
+                : donationsActive
+                  ? "Give useful sports gear locally once the Donations domain is ready."
+                  : "Players help players. Stronger together."}
+            </p>
+          </div>
+          {tab === "requests" ? (
+            <a className="help-action help-action--primary" href="/requests/new">
+              <PlusIcon />
+              <span>New Request</span>
+            </a>
+          ) : null}
+        </header>
+      </div>
 
-      <HelpTabs tab={tab} />
+      <div className="hooma-lane--nav">
+        <HelpTabs tab={tab} />
+      </div>
 
       {fundmeActive ? (
-        <section className="requests-empty panel">
-          <FundMeIcon className="requests-empty__icon" />
-          <span className="eyebrow">FUNDME</span>
-          <h2>FundMe is not taking contributions yet.</h2>
-          <p className="muted">
-            The surface is reserved. There is no campaign, donation form, payment intent or provider
-            integration until the later FundMe slices own that behavior.
-          </p>
-        </section>
+        <div className="hooma-lane--content">
+          <section className="requests-empty panel">
+            <FundMeIcon className="requests-empty__icon" />
+            <span className="eyebrow">FUNDME</span>
+            <h2>FundMe is not taking contributions yet.</h2>
+            <p className="muted">
+              The surface is reserved. There is no campaign, donation form, payment intent or
+              provider integration until the later FundMe slices own that behavior.
+            </p>
+          </section>
+        </div>
       ) : donationsActive ? (
-        <section className="requests-empty panel">
-          <DonationIcon className="requests-empty__icon" />
-          <span className="eyebrow">DONATIONS</span>
-          <h2>Donations are not live yet.</h2>
-          <p className="muted">
-            The Donations area is now part of HOOMA Help navigation. Giving and claiming items will
-            stay disabled until the Donations domain, permissions, and lifecycle are implemented.
-          </p>
-        </section>
+        <div className="hooma-lane--content">
+          <section className="requests-empty panel">
+            <DonationIcon className="requests-empty__icon" />
+            <span className="eyebrow">DONATIONS</span>
+            <h2>Donations are not live yet.</h2>
+            <p className="muted">
+              The Donations area is now part of HOOMA Help navigation. Giving and claiming items
+              will stay disabled until the Donations domain, permissions, and lifecycle are
+              implemented.
+            </p>
+          </section>
+        </div>
       ) : (
         <>
           {taxonomy ? (
-            <RequestTaxonomyFilters taxonomy={taxonomy} value={filters} onChange={setFilters} />
+            <div className="hooma-lane--content">
+              <RequestTaxonomyFilters taxonomy={taxonomy} value={filters} onChange={setFilters} />
+            </div>
           ) : null}
-          <RequestFeed
-            items={items}
-            loading={loading || !taxonomy}
-            error={error}
-            nextCursor={nextCursor}
-            loadingMore={loadingMore}
-            filtered={hasActiveDiscoveryFilters}
-            loadImage={loadCardImage}
-            onLoadMore={() => void loadMore()}
-          />
+          <div className="hooma-lane--content">
+            <RequestFeed
+              items={items}
+              loading={loading || !taxonomy}
+              error={error}
+              nextCursor={nextCursor}
+              loadingMore={loadingMore}
+              filtered={hasActiveDiscoveryFilters}
+              loadImage={loadCardImage}
+              onLoadMore={() => void loadMore()}
+            />
+          </div>
         </>
       )}
     </section>

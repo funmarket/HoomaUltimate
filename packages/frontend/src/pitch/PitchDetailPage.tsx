@@ -68,17 +68,29 @@ export function PitchDetailPage({ placeId }: { readonly placeId: string }) {
     }
   }
 
-  if (loading) return <p className="status">Loading pitch…</p>;
-  if (error && !item) return <p className="error">{error}</p>;
+  if (loading)
+    return (
+      <div className="hooma-lane--content">
+        <p className="status">Loading pitch…</p>
+      </div>
+    );
+  if (error && !item)
+    return (
+      <div className="hooma-lane--content">
+        <p className="error">{error}</p>
+      </div>
+    );
   if (!item) {
     return (
       <section className="pitch-detail-page">
-        <div className="panel pitch-empty">
-          <h1>Pitch unavailable</h1>
-          <p className="muted">This pitch is not currently approved or publicly available.</p>
-          <a className="pitch-back-link" href="/pitch">
-            Back to Pitch
-          </a>
+        <div className="hooma-lane--content">
+          <div className="panel pitch-empty">
+            <h1>Pitch unavailable</h1>
+            <p className="muted">This pitch is not currently approved or publicly available.</p>
+            <a className="pitch-back-link" href="/pitch">
+              Back to Pitch
+            </a>
+          </div>
         </div>
       </section>
     );
@@ -92,138 +104,162 @@ export function PitchDetailPage({ placeId }: { readonly placeId: string }) {
 
   return (
     <section className="pitch-detail-page">
-      <nav className="pitch-actions" aria-label="Pitch sections">
-        <a className="pitch-action pitch-action--active" href="/pitch">
-          Pitches
-        </a>
-        <a className="pitch-action pitch-action--primary" href="/places/new?kind=PITCH">
-          Add a Pitch
-        </a>
-      </nav>
-
-      <div className="pitch-detail-toolbar">
-        <a className="pitch-back-link" href="/pitch" aria-label="Back to Pitch">
-          ← Pitch
-        </a>
-        {verifiedOwner ? (
-          <a
-            className="pitch-owner-link pitch-owner-link--toolbar"
-            href={`/pitch/manage?placeId=${encodeURIComponent(place.id)}`}
-          >
-            Manage pitch
+      <div className="hooma-lane--nav">
+        <nav className="pitch-actions" aria-label="Pitch sections">
+          <a className="pitch-action pitch-action--active" href="/pitch">
+            Pitches
           </a>
-        ) : null}
+          <a className="pitch-action pitch-action--primary" href="/places/new?kind=PITCH">
+            Add a Pitch
+          </a>
+        </nav>
       </div>
 
-      <header className="pitch-detail-hero">
-        <p className="pitch-detail-hero__eyebrow">PITCH RENTAL</p>
-        <h1>{place.name}</h1>
-        <p className="pitch-detail-hero__description">{description}</p>
-        <div className="pitch-detail-rate" aria-label="Hourly rental price">
-          <strong>{rate}</strong>
-          <span>{item.currency} / hour</span>
-        </div>
-      </header>
-
-      <div className="place-info-grid pitch-info-grid">
-        <article>
-          <div className="place-info-card__heading">
-            <PinIcon />
-            <span>Address</span>
-          </div>
-          <strong>{place.address}</strong>
-          {place.city ? <span className="place-info-card__secondary">{place.city}</span> : null}
-        </article>
-        <article>
-          <div className="place-info-card__heading">
-            <PinIcon />
-            <span>Houma</span>
-          </div>
-          <strong>{place.houma || "—"}</strong>
-          <a
-            className="place-info-card__action"
-            href={mapHref(place)}
-            target="_blank"
-            rel="noreferrer"
-          >
-            View on map
+      <div className="hooma-lane--content">
+        <div className="pitch-detail-toolbar">
+          <a className="pitch-back-link" href="/pitch" aria-label="Back to Pitch">
+            ← Pitch
           </a>
-        </article>
-        <article>
-          <div className="place-info-card__heading">
-            <PhoneIcon />
-            <span>Contact</span>
-          </div>
-          {hasContact ? (
-            <div className="place-info-values">
-              {place.phone ? <a href={`tel:${place.phone}`}>{place.phone}</a> : null}
-              {place.email ? <a href={`mailto:${place.email}`}>{place.email}</a> : null}
-              {place.websiteUrl ? (
-                <a href={place.websiteUrl} target="_blank" rel="noreferrer">
-                  Website
-                </a>
-              ) : null}
-            </div>
-          ) : (
-            <strong>—</strong>
-          )}
-          {place.phone ? (
-            <a className="place-info-card__action" href={`tel:${place.phone}`}>
-              <PhoneIcon size={16} /> Call
+          {verifiedOwner ? (
+            <a
+              className="pitch-owner-link pitch-owner-link--toolbar"
+              href={`/pitch/manage?placeId=${encodeURIComponent(place.id)}`}
+            >
+              Manage pitch
             </a>
           ) : null}
-        </article>
-        <article>
-          <div className="place-info-card__heading">
-            <InfoIcon />
-            <span>About</span>
-          </div>
-          <strong>{place.description || item.summary || "—"}</strong>
-        </article>
+        </div>
       </div>
 
-      <PlaceGallery place={place} />
+      <div className="hooma-lane--content">
+        <header className="pitch-detail-hero">
+          <p className="pitch-detail-hero__eyebrow">PITCH RENTAL</p>
+          <h1>{place.name}</h1>
+          <p className="pitch-detail-hero__description">{description}</p>
+          <div className="pitch-detail-rate" aria-label="Hourly rental price">
+            <strong>{rate}</strong>
+            <span>{item.currency} / hour</span>
+          </div>
+        </header>
+      </div>
 
-      <div className="pitch-detail-actions">
-        {place.phone ? (
-          <a
-            className="pitch-detail-action pitch-detail-action--primary"
-            href={`tel:${place.phone}`}
-          >
-            <PhoneIcon size={18} />
-            Contact venue
-          </a>
-        ) : null}
-        {!verifiedOwner ? (
-          <button
-            className="pitch-detail-action pitch-detail-action--secondary"
-            type="button"
-            onClick={() => setClaimOpen((value) => !value)}
-          >
-            Own this pitch?
-          </button>
-        ) : null}
+      <div className="hooma-lane--content">
+        <div className="place-info-grid pitch-info-grid">
+          <article>
+            <div className="place-info-card__heading">
+              <PinIcon />
+              <span>Address</span>
+            </div>
+            <strong>{place.address}</strong>
+            {place.city ? <span className="place-info-card__secondary">{place.city}</span> : null}
+          </article>
+          <article>
+            <div className="place-info-card__heading">
+              <PinIcon />
+              <span>Houma</span>
+            </div>
+            <strong>{place.houma || "—"}</strong>
+            <a
+              className="place-info-card__action"
+              href={mapHref(place)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              View on map
+            </a>
+          </article>
+          <article>
+            <div className="place-info-card__heading">
+              <PhoneIcon />
+              <span>Contact</span>
+            </div>
+            {hasContact ? (
+              <div className="place-info-values">
+                {place.phone ? <a href={`tel:${place.phone}`}>{place.phone}</a> : null}
+                {place.email ? <a href={`mailto:${place.email}`}>{place.email}</a> : null}
+                {place.websiteUrl ? (
+                  <a href={place.websiteUrl} target="_blank" rel="noreferrer">
+                    Website
+                  </a>
+                ) : null}
+              </div>
+            ) : (
+              <strong>—</strong>
+            )}
+            {place.phone ? (
+              <a className="place-info-card__action" href={`tel:${place.phone}`}>
+                <PhoneIcon size={16} /> Call
+              </a>
+            ) : null}
+          </article>
+          <article>
+            <div className="place-info-card__heading">
+              <InfoIcon />
+              <span>About</span>
+            </div>
+            <strong>{place.description || item.summary || "—"}</strong>
+          </article>
+        </div>
+      </div>
+
+      {place.images.length || place.imageUrl ? (
+        <div className="hooma-lane--media">
+          <PlaceGallery place={place} />
+        </div>
+      ) : null}
+
+      <div className="hooma-lane--content">
+        <div className="pitch-detail-actions">
+          {place.phone ? (
+            <a
+              className="pitch-detail-action pitch-detail-action--primary"
+              href={`tel:${place.phone}`}
+            >
+              <PhoneIcon size={18} />
+              Contact venue
+            </a>
+          ) : null}
+          {!verifiedOwner ? (
+            <button
+              className="pitch-detail-action pitch-detail-action--secondary"
+              type="button"
+              onClick={() => setClaimOpen((value) => !value)}
+            >
+              Own this pitch?
+            </button>
+          ) : null}
+        </div>
       </div>
 
       {claimOpen && !verifiedOwner ? (
-        <form className="panel pitch-claim-form" onSubmit={(event) => void claim(event)}>
-          <div>
-            <p className="eyebrow">CLAIM THIS PITCH</p>
-            <h2>{place.name}</h2>
-            <p className="muted">Tell the App Admin how you own or manage this venue.</p>
-          </div>
-          <label>
-            Ownership or management evidence
-            <textarea name="evidence" minLength={10} required />
-          </label>
-          <button type="submit" disabled={claimPending}>
-            {claimPending ? "Submitting…" : "Submit claim"}
-          </button>
-        </form>
+        <div className="hooma-lane--content">
+          <form className="panel pitch-claim-form" onSubmit={(event) => void claim(event)}>
+            <div>
+              <p className="eyebrow">CLAIM THIS PITCH</p>
+              <h2>{place.name}</h2>
+              <p className="muted">Tell the App Admin how you own or manage this venue.</p>
+            </div>
+            <label>
+              Ownership or management evidence
+              <textarea name="evidence" minLength={10} required />
+            </label>
+            <button type="submit" disabled={claimPending}>
+              {claimPending ? "Submitting…" : "Submit claim"}
+            </button>
+          </form>
+        </div>
       ) : null}
 
-      {message ? <p className="success">{message}</p> : null}
-      {error ? <p className="error">{error}</p> : null}
+      {message ? (
+        <div className="hooma-lane--content">
+          <p className="success">{message}</p>
+        </div>
+      ) : null}
+      {error ? (
+        <div className="hooma-lane--content">
+          <p className="error">{error}</p>
+        </div>
+      ) : null}
     </section>
   );
 }

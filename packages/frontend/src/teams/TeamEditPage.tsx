@@ -98,110 +98,119 @@ export function TeamEditPage({ teamId }: TeamEditPageProps) {
     }
   }
 
-  if (loading) return <p className="status">Loading Team settings…</p>;
+  if (loading)
+    return (
+      <div className="hooma-lane--content">
+        <p className="status">Loading Team settings…</p>
+      </div>
+    );
 
   return (
-    <section className="control-room team-edit-page">
-      <a
-        className="team-management-back"
-        href={me?.platformRoles.includes("PLATFORM_ADMIN") ? "/admin" : "/teams/control"}
-      >
-        ← {me?.platformRoles.includes("PLATFORM_ADMIN") ? "App Admin" : "Coach Control Room"}
-      </a>
+    <div className="hooma-lane--content">
+      <section className="control-room team-edit-page">
+        <a
+          className="team-management-back"
+          href={me?.platformRoles.includes("PLATFORM_ADMIN") ? "/admin" : "/teams/control"}
+        >
+          ← {me?.platformRoles.includes("PLATFORM_ADMIN") ? "App Admin" : "Coach Control Room"}
+        </a>
 
-      <header className="control-room__header team-edit-page__header">
-        <div>
-          <p className="eyebrow control-room__section-title">TEAM SETTINGS</p>
-          <h2>Edit Team</h2>
-          <p>Update the Team identity and media without crowding the day-to-day Coach workspace.</p>
-        </div>
-      </header>
-
-      {error ? <p className="error">{error}</p> : null}
-      {notice ? <p className="success">{notice}</p> : null}
-
-      {team ? (
-        <>
-          <form className="panel team-edit-form" onSubmit={submit}>
-            <div className="team-edit-form__intro">
-              <span>Team</span>
-              <strong>{team.name}</strong>
-            </div>
-
-            <label>
-              Name
-              <input name="name" defaultValue={team.name} required />
-            </label>
-            <label>
-              Motto
-              <input name="motto" defaultValue={team.motto ?? ""} />
-            </label>
-            <div className="team-edit-form__split">
-              <label>
-                City
-                <input name="city" defaultValue={team.city ?? ""} />
-              </label>
-              <label>
-                Houma
-                <input name="houma" defaultValue={team.houma ?? ""} />
-              </label>
-            </div>
-            <label>
-              Team logo / crest URL
-              <input
-                name="badgeUrl"
-                type="url"
-                maxLength={2000}
-                defaultValue={team.badgeUrl ?? ""}
-                placeholder="https://…/team-logo.png"
-              />
-            </label>
-            <label>
-              Banner image URL
-              <input
-                name="bannerUrl"
-                type="url"
-                maxLength={2000}
-                defaultValue={team.bannerUrl ?? ""}
-                placeholder="https://…/team-banner.jpg"
-              />
-            </label>
-
-            <div className="team-edit-form__actions">
-              <a
-                className="coach-secondary-action"
-                href={me?.platformRoles.includes("PLATFORM_ADMIN") ? "/admin" : "/teams/control"}
-              >
-                Cancel
-              </a>
-              <button
-                className="coach-primary-action"
-                type="submit"
-                disabled={saving || deleting}
-              >
-                {saving ? "Saving…" : "Save Team"}
-              </button>
-            </div>
-          </form>
-
-          <section className="panel entity-danger-zone">
-            <p className="eyebrow">DANGER ZONE</p>
-            <h3>Delete Team</h3>
+        <header className="control-room__header team-edit-page__header">
+          <div>
+            <p className="eyebrow control-room__section-title">TEAM SETTINGS</p>
+            <h2>Edit Team</h2>
             <p>
-              Removes this Team from active discovery and management. Historical match and audit
-              records are preserved.
+              Update the Team identity and media without crowding the day-to-day Coach workspace.
             </p>
-            <button
-              className="entity-delete-action"
-              type="button"
-              disabled={deleting || saving}
-              onClick={() => void deleteTeam()}
-            >
-              {deleting ? "Deleting…" : "Delete Team"}
-            </button>
-          </section>
-        </>
-      ) : null}
-    </section>
+          </div>
+        </header>
+
+        {error ? <p className="error">{error}</p> : null}
+        {notice ? <p className="success">{notice}</p> : null}
+
+        {team ? (
+          <>
+            <form className="panel team-edit-form" onSubmit={submit}>
+              <div className="team-edit-form__intro">
+                <span>Team</span>
+                <strong>{team.name}</strong>
+              </div>
+
+              <label>
+                Name
+                <input name="name" defaultValue={team.name} required />
+              </label>
+              <label>
+                Motto
+                <input name="motto" defaultValue={team.motto ?? ""} />
+              </label>
+              <div className="team-edit-form__split">
+                <label>
+                  City
+                  <input name="city" defaultValue={team.city ?? ""} />
+                </label>
+                <label>
+                  Houma
+                  <input name="houma" defaultValue={team.houma ?? ""} />
+                </label>
+              </div>
+              <label>
+                Team logo / crest URL
+                <input
+                  name="badgeUrl"
+                  type="url"
+                  maxLength={2000}
+                  defaultValue={team.badgeUrl ?? ""}
+                  placeholder="https://…/team-logo.png"
+                />
+              </label>
+              <label>
+                Banner image URL
+                <input
+                  name="bannerUrl"
+                  type="url"
+                  maxLength={2000}
+                  defaultValue={team.bannerUrl ?? ""}
+                  placeholder="https://…/team-banner.jpg"
+                />
+              </label>
+
+              <div className="team-edit-form__actions">
+                <a
+                  className="coach-secondary-action"
+                  href={me?.platformRoles.includes("PLATFORM_ADMIN") ? "/admin" : "/teams/control"}
+                >
+                  Cancel
+                </a>
+                <button
+                  className="coach-primary-action"
+                  type="submit"
+                  disabled={saving || deleting}
+                >
+                  {saving ? "Saving…" : "Save Team"}
+                </button>
+              </div>
+            </form>
+
+            <section className="panel entity-danger-zone">
+              <p className="eyebrow">DANGER ZONE</p>
+              <h3>Delete Team</h3>
+              <p>
+                Removes this Team from active discovery and management. Historical match and audit
+                records are preserved.
+              </p>
+              <button
+                className="entity-delete-action"
+                type="button"
+                disabled={deleting || saving}
+                onClick={() => void deleteTeam()}
+              >
+                {deleting ? "Deleting…" : "Delete Team"}
+              </button>
+            </section>
+          </>
+        ) : null}
+      </section>
+    </div>
   );
 }

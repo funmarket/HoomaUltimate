@@ -21,5 +21,5 @@ export function shellPresentationForPath(pathname: string): ShellPresentation {
 
 export function shellInlinePresentationForPath(pathname: string): ShellInlinePresentation {
   void pathname;
-  return SHELL_INLINE_PRESENTATION.LEGACY;
+  return SHELL_INLINE_PRESENTATION.EDGE_CAPABLE;
 }

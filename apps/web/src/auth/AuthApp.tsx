@@ -67,9 +67,11 @@ export function AuthApp() {
 
   if (loading) {
     return (
-      <section className="auth-card" aria-busy="true">
-        <p className="status">Loading account…</p>
-      </section>
+      <div className="hooma-lane--content">
+        <section className="auth-card" aria-busy="true">
+          <p className="status">Loading account…</p>
+        </section>
+      </div>
     );
   }
 
@@ -77,54 +79,58 @@ export function AuthApp() {
 
   if (me) {
     return (
-      <section className="auth-card">
-        <p className="eyebrow">SIGNED IN</p>
-        <h2>{me.presentation.displayName}</h2>
-        <p>@{me.presentation.username}</p>
-        <button type="button" onClick={() => void signOut()}>
-          Sign out
-        </button>
-        {visibleError ? <p className="error">{visibleError}</p> : null}
-      </section>
+      <div className="hooma-lane--content">
+        <section className="auth-card">
+          <p className="eyebrow">SIGNED IN</p>
+          <h2>{me.presentation.displayName}</h2>
+          <p>@{me.presentation.username}</p>
+          <button type="button" onClick={() => void signOut()}>
+            Sign out
+          </button>
+          {visibleError ? <p className="error">{visibleError}</p> : null}
+        </section>
+      </div>
     );
   }
 
   return (
-    <section className="auth-card">
-      <div className="auth-tabs">
-        <button type="button" aria-pressed={mode === "login"} onClick={() => selectMode("login")}>
-          Sign in
-        </button>
-        <button
-          type="button"
-          aria-pressed={mode === "register"}
-          onClick={() => selectMode("register")}
-        >
-          Create account
-        </button>
-      </div>
-      {mode === "login" ? (
-        <LoginForm
-          onSuccess={completeAuthentication}
-          onError={setError}
-          onRecover={() => selectMode("recover")}
-        />
-      ) : mode === "register" ? (
-        <RegisterForm
-          onSuccess={completeAuthentication}
-          onCreatedWithWarning={completeWithWarning}
-          onError={setError}
-        />
-      ) : (
-        <PasswordRecoveryForm
-          onRecovered={completePasswordRecovery}
-          onCancel={() => selectMode("login")}
-          onError={setError}
-        />
-      )}
-      {notice ? <p className="status">{notice}</p> : null}
-      {visibleError ? <p className="error">{visibleError}</p> : null}
-    </section>
+    <div className="hooma-lane--content">
+      <section className="auth-card">
+        <div className="auth-tabs">
+          <button type="button" aria-pressed={mode === "login"} onClick={() => selectMode("login")}>
+            Sign in
+          </button>
+          <button
+            type="button"
+            aria-pressed={mode === "register"}
+            onClick={() => selectMode("register")}
+          >
+            Create account
+          </button>
+        </div>
+        {mode === "login" ? (
+          <LoginForm
+            onSuccess={completeAuthentication}
+            onError={setError}
+            onRecover={() => selectMode("recover")}
+          />
+        ) : mode === "register" ? (
+          <RegisterForm
+            onSuccess={completeAuthentication}
+            onCreatedWithWarning={completeWithWarning}
+            onError={setError}
+          />
+        ) : (
+          <PasswordRecoveryForm
+            onRecovered={completePasswordRecovery}
+            onCancel={() => selectMode("login")}
+            onError={setError}
+          />
+        )}
+        {notice ? <p className="status">{notice}</p> : null}
+        {visibleError ? <p className="error">{visibleError}</p> : null}
+      </section>
+    </div>
   );
 }
 

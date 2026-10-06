@@ -79,10 +79,16 @@ export function HomeGateway() {
     <>
       <style>{HOME_GATEWAY_TYPOGRAPHY}</style>
       <section>
-        <HomeHero />
-        <p className="eyebrow">YOUR FOOTBALL NEIGHBORHOOD</p>
-        <h2 className="home-gateway-title">Find your people. Find the game.</h2>
-        <HomeGatewayGrid />
+        <div className="hooma-lane--media">
+          <HomeHero />
+        </div>
+        <div className="hooma-lane--content">
+          <p className="eyebrow">YOUR FOOTBALL NEIGHBORHOOD</p>
+          <h2 className="home-gateway-title">Find your people. Find the game.</h2>
+        </div>
+        <div className="hooma-lane--nav">
+          <HomeGatewayGrid />
+        </div>
       </section>
     </>
   );

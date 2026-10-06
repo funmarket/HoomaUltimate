@@ -5,7 +5,9 @@ export function HomePage() {
   return (
     <>
       <HomeGateway />
-      <HoomaNowSection />
+      <div className="hooma-lane--content">
+        <HoomaNowSection />
+      </div>
     </>
   );
 }

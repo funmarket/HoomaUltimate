@@ -114,123 +114,148 @@ export function AthletesPage({
 
   return (
     <div className="page athletes-page">
-      <section className="athletes-surface athletes-hero athletes-hero--hub">
-        {heroUrl ? (
-          <img className="athletes-hero__banner" src={heroUrl} alt="" aria-hidden="true" />
-        ) : null}
-        <h1 className="athletes-hero__semantic-title">Move together. Train together.</h1>
-        <span className="athletes-hero__motion" aria-hidden="true" />
-      </section>
-
-      <div className="athletes-actions athletes-hub-create">
-        <button
-          className="button athletes-action athletes-action--primary"
-          type="button"
-          onClick={onCreateCommunity}
-          disabled={createCommunityDisabled}
-        >
-          <span className="athletes-action__icon" aria-hidden="true">
-            +
-          </span>
-          Create community
-        </button>
+      <div className="hooma-lane--media">
+        <section className="athletes-surface athletes-hero athletes-hero--hub">
+          {heroUrl ? (
+            <img className="athletes-hero__banner" src={heroUrl} alt="" aria-hidden="true" />
+          ) : null}
+          <h1 className="athletes-hero__semantic-title">Move together. Train together.</h1>
+          <span className="athletes-hero__motion" aria-hidden="true" />
+        </section>
       </div>
 
-      <AthletesHubTabs active={activeView} />
+      <div className="hooma-lane--content">
+        <div className="athletes-actions athletes-hub-create">
+          <button
+            className="button athletes-action athletes-action--primary"
+            type="button"
+            onClick={onCreateCommunity}
+            disabled={createCommunityDisabled}
+          >
+            <span className="athletes-action__icon" aria-hidden="true">
+              +
+            </span>
+            Create community
+          </button>
+        </div>
+      </div>
+
+      <div className="hooma-lane--nav">
+        <AthletesHubTabs active={activeView} />
+      </div>
 
       {activeView === "communities" ? (
-        <section className="athletes-surface athletes-filter" aria-label="Filter Athletes by sport">
-          <div className="athletes-section-heading">
-            <span className="eyebrow">SPORT</span>
-            <span className="athletes-section-heading__hint">Find your pace</span>
-          </div>
-          <div className="athletes-sport-chips">
-            <button
-              className={sport === "ALL" ? "is-active" : ""}
-              type="button"
-              aria-pressed={sport === "ALL"}
-              onClick={() => setSport("ALL")}
-            >
-              All
-            </button>
-            {sports.map((option) => (
+        <div className="hooma-lane--content">
+          <section
+            className="athletes-surface athletes-filter"
+            aria-label="Filter Athletes by sport"
+          >
+            <div className="athletes-section-heading">
+              <span className="eyebrow">SPORT</span>
+              <span className="athletes-section-heading__hint">Find your pace</span>
+            </div>
+            <div className="athletes-sport-chips">
               <button
-                key={option.value}
-                className={sport === option.value ? "is-active" : ""}
+                className={sport === "ALL" ? "is-active" : ""}
                 type="button"
-                aria-pressed={sport === option.value}
-                onClick={() => setSport(option.value)}
+                aria-pressed={sport === "ALL"}
+                onClick={() => setSport("ALL")}
               >
-                {option.label}
+                All
               </button>
-            ))}
-          </div>
-        </section>
+              {sports.map((option) => (
+                <button
+                  key={option.value}
+                  className={sport === option.value ? "is-active" : ""}
+                  type="button"
+                  aria-pressed={sport === option.value}
+                  onClick={() => setSport(option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
       ) : null}
 
       {activeView === "communities" && error ? (
-        <div className="error-box" role="alert">
-          {error} <button onClick={() => void load(nextCursor ?? undefined)}>Retry</button>
+        <div className="hooma-lane--content">
+          <div className="error-box" role="alert">
+            {error} <button onClick={() => void load(nextCursor ?? undefined)}>Retry</button>
+          </div>
         </div>
       ) : null}
       {activeView === "communities" && loading ? (
-        <div className="state-card">Loading Athletes communities…</div>
+        <div className="hooma-lane--content">
+          <div className="state-card">Loading Athletes communities…</div>
+        </div>
       ) : null}
       {activeView === "communities" && !loading && !items.length && !error ? (
-        <div className="state-card">
-          No Athletes communities yet. Start the first real training circle.
+        <div className="hooma-lane--content">
+          <div className="state-card">
+            No Athletes communities yet. Start the first real training circle.
+          </div>
         </div>
       ) : null}
       {activeView === "communities" && items.length ? (
-        <section className="athletes-grid" aria-label="Athletes communities">
-          {items.map((item) => (
-            <button
-              className="athletes-card"
-              data-sport={item.sport}
-              type="button"
-              key={item.id}
-              onClick={() => navigate(`/athletes/${item.id}`)}
-            >
-              <AthletesImage
-                src={item.bannerUrl}
-                className="athletes-banner"
-                alt={`${item.name} banner`}
-              />
-              <AthletesImage
-                src={item.logoUrl}
-                className="athletes-logo"
-                alt={`${item.name} logo`}
-              />
-              <span className="athletes-card__motif" aria-hidden="true" />
-              <span className="athletes-sport">{sportLabel(item.sport)}</span>
-              <h2>{item.name}</h2>
-              <p>{item.description || "Train and compete with people nearby."}</p>
-              <div className="athletes-card__footer">
-                <small>{locationLabel(item)}</small>
-                <span>
-                  {item.visibility === "PRIVATE"
-                    ? "Approval required"
-                    : item.joinPolicy === "OPEN"
-                      ? "Open to join"
-                      : "Request to join"}{" "}
-                  · {item.memberCount} members
-                </span>
-              </div>
-            </button>
-          ))}
-        </section>
+        <div className="hooma-lane--content">
+          <section className="athletes-grid" aria-label="Athletes communities">
+            {items.map((item) => (
+              <button
+                className="athletes-card"
+                data-sport={item.sport}
+                type="button"
+                key={item.id}
+                onClick={() => navigate(`/athletes/${item.id}`)}
+              >
+                <AthletesImage
+                  src={item.bannerUrl}
+                  className="athletes-banner"
+                  alt={`${item.name} banner`}
+                />
+                <AthletesImage
+                  src={item.logoUrl}
+                  className="athletes-logo"
+                  alt={`${item.name} logo`}
+                />
+                <span className="athletes-card__motif" aria-hidden="true" />
+                <span className="athletes-sport">{sportLabel(item.sport)}</span>
+                <h2>{item.name}</h2>
+                <p>{item.description || "Train and compete with people nearby."}</p>
+                <div className="athletes-card__footer">
+                  <small>{locationLabel(item)}</small>
+                  <span>
+                    {item.visibility === "PRIVATE"
+                      ? "Approval required"
+                      : item.joinPolicy === "OPEN"
+                        ? "Open to join"
+                        : "Request to join"}{" "}
+                    · {item.memberCount} members
+                  </span>
+                </div>
+              </button>
+            ))}
+          </section>
+        </div>
       ) : null}
       {activeView === "communities" && nextCursor ? (
-        <button
-          className="button athletes-action athletes-action--secondary"
-          disabled={loadingMore}
-          onClick={() => void load(nextCursor)}
-        >
-          {loadingMore ? "Loading…" : "Load more communities"}
-        </button>
+        <div className="hooma-lane--content">
+          <button
+            className="button athletes-action athletes-action--secondary"
+            disabled={loadingMore}
+            onClick={() => void load(nextCursor)}
+          >
+            {loadingMore ? "Loading…" : "Load more communities"}
+          </button>
+        </div>
       ) : null}
 
-      {activeView === "requests" ? <AthletesRequestsPane /> : null}
+      {activeView === "requests" ? (
+        <div className="hooma-lane--content">
+          <AthletesRequestsPane />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -300,20 +325,26 @@ function AthletesDetailContent({
   if (loading)
     return (
       <div className="page athletes-page">
-        <div className="state-card" role="status">
-          Loading Athletes community…
+        <div className="hooma-lane--content">
+          <div className="state-card" role="status">
+            Loading Athletes community…
+          </div>
         </div>
       </div>
     );
   if (!detail)
     return (
       <div className="page athletes-page">
-        <div className="error-box" role="alert">
-          {error || "Community unavailable."}
+        <div className="hooma-lane--content">
+          <div className="error-box" role="alert">
+            {error || "Community unavailable."}
+          </div>
         </div>
-        <button className="button" onClick={() => void reload()}>
-          Retry
-        </button>
+        <div className="hooma-lane--content">
+          <button className="button" onClick={() => void reload()}>
+            Retry
+          </button>
+        </div>
       </div>
     );
   if (editing && founder)
@@ -330,301 +361,327 @@ function AthletesDetailContent({
 
   return (
     <div className="page athletes-page athletes-detail-page" data-sport={detail.sport}>
-      <button
-        type="button"
-        className="team-management-back athletes-back"
-        onClick={() => navigate("/athletes")}
-      >
-        ← Athletes
-      </button>
-      <section
-        className="athletes-surface athletes-hero athletes-hero--detail"
-        data-sport={detail.sport}
-      >
-        <AthletesImage
-          src={detail.bannerUrl}
-          className="athletes-banner"
-          alt={`${detail.name} banner`}
-        />
-        <div className="athletes-hero__content">
+      <div className="hooma-lane--content">
+        <button
+          type="button"
+          className="team-management-back athletes-back"
+          onClick={() => navigate("/athletes")}
+        >
+          ← Athletes
+        </button>
+      </div>
+      <div className="hooma-lane--media">
+        <section
+          className="athletes-surface athletes-hero athletes-hero--detail"
+          data-sport={detail.sport}
+        >
           <AthletesImage
-            src={detail.logoUrl}
-            className="athletes-logo"
-            alt={`${detail.name} logo`}
+            src={detail.bannerUrl}
+            className="athletes-banner"
+            alt={`${detail.name} banner`}
           />
-          <span className="eyebrow">{sportLabel(detail.sport)}</span>
-          <h1>{detail.name}</h1>
-          <p>{detail.description || "Train and compete with this Athletes community."}</p>
-          <div className="athletes-hero__meta">
-            <span>{locationLabel(detail)}</span>
-            <span>{detail.memberCount} athletes</span>
+          <div className="athletes-hero__content">
+            <AthletesImage
+              src={detail.logoUrl}
+              className="athletes-logo"
+              alt={`${detail.name} logo`}
+            />
+            <span className="eyebrow">{sportLabel(detail.sport)}</span>
+            <h1>{detail.name}</h1>
+            <p>{detail.description || "Train and compete with this Athletes community."}</p>
+            <div className="athletes-hero__meta">
+              <span>{locationLabel(detail)}</span>
+              <span>{detail.memberCount} athletes</span>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
       {notice ? (
-        <div className="success-box" role="status">
-          {notice}
+        <div className="hooma-lane--content">
+          <div className="success-box" role="status">
+            {notice}
+          </div>
         </div>
       ) : null}
       {error ? (
-        <div className="error-box" role="alert">
-          {error}
+        <div className="hooma-lane--content">
+          <div className="error-box" role="alert">
+            {error}
+          </div>
         </div>
       ) : null}
-      <section className="athletes-surface athletes-join-panel">
-        <div className="athletes-join-panel__status">
-          <span>{detail.visibility === "PRIVATE" ? "Private" : "Public"}</span>
-          <span>{detail.joinPolicy === "OPEN" ? "Open join" : "Approval required"}</span>
-        </div>
-        {detail.viewerRole ? (
-          <strong className="athletes-role">{detail.viewerRole}</strong>
-        ) : detail.viewerJoinRequestStatus === "PENDING" ? (
-          <>
-            <span role="status">Join request pending</span>
+      <div className="hooma-lane--content">
+        <section className="athletes-surface athletes-join-panel">
+          <div className="athletes-join-panel__status">
+            <span>{detail.visibility === "PRIVATE" ? "Private" : "Public"}</span>
+            <span>{detail.joinPolicy === "OPEN" ? "Open join" : "Approval required"}</span>
+          </div>
+          {detail.viewerRole ? (
+            <strong className="athletes-role">{detail.viewerRole}</strong>
+          ) : detail.viewerJoinRequestStatus === "PENDING" ? (
+            <>
+              <span role="status">Join request pending</span>
+              <button
+                type="button"
+                className="button secondary athletes-action athletes-action--secondary"
+                disabled={busy}
+                onClick={() =>
+                  void act(() => api.athletes.cancelJoinRequest(id), "Join request cancelled.")
+                }
+              >
+                Cancel request
+              </button>
+            </>
+          ) : (
             <button
-              type="button"
-              className="button secondary athletes-action athletes-action--secondary"
+              className="button athletes-action athletes-action--primary"
               disabled={busy}
               onClick={() =>
-                void act(() => api.athletes.cancelJoinRequest(id), "Join request cancelled.")
+                void act(
+                  () => api.athletes.join(id),
+                  detail.joinPolicy === "OPEN"
+                    ? "Joined Athletes community."
+                    : "Join request sent.",
+                )
               }
             >
-              Cancel request
+              {detail.joinPolicy === "OPEN" ? "Join" : "Request to join"}
             </button>
-          </>
-        ) : (
-          <button
-            className="button athletes-action athletes-action--primary"
-            disabled={busy}
-            onClick={() =>
-              void act(
-                () => api.athletes.join(id),
-                detail.joinPolicy === "OPEN" ? "Joined Athletes community." : "Join request sent.",
-              )
-            }
-          >
-            {detail.joinPolicy === "OPEN" ? "Join" : "Request to join"}
-          </button>
-        )}
-      </section>
+          )}
+        </section>
+      </div>
       {founder ? (
-        <section className="athletes-surface athletes-section">
-          <h2>Community settings</h2>
-          <div className="athletes-actions">
-            <button
-              className="button athletes-action athletes-action--secondary"
-              disabled={busy}
-              onClick={() => setEditing(true)}
-            >
-              Edit community
-            </button>
-            <button
-              className="athletes-mini-action athletes-mini-action--decline"
-              disabled={busy}
-              onClick={() => setConfirmArchive(true)}
-            >
-              Archive community
-            </button>
-          </div>
-          {confirmArchive ? (
-            <div role="group" aria-label="Confirm archive">
-              <p>Archive {detail.name}? Member access will close. Photos will be retained.</p>
+        <div className="hooma-lane--content">
+          <section className="athletes-surface athletes-section">
+            <h2>Community settings</h2>
+            <div className="athletes-actions">
+              <button
+                className="button athletes-action athletes-action--secondary"
+                disabled={busy}
+                onClick={() => setEditing(true)}
+              >
+                Edit community
+              </button>
               <button
                 className="athletes-mini-action athletes-mini-action--decline"
                 disabled={busy}
-                onClick={() =>
-                  void act(
-                    () => api.athletes.archive(id),
-                    "Community archived.",
-                    () => navigate("/athletes", { replace: true }),
-                  )
-                }
+                onClick={() => setConfirmArchive(true)}
               >
-                Confirm archive
-              </button>{" "}
-              <button
-                className="athletes-mini-action"
-                disabled={busy}
-                onClick={() => setConfirmArchive(false)}
-              >
-                Keep community
+                Archive community
               </button>
             </div>
-          ) : null}
-        </section>
+            {confirmArchive ? (
+              <div role="group" aria-label="Confirm archive">
+                <p>Archive {detail.name}? Member access will close. Photos will be retained.</p>
+                <button
+                  className="athletes-mini-action athletes-mini-action--decline"
+                  disabled={busy}
+                  onClick={() =>
+                    void act(
+                      () => api.athletes.archive(id),
+                      "Community archived.",
+                      () => navigate("/athletes", { replace: true }),
+                    )
+                  }
+                >
+                  Confirm archive
+                </button>{" "}
+                <button
+                  className="athletes-mini-action"
+                  disabled={busy}
+                  onClick={() => setConfirmArchive(false)}
+                >
+                  Keep community
+                </button>
+              </div>
+            ) : null}
+          </section>
+        </div>
       ) : null}
       {detail.viewerRole ? (
         <>
-          <AthletesCalendar athletesCommunityId={id} founder={founder} />
-          <AthletesPhotoBoard
-            athletesCommunityId={id}
-            communityStatus={detail.status}
-            viewerRole={detail.viewerRole}
-          />
-          <AthletesWhistleBoard athletesCommunityId={id} />
-          <section className="athletes-surface athletes-section">
-            <h2>Active Athletes</h2>
-            {membersError ? (
-              <div role="alert" className="error-box">
-                {membersError} <button onClick={() => void refreshMembers()}>Retry members</button>
-              </div>
-            ) : (
-              <>
-                <ActiveAthletesList
-                  members={members}
-                  founder={founder}
-                  canManage={canManage}
-                  busy={busy}
-                  onToggleRole={(member) =>
-                    void act(
-                      () =>
-                        api.athletes.setMemberRole(
-                          id,
-                          member.userId,
-                          member.role === "MODERATOR" ? "MEMBER" : "MODERATOR",
-                        ),
-                      "Member role updated.",
-                      refreshMembershipAfterAction,
-                    )
-                  }
-                  onRemove={(member) =>
-                    void act(
-                      () => api.athletes.removeMember(id, member.userId),
-                      "Member removed.",
-                      refreshDetailAndMembershipAfterAction,
-                    )
-                  }
-                />
-                {membersNextCursor ? (
-                  <button
-                    className="button athletes-action athletes-action--secondary"
-                    disabled={loadingMoreMembers}
-                    onClick={() => void loadMoreMembers()}
-                  >
-                    {loadingMoreMembers ? "Loading…" : "Load more athletes"}
-                  </button>
-                ) : null}
-              </>
-            )}
-          </section>
+          <div className="hooma-lane--content">
+            <AthletesCalendar athletesCommunityId={id} founder={founder} />
+          </div>
+          <div className="hooma-lane--content">
+            <AthletesPhotoBoard
+              athletesCommunityId={id}
+              communityStatus={detail.status}
+              viewerRole={detail.viewerRole}
+            />
+          </div>
+          <div className="hooma-lane--content">
+            <AthletesWhistleBoard athletesCommunityId={id} />
+          </div>
+          <div className="hooma-lane--content">
+            <section className="athletes-surface athletes-section">
+              <h2>Active Athletes</h2>
+              {membersError ? (
+                <div role="alert" className="error-box">
+                  {membersError}{" "}
+                  <button onClick={() => void refreshMembers()}>Retry members</button>
+                </div>
+              ) : (
+                <>
+                  <ActiveAthletesList
+                    members={members}
+                    founder={founder}
+                    canManage={canManage}
+                    busy={busy}
+                    onToggleRole={(member) =>
+                      void act(
+                        () =>
+                          api.athletes.setMemberRole(
+                            id,
+                            member.userId,
+                            member.role === "MODERATOR" ? "MEMBER" : "MODERATOR",
+                          ),
+                        "Member role updated.",
+                        refreshMembershipAfterAction,
+                      )
+                    }
+                    onRemove={(member) =>
+                      void act(
+                        () => api.athletes.removeMember(id, member.userId),
+                        "Member removed.",
+                        refreshDetailAndMembershipAfterAction,
+                      )
+                    }
+                  />
+                  {membersNextCursor ? (
+                    <button
+                      className="button athletes-action athletes-action--secondary"
+                      disabled={loadingMoreMembers}
+                      onClick={() => void loadMoreMembers()}
+                    >
+                      {loadingMoreMembers ? "Loading…" : "Load more athletes"}
+                    </button>
+                  ) : null}
+                </>
+              )}
+            </section>
+          </div>
         </>
       ) : null}
       {canManage ? (
-        <section className="athletes-surface athletes-section athletes-manage-section">
-          <div className="athletes-section-heading athletes-manage-heading">
-            <div>
-              <span className="eyebrow">MEMBERSHIP</span>
-              <h2>Join requests</h2>
-            </div>
-            <span
-              className="athletes-section-count"
-              aria-label={`${requests.length} loaded pending join ${
-                requests.length === 1 ? "request" : "requests"
-              }`}
-            >
-              {requests.length}
-            </span>
-          </div>
-          {requestsError ? (
-            <div className="error-box" role="alert">
-              {requestsError} <button onClick={() => void refreshRequests()}>Retry requests</button>
-            </div>
-          ) : requests.length ? (
-            <>
-              <div className="athletes-member-list athletes-request-list">
-                {requests.map((request) => (
-                  <div className="athletes-member-row athletes-request-row" key={request.id}>
-                    <span>
-                      {request.requester.presentation?.displayName ?? "Member"}
-                      {request.requester.presentation ? (
-                        <small>@{request.requester.presentation.username}</small>
-                      ) : null}
-                    </span>
-                    <span className="athletes-request-actions">
-                      <button
-                        className="athletes-mini-action athletes-mini-action--approve"
-                        disabled={busy}
-                        onClick={() =>
-                          void act(
-                            () => api.athletes.approveJoinRequest(id, request.userId),
-                            "Join request approved.",
-                            refreshDetailAndMembershipAfterAction,
-                          )
-                        }
-                      >
-                        Approve
-                      </button>
-                      <button
-                        className="athletes-mini-action athletes-mini-action--decline"
-                        disabled={busy}
-                        onClick={() =>
-                          void act(
-                            () => api.athletes.declineJoinRequest(id, request.userId),
-                            "Join request declined.",
-                            refreshMembershipAfterAction,
-                          )
-                        }
-                      >
-                        Decline
-                      </button>
-                    </span>
-                  </div>
-                ))}
+        <div className="hooma-lane--content">
+          <section className="athletes-surface athletes-section athletes-manage-section">
+            <div className="athletes-section-heading athletes-manage-heading">
+              <div>
+                <span className="eyebrow">MEMBERSHIP</span>
+                <h2>Join requests</h2>
               </div>
-              {requestsNextCursor ? (
-                <button
-                  className="button athletes-action athletes-action--secondary"
-                  disabled={loadingMoreRequests}
-                  onClick={() => void loadMoreRequests()}
-                >
-                  {loadingMoreRequests ? "Loading…" : "Load more requests"}
-                </button>
-              ) : null}
-            </>
-          ) : (
-            <p className="muted">No pending join requests.</p>
-          )}
-          <details className="athletes-direct-add">
-            <summary>Add member directly</summary>
-            <div className="athletes-direct-add__body">
-              <p className="muted">Add an existing HOOMA user by username.</p>
-              <form
-                className="athletes-inline-form athletes-direct-add__form"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  void act(
-                    async () => {
-                      await api.athletes.addMember(id, username);
-                      setUsername("");
-                    },
-                    "Member added.",
-                    refreshDetailAndMembershipAfterAction,
-                  );
-                }}
+              <span
+                className="athletes-section-count"
+                aria-label={`${requests.length} loaded pending join ${
+                  requests.length === 1 ? "request" : "requests"
+                }`}
               >
-                <label className="athletes-direct-add__field">
-                  <span>HOOMA username</span>
-                  <input
-                    value={username}
-                    onChange={(event) => setUsername(event.currentTarget.value)}
-                    placeholder="username"
-                    autoComplete="off"
-                    required
-                    maxLength={50}
-                    disabled={busy}
-                  />
-                </label>
-                <button
-                  className="button athletes-action athletes-action--secondary"
-                  type="submit"
-                  disabled={busy}
-                >
-                  Add member
-                </button>
-              </form>
+                {requests.length}
+              </span>
             </div>
-          </details>
-        </section>
+            {requestsError ? (
+              <div className="error-box" role="alert">
+                {requestsError}{" "}
+                <button onClick={() => void refreshRequests()}>Retry requests</button>
+              </div>
+            ) : requests.length ? (
+              <>
+                <div className="athletes-member-list athletes-request-list">
+                  {requests.map((request) => (
+                    <div className="athletes-member-row athletes-request-row" key={request.id}>
+                      <span>
+                        {request.requester.presentation?.displayName ?? "Member"}
+                        {request.requester.presentation ? (
+                          <small>@{request.requester.presentation.username}</small>
+                        ) : null}
+                      </span>
+                      <span className="athletes-request-actions">
+                        <button
+                          className="athletes-mini-action athletes-mini-action--approve"
+                          disabled={busy}
+                          onClick={() =>
+                            void act(
+                              () => api.athletes.approveJoinRequest(id, request.userId),
+                              "Join request approved.",
+                              refreshDetailAndMembershipAfterAction,
+                            )
+                          }
+                        >
+                          Approve
+                        </button>
+                        <button
+                          className="athletes-mini-action athletes-mini-action--decline"
+                          disabled={busy}
+                          onClick={() =>
+                            void act(
+                              () => api.athletes.declineJoinRequest(id, request.userId),
+                              "Join request declined.",
+                              refreshMembershipAfterAction,
+                            )
+                          }
+                        >
+                          Decline
+                        </button>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                {requestsNextCursor ? (
+                  <button
+                    className="button athletes-action athletes-action--secondary"
+                    disabled={loadingMoreRequests}
+                    onClick={() => void loadMoreRequests()}
+                  >
+                    {loadingMoreRequests ? "Loading…" : "Load more requests"}
+                  </button>
+                ) : null}
+              </>
+            ) : (
+              <p className="muted">No pending join requests.</p>
+            )}
+            <details className="athletes-direct-add">
+              <summary>Add member directly</summary>
+              <div className="athletes-direct-add__body">
+                <p className="muted">Add an existing HOOMA user by username.</p>
+                <form
+                  className="athletes-inline-form athletes-direct-add__form"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void act(
+                      async () => {
+                        await api.athletes.addMember(id, username);
+                        setUsername("");
+                      },
+                      "Member added.",
+                      refreshDetailAndMembershipAfterAction,
+                    );
+                  }}
+                >
+                  <label className="athletes-direct-add__field">
+                    <span>HOOMA username</span>
+                    <input
+                      value={username}
+                      onChange={(event) => setUsername(event.currentTarget.value)}
+                      placeholder="username"
+                      autoComplete="off"
+                      required
+                      maxLength={50}
+                      disabled={busy}
+                    />
+                  </label>
+                  <button
+                    className="button athletes-action athletes-action--secondary"
+                    type="submit"
+                    disabled={busy}
+                  >
+                    Add member
+                  </button>
+                </form>
+              </div>
+            </details>
+          </section>
+        </div>
       ) : null}
     </div>
   );

@@ -26,16 +26,19 @@ test("Play presents Games, Players, Requests, and Mine as sibling local views", 
   assert.match(page, /aria-selected=\{activeView === "mine"\}/);
   assert.match(
     page,
-    /\{activeView === "games" \? \(\s*<section className="play-section" aria-labelledby="open-matches-title">/s,
+    /\{activeView === "games" \? \(\s*<div className="hooma-lane--content">\s*<section className="play-section" aria-labelledby="open-matches-title">/s,
   );
   assert.match(
     page,
-    /\{activeView === "players" \? \(\s*<section className="play-section" aria-labelledby="players-looking-title">/s,
+    /\{activeView === "players" \? \(\s*<div className="hooma-lane--content">\s*<section className="play-section" aria-labelledby="players-looking-title">/s,
   );
-  assert.match(page, /\{activeView === "requests" \? <PlayRequestsPane \/> : null\}/);
   assert.match(
     page,
-    /\{activeView === "mine" \? \(\s*<section className="play-section play-mine" aria-labelledby="mine-title">/s,
+    /\{activeView === "requests" \? \(\s*<div className="hooma-lane--content">\s*<PlayRequestsPane \/>\s*<\/div>\s*\) : null\}/,
+  );
+  assert.match(
+    page,
+    /\{activeView === "mine" \? \(\s*<div className="hooma-lane--content">\s*<section className="play-section play-mine" aria-labelledby="mine-title">/s,
   );
   assert.doesNotMatch(page, /hidden=\{activeView/);
   assert.match(router, /path="\/play" element=\{<PlayPage \/>\}/);

@@ -54,38 +54,45 @@ export function TeamLineupPage({ teamId }: TeamLineupPageProps) {
     }
   }
 
-  if (loading) return <p className="status">Loading lineup control…</p>;
+  if (loading)
+    return (
+      <div className="hooma-lane--content">
+        <p className="status">Loading lineup control…</p>
+      </div>
+    );
 
   return (
-    <section className="control-room">
-      <a href="/teams/control">← Team HQ</a>
-      <header className="control-room__header">
-        <div>
-          <p className="eyebrow">TEAM HQ · LINEUP CONTROL</p>
-          <h2>Build the shape</h2>
-          <p>Draft, publish and update this Team&apos;s matchday lineup here.</p>
-        </div>
-      </header>
+    <div className="hooma-lane--content">
+      <section className="control-room">
+        <a href="/teams/control">← Team HQ</a>
+        <header className="control-room__header">
+          <div>
+            <p className="eyebrow">TEAM HQ · LINEUP CONTROL</p>
+            <h2>Build the shape</h2>
+            <p>Draft, publish and update this Team&apos;s matchday lineup here.</p>
+          </div>
+        </header>
 
-      {error ? <p className="error">{error}</p> : null}
-      {notice ? <p className="success">{notice}</p> : null}
+        {error ? <p className="error">{error}</p> : null}
+        {notice ? <p className="success">{notice}</p> : null}
 
-      {team ? (
-        <>
-          <section className="panel control-room__summary">
-            <div>
-              <span>Team</span>
-              <strong>{team.name}</strong>
-            </div>
-            <div>
-              <span>Roster</span>
-              <strong>{team.players.length}</strong>
-            </div>
-            <a href={`/teams/${team.id}`}>Open public Team profile</a>
-          </section>
-          <TeamLineupManager key={team.id} api={api.teams} team={team} onRun={runLineupAction} />
-        </>
-      ) : null}
-    </section>
+        {team ? (
+          <>
+            <section className="panel control-room__summary">
+              <div>
+                <span>Team</span>
+                <strong>{team.name}</strong>
+              </div>
+              <div>
+                <span>Roster</span>
+                <strong>{team.players.length}</strong>
+              </div>
+              <a href={`/teams/${team.id}`}>Open public Team profile</a>
+            </section>
+            <TeamLineupManager key={team.id} api={api.teams} team={team} onRun={runLineupAction} />
+          </>
+        ) : null}
+      </section>
+    </div>
   );
 }

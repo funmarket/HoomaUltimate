@@ -101,11 +101,17 @@ export function HoomaShell({
         {...(!hasTelegramIdentity ? { onSignOut: () => void signOut() } : {})}
       />
       {interactionNotice ? (
-        <p className="status success" role="status" aria-live="polite">
-          ✓ {interactionNotice}
-        </p>
+        <div className="hooma-lane--content">
+          <p className="status success" role="status" aria-live="polite">
+            ✓ {interactionNotice}
+          </p>
+        </div>
       ) : null}
-      {shellError ? <p className="status">{shellError}</p> : null}
+      {shellError ? (
+        <div className="hooma-lane--content">
+          <p className="status">{shellError}</p>
+        </div>
+      ) : null}
       <section className="shell-content">{children}</section>
       <HoomaBottomNav pathname={navPathname} onNavigate={(href) => navigate(href)} />
     </main>
