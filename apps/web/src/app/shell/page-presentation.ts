@@ -20,8 +20,6 @@ export function shellPresentationForPath(pathname: string): ShellPresentation {
 }
 
 export function shellInlinePresentationForPath(pathname: string): ShellInlinePresentation {
-  switch (pathname) {
-    default:
-      return SHELL_INLINE_PRESENTATION.LEGACY;
-  }
+  void pathname;
+  return SHELL_INLINE_PRESENTATION.LEGACY;
 }

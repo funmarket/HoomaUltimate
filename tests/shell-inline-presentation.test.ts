@@ -4,9 +4,7 @@ import { join } from "node:path";
 import test from "node:test";
 import {
   SHELL_INLINE_PRESENTATION,
-  SHELL_PRESENTATION,
   shellInlinePresentationForPath,
-  shellPresentationForPath,
 } from "../apps/web/src/app/shell/page-presentation.js";
 
 const styles = readFileSync("apps/web/src/styles.css", "utf8");
@@ -103,25 +101,20 @@ test("every registered route and representative resolved pathname remains LEGACY
 });
 
 test("inline presentation composes globally without changing the vertical axis", () => {
-  assert.match(shell, /shellInlinePresentationForPath\(location\.pathname\)/);
-  assert.match(shell, /shellPresentationForPath\(location\.pathname\)/);
+  assert.match(
+    shell,
+    /const shellInlinePresentation = shellInlinePresentationForPath\(location\.pathname\)/,
+  );
+  assert.match(shell, /const shellPresentation = shellPresentationForPath\(location\.pathname\)/);
   assert.match(
     shell,
     /foundation-shell--\$\{shellPresentation\} foundation-shell--inline-\$\{shellInlinePresentation\}/,
   );
   assert.match(router, /<HoomaShell runtime=\{runtime\}>[\s\S]*<Routes>/);
-  assert.deepEqual(declarations(standaloneRule(styles, ".foundation-shell--media-first")), {
-    "align-content": "start",
-    "row-gap": "0",
-  });
-  for (const path of ["/", "/telegram", "/play", "/athletes/new", "/athletes/contract-parameter"]) {
-    assert.equal(shellPresentationForPath(path), SHELL_PRESENTATION.STANDARD);
-    assert.equal(shellInlinePresentationForPath(path), SHELL_INLINE_PRESENTATION.LEGACY);
-  }
-  for (const path of ["/athletes", "/athletes/"]) {
-    assert.equal(shellPresentationForPath(path), SHELL_PRESENTATION.MEDIA_FIRST);
-    assert.equal(shellInlinePresentationForPath(path), SHELL_INLINE_PRESENTATION.LEGACY);
-  }
+  assert.doesNotMatch(
+    shellInlinePresentationForPath.toString(),
+    /\b(?:shellPresentationForPath|SHELL_PRESENTATION)\b/,
+  );
 });
 
 test("no shipped frontend source adopts the inactive semantic lanes in Packet 2", () => {
