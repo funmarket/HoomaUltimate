@@ -35,6 +35,12 @@ function declarations(rule: string): Record<string, string> {
   );
 }
 
+function rulesFor(css: string, selector: string): string[] {
+  return [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .filter((match) => match[1].split(",").some((entry) => entry.trim() === selector))
+    .map((match) => match[2]);
+}
+
 test("base shell is horizontally neutral and retains its composition and bottom clearance", () => {
   const base = standaloneRule(styles, ".foundation-shell");
   assert.doesNotMatch(base, /--shell-inline/);
@@ -50,17 +56,34 @@ test("base shell is horizontally neutral and retains its composition and bottom 
   });
 });
 
-test("ordinary Web compatibility belongs to LEGACY while EDGE_CAPABLE keeps zero inset", () => {
+test("LEGACY owns routed-content outer spacing while the whole shell stays neutral", () => {
   assert.equal(
     declarations(standaloneRule(styles, ":root"))["--shell-inline"],
     "clamp(12px, 6vw, 24px)",
   );
-  assert.deepEqual(declarations(standaloneRule(styles, ".foundation-shell--inline-legacy")), {
-    "padding-inline": "var(--shell-inline)",
-  });
-  const edge = standaloneRule(styles, ".foundation-shell--inline-edge-capable");
+  assert.equal(rulesFor(styles, ".foundation-shell--inline-legacy").length, 0);
+  const legacy = rulesFor(styles, ".foundation-shell--inline-legacy > .shell-content");
+  assert.equal(legacy.length, 2, "Compatibility keeps the existing desktop/mobile safe-area inset");
+  for (const rule of legacy) {
+    assert.match(rule, /margin-left:\s*max\(\s*var\(--shell-inline\)/);
+    assert.match(rule, /margin-right:\s*max\(\s*var\(--shell-inline\)/);
+    assert.match(rule, /--hooma-safe-area-inset-left/);
+    assert.match(rule, /--hooma-content-safe-area-inset-right/);
+    assert.doesNotMatch(rule, /padding/);
+  }
+  const edge = standaloneRule(styles, ".foundation-shell--inline-edge-capable > .shell-content");
   assert.doesNotMatch(edge, /--shell-inline/);
-  assert.deepEqual(declarations(edge), { "padding-inline": "0" });
+  assert.deepEqual(declarations(edge), { "margin-inline": "0" });
+});
+
+test("shell-owned statuses share LEGACY outer geometry without changing panel interior spacing", () => {
+  const content = rulesFor(styles, ".foundation-shell--inline-legacy > .shell-content");
+  const statuses = rulesFor(styles, ".foundation-shell--inline-legacy > .status");
+  assert.equal(statuses.length, 2);
+  assert.deepEqual(statuses, content);
+  assert.equal(declarations(standaloneRule(styles, ".status")).padding, "16px");
+  assert.match(shell, /<p className="status success"/);
+  assert.match(shell, /<p className="status">/);
 });
 
 test("global lanes have one shared 8/8/16/0 authority and matching primitives", () => {
@@ -117,7 +140,7 @@ test("inline presentation composes globally without changing the vertical axis",
   );
 });
 
-test("no shipped frontend source adopts the inactive semantic lanes in Packet 2", () => {
+test("no shipped frontend source adopts semantic lanes before route adoption", () => {
   function inspect(directory: string): void {
     for (const entry of readdirSync(directory, { withFileTypes: true })) {
       const path = join(directory, entry.name);

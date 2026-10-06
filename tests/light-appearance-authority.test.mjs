@@ -28,11 +28,14 @@ test("legacy global CSS no longer owns the application color scheme", async () =
   assert.match(css, /\.panel\s*\{[\s\S]*background:\s*var\(--app-surface\)/);
   assert.doesNotMatch(css, /padding:\s*48px 24px/);
   const baseShell = css.match(/(?:^|\})\s*\.foundation-shell\s*\{([^{}]*)\}/)?.[1] ?? "";
-  const legacyShell = css.match(/\.foundation-shell--inline-legacy\s*\{([\s\S]*?)\}/)?.[1] ?? "";
+  const legacyContent =
+    css.match(/\.foundation-shell--inline-legacy > \.shell-content\s*,[\s\S]*?\{([^{}]*)\}/)?.[1] ??
+    "";
 
   assert.match(baseShell, /padding:\s*0 0 48px/);
   assert.doesNotMatch(baseShell, /--shell-inline/);
-  assert.match(legacyShell, /padding-inline:\s*var\(--shell-inline\)/);
+  assert.doesNotMatch(css, /\.foundation-shell--inline-legacy\s*\{/);
+  assert.match(legacyContent, /margin-left:\s*max\(\s*var\(--shell-inline\)/);
 });
 
 test("account styles map to app semantics instead of declaring another light palette", async () => {
@@ -51,10 +54,12 @@ test("top account chrome stays dark and owns safe-area spacing", async () => {
 
   assert.match(root, /--hooma-chrome-bg:\s*#070808/);
   assert.match(css, /\.hooma-topbar\s*\{[\s\S]*background:\s*var\(--hooma-chrome-bg\)/);
-  assert.match(
-    css,
-    /padding:\s*max\(8px, env\(safe-area-inset-top, 0px\)\) var\(--shell-inline\) 10px/,
-  );
+  const topbar = css.match(/\.hooma-topbar\s*\{([^{}]*)\}/)?.[1] ?? "";
+  assert.doesNotMatch(topbar, /--shell-inline|margin-inline/);
+  assert.match(topbar, /padding-top:\s*max\(8px, env\(safe-area-inset-top, 0px\)\)/);
+  assert.match(topbar, /padding-bottom:\s*10px/);
+  assert.match(topbar, /--hooma-ui-page-inline/);
+  assert.doesNotMatch(topbar, /--hooma-ui-lane-/);
   assert.match(
     css,
     /\.hooma-profile-trigger\s*\{[\s\S]*background:\s*var\(--hooma-chrome-surface\)/,

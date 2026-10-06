@@ -1,8 +1,8 @@
 .hooma-bottom-nav {
   position: fixed;
   z-index: 50;
-  left: max(8px, calc((100vw - 736px) / 2));
-  right: max(8px, calc((100vw - 736px) / 2));
+  left: max(var(--hooma-ui-lane-nav-inline), calc((100vw - 736px) / 2));
+  right: max(var(--hooma-ui-lane-nav-inline), calc((100vw - 736px) / 2));
   bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -170,8 +170,8 @@
 
 @media (max-width: 520px) {
   .hooma-bottom-nav {
-    left: 8px;
-    right: 8px;
+    left: var(--hooma-ui-lane-nav-inline);
+    right: var(--hooma-ui-lane-nav-inline);
     bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
     min-height: 70px;
     padding-top: 4px;

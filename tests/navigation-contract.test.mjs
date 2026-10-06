@@ -36,11 +36,27 @@ test("locked bottom navigation and six-card Home gateway cannot drift", async ()
   assert.doesNotMatch(gatewaySource, /label: "Gamers"/);
   assert.doesNotMatch(gatewaySource, /label: "Ultras"/);
   assert.doesNotMatch(gatewaySource, /label: "FundMe"/);
-  assert.match(
-    accountCss,
-    /\.hooma-topbar\s*\{[\s\S]*margin-inline:\s*calc\(-1 \* var\(--shell-inline\)\)/,
-  );
+  assert.doesNotMatch(accountCss, /margin-inline:\s*calc\(-1 \* var\(--shell-inline\)\)/);
   assert.doesNotMatch(accountCss, /\.hooma-topbar\s*\{[\s\S]*inline-size:\s*100vw/);
+});
+
+test("fixed navigation consumes canonical NAV spacing while preserving its mechanics", async () => {
+  const css = await readFile("packages/ui/src/navigation/bottom-nav.css", "utf8");
+  const nav = css.match(/\.hooma-bottom-nav\s*\{([^{}]*)\}/)?.[1] ?? "";
+  assert.match(nav, /position:\s*fixed/);
+  for (const side of ["left", "right"]) {
+    assert.match(
+      nav,
+      new RegExp(
+        `${side}:\\s*max\\(var\\(--hooma-ui-lane-nav-inline\\), calc\\(\\(100vw - 736px\\) / 2\\)\\)`,
+      ),
+    );
+    assert.doesNotMatch(css, new RegExp(`${side}:\\s*8px`));
+  }
+  assert.match(nav, /bottom:\s*calc\(env\(safe-area-inset-bottom, 0px\) \+ 6px\)/);
+  assert.match(css, /\.hooma-bottom-nav--hidden\s*\{[\s\S]*transform:\s*translateY/);
+  assert.match(css, /\.hooma-bottom-nav__item--active\s*\{[\s\S]*color:\s*#aaff00/);
+  assert.match(css, /padding-bottom:\s*calc\(88px \+ env\(safe-area-inset-bottom, 0px\)\)/);
 });
 
 test("Home gateway cards expose visible labels and disable unavailable destinations", async () => {

@@ -41,12 +41,38 @@ body {
   gap: 32px;
 }
 
-.foundation-shell--inline-legacy {
-  padding-inline: var(--shell-inline);
+.foundation-shell--inline-legacy > .shell-content,
+.foundation-shell--inline-legacy > .status {
+  margin-left: max(
+    var(--shell-inline),
+    calc(var(--hooma-safe-area-inset-left) + 12px),
+    calc(var(--hooma-content-safe-area-inset-left) + 12px)
+  );
+  margin-right: max(
+    var(--shell-inline),
+    calc(var(--hooma-safe-area-inset-right) + 12px),
+    calc(var(--hooma-content-safe-area-inset-right) + 12px)
+  );
 }
 
-.foundation-shell--inline-edge-capable {
-  padding-inline: 0;
+.foundation-shell--inline-edge-capable > .shell-content {
+  margin-inline: 0;
+}
+
+@media (max-width: 520px) {
+  .foundation-shell--inline-legacy > .shell-content,
+  .foundation-shell--inline-legacy > .status {
+    margin-left: max(
+      var(--shell-inline),
+      calc(var(--hooma-safe-area-inset-left) + 8px),
+      calc(var(--hooma-content-safe-area-inset-left) + 8px)
+    );
+    margin-right: max(
+      var(--shell-inline),
+      calc(var(--hooma-safe-area-inset-right) + 8px),
+      calc(var(--hooma-content-safe-area-inset-right) + 8px)
+    );
+  }
 }
 
 .hooma-lane--media {
