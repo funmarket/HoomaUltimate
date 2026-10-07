@@ -4,26 +4,20 @@ import test from "node:test";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("base shell is horizontally neutral while LEGACY preserves the current inset", async () => {
+test("base shell is horizontally neutral without a compatibility inset", async () => {
   const [styles, account] = await Promise.all([
     read("apps/web/src/styles.css"),
     read("apps/web/src/account/account.css"),
   ]);
 
   const baseShell = styles.match(/(?:^|\})\s*\.foundation-shell\s*\{([^{}]*)\}/)?.[1] ?? "";
-  const legacyContent =
-    styles.match(
-      /\.foundation-shell--inline-legacy > \.shell-content\s*,[\s\S]*?\{([^{}]*)\}/,
-    )?.[1] ?? "";
   const topbar = account.match(/\.hooma-topbar\s*\{([^{}]*)\}/)?.[1] ?? "";
 
   assert.doesNotMatch(styles, /min-width:\s*320px/);
-  assert.match(styles, /--shell-inline:\s*clamp\(12px, 6vw, 24px\)/);
+  assert.doesNotMatch(styles, /--shell-inline|foundation-shell--inline-/);
   assert.match(baseShell, /width:\s*100%/);
   assert.match(baseShell, /padding:\s*0 0 48px/);
   assert.doesNotMatch(baseShell, /--shell-inline/);
-  assert.doesNotMatch(styles, /\.foundation-shell--inline-legacy\s*\{/);
-  assert.match(legacyContent, /margin-left:\s*max\(\s*var\(--shell-inline\)/);
   assert.doesNotMatch(topbar, /margin-inline|--shell-inline|100vw|transform|!important/);
   for (const side of ["left", "right"]) {
     assert.match(

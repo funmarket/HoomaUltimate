@@ -1,10 +1,8 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import {
-  SHELL_INLINE_PRESENTATION,
-  shellInlinePresentationForPath,
-} from "../apps/web/src/app/shell/page-presentation.js";
+import * as presentation from "../apps/web/src/app/shell/page-presentation.js";
 
 const styles = readFileSync("apps/web/src/styles.css", "utf8");
 const theme = readFileSync("apps/web/src/theme.css", "utf8");
@@ -34,12 +32,6 @@ function declarations(rule: string): Record<string, string> {
   );
 }
 
-function rulesFor(css: string, selector: string): string[] {
-  return [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
-    .filter((match) => match[1].split(",").some((entry) => entry.trim() === selector))
-    .map((match) => match[2]);
-}
-
 test("base shell is horizontally neutral and retains its composition and bottom clearance", () => {
   const base = standaloneRule(styles, ".foundation-shell");
   assert.doesNotMatch(base, /--shell-inline/);
@@ -55,31 +47,26 @@ test("base shell is horizontally neutral and retains its composition and bottom 
   });
 });
 
-test("LEGACY owns routed-content outer spacing while the whole shell stays neutral", () => {
-  assert.equal(
-    declarations(standaloneRule(styles, ":root"))["--shell-inline"],
-    "clamp(12px, 6vw, 24px)",
-  );
-  assert.equal(rulesFor(styles, ".foundation-shell--inline-legacy").length, 0);
-  const legacy = rulesFor(styles, ".foundation-shell--inline-legacy > .shell-content");
-  assert.equal(legacy.length, 2, "Compatibility keeps the existing desktop/mobile safe-area inset");
-  for (const rule of legacy) {
-    assert.match(rule, /margin-left:\s*max\(\s*var\(--shell-inline\)/);
-    assert.match(rule, /margin-right:\s*max\(\s*var\(--shell-inline\)/);
-    assert.match(rule, /--hooma-safe-area-inset-left/);
-    assert.match(rule, /--hooma-content-safe-area-inset-right/);
-    assert.doesNotMatch(rule, /padding/);
-  }
-  const edge = standaloneRule(styles, ".foundation-shell--inline-edge-capable > .shell-content");
-  assert.doesNotMatch(edge, /--shell-inline/);
-  assert.deepEqual(declarations(edge), { "margin-inline": "0" });
+test("routed content is neutral and temporary horizontal compatibility has no owner", () => {
+  assert.doesNotMatch(styles, /--shell-inline|foundation-shell--inline-/);
+  assert.doesNotMatch(shell, /shellInlinePresentation|foundation-shell--inline-/);
+  assert.deepEqual(Object.keys(presentation).sort(), [
+    "SHELL_PRESENTATION",
+    "shellPresentationForPath",
+  ]);
+  assert.deepEqual(declarations(standaloneRule(styles, ".foundation-shell > .shell-content")), {
+    "margin-inline": "0",
+  });
 });
 
-test("shell-owned statuses share LEGACY outer geometry without changing panel interior spacing", () => {
-  const content = rulesFor(styles, ".foundation-shell--inline-legacy > .shell-content");
-  const statuses = rulesFor(styles, ".foundation-shell--inline-legacy > .status");
-  assert.equal(statuses.length, 2);
-  assert.deepEqual(statuses, content);
+test("router statuses retain shared CONTENT safe-area geometry and panel interior spacing", () => {
+  const status = declarations(
+    standaloneRule(styles, ".foundation-shell > .shell-content > .status"),
+  );
+  const content = declarations(standaloneRule(styles, ".hooma-lane--content"));
+  for (const side of ["left", "right"]) {
+    assert.equal(status[`margin-${side}`], content[`padding-${side}`]);
+  }
   assert.equal(declarations(standaloneRule(styles, ".status")).padding, "16px");
   assert.match(shell, /<p className="status success"/);
   assert.match(shell, /<p className="status">/);
@@ -108,50 +95,45 @@ test("global lanes have one shared 8/8/16/0 authority and matching primitives", 
   }
 });
 
-test("every registered route and representative resolved pathname is globally EDGE_CAPABLE", () => {
-  assert.deepEqual(SHELL_INLINE_PRESENTATION, { LEGACY: "legacy", EDGE_CAPABLE: "edge-capable" });
+test("all registered routes share the permanent shell with only vertical presentation", () => {
   const patterns = [...router.matchAll(/\bpath="([^"]+)"/g)].map((match) => match[1]);
   assert.ok(patterns.length > 0, "Route census must come from the current router");
+  assert.match(router, /<HoomaShell runtime=\{runtime\}>[\s\S]*<Routes>/);
+  assert.match(shell, /const shellPresentation = shellPresentationForPath\(location\.pathname\)/);
+  assert.match(shell, /className=\{`foundation-shell foundation-shell--\$\{shellPresentation\}`\}/);
+  assert.deepEqual(presentation.SHELL_PRESENTATION, {
+    STANDARD: "standard",
+    MEDIA_FIRST: "media-first",
+  });
   for (const pattern of patterns) {
-    // Test-only segments exercise resolver paths; they do not identify product records.
     const pathname = pattern
       .replace(/:[^/]+/g, "contract-parameter")
       .replace(/\*/g, "contract-fallback");
-    for (const path of [pattern, pathname, pathname === "/" ? "/" : `${pathname}/`]) {
-      assert.equal(
-        shellInlinePresentationForPath(path),
-        SHELL_INLINE_PRESENTATION.EDGE_CAPABLE,
-        path,
-      );
-    }
+    assert.equal(
+      presentation.shellPresentationForPath(pathname),
+      pathname === "/athletes"
+        ? presentation.SHELL_PRESENTATION.MEDIA_FIRST
+        : presentation.SHELL_PRESENTATION.STANDARD,
+    );
   }
   assert.equal(
-    shellInlinePresentationForPath("/__shell_contract_unregistered__"),
-    SHELL_INLINE_PRESENTATION.EDGE_CAPABLE,
+    presentation.shellPresentationForPath("/athletes/"),
+    presentation.SHELL_PRESENTATION.MEDIA_FIRST,
   );
 });
 
-test("inline presentation composes globally without changing the vertical axis", () => {
-  assert.match(
-    shell,
-    /const shellInlinePresentation = shellInlinePresentationForPath\(location\.pathname\)/,
-  );
-  assert.match(shell, /const shellPresentation = shellPresentationForPath\(location\.pathname\)/);
-  assert.match(
-    shell,
-    /foundation-shell--\$\{shellPresentation\} foundation-shell--inline-\$\{shellInlinePresentation\}/,
-  );
-  assert.match(router, /<HoomaShell runtime=\{runtime\}>[\s\S]*<Routes>/);
-  assert.doesNotMatch(
-    shellInlinePresentationForPath.toString(),
-    /\b(?:shellPresentationForPath|SHELL_PRESENTATION)\b/,
-  );
-});
-
-test("global horizontal adoption ignores pathname mechanically and retains compatibility definitions", () => {
-  const resolver = shellInlinePresentationForPath.toString();
-  assert.match(resolver, /void pathname/);
-  assert.match(resolver, /return .*EDGE_CAPABLE/);
-  assert.doesNotMatch(resolver, /switch|case|if\s*\(|pathname\s*===|LEGACY/);
-  assert.match(styles, /foundation-shell--inline-legacy/);
+test("repository source and governing documents contain no stale horizontal migration references", () => {
+  const files = execFileSync("git", ["-c", `safe.directory=${process.cwd()}`, "ls-files", "-z"], {
+    encoding: "utf8",
+  }).split("\0");
+  for (const file of files) {
+    // Tests retain negative assertions against removed identifiers as regression guards.
+    if (!file || file.startsWith("tests/") || !/\.(?:[cm]?[jt]sx?|css|md|json|ya?ml)$/.test(file))
+      continue;
+    assert.doesNotMatch(
+      readFileSync(file, "utf8"),
+      /--shell-inline|foundation-shell--inline-|SHELL_INLINE_PRESENTATION|ShellInlinePresentation|shellInlinePresentation/,
+      file,
+    );
+  }
 });

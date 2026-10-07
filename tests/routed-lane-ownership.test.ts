@@ -155,7 +155,7 @@ function inspectExpression(node: ts.Node): void {
       className.text === "status"
     ) {
       const css = readFileSync("apps/web/src/styles.css", "utf8");
-      assert.match(css, /\.foundation-shell--inline-edge-capable > \.shell-content > \.status/);
+      assert.match(css, /\.foundation-shell > \.shell-content > \.status/);
       assert.match(css, /margin-left:\s*max\(\s*var\(--hooma-ui-lane-content-inline\)/);
       owners.add("content");
       return;

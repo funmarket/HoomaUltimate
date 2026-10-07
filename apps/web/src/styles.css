@@ -1,5 +1,4 @@
 :root {
-  --shell-inline: clamp(12px, 6vw, 24px);
   font-family: var(--font-ui);
 }
 
@@ -41,38 +40,8 @@ body {
   gap: 32px;
 }
 
-.foundation-shell--inline-legacy > .shell-content,
-.foundation-shell--inline-legacy > .status {
-  margin-left: max(
-    var(--shell-inline),
-    calc(var(--hooma-safe-area-inset-left) + 12px),
-    calc(var(--hooma-content-safe-area-inset-left) + 12px)
-  );
-  margin-right: max(
-    var(--shell-inline),
-    calc(var(--hooma-safe-area-inset-right) + 12px),
-    calc(var(--hooma-content-safe-area-inset-right) + 12px)
-  );
-}
-
-.foundation-shell--inline-edge-capable > .shell-content {
+.foundation-shell > .shell-content {
   margin-inline: 0;
-}
-
-@media (max-width: 520px) {
-  .foundation-shell--inline-legacy > .shell-content,
-  .foundation-shell--inline-legacy > .status {
-    margin-left: max(
-      var(--shell-inline),
-      calc(var(--hooma-safe-area-inset-left) + 8px),
-      calc(var(--hooma-content-safe-area-inset-left) + 8px)
-    );
-    margin-right: max(
-      var(--shell-inline),
-      calc(var(--hooma-safe-area-inset-right) + 8px),
-      calc(var(--hooma-content-safe-area-inset-right) + 8px)
-    );
-  }
 }
 
 .hooma-lane--media {
@@ -131,7 +100,7 @@ body {
   );
 }
 
-.foundation-shell--inline-edge-capable > .shell-content > .status {
+.foundation-shell > .shell-content > .status {
   margin-left: max(
     var(--hooma-ui-lane-content-inline),
     calc(var(--hooma-safe-area-inset-left) + var(--hooma-ui-lane-content-inline)),

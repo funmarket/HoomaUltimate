@@ -23,19 +23,13 @@ test("legacy global CSS no longer owns the application color scheme", async () =
 
   assert.doesNotMatch(root, /color\s*:/);
   assert.doesNotMatch(root, /background\s*:/);
-  assert.match(root, /--shell-inline:\s*clamp\(12px, 6vw, 24px\)/);
+  assert.doesNotMatch(css, /--shell-inline|foundation-shell--inline-/);
   assert.match(css, /\.panel\s*\{[\s\S]*border:\s*1px solid var\(--app-line-strong\)/);
   assert.match(css, /\.panel\s*\{[\s\S]*background:\s*var\(--app-surface\)/);
   assert.doesNotMatch(css, /padding:\s*48px 24px/);
   const baseShell = css.match(/(?:^|\})\s*\.foundation-shell\s*\{([^{}]*)\}/)?.[1] ?? "";
-  const legacyContent =
-    css.match(/\.foundation-shell--inline-legacy > \.shell-content\s*,[\s\S]*?\{([^{}]*)\}/)?.[1] ??
-    "";
-
   assert.match(baseShell, /padding:\s*0 0 48px/);
   assert.doesNotMatch(baseShell, /--shell-inline/);
-  assert.doesNotMatch(css, /\.foundation-shell--inline-legacy\s*\{/);
-  assert.match(legacyContent, /margin-left:\s*max\(\s*var\(--shell-inline\)/);
 });
 
 test("account styles map to app semantics instead of declaring another light palette", async () => {
