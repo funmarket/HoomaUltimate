@@ -342,7 +342,7 @@ export function PlayPage() {
 
   return (
     <section className="play-page">
-      <div className="hooma-lane--media">
+      <div className="hooma-lane--content">
         <PlayHero />
       </div>
 
