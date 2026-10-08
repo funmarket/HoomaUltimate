@@ -68,70 +68,89 @@ export function GearUpProductDetailPage({ productId }: { readonly productId: str
     };
   }, [api, productId]);
 
-  if (loading) return <p className="status">Loading product…</p>;
-  if (error) return <p className="error">{error}</p>;
-  if (!product || !shop) return <p className="error">Gear Up product not found.</p>;
+  if (loading)
+    return (
+      <div className="hooma-lane--content">
+        <p className="status">Loading product…</p>
+      </div>
+    );
+  if (error)
+    return (
+      <div className="hooma-lane--content">
+        <p className="error">{error}</p>
+      </div>
+    );
+  if (!product || !shop)
+    return (
+      <div className="hooma-lane--content">
+        <p className="error">Gear Up product not found.</p>
+      </div>
+    );
 
   const location = [shop.place.houma, shop.place.city].filter(Boolean).join(" · ");
 
   return (
-    <section className="gear-up-product-detail">
-      <a className="gear-up-shop-detail__back" href="/athletes/gear-up">
-        ← Back to Products
-      </a>
+    <div className="hooma-lane--content">
+      <section className="gear-up-product-detail">
+        <a className="gear-up-shop-detail__back" href="/athletes/gear-up">
+          ← Back to Products
+        </a>
 
-      <div className="gear-up-product-detail__layout">
-        <section className="gear-up-product-detail__media" aria-label={`${product.title} photos`}>
-          <div className="gear-up-product-detail__image">
-            {imageUrls[activeImage] ? (
-              <img src={imageUrls[activeImage]} alt={product.title} />
-            ) : (
-              <span>HOOMA</span>
-            )}
-            {product.featuredAt ? <strong>Featured</strong> : null}
-          </div>
-          {imageUrls.length > 1 ? (
-            <div className="gear-up-product-detail__thumbs">
-              {imageUrls.map((url, index) => (
-                <button
-                  type="button"
-                  key={url}
-                  className={index === activeImage ? "is-active" : ""}
-                  aria-label={`Show product photo ${index + 1}`}
-                  onClick={() => setActiveImage(index)}
-                >
-                  <img src={url} alt="" />
-                </button>
-              ))}
+        <div className="gear-up-product-detail__layout">
+          <section className="gear-up-product-detail__media" aria-label={`${product.title} photos`}>
+            <div className="gear-up-product-detail__image">
+              {imageUrls[activeImage] ? (
+                <img src={imageUrls[activeImage]} alt={product.title} />
+              ) : (
+                <span>HOOMA</span>
+              )}
+              {product.featuredAt ? <strong>Featured</strong> : null}
             </div>
-          ) : null}
-        </section>
+            {imageUrls.length > 1 ? (
+              <div className="gear-up-product-detail__thumbs">
+                {imageUrls.map((url, index) => (
+                  <button
+                    type="button"
+                    key={url}
+                    className={index === activeImage ? "is-active" : ""}
+                    aria-label={`Show product photo ${index + 1}`}
+                    onClick={() => setActiveImage(index)}
+                  >
+                    <img src={url} alt="" />
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </section>
 
-        <section className="gear-up-product-detail__info">
-          <div className="gear-up-product-detail__shop">
-            <strong>{shop.place.name}</strong>
-            <span>{location || shop.place.address}</span>
-          </div>
+          <section className="gear-up-product-detail__info">
+            <div className="gear-up-product-detail__shop">
+              <strong>{shop.place.name}</strong>
+              <span>{location || shop.place.address}</span>
+            </div>
 
-          {product.brand ? <p className="gear-up-product-detail__brand">{product.brand}</p> : null}
-          <h1>{product.title}</h1>
-          <strong className="gear-up-product-detail__price">{priceLabel(product)}</strong>
+            {product.brand ? (
+              <p className="gear-up-product-detail__brand">{product.brand}</p>
+            ) : null}
+            <h1>{product.title}</h1>
+            <strong className="gear-up-product-detail__price">{priceLabel(product)}</strong>
 
-          <div className="gear-up-product-detail__tags">
-            {product.sports.map((sport) => (
-              <span key={sport}>{GEAR_UP_SPORT_LABELS[sport]}</span>
-            ))}
-            <span>{GEAR_UP_PRODUCT_CATEGORY_LABELS[product.category]}</span>
-          </div>
+            <div className="gear-up-product-detail__tags">
+              {product.sports.map((sport) => (
+                <span key={sport}>{GEAR_UP_SPORT_LABELS[sport]}</span>
+              ))}
+              <span>{GEAR_UP_PRODUCT_CATEGORY_LABELS[product.category]}</span>
+            </div>
 
-          <p className="gear-up-product-detail__description">{product.description}</p>
+            <p className="gear-up-product-detail__description">{product.description}</p>
 
-          <div className="gear-up-product-detail__actions">
-            <a href={`/athletes/gear-up/shops/${shop.place.id}`}>View Shop</a>
-            {shop.place.phone ? <a href={`tel:${shop.place.phone}`}>Call Shop</a> : null}
-          </div>
-        </section>
-      </div>
-    </section>
+            <div className="gear-up-product-detail__actions">
+              <a href={`/athletes/gear-up/shops/${shop.place.id}`}>View Shop</a>
+              {shop.place.phone ? <a href={`tel:${shop.place.phone}`}>Call Shop</a> : null}
+            </div>
+          </section>
+        </div>
+      </section>
+    </div>
   );
 }

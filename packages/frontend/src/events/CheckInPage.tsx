@@ -67,16 +67,18 @@ export function CheckInPage({ eventId }: { readonly eventId: string }) {
             : "";
 
   return (
-    <section className="panel">
-      <p className="eyebrow">CHECK-IN</p>
-      <h2>Confirm you arrived</h2>
-      <p>Location is optional. RSVP authority is always checked on the server.</p>
-      <button type="button" disabled={loading || !actions?.canCheckIn} onClick={checkIn}>
-        {loading ? "Checking eligibility…" : actions?.attended ? "Checked in" : "Check in"}
-      </button>
-      {unavailable ? <p className="status">{unavailable}</p> : null}
-      {message ? <p className="success">{message}</p> : null}
-      {error ? <p className="error">{error}</p> : null}
-    </section>
+    <div className="hooma-lane--content">
+      <section className="panel">
+        <p className="eyebrow">CHECK-IN</p>
+        <h2>Confirm you arrived</h2>
+        <p>Location is optional. RSVP authority is always checked on the server.</p>
+        <button type="button" disabled={loading || !actions?.canCheckIn} onClick={checkIn}>
+          {loading ? "Checking eligibility…" : actions?.attended ? "Checked in" : "Check in"}
+        </button>
+        {unavailable ? <p className="status">{unavailable}</p> : null}
+        {message ? <p className="success">{message}</p> : null}
+        {error ? <p className="error">{error}</p> : null}
+      </section>
+    </div>
   );
 }

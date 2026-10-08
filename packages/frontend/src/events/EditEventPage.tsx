@@ -85,77 +85,85 @@ export function EditEventPage({ eventId }: { readonly eventId: string }) {
 
   if (!event)
     return error ? (
-      <p className="error">{error}</p>
+      <div className="hooma-lane--content">
+        <p className="error">{error}</p>
+      </div>
     ) : (
-      <p className="status">Loading Event settings…</p>
+      <div className="hooma-lane--content">
+        <p className="status">Loading Event settings…</p>
+      </div>
     );
 
   if (event.type === "PLAY") {
     return (
-      <section className="watch-event-form-page">
-        <a className="place-back-link" href={`/events/${event.id}`}>
-          ← Match
-        </a>
-        <header className="watch-event-form-page__header">
-          <p className="eyebrow">PLAY MATCH SETTINGS</p>
-          <h1>Edit Match</h1>
-          <p>Control who can discover this match without changing community privacy.</p>
-        </header>
-        <form className="event-form panel" onSubmit={savePlay}>
-          <PlayVisibilityField
-            defaultValue={event.playDetails?.visibility ?? "OPEN"}
-            disabled={pending || deleting}
-          />
-          <button
-            className="event-form__primary-action"
-            type="submit"
-            disabled={pending || deleting}
-          >
-            {pending ? "Saving…" : "Save Match"}
-          </button>
-        </form>
-        {notice ? <p className="success">{notice}</p> : null}
-        {error ? <p className="error">{error}</p> : null}
-        <section className="entity-danger-zone event-danger-zone">
-          <p className="eyebrow">EVENT MANAGEMENT</p>
-          <h3>Delete Match</h3>
-          <p>Remove this match from active Play surfaces while keeping its historical records.</p>
-          <button type="button" disabled={deleting || pending} onClick={() => void deleteEvent()}>
-            {deleting ? "Deleting…" : "Delete Match"}
-          </button>
+      <div className="hooma-lane--content">
+        <section className="watch-event-form-page">
+          <a className="place-back-link" href={`/events/${event.id}`}>
+            ← Match
+          </a>
+          <header className="watch-event-form-page__header">
+            <p className="eyebrow">PLAY MATCH SETTINGS</p>
+            <h1>Edit Match</h1>
+            <p>Control who can discover this match without changing community privacy.</p>
+          </header>
+          <form className="event-form panel" onSubmit={savePlay}>
+            <PlayVisibilityField
+              defaultValue={event.playDetails?.visibility ?? "OPEN"}
+              disabled={pending || deleting}
+            />
+            <button
+              className="event-form__primary-action"
+              type="submit"
+              disabled={pending || deleting}
+            >
+              {pending ? "Saving…" : "Save Match"}
+            </button>
+          </form>
+          {notice ? <p className="success">{notice}</p> : null}
+          {error ? <p className="error">{error}</p> : null}
+          <section className="entity-danger-zone event-danger-zone">
+            <p className="eyebrow">EVENT MANAGEMENT</p>
+            <h3>Delete Match</h3>
+            <p>Remove this match from active Play surfaces while keeping its historical records.</p>
+            <button type="button" disabled={deleting || pending} onClick={() => void deleteEvent()}>
+              {deleting ? "Deleting…" : "Delete Match"}
+            </button>
+          </section>
         </section>
-      </section>
+      </div>
     );
   }
 
   return (
-    <section className="watch-event-form-page">
-      <a className="place-back-link" href={`/events/${event.id}`}>
-        ← Event
-      </a>
-      <header className="watch-event-form-page__header">
-        <p className="eyebrow">WATCH EVENT SETTINGS</p>
-        <h1>Edit Event</h1>
-        <p>Update this Watch event without changing its published event type.</p>
-      </header>
-      <WatchEventForm
-        places={[]}
-        initialEvent={event}
-        lockPlace
-        submitLabel="Save Event"
-        pending={pending}
-        onSubmit={saveWatch}
-      />
-      {notice ? <p className="success">{notice}</p> : null}
-      {error ? <p className="error">{error}</p> : null}
-      <section className="entity-danger-zone event-danger-zone">
-        <p className="eyebrow">EVENT MANAGEMENT</p>
-        <h3>Delete Event</h3>
-        <p>Remove this event from active Watch feeds while keeping its historical records.</p>
-        <button type="button" disabled={deleting || pending} onClick={() => void deleteEvent()}>
-          {deleting ? "Deleting…" : "Delete Event"}
-        </button>
+    <div className="hooma-lane--content">
+      <section className="watch-event-form-page">
+        <a className="place-back-link" href={`/events/${event.id}`}>
+          ← Event
+        </a>
+        <header className="watch-event-form-page__header">
+          <p className="eyebrow">WATCH EVENT SETTINGS</p>
+          <h1>Edit Event</h1>
+          <p>Update this Watch event without changing its published event type.</p>
+        </header>
+        <WatchEventForm
+          places={[]}
+          initialEvent={event}
+          lockPlace
+          submitLabel="Save Event"
+          pending={pending}
+          onSubmit={saveWatch}
+        />
+        {notice ? <p className="success">{notice}</p> : null}
+        {error ? <p className="error">{error}</p> : null}
+        <section className="entity-danger-zone event-danger-zone">
+          <p className="eyebrow">EVENT MANAGEMENT</p>
+          <h3>Delete Event</h3>
+          <p>Remove this event from active Watch feeds while keeping its historical records.</p>
+          <button type="button" disabled={deleting || pending} onClick={() => void deleteEvent()}>
+            {deleting ? "Deleting…" : "Delete Event"}
+          </button>
+        </section>
       </section>
-    </section>
+    </div>
   );
 }

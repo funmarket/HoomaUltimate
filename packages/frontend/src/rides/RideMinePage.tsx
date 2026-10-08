@@ -65,118 +65,120 @@ export function RideMinePage() {
   }, [api, protectedError]);
 
   return (
-    <section className="ride-page ride-mine">
-      <header className="ride-section-header panel">
-        <p className="eyebrow">MY RIDES</p>
-        <h1>Your Ride activity</h1>
-        <p>Your offers, requests and trips — all in one place.</p>
-      </header>
+    <div className="hooma-lane--content">
+      <section className="ride-page ride-mine">
+        <header className="ride-section-header panel">
+          <p className="eyebrow">MY RIDES</p>
+          <h1>Your Ride activity</h1>
+          <p>Your offers, requests and trips — all in one place.</p>
+        </header>
 
-      {loading ? <p className="ride-state panel">Loading My Rides...</p> : null}
-      {error ? <p className="ride-state panel error">{error}</p> : null}
+        {loading ? <p className="ride-state panel">Loading My Rides...</p> : null}
+        {error ? <p className="ride-state panel error">{error}</p> : null}
 
-      {!loading && !error ? (
-        <>
-          <section className="ride-home-panel panel">
-            <RideMineHeading title="My Offers" count={mine.offers.items.length} />
-            <div className="ride-recent-list">
-              {mine.offers.items.map((offer) => (
-                <article className="ride-recent-card ride-recent-card--owned" key={offer.id}>
-                  <span className="ride-recent-card__avatar" aria-hidden="true">
-                    <RideHistoryIcon />
-                  </span>
-                  <span className="ride-recent-card__body">
-                    <strong>{destinationLabel(offer.destination)}</strong>
-                    <span>
-                      {rideContextLabel(offer.context)} · {offer.status} ·{" "}
-                      {formatRideTime(offer.departureAt)}
+        {!loading && !error ? (
+          <>
+            <section className="ride-home-panel panel">
+              <RideMineHeading title="My Offers" count={mine.offers.items.length} />
+              <div className="ride-recent-list">
+                {mine.offers.items.map((offer) => (
+                  <article className="ride-recent-card ride-recent-card--owned" key={offer.id}>
+                    <span className="ride-recent-card__avatar" aria-hidden="true">
+                      <RideHistoryIcon />
                     </span>
-                    <span>
-                      {offer.availableSeats}/{offer.totalSeats} seats open from{" "}
-                      {offer.originAreaLabel}
-                    </span>
-                    <span className="ride-recent-card__meta">
-                      <RideCompensationBadge terms={offer.compensationTerms} />
-                      <span>{offer.participationCount} passenger updates</span>
-                    </span>
-                    <span className="ride-recent-card__actions">
-                      <a className="ride-link" href={`/rides/offers/${offer.id}`}>
-                        Manage offer
-                      </a>
-                      {canEditOffer(offer.status) ? (
-                        <a className="ride-link" href={`/rides/offers/${offer.id}/edit`}>
-                          Edit offer
+                    <span className="ride-recent-card__body">
+                      <strong>{destinationLabel(offer.destination)}</strong>
+                      <span>
+                        {rideContextLabel(offer.context)} · {offer.status} ·{" "}
+                        {formatRideTime(offer.departureAt)}
+                      </span>
+                      <span>
+                        {offer.availableSeats}/{offer.totalSeats} seats open from{" "}
+                        {offer.originAreaLabel}
+                      </span>
+                      <span className="ride-recent-card__meta">
+                        <RideCompensationBadge terms={offer.compensationTerms} />
+                        <span>{offer.participationCount} passenger updates</span>
+                      </span>
+                      <span className="ride-recent-card__actions">
+                        <a className="ride-link" href={`/rides/offers/${offer.id}`}>
+                          Manage offer
                         </a>
-                      ) : (
-                        <span className="muted">Read-only</span>
-                      )}
+                        {canEditOffer(offer.status) ? (
+                          <a className="ride-link" href={`/rides/offers/${offer.id}/edit`}>
+                            Edit offer
+                          </a>
+                        ) : (
+                          <span className="muted">Read-only</span>
+                        )}
+                      </span>
                     </span>
-                  </span>
-                </article>
-              ))}
-            </div>
-            <RideMineEmpty show={!mine.offers.items.length} label="No Ride offers yet." />
-            <RideMineMore nextCursor={mine.offers.nextCursor} />
-          </section>
+                  </article>
+                ))}
+              </div>
+              <RideMineEmpty show={!mine.offers.items.length} label="No Ride offers yet." />
+              <RideMineMore nextCursor={mine.offers.nextCursor} />
+            </section>
 
-          <section className="ride-home-panel panel">
-            <RideMineHeading title="My Requests" count={mine.requests.items.length} />
-            <div className="ride-recent-list">
-              {mine.requests.items.map((request) => (
-                <article className="ride-recent-card ride-recent-card--request" key={request.id}>
-                  <span className="ride-recent-card__avatar" aria-hidden="true">
-                    <RideHistoryIcon />
-                  </span>
-                  <span className="ride-recent-card__body">
-                    <strong>{destinationLabel(request.destination)}</strong>
-                    <span>
-                      {rideContextLabel(request.context)} · {request.status} ·{" "}
-                      {formatRideTime(request.desiredDepartureAt)}
+            <section className="ride-home-panel panel">
+              <RideMineHeading title="My Requests" count={mine.requests.items.length} />
+              <div className="ride-recent-list">
+                {mine.requests.items.map((request) => (
+                  <article className="ride-recent-card ride-recent-card--request" key={request.id}>
+                    <span className="ride-recent-card__avatar" aria-hidden="true">
+                      <RideHistoryIcon />
                     </span>
-                    <span>
-                      {request.passengerCount} passenger{request.passengerCount === 1 ? "" : "s"}{" "}
-                      from {request.pickupAreaLabel}
+                    <span className="ride-recent-card__body">
+                      <strong>{destinationLabel(request.destination)}</strong>
+                      <span>
+                        {rideContextLabel(request.context)} · {request.status} ·{" "}
+                        {formatRideTime(request.desiredDepartureAt)}
+                      </span>
+                      <span>
+                        {request.passengerCount} passenger{request.passengerCount === 1 ? "" : "s"}{" "}
+                        from {request.pickupAreaLabel}
+                      </span>
+                      <span>Shared with: {requestAudienceLabel(request)}</span>
+                      <span className="ride-recent-card__meta">
+                        <RideCompensationBadge terms={request.compensationTerms} mode="request" />
+                      </span>
+                      <span className="ride-recent-card__actions">
+                        {canEditRequest(request.status) ? (
+                          <a className="ride-link" href={`/rides/requests/${request.id}/edit`}>
+                            Edit request
+                          </a>
+                        ) : (
+                          <span className="muted">Read-only</span>
+                        )}
+                      </span>
                     </span>
-                    <span>Shared with: {requestAudienceLabel(request)}</span>
-                    <span className="ride-recent-card__meta">
-                      <RideCompensationBadge terms={request.compensationTerms} mode="request" />
-                    </span>
-                    <span className="ride-recent-card__actions">
-                      {canEditRequest(request.status) ? (
-                        <a className="ride-link" href={`/rides/requests/${request.id}/edit`}>
-                          Edit request
-                        </a>
-                      ) : (
-                        <span className="muted">Read-only</span>
-                      )}
-                    </span>
-                  </span>
-                </article>
-              ))}
-            </div>
-            <RideMineEmpty show={!mine.requests.items.length} label="No Ride requests yet." />
-            <RideMineMore nextCursor={mine.requests.nextCursor} />
-          </section>
+                  </article>
+                ))}
+              </div>
+              <RideMineEmpty show={!mine.requests.items.length} label="No Ride requests yet." />
+              <RideMineMore nextCursor={mine.requests.nextCursor} />
+            </section>
 
-          <section className="ride-home-panel panel">
-            <RideMineHeading
-              title="My Trips / Participations"
-              count={mine.participations.items.length}
-            />
-            <div className="ride-recent-list">
-              {mine.participations.items.map((participation) => (
-                <PassengerTripCard participation={participation} key={participation.id} />
-              ))}
-            </div>
-            <RideMineEmpty
-              show={!mine.participations.items.length}
-              label="No passenger trips yet."
-            />
-            <RideMineMore nextCursor={mine.participations.nextCursor} />
-          </section>
-        </>
-      ) : null}
-    </section>
+            <section className="ride-home-panel panel">
+              <RideMineHeading
+                title="My Trips / Participations"
+                count={mine.participations.items.length}
+              />
+              <div className="ride-recent-list">
+                {mine.participations.items.map((participation) => (
+                  <PassengerTripCard participation={participation} key={participation.id} />
+                ))}
+              </div>
+              <RideMineEmpty
+                show={!mine.participations.items.length}
+                label="No passenger trips yet."
+              />
+              <RideMineMore nextCursor={mine.participations.nextCursor} />
+            </section>
+          </>
+        ) : null}
+      </section>
+    </div>
   );
 }
 

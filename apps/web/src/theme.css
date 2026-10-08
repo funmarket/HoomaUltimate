@@ -35,6 +35,10 @@
   --hooma-ui-eyebrow: 12px;
   --hooma-ui-readable-min: 12px;
   --hooma-ui-page-inline: 16px;
+  --hooma-ui-lane-media-inline: 8px;
+  --hooma-ui-lane-nav-inline: 8px;
+  --hooma-ui-lane-content-inline: var(--hooma-ui-page-inline);
+  --hooma-ui-lane-bleed-inline: 0px;
   --hooma-ui-card-padding: 16px;
   --hooma-ui-card-gap: 16px;
   --hooma-ui-section-gap: 20px;

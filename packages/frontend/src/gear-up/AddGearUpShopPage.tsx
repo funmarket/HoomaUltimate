@@ -145,25 +145,33 @@ export function AddGearUpShopPage() {
   }
 
   if (accountState === "loading") {
-    return <p className="status">Loading Gear Up Store setup…</p>;
+    return (
+      <div className="hooma-lane--content">
+        <p className="status">Loading Gear Up Store setup…</p>
+      </div>
+    );
   }
 
   if (accountState === "signed-out") {
     const href = authenticationHref("/athletes/gear-up/add-store");
     return (
       <section className="gear-up-page gear-up-add-store">
-        <AthletesHubTabs active="gear-up" />
-        <section className="gear-up-empty-state">
-          <p className="gear-up-hero__eyebrow">ADD STORE</p>
-          <h1>Sign in to add a Gear Up Store.</h1>
-          <p>An HOOMA account is required before a Store can be submitted for review.</p>
-          {href ? (
-            <a className="gear-up-add-store-link" href={href}>
-              Sign in to continue
-            </a>
-          ) : null}
-          {accountError ? <p className="error">{accountError}</p> : null}
-        </section>
+        <div className="hooma-lane--nav">
+          <AthletesHubTabs active="gear-up" />
+        </div>
+        <div className="hooma-lane--content">
+          <section className="gear-up-empty-state">
+            <p className="gear-up-hero__eyebrow">ADD STORE</p>
+            <h1>Sign in to add a Gear Up Store.</h1>
+            <p>An HOOMA account is required before a Store can be submitted for review.</p>
+            {href ? (
+              <a className="gear-up-add-store-link" href={href}>
+                Sign in to continue
+              </a>
+            ) : null}
+            {accountError ? <p className="error">{accountError}</p> : null}
+          </section>
+        </div>
       </section>
     );
   }
@@ -181,22 +189,26 @@ export function AddGearUpShopPage() {
 
     return (
       <section className="gear-up-page gear-up-add-store">
-        <AthletesHubTabs active="gear-up" />
-        <section className="gear-up-empty-state">
-          <p className="gear-up-hero__eyebrow">{existing ? "EXISTING PLACE" : "SUBMITTED"}</p>
-          <h1>{existing ? "No duplicate created" : "Store submitted"}</h1>
-          <p>
-            {existing
-              ? "HOOMA kept the existing canonical Place and attached the Gear Up submission to it."
-              : "Your Store is now in the Gear Up review flow."}
-          </p>
-          <p>{REVIEW_NOTE}</p>
-          {statusNote ? <p className="muted">{statusNote}</p> : null}
-          <a className="gear-up-add-store-link" href="/athletes/gear-up">
-            Back to Gear Up
-          </a>
-          <span className="gear-up-visually-hidden">Store Place ID: {placeId}</span>
-        </section>
+        <div className="hooma-lane--nav">
+          <AthletesHubTabs active="gear-up" />
+        </div>
+        <div className="hooma-lane--content">
+          <section className="gear-up-empty-state">
+            <p className="gear-up-hero__eyebrow">{existing ? "EXISTING PLACE" : "SUBMITTED"}</p>
+            <h1>{existing ? "No duplicate created" : "Store submitted"}</h1>
+            <p>
+              {existing
+                ? "HOOMA kept the existing canonical Place and attached the Gear Up submission to it."
+                : "Your Store is now in the Gear Up review flow."}
+            </p>
+            <p>{REVIEW_NOTE}</p>
+            {statusNote ? <p className="muted">{statusNote}</p> : null}
+            <a className="gear-up-add-store-link" href="/athletes/gear-up">
+              Back to Gear Up
+            </a>
+            <span className="gear-up-visually-hidden">Store Place ID: {placeId}</span>
+          </section>
+        </div>
       </section>
     );
   }
@@ -295,53 +307,65 @@ export function AddGearUpShopPage() {
 
   return (
     <section className="gear-up-page gear-up-add-store">
-      <AthletesHubTabs active="gear-up" />
+      <div className="hooma-lane--nav">
+        <AthletesHubTabs active="gear-up" />
+      </div>
 
-      <header className="gear-up-hero">
-        <p className="gear-up-hero__eyebrow">ADD STORE</p>
-        <h1 className="gear-up-page__title">Add a Store to Gear Up.</h1>
-        <p className="gear-up-hero__description">
-          Keep one canonical HOOMA Place while adding the Store details Gear Up needs.
-        </p>
-      </header>
+      <div className="hooma-lane--content">
+        <header className="gear-up-hero">
+          <p className="gear-up-hero__eyebrow">ADD STORE</p>
+          <h1 className="gear-up-page__title">Add a Store to Gear Up.</h1>
+          <p className="gear-up-hero__description">
+            Keep one canonical HOOMA Place while adding the Store details Gear Up needs.
+          </p>
+        </header>
+      </div>
 
-      <section className="gear-up-add-store__source">
-        <p className="gear-up-hero__eyebrow">WHO IS ADDING THIS STORE?</p>
-        <div
-          className="place-source-tabs"
-          role="tablist"
-          aria-label="Gear Up Store submission source"
-        >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={origin === "OWNER"}
-            className={sourceTabClass(origin === "OWNER")}
-            onClick={() => setOrigin("OWNER")}
+      <div className="hooma-lane--content">
+        <section className="gear-up-add-store__source">
+          <p className="gear-up-hero__eyebrow">WHO IS ADDING THIS STORE?</p>
+          <div
+            className="place-source-tabs"
+            role="tablist"
+            aria-label="Gear Up Store submission source"
           >
-            By Owner
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={origin === "FANHUB"}
-            className={sourceTabClass(origin === "FANHUB")}
-            onClick={() => setOrigin("FANHUB")}
-          >
-            FanHub
-          </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={origin === "OWNER"}
+              className={sourceTabClass(origin === "OWNER")}
+              onClick={() => setOrigin("OWNER")}
+            >
+              By Owner
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={origin === "FANHUB"}
+              className={sourceTabClass(origin === "FANHUB")}
+              onClick={() => setOrigin("FANHUB")}
+            >
+              FanHub
+            </button>
+          </div>
+          <p className="gear-up-add-store__note">{origin === "OWNER" ? OWNER_NOTE : FANHUB_NOTE}</p>
+        </section>
+      </div>
+
+      <div className="hooma-lane--content">
+        <PlaceForm
+          submitLabel="Submit Store"
+          pending={pending}
+          showMenu={false}
+          extraSection={shopDetails}
+          onSubmit={submit}
+        />
+      </div>
+      {error ? (
+        <div className="hooma-lane--content">
+          <p className="error">{error}</p>
         </div>
-        <p className="gear-up-add-store__note">{origin === "OWNER" ? OWNER_NOTE : FANHUB_NOTE}</p>
-      </section>
-
-      <PlaceForm
-        submitLabel="Submit Store"
-        pending={pending}
-        showMenu={false}
-        extraSection={shopDetails}
-        onSubmit={submit}
-      />
-      {error ? <p className="error">{error}</p> : null}
+      ) : null}
     </section>
   );
 }

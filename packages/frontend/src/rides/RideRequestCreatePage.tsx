@@ -269,240 +269,254 @@ export function RideRequestCreatePage({ requestId }: { readonly requestId?: stri
   }
 
   if (editing && loadingExisting) {
-    return <p className="ride-state panel">Loading your Ride request...</p>;
+    return (
+      <div className="hooma-lane--content">
+        <p className="ride-state panel">Loading your Ride request...</p>
+      </div>
+    );
   }
 
   if (editing && !existingRequest && error) {
-    return <p className="ride-state panel error">{error}</p>;
+    return (
+      <div className="hooma-lane--content">
+        <p className="ride-state panel error">{error}</p>
+      </div>
+    );
   }
 
   return (
-    <section className="ride-page ride-form-page">
-      <RideSectionHeader
-        eyebrow={editing ? "MY REQUESTS" : "TAKE ME TO THE GAME"}
-        title={editing ? "Edit Ride request" : "Request a Ride"}
-        body={
-          editing
-            ? "Update the same canonical RideRequest. Its My Rides ownership and HOOMA NOW projections follow the saved Ride state."
-            : "Create a real RideRequest. This does not create fake matching, fare collection, drivers, or bookings."
-        }
-        actionHref={editing ? "/rides/mine" : `/rides/offers${contextQuery(rideContext)}`}
-        actionLabel={editing ? "Back to My Rides" : "Browse offers"}
-      />
+    <div className="hooma-lane--content">
+      <section className="ride-page ride-form-page">
+        <RideSectionHeader
+          eyebrow={editing ? "MY REQUESTS" : "TAKE ME TO THE GAME"}
+          title={editing ? "Edit Ride request" : "Request a Ride"}
+          body={
+            editing
+              ? "Update the same canonical RideRequest. Its My Rides ownership and HOOMA NOW projections follow the saved Ride state."
+              : "Create a real RideRequest. This does not create fake matching, fare collection, drivers, or bookings."
+          }
+          actionHref={editing ? "/rides/mine" : `/rides/offers${contextQuery(rideContext)}`}
+          actionLabel={editing ? "Back to My Rides" : "Browse offers"}
+        />
 
-      {readOnly ? (
-        <p className="ride-state panel">
-          This Ride request is {existingRequest?.status.toLowerCase()} and is read-only.
-        </p>
-      ) : null}
-
-      {savedRequest ? (
-        <section className="ride-created panel">
-          <p className="eyebrow">{editing ? "RIDE REQUEST UPDATED" : "RIDE REQUEST CREATED"}</p>
-          <h2>{destinationLabel(savedRequest.destination)}</h2>
-          <RideCompensationBadge terms={savedRequest.compensationTerms} mode="request" />
-          <p>{audienceSuccessMessage(savedRequest, editing)}</p>
-          <p>
-            {editing
-              ? "This is still the same RideRequest. Discovery and HOOMA NOW read the updated canonical record."
-              : `One canonical RideRequest is live from ${savedRequest.pickupAreaLabel}. Matching remains a later Ride-owned capability.`}
+        {readOnly ? (
+          <p className="ride-state panel">
+            This Ride request is {existingRequest?.status.toLowerCase()} and is read-only.
           </p>
-          <div className="ride-actions">
-            <a className="ride-button ride-button--primary" href="/rides/mine">
-              Back to My Rides
-            </a>
-            {!editing ? (
-              <a className="ride-button" href={`/rides/request${contextQuery(rideContext)}`}>
-                Create another
-              </a>
-            ) : null}
-          </div>
-        </section>
-      ) : readOnly ? null : (
-        <form className="ride-form panel" onSubmit={submit}>
-          <section className="ride-form-section">
-            <p className="eyebrow">TRIP</p>
-            <RideContextSelector value={rideContext} onChange={setRideContext} />
-            <RideDestinationFields
-              context={rideContext}
-              destination={destination}
-              onChange={setDestination}
-            />
-            <label className="ride-field">
-              <span>Pickup area</span>
-              <input
-                value={pickupAreaLabel}
-                onChange={(event) => setPickupAreaLabel(event.target.value)}
-                placeholder="Public area only, not an exact private address"
-                required
-              />
-            </label>
-            <label className="ride-field">
-              <span>Desired departure</span>
-              <input
-                type="datetime-local"
-                value={desiredDepartureAt}
-                onChange={(event) => setDesiredDepartureAt(event.target.value)}
-                required
-              />
-            </label>
-          </section>
-          <section className="ride-form-section">
-            <p className="eyebrow">SEATS</p>
-            <label className="ride-field">
-              <span>Passengers</span>
-              <input
-                type="number"
-                min="1"
-                inputMode="numeric"
-                value={passengerCount}
-                onChange={(event) => setPassengerCount(event.target.value)}
-                required
-              />
-            </label>
-          </section>
-          <RideCompensationFields mode="request" value={compensation} onChange={setCompensation} />
-          <section className="ride-form-section ride-share-with">
-            <div className="ride-form-section__header">
-              <p className="eyebrow">SHARE WITH</p>
-            </div>
-            <fieldset className="ride-audience-choice" aria-describedby="ride-audience-help">
-              <legend>Who should see this Ride request?</legend>
-              {editing && audienceChoice === "SAVED" && existingRequest ? (
-                <p className="ride-audience-current">
-                  Current saved audience: <strong>{savedAudienceLabel(existingRequest)}</strong>. It
-                  stays unchanged unless you choose a new option below.
-                </p>
-              ) : null}
-              <label className={audienceChoice === "GLOBAL" ? "is-selected" : ""}>
-                <input
-                  type="radio"
-                  name="ride-request-audience"
-                  value="GLOBAL"
-                  checked={audienceChoice === "GLOBAL"}
-                  onChange={() => chooseAudience("GLOBAL")}
-                />
-                <span>
-                  <strong>Everyone</strong>
-                  <small>Visible in normal Ride request discovery.</small>
-                </span>
-              </label>
-              <label
-                className={audienceChoice === "ONE" ? "is-selected" : ""}
-                aria-disabled={!hasCommunityMemberships}
-              >
-                <input
-                  type="radio"
-                  name="ride-request-audience"
-                  value="ONE"
-                  checked={audienceChoice === "ONE"}
-                  disabled={!hasCommunityMemberships}
-                  onChange={() => chooseAudience("ONE")}
-                />
-                <span>
-                  <strong>One of my HOOMAs</strong>
-                  <small>Only members of the HOOMA you choose can see it.</small>
-                </span>
-              </label>
-              <label
-                className={audienceChoice === "ALL_CURRENT" ? "is-selected" : ""}
-                aria-disabled={!hasCommunityMemberships}
-              >
-                <input
-                  type="radio"
-                  name="ride-request-audience"
-                  value="ALL_CURRENT"
-                  checked={audienceChoice === "ALL_CURRENT"}
-                  disabled={!hasCommunityMemberships}
-                  onChange={() => chooseAudience("ALL_CURRENT")}
-                />
-                <span>
-                  <strong>All my HOOMAs</strong>
-                  <small>Share with every HOOMA where you are currently a member.</small>
-                </span>
-              </label>
-            </fieldset>
-            {audienceChoice === "ONE" && hasCommunityMemberships ? (
-              <label className="ride-field ride-community-select">
-                <span>Choose one HOOMA</span>
-                <select
-                  value={selectedCommunityId}
-                  onChange={(event) => {
-                    setSelectedCommunityId(event.target.value);
-                    setAudienceDirty(true);
-                  }}
-                  required
-                >
-                  {memberships.map((community) => (
-                    <option key={community.id} value={community.id}>
-                      {community.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
-            {!loadingMemberships && !hasCommunityMemberships ? (
-              <p className="ride-audience-note" id="ride-audience-help">
-                {communityAudienceCopy}
-              </p>
-            ) : (
-              <p className="ride-audience-note" id="ride-audience-help">
-                All my HOOMAs is resolved by the server when this request is saved.
-              </p>
-            )}
-          </section>
-          <section className="ride-form-section">
-            <p className="eyebrow">DETAILS</p>
-            <label className="ride-field">
-              <span>Request expires</span>
-              <input
-                type="datetime-local"
-                value={expiresAt}
-                onChange={(event) => setExpiresAt(event.target.value)}
-                required
-              />
-            </label>
-            <label className="ride-field">
-              <span>Note</span>
-              <textarea value={note} onChange={(event) => setNote(event.target.value)} rows={3} />
-            </label>
-          </section>
-          {error ? <p className="error">{error}</p> : null}
-          <button
-            className="ride-button ride-button--primary"
-            type="submit"
-            disabled={saving || communityAudienceInvalid}
-          >
-            {saving
-              ? editing
-                ? "Saving..."
-                : "Creating..."
-              : editing
-                ? "Save Ride request"
-                : "Create Ride request"}
-          </button>
-        </form>
-      )}
+        ) : null}
 
-      {!editing ? (
-        <section className="ride-request-preview panel">
-          <p className="eyebrow">PUBLIC RIDE REQUESTS</p>
-          {loadingRequests ? <p className="muted">Loading recent Ride requests...</p> : null}
-          {!loadingRequests && !publicRequests.length ? (
-            <p className="muted">No public Ride requests yet.</p>
-          ) : null}
-          {publicRequests.map((requestItem) => (
-            <article className="ride-request-row" key={requestItem.id}>
-              <strong>{destinationLabel(requestItem.destination)}</strong>
-              <span>
-                {requestItem.pickupAreaLabel} - {requestItem.passengerCount} passenger
-                {requestItem.passengerCount === 1 ? "" : "s"}
-              </span>
-              <RideCompensationBadge terms={requestItem.compensationTerms} mode="request" />
-            </article>
-          ))}
-        </section>
-      ) : null}
-    </section>
+        {savedRequest ? (
+          <section className="ride-created panel">
+            <p className="eyebrow">{editing ? "RIDE REQUEST UPDATED" : "RIDE REQUEST CREATED"}</p>
+            <h2>{destinationLabel(savedRequest.destination)}</h2>
+            <RideCompensationBadge terms={savedRequest.compensationTerms} mode="request" />
+            <p>{audienceSuccessMessage(savedRequest, editing)}</p>
+            <p>
+              {editing
+                ? "This is still the same RideRequest. Discovery and HOOMA NOW read the updated canonical record."
+                : `One canonical RideRequest is live from ${savedRequest.pickupAreaLabel}. Matching remains a later Ride-owned capability.`}
+            </p>
+            <div className="ride-actions">
+              <a className="ride-button ride-button--primary" href="/rides/mine">
+                Back to My Rides
+              </a>
+              {!editing ? (
+                <a className="ride-button" href={`/rides/request${contextQuery(rideContext)}`}>
+                  Create another
+                </a>
+              ) : null}
+            </div>
+          </section>
+        ) : readOnly ? null : (
+          <form className="ride-form panel" onSubmit={submit}>
+            <section className="ride-form-section">
+              <p className="eyebrow">TRIP</p>
+              <RideContextSelector value={rideContext} onChange={setRideContext} />
+              <RideDestinationFields
+                context={rideContext}
+                destination={destination}
+                onChange={setDestination}
+              />
+              <label className="ride-field">
+                <span>Pickup area</span>
+                <input
+                  value={pickupAreaLabel}
+                  onChange={(event) => setPickupAreaLabel(event.target.value)}
+                  placeholder="Public area only, not an exact private address"
+                  required
+                />
+              </label>
+              <label className="ride-field">
+                <span>Desired departure</span>
+                <input
+                  type="datetime-local"
+                  value={desiredDepartureAt}
+                  onChange={(event) => setDesiredDepartureAt(event.target.value)}
+                  required
+                />
+              </label>
+            </section>
+            <section className="ride-form-section">
+              <p className="eyebrow">SEATS</p>
+              <label className="ride-field">
+                <span>Passengers</span>
+                <input
+                  type="number"
+                  min="1"
+                  inputMode="numeric"
+                  value={passengerCount}
+                  onChange={(event) => setPassengerCount(event.target.value)}
+                  required
+                />
+              </label>
+            </section>
+            <RideCompensationFields
+              mode="request"
+              value={compensation}
+              onChange={setCompensation}
+            />
+            <section className="ride-form-section ride-share-with">
+              <div className="ride-form-section__header">
+                <p className="eyebrow">SHARE WITH</p>
+              </div>
+              <fieldset className="ride-audience-choice" aria-describedby="ride-audience-help">
+                <legend>Who should see this Ride request?</legend>
+                {editing && audienceChoice === "SAVED" && existingRequest ? (
+                  <p className="ride-audience-current">
+                    Current saved audience: <strong>{savedAudienceLabel(existingRequest)}</strong>.
+                    It stays unchanged unless you choose a new option below.
+                  </p>
+                ) : null}
+                <label className={audienceChoice === "GLOBAL" ? "is-selected" : ""}>
+                  <input
+                    type="radio"
+                    name="ride-request-audience"
+                    value="GLOBAL"
+                    checked={audienceChoice === "GLOBAL"}
+                    onChange={() => chooseAudience("GLOBAL")}
+                  />
+                  <span>
+                    <strong>Everyone</strong>
+                    <small>Visible in normal Ride request discovery.</small>
+                  </span>
+                </label>
+                <label
+                  className={audienceChoice === "ONE" ? "is-selected" : ""}
+                  aria-disabled={!hasCommunityMemberships}
+                >
+                  <input
+                    type="radio"
+                    name="ride-request-audience"
+                    value="ONE"
+                    checked={audienceChoice === "ONE"}
+                    disabled={!hasCommunityMemberships}
+                    onChange={() => chooseAudience("ONE")}
+                  />
+                  <span>
+                    <strong>One of my HOOMAs</strong>
+                    <small>Only members of the HOOMA you choose can see it.</small>
+                  </span>
+                </label>
+                <label
+                  className={audienceChoice === "ALL_CURRENT" ? "is-selected" : ""}
+                  aria-disabled={!hasCommunityMemberships}
+                >
+                  <input
+                    type="radio"
+                    name="ride-request-audience"
+                    value="ALL_CURRENT"
+                    checked={audienceChoice === "ALL_CURRENT"}
+                    disabled={!hasCommunityMemberships}
+                    onChange={() => chooseAudience("ALL_CURRENT")}
+                  />
+                  <span>
+                    <strong>All my HOOMAs</strong>
+                    <small>Share with every HOOMA where you are currently a member.</small>
+                  </span>
+                </label>
+              </fieldset>
+              {audienceChoice === "ONE" && hasCommunityMemberships ? (
+                <label className="ride-field ride-community-select">
+                  <span>Choose one HOOMA</span>
+                  <select
+                    value={selectedCommunityId}
+                    onChange={(event) => {
+                      setSelectedCommunityId(event.target.value);
+                      setAudienceDirty(true);
+                    }}
+                    required
+                  >
+                    {memberships.map((community) => (
+                      <option key={community.id} value={community.id}>
+                        {community.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+              {!loadingMemberships && !hasCommunityMemberships ? (
+                <p className="ride-audience-note" id="ride-audience-help">
+                  {communityAudienceCopy}
+                </p>
+              ) : (
+                <p className="ride-audience-note" id="ride-audience-help">
+                  All my HOOMAs is resolved by the server when this request is saved.
+                </p>
+              )}
+            </section>
+            <section className="ride-form-section">
+              <p className="eyebrow">DETAILS</p>
+              <label className="ride-field">
+                <span>Request expires</span>
+                <input
+                  type="datetime-local"
+                  value={expiresAt}
+                  onChange={(event) => setExpiresAt(event.target.value)}
+                  required
+                />
+              </label>
+              <label className="ride-field">
+                <span>Note</span>
+                <textarea value={note} onChange={(event) => setNote(event.target.value)} rows={3} />
+              </label>
+            </section>
+            {error ? <p className="error">{error}</p> : null}
+            <button
+              className="ride-button ride-button--primary"
+              type="submit"
+              disabled={saving || communityAudienceInvalid}
+            >
+              {saving
+                ? editing
+                  ? "Saving..."
+                  : "Creating..."
+                : editing
+                  ? "Save Ride request"
+                  : "Create Ride request"}
+            </button>
+          </form>
+        )}
+
+        {!editing ? (
+          <section className="ride-request-preview panel">
+            <p className="eyebrow">PUBLIC RIDE REQUESTS</p>
+            {loadingRequests ? <p className="muted">Loading recent Ride requests...</p> : null}
+            {!loadingRequests && !publicRequests.length ? (
+              <p className="muted">No public Ride requests yet.</p>
+            ) : null}
+            {publicRequests.map((requestItem) => (
+              <article className="ride-request-row" key={requestItem.id}>
+                <strong>{destinationLabel(requestItem.destination)}</strong>
+                <span>
+                  {requestItem.pickupAreaLabel} - {requestItem.passengerCount} passenger
+                  {requestItem.passengerCount === 1 ? "" : "s"}
+                </span>
+                <RideCompensationBadge terms={requestItem.compensationTerms} mode="request" />
+              </article>
+            ))}
+          </section>
+        ) : null}
+      </section>
+    </div>
   );
 }

@@ -5,12 +5,7 @@ import { createRideApi } from "./api";
 import { RideCompensationBadge } from "./RideCompensationBadge";
 import { contextQuery } from "./RideContextSelector";
 import { RideFeatureGrid } from "./RideFeatureGrid";
-import {
-  RideBrowseIcon,
-  RideCarPlusIcon,
-  RideHistoryIcon,
-  RideMapPinIcon,
-} from "./RideIcons";
+import { RideBrowseIcon, RideCarPlusIcon, RideHistoryIcon, RideMapPinIcon } from "./RideIcons";
 import { destinationLabel, errorMessage, formatRideTime } from "./ride-view-model";
 
 export function RidesPage({ context }: { readonly context?: "MATCHDAY" | "GENERAL" }) {
@@ -50,21 +45,35 @@ export function RideGatewayPage({ context }: { readonly context?: "MATCHDAY" | "
 
   return (
     <section className="ride-page ride-gateway">
-      <RideHero copy={copy} />
-      <RideFeatureGrid />
+      <div className="hooma-lane--media">
+        <RideHero copy={copy} />
+      </div>
+      <div className="hooma-lane--nav">
+        <RideFeatureGrid />
+      </div>
 
-      {loading ? <p className="ride-state panel">Loading Ride activity...</p> : null}
+      {loading ? (
+        <div className="hooma-lane--content">
+          <p className="ride-state panel">Loading Ride activity...</p>
+        </div>
+      ) : null}
       {error ? (
-        <p className="ride-state panel error">Ride activity unavailable. Try again shortly.</p>
+        <div className="hooma-lane--content">
+          <p className="ride-state panel error">Ride activity unavailable. Try again shortly.</p>
+        </div>
       ) : null}
 
-      <RideRecentOffers
-        context={context}
-        offers={offers}
-        loading={loading}
-        photoUrl={api.offerPhotoUrl}
-      />
-      <RideRecentRequests context={context} requests={requests} loading={loading} />
+      <div className="hooma-lane--content">
+        <RideRecentOffers
+          context={context}
+          offers={offers}
+          loading={loading}
+          photoUrl={api.offerPhotoUrl}
+        />
+      </div>
+      <div className="hooma-lane--content">
+        <RideRecentRequests context={context} requests={requests} loading={loading} />
+      </div>
     </section>
   );
 }

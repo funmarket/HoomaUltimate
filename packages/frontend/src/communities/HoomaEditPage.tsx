@@ -92,138 +92,144 @@ export function HoomaEditPage({ communityId }: { readonly communityId: string })
 
   if (loading)
     return (
-      <div className="page hooma-create-page">
-        <div className="state-card">Loading HOOMA settings…</div>
+      <div className="hooma-lane--content">
+        <div className="page hooma-create-page">
+          <div className="state-card">Loading HOOMA settings…</div>
+        </div>
       </div>
     );
 
   return (
-    <div className="page hooma-create-page hooma-edit-page">
-      <a
-        className="team-management-back"
-        href={me?.platformRoles.includes("PLATFORM_ADMIN") ? "/admin" : `/hooma/${communityId}`}
-      >
-        ← {me?.platformRoles.includes("PLATFORM_ADMIN") ? "App Admin" : "HOOMA HQ"}
-      </a>
-      <section className="panel">
-        <span className="eyebrow">HOOMA SETTINGS</span>
-        <h1>Edit HOOMA</h1>
-        <p className="muted">
-          Update the community identity, neighborhood, privacy and media from one canonical settings
-          page.
-        </p>
-      </section>
-      {error ? <div className="error-box">{error}</div> : null}
-      {notice ? <div className="success-box">{notice}</div> : null}
-      {community ? (
-        <>
-          <form className="panel hooma-create-form" onSubmit={submit}>
-            <fieldset className="hooma-privacy-choice">
-              <legend>Who can join?</legend>
-              <label className={community.visibility === "PUBLIC" ? "is-selected" : ""}>
-                <input
-                  type="radio"
-                  name="visibility"
-                  value="PUBLIC"
-                  defaultChecked={community.visibility === "PUBLIC"}
-                />
-                <span>
-                  <strong>Public</strong>
-                  <small>People can find this HOOMA and join immediately.</small>
-                </span>
-              </label>
-              <label className={community.visibility === "PRIVATE" ? "is-selected" : ""}>
-                <input
-                  type="radio"
-                  name="visibility"
-                  value="PRIVATE"
-                  defaultChecked={community.visibility === "PRIVATE"}
-                />
-                <span>
-                  <strong>Private</strong>
-                  <small>People can find this HOOMA but the Founder approves membership.</small>
-                </span>
-              </label>
-            </fieldset>
-            <div className="hooma-form-grid">
-              <label className="field">
-                <span>Name</span>
-                <input
-                  name="name"
-                  defaultValue={community.name}
-                  required
-                  minLength={2}
-                  maxLength={100}
-                />
-              </label>
-              <label className="field">
-                <span>City</span>
-                <input name="city" defaultValue={community.city ?? ""} maxLength={100} />
-              </label>
-              <label className="field">
-                <span>Houma / neighborhood</span>
-                <input name="houma" defaultValue={community.houma ?? ""} maxLength={100} />
-              </label>
-              <label className="field">
-                <span>Community logo URL</span>
-                <input
-                  name="logoUrl"
-                  type="url"
-                  defaultValue={community.logoUrl ?? ""}
-                  maxLength={2000}
-                />
-              </label>
-              <label className="field hooma-span-2">
-                <span>Banner image URL</span>
-                <input
-                  name="bannerUrl"
-                  type="url"
-                  defaultValue={community.bannerUrl ?? ""}
-                  maxLength={2000}
-                />
-              </label>
-              <label className="field hooma-span-2">
-                <span>Description</span>
-                <textarea
-                  name="description"
-                  defaultValue={community.description ?? ""}
-                  maxLength={600}
-                  rows={4}
-                />
-              </label>
-            </div>
-            <div className="hooma-form-actions">
-              <a
-                className="button secondary"
-                href={
-                  me?.platformRoles.includes("PLATFORM_ADMIN") ? "/admin" : `/hooma/${community.id}`
-                }
+    <div className="hooma-lane--content">
+      <div className="page hooma-create-page hooma-edit-page">
+        <a
+          className="team-management-back"
+          href={me?.platformRoles.includes("PLATFORM_ADMIN") ? "/admin" : `/hooma/${communityId}`}
+        >
+          ← {me?.platformRoles.includes("PLATFORM_ADMIN") ? "App Admin" : "HOOMA HQ"}
+        </a>
+        <section className="panel">
+          <span className="eyebrow">HOOMA SETTINGS</span>
+          <h1>Edit HOOMA</h1>
+          <p className="muted">
+            Update the community identity, neighborhood, privacy and media from one canonical
+            settings page.
+          </p>
+        </section>
+        {error ? <div className="error-box">{error}</div> : null}
+        {notice ? <div className="success-box">{notice}</div> : null}
+        {community ? (
+          <>
+            <form className="panel hooma-create-form" onSubmit={submit}>
+              <fieldset className="hooma-privacy-choice">
+                <legend>Who can join?</legend>
+                <label className={community.visibility === "PUBLIC" ? "is-selected" : ""}>
+                  <input
+                    type="radio"
+                    name="visibility"
+                    value="PUBLIC"
+                    defaultChecked={community.visibility === "PUBLIC"}
+                  />
+                  <span>
+                    <strong>Public</strong>
+                    <small>People can find this HOOMA and join immediately.</small>
+                  </span>
+                </label>
+                <label className={community.visibility === "PRIVATE" ? "is-selected" : ""}>
+                  <input
+                    type="radio"
+                    name="visibility"
+                    value="PRIVATE"
+                    defaultChecked={community.visibility === "PRIVATE"}
+                  />
+                  <span>
+                    <strong>Private</strong>
+                    <small>People can find this HOOMA but the Founder approves membership.</small>
+                  </span>
+                </label>
+              </fieldset>
+              <div className="hooma-form-grid">
+                <label className="field">
+                  <span>Name</span>
+                  <input
+                    name="name"
+                    defaultValue={community.name}
+                    required
+                    minLength={2}
+                    maxLength={100}
+                  />
+                </label>
+                <label className="field">
+                  <span>City</span>
+                  <input name="city" defaultValue={community.city ?? ""} maxLength={100} />
+                </label>
+                <label className="field">
+                  <span>Houma / neighborhood</span>
+                  <input name="houma" defaultValue={community.houma ?? ""} maxLength={100} />
+                </label>
+                <label className="field">
+                  <span>Community logo URL</span>
+                  <input
+                    name="logoUrl"
+                    type="url"
+                    defaultValue={community.logoUrl ?? ""}
+                    maxLength={2000}
+                  />
+                </label>
+                <label className="field hooma-span-2">
+                  <span>Banner image URL</span>
+                  <input
+                    name="bannerUrl"
+                    type="url"
+                    defaultValue={community.bannerUrl ?? ""}
+                    maxLength={2000}
+                  />
+                </label>
+                <label className="field hooma-span-2">
+                  <span>Description</span>
+                  <textarea
+                    name="description"
+                    defaultValue={community.description ?? ""}
+                    maxLength={600}
+                    rows={4}
+                  />
+                </label>
+              </div>
+              <div className="hooma-form-actions">
+                <a
+                  className="button secondary"
+                  href={
+                    me?.platformRoles.includes("PLATFORM_ADMIN")
+                      ? "/admin"
+                      : `/hooma/${community.id}`
+                  }
+                >
+                  Cancel
+                </a>
+                <button className="button" disabled={saving || deleting}>
+                  {saving ? "Saving…" : "Save HOOMA"}
+                </button>
+              </div>
+            </form>
+            <section className="panel entity-danger-zone">
+              <span className="eyebrow">DANGER ZONE</span>
+              <h2>Delete HOOMA</h2>
+              <p>
+                Removes this HOOMA from active discovery. Delete its active Team and finish/cancel
+                published Events first. Historical records are preserved.
+              </p>
+              <button
+                className="entity-delete-action"
+                type="button"
+                disabled={deleting || saving}
+                onClick={() => void deleteHooma()}
               >
-                Cancel
-              </a>
-              <button className="button" disabled={saving || deleting}>
-                {saving ? "Saving…" : "Save HOOMA"}
+                {deleting ? "Deleting…" : "Delete HOOMA"}
               </button>
-            </div>
-          </form>
-          <section className="panel entity-danger-zone">
-            <span className="eyebrow">DANGER ZONE</span>
-            <h2>Delete HOOMA</h2>
-            <p>
-              Removes this HOOMA from active discovery. Delete its active Team and finish/cancel
-              published Events first. Historical records are preserved.
-            </p>
-            <button
-              className="entity-delete-action"
-              type="button"
-              disabled={deleting || saving}
-              onClick={() => void deleteHooma()}
-            >
-              {deleting ? "Deleting…" : "Delete HOOMA"}
-            </button>
-          </section>
-        </>
-      ) : null}
+            </section>
+          </>
+        ) : null}
+      </div>
     </div>
   );
 }

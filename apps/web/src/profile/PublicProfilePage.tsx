@@ -34,14 +34,21 @@ export function PublicProfilePage({ username }: { username: string }) {
     };
   }, [normalizedUsername, profileApi]);
 
-  if (loading) return <p className="status">Loading HOOMA profile…</p>;
+  if (loading)
+    return (
+      <div className="hooma-lane--content">
+        <p className="status">Loading HOOMA profile…</p>
+      </div>
+    );
   if (!profile) {
     return (
-      <section className="panel public-profile-state">
-        <strong>HOOMA profile unavailable.</strong>
-        <span>{error || "This HOOMA profile could not be found."}</span>
-        <a href="/">Back to HOOMA</a>
-      </section>
+      <div className="hooma-lane--content">
+        <section className="panel public-profile-state">
+          <strong>HOOMA profile unavailable.</strong>
+          <span>{error || "This HOOMA profile could not be found."}</span>
+          <a href="/">Back to HOOMA</a>
+        </section>
+      </div>
     );
   }
 
@@ -50,77 +57,79 @@ export function PublicProfilePage({ username }: { username: string }) {
   const openTeam = profile.teams[0]?.name ?? null;
 
   return (
-    <section className="public-profile-page">
-      <header className="hooma-passport-card">
-        <div className="hooma-passport-card__copy">
-          <p className="hooma-passport-card__kicker">HOOMA PASSPORT</p>
-          <h1>{presentation.displayName}</h1>
-          <p className="hooma-passport-card__handle">@{presentation.username}</p>
-          {profile.player ? (
-            <>
-              <p className="hooma-passport-card__ovr">{profile.player.overallRating}</p>
-              <p className="hooma-passport-card__pos">{primaryPosition || "PLAYER"}</p>
-            </>
-          ) : null}
-          <PublicIdentityBadges identities={profile.identities} />
-        </div>
-        <div className="hooma-passport-card__photo" aria-hidden={!presentation.photoUrl}>
-          {presentation.photoUrl ? (
-            <img src={presentation.photoUrl} alt="" />
-          ) : (
-            <span>{presentation.displayName.slice(0, 1).toUpperCase()}</span>
-          )}
-        </div>
-      </header>
+    <div className="hooma-lane--content">
+      <section className="public-profile-page">
+        <header className="hooma-passport-card">
+          <div className="hooma-passport-card__copy">
+            <p className="hooma-passport-card__kicker">HOOMA PASSPORT</p>
+            <h1>{presentation.displayName}</h1>
+            <p className="hooma-passport-card__handle">@{presentation.username}</p>
+            {profile.player ? (
+              <>
+                <p className="hooma-passport-card__ovr">{profile.player.overallRating}</p>
+                <p className="hooma-passport-card__pos">{primaryPosition || "PLAYER"}</p>
+              </>
+            ) : null}
+            <PublicIdentityBadges identities={profile.identities} />
+          </div>
+          <div className="hooma-passport-card__photo" aria-hidden={!presentation.photoUrl}>
+            {presentation.photoUrl ? (
+              <img src={presentation.photoUrl} alt="" />
+            ) : (
+              <span>{presentation.displayName.slice(0, 1).toUpperCase()}</span>
+            )}
+          </div>
+        </header>
 
-      {profile.player ? (
-        <div className="hooma-passport-stats" aria-label="Football profile">
-          <div>
-            <span>PLAY STYLE</span>
-            <strong className="is-yellow">{formatEnumLabel(profile.player.skillLevel)}</strong>
+        {profile.player ? (
+          <div className="hooma-passport-stats" aria-label="Football profile">
+            <div>
+              <span>PLAY STYLE</span>
+              <strong className="is-yellow">{formatEnumLabel(profile.player.skillLevel)}</strong>
+            </div>
+            <div>
+              <span>POSITION</span>
+              <strong className="is-orange">{primaryPosition || "—"}</strong>
+            </div>
+            <div>
+              <span>TEAM STATUS</span>
+              <strong className="is-green">{openTeam ? "OPEN TEAM" : "FREE AGENT"}</strong>
+            </div>
           </div>
-          <div>
-            <span>POSITION</span>
-            <strong className="is-orange">{primaryPosition || "—"}</strong>
-          </div>
-          <div>
-            <span>TEAM STATUS</span>
-            <strong className="is-green">{openTeam ? "OPEN TEAM" : "FREE AGENT"}</strong>
-          </div>
-        </div>
-      ) : null}
+        ) : null}
 
-      {presentation.bio ? <p className="public-profile-bio">{presentation.bio}</p> : null}
+        {presentation.bio ? <p className="public-profile-bio">{presentation.bio}</p> : null}
 
-      {profile.teams.length ? (
-        <section className="panel public-profile-teams">
-          <div>
-            <p className="eyebrow">TEAMS</p>
-            <h2>Current Team memberships</h2>
-          </div>
-          <div className="public-profile-team-list">
-            {profile.teams.map((team) => (
-              <a href={`/teams/${encodeURIComponent(team.id)}`} key={team.id}>
-                <span className="public-profile-team-badge" aria-hidden="true">
-                  {team.badgeUrl ? <img src={team.badgeUrl} alt="" /> : team.name.slice(0, 1)}
-                </span>
-                <strong>{team.name}</strong>
-                <span>OPEN</span>
-              </a>
-            ))}
-          </div>
+        {profile.teams.length ? (
+          <section className="panel public-profile-teams">
+            <div>
+              <p className="eyebrow">TEAMS</p>
+              <h2>Current Team memberships</h2>
+            </div>
+            <div className="public-profile-team-list">
+              {profile.teams.map((team) => (
+                <a href={`/teams/${encodeURIComponent(team.id)}`} key={team.id}>
+                  <span className="public-profile-team-badge" aria-hidden="true">
+                    {team.badgeUrl ? <img src={team.badgeUrl} alt="" /> : team.name.slice(0, 1)}
+                  </span>
+                  <strong>{team.name}</strong>
+                  <span>OPEN</span>
+                </a>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        <section className="panel public-profile-contact">
+          <p className="eyebrow">CONTACT</p>
+          <h2>Whistle</h2>
+          <UserWhistlePanel
+            username={presentation.username}
+            recipientName={presentation.displayName}
+          />
         </section>
-      ) : null}
-
-      <section className="panel public-profile-contact">
-        <p className="eyebrow">CONTACT</p>
-        <h2>Whistle</h2>
-        <UserWhistlePanel
-          username={presentation.username}
-          recipientName={presentation.displayName}
-        />
       </section>
-    </section>
+    </div>
   );
 }
 

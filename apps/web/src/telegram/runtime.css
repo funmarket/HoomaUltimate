@@ -17,35 +17,21 @@ body,
 }
 
 :root[data-telegram-runtime="active"] .foundation-shell {
-  padding-top: max(
-    0px,
-    var(--hooma-safe-area-inset-top),
-    var(--hooma-content-safe-area-inset-top)
-  );
-  padding-left: max(
-    var(--shell-inline, 24px),
-    calc(var(--hooma-safe-area-inset-left) + 12px),
-    calc(var(--hooma-content-safe-area-inset-left) + 12px)
-  );
-  padding-right: max(
-    var(--shell-inline, 24px),
-    calc(var(--hooma-safe-area-inset-right) + 12px),
-    calc(var(--hooma-content-safe-area-inset-right) + 12px)
-  );
+  padding-top: max(0px, var(--hooma-safe-area-inset-top), var(--hooma-content-safe-area-inset-top));
 }
 
 :root[data-telegram-runtime="active"] .hooma-bottom-nav {
   left: max(
-    8px,
+    var(--hooma-ui-lane-nav-inline),
     calc((100vw - 736px) / 2),
-    calc(var(--hooma-safe-area-inset-left) + 8px),
-    calc(var(--hooma-content-safe-area-inset-left) + 8px)
+    calc(var(--hooma-safe-area-inset-left) + var(--hooma-ui-lane-nav-inline)),
+    calc(var(--hooma-content-safe-area-inset-left) + var(--hooma-ui-lane-nav-inline))
   );
   right: max(
-    8px,
+    var(--hooma-ui-lane-nav-inline),
     calc((100vw - 736px) / 2),
-    calc(var(--hooma-safe-area-inset-right) + 8px),
-    calc(var(--hooma-content-safe-area-inset-right) + 8px)
+    calc(var(--hooma-safe-area-inset-right) + var(--hooma-ui-lane-nav-inline)),
+    calc(var(--hooma-content-safe-area-inset-right) + var(--hooma-ui-lane-nav-inline))
   );
   bottom: max(
     6px,
@@ -63,29 +49,16 @@ body,
 }
 
 @media (max-width: 520px) {
-  :root[data-telegram-runtime="active"] .foundation-shell {
-    padding-left: max(
-      var(--shell-inline, 12px),
-      calc(var(--hooma-safe-area-inset-left) + 8px),
-      calc(var(--hooma-content-safe-area-inset-left) + 8px)
-    );
-    padding-right: max(
-      var(--shell-inline, 12px),
-      calc(var(--hooma-safe-area-inset-right) + 8px),
-      calc(var(--hooma-content-safe-area-inset-right) + 8px)
-    );
-  }
-
   :root[data-telegram-runtime="active"] .hooma-bottom-nav {
     left: max(
-      8px,
-      calc(var(--hooma-safe-area-inset-left) + 8px),
-      calc(var(--hooma-content-safe-area-inset-left) + 8px)
+      var(--hooma-ui-lane-nav-inline),
+      calc(var(--hooma-safe-area-inset-left) + var(--hooma-ui-lane-nav-inline)),
+      calc(var(--hooma-content-safe-area-inset-left) + var(--hooma-ui-lane-nav-inline))
     );
     right: max(
-      8px,
-      calc(var(--hooma-safe-area-inset-right) + 8px),
-      calc(var(--hooma-content-safe-area-inset-right) + 8px)
+      var(--hooma-ui-lane-nav-inline),
+      calc(var(--hooma-safe-area-inset-right) + var(--hooma-ui-lane-nav-inline)),
+      calc(var(--hooma-content-safe-area-inset-right) + var(--hooma-ui-lane-nav-inline))
     );
     bottom: max(
       4px,

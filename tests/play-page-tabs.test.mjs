@@ -26,16 +26,19 @@ test("Play presents Games, Players, Requests, and Mine as sibling local views", 
   assert.match(page, /aria-selected=\{activeView === "mine"\}/);
   assert.match(
     page,
-    /\{activeView === "games" \? \(\s*<section className="play-section" aria-labelledby="open-matches-title">/s,
+    /\{activeView === "games" \? \(\s*<div className="hooma-lane--content">\s*<section className="play-section" aria-labelledby="open-matches-title">/s,
   );
   assert.match(
     page,
-    /\{activeView === "players" \? \(\s*<section className="play-section" aria-labelledby="players-looking-title">/s,
+    /\{activeView === "players" \? \(\s*<div className="hooma-lane--content">\s*<section className="play-section" aria-labelledby="players-looking-title">/s,
   );
-  assert.match(page, /\{activeView === "requests" \? <PlayRequestsPane \/> : null\}/);
   assert.match(
     page,
-    /\{activeView === "mine" \? \(\s*<section className="play-section play-mine" aria-labelledby="mine-title">/s,
+    /\{activeView === "requests" \? \(\s*<div className="hooma-lane--content">\s*<PlayRequestsPane \/>\s*<\/div>\s*\) : null\}/,
+  );
+  assert.match(
+    page,
+    /\{activeView === "mine" \? \(\s*<div className="hooma-lane--content">\s*<section className="play-section play-mine" aria-labelledby="mine-title">/s,
   );
   assert.doesNotMatch(page, /hidden=\{activeView/);
   assert.match(router, /path="\/play" element=\{<PlayPage \/>\}/);
@@ -66,4 +69,19 @@ test("Play detail and Open Matches use the authenticated Play API authority", as
     /Promise\.all\(\[playApi\.openMatches\(\), eventApi\.publicWatch\(\)\]\)/,
   );
   assert.doesNotMatch(rideDestinationFields, /eventApi\.publicPlay/);
+});
+
+test("text-only page introduction uses CONTENT while major section tabs use NAV", async () => {
+  const [page, hero] = await Promise.all([
+    read("packages/frontend/src/events/PlayPage.tsx"),
+    read("packages/ui/src/play/PlayHero.tsx"),
+  ]);
+
+  assert.match(hero, /<h1>PLAY<\/h1>/);
+  assert.doesNotMatch(hero, /<(?:img|picture|video|canvas)\b/);
+  assert.match(page, /<div className="hooma-lane--content">\s*<PlayHero \/>\s*<\/div>/);
+  assert.match(
+    page,
+    /<div className="hooma-lane--nav">\s*<div\s+className="play-view-tabs play-view-tabs--four"/,
+  );
 });

@@ -1,5 +1,4 @@
 :root {
-  --shell-inline: clamp(12px, 6vw, 24px);
   font-family: var(--font-ui);
 }
 
@@ -35,10 +34,83 @@ body {
   min-height: 100vh;
   max-width: 960px;
   margin: 0 auto;
-  padding: 0 var(--shell-inline) 48px;
+  padding: 0 0 48px;
   display: grid;
   align-content: space-between;
   gap: 32px;
+}
+
+.foundation-shell > .shell-content {
+  margin-inline: 0;
+}
+
+.hooma-lane--media {
+  min-width: 0;
+  padding-left: max(
+    var(--hooma-ui-lane-media-inline),
+    calc(var(--hooma-safe-area-inset-left) + var(--hooma-ui-lane-media-inline)),
+    calc(var(--hooma-content-safe-area-inset-left) + var(--hooma-ui-lane-media-inline))
+  );
+  padding-right: max(
+    var(--hooma-ui-lane-media-inline),
+    calc(var(--hooma-safe-area-inset-right) + var(--hooma-ui-lane-media-inline)),
+    calc(var(--hooma-content-safe-area-inset-right) + var(--hooma-ui-lane-media-inline))
+  );
+}
+
+.hooma-lane--nav {
+  min-width: 0;
+  padding-left: max(
+    var(--hooma-ui-lane-nav-inline),
+    calc(var(--hooma-safe-area-inset-left) + var(--hooma-ui-lane-nav-inline)),
+    calc(var(--hooma-content-safe-area-inset-left) + var(--hooma-ui-lane-nav-inline))
+  );
+  padding-right: max(
+    var(--hooma-ui-lane-nav-inline),
+    calc(var(--hooma-safe-area-inset-right) + var(--hooma-ui-lane-nav-inline)),
+    calc(var(--hooma-content-safe-area-inset-right) + var(--hooma-ui-lane-nav-inline))
+  );
+}
+
+.hooma-lane--content {
+  min-width: 0;
+  padding-left: max(
+    var(--hooma-ui-lane-content-inline),
+    calc(var(--hooma-safe-area-inset-left) + var(--hooma-ui-lane-content-inline)),
+    calc(var(--hooma-content-safe-area-inset-left) + var(--hooma-ui-lane-content-inline))
+  );
+  padding-right: max(
+    var(--hooma-ui-lane-content-inline),
+    calc(var(--hooma-safe-area-inset-right) + var(--hooma-ui-lane-content-inline)),
+    calc(var(--hooma-content-safe-area-inset-right) + var(--hooma-ui-lane-content-inline))
+  );
+}
+
+.hooma-lane--bleed {
+  min-width: 0;
+  padding-left: max(
+    var(--hooma-ui-lane-bleed-inline),
+    calc(var(--hooma-safe-area-inset-left) + var(--hooma-ui-lane-bleed-inline)),
+    calc(var(--hooma-content-safe-area-inset-left) + var(--hooma-ui-lane-bleed-inline))
+  );
+  padding-right: max(
+    var(--hooma-ui-lane-bleed-inline),
+    calc(var(--hooma-safe-area-inset-right) + var(--hooma-ui-lane-bleed-inline)),
+    calc(var(--hooma-content-safe-area-inset-right) + var(--hooma-ui-lane-bleed-inline))
+  );
+}
+
+.foundation-shell > .shell-content > .status {
+  margin-left: max(
+    var(--hooma-ui-lane-content-inline),
+    calc(var(--hooma-safe-area-inset-left) + var(--hooma-ui-lane-content-inline)),
+    calc(var(--hooma-content-safe-area-inset-left) + var(--hooma-ui-lane-content-inline))
+  );
+  margin-right: max(
+    var(--hooma-ui-lane-content-inline),
+    calc(var(--hooma-safe-area-inset-right) + var(--hooma-ui-lane-content-inline)),
+    calc(var(--hooma-content-safe-area-inset-right) + var(--hooma-ui-lane-content-inline))
+  );
 }
 
 .foundation-shell--media-first {

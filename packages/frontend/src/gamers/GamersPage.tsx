@@ -231,261 +231,293 @@ export function GamersPage() {
 
   return (
     <div className="page gamers-page gamers-home-page">
-      <header className="gamers-hero panel">
-        <span className="eyebrow">HOOMA GAMERS</span>
-        <h1>Find players. Whistle them. Challenge them.</h1>
-        <p>
-          Discover real HOOMA Gamers across the games they already play. HOOMA connects the people;
-          gameplay stays inside the game.
-        </p>
-      </header>
+      <div className="hooma-lane--media">
+        <header className="gamers-hero panel">
+          <span className="eyebrow">HOOMA GAMERS</span>
+          <h1>Find players. Whistle them. Challenge them.</h1>
+          <p>
+            Discover real HOOMA Gamers across the games they already play. HOOMA connects the
+            people; gameplay stays inside the game.
+          </p>
+        </header>
+      </div>
 
-      <nav className="gamers-home-tabs" aria-label="Gamers sections">
-        <button
-          className={activeTab === "GAMERS" ? "active" : ""}
-          type="button"
-          onClick={() => setActiveTab("GAMERS")}
-        >
-          GAMERS
-        </button>
-        <button
-          className={activeTab === "CHALLENGERS" ? "active" : ""}
-          type="button"
-          onClick={() => setActiveTab("CHALLENGERS")}
-        >
-          CHALLENGERS
-        </button>
-        <button
-          className={activeTab === "ARENA" ? "active" : ""}
-          type="button"
-          onClick={() => setActiveTab("ARENA")}
-        >
-          ARENA
-        </button>
-        <button
-          className={activeTab === "CATALOG" ? "active" : ""}
-          type="button"
-          onClick={() => setActiveTab("CATALOG")}
-        >
-          GAME CATALOG
-        </button>
-      </nav>
+      <div className="hooma-lane--nav">
+        <nav className="gamers-home-tabs" aria-label="Gamers sections">
+          <button
+            className={activeTab === "GAMERS" ? "active" : ""}
+            type="button"
+            onClick={() => setActiveTab("GAMERS")}
+          >
+            GAMERS
+          </button>
+          <button
+            className={activeTab === "CHALLENGERS" ? "active" : ""}
+            type="button"
+            onClick={() => setActiveTab("CHALLENGERS")}
+          >
+            CHALLENGERS
+          </button>
+          <button
+            className={activeTab === "ARENA" ? "active" : ""}
+            type="button"
+            onClick={() => setActiveTab("ARENA")}
+          >
+            ARENA
+          </button>
+          <button
+            className={activeTab === "CATALOG" ? "active" : ""}
+            type="button"
+            onClick={() => setActiveTab("CATALOG")}
+          >
+            GAME CATALOG
+          </button>
+        </nav>
+      </div>
 
-      {notice ? <div className="success-box">{notice}</div> : null}
-      {error ? <div className="error-box">{error}</div> : null}
-      {memberError ? <div className="error-box">{memberError}</div> : null}
+      {notice ? (
+        <div className="hooma-lane--content">
+          <div className="success-box">{notice}</div>
+        </div>
+      ) : null}
+      {error ? (
+        <div className="hooma-lane--content">
+          <div className="error-box">{error}</div>
+        </div>
+      ) : null}
+      {memberError ? (
+        <div className="hooma-lane--content">
+          <div className="error-box">{memberError}</div>
+        </div>
+      ) : null}
 
-      <section className="panel gamers-join-panel" aria-labelledby="gamers-join-heading">
-        {accountLoading ? <p className="muted">Checking your HOOMA account…</p> : null}
-        {!accountLoading && me && !isGamer ? (
-          <div className="member-gate">
-            <strong id="gamers-join-heading">Join Gamers with your existing HOOMA profile.</strong>
-            <span className="muted">
-              This enables Gamer participation on your canonical HOOMA identity. It does not create
-              a second account.
-            </span>
-            <button
-              className="button"
-              type="button"
-              disabled={joining}
-              onClick={() => void joinGamers()}
-            >
-              {joining ? "Joining…" : "Join Gamers"}
-            </button>
-          </div>
-        ) : null}
-        {!accountLoading && me && isGamer ? (
-          <div className="gamers-member-state">
-            <span className="eyebrow">GAMER ENABLED</span>
-            <strong id="gamers-join-heading">{me.presentation.displayName}</strong>
-            <span className="muted">Your Gamer identity belongs to this HOOMA account.</span>
-          </div>
-        ) : null}
-        {!accountLoading && !me ? (
-          <div className="member-gate">
-            <strong id="gamers-join-heading">Join Gamers with a HOOMA account.</strong>
-            <span className="muted">
-              Create or sign in to one canonical HOOMA account, then enable Gamer participation.
-            </span>
-            {accountHref ? (
-              <a className="button secondary" href={accountHref}>
-                Create or sign in
-              </a>
-            ) : null}
-          </div>
-        ) : null}
-      </section>
+      <div className="hooma-lane--content">
+        <section className="panel gamers-join-panel" aria-labelledby="gamers-join-heading">
+          {accountLoading ? <p className="muted">Checking your HOOMA account…</p> : null}
+          {!accountLoading && me && !isGamer ? (
+            <div className="member-gate">
+              <strong id="gamers-join-heading">
+                Join Gamers with your existing HOOMA profile.
+              </strong>
+              <span className="muted">
+                This enables Gamer participation on your canonical HOOMA identity. It does not
+                create a second account.
+              </span>
+              <button
+                className="button"
+                type="button"
+                disabled={joining}
+                onClick={() => void joinGamers()}
+              >
+                {joining ? "Joining…" : "Join Gamers"}
+              </button>
+            </div>
+          ) : null}
+          {!accountLoading && me && isGamer ? (
+            <div className="gamers-member-state">
+              <span className="eyebrow">GAMER ENABLED</span>
+              <strong id="gamers-join-heading">{me.presentation.displayName}</strong>
+              <span className="muted">Your Gamer identity belongs to this HOOMA account.</span>
+            </div>
+          ) : null}
+          {!accountLoading && !me ? (
+            <div className="member-gate">
+              <strong id="gamers-join-heading">Join Gamers with a HOOMA account.</strong>
+              <span className="muted">
+                Create or sign in to one canonical HOOMA account, then enable Gamer participation.
+              </span>
+              {accountHref ? (
+                <a className="button secondary" href={accountHref}>
+                  Create or sign in
+                </a>
+              ) : null}
+            </div>
+          ) : null}
+        </section>
+      </div>
 
       {activeTab === "GAMERS" ? (
-        <section className="gamers-section" aria-labelledby="gamers-discovery-heading">
-          <div className="gamers-section-heading">
-            <div>
-              <span className="eyebrow">GAMERS</span>
-              <h2 id="gamers-discovery-heading">Players across HOOMA</h2>
+        <div className="hooma-lane--content">
+          <section className="gamers-section" aria-labelledby="gamers-discovery-heading">
+            <div className="gamers-section-heading">
+              <div>
+                <span className="eyebrow">GAMERS</span>
+                <h2 id="gamers-discovery-heading">Players across HOOMA</h2>
+              </div>
+              <span className="gamers-count">{gamers.length} profiles</span>
             </div>
-            <span className="gamers-count">{gamers.length} profiles</span>
-          </div>
-          {renderCards(gamers)}
-        </section>
+            {renderCards(gamers)}
+          </section>
+        </div>
       ) : null}
 
       {activeTab === "CHALLENGERS" ? (
-        <section className="gamers-section" aria-labelledby="gamers-challengers-heading">
-          <div className="gamers-section-heading">
-            <div>
-              <span className="eyebrow">CHALLENGERS</span>
-              <h2 id="gamers-challengers-heading">Open to challenge now</h2>
+        <div className="hooma-lane--content">
+          <section className="gamers-section" aria-labelledby="gamers-challengers-heading">
+            <div className="gamers-section-heading">
+              <div>
+                <span className="eyebrow">CHALLENGERS</span>
+                <h2 id="gamers-challengers-heading">Open to challenge now</h2>
+              </div>
+              <span className="gamers-count">{challengers.length} open</span>
             </div>
-            <span className="gamers-count">{challengers.length} open</span>
-          </div>
-          {renderCards(challengers)}
-        </section>
+            {renderCards(challengers)}
+          </section>
+        </div>
       ) : null}
 
       {activeTab === "ARENA" ? (
-        <section
-          className="gamers-section gamer-global-arena"
-          aria-labelledby="gamers-arena-heading"
-        >
-          <div className="gamers-section-heading">
-            <div>
-              <span className="eyebrow">ARENA</span>
-              <h2 id="gamers-arena-heading">Accepted matches across HOOMA</h2>
-            </div>
-            <span className="gamers-count">{arenaMatches.length} loaded</span>
-          </div>
-          {loading && !arenaMatches.length ? (
-            <div className="state-card">
-              <strong>Loading Arena…</strong>
-            </div>
-          ) : !arenaMatches.length ? (
-            <div className="state-card">
-              <strong>No accepted Match Cards yet.</strong>
-              <p className="muted">Accepted Gamer challenges from active games appear here.</p>
-            </div>
-          ) : (
-            <>
-              <div className="gamer-arena-grid gamer-global-arena-grid">
-                {arenaMatches.map((match) => (
-                  <GamerMatchCard
-                    key={match.id}
-                    status={match.status}
-                    challenger={match.challenger}
-                    challenged={match.challenged}
-                    label="MATCH CARD"
-                    game={match.game}
-                    compact
-                  />
-                ))}
+        <div className="hooma-lane--content">
+          <section
+            className="gamers-section gamer-global-arena"
+            aria-labelledby="gamers-arena-heading"
+          >
+            <div className="gamers-section-heading">
+              <div>
+                <span className="eyebrow">ARENA</span>
+                <h2 id="gamers-arena-heading">Accepted matches across HOOMA</h2>
               </div>
-              {arenaNextCursor ? (
-                <button
-                  className="button secondary gamer-arena-more"
-                  type="button"
-                  disabled={arenaLoadingMore}
-                  onClick={() => void loadMoreArena()}
-                >
-                  {arenaLoadingMore ? "Loading…" : "Load more matches"}
-                </button>
-              ) : null}
-            </>
-          )}
-        </section>
+              <span className="gamers-count">{arenaMatches.length} loaded</span>
+            </div>
+            {loading && !arenaMatches.length ? (
+              <div className="state-card">
+                <strong>Loading Arena…</strong>
+              </div>
+            ) : !arenaMatches.length ? (
+              <div className="state-card">
+                <strong>No accepted Match Cards yet.</strong>
+                <p className="muted">Accepted Gamer challenges from active games appear here.</p>
+              </div>
+            ) : (
+              <>
+                <div className="gamer-arena-grid gamer-global-arena-grid">
+                  {arenaMatches.map((match) => (
+                    <GamerMatchCard
+                      key={match.id}
+                      status={match.status}
+                      challenger={match.challenger}
+                      challenged={match.challenged}
+                      label="MATCH CARD"
+                      game={match.game}
+                      compact
+                    />
+                  ))}
+                </div>
+                {arenaNextCursor ? (
+                  <button
+                    className="button secondary gamer-arena-more"
+                    type="button"
+                    disabled={arenaLoadingMore}
+                    onClick={() => void loadMoreArena()}
+                  >
+                    {arenaLoadingMore ? "Loading…" : "Load more matches"}
+                  </button>
+                ) : null}
+              </>
+            )}
+          </section>
+        </div>
       ) : null}
 
       {activeTab === "CATALOG" ? (
         <>
-          <section className="gamers-section" aria-labelledby="gamers-catalog-heading">
-            <div className="gamers-section-heading">
+          <div className="hooma-lane--content">
+            <section className="gamers-section" aria-labelledby="gamers-catalog-heading">
+              <div className="gamers-section-heading">
+                <div>
+                  <span className="eyebrow">GAME CATALOG</span>
+                  <h2 id="gamers-catalog-heading">Choose your game</h2>
+                </div>
+                <span className="gamers-count">{games.length} active</span>
+              </div>
+
+              {loading && !games.length ? (
+                <div className="state-card">
+                  <strong>Loading games…</strong>
+                </div>
+              ) : null}
+              {!loading && !games.length && !error ? (
+                <div className="state-card">
+                  <strong>No active games yet.</strong>
+                </div>
+              ) : null}
+              {games.length ? (
+                <div className="gamers-grid">
+                  {games.map((game) => (
+                    <a
+                      className="gamer-game-card"
+                      href={`/gamers/games/${encodeURIComponent(game.slug)}`}
+                      key={game.id}
+                    >
+                      <span className="gamer-game-mark" aria-hidden="true">
+                        {game.name.slice(0, 2).toUpperCase()}
+                      </span>
+                      <div>
+                        <span className="eyebrow">ACTIVE GAME</span>
+                        <h3>{game.name}</h3>
+                        <p className="muted">Open the game hub for Challengers and Arena.</p>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              ) : null}
+            </section>
+          </div>
+
+          <div className="hooma-lane--content">
+            <section className="panel gamers-add-panel" aria-labelledby="gamers-add-heading">
               <div>
-                <span className="eyebrow">GAME CATALOG</span>
-                <h2 id="gamers-catalog-heading">Choose your game</h2>
+                <span className="eyebrow">MISSING A GAME?</span>
+                <h2 id="gamers-add-heading">Add it to HOOMA</h2>
+                <p className="muted">
+                  Legitimate community-added games join the same persisted catalog. Duplicate names
+                  are rejected at the source.
+                </p>
               </div>
-              <span className="gamers-count">{games.length} active</span>
-            </div>
-
-            {loading && !games.length ? (
-              <div className="state-card">
-                <strong>Loading games…</strong>
-              </div>
-            ) : null}
-            {!loading && !games.length && !error ? (
-              <div className="state-card">
-                <strong>No active games yet.</strong>
-              </div>
-            ) : null}
-            {games.length ? (
-              <div className="gamers-grid">
-                {games.map((game) => (
-                  <a
-                    className="gamer-game-card"
-                    href={`/gamers/games/${encodeURIComponent(game.slug)}`}
-                    key={game.id}
-                  >
-                    <span className="gamer-game-mark" aria-hidden="true">
-                      {game.name.slice(0, 2).toUpperCase()}
-                    </span>
-                    <div>
-                      <span className="eyebrow">ACTIVE GAME</span>
-                      <h3>{game.name}</h3>
-                      <p className="muted">Open the game hub for Challengers and Arena.</p>
-                    </div>
-                  </a>
-                ))}
-              </div>
-            ) : null}
-          </section>
-
-          <section className="panel gamers-add-panel" aria-labelledby="gamers-add-heading">
-            <div>
-              <span className="eyebrow">MISSING A GAME?</span>
-              <h2 id="gamers-add-heading">Add it to HOOMA</h2>
-              <p className="muted">
-                Legitimate community-added games join the same persisted catalog. Duplicate names
-                are rejected at the source.
-              </p>
-            </div>
-            {!accountLoading && me ? (
-              <form className="gamers-add-form" onSubmit={addGame}>
-                <label className="field">
-                  <span>Game name</span>
-                  <input
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                    placeholder="Example: Rocket League"
-                    minLength={2}
-                    maxLength={100}
-                    required
-                  />
-                </label>
-                <button className="button" type="submit" disabled={creating || !name.trim()}>
-                  {creating ? "Adding…" : "Add Game"}
-                </button>
-              </form>
-            ) : null}
-            {!accountLoading && !me && accountHref ? (
-              <a className="button secondary" href={accountHref}>
-                Create HOOMA account to add a game
-              </a>
-            ) : null}
-          </section>
+              {!accountLoading && me ? (
+                <form className="gamers-add-form" onSubmit={addGame}>
+                  <label className="field">
+                    <span>Game name</span>
+                    <input
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
+                      placeholder="Example: Rocket League"
+                      minLength={2}
+                      maxLength={100}
+                      required
+                    />
+                  </label>
+                  <button className="button" type="submit" disabled={creating || !name.trim()}>
+                    {creating ? "Adding…" : "Add Game"}
+                  </button>
+                </form>
+              ) : null}
+              {!accountLoading && !me && accountHref ? (
+                <a className="button secondary" href={accountHref}>
+                  Create HOOMA account to add a game
+                </a>
+              ) : null}
+            </section>
+          </div>
         </>
       ) : null}
 
       {challengeTarget ? (
-        <GamerChallengeSetupModal
-          game={challengeTarget.game}
-          challengedProfileId={challengeTarget.id}
-          challengedName={challengeTarget.presentation.displayName}
-          returnTo={`/gamers?challenge=${encodeURIComponent(challengeTarget.id)}&game=${encodeURIComponent(
-            challengeTarget.game.slug,
-          )}`}
-          onClose={() => setChallengeTarget(null)}
-          onSent={async () => {
-            setNotice(`Challenge sent to ${challengeTarget.presentation.displayName}.`);
-            await loadPublic();
-          }}
-        />
+        <div className="hooma-lane--content">
+          <GamerChallengeSetupModal
+            game={challengeTarget.game}
+            challengedProfileId={challengeTarget.id}
+            challengedName={challengeTarget.presentation.displayName}
+            returnTo={`/gamers?challenge=${encodeURIComponent(challengeTarget.id)}&game=${encodeURIComponent(
+              challengeTarget.game.slug,
+            )}`}
+            onClose={() => setChallengeTarget(null)}
+            onSent={async () => {
+              setNotice(`Challenge sent to ${challengeTarget.presentation.displayName}.`);
+              await loadPublic();
+            }}
+          />
+        </div>
       ) : null}
     </div>
   );

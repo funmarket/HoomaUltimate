@@ -305,9 +305,13 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
 
   if (!place)
     return placeError ? (
-      <p className="error">{placeError}</p>
+      <div className="hooma-lane--content">
+        <p className="error">{placeError}</p>
+      </div>
     ) : (
-      <p className="status">Loading Place…</p>
+      <div className="hooma-lane--content">
+        <p className="status">Loading Place…</p>
+      </div>
     );
 
   const selectedDate = selectedEvent ? eventDateParts(selectedEvent) : null;
@@ -317,308 +321,338 @@ export function PlaceDetailPage({ placeId }: { readonly placeId: string }) {
 
   return (
     <section className="place-detail-page">
-      <div className="place-detail-toolbar">
-        <Link className="place-back-link" to="/watch" aria-label="Back to Watch">
-          ← Watch
-        </Link>
-        {canManage ? (
-          <a className="place-owner-edit" href={`/places/${place.id}/edit`}>
-            <EditIcon size={17} />
-            Edit Place
-          </a>
-        ) : null}
+      <div className="hooma-lane--content">
+        <div className="place-detail-toolbar">
+          <Link className="place-back-link" to="/watch" aria-label="Back to Watch">
+            ← Watch
+          </Link>
+          {canManage ? (
+            <a className="place-owner-edit" href={`/places/${place.id}/edit`}>
+              <EditIcon size={17} />
+              Edit Place
+            </a>
+          ) : null}
+        </div>
       </div>
 
       {selectedEvent?.watchDetails?.kind === "CULTURAL" ? (
-        <CulturalEventCard event={selectedEvent} />
+        <div className="hooma-lane--media">
+          <CulturalEventCard event={selectedEvent} />
+        </div>
       ) : selectedEvent ? (
-        <WatchTicket event={selectedEvent} variant="place-detail" />
+        <div className="hooma-lane--media">
+          <WatchTicket event={selectedEvent} variant="place-detail" />
+        </div>
       ) : null}
 
-      <section className="place-detail-hero place-detail-hero--copy-only">
-        <div className="place-detail-hero__copy">
-          {place.category ? <p className="place-detail-category">{place.category}</p> : null}
-          <h1>{place.name}</h1>
-          <p className="place-detail-description">
-            {place.description || "Watch together at this HOOMA Place."}
-          </p>
+      <div className="hooma-lane--content">
+        <section className="place-detail-hero place-detail-hero--copy-only">
+          <div className="place-detail-hero__copy">
+            {place.category ? <p className="place-detail-category">{place.category}</p> : null}
+            <h1>{place.name}</h1>
+            <p className="place-detail-description">
+              {place.description || "Watch together at this HOOMA Place."}
+            </p>
 
-          {selectedEvent && selectedDate ? (
-            <div className="place-event-summary">
-              <span>
-                <UsersIcon /> <strong>{selectedEvent._count.rsvps}</strong> going
-              </span>
-              <span className="place-event-summary__divider" aria-hidden="true" />
-              <span>
-                <CalendarIcon /> {selectedDate.date} · {selectedDate.time}
-              </span>
-              <span className="place-event-summary__divider" aria-hidden="true" />
-              <span>
-                {selectedEvent.publisherAuthority === "VERIFIED_PLACE_OWNER"
-                  ? "Published by venue"
-                  : "Community-published"}
-              </span>
-            </div>
-          ) : null}
+            {selectedEvent && selectedDate ? (
+              <div className="place-event-summary">
+                <span>
+                  <UsersIcon /> <strong>{selectedEvent._count.rsvps}</strong> going
+                </span>
+                <span className="place-event-summary__divider" aria-hidden="true" />
+                <span>
+                  <CalendarIcon /> {selectedDate.date} · {selectedDate.time}
+                </span>
+                <span className="place-event-summary__divider" aria-hidden="true" />
+                <span>
+                  {selectedEvent.publisherAuthority === "VERIFIED_PLACE_OWNER"
+                    ? "Published by venue"
+                    : "Community-published"}
+                </span>
+              </div>
+            ) : null}
 
-          {selectedEvent ? (
-            <div className="place-watch-actions">
-              {rsvp === "ATTENDED" ? (
-                <div className="place-watch-action place-watch-action--joined">Checked in</div>
-              ) : participationActions?.canCancelRsvp ? (
+            {selectedEvent ? (
+              <div className="place-watch-actions">
+                {rsvp === "ATTENDED" ? (
+                  <div className="place-watch-action place-watch-action--joined">Checked in</div>
+                ) : participationActions?.canCancelRsvp ? (
+                  <button
+                    type="button"
+                    className="place-watch-action place-watch-action--primary"
+                    disabled={actionPending}
+                    onClick={() => void leaveSelectedEvent()}
+                  >
+                    <UserPlusIcon />
+                    {actionPending
+                      ? "Updating…"
+                      : rsvp === "WAITLISTED"
+                        ? "Leave waitlist"
+                        : "Cancel RSVP"}
+                  </button>
+                ) : participationActions?.canJoin ? (
+                  <button
+                    type="button"
+                    className="place-watch-action place-watch-action--primary"
+                    disabled={actionPending || participationLoading}
+                    onClick={() => void joinSelectedEvent()}
+                  >
+                    <UserPlusIcon />
+                    {actionPending ? "Joining…" : "Join event"}
+                  </button>
+                ) : null}
                 <button
                   type="button"
-                  className="place-watch-action place-watch-action--primary"
-                  disabled={actionPending}
-                  onClick={() => void leaveSelectedEvent()}
+                  className="place-watch-action place-watch-action--secondary"
+                  onClick={() => void shareSelectedEvent()}
                 >
-                  <UserPlusIcon />
-                  {actionPending
-                    ? "Updating…"
-                    : rsvp === "WAITLISTED"
-                      ? "Leave waitlist"
-                      : "Cancel RSVP"}
+                  <ShareIcon />
+                  Share event
                 </button>
-              ) : participationActions?.canJoin ? (
-                <button
-                  type="button"
-                  className="place-watch-action place-watch-action--primary"
-                  disabled={actionPending || participationLoading}
-                  onClick={() => void joinSelectedEvent()}
-                >
-                  <UserPlusIcon />
-                  {actionPending ? "Joining…" : "Join event"}
-                </button>
-              ) : null}
-              <button
-                type="button"
-                className="place-watch-action place-watch-action--secondary"
-                onClick={() => void shareSelectedEvent()}
-              >
-                <ShareIcon />
-                Share event
-              </button>
-            </div>
-          ) : (
-            <div className="place-detail-secondary-links">
-              {place.phone ? (
-                <a href={`tel:${place.phone}`}>
-                  <PhoneIcon size={18} /> Call
-                </a>
-              ) : null}
-              {place.websiteUrl ? (
-                <a href={place.websiteUrl} target="_blank" rel="noreferrer">
-                  Website
-                </a>
-              ) : null}
-            </div>
-          )}
-        </div>
-      </section>
-
-      <div className="place-info-grid">
-        <article>
-          <div className="place-info-card__heading">
-            <PinIcon />
-            <span>Address</span>
+              </div>
+            ) : (
+              <div className="place-detail-secondary-links">
+                {place.phone ? (
+                  <a href={`tel:${place.phone}`}>
+                    <PhoneIcon size={18} /> Call
+                  </a>
+                ) : null}
+                {place.websiteUrl ? (
+                  <a href={place.websiteUrl} target="_blank" rel="noreferrer">
+                    Website
+                  </a>
+                ) : null}
+              </div>
+            )}
           </div>
-          <strong>{place.address}</strong>
-          {place.city ? <span className="place-info-card__secondary">{place.city}</span> : null}
-        </article>
-        <article>
-          <div className="place-info-card__heading">
-            <PinIcon />
-            <span>Houma</span>
-          </div>
-          <strong>{place.houma || "—"}</strong>
-          <a
-            className="place-info-card__action"
-            href={mapHref(place)}
-            target="_blank"
-            rel="noreferrer"
-          >
-            View on map
-          </a>
-        </article>
-        <article>
-          <div className="place-info-card__heading">
-            <PhoneIcon />
-            <span>Contact</span>
-          </div>
-          {hasContact ? (
-            <div className="place-info-values">
-              {place.phone ? <a href={`tel:${place.phone}`}>{place.phone}</a> : null}
-              {place.email ? <a href={`mailto:${place.email}`}>{place.email}</a> : null}
-              {place.websiteUrl ? (
-                <a href={place.websiteUrl} target="_blank" rel="noreferrer">
-                  Website
-                </a>
-              ) : null}
-            </div>
-          ) : (
-            <strong>—</strong>
-          )}
-          {place.phone ? (
-            <a className="place-info-card__action" href={`tel:${place.phone}`}>
-              <PhoneIcon size={16} /> Call
-            </a>
-          ) : null}
-        </article>
-        <article>
-          <div className="place-info-card__heading">
-            <InfoIcon />
-            <span>About</span>
-          </div>
-          <strong>{place.description || "—"}</strong>
-        </article>
+        </section>
       </div>
 
-      <PlaceGallery place={place} />
+      <div className="hooma-lane--content">
+        <div className="place-info-grid">
+          <article>
+            <div className="place-info-card__heading">
+              <PinIcon />
+              <span>Address</span>
+            </div>
+            <strong>{place.address}</strong>
+            {place.city ? <span className="place-info-card__secondary">{place.city}</span> : null}
+          </article>
+          <article>
+            <div className="place-info-card__heading">
+              <PinIcon />
+              <span>Houma</span>
+            </div>
+            <strong>{place.houma || "—"}</strong>
+            <a
+              className="place-info-card__action"
+              href={mapHref(place)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              View on map
+            </a>
+          </article>
+          <article>
+            <div className="place-info-card__heading">
+              <PhoneIcon />
+              <span>Contact</span>
+            </div>
+            {hasContact ? (
+              <div className="place-info-values">
+                {place.phone ? <a href={`tel:${place.phone}`}>{place.phone}</a> : null}
+                {place.email ? <a href={`mailto:${place.email}`}>{place.email}</a> : null}
+                {place.websiteUrl ? (
+                  <a href={place.websiteUrl} target="_blank" rel="noreferrer">
+                    Website
+                  </a>
+                ) : null}
+              </div>
+            ) : (
+              <strong>—</strong>
+            )}
+            {place.phone ? (
+              <a className="place-info-card__action" href={`tel:${place.phone}`}>
+                <PhoneIcon size={16} /> Call
+              </a>
+            ) : null}
+          </article>
+          <article>
+            <div className="place-info-card__heading">
+              <InfoIcon />
+              <span>About</span>
+            </div>
+            <strong>{place.description || "—"}</strong>
+          </article>
+        </div>
+      </div>
+
+      {place.images.length || place.imageUrl ? (
+        <div className="hooma-lane--media">
+          <PlaceGallery place={place} />
+        </div>
+      ) : null}
 
       {place.menuItems.length ? (
-        <section className="place-menu-section" id="place-menu">
+        <div className="hooma-lane--content">
+          <section className="place-menu-section" id="place-menu">
+            <div className="place-section-heading">
+              <h2>
+                <MenuIcon /> Menu
+              </h2>
+              {place.menuItems.length > 5 ? (
+                <button type="button" onClick={() => setMenuExpanded((value) => !value)}>
+                  {menuExpanded ? "Show less" : "View full menu"}
+                  <ChevronRightIcon size={18} />
+                </button>
+              ) : null}
+            </div>
+            <div className="place-menu-preview">
+              {visibleMenuItems.map((item) => (
+                <article key={item.id}>
+                  <MenuIcon size={22} />
+                  <div>
+                    <strong>{item.name}</strong>
+                    <span>
+                      {item.price} {item.currency}
+                    </span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      <div className="hooma-lane--content">
+        <section className="place-events-section">
           <div className="place-section-heading">
             <h2>
-              <MenuIcon /> Menu
+              <CalendarIcon /> Upcoming Watch events at this place
             </h2>
-            {place.menuItems.length > 5 ? (
-              <button type="button" onClick={() => setMenuExpanded((value) => !value)}>
-                {menuExpanded ? "Show less" : "View full menu"}
+            {events.length > 2 || eventsNextCursor ? (
+              <button type="button" onClick={() => setEventsExpanded((value) => !value)}>
+                {eventsExpanded ? "Show less" : "View all"}
                 <ChevronRightIcon size={18} />
               </button>
             ) : null}
+            {eventsExpanded && eventsNextCursor ? (
+              <button
+                type="button"
+                disabled={eventsLoading}
+                onClick={() => void loadPlaceEvents(eventsNextCursor)}
+              >
+                {eventsLoading ? "Loading…" : "Load more events"}
+              </button>
+            ) : null}
           </div>
-          <div className="place-menu-preview">
-            {visibleMenuItems.map((item) => (
-              <article key={item.id}>
-                <MenuIcon size={22} />
-                <div>
-                  <strong>{item.name}</strong>
-                  <span>
-                    {item.price} {item.currency}
+          <div className="place-event-list">
+            {visibleEvents.map((event) => {
+              const date = eventDateParts(event);
+              const details = event.watchDetails;
+              const match = details?.kind === "MATCH" ? details : null;
+              return (
+                <Link className="place-event-row" key={event.id} to={`/events/${event.id}`}>
+                  <span className="place-event-row__date">
+                    <small>{date.month}</small>
+                    <strong>{date.day}</strong>
                   </span>
-                </div>
-              </article>
-            ))}
+                  <EventTeamMarks event={event} />
+                  <span className="place-event-row__match">
+                    {match ? (
+                      <span className="place-event-row__matchup">
+                        <FitSingleLineText
+                          className="place-event-row__team-name place-event-row__team-name--one"
+                          text={match.teamOneName}
+                          minFontSize={10}
+                          maxFontSize={24}
+                        />
+                        <small>VS</small>
+                        <FitSingleLineText
+                          className="place-event-row__team-name place-event-row__team-name--two"
+                          text={match.teamTwoName}
+                          minFontSize={10}
+                          maxFontSize={24}
+                        />
+                      </span>
+                    ) : (
+                      <FitSingleLineText
+                        className="place-event-row__legacy-title"
+                        text={event.title}
+                        minFontSize={11}
+                        maxFontSize={20}
+                      />
+                    )}
+                  </span>
+                  <span className="place-event-row__attendance">
+                    <UsersIcon size={18} />
+                    <strong>{event._count.rsvps}</strong> going
+                  </span>
+                  <span className="place-event-row__time">{date.time}</span>
+                  <ChevronRightIcon className="place-event-row__chevron" />
+                </Link>
+              );
+            })}
+            {!events.length && !eventsLoading && !eventsError ? (
+              <p className="muted">No upcoming Watch events yet.</p>
+            ) : null}
+            {eventsError ? <p className="error">{eventsError}</p> : null}
           </div>
         </section>
-      ) : null}
-
-      <section className="place-events-section">
-        <div className="place-section-heading">
-          <h2>
-            <CalendarIcon /> Upcoming Watch events at this place
-          </h2>
-          {events.length > 2 || eventsNextCursor ? (
-            <button type="button" onClick={() => setEventsExpanded((value) => !value)}>
-              {eventsExpanded ? "Show less" : "View all"}
-              <ChevronRightIcon size={18} />
-            </button>
-          ) : null}
-          {eventsExpanded && eventsNextCursor ? (
-            <button
-              type="button"
-              disabled={eventsLoading}
-              onClick={() => void loadPlaceEvents(eventsNextCursor)}
-            >
-              {eventsLoading ? "Loading…" : "Load more events"}
-            </button>
-          ) : null}
-        </div>
-        <div className="place-event-list">
-          {visibleEvents.map((event) => {
-            const date = eventDateParts(event);
-            const details = event.watchDetails;
-            const match = details?.kind === "MATCH" ? details : null;
-            return (
-              <Link className="place-event-row" key={event.id} to={`/events/${event.id}`}>
-                <span className="place-event-row__date">
-                  <small>{date.month}</small>
-                  <strong>{date.day}</strong>
-                </span>
-                <EventTeamMarks event={event} />
-                <span className="place-event-row__match">
-                  {match ? (
-                    <span className="place-event-row__matchup">
-                      <FitSingleLineText
-                        className="place-event-row__team-name place-event-row__team-name--one"
-                        text={match.teamOneName}
-                        minFontSize={10}
-                        maxFontSize={24}
-                      />
-                      <small>VS</small>
-                      <FitSingleLineText
-                        className="place-event-row__team-name place-event-row__team-name--two"
-                        text={match.teamTwoName}
-                        minFontSize={10}
-                        maxFontSize={24}
-                      />
-                    </span>
-                  ) : (
-                    <FitSingleLineText
-                      className="place-event-row__legacy-title"
-                      text={event.title}
-                      minFontSize={11}
-                      maxFontSize={20}
-                    />
-                  )}
-                </span>
-                <span className="place-event-row__attendance">
-                  <UsersIcon size={18} />
-                  <strong>{event._count.rsvps}</strong> going
-                </span>
-                <span className="place-event-row__time">{date.time}</span>
-                <ChevronRightIcon className="place-event-row__chevron" />
-              </Link>
-            );
-          })}
-          {!events.length && !eventsLoading && !eventsError ? (
-            <p className="muted">No upcoming Watch events yet.</p>
-          ) : null}
-          {eventsError ? <p className="error">{eventsError}</p> : null}
-        </div>
-      </section>
+      </div>
 
       {canManage ? (
-        <details className="place-owner-tools">
-          <summary>Place management</summary>
-          <div>
-            <a href={`/places/${place.id}/edit`}>
-              <EditIcon size={16} /> Edit Place
-            </a>
-            <a
-              href={`/events/new?type=WATCH&kind=CULTURAL&placeId=${encodeURIComponent(place.id)}`}
-            >
-              Create Cultural Event
-            </a>
-            <button type="button" disabled={deleting} onClick={() => void deletePlace()}>
-              {deleting ? "Deleting…" : "Delete Place"}
-            </button>
-          </div>
-        </details>
+        <div className="hooma-lane--content">
+          <details className="place-owner-tools">
+            <summary>Place management</summary>
+            <div>
+              <a href={`/places/${place.id}/edit`}>
+                <EditIcon size={16} /> Edit Place
+              </a>
+              <a
+                href={`/events/new?type=WATCH&kind=CULTURAL&placeId=${encodeURIComponent(place.id)}`}
+              >
+                Create Cultural Event
+              </a>
+              <button type="button" disabled={deleting} onClick={() => void deletePlace()}>
+                {deleting ? "Deleting…" : "Delete Place"}
+              </button>
+            </div>
+          </details>
+        </div>
       ) : (
-        <section className="place-claim-section">
-          <button
-            type="button"
-            className="place-claim-toggle"
-            onClick={() => setClaimOpen((value) => !value)}
-          >
-            Own/manage this place?
-          </button>
-          {claimOpen ? (
-            <form className="panel place-claim-form" onSubmit={(event) => void claim(event)}>
-              <label>
-                Ownership or management evidence
-                <textarea name="evidence" minLength={10} required />
-              </label>
-              <button type="submit">Submit ownership claim</button>
-            </form>
-          ) : null}
-        </section>
+        <div className="hooma-lane--content">
+          <section className="place-claim-section">
+            <button
+              type="button"
+              className="place-claim-toggle"
+              onClick={() => setClaimOpen((value) => !value)}
+            >
+              Own/manage this place?
+            </button>
+            {claimOpen ? (
+              <form className="panel place-claim-form" onSubmit={(event) => void claim(event)}>
+                <label>
+                  Ownership or management evidence
+                  <textarea name="evidence" minLength={10} required />
+                </label>
+                <button type="submit">Submit ownership claim</button>
+              </form>
+            ) : null}
+          </section>
+        </div>
       )}
 
-      {message ? <p className="status">{message}</p> : null}
-      {error ? <p className="error">{error}</p> : null}
+      {message ? (
+        <div className="hooma-lane--content">
+          <p className="status">{message}</p>
+        </div>
+      ) : null}
+      {error ? (
+        <div className="hooma-lane--content">
+          <p className="error">{error}</p>
+        </div>
+      ) : null}
     </section>
   );
 }

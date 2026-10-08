@@ -137,6 +137,10 @@
   padding: 18px 0 30px;
   border-bottom: 1px solid var(--teams-line);
 }
+
+.teams-hero-pro > div:first-child {
+  min-width: 0;
+}
 .teams-hero-pro h1 {
   margin: 8px 0 14px;
   font-family: Georgia, "Times New Roman", serif;
@@ -331,6 +335,10 @@
 }
 .teams-load-more {
   justify-self: center;
+}
+
+.teams-load-more-lane {
+  display: grid;
 }
 
 .teams-section-heading {

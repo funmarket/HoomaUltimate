@@ -76,33 +76,35 @@ export function TelegramAccountActivationPage() {
   }
 
   return (
-    <section className="auth-card">
-      <p className="eyebrow">HOOMA ACCOUNT</p>
-      <h2>Create your HOOMA profile</h2>
-      <p>
-        Browsing stays open without an account. Create your HOOMA profile only when you want to
-        join, create, play, contribute, challenge or use member-only features.
-      </p>
-      {!accountCreated ? <GamerSignupFields onboarding={gamerOnboarding} /> : null}
-      {checking ? <p className="status">Checking your HOOMA account…</p> : null}
-      {!checking && !accountCreated ? (
-        <button
-          type="button"
-          disabled={
-            creating ||
-            (gamerOnboarding.selection.enabled && gamerOnboarding.selection.gamesLoading)
-          }
-          onClick={() => void createAccount()}
-        >
-          {creating ? "Creating…" : "Create HOOMA account"}
-        </button>
-      ) : null}
-      {accountCreated ? (
-        <a href="/gamers">Continue to Gamers</a>
-      ) : (
-        <a href={returnTo}>Keep browsing</a>
-      )}
-      {error ? <p className="error">{error}</p> : null}
-    </section>
+    <div className="hooma-lane--content">
+      <section className="auth-card">
+        <p className="eyebrow">HOOMA ACCOUNT</p>
+        <h2>Create your HOOMA profile</h2>
+        <p>
+          Browsing stays open without an account. Create your HOOMA profile only when you want to
+          join, create, play, contribute, challenge or use member-only features.
+        </p>
+        {!accountCreated ? <GamerSignupFields onboarding={gamerOnboarding} /> : null}
+        {checking ? <p className="status">Checking your HOOMA account…</p> : null}
+        {!checking && !accountCreated ? (
+          <button
+            type="button"
+            disabled={
+              creating ||
+              (gamerOnboarding.selection.enabled && gamerOnboarding.selection.gamesLoading)
+            }
+            onClick={() => void createAccount()}
+          >
+            {creating ? "Creating…" : "Create HOOMA account"}
+          </button>
+        ) : null}
+        {accountCreated ? (
+          <a href="/gamers">Continue to Gamers</a>
+        ) : (
+          <a href={returnTo}>Keep browsing</a>
+        )}
+        {error ? <p className="error">{error}</p> : null}
+      </section>
+    </div>
   );
 }

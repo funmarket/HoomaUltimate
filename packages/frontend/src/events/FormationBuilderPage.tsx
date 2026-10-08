@@ -434,194 +434,198 @@ export function FormationBuilderPage({ eventId }: { readonly eventId: string }) 
   }
 
   return (
-    <section className="formation-builder">
-      <header className="formation-builder__header">
-        <div>
-          <p className="eyebrow">Tactical board</p>
-          <h1>Formation builder</h1>
-          <p>{event?.title || "Pickup match"}</p>
-        </div>
-        <a href={`/events/${eventId}`}>Back to match</a>
-      </header>
+    <div className="hooma-lane--content">
+      <section className="formation-builder">
+        <header className="formation-builder__header">
+          <div>
+            <p className="eyebrow">Tactical board</p>
+            <h1>Formation builder</h1>
+            <p>{event?.title || "Pickup match"}</p>
+          </div>
+          <a href={`/events/${eventId}`}>Back to match</a>
+        </header>
 
-      <div className="formation-toolbar panel formation-toolbar--builder">
-        <label>
-          Formation name
-          <input value={name} onChange={(event) => setName(event.target.value)} maxLength={80} />
-        </label>
-        <div className="formation-builder__selectors">
+        <div className="formation-toolbar panel formation-toolbar--builder">
           <label>
-            Match size
-            <strong>{formatLabel(format)}</strong>
+            Formation name
+            <input value={name} onChange={(event) => setName(event.target.value)} maxLength={80} />
           </label>
-          <label>
-            Formation
-            <select value={formationId} onChange={(event) => changeFormation(event.target.value)}>
-              {FORMATION_PRESETS[format].map((preset) => (
-                <option value={preset.id} key={preset.id}>
-                  {preset.label}
-                </option>
-              ))}
-            </select>
+          <div className="formation-builder__selectors">
+            <label>
+              Match size
+              <strong>{formatLabel(format)}</strong>
+            </label>
+            <label>
+              Formation
+              <select value={formationId} onChange={(event) => changeFormation(event.target.value)}>
+                {FORMATION_PRESETS[format].map((preset) => (
+                  <option value={preset.id} key={preset.id}>
+                    {preset.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <label className="formation-publish">
+            <input
+              type="checkbox"
+              checked={published}
+              onChange={(event) => setPublished(event.target.checked)}
+            />{" "}
+            Publish to participants
           </label>
         </div>
-        <label className="formation-publish">
-          <input
-            type="checkbox"
-            checked={published}
-            onChange={(event) => setPublished(event.target.checked)}
-          />{" "}
-          Publish to participants
-        </label>
-      </div>
 
-      <div className="formation-pitches">
-        {(["A", "B"] as const).map((team) => {
-          const accent = team === "A" ? "#31f56f" : "#f2c94c";
-          const teamStyle = { "--formation-accent": accent } as CSSProperties;
-          return (
-            <section key={team} className="formation-team formation-team--game" style={teamStyle}>
-              <div className="formation-team__heading">
-                <h2>Team {team}</h2>
-                <span>
-                  {FORMATION_PRESETS[format].find((preset) => preset.id === formationId)?.label}
-                </span>
-                <small>{formatLabel(format)}</small>
-              </div>
-
-              <div className="formation-pitch formation-pitch--stadium">
-                <div className="formation-pitch__lights" aria-hidden="true" />
-                <div className="formation-pitch__surface">
-                  <PitchMarkings />
+        <div className="formation-pitches">
+          {(["A", "B"] as const).map((team) => {
+            const accent = team === "A" ? "#31f56f" : "#f2c94c";
+            const teamStyle = { "--formation-accent": accent } as CSSProperties;
+            return (
+              <section key={team} className="formation-team formation-team--game" style={teamStyle}>
+                <div className="formation-team__heading">
+                  <h2>Team {team}</h2>
+                  <span>
+                    {FORMATION_PRESETS[format].find((preset) => preset.id === formationId)?.label}
+                  </span>
+                  <small>{formatLabel(format)}</small>
                 </div>
-                <div className="formation-pitch__players">
-                  {slots
-                    .filter((slot) => slot.team === team)
-                    .map((slot) => {
-                      const player = slot.userId ? byId.get(slot.userId) : undefined;
-                      return (
-                        <div
-                          className="formation-slot formation-slot--game"
-                          data-assigned={Boolean(player)}
-                          key={slot.id}
-                          style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
-                        >
-                          <button
-                            className="formation-slot__tap-target"
-                            type="button"
-                            onClick={() => openSlotPicker(slot.id)}
-                            aria-label={`Change Team ${team} ${slot.position}`}
+
+                <div className="formation-pitch formation-pitch--stadium">
+                  <div className="formation-pitch__lights" aria-hidden="true" />
+                  <div className="formation-pitch__surface">
+                    <PitchMarkings />
+                  </div>
+                  <div className="formation-pitch__players">
+                    {slots
+                      .filter((slot) => slot.team === team)
+                      .map((slot) => {
+                        const player = slot.userId ? byId.get(slot.userId) : undefined;
+                        return (
+                          <div
+                            className="formation-slot formation-slot--game"
+                            data-assigned={Boolean(player)}
+                            key={slot.id}
+                            style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
                           >
-                            <span className="formation-slot__marker formation-slot__marker--game">
-                              <PlayerPortrait player={player} fallback={slot.label} />
-                              <span className="formation-slot__position">{slot.position}</span>
-                            </span>
-                            <span className="formation-slot__name">
-                              {player ? playerName(player) : slot.position}
-                            </span>
-                          </button>
-                          <select
-                            ref={(node) => {
-                              selectRefs.current[slot.id] = node;
-                            }}
-                            aria-label={`Team ${team} ${slot.position}`}
-                            value={slot.userId || ""}
-                            onChange={(event) => assign(slot.id, event.target.value)}
-                          >
-                            <option value="">{slot.position}</option>
-                            {players.map((candidate) => (
-                              <option
-                                value={candidate.userId}
-                                key={candidate.userId}
-                                disabled={
-                                  assigned.has(candidate.userId) && candidate.userId !== slot.userId
-                                }
-                              >
-                                {playerName(candidate)}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      );
-                    })}
+                            <button
+                              className="formation-slot__tap-target"
+                              type="button"
+                              onClick={() => openSlotPicker(slot.id)}
+                              aria-label={`Change Team ${team} ${slot.position}`}
+                            >
+                              <span className="formation-slot__marker formation-slot__marker--game">
+                                <PlayerPortrait player={player} fallback={slot.label} />
+                                <span className="formation-slot__position">{slot.position}</span>
+                              </span>
+                              <span className="formation-slot__name">
+                                {player ? playerName(player) : slot.position}
+                              </span>
+                            </button>
+                            <select
+                              ref={(node) => {
+                                selectRefs.current[slot.id] = node;
+                              }}
+                              aria-label={`Team ${team} ${slot.position}`}
+                              value={slot.userId || ""}
+                              onChange={(event) => assign(slot.id, event.target.value)}
+                            >
+                              <option value="">{slot.position}</option>
+                              {players.map((candidate) => (
+                                <option
+                                  value={candidate.userId}
+                                  key={candidate.userId}
+                                  disabled={
+                                    assigned.has(candidate.userId) &&
+                                    candidate.userId !== slot.userId
+                                  }
+                                >
+                                  {playerName(candidate)}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        );
+                      })}
+                  </div>
                 </div>
-              </div>
 
-              <section
-                className="formation-bench"
-                aria-label={`Unassigned players available below Team ${team}`}
-              >
-                <div className="formation-bench__header">
-                  <strong>⚽ Bench</strong>
-                  <span>{benchPlayers.length} available</span>
-                </div>
-                <div className="formation-bench__players">
-                  {benchPlayers.map((player) => (
-                    <button
-                      type="button"
-                      className="formation-bench-player"
-                      key={`${team}-${player.userId}`}
-                      title={`${playerName(player)} is currently unassigned`}
-                    >
-                      <span className="formation-bench-player__portrait">
-                        <PlayerPortrait player={player} fallback={playerInitials(player)} />
-                      </span>
-                      <span>{playerName(player)}</span>
-                    </button>
-                  ))}
-                  {!benchPlayers.length ? <p className="muted">No bench players</p> : null}
-                </div>
-                <p className="formation-bench__hint">
-                  Tap a player on the pitch to change the assignment. Bench players are unassigned.
-                </p>
+                <section
+                  className="formation-bench"
+                  aria-label={`Unassigned players available below Team ${team}`}
+                >
+                  <div className="formation-bench__header">
+                    <strong>⚽ Bench</strong>
+                    <span>{benchPlayers.length} available</span>
+                  </div>
+                  <div className="formation-bench__players">
+                    {benchPlayers.map((player) => (
+                      <button
+                        type="button"
+                        className="formation-bench-player"
+                        key={`${team}-${player.userId}`}
+                        title={`${playerName(player)} is currently unassigned`}
+                      >
+                        <span className="formation-bench-player__portrait">
+                          <PlayerPortrait player={player} fallback={playerInitials(player)} />
+                        </span>
+                        <span>{playerName(player)}</span>
+                      </button>
+                    ))}
+                    {!benchPlayers.length ? <p className="muted">No bench players</p> : null}
+                  </div>
+                  <p className="formation-bench__hint">
+                    Tap a player on the pitch to change the assignment. Bench players are
+                    unassigned.
+                  </p>
+                </section>
               </section>
-            </section>
-          );
-        })}
-      </div>
-
-      <section className="formation-roster panel">
-        <div>
-          <p className="eyebrow">Confirmed roster</p>
-          <h2>Available players</h2>
+            );
+          })}
         </div>
-        <div className="formation-roster__list">
-          {players.map((player) => (
-            <span key={player.userId} data-assigned={assigned.has(player.userId)}>
-              {playerName(player)}
-              {player.status === "ATTENDED" ? " · checked in" : ""}
-            </span>
-          ))}
-          {!players.length ? <p className="muted">No confirmed players yet.</p> : null}
-        </div>
-      </section>
 
-      <button
-        className="formation-save"
-        type="button"
-        disabled={saving || !name.trim()}
-        onClick={() => void save()}
-      >
-        {saving ? "Saving…" : "Save formation"}
-      </button>
-      {success ? <p className="success">{success}</p> : null}
-      {error ? <p className="error">{error}</p> : null}
-
-      {formations.length ? (
-        <section className="formation-history">
-          <p className="eyebrow">Saved formations</p>
-          {formations.map((formation) => (
-            <article className="panel" key={formation.id}>
-              <strong>{formation.name}</strong>
-              <span>
-                {formation.format.replaceAll("_", " ")} ·{" "}
-                {formation.slots.filter((slot) => slot.userId).length} assigned ·{" "}
-                {formation.published ? "Published" : "Draft"}
+        <section className="formation-roster panel">
+          <div>
+            <p className="eyebrow">Confirmed roster</p>
+            <h2>Available players</h2>
+          </div>
+          <div className="formation-roster__list">
+            {players.map((player) => (
+              <span key={player.userId} data-assigned={assigned.has(player.userId)}>
+                {playerName(player)}
+                {player.status === "ATTENDED" ? " · checked in" : ""}
               </span>
-            </article>
-          ))}
+            ))}
+            {!players.length ? <p className="muted">No confirmed players yet.</p> : null}
+          </div>
         </section>
-      ) : null}
-    </section>
+
+        <button
+          className="formation-save"
+          type="button"
+          disabled={saving || !name.trim()}
+          onClick={() => void save()}
+        >
+          {saving ? "Saving…" : "Save formation"}
+        </button>
+        {success ? <p className="success">{success}</p> : null}
+        {error ? <p className="error">{error}</p> : null}
+
+        {formations.length ? (
+          <section className="formation-history">
+            <p className="eyebrow">Saved formations</p>
+            {formations.map((formation) => (
+              <article className="panel" key={formation.id}>
+                <strong>{formation.name}</strong>
+                <span>
+                  {formation.format.replaceAll("_", " ")} ·{" "}
+                  {formation.slots.filter((slot) => slot.userId).length} assigned ·{" "}
+                  {formation.published ? "Published" : "Draft"}
+                </span>
+              </article>
+            ))}
+          </section>
+        ) : null}
+      </section>
+    </div>
   );
 }

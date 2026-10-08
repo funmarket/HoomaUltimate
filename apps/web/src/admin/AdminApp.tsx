@@ -720,25 +720,29 @@ export function AdminApp() {
 
   if (!access) {
     return (
-      <section className="auth-card">
-        <p className="eyebrow">PLATFORM CONTROL ROOM</p>
-        <h2>{accessState === "error" ? "Unable to verify access" : "Loading access"}</h2>
-        <p className={accessState === "error" ? "error" : "muted"}>
-          {accessState === "error"
-            ? error || "Platform access check failed."
-            : "Checking authority…"}
-        </p>
-      </section>
+      <div className="hooma-lane--content">
+        <section className="auth-card">
+          <p className="eyebrow">PLATFORM CONTROL ROOM</p>
+          <h2>{accessState === "error" ? "Unable to verify access" : "Loading access"}</h2>
+          <p className={accessState === "error" ? "error" : "muted"}>
+            {accessState === "error"
+              ? error || "Platform access check failed."
+              : "Checking authority…"}
+          </p>
+        </section>
+      </div>
     );
   }
 
   if (!access.isPlatformOwner && access.managerCapabilities.length === 0) {
     return (
-      <section className="auth-card">
-        <p className="eyebrow">PLATFORM CONTROL ROOM</p>
-        <h2>Access required</h2>
-        <p className="muted">This account has no App Manager permissions.</p>
-      </section>
+      <div className="hooma-lane--content">
+        <section className="auth-card">
+          <p className="eyebrow">PLATFORM CONTROL ROOM</p>
+          <h2>Access required</h2>
+          <p className="muted">This account has no App Manager permissions.</p>
+        </section>
+      </div>
     );
   }
 

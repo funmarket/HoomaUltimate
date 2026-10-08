@@ -24,8 +24,18 @@
   gap: 18px;
   inline-size: auto;
   min-height: 58px;
-  margin-inline: calc(-1 * var(--shell-inline));
-  padding: max(8px, env(safe-area-inset-top, 0px)) var(--shell-inline) 10px;
+  padding-top: max(8px, env(safe-area-inset-top, 0px));
+  padding-bottom: 10px;
+  padding-left: max(
+    var(--hooma-ui-page-inline),
+    calc(var(--hooma-safe-area-inset-left) + var(--hooma-ui-page-inline)),
+    calc(var(--hooma-content-safe-area-inset-left) + var(--hooma-ui-page-inline))
+  );
+  padding-right: max(
+    var(--hooma-ui-page-inline),
+    calc(var(--hooma-safe-area-inset-right) + var(--hooma-ui-page-inline)),
+    calc(var(--hooma-content-safe-area-inset-right) + var(--hooma-ui-page-inline))
+  );
   border-bottom: 1px solid color-mix(in srgb, var(--hooma-chrome-border) 72%, transparent);
   background: var(--hooma-chrome-bg);
   color: var(--hooma-chrome-text);

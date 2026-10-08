@@ -29,26 +29,28 @@ export function EventChatPage({ eventId }: { readonly eventId: string }) {
       .catch((reason) => setError(protectedError(reason, "Unable to send event message")));
   }
   return (
-    <section>
-      <p className="eyebrow">TEMPORARY EVENT CHAT</p>
-      <h2>Match chat</h2>
-      <p className="muted">
-        Available only to active participants during the event window. Messages expire with the
-        room.
-      </p>
-      {error ? <p className="error">{error}</p> : null}
-      <div className="chat-list">
-        {messages.map((message) => (
-          <article key={message.id}>
-            <strong>{message.user?.presentation?.displayName ?? "Player"}</strong>
-            <p>{message.body}</p>
-          </article>
-        ))}
-      </div>
-      <form className="chat-compose" onSubmit={submit}>
-        <input name="body" maxLength={1200} placeholder="Message the players" required />
-        <button type="submit">Send</button>
-      </form>
-    </section>
+    <div className="hooma-lane--content">
+      <section>
+        <p className="eyebrow">TEMPORARY EVENT CHAT</p>
+        <h2>Match chat</h2>
+        <p className="muted">
+          Available only to active participants during the event window. Messages expire with the
+          room.
+        </p>
+        {error ? <p className="error">{error}</p> : null}
+        <div className="chat-list">
+          {messages.map((message) => (
+            <article key={message.id}>
+              <strong>{message.user?.presentation?.displayName ?? "Player"}</strong>
+              <p>{message.body}</p>
+            </article>
+          ))}
+        </div>
+        <form className="chat-compose" onSubmit={submit}>
+          <input name="body" maxLength={1200} placeholder="Message the players" required />
+          <button type="submit">Send</button>
+        </form>
+      </section>
+    </div>
   );
 }
