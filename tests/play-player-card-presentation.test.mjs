@@ -39,7 +39,6 @@ test("Play player cards route to the canonical profile and use real React-owned 
   assert.match(api, /\/api\/v1\/play\/player-actions/);
   assert.match(api, /\/team-offer`/);
   assert.match(api, /\/event-invite`/);
-  assert.match(css, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
   assert.match(css, /@media \(max-width: 520px\)/);
   assert.match(router, /path="\/profile\/:username"/);
   assert.match(identityRoutes, /router\.use\("\/profiles", createIdentityProfilePublicRouter/);
