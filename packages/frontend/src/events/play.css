@@ -12,6 +12,10 @@
   overflow: hidden;
   background: #0b0c09;
 }
+.play-view-tabs--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .play-view-tabs--four {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
