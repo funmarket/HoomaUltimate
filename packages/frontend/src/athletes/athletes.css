@@ -103,6 +103,18 @@
   border: 0;
 }
 
+.athletes-hero--hub[data-media-state="delivery-unavailable"] .athletes-hero__semantic-title,
+.athletes-hero--hub[data-media-state="image-failed"] .athletes-hero__semantic-title {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 1.25rem;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
 .athletes-hero--hub::after,
 .athletes-hero--hub::before,
 .athletes-hero--hub .athletes-hero__motion {

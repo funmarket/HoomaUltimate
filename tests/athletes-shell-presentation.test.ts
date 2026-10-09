@@ -33,8 +33,8 @@ test("Athletes hub orders artwork then Create Community then tabs with no CTA in
     athletesPage.indexOf("export function AthletesPage"),
     athletesPage.indexOf("export function CreateAthletesPage"),
   );
-  const heroStart = hub.indexOf(
-    '<section className="athletes-surface athletes-hero athletes-hero--hub">',
+  const heroStart = hub.search(
+    /<section\s+className="athletes-surface athletes-hero athletes-hero--hub"(?:\s|>)/,
   );
   const heroEnd = hub.indexOf("</section>", heroStart);
   const createStart = hub.indexOf('className="athletes-actions athletes-hub-create"');

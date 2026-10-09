@@ -34,6 +34,10 @@ export function AthletesPage({
   const navigate = useNavigate();
   const [items, setItems] = useState<PublicAthletesSummary[]>([]);
   const [heroUrl, setHeroUrl] = useState<string | null>(null);
+  const [heroStatus, setHeroStatus] = useState<
+    "delivery-pending" | "delivery-unavailable" | "image-loading" | "image-loaded" | "image-failed"
+  >("delivery-pending");
+  const heroImage = useRef<HTMLImageElement>(null);
   const [searchParams] = useSearchParams();
   const activeView = searchParams.get("tab") === "requests" ? "requests" : "communities";
   const [sport, setSport] = useState<AthletesSport | "ALL">("ALL");
@@ -44,13 +48,20 @@ export function AthletesPage({
     const controller = new AbortController();
     let active = true;
 
+    setHeroUrl(null);
+    setHeroStatus("delivery-pending");
     void api.athletes
       .heroDelivery(controller.signal)
       .then((delivery) => {
-        if (active) setHeroUrl(delivery.contentUrl);
+        if (!active) return;
+        const contentUrl = delivery.contentUrl?.trim();
+        setHeroUrl(contentUrl || null);
+        setHeroStatus(contentUrl ? "image-loading" : "delivery-unavailable");
       })
       .catch(() => {
-        if (active) setHeroUrl(null);
+        if (!active) return;
+        setHeroUrl(null);
+        setHeroStatus("delivery-unavailable");
       });
 
     return () => {
@@ -115,9 +126,26 @@ export function AthletesPage({
   return (
     <div className="page athletes-page">
       <div className="hooma-lane--media">
-        <section className="athletes-surface athletes-hero athletes-hero--hub">
-          {heroUrl ? (
-            <img className="athletes-hero__banner" src={heroUrl} alt="" aria-hidden="true" />
+        <section
+          className="athletes-surface athletes-hero athletes-hero--hub"
+          data-media-state={heroStatus}
+        >
+          {heroUrl && heroStatus !== "image-failed" ? (
+            <img
+              key={heroUrl}
+              ref={heroImage}
+              className="athletes-hero__banner"
+              src={heroUrl}
+              alt=""
+              aria-hidden="true"
+              onLoad={(event) => {
+                if (event.currentTarget === heroImage.current) setHeroStatus("image-loaded");
+              }}
+              onError={(event) => {
+                if (event.currentTarget !== heroImage.current) return;
+                setHeroStatus((status) => (status === "image-loaded" ? status : "image-failed"));
+              }}
+            />
           ) : null}
           <h1 className="athletes-hero__semantic-title">Move together. Train together.</h1>
           <span className="athletes-hero__motion" aria-hidden="true" />
