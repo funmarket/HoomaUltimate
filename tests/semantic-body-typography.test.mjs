@@ -1,21 +1,37 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import postcss from "postcss";
 
-const stylesheet = (path) =>
-  postcss.parse(readFileSync(new URL(`../${path}`, import.meta.url), "utf8"));
+// Match the leaf-rule inspection used by shell-inline-presentation.test.ts.
+// Keep declarations as entries rather than collapsing duplicate properties.
+function cssRules(css) {
+  const uncommented = css.replace(/\/\*[\s\S]*?\*\//g, "");
+  return [...uncommented.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((match) => ({
+    selectors: match[1].split(",").map((selector) => selector.trim()),
+    nodes: match[2]
+      .split(";")
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .map((entry) => {
+        const colon = entry.indexOf(":");
+        assert.ok(colon > 0, `Invalid declaration: ${entry}`);
+        return { prop: entry.slice(0, colon).trim(), value: entry.slice(colon + 1).trim() };
+      }),
+  }));
+}
+
+const stylesheet = (path) => cssRules(readFileSync(new URL(`../${path}`, import.meta.url), "utf8"));
 
 function declarations(path, selector, property) {
   const matches = [];
-  stylesheet(path).walkRules((rule) => {
+  for (const rule of stylesheet(path)) {
     if (
       rule.selectors.includes(selector) &&
       (!property || rule.nodes.some((node) => node.prop === property))
     ) {
       matches.push(rule);
     }
-  });
+  }
   assert.equal(matches.length, 1, `${selector} must have one owning rule`);
   return new Map(matches[0].nodes.map((node) => [node.prop, node.value]));
 }
@@ -45,10 +61,10 @@ for (const [path, selector] of [
     assert.equal(rule.get("color"), "#f7f7f7");
     for (const property of ["font-size", "color"]) {
       let owners = 0;
-      stylesheet(path).walkRules((candidate) => {
-        if (!candidate.selectors.includes(selector)) return;
+      for (const candidate of stylesheet(path)) {
+        if (!candidate.selectors.includes(selector)) continue;
         owners += candidate.nodes.filter((node) => node.prop === property).length;
-      });
+      }
       assert.equal(owners, 1, `${selector} has one ${property} owner`);
     }
   });
@@ -75,4 +91,22 @@ test("body correction preserves captions, metadata and compact retry/navigation 
     "font-size",
   );
   assert.equal(navigation.get("font-size"), "13px");
+});
+
+test("CSS inspection retains grouped and media-query rules and duplicate declarations", () => {
+  const rules = cssRules(`
+    /* .copy { font-size: 1px; } */
+    .copy, p.copy { font-size: var(--hooma-ui-body); color: #f7f7f7; }
+    @media (max-width: 520px) {
+      .copy { font-size: 14px; font-size: 16px; }
+    }
+  `);
+  assert.equal(rules.length, 2);
+  assert.deepEqual(rules[0].selectors, [".copy", "p.copy"]);
+  assert.equal(rules[0].nodes[0].value, "var(--hooma-ui-body)");
+  assert.deepEqual(rules[1].selectors, [".copy"]);
+  assert.deepEqual(
+    rules[1].nodes.filter((node) => node.prop === "font-size").map((node) => node.value),
+    ["14px", "16px"],
+  );
 });
