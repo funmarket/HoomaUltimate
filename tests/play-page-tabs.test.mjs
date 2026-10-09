@@ -45,6 +45,32 @@ test("Play presents Games, Players, Requests, and Mine as sibling local views", 
   assert.doesNotMatch(router, /path="\/play\/(?:games|players|requests|mine|open-matches)"/);
 });
 
+test("Play's tab column ownership is responsive and not overridden by player styling", async () => {
+  const [playCss, playerListingCss] = await Promise.all([
+    read("packages/frontend/src/events/play.css"),
+    read("packages/frontend/src/events/play-player-listing.css"),
+  ]);
+
+  assert.match(
+    playCss,
+    /\.play-view-tabs--four\s*\{\s*grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\);/,
+  );
+  assert.match(
+    playCss,
+    /@media \(max-width:\s*620px\)\s*\{\s*\.play-view-tabs--four\s*\{\s*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\);/,
+  );
+  assert.match(
+    playCss,
+    /\.play-view-tabs--three\s*\{\s*grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\);/,
+  );
+
+  const listingTabRule = playerListingCss.match(
+    /\.play-page \.play-view-tabs,\s*\.play-page \.play-view-tabs--three\s*\{([^}]*)\}/,
+  )?.[1];
+  assert.ok(listingTabRule, "existing Play pill presentation must remain");
+  assert.doesNotMatch(listingTabRule, /(?:display|grid-template-columns)\s*:/);
+});
+
 test("Play detail and Open Matches use the authenticated Play API authority", async () => {
   const [detailPage, eventApi, playApi, rideDestinationFields] = await Promise.all([
     read("packages/frontend/src/events/EventDetailPage.tsx"),
