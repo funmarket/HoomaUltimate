@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@hooma/config": "0.1.0",
+    "@hooma/contracts": "0.1.0",
     "@hooma/storage": "0.1.0",
     "@hooma/database": "0.1.0",
     "@hooma/media-processing": "0.1.0"
