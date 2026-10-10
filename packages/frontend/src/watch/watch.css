@@ -542,7 +542,8 @@
 
 .watch-empty-state p {
   margin: 0;
-  color: var(--app-text-secondary);
+  color: #f7f7f7;
+  font-size: var(--hooma-ui-body);
 }
 
 @media (max-width: 760px) {

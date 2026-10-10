@@ -40,8 +40,8 @@
 .hooma-now__intro {
   max-width: 34rem;
   margin: 9px 0 0;
-  color: #9c9a91;
-  font-size: 15px;
+  color: #f7f7f7;
+  font-size: var(--hooma-ui-body);
   line-height: 1.45;
 }
 
@@ -398,8 +398,13 @@
   padding: 22px 16px;
   border: 1px dashed rgba(190, 150, 72, 0.28);
   border-radius: 16px;
-  color: #b9b3a6;
   text-align: center;
+}
+
+p.hooma-now__state,
+.hooma-now__state--error p {
+  color: #f7f7f7;
+  font-size: var(--hooma-ui-body);
 }
 
 .hooma-now__state--error p {

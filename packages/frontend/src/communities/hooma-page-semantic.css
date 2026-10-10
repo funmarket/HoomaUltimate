@@ -52,6 +52,12 @@
 
 .hooma-page .muted,
 .hooma-page p,
+.hooma-page p.muted,
+.hooma-page span.muted {
+  color: #f7f7f7;
+  font-size: var(--hooma-ui-body);
+}
+
 .hooma-page small {
   color: var(--hooma-page-muted);
 }
@@ -85,8 +91,8 @@
 .hooma-page .hooma-hero p {
   max-width: 34rem;
   margin: 0;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.98rem;
+  color: #f7f7f7;
+  font-size: var(--hooma-ui-body);
   line-height: 1.55;
 }
 
@@ -115,7 +121,11 @@
   font-size: 1.05rem;
 }
 
-.hooma-page .hooma-create-callout span,
+.hooma-page .hooma-create-callout span {
+  color: #f7f7f7;
+  font-size: var(--hooma-ui-body);
+}
+
 .hooma-page .hooma-create-callout small {
   color: var(--hooma-page-muted);
 }
@@ -230,7 +240,11 @@
   letter-spacing: -0.025em;
 }
 
-.hooma-page .hooma-card-copy p,
+.hooma-page .hooma-card-copy p {
+  color: #f7f7f7;
+  font-size: var(--hooma-ui-body);
+}
+
 .hooma-page .hooma-card-copy small {
   color: var(--hooma-page-muted);
 }

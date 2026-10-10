@@ -422,7 +422,8 @@
 .athletes-card p {
   max-width: 34rem;
   margin: 0;
-  color: rgba(255, 255, 255, 0.64);
+  color: #f7f7f7;
+  font-size: var(--hooma-ui-body);
   line-height: 1.45;
 }
 
