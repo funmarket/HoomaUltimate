@@ -3,11 +3,13 @@ import type { ManagedPlaceSummary } from "@hooma/contracts/places";
 import { useHoomaFrontend } from "../context";
 import { createPlacesApi } from "./api";
 import { PlaceForm } from "./PlaceForm";
+import { PlacePhotoManager } from "./PlacePhotoManager";
 
 export function PlaceEditPage({ placeId }: { readonly placeId: string }) {
   const { transport, protectedError } = useHoomaFrontend();
   const api = useMemo(() => createPlacesApi(transport), [transport]);
   const [place, setPlace] = useState<ManagedPlaceSummary | null>(null);
+  const [mediaImageLimit, setMediaImageLimit] = useState<number | null>(null);
   const [pending, setPending] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [notice, setNotice] = useState("");
@@ -16,7 +18,10 @@ export function PlaceEditPage({ placeId }: { readonly placeId: string }) {
   useEffect(() => {
     void api
       .manage(placeId)
-      .then(setPlace)
+      .then((managed) => {
+        setPlace(managed);
+        setMediaImageLimit(managed.mediaImageLimit);
+      })
       .catch((reason) => setError(protectedError(reason, "Unable to open Place settings")));
   }, [api, placeId, protectedError]);
 
@@ -82,11 +87,23 @@ export function PlaceEditPage({ placeId }: { readonly placeId: string }) {
           </div>
         </header>
         <PlaceForm
+          metadataOnly
           initialPlace={place}
           submitLabel="Save Place"
           pending={pending}
           onSubmit={save}
         />
+        {mediaImageLimit !== null ? (
+          <PlacePhotoManager
+            place={place}
+            maxImages={mediaImageLimit}
+            onChanged={async () => {
+              const managed = await api.manage(placeId);
+              setPlace(managed);
+              setMediaImageLimit(managed.mediaImageLimit);
+            }}
+          />
+        ) : null}
         {notice ? <p className="success">{notice}</p> : null}
         {error ? <p className="error">{error}</p> : null}
         <section className="entity-danger-zone place-danger-zone">

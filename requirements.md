@@ -756,6 +756,12 @@ Place photo inputs may be direct image URLs or public web/share/result URLs that
 
 External resolution must reject private/internal network targets and revalidate redirects so Place media cannot become an SSRF path. Spot, Watch and Pitch continue to read the same canonical Place media rather than owning parallel photo stores.
 
+## 11.0.2 Place metadata and gallery management
+
+Ordinary Place metadata updates preserve canonical gallery rows, including image identities, URLs and order. The metadata update contract rejects legacy `imageUrl` and `imageUrls` fields instead of treating a requested photo change as successful. Edit Place submits metadata separately from gallery actions.
+
+Existing Place-owned media operations govern external URL addition, managed upload, removal and ordering. Verified owners and active pending OWNER submitters retain the three-photo media limit; App Admin retains six. Generic pending FANHUB submitter metadata access does not grant media authority. Initial Place suggestion remains a separate creation workflow supporting up to four image URLs.
+
 ## 11.1 Place suggestion
 
 Authenticated users may suggest a Place. Suggestion alone does not make the suggester an owner.

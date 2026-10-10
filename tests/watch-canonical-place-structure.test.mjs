@@ -106,17 +106,17 @@ test("Place coordinates stay optional and update defaults stay out of partial PA
   );
   assert.match(
     contracts,
-    /placeUpdateSchema[\s\S]*?omit\(\{ imageUrl: true, imageUrls: true, menuItems: true \}\)[\s\S]*?imageUrls: z\.array\(placeImageUrlSchema\)\.max\(4\)\.optional\(\)[\s\S]*?menuItems: z\.array\(placeMenuItemSchema\)\.max\(20\)\.optional\(\)/,
+    /placeUpdateSchema[\s\S]*?omit\(\{ imageUrl: true, imageUrls: true, menuItems: true \}\)[\s\S]*?menuItems: z\.array\(placeMenuItemSchema\)\.max\(20\)\.optional\(\)/,
   );
 });
 
-test("Place partial updates preserve omitted images while explicit empty imageUrls clears them", () => {
+test("Place partial updates preserve omitted images and reject legacy gallery fields", () => {
   const partial = placeUpdateSchema.parse({ description: "Updated description" });
   assert.equal(partial.imageUrl, undefined);
   assert.equal(partial.imageUrls, undefined);
 
-  const explicitClear = placeUpdateSchema.parse({ imageUrls: [] });
-  assert.deepEqual(explicitClear.imageUrls, []);
+  assert.equal(placeUpdateSchema.safeParse({ imageUrls: [] }).success, false);
+  assert.equal(placeUpdateSchema.safeParse({ imageUrl: null }).success, false);
 });
 
 test("Place Add and Edit share one branded form and management stays on canonical Place routes", () => {

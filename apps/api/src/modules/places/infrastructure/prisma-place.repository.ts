@@ -12,7 +12,6 @@ import type {
 import { Prisma, type PrismaClient } from "@hooma/database";
 import type { PlaceModerationDecision, PlaceRepository } from "../application/place.repository.js";
 import {
-  canonicalPlaceImageCreate,
   canonicalPlaceSelect,
   canonicalPlaceSummary,
   findCanonicalPlaceDuplicate,
@@ -148,22 +147,6 @@ export class PrismaPlaceRepository implements PlaceRepository {
 
       if (input.menuItems !== undefined) {
         await tx.placeMenuItem.deleteMany({ where: { placeId } });
-      }
-      const imageUrls =
-        input.imageUrls !== undefined
-          ? input.imageUrls
-          : input.imageUrl !== undefined
-            ? input.imageUrl
-              ? [input.imageUrl]
-              : []
-            : undefined;
-      if (imageUrls !== undefined) {
-        await tx.placeImage.deleteMany({ where: { placeId } });
-        if (imageUrls.length) {
-          await tx.placeImage.createMany({
-            data: canonicalPlaceImageCreate(imageUrls).map((image) => ({ ...image, placeId })),
-          });
-        }
       }
       const place = await tx.place.update({
         where: { id: placeId },

@@ -18,7 +18,8 @@ test("By Owner Add Pitch exposes upload plus URL intake capped at three", () => 
 
 test("Pitch Manage uses the same canonical Place gallery for owner and App Admin limits", () => {
   const manage = source("packages/frontend/src/pitch/PitchManagePage.tsx");
-  const manager = source("packages/frontend/src/pitch/PitchPhotoManager.tsx");
+  const manager = source("packages/frontend/src/places/PlacePhotoManager.tsx");
+  assert.match(source("packages/frontend/src/pitch/PitchPhotoManager.tsx"), /<PlacePhotoManager/);
 
   assert.match(manage, /<PitchPhotoManager/);
   assert.match(manage, /maxImages=\{management\.verifiedOwnership \? 3 : 6\}/);
