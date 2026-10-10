@@ -1,3 +1,8 @@
+import {
+  PLACE_IMAGE_RECONCILE_TOPIC,
+  placeImageObjectKey,
+  placeManagedImagePath,
+} from "@hooma/contracts/places";
 import type {
   ManagedPlaceSummary,
   PlaceOwnershipClaimInput,
@@ -216,13 +221,64 @@ export class PrismaPlaceRepository implements PlaceRepository {
     });
   }
 
+  async prepareImageUpload(placeId: string, imageId: string): Promise<void> {
+    await this.db.outboxEvent.create({
+      data: {
+        id: imageId,
+        topic: PLACE_IMAGE_RECONCILE_TOPIC,
+        aggregateType: "PlaceImage",
+        aggregateId: placeId,
+        payload: { placeId, imageId, objectKey: placeImageObjectKey(placeId, imageId) },
+        // Existing reconciliation grace period exceeds the storage transport's 30s timeout.
+        availableAt: new Date(Date.now() + 60 * 60 * 1000),
+      },
+    });
+  }
+
+  async addPreparedImage(
+    placeId: string,
+    imageId: string,
+    maxImages: number,
+  ): Promise<PublicPlaceImage> {
+    return this.createImage(
+      placeId,
+      imageId,
+      placeManagedImagePath(placeId, imageId),
+      maxImages,
+      true,
+    );
+  }
+
   async addImage(
     placeId: string,
     imageId: string,
     imageUrl: string,
     maxImages: number,
   ): Promise<PublicPlaceImage> {
+    return this.createImage(placeId, imageId, imageUrl, maxImages, false);
+  }
+
+  private async createImage(
+    placeId: string,
+    imageId: string,
+    imageUrl: string,
+    maxImages: number,
+    prepared: boolean,
+  ): Promise<PublicPlaceImage> {
     return this.db.$transaction(async (tx) => {
+      if (prepared) {
+        const intent = await tx.outboxEvent.deleteMany({
+          where: {
+            id: imageId,
+            topic: PLACE_IMAGE_RECONCILE_TOPIC,
+            aggregateId: placeId,
+            status: "PENDING",
+            attempts: 0,
+            availableAt: { gt: new Date() },
+          },
+        });
+        if (intent.count !== 1) throw new Error("PLACE_IMAGE_UPLOAD_EXPIRED");
+      }
       const count = await tx.placeImage.count({ where: { placeId } });
       if (count >= maxImages) throw new Error("PLACE_IMAGE_LIMIT_REACHED");
       return tx.placeImage.create({
@@ -240,6 +296,17 @@ export class PrismaPlaceRepository implements PlaceRepository {
       });
       if (!existing) return null;
       await tx.placeImage.delete({ where: { id: imageId } });
+      if (existing.imageUrl === placeManagedImagePath(placeId, imageId)) {
+        await tx.outboxEvent.create({
+          data: {
+            id: imageId,
+            topic: PLACE_IMAGE_RECONCILE_TOPIC,
+            aggregateType: "PlaceImage",
+            aggregateId: placeId,
+            payload: { placeId, imageId, objectKey: placeImageObjectKey(placeId, imageId) },
+          },
+        });
+      }
       const remaining = await tx.placeImage.findMany({
         where: { placeId },
         orderBy: [{ sortOrder: "asc" }, { id: "asc" }],

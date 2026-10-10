@@ -6,6 +6,8 @@ import {
   PLACE_OWNER_IMAGE_LIMIT,
   placeExternalImageInputSchema,
   placeImageOrderSchema,
+  placeManagedImagePath as managedImagePath,
+  placeImageObjectKey as objectKey,
   type PlaceExternalImageInput,
   type PlaceImageContentType,
   type PlaceImageOrderInput,
@@ -23,16 +25,6 @@ const PLACE_IMAGE_TYPES = new Set<string>(PLACE_IMAGE_CONTENT_TYPES);
 export interface PlaceImageUploadInput {
   readonly contentType: string;
   readonly body: Uint8Array;
-}
-
-function managedImagePath(placeId: string, imageId: string): string {
-  return `/api/public/v1/places/${encodeURIComponent(placeId)}/images/${encodeURIComponent(
-    imageId,
-  )}/content`;
-}
-
-function objectKey(placeId: string, imageId: string): string {
-  return `place-images/${placeId}/${imageId}`;
 }
 
 function normalizeContentType(contentType: string): string {
@@ -89,17 +81,32 @@ export class PlaceMediaService {
       input.body,
       contentType as PlaceImageContentType,
     );
+    await this.places.prepareImageUpload(placeId, imageId);
     let uploaded = false;
     try {
       await this.storage.put(key, processed.body, processed.contentType);
       uploaded = true;
-      return await this.addImage(placeId, imageId, managedImagePath(placeId, imageId), maxImages);
+      try {
+        return await this.places.addPreparedImage(placeId, imageId, maxImages);
+      } catch (error) {
+        if (error instanceof Error && error.message === "PLACE_IMAGE_LIMIT_REACHED") {
+          throw new PlaceMediaError(
+            "PLACE_IMAGE_LIMIT_REACHED",
+            `This gallery is already at its ${maxImages}-photo limit`,
+          );
+        }
+        if (error instanceof Error && error.message === "PLACE_IMAGE_UPLOAD_EXPIRED") {
+          throw new Error("Place photo upload expired; please retry");
+        }
+        throw error;
+      }
     } catch (error) {
       if (uploaded) {
         try {
-          await this.storage.remove(key);
+          // A commit response can fail after publication; never remove a published image.
+          if (!(await this.places.getImage(placeId, imageId))) await this.storage.remove(key);
         } catch {
-          // Preserve the original failure; orphan cleanup can be retried operationally.
+          // The pre-upload intent remains durable when immediate cleanup cannot complete.
         }
       }
       throw error;
@@ -110,13 +117,6 @@ export class PlaceMediaService {
     await this.requireMediaAccess(userId, placeId);
     const deleted = await this.places.deleteImage(placeId, imageId);
     if (!deleted) throw new PlaceMediaError("PLACE_IMAGE_NOT_FOUND", "Place photo not found");
-    if (deleted.imageUrl === managedImagePath(placeId, imageId) && this.storage) {
-      try {
-        await this.storage.remove(objectKey(placeId, imageId));
-      } catch {
-        // Canonical gallery deletion remains authoritative.
-      }
-    }
     return { ok: true as const };
   }
 

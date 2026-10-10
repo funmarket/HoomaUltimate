@@ -1220,6 +1220,10 @@ Rules:
 - `Place` is the only physical venue record;
 - `Place.phone`, `Place.email`, and `Place.websiteUrl` are the single contact authority for Pitch;
 - `PlaceImage[]` is the runtime image authority;
+- managed Place image cleanup uses `place.image.reconcile-object` OutboxEvent payloads containing `placeId`, `imageId`, and the exact existing `place-images/{placeId}/{imageId}` key;
+- upload intents use image ID as event ID and a one-hour reconciliation grace period; gallery attachment consumes an unexpired PENDING intent with zero prior retry attempts in the same transaction as insertion, while failed/abandoned writes retain cleanup ownership;
+- managed gallery deletion atomically creates the cleanup event; external URLs do not create physical cleanup;
+- the Places Worker handler refuses mismatched identities/keys and skips objects still referenced by canonical gallery identity or delivery URL; existing Outbox leases, backoff and FAILED records retain retry/recovery semantics;
 - `PlaceCapability(kind=PITCH)` owns the current approved Pitch summary, hourly rate, and currency;
 - a Pitch suggestion creates pending Place + pending PITCH capability with submitted hourly rate/currency together;
 - approval of a community suggestion does not grant Place ownership to the suggester;
