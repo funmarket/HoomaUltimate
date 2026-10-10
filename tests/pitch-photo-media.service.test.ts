@@ -32,6 +32,14 @@ function dependencies({
       images.push(image);
       return image;
     },
+    prepareImageUpload: async () => undefined,
+    addPreparedImage: async (placeId: string, imageId: string, maxImages: number) =>
+      places.addImage(
+        placeId,
+        imageId,
+        `/api/public/v1/places/${placeId}/images/${imageId}/content`,
+        maxImages,
+      ),
     deleteImage: async () => null,
     reorderImages: async () => images,
   };

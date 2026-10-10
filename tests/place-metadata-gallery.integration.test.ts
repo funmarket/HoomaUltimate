@@ -10,7 +10,10 @@ import { PlaceService } from "../apps/api/src/modules/places/application/place.s
 import { PlaceMediaService } from "../apps/api/src/modules/places/application/place-media.service.js";
 import { PrismaPlaceRepository } from "../apps/api/src/modules/places/infrastructure/prisma-place.repository.js";
 import { SharpPlaceImageProcessor } from "../apps/api/src/modules/places/infrastructure/sharp-place-image-processor.js";
-import type { PlaceUpdateInput } from "@hooma/contracts/places";
+import { PLACE_IMAGE_RECONCILE_TOPIC, type PlaceUpdateInput } from "@hooma/contracts/places";
+import { createPlaceImageCleanupHandler } from "../apps/worker/src/places/place-image-cleanup.js";
+import { OutboxRepository } from "../apps/worker/src/outbox/outbox.repository.js";
+import { OutboxRunner } from "../apps/worker/src/outbox/outbox.runner.js";
 
 if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required for Place metadata tests");
 const db = getDatabaseClient();
@@ -288,8 +291,17 @@ test("Place metadata and gallery operations retain separate ownership through HT
           (await call(owner.cookie, `/${ownerId}/images/${image.id}`, "DELETE")).status,
           200,
         );
-        assert.equal(storage.objects.size, 0);
         assert.equal((await gallery(ownerId)).length, 2);
+        const cleanup = await db.outboxEvent.findUniqueOrThrow({ where: { id: image.id } });
+        assert.equal(cleanup.topic, PLACE_IMAGE_RECONCILE_TOPIC);
+        assert.equal(cleanup.status, "PENDING");
+        assert.equal(storage.objects.size, 1);
+        const runner = new OutboxRunner(
+          new OutboxRepository(db),
+          new Map([[PLACE_IMAGE_RECONCILE_TOPIC, createPlaceImageCleanupHandler(db, storage)]]),
+        );
+        assert.equal((await runner.runOnce()).delivered, 1);
+        assert.equal(storage.objects.size, 0);
       },
     );
     await t.test(
@@ -354,6 +366,9 @@ test("Place metadata and gallery operations retain separate ownership through HT
     await new Promise<void>((resolve, reject) =>
       server.close((error) => (error ? reject(error) : resolve())),
     );
+    await db.outboxEvent.deleteMany({
+      where: { topic: PLACE_IMAGE_RECONCILE_TOPIC, aggregateId: { in: places } },
+    });
     await db.place.deleteMany({ where: { id: { in: places } } });
     await db.user.deleteMany({ where: { id: { in: users } } });
     await db.$disconnect();

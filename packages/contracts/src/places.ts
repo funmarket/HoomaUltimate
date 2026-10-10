@@ -8,6 +8,29 @@ export const placeMenuItemSchema = z.object({
   currency: z.string().trim().length(3).default("TND"),
 });
 
+export const PLACE_IMAGE_RECONCILE_TOPIC = "place.image.reconcile-object";
+const placeMediaIdentitySchema = z
+  .string()
+  .min(1)
+  .max(200)
+  .regex(/^[A-Za-z0-9_-]+$/);
+export const placeImageCleanupPayloadSchema = z
+  .object({
+    placeId: placeMediaIdentitySchema,
+    imageId: placeMediaIdentitySchema,
+    objectKey: z.string().min(1).max(500),
+  })
+  .strict();
+export type PlaceImageCleanupPayload = z.infer<typeof placeImageCleanupPayloadSchema>;
+
+export function placeManagedImagePath(placeId: string, imageId: string): string {
+  return `/api/public/v1/places/${encodeURIComponent(placeId)}/images/${encodeURIComponent(imageId)}/content`;
+}
+
+export function placeImageObjectKey(placeId: string, imageId: string): string {
+  return `place-images/${placeId}/${imageId}`;
+}
+
 export const PLACE_OWNER_IMAGE_LIMIT = 3;
 export const PLACE_APP_ADMIN_IMAGE_LIMIT = 6;
 export const PLACE_IMAGE_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
