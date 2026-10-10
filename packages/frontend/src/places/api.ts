@@ -1,5 +1,6 @@
 import type {
   ManagedPlaceSummary,
+  PlaceManagementState,
   PlaceExternalImageInput,
   PlaceImageOrderInput,
   PlaceOwnershipClaimInput,
@@ -51,7 +52,7 @@ export function createPlacesApi(transport: HoomaTransport) {
     manage: async (placeId: string) =>
       normalizePlaceMedia(
         transport,
-        await request<ManagedPlaceSummary>(
+        await request<PlaceManagementState>(
           transport,
           `/api/v1/places/${encodeURIComponent(placeId)}/manage`,
         ),

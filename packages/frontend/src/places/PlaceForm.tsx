@@ -1,5 +1,9 @@
-import { useState, type FormEvent, type ReactNode } from "react";
-import type { PlaceSuggestionInput, PublicPlaceSummary } from "@hooma/contracts/places";
+import { useState, type FormEvent, type ReactNode, type ReactElement } from "react";
+import type {
+  PlaceSuggestionInput,
+  PlaceUpdateInput,
+  PublicPlaceSummary,
+} from "@hooma/contracts/places";
 
 export type PlaceFormInput = Omit<PlaceSuggestionInput, "submissionOrigin"> & {
   readonly imageFiles: readonly File[];
@@ -30,16 +34,7 @@ function imageDrafts(place: PublicPlaceSummary | null | undefined, maxImages: nu
   );
 }
 
-export function PlaceForm({
-  initialPlace,
-  submitLabel,
-  pending,
-  showMenu = true,
-  maxImages = 4,
-  allowUploads = false,
-  extraSection,
-  onSubmit,
-}: {
+type PlaceFormProps = {
   readonly initialPlace?: PublicPlaceSummary | null;
   readonly submitLabel: string;
   readonly pending: boolean;
@@ -47,8 +42,23 @@ export function PlaceForm({
   readonly maxImages?: number;
   readonly allowUploads?: boolean;
   readonly extraSection?: ReactNode;
-  readonly onSubmit: (input: PlaceFormInput) => Promise<void>;
-}) {
+} & (
+  | { readonly metadataOnly: true; readonly onSubmit: (input: PlaceUpdateInput) => Promise<void> }
+  | { readonly metadataOnly?: false; readonly onSubmit: (input: PlaceFormInput) => Promise<void> }
+);
+
+export function PlaceForm(props: PlaceFormProps & { readonly metadataOnly: true }): ReactElement;
+export function PlaceForm(props: PlaceFormProps & { readonly metadataOnly?: false }): ReactElement;
+export function PlaceForm(props: PlaceFormProps) {
+  const {
+    initialPlace,
+    submitLabel,
+    pending,
+    showMenu = true,
+    maxImages = 4,
+    allowUploads = false,
+    extraSection,
+  } = props;
   const [menu, setMenu] = useState<MenuDraft[]>(() => menuDrafts(initialPlace));
   const [imageUrls, setImageUrls] = useState<string[]>(() => imageDrafts(initialPlace, maxImages));
   const [imageFiles, setImageFiles] = useState<readonly File[]>([]);
@@ -110,18 +120,16 @@ export function PlaceForm({
           .filter((item) => item.name && Number.isFinite(item.price) && item.price >= 0)
       : [];
     const canonicalImages = imageUrls.map((value) => value.trim()).filter(Boolean);
-    if (canonicalImages.length + imageFiles.length > maxImages) {
+    if (!props.metadataOnly && canonicalImages.length + imageFiles.length > maxImages) {
       setImageError(`Choose no more than ${maxImages} photos in total.`);
       return;
     }
     setImageError("");
 
-    await onSubmit({
+    const metadata = {
       name: String(data.get("name") ?? "").trim(),
       category: optionalText("category"),
       description: optionalText("description"),
-      imageUrl: canonicalImages[0] ?? null,
-      imageUrls: canonicalImages,
       address: String(data.get("address") ?? "").trim(),
       city: optionalText("city"),
       houma: optionalText("houma"),
@@ -131,8 +139,17 @@ export function PlaceForm({
       email: optionalText("email"),
       websiteUrl: optionalText("websiteUrl"),
       menuItems,
-      imageFiles,
-    });
+    };
+    if (props.metadataOnly) {
+      await props.onSubmit(metadata);
+    } else {
+      await props.onSubmit({
+        ...metadata,
+        imageUrl: canonicalImages[0] ?? null,
+        imageUrls: canonicalImages,
+        imageFiles,
+      });
+    }
   }
 
   return (
@@ -159,64 +176,66 @@ export function PlaceForm({
             />
           </label>
         </div>
-        <div className="place-photo-editor">
-          <div className="place-photo-editor__heading">
-            <strong>Place photos</strong>
-            <small>
-              Up to {maxImages} photos. The first photo is the Place cover.
-              {allowUploads ? " Add links or upload files." : " Add external image links."}
-            </small>
-          </div>
-          {imageUrls.map((imageUrl, index) => (
-            <div className="place-photo-editor__row" key={index}>
-              <label className="hooma-field">
-                <span>Photo {index + 1} URL</span>
-                <input
-                  type="url"
-                  maxLength={4000}
-                  value={imageUrl}
-                  placeholder="https://…"
-                  onChange={(event) => updateImage(index, event.target.value)}
-                />
-              </label>
-              <div className="place-photo-editor__order" aria-label={`Photo ${index + 1} order`}>
-                <button
-                  type="button"
-                  disabled={index === 0}
-                  aria-label={`Move photo ${index + 1} up`}
-                  onClick={() => moveImage(index, -1)}
-                >
-                  ↑
-                </button>
-                <button
-                  type="button"
-                  disabled={index === imageUrls.length - 1}
-                  aria-label={`Move photo ${index + 1} down`}
-                  onClick={() => moveImage(index, 1)}
-                >
-                  ↓
-                </button>
-              </div>
-            </div>
-          ))}
-          {allowUploads ? (
-            <label className="hooma-field">
-              <span>Upload photos</span>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                multiple
-                onChange={(event) =>
-                  setImageFiles(Array.from(event.currentTarget.files ?? []).slice(0, maxImages))
-                }
-              />
+        {!props.metadataOnly ? (
+          <div className="place-photo-editor">
+            <div className="place-photo-editor__heading">
+              <strong>Place photos</strong>
               <small>
-                JPEG, PNG or WebP. URL and upload photos share the same {maxImages}-photo limit.
+                Up to {maxImages} photos. The first photo is the Place cover.
+                {allowUploads ? " Add links or upload files." : " Add external image links."}
               </small>
-            </label>
-          ) : null}
-          {imageError ? <p className="error">{imageError}</p> : null}
-        </div>
+            </div>
+            {imageUrls.map((imageUrl, index) => (
+              <div className="place-photo-editor__row" key={index}>
+                <label className="hooma-field">
+                  <span>Photo {index + 1} URL</span>
+                  <input
+                    type="url"
+                    maxLength={4000}
+                    value={imageUrl}
+                    placeholder="https://…"
+                    onChange={(event) => updateImage(index, event.target.value)}
+                  />
+                </label>
+                <div className="place-photo-editor__order" aria-label={`Photo ${index + 1} order`}>
+                  <button
+                    type="button"
+                    disabled={index === 0}
+                    aria-label={`Move photo ${index + 1} up`}
+                    onClick={() => moveImage(index, -1)}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    disabled={index === imageUrls.length - 1}
+                    aria-label={`Move photo ${index + 1} down`}
+                    onClick={() => moveImage(index, 1)}
+                  >
+                    ↓
+                  </button>
+                </div>
+              </div>
+            ))}
+            {allowUploads ? (
+              <label className="hooma-field">
+                <span>Upload photos</span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  onChange={(event) =>
+                    setImageFiles(Array.from(event.currentTarget.files ?? []).slice(0, maxImages))
+                  }
+                />
+                <small>
+                  JPEG, PNG or WebP. URL and upload photos share the same {maxImages}-photo limit.
+                </small>
+              </label>
+            ) : null}
+            {imageError ? <p className="error">{imageError}</p> : null}
+          </div>
+        ) : null}
         <label className="hooma-field">
           <span>About</span>
           <textarea

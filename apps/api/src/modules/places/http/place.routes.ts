@@ -117,9 +117,13 @@ export function createPlacesMemberRouter(service: PlaceService, media: PlaceMedi
   router.get(
     "/:placeId/manage",
     asyncHandler(async (request, response) => {
-      response.json(
-        await service.getManaged(getAuth(request).userId, String(request.params.placeId)),
-      );
+      const userId = getAuth(request).userId;
+      const placeId = String(request.params.placeId);
+      const place = await service.getManaged(userId, placeId);
+      response.json({
+        ...place,
+        mediaImageLimit: await media.managementImageLimit(userId, placeId),
+      });
     }),
   );
   router.patch(

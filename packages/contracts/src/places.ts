@@ -72,10 +72,9 @@ export const placeUpdateSchema = placeSuggestionBaseSchema
   .omit({ imageUrl: true, imageUrls: true, menuItems: true })
   .partial()
   .extend({
-    imageUrl: placeImageUrlSchema.optional().nullable(),
-    imageUrls: z.array(placeImageUrlSchema).max(4).optional(),
     menuItems: z.array(placeMenuItemSchema).max(20).optional(),
-  });
+  })
+  .strict();
 
 export const placeOwnershipClaimSchema = z.object({
   evidence: z.string().trim().min(10).max(4000),
@@ -136,6 +135,10 @@ export interface PlaceSuggestionResult {
 export interface ManagedPlaceSummary extends PublicPlaceSummary {
   readonly moderationStatus: PlaceModerationStatus;
   readonly archivedAt: string | null;
+}
+
+export interface PlaceManagementState extends ManagedPlaceSummary {
+  readonly mediaImageLimit: number | null;
 }
 
 export interface PlaceReviewApplicant {

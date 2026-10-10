@@ -285,6 +285,8 @@ This rule exists for scalability and user experience as well as code cleanliness
 
 Physical `Place` is the venue source of truth. Pitch extends Place through Pitch-owned capability/application behavior. Watch references canonical Place; it does not require a duplicate Watch venue entity or a generic capability model merely for symmetry.
 
+Place metadata updates do not write `PlaceImage` rows. The Places-owned media service retains gallery mutation and authorization; the managed Place response exposes its existing permitted image limit for Edit Place controls. Edit Place and Pitch management reuse one Places-owned photo-control implementation, while initial suggestion retains its separate gallery creation path.
+
 ADR-050 explicitly unfreezes durable Ride and Requests vertical slices. Rides owns ride offers, ride requests, participation, private meeting-point policy and Ride vehicle-photo metadata. Requests owns the single canonical `HelpRequest` domain, its Request Type/taxonomy selection, lifecycle/private-response behavior and Request media metadata. Request projections for Requests, Play and Athletes must remain views over that same HelpRequest owner rather than creating `PlayRequest`, `AthletesRequest` or another request persistence model.
 
 HOOMA Help presents Requests, FundMe and Donations as one product family while keeping three independent owning domains. Requests owns `HelpRequest`; Fundraising owns FundMe state when implemented; Donations owns physical-item giving when implemented; Payments remains separately governed. Shared Help access/taxonomy/media transport may be reused only through narrow explicit boundaries.

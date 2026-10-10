@@ -1,3 +1,4 @@
+import { placeUpdateSchema } from "@hooma/contracts/places";
 import type {
   PlaceOwnershipClaimInput,
   PlaceSuggestionInput,
@@ -42,9 +43,9 @@ export class PlaceService {
 
   async update(userId: string, placeId: string, input: PlaceUpdateInput) {
     await this.requireManage(userId, placeId);
-    const resolvedInput = await resolvePlaceImageFields(input, this.imageResolver);
+    const metadata = placeUpdateSchema.parse(input);
     try {
-      return await this.repository.update(placeId, resolvedInput);
+      return await this.repository.update(placeId, metadata);
     } catch (error) {
       if (error instanceof Error && error.message === "PLACE_ALREADY_EXISTS") {
         throw new AppError(

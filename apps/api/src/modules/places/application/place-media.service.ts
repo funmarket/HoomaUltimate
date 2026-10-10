@@ -156,9 +156,15 @@ export class PlaceMediaService {
     );
   }
 
-  private async requireMediaAccess(userId: string, placeId: string): Promise<number> {
+  async managementImageLimit(userId: string, placeId: string): Promise<number | null> {
     if (await this.platformAdmin.isPlatformAdmin(userId)) return PLACE_APP_ADMIN_IMAGE_LIMIT;
     if (await this.places.canManageOwnerMedia(placeId, userId)) return PLACE_OWNER_IMAGE_LIMIT;
+    return null;
+  }
+
+  private async requireMediaAccess(userId: string, placeId: string): Promise<number> {
+    const limit = await this.managementImageLimit(userId, placeId);
+    if (limit !== null) return limit;
     throw new PlaceMediaError(
       "PLACE_IMAGE_MANAGE_FORBIDDEN",
       "Verified owner, pending owner submitter, or App Admin access required",
