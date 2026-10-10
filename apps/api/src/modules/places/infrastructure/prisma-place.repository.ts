@@ -221,6 +221,13 @@ export class PrismaPlaceRepository implements PlaceRepository {
     });
   }
 
+  private async lockGallery(tx: Prisma.TransactionClient, placeId: string): Promise<void> {
+    // Serialize existing-gallery reads and writes across API processes until commit.
+    await tx.$queryRaw(
+      Prisma.sql`SELECT "id" FROM "Place" WHERE "id" = ${placeId} FOR NO KEY UPDATE`,
+    );
+  }
+
   async prepareImageUpload(placeId: string, imageId: string): Promise<void> {
     await this.db.outboxEvent.create({
       data: {
@@ -266,6 +273,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
     prepared: boolean,
   ): Promise<PublicPlaceImage> {
     return this.db.$transaction(async (tx) => {
+      await this.lockGallery(tx, placeId);
       if (prepared) {
         const intent = await tx.outboxEvent.deleteMany({
           where: {
@@ -290,6 +298,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
 
   async deleteImage(placeId: string, imageId: string): Promise<PublicPlaceImage | null> {
     return this.db.$transaction(async (tx) => {
+      await this.lockGallery(tx, placeId);
       const existing = await tx.placeImage.findFirst({
         where: { id: imageId, placeId },
         select: { id: true, imageUrl: true, sortOrder: true },
@@ -330,6 +339,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
     imageIds: readonly string[],
   ): Promise<readonly PublicPlaceImage[]> {
     return this.db.$transaction(async (tx) => {
+      await this.lockGallery(tx, placeId);
       const existing = await tx.placeImage.findMany({
         where: { placeId },
         orderBy: [{ sortOrder: "asc" }, { id: "asc" }],

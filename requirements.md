@@ -762,6 +762,8 @@ Ordinary Place metadata updates preserve canonical gallery rows, including image
 
 Existing Place-owned media operations govern external URL addition, managed upload, removal and ordering. Verified owners and active pending OWNER submitters retain the three-photo media limit; App Admin retains six. Generic pending FANHUB submitter metadata access does not grant media authority. Initial Place suggestion remains a separate creation workflow supporting up to four image URLs.
 
+Existing gallery actions serialize per Place across API processes. Concurrent valid additions within capacity succeed; additions beyond the caller's limit and stale reorder membership fail with the existing domain errors. Historical over-limit galleries retain their images and support authorized deletion/reordering without admitting additions above the applicable limit.
+
 Managed Place gallery removal commits object-cleanup intent in the same transaction as row deletion. External URL removal does not delete storage objects. Managed uploads persist reconciliation intent before storage writes and consume an unexpired, never-claimed intent atomically with gallery attachment; expired or Worker-claimed uploads cannot attach. Immediate upload-failure cleanup is best-effort only because the durable intent remains responsible for retry. The Places-owned Worker handler validates the exact image identity/key and preserves any canonical gallery reference before deletion; failures use existing Outbox retries and identifiable terminal state.
 
 ## 11.1 Place suggestion

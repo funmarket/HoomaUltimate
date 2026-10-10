@@ -1220,6 +1220,7 @@ Rules:
 - `Place` is the only physical venue record;
 - `Place.phone`, `Place.email`, and `Place.websiteUrl` are the single contact authority for Pitch;
 - `PlaceImage[]` is the runtime image authority;
+- existing-gallery mutations acquire the canonical Place row lock before gallery reads and hold it through transaction completion; the existing unique `(placeId, sortOrder)` constraint and two-phase ordering remain intact;
 - managed Place image cleanup uses `place.image.reconcile-object` OutboxEvent payloads containing `placeId`, `imageId`, and the exact existing `place-images/{placeId}/{imageId}` key;
 - upload intents use image ID as event ID and a one-hour reconciliation grace period; gallery attachment consumes an unexpired PENDING intent with zero prior retry attempts in the same transaction as insertion, while failed/abandoned writes retain cleanup ownership;
 - managed gallery deletion atomically creates the cleanup event; external URLs do not create physical cleanup;
