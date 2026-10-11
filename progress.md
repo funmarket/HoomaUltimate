@@ -79,6 +79,7 @@ Do not store current branch heads, pull-request state, commit SHAs, CI run IDs, 
 - PostgreSQL is durable business truth.
 - Redis/Valkey is used only for explicitly transient/disposable state.
 - Managed media bytes live in S3-compatible object storage while owning domains retain their business metadata/authorization.
+- Existing Place gallery mutations serialize per canonical Place through transaction-held PostgreSQL row locks. Deterministic independent-connection regressions cover capacity, quota errors, add/delete/reorder races, stale membership, prepared-upload intent rollback, legacy galleries, cover ordering and independent Places; existing ownership and durable cleanup regressions remain applicable.
 - Place metadata saves preserve canonical gallery identities, URLs and order; legacy gallery fields are rejected by the metadata contract. Edit Place and Pitch management use the same Places-owned media controls and existing narrower media permissions. Initial four-URL Place suggestion remains separate.
 - Managed Place object cleanup is Places-owned and durable through the existing Outbox/Worker lifecycle. Pre-upload intent and transactionally fenced publication protect attachment; gallery deletion commits cleanup intent atomically. PostgreSQL regressions cover interrupted API execution, Worker restart, controlled storage failure/retry, terminal failure, invalid keys, reference protection and E1A gallery preservation.
 - Durable schema changes use committed migrations; production `prisma db push` is not a migration strategy.
