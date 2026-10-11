@@ -70,6 +70,34 @@ export function createPlacesMemberRouter(service: PlaceService, media: PlaceMedi
     }),
   );
   router.put(
+    "/:placeId/images/:imageId/external",
+    asyncHandler(async (request, response) => {
+      response.json(
+        await media.replaceExternal(
+          getAuth(request).userId,
+          String(request.params.placeId),
+          String(request.params.imageId),
+          placeExternalImageInputSchema.parse(request.body),
+        ),
+      );
+    }),
+  );
+  router.put(
+    "/:placeId/images/:imageId/upload",
+    raw({ type: "*/*", limit: "5mb" }),
+    asyncHandler(async (request, response) => {
+      const body = Buffer.isBuffer(request.body) ? request.body : Buffer.alloc(0);
+      response.json(
+        await media.replaceUpload(
+          getAuth(request).userId,
+          String(request.params.placeId),
+          String(request.params.imageId),
+          { contentType: request.get("content-type") ?? "", body },
+        ),
+      );
+    }),
+  );
+  router.put(
     "/:placeId/images/order",
     asyncHandler(async (request, response) => {
       response.json(

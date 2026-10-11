@@ -766,6 +766,8 @@ Existing gallery actions serialize per Place across API processes. Concurrent va
 
 Managed Place gallery removal commits object-cleanup intent in the same transaction as row deletion. External URL removal does not delete storage objects. Managed uploads persist reconciliation intent before storage writes and consume an unexpired, never-claimed intent atomically with gallery attachment; expired or Worker-claimed uploads cannot attach. Immediate upload-failure cleanup is best-effort only because the durable intent remains responsible for retry. The Places-owned Worker handler validates the exact image identity/key and preserves any canonical gallery reference before deletion; failures use existing Outbox retries and identifiable terminal state.
 
+One-for-one gallery replacement keeps the selected image's current gallery slot and cover position while publishing a new immutable image identity. Uploaded photos and validated external URLs can replace an existing image without a separate deletion, including at owner/Admin quota and in historical over-limit galleries. Replacement under the existing canonical Place lock rejects stale image selection and retains the old public image if processing, upload, or the transaction fails. Managed objects retired by replacement use the existing transactional Outbox/Worker cleanup. External URLs never trigger physical deletion. Edit Place and Pitch share the Places-owned replacement controls.
+
 ## 11.1 Place suggestion
 
 Authenticated users may suggest a Place. Suggestion alone does not make the suggester an owner.

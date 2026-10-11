@@ -316,6 +316,70 @@ test("Place gallery mutations serialize across independent PostgreSQL connection
         );
       },
     );
+    await t.test("concurrent replacements reject the stale image without losing the slot", async () => {
+      const { placeId, ids } = await fixture(3);
+      const nextId = randomUUID();
+      const results = await pair(
+        (r) => r.replaceImage(placeId, ids[0], nextId, "https://images.example.test/first.webp", false),
+        (r) => r.replaceImage(placeId, ids[0], randomUUID(), "https://images.example.test/second.webp", false),
+      );
+      success(results[0]);
+      rejected(results[1], "PLACE_IMAGE_STALE");
+      assert.deepEqual((await rows(placeId)).map((image) => image.id), [nextId, ids[1], ids[2]]);
+    });
+    await t.test("replacement at six-photo quota never opens an addition slot", async () => {
+      const { placeId, ids } = await fixture(6);
+      const nextId = randomUUID();
+      const results = await pair(
+        (r) => r.replaceImage(placeId, ids[0], nextId, "https://images.example.test/new.webp", false),
+        (r) => add(r, placeId, randomUUID(), 6),
+      );
+      success(results[0]);
+      rejected(results[1], "PLACE_IMAGE_LIMIT_REACHED");
+      assert.equal((await rows(placeId)).length, 6);
+      assert.equal((await rows(placeId))[0]?.id, nextId);
+    });
+    for (const replaceFirst of [false, true]) {
+      await t.test(`replace versus deletion, replace first = ${replaceFirst}`, async () => {
+        const { placeId, ids } = await fixture(3);
+        const nextId = randomUUID();
+        const replace = (r: PrismaPlaceRepository) =>
+          r.replaceImage(placeId, ids[1], nextId, "https://images.example.test/new.webp", false);
+        const remove = (r: PrismaPlaceRepository) => r.deleteImage(placeId, ids[1]);
+        const results = await pair(
+          replaceFirst ? replace : remove,
+          replaceFirst ? remove : replace,
+        );
+        success(results[0]);
+        if (replaceFirst) success(results[1]);
+        else rejected(results[1], "PLACE_IMAGE_STALE");
+        assert.deepEqual(
+          (await rows(placeId)).map((image) => image.id),
+          replaceFirst ? [ids[0], nextId, ids[2]] : [ids[0], ids[2]],
+        );
+      });
+    }
+    await t.test("reorder before replacement preserves the current cover", async () => {
+      const { placeId, ids } = await fixture(3);
+      const nextId = randomUUID();
+      const results = await pair(
+        (r) => r.reorderImages(placeId, [...ids].reverse()),
+        (r) => r.replaceImage(placeId, ids[2], nextId, "https://images.example.test/new.webp", false),
+      );
+      results.forEach(success);
+      assert.deepEqual((await rows(placeId)).map((image) => image.id), [nextId, ids[1], ids[0]]);
+    });
+    await t.test("legacy seven-photo gallery supports one-for-one replacement", async () => {
+      const { placeId, ids } = await fixture(7);
+      const nextId = randomUUID();
+      await repository.replaceImage(placeId, ids[3], nextId, "https://images.example.test/new.webp", false);
+      assert.deepEqual((await rows(placeId)).map((image) => image.id), [
+        ...ids.slice(0, 3),
+        nextId,
+        ...ids.slice(4),
+      ]);
+      await assert.rejects(() => add(repository, placeId, randomUUID()), /PLACE_IMAGE_LIMIT_REACHED/);
+    });
     await t.test("independent Places mutate without a global gallery lock", async () => {
       const a = await fixture(1);
       const b = await fixture(1);

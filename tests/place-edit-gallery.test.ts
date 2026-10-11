@@ -122,6 +122,24 @@ test("Edit Place uses dedicated gallery operations and reports rejected photo ch
         { error: { code: "PLACE_IMAGE_MANAGE_FORBIDDEN", message: "Photo permission denied" } },
         { status: 403 },
       );
+    if (method === "PUT" && /\/images\/image-[0-9]+\/(external|upload)$/.test(path)) {
+      const oldId = path.match(/\/images\/(image-[0-9]+)\//)?.[1];
+      const index = images.findIndex((image) => image.id === oldId);
+      if (index < 0)
+        return Response.json(
+          { error: { code: "PLACE_IMAGE_STALE", message: "Selected photo changed" } },
+          { status: 409 },
+        );
+      const image = {
+        id: "replacement-image",
+        imageUrl: body instanceof Blob
+          ? "/api/public/v1/places/test-place/images/replacement-image/content"
+          : body.url,
+        sortOrder: images[index]!.sortOrder,
+      };
+      images[index] = image;
+      return Response.json(image);
+    }
     if (path.endsWith("/images/order")) {
       images = body.imageIds.map((id: string, sortOrder: number) => ({
         ...images.find((image) => image.id === id)!,
@@ -181,6 +199,23 @@ test("Edit Place uses dedicated gallery operations and reports rejected photo ch
           call.path.endsWith("/images/upload") &&
           call.method === "POST" &&
           call.body instanceof Blob,
+      ),
+    );
+    fireEvent.click(view.getAllByText("Replace")[0]!);
+    fireEvent.change(view.getByLabelText("Replacement image URL"), {
+      target: { value: "https://example.test/replaced.jpg" },
+    });
+    fireEvent.submit(view.getByLabelText("Replacement image URL").closest("form")!);
+    await waitFor(() =>
+      assert.equal(view.getAllByRole("img")[0]!.getAttribute("src"), "https://example.test/replaced.jpg"),
+    );
+    assert.equal(view.getAllByRole("img").length, 3);
+    assert.ok(
+      calls.some(
+        (call) =>
+          call.method === "PUT" &&
+          call.path.endsWith("/images/image-1/external") &&
+          call.body.url === "https://example.test/replaced.jpg",
       ),
     );
     rejected = true;

@@ -296,6 +296,59 @@ export class PrismaPlaceRepository implements PlaceRepository {
     });
   }
 
+  async replaceImage(
+    placeId: string,
+    previousImageId: string,
+    nextImageId: string,
+    nextImageUrl: string,
+    prepared: boolean,
+  ): Promise<PublicPlaceImage> {
+    return this.db.$transaction(async (tx) => {
+      await this.lockGallery(tx, placeId);
+      const previous = await tx.placeImage.findFirst({
+        where: { id: previousImageId, placeId },
+        select: { id: true, imageUrl: true, sortOrder: true },
+      });
+      if (!previous) throw new Error("PLACE_IMAGE_STALE");
+
+      if (prepared) {
+        const intent = await tx.outboxEvent.deleteMany({
+          where: {
+            id: nextImageId,
+            topic: PLACE_IMAGE_RECONCILE_TOPIC,
+            aggregateId: placeId,
+            status: "PENDING",
+            attempts: 0,
+            availableAt: { gt: new Date() },
+          },
+        });
+        if (intent.count !== 1) throw new Error("PLACE_IMAGE_UPLOAD_EXPIRED");
+      }
+
+      // Delete and insert remain one committed gallery transition.
+      await tx.placeImage.delete({ where: { id: previousImageId } });
+      if (previous.imageUrl === placeManagedImagePath(placeId, previousImageId)) {
+        await tx.outboxEvent.create({
+          data: {
+            id: previousImageId,
+            topic: PLACE_IMAGE_RECONCILE_TOPIC,
+            aggregateType: "PlaceImage",
+            aggregateId: placeId,
+            payload: {
+              placeId,
+              imageId: previousImageId,
+              objectKey: placeImageObjectKey(placeId, previousImageId),
+            },
+          },
+        });
+      }
+      return tx.placeImage.create({
+        data: { id: nextImageId, placeId, imageUrl: nextImageUrl, sortOrder: previous.sortOrder },
+        select: { id: true, imageUrl: true, sortOrder: true },
+      });
+    });
+  }
+
   async deleteImage(placeId: string, imageId: string): Promise<PublicPlaceImage | null> {
     return this.db.$transaction(async (tx) => {
       await this.lockGallery(tx, placeId);

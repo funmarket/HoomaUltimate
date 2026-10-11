@@ -34,6 +34,13 @@ export interface PlaceRepository {
   ): Promise<PublicPlaceImage>;
   prepareImageUpload(placeId: string, imageId: string): Promise<void>;
   addPreparedImage(placeId: string, imageId: string, maxImages: number): Promise<PublicPlaceImage>;
+  replaceImage(
+    placeId: string,
+    previousImageId: string,
+    nextImageId: string,
+    nextImageUrl: string,
+    prepared: boolean,
+  ): Promise<PublicPlaceImage>;
   deleteImage(placeId: string, imageId: string): Promise<PublicPlaceImage | null>;
   reorderImages(placeId: string, imageIds: readonly string[]): Promise<readonly PublicPlaceImage[]>;
   claimOwnership(

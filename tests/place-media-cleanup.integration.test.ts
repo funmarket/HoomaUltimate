@@ -443,6 +443,38 @@ test("Place cleanup is durable, fenced and retryable through PostgreSQL and Work
         assert.equal(storage.removed.length, before);
       },
     );
+    await t.test("atomic replacement retires managed bytes only after a committed new reference", async () => {
+      const first = await upload();
+      const previous = await repository.getImage(place.id, first.id);
+      assert.ok(previous);
+      const next = await media.replaceUpload(owner.id, place.id, first.id, {
+        contentType: "image/png",
+        body: new Uint8Array([1]),
+      });
+      assert.equal(next.sortOrder, previous.sortOrder);
+      assert.notEqual(next.id, first.id);
+      assert.equal(await repository.getImage(place.id, first.id), null);
+      assert.equal(storage.objects.has(key(first.id)), true);
+      assert.equal(storage.objects.has(key(next.id)), true);
+      await due();
+      await runner().runOnce();
+      assert.equal(storage.objects.has(key(first.id)), false);
+      assert.equal(storage.objects.has(key(next.id)), true);
+      const external = await media.replaceExternal(owner.id, place.id, next.id, {
+        url: "https://cdn.example.test/replacement.webp",
+      });
+      assert.equal(external.sortOrder, previous.sortOrder);
+      await due();
+      await runner().runOnce();
+      assert.equal(storage.objects.has(key(next.id)), false);
+      assert.equal(await db.placeImage.count({ where: { placeId: place.id } }), 1);
+      await assert.rejects(
+        () => media.replaceExternal(owner.id, place.id, next.id, {
+          url: "https://cdn.example.test/stale.webp",
+        }),
+        (error: unknown) => (error as { code?: string }).code === "PLACE_IMAGE_STALE",
+      );
+    });
   } finally {
     await db.outboxEvent.deleteMany({ where: { topic, aggregateId: place.id } });
     await db.place.delete({ where: { id: place.id } });

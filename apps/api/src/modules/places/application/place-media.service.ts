@@ -53,7 +53,37 @@ export class PlaceMediaService {
     return this.addImage(placeId, randomUUID(), imageUrl, maxImages);
   }
 
+  async replaceExternal(
+    userId: string,
+    placeId: string,
+    previousImageId: string,
+    input: PlaceExternalImageInput,
+  ) {
+    await this.requireMediaAccess(userId, placeId);
+    const parsed = placeExternalImageInputSchema.parse(input);
+    const imageUrl = await this.externalResolver.resolve(parsed.url);
+    return this.replaceImage(placeId, previousImageId, randomUUID(), imageUrl, false);
+  }
+
   async addUpload(userId: string, placeId: string, input: PlaceImageUploadInput) {
+    return this.saveUpload(userId, placeId, input);
+  }
+
+  async replaceUpload(
+    userId: string,
+    placeId: string,
+    previousImageId: string,
+    input: PlaceImageUploadInput,
+  ) {
+    return this.saveUpload(userId, placeId, input, previousImageId);
+  }
+
+  private async saveUpload(
+    userId: string,
+    placeId: string,
+    input: PlaceImageUploadInput,
+    previousImageId?: string,
+  ) {
     const maxImages = await this.requireMediaAccess(userId, placeId);
     const contentType = normalizeContentType(input.contentType);
     if (!PLACE_IMAGE_TYPES.has(contentType)) {
@@ -87,7 +117,15 @@ export class PlaceMediaService {
       await this.storage.put(key, processed.body, processed.contentType);
       uploaded = true;
       try {
-        return await this.places.addPreparedImage(placeId, imageId, maxImages);
+        return previousImageId === undefined
+          ? await this.places.addPreparedImage(placeId, imageId, maxImages)
+          : await this.replaceImage(
+              placeId,
+              previousImageId,
+              imageId,
+              managedImagePath(placeId, imageId),
+              true,
+            );
       } catch (error) {
         if (error instanceof Error && error.message === "PLACE_IMAGE_LIMIT_REACHED") {
           throw new PlaceMediaError(
@@ -108,6 +146,32 @@ export class PlaceMediaService {
         } catch {
           // The pre-upload intent remains durable when immediate cleanup cannot complete.
         }
+      }
+      throw error;
+    }
+  }
+
+  private async replaceImage(
+    placeId: string,
+    previousImageId: string,
+    nextImageId: string,
+    nextImageUrl: string,
+    prepared: boolean,
+  ) {
+    try {
+      return await this.places.replaceImage(
+        placeId,
+        previousImageId,
+        nextImageId,
+        nextImageUrl,
+        prepared,
+      );
+    } catch (error) {
+      if (error instanceof Error && error.message === "PLACE_IMAGE_STALE") {
+        throw new PlaceMediaError(
+          "PLACE_IMAGE_STALE",
+          "Selected Place photo has changed. Refresh the gallery and try again",
+        );
       }
       throw error;
     }
