@@ -347,40 +347,25 @@ test("Place gallery mutations serialize across independent PostgreSQL connection
         );
       },
     );
-    await t.test(
-      "replacement at six-photo quota never opens an addition slot",
-      async () => {
-        const { placeId, ids } = await fixture(6);
-        const nextId = randomUUID();
-        const results = await pair(
-          (r) =>
-            r.replaceImage(
-              placeId,
-              ids[0],
-              nextId,
-              "https://images.example.test/new.webp",
-              false,
-            ),
-          (r) => add(r, placeId, randomUUID(), 6),
-        );
-        success(results[0]);
-        rejected(results[1], "PLACE_IMAGE_LIMIT_REACHED");
-        assert.equal((await rows(placeId)).length, 6);
-        assert.equal((await rows(placeId))[0]?.id, nextId);
-      },
-    );
+    await t.test("replacement at six-photo quota never opens an addition slot", async () => {
+      const { placeId, ids } = await fixture(6);
+      const nextId = randomUUID();
+      const results = await pair(
+        (r) =>
+          r.replaceImage(placeId, ids[0], nextId, "https://images.example.test/new.webp", false),
+        (r) => add(r, placeId, randomUUID(), 6),
+      );
+      success(results[0]);
+      rejected(results[1], "PLACE_IMAGE_LIMIT_REACHED");
+      assert.equal((await rows(placeId)).length, 6);
+      assert.equal((await rows(placeId))[0]?.id, nextId);
+    });
     for (const replaceFirst of [false, true]) {
       await t.test(`replace versus deletion, replace first = ${replaceFirst}`, async () => {
         const { placeId, ids } = await fixture(3);
         const nextId = randomUUID();
         const replacement = (r: PrismaPlaceRepository) =>
-          r.replaceImage(
-            placeId,
-            ids[1],
-            nextId,
-            "https://images.example.test/new.webp",
-            false,
-          );
+          r.replaceImage(placeId, ids[1], nextId, "https://images.example.test/new.webp", false);
         const remove = (r: PrismaPlaceRepository) => r.deleteImage(placeId, ids[1]);
         const results = await pair(
           replaceFirst ? replacement : remove,
@@ -401,13 +386,7 @@ test("Place gallery mutations serialize across independent PostgreSQL connection
       const results = await pair(
         (r) => r.reorderImages(placeId, [...ids].reverse()),
         (r) =>
-          r.replaceImage(
-            placeId,
-            ids[2],
-            nextId,
-            "https://images.example.test/new.webp",
-            false,
-          ),
+          r.replaceImage(placeId, ids[2], nextId, "https://images.example.test/new.webp", false),
       );
       results.forEach(success);
       assert.deepEqual(

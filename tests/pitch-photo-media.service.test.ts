@@ -174,8 +174,7 @@ test("unauthorized replacement cannot upload", async () => {
         contentType: "image/png",
         body: new Uint8Array([1]),
       }),
-    (error: unknown) =>
-      (error as { code?: string }).code === "PLACE_IMAGE_MANAGE_FORBIDDEN",
+    (error: unknown) => (error as { code?: string }).code === "PLACE_IMAGE_MANAGE_FORBIDDEN",
   );
   assert.equal(calls.puts.length, 0);
 });
