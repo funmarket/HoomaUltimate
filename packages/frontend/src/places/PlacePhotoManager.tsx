@@ -17,17 +17,31 @@ export function PlacePhotoManager({
   const { transport, protectedError } = useHoomaFrontend();
   const api = useMemo(() => createPlacesApi(transport), [transport]);
   const [externalUrl, setExternalUrl] = useState("");
+  const [replacingId, setReplacingId] = useState<string | null>(null);
+  const [replacementUrl, setReplacementUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const atLimit = place.images.length >= maxImages;
 
-  async function run(action: () => Promise<unknown>) {
+  async function run(action: () => Promise<unknown>, replacement = false) {
     setBusy(true);
     setError("");
     try {
       await action();
       await onChanged();
+      if (replacement) {
+        setReplacingId(null);
+        setReplacementUrl("");
+      }
     } catch (reason) {
+      if (replacement) {
+        try {
+          await onChanged();
+        } catch {
+          // Preserve the original replacement error.
+        }
+        setReplacingId(null);
+      }
       setError(protectedError(reason, `Unable to update ${subject} photos`));
     } finally {
       setBusy(false);
@@ -46,6 +60,20 @@ export function PlacePhotoManager({
   async function upload(file: File | null) {
     if (!file || atLimit) return;
     await run(() => api.uploadImage(place.id, file));
+  }
+
+  async function replaceExternal(event: FormEvent<HTMLFormElement>, imageId: string) {
+    event.preventDefault();
+    if (!replacementUrl.trim()) return;
+    await run(
+      () => api.replaceExternalImage(place.id, imageId, { url: replacementUrl.trim() }),
+      true,
+    );
+  }
+
+  async function replaceUpload(imageId: string, file: File | null) {
+    if (!file) return;
+    await run(() => api.replaceUploadedImage(place.id, imageId, file), true);
   }
 
   async function move(index: number, direction: -1 | 1) {
@@ -87,11 +115,52 @@ export function PlacePhotoManager({
               <button
                 type="button"
                 disabled={busy}
+                onClick={() => {
+                  setReplacingId(replacingId === image.id ? null : image.id);
+                  setReplacementUrl("");
+                  setError("");
+                }}
+              >
+                {replacingId === image.id ? "Cancel replacement" : "Replace"}
+              </button>
+              <button
+                type="button"
+                disabled={busy}
                 onClick={() => void run(() => api.deleteImage(place.id, image.id))}
               >
                 Remove
               </button>
             </div>
+            {replacingId === image.id ? (
+              <div className="pitch-photo-manager__replacement">
+                <form onSubmit={(event) => void replaceExternal(event, image.id)}>
+                  <label className="place-business-field">
+                    <span>Replacement image URL</span>
+                    <input
+                      type="url"
+                      value={replacementUrl}
+                      disabled={busy}
+                      placeholder="https://…"
+                      onChange={(event) => setReplacementUrl(event.target.value)}
+                    />
+                  </label>
+                  <button type="submit" disabled={busy || !replacementUrl.trim()}>
+                    Replace from URL
+                  </button>
+                </form>
+                <label className="place-business-field">
+                  <span>Replacement upload</span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    disabled={busy}
+                    onChange={(event) =>
+                      void replaceUpload(image.id, event.currentTarget.files?.[0] ?? null)
+                    }
+                  />
+                </label>
+              </div>
+            ) : null}
           </article>
         ))}
       </div>

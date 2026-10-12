@@ -287,6 +287,8 @@ Physical `Place` is the venue source of truth. Pitch extends Place through Pitch
 
 Places owns managed-image reconciliation intent and its key/delivery contract. Upload preparation commits an existing OutboxEvent before object storage; publication consumes the unexpired, never-claimed intent transactionally with PlaceImage insertion. Gallery deletion queues managed cleanup in the same transaction. The Places-owned Worker handler uses the shared Outbox engine and checks canonical references before physical removal; no separate cleanup queue or media persistence model exists.
 
+One-for-one gallery replacement also uses the Places-owned media service and canonical Place transaction lock. A new immutable image ID replaces the old gallery record at its current slot in one commit, with the retired managed object's cleanup intent committed alongside the swap. URL and upload replacement share the existing Place/Pitch photo-control owner, without a new data table or queue.
+
 Existing-gallery addition, prepared upload publication, deletion and reordering share a transaction-held PostgreSQL lock on the canonical Place row before gallery reads. Quota and membership checks remain inside those transactions; independent Places do not share a gallery lock.
 
 Place metadata updates do not write `PlaceImage` rows. The Places-owned media service retains gallery mutation and authorization; the managed Place response exposes its existing permitted image limit for Edit Place controls. Edit Place and Pitch management reuse one Places-owned photo-control implementation, while initial suggestion retains its separate gallery creation path.

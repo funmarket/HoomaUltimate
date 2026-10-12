@@ -102,6 +102,30 @@ export function createPlacesApi(transport: HoomaTransport) {
           { method: "POST" },
         ),
       ),
+    replaceExternalImage: async (
+      placeId: string,
+      imageId: string,
+      input: PlaceExternalImageInput,
+    ) =>
+      normalizeImage(
+        transport,
+        await request<PublicPlaceImage>(
+          transport,
+          `/api/v1/places/${encodeURIComponent(placeId)}/images/${encodeURIComponent(imageId)}/external`,
+          { method: "PUT", body: JSON.stringify(input) },
+        ),
+      ),
+    replaceUploadedImage: async (placeId: string, imageId: string, file: File) =>
+      normalizeImage(
+        transport,
+        await requestBinary<PublicPlaceImage>(
+          transport,
+          `/api/v1/places/${encodeURIComponent(placeId)}/images/${encodeURIComponent(imageId)}/upload`,
+          file,
+          file.type,
+          { method: "PUT" },
+        ),
+      ),
     reorderImages: (placeId: string, input: PlaceImageOrderInput) =>
       request<PublicPlaceImage[]>(
         transport,
