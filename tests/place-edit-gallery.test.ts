@@ -132,9 +132,10 @@ test("Edit Place uses dedicated gallery operations and reports rejected photo ch
         );
       const image = {
         id: "replacement-image",
-        imageUrl: body instanceof Blob
-          ? "/api/public/v1/places/test-place/images/replacement-image/content"
-          : body.url,
+        imageUrl:
+          body instanceof Blob
+            ? "/api/public/v1/places/test-place/images/replacement-image/content"
+            : body.url,
         sortOrder: images[index]!.sortOrder,
       };
       images[index] = image;
@@ -207,7 +208,10 @@ test("Edit Place uses dedicated gallery operations and reports rejected photo ch
     });
     fireEvent.submit(view.getByLabelText("Replacement image URL").closest("form")!);
     await waitFor(() =>
-      assert.equal(view.getAllByRole("img")[0]!.getAttribute("src"), "https://example.test/replaced.jpg"),
+      assert.equal(
+        view.getAllByRole("img")[0]!.getAttribute("src"),
+        "https://example.test/replaced.jpg",
+      ),
     );
     assert.equal(view.getAllByRole("img").length, 3);
     assert.ok(
