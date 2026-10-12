@@ -43,7 +43,11 @@ function dependencies({
     replaceImage: async (_placeId: string, oldId: string, newId: string, url: string) => {
       const index = images.findIndex((image) => image.id === oldId);
       if (index < 0) throw new Error("PLACE_IMAGE_STALE");
-      const image = { id: newId, imageUrl: url, sortOrder: images[index]!.sortOrder };
+      const image = {
+        id: newId,
+        imageUrl: url,
+        sortOrder: images[index]!.sortOrder,
+      };
       images[index] = image;
       return image;
     },
@@ -121,7 +125,10 @@ test("managed upload and external URL both create canonical gallery entries", as
 });
 
 test("owner and App Admin can replace at quota without changing count or cover", async () => {
-  for (const [count, admin] of [[3, false], [6, true]] as const) {
+  for (const [count, admin] of [
+    [3, false],
+    [6, true],
+  ] as const) {
     const { service, images } = dependencies({ count, admin, owner: !admin });
     const old = images[0]!;
     const replacement = await service.replaceExternal("actor", "place-1", old.id, {
@@ -132,9 +139,10 @@ test("owner and App Admin can replace at quota without changing count or cover",
     assert.equal(images[0]?.id, replacement.id);
     assert.equal(replacement.sortOrder, 0);
     await assert.rejects(
-      () => service.replaceExternal("actor", "place-1", old.id, {
-        url: "https://cdn.example.com/stale.webp",
-      }),
+      () =>
+        service.replaceExternal("actor", "place-1", old.id, {
+          url: "https://cdn.example.com/stale.webp",
+        }),
       (error: unknown) => (error as { code?: string }).code === "PLACE_IMAGE_STALE",
     );
   }
@@ -161,11 +169,13 @@ test("replacement supports managed and external sources in historical galleries"
 test("unauthorized replacement cannot upload", async () => {
   const { service, images, calls } = dependencies({ owner: false, count: 3 });
   await assert.rejects(
-    () => service.replaceUpload("outsider", "place-1", images[0]!.id, {
-      contentType: "image/png",
-      body: new Uint8Array([1]),
-    }),
-    (error: unknown) => (error as { code?: string }).code === "PLACE_IMAGE_MANAGE_FORBIDDEN",
+    () =>
+      service.replaceUpload("outsider", "place-1", images[0]!.id, {
+        contentType: "image/png",
+        body: new Uint8Array([1]),
+      }),
+    (error: unknown) =>
+      (error as { code?: string }).code === "PLACE_IMAGE_MANAGE_FORBIDDEN",
   );
   assert.equal(calls.puts.length, 0);
 });
