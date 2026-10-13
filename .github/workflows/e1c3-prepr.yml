@@ -1,0 +1,79 @@
+name: E1C3 Temporary Pre-PR Verification
+
+on:
+  push:
+    branches: [feat/e1c3-historical-gallery-reorder]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hooma_ultimate_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hooma_ultimate_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hooma_ultimate_test
+      REDIS_URL: redis://localhost:6379
+      WEB_ORIGIN: http://localhost:5173
+      TELEGRAM_ORIGIN: http://localhost:5174
+      TELEGRAM_BOT_TOKEN: integration-test-token
+      CI_BASE_SHA: 1ce33fb85e6a4b93088f3df3200d4af76cca21c1
+      CI_HEAD_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Pin repository npm version
+        run: npm install --global npm@10.9.2
+      - run: npm ci
+      - name: Temporary pinned Prettier generation
+        run: |
+          npm exec -- prettier --write packages/contracts/src/places.ts tests/place-gallery-reorder-contract.test.ts tests/place-gallery-concurrency.integration.test.ts
+          echo E1C3_PRETTIER_DIFF_BEGIN
+          git diff -- packages/contracts/src/places.ts tests/place-gallery-reorder-contract.test.ts tests/place-gallery-concurrency.integration.test.ts
+          echo E1C3_PRETTIER_DIFF_END
+      - run: npm run db:generate
+      - run: npm run db:validate
+      - run: npm run db:migrate:deploy
+      - run: npm run architecture:check
+      - name: Check changed-file formatting
+        run: node scripts/check-changed-format.mjs
+      - name: Lint changed source files
+        run: node scripts/check-changed-lint.mjs
+      - run: npm run typecheck
+      - run: npm run build:packages
+      - run: npm test
+      - run: npm run build
+      - run: npm run test:integration
+      - run: npm run deploy:preflight
+      - run: npm run security:check
+      - run: npm run db:migrate:status

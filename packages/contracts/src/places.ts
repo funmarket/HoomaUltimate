@@ -65,7 +65,7 @@ export const placeImageUrlSchema = z
 export const placeExternalImageInputSchema = z.object({ url: placeImageUrlSchema }).strict();
 export const placeImageOrderSchema = z
   .object({
-    imageIds: z.array(z.string().trim().min(1)).min(1).max(PLACE_APP_ADMIN_IMAGE_LIMIT),
+    imageIds: z.array(z.string().trim().min(1)).min(1),
   })
   .strict();
 export const placeImageContentTypeSchema = z.enum(PLACE_IMAGE_CONTENT_TYPES);

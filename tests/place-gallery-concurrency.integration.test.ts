@@ -316,6 +316,73 @@ test("Place gallery mutations serialize across independent PostgreSQL connection
         );
       },
     );
+    await t.test("standard and admin galleries preserve identities and cover on reorder", async () => {
+      for (const count of [3, 6]) {
+        const { placeId, ids } = await fixture(count);
+        const previous = await rows(placeId);
+        const order = [...ids].reverse();
+        await repository.reorderImages(placeId, order);
+        const after = await rows(placeId);
+        assert.deepEqual(after.map((image) => image.id), order);
+        assert.deepEqual(
+          after.map((image) => image.imageUrl).sort(),
+          previous.map((image) => image.imageUrl).sort(),
+        );
+      }
+    });
+    await t.test("legacy seven-photo reorder retains every identity, media URL and quota", async () => {
+      const { placeId, ids } = await fixture(7);
+      const before = await rows(placeId);
+      const order = [...ids].reverse();
+      const result = await repository.reorderImages(placeId, order);
+      assert.deepEqual(result.map((image) => image.id), order);
+      const after = await rows(placeId);
+      assert.deepEqual(after.map((image) => image.id), order);
+      assert.deepEqual(
+        after.map((image) => [image.id, image.imageUrl]).sort(([a], [b]) => a.localeCompare(b)),
+        before.map((image) => [image.id, image.imageUrl]).sort(([a], [b]) => a.localeCompare(b)),
+      );
+      for (const limit of [3, 6]) {
+        await assert.rejects(
+          () => add(repository, placeId, randomUUID(), limit),
+          /PLACE_IMAGE_LIMIT_REACHED/,
+        );
+      }
+      assert.deepEqual(await rows(placeId), after);
+    });
+    await t.test("legacy reorder rejects incomplete, duplicate, foreign and stale identities", async () => {
+      const { placeId, ids } = await fixture(7);
+      const original = await rows(placeId);
+      for (const invalid of [
+        ids.slice(0, -1),
+        [ids[0], ids[0], ...ids.slice(2)],
+        [...ids.slice(0, -1), randomUUID()],
+      ]) {
+        await assert.rejects(
+          () => repository.reorderImages(placeId, invalid),
+          /PLACE_IMAGE_ORDER_INVALID/,
+        );
+        assert.deepEqual(await rows(placeId), original);
+      }
+      await repository.deleteImage(placeId, ids[2]);
+      const remaining = await rows(placeId);
+      await assert.rejects(
+        () => repository.reorderImages(placeId, ids),
+        /PLACE_IMAGE_ORDER_INVALID/,
+      );
+      assert.deepEqual(await rows(placeId), remaining);
+    });
+    await t.test("legacy reorder and net-new addition serialize without exceeding quota", async () => {
+      const { placeId, ids } = await fixture(7);
+      const order = [...ids].reverse();
+      const result = await pair(
+        (r) => r.reorderImages(placeId, order),
+        (r) => add(r, placeId, randomUUID(), 6),
+      );
+      success(result[0]);
+      rejected(result[1], "PLACE_IMAGE_LIMIT_REACHED");
+      assert.deepEqual((await rows(placeId)).map((image) => image.id), order);
+    });
     await t.test(
       "concurrent replacements reject the stale image without losing the slot",
       async () => {
