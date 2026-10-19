@@ -174,7 +174,7 @@ Shared Web/Telegram product feature UI and domain API integration.
 
 ### `packages/media-processing`
 
-Mechanical shared image-processing primitives only: decode/format verification, decoded-pixel protection, EXIF/orientation normalization, metadata stripping, approved profile/variant transforms, typed media namespaces, and deterministic object-key/descriptor planning. It owns no product authorization, domain lifecycle, persistence policy, moderation, or media metadata authority.
+Mechanical shared image-processing primitives only: decode/format verification, decoded-pixel protection, EXIF/orientation normalization, metadata stripping, approved profile/variant transforms, typed media namespaces, and deterministic object-key/descriptor planning. It owns no product authorization, domain lifecycle, persistence policy, moderation, or media metadata authority. PHOTO_STANDARD supports a validated, nonempty, duplicate-free `requestedVariants` subset of master/card/thumb in canonical order; omitted selection retains all three. A trusted owning domain may explicitly omit master. Processing records explicit `selectedVariants`, and key planning/writing use the same selection; legacy results require the full profile and malformed output sets fail before storage writes. Athletes Photo Board explicitly processes master only while retaining its existing one-object lifecycle. PAGE_BANNER_STANDARD remains a separate unchanged full-set profile.
 
 ### `packages/storage`
 

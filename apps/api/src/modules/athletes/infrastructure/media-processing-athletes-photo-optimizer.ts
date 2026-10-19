@@ -12,7 +12,12 @@ export class MediaProcessingAthletesPhotoOptimizer implements AthletesPhotoOptim
     contentType: AthletesPhotoContentType,
   ): Promise<AthletesOptimizedPhoto> {
     try {
-      const processed = await processMedia({ body, contentType, profile: PHOTO_STANDARD });
+      const processed = await processMedia({
+        body,
+        contentType,
+        profile: PHOTO_STANDARD,
+        requestedVariants: ["master"],
+      });
       const master = processed.variants.find(({ variant }) => variant === "master");
       if (!master) {
         throw new MediaProcessingError(

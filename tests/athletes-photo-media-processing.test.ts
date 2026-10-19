@@ -67,3 +67,15 @@ test("A1 media-processing adapter never enlarges a small source", async () => {
   assert.equal(metadata.width, 320);
   assert.equal(metadata.height, 160);
 });
+
+test("A1 encodes only master and keeps the existing optimizer result shape", async (t) => {
+  const body = await raster("png", 2400, 1200);
+  const encode = t.mock.method(sharp.prototype, "webp");
+  const result = await optimizer.optimize(body, "image/png");
+  assert.equal(encode.mock.callCount(), 1);
+  assert.equal(encode.mock.calls[0]?.arguments[0]?.quality, 88);
+  assert.deepEqual(Object.keys(result).sort(), ["body", "contentType"]);
+  const metadata = await sharp(result.body).metadata();
+  assert.equal(metadata.width, 2048);
+  assert.equal(metadata.height, 1024);
+});

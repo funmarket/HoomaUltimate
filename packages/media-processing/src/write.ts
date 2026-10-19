@@ -46,8 +46,33 @@ export interface WriteMediaVariantsInput {
 export async function writeMediaVariants(
   input: WriteMediaVariantsInput,
 ): Promise<MediaWriteResult> {
+  if (
+    input.processed.profile !== "PHOTO_STANDARD" &&
+    input.processed.profile !== "PAGE_BANNER_STANDARD"
+  ) {
+    throw new MediaProcessingError("VARIANT_SET_MISMATCH", "Unknown processed media profile");
+  }
   const profile = profileFromId(input.processed.profile);
-  const plan = planMediaObjectKeys({ ...input.identity, profile });
+  const plan = planMediaObjectKeys({
+    ...input.identity,
+    profile,
+    ...(input.processed.selectedVariants === undefined
+      ? {}
+      : { requestedVariants: input.processed.selectedVariants }),
+  });
+  if (
+    !Array.isArray(input.processed.variants) ||
+    input.processed.variants.length !== plan.length ||
+    plan.some(
+      ({ variant }) =>
+        input.processed.variants.filter((output) => output?.variant === variant).length !== 1,
+    )
+  ) {
+    throw new MediaProcessingError(
+      "VARIANT_SET_MISMATCH",
+      "Processed outputs must exactly match the planned variant set",
+    );
+  }
   const plannedKeys = plan.map(({ objectKey }) => objectKey);
   const writtenDescriptors: MediaVariantDescriptor[] = [];
 

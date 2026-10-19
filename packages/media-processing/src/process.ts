@@ -1,9 +1,11 @@
 import sharp, { type Metadata } from "sharp";
 import { MediaProcessingError } from "./errors.js";
+import { resolveMediaVariants } from "./profiles.js";
 import type {
   MediaInputContentType,
   MediaProcessingProfile,
   MediaVariant,
+  PhotoVariant,
   PageBannerVariantSpec,
   PhotoVariantSpec,
 } from "./profiles.js";
@@ -13,6 +15,7 @@ export interface ProcessMediaInput {
   readonly contentType: MediaInputContentType;
   readonly profile: MediaProcessingProfile;
   readonly maxInputBytes?: number;
+  readonly requestedVariants?: readonly PhotoVariant[];
 }
 
 export interface ProcessedMediaVariant {
@@ -32,6 +35,7 @@ export interface ProcessedMediaResult {
     heightPx: number;
   }>;
   readonly variants: readonly ProcessedMediaVariant[];
+  readonly selectedVariants?: readonly PhotoVariant[];
 }
 
 const CONTENT_TYPE_BY_FORMAT = {
@@ -215,10 +219,11 @@ async function processBannerVariant(
 }
 
 export async function processMedia(input: ProcessMediaInput): Promise<ProcessedMediaResult> {
+  const selected = resolveMediaVariants(input.profile, input.requestedVariants);
   const source = await inspectInput(input);
   const variants: ProcessedMediaVariant[] = [];
   if (input.profile.kind === "photo") {
-    for (const spec of input.profile.variants) {
+    for (const spec of input.profile.variants.filter(({ variant }) => selected.includes(variant))) {
       variants.push(await processPhotoVariant(input.body, input.profile.maxDecodedPixels, spec));
     }
   } else {
@@ -235,6 +240,9 @@ export async function processMedia(input: ProcessMediaInput): Promise<ProcessedM
   }
   return {
     profile: input.profile.id,
+    ...(input.requestedVariants === undefined
+      ? {}
+      : { selectedVariants: selected as readonly PhotoVariant[] }),
     source: { contentType: input.contentType, widthPx: source.width, heightPx: source.height },
     variants,
   };
