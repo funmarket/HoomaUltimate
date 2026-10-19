@@ -1,3 +1,5 @@
+import { MediaProcessingError } from "./errors.js";
+
 export const MAX_DECODED_PIXELS = 40_000_000;
 export const DEFAULT_INTENDED_HTTP_MAX_BYTES = 5 * 1024 * 1024;
 export const ACCEPTED_MEDIA_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
@@ -72,4 +74,29 @@ export const PAGE_BANNER_STANDARD: PageBannerStandardProfile = {
 
 export function profileFromId(id: MediaProcessingProfile["id"]): MediaProcessingProfile {
   return id === "PHOTO_STANDARD" ? PHOTO_STANDARD : PAGE_BANNER_STANDARD;
+}
+
+/** Resolve mechanics only; a trusted domain chooses its own persisted photo variants. */
+export function resolveMediaVariants(
+  profile: MediaProcessingProfile,
+  requestedVariants: readonly PhotoVariant[] | undefined,
+): readonly MediaVariant[] {
+  if (requestedVariants === undefined) return profile.variants.map(({ variant }) => variant);
+  if (
+    profile.id !== "PHOTO_STANDARD" ||
+    !Array.isArray(requestedVariants) ||
+    requestedVariants.length === 0 ||
+    new Set(requestedVariants).size !== requestedVariants.length ||
+    [...requestedVariants].some(
+      (variant) => !PHOTO_STANDARD.variants.some((spec) => spec.variant === variant),
+    )
+  ) {
+    throw new MediaProcessingError(
+      "VARIANT_SET_MISMATCH",
+      "Expected a nonempty unique PHOTO_STANDARD variant selection",
+    );
+  }
+  return PHOTO_STANDARD.variants
+    .filter(({ variant }) => requestedVariants.includes(variant))
+    .map(({ variant }) => variant);
 }

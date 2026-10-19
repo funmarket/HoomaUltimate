@@ -582,3 +582,265 @@ test("writeMediaVariants fails closed on returned-key mismatch with canonical re
     "production/media/v1/place-photo/place-1/media-1/card.webp",
   ]);
 });
+
+test("selected PHOTO_STANDARD variants are encoded once in canonical order", async (t) => {
+  const body = await createRaster("png", 1000, 500);
+  const encode = t.mock.method(sharp.prototype, "webp");
+  for (const [requestedVariants, expected, qualities] of [
+    [["master"], ["master"], [88]],
+    [["card"], ["card"], [80]],
+    [["thumb"], ["thumb"], [75]],
+    [
+      ["thumb", "master"],
+      ["master", "thumb"],
+      [88, 75],
+    ],
+    [
+      ["thumb", "card"],
+      ["card", "thumb"],
+      [80, 75],
+    ],
+    [
+      ["thumb", "card", "master"],
+      ["master", "card", "thumb"],
+      [88, 80, 75],
+    ],
+  ] as const) {
+    encode.mock.resetCalls();
+    const result = await processMedia({
+      body,
+      contentType: "image/png",
+      profile: PHOTO_STANDARD,
+      requestedVariants,
+    });
+    assert.deepEqual(result.selectedVariants, expected);
+    assert.deepEqual(
+      result.variants.map(({ variant }) => variant),
+      expected,
+    );
+    assert.deepEqual(
+      encode.mock.calls.map(({ arguments: args }) => args[0]?.quality),
+      qualities,
+    );
+    for (const variant of result.variants) {
+      const metadata = await sharp(variant.body).metadata();
+      const edge = variant.variant === "master" ? 1000 : variant.variant === "card" ? 800 : 400;
+      assert.equal(metadata.width, edge);
+      assert.equal(metadata.height, edge / 2);
+      assert.equal(metadata.format, "webp");
+      assert.equal(variant.sizeBytes, variant.body.byteLength);
+    }
+  }
+});
+
+test("variant selection rejects malformed runtime values and PageBanner selection before encoding", async (t) => {
+  const body = await createRaster("png", 20, 10);
+  const encode = t.mock.method(sharp.prototype, "webp");
+  for (const requestedVariants of [
+    [],
+    ["master", "master"],
+    ["display"],
+    ["unknown"],
+    "master",
+    null,
+    1,
+    {},
+    [undefined],
+    Array(1),
+  ]) {
+    for (const profile of [PHOTO_STANDARD, PAGE_BANNER_STANDARD]) {
+      await assert.rejects(
+        () =>
+          processMedia({
+            body,
+            contentType: "image/png",
+            profile,
+            requestedVariants: requestedVariants as never,
+          }),
+        (error: unknown) => hasCode(error, "VARIANT_SET_MISMATCH"),
+      );
+    }
+  }
+  assert.equal(encode.mock.callCount(), 0);
+});
+
+test("selected key plans keep canonical identity and reject invalid selectors", () => {
+  const identity = {
+    scope: "staging",
+    namespace: "ATHLETES_PHOTO",
+    ownerId: "owner-1",
+    mediaId: "photo-1",
+  } as const;
+  assert.deepEqual(
+    planMediaObjectKeys({
+      ...identity,
+      profile: PHOTO_STANDARD,
+      requestedVariants: ["thumb", "master"],
+    }),
+    [
+      {
+        variant: "master",
+        objectKey: "staging/media/v1/athletes-photo/owner-1/photo-1/master.webp",
+      },
+      { variant: "thumb", objectKey: "staging/media/v1/athletes-photo/owner-1/photo-1/thumb.webp" },
+    ],
+  );
+  for (const requestedVariants of [[], ["master", "master"], ["display"], null, "master"]) {
+    assert.throws(
+      () =>
+        planMediaObjectKeys({
+          ...identity,
+          profile: PHOTO_STANDARD,
+          requestedVariants: requestedVariants as never,
+        }),
+      (error: unknown) => hasCode(error, "VARIANT_SET_MISMATCH"),
+    );
+  }
+  assert.throws(
+    () =>
+      planMediaObjectKeys({
+        ...identity,
+        profile: PAGE_BANNER_STANDARD,
+        requestedVariants: ["master"],
+      }),
+    (error: unknown) => hasCode(error, "VARIANT_SET_MISMATCH"),
+  );
+});
+
+test("writer rejects incomplete, duplicate, unexpected and inconsistent results before any PUT", async () => {
+  const processed = await processMedia({
+    body: await createRaster("png", 20, 10),
+    contentType: "image/png",
+    profile: PHOTO_STANDARD,
+  });
+  const master = processed.variants[0]!;
+  const puts: string[] = [];
+  const storage = {
+    async put(key: string, body: Uint8Array, contentType: string) {
+      puts.push(key);
+      return { key, contentType, sizeBytes: body.byteLength };
+    },
+    async get() {
+      throw new Error("unused");
+    },
+    async remove() {},
+  };
+  const identity = {
+    scope: "production",
+    namespace: "ATHLETES_PHOTO",
+    ownerId: "owner-1",
+    mediaId: "photo-1",
+  } as const;
+  const invalid = [
+    { ...processed, variants: [master] },
+    { ...processed, variants: [...processed.variants, master] },
+    { ...processed, variants: [...processed.variants, { ...master, variant: "display" }] },
+    { ...processed, selectedVariants: ["master"], variants: processed.variants },
+    { ...processed, selectedVariants: ["card"], variants: [master] },
+    { ...processed, selectedVariants: [] },
+    { ...processed, selectedVariants: ["master", "master"] },
+    { ...processed, selectedVariants: ["display"] },
+    { ...processed, selectedVariants: null },
+    { ...processed, profile: "UNKNOWN" },
+    { ...processed, profile: "PAGE_BANNER_STANDARD", selectedVariants: ["master"] },
+  ];
+  for (const result of invalid) {
+    await assert.rejects(
+      () => writeMediaVariants({ storage, identity, processed: result as never }),
+      (error: unknown) => hasCode(error, "VARIANT_SET_MISMATCH"),
+    );
+    assert.deepEqual(puts, []);
+  }
+});
+
+test("selected writer persists only selected descriptors and exposes selected planned keys on ambiguous PUT", async () => {
+  const identity = {
+    scope: "production",
+    namespace: "ATHLETES_PHOTO",
+    ownerId: "owner-1",
+    mediaId: "photo-1",
+  } as const;
+  const body = await createRaster("png", 20, 10);
+  for (const requestedVariants of [["master"], ["thumb"], ["thumb", "card"]] as const) {
+    const processed = await processMedia({
+      body,
+      contentType: "image/png",
+      profile: PHOTO_STANDARD,
+      requestedVariants,
+    });
+    const puts: string[] = [];
+    const storage = {
+      async put(key: string, bytes: Uint8Array, contentType: string) {
+        puts.push(key);
+        return { key, contentType, sizeBytes: bytes.byteLength };
+      },
+      async get() {
+        throw new Error("unused");
+      },
+      async remove() {},
+    };
+    const written = await writeMediaVariants({ storage, identity, processed });
+    const expected = requestedVariants.includes("card" as never)
+      ? ["card", "thumb"]
+      : [...requestedVariants];
+    assert.deepEqual(
+      written.descriptors.map(({ variant }) => variant),
+      expected,
+    );
+    assert.equal(puts.length, expected.length);
+    assert.deepEqual(written.cleanupKeys, puts);
+    written.descriptors.forEach((descriptor, index) => {
+      const variant = processed.variants[index]!;
+      assert.equal(
+        descriptor.objectKey,
+        `production/media/v1/athletes-photo/owner-1/photo-1/${variant.variant}.webp`,
+      );
+      assert.equal(descriptor.sizeBytes, variant.sizeBytes);
+      assert.equal(descriptor.widthPx, variant.widthPx);
+      assert.equal(descriptor.heightPx, variant.heightPx);
+    });
+  }
+  const processed = await processMedia({
+    body,
+    contentType: "image/png",
+    profile: PHOTO_STANDARD,
+    requestedVariants: ["thumb", "card"],
+  });
+  const stored = new Set<string>();
+  await assert.rejects(
+    () =>
+      writeMediaVariants({
+        identity,
+        processed,
+        storage: {
+          async put(key, bytes, contentType) {
+            stored.add(key);
+            if (key.endsWith("thumb.webp"))
+              throw new Error("provider stored bytes but acknowledgement was lost");
+            return { key, contentType, sizeBytes: bytes.byteLength };
+          },
+          async get() {
+            throw new Error("unused");
+          },
+          async remove() {},
+        },
+      }),
+    (error: unknown) => {
+      assert.ok(error instanceof MediaVariantWriteError);
+      assert.equal(error.failedVariant, "thumb");
+      assert.deepEqual(error.plannedKeys, [
+        "production/media/v1/athletes-photo/owner-1/photo-1/card.webp",
+        "production/media/v1/athletes-photo/owner-1/photo-1/thumb.webp",
+      ]);
+      assert.deepEqual([...stored], error.plannedKeys);
+      assert.deepEqual(
+        error.writtenDescriptors.map(({ variant }) => variant),
+        ["card"],
+      );
+      assert.deepEqual(error.cleanupKeys, [
+        "production/media/v1/athletes-photo/owner-1/photo-1/card.webp",
+      ]);
+      return true;
+    },
+  );
+});

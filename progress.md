@@ -41,6 +41,7 @@ Do not store current branch heads, pull-request state, commit SHAs, CI run IDs, 
 - Athletes is an independent HOOMA-connected domain with its own community, membership and join-request lifecycle.
 - Athletes has member-authorized Whistle integration through the shared Whistle engine.
 - Athletes owns a private Founder-curated Photo Board with durable metadata and object-storage image bytes.
+- Shared PHOTO_STANDARD processing, key planning and writing support explicit domain-selected variants with full-set defaults and complete pre-write output validation. Athletes Photo Board selects master only, avoiding discarded card/thumb encodes while preserving its existing persistence, delivery and cleanup lifecycle; PageBanner processing is unchanged.
 - Athletes owns its private Calendar and Calendar RSVP lifecycle independently from generic Event RSVP.
 - Athletes member presentation may project Identity-owned WebSession last-seen data without creating real-time presence or a second profile model.
 - Athletes Requests is a projection of canonical Requests data, not separate Requests persistence.

@@ -1,5 +1,10 @@
 import { MediaProcessingError } from "./errors.js";
-import type { MediaProcessingProfile, MediaVariant } from "./profiles.js";
+import {
+  resolveMediaVariants,
+  type MediaProcessingProfile,
+  type MediaVariant,
+  type PhotoVariant,
+} from "./profiles.js";
 
 export const MEDIA_NAMESPACES = {
   ATHLETES_PHOTO: "athletes-photo",
@@ -81,9 +86,12 @@ export function buildMediaObjectKey(input: MediaObjectKeyInput): string {
 }
 
 export function planMediaObjectKeys(
-  input: MediaIdentity & { readonly profile: MediaProcessingProfile },
+  input: MediaIdentity & {
+    readonly profile: MediaProcessingProfile;
+    readonly requestedVariants?: readonly PhotoVariant[];
+  },
 ): readonly PlannedMediaObject[] {
-  return input.profile.variants.map(({ variant }) => ({
+  return resolveMediaVariants(input.profile, input.requestedVariants).map((variant) => ({
     variant,
     objectKey: buildMediaObjectKey({ ...input, variant }),
   }));
