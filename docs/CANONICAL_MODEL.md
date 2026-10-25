@@ -1281,6 +1281,8 @@ Ride waypoints are ordered `RideOfferWaypoint` records with optional canonical P
 
 Ride vehicle-photo bytes belong in object storage. `RideOfferVehiclePhoto` is a single-purpose Ride-owned metadata record for the managed object key, content type, size and lifecycle fields until a separately authorized generic Media domain exists. PostgreSQL must not store photo bytes, base64 payloads, storage credentials or polymorphic generic media ownership for this slice.
 
+New Ride vehicle-photo uploads are decoded and format/MIME/pixel-limit validated through shared mechanics before any object write. The canonical Ride record continues to describe the submitted bytes and normalized original MIME; inspection does not transform the image or change the one-photo relation, key convention or cleanup ownership. Invalid input cannot replace the existing record. Historical stored photos retain their existing read behavior.
+
 Requests owns one canonical `HelpRequest` domain. The model below describes current source-backed Request truth. FundMe/Fundraising and Donations remain separate owners and are not implied by the Requests model.
 
 ```text

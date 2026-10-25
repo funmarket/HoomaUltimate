@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import sharp from "sharp";
 import type {
   PublicRideOffer,
   PublicRideRequest,
@@ -352,15 +353,84 @@ test("RideService normalizes public list limits without hiding repository owners
   assert.equal(fixture.requests.lastListInput?.limit, 1);
 });
 
-test("RideService cleans up uploaded vehicle photos when metadata persistence fails", async () => {
+test("RideService rejects corrupt vehicle photo bytes before storage or metadata adoption", async () => {
   const fixture = createServiceFixture();
-  fixture.vehiclePhotos.replaceError = new Error("database unavailable after upload");
-
   await assertRideError(
     () =>
       fixture.service.replaceOfferVehiclePhoto("driver-1", "offer-1", {
         contentType: "image/png",
         body: Uint8Array.of(1, 2, 3),
+      }),
+    415,
+    "RIDE_VEHICLE_PHOTO_TYPE_INVALID",
+  );
+  assert.deepEqual(fixture.storage.putKeys, []);
+  assert.deepEqual(fixture.storage.removedKeys, []);
+  assert.deepEqual(fixture.vehiclePhotos.scheduledDeletions, []);
+});
+
+test("RideService rejects a corrupt later WebP frame before storage effects", async () => {
+  const fixture = createServiceFixture();
+  const pixels = Buffer.alloc(8 * 8 * 3);
+  pixels.fill(255, 0, 8 * 4 * 3);
+  const body = await sharp(pixels, {
+    raw: { width: 8, height: 8, channels: 3, pageHeight: 4 },
+  })
+    .webp({ lossless: true, loop: 0, delay: [100, 100] })
+    .toBuffer();
+  body[body.length - 1] ^= 255;
+  await sharp(body, { failOn: "warning" }).stats();
+  await assertRideError(
+    () =>
+      fixture.service.replaceOfferVehiclePhoto("driver-1", "offer-1", {
+        contentType: "image/webp",
+        body,
+      }),
+    415,
+    "RIDE_VEHICLE_PHOTO_TYPE_INVALID",
+  );
+  assert.deepEqual(fixture.storage.putKeys, []);
+  assert.deepEqual(fixture.storage.removedKeys, []);
+  assert.deepEqual(fixture.vehiclePhotos.scheduledDeletions, []);
+});
+
+test("RideService preserves original valid image bytes and metadata for every supported format", async (t) => {
+  for (const format of ["jpeg", "png", "webp"] as const) {
+    const fixture = createServiceFixture();
+    const body = await ridePhoto(format);
+    const put = t.mock.method(fixture.storage, "put");
+    const result = await fixture.service.replaceOfferVehiclePhoto("driver-1", "offer-1", {
+      contentType: `image/${format}`,
+      body,
+    });
+    assert.deepEqual(put.mock.calls[0]?.arguments[1], body);
+    assert.equal(result.contentType, `image/${format}`);
+    assert.equal(result.sizeBytes, body.byteLength);
+    assert.match(fixture.storage.putKeys[0] ?? "", /^ride-offer-vehicles\/offer-1\//);
+  }
+});
+
+async function ridePhoto(format: "jpeg" | "png" | "webp"): Promise<Uint8Array> {
+  return new Uint8Array(
+    await sharp({
+      create: { width: 20, height: 10, channels: 3, background: "#345678" },
+    })
+      .toFormat(format)
+      .toBuffer(),
+  );
+}
+
+test("RideService cleans up uploaded vehicle photos when metadata persistence fails", async () => {
+  const fixture = createServiceFixture();
+  fixture.vehiclePhotos.replaceError = new Error("database unavailable after upload");
+  const png = await ridePhoto("png");
+  const webp = await ridePhoto("webp");
+
+  await assertRideError(
+    () =>
+      fixture.service.replaceOfferVehiclePhoto("driver-1", "offer-1", {
+        contentType: "image/png",
+        body: png,
       }),
     503,
     "RIDE_VEHICLE_PHOTO_UPLOAD_FAILED",
@@ -379,7 +449,7 @@ test("RideService cleans up uploaded vehicle photos when metadata persistence fa
     () =>
       scheduledFixture.service.replaceOfferVehiclePhoto("driver-1", "offer-1", {
         contentType: "image/webp",
-        body: Uint8Array.of(4, 5, 6),
+        body: webp,
       }),
     503,
     "RIDE_VEHICLE_PHOTO_UPLOAD_FAILED",

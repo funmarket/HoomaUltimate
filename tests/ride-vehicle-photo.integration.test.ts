@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import sharp from "sharp";
 import { loadApiConfig } from "@hooma/config";
 import { getDatabaseClient } from "@hooma/database";
 import type { ObjectStorage, StoredObject, StoredObjectDescriptor } from "@hooma/storage";
@@ -29,10 +30,12 @@ const db = getDatabaseClient();
 class MemoryObjectStorage implements ObjectStorage {
   readonly objects = new Map<string, StoredObject>();
   readonly removedKeys: string[] = [];
+  readonly putKeys: string[] = [];
   readonly failRemoveKeys = new Set<string>();
   failPut = false;
 
   async put(key: string, body: Uint8Array, contentType: string): Promise<StoredObjectDescriptor> {
+    this.putKeys.push(key);
     if (this.failPut) throw new Error("expected put failure");
     const stored = {
       key,
@@ -109,6 +112,13 @@ async function createRideOffer(base: string, cookie: string): Promise<string> {
 
 test("Ride vehicle-photo upload, delivery, replacement and cleanup stay Ride-owned", async () => {
   const storage = new MemoryObjectStorage();
+  const png = new Uint8Array(
+    await sharp({ create: { width: 24, height: 12, channels: 3, background: "#234567" } })
+      .png()
+      .toBuffer(),
+  );
+  const webp = new Uint8Array(await sharp(png).webp().toBuffer());
+  const jpeg = new Uint8Array(await sharp(png).jpeg().withMetadata({ orientation: 6 }).toBuffer());
   const container = createContainer(config, { objectStorage: storage });
   const app = createApp(config, container);
   const server = app.listen(0, "127.0.0.1");
@@ -128,6 +138,30 @@ test("Ride vehicle-photo upload, delivery, replacement and cleanup stay Ride-own
 
     const missingPhoto = await fetch(`${base}/api/public/v1/rides/offers/${rideOfferId}/photo`);
     assert.equal(missingPhoto.status, 404);
+    // Existing stored objects are read unchanged; E2A validates new uploads only.
+    const legacyKey = "ride-offer-vehicles/" + rideOfferId + "/legacy-photo";
+    const legacyBytes = Uint8Array.of(1, 2, 3);
+    await storage.put(legacyKey, legacyBytes, "image/png");
+    await db.rideOfferVehiclePhoto.create({
+      data: {
+        id: "legacy-photo-" + rideOfferId,
+        rideOfferId,
+        objectKey: legacyKey,
+        contentType: "image/png",
+        sizeBytes: legacyBytes.byteLength,
+      },
+    });
+    const legacyRead = await fetch(`${base}/api/public/v1/rides/offers/${rideOfferId}/photo`);
+    assert.equal(legacyRead.status, 200);
+    assert.deepEqual(new Uint8Array(await legacyRead.arrayBuffer()), legacyBytes);
+    const legacyDelete = await fetch(`${base}/api/v1/rides/offers/${rideOfferId}/photo`, {
+      method: "DELETE",
+      headers: jsonHeaders(driver.cookie),
+    });
+    assert.equal(legacyDelete.status, 204);
+    assert.equal(storage.objects.size, 0);
+    storage.putKeys.length = 0;
+    storage.removedKeys.length = 0;
 
     const unauthenticatedUpload = await fetch(`${base}/api/v1/rides/offers/${rideOfferId}/photo`, {
       method: "PUT",
@@ -160,11 +194,54 @@ test("Ride vehicle-photo upload, delivery, replacement and cleanup stay Ride-own
     assert.equal(tooLargeUpload.status, 413);
     assert.equal(storage.objects.size, 0);
 
+    for (const [contentType, body] of [
+      ["image/png", Uint8Array.of(1, 2, 3)],
+      ["image/png", png.subarray(0, 40)],
+      ["image/jpeg", png],
+      [
+        "image/png",
+        new TextEncoder().encode(
+          '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>',
+        ),
+      ],
+      ["image/png", new Uint8Array()],
+    ] as const) {
+      const rejected = await fetch(`${base}/api/v1/rides/offers/${rideOfferId}/photo`, {
+        method: "PUT",
+        headers: imageHeaders(driver.cookie, contentType),
+        body,
+      });
+      assert.equal(rejected.status, body.byteLength === 0 ? 400 : 415);
+      assert.equal(storage.objects.size, 0);
+      assert.equal(storage.putKeys.length, 0);
+      assert.equal(await db.rideOfferVehiclePhoto.count({ where: { rideOfferId } }), 0);
+      assert.equal(
+        await db.outboxEvent.count({ where: { topic: RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC } }),
+        0,
+      );
+    }
+    const overPixels = new Uint8Array(
+      await sharp({
+        create: { width: 6401, height: 6250, channels: 3, background: "#101010" },
+      })
+        .png()
+        .toBuffer(),
+    );
+    assert.ok(overPixels.byteLength < 5 * 1024 * 1024);
+    const pixelRejected = await fetch(`${base}/api/v1/rides/offers/${rideOfferId}/photo`, {
+      method: "PUT",
+      headers: imageHeaders(driver.cookie, "image/png"),
+      body: overPixels,
+    });
+    assert.equal(pixelRejected.status, 415);
+    assert.equal(storage.objects.size, 0);
+    assert.equal(await db.rideOfferVehiclePhoto.count({ where: { rideOfferId } }), 0);
+
     storage.failPut = true;
     const failedUpload = await fetch(`${base}/api/v1/rides/offers/${rideOfferId}/photo`, {
       method: "PUT",
       headers: imageHeaders(driver.cookie, "image/png"),
-      body: Uint8Array.of(9, 9, 9),
+      body: png,
     });
     assert.equal(failedUpload.status, 503);
     assert.equal(await db.rideOfferVehiclePhoto.count({ where: { rideOfferId } }), 0);
@@ -174,19 +251,19 @@ test("Ride vehicle-photo upload, delivery, replacement and cleanup stay Ride-own
     const upload = await fetch(`${base}/api/v1/rides/offers/${rideOfferId}/photo`, {
       method: "PUT",
       headers: imageHeaders(driver.cookie, "image/png"),
-      body: Uint8Array.of(1, 2, 3, 4),
+      body: png,
     });
     assert.equal(upload.status, 200);
     const uploaded = (await upload.json()) as Record<string, unknown>;
     assert.equal(uploaded.rideOfferId, rideOfferId);
     assert.equal(uploaded.contentType, "image/png");
-    assert.equal(uploaded.sizeBytes, 4);
+    assert.equal(uploaded.sizeBytes, png.byteLength);
     assert.equal("objectKey" in uploaded, false);
 
     const firstRow = await db.rideOfferVehiclePhoto.findUniqueOrThrow({ where: { rideOfferId } });
     assert.match(firstRow.objectKey, new RegExp(`^ride-offer-vehicles/${rideOfferId}/`));
     assert.equal(firstRow.contentType, "image/png");
-    assert.equal(firstRow.sizeBytes, 4);
+    assert.equal(firstRow.sizeBytes, png.byteLength);
     assert.ok(storage.objects.has(firstRow.objectKey));
 
     const publicOffer = await fetch(`${base}/api/public/v1/rides/offers/${rideOfferId}`);
@@ -198,13 +275,31 @@ test("Ride vehicle-photo upload, delivery, replacement and cleanup stay Ride-own
     const publicPhoto = await fetch(`${base}/api/public/v1/rides/offers/${rideOfferId}/photo`);
     assert.equal(publicPhoto.status, 200);
     assert.equal(publicPhoto.headers.get("content-type"), "image/png");
-    assert.deepEqual(new Uint8Array(await publicPhoto.arrayBuffer()), Uint8Array.of(1, 2, 3, 4));
+    assert.deepEqual(new Uint8Array(await publicPhoto.arrayBuffer()), png);
+    const putsBeforeInvalidReplacement = storage.putKeys.length;
+    const invalidReplacement = await fetch(`${base}/api/v1/rides/offers/${rideOfferId}/photo`, {
+      method: "PUT",
+      headers: imageHeaders(driver.cookie, "image/png"),
+      body: png.subarray(0, 40),
+    });
+    assert.equal(invalidReplacement.status, 415);
+    assert.equal(storage.putKeys.length, putsBeforeInvalidReplacement);
+    assert.deepEqual(
+      await db.rideOfferVehiclePhoto.findUniqueOrThrow({ where: { rideOfferId } }),
+      firstRow,
+    );
+    assert.deepEqual(storage.objects.get(firstRow.objectKey)?.body, png);
+    assert.equal(
+      await db.outboxEvent.count({ where: { topic: RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC } }),
+      0,
+    );
+    assert.deepEqual(storage.removedKeys, []);
 
     storage.failRemoveKeys.add(firstRow.objectKey);
     const replace = await fetch(`${base}/api/v1/rides/offers/${rideOfferId}/photo`, {
       method: "PUT",
       headers: imageHeaders(driver.cookie, "image/webp"),
-      body: Uint8Array.of(5, 6),
+      body: webp,
     });
     assert.equal(replace.status, 200);
     const secondRow = await db.rideOfferVehiclePhoto.findUniqueOrThrow({ where: { rideOfferId } });
@@ -240,6 +335,22 @@ test("Ride vehicle-photo upload, delivery, replacement and cleanup stay Ride-own
     });
     assert.equal(storage.objects.has(firstRow.objectKey), false);
 
+    const jpegReplacement = await fetch(`${base}/api/v1/rides/offers/${rideOfferId}/photo`, {
+      method: "PUT",
+      headers: imageHeaders(driver.cookie, "image/jpeg"),
+      body: jpeg,
+    });
+    assert.equal(jpegReplacement.status, 200);
+    const finalRow = await db.rideOfferVehiclePhoto.findUniqueOrThrow({ where: { rideOfferId } });
+    assert.equal(finalRow.contentType, "image/jpeg");
+    assert.equal(finalRow.sizeBytes, jpeg.byteLength);
+    assert.equal(await db.rideOfferVehiclePhoto.count({ where: { rideOfferId } }), 1);
+    const jpegRead = await fetch(`${base}/api/public/v1/rides/offers/${rideOfferId}/photo`);
+    assert.equal(jpegRead.headers.get("content-type"), "image/jpeg");
+    const jpegReadBytes = new Uint8Array(await jpegRead.arrayBuffer());
+    assert.deepEqual(jpegReadBytes, jpeg);
+    assert.equal((await sharp(jpegReadBytes).metadata()).orientation, 6);
+
     const deletePhoto = await fetch(`${base}/api/v1/rides/offers/${rideOfferId}/photo`, {
       method: "DELETE",
       headers: jsonHeaders(driver.cookie),
@@ -247,6 +358,7 @@ test("Ride vehicle-photo upload, delivery, replacement and cleanup stay Ride-own
     assert.equal(deletePhoto.status, 204);
     assert.equal(await db.rideOfferVehiclePhoto.count({ where: { rideOfferId } }), 0);
     assert.equal(storage.objects.has(secondRow.objectKey), false);
+    assert.equal(storage.objects.has(finalRow.objectKey), false);
 
     const publicOfferAfterDelete = await fetch(`${base}/api/public/v1/rides/offers/${rideOfferId}`);
     assert.equal(publicOfferAfterDelete.status, 200);

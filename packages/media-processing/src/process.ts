@@ -10,11 +10,20 @@ import type {
   PhotoVariantSpec,
 } from "./profiles.js";
 
-export interface ProcessMediaInput {
+export interface InspectMediaInput {
   readonly body: Uint8Array;
   readonly contentType: MediaInputContentType;
   readonly profile: MediaProcessingProfile;
   readonly maxInputBytes?: number;
+}
+
+export interface InspectedMedia {
+  readonly contentType: MediaInputContentType;
+  readonly widthPx: number;
+  readonly heightPx: number;
+}
+
+export interface ProcessMediaInput extends InspectMediaInput {
   readonly requestedVariants?: readonly PhotoVariant[];
 }
 
@@ -80,11 +89,11 @@ function classifySharpFailure(error: unknown): MediaProcessingError {
   });
 }
 
-async function inspectInput(input: ProcessMediaInput): Promise<{
-  metadata: Metadata;
-  width: number;
-  height: number;
-}> {
+export async function inspectMedia(input: InspectMediaInput): Promise<InspectedMedia> {
+  return inspectInput(input, true);
+}
+
+async function inspectInput(input: InspectMediaInput, allFrames = false): Promise<InspectedMedia> {
   if (!input.body.byteLength) throw new MediaProcessingError("EMPTY_INPUT", "Image body is empty");
   if (!isSupportedContentType(input.contentType)) {
     throw new MediaProcessingError(
@@ -108,6 +117,7 @@ async function inspectInput(input: ProcessMediaInput): Promise<{
     const image = sharp(input.body, {
       failOn: "warning",
       limitInputPixels: input.profile.maxDecodedPixels,
+      animated: allFrames,
     });
     const metadata = await image.metadata();
     if (!isSupportedSharpFormat(metadata.format)) {
@@ -130,8 +140,10 @@ async function inspectInput(input: ProcessMediaInput): Promise<{
       );
     }
     await image.stats();
-    const { width, height } = orientedDimensions(metadata);
-    return { metadata, width, height };
+    const { width, height } = orientedDimensions(
+      allFrames && metadata.pageHeight ? { ...metadata, height: metadata.pageHeight } : metadata,
+    );
+    return { contentType: input.contentType, widthPx: width, heightPx: height };
   } catch (error) {
     throw classifySharpFailure(error);
   }
@@ -243,7 +255,7 @@ export async function processMedia(input: ProcessMediaInput): Promise<ProcessedM
     ...(input.requestedVariants === undefined
       ? {}
       : { selectedVariants: selected as readonly PhotoVariant[] }),
-    source: { contentType: input.contentType, widthPx: source.width, heightPx: source.height },
+    source,
     variants,
   };
 }

@@ -24,7 +24,13 @@ export type {
   PhotoStandardProfile,
   PhotoVariant,
 } from "./profiles.js";
-export { processMedia } from "./process.js";
-export type { ProcessedMediaResult, ProcessedMediaVariant, ProcessMediaInput } from "./process.js";
+export { inspectMedia, processMedia } from "./process.js";
+export type {
+  InspectMediaInput,
+  InspectedMedia,
+  ProcessedMediaResult,
+  ProcessedMediaVariant,
+  ProcessMediaInput,
+} from "./process.js";
 export { MediaVariantWriteError, writeMediaVariants } from "./write.js";
 export type { MediaVariantDescriptor, MediaWriteResult, WriteMediaVariantsInput } from "./write.js";

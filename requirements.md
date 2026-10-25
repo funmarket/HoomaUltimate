@@ -982,6 +982,8 @@ RideRequest audience choices are exactly `Everyone`, `One of my HOOMAs`, and `Al
 
 Ride vehicle media is Ride-owned metadata plus object-storage bytes. Binary photo bytes, base64 data and object-storage credentials must not be stored in PostgreSQL, logs, outbox payloads or generic JSON blobs. Until a separately authorized generic Media domain exists, Ride vehicle-photo metadata belongs to a single-purpose Rides-owned model and object keys use a Ride-owned namespace.
 
+Ride vehicle photos remain upload-only with one current photo per offer. Owner-authorized uploads up to 5 MiB must pass actual JPEG/PNG/WebP format verification, declared-MIME consistency, full decoding of all retained frames and the shared 40-megapixel decoded-pixel limit before object storage or metadata adoption. Validation preserves the submitted bytes, normalized original MIME, existing Ride keys and replacement/cleanup behavior; it does not rotate, strip metadata, transcode or generate variants. Rejected replacement input retains the previous photo without storage writes or cleanup scheduling. Existing stored photos remain readable without revalidation or backfill.
+
 Current Ride Whistle authorization is implemented through the shared Whistle engine and the Ride domain's server-side read/post authorization. This does not create a Ride chat/message table or a second messaging system.
 
 ---
