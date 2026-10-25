@@ -56,6 +56,8 @@ Do not store current branch heads, pull-request state, commit SHAs, CI run IDs, 
 
 ### Ride
 
+- Ride vehicle-photo uploads use shared validation-only decoding before storage, enforcing actual format, declared MIME, byte and decoded-pixel limits while preserving original bytes, EXIF metadata, one-photo ownership, legacy reads and the existing replacement/cleanup lifecycle.
+
 - Ride has domain-owned offers, requests, participation, compensation terms, destination/reference policy, private meeting-point handling and vehicle-photo metadata.
 - Ride supports Community-targeted Request projection without transferring RideRequest ownership to Communities or HOOMA NOW.
 - Ride uses the shared Whistle engine through Ride-owned authorization rather than a separate chat/message store.

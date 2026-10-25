@@ -1,3 +1,9 @@
+import {
+  inspectMedia,
+  MediaProcessingError,
+  PHOTO_STANDARD,
+  type MediaInputContentType,
+} from "@hooma/media-processing";
 import type { ObjectStorage, StoredObject } from "@hooma/storage";
 import { randomUUID } from "node:crypto";
 import { rideMineQuerySchema } from "@hooma/contracts/rides";
@@ -422,6 +428,23 @@ export class RideService {
         "RIDE_VEHICLE_PHOTO_STORAGE_NOT_CONFIGURED",
         "Ride vehicle photo storage is not configured",
       );
+    }
+
+    try {
+      await inspectMedia({
+        body: input.body,
+        contentType: contentType as MediaInputContentType,
+        profile: PHOTO_STANDARD,
+        maxInputBytes: RIDE_VEHICLE_PHOTO_MAX_BYTES,
+      });
+    } catch (error) {
+      if (error instanceof MediaProcessingError) {
+        throw new RideError(
+          "RIDE_VEHICLE_PHOTO_TYPE_INVALID",
+          "Ride vehicle photo must be a valid JPEG, PNG, or WebP image up to 40 megapixels",
+        );
+      }
+      throw error;
     }
 
     const photoId = randomUUID();

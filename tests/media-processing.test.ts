@@ -10,6 +10,7 @@ import {
   buildMediaObjectKey,
   planMediaObjectKeys,
   processMedia,
+  inspectMedia,
   writeMediaVariants,
 } from "../packages/media-processing/src/index.js";
 
@@ -842,5 +843,110 @@ test("selected writer persists only selected descriptors and exposes selected pl
       ]);
       return true;
     },
+  );
+});
+
+test("inspectMedia validates original image bytes without encoding and reports oriented dimensions", async (t) => {
+  const samples = await Promise.all(
+    (["jpeg", "png", "webp"] as const).map(async (format) => ({
+      body: await createRaster(format, 40, 20),
+      contentType: "image/" + format,
+    })),
+  );
+  const oriented = new Uint8Array(
+    await sharp({
+      create: { width: 40, height: 20, channels: 3, background: "#123456" },
+    })
+      .jpeg()
+      .withMetadata({ orientation: 6 })
+      .toBuffer(),
+  );
+  const webp = t.mock.method(sharp.prototype, "webp");
+  for (const sample of samples) {
+    const original = Uint8Array.from(sample.body);
+    const result = await inspectMedia({
+      body: sample.body,
+      contentType: sample.contentType as "image/jpeg" | "image/png" | "image/webp",
+      profile: PHOTO_STANDARD,
+    });
+    assert.deepEqual(result, { contentType: sample.contentType, widthPx: 40, heightPx: 20 });
+    assert.deepEqual(sample.body, original);
+  }
+  assert.deepEqual(
+    await inspectMedia({ body: oriented, contentType: "image/jpeg", profile: PHOTO_STANDARD }),
+    { contentType: "image/jpeg", widthPx: 20, heightPx: 40 },
+  );
+  assert.equal((await sharp(oriented).metadata()).orientation, 6);
+  assert.equal(webp.mock.callCount(), 0);
+});
+
+test("inspectMedia rejects invalid decoded content and enforces the caller limits", async () => {
+  const png = await createRaster("png", 32, 32);
+  for (const [body, contentType, code] of [
+    [Uint8Array.of(1, 2, 3), "image/png", "INVALID_IMAGE"],
+    [png.subarray(0, 40), "image/png", "INVALID_IMAGE"],
+    [png, "image/jpeg", "FORMAT_MISMATCH"],
+    [new Uint8Array(), "image/png", "EMPTY_INPUT"],
+    [png, "image/gif", "UNSUPPORTED_FORMAT"],
+  ] as const) {
+    await assert.rejects(
+      () => inspectMedia({ body, contentType: contentType as never, profile: PHOTO_STANDARD }),
+      (error: unknown) => hasCode(error, code),
+    );
+  }
+  await assert.rejects(
+    () =>
+      inspectMedia({
+        body: png,
+        contentType: "image/png",
+        profile: PHOTO_STANDARD,
+        maxInputBytes: png.byteLength - 1,
+      }),
+    (error: unknown) => hasCode(error, "INPUT_TOO_LARGE"),
+  );
+  await assert.rejects(
+    () =>
+      inspectMedia({
+        body: png,
+        contentType: "image/png",
+        profile: { ...PHOTO_STANDARD, maxDecodedPixels: 100 },
+      }),
+    (error: unknown) => hasCode(error, "PIXEL_LIMIT_EXCEEDED"),
+  );
+});
+
+test("validation-only inspection decodes every retained WebP frame within the pixel bound", async () => {
+  const pixels = Buffer.alloc(8 * 8 * 3);
+  pixels.fill(255, 0, 8 * 4 * 3);
+  const body = await sharp(pixels, {
+    raw: { width: 8, height: 8, channels: 3, pageHeight: 4 },
+  })
+    .webp({ lossless: true, loop: 0, delay: [100, 100] })
+    .toBuffer();
+  const before = Buffer.from(body);
+  assert.equal((await sharp(body).metadata()).pages, 2);
+  assert.deepEqual(
+    await inspectMedia({ body, contentType: "image/webp", profile: PHOTO_STANDARD }),
+    {
+      contentType: "image/webp",
+      widthPx: 8,
+      heightPx: 4,
+    },
+  );
+  assert.deepEqual(body, before);
+  await assert.rejects(
+    inspectMedia({
+      body,
+      contentType: "image/webp",
+      profile: { ...PHOTO_STANDARD, maxDecodedPixels: 40 },
+    }),
+    (error: unknown) => hasCode(error, "PIXEL_LIMIT_EXCEEDED"),
+  );
+  const corrupted = Buffer.from(body);
+  corrupted[corrupted.length - 1] ^= 255;
+  await sharp(corrupted, { failOn: "warning" }).stats();
+  await assert.rejects(
+    inspectMedia({ body: corrupted, contentType: "image/webp", profile: PHOTO_STANDARD }),
+    (error: unknown) => hasCode(error, "INVALID_IMAGE"),
   );
 });
