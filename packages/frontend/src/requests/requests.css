@@ -494,7 +494,7 @@
   display: -webkit-box;
   overflow: hidden;
   margin: 0;
-  color: #d8d4ca;
+  color: #f7f7f7;
   font-size: 16px;
   line-height: 1.35;
   -webkit-box-orient: vertical;
@@ -942,7 +942,7 @@
 
 .request-detail p,
 .request-response p {
-  color: var(--hooma-ui-text-secondary);
+  color: #f7f7f7;
   font-size: var(--hooma-ui-body);
   line-height: 1.55;
 }
@@ -967,7 +967,7 @@
 
 .request-detail__facts dd {
   overflow-wrap: anywhere;
-  color: var(--hooma-ui-text-description);
+  color: #f7f7f7;
   font-size: var(--hooma-ui-body);
   font-weight: 650;
   line-height: 1.45;
