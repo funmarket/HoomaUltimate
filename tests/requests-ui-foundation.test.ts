@@ -72,7 +72,7 @@ test("collapsed and expanded Request cards preserve accepted text and layout rol
   );
 });
 
-test("Requests descriptive paragraphs and fact values use the approved near-white body role", () => {
+test("Requests descriptive body copy uses near-white", () => {
   assert.match(
     requestsCss,
     /\.request-detail p,\s*\.request-response p\s*\{[^}]*color:\s*#f7f7f7;/s,
