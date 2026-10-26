@@ -72,6 +72,18 @@ test("collapsed and expanded Request cards preserve accepted text and layout rol
   );
 });
 
+test("Requests descriptive paragraphs and fact values use the approved near-white body role", () => {
+  assert.match(
+    requestsCss,
+    /\\.request-detail p,\\s*\\.request-response p\\s*\\{[^}]*color:\\s*#f7f7f7;/s,
+  );
+  assert.match(
+    requestsCss,
+    /\\.request-detail__facts dd\\s*\\{[^}]*color:\\s*#f7f7f7;/s,
+  );
+  assert.match(requestsCss, /\\.request-card__meta\\s*\\{[^}]*color:\\s*#b8b5ad;/s);
+});
+
 test("Requests CSS does not include the deferred VR4 advanced-filter workflow", () => {
   assert.doesNotMatch(requestsCss, /request-filter-affordance/);
   assert.doesNotMatch(requestsCss, /request-filter-trigger__count/);
