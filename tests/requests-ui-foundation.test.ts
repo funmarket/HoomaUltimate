@@ -59,7 +59,7 @@ test("collapsed and expanded Request cards preserve accepted text and layout rol
   );
   assert.match(
     requestsCss,
-    /\.request-card__body\s*>\s*span\s*\{[^}]*color:\s*#d8d4ca;[^}]*font-size:\s*16px;/s,
+    /\.request-card__body\s*>\s*span\s*\{[^}]*color:\s*#f7f7f7;[^}]*font-size:\s*16px;/s,
   );
   assert.match(requestsCss, /\.request-card__meta\s*\{[^}]*color:\s*#b8b5ad;/s);
   assert.match(
@@ -75,13 +75,13 @@ test("collapsed and expanded Request cards preserve accepted text and layout rol
 test("Requests descriptive paragraphs and fact values use the approved near-white body role", () => {
   assert.match(
     requestsCss,
-    /\\.request-detail p,\\s*\\.request-response p\\s*\\{[^}]*color:\\s*#f7f7f7;/s,
+    /\.request-detail p,\s*\.request-response p\s*\{[^}]*color:\s*#f7f7f7;/s,
   );
   assert.match(
     requestsCss,
-    /\\.request-detail__facts dd\\s*\\{[^}]*color:\\s*#f7f7f7;/s,
+    /\.request-detail__facts dd\s*\{[^}]*color:\s*#f7f7f7;/s,
   );
-  assert.match(requestsCss, /\\.request-card__meta\\s*\\{[^}]*color:\\s*#b8b5ad;/s);
+  assert.match(requestsCss, /\.request-card__meta\s*\{[^}]*color:\s*#b8b5ad;/s);
 });
 
 test("Requests CSS does not include the deferred VR4 advanced-filter workflow", () => {
