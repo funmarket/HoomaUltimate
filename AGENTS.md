@@ -12,6 +12,23 @@ Project-control documentation is limited to the eight files named in `README.md`
 
 ---
 
+## 0A. Product-owner locked phone-first UI execution rule
+
+**PRODUCT OWNER LOCK — MANDATORY FOR EVERY CURRENT AND FUTURE AGENT.** HOOMA is primarily a **phone-targeted application**, not a desktop website scaled down to fit phones. This requirement already exists in `requirements.md` §3.2 (Mobile first) and §3.3 (global visual roles). This section makes its execution order explicit; it does not authorize a redesign or supersede other product rules.
+
+For every authorized task that creates, changes, audits, or verifies UI/layout/visual behavior:
+
+- **Start with the phone experience.** Base component composition, content hierarchy, navigation, readability, interactive states, media presentation, and touch accessibility on real phone constraints. Use familiar high-quality mobile-app interaction principles (as seen in Facebook, X/Twitter, and Telegram) as usability references, **not** as permission to copy their designs or invent HOOMA product behavior.
+- **Adapt outward:** phone first → tablet second → desktop third. Desktop layout is a responsive adaptation, never the authority for choosing or rejecting the phone layout. Do not describe a desktop composition as the primary product decision.
+- **Verify actual phone rendering, not CSS/source patterns alone.** Test the relevant supported phone widths, including 320, 360, 375, 390, 393, 412, and 430 CSS px where applicable; check overflow, touch targets, content visibility, text wrapping, scrolling, navigation, and interaction states. Verify applicable tablet/desktop adaptations afterward. If runtime/browser proof is unavailable, report that limitation; do not claim responsive acceptance.
+- **Preserve the governed HOOMA design system.** Follow the current approved colors, text roles, outlines, typography, controls, icon semantics, safe areas, and shared MEDIA/NAV/CONTENT/BLEED layout ownership. Do not improvise page-wide colors, desktop-first grids, arbitrary offsets, or a new visual system.
+- **Keep behavior protected.** UI work must preserve current domain mechanics, routes, authorization/guest boundaries, Team Challenge handoff, media ownership and lifecycle, and the single shared Browser/Telegram product. Telegram host/safe-area differences must be verified without creating a second frontend.
+- **Use source truth before editing.** Inspect the current GitHub foundation and relevant governing requirements; old local screenshots, worktrees, branches, proposed layouts, or historical tests are evidence only, not design authority. Carry forward only explicitly authorized changes. A historical mobile/desktop layout difference is not, by itself, an approved redesign or a proven defect.
+
+These obligations apply equally to Codex, ChatGPT, other coding agents, reviewers, and future engineering sessions. Include phone-first verification and any genuine unverified constraints in UI task reports; do not silently downgrade the phone checks to an optional desktop-oriented review.
+
+---
+
 ## 1. Source-of-truth order
 
 When sources disagree, use this order:
