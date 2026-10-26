@@ -59,7 +59,7 @@ test("collapsed and expanded Request cards preserve accepted text and layout rol
   );
   assert.match(
     requestsCss,
-    /\.request-card__body\s*>\s*span\s*\{[^}]*color:\s*#d8d4ca;[^}]*font-size:\s*16px;/s,
+    /\.request-card__body\s*>\s*span\s*\{[^}]*color:\s*#f7f7f7;[^}]*font-size:\s*16px;/s,
   );
   assert.match(requestsCss, /\.request-card__meta\s*\{[^}]*color:\s*#b8b5ad;/s);
   assert.match(
