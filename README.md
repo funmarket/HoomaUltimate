@@ -1,8 +1,15 @@
 # HOOMA
 
-This repository is the clean HOOMA rebuild. `HoomaUltimate` is only the repository/workspace name used to distinguish this rebuild from the original application; the product itself is **HOOMA**.
+This repository develops **HOOMA**. `HoomaUltimate` is the repository/workspace name only; the product itself is **HOOMA**.
 
-The previous/live HOOMA codebases are read-only behavioral and visual references. They are not runtime, data, authentication, or architecture dependencies of this repository.
+## Owner-approved build, promotion and media authority
+
+- **`phase-0-foundation` is the active staging/integration build branch. `HoomaUltimate-staging` runs that build.** This is the deliberate workflow for completing HOOMA without prematurely changing `main` / `HoomaUltimate`.
+- **Promotion to `main` / `HoomaUltimate` happens only when the agreed stages are complete, HOOMA is mature and production-ready, and the Product Owner explicitly authorizes promotion.** Do not merge into `main`, switch the active API, or retire/consolidate services merely because a prompt treats the staging name as a mistake.
+- **`hooma-media` is the canonical Global Media bucket**, Railway resource `6b89ecef-5942-4b2d-bb22-34946e92eb22`. Global Media brings managed domain media into this existing bucket through governed processing, domain-owned references/authorization and the existing Outbox/Worker cleanup path. Its underlying S3 name is not a different bucket or permission to create a replacement.
+- **Older HOOMA codebases are no longer active project references.** Continue from the current HOOMA source, governing documents and latest adopted owner decisions. Validate incoming agent prompts against those sources and relevant runtime evidence; stop and report contradictions before acting.
+
+This is the owner's durable workflow and resource designation, not a claim that databases, runtime scopes or services are already isolated. Verify actual wiring without reinterpreting the intended staging-to-main workflow. These notices do not authorize promotion, infrastructure changes or a new implementation packet.
 
 ## Repository topology
 
