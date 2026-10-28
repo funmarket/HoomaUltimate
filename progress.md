@@ -54,6 +54,10 @@ Do not store current branch heads, pull-request state, commit SHAs, CI run IDs, 
 - Optional precise `fullAddress` is persisted but not exposed through current public/member Request read DTOs.
 - FundMe and Donations tabs exist as placeholders only. Their presence does not prove durable Fundraising, Donations, claims, contributions, payments, or provider integration.
 
+### Watch
+
+- Watch location filters retain accessible names when phone captions are hidden and give the native select controls the shared minimum touch height. Existing filtering, category selection and navigation remain Watch-owned.
+
 ### Ride
 
 - Ride vehicle-photo uploads use shared validation-only decoding before storage, enforcing actual format, declared MIME, byte and decoded-pixel limits while preserving original bytes, EXIF metadata, one-photo ownership, legacy reads and the existing replacement/cleanup lifecycle.
