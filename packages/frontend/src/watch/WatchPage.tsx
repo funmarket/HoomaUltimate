@@ -221,7 +221,11 @@ export function WatchPage() {
           <div className="watch-location-filters">
             <label>
               <span>City</span>
-              <select value={city} onChange={(event) => setCity(event.target.value)}>
+              <select
+                aria-label="City"
+                value={city}
+                onChange={(event) => setCity(event.target.value)}
+              >
                 <option value="">All cities</option>
                 {cities.map((value) => (
                   <option key={value} value={value}>
@@ -232,7 +236,11 @@ export function WatchPage() {
             </label>
             <label>
               <span>Houma</span>
-              <select value={houma} onChange={(event) => setHouma(event.target.value)}>
+              <select
+                aria-label="Houma"
+                value={houma}
+                onChange={(event) => setHouma(event.target.value)}
+              >
                 <option value="">All Houmas</option>
                 {houmas.map((value) => (
                   <option key={value} value={value}>
