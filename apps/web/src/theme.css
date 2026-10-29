@@ -147,7 +147,7 @@ body {
       var(--app-bg) 42%
     );
   background-attachment: fixed;
-  font-size: var(--type-body);
+  font-size: var(--hooma-ui-body);
   line-height: 1.5;
 }
 
@@ -177,7 +177,7 @@ h3,
 
 p,
 .type-body {
-  font-size: var(--type-body);
+  font-size: var(--hooma-ui-body);
   color: var(--app-text);
 }
 
