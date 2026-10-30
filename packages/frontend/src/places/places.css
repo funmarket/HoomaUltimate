@@ -1169,9 +1169,6 @@
   max-width: 100%;
 }
 
-.pitch-photo-manager__list input[type="file"],
-.pitch-photo-manager__list input[type="url"],
-.pitch-photo-manager > input[type="file"],
 .pitch-photo-manager input[type="file"],
 .pitch-photo-manager input[type="url"] {
   box-sizing: border-box;
