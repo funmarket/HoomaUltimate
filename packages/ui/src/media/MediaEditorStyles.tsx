@@ -5,7 +5,12 @@ export function MediaEditorStyles() {
 const MEDIA_EDITOR_STYLES = `
 .hooma-media-field,
 .hooma-media-gallery {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
   color: #f7f7f7;
   font-family: var(--font-ui, "Source Sans 3", system-ui, sans-serif);
@@ -69,6 +74,8 @@ const MEDIA_EDITOR_STYLES = `
 
 .hooma-media-field__preview,
 .hooma-media-gallery__preview {
+  min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   margin: 0;
   background: #050605;
@@ -80,8 +87,11 @@ const MEDIA_EDITOR_STYLES = `
 .hooma-media-gallery__preview img {
   display: block;
   width: 100%;
+  height: auto;
+  max-width: 100%;
   max-height: 320px;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
 }
 
 .hooma-media-field__control,
@@ -217,6 +227,8 @@ const MEDIA_EDITOR_STYLES = `
 }
 
 .hooma-media-gallery__list {
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
   display: grid;
   gap: 12px;
   margin: 0;
@@ -225,6 +237,8 @@ const MEDIA_EDITOR_STYLES = `
 }
 
 .hooma-media-gallery__item {
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
   display: grid;
   gap: 12px;
   padding: 14px;

@@ -1131,3 +1131,46 @@
     height: 18px;
   }
 }
+
+/* Canonical Place/Pitch gallery manager: previews must not size the page. */
+.pitch-photo-manager,
+.pitch-photo-manager__list,
+.pitch-photo-manager__list > article,
+.pitch-photo-manager__replacement {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.pitch-photo-manager__list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+}
+
+.pitch-photo-manager__list > article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.pitch-photo-manager__list > article > img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  max-height: min(70vh, 640px);
+  object-fit: contain;
+  object-position: center;
+}
+
+.pitch-photo-manager__list > article > div,
+.pitch-photo-manager__list input {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.pitch-photo-manager input[type="file"],
+.pitch-photo-manager input[type="url"] {
+  box-sizing: border-box;
+  width: 100%;
+}
