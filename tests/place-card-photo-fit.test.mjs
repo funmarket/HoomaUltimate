@@ -53,7 +53,10 @@ test("Place/Pitch photo manager contains full images and cannot widen its grid",
 });
 
 test("shared media editors use bounded non-cropping previews", async () => {
-  const source = await readFile(new URL("../packages/ui/src/media/MediaEditorStyles.tsx", import.meta.url), "utf8");
+  const source = await readFile(
+    new URL("../packages/ui/src/media/MediaEditorStyles.tsx", import.meta.url),
+    "utf8",
+  );
   assert.match(source, /\.hooma-media-gallery__preview img \{[\s\S]*?object-fit: contain;/);
   assert.doesNotMatch(source, /object-fit:\s*cover;/);
   assert.match(source, /max-width:\s*100%;/);
