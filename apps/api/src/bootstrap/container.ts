@@ -46,6 +46,7 @@ import { PrismaTeamLifecycleRepository } from "../modules/teams/infrastructure/p
 import { PrismaTeamRepository } from "../modules/teams/infrastructure/prisma-team.repository.js";
 import { EventService } from "../modules/events/application/event.service.js";
 import { PrismaEventRepository } from "../modules/events/infrastructure/prisma-event.repository.js";
+import { PrismaAuditWriter } from "../modules/audit/infrastructure/prisma-audit-writer.js";
 import { GamerMatchService } from "../modules/gamers/application/gamer-match.service.js";
 import { GamerService } from "../modules/gamers/application/gamer.service.js";
 import { PrismaGamerChallengeRepository } from "../modules/gamers/infrastructure/prisma-gamer-challenge.repository.js";
@@ -275,7 +276,10 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
   const gamerProfileRepository = new PrismaGamerProfileRepository(database);
   const gamerChallengeRepository = new PrismaGamerChallengeRepository(database);
   const gamerEligibilityRepository = new PrismaGamerEligibilityRepository(database);
-  const gamerMatchRepository = new PrismaGamerMatchRepository(database);
+  const gamerMatchRepository = new PrismaGamerMatchRepository(
+    database,
+    new PrismaAuditWriter(database),
+  );
   const gamerService = new GamerService(
     gamerGameRepository,
     gamerProfileRepository,
