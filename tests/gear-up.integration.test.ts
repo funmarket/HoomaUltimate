@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import test from "node:test";
 import { getDatabaseClient } from "@hooma/database";
+import { PrismaAuditWriter } from "../apps/api/src/modules/audit/infrastructure/prisma-audit-writer.js";
 import { PrismaPlaceRepository } from "../apps/api/src/modules/places/infrastructure/prisma-place.repository.js";
 
 const repositoryUrl = new URL(
@@ -46,7 +47,7 @@ function input(name: string, address: string) {
 
 test("Gear Up repository reuses canonical Place and approves Place plus shop atomically", async () => {
   const { PrismaGearUpRepository } = await loadRepository();
-  const repository = new PrismaGearUpRepository(db);
+  const repository = new PrismaGearUpRepository(db, new PrismaAuditWriter(db));
   const suffix = Date.now().toString(36);
   const submitter = await db.user.create({ data: {} });
   const admin = await db.user.create({ data: {} });
@@ -124,7 +125,7 @@ test("Gear Up repository reuses canonical Place and approves Place plus shop ato
 
 test("Gear Up review preserves approved Place while approving pending shop", async () => {
   const { PrismaGearUpRepository } = await loadRepository();
-  const repository = new PrismaGearUpRepository(db);
+  const repository = new PrismaGearUpRepository(db, new PrismaAuditWriter(db));
   const suffix = Date.now().toString(36);
   const submitter = await db.user.create({ data: {} });
   const placeAdmin = await db.user.create({ data: {} });

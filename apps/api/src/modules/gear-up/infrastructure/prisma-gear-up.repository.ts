@@ -8,6 +8,7 @@ import type {
 } from "@hooma/contracts/gear-up";
 import type { PlaceSuggestionResult } from "@hooma/contracts/places";
 import { Prisma, type PrismaClient } from "@hooma/database";
+import type { AuditWriter } from "../../audit/application/audit-writer.js";
 import type {
   GearUpModerationDecision,
   GearUpRepository,
@@ -72,7 +73,10 @@ function publicShop(
 }
 
 export class PrismaGearUpRepository implements GearUpRepository {
-  constructor(private readonly db: PrismaClient) {}
+  constructor(
+    private readonly db: PrismaClient,
+    private readonly auditWriter: AuditWriter,
+  ) {}
 
   async listPublic(input: GearUpListQueryInput) {
     const q = input.q?.trim();
@@ -236,15 +240,16 @@ export class PrismaGearUpRepository implements GearUpRepository {
       });
       if (!shopResult.count) return false;
 
-      await tx.auditLog.create({
-        data: {
+      await this.auditWriter.writeInTransaction(
+        {
           actorUserId,
           action: `GEAR_UP_SHOP_${status}`,
           entityType: "GearUpShop",
           entityId: placeId,
           metadata: { note: input.note ?? null },
         },
-      });
+        tx,
+      );
       return true;
     });
   }

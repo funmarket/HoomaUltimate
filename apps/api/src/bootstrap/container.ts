@@ -206,7 +206,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
   );
   const pitchModerationService = new PitchModerationService(pitchRepository, platformAdminService);
 
-  const gearUpRepository = new PrismaGearUpRepository(database);
+  const gearUpRepository = new PrismaGearUpRepository(database, new PrismaAuditWriter(database));
   const gearUpProductRepository = new PrismaGearUpProductRepository(database);
   const gearUpProductMediaRepository = new PrismaGearUpProductMediaRepository(database);
   const gearUpService = new GearUpService(
