@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@hooma/database";
+import type { AuditWriter } from "../../audit/application/audit-writer.js";
 import type { GamerDisputeResolutionInput, GamerMatchSide } from "@hooma/contracts/gamers";
 import type {
   GamerMatchDisputeRecord,
@@ -63,7 +64,10 @@ function winnerSide(challengerScore: number, challengedScore: number): GamerMatc
 }
 
 export class PrismaGamerMatchRepository implements GamerMatchRepository {
-  constructor(private readonly database: PrismaClient) {}
+  constructor(
+    private readonly database: PrismaClient,
+    private readonly auditWriter: AuditWriter,
+  ) {}
 
   async getByChallengeId(challengeId: string): Promise<GamerMatchSessionRecord | null> {
     const row = await this.database.gamerMatchSession.findUnique({
@@ -269,8 +273,8 @@ export class PrismaGamerMatchRepository implements GamerMatchRepository {
               moderatorNotes: input.resolution.moderatorNotes,
             },
       });
-      await tx.auditLog.create({
-        data: {
+      await this.auditWriter.writeInTransaction(
+        {
           actorUserId: input.actorUserId,
           action: score ? "GAMER_MATCH_DISPUTE_RESOLVED" : "GAMER_MATCH_DISPUTE_VOIDED",
           entityType: "GamerMatchSession",
@@ -287,7 +291,8 @@ export class PrismaGamerMatchRepository implements GamerMatchRepository {
             moderatorNotes: input.resolution.moderatorNotes,
           },
         },
-      });
+        tx,
+      );
       const row = await tx.gamerMatchSession.findUnique({
         where: { id: input.matchId },
         include: sessionInclude,
