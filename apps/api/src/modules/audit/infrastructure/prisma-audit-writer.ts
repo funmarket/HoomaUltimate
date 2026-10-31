@@ -5,7 +5,15 @@ export class PrismaAuditWriter implements AuditWriter {
   constructor(private readonly db: PrismaClient) {}
 
   async write(entry: AuditEntryInput): Promise<void> {
-    await this.db.auditLog.create({
+    await this.append(entry, this.db);
+  }
+
+  async writeInTransaction(entry: AuditEntryInput, transaction: Prisma.TransactionClient): Promise<void> {
+    await this.append(entry, transaction);
+  }
+
+  private async append(entry: AuditEntryInput, client: PrismaClient | Prisma.TransactionClient): Promise<void> {
+    await client.auditLog.create({
       data: {
         actorUserId: entry.actorUserId ?? null,
         action: entry.action,
