@@ -7,6 +7,9 @@ export interface AuditEntryInput {
   readonly metadata?: Record<string, unknown>;
 }
 
+import type { Prisma } from "@hooma/database";
+
 export interface AuditWriter {
   write(entry: AuditEntryInput): Promise<void>;
+  writeInTransaction(entry: AuditEntryInput, transaction: Prisma.TransactionClient): Promise<void>;
 }
