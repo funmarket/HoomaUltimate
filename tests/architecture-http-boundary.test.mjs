@@ -216,6 +216,49 @@ test("architecture check allows Gear Up Place reads, relation fields and owner b
   assert.equal(result.status, 0, result.stderr);
 });
 
+
+test("architecture check allows canonical Audit writer and reader persistence", async () => {
+  const root = await createArchitectureFixture({
+    "apps/api/src/modules/audit/infrastructure/prisma-audit-writer.ts":
+      "export async function write(tx) { await tx.auditLog.create({}); await tx.auditLog.update({}); }",
+    "apps/api/src/modules/audit/infrastructure/prisma-audit-reader.ts":
+      "export async function read(db) { await db.auditLog.findMany({}); await db.auditLog.findFirst({}); await db.auditLog.count(); }",
+  });
+  const result = runArchitectureCheck(root);
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test("architecture check rejects foreign direct Audit persistence access", async () => {
+  const file = "apps/api/src/modules/gamers/infrastructure/prisma-gamer.repository.ts";
+  const root = await createArchitectureFixture({
+    [file]: "export async function write(tx) { await tx.auditLog.create({}); }",
+  });
+  const result = runArchitectureCheck(root);
+  assert.notEqual(result.status, 0);
+  assert.match(
+    result.stderr,
+    new RegExp(file + ":.*foreign direct Audit persistence access.*AuditWriter/AuditReader"),
+  );
+});
+
+test("architecture check allows legitimate test Audit assertions", async () => {
+  const root = await createArchitectureFixture({
+    "tests/platform-admin-audit-archive.test.ts":
+      "export async function assertAudit(prisma) { return prisma.auditLog.findMany({}); }",
+  });
+  const result = runArchitectureCheck(root);
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test("architecture check ignores comments, strings, and unrelated auditLog-shaped objects", async () => {
+  const root = await createArchitectureFixture({
+    "apps/api/src/modules/gamers/application/gamer.service.ts":
+      '// tx.auditLog.create({});\\nconst example = "tx.auditLog.findMany({})";\\nconst auditLog = { count() { return 1; } };\\nexport function read() { return auditLog.count() + example.length; }',
+  });
+  const result = runArchitectureCheck(root);
+  assert.equal(result.status, 0, result.stderr);
+});
+
 async function createArchitectureFixture(files) {
   const root = await mkdtemp(path.join(tmpdir(), "hooma-architecture-"));
   await writeFixtureFile(
