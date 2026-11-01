@@ -88,7 +88,11 @@ test("Pitch owner management reads approved pending and latest rejected state", 
   const placeService = new PlaceService(places, authorizer, {
     resolve: async (value) => value,
   });
-  const pitch = new PitchOwnerService(new PrismaPitchRepository(db, new PrismaAuditWriter(db)), placeService, authorizer);
+  const pitch = new PitchOwnerService(
+    new PrismaPitchRepository(db, new PrismaAuditWriter(db)),
+    placeService,
+    authorizer,
+  );
 
   try {
     const management = await pitch.getManagementState(owner.id, place.id);
