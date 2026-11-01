@@ -1,4 +1,5 @@
 import { getDatabaseClient, disconnectDatabase } from "@hooma/database";
+import { PrismaAuditWriter } from "../apps/api/src/modules/audit/infrastructure/prisma-audit-writer.js";
 
 function argument(name: string): string | undefined {
   const prefix = `--${name}=`;
@@ -22,6 +23,7 @@ if (Boolean(userIdArg) === Boolean(loginUsernameArg)) {
 }
 
 const db = getDatabaseClient();
+const auditWriter = new PrismaAuditWriter(db);
 try {
   const user = userIdArg
     ? await db.user.findUnique({
@@ -62,15 +64,16 @@ try {
           grantedBy: "configured-owner-cli",
         },
       });
-      await tx.auditLog.create({
-        data: {
+      await auditWriter.writeInTransaction(
+        {
           actorUserId: null,
           action: "PLATFORM_OWNER_RECONCILED",
           entityType: "User",
           entityId: user.id,
           metadata: { source: "configured-owner-cli" },
         },
-      });
+        tx,
+      );
     });
     console.log(`Reconciled configured platform owner ${user.id}.`);
   }
