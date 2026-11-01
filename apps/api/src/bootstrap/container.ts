@@ -148,7 +148,10 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     new RedisReadinessProbe(redis),
     objectStorageReadinessProbe(storage),
   );
-  const platformAdminRepository = new PrismaPlatformAdminRepository(database);
+  const platformAdminRepository = new PrismaPlatformAdminRepository(
+    database,
+    new PrismaAuditWriter(database),
+  );
   const platformAdminService = new PlatformAdminService(platformAdminRepository);
   const identityRepository = new PrismaIdentityRepository(database);
   const webSessionActivity = new PrismaWebSessionActivity(database);
