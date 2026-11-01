@@ -43,7 +43,14 @@ export class PrismaAuditReader implements AuditReader {
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: query.limit + 1,
     });
-    const items = rows.slice(0, query.limit);
+    const items = rows.slice(0, query.limit).map((row) => ({
+      id: row.id,
+      actorUserId: row.actorUserId,
+      action: row.action,
+      entityType: row.entityType,
+      entityId: row.entityId,
+      createdAt: row.createdAt,
+    }));
     const extra = rows.length > query.limit ? items.at(-1) : undefined;
     return {
       items,
