@@ -23,7 +23,10 @@ const legacyApplicationHttpImports = new Map(
 );
 const hardenedApplicationImports = new Map(
   [
-    ["teams/application/team.service.ts", ["../../communities/application/community.service.js"]],
+    [
+      "teams/application/team.service.ts",
+      ["../../communities/application/community.service.js"],
+    ],
     [
       "events/application/event.service.ts",
       [
@@ -31,8 +34,14 @@ const hardenedApplicationImports = new Map(
         "../../places/application/place.service.js",
       ],
     ],
-    ["pitch/application/pitch-owner.service.ts", ["../../places/application/place.repository.js"]],
-    ["gear-up/application/gear-up.service.ts", ["../../places/application/place.repository.js"]],
+    [
+      "pitch/application/pitch-owner.service.ts",
+      ["../../places/application/place.repository.js"],
+    ],
+    [
+      "gear-up/application/gear-up.service.ts",
+      ["../../places/application/place.repository.js"],
+    ],
     [
       "gear-up/application/gear-up-product.service.ts",
       ["../../places/application/place.repository.js"],
@@ -51,9 +60,13 @@ const hardenedApplicationImports = new Map(
         "../../rides/application/ride.service.js",
       ],
     ],
-  ].map(([file, specifiers]) => [`apps/api/src/modules/${file}`, new Set(specifiers)]),
+  ].map(([file, specifiers]) => [
+    `apps/api/src/modules/${file}`,
+    new Set(specifiers),
+  ]),
 );
-const importSpecifierPattern = /\bimport\b(?:[\s\S]*?\bfrom\s*)?["']([^"']+)["']/g;
+const importSpecifierPattern =
+  /\bimport\b(?:[\s\S]*?\bfrom\s*)?["']([^"']+)["']/g;
 
 const auditOwnerPaths = new Set([
   "apps/api/src/modules/audit/infrastructure/prisma-audit-writer.ts",
@@ -106,7 +119,10 @@ function getImportSpecifiers(source) {
   return [...source.matchAll(importSpecifierPattern)].map((match) => match[1]);
 }
 function isHttpTransportImport(specifier) {
-  return /^(?:\.\.\/)+http\//.test(specifier) || specifier.includes("apps/api/src/http/");
+  return (
+    /^(?:\.\.\/)+http\//.test(specifier) ||
+    specifier.includes("apps/api/src/http/")
+  );
 }
 function resolveRepositoryImport(file, specifier) {
   if (specifier.startsWith(".")) {
@@ -116,10 +132,14 @@ function resolveRepositoryImport(file, specifier) {
   return null;
 }
 function isForeignInfrastructureImport(rel, file, specifier) {
-  const source = rel.match(/^apps\/api\/src\/modules\/([^/]+)\/(?:application|domain)\//);
+  const source = rel.match(
+    /^apps\/api\/src\/modules\/([^/]+)\/(?:application|domain)\//,
+  );
   if (!source) return false;
   const resolved = resolveRepositoryImport(file, specifier);
-  const target = resolved?.match(/^apps\/api\/src\/modules\/([^/]+)\/infrastructure\//);
+  const target = resolved?.match(
+    /^apps\/api\/src\/modules\/([^/]+)\/infrastructure\//,
+  );
   return Boolean(target && target[1] !== source[1]);
 }
 
@@ -149,7 +169,10 @@ for (const file of await walk(root)) {
       }
     }
   }
-  if (rel === "apps/api/src/modules/gear-up/infrastructure/prisma-gear-up.repository.ts") {
+  if (
+    rel ===
+    "apps/api/src/modules/gear-up/infrastructure/prisma-gear-up.repository.ts"
+  ) {
     forbid(
       file,
       source,
@@ -197,19 +220,28 @@ for (const file of await walk(root)) {
     );
   }
   if (/^apps\/api\/src\/modules\/[^/]+\/application\//.test(rel)) {
-    forbid(file, source, /from ["']express["']/, "application layer must not depend on Express");
+    forbid(
+      file,
+      source,
+      /from ["']express["']/,
+      "application layer must not depend on Express",
+    );
   }
   if (/^apps\/api\/src\/modules\/[^/]+\/(application|domain)\//.test(rel)) {
     const importSpecifiers = getImportSpecifiers(source);
     const allowedLegacyImports = legacyApplicationHttpImports.get(rel);
     const forbiddenHttpImports = importSpecifiers.filter(
-      (specifier) => isHttpTransportImport(specifier) && !allowedLegacyImports?.has(specifier),
+      (specifier) =>
+        isHttpTransportImport(specifier) &&
+        !allowedLegacyImports?.has(specifier),
     );
     if (forbiddenHttpImports.length > 0) {
-      violations.push(`${rel}: application/domain layer must not import API HTTP transport`);
+      violations.push(
+        `${rel}: application/domain layer must not import API HTTP transport`,
+      );
     }
-    const forbiddenInfrastructureImports = importSpecifiers.filter((specifier) =>
-      isForeignInfrastructureImport(rel, file, specifier),
+    const forbiddenInfrastructureImports = importSpecifiers.filter(
+      (specifier) => isForeignInfrastructureImport(rel, file, specifier),
     );
     if (forbiddenInfrastructureImports.length > 0) {
       violations.push(
@@ -227,14 +259,24 @@ for (const file of await walk(root)) {
   }
 
   if (rel.startsWith("apps/api/src/modules/places/")) {
-    forbid(file, source, /modules\/pitch|\.\.\/\.\.\/pitch\//, "Places must not depend on Pitch");
+    forbid(
+      file,
+      source,
+      /modules\/pitch|\.\.\/\.\.\/pitch\//,
+      "Places must not depend on Pitch",
+    );
     forbid(
       file,
       source,
       /modules\/platform-admin|\.\.\/\.\.\/platform-admin\//,
       "Places must not depend on Platform Admin application code",
     );
-    forbid(file, source, /@hooma\/contracts\/pitch/, "Places must not depend on Pitch contracts");
+    forbid(
+      file,
+      source,
+      /@hooma\/contracts\/pitch/,
+      "Places must not depend on Pitch contracts",
+    );
     forbid(
       file,
       source,
@@ -294,8 +336,13 @@ for (const file of await walk(root)) {
     );
   }
 
-  if (rel.startsWith("apps/worker/") && /apps\/api\/src\/.*\/http\//.test(source)) {
-    violations.push(`${rel}: worker must not import API HTTP controllers/routes`);
+  if (
+    rel.startsWith("apps/worker/") &&
+    /apps\/api\/src\/.*\/http\//.test(source)
+  ) {
+    violations.push(
+      `${rel}: worker must not import API HTTP controllers/routes`,
+    );
   }
 
   if (rel.startsWith("packages/ui/src/")) {
@@ -314,7 +361,10 @@ for (const file of await walk(root)) {
   }
 }
 
-const canonicalRouterPath = path.join(root, "apps/web/src/app/router/HoomaRouter.tsx");
+const canonicalRouterPath = path.join(
+  root,
+  "apps/web/src/app/router/HoomaRouter.tsx",
+);
 try {
   const canonicalRouter = await readFile(canonicalRouterPath, "utf8");
   if (!canonicalRouter.includes('path="/telegram"')) {
@@ -329,7 +379,10 @@ try {
 }
 
 if (violations.length > 0) {
-  console.error("Architecture check failed:\n" + violations.map((item) => `- ${item}`).join("\n"));
+  console.error(
+    "Architecture check failed:\n" +
+      violations.map((item) => `- ${item}`).join("\n"),
+  );
   process.exit(1);
 }
 console.log("Architecture check passed.");
