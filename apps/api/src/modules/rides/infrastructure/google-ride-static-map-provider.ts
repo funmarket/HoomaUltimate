@@ -33,11 +33,7 @@ export class GoogleRideStaticMapProvider implements RideStaticMapProvider {
     const searchText = input.searchText.trim();
     if (!searchText) return null;
 
-    return this.renderStaticMap(
-      searchText,
-      PUBLIC_DESTINATION_ZOOM,
-      PUBLIC_MARKER_COLOR,
-    );
+    return this.renderStaticMap(searchText, PUBLIC_DESTINATION_ZOOM, PUBLIC_MARKER_COLOR);
   }
 
   async renderPrivateMeetingPointMap(input: {
@@ -52,11 +48,7 @@ export class GoogleRideStaticMapProvider implements RideStaticMapProvider {
     }
 
     const center = `${input.coordinates.latitude},${input.coordinates.longitude}`;
-    return this.renderStaticMap(
-      center,
-      PRIVATE_MEETING_POINT_ZOOM,
-      PRIVATE_MARKER_COLOR,
-    );
+    return this.renderStaticMap(center, PRIVATE_MEETING_POINT_ZOOM, PRIVATE_MARKER_COLOR);
   }
 
   private async renderStaticMap(
