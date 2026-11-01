@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { AppError } from "../apps/api/src/http/errors/app-error.js";
+import type { AuditReader } from "../apps/api/src/modules/audit/application/audit-reader.js";
 import type { AuditWriter } from "../apps/api/src/modules/audit/application/audit-writer.js";
 import type {
   PlatformAdminAuditPage,
@@ -81,7 +82,7 @@ test("Audit Archive keeps VIEW_AUDIT authorization and normalizes safe filter qu
 });
 
 test("Audit Archive repository filters safely and returns cursor pages without metadata exposure", async () => {
-  let findManyArgs: unknown;
+  let findPageQuery: unknown;
   const rows = [
     {
       id: "audit-new",
@@ -102,21 +103,25 @@ test("Audit Archive repository filters safely and returns cursor pages without m
       metadata: { token: "secret-token-2" },
     },
   ];
-  const db = {
-    auditLog: {
-      findMany: async (args: unknown) => {
-        findManyArgs = args;
-        return rows;
-      },
-    },
-  };
   const auditWriter: AuditWriter = {
     write: async () => {},
     writeInTransaction: async () => {},
   };
+  const auditReader: AuditReader = {
+    count: async () => rows.length,
+    findPage: async (query) => {
+      findPageQuery = query;
+      return {
+        items: [rows[0]!],
+        nextCursor: { createdAt: rows[0]!.createdAt, id: rows[0]!.id },
+      };
+    },
+    exists: async () => false,
+  };
   const repository = new PrismaPlatformAdminRepository(
-    db as unknown as ConstructorParameters<typeof PrismaPlatformAdminRepository>[0],
+    {} as ConstructorParameters<typeof PrismaPlatformAdminRepository>[0],
     auditWriter,
+    auditReader,
   );
 
   const page = await repository.auditEntries({
@@ -141,25 +146,13 @@ test("Audit Archive repository filters safely and returns cursor pages without m
   assert.equal(JSON.stringify(page).includes("secret-token"), false);
   assert.equal(JSON.stringify(page).includes("requestBody"), false);
   assert.ok(page.nextCursor);
-  assert.deepEqual(findManyArgs, {
-    select: {
-      id: true,
-      actorUserId: true,
-      action: true,
-      entityType: true,
-      entityId: true,
-      createdAt: true,
-    },
-    where: {
-      actorUserId: { contains: "user-1" },
-      action: "USER_SESSION_REVOKED",
-      entityType: "User",
-      createdAt: {
-        gte: new Date("2026-09-01T00:00:00.000Z"),
-        lte: new Date("2026-09-30T23:59:59.999Z"),
-      },
-    },
-    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    take: 2,
+  assert.deepEqual(findPageQuery, {
+    actorUserId: "user-1",
+    action: "USER_SESSION_REVOKED",
+    entityType: "User",
+    from: new Date("2026-09-01T00:00:00.000Z"),
+    to: new Date("2026-09-30T23:59:59.999Z"),
+    limit: 1,
+    cursor: null,
   });
 });
