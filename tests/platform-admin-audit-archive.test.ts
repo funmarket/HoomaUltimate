@@ -112,7 +112,16 @@ test("Audit Archive repository filters safely and returns cursor pages without m
     findPage: async (query) => {
       findPageQuery = query;
       return {
-        items: [rows[0]!],
+        items: [
+          {
+            id: rows[0]!.id,
+            actorUserId: rows[0]!.actorUserId,
+            action: rows[0]!.action,
+            entityType: rows[0]!.entityType,
+            entityId: rows[0]!.entityId,
+            createdAt: rows[0]!.createdAt,
+          },
+        ],
         nextCursor: { createdAt: rows[0]!.createdAt, id: rows[0]!.id },
       };
     },
