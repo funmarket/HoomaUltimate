@@ -388,7 +388,10 @@ test("Place cleanup is durable, fenced and retryable through PostgreSQL and Work
       async () => {
         const id = randomUUID();
         const apiDb = new PrismaClient();
-        await new PrismaPlaceRepository(apiDb, new PrismaAuditWriter(apiDb)).prepareImageUpload(place.id, id);
+        await new PrismaPlaceRepository(
+          apiDb,
+          new PrismaAuditWriter(apiDb),
+        ).prepareImageUpload(place.id, id);
         await storage.put(key(id), new Uint8Array([1]), "image/webp");
         await apiDb.$disconnect();
         await db.outboxEvent.update({
