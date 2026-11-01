@@ -1,5 +1,6 @@
 import type { AdminIssueSummary, PlatformManagerCapability } from "@hooma/contracts/platform-admin";
 import type { PrismaClient } from "@hooma/database";
+import type { AuditWriter } from "../../audit/application/audit-writer.js";
 import type {
   AdminIssueDisposition,
   AppManagerRecord,
@@ -78,7 +79,10 @@ function decodeOutboxIssueId(issueId: string): OutboxIssueKey | null {
 }
 
 export class PrismaPlatformAdminRepository implements PlatformAdminRepository {
-  constructor(private readonly db: PrismaClient) {}
+  constructor(
+    private readonly db: PrismaClient,
+    private readonly auditWriter: AuditWriter,
+  ) {}
 
   async hasPlatformAdminRole(userId: string): Promise<boolean> {
     return Boolean(
@@ -136,15 +140,16 @@ export class PrismaPlatformAdminRepository implements PlatformAdminRepository {
       });
 
       if (changed) {
-        await tx.auditLog.create({
-          data: {
+        await this.auditWriter.writeInTransaction(
+          {
             actorUserId: null,
             action: "PLATFORM_OWNER_RECONCILED",
             entityType: "User",
             entityId: userId,
             metadata: { source: "PLATFORM_ADMIN_BOOTSTRAP_TELEGRAM_USER_ID" },
           },
-        });
+          tx,
+        );
       }
     });
   }
@@ -203,15 +208,16 @@ export class PrismaPlatformAdminRepository implements PlatformAdminRepository {
           },
         });
       }
-      await tx.auditLog.create({
-        data: {
+      await this.auditWriter.writeInTransaction(
+        {
           actorUserId,
           action: "APP_MANAGER_CAPABILITIES_SET",
           entityType: "User",
           entityId: targetUserId,
           metadata: { capabilities: uniqueCapabilities },
         },
-      });
+        tx,
+      );
     });
   }
 
@@ -368,19 +374,17 @@ export class PrismaPlatformAdminRepository implements PlatformAdminRepository {
     const issue = this.outboxIssueFromGroup(group);
     if (issue.id !== issueId) return false;
     if (await this.outboxIssueDispositionExists(issueId, new Date(issue.updatedAt))) return false;
-    await this.db.auditLog.create({
-      data: {
-        actorUserId,
-        action: disposition === "RESOLVED" ? "ADMIN_ISSUE_RESOLVED" : "ADMIN_ISSUE_DISMISSED",
-        entityType: "AdminIssue",
-        entityId: issueId,
-        metadata: {
-          source: key.source,
-          topic: key.topic,
-          aggregateType: key.aggregateType,
-          aggregateId: key.aggregateId,
-          note: note.trim(),
-        },
+    await this.auditWriter.write({
+      actorUserId,
+      action: disposition === "RESOLVED" ? "ADMIN_ISSUE_RESOLVED" : "ADMIN_ISSUE_DISMISSED",
+      entityType: "AdminIssue",
+      entityId: issueId,
+      metadata: {
+        source: key.source,
+        topic: key.topic,
+        aggregateType: key.aggregateType,
+        aggregateId: key.aggregateId,
+        note: note.trim(),
       },
     });
     return true;
