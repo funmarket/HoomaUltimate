@@ -40,7 +40,7 @@ test("an approved suggested Pitch preserves immutable owner moderation history",
   const placeService = new PlaceService(places, allowAdmin, {
     resolve: async (value) => value,
   });
-  const pitchRepository = new PrismaPitchRepository(db);
+  const pitchRepository = new PrismaPitchRepository(db, new PrismaAuditWriter(db));
   const pitchReader = new ApprovedPitchReader(pitchRepository);
   const pitchSuggestions = new PitchSuggestionService(pitchRepository);
   const pitchOwner = new PitchOwnerService(pitchRepository, placeService, allowAdmin);
