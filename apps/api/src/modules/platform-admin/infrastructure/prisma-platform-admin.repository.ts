@@ -240,11 +240,11 @@ export class PrismaPlatformAdminRepository implements PlatformAdminRepository {
   async auditEntries(query: PlatformAdminAuditQuery): Promise<PlatformAdminAuditPage> {
     const cursor = decodeAuditCursor(query.cursor);
     const page = await this.auditReader.findPage({
-      actorUserId: query.actor,
-      action: query.action,
-      entityType: query.entityType,
-      from: query.from,
-      to: query.to,
+      ...(query.actor !== undefined ? { actorUserId: query.actor } : {}),
+      ...(query.action !== undefined ? { action: query.action } : {}),
+      ...(query.entityType !== undefined ? { entityType: query.entityType } : {}),
+      ...(query.from !== undefined ? { from: query.from } : {}),
+      ...(query.to !== undefined ? { to: query.to } : {}),
       limit: query.limit,
       cursor,
     });
