@@ -134,12 +134,7 @@ for (const file of await walk(root)) {
   ) {
     for (const access of findAuditPersistenceAccesses(source)) {
       violations.push(
-        rel +
-          ":" +
-          access.line +
-          ': foreign direct Audit persistence access "' +
-          access.source +
-          '"; use the application AuditWriter/AuditReader seam',
+        `${rel}:${access.line}: foreign direct Audit persistence access "${access.source}"; use the application AuditWriter/AuditReader seam`,
       );
     }
   }
