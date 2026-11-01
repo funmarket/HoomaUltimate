@@ -1,3 +1,5 @@
+import type { Prisma } from "@hooma/database";
+
 export interface AuditRecord {
   readonly id: string;
   readonly actorUserId: string | null;
@@ -35,7 +37,7 @@ export interface AuditEntryExistsQuery {
 }
 
 export interface AuditReader {
-  count(): Promise<number>;
+  count(transaction?: Prisma.TransactionClient): Promise<number>;
   findPage(query: AuditPageQuery): Promise<AuditPage>;
   exists(query: AuditEntryExistsQuery): Promise<boolean>;
 }
