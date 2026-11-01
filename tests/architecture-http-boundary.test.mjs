@@ -236,7 +236,9 @@ test("architecture check rejects foreign direct Audit persistence access", async
   assert.notEqual(result.status, 0);
   assert.match(
     result.stderr,
-    new RegExp(\n      file + ":.*foreign direct Audit persistence access.*AuditWriter/AuditReader",\n    ),
+    new RegExp(
+      file + ":.*foreign direct Audit persistence access.*AuditWriter/AuditReader",
+    ),
   );
 });
 
