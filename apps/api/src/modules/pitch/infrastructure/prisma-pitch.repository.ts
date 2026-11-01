@@ -6,6 +6,7 @@ import type {
   PublicPitch,
 } from "@hooma/contracts/pitch";
 import { Prisma, type PrismaClient } from "@hooma/database";
+import type { AuditWriter } from "../../audit/application/audit-writer.js";
 import {
   canonicalPlaceSelect,
   canonicalPlaceSummary,
@@ -48,7 +49,10 @@ function pitchSummary(row: PitchRow, images: readonly PlaceImageRow[] = []): Pub
 }
 
 export class PrismaPitchRepository implements PitchRepository {
-  constructor(private readonly db: PrismaClient) {}
+  constructor(
+    private readonly db: PrismaClient,
+    private readonly auditWriter: AuditWriter,
+  ) {}
 
   async listApproved(): Promise<readonly PublicPitch[]> {
     const rows = await this.db.placeCapability.findMany({
@@ -394,15 +398,16 @@ export class PrismaPitchRepository implements PitchRepository {
         throw new Error("PITCH_INITIAL_PLACE_STATE_CHANGED");
       }
 
-      await tx.auditLog.create({
-        data: {
+      await this.auditWriter.writeInTransaction(
+        {
           actorUserId,
           action: `PITCH_INITIAL_SUGGESTION_${status}`,
           entityType: "PlaceCapability",
           entityId: capabilityId,
           metadata: { placeId: pitch.placeId, kind: "PITCH", note: input.note ?? null },
         },
-      });
+        tx,
+      );
       return true;
     });
   }
@@ -469,15 +474,16 @@ export class PrismaPitchRepository implements PitchRepository {
         });
       }
 
-      await tx.auditLog.create({
-        data: {
+      await this.auditWriter.writeInTransaction(
+        {
           actorUserId,
           action: `PITCH_APPLICATION_${status}`,
           entityType: "PlaceCapabilityApplication",
           entityId: applicationId,
           metadata: { placeId: application.placeId, kind: "PITCH", note: input.note ?? null },
         },
-      });
+        tx,
+      );
       return true;
     });
   }
