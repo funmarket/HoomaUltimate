@@ -49,14 +49,16 @@ test("Audit reader returns metadata-free cursor pages with canonical filters", a
     cursor: null,
   });
 
-  assert.deepEqual(page.items, [rows[0] && {
-    id: rows[0].id,
-    actorUserId: rows[0].actorUserId,
-    action: rows[0].action,
-    entityType: rows[0].entityType,
-    entityId: rows[0].entityId,
-    createdAt: rows[0].createdAt,
-  }]);
+  assert.deepEqual(page.items, [
+    {
+      id: rows[0]!.id,
+      actorUserId: rows[0]!.actorUserId,
+      action: rows[0]!.action,
+      entityType: rows[0]!.entityType,
+      entityId: rows[0]!.entityId,
+      createdAt: rows[0]!.createdAt,
+    },
+  ]);
   assert.equal(JSON.stringify(page).includes("secret-token"), false);
   assert.deepEqual(page.nextCursor, {
     createdAt: rows[0]!.createdAt,
