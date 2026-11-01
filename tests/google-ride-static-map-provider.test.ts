@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { GoogleRideStaticMapProvider } from "../apps/api/src/modules/rides/infrastructure/google-ride-static-map-provider.js";
+import {\n  GoogleRideStaticMapProvider,\n} from "../apps/api/src/modules/rides/infrastructure/google-ride-static-map-provider.js";
 
 test("Google Ride static map provider renders public destination with Google map parameters", async () => {
   let requestedUrl: URL | null = null;
