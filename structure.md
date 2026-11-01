@@ -559,3 +559,7 @@ For every task:
 14. Report exact changed files, documentation updates, proof, current commit, remaining risk, and evidence-based score.
 
 No task is complete while affected governing documentation still describes the old source state.
+
+## PageBanner ownership
+
+Platform Admin owns PageBanner placement administration and authorization. The PageBanner module owns placement/slide metadata, destination policy, media lifecycle intent and public projection. PostgreSQL stores placement, slide and processed-variant metadata; object storage stores image bytes; the existing outbox/Worker authority reconciles abandoned and retired objects. PageBanner uses the canonical AuditWriter for Admin mutations and does not create a generic Media owner or cross-domain persistence authority.

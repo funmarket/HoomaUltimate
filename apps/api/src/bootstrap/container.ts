@@ -22,6 +22,8 @@ import { PrismaUserLastSeenReader } from "../modules/identity/infrastructure/pri
 import { PrismaWebSessionActivity } from "../modules/identity/infrastructure/prisma-web-session-activity.js";
 import { PrismaPlatformAdminRepository } from "../modules/platform-admin/infrastructure/prisma-platform-admin.repository.js";
 import { PlatformAdminService } from "../modules/platform-admin/application/platform-admin.service.js";
+import { PageBannerService } from "../modules/page-banner/application/page-banner.service.js";
+import { PrismaPageBannerRepository } from "../modules/page-banner/infrastructure/prisma-page-banner.repository.js";
 import { PlaceMediaService } from "../modules/places/application/place-media.service.js";
 import { PlaceService } from "../modules/places/application/place.service.js";
 import { HttpExternalPlaceImageResolver } from "../modules/places/infrastructure/http-external-place-image-resolver.js";
@@ -155,6 +157,12 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     new PrismaAuditReader(database),
   );
   const platformAdminService = new PlatformAdminService(platformAdminRepository);
+  const pageBannerService = new PageBannerService(
+    new PrismaPageBannerRepository(database, new PrismaAuditWriter(database)),
+    platformAdminService,
+    storage,
+    mediaStorageScope ?? null,
+  );
   const identityRepository = new PrismaIdentityRepository(database);
   const webSessionActivity = new PrismaWebSessionActivity(database);
   const identityService = new IdentityService(
@@ -375,6 +383,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     passwordRecoveryService,
     identityAdminService,
     platformAdminService,
+    pageBannerService,
     placeService,
     placeMediaService,
     approvedPitchReader,

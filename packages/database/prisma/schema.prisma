@@ -40,6 +40,11 @@ enum OutboxStatus {
   FAILED
 }
 
+enum PageBannerDestinationKind {
+  INTERNAL
+  EXTERNAL
+}
+
 enum CommunityStatus {
   ACTIVE
   ARCHIVED
@@ -1404,4 +1409,47 @@ model OutboxEvent {
 
   @@index([status, availableAt])
   @@index([aggregateType, aggregateId])
+}
+
+model PageBannerPlacement {
+  id        String           @id
+  enabled   Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  slides    PageBannerSlide[]
+}
+
+model PageBannerSlide {
+  id                   String                    @id @default(cuid())
+  placementId          String
+  mediaId              String                    @unique
+  sortOrder            Int
+  enabled              Boolean                   @default(true)
+  isDecorative         Boolean                   @default(false)
+  altText              String?
+  destinationKind      PageBannerDestinationKind?
+  destinationUrl       String?
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+  placement            PageBannerPlacement       @relation(fields: [placementId], references: [id], onDelete: Cascade)
+  variants             PageBannerSlideVariant[]
+
+  @@unique([placementId, sortOrder])
+  @@index([placementId, enabled, sortOrder])
+}
+
+model PageBannerSlideVariant {
+  id          String         @id @default(cuid())
+  slideId     String
+  variant     String
+  objectKey   String
+  contentType String
+  sizeBytes   Int
+  widthPx     Int
+  heightPx    Int
+  createdAt   DateTime       @default(now())
+  slide       PageBannerSlide @relation(fields: [slideId], references: [id], onDelete: Cascade)
+
+  @@unique([slideId, variant])
+  @@index([objectKey])
 }

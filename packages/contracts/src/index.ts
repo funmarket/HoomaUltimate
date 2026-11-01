@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { platformManagerCapabilitySchema } from "./platform-admin.js";
+export * from "./page-banner.js";
 
 export const healthResponseSchema = z.object({
   status: z.literal("ok"),

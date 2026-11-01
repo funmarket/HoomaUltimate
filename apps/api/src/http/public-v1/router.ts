@@ -20,6 +20,7 @@ import { createHelpTaxonomyPublicRouter } from "../../modules/help-taxonomy/http
 import { createRidePublicRouter } from "../../modules/rides/http/ride.routes.js";
 import { createTeamPublicRouter } from "../../modules/teams/http/team.routes.js";
 import { createGearUpPublicRouter } from "../../modules/gear-up/http/gear-up.routes.js";
+import { createPageBannerPublicRouter } from "../../modules/page-banner/http/page-banner.routes.js";
 
 export function createPublicV1Router(container: AppContainer, config: ApiConfig): Router {
   const router = Router();
@@ -50,6 +51,7 @@ export function createPublicV1Router(container: AppContainer, config: ApiConfig)
     createPlacesPublicRouter(container.placeService, container.placeMediaService),
   );
   router.use("/pitch", createPitchPublicRouter(container.approvedPitchReader));
+  router.use(createPageBannerPublicRouter(container.pageBannerService));
   router.use(
     "/gear-up",
     createGearUpPublicRouter(

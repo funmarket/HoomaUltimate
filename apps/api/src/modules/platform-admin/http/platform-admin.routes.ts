@@ -19,6 +19,8 @@ import type { PitchModerationService } from "../../pitch/application/pitch-moder
 import type { PlaceService } from "../../places/application/place.service.js";
 import type { IdentityAdminService } from "../../identity/application/identity-admin.service.js";
 import type { PlatformAdminService } from "../application/platform-admin.service.js";
+import type { PageBannerService } from "../../page-banner/application/page-banner.service.js";
+import { createPageBannerAdminRouter } from "../../page-banner/http/page-banner.routes.js";
 import type { GearUpService } from "../../gear-up/application/gear-up.service.js";
 import type { GearUpSettingsService } from "../../gear-up/application/gear-up-settings.service.js";
 
@@ -42,8 +44,11 @@ export function createPlatformAdminRouter(
   gamerMatches: GamerMatchService,
   gearUp: GearUpService,
   gearUpSettings: GearUpSettingsService,
+  pageBanner: PageBannerService,
 ): Router {
   const router = Router();
+
+  router.use(pageBannerRouter(pageBanner));
 
   router.get(
     "/access",
@@ -318,5 +323,11 @@ export function createPlatformAdminRouter(
     }),
   );
 
+  return router;
+}
+
+function pageBannerRouter(service: PageBannerService): Router {
+  const router = Router();
+  router.use(createPageBannerAdminRouter(service));
   return router;
 }
