@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { getDatabaseClient } from "@hooma/database";
+import { PrismaAuditWriter } from "../apps/api/src/modules/audit/infrastructure/prisma-audit-writer.js";
 import type { PlatformAdminAccessPort } from "../apps/api/src/application/platform-admin-access.port.js";
 import { AppError } from "../apps/api/src/http/errors/app-error.js";
 import { PlaceService } from "../apps/api/src/modules/places/application/place.service.js";
@@ -87,7 +88,7 @@ test("Pitch owner management reads approved pending and latest rejected state", 
   const placeService = new PlaceService(places, authorizer, {
     resolve: async (value) => value,
   });
-  const pitch = new PitchOwnerService(new PrismaPitchRepository(db), placeService, authorizer);
+  const pitch = new PitchOwnerService(new PrismaPitchRepository(db, new PrismaAuditWriter(db)), placeService, authorizer);
 
   try {
     const management = await pitch.getManagementState(owner.id, place.id);
