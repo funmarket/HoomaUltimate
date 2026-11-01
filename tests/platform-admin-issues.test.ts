@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { AppError } from "../apps/api/src/http/errors/app-error.js";
-import type { AuditEntryInput, AuditWriter } from "../apps/api/src/modules/audit/application/audit-writer.js";
+import type {
+  AuditEntryInput,
+  AuditWriter,
+} from "../apps/api/src/modules/audit/application/audit-writer.js";
 import type { PlatformManagerCapability } from "@hooma/contracts/platform-admin";
 import type { PlatformAdminRepository } from "../apps/api/src/modules/platform-admin/application/platform-admin.repository.js";
 import { PlatformAdminService } from "../apps/api/src/modules/platform-admin/application/platform-admin.service.js";
