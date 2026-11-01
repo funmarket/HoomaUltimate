@@ -187,7 +187,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     userNotificationService,
   );
 
-  const placeRepository = new PrismaPlaceRepository(database);
+  const placeRepository = new PrismaPlaceRepository(database, new PrismaAuditWriter(database));
   const placeImageResolver = new HttpExternalPlaceImageResolver();
   const placeService = new PlaceService(placeRepository, platformAdminService, placeImageResolver);
   const placeMediaService = new PlaceMediaService(
