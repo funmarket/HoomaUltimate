@@ -19,7 +19,10 @@ test("architecture check grandfathers exact legacy AppError imports only", async
   const result = runArchitectureCheck(root);
 
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /community\.service\.ts: application\/domain layer/);
+  assert.match(
+    result.stderr,
+    /community\.service\.ts: application\/domain layer/,
+  );
 });
 
 test("architecture check rejects deeper relative application imports into API HTTP", async () => {
@@ -73,7 +76,10 @@ test("architecture check rejects a consumer application importing foreign infras
   const result = runArchitectureCheck(root);
 
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /must not import another domain's infrastructure/);
+  assert.match(
+    result.stderr,
+    /must not import another domain's infrastructure/,
+  );
 });
 
 test("architecture check allows the composition root to wire concrete domain infrastructure", async () => {
@@ -90,7 +96,10 @@ test("architecture check allows the composition root to wire concrete domain inf
 });
 
 const hardenedImports = [
-  ["teams/application/team.service.ts", ["../../communities/application/community.service.js"]],
+  [
+    "teams/application/team.service.ts",
+    ["../../communities/application/community.service.js"],
+  ],
   [
     "events/application/event.service.ts",
     [
@@ -98,8 +107,14 @@ const hardenedImports = [
       "../../places/application/place.service.js",
     ],
   ],
-  ["pitch/application/pitch-owner.service.ts", ["../../places/application/place.repository.js"]],
-  ["gear-up/application/gear-up.service.ts", ["../../places/application/place.repository.js"]],
+  [
+    "pitch/application/pitch-owner.service.ts",
+    ["../../places/application/place.repository.js"],
+  ],
+  [
+    "gear-up/application/gear-up.service.ts",
+    ["../../places/application/place.repository.js"],
+  ],
   [
     "gear-up/application/gear-up-product.service.ts",
     ["../../places/application/place.repository.js"],
@@ -150,12 +165,14 @@ test("architecture check allows every hardened narrow capability and concrete co
     "apps/api/src/modules/pitch/application/pitch-owner.service.ts":
       'import type { PitchPlaceAccess } from "./pitch-place-access.js";',
     ...Object.fromEntries(
-      ["gear-up.service.ts", "gear-up-product.service.ts", "gear-up-product-media.service.ts"].map(
-        (file) => [
-          `apps/api/src/modules/gear-up/application/${file}`,
-          'import type { GearUpPlaceAccess } from "./gear-up-place-access.js";',
-        ],
-      ),
+      [
+        "gear-up.service.ts",
+        "gear-up-product.service.ts",
+        "gear-up-product-media.service.ts",
+      ].map((file) => [
+        `apps/api/src/modules/gear-up/application/${file}`,
+        'import type { GearUpPlaceAccess } from "./gear-up-place-access.js";',
+      ]),
     ),
     "apps/api/src/modules/whistle/application/whistle.service.ts": `
       import type { CommunityMemberAuthorizer } from "../../communities/application/community-member.authorizer.js";
@@ -228,7 +245,8 @@ test("architecture check allows canonical Audit writer and reader persistence", 
 });
 
 test("architecture check rejects foreign direct Audit persistence access", async () => {
-  const file = "apps/api/src/modules/gamers/infrastructure/prisma-gamer.repository.ts";
+  const file =
+    "apps/api/src/modules/gamers/infrastructure/prisma-gamer.repository.ts";
   const root = await createArchitectureFixture({
     [file]: "export async function write(tx) { await tx.auditLog.create({}); }",
   });
@@ -237,7 +255,8 @@ test("architecture check rejects foreign direct Audit persistence access", async
   assert.match(
     result.stderr,
     new RegExp(
-      file + ":.*foreign direct Audit persistence access.*AuditWriter/AuditReader",
+      file +
+        ":.*foreign direct Audit persistence access.*AuditWriter/AuditReader",
     ),
   );
 });
