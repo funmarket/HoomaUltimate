@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { getDatabaseClient } from "@hooma/database";
+import { PrismaAuditWriter } from "../apps/api/src/modules/audit/infrastructure/prisma-audit-writer.js";
 import { PrismaPitchRepository } from "../apps/api/src/modules/pitch/infrastructure/prisma-pitch.repository.js";
 
 const db = getDatabaseClient();
@@ -64,7 +65,7 @@ async function cleanup(placeIds: readonly string[], userIds: readonly string[]) 
 test("FANHUB Pitch submission preserves provenance without ownership", async () => {
   const suffix = `fanhub-${Date.now().toString(36)}`;
   const suggester = await db.user.create({ data: {} });
-  const repository = new PrismaPitchRepository(db);
+  const repository = new PrismaPitchRepository(db, new PrismaAuditWriter(db));
   let placeId: string | null = null;
 
   try {
@@ -97,7 +98,7 @@ test("FANHUB Pitch submission preserves provenance without ownership", async () 
 test("OWNER Pitch submission creates pending claim without verified ownership", async () => {
   const suffix = `owner-${Date.now().toString(36)}`;
   const owner = await db.user.create({ data: {} });
-  const repository = new PrismaPitchRepository(db);
+  const repository = new PrismaPitchRepository(db, new PrismaAuditWriter(db));
   let placeId: string | null = null;
 
   try {
@@ -140,7 +141,7 @@ test("duplicate OWNER intent preserves existing provenance and authority state",
   const suffix = `duplicate-${Date.now().toString(36)}`;
   const fanHubUser = await db.user.create({ data: {} });
   const ownerUser = await db.user.create({ data: {} });
-  const repository = new PrismaPitchRepository(db);
+  const repository = new PrismaPitchRepository(db, new PrismaAuditWriter(db));
   let placeId: string | null = null;
 
   try {
