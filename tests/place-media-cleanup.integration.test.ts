@@ -6,6 +6,7 @@ import { once } from "node:events";
 import { createServer } from "node:http";
 import { getDatabaseClient, PrismaClient } from "@hooma/database";
 import type { ObjectStorage, StoredObject } from "@hooma/storage";
+import { PrismaAuditWriter } from "../apps/api/src/modules/audit/infrastructure/prisma-audit-writer.js";
 import { PlaceMediaService } from "../apps/api/src/modules/places/application/place-media.service.js";
 import { PrismaPlaceRepository } from "../apps/api/src/modules/places/infrastructure/prisma-place.repository.js";
 import { OutboxRepository } from "../apps/worker/src/outbox/outbox.repository.js";
@@ -44,7 +45,7 @@ class ControlledStorage implements ObjectStorage {
 
 test("Place cleanup is durable, fenced and retryable through PostgreSQL and Worker", async (t) => {
   const storage = new ControlledStorage();
-  const repository = new PrismaPlaceRepository(db);
+  const repository = new PrismaPlaceRepository(db, new PrismaAuditWriter(db));
   const owner = await db.user.create({ data: {} });
   const place = await db.place.create({
     data: {
@@ -280,9 +281,10 @@ test("Place cleanup is durable, fenced and retryable through PostgreSQL and Work
         assert.ok(address && typeof address !== "string");
         const childSource = `
         import { PrismaClient } from "@hooma/database";
+        import { PrismaAuditWriter } from "./apps/api/src/modules/audit/infrastructure/prisma-audit-writer.ts";
         import { PrismaPlaceRepository } from "./apps/api/src/modules/places/infrastructure/prisma-place.repository.ts";
         import { PlaceMediaService } from "./apps/api/src/modules/places/application/place-media.service.ts";
-        const db = new PrismaClient(); const repo = new PrismaPlaceRepository(db);
+        const db = new PrismaClient(); const repo = new PrismaPlaceRepository(db, new PrismaAuditWriter(db));
         repo.addPreparedImage = async (_placeId, imageId) => {
           console.log("READY " + imageId);
           await new Promise(() => {});
@@ -386,7 +388,8 @@ test("Place cleanup is durable, fenced and retryable through PostgreSQL and Work
       async () => {
         const id = randomUUID();
         const apiDb = new PrismaClient();
-        await new PrismaPlaceRepository(apiDb).prepareImageUpload(place.id, id);
+        const apiRepository = new PrismaPlaceRepository(apiDb, new PrismaAuditWriter(apiDb));
+        await apiRepository.prepareImageUpload(place.id, id);
         await storage.put(key(id), new Uint8Array([1]), "image/webp");
         await apiDb.$disconnect();
         await db.outboxEvent.update({

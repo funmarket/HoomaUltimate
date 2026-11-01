@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
 import { PrismaClient, type Prisma } from "@hooma/database";
+import { PrismaAuditWriter } from "../apps/api/src/modules/audit/infrastructure/prisma-audit-writer.js";
 import { PrismaPlaceRepository } from "../apps/api/src/modules/places/infrastructure/prisma-place.repository.js";
 
 if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL required");
@@ -61,7 +62,7 @@ function observeReads(client: PrismaClient, onRead: () => Promise<void>) {
 test("Place gallery mutations serialize across independent PostgreSQL connections", async (t) => {
   const owner = await db.user.create({ data: {} });
   const placeIds: string[] = [];
-  const repository = new PrismaPlaceRepository(db);
+  const repository = new PrismaPlaceRepository(db, new PrismaAuditWriter(db));
   async function fixture(count: number) {
     const place = await db.place.create({
       data: {
@@ -118,11 +119,13 @@ test("Place gallery mutations serialize across independent PostgreSQL connection
           await release.promise;
         }
       }),
+      new PrismaAuditWriter(firstDb),
     );
     const secondRepo = new PrismaPlaceRepository(
       observeReads(secondDb, async () => {
         secondRead = true;
       }),
+      new PrismaAuditWriter(secondDb),
     );
     const [{ pid }] = await secondDb.$queryRaw<
       Array<{ pid: number }>

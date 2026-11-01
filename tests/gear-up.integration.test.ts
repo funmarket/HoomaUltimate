@@ -63,7 +63,7 @@ test("Gear Up repository reuses canonical Place and approves Place plus shop ato
     const placeId = first.place.id;
     assert.equal(await db.placeDiscovery.count({ where: { placeId, kind: "GEAR_UP" } }), 1);
     assert.equal(await db.gearUpShop.count({ where: { placeId } }), 1);
-    const genericPlaces = new PrismaPlaceRepository(db);
+    const genericPlaces = new PrismaPlaceRepository(db, new PrismaAuditWriter(db));
     assert.equal(
       (await genericPlaces.pendingPlaces()).some((item) => item.place.id === placeId),
       false,
@@ -140,7 +140,7 @@ test("Gear Up review preserves approved Place while approving pending shop", asy
     assert.equal(created.status, "PENDING");
 
     const placeId = created.place.id;
-    const places = new PrismaPlaceRepository(db);
+    const places = new PrismaPlaceRepository(db, new PrismaAuditWriter(db));
     assert.equal(
       await places.reviewPlace(placeAdmin.id, placeId, {
         decision: "APPROVE",

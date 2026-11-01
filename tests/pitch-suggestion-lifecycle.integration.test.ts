@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { getDatabaseClient } from "@hooma/database";
 import type { PlatformAdminAccessPort } from "../apps/api/src/application/platform-admin-access.port.js";
+import { PrismaAuditWriter } from "../apps/api/src/modules/audit/infrastructure/prisma-audit-writer.js";
 import { PlaceService } from "../apps/api/src/modules/places/application/place.service.js";
 import { PrismaPlaceRepository } from "../apps/api/src/modules/places/infrastructure/prisma-place.repository.js";
 import { ApprovedPitchReader } from "../apps/api/src/modules/pitch/application/approved-pitch.reader.js";
@@ -35,7 +36,7 @@ test("an approved suggested Pitch preserves immutable owner moderation history",
       displayName: "Pitch Suggester",
     },
   });
-  const places = new PrismaPlaceRepository(db);
+  const places = new PrismaPlaceRepository(db, new PrismaAuditWriter(db));
   const placeService = new PlaceService(places, allowAdmin, {
     resolve: async (value) => value,
   });

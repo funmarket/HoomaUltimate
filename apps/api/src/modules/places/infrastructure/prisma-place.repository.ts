@@ -15,6 +15,7 @@ import type {
   PublicPlaceSummary,
 } from "@hooma/contracts/places";
 import { Prisma, type PrismaClient } from "@hooma/database";
+import type { AuditWriter } from "../../audit/application/audit-writer.js";
 import type { PlaceModerationDecision, PlaceRepository } from "../application/place.repository.js";
 import {
   canonicalPlaceSelect,
@@ -40,7 +41,10 @@ function menuCreate(input: PlaceSuggestionInput["menuItems"]) {
 }
 
 export class PrismaPlaceRepository implements PlaceRepository {
-  constructor(private readonly db: PrismaClient) {}
+  constructor(
+    private readonly db: PrismaClient,
+    private readonly auditWriter: AuditWriter,
+  ) {}
 
   async listPublic(): Promise<readonly PublicPlaceSummary[]> {
     const places = await this.db.place.findMany({
@@ -544,15 +548,16 @@ export class PrismaPlaceRepository implements PlaceRepository {
       });
       if (!result.count) return false;
 
-      await tx.auditLog.create({
-        data: {
+      await this.auditWriter.writeInTransaction(
+        {
           actorUserId,
           action: `PLACE_${status}`,
           entityType: "Place",
           entityId: placeId,
           metadata: { note: input.note ?? null },
         },
-      });
+        tx,
+      );
       return true;
     });
   }
@@ -598,15 +603,16 @@ export class PrismaPlaceRepository implements PlaceRepository {
           },
         });
       }
-      await tx.auditLog.create({
-        data: {
+      await this.auditWriter.writeInTransaction(
+        {
           actorUserId,
           action: `PLACE_OWNERSHIP_${status}`,
           entityType: "PlaceOwnershipClaim",
           entityId: claimId,
           metadata: { placeId: claim.placeId, note: input.note ?? null },
         },
-      });
+        tx,
+      );
       return true;
     });
   }

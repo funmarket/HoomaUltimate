@@ -583,6 +583,11 @@ test("App Admin preserves canonical Place identity while ownership and Watch lif
     );
     assert.ok(
       await db.auditLog.findFirst({
+        where: { action: "PLACE_OWNERSHIP_APPROVED", entityId: ownershipClaim.id },
+      }),
+    );
+    assert.ok(
+      await db.auditLog.findFirst({
         where: { action: "PITCH_APPLICATION_APPROVED", entityId: pitchApplication.id },
       }),
     );

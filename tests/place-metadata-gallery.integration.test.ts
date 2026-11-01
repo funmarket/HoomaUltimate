@@ -6,6 +6,7 @@ import { getDatabaseClient } from "@hooma/database";
 import type { ObjectStorage, StoredObject } from "@hooma/storage";
 import { createApp } from "../apps/api/src/bootstrap/app.js";
 import { createContainer } from "../apps/api/src/bootstrap/container.js";
+import { PrismaAuditWriter } from "../apps/api/src/modules/audit/infrastructure/prisma-audit-writer.js";
 import { PlaceService } from "../apps/api/src/modules/places/application/place.service.js";
 import { PlaceMediaService } from "../apps/api/src/modules/places/application/place-media.service.js";
 import { PrismaPlaceRepository } from "../apps/api/src/modules/places/infrastructure/prisma-place.repository.js";
@@ -54,7 +55,7 @@ test("Place metadata and gallery operations retain separate ownership through HT
     remaining: 5999,
     retryAfterSeconds: 60,
   });
-  const repository = new PrismaPlaceRepository(db);
+  const repository = new PrismaPlaceRepository(db, new PrismaAuditWriter(db));
   // External networking is isolated; production services, routes, auth and persistence remain real.
   const resolver = { resolve: async (value: string) => value };
   container.placeService = new PlaceService(repository, container.platformAdminService, resolver);
