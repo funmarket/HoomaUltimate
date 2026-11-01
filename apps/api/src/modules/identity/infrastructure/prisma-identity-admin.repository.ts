@@ -8,6 +8,7 @@ import type {
   PlatformManagerCapability,
 } from "@hooma/contracts/platform-admin";
 import type { PrismaClient } from "@hooma/database";
+import type { AuditWriter } from "../../audit/application/audit-writer.js";
 import type { IdentityAdminRepository } from "../application/identity-admin.service.js";
 
 function iso(value: Date | null): string | null {
@@ -102,7 +103,10 @@ function moderationStatus(sanctions: readonly SanctionRow[], now: Date): AdminUs
 }
 
 export class PrismaIdentityAdminRepository implements IdentityAdminRepository {
-  constructor(private readonly db: PrismaClient) {}
+  constructor(
+    private readonly db: PrismaClient,
+    private readonly auditWriter: AuditWriter,
+  ) {}
 
   async searchAdminUsers(query: string, limit: number): Promise<readonly AdminUserSearchItem[]> {
     const hasQuery = query.length > 0;
@@ -271,15 +275,16 @@ export class PrismaIdentityAdminRepository implements IdentityAdminRepository {
         where: { userId: targetUserId, revokedAt: null, expiresAt: { gt: now } },
         data: { revokedAt: now },
       });
-      await tx.auditLog.create({
-        data: {
+      await this.auditWriter.writeInTransaction(
+        {
           actorUserId,
           action: "USER_SESSIONS_REVOKED",
           entityType: "User",
           entityId: targetUserId,
           metadata: { reason: reason.trim(), revokedSessionCount: result.count },
         },
-      });
+        tx,
+      );
       return result.count;
     });
   }
@@ -305,8 +310,8 @@ export class PrismaIdentityAdminRepository implements IdentityAdminRepository {
           createdAt: input.createdAt,
         },
       });
-      await tx.auditLog.create({
-        data: {
+      await this.auditWriter.writeInTransaction(
+        {
           actorUserId: input.actorUserId,
           action: `USER_SANCTION_${input.actionType}`,
           entityType: "User",
@@ -316,7 +321,8 @@ export class PrismaIdentityAdminRepository implements IdentityAdminRepository {
             expiresAt: input.expiresAt?.toISOString() ?? null,
           },
         },
-      });
+        tx,
+      );
     });
   }
 
@@ -341,15 +347,16 @@ export class PrismaIdentityAdminRepository implements IdentityAdminRepository {
         },
       });
       if (update.count === 0) return null;
-      await tx.auditLog.create({
-        data: {
+      await this.auditWriter.writeInTransaction(
+        {
           actorUserId: input.actorUserId,
           action: "USER_SANCTION_CLEARED",
           entityType: "User",
           entityId: input.targetUserId,
           metadata: { reason: input.reason.trim(), sanctionId: input.sanctionId },
         },
-      });
+        tx,
+      );
       // Returned so the caller can notify the moderated user with the exact cleared time.
       return now;
     });

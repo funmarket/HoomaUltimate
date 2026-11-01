@@ -182,7 +182,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     },
   });
   const identityAdminService = new IdentityAdminService(
-    new PrismaIdentityAdminRepository(database),
+    new PrismaIdentityAdminRepository(database, new PrismaAuditWriter(database)),
     platformAdminService,
     userNotificationService,
   );
