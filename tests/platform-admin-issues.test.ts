@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { AppError } from "../apps/api/src/http/errors/app-error.js";
+import type { AuditReader } from "../apps/api/src/modules/audit/application/audit-reader.js";
 import type {
   AuditEntryInput,
   AuditWriter,
@@ -71,23 +72,22 @@ function createRepository(
         return filtered.slice(skip, skip + (args.take ?? filtered.length));
       },
     },
-    auditLog: {
-      findFirst: async (args: {
-        readonly where: { readonly entityId: string; readonly createdAt?: { readonly gte?: Date } };
-      }) =>
-        dispositions.some(
-          (record) =>
-            record.entityId === args.where.entityId &&
-            (!args.where.createdAt?.gte || record.createdAt >= args.where.createdAt.gte),
-        )
-          ? { id: "audit-hidden" }
-          : null,
-    },
+  };
+  const auditReader: AuditReader = {
+    count: async () => 0,
+    findPage: async () => ({ items: [], nextCursor: null }),
+    exists: async (query) =>
+      dispositions.some(
+        (record) =>
+          record.entityId === query.entityId &&
+          (!query.createdAtGte || record.createdAt >= query.createdAtGte),
+      ),
   };
   return {
     repository: new PrismaPlatformAdminRepository(
       db as unknown as ConstructorParameters<typeof PrismaPlatformAdminRepository>[0],
       auditWriter,
+      auditReader,
     ),
     auditCreates,
   };
