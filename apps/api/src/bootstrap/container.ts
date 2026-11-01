@@ -197,7 +197,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     storage,
     new SharpPlaceImageProcessor(),
   );
-  const pitchRepository = new PrismaPitchRepository(database);
+  const pitchRepository = new PrismaPitchRepository(database, new PrismaAuditWriter(database));
   const approvedPitchReader = new ApprovedPitchReader(pitchRepository);
   const pitchSuggestionService = new PitchSuggestionService(pitchRepository, placeImageResolver);
   const pitchOwnerService = new PitchOwnerService(
