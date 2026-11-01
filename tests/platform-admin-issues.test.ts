@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { AppError } from "../apps/api/src/http/errors/app-error.js";
+import type {
+  AuditEntryInput,
+  AuditWriter,
+} from "../apps/api/src/modules/audit/application/audit-writer.js";
 import type { PlatformManagerCapability } from "@hooma/contracts/platform-admin";
 import type { PlatformAdminRepository } from "../apps/api/src/modules/platform-admin/application/platform-admin.repository.js";
 import { PlatformAdminService } from "../apps/api/src/modules/platform-admin/application/platform-admin.service.js";
@@ -37,6 +41,14 @@ function createRepository(
   dispositions: readonly DispositionRecord[] = [],
 ) {
   const auditCreates: unknown[] = [];
+  const auditWriter: AuditWriter = {
+    write: async (entry: AuditEntryInput) => {
+      auditCreates.push(entry);
+    },
+    writeInTransaction: async (entry: AuditEntryInput) => {
+      auditCreates.push(entry);
+    },
+  };
   const db = {
     outboxEvent: {
       groupBy: async (args: {
@@ -70,15 +82,12 @@ function createRepository(
         )
           ? { id: "audit-hidden" }
           : null,
-      create: async (args: { readonly data: unknown }) => {
-        auditCreates.push(args.data);
-        return { id: "audit-created" };
-      },
     },
   };
   return {
     repository: new PrismaPlatformAdminRepository(
       db as unknown as ConstructorParameters<typeof PrismaPlatformAdminRepository>[0],
+      auditWriter,
     ),
     auditCreates,
   };

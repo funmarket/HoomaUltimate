@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { AppError } from "../apps/api/src/http/errors/app-error.js";
+import type { AuditWriter } from "../apps/api/src/modules/audit/application/audit-writer.js";
 import type {
   PlatformAdminAuditPage,
   PlatformAdminAuditQuery,
@@ -109,8 +110,13 @@ test("Audit Archive repository filters safely and returns cursor pages without m
       },
     },
   };
+  const auditWriter: AuditWriter = {
+    write: async () => {},
+    writeInTransaction: async () => {},
+  };
   const repository = new PrismaPlatformAdminRepository(
     db as unknown as ConstructorParameters<typeof PrismaPlatformAdminRepository>[0],
+    auditWriter,
   );
 
   const page = await repository.auditEntries({
