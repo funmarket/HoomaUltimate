@@ -62,3 +62,14 @@ test("Telegram menu configuration is opt-in and requires a bot token", () => {
   });
   assert.equal(ownerConfig.TELEGRAM_CONFIGURE_MENU, true);
 });
+
+test("Ride static map config accepts Google Maps provider credentials", () => {
+  const config = loadApiConfig({
+    DATABASE_URL: "postgresql://local",
+    RIDE_STATIC_MAP_PROVIDER: "google",
+    GOOGLE_MAPS_API_KEY: "google-test-key",
+  });
+
+  assert.equal(config.RIDE_STATIC_MAP_PROVIDER, "google");
+  assert.equal(config.GOOGLE_MAPS_API_KEY, "google-test-key");
+});
