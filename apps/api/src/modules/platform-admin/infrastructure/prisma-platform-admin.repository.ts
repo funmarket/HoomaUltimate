@@ -35,7 +35,7 @@ type AuditCursor = {
   readonly id: string;
 };
 
-function encodeAuditCursor(entry: PlatformAdminAuditEntry): string {
+function encodeAuditCursor(entry: Pick<PlatformAdminAuditEntry, "createdAt" | "id">): string {
   return Buffer.from(
     JSON.stringify({ createdAt: entry.createdAt.toISOString(), id: entry.id }),
   ).toString("base64url");
@@ -252,15 +252,7 @@ export class PrismaPlatformAdminRepository implements PlatformAdminRepository {
     });
     return {
       items: page.items,
-      nextCursor: page.nextCursor
-        ? encodeAuditCursor({
-            ...page.nextCursor,
-            actorUserId: null,
-            action: "",
-            entityType: "",
-            entityId: null,
-          })
-        : null,
+      nextCursor: page.nextCursor ? encodeAuditCursor(page.nextCursor) : null,
     };
   }
 
