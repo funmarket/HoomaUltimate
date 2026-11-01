@@ -47,6 +47,7 @@ import { PrismaTeamRepository } from "../modules/teams/infrastructure/prisma-tea
 import { EventService } from "../modules/events/application/event.service.js";
 import { PrismaEventRepository } from "../modules/events/infrastructure/prisma-event.repository.js";
 import { PrismaAuditWriter } from "../modules/audit/infrastructure/prisma-audit-writer.js";
+import { PrismaAuditReader } from "../modules/audit/infrastructure/prisma-audit-reader.js";
 import { GamerMatchService } from "../modules/gamers/application/gamer-match.service.js";
 import { GamerService } from "../modules/gamers/application/gamer.service.js";
 import { PrismaGamerChallengeRepository } from "../modules/gamers/infrastructure/prisma-gamer-challenge.repository.js";
@@ -151,6 +152,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
   const platformAdminRepository = new PrismaPlatformAdminRepository(
     database,
     new PrismaAuditWriter(database),
+    new PrismaAuditReader(database),
   );
   const platformAdminService = new PlatformAdminService(platformAdminRepository);
   const identityRepository = new PrismaIdentityRepository(database);
