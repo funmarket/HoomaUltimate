@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@hooma/database";
+import type { Prisma, PrismaClient } from "@hooma/database";
 import type {
   AuditEntryExistsQuery,
   AuditPageQuery,
@@ -8,8 +8,8 @@ import type {
 export class PrismaAuditReader implements AuditReader {
   constructor(private readonly db: PrismaClient) {}
 
-  async count(): Promise<number> {
-    return this.db.auditLog.count();
+  async count(transaction?: Prisma.TransactionClient): Promise<number> {
+    return (transaction ?? this.db).auditLog.count();
   }
 
   async findPage(query: AuditPageQuery) {
