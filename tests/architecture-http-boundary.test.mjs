@@ -253,7 +253,7 @@ test("architecture check allows legitimate test Audit assertions", async () => {
 test("architecture check ignores comments, strings, and unrelated auditLog-shaped objects", async () => {
   const root = await createArchitectureFixture({
     "apps/api/src/modules/gamers/application/gamer.service.ts":
-      '// tx.auditLog.create({});\\nconst example = "tx.auditLog.findMany({})";\\nconst auditLog = { count() { return 1; } };\\nexport function read() { return auditLog.count() + example.length; }',
+      '// tx.auditLog.create({});\nconst example = "tx.auditLog.findMany({})";\nconst auditLog = { count() { return 1; } };\nexport function read() { return auditLog.count() + example.length; }',
   });
   const result = runArchitectureCheck(root);
   assert.equal(result.status, 0, result.stderr);
