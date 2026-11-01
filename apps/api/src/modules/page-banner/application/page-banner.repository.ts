@@ -1,9 +1,5 @@
 import type { Prisma } from "@hooma/database";
-import type {
-  PageBannerDestination,
-  PageBannerPlacementId,
-  PageBannerSlideMetadata,
-} from "@hooma/contracts/page-banner";
+import type { PageBannerPlacementId, PageBannerSlideMetadata } from "@hooma/contracts/page-banner";
 
 export interface PageBannerVariantRecord {
   readonly variant: string;

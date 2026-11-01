@@ -6,7 +6,8 @@ import {
 } from "@hooma/contracts/page-banner";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import { getAuth } from "../../identity/http/auth-request.js";
-import { PageBannerService, parsePageBannerMetadata } from "../application/page-banner.service.js";
+import { parsePageBannerMetadata } from "../application/page-banner.service.js";
+import type { PageBannerService } from "../application/page-banner.service.js";
 
 export function createPageBannerAdminRouter(service: PageBannerService): Router {
   const router = Router();
