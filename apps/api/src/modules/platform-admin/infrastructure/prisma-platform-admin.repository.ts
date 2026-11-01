@@ -1,5 +1,6 @@
 import type { AdminIssueSummary, PlatformManagerCapability } from "@hooma/contracts/platform-admin";
 import type { PrismaClient } from "@hooma/database";
+import type { AuditReader } from "../../audit/application/audit-reader.js";
 import type { AuditWriter } from "../../audit/application/audit-writer.js";
 import type {
   AdminIssueDisposition,
@@ -34,7 +35,7 @@ type AuditCursor = {
   readonly id: string;
 };
 
-function encodeAuditCursor(entry: PlatformAdminAuditEntry): string {
+function encodeAuditCursor(entry: Pick<PlatformAdminAuditEntry, "createdAt" | "id">): string {
   return Buffer.from(
     JSON.stringify({ createdAt: entry.createdAt.toISOString(), id: entry.id }),
   ).toString("base64url");
@@ -82,6 +83,7 @@ export class PrismaPlatformAdminRepository implements PlatformAdminRepository {
   constructor(
     private readonly db: PrismaClient,
     private readonly auditWriter: AuditWriter,
+    private readonly auditReader: AuditReader,
   ) {}
 
   async hasPlatformAdminRole(userId: string): Promise<boolean> {
@@ -222,76 +224,43 @@ export class PrismaPlatformAdminRepository implements PlatformAdminRepository {
   }
 
   async overview(): Promise<PlatformAdminOverview> {
-    const [users, activePlatformAdmins, activeAppManagers, auditEntries] =
-      await this.db.$transaction([
-        this.db.user.count(),
-        this.db.platformRoleAssignment.count({
+    return this.db.$transaction(async (tx) => {
+      const [users, activePlatformAdmins, activeAppManagers, auditEntries] = await Promise.all([
+        tx.user.count(),
+        tx.platformRoleAssignment.count({
           where: { role: "PLATFORM_ADMIN", revokedAt: null },
         }),
-        this.db.user.count({ where: { appManagerGrants: { some: { revokedAt: null } } } }),
-        this.db.auditLog.count(),
+        tx.user.count({ where: { appManagerGrants: { some: { revokedAt: null } } } }),
+        this.auditReader.count(tx),
       ]);
-    return { users, activePlatformAdmins, activeAppManagers, auditEntries };
+      return { users, activePlatformAdmins, activeAppManagers, auditEntries };
+    });
   }
 
   async auditEntries(query: PlatformAdminAuditQuery): Promise<PlatformAdminAuditPage> {
     const cursor = decodeAuditCursor(query.cursor);
-    const createdAtFilter = {
-      ...(query.from ? { gte: query.from } : {}),
-      ...(query.to ? { lte: query.to } : {}),
-    };
-    const rows = await this.db.auditLog.findMany({
-      select: {
-        id: true,
-        actorUserId: true,
-        action: true,
-        entityType: true,
-        entityId: true,
-        createdAt: true,
-      },
-      where: {
-        ...(query.actor ? { actorUserId: { contains: query.actor } } : {}),
-        ...(query.action ? { action: query.action } : {}),
-        ...(query.entityType ? { entityType: query.entityType } : {}),
-        ...(Object.keys(createdAtFilter).length ? { createdAt: createdAtFilter } : {}),
-        ...(cursor
-          ? {
-              OR: [
-                { createdAt: { lt: cursor.createdAt } },
-                { createdAt: cursor.createdAt, id: { lt: cursor.id } },
-              ],
-            }
-          : {}),
-      },
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      take: query.limit + 1,
+    const page = await this.auditReader.findPage({
+      ...(query.actor !== undefined ? { actorUserId: query.actor } : {}),
+      ...(query.action !== undefined ? { action: query.action } : {}),
+      ...(query.entityType !== undefined ? { entityType: query.entityType } : {}),
+      ...(query.from !== undefined ? { from: query.from } : {}),
+      ...(query.to !== undefined ? { to: query.to } : {}),
+      limit: query.limit,
+      cursor,
     });
-    const items = rows.slice(0, query.limit).map((row) => ({
-      id: row.id,
-      actorUserId: row.actorUserId,
-      action: row.action,
-      entityType: row.entityType,
-      entityId: row.entityId,
-      createdAt: row.createdAt,
-    }));
-    const extra = rows.length > query.limit ? items.at(-1) : undefined;
     return {
-      items,
-      nextCursor: extra ? encodeAuditCursor(extra) : null,
+      items: page.items,
+      nextCursor: page.nextCursor ? encodeAuditCursor(page.nextCursor) : null,
     };
   }
 
   private async outboxIssueDispositionExists(issueId: string, updatedAt: Date): Promise<boolean> {
-    const disposition = await this.db.auditLog.findFirst({
-      where: {
-        action: { in: [...ISSUE_RESOLUTION_ACTIONS] },
-        entityType: "AdminIssue",
-        entityId: issueId,
-        createdAt: { gte: updatedAt },
-      },
-      select: { id: true },
+    return this.auditReader.exists({
+      actions: ISSUE_RESOLUTION_ACTIONS,
+      entityType: "AdminIssue",
+      entityId: issueId,
+      createdAtGte: updatedAt,
     });
-    return Boolean(disposition);
   }
 
   private outboxIssueFromGroup(group: FailedOutboxIssueGroup): AdminIssueSummary {
