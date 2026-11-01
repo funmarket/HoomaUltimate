@@ -28,6 +28,14 @@ import {
   RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC,
 } from "./rides/ride-vehicle-photo-cleanup.js";
 import { cleanupExpiredWhistles } from "./whistle/whistle-cleanup.js";
+import {
+  PAGE_BANNER_CLEANUP_TOPIC,
+  PAGE_BANNER_RECONCILE_TOPIC,
+} from "@hooma/contracts/page-banner";
+import {
+  createPageBannerCleanupHandler,
+  createPageBannerReconcileHandler,
+} from "./page-banner/page-banner-cleanup.js";
 
 const EVENT_CHAT_CLEANUP_INTERVAL_MS = 60_000;
 const GAMER_MATCH_RECONCILIATION_INTERVAL_MS = 15_000;
@@ -82,6 +90,14 @@ if (storage) {
   outboxHandlers.set(
     GEAR_UP_PRODUCT_IMAGE_RECONCILE_TOPIC,
     createGearUpProductImageCleanupHandler(database, storage),
+  );
+  outboxHandlers.set(
+    PAGE_BANNER_RECONCILE_TOPIC,
+    createPageBannerReconcileHandler(database, storage, mediaStorageScope),
+  );
+  outboxHandlers.set(
+    PAGE_BANNER_CLEANUP_TOPIC,
+    createPageBannerCleanupHandler(database, storage, mediaStorageScope),
   );
 }
 const outbox = new OutboxRunner(new OutboxRepository(database), outboxHandlers);

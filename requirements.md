@@ -1453,3 +1453,9 @@ Do not turn it into:
 For future-approved domains, this document may state product direction before implementation exists, but the text must make that distinction clear.
 
 When the product owner makes a newer explicit decision that conflicts with this file, implementation follows the newer decision and this contract should be updated promptly so later agents do not drift back to stale behavior.
+
+## 34. PageBanner initial product contract
+
+PageBanner is an optional Platform Admin-managed `PAGE_TOP` banner surface for HOME, PLAY, WATCH, HOOMA, TEAMS, PITCH, PLACES, REQUESTS, GEAR_UP, RIDE and ATHLETES. Each page has one stable placement ID formed from its page name and `_TOP`; each placement may retain zero to three ordered slides. The private Admin control toggles a placement on or off without deleting its stored slides or metadata.
+
+Each slide may be enabled or disabled, decorative or informational, and clickable or non-clickable. Informational artwork requires alt text; decorative artwork may omit it. Click targets may be internal HOOMA destinations or validated external HTTP(S) URLs. PageBanner image bytes are domain-owned object-storage media processed through the approved `PAGE_BANNER_STANDARD` variants; initial artwork is supplied separately from this backend slice. Public reads expose only enabled placement/slides and signed variant URLs. Rotation and the small pause/play control are frontend behavior, with automatic rotation disabled by default.

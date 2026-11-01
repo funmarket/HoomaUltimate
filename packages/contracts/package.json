@@ -68,6 +68,10 @@
       "types": "./src/platform-admin.ts",
       "default": "./dist/platform-admin.js"
     },
+    "./page-banner": {
+      "types": "./src/page-banner.ts",
+      "default": "./dist/page-banner.js"
+    },
     "./play": {
       "types": "./src/play.ts",
       "default": "./dist/play.js"

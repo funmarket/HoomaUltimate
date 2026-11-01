@@ -46,6 +46,7 @@ export function createMemberV1Router(container: AppContainer, config: ApiConfig)
       container.gamerMatchService,
       container.gearUpService,
       container.gearUpSettingsService,
+      container.pageBannerService,
     ),
   );
   router.use(
