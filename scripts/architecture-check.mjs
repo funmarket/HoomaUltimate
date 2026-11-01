@@ -55,6 +55,33 @@ const hardenedApplicationImports = new Map(
 );
 const importSpecifierPattern = /\bimport\b(?:[\s\S]*?\bfrom\s*)?["']([^"']+)["']/g;
 
+const auditOwnerPaths = new Set([
+  "apps/api/src/modules/audit/infrastructure/prisma-audit-writer.ts",
+  "apps/api/src/modules/audit/infrastructure/prisma-audit-reader.ts",
+]);
+const auditPersistenceAccessPattern =
+  /(?:\b[\w$]+|\))\s*\.\s*auditLog\s*\.\s*(create|createMany|createManyAndReturn|update|updateMany|updateManyAndReturn|upsert|delete|deleteMany|findMany|findFirst|findFirstOrThrow|findUnique|findUniqueOrThrow|count|aggregate|groupBy)\s*\(/g;
+
+function maskNonCode(source) {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, (match) => " ".repeat(match.length))
+    .replace(/\/\/[^\r\n]*/g, (match) => " ".repeat(match.length))
+    .replace(/(["'\x60])(?:\\[\s\S]|(?!\1)[\s\S])*\1/g, (match) => " ".repeat(match.length));
+}
+
+function findAuditPersistenceAccesses(source) {
+  const masked = maskNonCode(source);
+  return [...masked.matchAll(auditPersistenceAccessPattern)].map((match) => {
+    const line = masked.slice(0, match.index).split("\n").length;
+    const end = match.index + match[0].length;
+    return {
+      line,
+      operation: match[1],
+      source: source.slice(match.index, end).replace(/\s+/g, " ").trim(),
+    };
+  });
+}
+
 async function walk(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
   const files = [];
@@ -98,6 +125,17 @@ for (const file of await walk(root)) {
   const rel = relative(file);
   if (!sourceExtensions.has(path.extname(file))) continue;
   const source = await readFile(file, "utf8");
+
+  if (
+    (rel.startsWith("apps/api/src/") || rel.startsWith("scripts/")) &&
+    !auditOwnerPaths.has(rel)
+  ) {
+    for (const access of findAuditPersistenceAccesses(source)) {
+      violations.push(
+        `${rel}:${access.line}: foreign direct Audit persistence access "${access.source}"; use the application AuditWriter/AuditReader seam`,
+      );
+    }
+  }
 
   const forbiddenApplicationImports = hardenedApplicationImports.get(rel);
   if (forbiddenApplicationImports) {
