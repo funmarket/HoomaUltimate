@@ -73,7 +73,7 @@ const auditOwnerPaths = new Set([
   "apps/api/src/modules/audit/infrastructure/prisma-audit-reader.ts",
 ]);
 const auditPersistenceAccessPattern =
-  /(?:\b[\w$]+|\))\s*\.\s*auditLog\s*\.\s*(create|createMany|update|updateMany|upsert|delete|deleteMany|findMany|findFirst|findUnique|count|aggregate|groupBy)\s*\(/g;
+  /(?:\b[\w$]+|\))\s*\.\s*auditLog\s*\.\s*(create|createMany|createManyAndReturn|update|updateMany|updateManyAndReturn|upsert|delete|deleteMany|findMany|findFirst|findFirstOrThrow|findUnique|findUniqueOrThrow|count|aggregate|groupBy)\s*\(/g;
 
 function maskNonCode(source) {
   return source
