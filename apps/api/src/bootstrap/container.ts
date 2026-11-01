@@ -72,6 +72,7 @@ import {
 } from "../modules/rides/infrastructure/prisma-ride.repository.js";
 import { PrismaRideReferenceReader } from "../modules/rides/infrastructure/prisma-ride-reference.readers.js";
 import { PrismaRideVehiclePhotoRepository } from "../modules/rides/infrastructure/prisma-ride-vehicle-photo.repository.js";
+import { GoogleRideStaticMapProvider } from "../modules/rides/infrastructure/google-ride-static-map-provider.js";
 import { StadiaRideStaticMapProvider } from "../modules/rides/infrastructure/stadia-ride-static-map-provider.js";
 import { WhistleService } from "../modules/whistle/application/whistle.service.js";
 import { PrismaWhistleRepository } from "../modules/whistle/infrastructure/prisma-whistle.repository.js";
@@ -318,12 +319,14 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
   const rideVehiclePhotoRepository = new PrismaRideVehiclePhotoRepository(database);
   const rideCommunityInteractionRepository = new PrismaRideCommunityInteractionRepository(database);
   const rideStaticMapProvider =
-    config.RIDE_STATIC_MAP_PROVIDER === "stadiamaps" && config.STADIA_MAPS_API_KEY
-      ? new StadiaRideStaticMapProvider({
-          apiKey: config.STADIA_MAPS_API_KEY,
-          style: config.RIDE_STATIC_MAP_STYLE,
-        })
-      : null;
+    config.RIDE_STATIC_MAP_PROVIDER === "google" && config.GOOGLE_MAPS_API_KEY
+      ? new GoogleRideStaticMapProvider({ apiKey: config.GOOGLE_MAPS_API_KEY })
+      : config.RIDE_STATIC_MAP_PROVIDER === "stadiamaps" && config.STADIA_MAPS_API_KEY
+        ? new StadiaRideStaticMapProvider({
+            apiKey: config.STADIA_MAPS_API_KEY,
+            style: config.RIDE_STATIC_MAP_STYLE,
+          })
+        : null;
   const rideService = new RideService(
     rideOfferRepository,
     rideRequestRepository,
