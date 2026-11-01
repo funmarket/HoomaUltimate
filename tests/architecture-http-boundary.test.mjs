@@ -216,7 +216,6 @@ test("architecture check allows Gear Up Place reads, relation fields and owner b
   assert.equal(result.status, 0, result.stderr);
 });
 
-
 test("architecture check allows canonical Audit writer and reader persistence", async () => {
   const root = await createArchitectureFixture({
     "apps/api/src/modules/audit/infrastructure/prisma-audit-writer.ts":
@@ -237,7 +236,7 @@ test("architecture check rejects foreign direct Audit persistence access", async
   assert.notEqual(result.status, 0);
   assert.match(
     result.stderr,
-    new RegExp(file + ":.*foreign direct Audit persistence access.*AuditWriter/AuditReader"),
+    new RegExp(\n      file + ":.*foreign direct Audit persistence access.*AuditWriter/AuditReader",\n    ),
   );
 });
 
