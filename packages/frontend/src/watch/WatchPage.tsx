@@ -166,8 +166,8 @@ export function WatchPage() {
         <PageBanner placementId="WATCH_TOP">
           {({ artwork }) => (
             <header className="watch-hero">
-                      {${"artwork"} ? (
-                        <PageBannerArtwork artwork={${"artwork"}} className="watch-hero__managed-artwork" />
+                      {artwork ? (
+                        <PageBannerArtwork artwork={artwork} className="watch-hero__managed-artwork" />
                       ) : (
                         <>
             

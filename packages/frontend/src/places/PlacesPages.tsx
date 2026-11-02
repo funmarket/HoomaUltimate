@@ -144,8 +144,8 @@ export function PlacesPage() {
         <PageBanner placementId="PLACES_TOP">
           {({ artwork }) => (
             <header className="place-page__header">
-                      {${"artwork"} ? (
-                        <PageBannerArtwork artwork={${"artwork"}} className="place-page__header__managed-artwork" />
+                      {artwork ? (
+                        <PageBannerArtwork artwork={artwork} className="place-page__header__managed-artwork" />
                       ) : (
                         <>
             

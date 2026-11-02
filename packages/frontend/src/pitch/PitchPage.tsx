@@ -48,8 +48,8 @@ export function PitchPage() {
         <PageBanner placementId="PITCH_TOP">
           {({ artwork }) => (
             <header className="pitch-discovery-hero">
-                      {${"artwork"} ? (
-                        <PageBannerArtwork artwork={${"artwork"}} className="pitch-discovery-hero__managed-artwork" />
+                      {artwork ? (
+                        <PageBannerArtwork artwork={artwork} className="pitch-discovery-hero__managed-artwork" />
                       ) : (
                         <>
             

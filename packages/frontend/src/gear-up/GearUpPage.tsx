@@ -123,8 +123,8 @@ export function GearUpPage() {
         <PageBanner placementId="GEAR_UP_TOP">
           {({ artwork }) => (
             <header className="gear-up-hero">
-                      {${"artwork"} ? (
-                        <PageBannerArtwork artwork={${"artwork"}} className="gear-up-hero__managed-artwork" />
+                      {artwork ? (
+                        <PageBannerArtwork artwork={artwork} className="gear-up-hero__managed-artwork" />
                       ) : (
                         <>
             

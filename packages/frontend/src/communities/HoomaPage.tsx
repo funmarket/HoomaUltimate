@@ -117,8 +117,8 @@ export function HoomaPage() {
         <PageBanner placementId="HOOMA_TOP">
           {({ artwork }) => (
             <section className="hooma-hero panel">
-                      {${"artwork"} ? (
-                        <PageBannerArtwork artwork={${"artwork"}} className="hooma-hero panel__managed-artwork" />
+                      {artwork ? (
+                        <PageBannerArtwork artwork={artwork} className="hooma-hero panel__managed-artwork" />
                       ) : (
                         <>
             

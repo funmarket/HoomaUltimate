@@ -178,8 +178,8 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
         <PageBanner placementId="REQUESTS_TOP">
           {({ artwork }) => (
             <header className="help-hero">
-                      {${"artwork"} ? (
-                        <PageBannerArtwork artwork={${"artwork"}} className="help-hero__managed-artwork" />
+                      {artwork ? (
+                        <PageBannerArtwork artwork={artwork} className="help-hero__managed-artwork" />
                       ) : (
                         <>
             
