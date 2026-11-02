@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { HomeGatewayGrid } from "./home/HomeGatewayGrid.js";
-import { HomeHero } from "./home/HomeHero.js";
 
 export { HoomaAccountHeader } from "./account/HoomaAccountHeader.js";
 export type {
@@ -27,7 +26,6 @@ export { HoomaBottomNav, PRIMARY_NAV_ITEMS } from "./navigation/HoomaBottomNav.j
 export type { HoomaBottomNavProps } from "./navigation/HoomaBottomNav.js";
 export { AppearanceSettings } from "./settings/AppearanceSettings.js";
 export type { AppearanceMode } from "./settings/AppearanceSettings.js";
-export { HomeHero } from "./home/HomeHero.js";
 export { HomeGatewayCard } from "./home/HomeGatewayCard.js";
 export { HomeGatewayGrid } from "./home/HomeGatewayGrid.js";
 export { HoomaNowFeed } from "./home/HoomaNowFeed.js";
@@ -79,9 +77,6 @@ export function HomeGateway() {
     <>
       <style>{HOME_GATEWAY_TYPOGRAPHY}</style>
       <section>
-        <div className="hooma-lane--media">
-          <HomeHero />
-        </div>
         <div className="hooma-lane--content">
           <p className="eyebrow">YOUR FOOTBALL NEIGHBORHOOD</p>
           <h2 className="home-gateway-title">Find your people. Find the game.</h2>
