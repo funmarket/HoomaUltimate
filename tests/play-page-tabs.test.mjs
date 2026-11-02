@@ -99,12 +99,10 @@ test("Play detail and Open Matches use the authenticated Play API authority", as
 
 test("text-only page introduction uses the PageBanner surface while major section tabs use NAV", async () => {
   const page = await read("packages/frontend/src/events/PlayPage.tsx");
+  const banner = page.match(/<PageBanner placementId="PLAY_TOP">[\s\S]*?<\/PageBanner>/)?.[0] ?? "";
 
-  assert.match(page, /<PageBanner placementId="PLAY_TOP">[\s\S]*<h1>PLAY<\/h1>/);
-  assert.doesNotMatch(
-    page,
-    /<PageBanner placementId="PLAY_TOP">[\s\S]*<(?:img|picture|video|canvas)\b/,
-  );
+  assert.match(banner, /<h1>PLAY<\/h1>/);
+  assert.doesNotMatch(banner, /<(?:img|picture|video|canvas)\b/);
   assert.match(
     page,
     /<div className="hooma-lane--nav">\s*<div\s+className="play-view-tabs play-view-tabs--four"/,
