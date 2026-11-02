@@ -67,7 +67,7 @@ test("Ride surface uses real Ride APIs and no longer ships the old fake shell", 
     /Promise\.all\(\[eventApi\.publicPlay\(\), eventApi\.publicWatch\(\), placesApi\.list\(\)\]\)/,
   );
   assert.doesNotMatch(rideDestinationFields, /Event ID|Place ID/);
-  assert.match(rideCss, /\.ride-hero__banner \{[\s\S]*object-fit:\s*cover/);
+  assert.match(rideCss, /\.page-banner--ride__banner \{[\s\S]*object-fit:\s*cover/);
   assert.match(rideCss, /\.ride-recent-card__media img \{[\s\S]*object-fit:\s*contain/);
   assert.match(rideApi, /\/api\/public\/v1\/rides\/\$\{kind\}/);
   assert.match(rideApi, /listPath\("offers"/);
