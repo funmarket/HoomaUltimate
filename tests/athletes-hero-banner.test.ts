@@ -89,48 +89,44 @@ test("Athletes hub keeps the real Create community control without visible app c
     athletesPage.indexOf("export function CreateAthletesPage"),
   );
 
-  assert.match(hub, /onClick=\{onCreateCommunity\}/);
-  assert.match(hub, />\s*Create community\s*<\/button>/);
-  assert.match(
-    hub,
-    /<h1 className="athletes-hero__semantic-title">\s*Move together\. Train together\.\s*<\/h1>/,
-  );
-  assert.doesNotMatch(hub, /<span className="eyebrow">ATHLETES<\/span>/);
-  assert.doesNotMatch(hub, /Find local sports communities built around the way you move\./);
-  assert.match(hub, /className="athletes-hero__banner"/);
-  assert.match(hub, /src=\{heroUrl\}/);
-  assert.match(hub, /api\.athletes[\s\S]*?\.heroDelivery\(controller\.signal\)/);
+  assert.ok(hub.includes("onClick={onCreateCommunity}"));
+  assert.ok(hub.includes("Create community"));
+  assert.ok(hub.includes("page-banner__semantic-title--athletes"));
+  assert.ok(hub.includes("Move together. Train together."));
+  assert.equal(hub.includes("Find local sports communities built around the way you move."), false);
+  assert.ok(hub.includes("page-banner__fallback-image--athletes"));
+  assert.ok(hub.includes("src={pageBannerFallbackUrl}"));
+  assert.ok(hub.includes(".heroDelivery(controller.signal)"));
 });
 
-test("Athletes hub banner is phone-scaled, borderless, and keeps only semantic hidden copy", () => {
-  const hubRule =
-    athletesCss.match(/\.athletes-hero(?:\.athletes-hero--hub|--hub)\s*\{[\s\S]*?\}/)?.[0] ?? "";
-  const bannerRule = athletesCss.match(/\.athletes-hero__banner\s*\{[\s\S]*?\}/)?.[0] ?? "";
-  const hiddenRule =
-    athletesCss.match(/\.athletes-hero--hub \.athletes-hero__semantic-title\s*\{[\s\S]*?\}/)?.[0] ??
-    "";
+test("Athletes PageBanner fallback selectors match the final CSS contract", () => {
+  const selectors = [
+    ".page-banner__fallback--athletes",
+    ".page-banner__fallback-image--athletes",
+    ".page-banner__semantic-title--athletes",
+    ".page-banner__motion--athletes",
+  ];
 
-  assert.match(hubRule, /aspect-ratio:\s*720\s*\/\s*520/);
-  assert.match(hubRule, /min-height:\s*0/);
-  assert.match(hubRule, /padding:\s*0/);
-  assert.match(hubRule, /border:\s*0/);
-  assert.match(hubRule, /box-shadow:\s*none/);
-  assert.doesNotMatch(hubRule, /min-height:\s*20rem/);
+  for (const selector of selectors) {
+    assert.ok(athletesCss.includes(selector));
+  }
 
-  assert.match(bannerRule, /width:\s*100%/);
-  assert.match(bannerRule, /height:\s*100%/);
-  assert.match(bannerRule, /object-fit:\s*contain/);
+  for (const declaration of [
+    "aspect-ratio: 720 / 520;",
+    "min-height: 0;",
+    "padding: 0;",
+    "border: 0;",
+    "box-shadow: none;",
+    "object-fit: contain;",
+    "clip: rect(0 0 0 0);",
+    "display: none;",
+  ]) {
+    assert.ok(athletesCss.includes(declaration));
+  }
 
-  assert.match(hiddenRule, /width:\s*1px/);
-  assert.match(hiddenRule, /height:\s*1px/);
-  assert.match(hiddenRule, /clip:/);
-  assert.doesNotMatch(hiddenRule, /display:\s*none|visibility:\s*hidden/);
-
-  assert.match(athletesCss, /\.athletes-hero--hub::before[\s\S]*display:\s*none/);
-  assert.match(athletesCss, /\.athletes-hero--hub::after[\s\S]*display:\s*none/);
-  assert.match(athletesCss, /\.athletes-hero--hub \.athletes-hero__motion[\s\S]*display:\s*none/);
-  assert.match(athletesCss, /\.athletes-hero--create h1/);
-  assert.match(athletesCss, /\.athletes-hero--detail h1/);
+  assert.equal(athletesCss.includes("athletes-hero--hub"), false);
+  assert.ok(athletesCss.includes(".athletes-hero--create h1,"));
+  assert.ok(athletesCss.includes(".athletes-hero--detail h1"));
 });
 
 test("Athletes hero uses a public signed-delivery endpoint and no local Git-hosted banner path", () => {

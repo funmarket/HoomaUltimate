@@ -23,7 +23,7 @@ import "./pitch/pitch-detail.css";
 import "./requests/requests.css";
 import "./rides/rides.css";
 import "./rides/rides-mobile.css";
-import "./rides/ride-hero-actions-google.css";
+import "./rides/ride-page-banner-actions-google.css";
 import "./watch/watch.css";
 import "./watch/watch-section-actions.css";
 

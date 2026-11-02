@@ -47,10 +47,29 @@ export function RideGatewayPage({ context }: { readonly context?: "MATCHDAY" | "
   return (
     <section className="ride-page ride-gateway">
       <div className="hooma-lane--media">
-        <PageBanner placementId="RIDE_TOP" />
-      </div>
-      <div className="hooma-lane--media">
-        <RideHero copy={copy} />
+        <PageBanner
+          placementId="RIDE_TOP"
+          className="page-banner--ride"
+          fallback={
+            <div className="page-banner__fallback page-banner__fallback--ride">
+              <div className="page-banner__fallback-media page-banner__fallback-media--ride">
+                <img
+                  className="page-banner__fallback-image page-banner__fallback-image--ride"
+                  src="/rides/on-my-way-banner.png"
+                  alt="HOOMA ON MY WAY — going somewhere solo? See who's on your route, or bring someone along."
+                />
+              </div>
+              <div className="page-banner__semantic-copy page-banner__semantic-copy--ride">
+                <p>RIDE</p>
+                <h1>ON MY WAY</h1>
+                <p>{copy.subhead}</p>
+                <p>{copy.support}</p>
+              </div>
+            </div>
+          }
+        >
+          <RidePageBannerActions copy={copy} />
+        </PageBanner>
       </div>
       <div className="hooma-lane--nav">
         <RideFeatureGrid />
@@ -82,38 +101,23 @@ export function RideGatewayPage({ context }: { readonly context?: "MATCHDAY" | "
   );
 }
 
-function RideHero({ copy }: { readonly copy: ReturnType<typeof heroCopy> }) {
+function RidePageBannerActions({ copy }: { readonly copy: ReturnType<typeof heroCopy> }) {
   const scopedQuery = contextQuery(copy.context);
   return (
-    <header className="ride-hero">
-      <div className="ride-hero__media">
-        <img
-          className="ride-hero__banner"
-          src="/rides/on-my-way-banner.png"
-          alt="HOOMA ON MY WAY — going somewhere solo? See who's on your route, or bring someone along."
-        />
-      </div>
-      <div className="ride-hero__sr-copy">
-        <p>RIDE</p>
-        <h1>ON MY WAY</h1>
-        <p>{copy.subhead}</p>
-        <p>{copy.support}</p>
-      </div>
-      <nav className="ride-hero__actions" aria-label="Ride actions">
-        <a className="ride-button ride-button--primary" href={`/rides/request${scopedQuery}`}>
-          <RideMapPinIcon />
-          <span>Request a Ride</span>
-        </a>
-        <a className="ride-button" href={`/rides/offers${scopedQuery}`}>
-          <RideBrowseIcon />
-          <span>Browse Offers</span>
-        </a>
-        <a className="ride-button" href={`/rides/offers/new${scopedQuery}`}>
-          <RideCarPlusIcon />
-          <span>Offer Seats</span>
-        </a>
-      </nav>
-    </header>
+    <nav className="page-banner__actions page-banner__actions--ride" aria-label="Ride actions">
+      <a className="ride-button ride-button--primary" href={`/rides/request${scopedQuery}`}>
+        <RideMapPinIcon />
+        <span>Request a Ride</span>
+      </a>
+      <a className="ride-button" href={`/rides/offers${scopedQuery}`}>
+        <RideBrowseIcon />
+        <span>Browse Offers</span>
+      </a>
+      <a className="ride-button" href={`/rides/offers/new${scopedQuery}`}>
+        <RideCarPlusIcon />
+        <span>Offer Seats</span>
+      </a>
+    </nav>
   );
 }
 

@@ -44,7 +44,7 @@
 
 /* --- hero ------------------------------------------------------------- */
 
-.help-hero {
+.page-banner--requests {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
@@ -52,17 +52,17 @@
   padding: 8px 2px 2px;
 }
 
-.help-hero__copy {
+.page-banner__copy--requests {
   display: grid;
   gap: 8px;
   min-width: 0;
 }
 
-.help-hero .eyebrow {
+.page-banner--requests .eyebrow {
   color: var(--app-gold);
 }
 
-.help-hero h1 {
+.page-banner--requests h1 {
   margin: 0;
   color: var(--hooma-ui-text);
   font-size: clamp(23px, 6vw, 24px);
@@ -70,7 +70,7 @@
   line-height: 1.1;
 }
 
-.help-hero p {
+.page-banner--requests p {
   margin: 0;
   max-width: 62ch;
   color: var(--hooma-ui-text-secondary);
@@ -185,8 +185,8 @@
   background: color-mix(in srgb, var(--hooma-ui-accent) 6%, #090a08);
 }
 
-.help-hero > .help-action--primary,
-.help-hero > .help-action--primary:hover:not(:disabled) {
+.page-banner--requests > .help-action--primary,
+.page-banner--requests > .help-action--primary:hover:not(:disabled) {
   border-color: #008000;
   background: #090a08;
   color: #008000;
@@ -1191,12 +1191,12 @@
 }
 
 @media (max-width: 640px) {
-  .help-hero {
+  .page-banner--requests {
     grid-template-columns: minmax(0, 1fr);
     align-items: stretch;
   }
 
-  .help-hero > .help-action {
+  .page-banner--requests > .help-action {
     width: 100%;
     box-sizing: border-box;
   }
