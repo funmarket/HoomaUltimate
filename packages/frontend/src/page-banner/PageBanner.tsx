@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import type { PageBannerPlacementId } from "@hooma/contracts/page-banner";
 import { useHoomaFrontend } from "../context";
 import type { PageBannerPublicSlide } from "./api";
@@ -91,17 +91,15 @@ export function PageBanner({ placementId }: { readonly placementId: PageBannerPl
   const variant = mediaVariant(slide);
   if (!variant) return null;
 
-  const image = (
-    <img
-      className="page-banner__image"
-      src={variant.contentUrl}
-      width={variant.widthPx}
-      height={variant.heightPx}
-      alt={slide.isDecorative ? "" : (slide.altText ?? "")}
-      loading="eager"
-      decoding="async"
-    />
-  );
+  const image = React.createElement("img", {
+    className: "page-banner__image",
+    src: variant.contentUrl,
+    width: variant.widthPx,
+    height: variant.heightPx,
+    alt: slide.isDecorative ? "" : (slide.altText ?? ""),
+    loading: "eager",
+    decoding: "async",
+  });
   const content = slide.destination ? (
     <a
       className="page-banner__link"
