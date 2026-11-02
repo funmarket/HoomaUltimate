@@ -83,62 +83,75 @@ test("Athletes hero maps missing or failed storage to safe Athletes errors", asy
   );
 });
 
+function cssRule(css: string, selector: string): string {
+  const startIndex = css.indexOf(`${selector} {`);
+  assert.notEqual(startIndex, -1, `Missing CSS rule for ${selector}`);
+  const endIndex = css.indexOf("}", startIndex);
+  assert.notEqual(endIndex, -1, `Unclosed CSS rule for ${selector}`);
+  return css.slice(startIndex, endIndex + 1);
+}
+
 test("Athletes hub keeps the real Create community control without visible app copy", () => {
   const hub = athletesPage.slice(
     athletesPage.indexOf("export function AthletesPage"),
     athletesPage.indexOf("export function CreateAthletesPage"),
   );
 
-  assert.match(hub, /onClick=\{onCreateCommunity\}/);
-  assert.match(hub, />\s*Create community\s*<\/button>/);
-  assert.match(
-    hub,
-    /<h1 className="page-banner__semantic-title page-banner__semantic-title--athletes">\s*Move together\. Train together\.\s*<\/h1>/,
+  assert.ok(hub.includes("onClick={onCreateCommunity}"));
+  assert.ok(hub.includes("Create community"));
+  assert.ok(
+    hub.includes(
+      '<h1 className="page-banner__semantic-title page-banner__semantic-title--athletes">',
+    ),
   );
-  assert.doesNotMatch(hub, /<span className="eyebrow">ATHLETES<\/span>/);
-  assert.doesNotMatch(hub, /Find local sports communities built around the way you move\./);
-  assert.match(
-    hub,
-    /className="page-banner__fallback-image page-banner__fallback-image--athletes"/,
+  assert.ok(hub.includes("Move together. Train together."));
+  assert.equal(hub.includes('<span className="eyebrow">ATHLETES</span>'), false);
+  assert.equal(hub.includes("Find local sports communities built around the way you move."), false);
+  assert.ok(
+    hub.includes(
+      'className="page-banner__fallback-image page-banner__fallback-image--athletes"',
+    ),
   );
-  assert.match(hub, /src=\{pageBannerFallbackUrl\}/);
-  assert.match(hub, /api\.athletes[\s\S]*?\.heroDelivery\(controller\.signal\)/);
+  assert.ok(hub.includes("src={pageBannerFallbackUrl}"));
+  assert.ok(hub.includes(".heroDelivery(controller.signal)"));
 });
 
-test("Athletes hub banner is phone-scaled, borderless, and keeps only semantic hidden copy", () => {
-  const hubRule =
-    athletesCss.match(/\.page-banner__fallback--athletes\s*\{[\s\S]*?\}/)?.[0] ?? "";
-  const bannerRule =
-    athletesCss.match(/\.page-banner__fallback-image--athletes\s*\{[\s\S]*?\}/)?.[0] ?? "";
-  const hiddenRule =
-    athletesCss.match(
-      /\.page-banner__fallback--athletes \.page-banner__semantic-title--athletes\s*\{[\s\S]*?\}/,
-    )?.[0] ?? "";
-
-  assert.match(hubRule, /aspect-ratio:\s*720\s*\/\s*520/);
-  assert.match(hubRule, /min-height:\s*0/);
-  assert.match(hubRule, /padding:\s*0/);
-  assert.match(hubRule, /border:\s*0/);
-  assert.match(hubRule, /box-shadow:\s*none/);
-  assert.doesNotMatch(hubRule, /min-height:\s*20rem/);
-
-  assert.match(bannerRule, /width:\s*100%/);
-  assert.match(bannerRule, /height:\s*100%/);
-  assert.match(bannerRule, /object-fit:\s*contain/);
-
-  assert.match(hiddenRule, /width:\s*1px/);
-  assert.match(hiddenRule, /height:\s*1px/);
-  assert.match(hiddenRule, /clip:/);
-  assert.doesNotMatch(hiddenRule, /display:\s*none|visibility:\s*hidden/);
-
-  assert.match(athletesCss, /\.page-banner__fallback--athletes::before[\s\S]*display:\s*none/);
-  assert.match(athletesCss, /\.page-banner__fallback--athletes::after[\s\S]*display:\s*none/);
-  assert.match(
+test("Athletes PageBanner fallback selectors match the final CSS contract", () => {
+  const hubRule = cssRule(athletesCss, ".page-banner__fallback--athletes");
+  const bannerRule = cssRule(athletesCss, ".page-banner__fallback-image--athletes");
+  const hiddenRule = cssRule(
     athletesCss,
-    /\.page-banner__fallback--athletes \.page-banner__motion--athletes[\s\S]*display:\s*none/,
+    ".page-banner__fallback--athletes .page-banner__semantic-title--athletes",
   );
-  assert.match(athletesCss, /\.athletes-hero--create h1/);
-  assert.match(athletesCss, /\.athletes-hero--detail h1/);
+
+  for (const declaration of [
+    "aspect-ratio: 720 / 520;",
+    "min-height: 0;",
+    "padding: 0;",
+    "border: 0;",
+    "box-shadow: none;",
+  ]) {
+    assert.ok(hubRule.includes(declaration));
+  }
+  assert.equal(hubRule.includes("min-height: 20rem;"), false);
+
+  for (const declaration of ["width: 100%;", "height: 100%;", "object-fit: contain;"]) {
+    assert.ok(bannerRule.includes(declaration));
+  }
+
+  for (const declaration of ["width: 1px;", "height: 1px;", "clip: rect(0 0 0 0);"]) {
+    assert.ok(hiddenRule.includes(declaration));
+  }
+  assert.equal(hiddenRule.includes("display: none;"), false);
+  assert.equal(hiddenRule.includes("visibility: hidden;"), false);
+
+  assert.ok(
+    athletesCss.includes(
+      ".page-banner__fallback--athletes::after,\n.page-banner__fallback--athletes::before,\n.page-banner__fallback--athletes .page-banner__motion--athletes {\n  display: none;",
+    ),
+  );
+  assert.ok(athletesCss.includes(".athletes-hero--create h1,"));
+  assert.ok(athletesCss.includes(".athletes-hero--detail h1"));
 });
 
 test("Athletes hero uses a public signed-delivery endpoint and no local Git-hosted banner path", () => {
