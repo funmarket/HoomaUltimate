@@ -3,40 +3,149 @@ import { registerHooks } from "node:module";
 import test, { afterEach } from "node:test";
 import { JSDOM } from "jsdom";
 
-registerHooks({ load(url, context, nextLoad) { if (url.endsWith(".css")) return { format: "module", source: "export default {};", shortCircuit: true }; return nextLoad(url, context); } });
-const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/" });
-for (const key of ["window", "document", "HTMLElement", "Element", "Node", "navigator"]) Object.defineProperty(globalThis, key, { value: dom.window[key], configurable: true, writable: true });
+registerHooks({
+  load(url, context, nextLoad) {
+    if (url.endsWith(".css")) {
+      return {
+        format: "module",
+        source: "export default {};",
+        shortCircuit: true,
+      };
+    }
+    return nextLoad(url, context);
+  },
+});
+
+const dom = new JSDOM("<!doctype html><html><body></body></html>", {
+  url: "http://localhost/",
+});
+for (const key of ["window", "document", "HTMLElement", "Element", "Node", "navigator"]) {
+  Object.defineProperty(globalThis, key, {
+    value: dom.window[key],
+    configurable: true,
+    writable: true,
+  });
+}
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+
 const React = await import("react");
-Object.defineProperty(globalThis, "React", { value: React, configurable: true });
+Object.defineProperty(globalThis, "React", {
+  value: React,
+  configurable: true,
+});
 const { act, cleanup, fireEvent, render, waitFor } = await import("@testing-library/react");
 const { HoomaFrontendProvider } = await import("../packages/frontend/src/context");
 const { PageBanner } = await import("../packages/frontend/src/page-banner/PageBanner");
+
 const originalFetch = globalThis.fetch;
-afterEach(() => { cleanup(); globalThis.fetch = originalFetch; });
-const signedVariant = (url: string) => ({ variant: "master", contentUrl: url, expiresAt: "2026-11-02T12:00:00.000Z", contentType: "image/webp", widthPx: 1200, heightPx: 400 });
+afterEach(() => {
+  cleanup();
+  globalThis.fetch = originalFetch;
+});
+
+const signedVariant = (url: string) => ({
+  variant: "master",
+  contentUrl: url,
+  expiresAt: "2026-11-02T12:00:00.000Z",
+  contentType: "image/webp",
+  widthPx: 1200,
+  heightPx: 400,
+});
+
 function mount(body: unknown) {
-  globalThis.fetch = async () => new Response(JSON.stringify(body), { headers: { "content-type": "application/json" } });
-  return render(React.createElement(HoomaFrontendProvider, { transport: { baseUrl: "https://api.example.test" } }, React.createElement(PageBanner, { placementId: "ATHLETES_TOP" }, ({ artwork }) => React.createElement("section", { className: "page-banner--athletes", "data-page-banner-surface": true }, artwork ? React.createElement("img", { src: artwork.variant.contentUrl, alt: artwork.slide.altText ?? "" }) : React.createElement("h1", null, "Move together. Train together."))));
+  globalThis.fetch = async () =>
+    new Response(JSON.stringify(body), {
+      headers: { "content-type": "application/json" },
+    });
+  return render(
+    React.createElement(
+      HoomaFrontendProvider,
+      { transport: { baseUrl: "https://api.example.test" } },
+      React.createElement(
+        PageBanner,
+        { placementId: "ATHLETES_TOP" },
+        () =>
+          React.createElement(
+            "section",
+            {
+              className: "page-banner--athletes",
+              "data-page-banner-surface": true,
+            },
+            React.createElement("h1", null, "Move together. Train together."),
+          ),
+      ),
+    ),
+  );
 }
+
 test("empty and disabled placements retain one PageBanner hero surface", async () => {
-  for (const body of [{ placementId: "ATHLETES_TOP", enabled: false, slides: [] }, { placementId: "ATHLETES_TOP", enabled: true, slides: [] }]) {
+  for (const body of [
+    { placementId: "ATHLETES_TOP", enabled: false, slides: [] },
+    { placementId: "ATHLETES_TOP", enabled: true, slides: [] },
+  ]) {
     const view = mount(body);
     await waitFor(() => assert.ok(view.container.querySelector("[data-page-banner-surface]")));
     assert.equal(view.container.querySelectorAll("[data-page-banner]").length, 1);
     cleanup();
   }
 });
-test("managed artwork replaces content inside the canonical PageBanner hero", async () => {
-  const view = mount({ placementId: "ATHLETES_TOP", enabled: true, slides: [{ id: "slide-1", sortOrder: 0, isDecorative: false, altText: "Athletes together", destination: null, variants: [signedVariant("https://media.example.test/slide.webp")] }] });
+
+test("managed artwork replaces the legacy hero inside the canonical PageBanner", async () => {
+  const view = mount({
+    placementId: "ATHLETES_TOP",
+    enabled: true,
+    slides: [
+      {
+        id: "slide-1",
+        sortOrder: 0,
+        isDecorative: false,
+        altText: "Athletes together",
+        destination: null,
+        variants: [signedVariant("https://media.example.test/slide.webp")],
+      },
+    ],
+  });
   await waitFor(() => assert.ok(view.getByRole("img", { name: "Athletes together" })));
   assert.equal(view.container.querySelectorAll("[data-page-banner]").length, 1);
-  assert.equal(view.container.querySelector("[data-page-banner-surface] img")?.getAttribute("src"), "https://media.example.test/slide.webp");
+  assert.equal(view.container.querySelector("[data-page-banner-surface]"), null);
+  assert.equal(
+    view.container.querySelector("[data-page-banner] img")?.getAttribute("src"),
+    "https://media.example.test/slide.webp",
+  );
 });
+
 test("multiple slides update the same PageBanner hero surface", async () => {
-  const view = mount({ placementId: "ATHLETES_TOP", enabled: true, slides: [{ id: "slide-1", sortOrder: 0, isDecorative: false, altText: "First", destination: null, variants: [signedVariant("https://media.example.test/one.webp")] }, { id: "slide-2", sortOrder: 1, isDecorative: false, altText: "Second", destination: null, variants: [signedVariant("https://media.example.test/two.webp")] }] });
+  const view = mount({
+    placementId: "ATHLETES_TOP",
+    enabled: true,
+    slides: [
+      {
+        id: "slide-1",
+        sortOrder: 0,
+        isDecorative: false,
+        altText: "First",
+        destination: null,
+        variants: [signedVariant("https://media.example.test/one.webp")],
+      },
+      {
+        id: "slide-2",
+        sortOrder: 1,
+        isDecorative: false,
+        altText: "Second",
+        destination: null,
+        variants: [signedVariant("https://media.example.test/two.webp")],
+      },
+    ],
+  });
   await waitFor(() => assert.ok(view.getByRole("button", { name: "Next banner" })));
-  await act(async () => { fireEvent.click(view.getByRole("button", { name: "Next banner" })); });
+  await act(async () => {
+    fireEvent.click(view.getByRole("button", { name: "Next banner" }));
+  });
   await waitFor(() => assert.ok(view.getByRole("img", { name: "Second" })));
-  assert.equal(view.container.querySelectorAll("[data-page-banner-surface]").length, 1);
+  assert.equal(view.container.querySelectorAll("[data-page-banner]").length, 1);
+  assert.equal(view.container.querySelectorAll("[data-page-banner-surface]").length, 0);
+  assert.equal(
+    view.container.querySelector("[data-page-banner] img")?.getAttribute("src"),
+    "https://media.example.test/two.webp",
+  );
 });
