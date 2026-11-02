@@ -93,9 +93,9 @@ test("Ride keeps its exact actions inside the single RIDE_TOP PageBanner", () =>
   assert.ok(source.includes("Request a Ride"));
   assert.ok(source.includes("Browse Offers"));
   assert.ok(source.includes("Offer Seats"));
-  assert.ok(source.includes('href={`/rides/request${scopedQuery}`}'));
-  assert.ok(source.includes('href={`/rides/offers${scopedQuery}`}'));
-  assert.ok(source.includes('href={`/rides/offers/new${scopedQuery}`}'));
+  assert.ok(source.includes("href={`/rides/request${scopedQuery}`}"));
+  assert.ok(source.includes("href={`/rides/offers${scopedQuery}`}"));
+  assert.ok(source.includes("href={`/rides/offers/new${scopedQuery}`}"));
 });
 
 test("Athletes hub JSX and CSS use the same canonical PageBanner selector vocabulary", () => {
