@@ -14,6 +14,7 @@ import { AthletesPhotoBoard } from "./AthletesPhotoBoard";
 import { ActiveAthletesList } from "./ActiveAthletesList";
 import { AthletesRequestsPane } from "./AthletesRequestsPane";
 import { AthletesHubTabs } from "./AthletesHubTabs";
+import { PageBanner } from "../page-banner/PageBanner";
 
 function report(reason: unknown, fallback: string): string {
   return reason instanceof Error ? reason.message : fallback;
@@ -125,6 +126,9 @@ export function AthletesPage({
 
   return (
     <div className="page athletes-page">
+      <div className="hooma-lane--media">
+        <PageBanner placementId="ATHLETES_TOP" />
+      </div>
       <div className="hooma-lane--media">
         <section
           className="athletes-surface athletes-hero athletes-hero--hub"
