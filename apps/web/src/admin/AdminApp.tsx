@@ -29,6 +29,7 @@ import {
 import { ControlRoomShell } from "./ControlRoomShell";
 import { GamerDisputeConsole } from "./GamerDisputeConsole";
 import { ManagedEntities } from "./ManagedEntities";
+import { PageBannerManager } from "./PageBannerManager";
 import { ReviewQueues, type AdminQueueStates, type AdminQueues } from "./ReviewQueues";
 import "./admin.css";
 
@@ -859,6 +860,15 @@ export function AdminApp() {
           },
         ]
       : []),
+    ...(access.isPlatformOwner
+      ? [
+          {
+            label: "Page Banners",
+            description: "Manage optional top-of-page placements and their ordered slides.",
+            href: "#page-banners",
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -934,6 +944,8 @@ export function AdminApp() {
           teamsState={teamsState}
         />
       ) : null}
+
+      {access.isPlatformOwner ? <PageBannerManager adminApi={adminApi} /> : null}
 
       {canViewAudit ? (
         <AuditArchive

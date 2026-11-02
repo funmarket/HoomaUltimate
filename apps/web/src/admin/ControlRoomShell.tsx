@@ -71,6 +71,9 @@ function ControlRoomNavigation({
         ]
       : []),
     ...(isPlatformOwner
+      ? [{ href: "#page-banners", label: "Page Banners", icon: "archive" as const }]
+      : []),
+    ...(isPlatformOwner
       ? [{ href: "#access-managers", label: "Access", icon: "access" as const }]
       : []),
     ...(canViewAudit
