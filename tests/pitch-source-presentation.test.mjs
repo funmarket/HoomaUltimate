@@ -33,7 +33,7 @@ test("Pitch discovery body uses the approved HOOMA body shell without fake futur
   assert.match(page, /Find your pitch/);
   assert.match(page, /Book football pitches near you/);
   assert.doesNotMatch(page, /Field format|Surface|Date & time/);
-  assert.match(css, /\.pitch-discovery-hero/);
+  assert.match(css, /.page-banner--pitch/);
   assert.match(css, /\.pitch-source-tabs/);
 });
 
