@@ -13,7 +13,7 @@ const placements = [
   ["packages/frontend/src/requests/RequestsPage.tsx", "REQUESTS_TOP"],
   ["packages/frontend/src/gear-up/GearUpPage.tsx", "GEAR_UP_TOP"],
   ["packages/frontend/src/rides/RideGatewayPage.tsx", "RIDE_TOP"],
-] as const;
+];
 
 test("remaining public pages adopt the shared canonical PageBanner placement", async () => {
   const contents = await Promise.all(
