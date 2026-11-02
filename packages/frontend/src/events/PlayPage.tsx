@@ -3,6 +3,7 @@ import type { MeResponse } from "@hooma/contracts";
 import type { PlayLookingFor } from "@hooma/contracts/play";
 import { PickupMatchCard, PlayHero } from "@hooma/ui";
 import { useHoomaFrontend } from "../context";
+import { PageBanner } from "../page-banner/PageBanner";
 import { TeamOffersPanel } from "../teams/TeamOffersPanel";
 import { createTeamOfferApi, type RecruitingTeam } from "../teams/team-offer-api";
 import type { PublicEvent } from "./api";
@@ -342,6 +343,9 @@ export function PlayPage() {
 
   return (
     <section className="play-page">
+      <div className="hooma-lane--media">
+        <PageBanner placementId="PLAY_TOP" />
+      </div>
       <div className="hooma-lane--content">
         <PlayHero />
       </div>
