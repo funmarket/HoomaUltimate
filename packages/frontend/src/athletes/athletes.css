@@ -43,11 +43,6 @@
   color: var(--athletes-yellow);
 }
 
-.page-banner--athletes {
-  isolation: isolate;
-  padding: 1.25rem;
-}
-
 .page-banner--athletes::after {
   content: "";
   position: absolute;
@@ -60,6 +55,7 @@
 }
 
 .page-banner--athletes {
+  isolation: isolate;
   min-height: 0;
   aspect-ratio: 720 / 520;
   display: flex;
