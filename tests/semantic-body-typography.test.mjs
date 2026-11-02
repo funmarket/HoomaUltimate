@@ -51,7 +51,7 @@ for (const [path, selector] of [
   [hooma, ".hooma-page p.muted"],
   [hooma, ".hooma-page span.muted"],
   [hooma, ".hooma-page .muted"],
-  [hooma, ".hooma-page .hooma-hero p"],
+  [hooma, ".hooma-page .page-banner--hooma p"],
   [hooma, ".hooma-page .hooma-create-callout span"],
   [hooma, ".hooma-page .hooma-card-copy p"],
 ]) {
