@@ -37,7 +37,7 @@ test("remaining public pages adopt the shared canonical PageBanner placement", a
     );
     assert.doesNotMatch(
       source,
-      /\/api\/public\/v1\/banners|fetch\\([^)]*banners/,
+      /\/api\/public\/v1\/banners|fetch\([^)]*banners/,
       `${path} must not own a second PageBanner API client`,
     );
   }
