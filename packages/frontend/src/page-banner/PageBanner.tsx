@@ -134,7 +134,11 @@ export function PageBanner({
       aria-label={`${placementLabels[placementId]} page banner`}
       aria-busy={state.status === "loading"}
     >
-      {state.artwork ? <PageBannerArtwork artwork={state.artwork} /> : children ? children(state) : null}
+      {state.artwork ? (
+        <PageBannerArtwork artwork={state.artwork} />
+      ) : children ? (
+        children(state)
+      ) : null}
       {state.slideCount > 1 ? (
         <div className="page-banner__controls" aria-label="Page banner controls">
           <button
