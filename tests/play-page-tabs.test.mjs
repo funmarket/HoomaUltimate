@@ -97,17 +97,16 @@ test("Play detail and Open Matches use the authenticated Play API authority", as
   assert.doesNotMatch(rideDestinationFields, /eventApi\.publicPlay/);
 });
 
-test("text-only page introduction uses CONTENT while major section tabs use NAV", async () => {
-  const [page, hero] = await Promise.all([
-    read("packages/frontend/src/events/PlayPage.tsx"),
-    read("packages/ui/src/play/PageBanner.tsx"),
-  ]);
+test("text-only page introduction uses the PageBanner surface while major section tabs use NAV", async () => {
+  const page = await read("packages/frontend/src/events/PlayPage.tsx");
 
-  assert.match(hero, /<h1>PLAY<\/h1>/);
-  assert.doesNotMatch(hero, /<(?:img|picture|video|canvas)\b/);
-  assert.match(page, /<div className="hooma-lane--content">\s*<PageBanner \/>\s*<\/div>/);
+  assert.match(page, /<PageBanner placementId="PLAY_TOP">[\\s\\S]*<h1>PLAY<\\/h1>/);
+  assert.doesNotMatch(
+    page,
+    /<PageBanner placementId="PLAY_TOP">[\\s\\S]*<(?:img|picture|video|canvas)\\b/,
+  );
   assert.match(
     page,
-    /<div className="hooma-lane--nav">\s*<div\s+className="play-view-tabs play-view-tabs--four"/,
+    /<div className="hooma-lane--nav">\\s*<div\\s+className="play-view-tabs play-view-tabs--four"/,
   );
 });
