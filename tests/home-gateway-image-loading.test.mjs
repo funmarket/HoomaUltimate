@@ -30,7 +30,10 @@ test("homepage gateway artwork does not compete with the critical PageBanner fal
 });
 
 test("HOME_TOP PageBanner fallback opens the canonical Play route", () => {
-  assert.match(homePage, /className="page-banner__fallback-link page-banner__fallback-link--home"[\s\S]*href="\/play"/);
+  assert.match(
+    homePage,
+    /className="page-banner__fallback-link page-banner__fallback-link--home"[\s\S]*href="\/play"/,
+  );
   assert.match(homePage, /aria-label="Match Day — open Play"/);
   assert.match(homePage, /page-banner__fallback-link--home/);
   assert.doesNotMatch(homePage, /href="\/events\/new"/);
