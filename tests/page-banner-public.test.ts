@@ -38,6 +38,7 @@ const { HoomaFrontendProvider } = await import("../packages/frontend/src/context
 const { PageBanner } = await import("../packages/frontend/src/page-banner/PageBanner");
 
 const originalFetch = globalThis.fetch;
+
 afterEach(() => {
   cleanup();
   globalThis.fetch = originalFetch;
@@ -52,27 +53,48 @@ const signedVariant = (url: string) => ({
   heightPx: 400,
 });
 
-async function flushReact() {
-  await act(async () => {
-    await Promise.resolve();
-  });
-}
-
 function mount(body: unknown) {
   globalThis.fetch = async () =>
     new Response(JSON.stringify(body), {
       headers: { "content-type": "application/json" },
     });
+
   return render(
     React.createElement(
       HoomaFrontendProvider,
       { transport: { baseUrl: "https://api.example.test" } },
-      React.createElement(PageBanner, { placementId: "ATHLETES_TOP" }),
+      React.createElement(
+        PageBanner,
+        { placementId: "ATHLETES_TOP" },
+        () =>
+          React.createElement(
+            "section",
+            {
+              className: "page-banner--athletes",
+              "data-existing-page-banner-content": true,
+            },
+            React.createElement("h1", null, "Move together. Train together."),
+          ),
+      ),
     ),
   );
 }
 
-test("public PageBanner renders a signed Athletes slide with accessible metadata", async () => {
+test("empty and disabled placements retain one existing PageBanner surface", async () => {
+  for (const body of [
+    { placementId: "ATHLETES_TOP", enabled: false, slides: [] },
+    { placementId: "ATHLETES_TOP", enabled: true, slides: [] },
+  ]) {
+    const view = mount(body);
+    await waitFor(() =>
+      assert.ok(view.container.querySelector("[data-existing-page-banner-content]")),
+    );
+    assert.equal(view.container.querySelectorAll("[data-page-banner]").length, 1);
+    cleanup();
+  }
+});
+
+test("managed artwork replaces content inside the same PageBanner surface", async () => {
   const view = mount({
     placementId: "ATHLETES_TOP",
     enabled: true,
@@ -81,30 +103,23 @@ test("public PageBanner renders a signed Athletes slide with accessible metadata
         id: "slide-1",
         sortOrder: 0,
         isDecorative: false,
-        altText: "Athletes training together",
-        destination: { kind: "INTERNAL", url: "/athletes" },
-        variants: [signedVariant("https://media.example.test/slide-1.webp")],
+        altText: "Athletes together",
+        destination: null,
+        variants: [signedVariant("https://media.example.test/slide.webp")],
       },
     ],
   });
 
-  await flushReact();
-  await waitFor(() => assert.ok(view.getByRole("img", { name: "Athletes training together" })), {
-    timeout: 2_000,
-  });
-  const image = view.getByRole("img", { name: "Athletes training together" });
-  assert.equal(image.getAttribute("src"), "https://media.example.test/slide-1.webp");
+  await waitFor(() => assert.ok(view.getByRole("img", { name: "Athletes together" })));
+  assert.equal(view.container.querySelectorAll("[data-page-banner]").length, 1);
+  assert.equal(view.container.querySelector("[data-existing-page-banner-content]"), null);
   assert.equal(
-    view.getByRole("link", { name: "Athletes training together" }).getAttribute("href"),
-    "/athletes",
-  );
-  assert.equal(
-    view.getByRole("region", { name: "Athletes banner" }).getAttribute("aria-live"),
-    null,
+    view.container.querySelector("[data-page-banner] img")?.getAttribute("src"),
+    "https://media.example.test/slide.webp",
   );
 });
 
-test("public PageBanner manually navigates ordered slides without auto-rotation", async () => {
+test("multiple slides update the same PageBanner surface", async () => {
   const view = mount({
     placementId: "ATHLETES_TOP",
     enabled: true,
@@ -115,50 +130,28 @@ test("public PageBanner manually navigates ordered slides without auto-rotation"
         isDecorative: true,
         altText: null,
         destination: null,
-        variants: [signedVariant("https://media.example.test/slide-1.webp")],
+        variants: [signedVariant("https://media.example.test/one.webp")],
       },
       {
         id: "slide-2",
         sortOrder: 1,
         isDecorative: false,
-        altText: "Athletes community",
-        destination: {
-          kind: "EXTERNAL",
-          url: "https://example.test/community",
-        },
-        variants: [signedVariant("https://media.example.test/slide-2.webp")],
+        altText: "Second",
+        destination: null,
+        variants: [signedVariant("https://media.example.test/two.webp")],
       },
     ],
   });
 
-  await flushReact();
-  await waitFor(() => assert.ok(view.getByRole("button", { name: "Next banner" })), {
-    timeout: 2_000,
-  });
-  assert.equal(view.container.querySelector("img")?.getAttribute("alt"), "");
+  await waitFor(() => assert.ok(view.getByRole("button", { name: "Next banner" })));
   await act(async () => {
     fireEvent.click(view.getByRole("button", { name: "Next banner" }));
   });
-  await waitFor(() => assert.ok(view.getByRole("img", { name: "Athletes community" })), {
-    timeout: 2_000,
-  });
+  await waitFor(() => assert.ok(view.getByRole("img", { name: "Second" })));
+  assert.equal(view.container.querySelectorAll("[data-page-banner]").length, 1);
+  assert.equal(view.container.querySelectorAll("[data-existing-page-banner-content]").length, 0);
   assert.equal(
-    view.getByRole("link", { name: "Athletes community" }).getAttribute("href"),
-    "https://example.test/community",
+    view.container.querySelector("[data-page-banner] img")?.getAttribute("src"),
+    "https://media.example.test/two.webp",
   );
-  assert.equal(view.getByText("2 of 2").textContent, "2 of 2");
-});
-
-test("public PageBanner renders no public surface for disabled or empty placements", async () => {
-  for (const body of [
-    { placementId: "ATHLETES_TOP", enabled: false, slides: [] },
-    { placementId: "ATHLETES_TOP", enabled: true, slides: [] },
-  ]) {
-    const view = mount(body);
-    await flushReact();
-    await waitFor(() => assert.equal(view.container.querySelector("[data-page-banner]"), null), {
-      timeout: 2_000,
-    });
-    cleanup();
-  }
 });

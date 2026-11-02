@@ -141,16 +141,17 @@ export function PlacesPage() {
   return (
     <section className="place-page">
       <div className="hooma-lane--media">
-        <PageBanner placementId="PLACES_TOP" />
-      </div>
-      <div className="hooma-lane--content">
-        <header className="place-page__header">
-          <div>
-            <p className="eyebrow">SPOTS</p>
-            <h1>Spots</h1>
-            <p>Cafés, lounges, restaurants and other places to watch together.</p>
-          </div>
-        </header>
+        <PageBanner placementId="PLACES_TOP">
+          {() => (
+            <header className="page-banner--places">
+              <div>
+                <p className="eyebrow">SPOTS</p>
+                <h1>Spots</h1>
+                <p>Cafés, lounges, restaurants and other places to watch together.</p>
+              </div>
+            </header>
+          )}
+        </PageBanner>
       </div>
 
       <div className="hooma-lane--nav">
@@ -399,7 +400,7 @@ export function AddPlacePage() {
             : "place-page place-form-page"
         }
       >
-        <header className="place-page__header place-form-page__header">
+        <header className="page-banner--places place-form-page__header">
           <div>
             <p className="eyebrow">{isPitchSuggestion ? "ADD A PITCH" : "ADD A PLACE"}</p>
             <h1>{isPitchSuggestion ? "Add a football pitch" : "Add a Watch Spot"}</h1>

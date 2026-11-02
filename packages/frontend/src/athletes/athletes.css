@@ -43,12 +43,12 @@
   color: var(--athletes-yellow);
 }
 
-.athletes-hero {
+.page-banner--athletes {
   isolation: isolate;
   padding: 1.25rem;
 }
 
-.athletes-hero::after {
+.page-banner--athletes::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -59,7 +59,7 @@
     radial-gradient(circle at 8% 100%, rgba(243, 207, 98, 0.065), transparent 36%);
 }
 
-.athletes-hero.athletes-hero--hub {
+.page-banner--athletes {
   min-height: 0;
   aspect-ratio: 720 / 520;
   display: flex;
@@ -70,7 +70,7 @@
   box-shadow: none;
 }
 
-.athletes-hero__banner {
+.page-banner--athletes__image {
   position: absolute;
   inset: 0;
   z-index: 0;
@@ -91,7 +91,7 @@
   margin-inline: auto;
 }
 
-.athletes-hero--hub .athletes-hero__semantic-title {
+.page-banner--athletes .page-banner--athletes__title {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -103,8 +103,8 @@
   border: 0;
 }
 
-.athletes-hero--hub[data-media-state="delivery-unavailable"] .athletes-hero__semantic-title,
-.athletes-hero--hub[data-media-state="image-failed"] .athletes-hero__semantic-title {
+.page-banner--athletes[data-media-state="delivery-unavailable"] .page-banner--athletes__title,
+.page-banner--athletes[data-media-state="image-failed"] .page-banner--athletes__title {
   position: static;
   width: auto;
   height: auto;
@@ -115,20 +115,20 @@
   white-space: normal;
 }
 
-.athletes-hero--hub::after,
-.athletes-hero--hub::before,
-.athletes-hero--hub .athletes-hero__motion {
+.page-banner--athletes::after,
+.page-banner--athletes::before,
+.page-banner--athletes .page-banner--athletes__motion {
   display: none;
 }
 
-.athletes-hero--hub::before,
-.athletes-hero__motion {
+.page-banner--athletes::before,
+.page-banner--athletes__motion {
   content: "";
   position: absolute;
   pointer-events: none;
 }
 
-.athletes-hero--hub::before {
+.page-banner--athletes::before {
   width: 12rem;
   height: 12rem;
   right: -4.5rem;
@@ -140,7 +140,7 @@
     0 0 0 3.3rem rgba(255, 145, 61, 0.012);
 }
 
-.athletes-hero__motion {
+.page-banner--athletes__motion {
   width: 8.5rem;
   height: 1px;
   right: 1.25rem;
