@@ -4,7 +4,7 @@ import type { PublicEvent } from "../events/api";
 import { useEventApi } from "../events/useEventApi";
 import { CulturalEventCard } from "./CulturalEventCard";
 import { WatchSectionNavigation } from "./WatchSectionNavigation";
-import { WatchTicket } from "./WatchTicket";
+import { WatchTicket } from "./WatchTicket";\nimport { PageBanner } from "../page-banner/PageBanner";
 
 function normalize(value: string | null | undefined): string {
   return value?.trim().toLocaleLowerCase() ?? "";
@@ -161,6 +161,7 @@ export function WatchPage() {
 
   return (
     <section className="watch-page">
+      <div className="hooma-lane--media">\n        <PageBanner placementId="WATCH_TOP" />\n      </div>
       <div className="hooma-lane--media">
         <header className="watch-hero">
           <div>

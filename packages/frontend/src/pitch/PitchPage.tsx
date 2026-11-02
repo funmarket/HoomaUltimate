@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { PublicPitch } from "@hooma/contracts/pitch";
 import { useHoomaFrontend } from "../context";
 import { createPitchApi } from "./api";
-import { PitchTicket } from "./PitchTicket";
+import { PitchTicket } from "./PitchTicket";\nimport { PageBanner } from "../page-banner/PageBanner";
 
 type PitchSource = "OWNER" | "FANHUB" | "LEGACY";
 
@@ -43,6 +43,7 @@ export function PitchPage() {
 
   return (
     <section className="pitch-page">
+      <div className="hooma-lane--media">\n        <PageBanner placementId="PITCH_TOP" />\n      </div>
       <div className="hooma-lane--content">
         <header className="pitch-discovery-hero">
           <div className="pitch-discovery-hero__copy">

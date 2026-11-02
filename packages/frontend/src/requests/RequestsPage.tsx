@@ -6,7 +6,7 @@ import { DonationIcon, FundMeIcon, PlusIcon } from "../help/HelpIcons";
 import { createRequestsApi, type RequestsListQuery } from "./api";
 import { HelpTabs } from "./HelpTabs";
 import { RequestFeed } from "./RequestFeed";
-import { RequestTaxonomyFilters } from "./RequestTaxonomyFilters";
+import { RequestTaxonomyFilters } from "./RequestTaxonomyFilters";\nimport { PageBanner } from "../page-banner/PageBanner";
 
 export type RequestsPageTab = "requests" | "fundme" | "donations";
 
@@ -173,6 +173,7 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
 
   return (
     <section className="page requests-page">
+      <div className="hooma-lane--media">\n        <PageBanner placementId="REQUESTS_TOP" />\n      </div>
       <div className="hooma-lane--content">
         <header className="help-hero">
           <div className="help-hero__copy">

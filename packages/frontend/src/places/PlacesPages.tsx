@@ -12,7 +12,7 @@ import { createPitchApi } from "../pitch/api";
 import { WatchSectionNavigation } from "../watch/WatchSectionNavigation";
 import { pitchRateToMinor } from "../pitch/pricing";
 import { createPlacesApi } from "./api";
-import { PlaceForm } from "./PlaceForm";
+import { PlaceForm } from "./PlaceForm";\nimport { PageBanner } from "../page-banner/PageBanner";
 
 export { PlaceDetailPage } from "./PlaceDetailPage";
 
@@ -139,6 +139,7 @@ export function PlacesPage() {
 
   return (
     <section className="place-page">
+      <div className="hooma-lane--media">\n        <PageBanner placementId="PLACES_TOP" />\n      </div>
       <div className="hooma-lane--content">
         <header className="place-page__header">
           <div>

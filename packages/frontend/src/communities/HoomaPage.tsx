@@ -13,7 +13,7 @@ import { CommunityHoomaNowSection } from "../discovery/HoomaNowSection";
 import { successNavigationState } from "../interaction-feedback";
 import { HoomaWhistleBoard } from "../whistle/HoomaWhistleBoard";
 import { CommunityLogo, CommunityMediaSurface } from "./CommunityMedia";
-import { HoomaMembershipRequests } from "./HoomaMembershipRequests";
+import { HoomaMembershipRequests } from "./HoomaMembershipRequests";\nimport { PageBanner } from "../page-banner/PageBanner";
 
 function report(reason: unknown): string {
   return reason instanceof Error ? reason.message : "Unexpected HOOMA error";
@@ -112,6 +112,7 @@ export function HoomaPage() {
 
   return (
     <div className="page hooma-page">
+      <div className="hooma-lane--media">\n        <PageBanner placementId="HOOMA_TOP" />\n      </div>
       <div className="hooma-lane--media">
         <section className="hooma-hero panel">
           <span className="eyebrow">YOUR FOOTBALL NEIGHBORHOOD</span>
