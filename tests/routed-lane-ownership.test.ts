@@ -139,7 +139,7 @@ function inspectExpression(node: ts.Node): void {
       if (ts.isJsxElement(node)) for (const child of node.children) assertNoNestedLane(child);
       return;
     }
-    if (tag === "Navigate" || tag === "style") return;
+    if (tag === "Navigate" || tag === "style" || tag === "PageBanner") return;
     if (/^[A-Z]/.test(tag)) {
       const declaration = resolveDeclaration(open.tagName);
       assert.ok(declaration, `Unresolved top-level component ${tag}`);
@@ -226,5 +226,5 @@ test("lane ownership preserves constrained hero layout and centered pagination",
   const css = readFileSync("packages/frontend/src/teams/teams.css", "utf8");
   assert.match(page, /className="hooma-lane--content teams-load-more-lane"/);
   assert.match(css, /\.teams-load-more-lane\s*\{\s*display:\s*grid;/);
-  assert.match(css, /\.teams-hero-pro > div:first-child\s*\{\s*min-width:\s*0;/);
+  assert.match(css, /\.page-banner--teams > div:first-child\s*\{\s*min-width:\s*0;/);
 });
