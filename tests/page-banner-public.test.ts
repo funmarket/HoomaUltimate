@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { registerHooks } from "node:module";
 import test, { afterEach } from "node:test";
 import { JSDOM } from "jsdom";
-import { createElement as h } from "react";
 
 registerHooks({
   load(url, context, nextLoad) {
@@ -29,6 +28,11 @@ for (const key of ["window", "document", "HTMLElement", "Element", "Node", "navi
 }
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
+const React = await import("react");
+Object.defineProperty(globalThis, "React", {
+  value: React,
+  configurable: true,
+});
 const { act, cleanup, fireEvent, render, waitFor } = await import("@testing-library/react");
 const { HoomaFrontendProvider } = await import("../packages/frontend/src/context");
 const { PageBanner } = await import("../packages/frontend/src/page-banner/PageBanner");
@@ -60,10 +64,10 @@ function mount(body: unknown) {
       headers: { "content-type": "application/json" },
     });
   return render(
-    h(
+    React.createElement(
       HoomaFrontendProvider,
       { transport: { baseUrl: "https://api.example.test" } },
-      h(PageBanner, { placementId: "ATHLETES_TOP" }),
+      React.createElement(PageBanner, { placementId: "ATHLETES_TOP" }),
     ),
   );
 }
