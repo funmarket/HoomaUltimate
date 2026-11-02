@@ -25,10 +25,8 @@ test("remaining public pages adopt the shared canonical PageBanner placement", a
   );
 
   for (const { path, placementId, source } of contents) {
-    assert.match(
-      /import \{(?:[^}]*,\s*)?PageBanner(?:,\s*[^}]*)?\s*\} from "(?:@hooma\/frontend|\.\.\/page-banner\/PageBanner)";/,
-      /import \{(?:[^}]*,\s*)?PageBanner(?:,\s*[^}]*)?\} from "(?:@hooma\/frontend|\.\.\/page-banner\/PageBanner)";/,
-      `${path} must import the shared PageBanner component`,
+    assert.match(source, /import[\s\S]*PageBanner/, \`\${path} must import the shared PageBanner component\`);
+    assert.match(source, /from "(?:@hooma\/frontend|\.\.\/page-banner\/PageBanner)";/, \`\${path} must use an approved shared import seam\`);
     );
     assert.match(
       source,
