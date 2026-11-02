@@ -34,7 +34,7 @@ test("Athletes hub orders artwork then Create Community then tabs with no CTA in
     athletesPage.indexOf("export function CreateAthletesPage"),
   );
   const heroStart = hub.search(
-    /<section\s+className="athletes-surface athletes-hero athletes-hero--hub"(?:\s|>)/,
+    /<section\s+className="athletes-surface page-banner--athletes"(?:\s|>)/,
   );
   const heroEnd = hub.indexOf("</section>", heroStart);
   const createStart = hub.indexOf('className="athletes-actions athletes-hub-create"');
@@ -46,9 +46,9 @@ test("Athletes hub orders artwork then Create Community then tabs with no CTA in
   assert.ok(tabsStart > createStart);
 
   const heroMarkup = hub.slice(heroStart, heroEnd);
-  assert.match(heroMarkup, /className="athletes-hero__banner"/);
+  assert.match(heroMarkup, /className="page-banner--athletes__image"/);
   assert.match(heroMarkup, /src=\{heroUrl\}/);
-  assert.match(heroMarkup, /athletes-hero__semantic-title/);
+  assert.match(heroMarkup, /page-banner--athletes__title/);
   assert.doesNotMatch(heroMarkup, /Create community|onCreateCommunity|athletes-hub-create/);
 
   assert.match(hub, /api\.athletes[\s\S]*?\.heroDelivery\(controller\.signal\)/);
@@ -59,8 +59,8 @@ test("Athletes hub orders artwork then Create Community then tabs with no CTA in
 
 test("Athletes hero keeps 720x520 contain geometry and removes the hub overlay content rule", () => {
   const hubRule =
-    athletesCss.match(/\.athletes-hero(?:\.athletes-hero--hub|--hub)\s*\{[\s\S]*?\}/)?.[0] ?? "";
-  const bannerRule = athletesCss.match(/\.athletes-hero__banner\s*\{[\s\S]*?\}/)?.[0] ?? "";
+    athletesCss.match(/\.page-banner--athletes\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const bannerRule = athletesCss.match(/\.page-banner--athletes__image\s*\{[\s\S]*?\}/)?.[0] ?? "";
 
   assert.match(hubRule, /aspect-ratio:\s*720\s*\/\s*520/);
   assert.match(bannerRule, /object-fit:\s*contain/);
