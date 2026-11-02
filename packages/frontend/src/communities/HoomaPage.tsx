@@ -9,6 +9,7 @@ import type {
   PublicCommunitySummary,
 } from "../api";
 import { useHoomaFrontend } from "../context";
+import { PageBanner } from "../page-banner/PageBanner";
 import { CommunityHoomaNowSection } from "../discovery/HoomaNowSection";
 import { successNavigationState } from "../interaction-feedback";
 import { HoomaWhistleBoard } from "../whistle/HoomaWhistleBoard";
@@ -112,6 +113,9 @@ export function HoomaPage() {
 
   return (
     <div className="page hooma-page">
+      <div className="hooma-lane--media">
+        <PageBanner placementId="HOOMA_TOP" />
+      </div>
       <div className="hooma-lane--media">
         <section className="hooma-hero panel">
           <span className="eyebrow">YOUR FOOTBALL NEIGHBORHOOD</span>
