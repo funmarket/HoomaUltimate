@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { PageBannerPlacementId } from "@hooma/contracts/page-banner";
 import { useHoomaFrontend } from "../context";
 import type { PageBannerPublicSlide } from "./api";
@@ -27,7 +27,14 @@ function nextIndex(current: number, length: number, direction: -1 | 1): number {
   return (current + direction + length) % length;
 }
 
-export function PageBanner({ placementId }: { readonly placementId: PageBannerPlacementId }) {
+type PageBannerProps = {
+  readonly placementId: PageBannerPlacementId;
+  readonly className?: string;
+  readonly fallback?: ReactNode;
+  readonly children?: ReactNode;
+};
+
+export function PageBanner({ placementId, className, fallback, children }: PageBannerProps) {
   const { api } = useHoomaFrontend();
   const [response, setResponse] = useState<{
     readonly status: "loading" | "ready" | "error";
@@ -60,7 +67,11 @@ export function PageBanner({ placementId }: { readonly placementId: PageBannerPl
     [response],
   );
 
-  if (response.status === "loading") {
+  const hasOwnedContent = fallback !== undefined || children !== undefined;
+  const slide = slides.length ? slides[Math.min(activeIndex, slides.length - 1)]! : null;
+  const variant = slide ? mediaVariant(slide) : null;
+
+  if (!hasOwnedContent && response.status === "loading") {
     return (
       <section
         className="page-banner page-banner--loading"
@@ -72,7 +83,7 @@ export function PageBanner({ placementId }: { readonly placementId: PageBannerPl
     );
   }
 
-  if (response.status === "error") {
+  if (!hasOwnedContent && response.status === "error") {
     return (
       <div
         className="page-banner page-banner--error"
@@ -85,44 +96,48 @@ export function PageBanner({ placementId }: { readonly placementId: PageBannerPl
     );
   }
 
-  if (!slides.length) return null;
+  if (!hasOwnedContent && !variant) return null;
 
-  const slide = slides[Math.min(activeIndex, slides.length - 1)]!;
-  const variant = mediaVariant(slide);
-  if (!variant) return null;
+  let managedContent: ReactNode = null;
+  if (slide && variant) {
+    const image = React.createElement("img", {
+      className: "page-banner__image",
+      src: variant.contentUrl,
+      width: variant.widthPx,
+      height: variant.heightPx,
+      alt: slide.isDecorative ? "" : (slide.altText ?? ""),
+      loading: "eager",
+      decoding: "async",
+    });
+    managedContent = slide.destination ? (
+      <a
+        className="page-banner__link"
+        href={slide.destination.url}
+        {...(slide.destination.kind === "EXTERNAL"
+          ? { rel: "noreferrer noopener", target: "_blank" }
+          : {})}
+      >
+        {image}
+      </a>
+    ) : (
+      image
+    );
+  }
 
-  const image = React.createElement("img", {
-    className: "page-banner__image",
-    src: variant.contentUrl,
-    width: variant.widthPx,
-    height: variant.heightPx,
-    alt: slide.isDecorative ? "" : (slide.altText ?? ""),
-    loading: "eager",
-    decoding: "async",
-  });
-  const content = slide.destination ? (
-    <a
-      className="page-banner__link"
-      href={slide.destination.url}
-      {...(slide.destination.kind === "EXTERNAL"
-        ? { rel: "noreferrer noopener", target: "_blank" }
-        : {})}
-    >
-      {image}
-    </a>
-  ) : (
-    image
-  );
+  const state = variant ? "ready" : response.status === "ready" ? "fallback" : response.status;
 
   return (
     <section
-      className="page-banner"
+      className={`page-banner${className ? ` ${className}` : ""}`}
       data-page-banner
-      data-state="ready"
+      data-placement={placementId}
+      data-state={state}
       aria-label={`${placementLabels[placementId]} banner`}
+      {...(response.status === "loading" ? { "aria-busy": true } : {})}
     >
-      <div className="page-banner__frame">{content}</div>
-      {slides.length > 1 ? (
+      {managedContent ? <div className="page-banner__frame">{managedContent}</div> : fallback}
+      {children}
+      {variant && slides.length > 1 ? (
         <div className="page-banner__controls">
           <button
             className="page-banner__control"
