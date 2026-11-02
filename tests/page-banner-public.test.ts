@@ -135,7 +135,7 @@ test("public PageBanner manually navigates ordered slides without auto-rotation"
   await waitFor(() => assert.ok(view.getByRole("button", { name: "Next banner" })), {
     timeout: 2_000,
   });
-  assert.equal(view.getByRole("img").getAttribute("alt"), "");
+  assert.equal(view.container.querySelector("img")?.getAttribute("alt"), "");
   await act(async () => {
     fireEvent.click(view.getByRole("button", { name: "Next banner" }));
   });
