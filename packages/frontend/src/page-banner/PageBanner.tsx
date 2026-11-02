@@ -81,7 +81,7 @@ export function usePageBanner(placementId: PageBannerPlacementId): PageBannerRen
 
 export function PageBannerArtwork({
   artwork,
-  className,
+  className = "page-banner__image",
 }: {
   readonly artwork: PageBannerArtwork;
   readonly className?: string;
@@ -129,7 +129,7 @@ export function PageBanner({
       aria-label={`${placementLabels[placementId]} page banner`}
       aria-busy={state.status === "loading"}
     >
-      {children(state)}
+      {state.artwork ? <PageBannerArtwork artwork={state.artwork} /> : children(state)}
       {state.slideCount > 1 ? (
         <div className="page-banner__controls" aria-label="Page banner controls">
           <button
