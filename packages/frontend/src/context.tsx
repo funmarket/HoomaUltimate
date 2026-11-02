@@ -1,5 +1,16 @@
-import { createContext, useContext, useMemo, type ReactNode } from "react";
-import { createHoomaApi, HoomaApiError, request, type HoomaApi, type HoomaTransport } from "./api";
+import React, {
+  createContext,
+  useContext,
+  useMemo,
+  type ReactNode,
+} from "react";
+import {
+  createHoomaApi,
+  HoomaApiError,
+  request,
+  type HoomaApi,
+  type HoomaTransport,
+} from "./api";
 
 type FrontendContextValue = {
   readonly api: HoomaApi;

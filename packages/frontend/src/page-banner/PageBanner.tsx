@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import type { PageBannerPlacementId } from "@hooma/contracts/page-banner";
 import { useHoomaFrontend } from "../context";
 import type { PageBannerPublicSlide } from "./api";
-import "./page-banner.css";
 
 const placementLabels: Readonly<Record<PageBannerPlacementId, string>> = {
   HOME_TOP: "Home",
