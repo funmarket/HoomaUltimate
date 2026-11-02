@@ -134,6 +134,7 @@ function inspectExpression(node: ts.Node): void {
       assert.ok(
         ts.isJsxElement(node) &&
           node.children.some((child) => !ts.isJsxText(child) || child.text.trim()),
+        `Lane node must have children: ${tag} ${node.getText()}`,
       );
       owners.add(lane);
       if (ts.isJsxElement(node)) for (const child of node.children) assertNoNestedLane(child);
