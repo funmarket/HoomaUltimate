@@ -110,3 +110,6 @@ A durable milestone belongs here only when it remains useful after branch heads,
 For present-tense questions such as “what is open?”, “what is deployed?”, “what is the current head?”, or “what should merge next?”, inspect the live repository/runtime instead of reading this ledger.
 
 For behavior claims, trace the current owning source, contracts, migrations, tests and runtime evidence as appropriate. If the current implementation contradicts this ledger, the live implementation proves what exists and this ledger must be corrected without inventing replacement behavior.
+
+
+- Step 13 root PageBanner correction: the shared public runtime now supplies managed artwork to each existing page hero in place, preserving the existing hero as the sole visual owner and fallback during loading, empty, disabled and error states. No standalone public PageBanner slot is introduced.

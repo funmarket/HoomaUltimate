@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { PublicPitch } from "@hooma/contracts/pitch";
 import { useHoomaFrontend } from "../context";
-import { PageBanner } from "../page-banner/PageBanner";
+import { PageBanner, PageBannerArtwork } from "../page-banner/PageBanner";
 import { createPitchApi } from "./api";
 import { PitchTicket } from "./PitchTicket";
 
@@ -47,18 +47,30 @@ export function PitchPage() {
       <div className="hooma-lane--media">
         <PageBanner placementId="PITCH_TOP" />
       </div>
-      <div className="hooma-lane--content">
-        <header className="pitch-discovery-hero">
-          <div className="pitch-discovery-hero__copy">
-            <p className="pitch-discovery-hero__eyebrow">PITCHES</p>
-            <h1>Find your pitch</h1>
-            <p>Book football pitches near you. By real owners or from FanHub.</p>
-          </div>
-          <a className="pitch-add-action" href="/places/new?kind=PITCH">
-            <span aria-hidden="true">+</span>
-            Add a Pitch
-          </a>
-        </header>
+<div className="hooma-lane--content">
+        <PageBanner placementId="PITCH_TOP">
+          {({ artwork }) => (
+            <header className="pitch-discovery-hero">
+                      {${"artwork"} ? (
+                        <PageBannerArtwork artwork={${"artwork"}} className="pitch-discovery-hero__managed-artwork" />
+                      ) : (
+                        <>
+            
+                      <div className="pitch-discovery-hero__copy">
+                        <p className="pitch-discovery-hero__eyebrow">PITCHES</p>
+                        <h1>Find your pitch</h1>
+                        <p>Book football pitches near you. By real owners or from FanHub.</p>
+                      </div>
+                      <a className="pitch-add-action" href="/places/new?kind=PITCH">
+                        <span aria-hidden="true">+</span>
+                        Add a Pitch
+                      </a>
+                    
+                        </>
+                      )}
+                    </header>
+          )}
+        </PageBanner>
       </div>
 
       <div className="hooma-lane--nav">

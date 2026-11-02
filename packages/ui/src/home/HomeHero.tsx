@@ -32,21 +32,12 @@ const HOME_HERO_STYLES = `
 }
 `;
 
-export function HomeHero() {
+export function HomeHero({ artwork }: { readonly artwork?: { readonly src:string; readonly alt:string; readonly width:number; readonly height:number } }) {
   return (
     <>
       <style>{HOME_HERO_STYLES}</style>
-      <a className="home-hero" href="/play" aria-label="Match Day — open Play">
-        <img
-          className="home-hero__image"
-          src="/home-hero/matchday.webp"
-          alt="Match Day — Play together. Watch together. Move as one. Create or join a HOOMA community to get started."
-          width={1850}
-          height={850}
-          loading="eager"
-          decoding="sync"
-          fetchPriority="high"
-        />
+      <a className="home-hero" href="/play" aria-label={artwork?.alt || "Match Day — open Play"}>
+        <img className="home-hero__image" src={artwork?.src ?? "/home-hero/matchday.webp"} alt={artwork?.alt ?? "Match Day — Play together. Watch together. Move as one. Create or join a HOOMA community to get started."} width={artwork?.width ?? 1850} height={artwork?.height ?? 850} loading="eager" decoding="sync" fetchPriority="high" />
       </a>
     </>
   );

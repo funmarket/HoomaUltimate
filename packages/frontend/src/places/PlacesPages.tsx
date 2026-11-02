@@ -6,7 +6,7 @@ import type {
 } from "@hooma/contracts/places";
 import type { PitchRentalCurrency } from "@hooma/contracts/pitch";
 import { useHoomaFrontend } from "../context";
-import { PageBanner } from "../page-banner/PageBanner";
+import { PageBanner, PageBannerArtwork } from "../page-banner/PageBanner";
 import type { PublicEvent } from "../events/api";
 import { useEventApi } from "../events/useEventApi";
 import { createPitchApi } from "../pitch/api";
@@ -143,14 +143,26 @@ export function PlacesPage() {
       <div className="hooma-lane--media">
         <PageBanner placementId="PLACES_TOP" />
       </div>
-      <div className="hooma-lane--content">
-        <header className="place-page__header">
-          <div>
-            <p className="eyebrow">SPOTS</p>
-            <h1>Spots</h1>
-            <p>Cafés, lounges, restaurants and other places to watch together.</p>
-          </div>
-        </header>
+<div className="hooma-lane--content">
+        <PageBanner placementId="PLACES_TOP">
+          {({ artwork }) => (
+            <header className="place-page__header">
+                      {${"artwork"} ? (
+                        <PageBannerArtwork artwork={${"artwork"}} className="place-page__header__managed-artwork" />
+                      ) : (
+                        <>
+            
+                      <div>
+                        <p className="eyebrow">SPOTS</p>
+                        <h1>Spots</h1>
+                        <p>Cafés, lounges, restaurants and other places to watch together.</p>
+                      </div>
+                    
+                        </>
+                      )}
+                    </header>
+          )}
+        </PageBanner>
       </div>
 
       <div className="hooma-lane--nav">

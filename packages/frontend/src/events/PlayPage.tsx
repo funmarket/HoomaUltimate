@@ -343,8 +343,8 @@ export function PlayPage() {
 
   return (
     <section className="play-page">
-      <div className="hooma-lane--media">
-        <PageBanner placementId="PLAY_TOP" />
+      <div className="hooma-lane--content">
+        <PageBanner placementId="PLAY_TOP">{({ artwork }) => <PlayHero managedArtwork={artwork ? {src:artwork.variant.contentUrl,alt:artwork.slide.isDecorative?"":artwork.slide.altText??"",width:artwork.variant.widthPx,height:artwork.variant.heightPx} : undefined} />}</PageBanner>
       </div>
       <div className="hooma-lane--content">
         <PlayHero />

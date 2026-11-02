@@ -9,7 +9,7 @@ import type {
   PublicCommunitySummary,
 } from "../api";
 import { useHoomaFrontend } from "../context";
-import { PageBanner } from "../page-banner/PageBanner";
+import { PageBanner, PageBannerArtwork } from "../page-banner/PageBanner";
 import { CommunityHoomaNowSection } from "../discovery/HoomaNowSection";
 import { successNavigationState } from "../interaction-feedback";
 import { HoomaWhistleBoard } from "../whistle/HoomaWhistleBoard";
@@ -116,12 +116,24 @@ export function HoomaPage() {
       <div className="hooma-lane--media">
         <PageBanner placementId="HOOMA_TOP" />
       </div>
-      <div className="hooma-lane--media">
-        <section className="hooma-hero panel">
-          <span className="eyebrow">YOUR FOOTBALL NEIGHBORHOOD</span>
-          <h1>HOOMA</h1>
-          <p>Find your people, build your neighborhood, and connect through sport and community.</p>
-        </section>
+<div className="hooma-lane--media">
+        <PageBanner placementId="HOOMA_TOP">
+          {({ artwork }) => (
+            <section className="hooma-hero panel">
+                      {${"artwork"} ? (
+                        <PageBannerArtwork artwork={${"artwork"}} className="hooma-hero panel__managed-artwork" />
+                      ) : (
+                        <>
+            
+                      <span className="eyebrow">YOUR FOOTBALL NEIGHBORHOOD</span>
+                      <h1>HOOMA</h1>
+                      <p>Find your people, build your neighborhood, and connect through sport and community.</p>
+                    
+                        </>
+                      )}
+                    </section>
+          )}
+        </PageBanner>
       </div>
 
       <div className="hooma-lane--content">

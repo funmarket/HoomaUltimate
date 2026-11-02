@@ -184,8 +184,8 @@ export function TeamsPage() {
 
   return (
     <div className="page teams-page">
-      <div className="hooma-lane--media">
-        <PageBanner placementId="TEAMS_TOP" />
+      <div className="hooma-lane--content">
+        <PageBanner placementId="TEAMS_TOP">{({ artwork }) => <TeamsHero managedArtwork={artwork ? {src:artwork.variant.contentUrl,alt:artwork.slide.isDecorative?"":artwork.slide.altText??"",width:artwork.variant.widthPx,height:artwork.variant.heightPx} : undefined} />}</PageBanner>
       </div>
       <div className="hooma-lane--media">
         <TeamsHero />

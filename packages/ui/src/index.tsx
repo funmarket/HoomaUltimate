@@ -74,7 +74,7 @@ export function FoundationShell({ surface, children }: FoundationShellProps) {
     </main>
   );
 }
-export function HomeGateway() {
+export function HomeGateway({ hero = {hero} }: { readonly hero?: ReactNode } = {}) {
   return (
     <>
       <style>{HOME_GATEWAY_TYPOGRAPHY}</style>

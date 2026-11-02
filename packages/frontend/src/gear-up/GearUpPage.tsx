@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { PublicGearUpShop } from "@hooma/contracts/gear-up";
 import { useHoomaFrontend } from "../context";
-import { PageBanner } from "../page-banner/PageBanner";
+import { PageBanner, PageBannerArtwork } from "../page-banner/PageBanner";
 import { AthletesHubTabs } from "../athletes/AthletesHubTabs";
 import { createGearUpApi } from "./api";
 import { GearUpFilters, type GearUpDiscoveryFilters } from "./GearUpFilters";
@@ -122,25 +122,37 @@ export function GearUpPage() {
         <AthletesHubTabs active="gear-up" />
       </div>
 
-      <div className="hooma-lane--content">
-        <header className="gear-up-hero">
-          <p className="gear-up-hero__eyebrow">GEAR UP</p>
-          <h1 className="gear-up-page__title">
-            {mode === "stores"
-              ? "Discover shops offering gear and sportswear."
-              : "Discover sports products from local shops."}
-          </h1>
-          <p className="gear-up-hero__description">
-            {mode === "stores"
-              ? "Find sportswear, equipment and more from local shops. Support real places in your community."
-              : "Browse products across approved Gear Up shops while keeping every product connected to its real store."}
-          </p>
-          <div className="gear-up-hero__actions">
-            <a className="gear-up-add-store-link" href="/athletes/gear-up/add-store">
-              Add Store
-            </a>
-          </div>
-        </header>
+<div className="hooma-lane--content">
+        <PageBanner placementId="GEAR_UP_TOP">
+          {({ artwork }) => (
+            <header className="gear-up-hero">
+                      {${"artwork"} ? (
+                        <PageBannerArtwork artwork={${"artwork"}} className="gear-up-hero__managed-artwork" />
+                      ) : (
+                        <>
+            
+                      <p className="gear-up-hero__eyebrow">GEAR UP</p>
+                      <h1 className="gear-up-page__title">
+                        {mode === "stores"
+                          ? "Discover shops offering gear and sportswear."
+                          : "Discover sports products from local shops."}
+                      </h1>
+                      <p className="gear-up-hero__description">
+                        {mode === "stores"
+                          ? "Find sportswear, equipment and more from local shops. Support real places in your community."
+                          : "Browse products across approved Gear Up shops while keeping every product connected to its real store."}
+                      </p>
+                      <div className="gear-up-hero__actions">
+                        <a className="gear-up-add-store-link" href="/athletes/gear-up/add-store">
+                          Add Store
+                        </a>
+                      </div>
+                    
+                        </>
+                      )}
+                    </header>
+          )}
+        </PageBanner>
       </div>
 
       <div className="hooma-lane--nav">

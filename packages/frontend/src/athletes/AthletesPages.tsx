@@ -14,7 +14,7 @@ import { AthletesPhotoBoard } from "./AthletesPhotoBoard";
 import { ActiveAthletesList } from "./ActiveAthletesList";
 import { AthletesRequestsPane } from "./AthletesRequestsPane";
 import { AthletesHubTabs } from "./AthletesHubTabs";
-import { PageBanner } from "../page-banner/PageBanner";
+import { PageBanner, PageBannerArtwork } from "../page-banner/PageBanner";
 
 function report(reason: unknown, fallback: string): string {
   return reason instanceof Error ? reason.message : fallback;
@@ -154,6 +154,291 @@ export function AthletesPage({
           <h1 className="athletes-hero__semantic-title">Move together. Train together.</h1>
           <span className="athletes-hero__motion" aria-hidden="true" />
         </section>
+      </div>
+
+      <div className="hooma-lane--content">
+        <div className="athletes-actions athletes-hub-create">
+          <button
+            className="button athletes-action athletes-action--primary"
+            type="button"
+            onClick={onCreateCommunity}
+            disabled={createCommunityDisabled}
+          >
+            <span className="athletes-action__icon" aria-hidden="true">
+              +
+            </span>
+            Create community
+          </button>
+        </div>
+      </div>
+
+      <div className="hooma-lane--nav">
+        <AthletesHubTabs active={activeView} />
+      </div>
+
+      {activeView === "communities" ? (
+        <div className="hooma-lane--content">
+          <section
+            className="athletes-surface athletes-filter"
+            aria-label="Filter Athletes by sport"
+          >
+            <div className="athletes-section-heading">
+              <span className="eyebrow">SPORT</span>
+              <span className="athletes-section-heading__hint">Find your pace</span>
+            </div>
+            <div className="athletes-sport-chips">
+              <button
+                className={sport === "ALL" ? "is-active" : ""}
+                type="button"
+                aria-pressed={sport === "ALL"}
+                onClick={() => setSport("ALL")}
+              >
+                All
+              </button>
+              {sports.map((option) => (
+                <button
+                  key={option.value}
+                  className={sport === option.value ? "is-active" : ""}
+                  type="button"
+                  aria-pressed={sport === option.value}
+                  onClick={() => setSport(option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {activeView === "communities" && error ? (
+        <div className="hooma-lane--content">
+          <div className="error-box" role="alert">
+            {error} <button onClick={() => void load(nextCursor ?? undefined)}>Retry</button>
+          </div>
+        </div>
+      ) : null}
+      {activeView === "communities" && loading ? (
+        <div className="hooma-lane--content">
+          <div className="state-card">Loading Athletes communities…</div>
+        </div>
+      ) : null}
+      {activeView === "communities" && !loading && !items.length && !error ? (
+        <div className="hooma-lane--content">
+          <div className="state-card">
+            No Athletes communities yet. Start the first real training circle.
+          </div>
+        </div>
+      ) : null}
+      {activeView === "communities" && items.length ? (
+        <div className="hooma-lane--content">
+          <section className="athletes-grid" aria-label="Athletes communities">
+            {items.map((item) => (
+              <button
+                className="athletes-card"
+                data-sport={item.sport}
+                type="button"
+                key={item.id}
+                onClick={() => navigate(`/athletes/${item.id}`)}
+              >
+                <AthletesImage
+                  src={item.bannerUrl}
+                  className="athletes-banner"
+                  alt={`${item.name} banner`}
+                />
+                <AthletesImage
+                  src={item.logoUrl}
+                  className="athletes-logo"
+                  alt={`${item.name} logo`}
+                />
+                <span className="athletes-card__motif" aria-hidden="true" />
+                <span className="athletes-sport">{sportLabel(item.sport)}</span>
+                <h2>{item.name}</h2>
+                <p>{item.description || "Train and compete with people nearby."}</p>
+                <div className="athletes-card__footer">
+                  <small>{locationLabel(item)}</small>
+                  <span>
+                    {item.visibility === "PRIVATE"
+                      ? "Approval required"
+                      : item.joinPolicy === "OPEN"
+                        ? "Open to join"
+                        : "Request to join"}{" "}
+                    · {item.memberCount} members
+                  </span>
+                </div>
+              </button>
+            ))}
+          </section>
+        </div>
+      ) : null}
+      {activeView === "communities" && nextCursor ? (
+        <div className="hooma-lane--content">
+          <button
+            className="button athletes-action athletes-action--secondary"
+            disabled={loadingMore}
+            onClick={() => void load(nextCursor)}
+          >
+            {loadingMore ? "Loading…" : "Load more communities"}
+          </button>
+        </div>
+      ) : null}
+
+      {activeView === "requests" ? (
+        <div className="hooma-lane--content">
+          <AthletesRequestsPane />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export function CreateAthletesPage() {
+  const navigate = useNavigate();
+  return (
+    <AthletesCommunityForm
+      onSaved={(id) =>
+        navigate(`/athletes/${id}`, {
+          replace: true,
+          state: successNavigationState("Athletes community created."),
+        })
+      }
+      onCancel={() => navigate("/athletes")}
+    />
+  );
+}
+
+export function AthletesDetailPage({
+  athletesCommunityId,
+}: {
+  readonly athletesCommunityId: string;
+}) {
+  return (
+    <AthletesDetailContent key={athletesCommunityId} athletesCommunityId={athletesCommunityId} />
+  );
+}
+
+function AthletesDetailContent({
+  athletesCommunityId: id,
+}: {
+  readonly athletesCommunityId: string;
+}) {
+  const { api } = useHoomaFrontend();
+  const navigate = useNavigate();
+  const state = useAthletesDetail(id);
+  const { detail, error, notice, loading, busy, reload, refreshDetail, act } = state;
+  const [username, setUsername] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [confirmArchive, setConfirmArchive] = useState(false);
+  const founder = detail?.viewerRole === "FOUNDER";
+  const canManage = founder || detail?.viewerRole === "MODERATOR";
+  const membership = useAthletesMembershipPages(id, Boolean(detail?.viewerRole), canManage);
+  const {
+    members,
+    requests,
+    membersNextCursor,
+    requestsNextCursor,
+    membersError,
+    requestsError,
+    loadingMoreMembers,
+    loadingMoreRequests,
+    refreshMembers,
+    refreshRequests,
+    refreshMembership,
+    loadMoreMembers,
+    loadMoreRequests,
+  } = membership;
+  const refreshMembershipAfterAction = () => {
+    void refreshMembership();
+  };
+  const refreshDetailAndMembershipAfterAction = async () => {
+    await Promise.all([refreshDetail(), refreshMembership()]);
+  };
+
+  if (loading)
+    return (
+      <div className="page athletes-page">
+        <div className="hooma-lane--content">
+          <div className="state-card" role="status">
+            Loading Athletes community…
+          </div>
+        </div>
+      </div>
+    );
+  if (!detail)
+    return (
+      <div className="page athletes-page">
+        <div className="hooma-lane--content">
+          <div className="error-box" role="alert">
+            {error || "Community unavailable."}
+          </div>
+        </div>
+        <div className="hooma-lane--content">
+          <button className="button" onClick={() => void reload()}>
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  if (editing && founder)
+    return (
+      <AthletesCommunityForm
+        community={detail}
+        onSaved={() => {
+          setEditing(false);
+          void reload();
+        }}
+        onCancel={() => setEditing(false)}
+      />
+    );
+
+  return (
+    <div className="page athletes-page athletes-detail-page" data-sport={detail.sport}>
+      <div className="hooma-lane--content">
+        <button
+          type="button"
+          className="team-management-back athletes-back"
+          onClick={() => navigate("/athletes")}
+        >
+          ← Athletes
+        </button>
+      </div>
+      <div className="hooma-lane--media">
+        <PageBanner placementId="ATHLETES_TOP">
+          {({ artwork }) => (
+            <section
+                      className="athletes-surface athletes-hero athletes-hero--hub"
+                      data-media-state={heroStatus}
+                    >
+                      {${"artwork"} ? (
+                        <PageBannerArtwork artwork={${"artwork"}} className="athletes-hero__managed-artwork" />
+                      ) : (
+                        <>
+            
+                      {heroUrl && heroStatus !== "image-failed" ? (
+                        <img
+                          key={heroUrl}
+                          ref={heroImage}
+                          className="athletes-hero__banner"
+                          src={heroUrl}
+                          alt=""
+                          aria-hidden="true"
+                          onLoad={(event) => {
+                            if (event.currentTarget === heroImage.current) setHeroStatus("image-loaded");
+                          }}
+                          onError={(event) => {
+                            if (event.currentTarget !== heroImage.current) return;
+                            setHeroStatus((status) => (status === "image-loaded" ? status : "image-failed"));
+                          }}
+                        />
+                      ) : null}
+                      <h1 className="athletes-hero__semantic-title">Move together. Train together.</h1>
+                      <span className="athletes-hero__motion" aria-hidden="true" />
+                    
+                        </>
+                      )}
+                    </section>
+          )}
+        </PageBanner>
       </div>
 
       <div className="hooma-lane--content">

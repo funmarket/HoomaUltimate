@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { HelpTaxonomyResponse } from "@hooma/contracts/help-taxonomy";
 import type { HelpRequest } from "@hooma/contracts/requests";
 import { useHoomaFrontend } from "../context";
-import { PageBanner } from "../page-banner/PageBanner";
+import { PageBanner, PageBannerArtwork } from "../page-banner/PageBanner";
 import { DonationIcon, FundMeIcon, PlusIcon } from "../help/HelpIcons";
 import { createRequestsApi, type RequestsListQuery } from "./api";
 import { HelpTabs } from "./HelpTabs";
@@ -177,26 +177,38 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
       <div className="hooma-lane--media">
         <PageBanner placementId="REQUESTS_TOP" />
       </div>
-      <div className="hooma-lane--content">
-        <header className="help-hero">
-          <div className="help-hero__copy">
-            <span className="eyebrow">HOOMA HELP</span>
-            <h1>{fundmeActive ? "FundMe" : donationsActive ? "Donations" : "Requests"}</h1>
-            <p>
-              {fundmeActive
-                ? "FundMe will carry contributions for community needs once its own slice exists."
-                : donationsActive
-                  ? "Give useful sports gear locally once the Donations domain is ready."
-                  : "Players help players. Stronger together."}
-            </p>
-          </div>
-          {tab === "requests" ? (
-            <a className="help-action help-action--primary" href="/requests/new">
-              <PlusIcon />
-              <span>New Request</span>
-            </a>
-          ) : null}
-        </header>
+<div className="hooma-lane--content">
+        <PageBanner placementId="REQUESTS_TOP">
+          {({ artwork }) => (
+            <header className="help-hero">
+                      {${"artwork"} ? (
+                        <PageBannerArtwork artwork={${"artwork"}} className="help-hero__managed-artwork" />
+                      ) : (
+                        <>
+            
+                      <div className="help-hero__copy">
+                        <span className="eyebrow">HOOMA HELP</span>
+                        <h1>{fundmeActive ? "FundMe" : donationsActive ? "Donations" : "Requests"}</h1>
+                        <p>
+                          {fundmeActive
+                            ? "FundMe will carry contributions for community needs once its own slice exists."
+                            : donationsActive
+                              ? "Give useful sports gear locally once the Donations domain is ready."
+                              : "Players help players. Stronger together."}
+                        </p>
+                      </div>
+                      {tab === "requests" ? (
+                        <a className="help-action help-action--primary" href="/requests/new">
+                          <PlusIcon />
+                          <span>New Request</span>
+                        </a>
+                      ) : null}
+                    
+                        </>
+                      )}
+                    </header>
+          )}
+        </PageBanner>
       </div>
 
       <div className="hooma-lane--nav">
