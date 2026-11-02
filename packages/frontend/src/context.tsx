@@ -40,7 +40,7 @@ export function HoomaFrontendProvider({
     }),
     [api, transport],
   );
-  return <FrontendContext.Provider value={value}>{children}</FrontendContext.Provider>;
+  return React.createElement(FrontendContext.Provider, { value }, children);
 }
 
 export function useHoomaFrontend(): FrontendContextValue {
