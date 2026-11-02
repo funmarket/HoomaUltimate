@@ -78,7 +78,12 @@
 
 .page-banner--loading {
   min-height: 7.5rem;
-  background: linear-gradient(90deg, rgb(255 255 255 / 6%), rgb(255 255 255 / 12%), rgb(255 255 255 / 6%));
+  background: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 6%),
+    rgb(255 255 255 / 12%),
+    rgb(255 255 255 / 6%)
+  );
   background-size: 200% 100%;
   animation: page-banner-shimmer 1.4s ease-in-out infinite;
 }
@@ -91,15 +96,26 @@
 }
 
 @keyframes page-banner-shimmer {
-  0% { background-position: 100% 0; }
-  100% { background-position: -100% 0; }
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .page-banner--loading { animation: none; }
+  .page-banner--loading {
+    animation: none;
+  }
 }
 
 @media (min-width: 48rem) {
-  .page-banner__frame { min-height: 10rem; }
-  .page-banner__controls { right: 1rem; bottom: 1rem; }
+  .page-banner__frame {
+    min-height: 10rem;
+  }
+  .page-banner__controls {
+    right: 1rem;
+    bottom: 1rem;
+  }
 }

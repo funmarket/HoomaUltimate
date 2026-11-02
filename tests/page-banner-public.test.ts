@@ -7,7 +7,11 @@ import { createElement as h } from "react";
 registerHooks({
   load(url, context, nextLoad) {
     if (url.endsWith(".css")) {
-      return { format: "module", source: "export default {};", shortCircuit: true };
+      return {
+        format: "module",
+        source: "export default {};",
+        shortCircuit: true,
+      };
     }
     return nextLoad(url, context);
   },
@@ -16,7 +20,14 @@ registerHooks({
 const dom = new JSDOM("<!doctype html><html><body></body></html>", {
   url: "http://localhost/",
 });
-for (const key of ["window", "document", "HTMLElement", "Element", "Node", "navigator"]) {
+for (const key of [
+  "window",
+  "document",
+  "HTMLElement",
+  "Element",
+  "Node",
+  "navigator",
+]) {
   Object.defineProperty(globalThis, key, {
     value: dom.window[key],
     configurable: true,
@@ -25,9 +36,12 @@ for (const key of ["window", "document", "HTMLElement", "Element", "Node", "navi
 }
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
-const { cleanup, fireEvent, render, waitFor } = await import("@testing-library/react");
-const { HoomaFrontendProvider } = await import("../packages/frontend/src/context");
-const { PageBanner } = await import("../packages/frontend/src/page-banner/PageBanner");
+const { cleanup, fireEvent, render, waitFor } =
+  await import("@testing-library/react");
+const { HoomaFrontendProvider } =
+  await import("../packages/frontend/src/context");
+const { PageBanner } =
+  await import("../packages/frontend/src/page-banner/PageBanner");
 
 const originalFetch = globalThis.fetch;
 afterEach(() => {
@@ -74,14 +88,26 @@ test("public PageBanner renders a signed Athletes slide with accessible metadata
     ],
   });
 
-  await waitFor(() => assert.ok(view.getByRole("img", { name: "Athletes training together" })));
+  await waitFor(() =>
+    assert.ok(view.getByRole("img", { name: "Athletes training together" })),
+  );
   const image = view.getByRole("img", { name: "Athletes training together" });
-  assert.equal(image.getAttribute("src"), "https://media.example.test/slide-1.webp");
   assert.equal(
-    view.getByRole("link", { name: "Athletes training together" }).getAttribute("href"),
+    image.getAttribute("src"),
+    "https://media.example.test/slide-1.webp",
+  );
+  assert.equal(
+    view
+      .getByRole("link", { name: "Athletes training together" })
+      .getAttribute("href"),
     "/athletes",
   );
-  assert.equal(view.getByRole("region", { name: "Athletes banner" }).getAttribute("aria-live"), null);
+  assert.equal(
+    view
+      .getByRole("region", { name: "Athletes banner" })
+      .getAttribute("aria-live"),
+    null,
+  );
 });
 
 test("public PageBanner manually navigates ordered slides without auto-rotation", async () => {
@@ -102,16 +128,23 @@ test("public PageBanner manually navigates ordered slides without auto-rotation"
         sortOrder: 1,
         isDecorative: false,
         altText: "Athletes community",
-        destination: { kind: "EXTERNAL", url: "https://example.test/community" },
+        destination: {
+          kind: "EXTERNAL",
+          url: "https://example.test/community",
+        },
         variants: [signedVariant("https://media.example.test/slide-2.webp")],
       },
     ],
   });
 
-  await waitFor(() => assert.ok(view.getByRole("button", { name: "Next banner" })));
+  await waitFor(() =>
+    assert.ok(view.getByRole("button", { name: "Next banner" })),
+  );
   assert.equal(view.getByRole("img").getAttribute("alt"), "");
   fireEvent.click(view.getByRole("button", { name: "Next banner" }));
-  await waitFor(() => assert.ok(view.getByRole("img", { name: "Athletes community" })));
+  await waitFor(() =>
+    assert.ok(view.getByRole("img", { name: "Athletes community" })),
+  );
   assert.equal(
     view.getByRole("link", { name: "Athletes community" }).getAttribute("href"),
     "https://example.test/community",
@@ -125,7 +158,9 @@ test("public PageBanner renders no public surface for disabled or empty placemen
     { placementId: "ATHLETES_TOP", enabled: true, slides: [] },
   ]) {
     const view = mount(body);
-    await waitFor(() => assert.equal(view.container.querySelector("[data-page-banner]"), null));
+    await waitFor(() =>
+      assert.equal(view.container.querySelector("[data-page-banner]"), null),
+    );
     cleanup();
   }
 });

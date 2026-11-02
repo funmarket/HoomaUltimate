@@ -19,14 +19,22 @@ const placementLabels: Readonly<Record<PageBannerPlacementId, string>> = {
 };
 
 function mediaVariant(slide: PageBannerPublicSlide) {
-  return slide.variants.find((variant) => variant.variant === "master") ?? slide.variants[0] ?? null;
+  return (
+    slide.variants.find((variant) => variant.variant === "master") ??
+    slide.variants[0] ??
+    null
+  );
 }
 
 function nextIndex(current: number, length: number, direction: -1 | 1): number {
   return (current + direction + length) % length;
 }
 
-export function PageBanner({ placementId }: { readonly placementId: PageBannerPlacementId }) {
+export function PageBanner({
+  placementId,
+}: {
+  readonly placementId: PageBannerPlacementId;
+}) {
   const { api } = useHoomaFrontend();
   const [response, setResponse] = useState<{
     readonly status: "loading" | "ready" | "error";
@@ -73,7 +81,12 @@ export function PageBanner({ placementId }: { readonly placementId: PageBannerPl
 
   if (response.status === "error") {
     return (
-      <div className="page-banner page-banner--error" data-page-banner data-state="error" role="status">
+      <div
+        className="page-banner page-banner--error"
+        data-page-banner
+        data-state="error"
+        role="status"
+      >
         Banner unavailable.
       </div>
     );
@@ -91,7 +104,7 @@ export function PageBanner({ placementId }: { readonly placementId: PageBannerPl
       src={variant.contentUrl}
       width={variant.widthPx}
       height={variant.heightPx}
-      alt={slide.isDecorative ? "" : slide.altText ?? ""}
+      alt={slide.isDecorative ? "" : (slide.altText ?? "")}
       loading="eager"
       decoding="async"
     />
@@ -124,18 +137,25 @@ export function PageBanner({ placementId }: { readonly placementId: PageBannerPl
             className="page-banner__control"
             type="button"
             aria-label="Previous banner"
-            onClick={() => setActiveIndex((current) => nextIndex(current, slides.length, -1))}
+            onClick={() =>
+              setActiveIndex((current) => nextIndex(current, slides.length, -1))
+            }
           >
             <span aria-hidden="true">‹</span>
           </button>
-          <span className="page-banner__position" aria-label={`${activeIndex + 1} of ${slides.length}`}>
+          <span
+            className="page-banner__position"
+            aria-label={`${activeIndex + 1} of ${slides.length}`}
+          >
             {activeIndex + 1} of {slides.length}
           </span>
           <button
             className="page-banner__control"
             type="button"
             aria-label="Next banner"
-            onClick={() => setActiveIndex((current) => nextIndex(current, slides.length, 1))}
+            onClick={() =>
+              setActiveIndex((current) => nextIndex(current, slides.length, 1))
+            }
           >
             <span aria-hidden="true">›</span>
           </button>

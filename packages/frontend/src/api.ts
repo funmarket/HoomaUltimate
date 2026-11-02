@@ -1,6 +1,9 @@
 import { createAthletesApi } from "./athletes/api";
 import { createPageBannerApi } from "./page-banner/api";
-import type { AthletesPublicDetail, AthletesPublicSummary } from "@hooma/contracts/athletes";
+import type {
+  AthletesPublicDetail,
+  AthletesPublicSummary,
+} from "@hooma/contracts/athletes";
 import type {
   LoginInput,
   MeResponse,
@@ -58,10 +61,16 @@ export type PublicProfile = {
 };
 export type PublicCommunitySummary = CommunityPublicSummary;
 export type PublicCommunityDetail = CommunityPublicDetail;
-export type PublicCommunityList = { items: PublicCommunitySummary[]; nextCursor: string | null };
+export type PublicCommunityList = {
+  items: PublicCommunitySummary[];
+  nextCursor: string | null;
+};
 export type PublicAthletesSummary = AthletesPublicSummary;
 export type PublicAthletesDetail = AthletesPublicDetail;
-export type PublicAthletesList = { items: PublicAthletesSummary[]; nextCursor: string | null };
+export type PublicAthletesList = {
+  items: PublicAthletesSummary[];
+  nextCursor: string | null;
+};
 export type CreatedCommunity = {
   id: string;
   slug: string;
@@ -82,7 +91,11 @@ export type CommunityMember = {
   userId: string;
   role: CommunityRole;
   joinedAt: string;
-  presentation: { displayName: string; username: string; photoUrl: string | null } | null;
+  presentation: {
+    displayName: string;
+    username: string;
+    photoUrl: string | null;
+  } | null;
 };
 export type WhistleListItem = {
   id: string;
@@ -91,7 +104,11 @@ export type WhistleListItem = {
   createdAt: string;
   expiresAt: string;
   author?: {
-    presentation: { displayName: string; username: string; photoUrl: string | null } | null;
+    presentation: {
+      displayName: string;
+      username: string;
+      photoUrl: string | null;
+    } | null;
   };
 };
 export type WhistleList = {
@@ -112,7 +129,10 @@ export type PublicTeamSummary = {
   communityId: string | null;
   _count: { players: number };
 };
-export type PublicTeamList = { items: PublicTeamSummary[]; nextCursor: string | null };
+export type PublicTeamList = {
+  items: PublicTeamSummary[];
+  nextCursor: string | null;
+};
 export type ManagedTeam = {
   id: string;
   name: string;
@@ -128,7 +148,11 @@ export type TeamRosterPlayer = {
   userId: string;
   joinedAt: string;
   user: {
-    presentation: { displayName: string; username: string; photoUrl?: string | null } | null;
+    presentation: {
+      displayName: string;
+      username: string;
+      photoUrl?: string | null;
+    } | null;
   };
 };
 export type TeamLineupSlotView = {
@@ -272,26 +296,41 @@ export function createHoomaApi(transport: HoomaTransport) {
         body: JSON.stringify(input),
       }),
     requestPasswordRecovery: (input: PasswordRecoveryRequestInput) =>
-      request<{ ok: true }>(transport, "/api/public/v1/auth/password-recovery/request", {
-        method: "POST",
-        body: JSON.stringify(input),
-      }),
+      request<{ ok: true }>(
+        transport,
+        "/api/public/v1/auth/password-recovery/request",
+        {
+          method: "POST",
+          body: JSON.stringify(input),
+        },
+      ),
     confirmPasswordRecovery: (input: PasswordRecoveryConfirmInput) =>
-      request<{ ok: true }>(transport, "/api/public/v1/auth/password-recovery/confirm", {
-        method: "POST",
-        body: JSON.stringify(input),
-      }),
+      request<{ ok: true }>(
+        transport,
+        "/api/public/v1/auth/password-recovery/confirm",
+        {
+          method: "POST",
+          body: JSON.stringify(input),
+        },
+      ),
     passwordRecoveryCodeFromNotification: (notificationId: string) =>
       request<PasswordRecoveryCodeResponse>(
         transport,
         `/api/v1/auth/password-recovery/notifications/${encodeURIComponent(notificationId)}/code`,
         { method: "POST" },
       ),
-    logout: () => request<{ ok: true }>(transport, "/api/v1/auth/logout", { method: "POST" }),
+    logout: () =>
+      request<{ ok: true }>(transport, "/api/v1/auth/logout", {
+        method: "POST",
+      }),
     publicProfile: (username: string) =>
-      request<PublicProfile>(transport, `/api/public/v1/profiles/${encodeURIComponent(username)}`),
+      request<PublicProfile>(
+        transport,
+        `/api/public/v1/profiles/${encodeURIComponent(username)}`,
+      ),
     me: () => request<MeResponse>(transport, "/api/v1/me"),
-    meOptional: () => request<MeResponse | null>(transport, "/api/public/v1/auth/session"),
+    meOptional: () =>
+      request<MeResponse | null>(transport, "/api/public/v1/auth/session"),
     updatePresentation: (input: ProfilePresentationUpdateInput) =>
       request<MeResponse>(transport, "/api/v1/me/presentation", {
         method: "PATCH",
@@ -299,11 +338,15 @@ export function createHoomaApi(transport: HoomaTransport) {
       }),
   };
   const platformAdmin = {
-    overview: () => request<PlatformAdminOverview>(transport, "/api/v1/admin/overview"),
+    overview: () =>
+      request<PlatformAdminOverview>(transport, "/api/v1/admin/overview"),
   };
   const communities = {
     publicList: () =>
-      request<PublicCommunityList>(transport, "/api/public/v1/communities?limit=30"),
+      request<PublicCommunityList>(
+        transport,
+        "/api/public/v1/communities?limit=30",
+      ),
     publicDetail: (id: string) =>
       request<PublicCommunityDetail>(
         transport,
@@ -315,14 +358,22 @@ export function createHoomaApi(transport: HoomaTransport) {
         body: JSON.stringify(input),
       }),
     update: (id: string, input: CommunityUpdateInput) =>
-      request<CreatedCommunity>(transport, `/api/v1/communities/${encodeURIComponent(id)}`, {
-        method: "PATCH",
-        body: JSON.stringify(input),
-      }),
+      request<CreatedCommunity>(
+        transport,
+        `/api/v1/communities/${encodeURIComponent(id)}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(input),
+        },
+      ),
     archive: (id: string) =>
-      request<{ ok: true }>(transport, `/api/v1/communities/${encodeURIComponent(id)}`, {
-        method: "DELETE",
-      }),
+      request<{ ok: true }>(
+        transport,
+        `/api/v1/communities/${encodeURIComponent(id)}`,
+        {
+          method: "DELETE",
+        },
+      ),
     join: (id: string) =>
       request<CommunityJoinResult>(
         transport,
@@ -360,9 +411,13 @@ export function createHoomaApi(transport: HoomaTransport) {
         { method: "POST" },
       ),
     leave: (id: string) =>
-      request<{ ok: true }>(transport, `/api/v1/communities/${encodeURIComponent(id)}/membership`, {
-        method: "DELETE",
-      }),
+      request<{ ok: true }>(
+        transport,
+        `/api/v1/communities/${encodeURIComponent(id)}/membership`,
+        {
+          method: "DELETE",
+        },
+      ),
     members: (id: string) =>
       request<CommunityMember[]>(
         transport,
@@ -381,10 +436,14 @@ export function createHoomaApi(transport: HoomaTransport) {
         { method: "DELETE" },
       ),
     appointCoach: (id: string, userId: string) =>
-      request<{ ok: true }>(transport, `/api/v1/communities/${encodeURIComponent(id)}/coaches`, {
-        method: "POST",
-        body: JSON.stringify({ userId }),
-      }),
+      request<{ ok: true }>(
+        transport,
+        `/api/v1/communities/${encodeURIComponent(id)}/coaches`,
+        {
+          method: "POST",
+          body: JSON.stringify({ userId }),
+        },
+      ),
     revokeCoach: (id: string, userId: string) =>
       request<{ ok: true }>(
         transport,
@@ -402,7 +461,11 @@ export function createHoomaApi(transport: HoomaTransport) {
         ),
       ),
     sendToCommunity: (communityId: string, body: string) =>
-      request<{ whistle: WhistleListItem; remainingToday: number; resetsAt: string }>(
+      request<{
+        whistle: WhistleListItem;
+        remainingToday: number;
+        resetsAt: string;
+      }>(
         transport,
         `/api/v1/whistles/contexts/COMMUNITY/${encodeURIComponent(communityId)}`,
         { method: "POST", body: JSON.stringify({ body }) },
@@ -416,7 +479,11 @@ export function createHoomaApi(transport: HoomaTransport) {
         ),
       ),
     sendToAthletes: (athletesCommunityId: string, body: string) =>
-      request<{ whistle: WhistleListItem; remainingToday: number; resetsAt: string }>(
+      request<{
+        whistle: WhistleListItem;
+        remainingToday: number;
+        resetsAt: string;
+      }>(
         transport,
         `/api/v1/whistles/contexts/ATHLETES/${encodeURIComponent(athletesCommunityId)}`,
         { method: "POST", body: JSON.stringify({ body }) },
@@ -430,7 +497,11 @@ export function createHoomaApi(transport: HoomaTransport) {
         ),
       ),
     sendToRide: (rideRequestId: string, body: string) =>
-      request<{ whistle: WhistleListItem; remainingToday: number; resetsAt: string }>(
+      request<{
+        whistle: WhistleListItem;
+        remainingToday: number;
+        resetsAt: string;
+      }>(
         transport,
         `/api/v1/whistles/contexts/RIDE/${encodeURIComponent(rideRequestId)}`,
         { method: "POST", body: JSON.stringify({ body }) },
@@ -438,7 +509,8 @@ export function createHoomaApi(transport: HoomaTransport) {
   };
 
   const notifications = {
-    list: () => request<UserNotificationPage>(transport, "/api/v1/notifications"),
+    list: () =>
+      request<UserNotificationPage>(transport, "/api/v1/notifications"),
     markRead: (notificationId: string) =>
       request<{ ok: true }>(
         transport,
@@ -456,23 +528,37 @@ export function createHoomaApi(transport: HoomaTransport) {
     mine: () => request<PublicTeamSummary[]>(transport, "/api/v1/teams/mine"),
     managed: () => request<ManagedTeam[]>(transport, "/api/v1/teams/managed"),
     publicDetail: (teamId: string) =>
-      request<TeamControlDetail>(transport, `/api/public/v1/teams/${encodeURIComponent(teamId)}`),
+      request<TeamControlDetail>(
+        transport,
+        `/api/public/v1/teams/${encodeURIComponent(teamId)}`,
+      ),
     create: (input: TeamCreateInput) =>
-      request(transport, "/api/v1/teams", { method: "POST", body: JSON.stringify(input) }),
+      request(transport, "/api/v1/teams", {
+        method: "POST",
+        body: JSON.stringify(input),
+      }),
     update: (teamId: string, input: TeamUpdateInput) =>
       request(transport, `/api/v1/teams/${encodeURIComponent(teamId)}`, {
         method: "PATCH",
         body: JSON.stringify(input),
       }),
     archive: (teamId: string) =>
-      request<{ ok: true }>(transport, `/api/v1/teams/${encodeURIComponent(teamId)}`, {
-        method: "DELETE",
-      }),
+      request<{ ok: true }>(
+        transport,
+        `/api/v1/teams/${encodeURIComponent(teamId)}`,
+        {
+          method: "DELETE",
+        },
+      ),
     addPlayer: (teamId: string, userId: string) =>
-      request(transport, `/api/v1/teams/${encodeURIComponent(teamId)}/players`, {
-        method: "POST",
-        body: JSON.stringify({ userId }),
-      }),
+      request(
+        transport,
+        `/api/v1/teams/${encodeURIComponent(teamId)}/players`,
+        {
+          method: "POST",
+          body: JSON.stringify({ userId }),
+        },
+      ),
     removePlayer: (teamId: string, userId: string) =>
       request(
         transport,
@@ -484,10 +570,14 @@ export function createHoomaApi(transport: HoomaTransport) {
       userId: string,
       capabilities: readonly TeamCapabilityInput[],
     ) =>
-      request(transport, `/api/v1/teams/${encodeURIComponent(teamId)}/assistants`, {
-        method: "POST",
-        body: JSON.stringify({ userId, capabilities }),
-      }),
+      request(
+        transport,
+        `/api/v1/teams/${encodeURIComponent(teamId)}/assistants`,
+        {
+          method: "POST",
+          body: JSON.stringify({ userId, capabilities }),
+        },
+      ),
     revokeAssistant: (teamId: string, userId: string) =>
       request(
         transport,
@@ -514,24 +604,51 @@ export function createHoomaApi(transport: HoomaTransport) {
         body: JSON.stringify(input),
       }),
     incomingChallenges: () =>
-      request<TeamChallengeSummary[]>(transport, "/api/v1/teams/challenges/incoming"),
+      request<TeamChallengeSummary[]>(
+        transport,
+        "/api/v1/teams/challenges/incoming",
+      ),
     outgoingChallenges: () =>
-      request<TeamChallengeSummary[]>(transport, "/api/v1/teams/challenges/outgoing"),
+      request<TeamChallengeSummary[]>(
+        transport,
+        "/api/v1/teams/challenges/outgoing",
+      ),
     games: () => request<TeamGameSummary[]>(transport, "/api/v1/teams/games"),
     acceptChallenge: (id: string) =>
-      request(transport, `/api/v1/teams/challenges/${encodeURIComponent(id)}/accept`, {
-        method: "POST",
-      }),
+      request(
+        transport,
+        `/api/v1/teams/challenges/${encodeURIComponent(id)}/accept`,
+        {
+          method: "POST",
+        },
+      ),
     declineChallenge: (id: string) =>
-      request(transport, `/api/v1/teams/challenges/${encodeURIComponent(id)}/decline`, {
-        method: "POST",
-      }),
+      request(
+        transport,
+        `/api/v1/teams/challenges/${encodeURIComponent(id)}/decline`,
+        {
+          method: "POST",
+        },
+      ),
     cancelChallenge: (id: string) =>
-      request(transport, `/api/v1/teams/challenges/${encodeURIComponent(id)}/cancel`, {
-        method: "POST",
-      }),
+      request(
+        transport,
+        `/api/v1/teams/challenges/${encodeURIComponent(id)}/cancel`,
+        {
+          method: "POST",
+        },
+      ),
   };
-  return { identity, platformAdmin, communities, athletes, pageBanners, whistles, notifications, teams };
+  return {
+    identity,
+    platformAdmin,
+    communities,
+    athletes,
+    pageBanners,
+    whistles,
+    notifications,
+    teams,
+  };
 }
 
 export type HoomaApi = ReturnType<typeof createHoomaApi>;
