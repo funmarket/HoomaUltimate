@@ -159,7 +159,10 @@ export function AthletesPage({
               <h1 className="page-banner__semantic-title page-banner__semantic-title--athletes">
                 Move together. Train together.
               </h1>
-              <span className="page-banner__motion page-banner__motion--athletes" aria-hidden="true" />
+              <span
+                className="page-banner__motion page-banner__motion--athletes"
+                aria-hidden="true"
+              />
             </div>
           }
         />
