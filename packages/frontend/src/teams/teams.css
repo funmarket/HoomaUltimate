@@ -128,7 +128,7 @@
   color: #ffaca6;
 }
 
-.teams-hero-pro {
+.page-banner__body--teams {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -138,24 +138,24 @@
   border-bottom: 1px solid var(--teams-line);
 }
 
-.teams-hero-pro > div:first-child {
+.page-banner__body--teams > div:first-child {
   min-width: 0;
 }
-.teams-hero-pro h1 {
+.page-banner__body--teams h1 {
   margin: 8px 0 14px;
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(42px, 8vw, 78px);
   line-height: 0.94;
   letter-spacing: -0.045em;
 }
-.teams-hero-pro p {
+.page-banner__body--teams p {
   margin: 0;
   max-width: 650px;
   color: var(--teams-muted);
   font-size: clamp(15px, 2vw, 19px);
   line-height: 1.6;
 }
-.teams-hero-pro-art {
+.page-banner__art--teams {
   position: relative;
   width: 210px;
   height: 150px;
@@ -526,7 +526,7 @@
   .team-create-panel > div {
     grid-column: 1/-1;
   }
-  .teams-hero-pro-art {
+  .page-banner__art--teams {
     width: 150px;
   }
   .challenge-card,
@@ -548,10 +548,10 @@
 }
 
 @media (max-width: 560px) {
-  .teams-hero-pro {
+  .page-banner__body--teams {
     min-height: 170px;
   }
-  .teams-hero-pro-art {
+  .page-banner__art--teams {
     width: 100px;
     height: 110px;
   }
