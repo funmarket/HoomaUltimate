@@ -5,7 +5,8 @@ import { AthletesHubTabs } from "../athletes/AthletesHubTabs";
 import { createGearUpApi } from "./api";
 import { GearUpFilters, type GearUpDiscoveryFilters } from "./GearUpFilters";
 import { GearUpProductsPane } from "./GearUpProductsPane";
-import { GearUpShopCard } from "./GearUpShopCard";\nimport { PageBanner } from "../page-banner/PageBanner";
+import { GearUpShopCard } from "./GearUpShopCard";
+import { PageBanner } from "../page-banner/PageBanner";
 
 const INITIAL_FILTERS: GearUpDiscoveryFilters = {
   query: "",
@@ -114,7 +115,9 @@ export function GearUpPage() {
 
   return (
     <section className="gear-up-page">
-      <div className="hooma-lane--media">\n        <PageBanner placementId="GEAR_UP_TOP" />\n      </div>
+      <div className="hooma-lane--media">
+        <PageBanner placementId="GEAR_UP_TOP" />
+      </div>
       <div className="hooma-lane--nav">
         <AthletesHubTabs active="gear-up" />
       </div>

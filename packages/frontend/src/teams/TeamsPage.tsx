@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import type { MeResponse } from "@hooma/contracts";
 import { TeamDiscoveryCard, TeamsHero } from "@hooma/ui";
 import type { ManagedTeam, PublicTeamSummary, TeamChallengeSummary, TeamGameSummary } from "../api";
-import { useHoomaFrontend } from "../context";\nimport { PageBanner } from "../page-banner/PageBanner";
+import { useHoomaFrontend } from "../context";
+import { PageBanner } from "../page-banner/PageBanner";
 
 type TeamsTab = "discover" | "mine" | "requests" | "games";
 
@@ -183,7 +184,9 @@ export function TeamsPage() {
 
   return (
     <div className="page teams-page">
-      <div className="hooma-lane--media">\n        <PageBanner placementId="TEAMS_TOP" />\n      </div>
+      <div className="hooma-lane--media">
+        <PageBanner placementId="TEAMS_TOP" />
+      </div>
       <div className="hooma-lane--media">
         <TeamsHero />
       </div>

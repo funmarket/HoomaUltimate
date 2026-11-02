@@ -6,7 +6,8 @@ import { RideCompensationBadge } from "./RideCompensationBadge";
 import { contextQuery } from "./RideContextSelector";
 import { RideFeatureGrid } from "./RideFeatureGrid";
 import { RideBrowseIcon, RideCarPlusIcon, RideHistoryIcon, RideMapPinIcon } from "./RideIcons";
-import { destinationLabel, errorMessage, formatRideTime } from "./ride-view-model";\nimport { PageBanner } from "../page-banner/PageBanner";
+import { destinationLabel, errorMessage, formatRideTime } from "./ride-view-model";
+import { PageBanner } from "../page-banner/PageBanner";
 
 export function RidesPage({ context }: { readonly context?: "MATCHDAY" | "GENERAL" }) {
   return context ? <RideGatewayPage context={context} /> : <RideGatewayPage />;
@@ -45,7 +46,9 @@ export function RideGatewayPage({ context }: { readonly context?: "MATCHDAY" | "
 
   return (
     <section className="ride-page ride-gateway">
-      <div className="hooma-lane--media">\n        <PageBanner placementId="RIDE_TOP" />\n      </div>
+      <div className="hooma-lane--media">
+        <PageBanner placementId="RIDE_TOP" />
+      </div>
       <div className="hooma-lane--media">
         <RideHero copy={copy} />
       </div>

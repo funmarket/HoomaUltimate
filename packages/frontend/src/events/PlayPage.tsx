@@ -15,7 +15,8 @@ import {
   type PublicPlayPlayerListing,
 } from "./play-api";
 import { PlayPlayerCard } from "./PlayPlayerCard";
-import { PlayRequestsPane } from "./PlayRequestsPane";\nimport { PageBanner } from "../page-banner/PageBanner";
+import { PlayRequestsPane } from "./PlayRequestsPane";
+import { PageBanner } from "../page-banner/PageBanner";
 
 type PlayView = "games" | "players" | "requests" | "mine";
 
@@ -342,7 +343,9 @@ export function PlayPage() {
 
   return (
     <section className="play-page">
-      <div className="hooma-lane--media">\n        <PageBanner placementId="PLAY_TOP" />\n      </div>
+      <div className="hooma-lane--media">
+        <PageBanner placementId="PLAY_TOP" />
+      </div>
       <div className="hooma-lane--content">
         <PlayHero />
       </div>
