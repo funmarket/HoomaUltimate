@@ -14,7 +14,10 @@ const gateways = await readFile(
   new URL("../packages/ui/src/home/home-gateways.ts", import.meta.url),
   "utf8",
 );
-const homePage = await readFile(new URL("../apps/web/src/home/HomePage.tsx", import.meta.url), "utf8");
+const homePage = await readFile(
+  new URL("../apps/web/src/home/HomePage.tsx", import.meta.url),
+  "utf8",
+);
 const pageBannerCss = await readFile(
   new URL("../packages/frontend/src/page-banner/page-banner.css", import.meta.url),
   "utf8",

@@ -1404,5 +1404,4 @@ Any mismatch is a blocker, not a reason for a compatibility patch.
 
 The merged foundation keeps `WebSession.lastSeenAt` under Identity ownership and exposes only the narrow batched `UserLastSeenReader` to Athletes. Athletes preserves its canonical active membership list and projects nullable Identity activity alongside canonical UserPresentation fields; a missing active WebSession produces `lastSeenAt == null` rather than removing the member or fabricating online/offline state. No presence table, Redis presence layer, Telegram fallback, or duplicate user identity model is introduced by this slice.
 
-
 The frontend PageBanner is the sole owner of each canonical page-top hero surface; managed artwork replaces the existing page-hero content inside that same owner rather than rendering beside it.

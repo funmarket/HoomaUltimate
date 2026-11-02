@@ -75,8 +75,7 @@ export function HomeGateway() {
     <>
       <style>{HOME_GATEWAY_TYPOGRAPHY}</style>
       <section>
-        <div className="hooma-lane--media">
-            </div>
+        <div className="hooma-lane--media"></div>
         <div className="hooma-lane--content">
           <p className="eyebrow">YOUR FOOTBALL NEIGHBORHOOD</p>
           <h2 className="home-gateway-title">Find your people. Find the game.</h2>

@@ -119,7 +119,9 @@ export function HoomaPage() {
             <section className="page-banner--hooma panel">
               <span className="eyebrow">YOUR FOOTBALL NEIGHBORHOOD</span>
               <h1>HOOMA</h1>
-              <p>Find your people, build your neighborhood, and connect through sport and community.</p>
+              <p>
+                Find your people, build your neighborhood, and connect through sport and community.
+              </p>
             </section>
           )}
         </PageBanner>

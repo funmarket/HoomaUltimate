@@ -64,7 +64,10 @@ export function RideGatewayPage({ context }: { readonly context?: "MATCHDAY" | "
                 <p>{copy.support}</p>
               </div>
               <nav className="page-banner--ride__actions" aria-label="Ride actions">
-                <a className="ride-button ride-button--primary" href={"/rides/request" + contextQuery(copy.context)}>
+                <a
+                  className="ride-button ride-button--primary"
+                  href={"/rides/request" + contextQuery(copy.context)}
+                >
                   <RideMapPinIcon />
                   <span>Request a Ride</span>
                 </a>

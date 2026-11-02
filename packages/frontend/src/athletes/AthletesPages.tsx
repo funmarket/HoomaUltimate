@@ -129,7 +129,10 @@ export function AthletesPage({
       <div className="hooma-lane--media">
         <PageBanner placementId="ATHLETES_TOP">
           {() => (
-            <section className="athletes-surface page-banner--athletes" data-media-state={heroStatus}>
+            <section
+              className="athletes-surface page-banner--athletes"
+              data-media-state={heroStatus}
+            >
               {heroUrl && heroStatus !== "image-failed" ? (
                 <img
                   key={heroUrl}

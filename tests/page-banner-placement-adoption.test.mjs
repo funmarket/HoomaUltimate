@@ -20,13 +20,13 @@ test("every canonical page-top placement has one PageBanner owner", async () => 
   for (const [path, placementId] of placements) {
     const source = await readFile(path, "utf8");
     assert.equal(
-      (source.match(new RegExp("<PageBanner placementId=\\\"" + placementId + "\\\"", "g")) ?? [])
+      (source.match(new RegExp('<PageBanner placementId=\\"' + placementId + '\\"', "g")) ?? [])
         .length,
       1,
       path + " must render exactly one " + placementId + " PageBanner",
     );
     assert.equal(
-      source.includes("<PageBanner placementId=\"" + placementId + "\" />"),
+      source.includes('<PageBanner placementId="' + placementId + '" />'),
       false,
       path + " must not leave a self-closing PageBanner without its page-hero content",
     );
@@ -64,7 +64,10 @@ test("Athletes page-top markup and CSS use the same PageBanner selector names", 
     assert.ok(tsx.includes(token), token + " must appear in Athletes markup");
     assert.ok(css.includes(token), token + " must appear in Athletes CSS");
   }
-  assert.doesNotMatch(tsx, /athletes-hero--hub|athletes-hero__banner|athletes-hero__semantic-title/);
+  assert.doesNotMatch(
+    tsx,
+    /athletes-hero--hub|athletes-hero__banner|athletes-hero__semantic-title/,
+  );
 });
 
 test("PageBanner keeps the existing page-hero content in one surface", async () => {
