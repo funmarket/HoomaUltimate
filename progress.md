@@ -110,3 +110,5 @@ A durable milestone belongs here only when it remains useful after branch heads,
 For present-tense questions such as “what is open?”, “what is deployed?”, “what is the current head?”, or “what should merge next?”, inspect the live repository/runtime instead of reading this ledger.
 
 For behavior claims, trace the current owning source, contracts, migrations, tests and runtime evidence as appropriate. If the current implementation contradicts this ledger, the live implementation proves what exists and this ledger must be corrected without inventing replacement behavior.
+
+- Step 13 root correction: PageBanner is the sole canonical page-top hero owner. Former page-hero implementations are migrated into PageBanner placements and are not rendered as sibling surfaces.

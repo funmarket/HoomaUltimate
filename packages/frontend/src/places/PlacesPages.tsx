@@ -140,18 +140,17 @@ export function PlacesPage() {
 
   return (
     <section className="place-page">
-      <div className="hooma-lane--media">
-        <PageBanner placementId="PLACES_TOP" />
-      </div>
-      <div className="hooma-lane--content">
-        <header className="place-page__header">
-          <div>
-            <p className="eyebrow">SPOTS</p>
-            <h1>Spots</h1>
-            <p>Cafés, lounges, restaurants and other places to watch together.</p>
-          </div>
-        </header>
-      </div>
+            <PageBanner placementId="PLACES_TOP">
+        {() => (
+          <header className="page-banner--places">
+                    <div>
+                      <p className="eyebrow">SPOTS</p>
+                      <h1>Spots</h1>
+                      <p>Cafés, lounges, restaurants and other places to watch together.</p>
+                    </div>
+                  </header>
+        )}
+      </PageBanner>
 
       <div className="hooma-lane--nav">
         <WatchSectionNavigation active="spots" />

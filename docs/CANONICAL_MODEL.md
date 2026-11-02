@@ -1398,7 +1398,7 @@ Any mismatch is a blocker, not a reason for a compatibility patch.
 
 ## PageBanner canonical model
 
-`PageBannerPlacement` is the canonical owner of the approved page placement IDs and Admin-controlled enabled state. `PageBannerSlide` owns ordered slide metadata, click destination policy and enabled/decorative state. `PageBannerSlideVariant` owns processed object descriptors; image bytes remain in S3-compatible object storage. Placement and slide mutations are authorized by Platform Admin and audit through the canonical AuditWriter. Public delivery filters disabled placements/slides and returns signed variant URLs without exposing storage keys.
+`PageBannerPlacement` is the canonical owner of the approved page placement IDs and Admin-controlled enabled state. `PageBannerSlide` owns ordered slide metadata, click destination policy and enabled/decorative state. `PageBannerSlideVariant` owns processed object descriptors; image bytes remain in S3-compatible object storage. Placement and slide mutations are authorized by Platform Admin and audit through the canonical AuditWriter. Public delivery filters disabled placements/slides and returns signed variant URLs without exposing storage keys. The frontend PageBanner is the sole page-top hero owner; it does not render beside a second legacy page hero.
 
 ## Current Athletes WebSession activity projection
 

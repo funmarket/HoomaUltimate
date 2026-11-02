@@ -45,7 +45,7 @@
   outline: 2px solid #c4dc43;
   outline-offset: -2px;
 }
-.play-hero-pro {
+.page-banner--play {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -53,26 +53,26 @@
   padding: 0.7rem 0 1.2rem;
   border-bottom: 1px solid rgba(199, 154, 43, 0.18);
 }
-.play-hero-pro > div > span {
+.page-banner--play > div > span {
   color: #c4dc43;
   font-size: 0.68rem;
   font-weight: 950;
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
-.play-hero-pro h1 {
+.page-banner--play h1 {
   margin: 0.25rem 0 0;
   color: var(--app-text-strong);
   font-family: Georgia, serif;
   font-size: clamp(3.7rem, 15vw, 6rem);
   line-height: 0.84;
 }
-.play-hero-pro p {
+.page-banner--play p {
   margin: 0.75rem 0 0;
   color: var(--app-text-secondary);
   font-size: 0.9rem;
 }
-.play-hero-pro__action {
+.page-banner--play__action {
   min-height: 3rem;
   padding: 0 1rem;
   display: inline-flex;
@@ -87,7 +87,7 @@
   text-decoration: none;
   white-space: nowrap;
 }
-.play-hero-pro__action svg {
+.page-banner--play__action svg {
   color: #c4dc43;
 }
 .play-section {
@@ -926,11 +926,11 @@
   }
 }
 @media (max-width: 620px) {
-  .play-hero-pro {
+  .page-banner--play {
     display: grid;
     align-items: start;
   }
-  .play-hero-pro__action {
+  .page-banner--play__action {
     width: fit-content;
   }
   .formation-builder__header {

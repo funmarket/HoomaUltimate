@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type { MeResponse } from "@hooma/contracts";
 import type { PlayLookingFor } from "@hooma/contracts/play";
-import { PickupMatchCard, PlayHero } from "@hooma/ui";
+import { PickupMatchCard } from "@hooma/ui";
 import { useHoomaFrontend } from "../context";
 import { PageBanner } from "../page-banner/PageBanner";
 import { TeamOffersPanel } from "../teams/TeamOffersPanel";
@@ -343,12 +343,21 @@ export function PlayPage() {
 
   return (
     <section className="play-page">
-      <div className="hooma-lane--media">
-        <PageBanner placementId="PLAY_TOP" />
-      </div>
-      <div className="hooma-lane--content">
-        <PlayHero />
-      </div>
+      <PageBanner placementId="PLAY_TOP">
+        {() => (
+          <section className="page-banner--play">
+            <div>
+              <span>Pickup football</span>
+              <h1>PLAY</h1>
+              <p>Find a game. Find players. Get on the pitch.</p>
+            </div>
+            <a className="page-banner--play__action" href="/events/new">
+              <span aria-hidden="true">+</span>
+              Create match
+            </a>
+          </section>
+        )}
+      </PageBanner>
 
       <div className="hooma-lane--nav">
         <div

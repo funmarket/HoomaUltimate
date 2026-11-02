@@ -126,19 +126,17 @@ export function AthletesPage({
 
   return (
     <div className="page athletes-page">
-      <div className="hooma-lane--media">
-        <PageBanner placementId="ATHLETES_TOP" />
-      </div>
-      <div className="hooma-lane--media">
-        <section
-          className="athletes-surface athletes-hero athletes-hero--hub"
-          data-media-state={heroStatus}
-        >
+      <PageBanner placementId="ATHLETES_TOP">
+        {() => (
+          <section
+            className="page-banner--athletes"
+            data-media-state={heroStatus}
+          >
           {heroUrl && heroStatus !== "image-failed" ? (
             <img
               key={heroUrl}
               ref={heroImage}
-              className="athletes-hero__banner"
+              className="page-banner--athletes__banner"
               src={heroUrl}
               alt=""
               aria-hidden="true"
@@ -151,10 +149,11 @@ export function AthletesPage({
               }}
             />
           ) : null}
-          <h1 className="athletes-hero__semantic-title">Move together. Train together.</h1>
-          <span className="athletes-hero__motion" aria-hidden="true" />
-        </section>
-      </div>
+          <h1 className="page-banner--athletes__semantic-title">Move together. Train together.</h1>
+          <span className="page-banner--athletes__motion" aria-hidden="true" />
+          </section>
+        )}
+      </PageBanner>
 
       <div className="hooma-lane--content">
         <div className="athletes-actions athletes-hub-create">

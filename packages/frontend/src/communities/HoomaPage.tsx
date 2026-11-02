@@ -113,16 +113,15 @@ export function HoomaPage() {
 
   return (
     <div className="page hooma-page">
-      <div className="hooma-lane--media">
-        <PageBanner placementId="HOOMA_TOP" />
-      </div>
-      <div className="hooma-lane--media">
-        <section className="hooma-hero panel">
+            <PageBanner placementId="HOOMA_TOP">
+        {() => (
+          <section className="page-banner--hooma panel">
           <span className="eyebrow">YOUR FOOTBALL NEIGHBORHOOD</span>
           <h1>HOOMA</h1>
           <p>Find your people, build your neighborhood, and connect through sport and community.</p>
-        </section>
-      </div>
+          </section>
+        )}
+      </PageBanner>
 
       <div className="hooma-lane--content">
         <section className="hooma-create-section">
