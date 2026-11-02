@@ -1,7 +1,17 @@
 import assert from "node:assert/strict";
+import { registerHooks } from "node:module";
 import test, { afterEach } from "node:test";
 import { JSDOM } from "jsdom";
 import { createElement as h } from "react";
+
+registerHooks({
+  load(url, context, nextLoad) {
+    if (url.endsWith(".css")) {
+      return { format: "module", source: "export default {};", shortCircuit: true };
+    }
+    return nextLoad(url, context);
+  },
+});
 
 const dom = new JSDOM("<!doctype html><html><body></body></html>", {
   url: "http://localhost/",
@@ -19,9 +29,10 @@ const { cleanup, fireEvent, render, waitFor } = await import("@testing-library/r
 const { HoomaFrontendProvider } = await import("../packages/frontend/src/context");
 const { PageBanner } = await import("../packages/frontend/src/page-banner/PageBanner");
 
+const originalFetch = globalThis.fetch;
 afterEach(() => {
   cleanup();
-  globalThis.fetch = fetch;
+  globalThis.fetch = originalFetch;
 });
 
 const signedVariant = (url: string) => ({
@@ -66,7 +77,10 @@ test("public PageBanner renders a signed Athletes slide with accessible metadata
   await waitFor(() => assert.ok(view.getByRole("img", { name: "Athletes training together" })));
   const image = view.getByRole("img", { name: "Athletes training together" });
   assert.equal(image.getAttribute("src"), "https://media.example.test/slide-1.webp");
-  assert.equal(view.getByRole("link", { name: "Athletes training together" }).getAttribute("href"), "/athletes");
+  assert.equal(
+    view.getByRole("link", { name: "Athletes training together" }).getAttribute("href"),
+    "/athletes",
+  );
   assert.equal(view.getByRole("region", { name: "Athletes banner" }).getAttribute("aria-live"), null);
 });
 
@@ -98,7 +112,10 @@ test("public PageBanner manually navigates ordered slides without auto-rotation"
   assert.equal(view.getByRole("img").getAttribute("alt"), "");
   fireEvent.click(view.getByRole("button", { name: "Next banner" }));
   await waitFor(() => assert.ok(view.getByRole("img", { name: "Athletes community" })));
-  assert.equal(view.getByRole("link", { name: "Athletes community" }).getAttribute("href"), "https://example.test/community");
+  assert.equal(
+    view.getByRole("link", { name: "Athletes community" }).getAttribute("href"),
+    "https://example.test/community",
+  );
   assert.equal(view.getByText("2 of 2").textContent, "2 of 2");
 });
 

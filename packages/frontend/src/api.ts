@@ -1,4 +1,5 @@
 import { createAthletesApi } from "./athletes/api";
+import { createPageBannerApi } from "./page-banner/api";
 import type { AthletesPublicDetail, AthletesPublicSummary } from "@hooma/contracts/athletes";
 import type {
   LoginInput,
@@ -447,6 +448,7 @@ export function createHoomaApi(transport: HoomaTransport) {
   };
 
   const athletes = createAthletesApi(transport);
+  const pageBanners = createPageBannerApi(transport);
 
   const teams = {
     publicList: (filters?: TeamListFilters) =>
@@ -529,7 +531,7 @@ export function createHoomaApi(transport: HoomaTransport) {
         method: "POST",
       }),
   };
-  return { identity, platformAdmin, communities, athletes, whistles, notifications, teams };
+  return { identity, platformAdmin, communities, athletes, pageBanners, whistles, notifications, teams };
 }
 
 export type HoomaApi = ReturnType<typeof createHoomaApi>;
