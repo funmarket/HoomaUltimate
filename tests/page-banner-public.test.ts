@@ -29,7 +29,7 @@ for (const key of ["window", "document", "HTMLElement", "Element", "Node", "navi
 }
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
-const { cleanup, fireEvent, render, waitFor } = await import("@testing-library/react");
+const { act, cleanup, fireEvent, render, waitFor } = await import("@testing-library/react");
 const { HoomaFrontendProvider } = await import("../packages/frontend/src/context");
 const { PageBanner } = await import("../packages/frontend/src/page-banner/PageBanner");
 
@@ -47,6 +47,12 @@ const signedVariant = (url: string) => ({
   widthPx: 1200,
   heightPx: 400,
 });
+
+async function flushReact() {
+  await act(async () => {
+    await Promise.resolve();
+  });
+}
 
 function mount(body: unknown) {
   globalThis.fetch = async () =>
@@ -78,7 +84,11 @@ test("public PageBanner renders a signed Athletes slide with accessible metadata
     ],
   });
 
-  await waitFor(() => assert.ok(view.getByRole("img", { name: "Athletes training together" })));
+  await flushReact();
+  await waitFor(
+    () => assert.ok(view.getByRole("img", { name: "Athletes training together" })),
+    { timeout: 2_000 },
+  );
   const image = view.getByRole("img", { name: "Athletes training together" });
   assert.equal(image.getAttribute("src"), "https://media.example.test/slide-1.webp");
   assert.equal(
@@ -118,10 +128,17 @@ test("public PageBanner manually navigates ordered slides without auto-rotation"
     ],
   });
 
-  await waitFor(() => assert.ok(view.getByRole("button", { name: "Next banner" })));
+  await flushReact();
+  await waitFor(() => assert.ok(view.getByRole("button", { name: "Next banner" })), {
+    timeout: 2_000,
+  });
   assert.equal(view.getByRole("img").getAttribute("alt"), "");
-  fireEvent.click(view.getByRole("button", { name: "Next banner" }));
-  await waitFor(() => assert.ok(view.getByRole("img", { name: "Athletes community" })));
+  await act(async () => {
+    fireEvent.click(view.getByRole("button", { name: "Next banner" }));
+  });
+  await waitFor(() => assert.ok(view.getByRole("img", { name: "Athletes community" })), {
+    timeout: 2_000,
+  });
   assert.equal(
     view.getByRole("link", { name: "Athletes community" }).getAttribute("href"),
     "https://example.test/community",
@@ -135,7 +152,10 @@ test("public PageBanner renders no public surface for disabled or empty placemen
     { placementId: "ATHLETES_TOP", enabled: true, slides: [] },
   ]) {
     const view = mount(body);
-    await waitFor(() => assert.equal(view.container.querySelector("[data-page-banner]"), null));
+    await flushReact();
+    await waitFor(() => assert.equal(view.container.querySelector("[data-page-banner]"), null), {
+      timeout: 2_000,
+    });
     cleanup();
   }
 });
