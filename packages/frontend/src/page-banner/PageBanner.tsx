@@ -20,9 +20,7 @@ const placementLabels: Readonly<Record<PageBannerPlacementId, string>> = {
 
 function mediaVariant(slide: PageBannerPublicSlide) {
   return (
-    slide.variants.find((variant) => variant.variant === "master") ??
-    slide.variants[0] ??
-    null
+    slide.variants.find((variant) => variant.variant === "master") ?? slide.variants[0] ?? null
   );
 }
 
@@ -30,11 +28,7 @@ function nextIndex(current: number, length: number, direction: -1 | 1): number {
   return (current + direction + length) % length;
 }
 
-export function PageBanner({
-  placementId,
-}: {
-  readonly placementId: PageBannerPlacementId;
-}) {
+export function PageBanner({ placementId }: { readonly placementId: PageBannerPlacementId }) {
   const { api } = useHoomaFrontend();
   const [response, setResponse] = useState<{
     readonly status: "loading" | "ready" | "error";
@@ -137,9 +131,7 @@ export function PageBanner({
             className="page-banner__control"
             type="button"
             aria-label="Previous banner"
-            onClick={() =>
-              setActiveIndex((current) => nextIndex(current, slides.length, -1))
-            }
+            onClick={() => setActiveIndex((current) => nextIndex(current, slides.length, -1))}
           >
             <span aria-hidden="true">‹</span>
           </button>
@@ -153,9 +145,7 @@ export function PageBanner({
             className="page-banner__control"
             type="button"
             aria-label="Next banner"
-            onClick={() =>
-              setActiveIndex((current) => nextIndex(current, slides.length, 1))
-            }
+            onClick={() => setActiveIndex((current) => nextIndex(current, slides.length, 1))}
           >
             <span aria-hidden="true">›</span>
           </button>
