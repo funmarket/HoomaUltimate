@@ -60,7 +60,8 @@ test("Athletes hub orders artwork then Create Community then tabs with no CTA in
 test("Athletes hero keeps 720x520 contain geometry and removes the hub overlay content rule", () => {
   const hubRule =
     athletesCss.match(/\.page-banner--athletes\s*\{[\s\S]*?\}/)?.[0] ?? "";
-  const bannerRule = athletesCss.match(/\.page-banner--athletes__image\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const bannerRule =
+    athletesCss.match(/\.page-banner--athletes__image\s*\{[\s\S]*?\}/)?.[0] ?? "";
 
   assert.match(hubRule, /aspect-ratio:\s*720\s*\/\s*520/);
   assert.match(bannerRule, /object-fit:\s*contain/);
