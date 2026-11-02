@@ -116,31 +116,34 @@ export function GearUpPage() {
   return (
     <section className="gear-up-page">
       <div className="hooma-lane--media">
-        <PageBanner placementId="GEAR_UP_TOP" />
-      </div>
-      <div className="hooma-lane--nav">
-        <AthletesHubTabs active="gear-up" />
-      </div>
-
-      <div className="hooma-lane--content">
-        <header className="gear-up-hero">
-          <p className="gear-up-hero__eyebrow">GEAR UP</p>
-          <h1 className="gear-up-page__title">
-            {mode === "stores"
-              ? "Discover shops offering gear and sportswear."
-              : "Discover sports products from local shops."}
-          </h1>
-          <p className="gear-up-hero__description">
-            {mode === "stores"
-              ? "Find sportswear, equipment and more from local shops. Support real places in your community."
-              : "Browse products across approved Gear Up shops while keeping every product connected to its real store."}
-          </p>
-          <div className="gear-up-hero__actions">
+        <PageBanner
+          placementId="GEAR_UP_TOP"
+          className="page-banner--gear-up"
+          fallback={
+            <div className="page-banner__copy page-banner__copy--gear-up">
+              <p className="page-banner__eyebrow">GEAR UP</p>
+              <h1 className="gear-up-page__title">
+                {mode === "stores"
+                  ? "Discover shops offering gear and sportswear."
+                  : "Discover sports products from local shops."}
+              </h1>
+              <p className="page-banner__description page-banner__description--gear-up">
+                {mode === "stores"
+                  ? "Find sportswear, equipment and more from local shops. Support real places in your community."
+                  : "Browse products across approved Gear Up shops while keeping every product connected to its real store."}
+              </p>
+            </div>
+          }
+        >
+          <div className="page-banner__actions page-banner__actions--gear-up">
             <a className="gear-up-add-store-link" href="/athletes/gear-up/add-store">
               Add Store
             </a>
           </div>
-        </header>
+        </PageBanner>
+      </div>
+      <div className="hooma-lane--nav">
+        <AthletesHubTabs active="gear-up" />
       </div>
 
       <div className="hooma-lane--nav">
