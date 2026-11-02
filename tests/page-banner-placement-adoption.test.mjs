@@ -6,7 +6,7 @@ const placements = [
   {
     path: "apps/web/src/home/HomePage.tsx",
     placementId: "HOME_TOP",
-    forbidden: ["<HomeHero", "home-hero\""],
+    forbidden: ["<HomeHero", 'home-hero"'],
   },
   {
     path: "packages/frontend/src/events/PlayPage.tsx",
