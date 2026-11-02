@@ -14,8 +14,12 @@ const gateways = await readFile(
   new URL("../packages/ui/src/home/home-gateways.ts", import.meta.url),
   "utf8",
 );
-const homeHero = await readFile(
-  new URL("../packages/ui/src/home/HomeHero.tsx", import.meta.url),
+const homePage = await readFile(
+  new URL("../apps/web/src/home/HomePage.tsx", import.meta.url),
+  "utf8",
+);
+const pageBannerCss = await readFile(
+  new URL("../packages/frontend/src/page-banner/page-banner.css", import.meta.url),
   "utf8",
 );
 
@@ -25,16 +29,16 @@ test("homepage gateway artwork does not compete with the critical hero image", (
   assert.doesNotMatch(gatewayCard, /loading="eager"/);
   assert.doesNotMatch(gatewayCard, /decoding="sync"/);
 
-  assert.match(homeHero, /loading="eager"/);
-  assert.match(homeHero, /fetchPriority="high"/);
+  assert.match(homePage, /loading="eager"/);
+  assert.match(homePage, /fetchPriority="high"/);
 });
 
 test("Match Day hero opens the canonical Play route", () => {
-  assert.match(homeHero, /<a className="home-hero" href="\/play"/);
-  assert.match(homeHero, /aria-label="Match Day — open Play"/);
-  assert.match(homeHero, /\.home-hero:focus-visible/);
-  assert.doesNotMatch(homeHero, /href="\/events\/new"/);
-  assert.doesNotMatch(homeHero, /hooma-web-production\.up\.railway\.app/);
+  assert.match(homePage, /<a className="page-banner--home" href="\/play"/);
+  assert.match(homePage, /aria-label="Match Day — open Play"/);
+  assert.match(pageBannerCss, /\.page-banner--home:focus-visible/);
+  assert.doesNotMatch(homePage, /href="\/events\/new"/);
+  assert.doesNotMatch(homePage, /hooma-web-production\.up\.railway\.app/);
 });
 
 test("homepage gateway contract is a phone-first three by two grid", () => {

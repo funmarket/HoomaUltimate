@@ -98,14 +98,11 @@ test("Play detail and Open Matches use the authenticated Play API authority", as
 });
 
 test("text-only page introduction uses CONTENT while major section tabs use NAV", async () => {
-  const [page, hero] = await Promise.all([
-    read("packages/frontend/src/events/PlayPage.tsx"),
-    read("packages/ui/src/play/PlayHero.tsx"),
-  ]);
+  const page = await read("packages/frontend/src/events/PlayPage.tsx");
 
-  assert.match(hero, /<h1>PLAY<\/h1>/);
-  assert.doesNotMatch(hero, /<(?:img|picture|video|canvas)\b/);
-  assert.match(page, /<div className="hooma-lane--content">\s*<PlayHero \/>\s*<\/div>/);
+  assert.match(page, /<h1>PLAY<\/h1>/);
+  assert.doesNotMatch(page, /<PageBanner[^>]*>\s*<[^>]+>\s*<(?:img|picture|video|canvas)\b/s);
+  assert.match(page, /<PageBanner placementId="PLAY_TOP">/);
   assert.match(
     page,
     /<div className="hooma-lane--nav">\s*<div\s+className="play-view-tabs play-view-tabs--four"/,
