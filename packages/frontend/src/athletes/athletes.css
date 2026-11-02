@@ -103,8 +103,10 @@
   border: 0;
 }
 
-.page-banner__fallback--athletes[data-media-state="delivery-unavailable"] .page-banner__semantic-title--athletes,
-.page-banner__fallback--athletes[data-media-state="image-failed"] .page-banner__semantic-title--athletes {
+.page-banner__fallback--athletes[data-media-state="delivery-unavailable"]
+  .page-banner__semantic-title--athletes,
+.page-banner__fallback--athletes[data-media-state="image-failed"]
+  .page-banner__semantic-title--athletes {
   position: static;
   width: auto;
   height: auto;
