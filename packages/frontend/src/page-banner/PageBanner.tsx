@@ -122,7 +122,7 @@ export function PageBanner({
   children,
 }: {
   readonly placementId: PageBannerPlacementId;
-  readonly children: (state: PageBannerRenderState) => ReactNode;
+  readonly children?: (state: PageBannerRenderState) => ReactNode;
 }) {
   const state = usePageBanner(placementId);
   return (
@@ -134,7 +134,7 @@ export function PageBanner({
       aria-label={`${placementLabels[placementId]} page banner`}
       aria-busy={state.status === "loading"}
     >
-      {state.artwork ? <PageBannerArtwork artwork={state.artwork} /> : children(state)}
+      {state.artwork ? <PageBannerArtwork artwork={state.artwork} /> : children ? children(state) : null}
       {state.slideCount > 1 ? (
         <div className="page-banner__controls" aria-label="Page banner controls">
           <button
