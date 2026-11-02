@@ -69,10 +69,7 @@ test("all canonical public roots have exactly one PageBanner page-top owner", ()
       1,
       `${path} must render exactly one PageBanner`,
     );
-    assert.ok(
-      source.includes(`placementId="${placementId}"`),
-      `${path} must own ${placementId}`,
-    );
+    assert.ok(source.includes(`placementId="${placementId}"`), `${path} must own ${placementId}`);
     assert.equal(
       source.includes("/api/public/v1/banners"),
       false,
