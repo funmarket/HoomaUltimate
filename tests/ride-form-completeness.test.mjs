@@ -118,9 +118,9 @@ test("Ride compensation fields are shared, mode-aware, and prevent stale cash su
 
 test("Ride context journey is explicit and generic routes expose a selector", () => {
   assert.match(gatewayPage, /contextQuery\(copy\.context\)/);
-  assert.match(gatewayPage, /href=\{\{"\/rides\/request" \+ contextQuery\(copy\.context\)\}\}/);
-  assert.match(gatewayPage, /href=\{\{"\/rides\/offers\/new" \+ contextQuery\(copy\.context\)\}\}/);
-  assert.match(gatewayPage, /href=\{\{"\/rides\/offers" \+ contextQuery\(copy\.context\)\}\}/);
+  assert.match(gatewayPage, /href=\{"\/rides\/request" \+ contextQuery\(copy\.context\)\}/);
+  assert.match(gatewayPage, /href=\{"\/rides\/offers\/new" \+ contextQuery\(copy\.context\)\}/);
+  assert.match(gatewayPage, /href=\{"\/rides\/offers" \+ contextQuery\(copy\.context\)\}/);
   assert.match(gatewayPage, /actionHref=\{`\/rides\/offers\$\{scopedQuery\}`\}/);
   assert.match(offerCreatePage, /RideContextSelector/);
   assert.match(requestCreatePage, /RideContextSelector/);
