@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { PageBanner } from "../page-banner/PageBanner";
 import type { WatchEventKind } from "@hooma/contracts";
 import type { PublicEvent } from "../events/api";
 import { useEventApi } from "../events/useEventApi";
@@ -161,6 +162,9 @@ export function WatchPage() {
 
   return (
     <section className="watch-page">
+      <div className="hooma-lane--media">
+        <PageBanner placementId="WATCH_TOP" />
+      </div>
       <div className="hooma-lane--media">
         <header className="watch-hero">
           <div>
