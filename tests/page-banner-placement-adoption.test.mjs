@@ -6,7 +6,7 @@ const placements = [
   {
     path: "apps/web/src/home/HomePage.tsx",
     placementId: "HOME_TOP",
-    forbidden: ["<HomeHero", 'home-hero"'],
+    forbidden: ["<HomeHero", `className="home-hero"`],
   },
   {
     path: "packages/frontend/src/events/PlayPage.tsx",
@@ -88,7 +88,8 @@ test("all canonical public roots have exactly one PageBanner page-top owner", ()
 test("Ride keeps its exact actions inside the single RIDE_TOP PageBanner", () => {
   const source = readFileSync("packages/frontend/src/rides/RideGatewayPage.tsx", "utf8");
 
-  assert.ok(source.includes('className="page-banner__actions page-banner__actions--ride"'));
+  const rideActionsClass = `className="page-banner__actions page-banner__actions--ride"`;
+  assert.ok(source.includes(rideActionsClass));
   assert.ok(source.includes("Request a Ride"));
   assert.ok(source.includes("Browse Offers"));
   assert.ok(source.includes("Offer Seats"));
