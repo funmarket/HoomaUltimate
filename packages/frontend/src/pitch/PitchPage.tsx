@@ -44,10 +44,7 @@ export function PitchPage() {
 
   return (
     <section className="pitch-page">
-      <div className="hooma-lane--media">
-        <PageBanner placementId="PITCH_TOP" />
-      </div>
-<div className="hooma-lane--content">
+      <div className="hooma-lane--content">
         <PageBanner placementId="PITCH_TOP">
           {({ artwork }) => (
             <header className="pitch-discovery-hero">

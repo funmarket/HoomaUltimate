@@ -115,10 +115,7 @@ export function GearUpPage() {
 
   return (
     <section className="gear-up-page">
-      <div className="hooma-lane--media">
-        <PageBanner placementId="GEAR_UP_TOP" />
-      </div>
-      <div className="hooma-lane--nav">
+            <div className="hooma-lane--nav">
         <AthletesHubTabs active="gear-up" />
       </div>
 

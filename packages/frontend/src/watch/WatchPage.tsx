@@ -163,9 +163,6 @@ export function WatchPage() {
   return (
     <section className="watch-page">
       <div className="hooma-lane--media">
-        <PageBanner placementId="WATCH_TOP" />
-      </div>
-<div className="hooma-lane--media">
         <PageBanner placementId="WATCH_TOP">
           {({ artwork }) => (
             <header className="watch-hero">

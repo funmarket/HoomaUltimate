@@ -140,10 +140,7 @@ export function PlacesPage() {
 
   return (
     <section className="place-page">
-      <div className="hooma-lane--media">
-        <PageBanner placementId="PLACES_TOP" />
-      </div>
-<div className="hooma-lane--content">
+      <div className="hooma-lane--content">
         <PageBanner placementId="PLACES_TOP">
           {({ artwork }) => (
             <header className="place-page__header">

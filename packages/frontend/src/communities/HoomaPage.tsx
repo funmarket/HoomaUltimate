@@ -114,9 +114,6 @@ export function HoomaPage() {
   return (
     <div className="page hooma-page">
       <div className="hooma-lane--media">
-        <PageBanner placementId="HOOMA_TOP" />
-      </div>
-<div className="hooma-lane--media">
         <PageBanner placementId="HOOMA_TOP">
           {({ artwork }) => (
             <section className="hooma-hero panel">
