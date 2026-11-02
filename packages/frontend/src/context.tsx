@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, type ReactNode } from "react";
+import React, { createContext, useContext, useMemo, type ReactNode } from "react";
 import { createHoomaApi, HoomaApiError, request, type HoomaApi, type HoomaTransport } from "./api";
 
 type FrontendContextValue = {
@@ -40,7 +40,7 @@ export function HoomaFrontendProvider({
     }),
     [api, transport],
   );
-  return <FrontendContext.Provider value={value}>{children}</FrontendContext.Provider>;
+  return React.createElement(FrontendContext.Provider, { value }, children);
 }
 
 export function useHoomaFrontend(): FrontendContextValue {
