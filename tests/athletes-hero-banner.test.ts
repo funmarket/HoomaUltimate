@@ -106,7 +106,10 @@ test("Athletes hub keeps the real Create community control without visible app c
   );
   assert.ok(hub.includes("Move together. Train together."));
   assert.equal(hub.includes('<span className="eyebrow">ATHLETES</span>'), false);
-  assert.equal(hub.includes("Find local sports communities built around the way you move."), false);
+  assert.equal(
+    hub.includes("Find local sports communities built around the way you move."),
+    false,
+  );
   assert.ok(
     hub.includes(
       'className="page-banner__fallback-image page-banner__fallback-image--athletes"',
