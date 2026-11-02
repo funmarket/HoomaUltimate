@@ -17,7 +17,56 @@ import type {
   PlatformAuditPage,
   UserSessionRevocationInput,
 } from "@hooma/contracts/platform-admin";
-import { request, type HoomaTransport } from "../http";
+import { request, requestBinary, type HoomaTransport } from "../http";
+import type { PageBannerDestination, PageBannerPlacementId } from "@hooma/contracts/page-banner";
+
+export interface PageBannerAdminVariant {
+  readonly variant: string;
+  readonly objectKey: string;
+  readonly contentType: string;
+  readonly sizeBytes: number;
+  readonly widthPx: number;
+  readonly heightPx: number;
+}
+
+export interface PageBannerAdminSlide {
+  readonly id: string;
+  readonly placementId: PageBannerPlacementId;
+  readonly mediaId: string;
+  readonly sortOrder: number;
+  readonly enabled: boolean;
+  readonly isDecorative: boolean;
+  readonly altText: string | null;
+  readonly destinationKind: "INTERNAL" | "EXTERNAL" | null;
+  readonly destinationUrl: string | null;
+  readonly variants: readonly PageBannerAdminVariant[];
+}
+
+export interface PageBannerAdminPlacement {
+  readonly id: PageBannerPlacementId;
+  readonly enabled: boolean;
+  readonly slides: readonly PageBannerAdminSlide[];
+}
+
+export interface PageBannerSlideMetadataInput {
+  readonly enabled?: boolean;
+  readonly isDecorative: boolean;
+  readonly altText: string | null;
+  readonly destination: PageBannerDestination | null;
+}
+
+function pageBannerUploadQuery(input: PageBannerSlideMetadataInput): string {
+  const params = new URLSearchParams({
+    enabled: String(input.enabled ?? true),
+    isDecorative: String(input.isDecorative),
+  });
+  if (input.altText !== null) params.set("altText", input.altText);
+  if (input.destination) {
+    params.set("destinationKind", input.destination.kind);
+    params.set("destinationUrl", input.destination.url);
+  }
+  return params.toString();
+}
 
 export type {
   AdminIssueSummary,
@@ -49,7 +98,7 @@ function auditQueryString(input: AdminAuditQueryInput = {}): string {
 }
 
 export function createPlatformAdminApi(transport: HoomaTransport) {
-  return {
+  const api = {
     access: () => request<AdminAccess>(transport, "/api/v1/admin/access"),
     overview: () => request<PlatformOverview>(transport, "/api/v1/admin/overview"),
     audit: (input: AdminAuditQueryInput = {}) =>
@@ -134,5 +183,52 @@ export function createPlatformAdminApi(transport: HoomaTransport) {
         `/api/v1/admin/queues/pitch/${encodeURIComponent(target)}/${encodeURIComponent(reviewId)}/decision`,
         { method: "POST", body: JSON.stringify(input) },
       ),
+    pageBanners: {
+      list: () => request<PageBannerAdminPlacement[]>(transport, "/api/v1/admin/banners"),
+      setEnabled: (placementId: PageBannerPlacementId, enabled: boolean) =>
+        request<PageBannerAdminPlacement>(
+          transport,
+          `/api/v1/admin/banners/${encodeURIComponent(placementId)}`,
+          { method: "PATCH", body: JSON.stringify({ enabled }) },
+        ),
+      upload: (
+        placementId: PageBannerPlacementId,
+        file: Blob,
+        input: PageBannerSlideMetadataInput,
+        slideId?: string,
+      ) =>
+        requestBinary<PageBannerAdminSlide>(
+          transport,
+          `/api/v1/admin/banners/${encodeURIComponent(placementId)}/slides${slideId ? `/${encodeURIComponent(slideId)}` : ""}/upload?${pageBannerUploadQuery(input)}`,
+          file,
+          file.type,
+          { method: "POST" },
+        ),
+      updateSlide: (
+        placementId: PageBannerPlacementId,
+        slideId: string,
+        input: PageBannerSlideMetadataInput,
+      ) =>
+        request<PageBannerAdminSlide>(
+          transport,
+          `/api/v1/admin/banners/${encodeURIComponent(placementId)}/slides/${encodeURIComponent(slideId)}`,
+          { method: "PATCH", body: JSON.stringify(input) },
+        ),
+      reorder: (placementId: PageBannerPlacementId, slideIds: readonly string[]) =>
+        request<PageBannerAdminSlide[]>(
+          transport,
+          `/api/v1/admin/banners/${encodeURIComponent(placementId)}/slides/reorder`,
+          { method: "POST", body: JSON.stringify({ slideIds }) },
+        ),
+      deleteSlide: (placementId: PageBannerPlacementId, slideId: string) =>
+        request<{ ok: true }>(
+          transport,
+          `/api/v1/admin/banners/${encodeURIComponent(placementId)}/slides/${encodeURIComponent(slideId)}`,
+          { method: "DELETE" },
+        ),
+    },
   };
+  return api;
 }
+
+export type PlatformAdminApi = ReturnType<typeof createPlatformAdminApi>;
