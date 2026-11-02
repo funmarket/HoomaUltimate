@@ -89,10 +89,9 @@ test("public PageBanner renders a signed Athletes slide with accessible metadata
   });
 
   await flushReact();
-  await waitFor(
-    () => assert.ok(view.getByRole("img", { name: "Athletes training together" })),
-    { timeout: 2_000 },
-  );
+  await waitFor(() => assert.ok(view.getByRole("img", { name: "Athletes training together" })), {
+    timeout: 2_000,
+  });
   const image = view.getByRole("img", { name: "Athletes training together" });
   assert.equal(image.getAttribute("src"), "https://media.example.test/slide-1.webp");
   assert.equal(
