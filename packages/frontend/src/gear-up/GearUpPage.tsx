@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { PublicGearUpShop } from "@hooma/contracts/gear-up";
 import { useHoomaFrontend } from "../context";
+import { PageBanner } from "../page-banner/PageBanner";
 import { AthletesHubTabs } from "../athletes/AthletesHubTabs";
 import { createGearUpApi } from "./api";
 import { GearUpFilters, type GearUpDiscoveryFilters } from "./GearUpFilters";
@@ -114,6 +115,9 @@ export function GearUpPage() {
 
   return (
     <section className="gear-up-page">
+      <div className="hooma-lane--media">
+        <PageBanner placementId="GEAR_UP_TOP" />
+      </div>
       <div className="hooma-lane--nav">
         <AthletesHubTabs active="gear-up" />
       </div>

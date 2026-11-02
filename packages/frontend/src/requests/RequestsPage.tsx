@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { HelpTaxonomyResponse } from "@hooma/contracts/help-taxonomy";
 import type { HelpRequest } from "@hooma/contracts/requests";
 import { useHoomaFrontend } from "../context";
+import { PageBanner } from "../page-banner/PageBanner";
 import { DonationIcon, FundMeIcon, PlusIcon } from "../help/HelpIcons";
 import { createRequestsApi, type RequestsListQuery } from "./api";
 import { HelpTabs } from "./HelpTabs";
@@ -173,6 +174,9 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
 
   return (
     <section className="page requests-page">
+      <div className="hooma-lane--media">
+        <PageBanner placementId="REQUESTS_TOP" />
+      </div>
       <div className="hooma-lane--content">
         <header className="help-hero">
           <div className="help-hero__copy">

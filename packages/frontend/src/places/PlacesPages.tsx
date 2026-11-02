@@ -6,6 +6,7 @@ import type {
 } from "@hooma/contracts/places";
 import type { PitchRentalCurrency } from "@hooma/contracts/pitch";
 import { useHoomaFrontend } from "../context";
+import { PageBanner } from "../page-banner/PageBanner";
 import type { PublicEvent } from "../events/api";
 import { useEventApi } from "../events/useEventApi";
 import { createPitchApi } from "../pitch/api";
@@ -139,6 +140,9 @@ export function PlacesPage() {
 
   return (
     <section className="place-page">
+      <div className="hooma-lane--media">
+        <PageBanner placementId="PLACES_TOP" />
+      </div>
       <div className="hooma-lane--content">
         <header className="place-page__header">
           <div>

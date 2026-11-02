@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { PublicRideOffer, PublicRideRequest } from "@hooma/contracts/rides";
 import { useHoomaFrontend } from "../context";
+import { PageBanner } from "../page-banner/PageBanner";
 import { createRideApi } from "./api";
 import { RideCompensationBadge } from "./RideCompensationBadge";
 import { contextQuery } from "./RideContextSelector";
@@ -45,6 +46,9 @@ export function RideGatewayPage({ context }: { readonly context?: "MATCHDAY" | "
 
   return (
     <section className="ride-page ride-gateway">
+      <div className="hooma-lane--media">
+        <PageBanner placementId="RIDE_TOP" />
+      </div>
       <div className="hooma-lane--media">
         <RideHero copy={copy} />
       </div>
