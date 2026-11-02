@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import type { PublicGearUpShop } from "@hooma/contracts/gear-up";
 import { useHoomaFrontend } from "../context";
 import { PageBanner } from "../page-banner/PageBanner";
-import { AthletesHubTabs } from "../athletes/AthletesHubTabs";
 import { createGearUpApi } from "./api";
 import { GearUpFilters, type GearUpDiscoveryFilters } from "./GearUpFilters";
 import { GearUpProductsPane } from "./GearUpProductsPane";
