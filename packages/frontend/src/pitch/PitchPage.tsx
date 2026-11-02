@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { PublicPitch } from "@hooma/contracts/pitch";
 import { useHoomaFrontend } from "../context";
+import { PageBanner } from "../page-banner/PageBanner";
 import { createPitchApi } from "./api";
 import { PitchTicket } from "./PitchTicket";
 
@@ -43,6 +44,9 @@ export function PitchPage() {
 
   return (
     <section className="pitch-page">
+      <div className="hooma-lane--media">
+        <PageBanner placementId="PITCH_TOP" />
+      </div>
       <div className="hooma-lane--content">
         <header className="pitch-discovery-hero">
           <div className="pitch-discovery-hero__copy">
