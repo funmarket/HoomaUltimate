@@ -17,7 +17,7 @@
   color: var(--ride-text);
 }
 
-.ride-hero,
+.page-banner--ride,
 .ride-section-header,
 .ride-created,
 .ride-home-panel,
@@ -28,7 +28,7 @@
   gap: 14px;
 }
 
-.ride-hero,
+.page-banner--ride,
 .ride-section-header {
   border: 1px solid color-mix(in srgb, var(--ride-gold-dim) 58%, transparent);
   border-radius: 28px;
@@ -39,7 +39,7 @@
   padding: clamp(16px, 4.5vw, 28px);
 }
 
-.ride-hero {
+.page-banner--ride {
   position: relative;
   overflow: hidden;
   min-height: 0;
@@ -48,15 +48,15 @@
   padding: 0;
 }
 
-.ride-hero::before {
+.page-banner--ride::before {
   content: none;
 }
 
-.ride-hero::after {
+.page-banner--ride::after {
   content: none;
 }
 
-.ride-hero__media {
+.page-banner__fallback-media--ride {
   overflow: hidden;
   width: 100%;
   aspect-ratio: 1672 / 941;
@@ -65,7 +65,7 @@
   background: #060606;
 }
 
-.ride-hero__banner {
+.page-banner__fallback-image--ride {
   display: block;
   width: 100%;
   height: 100%;
@@ -73,7 +73,7 @@
   object-position: center;
 }
 
-.ride-hero__sr-copy {
+.page-banner__semantic-copy--ride {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -83,14 +83,14 @@
   white-space: nowrap;
 }
 
-.ride-hero__actions {
+.page-banner__actions--ride {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
   padding: 18px 12px 10px;
 }
 
-.ride-hero__actions .ride-button--primary {
+.page-banner__actions--ride .ride-button--primary {
   grid-column: 1 / -1;
 }
 
@@ -125,7 +125,7 @@
   object-fit: contain;
 }
 
-.ride-hero p,
+.page-banner--ride p,
 .ride-section-header p,
 .ride-created p,
 .ride-home-panel p,
@@ -789,12 +789,12 @@
 }
 
 @media (max-width: 430px) {
-  .ride-hero {
+  .page-banner--ride {
     min-height: 0;
     border-radius: 28px;
   }
 
-  .ride-hero__media {
+  .page-banner__fallback-media--ride {
     border-radius: 28px 28px 0 0;
   }
 
@@ -821,11 +821,11 @@
 }
 
 @media (max-width: 360px) {
-  .ride-hero {
+  .page-banner--ride {
     min-height: 0;
   }
 
-  .ride-hero__actions {
+  .page-banner__actions--ride {
     gap: 10px;
     padding-inline: 10px;
   }
