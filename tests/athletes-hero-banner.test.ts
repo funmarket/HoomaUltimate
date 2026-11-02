@@ -93,11 +93,11 @@ test("Athletes hub keeps the real Create community control without visible app c
   assert.match(hub, />\s*Create community\s*<\/button>/);
   assert.match(
     hub,
-    /<h1 className="athletes-hero__semantic-title">\s*Move together\. Train together\.\s*<\/h1>/,
+    /<h1 className="page-banner--athletes__title">\s*Move together\. Train together\.\s*<\/h1>/,
   );
   assert.doesNotMatch(hub, /<span className="eyebrow">ATHLETES<\/span>/);
   assert.doesNotMatch(hub, /Find local sports communities built around the way you move\./);
-  assert.match(hub, /className="athletes-hero__banner"/);
+  assert.match(hub, /className="page-banner--athletes__image"/);
   assert.match(hub, /src=\{heroUrl\}/);
   assert.match(hub, /api\.athletes[\s\S]*?\.heroDelivery\(controller\.signal\)/);
 });
@@ -105,9 +105,9 @@ test("Athletes hub keeps the real Create community control without visible app c
 test("Athletes hub banner is phone-scaled, borderless, and keeps only semantic hidden copy", () => {
   const hubRule =
     athletesCss.match(/\.athletes-hero(?:\.athletes-hero--hub|--hub)\s*\{[\s\S]*?\}/)?.[0] ?? "";
-  const bannerRule = athletesCss.match(/\.athletes-hero__banner\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const bannerRule = athletesCss.match(/\.page-banner--athletes__image\s*\{[\s\S]*?\}/)?.[0] ?? "";
   const hiddenRule =
-    athletesCss.match(/\.athletes-hero--hub \.athletes-hero__semantic-title\s*\{[\s\S]*?\}/)?.[0] ??
+    athletesCss.match(/\.athletes-hero--hub \.page-banner--athletes__title\s*\{[\s\S]*?\}/)?.[0] ??
     "";
 
   assert.match(hubRule, /aspect-ratio:\s*720\s*\/\s*520/);
