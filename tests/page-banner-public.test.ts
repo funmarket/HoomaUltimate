@@ -61,18 +61,15 @@ function mount(body: unknown) {
     React.createElement(
       HoomaFrontendProvider,
       { transport: { baseUrl: "https://api.example.test" } },
-      React.createElement(
-        PageBanner,
-        { placementId: "ATHLETES_TOP" },
-        () =>
-          React.createElement(
-            "section",
-            {
-              className: "page-banner--athletes",
-              "data-page-banner-surface": true,
-            },
-            React.createElement("h1", null, "Move together. Train together."),
-          ),
+      React.createElement(PageBanner, { placementId: "ATHLETES_TOP" }, () =>
+        React.createElement(
+          "section",
+          {
+            className: "page-banner--athletes",
+            "data-page-banner-surface": true,
+          },
+          React.createElement("h1", null, "Move together. Train together."),
+        ),
       ),
     ),
   );

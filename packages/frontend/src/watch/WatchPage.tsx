@@ -162,14 +162,14 @@ export function WatchPage() {
 
   return (
     <section className="watch-page">
-            <PageBanner placementId="WATCH_TOP">
+      <PageBanner placementId="WATCH_TOP">
         {() => (
           <header className="page-banner--watch">
-                    <div>
-                      <h1>Watch</h1>
-                      <p>Watch together. Find the match, the culture and the crowd.</p>
-                    </div>
-                  </header>
+            <div>
+              <h1>Watch</h1>
+              <p>Watch together. Find the match, the culture and the crowd.</p>
+            </div>
+          </header>
         )}
       </PageBanner>
 

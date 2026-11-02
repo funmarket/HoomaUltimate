@@ -128,29 +128,28 @@ export function AthletesPage({
     <div className="page athletes-page">
       <PageBanner placementId="ATHLETES_TOP">
         {() => (
-          <section
-            className="page-banner--athletes"
-            data-media-state={heroStatus}
-          >
-          {heroUrl && heroStatus !== "image-failed" ? (
-            <img
-              key={heroUrl}
-              ref={heroImage}
-              className="page-banner--athletes__banner"
-              src={heroUrl}
-              alt=""
-              aria-hidden="true"
-              onLoad={(event) => {
-                if (event.currentTarget === heroImage.current) setHeroStatus("image-loaded");
-              }}
-              onError={(event) => {
-                if (event.currentTarget !== heroImage.current) return;
-                setHeroStatus((status) => (status === "image-loaded" ? status : "image-failed"));
-              }}
-            />
-          ) : null}
-          <h1 className="page-banner--athletes__semantic-title">Move together. Train together.</h1>
-          <span className="page-banner--athletes__motion" aria-hidden="true" />
+          <section className="page-banner--athletes" data-media-state={heroStatus}>
+            {heroUrl && heroStatus !== "image-failed" ? (
+              <img
+                key={heroUrl}
+                ref={heroImage}
+                className="page-banner--athletes__banner"
+                src={heroUrl}
+                alt=""
+                aria-hidden="true"
+                onLoad={(event) => {
+                  if (event.currentTarget === heroImage.current) setHeroStatus("image-loaded");
+                }}
+                onError={(event) => {
+                  if (event.currentTarget !== heroImage.current) return;
+                  setHeroStatus((status) => (status === "image-loaded" ? status : "image-failed"));
+                }}
+              />
+            ) : null}
+            <h1 className="page-banner--athletes__semantic-title">
+              Move together. Train together.
+            </h1>
+            <span className="page-banner--athletes__motion" aria-hidden="true" />
           </section>
         )}
       </PageBanner>

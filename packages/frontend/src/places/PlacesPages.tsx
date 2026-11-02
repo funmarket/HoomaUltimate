@@ -140,15 +140,15 @@ export function PlacesPage() {
 
   return (
     <section className="place-page">
-            <PageBanner placementId="PLACES_TOP">
+      <PageBanner placementId="PLACES_TOP">
         {() => (
           <header className="page-banner--places">
-                    <div>
-                      <p className="eyebrow">SPOTS</p>
-                      <h1>Spots</h1>
-                      <p>Cafés, lounges, restaurants and other places to watch together.</p>
-                    </div>
-                  </header>
+            <div>
+              <p className="eyebrow">SPOTS</p>
+              <h1>Spots</h1>
+              <p>Cafés, lounges, restaurants and other places to watch together.</p>
+            </div>
+          </header>
         )}
       </PageBanner>
 

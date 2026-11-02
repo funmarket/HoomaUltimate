@@ -115,26 +115,26 @@ export function GearUpPage() {
 
   return (
     <section className="gear-up-page">
-            <PageBanner placementId="GEAR_UP_TOP">
+      <PageBanner placementId="GEAR_UP_TOP">
         {() => (
           <header className="page-banner--gear-up">
-                    <p className="page-banner--gear-up__eyebrow">GEAR UP</p>
-                    <h1 className="gear-up-page__title">
-                      {mode === "stores"
-                        ? "Discover shops offering gear and sportswear."
-                        : "Discover sports products from local shops."}
-                    </h1>
-                    <p className="page-banner--gear-up__description">
-                      {mode === "stores"
-                        ? "Find sportswear, equipment and more from local shops. Support real places in your community."
-                        : "Browse products across approved Gear Up shops while keeping every product connected to its real store."}
-                    </p>
-                    <div className="page-banner--gear-up__actions">
-                      <a className="gear-up-add-store-link" href="/athletes/gear-up/add-store">
-                        Add Store
-                      </a>
-                    </div>
-                  </header>
+            <p className="page-banner--gear-up__eyebrow">GEAR UP</p>
+            <h1 className="gear-up-page__title">
+              {mode === "stores"
+                ? "Discover shops offering gear and sportswear."
+                : "Discover sports products from local shops."}
+            </h1>
+            <p className="page-banner--gear-up__description">
+              {mode === "stores"
+                ? "Find sportswear, equipment and more from local shops. Support real places in your community."
+                : "Browse products across approved Gear Up shops while keeping every product connected to its real store."}
+            </p>
+            <div className="page-banner--gear-up__actions">
+              <a className="gear-up-add-store-link" href="/athletes/gear-up/add-store">
+                Add Store
+              </a>
+            </div>
+          </header>
         )}
       </PageBanner>
 

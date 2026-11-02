@@ -29,7 +29,9 @@ export type PageBannerRenderState = {
 };
 
 function mediaVariant(slide: PageBannerPublicSlide): PageBannerPublicVariant | null {
-  return slide.variants.find((variant) => variant.variant === "master") ?? slide.variants[0] ?? null;
+  return (
+    slide.variants.find((variant) => variant.variant === "master") ?? slide.variants[0] ?? null
+  );
 }
 function nextIndex(current: number, length: number, direction: -1 | 1): number {
   return (current + direction + length) % length;
@@ -49,7 +51,8 @@ export function usePageBanner(placementId: PageBannerPlacementId): PageBannerRen
     setStatus("loading");
     setSlides([]);
     setActiveIndex(0);
-    void api.pageBanners.publicRead(placementId)
+    void api.pageBanners
+      .publicRead(placementId)
       .then((response) => {
         if (!active) return;
         setSlides(response.enabled ? response.slides.filter((slide) => mediaVariant(slide)) : []);
@@ -73,7 +76,9 @@ export function usePageBanner(placementId: PageBannerPlacementId): PageBannerRen
     status,
     activeIndex: safeIndex,
     previous: () =>
-      setActiveIndex((current) => (slides.length ? nextIndex(current, slides.length, -1) : current)),
+      setActiveIndex((current) =>
+        slides.length ? nextIndex(current, slides.length, -1) : current,
+      ),
     next: () =>
       setActiveIndex((current) => (slides.length ? nextIndex(current, slides.length, 1) : current)),
   };

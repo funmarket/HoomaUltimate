@@ -174,27 +174,27 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
 
   return (
     <section className="page requests-page">
-            <PageBanner placementId="REQUESTS_TOP">
+      <PageBanner placementId="REQUESTS_TOP">
         {() => (
           <header className="page-banner--requests">
-                    <div className="page-banner--requests__copy">
-                      <span className="eyebrow">HOOMA HELP</span>
-                      <h1>{fundmeActive ? "FundMe" : donationsActive ? "Donations" : "Requests"}</h1>
-                      <p>
-                        {fundmeActive
-                          ? "FundMe will carry contributions for community needs once its own slice exists."
-                          : donationsActive
-                            ? "Give useful sports gear locally once the Donations domain is ready."
-                            : "Players help players. Stronger together."}
-                      </p>
-                    </div>
-                    {tab === "requests" ? (
-                      <a className="help-action help-action--primary" href="/requests/new">
-                        <PlusIcon />
-                        <span>New Request</span>
-                      </a>
-                    ) : null}
-                  </header>
+            <div className="page-banner--requests__copy">
+              <span className="eyebrow">HOOMA HELP</span>
+              <h1>{fundmeActive ? "FundMe" : donationsActive ? "Donations" : "Requests"}</h1>
+              <p>
+                {fundmeActive
+                  ? "FundMe will carry contributions for community needs once its own slice exists."
+                  : donationsActive
+                    ? "Give useful sports gear locally once the Donations domain is ready."
+                    : "Players help players. Stronger together."}
+              </p>
+            </div>
+            {tab === "requests" ? (
+              <a className="help-action help-action--primary" href="/requests/new">
+                <PlusIcon />
+                <span>New Request</span>
+              </a>
+            ) : null}
+          </header>
         )}
       </PageBanner>
 

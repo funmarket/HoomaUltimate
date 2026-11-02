@@ -191,8 +191,8 @@ export function TeamsPage() {
               <span className="eyebrow">TEAMS</span>
               <h1>Discover teams. Find opponents.</h1>
               <p>
-                Build your squad, publish your identity, send challenges and manage matchday from the
-                Coach Control Room.
+                Build your squad, publish your identity, send challenges and manage matchday from
+                the Coach Control Room.
               </p>
             </div>
             <div className="page-banner--teams-art" aria-hidden="true">
