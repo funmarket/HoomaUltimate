@@ -5,21 +5,21 @@
   padding-bottom: 32px;
 }
 
-.place-page__header {
+.page-banner__body--places {
   display: flex;
   align-items: end;
   justify-content: space-between;
   gap: 18px;
 }
 
-.place-page__header h1,
-.place-page__header p,
+.page-banner__body--places h1,
+.page-banner__body--places p,
 .place-submitted h1,
 .place-submitted p {
   margin: 0;
 }
 
-.place-page__header h1,
+.page-banner__body--places h1,
 .place-submitted h1 {
   color: var(--app-text-strong);
 }
@@ -775,7 +775,7 @@
 }
 
 @media (max-width: 760px) {
-  .place-page__header {
+  .page-banner__body--places {
     display: grid;
     align-items: start;
   }
