@@ -20,7 +20,7 @@ export function RideGatewayPage({ context }: { readonly context?: "MATCHDAY" | "
   const [requests, setRequests] = useState<PublicRideRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const copy = heroCopy(context);
+  const copy = pageBannerCopy(context);
 
   useEffect(() => {
     let active = true;
@@ -47,10 +47,42 @@ export function RideGatewayPage({ context }: { readonly context?: "MATCHDAY" | "
   return (
     <section className="ride-page ride-gateway">
       <div className="hooma-lane--media">
-        <PageBanner placementId="RIDE_TOP" />
-      </div>
-      <div className="hooma-lane--media">
-        <RideHero copy={copy} />
+        <PageBanner placementId="RIDE_TOP">
+          {() => (
+            <header className="page-banner--ride">
+              <div className="page-banner--ride__media">
+                <img
+                  className="page-banner--ride__banner"
+                  src="/rides/on-my-way-banner.png"
+                  alt="HOOMA ON MY WAY — going somewhere solo? See who's on your route, or bring someone along."
+                />
+              </div>
+              <div className="page-banner--ride__sr-copy">
+                <p>RIDE</p>
+                <h1>ON MY WAY</h1>
+                <p>{copy.subhead}</p>
+                <p>{copy.support}</p>
+              </div>
+              <nav className="page-banner--ride__actions" aria-label="Ride actions">
+                <a
+                  className="ride-button ride-button--primary"
+                  href={"/rides/request" + contextQuery(copy.context)}
+                >
+                  <RideMapPinIcon />
+                  <span>Request a Ride</span>
+                </a>
+                <a className="ride-button" href={"/rides/offers" + contextQuery(copy.context)}>
+                  <RideBrowseIcon />
+                  <span>Browse Offers</span>
+                </a>
+                <a className="ride-button" href={"/rides/offers/new" + contextQuery(copy.context)}>
+                  <RideCarPlusIcon />
+                  <span>Offer Seats</span>
+                </a>
+              </nav>
+            </header>
+          )}
+        </PageBanner>
       </div>
       <div className="hooma-lane--nav">
         <RideFeatureGrid />
@@ -79,41 +111,6 @@ export function RideGatewayPage({ context }: { readonly context?: "MATCHDAY" | "
         <RideRecentRequests context={context} requests={requests} loading={loading} />
       </div>
     </section>
-  );
-}
-
-function RideHero({ copy }: { readonly copy: ReturnType<typeof heroCopy> }) {
-  const scopedQuery = contextQuery(copy.context);
-  return (
-    <header className="ride-hero">
-      <div className="ride-hero__media">
-        <img
-          className="ride-hero__banner"
-          src="/rides/on-my-way-banner.png"
-          alt="HOOMA ON MY WAY — going somewhere solo? See who's on your route, or bring someone along."
-        />
-      </div>
-      <div className="ride-hero__sr-copy">
-        <p>RIDE</p>
-        <h1>ON MY WAY</h1>
-        <p>{copy.subhead}</p>
-        <p>{copy.support}</p>
-      </div>
-      <nav className="ride-hero__actions" aria-label="Ride actions">
-        <a className="ride-button ride-button--primary" href={`/rides/request${scopedQuery}`}>
-          <RideMapPinIcon />
-          <span>Request a Ride</span>
-        </a>
-        <a className="ride-button" href={`/rides/offers${scopedQuery}`}>
-          <RideBrowseIcon />
-          <span>Browse Offers</span>
-        </a>
-        <a className="ride-button" href={`/rides/offers/new${scopedQuery}`}>
-          <RideCarPlusIcon />
-          <span>Offer Seats</span>
-        </a>
-      </nav>
-    </header>
   );
 }
 
@@ -229,7 +226,7 @@ function RidePanelHeading({
   );
 }
 
-function heroCopy(context: "MATCHDAY" | "GENERAL" | undefined) {
+function pageBannerCopy(context: "MATCHDAY" | "GENERAL" | undefined) {
   if (context === "MATCHDAY") {
     return {
       subhead: "Going to the match solo? Why?",

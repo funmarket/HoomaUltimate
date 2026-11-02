@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { HomeGatewayGrid } from "./home/HomeGatewayGrid.js";
-import { HomeHero } from "./home/HomeHero.js";
 
 export { HoomaAccountHeader } from "./account/HoomaAccountHeader.js";
 export type {
@@ -27,19 +26,16 @@ export { HoomaBottomNav, PRIMARY_NAV_ITEMS } from "./navigation/HoomaBottomNav.j
 export type { HoomaBottomNavProps } from "./navigation/HoomaBottomNav.js";
 export { AppearanceSettings } from "./settings/AppearanceSettings.js";
 export type { AppearanceMode } from "./settings/AppearanceSettings.js";
-export { HomeHero } from "./home/HomeHero.js";
 export { HomeGatewayCard } from "./home/HomeGatewayCard.js";
 export { HomeGatewayGrid } from "./home/HomeGatewayGrid.js";
 export { HoomaNowFeed } from "./home/HoomaNowFeed.js";
 export type { HoomaNowFeedItem, HoomaNowFeedProps, HoomaNowUrgency } from "./home/HoomaNowFeed.js";
 export { HOME_GATEWAYS } from "./home/home-gateways.js";
 export type { HomeGatewayId, HomeGatewayItem } from "./home/home-gateways.js";
-export { TeamsHero } from "./teams/TeamsHero.js";
 export { TeamDiscoveryCard } from "./teams/TeamDiscoveryCard.js";
 export type { TeamDiscoveryCardProps } from "./teams/TeamDiscoveryCard.js";
 export { TeamBadge, TeamBanner } from "./teams/TeamMedia.js";
 export type { TeamBadgeProps, TeamBannerProps } from "./teams/TeamMedia.js";
-export { PlayHero } from "./play/PlayHero.js";
 export { PickupMatchCard } from "./play/PickupMatchCard.js";
 export { WATCH_COLLECTOR_TICKET_MASTER } from "./brand/watch-assets.js";
 export { MediaUploadField } from "./media/MediaUploadField.js";
@@ -79,9 +75,7 @@ export function HomeGateway() {
     <>
       <style>{HOME_GATEWAY_TYPOGRAPHY}</style>
       <section>
-        <div className="hooma-lane--media">
-          <HomeHero />
-        </div>
+        <div className="hooma-lane--media"></div>
         <div className="hooma-lane--content">
           <p className="eyebrow">YOUR FOOTBALL NEIGHBORHOOD</p>
           <h2 className="home-gateway-title">Find your people. Find the game.</h2>

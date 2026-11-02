@@ -9,15 +9,15 @@
   background: var(--hooma-ui-bg);
 }
 
-.gear-up-hero {
+.page-banner--gear-up {
   display: grid;
   gap: 8px;
   padding: 4px 0;
 }
 
-.gear-up-hero__eyebrow,
+.page-banner--gear-up__eyebrow,
 .gear-up-page__title,
-.gear-up-hero__description,
+.page-banner--gear-up__description,
 .gear-up-shop-card h2,
 .gear-up-shop-card p,
 .gear-up-results__heading h2,
@@ -26,7 +26,7 @@
   margin: 0;
 }
 
-.gear-up-hero__eyebrow {
+.page-banner--gear-up__eyebrow {
   color: var(--hooma-ui-text-meta);
   font-size: var(--hooma-ui-eyebrow);
   font-weight: 800;
@@ -40,14 +40,14 @@
   line-height: 1.08;
 }
 
-.gear-up-hero__description {
+.page-banner--gear-up__description {
   max-width: 56ch;
   color: var(--hooma-ui-text-description);
   font-size: var(--hooma-ui-body);
   line-height: 1.5;
 }
 
-.gear-up-hero__actions {
+.page-banner--gear-up__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;

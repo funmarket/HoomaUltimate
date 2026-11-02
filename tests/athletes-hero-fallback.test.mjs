@@ -63,7 +63,7 @@ async function fallback(view) {
   await waitFor(() => assert.equal(headingStyle(view).position, "static"));
   assert.equal(headingStyle(view).whiteSpace, "normal");
   assert.equal(view.getAllByRole("heading", { name: title }).length, 1);
-  assert.equal(view.container.querySelector(".athletes-hero__banner"), null);
+  assert.equal(view.container.querySelector(".page-banner--athletes__image"), null);
 }
 
 test("delivery failure reveals the existing heading without disabling CTA or tabs", async () => {
@@ -99,21 +99,21 @@ test("pending delivery and image loading keep the single heading clipped until a
   });
   const { view } = mount(() => response);
   assert.equal(
-    view.container.querySelector(".athletes-hero--hub").dataset.mediaState,
+    view.container.querySelector(".page-banner--athletes").dataset.mediaState,
     "delivery-pending",
   );
   assert.equal(headingStyle(view).position, "absolute");
   deliver(json({ contentUrl: firstUrl }));
-  await waitFor(() => assert.ok(view.container.querySelector("img.athletes-hero__banner")));
-  const image = view.container.querySelector("img.athletes-hero__banner");
+  await waitFor(() => assert.ok(view.container.querySelector("img.page-banner--athletes__image")));
+  const image = view.container.querySelector("img.page-banner--athletes__image");
   assert.equal(image.src, firstUrl);
   assert.equal(
-    view.container.querySelector(".athletes-hero--hub").dataset.mediaState,
+    view.container.querySelector(".page-banner--athletes").dataset.mediaState,
     "image-loading",
   );
   fireEvent.load(image);
   assert.equal(
-    view.container.querySelector(".athletes-hero--hub").dataset.mediaState,
+    view.container.querySelector(".page-banner--athletes").dataset.mediaState,
     "image-loaded",
   );
   assert.equal(headingStyle(view).position, "absolute");
@@ -125,23 +125,23 @@ test("pending delivery and image loading keep the single heading clipped until a
 test("image failure reveals the heading and a later delivery restores artwork without stale errors", async () => {
   let url = firstUrl;
   const { view, reload } = mount(async () => json({ contentUrl: url }));
-  await waitFor(() => assert.ok(view.container.querySelector("img.athletes-hero__banner")));
-  const oldImage = view.container.querySelector("img.athletes-hero__banner");
+  await waitFor(() => assert.ok(view.container.querySelector("img.page-banner--athletes__image")));
+  const oldImage = view.container.querySelector("img.page-banner--athletes__image");
   fireEvent.error(oldImage);
   await fallback(view);
   url = secondUrl;
   reload();
   await waitFor(() =>
-    assert.equal(view.container.querySelector("img.athletes-hero__banner")?.src, secondUrl),
+    assert.equal(view.container.querySelector("img.page-banner--athletes__image")?.src, secondUrl),
   );
-  const newImage = view.container.querySelector("img.athletes-hero__banner");
+  const newImage = view.container.querySelector("img.page-banner--athletes__image");
   fireEvent.load(newImage);
   fireEvent.error(oldImage);
   fireEvent.error(newImage);
   assert.equal(
-    view.container.querySelector(".athletes-hero--hub").dataset.mediaState,
+    view.container.querySelector(".page-banner--athletes").dataset.mediaState,
     "image-loaded",
   );
-  assert.equal(view.container.querySelector("img.athletes-hero__banner"), newImage);
+  assert.equal(view.container.querySelector("img.page-banner--athletes__image"), newImage);
   assert.equal(headingStyle(view).position, "absolute");
 });

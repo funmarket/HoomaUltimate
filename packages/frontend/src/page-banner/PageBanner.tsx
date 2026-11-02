@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState, type ReactNode } from "react";
 import type { PageBannerPlacementId } from "@hooma/contracts/page-banner";
 import { useHoomaFrontend } from "../context";
-import type { PageBannerPublicSlide } from "./api";
+import type { PageBannerPublicSlide, PageBannerPublicVariant } from "./api";
 
 const placementLabels: Readonly<Record<PageBannerPlacementId, string>> = {
   HOME_TOP: "Home",
@@ -17,7 +17,19 @@ const placementLabels: Readonly<Record<PageBannerPlacementId, string>> = {
   ATHLETES_TOP: "Athletes",
 };
 
-function mediaVariant(slide: PageBannerPublicSlide) {
+export type PageBannerArtwork = {
+  readonly slide: PageBannerPublicSlide;
+  readonly variant: PageBannerPublicVariant;
+};
+
+export type PageBannerRenderState = {
+  readonly artwork: PageBannerArtwork | null;
+  readonly slideCount: number;
+  readonly status: "loading" | "ready" | "error";
+  readonly activeIndex: number;
+};
+
+function mediaVariant(slide: PageBannerPublicSlide): PageBannerPublicVariant | null {
   return (
     slide.variants.find((variant) => variant.variant === "master") ?? slide.variants[0] ?? null
   );
@@ -27,80 +39,78 @@ function nextIndex(current: number, length: number, direction: -1 | 1): number {
   return (current + direction + length) % length;
 }
 
-export function PageBanner({ placementId }: { readonly placementId: PageBannerPlacementId }) {
+export function usePageBanner(placementId: PageBannerPlacementId): PageBannerRenderState & {
+  readonly previous: () => void;
+  readonly next: () => void;
+} {
   const { api } = useHoomaFrontend();
-  const [response, setResponse] = useState<{
-    readonly status: "loading" | "ready" | "error";
-    readonly data?: Awaited<ReturnType<typeof api.pageBanners.publicRead>>;
-  }>({ status: "loading" });
+  const [status, setStatus] = useState<PageBannerRenderState["status"]>("loading");
+  const [slides, setSlides] = useState<readonly PageBannerPublicSlide[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
     let active = true;
-    setResponse({ status: "loading" });
+    setStatus("loading");
+    setSlides([]);
     setActiveIndex(0);
+
     void api.pageBanners
       .publicRead(placementId)
-      .then((data) => {
-        if (active) setResponse({ status: "ready", data });
+      .then((response) => {
+        if (!active) return;
+        setSlides(response.enabled ? response.slides.filter((slide) => mediaVariant(slide)) : []);
+        setStatus("ready");
       })
       .catch(() => {
-        if (active) setResponse({ status: "error" });
+        if (active) setStatus("error");
       });
+
     return () => {
       active = false;
     };
   }, [api, placementId]);
 
-  const slides = useMemo(
-    () =>
-      response.status === "ready" && response.data?.enabled
-        ? response.data.slides.filter((slide) => mediaVariant(slide))
-        : [],
-    [response],
+  const safeIndex = slides.length ? Math.min(activeIndex, slides.length - 1) : 0;
+  const slide = slides[safeIndex] ?? null;
+  const variant = slide ? mediaVariant(slide) : null;
+
+  return {
+    artwork: slide && variant ? { slide, variant } : null,
+    slideCount: slides.length,
+    status,
+    activeIndex: safeIndex,
+    previous: () =>
+      setActiveIndex((current) =>
+        slides.length ? nextIndex(current, slides.length, -1) : current,
+      ),
+    next: () =>
+      setActiveIndex((current) => (slides.length ? nextIndex(current, slides.length, 1) : current)),
+  };
+}
+
+export function PageBannerArtwork({
+  artwork,
+  className = "page-banner__image",
+}: {
+  readonly artwork: PageBannerArtwork;
+  readonly className?: string;
+}) {
+  const { slide, variant } = artwork;
+  const image = (
+    <img
+      className={className}
+      src={variant.contentUrl}
+      width={variant.widthPx}
+      height={variant.heightPx}
+      alt={slide.isDecorative ? "" : (slide.altText ?? "")}
+      loading="eager"
+      decoding="async"
+    />
   );
 
-  if (response.status === "loading") {
-    return (
-      <section
-        className="page-banner page-banner--loading"
-        data-page-banner
-        data-state="loading"
-        aria-label={`${placementLabels[placementId]} banner`}
-        aria-busy="true"
-      />
-    );
-  }
+  if (!slide.destination) return image;
 
-  if (response.status === "error") {
-    return (
-      <div
-        className="page-banner page-banner--error"
-        data-page-banner
-        data-state="error"
-        role="status"
-      >
-        Banner unavailable.
-      </div>
-    );
-  }
-
-  if (!slides.length) return null;
-
-  const slide = slides[Math.min(activeIndex, slides.length - 1)]!;
-  const variant = mediaVariant(slide);
-  if (!variant) return null;
-
-  const image = React.createElement("img", {
-    className: "page-banner__image",
-    src: variant.contentUrl,
-    width: variant.widthPx,
-    height: variant.heightPx,
-    alt: slide.isDecorative ? "" : (slide.altText ?? ""),
-    loading: "eager",
-    decoding: "async",
-  });
-  const content = slide.destination ? (
+  return (
     <a
       className="page-banner__link"
       href={slide.destination.url}
@@ -110,39 +120,51 @@ export function PageBanner({ placementId }: { readonly placementId: PageBannerPl
     >
       {image}
     </a>
-  ) : (
-    image
   );
+}
+
+export function PageBanner({
+  placementId,
+  children,
+}: {
+  readonly placementId: PageBannerPlacementId;
+  readonly children: (state: PageBannerRenderState) => ReactNode;
+}) {
+  const state = usePageBanner(placementId);
+  const frameClassName = state.artwork
+    ? "page-banner__frame page-banner__frame--managed"
+    : "page-banner__frame";
 
   return (
     <section
       className="page-banner"
       data-page-banner
-      data-state="ready"
-      aria-label={`${placementLabels[placementId]} banner`}
+      data-state={state.status}
+      data-placement={placementId}
+      aria-label={placementLabels[placementId] + " page banner"}
+      aria-busy={state.status === "loading"}
     >
-      <div className="page-banner__frame">{content}</div>
-      {slides.length > 1 ? (
-        <div className="page-banner__controls">
+      <div className={frameClassName} data-page-banner-surface>
+        {state.artwork ? <PageBannerArtwork artwork={state.artwork} /> : children(state)}
+      </div>
+      {state.slideCount > 1 ? (
+        <div className="page-banner__controls" aria-label="Page banner controls">
           <button
             className="page-banner__control"
             type="button"
             aria-label="Previous banner"
-            onClick={() => setActiveIndex((current) => nextIndex(current, slides.length, -1))}
+            onClick={state.previous}
           >
             <span aria-hidden="true">‹</span>
           </button>
-          <span
-            className="page-banner__position"
-            aria-label={`${activeIndex + 1} of ${slides.length}`}
-          >
-            {activeIndex + 1} of {slides.length}
+          <span className="page-banner__position" aria-live="polite">
+            {state.activeIndex + 1} of {state.slideCount}
           </span>
           <button
             className="page-banner__control"
             type="button"
             aria-label="Next banner"
-            onClick={() => setActiveIndex((current) => nextIndex(current, slides.length, 1))}
+            onClick={state.next}
           >
             <span aria-hidden="true">›</span>
           </button>

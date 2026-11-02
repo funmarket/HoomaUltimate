@@ -559,38 +559,38 @@
 }
 
 /* Pitch discovery body — navigation remains owned by the app shell. */
-.pitch-discovery-hero {
+.page-banner--pitch {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
   gap: 16px;
 }
 
-.pitch-discovery-hero__copy {
+.page-banner--pitch__copy {
   display: grid;
   gap: 6px;
 }
 
-.pitch-discovery-hero__copy h1,
-.pitch-discovery-hero__copy p {
+.page-banner--pitch__copy h1,
+.page-banner--pitch__copy p {
   margin: 0;
 }
 
-.pitch-discovery-hero__eyebrow {
+.page-banner--pitch__eyebrow {
   color: #b8b5ad;
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.14em;
 }
 
-.pitch-discovery-hero__copy h1 {
+.page-banner--pitch__copy h1 {
   color: #f5f4ef;
   font-family: var(--font-ui, system-ui, sans-serif);
   font-size: 24px;
   line-height: 1.08;
 }
 
-.pitch-discovery-hero__copy > p:last-child {
+.page-banner--pitch__copy > p:last-child {
   color: #d8d4ca;
   font-size: 16px;
   line-height: 1.45;
@@ -746,7 +746,7 @@
 }
 
 @media (max-width: 719px) {
-  .pitch-discovery-hero {
+  .page-banner--pitch {
     grid-template-columns: 1fr;
     align-items: start;
   }

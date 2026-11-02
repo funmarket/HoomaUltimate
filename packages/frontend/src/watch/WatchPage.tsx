@@ -163,15 +163,16 @@ export function WatchPage() {
   return (
     <section className="watch-page">
       <div className="hooma-lane--media">
-        <PageBanner placementId="WATCH_TOP" />
-      </div>
-      <div className="hooma-lane--media">
-        <header className="watch-hero">
-          <div>
-            <h1>Watch</h1>
-            <p>Watch together. Find the match, the culture and the crowd.</p>
-          </div>
-        </header>
+        <PageBanner placementId="WATCH_TOP">
+          {() => (
+            <header className="page-banner--watch">
+              <div>
+                <h1>Watch</h1>
+                <p>Watch together. Find the match, the culture and the crowd.</p>
+              </div>
+            </header>
+          )}
+        </PageBanner>
       </div>
 
       <div className="hooma-lane--nav">

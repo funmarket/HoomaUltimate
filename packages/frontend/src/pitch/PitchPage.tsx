@@ -45,20 +45,21 @@ export function PitchPage() {
   return (
     <section className="pitch-page">
       <div className="hooma-lane--media">
-        <PageBanner placementId="PITCH_TOP" />
-      </div>
-      <div className="hooma-lane--content">
-        <header className="pitch-discovery-hero">
-          <div className="pitch-discovery-hero__copy">
-            <p className="pitch-discovery-hero__eyebrow">PITCHES</p>
-            <h1>Find your pitch</h1>
-            <p>Book football pitches near you. By real owners or from FanHub.</p>
-          </div>
-          <a className="pitch-add-action" href="/places/new?kind=PITCH">
-            <span aria-hidden="true">+</span>
-            Add a Pitch
-          </a>
-        </header>
+        <PageBanner placementId="PITCH_TOP">
+          {() => (
+            <header className="page-banner--pitch">
+              <div className="page-banner--pitch__copy">
+                <p className="page-banner--pitch__eyebrow">PITCHES</p>
+                <h1>Find your pitch</h1>
+                <p>Book football pitches near you. By real owners or from FanHub.</p>
+              </div>
+              <a className="pitch-add-action" href="/places/new?kind=PITCH">
+                <span aria-hidden="true">+</span>
+                Add a Pitch
+              </a>
+            </header>
+          )}
+        </PageBanner>
       </div>
 
       <div className="hooma-lane--nav">

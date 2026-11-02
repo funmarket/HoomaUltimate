@@ -31,15 +31,15 @@ test("Ride hub uses the locked exact ON MY WAY banner image", () => {
   assert.match(gateway, /See who's on your route/);
   assert.doesNotMatch(gateway, /Where you meet stays between you\./);
   assert.match(gateway, /src="\/rides\/on-my-way-banner\.png"/);
-  assert.match(gateway, /ride-hero__sr-copy/);
+  assert.match(gateway, /page-banner--ride__sr-copy/);
 
-  const hero = cssRule(css, ".ride-hero");
+  const hero = cssRule(css, ".page-banner--ride");
   assert.match(hero, /padding:\s*0/);
-  const media = cssRule(css, ".ride-hero__media");
+  const media = cssRule(css, ".page-banner--ride__media");
   assert.match(media, /overflow:\s*hidden/);
   assert.match(media, /aspect-ratio:\s*1672 \/ 941/);
   assert.match(media, /border-radius:\s*28px 28px 0 0/);
-  const banner = cssRule(css, ".ride-hero__banner");
+  const banner = cssRule(css, ".page-banner--ride__banner");
   assert.match(banner, /width:\s*100%/);
   assert.match(banner, /height:\s*100%/);
   assert.match(banner, /object-fit:\s*cover/);
@@ -49,7 +49,7 @@ test("Ride hub uses the locked exact ON MY WAY banner image", () => {
   assert.match(css, /--ride-sky-silver:\s*#afcfe6/);
   assert.match(css, /--ride-lime:\s*var\(--app-lime\)/);
   assert.match(css, /--ride-text-strong:\s*var\(--app-text-strong\)/);
-  assert.doesNotMatch(css, /\.ride-hero__route/);
+  assert.doesNotMatch(css, /\.page-banner--ride__route/);
   assert.doesNotMatch(css, /color:\s*var\(--ride-gold\) !important/);
 });
 
@@ -77,9 +77,9 @@ test("Ride hero actions keep approved IA and phone-first button layout", () => {
   assert.match(icons, /decoding="async"/);
   assert.doesNotMatch(gateway, /⌖|●●●|🔒/);
 
-  const actions = cssRule(css, ".ride-hero__actions");
+  const actions = cssRule(css, ".page-banner--ride__actions");
   assert.match(actions, /grid-template-columns:\s*1fr 1fr/);
-  assert.match(css, /\.ride-hero__actions \.ride-button--primary/);
+  assert.match(css, /\.page-banner--ride__actions \.ride-button--primary/);
   assert.match(css, /min-height:\s*52px/);
   assert.match(css, /\.ride-button img/);
   const button = cssRule(css, ".ride-button");
