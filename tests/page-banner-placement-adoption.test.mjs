@@ -36,7 +36,7 @@ const placements = [
   {
     path: "packages/frontend/src/places/PlacesPages.tsx",
     placementId: "PLACES_TOP",
-    forbidden: ["place-page__header"],
+    forbidden: [],
   },
   {
     path: "packages/frontend/src/requests/RequestsPage.tsx",
