@@ -97,7 +97,10 @@ test("Athletes hub keeps the real Create community control without visible app c
   );
   assert.doesNotMatch(hub, /<span className="eyebrow">ATHLETES<\/span>/);
   assert.doesNotMatch(hub, /Find local sports communities built around the way you move\./);
-  assert.match(hub, /className="page-banner__fallback-image page-banner__fallback-image--athletes"/);
+  assert.match(
+    hub,
+    /className="page-banner__fallback-image page-banner__fallback-image--athletes"/,
+  );
   assert.match(hub, /src=\{pageBannerFallbackUrl\}/);
   assert.match(hub, /api\.athletes[\s\S]*?\.heroDelivery\(controller\.signal\)/);
 });
@@ -105,10 +108,12 @@ test("Athletes hub keeps the real Create community control without visible app c
 test("Athletes hub banner is phone-scaled, borderless, and keeps only semantic hidden copy", () => {
   const hubRule =
     athletesCss.match(/\.page-banner__fallback--athletes\s*\{[\s\S]*?\}/)?.[0] ?? "";
-  const bannerRule = athletesCss.match(/\.page-banner__fallback-image--athletes\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const bannerRule =
+    athletesCss.match(/\.page-banner__fallback-image--athletes\s*\{[\s\S]*?\}/)?.[0] ?? "";
   const hiddenRule =
-    athletesCss.match(/\.page-banner__fallback--athletes \.page-banner__semantic-title--athletes\s*\{[\s\S]*?\}/)?.[0] ??
-    "";
+    athletesCss.match(
+      /\.page-banner__fallback--athletes \.page-banner__semantic-title--athletes\s*\{[\s\S]*?\}/,
+    )?.[0] ?? "";
 
   assert.match(hubRule, /aspect-ratio:\s*720\s*\/\s*520/);
   assert.match(hubRule, /min-height:\s*0/);
@@ -128,7 +133,10 @@ test("Athletes hub banner is phone-scaled, borderless, and keeps only semantic h
 
   assert.match(athletesCss, /\.page-banner__fallback--athletes::before[\s\S]*display:\s*none/);
   assert.match(athletesCss, /\.page-banner__fallback--athletes::after[\s\S]*display:\s*none/);
-  assert.match(athletesCss, /\.page-banner__fallback--athletes \.page-banner__motion--athletes[\s\S]*display:\s*none/);
+  assert.match(
+    athletesCss,
+    /\.page-banner__fallback--athletes \.page-banner__motion--athletes[\s\S]*display:\s*none/,
+  );
   assert.match(athletesCss, /\.athletes-hero--create h1/);
   assert.match(athletesCss, /\.athletes-hero--detail h1/);
 });
