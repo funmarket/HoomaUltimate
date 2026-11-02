@@ -104,7 +104,9 @@ test("pending delivery and image loading keep the single heading clipped until a
   );
   assert.equal(headingStyle(view).position, "absolute");
   deliver(json({ contentUrl: firstUrl }));
-  await waitFor(() => assert.ok(view.container.querySelector("img.page-banner__fallback-image--athletes")));
+  await waitFor(() =>
+    assert.ok(view.container.querySelector("img.page-banner__fallback-image--athletes")),
+  );
   const image = view.container.querySelector("img.page-banner__fallback-image--athletes");
   assert.equal(image.src, firstUrl);
   assert.equal(
@@ -125,14 +127,19 @@ test("pending delivery and image loading keep the single heading clipped until a
 test("image failure reveals the heading and a later delivery restores artwork without stale errors", async () => {
   let url = firstUrl;
   const { view, reload } = mount(async () => json({ contentUrl: url }));
-  await waitFor(() => assert.ok(view.container.querySelector("img.page-banner__fallback-image--athletes")));
+  await waitFor(() =>
+    assert.ok(view.container.querySelector("img.page-banner__fallback-image--athletes")),
+  );
   const oldImage = view.container.querySelector("img.page-banner__fallback-image--athletes");
   fireEvent.error(oldImage);
   await fallback(view);
   url = secondUrl;
   reload();
   await waitFor(() =>
-    assert.equal(view.container.querySelector("img.page-banner__fallback-image--athletes")?.src, secondUrl),
+    assert.equal(
+      view.container.querySelector("img.page-banner__fallback-image--athletes")?.src,
+      secondUrl,
+    ),
   );
   const newImage = view.container.querySelector("img.page-banner__fallback-image--athletes");
   fireEvent.load(newImage);
