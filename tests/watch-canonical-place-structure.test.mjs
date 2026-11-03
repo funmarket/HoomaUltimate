@@ -59,7 +59,8 @@ test("Watch separates primary destinations from secondary creation actions", () 
 test("Watch Spots reuse canonical Places and exclude canonical Pitch capabilities", () => {
   const places = source("packages/frontend/src/places/PlacesPages.tsx");
   const navigation = source("packages/frontend/src/watch/WatchSectionNavigation.tsx");
-  assert.match(places, /<h1>Spots<\/h1>/);
+  assert.match(places, /placementId="PLACES_TOP"/);
+  assert.doesNotMatch(places, /fallback=\{/);
   assert.match(places, /pitchApi\.list\(\)/);
   assert.match(places, /pitchPlaceIds/);
   assert.match(places, /!pitchPlaceIds\.has\(place\.id\)/);
