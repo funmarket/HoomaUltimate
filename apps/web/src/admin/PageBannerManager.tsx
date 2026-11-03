@@ -154,6 +154,13 @@ export function PageBannerManager({ adminApi }: { readonly adminApi: PlatformAdm
           metadata,
           editor.slideId ?? undefined,
         );
+        if (
+          !editor.slideId &&
+          editor.enabled &&
+          placements.find((placement) => placement.id === editor.placementId)?.enabled === false
+        ) {
+          await adminApi.pageBanners.setEnabled(editor.placementId, true);
+        }
       } else if (editor.slideId) {
         await adminApi.pageBanners.updateSlide(editor.placementId, editor.slideId, metadata);
       }
