@@ -43,24 +43,21 @@ test("Athletes hub orders PageBanner then Create Community then tabs with no CTA
 
   const bannerMarkup = hub.slice(bannerStart, createStart);
   assert.ok(bannerMarkup.includes('placementId="ATHLETES_TOP"'));
-  assert.ok(bannerMarkup.includes("page-banner__fallback-image--athletes"));
-  assert.ok(bannerMarkup.includes("src={pageBannerFallbackUrl}"));
-  assert.ok(bannerMarkup.includes("page-banner__semantic-title--athletes"));
+  assert.equal(bannerMarkup.includes("fallback={"), false);
+  assert.equal(bannerMarkup.includes("page-banner__fallback-image--athletes"), false);
   assert.equal(bannerMarkup.includes("Create community"), false);
   assert.equal(bannerMarkup.includes("onCreateCommunity"), false);
   assert.equal(bannerMarkup.includes("athletes-hub-create"), false);
 
-  assert.ok(hub.includes(".heroDelivery(controller.signal)"));
+  assert.equal(hub.includes("heroDelivery"), false);
   assert.ok(hub.includes("<AthletesHubTabs active={activeView} />"));
   assert.ok(hub.includes('activeView === "communities"'));
   assert.ok(hub.includes('activeView === "requests"'));
 });
 
-test("Athletes PageBanner fallback keeps 720x520 contain geometry without old hub aliases", () => {
-  assert.ok(athletesCss.includes(".page-banner__fallback--athletes {"));
-  assert.ok(athletesCss.includes("aspect-ratio: 720 / 520;"));
-  assert.ok(athletesCss.includes(".page-banner__fallback-image--athletes {"));
-  assert.ok(athletesCss.includes("object-fit: contain;"));
+test("Athletes hub keeps Create Community layout after retired PageBanner fallback removal", () => {
+  assert.equal(athletesCss.includes(".page-banner__fallback--athletes"), false);
+  assert.equal(athletesCss.includes(".page-banner__fallback-image--athletes"), false);
   assert.equal(athletesCss.includes(".athletes-hero--hub"), false);
   assert.ok(athletesCss.includes(".athletes-hub-create {"));
   const createStart = athletesCss.indexOf(".athletes-hub-create {");
