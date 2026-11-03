@@ -162,3 +162,55 @@ test("public PageBanner renders no public surface for disabled or empty placemen
     cleanup();
   }
 });
+
+
+test("public PageBanner keeps a neutral loading surface while the public read is pending", async () => {
+  let resolveFetch: ((response: Response) => void) | undefined;
+  globalThis.fetch = () =>
+    new Promise<Response>((resolve) => {
+      resolveFetch = resolve;
+    });
+
+  const view = render(
+    React.createElement(
+      HoomaFrontendProvider,
+      { transport: { baseUrl: "https://api.example.test" } },
+      React.createElement(PageBanner, { placementId: "WATCH_TOP" }),
+    ),
+  );
+
+  const loading = view.getByRole("region", { name: "Watch banner" });
+  assert.equal(loading.getAttribute("data-state"), "loading");
+  assert.equal(loading.textContent, "");
+
+  await act(async () => {
+    resolveFetch?.(
+      new Response(
+        JSON.stringify({ placementId: "WATCH_TOP", enabled: true, slides: [] }),
+        { headers: { "content-type": "application/json" } },
+      ),
+    );
+  });
+  await waitFor(() => assert.equal(view.container.querySelector("[data-page-banner]"), null), {
+    timeout: 2_000,
+  });
+});
+
+test("public PageBanner renders no public surface when its public read fails", async () => {
+  globalThis.fetch = async () => {
+    throw new Error("network unavailable");
+  };
+
+  const view = render(
+    React.createElement(
+      HoomaFrontendProvider,
+      { transport: { baseUrl: "https://api.example.test" } },
+      React.createElement(PageBanner, { placementId: "WATCH_TOP" }),
+    ),
+  );
+
+  await flushReact();
+  await waitFor(() => assert.equal(view.container.querySelector("[data-page-banner]"), null), {
+    timeout: 2_000,
+  });
+});
