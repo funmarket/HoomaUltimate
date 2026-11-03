@@ -163,7 +163,6 @@ test("public PageBanner renders no public surface for disabled or empty placemen
   }
 });
 
-
 test("public PageBanner keeps a neutral loading surface while the public read is pending", async () => {
   let resolveFetch: ((response: Response) => void) | undefined;
   globalThis.fetch = () =>
@@ -185,10 +184,9 @@ test("public PageBanner keeps a neutral loading surface while the public read is
 
   await act(async () => {
     resolveFetch?.(
-      new Response(
-        JSON.stringify({ placementId: "WATCH_TOP", enabled: true, slides: [] }),
-        { headers: { "content-type": "application/json" } },
-      ),
+      new Response(JSON.stringify({ placementId: "WATCH_TOP", enabled: true, slides: [] }), {
+        headers: { "content-type": "application/json" },
+      }),
     );
   });
   await waitFor(() => assert.equal(view.container.querySelector("[data-page-banner]"), null), {
