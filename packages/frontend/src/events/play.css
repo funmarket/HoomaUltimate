@@ -45,33 +45,6 @@
   outline: 2px solid #c4dc43;
   outline-offset: -2px;
 }
-.page-banner--play {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.7rem 0 1.2rem;
-  border-bottom: 1px solid rgba(199, 154, 43, 0.18);
-}
-.page-banner__copy--play > span {
-  color: #c4dc43;
-  font-size: 0.68rem;
-  font-weight: 950;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-.page-banner__copy--play h1 {
-  margin: 0.25rem 0 0;
-  color: var(--app-text-strong);
-  font-family: Georgia, serif;
-  font-size: clamp(3.7rem, 15vw, 6rem);
-  line-height: 0.84;
-}
-.page-banner__copy--play p {
-  margin: 0.75rem 0 0;
-  color: var(--app-text-secondary);
-  font-size: 0.9rem;
-}
 .page-banner__action--play {
   min-height: 3rem;
   padding: 0 1rem;
@@ -926,10 +899,6 @@
   }
 }
 @media (max-width: 620px) {
-  .page-banner--play {
-    display: grid;
-    align-items: start;
-  }
   .page-banner__action--play {
     width: fit-content;
   }
