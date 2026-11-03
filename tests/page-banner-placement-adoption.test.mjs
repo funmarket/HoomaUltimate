@@ -71,6 +71,11 @@ test("all canonical public roots have exactly one PageBanner page-top owner", ()
     );
     assert.ok(source.includes(`placementId="${placementId}"`), `${path} must own ${placementId}`);
     assert.equal(
+      source.includes("fallback={"),
+      false,
+      `${path} must not retain a retired PageBanner fallback`,
+    );
+    assert.equal(
       source.includes("/api/public/v1/banners"),
       false,
       `${path} must use the shared PageBanner API seam`,
@@ -82,16 +87,33 @@ test("all canonical public roots have exactly one PageBanner page-top owner", ()
   }
 });
 
-test("Ride keeps its exact actions inside the single RIDE_TOP PageBanner", () => {
-  const source = readFileSync("packages/frontend/src/rides/RideGatewayPage.tsx", "utf8");
+test("persistent page actions stay outside PageBanner ownership", () => {
+  const actionCases = [
+    ["packages/frontend/src/events/PlayPage.tsx", "page-banner__action--play"],
+    ["packages/frontend/src/pitch/PitchPage.tsx", "pitch-add-action"],
+    ["packages/frontend/src/requests/RequestsPage.tsx", "help-action help-action--primary"],
+    ["packages/frontend/src/gear-up/GearUpPage.tsx", "page-banner__actions page-banner__actions--gear-up"],
+    ["packages/frontend/src/rides/RideGatewayPage.tsx", "page-banner__actions page-banner__actions--ride"],
+  ];
 
-  assert.ok(source.includes("page-banner__actions--ride"));
-  assert.ok(source.includes("Request a Ride"));
-  assert.ok(source.includes("Browse Offers"));
-  assert.ok(source.includes("Offer Seats"));
-  assert.ok(source.includes("href={`/rides/request${scopedQuery}`}"));
-  assert.ok(source.includes("href={`/rides/offers${scopedQuery}`}"));
-  assert.ok(source.includes("href={`/rides/offers/new${scopedQuery}`}"));
+  for (const [path, actionToken] of actionCases) {
+    const source = readFileSync(path, "utf8");
+    const bannerStart = source.indexOf("<PageBanner");
+    const bannerEnd = source.indexOf("/>", bannerStart);
+    const actionIndex = source.indexOf(actionToken);
+
+    assert.ok(bannerStart >= 0, `${path} must retain PageBanner`);
+    assert.ok(bannerEnd > bannerStart, `${path} PageBanner must be self-closing`);
+    assert.ok(actionIndex > bannerEnd, `${path} must keep ${actionToken} outside PageBanner`);
+  }
+
+  const ride = readFileSync("packages/frontend/src/rides/RideGatewayPage.tsx", "utf8");
+  assert.ok(ride.includes("Request a Ride"));
+  assert.ok(ride.includes("Browse Offers"));
+  assert.ok(ride.includes("Offer Seats"));
+  assert.ok(ride.includes("href={`/rides/request${scopedQuery}`}"));
+  assert.ok(ride.includes("href={`/rides/offers${scopedQuery}`}"));
+  assert.ok(ride.includes("href={`/rides/offers/new${scopedQuery}`}"));
 });
 
 test("Athletes hub JSX and CSS use the same canonical PageBanner selector vocabulary", () => {
@@ -129,6 +151,8 @@ test("PageBanner runtime retains shared public reads without auto-rotation", () 
   const runtime = readFileSync("packages/frontend/src/page-banner/PageBanner.tsx", "utf8");
 
   assert.ok(runtime.includes("publicRead(placementId)"));
+  assert.equal(runtime.includes("fallback"), false);
+  assert.equal(runtime.includes("children"), false);
   assert.equal(runtime.includes("setInterval"), false);
   assert.equal(runtime.includes("setTimeout"), false);
 });
