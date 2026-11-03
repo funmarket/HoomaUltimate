@@ -101,8 +101,9 @@ test("Play introduction is owned by PLAY_TOP PageBanner while major section tabs
   const page = await read("packages/frontend/src/events/PlayPage.tsx");
 
   assert.ok(page.includes('placementId="PLAY_TOP"'));
-  assert.ok(page.includes('className="page-banner--play"'));
-  assert.ok(page.includes("<h1>PLAY</h1>"));
+  assert.equal(page.includes("fallback={"), false);
+  assert.equal(page.includes('className="page-banner--play"'), false);
+  assert.equal(page.includes("<h1>PLAY</h1>"), false);
   assert.equal(page.includes("<PlayHero"), false);
   assert.match(
     page,
