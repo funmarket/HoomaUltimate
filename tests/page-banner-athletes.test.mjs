@@ -5,7 +5,10 @@ import test from "node:test";
 const athletesPage = readFileSync("packages/frontend/src/athletes/AthletesPages.tsx", "utf8");
 const athletesCss = readFileSync("packages/frontend/src/athletes/athletes.css", "utf8");
 const athletesApi = readFileSync("packages/frontend/src/athletes/api.ts", "utf8");
-const athletesRoutes = readFileSync("apps/api/src/modules/athletes/http/athletes.routes.ts", "utf8");
+const athletesRoutes = readFileSync(
+  "apps/api/src/modules/athletes/http/athletes.routes.ts",
+  "utf8",
+);
 const publicRouter = readFileSync("apps/api/src/http/public-v1/router.ts", "utf8");
 const frontendApi = readFileSync("packages/frontend/src/api.ts", "utf8");
 
