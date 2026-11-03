@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { PageBannerPlacementId } from "@hooma/contracts/page-banner";
 import { useHoomaFrontend } from "../context";
 import type { PageBannerPublicSlide } from "./api";
@@ -110,16 +110,13 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
     );
   }
 
-  const state = variant ? "ready" : response.status === "ready" ? "fallback" : response.status;
-
   return (
     <section
       className={`page-banner${className ? ` ${className}` : ""}`}
       data-page-banner
       data-placement={placementId}
-      data-state={state}
+      data-state="ready"
       aria-label={`${placementLabels[placementId]} banner`}
-      {...(response.status === "loading" ? { "aria-busy": true } : {})}
     >
       <div className="page-banner__frame">{managedContent}</div>
       {variant && slides.length > 1 ? (
