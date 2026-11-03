@@ -563,3 +563,5 @@ No task is complete while affected governing documentation still describes the o
 ## PageBanner ownership
 
 Platform Admin owns PageBanner placement administration and authorization. The PageBanner module owns placement/slide metadata, destination policy, media lifecycle intent and public projection. PostgreSQL stores placement, slide and processed-variant metadata; object storage stores image bytes; the existing outbox/Worker authority reconciles abandoned and retired objects. PageBanner uses the canonical AuditWriter for Admin mutations and does not create a generic Media owner or cross-domain persistence authority.
+
+The shared public PageBanner runtime is the sole page-top banner owner for the approved placements. Retired page-specific heroes are not fallback owners: public roots render the shared neutral loading state while a PageBanner read is pending, render the managed banner when available, and render no page-top banner surface when the placement is empty/disabled or the read fails. Page-owned actions remain outside PageBanner presentation ownership.

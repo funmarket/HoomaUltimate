@@ -47,29 +47,8 @@ export function RideGatewayPage({ context }: { readonly context?: "MATCHDAY" | "
   return (
     <section className="ride-page ride-gateway">
       <div className="hooma-lane--media">
-        <PageBanner
-          placementId="RIDE_TOP"
-          className="page-banner--ride"
-          fallback={
-            <div className="page-banner__fallback page-banner__fallback--ride">
-              <div className="page-banner__fallback-media page-banner__fallback-media--ride">
-                <img
-                  className="page-banner__fallback-image page-banner__fallback-image--ride"
-                  src="/rides/on-my-way-banner.png"
-                  alt="HOOMA ON MY WAY — going somewhere solo? See who's on your route, or bring someone along."
-                />
-              </div>
-              <div className="page-banner__semantic-copy page-banner__semantic-copy--ride">
-                <p>RIDE</p>
-                <h1>ON MY WAY</h1>
-                <p>{copy.subhead}</p>
-                <p>{copy.support}</p>
-              </div>
-            </div>
-          }
-        >
-          <RidePageBannerActions copy={copy} />
-        </PageBanner>
+        <PageBanner placementId="RIDE_TOP" />
+        <RidePageBannerActions copy={copy} />
       </div>
       <div className="hooma-lane--nav">
         <RideFeatureGrid />

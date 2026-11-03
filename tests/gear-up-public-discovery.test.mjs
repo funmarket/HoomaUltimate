@@ -79,7 +79,8 @@ test("Gear Up discovery presents the approved filters and truthful canonical sho
   const filters = source("packages/frontend/src/gear-up/GearUpFilters.tsx");
   const card = source("packages/frontend/src/gear-up/GearUpShopCard.tsx");
 
-  assert.match(page, /Discover shops offering gear and sportswear\./);
+  assert.match(page, /placementId="GEAR_UP_TOP"/);
+  assert.doesNotMatch(page, /fallback=\{/);
   assert.match(page, /gear-up-discovery-mode/);
   assert.match(page, />\s*Stores\s*</);
   assert.match(page, />\s*Products\s*</);

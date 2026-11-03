@@ -42,42 +42,6 @@
   padding: 18px;
 }
 
-/* --- hero ------------------------------------------------------------- */
-
-.page-banner--requests {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 18px;
-  padding: 8px 2px 2px;
-}
-
-.page-banner__copy--requests {
-  display: grid;
-  gap: 8px;
-  min-width: 0;
-}
-
-.page-banner--requests .eyebrow {
-  color: var(--app-gold);
-}
-
-.page-banner--requests h1 {
-  margin: 0;
-  color: var(--hooma-ui-text);
-  font-size: clamp(23px, 6vw, 24px);
-  font-weight: 800;
-  line-height: 1.1;
-}
-
-.page-banner--requests p {
-  margin: 0;
-  max-width: 62ch;
-  color: var(--hooma-ui-text-secondary);
-  font-size: 17px;
-  line-height: 1.4;
-}
-
 .eyebrow {
   font-size: var(--hooma-ui-eyebrow);
   font-weight: 800;
@@ -185,8 +149,8 @@
   background: color-mix(in srgb, var(--hooma-ui-accent) 6%, #090a08);
 }
 
-.page-banner--requests > .help-action--primary,
-.page-banner--requests > .help-action--primary:hover:not(:disabled) {
+.help-action--page-top,
+.help-action--page-top:hover:not(:disabled) {
   border-color: #008000;
   background: #090a08;
   color: #008000;
@@ -1191,12 +1155,7 @@
 }
 
 @media (max-width: 640px) {
-  .page-banner--requests {
-    grid-template-columns: minmax(0, 1fr);
-    align-items: stretch;
-  }
-
-  .page-banner--requests > .help-action {
+  .help-action--page-top {
     width: 100%;
     box-sizing: border-box;
   }

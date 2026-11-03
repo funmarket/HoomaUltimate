@@ -45,22 +45,11 @@ export function PitchPage() {
   return (
     <section className="pitch-page">
       <div className="hooma-lane--media">
-        <PageBanner
-          placementId="PITCH_TOP"
-          className="page-banner--pitch"
-          fallback={
-            <div className="page-banner__copy page-banner__copy--pitch">
-              <p className="page-banner__eyebrow">PITCHES</p>
-              <h1>Find your pitch</h1>
-              <p>Book football pitches near you. By real owners or from FanHub.</p>
-            </div>
-          }
-        >
-          <a className="pitch-add-action" href="/places/new?kind=PITCH">
-            <span aria-hidden="true">+</span>
-            Add a Pitch
-          </a>
-        </PageBanner>
+        <PageBanner placementId="PITCH_TOP" />
+        <a className="pitch-add-action" href="/places/new?kind=PITCH">
+          <span aria-hidden="true">+</span>
+          Add a Pitch
+        </a>
       </div>
 
       <div className="hooma-lane--nav">

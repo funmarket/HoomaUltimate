@@ -9,42 +9,12 @@
   background: var(--hooma-ui-bg);
 }
 
-.page-banner--gear-up {
-  display: grid;
-  gap: 8px;
-  padding: 4px 0;
-}
-
-.page-banner__eyebrow,
-.gear-up-page__title,
-.page-banner__description--gear-up,
 .gear-up-shop-card h2,
 .gear-up-shop-card p,
 .gear-up-results__heading h2,
 .gear-up-empty-state h2,
 .gear-up-empty-state p {
   margin: 0;
-}
-
-.page-banner__eyebrow {
-  color: var(--hooma-ui-text-meta);
-  font-size: var(--hooma-ui-eyebrow);
-  font-weight: 800;
-  letter-spacing: 0.14em;
-}
-
-.gear-up-page__title {
-  color: var(--hooma-ui-text);
-  font-size: var(--hooma-ui-page-title);
-  font-weight: 800;
-  line-height: 1.08;
-}
-
-.page-banner__description--gear-up {
-  max-width: 56ch;
-  color: var(--hooma-ui-text-description);
-  font-size: var(--hooma-ui-body);
-  line-height: 1.5;
 }
 
 .page-banner__actions--gear-up {
