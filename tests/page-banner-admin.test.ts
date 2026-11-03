@@ -133,7 +133,7 @@ test("adding first enabled slide publishes an Off placement", async () => {
     fireEvent.change(view.getByLabelText("Alt text (required)"), {
       target: { value: "Match Day" },
     });
-    fireEvent.click(view.getByRole("button", { name: "Add slide" }));
+    fireEvent.click(view.getAllByRole("button", { name: "Add slide" })[1]!);
 
     await waitFor(() => assert.deepEqual(calls, ["upload", "setEnabled"]));
     await waitFor(() => assert.ok(view.getByRole("button", { name: "On" })));
