@@ -132,3 +132,23 @@ test("PageBanner runtime retains shared public reads without auto-rotation", () 
   assert.equal(runtime.includes("setInterval"), false);
   assert.equal(runtime.includes("setTimeout"), false);
 });
+
+
+test("Watch keeps retired hero presentation on the PageBanner fallback only", () => {
+  const page = readFileSync("packages/frontend/src/watch/WatchPage.tsx", "utf8");
+  const css = readFileSync("packages/frontend/src/watch/watch.css", "utf8");
+
+  assert.equal(page.split("<PageBanner").length - 1, 1);
+  assert.ok(page.includes('placementId="WATCH_TOP"'));
+  assert.equal(page.includes("watch-hero"), false);
+  assert.ok(page.includes("page-banner__body--watch"));
+
+  assert.match(css, /\.page-banner__body--watch\s*\{[\s\S]*?padding:/);
+  assert.match(css, /\.page-banner__body--watch\s*\{[\s\S]*?background:/);
+  assert.match(css, /\.page-banner__body--watch\s*\{[\s\S]*?border-radius:/);
+  assert.doesNotMatch(css, /\.page-banner--watch\s*\{[\s\S]*?padding:/);
+  assert.doesNotMatch(css, /\.page-banner--watch\s*\{[\s\S]*?background:/);
+  assert.doesNotMatch(css, /\.page-banner--watch\s*\{[\s\S]*?border-radius:/);
+  assert.ok(css.includes(".page-banner__body--watch h1"));
+  assert.ok(css.includes(".page-banner__body--watch p"));
+});
