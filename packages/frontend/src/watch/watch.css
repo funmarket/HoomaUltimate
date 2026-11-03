@@ -4,7 +4,7 @@
   padding-bottom: 32px;
 }
 
-.page-banner--watch {
+.page-banner__body--watch {
   min-height: clamp(180px, 30vw, 260px);
   display: grid;
   align-items: end;
@@ -20,12 +20,12 @@
     linear-gradient(150deg, #050605, color-mix(in srgb, var(--app-lime) 7%, #050605));
 }
 
-.page-banner--watch h1,
-.page-banner--watch p {
+.page-banner__body--watch h1,
+.page-banner__body--watch p {
   margin: 0;
 }
 
-.page-banner--watch h1 {
+.page-banner__body--watch h1 {
   color: var(--app-text-strong);
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(3.5rem, 13vw, 7rem);
@@ -33,7 +33,7 @@
   letter-spacing: -0.055em;
 }
 
-.page-banner--watch p {
+.page-banner__body--watch p {
   margin-top: 16px;
   color: var(--app-text-secondary);
   font-size: clamp(1rem, 3vw, 1.25rem);
