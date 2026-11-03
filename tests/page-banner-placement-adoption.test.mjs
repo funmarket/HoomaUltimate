@@ -133,7 +133,6 @@ test("PageBanner runtime retains shared public reads without auto-rotation", () 
   assert.equal(runtime.includes("setTimeout"), false);
 });
 
-
 test("Watch keeps retired hero presentation on the PageBanner fallback only", () => {
   const page = readFileSync("packages/frontend/src/watch/WatchPage.tsx", "utf8");
   const css = readFileSync("packages/frontend/src/watch/watch.css", "utf8");
