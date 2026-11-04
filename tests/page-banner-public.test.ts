@@ -205,7 +205,7 @@ test("media load and decode failures never expose a broken image surface", async
   assert.equal(secondView.container.querySelector("[data-page-banner]"), null);
 });
 
-test("manual navigation reveals only a decoded new slide and retains secure destinations", async () => {
+test("manual navigation shows decoded slides with safe destinations", async () => {
   const view = mount(
     response([
       slide("slide-1"),

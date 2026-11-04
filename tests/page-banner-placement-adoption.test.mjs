@@ -76,7 +76,7 @@ test("all canonical public roots have exactly one PageBanner page-top owner", ()
       `${path} must use the shared PageBanner API seam`,
     );
 
-    assert.equal(source.includes('fallback={'), false, `${path} must not include a legacy hero`);
+    assert.equal(source.includes("fallback={"), false, `${path} must not include a legacy hero`);
     for (const token of forbidden) {
       assert.equal(source.includes(token), false, `${path} must not retain ${token}`);
     }

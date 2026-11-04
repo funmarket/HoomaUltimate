@@ -765,7 +765,6 @@
 }
 
 @media (max-width: 760px) {
-  
   .place-directory,
   .place-business-grid {
     grid-template-columns: 1fr;
