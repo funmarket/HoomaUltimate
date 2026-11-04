@@ -28,6 +28,36 @@ for (const key of ["window", "document", "HTMLElement", "Element", "Node", "navi
 }
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
+class PendingImage {
+  static instances: PendingImage[] = [];
+  onload: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  naturalWidth = 720;
+  naturalHeight = 520;
+  complete = false;
+  src = "";
+  decode = async () => {};
+
+  constructor() {
+    PendingImage.instances.push(this);
+  }
+
+  load() {
+    this.complete = true;
+    this.onload?.();
+  }
+
+  fail() {
+    this.onerror?.();
+  }
+}
+
+Object.defineProperty(globalThis, "Image", {
+  value: PendingImage,
+  configurable: true,
+  writable: true,
+});
+
 const React = await import("react");
 Object.defineProperty(globalThis, "React", {
   value: React,
@@ -41,28 +71,50 @@ const originalFetch = globalThis.fetch;
 afterEach(() => {
   cleanup();
   globalThis.fetch = originalFetch;
+  PendingImage.instances.length = 0;
 });
 
-const signedVariant = (url: string) => ({
-  variant: "master",
-  contentUrl: url,
-  expiresAt: "2026-11-02T12:00:00.000Z",
-  contentType: "image/webp",
-  widthPx: 1200,
-  heightPx: 400,
-});
+function signedVariant(url: string) {
+  return {
+    variant: "master",
+    contentUrl: url,
+    expiresAt: "2026-11-02T12:00:00.000Z",
+    contentType: "image/webp",
+    widthPx: 720,
+    heightPx: 520,
+  };
+}
 
-async function flushReact() {
-  await act(async () => {
-    await Promise.resolve();
+function slide(
+  id: string,
+  altText: string | null = null,
+  destination: { kind: "INTERNAL" | "EXTERNAL"; url: string } | null = null,
+) {
+  return {
+    id,
+    sortOrder: Number(id.replace("slide-", "")) - 1,
+    isDecorative: altText === null,
+    altText,
+    destination,
+    variants: [signedVariant(`https://media.example.test/${id}.webp`)],
+  };
+}
+
+function response(
+  slides: ReturnType<typeof slide>[] = [],
+  enabled = true,
+) {
+  return { placementId: "ATHLETES_TOP", enabled, slides };
+}
+
+function json(body: unknown) {
+  return new Response(JSON.stringify(body), {
+    headers: { "content-type": "application/json" },
   });
 }
 
 function mount(body: unknown) {
-  globalThis.fetch = async () =>
-    new Response(JSON.stringify(body), {
-      headers: { "content-type": "application/json" },
-    });
+  globalThis.fetch = async () => json(body);
   return render(
     React.createElement(
       HoomaFrontendProvider,
@@ -72,93 +124,130 @@ function mount(body: unknown) {
   );
 }
 
-test("public PageBanner renders a signed Athletes slide with accessible metadata", async () => {
-  const view = mount({
-    placementId: "ATHLETES_TOP",
-    enabled: true,
-    slides: [
-      {
-        id: "slide-1",
-        sortOrder: 0,
-        isDecorative: false,
-        altText: "Athletes training together",
-        destination: { kind: "INTERNAL", url: "/athletes" },
-        variants: [signedVariant("https://media.example.test/slide-1.webp")],
-      },
-    ],
+async function flushReact() {
+  await act(async () => {
+    await Promise.resolve();
   });
+}
 
-  await flushReact();
-  await waitFor(() => assert.ok(view.getByRole("img", { name: "Athletes training together" })), {
-    timeout: 2_000,
+async function loadNext() {
+  const next = PendingImage.instances.at(-1);
+  assert.ok(next, "a managed image must be requested");
+  await act(async () => {
+    next.load();
+    await Promise.resolve();
   });
-  const image = view.getByRole("img", { name: "Athletes training together" });
+}
+
+test("decoded managed slide is the only displayed PageBanner artwork", async () => {
+  const view = mount(response([slide("slide-1", "Athletes training", { kind: "INTERNAL", url: "/athletes" })]));
+  assert.equal(view.container.querySelector("[data-page-banner]"), null);
+  await flushReact();
+  assert.equal(view.container.querySelector("[data-page-banner]"), null);
+  await loadNext();
+  const image = view.getByRole("img", { name: "Athletes training" });
   assert.equal(image.getAttribute("src"), "https://media.example.test/slide-1.webp");
-  assert.equal(
-    view.getByRole("link", { name: "Athletes training together" }).getAttribute("href"),
-    "/athletes",
-  );
-  assert.equal(
-    view.getByRole("region", { name: "Athletes banner" }).getAttribute("aria-live"),
-    null,
-  );
+  assert.equal(image.getAttribute("width"), "720");
+  assert.equal(image.getAttribute("height"), "520");
+  assert.equal(view.getByRole("link", { name: "Athletes training" }).getAttribute("href"), "/athletes");
+  assert.equal(view.getByRole("region", { name: "Athletes banner" }).getAttribute("aria-live"), null);
 });
 
-test("public PageBanner manually navigates ordered slides without auto-rotation", async () => {
-  const view = mount({
-    placementId: "ATHLETES_TOP",
-    enabled: true,
-    slides: [
-      {
-        id: "slide-1",
-        sortOrder: 0,
-        isDecorative: true,
-        altText: null,
-        destination: null,
-        variants: [signedVariant("https://media.example.test/slide-1.webp")],
-      },
-      {
-        id: "slide-2",
-        sortOrder: 1,
-        isDecorative: false,
-        altText: "Athletes community",
-        destination: {
-          kind: "EXTERNAL",
-          url: "https://example.test/community",
-        },
-        variants: [signedVariant("https://media.example.test/slide-2.webp")],
-      },
-    ],
-  });
+test("disabled or empty placements never render a fallback, loading, or error hero", async () => {
+  for (const body of [response([], false), response()]) {
+    const view = mount(body);
+    assert.equal(view.container.querySelector("[data-page-banner]"), null);
+    await flushReact();
+    assert.equal(view.container.querySelector("[data-page-banner]"), null);
+    assert.equal(view.container.querySelector("img"), null);
+    cleanup();
+  }
+});
 
+test("public API errors display no PageBanner or native substitute", async () => {
+  globalThis.fetch = async () => {
+    throw new Error("network unavailable");
+  };
+  const view = render(
+    React.createElement(
+      HoomaFrontendProvider,
+      { transport: { baseUrl: "https://api.example.test" } },
+      React.createElement(PageBanner, { placementId: "ATHLETES_TOP" }),
+    ),
+  );
   await flushReact();
-  await waitFor(() => assert.ok(view.getByRole("button", { name: "Next banner" })), {
-    timeout: 2_000,
-  });
-  assert.equal(view.container.querySelector("img")?.getAttribute("alt"), "");
+  assert.equal(view.container.querySelector("[data-page-banner]"), null);
+  assert.equal(view.queryByText("Banner unavailable."), null);
+});
+
+test("media load and decode failures never expose a broken image surface", async () => {
+  const view = mount(response([slide("slide-1")]));
+  await flushReact();
+  assert.equal(PendingImage.instances.length, 1);
   await act(async () => {
-    fireEvent.click(view.getByRole("button", { name: "Next banner" }));
+    PendingImage.instances[0]!.fail();
   });
-  await waitFor(() => assert.ok(view.getByRole("img", { name: "Athletes community" })), {
-    timeout: 2_000,
-  });
+  assert.equal(view.container.querySelector("[data-page-banner]"), null);
+  cleanup();
+
+  const secondView = mount(response([slide("slide-2")]));
+  await flushReact();
+  const second = PendingImage.instances.at(-1)!;
+  second.decode = async () => {
+    throw new Error("decode failed");
+  };
+  await loadNext();
+  assert.equal(secondView.container.querySelector("[data-page-banner]"), null);
+});
+
+test("manual navigation reveals only a decoded new slide and retains secure destinations", async () => {
+  const view = mount(
+    response([
+      slide("slide-1"),
+      slide("slide-2", "Community artwork", {
+        kind: "EXTERNAL",
+        url: "https://example.test/community",
+      }),
+    ]),
+  );
+  await flushReact();
+  await loadNext();
+  assert.equal(view.container.querySelector("img")?.getAttribute("alt"), "");
+
+  fireEvent.click(view.getByRole("button", { name: "Next banner" }));
+  assert.equal(view.container.querySelector("[data-page-banner]"), null);
+  await flushReact();
+  await loadNext();
+  await waitFor(() => assert.ok(view.getByRole("img", { name: "Community artwork" })));
   assert.equal(
-    view.getByRole("link", { name: "Athletes community" }).getAttribute("href"),
+    view.getByRole("link", { name: "Community artwork" }).getAttribute("href"),
     "https://example.test/community",
+  );
+  assert.equal(
+    view.getByRole("link", { name: "Community artwork" }).getAttribute("rel"),
+    "noreferrer noopener",
   );
   assert.equal(view.getByText("2 of 2").textContent, "2 of 2");
 });
 
-test("public PageBanner renders no public surface for disabled or empty placements", async () => {
-  for (const body of [
-    { placementId: "ATHLETES_TOP", enabled: false, slides: [] },
-    { placementId: "ATHLETES_TOP", enabled: true, slides: [] },
-  ]) {
-    const view = mount(body);
-    await flushReact();
-    await waitFor(() => assert.equal(view.container.querySelector("[data-page-banner]"), null), {
-      timeout: 2_000,
+test("unmounting during a pending request cannot resurrect a stale banner", async () => {
+  let resolveFetch: ((value: Response) => void) | undefined;
+  globalThis.fetch = () =>
+    new Promise<Response>((resolve) => {
+      resolveFetch = resolve;
     });
-    cleanup();
-  }
+  const view = render(
+    React.createElement(
+      HoomaFrontendProvider,
+      { transport: { baseUrl: "https://api.example.test" } },
+      React.createElement(PageBanner, { placementId: "ATHLETES_TOP" }),
+    ),
+  );
+  view.unmount();
+  await act(async () => {
+    resolveFetch?.(json(response([slide("slide-1")])));
+    await Promise.resolve();
+  });
+  assert.equal(view.container.querySelector("[data-page-banner]"), null);
+  assert.equal(PendingImage.instances.length, 0);
 });
