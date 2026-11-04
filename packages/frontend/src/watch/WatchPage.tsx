@@ -166,14 +166,6 @@ export function WatchPage() {
         <PageBanner
           placementId="WATCH_TOP"
           className="page-banner--watch"
-          fallback={
-            <div className="page-banner__body page-banner__body--watch">
-              <div>
-                <h1>Watch</h1>
-                <p>Watch together. Find the match, the culture and the crowd.</p>
-              </div>
-            </div>
-          }
         />
       </div>
 

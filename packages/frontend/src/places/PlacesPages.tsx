@@ -144,15 +144,6 @@ export function PlacesPage() {
         <PageBanner
           placementId="PLACES_TOP"
           className="page-banner--places"
-          fallback={
-            <div className="page-banner__body page-banner__body--places">
-              <div>
-                <p className="eyebrow">SPOTS</p>
-                <h1>Spots</h1>
-                <p>Cafés, lounges, restaurants and other places to watch together.</p>
-              </div>
-            </div>
-          }
         />
       </div>
 
