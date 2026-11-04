@@ -10,7 +10,8 @@ test("Pitch discovery keeps navigation outside the page body and exposes only Ad
   const page = source("packages/frontend/src/pitch/PitchPage.tsx");
 
   assert.match(page, /href="\/places\/new\?kind=PITCH"/);
-  assert.match(page, /PITCHES/);
+  assert.match(page, /placementId="PITCH_TOP"/);
+  assert.doesNotMatch(page, /<h1>PITCHES<\/h1>/);
   assert.match(page, /Add a Pitch/);
   assert.doesNotMatch(page, /aria-label="Pitch sections"/);
   assert.doesNotMatch(page, /className="pitch-actions"/);

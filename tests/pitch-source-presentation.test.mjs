@@ -30,10 +30,10 @@ test("Pitch discovery body uses the approved HOOMA body shell without fake futur
   const page = source("packages/frontend/src/pitch/PitchPage.tsx");
   const css = source("packages/frontend/src/pitch/pitch.css");
 
-  assert.match(page, /Find your pitch/);
-  assert.match(page, /Book football pitches near you/);
+  assert.match(page, /placementId="PITCH_TOP"/);
+  assert.doesNotMatch(page, /Find your pitch|Book football pitches near you/);
   assert.doesNotMatch(page, /Field format|Surface|Date & time/);
-  assert.ok(css.includes(".page-banner--pitch"));
+  assert.equal(css.includes(".page-banner--pitch"), false);
   assert.match(css, /\.pitch-source-tabs/);
 });
 
