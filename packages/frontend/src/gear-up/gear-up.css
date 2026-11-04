@@ -9,11 +9,6 @@
   background: var(--hooma-ui-bg);
 }
 
-.page-banner--gear-up {
-  display: grid;
-  gap: 8px;
-  padding: 4px 0;
-}
 
 .page-banner__eyebrow,
 .gear-up-page__title,

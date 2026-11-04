@@ -559,22 +559,8 @@
 }
 
 /* Pitch discovery body — navigation remains owned by the app shell. */
-.page-banner--pitch {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-  gap: 16px;
-}
 
-.page-banner__copy--pitch {
-  display: grid;
-  gap: 6px;
-}
 
-.page-banner__copy--pitch h1,
-.page-banner__copy--pitch p {
-  margin: 0;
-}
 
 .page-banner__eyebrow {
   color: #b8b5ad;
@@ -583,18 +569,7 @@
   letter-spacing: 0.14em;
 }
 
-.page-banner__copy--pitch h1 {
-  color: #f5f4ef;
-  font-family: var(--font-ui, system-ui, sans-serif);
-  font-size: 24px;
-  line-height: 1.08;
-}
 
-.page-banner__copy--pitch > p:last-child {
-  color: #d8d4ca;
-  font-size: 16px;
-  line-height: 1.45;
-}
 
 .pitch-add-action {
   min-height: 48px;
@@ -746,11 +721,7 @@
 }
 
 @media (max-width: 719px) {
-  .page-banner--pitch {
-    grid-template-columns: 1fr;
-    align-items: start;
-  }
-
+  
   .pitch-add-action {
     width: fit-content;
   }
