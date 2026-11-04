@@ -62,10 +62,6 @@
   color: var(--hooma-page-muted);
 }
 
-
-
-
-
 .hooma-page .hooma-section-heading {
   align-items: center;
   margin-bottom: 0.75rem;
@@ -289,5 +285,4 @@
   .hooma-page .panel.hooma-domain-links {
     padding: 0.9rem;
   }
-
   }

@@ -560,16 +560,12 @@
 
 /* Pitch discovery body — navigation remains owned by the app shell. */
 
-
-
 .page-banner__eyebrow {
   color: #b8b5ad;
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.14em;
 }
-
-
 
 .pitch-add-action {
   min-height: 48px;
