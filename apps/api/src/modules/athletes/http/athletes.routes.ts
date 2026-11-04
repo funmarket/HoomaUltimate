@@ -17,11 +17,22 @@ import { Router, raw } from "express";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import { getAuth } from "../../identity/http/auth-request.js";
 import type { AthletesCalendarService } from "../application/athletes-calendar.service.js";
+import type { AthletesHeroService } from "../application/athletes-hero.service.js";
 import type { AthletesPhotoService } from "../application/athletes-photo.service.js";
 import type { AthletesService } from "../application/athletes.service.js";
 
-export function createAthletesPublicRouter(service: AthletesService): Router {
+export function createAthletesPublicRouter(
+  service: AthletesService,
+  heroService: AthletesHeroService,
+): Router {
   const router = Router();
+  router.get(
+    "/hero/delivery",
+    asyncHandler(async (_req, res) => {
+      res.setHeader("cache-control", "public, max-age=60");
+      res.json(await heroService.delivery());
+    }),
+  );
   router.get(
     "/",
     asyncHandler(async (req, res) => {

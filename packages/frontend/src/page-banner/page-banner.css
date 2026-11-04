@@ -88,6 +88,13 @@
   animation: page-banner-shimmer 1.4s ease-in-out infinite;
 }
 
+.page-banner--error {
+  padding: 0.75rem 1rem;
+  color: var(--text-muted, #b7b7b7);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
 @keyframes page-banner-shimmer {
   0% {
     background-position: 100% 0;
@@ -113,6 +120,18 @@
   }
 }
 
+.page-banner__fallback,
+.page-banner__body,
+.page-banner__copy {
+  min-width: 0;
+}
+
+.page-banner__fallback-link,
+.page-banner__fallback-image {
+  display: block;
+  width: 100%;
+}
+
 .page-banner--home {
   border: 1px solid rgba(214, 171, 84, 0.52);
   border-radius: clamp(12px, 2.2vw, 22px);
@@ -120,6 +139,24 @@
   box-shadow:
     0 16px 34px rgba(0, 0, 0, 0.34),
     inset 0 0 0 1px rgba(255, 238, 192, 0.055);
+}
+
+.page-banner__fallback-link--home {
+  aspect-ratio: 1850 / 850;
+  color: inherit;
+  text-decoration: none;
+}
+
+.page-banner__fallback-link--home:focus-visible {
+  outline: 2px solid #d6ab54;
+  outline-offset: -3px;
+}
+
+.page-banner__fallback-image--home {
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  user-select: none;
 }
 
 @media (max-width: 520px) {

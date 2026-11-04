@@ -19,18 +19,25 @@ const homePage = await readFile(
   "utf8",
 );
 
-test("homepage gateway artwork remains lazy after retired Home hero removal", () => {
+test("homepage gateway artwork does not compete with the critical PageBanner fallback image", () => {
   assert.match(gatewayCard, /loading="lazy"/);
   assert.match(gatewayCard, /decoding="async"/);
   assert.doesNotMatch(gatewayCard, /loading="eager"/);
   assert.doesNotMatch(gatewayCard, /decoding="sync"/);
+
+  assert.match(homePage, /loading="eager"/);
+  assert.match(homePage, /fetchPriority="high"/);
 });
 
-test("HOME_TOP uses PageBanner without retired Match Day fallback markup", () => {
-  assert.match(homePage, /placementId="HOME_TOP"/);
-  assert.doesNotMatch(homePage, /fallback=\{/);
-  assert.doesNotMatch(homePage, /home-hero\/matchday\.webp/);
-  assert.doesNotMatch(homePage, /page-banner__fallback-link--home/);
+test("HOME_TOP PageBanner fallback opens the canonical Play route", () => {
+  assert.match(
+    homePage,
+    /className="page-banner__fallback-link page-banner__fallback-link--home"[\s\S]*href="\/play"/,
+  );
+  assert.match(homePage, /aria-label="Match Day — open Play"/);
+  assert.match(homePage, /page-banner__fallback-link--home/);
+  assert.doesNotMatch(homePage, /href="\/events\/new"/);
+  assert.doesNotMatch(homePage, /hooma-web-production\.up\.railway\.app/);
 });
 
 test("homepage gateway contract is a phone-first three by two grid", () => {
