@@ -56,9 +56,6 @@
   content: none;
 }
 
-
-
-
 .page-banner__actions--ride {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -770,7 +767,6 @@
     border-radius: 28px;
   }
 
-  
   .ride-feature-grid {
     gap: 10px;
   }
