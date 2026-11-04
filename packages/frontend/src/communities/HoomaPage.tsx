@@ -114,10 +114,7 @@ export function HoomaPage() {
   return (
     <div className="page hooma-page">
       <div className="hooma-lane--media">
-        <PageBanner
-          placementId="HOOMA_TOP"
-          className="page-banner--hooma"
-        />
+        <PageBanner placementId="HOOMA_TOP" className="page-banner--hooma" />
       </div>
 
       <div className="hooma-lane--content">

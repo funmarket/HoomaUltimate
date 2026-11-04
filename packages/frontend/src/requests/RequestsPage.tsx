@@ -179,10 +179,13 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
       </div>
       {tab === "requests" ? (
         <div className="hooma-lane--content">
-            <a className="help-action help-action--primary requests-page__create-action" href="/requests/new">
-              <PlusIcon />
-              <span>New Request</span>
-            </a>
+          <a
+            className="help-action help-action--primary requests-page__create-action"
+            href="/requests/new"
+          >
+            <PlusIcon />
+            <span>New Request</span>
+          </a>
         </div>
       ) : null}
 

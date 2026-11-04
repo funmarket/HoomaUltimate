@@ -185,10 +185,7 @@ export function TeamsPage() {
   return (
     <div className="page teams-page">
       <div className="hooma-lane--media">
-        <PageBanner
-          placementId="TEAMS_TOP"
-          className="page-banner--teams"
-        />
+        <PageBanner placementId="TEAMS_TOP" className="page-banner--teams" />
       </div>
       <div className="hooma-lane--nav">
         <nav className="teams-tabs" aria-label="Teams sections">
