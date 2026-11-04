@@ -83,52 +83,27 @@ test("Athletes hero maps missing or failed storage to safe Athletes errors", asy
   );
 });
 
-test("Athletes hub keeps the real Create community control without visible app copy", () => {
+test("Athletes hub retains Create community without legacy hero presentation or delivery", () => {
   const hub = athletesPage.slice(
     athletesPage.indexOf("export function AthletesPage"),
     athletesPage.indexOf("export function CreateAthletesPage"),
   );
-
   assert.ok(hub.includes("onClick={onCreateCommunity}"));
   assert.ok(hub.includes("Create community"));
-  assert.ok(hub.includes("page-banner__semantic-title--athletes"));
-  assert.ok(hub.includes("Move together. Train together."));
-  assert.equal(hub.includes("Find local sports communities built around the way you move."), false);
-  assert.ok(hub.includes("page-banner__fallback-image--athletes"));
-  assert.ok(hub.includes("src={pageBannerFallbackUrl}"));
-  assert.ok(hub.includes(".heroDelivery(controller.signal)"));
+  assert.ok(hub.includes('placementId="ATHLETES_TOP"'));
+  assert.equal(hub.includes("page-banner__fallback"), false);
+  assert.equal(hub.includes("Move together. Train together."), false);
+  assert.equal(hub.includes(".heroDelivery("), false);
+  assert.equal(hub.includes("pageBannerFallbackUrl"), false);
 });
-
-test("Athletes PageBanner fallback selectors match the final CSS contract", () => {
-  const selectors = [
-    ".page-banner__fallback--athletes",
-    ".page-banner__fallback-image--athletes",
-    ".page-banner__semantic-title--athletes",
-    ".page-banner__motion--athletes",
-  ];
-
-  for (const selector of selectors) {
-    assert.ok(athletesCss.includes(selector));
-  }
-
-  for (const declaration of [
-    "aspect-ratio: 720 / 520;",
-    "min-height: 0;",
-    "padding: 0;",
-    "border: 0;",
-    "box-shadow: none;",
-    "object-fit: contain;",
-    "clip: rect(0 0 0 0);",
-    "display: none;",
-  ]) {
-    assert.ok(athletesCss.includes(declaration));
-  }
-
+test("Athletes keeps legitimate detail hero CSS but no retired hub hero styles", () => {
+  assert.equal(athletesCss.includes(".page-banner__fallback--athletes"), false);
+  assert.equal(athletesCss.includes("page-banner__fallback-image--athletes"), false);
   assert.equal(athletesCss.includes("athletes-hero--hub"), false);
+  assert.ok(athletesCss.includes(".athletes-hub-create {"));
   assert.ok(athletesCss.includes(".athletes-hero--create h1,"));
   assert.ok(athletesCss.includes(".athletes-hero--detail h1"));
 });
-
 test("Athletes hero uses a public signed-delivery endpoint and no local Git-hosted banner path", () => {
   assert.match(athletesRoutes, /router\.get\(\s*"\/hero\/delivery"/);
   assert.match(athletesApi, /\/api\/public\/v1\/athletes\/hero\/delivery/);
