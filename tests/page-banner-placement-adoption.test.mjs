@@ -76,43 +76,36 @@ test("all canonical public roots have exactly one PageBanner page-top owner", ()
       `${path} must use the shared PageBanner API seam`,
     );
 
+    assert.equal(source.includes('fallback={'), false, `${path} must not include a legacy hero`);
     for (const token of forbidden) {
       assert.equal(source.includes(token), false, `${path} must not retain ${token}`);
     }
   }
 });
 
-test("Ride keeps its exact actions inside the single RIDE_TOP PageBanner", () => {
+test("Ride retains its exact actions outside the optional RIDE_TOP PageBanner", () => {
   const source = readFileSync("packages/frontend/src/rides/RideGatewayPage.tsx", "utf8");
-
-  assert.ok(source.includes("page-banner__actions--ride"));
-  assert.ok(source.includes("Request a Ride"));
-  assert.ok(source.includes("Browse Offers"));
-  assert.ok(source.includes("Offer Seats"));
+  const banner = source.indexOf('placementId="RIDE_TOP"');
+  const actions = source.indexOf("<RidePageBannerActions copy={copy} />");
+  assert.ok(banner >= 0 && actions > banner);
+  assert.match(source.slice(banner, actions), /<\/div>/);
+  for (const label of ["Request a Ride", "Browse Offers", "Offer Seats"]) {
+    assert.ok(source.includes(label));
+  }
   assert.ok(source.includes("href={`/rides/request${scopedQuery}`}"));
   assert.ok(source.includes("href={`/rides/offers${scopedQuery}`}"));
   assert.ok(source.includes("href={`/rides/offers/new${scopedQuery}`}"));
 });
-
-test("Athletes hub JSX and CSS use the same canonical PageBanner selector vocabulary", () => {
+test("Athletes hub no longer owns a native hero or legacy delivery request", () => {
   const page = readFileSync("packages/frontend/src/athletes/AthletesPages.tsx", "utf8");
   const css = readFileSync("packages/frontend/src/athletes/athletes.css", "utf8");
-  const selectors = [
-    "page-banner__fallback--athletes",
-    "page-banner__fallback-image--athletes",
-    "page-banner__semantic-title--athletes",
-    "page-banner__motion--athletes",
-  ];
-
-  for (const selector of selectors) {
-    assert.ok(page.includes(selector), `Athletes JSX must use ${selector}`);
-    assert.ok(css.includes(`.${selector}`), `Athletes CSS must style ${selector}`);
-  }
-
+  assert.ok(page.includes('placementId="ATHLETES_TOP"'));
+  assert.ok(page.includes("athletes-hub-create"));
+  assert.equal(page.includes("heroDelivery("), false);
+  assert.equal(page.includes("page-banner__fallback"), false);
+  assert.equal(css.includes("page-banner__fallback"), false);
   assert.equal(page.includes("athletes-hero--hub"), false);
-  assert.equal(css.includes("athletes-hero--hub"), false);
 });
-
 test("superseded Home, Play and Teams hero modules and exports are removed", () => {
   const uiIndex = readFileSync("packages/ui/src/index.tsx", "utf8");
 
@@ -133,21 +126,12 @@ test("PageBanner runtime retains shared public reads without auto-rotation", () 
   assert.equal(runtime.includes("setTimeout"), false);
 });
 
-test("Watch keeps retired hero presentation on the PageBanner fallback only", () => {
+test("Watch uses its canonical managed placement without retired hero presentation", () => {
   const page = readFileSync("packages/frontend/src/watch/WatchPage.tsx", "utf8");
   const css = readFileSync("packages/frontend/src/watch/watch.css", "utf8");
-
   assert.equal(page.split("<PageBanner").length - 1, 1);
   assert.ok(page.includes('placementId="WATCH_TOP"'));
-  assert.equal(page.includes("watch-hero"), false);
-  assert.ok(page.includes("page-banner__body--watch"));
-
-  assert.match(css, /\.page-banner__body--watch\s*\{[\s\S]*?padding:/);
-  assert.match(css, /\.page-banner__body--watch\s*\{[\s\S]*?background:/);
-  assert.match(css, /\.page-banner__body--watch\s*\{[\s\S]*?border-radius:/);
-  assert.doesNotMatch(css, /\.page-banner--watch\s*\{[\s\S]*?padding:/);
-  assert.doesNotMatch(css, /\.page-banner--watch\s*\{[\s\S]*?background:/);
-  assert.doesNotMatch(css, /\.page-banner--watch\s*\{[\s\S]*?border-radius:/);
-  assert.ok(css.includes(".page-banner__body--watch h1"));
-  assert.ok(css.includes(".page-banner__body--watch p"));
+  assert.equal(page.includes("page-banner__body--watch"), false);
+  assert.equal(css.includes("page-banner__body--watch"), false);
+  assert.ok(page.includes("<WatchSectionNavigation"));
 });
