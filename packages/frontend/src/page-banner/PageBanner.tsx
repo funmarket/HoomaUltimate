@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, type ReactNode } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import type { PageBannerPlacementId } from "@hooma/contracts/page-banner";
 import { useHoomaFrontend } from "../context";
 import type { PageBannerPublicSlide } from "./api";
@@ -30,114 +30,117 @@ function nextIndex(current: number, length: number, direction: -1 | 1): number {
 type PageBannerProps = {
   readonly placementId: PageBannerPlacementId;
   readonly className?: string;
-  readonly fallback?: ReactNode;
-  readonly children?: ReactNode;
 };
 
-export function PageBanner({ placementId, className, fallback, children }: PageBannerProps) {
+export function PageBanner({ placementId, className }: PageBannerProps) {
   const { api } = useHoomaFrontend();
   const [response, setResponse] = useState<{
+    readonly api: typeof api;
+    readonly placementId: PageBannerPlacementId;
     readonly status: "loading" | "ready" | "error";
     readonly data?: Awaited<ReturnType<typeof api.pageBanners.publicRead>>;
-  }>({ status: "loading" });
+  } | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [decodedKey, setDecodedKey] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    setResponse({ status: "loading" });
+    setResponse({ api, placementId, status: "loading" });
     setActiveIndex(0);
+    setDecodedKey(null);
     void api.pageBanners
       .publicRead(placementId)
       .then((data) => {
-        if (active) setResponse({ status: "ready", data });
+        if (active) setResponse({ api, placementId, status: "ready", data });
       })
       .catch(() => {
-        if (active) setResponse({ status: "error" });
+        if (active) setResponse({ api, placementId, status: "error" });
       });
     return () => {
       active = false;
     };
   }, [api, placementId]);
 
+  const currentResponse =
+    response?.api === api && response.placementId === placementId ? response : null;
   const slides = useMemo(
     () =>
-      response.status === "ready" && response.data?.enabled
-        ? response.data.slides.filter((slide) => mediaVariant(slide))
+      currentResponse?.status === "ready" && currentResponse.data?.enabled
+        ? currentResponse.data.slides.filter((slide) => mediaVariant(slide))
         : [],
-    [response],
+    [currentResponse],
   );
-
-  const hasOwnedContent = fallback !== undefined || children !== undefined;
   const slide = slides.length ? slides[Math.min(activeIndex, slides.length - 1)]! : null;
   const variant = slide ? mediaVariant(slide) : null;
+  const imageKey = slide && variant ? `${placementId}:${slide.id}:${variant.contentUrl}` : null;
 
-  if (!hasOwnedContent && response.status === "loading") {
-    return (
-      <section
-        className="page-banner page-banner--loading"
-        data-page-banner
-        data-state="loading"
-        aria-label={`${placementLabels[placementId]} banner`}
-        aria-busy="true"
-      />
-    );
-  }
+  useEffect(() => {
+    let active = true;
+    setDecodedKey(null);
+    if (!variant || !imageKey || !variant.contentUrl.trim()) return;
+    const image = new Image();
+    const ready = () => {
+      if (!active || !image.naturalWidth || !image.naturalHeight) return;
+      const decoding = typeof image.decode === "function" ? image.decode() : Promise.resolve();
+      void decoding
+        .then(() => {
+          if (active) setDecodedKey(imageKey);
+        })
+        .catch(() => {
+          if (active) setDecodedKey(null);
+        });
+    };
+    image.onload = ready;
+    image.onerror = () => {
+      if (active) setDecodedKey(null);
+    };
+    image.src = variant.contentUrl;
+    if (image.complete && image.naturalWidth > 0) ready();
+    return () => {
+      active = false;
+      image.onload = null;
+      image.onerror = null;
+    };
+  }, [imageKey, variant?.contentUrl]);
 
-  if (!hasOwnedContent && response.status === "error") {
-    return (
-      <div
-        className="page-banner page-banner--error"
-        data-page-banner
-        data-state="error"
-        role="status"
-      >
-        Banner unavailable.
-      </div>
-    );
-  }
+  if (!slide || !variant || !imageKey || decodedKey !== imageKey) return null;
 
-  if (!hasOwnedContent && !variant) return null;
-
-  let managedContent: ReactNode = null;
-  if (slide && variant) {
-    const image = React.createElement("img", {
-      className: "page-banner__image",
-      src: variant.contentUrl,
-      width: variant.widthPx,
-      height: variant.heightPx,
-      alt: slide.isDecorative ? "" : (slide.altText ?? ""),
-      loading: "eager",
-      decoding: "async",
-    });
-    managedContent = slide.destination ? (
-      <a
-        className="page-banner__link"
-        href={slide.destination.url}
-        {...(slide.destination.kind === "EXTERNAL"
-          ? { rel: "noreferrer noopener", target: "_blank" }
-          : {})}
-      >
-        {image}
-      </a>
-    ) : (
-      image
-    );
-  }
-
-  const state = variant ? "ready" : response.status === "ready" ? "fallback" : response.status;
-
+  const image = (
+    <img
+      className="page-banner__image"
+      src={variant.contentUrl}
+      width={variant.widthPx}
+      height={variant.heightPx}
+      alt={slide.isDecorative ? "" : (slide.altText ?? "")}
+      loading="eager"
+      decoding="async"
+      onError={() => setDecodedKey(null)}
+    />
+  );
   return (
     <section
       className={`page-banner${className ? ` ${className}` : ""}`}
       data-page-banner
       data-placement={placementId}
-      data-state={state}
+      data-state="ready"
       aria-label={`${placementLabels[placementId]} banner`}
-      {...(response.status === "loading" ? { "aria-busy": true } : {})}
     >
-      {managedContent ? <div className="page-banner__frame">{managedContent}</div> : fallback}
-      {children}
-      {variant && slides.length > 1 ? (
+      <div className="page-banner__frame">
+        {slide.destination ? (
+          <a
+            className="page-banner__link"
+            href={slide.destination.url}
+            {...(slide.destination.kind === "EXTERNAL"
+              ? { rel: "noreferrer noopener", target: "_blank" }
+              : {})}
+          >
+            {image}
+          </a>
+        ) : (
+          image
+        )}
+      </div>
+      {slides.length > 1 ? (
         <div className="page-banner__controls">
           <button
             className="page-banner__control"
