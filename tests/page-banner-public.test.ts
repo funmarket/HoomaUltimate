@@ -100,10 +100,7 @@ function slide(
   };
 }
 
-function response(
-  slides: ReturnType<typeof slide>[] = [],
-  enabled = true,
-) {
+function response(slides: ReturnType<typeof slide>[] = [], enabled = true) {
   return { placementId: "ATHLETES_TOP", enabled, slides };
 }
 
@@ -140,7 +137,9 @@ async function loadNext() {
 }
 
 test("decoded managed slide is the only displayed PageBanner artwork", async () => {
-  const view = mount(response([slide("slide-1", "Athletes training", { kind: "INTERNAL", url: "/athletes" })]));
+  const view = mount(
+    response([slide("slide-1", "Athletes training", { kind: "INTERNAL", url: "/athletes" })]),
+  );
   assert.equal(view.container.querySelector("[data-page-banner]"), null);
   await flushReact();
   assert.equal(view.container.querySelector("[data-page-banner]"), null);
@@ -149,8 +148,14 @@ test("decoded managed slide is the only displayed PageBanner artwork", async () 
   assert.equal(image.getAttribute("src"), "https://media.example.test/slide-1.webp");
   assert.equal(image.getAttribute("width"), "720");
   assert.equal(image.getAttribute("height"), "520");
-  assert.equal(view.getByRole("link", { name: "Athletes training" }).getAttribute("href"), "/athletes");
-  assert.equal(view.getByRole("region", { name: "Athletes banner" }).getAttribute("aria-live"), null);
+  assert.equal(
+    view.getByRole("link", { name: "Athletes training" }).getAttribute("href"),
+    "/athletes",
+  );
+  assert.equal(
+    view.getByRole("region", { name: "Athletes banner" }).getAttribute("aria-live"),
+    null,
+  );
 });
 
 test("disabled or empty placements never render a fallback, loading, or error hero", async () => {

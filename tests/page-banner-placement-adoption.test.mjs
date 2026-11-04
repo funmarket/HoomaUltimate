@@ -96,6 +96,7 @@ test("Ride retains its exact actions outside the optional RIDE_TOP PageBanner", 
   assert.ok(source.includes("href={`/rides/offers${scopedQuery}`}"));
   assert.ok(source.includes("href={`/rides/offers/new${scopedQuery}`}"));
 });
+
 test("Athletes hub no longer owns a native hero or legacy delivery request", () => {
   const page = readFileSync("packages/frontend/src/athletes/AthletesPages.tsx", "utf8");
   const css = readFileSync("packages/frontend/src/athletes/athletes.css", "utf8");
@@ -106,6 +107,7 @@ test("Athletes hub no longer owns a native hero or legacy delivery request", () 
   assert.equal(css.includes("page-banner__fallback"), false);
   assert.equal(page.includes("athletes-hero--hub"), false);
 });
+
 test("superseded Home, Play and Teams hero modules and exports are removed", () => {
   const uiIndex = readFileSync("packages/ui/src/index.tsx", "utf8");
 
