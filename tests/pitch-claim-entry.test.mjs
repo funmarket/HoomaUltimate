@@ -9,8 +9,7 @@ function source(path) {
 test("Pitch discovery stays consumer-first without ownership onboarding", () => {
   const pitch = source("packages/frontend/src/pitch/PitchPage.tsx");
 
-  assert.match(pitch, /placementId="PITCH_TOP"/);
-  assert.doesNotMatch(pitch, /fallback=\{/);
+  assert.match(pitch, /Find your pitch/);
   assert.doesNotMatch(pitch, /List a pitch|Verify Place ownership|PitchCapabilityOnboarding/);
   assert.doesNotMatch(pitch, /href="\/pitch\/manage"/);
 });

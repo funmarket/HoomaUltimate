@@ -30,9 +30,11 @@ function nextIndex(current: number, length: number, direction: -1 | 1): number {
 type PageBannerProps = {
   readonly placementId: PageBannerPlacementId;
   readonly className?: string;
+  readonly fallback?: ReactNode;
+  readonly children?: ReactNode;
 };
 
-export function PageBanner({ placementId, className }: PageBannerProps) {
+export function PageBanner({ placementId, className, fallback, children }: PageBannerProps) {
   const { api } = useHoomaFrontend();
   const [response, setResponse] = useState<{
     readonly status: "loading" | "ready" | "error";
@@ -65,10 +67,11 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
     [response],
   );
 
+  const hasOwnedContent = fallback !== undefined || children !== undefined;
   const slide = slides.length ? slides[Math.min(activeIndex, slides.length - 1)]! : null;
   const variant = slide ? mediaVariant(slide) : null;
 
-  if (response.status === "loading") {
+  if (!hasOwnedContent && response.status === "loading") {
     return (
       <section
         className="page-banner page-banner--loading"
@@ -80,9 +83,20 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
     );
   }
 
-  if (response.status === "error") return null;
+  if (!hasOwnedContent && response.status === "error") {
+    return (
+      <div
+        className="page-banner page-banner--error"
+        data-page-banner
+        data-state="error"
+        role="status"
+      >
+        Banner unavailable.
+      </div>
+    );
+  }
 
-  if (!variant) return null;
+  if (!hasOwnedContent && !variant) return null;
 
   let managedContent: ReactNode = null;
   if (slide && variant) {
@@ -110,15 +124,19 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
     );
   }
 
+  const state = variant ? "ready" : response.status === "ready" ? "fallback" : response.status;
+
   return (
     <section
       className={`page-banner${className ? ` ${className}` : ""}`}
       data-page-banner
       data-placement={placementId}
-      data-state="ready"
+      data-state={state}
       aria-label={`${placementLabels[placementId]} banner`}
+      {...(response.status === "loading" ? { "aria-busy": true } : {})}
     >
-      <div className="page-banner__frame">{managedContent}</div>
+      {managedContent ? <div className="page-banner__frame">{managedContent}</div> : fallback}
+      {children}
       {variant && slides.length > 1 ? (
         <div className="page-banner__controls">
           <button

@@ -34,11 +34,42 @@ export function AthletesPage({
   const { api } = useHoomaFrontend();
   const navigate = useNavigate();
   const [items, setItems] = useState<PublicAthletesSummary[]>([]);
+  const [pageBannerFallbackUrl, setPageBannerFallbackUrl] = useState<string | null>(null);
+  const [pageBannerStatus, setPageBannerStatus] = useState<
+    "delivery-pending" | "delivery-unavailable" | "image-loading" | "image-loaded" | "image-failed"
+  >("delivery-pending");
+  const pageBannerImage = useRef<HTMLImageElement>(null);
   const [searchParams] = useSearchParams();
   const activeView = searchParams.get("tab") === "requests" ? "requests" : "communities";
   const [sport, setSport] = useState<AthletesSport | "ALL">("ALL");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+
+    setPageBannerFallbackUrl(null);
+    setPageBannerStatus("delivery-pending");
+    void api.athletes
+      .heroDelivery(controller.signal)
+      .then((delivery) => {
+        if (!active) return;
+        const contentUrl = delivery.contentUrl?.trim();
+        setPageBannerFallbackUrl(contentUrl || null);
+        setPageBannerStatus(contentUrl ? "image-loading" : "delivery-unavailable");
+      })
+      .catch(() => {
+        if (!active) return;
+        setPageBannerFallbackUrl(null);
+        setPageBannerStatus("delivery-unavailable");
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [api]);
 
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -96,7 +127,45 @@ export function AthletesPage({
   return (
     <div className="page athletes-page">
       <div className="hooma-lane--media">
-        <PageBanner placementId="ATHLETES_TOP" />
+        <PageBanner
+          placementId="ATHLETES_TOP"
+          className="page-banner--athletes-hub"
+          fallback={
+            <div
+              className="page-banner__fallback page-banner__fallback--athletes"
+              data-media-state={pageBannerStatus}
+            >
+              {pageBannerFallbackUrl && pageBannerStatus !== "image-failed" ? (
+                <img
+                  key={pageBannerFallbackUrl}
+                  ref={pageBannerImage}
+                  className="page-banner__fallback-image page-banner__fallback-image--athletes"
+                  src={pageBannerFallbackUrl}
+                  alt=""
+                  aria-hidden="true"
+                  onLoad={(event) => {
+                    if (event.currentTarget === pageBannerImage.current) {
+                      setPageBannerStatus("image-loaded");
+                    }
+                  }}
+                  onError={(event) => {
+                    if (event.currentTarget !== pageBannerImage.current) return;
+                    setPageBannerStatus((status) =>
+                      status === "image-loaded" ? status : "image-failed",
+                    );
+                  }}
+                />
+              ) : null}
+              <h1 className="page-banner__semantic-title page-banner__semantic-title--athletes">
+                Move together. Train together.
+              </h1>
+              <span
+                className="page-banner__motion page-banner__motion--athletes"
+                aria-hidden="true"
+              />
+            </div>
+          }
+        />
       </div>
 
       <div className="hooma-lane--content">
