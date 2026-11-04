@@ -460,7 +460,7 @@
   .team-create-panel > div {
     grid-column: 1/-1;
   }
-    .challenge-card,
+  .challenge-card,
   .team-game-card {
     align-items: flex-start;
     flex-direction: column;
@@ -479,16 +479,6 @@
 }
 
 @media (max-width: 560px) {
-    .page-banner__art--teams {
-    width: 100px;
-    height: 110px;
-  }
-    .teams-ball {
-    right: 0;
-    width: 45px;
-    height: 45px;
-    font-size: 25px;
-  }
   .teams-tab {
     font-size: 12px;
   }

@@ -42,8 +42,6 @@
   padding: 18px;
 }
 
-/* --- hero ------------------------------------------------------------- */
-
 .eyebrow {
   font-size: var(--hooma-ui-eyebrow);
   font-weight: 800;
@@ -1157,7 +1155,6 @@
 }
 
 @media (max-width: 640px) {
-  
   .requests-page__create-action {
     width: 100%;
     box-sizing: border-box;

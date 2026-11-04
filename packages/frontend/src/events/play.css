@@ -899,7 +899,7 @@
   }
 }
 @media (max-width: 620px) {
-    .page-banner__action--play {
+  .page-banner__action--play {
     width: fit-content;
   }
   .formation-builder__header {

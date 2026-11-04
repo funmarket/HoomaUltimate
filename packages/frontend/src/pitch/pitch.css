@@ -558,8 +558,6 @@
   }
 }
 
-/* Pitch discovery body — navigation remains owned by the app shell. */
-
 .page-banner__eyebrow {
   color: #b8b5ad;
   font-size: 12px;
@@ -717,7 +715,6 @@
 }
 
 @media (max-width: 719px) {
-  
   .pitch-add-action {
     width: fit-content;
   }
