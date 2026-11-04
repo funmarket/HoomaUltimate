@@ -128,71 +128,7 @@
   color: #ffaca6;
 }
 
-.page-banner__body--teams {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  min-height: 210px;
-  padding: 18px 0 30px;
-  border-bottom: 1px solid var(--teams-line);
-}
 
-.page-banner__body--teams > div:first-child {
-  min-width: 0;
-}
-.page-banner__body--teams h1 {
-  margin: 8px 0 14px;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(42px, 8vw, 78px);
-  line-height: 0.94;
-  letter-spacing: -0.045em;
-}
-.page-banner__body--teams p {
-  margin: 0;
-  max-width: 650px;
-  color: var(--teams-muted);
-  font-size: clamp(15px, 2vw, 19px);
-  line-height: 1.6;
-}
-.page-banner__art--teams {
-  position: relative;
-  width: 210px;
-  height: 150px;
-  flex: 0 0 auto;
-  background: radial-gradient(ellipse at 50% 75%, rgba(201, 154, 72, 0.16), transparent 62%);
-}
-.teams-shield {
-  position: absolute;
-  right: 48px;
-  top: 4px;
-  width: 92px;
-  height: 108px;
-  display: grid;
-  place-items: center;
-  color: var(--teams-cream);
-  background: linear-gradient(145deg, #2a2417, #0c0b08);
-  border: 2px solid rgba(201, 154, 72, 0.72);
-  clip-path: polygon(50% 0, 92% 17%, 88% 70%, 50% 100%, 12% 70%, 8% 17%);
-  font-family: Georgia, serif;
-  font-size: 42px;
-  font-weight: 900;
-  filter: drop-shadow(0 0 18px rgba(201, 154, 72, 0.15));
-}
-.teams-ball {
-  position: absolute;
-  right: 16px;
-  bottom: 15px;
-  width: 60px;
-  height: 60px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: #d7d1bd;
-  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.5);
-  font-size: 34px;
-  font-style: normal;
-}
 
 .teams-tabs {
   display: grid;
@@ -526,10 +462,7 @@
   .team-create-panel > div {
     grid-column: 1/-1;
   }
-  .page-banner__art--teams {
-    width: 150px;
-  }
-  .challenge-card,
+    .challenge-card,
   .team-game-card {
     align-items: flex-start;
     flex-direction: column;
@@ -548,20 +481,11 @@
 }
 
 @media (max-width: 560px) {
-  .page-banner__body--teams {
-    min-height: 170px;
-  }
-  .page-banner__art--teams {
+    .page-banner__art--teams {
     width: 100px;
     height: 110px;
   }
-  .teams-shield {
-    right: 25px;
-    width: 68px;
-    height: 80px;
-    font-size: 29px;
-  }
-  .teams-ball {
+    .teams-ball {
     right: 0;
     width: 45px;
     height: 45px;
