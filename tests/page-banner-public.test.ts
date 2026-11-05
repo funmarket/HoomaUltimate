@@ -332,7 +332,9 @@ test("DPR-only variant change renews stale signed URLs", async () => {
   Object.defineProperty(window, "matchMedia", {
     configurable: true,
     value: () => ({
-      addEventListener: (_name: string, listener: () => void) => { notify = listener; },
+      addEventListener: (_name: string, listener: () => void) => {
+        notify = listener;
+      },
       removeEventListener: () => {},
     }),
   });
@@ -340,9 +342,11 @@ test("DPR-only variant change renews stale signed URLs", async () => {
     reads++;
     const prefix = reads === 1 ? "old" : "fresh";
     const expiry = reads === 1 ? "2099-11-02T12:00:00.000Z" : "2099-11-02T12:06:00.000Z";
-    return json(response([{
-      ...slide("slide-1"),
-      variants: [
+    return json(
+      response([
+        {
+          ...slide("slide-1"),
+          variants: [
         {
           ...signedVariant(`https://media.example.test/${prefix}-mobile.webp`, "mobile", 720),
           expiresAt: expiry,
@@ -351,8 +355,10 @@ test("DPR-only variant change renews stale signed URLs", async () => {
           ...signedVariant(`https://media.example.test/${prefix}-display.webp`, "display", 1440),
           expiresAt: expiry,
         },
-      ],
-    }]));
+          ],
+        },
+      ]),
+    );
   };
   try {
     const view = mountWithFetch();
@@ -360,7 +366,10 @@ test("DPR-only variant change renews stale signed URLs", async () => {
     await loadImage(findImage(view, "old-mobile.webp"));
     Date.now = () => new Date("2099-11-02T12:01:00.000Z").getTime();
     Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: 3 });
-    await act(async () => { notify(); await Promise.resolve(); });
+    await act(async () => {
+      notify();
+      await Promise.resolve();
+    });
     await waitFor(() => assert.equal(reads, 2));
     assert.equal(view.container.querySelector('img[src*="old-display.webp"]'), null);
     await waitFor(() => assert.ok(findImage(view, "fresh-display.webp")));

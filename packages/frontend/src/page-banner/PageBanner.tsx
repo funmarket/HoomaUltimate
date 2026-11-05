@@ -213,8 +213,12 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
       lastAutomaticRefresh.current = null;
       return;
     }
-    const key =
-      `${placementId}:${pixelWidth}:${expiredCandidate.slide.id}:${expiredCandidate.variant.variant}`;
+    const key = [
+      placementId,
+      pixelWidth,
+      expiredCandidate.slide.id,
+      expiredCandidate.variant.variant,
+    ].join(":");
     if (lastAutomaticRefresh.current === key) return;
     lastAutomaticRefresh.current = key;
     void refreshExpiredSlide(
