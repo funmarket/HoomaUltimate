@@ -320,6 +320,54 @@ test("expired mobile URL refreshes after viewport switch before downloading", as
   }
 });
 
+test("DPR-only variant change renews stale signed URLs", async () => {
+  const oldMatchMedia = window.matchMedia;
+  const oldDpr = window.devicePixelRatio;
+  const oldWidth = window.innerWidth;
+  const oldNow = Date.now;
+  let notify = () => {};
+  let reads = 0;
+  Object.defineProperty(window, "innerWidth", { configurable: true, value: 375 });
+  Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: 1 });
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    value: () => ({
+      addEventListener: (_name: string, listener: () => void) => { notify = listener; },
+      removeEventListener: () => {},
+    }),
+  });
+  globalThis.fetch = async () => {
+    reads++;
+    const prefix = reads === 1 ? "old" : "fresh";
+    const expiry = reads === 1 ? "2099-11-02T12:00:00.000Z" : "2099-11-02T12:06:00.000Z";
+    return json(response([{
+      ...slide("slide-1"),
+      variants: [
+        { ...signedVariant(`https://media.example.test/${prefix}-mobile.webp`, "mobile", 720), expiresAt: expiry },
+        { ...signedVariant(`https://media.example.test/${prefix}-display.webp`, "display", 1440), expiresAt: expiry },
+      ],
+    }]));
+  };
+  try {
+    const view = mountWithFetch();
+    await flushReact();
+    await loadImage(findImage(view, "old-mobile.webp"));
+    Date.now = () => new Date("2099-11-02T12:01:00.000Z").getTime();
+    Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: 3 });
+    await act(async () => { notify(); await Promise.resolve(); });
+    await waitFor(() => assert.equal(reads, 2));
+    assert.equal(view.container.querySelector('img[src*="old-display.webp"]'), null);
+    await waitFor(() => assert.ok(findImage(view, "fresh-display.webp")));
+    await loadImage(findImage(view, "fresh-display.webp"));
+    await waitFor(() => assert.equal(findImage(view, "fresh-display.webp").getAttribute("aria-hidden"), "false"));
+  } finally {
+    Date.now = oldNow;
+    Object.defineProperty(window, "matchMedia", { configurable: true, value: oldMatchMedia });
+    Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: oldDpr });
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: oldWidth });
+  }
+});
+
 test("decorative linked banners have an accessible name and empty image alt", async () => {
   const view = mount(response([slide("slide-1", null, { kind: "INTERNAL", url: "/athletes" })]));
   await flushReact();
