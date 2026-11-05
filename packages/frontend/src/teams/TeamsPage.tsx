@@ -184,28 +184,7 @@ export function TeamsPage() {
 
   return (
     <div className="page teams-page">
-      <div className="hooma-lane--media">
-        <PageBanner
-          placementId="TEAMS_TOP"
-          className="page-banner--teams"
-          fallback={
-            <div className="page-banner__body page-banner__body--teams">
-              <div>
-                <span className="eyebrow">TEAMS</span>
-                <h1>Discover teams. Find opponents.</h1>
-                <p>
-                  Build your squad, publish your identity, send challenges and manage matchday from
-                  the Coach Control Room.
-                </p>
-              </div>
-              <div className="page-banner__art page-banner__art--teams" aria-hidden="true">
-                <span className="teams-shield">H</span>
-                <i className="teams-ball">⚽</i>
-              </div>
-            </div>
-          }
-        />
-      </div>
+      <PageBanner placementId="TEAMS_TOP" className="page-banner--teams" />
       <div className="hooma-lane--nav">
         <nav className="teams-tabs" aria-label="Teams sections">
           <button

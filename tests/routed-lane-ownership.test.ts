@@ -226,5 +226,6 @@ test("lane ownership preserves constrained hero layout and centered pagination",
   const css = readFileSync("packages/frontend/src/teams/teams.css", "utf8");
   assert.match(page, /className="hooma-lane--content teams-load-more-lane"/);
   assert.match(css, /\.teams-load-more-lane\s*\{\s*display:\s*grid;/);
-  assert.match(css, /\.page-banner__body--teams > div:first-child\s*\{\s*min-width:\s*0;/);
+  assert.equal(css.includes(".page-banner__body--teams"), false);
+  assert.match(css, /\.teams-tabs\s*\{/);
 });

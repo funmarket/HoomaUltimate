@@ -97,15 +97,16 @@ test("Play detail and Open Matches use the authenticated Play API authority", as
   assert.doesNotMatch(rideDestinationFields, /eventApi\.publicPlay/);
 });
 
-test("Play introduction is owned by PLAY_TOP PageBanner while major section tabs use NAV", async () => {
+test("PLAY_TOP is only managed artwork while Create match and section tabs remain independent", async () => {
   const page = await read("packages/frontend/src/events/PlayPage.tsx");
-
   assert.ok(page.includes('placementId="PLAY_TOP"'));
   assert.ok(page.includes('className="page-banner--play"'));
-  assert.ok(page.includes("<h1>PLAY</h1>"));
+  assert.equal(page.includes("fallback={"), false);
+  assert.equal(page.includes("<h1>PLAY</h1>"), false);
+  const banner = page.indexOf("<PageBanner");
+  const action = page.indexOf("Create match");
+  const tabs = page.indexOf('className="play-view-tabs play-view-tabs--four"');
+  assert.ok(banner >= 0 && action > banner && tabs > action);
+  assert.match(page, /href="\/events\/new"/);
   assert.equal(page.includes("<PlayHero"), false);
-  assert.match(
-    page,
-    /<div className="hooma-lane--nav">\s*<div\s+className="play-view-tabs play-view-tabs--four"/,
-  );
 });

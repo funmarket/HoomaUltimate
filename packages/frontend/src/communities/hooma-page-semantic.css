@@ -62,40 +62,6 @@
   color: var(--hooma-page-muted);
 }
 
-/* Hero uses the same restrained graphite treatment as Athletes. */
-.hooma-page .page-banner--hooma {
-  min-height: 13rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: 1.25rem;
-  border-color: var(--hooma-page-border);
-}
-
-.hooma-page .page-banner--hooma::after {
-  inset: auto -3.5rem -4.5rem auto;
-  width: 11rem;
-  height: 11rem;
-  border-color: color-mix(in srgb, var(--hooma-page-accent) 20%, transparent);
-  opacity: 0.7;
-}
-
-.hooma-page .page-banner--hooma h1 {
-  margin: 0.35rem 0 0.7rem;
-  color: var(--hooma-page-text-strong);
-  font-size: clamp(2.25rem, 11vw, 4.5rem);
-  line-height: 0.93;
-  letter-spacing: -0.055em;
-}
-
-.hooma-page .page-banner--hooma p {
-  max-width: 34rem;
-  margin: 0;
-  color: #f7f7f7;
-  font-size: var(--hooma-ui-body);
-  line-height: 1.55;
-}
-
 .hooma-page .hooma-section-heading {
   align-items: center;
   margin-bottom: 0.75rem;
@@ -318,9 +284,5 @@
   .hooma-page .member-gate,
   .hooma-page .panel.hooma-domain-links {
     padding: 0.9rem;
-  }
-
-  .hooma-page .page-banner--hooma {
-    min-height: 12rem;
   }
 }
