@@ -137,3 +137,11 @@ test("Watch uses its canonical managed placement without retired hero presentati
   assert.equal(css.includes("page-banner__body--watch"), false);
   assert.ok(page.includes("<WatchSectionNavigation"));
 });
+
+test("desktop banner controls retain original 48rem spacing", () => {
+  const css = readFileSync("packages/frontend/src/page-banner/page-banner.css", "utf8");
+  assert.match(
+    css,
+    /@media \(min-width: 48rem\) \{\s*\.page-banner__controls \{\s*right: 1rem;\s*bottom: 1rem;\s*\}\s*\}/,
+  );
+});
