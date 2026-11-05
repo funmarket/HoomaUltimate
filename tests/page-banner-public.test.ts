@@ -343,8 +343,14 @@ test("DPR-only variant change renews stale signed URLs", async () => {
     return json(response([{
       ...slide("slide-1"),
       variants: [
-        { ...signedVariant(`https://media.example.test/${prefix}-mobile.webp`, "mobile", 720), expiresAt: expiry },
-        { ...signedVariant(`https://media.example.test/${prefix}-display.webp`, "display", 1440), expiresAt: expiry },
+        {
+          ...signedVariant(`https://media.example.test/${prefix}-mobile.webp`, "mobile", 720),
+          expiresAt: expiry,
+        },
+        {
+          ...signedVariant(`https://media.example.test/${prefix}-display.webp`, "display", 1440),
+          expiresAt: expiry,
+        },
       ],
     }]));
   };
@@ -359,7 +365,9 @@ test("DPR-only variant change renews stale signed URLs", async () => {
     assert.equal(view.container.querySelector('img[src*="old-display.webp"]'), null);
     await waitFor(() => assert.ok(findImage(view, "fresh-display.webp")));
     await loadImage(findImage(view, "fresh-display.webp"));
-    await waitFor(() => assert.equal(findImage(view, "fresh-display.webp").getAttribute("aria-hidden"), "false"));
+    await waitFor(() =>
+      assert.equal(findImage(view, "fresh-display.webp").getAttribute("aria-hidden"), "false"),
+    );
   } finally {
     Date.now = oldNow;
     Object.defineProperty(window, "matchMedia", { configurable: true, value: oldMatchMedia });

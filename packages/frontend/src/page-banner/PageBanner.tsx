@@ -213,14 +213,22 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
       lastAutomaticRefresh.current = null;
       return;
     }
-    const key = `${placementId}:${pixelWidth}:${expiredCandidate.slide.id}:${expiredCandidate.variant.variant}`;
+    const key =
+      `${placementId}:${pixelWidth}:${expiredCandidate.slide.id}:${expiredCandidate.variant.variant}`;
     if (lastAutomaticRefresh.current === key) return;
     lastAutomaticRefresh.current = key;
     void refreshExpiredSlide(
       expiredCandidate.slide.id,
       validDisplayed?.index ?? expiredCandidate.index,
     );
-  }, [expiredCandidate, refreshing, placementId, pixelWidth, validDisplayed?.index, refreshExpiredSlide]);
+  }, [
+    expiredCandidate,
+    refreshing,
+    placementId,
+    pixelWidth,
+    validDisplayed?.index,
+    refreshExpiredSlide,
+  ]);
 
   const usablePending = expiredCandidate ? null : pending;
   if (!validDisplayed && !usablePending) return null;
