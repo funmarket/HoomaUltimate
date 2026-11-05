@@ -74,8 +74,22 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
 
   useEffect(() => {
     const onResize = () => setPixelWidth(requiredImageWidth());
+    let resolution: MediaQueryList | null = null;
+    const onResolutionChange = () => {
+      resolution?.removeEventListener("change", onResolutionChange);
+      onResize();
+      resolution = window.matchMedia?.(`(resolution: ${window.devicePixelRatio}dppx)`) ?? null;
+      resolution?.addEventListener("change", onResolutionChange);
+    };
     window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    if (typeof window.matchMedia === "function") {
+      resolution = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+      resolution.addEventListener("change", onResolutionChange);
+    }
+    return () => {
+      window.removeEventListener("resize", onResize);
+      resolution?.removeEventListener("change", onResolutionChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -194,11 +208,11 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
   const pending = candidate?.key === validDisplayed?.key ? null : candidate;
   const expiredCandidate = pending && expiresSoon(pending.variant) ? pending : null;
   useEffect(() => {
+    if (refreshing) return;
     if (!expiredCandidate) {
       lastAutomaticRefresh.current = null;
       return;
     }
-    if (refreshing) return;
     const key = `${placementId}:${pixelWidth}:${expiredCandidate.slide.id}:${expiredCandidate.variant.variant}`;
     if (lastAutomaticRefresh.current === key) return;
     lastAutomaticRefresh.current = key;
