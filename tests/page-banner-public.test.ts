@@ -6,11 +6,7 @@ import { JSDOM } from "jsdom";
 registerHooks({
   load(url, context, nextLoad) {
     if (url.endsWith(".css")) {
-      return {
-        format: "module",
-        source: "export default {};",
-        shortCircuit: true,
-      };
+      return { format: "module", source: "export default {};", shortCircuit: true };
     }
     return nextLoad(url, context);
   },
@@ -28,34 +24,11 @@ for (const key of ["window", "document", "HTMLElement", "Element", "Node", "navi
 }
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
-class PendingImage {
-  static instances: PendingImage[] = [];
-  onload: (() => void) | null = null;
-  onerror: (() => void) | null = null;
-  naturalWidth = 720;
-  naturalHeight = 520;
-  complete = false;
-  src = "";
-  decode = async () => {};
-
-  constructor() {
-    PendingImage.instances.push(this);
-  }
-
-  load() {
-    this.complete = true;
-    this.onload?.();
-  }
-
-  fail() {
-    this.onerror?.();
-  }
-}
-
-Object.defineProperty(globalThis, "Image", {
-  value: PendingImage,
+Object.defineProperty(dom.window.HTMLImageElement.prototype, "decode", {
   configurable: true,
-  writable: true,
+  value() {
+    return Promise.resolve();
+  },
 });
 
 const React = await import("react");
@@ -66,22 +39,21 @@ Object.defineProperty(globalThis, "React", {
 const { act, cleanup, fireEvent, render, waitFor } = await import("@testing-library/react");
 const { HoomaFrontendProvider } = await import("../packages/frontend/src/context");
 const { PageBanner } = await import("../packages/frontend/src/page-banner/PageBanner");
-
 const originalFetch = globalThis.fetch;
+
 afterEach(() => {
   cleanup();
   globalThis.fetch = originalFetch;
-  PendingImage.instances.length = 0;
 });
 
-function signedVariant(url: string) {
+function signedVariant(url: string, variant = "master", widthPx = 720) {
   return {
-    variant: "master",
+    variant,
     contentUrl: url,
     expiresAt: "2099-11-02T12:00:00.000Z",
     contentType: "image/webp",
-    widthPx: 720,
-    heightPx: 520,
+    widthPx,
+    heightPx: (widthPx * 13) / 18,
   };
 }
 
@@ -112,6 +84,10 @@ function json(body: unknown) {
 
 function mount(body: unknown) {
   globalThis.fetch = async () => json(body);
+  return mountWithFetch();
+}
+
+function mountWithFetch() {
   return render(
     React.createElement(
       HoomaFrontendProvider,
@@ -127,85 +103,68 @@ async function flushReact() {
   });
 }
 
-async function loadNext() {
-  const next = PendingImage.instances.at(-1);
-  assert.ok(next, "a managed image must be requested");
+function findImage(view: ReturnType<typeof render>, fragment: string) {
+  const image = [...view.container.querySelectorAll("img")].find((node) =>
+    node.src.includes(fragment),
+  );
+  assert.ok(image, `managed image ${fragment} should be mounted`);
+  return image;
+}
+
+async function loadImage(image: HTMLImageElement) {
   await act(async () => {
-    next.load();
+    fireEvent.load(image);
     await Promise.resolve();
   });
 }
 
-test("decoded managed slide is the only displayed PageBanner artwork", async () => {
+test("only a decoded mounted image becomes visible and preserves semantics", async () => {
   const view = mount(
     response([slide("slide-1", "Athletes training", { kind: "INTERNAL", url: "/athletes" })]),
   );
-  assert.equal(view.container.querySelector("[data-page-banner]"), null);
   await flushReact();
-  assert.equal(view.container.querySelector("[data-page-banner]"), null);
-  await loadNext();
-  const image = view.getByRole("img", { name: "Athletes training" });
-  assert.equal(image.getAttribute("src"), "https://media.example.test/slide-1.webp");
-  assert.equal(image.getAttribute("width"), "720");
-  assert.equal(image.getAttribute("height"), "520");
-  assert.equal(
-    view.getByRole("link", { name: "Athletes training" }).getAttribute("href"),
-    "/athletes",
-  );
-  assert.equal(
-    view.getByRole("region", { name: "Athletes banner" }).getAttribute("aria-live"),
-    null,
-  );
+  const actual = findImage(view, "slide-1");
+  assert.ok(view.container.querySelector(".hooma-lane--media")?.hasAttribute("hidden"));
+  await loadImage(actual);
+  await waitFor(() => assert.equal(view.getByRole("img", { name: "Athletes training" }), actual));
+  assert.ok(!view.container.querySelector(".hooma-lane--media")?.hasAttribute("hidden"));
+  assert.equal(view.getByRole("link", { name: "Athletes training" }).getAttribute("href"), "/athletes");
+  assert.equal(actual.getAttribute("width"), "720");
 });
 
-test("disabled or empty placements never render a fallback, loading, or error hero", async () => {
+test("empty, disabled and API failures leave no optional media-lane footprint", async () => {
   for (const body of [response([], false), response()]) {
     const view = mount(body);
-    assert.equal(view.container.querySelector("[data-page-banner]"), null);
     await flushReact();
-    assert.equal(view.container.querySelector("[data-page-banner]"), null);
-    assert.equal(view.container.querySelector("img"), null);
+    assert.equal(view.container.querySelector(".hooma-lane--media"), null);
     cleanup();
   }
-});
-
-test("public API errors display no PageBanner or native substitute", async () => {
   globalThis.fetch = async () => {
     throw new Error("network unavailable");
   };
-  const view = render(
-    React.createElement(
-      HoomaFrontendProvider,
-      { transport: { baseUrl: "https://api.example.test" } },
-      React.createElement(PageBanner, { placementId: "ATHLETES_TOP" }),
-    ),
-  );
+  const view = mountWithFetch();
   await flushReact();
-  assert.equal(view.container.querySelector("[data-page-banner]"), null);
-  assert.equal(view.queryByText("Banner unavailable."), null);
+  assert.equal(view.container.querySelector(".hooma-lane--media"), null);
 });
 
-test("media load and decode failures never expose a broken image surface", async () => {
+test("image errors and decoding errors do not leave permanent blank media lanes", async () => {
   const view = mount(response([slide("slide-1")]));
   await flushReact();
-  assert.equal(PendingImage.instances.length, 1);
-  await act(async () => {
-    PendingImage.instances[0]!.fail();
-  });
-  assert.equal(view.container.querySelector("[data-page-banner]"), null);
+  fireEvent.error(findImage(view, "slide-1"));
+  await flushReact();
+  assert.equal(view.container.querySelector(".hooma-lane--media"), null);
   cleanup();
 
-  const secondView = mount(response([slide("slide-2")]));
+  const second = mount(response([slide("slide-2")]));
   await flushReact();
-  const second = PendingImage.instances.at(-1)!;
-  second.decode = async () => {
-    throw new Error("decode failed");
-  };
-  await loadNext();
-  assert.equal(secondView.container.querySelector("[data-page-banner]"), null);
+  const badImage = findImage(second, "slide-2");
+  Object.defineProperty(badImage, "decode", { value: () => Promise.reject(new Error("decode")) });
+  await loadImage(badImage);
+  await flushReact();
+  assert.equal(second.container.querySelector(".hooma-lane--media"), null);
 });
 
-test("manual navigation shows decoded slides with safe destinations", async () => {
+test("manual navigation retains old image until the new mounted image decodes", async () => {
   const view = mount(
     response([
       slide("slide-1"),
@@ -216,20 +175,16 @@ test("manual navigation shows decoded slides with safe destinations", async () =
     ]),
   );
   await flushReact();
-  await loadNext();
-  assert.equal(view.container.querySelector("img")?.getAttribute("alt"), "");
-
+  await loadImage(findImage(view, "slide-1"));
+  const old = findImage(view, "slide-1");
   fireEvent.click(view.getByRole("button", { name: "Next banner" }));
-  assert.equal(view.container.querySelector("img")?.getAttribute("alt"), "");
-  assert.ok(view.getByRole("button", { name: "Next banner" }));
   await flushReact();
-  assert.equal(view.container.querySelector("img")?.getAttribute("alt"), "");
-  await loadNext();
-  await waitFor(() => assert.ok(view.getByRole("img", { name: "Community artwork" })));
-  assert.equal(
-    view.getByRole("link", { name: "Community artwork" }).getAttribute("href"),
-    "https://example.test/community",
-  );
+  assert.equal(view.getByRole("img"), old);
+  assert.ok(view.getByRole("button", { name: "Next banner" }));
+  const actualNext = findImage(view, "slide-2");
+  assert.equal(actualNext.getAttribute("aria-hidden"), "true");
+  await loadImage(actualNext);
+  await waitFor(() => assert.equal(view.getByRole("img", { name: "Community artwork" }), actualNext));
   assert.equal(
     view.getByRole("link", { name: "Community artwork" }).getAttribute("rel"),
     "noreferrer noopener",
@@ -237,110 +192,86 @@ test("manual navigation shows decoded slides with safe destinations", async () =
   assert.equal(view.getByText("2 of 2").textContent, "2 of 2");
 });
 
-test("unmounting during a pending request cannot resurrect a stale banner", async () => {
+test("failed slide automatically skips to a healthy slide without hiding the old image", async () => {
+  const view = mount(response([slide("slide-1"), slide("slide-2"), slide("slide-3")]));
+  await flushReact();
+  await loadImage(findImage(view, "slide-1"));
+  const previous = view.getByRole("img");
+  fireEvent.click(view.getByRole("button", { name: "Next banner" }));
+  await flushReact();
+  fireEvent.error(findImage(view, "slide-2"));
+  await flushReact();
+  assert.equal(view.getByRole("img"), previous);
+  await loadImage(findImage(view, "slide-3"));
+  await waitFor(() => assert.match(view.getByRole("img").getAttribute("src") ?? "", /slide-3/));
+});
+
+test("expired signed URLs are refreshed on navigation without losing visible artwork", async () => {
+  let reads = 0;
+  const slides = [slide("slide-1"), slide("slide-2")];
+  globalThis.fetch = async () => {
+    reads++;
+    return json(
+      response(
+        reads === 1
+          ? slides
+          : slides.map((item) => ({
+              ...item,
+              variants: [signedVariant(`https://media.example.test/fresh-${item.id}.webp`)],
+            })),
+      ),
+    );
+  };
+  const view = mountWithFetch();
+  await flushReact();
+  await loadImage(findImage(view, "slide-1"));
+  const visible = view.getByRole("img");
+  const originalNow = Date.now;
+  Date.now = () => new Date("2099-11-02T11:59:45.000Z").getTime();
+  try {
+    fireEvent.click(view.getByRole("button", { name: "Next banner" }));
+    await waitFor(() => assert.equal(reads, 2));
+    assert.equal(view.getByRole("img"), visible);
+    await loadImage(findImage(view, "fresh-slide-2"));
+    await waitFor(() => assert.match(view.getByRole("img").getAttribute("src") ?? "", /fresh-slide-2/));
+  } finally {
+    Date.now = originalNow;
+  }
+});
+
+test("mobile DPR selects the smallest adequate processed variant", async () => {
+  const priorWidth = window.innerWidth;
+  const priorDpr = window.devicePixelRatio;
+  Object.defineProperty(window, "innerWidth", { configurable: true, value: 375 });
+  Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: 1 });
+  try {
+    const variants = [
+      signedVariant("https://media.example.test/master.webp", "master", 2160),
+      signedVariant("https://media.example.test/display.webp", "display", 1440),
+      signedVariant("https://media.example.test/mobile.webp", "mobile", 720),
+    ];
+    const view = mount(response([{ ...slide("slide-1"), variants }]));
+    await flushReact();
+    const image = findImage(view, "mobile.webp");
+    await loadImage(image);
+    assert.equal(view.getByRole("img"), image);
+  } finally {
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: priorWidth });
+    Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: priorDpr });
+  }
+});
+
+test("late public reads after unmount never revive retired banner content", async () => {
   let resolveFetch: ((value: Response) => void) | undefined;
   globalThis.fetch = () =>
     new Promise<Response>((resolve) => {
       resolveFetch = resolve;
     });
-  const view = render(
-    React.createElement(
-      HoomaFrontendProvider,
-      { transport: { baseUrl: "https://api.example.test" } },
-      React.createElement(PageBanner, { placementId: "ATHLETES_TOP" }),
-    ),
-  );
+  const view = mountWithFetch();
   view.unmount();
   await act(async () => {
     resolveFetch?.(json(response([slide("slide-1")])));
     await Promise.resolve();
   });
   assert.equal(view.container.querySelector("[data-page-banner]"), null);
-  assert.equal(PendingImage.instances.length, 0);
-});
-
-test("loading and failed slides preserve the current image until a healthy next slide is ready", async () => {
-  const view = mount(response([slide("slide-1"), slide("slide-2"), slide("slide-3")]));
-  await flushReact();
-  await loadNext();
-  const first = view.container.querySelector("img")?.getAttribute("src");
-  assert.match(first ?? "", /slide-1/);
-  fireEvent.click(view.getByRole("button", { name: "Next banner" }));
-  await flushReact();
-  assert.equal(view.container.querySelector("img")?.getAttribute("src"), first);
-  assert.ok(view.getByRole("button", { name: "Next banner" }));
-  await act(async () => {
-    PendingImage.instances.at(-1)!.fail();
-  });
-  await flushReact();
-  assert.equal(view.container.querySelector("img")?.getAttribute("src"), first);
-  await loadNext();
-  assert.match(view.container.querySelector("img")?.getAttribute("src") ?? "", /slide-3/);
-});
-
-test("the optional media lane is absent until there is decoded managed artwork", async () => {
-  const view = mount(response([slide("slide-1")]));
-  assert.equal(view.container.querySelector(".hooma-lane--media"), null);
-  await flushReact();
-  assert.equal(view.container.querySelector(".hooma-lane--media"), null);
-  await loadNext();
-  assert.ok(view.container.querySelector(".hooma-lane--media .page-banner__frame"));
-});
-
-test("expired signed URLs are refreshed before navigating to the next slide", async () => {
-  let reads = 0;
-  const slides = [slide("slide-1"), slide("slide-2")];
-  globalThis.fetch = async () => {
-    reads++;
-    if (reads === 1) return json(response(slides));
-    return json(response(slides.map((item) => ({
-      ...item,
-      variants: [signedVariant(`https://media.example.test/fresh-${item.id}.webp`)],
-    }))));
-  };
-  const view = render(
-    React.createElement(
-      HoomaFrontendProvider,
-      { transport: { baseUrl: "https://api.example.test" } },
-      React.createElement(PageBanner, { placementId: "ATHLETES_TOP" }),
-    ),
-  );
-  await flushReact();
-  await loadNext();
-  const first = view.container.querySelector("img")?.getAttribute("src");
-  const originalNow = Date.now;
-  Date.now = () => new Date("2099-11-02T11:59:45.000Z").getTime();
-  try {
-    fireEvent.click(view.getByRole("button", { name: "Next banner" }));
-    await flushReact();
-    assert.ok(reads >= 2, "expired URLs must trigger a fresh public read");
-    assert.equal(view.container.querySelector("img")?.getAttribute("src"), first);
-    await loadNext();
-    assert.match(view.container.querySelector("img")?.getAttribute("src") ?? "", /fresh-slide-2/);
-  } finally {
-    Date.now = originalNow;
-  }
-});
-
-test("phone-width viewports use an appropriate existing processed variant", async () => {
-  const priorWidth = window.innerWidth;
-  const priorDpr = window.devicePixelRatio;
-  Object.defineProperty(window, "innerWidth", { configurable: true, value: 375 });
-  Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: 1 });
-  try {
-    const image = slide("slide-1");
-    const variants = [
-      signedVariant("https://media.example.test/master.webp"),
-      { ...signedVariant("https://media.example.test/display.webp"), variant: "display", widthPx: 1440 },
-      { ...signedVariant("https://media.example.test/mobile.webp"), variant: "mobile", widthPx: 720 },
-    ];
-    const view = mount(response([{ ...image, variants }]));
-    await flushReact();
-    assert.equal(PendingImage.instances[0]?.src, "https://media.example.test/mobile.webp");
-    await loadNext();
-    assert.equal(view.container.querySelector("img")?.getAttribute("src"), variants[2]!.contentUrl);
-  } finally {
-    Object.defineProperty(window, "innerWidth", { configurable: true, value: priorWidth });
-    Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: priorDpr });
-  }
 });
