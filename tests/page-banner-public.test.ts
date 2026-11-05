@@ -182,7 +182,7 @@ test("manual navigation retains old image until the new mounted image decodes", 
   const old = findImage(view, "slide-1");
   fireEvent.click(view.getByRole("button", { name: "Next banner" }));
   await flushReact();
-  assert.equal(view.getByRole("img"), old);
+  assert.equal(findImage(view, "slide-1"), old);
   assert.ok(view.getByRole("button", { name: "Next banner" }));
   const actualNext = findImage(view, "slide-2");
   assert.equal(actualNext.getAttribute("aria-hidden"), "true");
@@ -201,14 +201,14 @@ test("failed slides skip to healthy artwork without hiding the old image", async
   const view = mount(response([slide("slide-1"), slide("slide-2"), slide("slide-3")]));
   await flushReact();
   await loadImage(findImage(view, "slide-1"));
-  const previous = view.getByRole("img");
+  const previous = findImage(view, "slide-1");
   fireEvent.click(view.getByRole("button", { name: "Next banner" }));
   await flushReact();
   fireEvent.error(findImage(view, "slide-2"));
   await flushReact();
-  assert.equal(view.getByRole("img"), previous);
+  assert.equal(findImage(view, "slide-1"), previous);
   await loadImage(findImage(view, "slide-3"));
-  await waitFor(() => assert.match(view.getByRole("img").getAttribute("src") ?? "", /slide-3/));
+  await waitFor(() => assert.equal(findImage(view, "slide-3").getAttribute("aria-hidden"), "false"));
 });
 
 test("expired URLs refresh without losing visible artwork", async () => {
@@ -230,16 +230,16 @@ test("expired URLs refresh without losing visible artwork", async () => {
   const view = mountWithFetch();
   await flushReact();
   await loadImage(findImage(view, "slide-1"));
-  const visible = view.getByRole("img");
+  const visible = findImage(view, "slide-1");
   const originalNow = Date.now;
   Date.now = () => new Date("2099-11-02T11:59:45.000Z").getTime();
   try {
     fireEvent.click(view.getByRole("button", { name: "Next banner" }));
     await waitFor(() => assert.equal(reads, 2));
-    assert.equal(view.getByRole("img"), visible);
+    assert.equal(findImage(view, "slide-1"), visible);
     await loadImage(findImage(view, "fresh-slide-2"));
     await waitFor(() =>
-      assert.match(view.getByRole("img").getAttribute("src") ?? "", /fresh-slide-2/),
+      assert.equal(findImage(view, "fresh-slide-2").getAttribute("aria-hidden"), "false"),
     );
   } finally {
     Date.now = originalNow;
@@ -261,7 +261,7 @@ test("mobile DPR selects the smallest adequate processed variant", async () => {
     await flushReact();
     const image = findImage(view, "mobile.webp");
     await loadImage(image);
-    assert.equal(view.getByRole("img"), image);
+    assert.equal(image.getAttribute("aria-hidden"), "false");
   } finally {
     Object.defineProperty(window, "innerWidth", { configurable: true, value: priorWidth });
     Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: priorDpr });

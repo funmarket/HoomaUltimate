@@ -88,7 +88,7 @@ test("Ride retains its exact actions outside the optional RIDE_TOP PageBanner", 
   const banner = source.indexOf('placementId="RIDE_TOP"');
   const actions = source.indexOf("<RidePageBannerActions copy={copy} />");
   assert.ok(banner >= 0 && actions > banner);
-  assert.match(source.slice(banner, actions), /<\/div>/);
+  assert.match(source.slice(banner, actions), /<div className="hooma-lane--content">/);
   for (const label of ["Request a Ride", "Browse Offers", "Offer Seats"]) {
     assert.ok(source.includes(label));
   }
