@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PageBannerPlacementId } from "@hooma/contracts/page-banner";
 import { useHoomaFrontend } from "../context";
 import type { PageBannerPublicSlide, PageBannerPublicVariant } from "./api";
@@ -58,6 +58,7 @@ type PageBannerProps = {
 export function PageBanner({ placementId, className }: PageBannerProps) {
   const { api } = useHoomaFrontend();
   const refreshSequence = useRef(0);
+  const lastAutomaticRefresh = useRef<string | null>(null);
   const [read, setRead] = useState<{
     readonly api: typeof api;
     readonly placementId: PageBannerPlacementId;
@@ -80,6 +81,7 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
   useEffect(() => {
     let active = true;
     refreshSequence.current += 1;
+    lastAutomaticRefresh.current = null;
     setRead({ api, placementId, status: "loading" });
     setRequestedIndex(0);
     setDisplayed(null);
@@ -153,6 +155,27 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
       });
   }
 
+  const refreshExpiredSlide = useCallback(
+    async (slideId: string, fallbackIndex: number) => {
+      const sequence = ++refreshSequence.current;
+      setRefreshing(true);
+      try {
+        const data = await api.pageBanners.publicRead(placementId);
+        if (sequence !== refreshSequence.current) return;
+        const updatedIndex = data.slides.findIndex((slide) => slide.id === slideId);
+        setRead({ api, placementId, status: "ready", data });
+        setRequestedIndex(updatedIndex >= 0 ? updatedIndex : 0);
+      } catch {
+        // Retain the last decoded image; allow another user action to retry.
+        if (sequence !== refreshSequence.current) return;
+        setRequestedIndex(fallbackIndex);
+      } finally {
+        if (sequence === refreshSequence.current) setRefreshing(false);
+      }
+    },
+    [api, placementId],
+  );
+
   async function navigate(direction: -1 | 1) {
     if (!validDisplayed || refreshing || slides.length <= 1) return;
     const desiredIndex = nextIndex(validDisplayed.index, slides.length, direction);
@@ -161,30 +184,32 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
     if (!desiredVariant) return;
     setFailedKeys([]);
     setReadyKey(null);
-    if (!expiresSoon(desiredVariant)) {
-      setRequestedIndex(desiredIndex);
+    if (expiresSoon(desiredVariant)) {
+      await refreshExpiredSlide(desiredSlide.id, validDisplayed.index);
       return;
     }
-
-    const sequence = ++refreshSequence.current;
-    setRefreshing(true);
-    try {
-      const data = await api.pageBanners.publicRead(placementId);
-      if (sequence !== refreshSequence.current) return;
-      const updatedIndex = data.slides.findIndex((slide) => slide.id === desiredSlide.id);
-      setRead({ api, placementId, status: "ready", data });
-      setRequestedIndex(updatedIndex >= 0 ? updatedIndex : 0);
-    } catch {
-      // Keep the last decoded image and its controls; the next interaction can retry.
-      if (sequence !== refreshSequence.current) return;
-      setRequestedIndex(validDisplayed.index);
-    } finally {
-      if (sequence === refreshSequence.current) setRefreshing(false);
-    }
+    setRequestedIndex(desiredIndex);
   }
 
   const pending = candidate?.key === validDisplayed?.key ? null : candidate;
-  if (!validDisplayed && !pending) return null;
+  const expiredCandidate = pending && expiresSoon(pending.variant) ? pending : null;
+  useEffect(() => {
+    if (!expiredCandidate) {
+      lastAutomaticRefresh.current = null;
+      return;
+    }
+    if (refreshing) return;
+    const key = `${placementId}:${pixelWidth}:${expiredCandidate.slide.id}:${expiredCandidate.variant.variant}`;
+    if (lastAutomaticRefresh.current === key) return;
+    lastAutomaticRefresh.current = key;
+    void refreshExpiredSlide(
+      expiredCandidate.slide.id,
+      validDisplayed?.index ?? expiredCandidate.index,
+    );
+  }, [expiredCandidate, refreshing, placementId, pixelWidth, validDisplayed?.index, refreshExpiredSlide]);
+
+  const usablePending = expiredCandidate ? null : pending;
+  if (!validDisplayed && !usablePending) return null;
 
   function renderArtwork(item: PreparedSlide, visible: boolean) {
     const image = (
@@ -207,6 +232,7 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
         key={item.key}
         className="page-banner__link"
         href={item.slide.destination.url}
+        aria-label={item.slide.isDecorative ? `${placementLabels[placementId]} banner` : undefined}
         aria-hidden={!visible}
         tabIndex={visible ? undefined : -1}
         style={
@@ -236,7 +262,7 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
       >
         <div className="page-banner__frame">
           {validDisplayed ? renderArtwork(validDisplayed, true) : null}
-          {pending ? renderArtwork(pending, false) : null}
+          {usablePending ? renderArtwork(usablePending, false) : null}
         </div>
         {validDisplayed && slides.length > 1 ? (
           <div className="page-banner__controls">

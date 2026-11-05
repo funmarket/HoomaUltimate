@@ -75,6 +75,13 @@
   line-height: 1;
 }
 
+@media (min-width: 48rem) {
+  .page-banner__controls {
+    right: 1rem;
+    bottom: 1rem;
+  }
+}
+
 .page-banner--home {
   border: 1px solid rgba(214, 171, 84, 0.52);
   border-radius: clamp(12px, 2.2vw, 22px);
