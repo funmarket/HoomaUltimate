@@ -208,7 +208,9 @@ test("failed slides skip to healthy artwork without hiding the old image", async
   await flushReact();
   assert.equal(findImage(view, "slide-1"), previous);
   await loadImage(findImage(view, "slide-3"));
-  await waitFor(() => assert.equal(findImage(view, "slide-3").getAttribute("aria-hidden"), "false"));
+  await waitFor(() =>
+    assert.equal(findImage(view, "slide-3").getAttribute("aria-hidden"), "false"),
+  );
 });
 
 test("expired URLs refresh without losing visible artwork", async () => {
