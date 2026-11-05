@@ -342,27 +342,11 @@ test("DPR-only variant change renews stale signed URLs", async () => {
     reads++;
     const prefix = reads === 1 ? "old" : "fresh";
     const expiry = reads === 1 ? "2099-11-02T12:00:00.000Z" : "2099-11-02T12:06:00.000Z";
-    return json(
-      response([
-        {
-          ...slide("slide-1"),
-          variants: [
-            {
-              ...signedVariant(`https://media.example.test/${prefix}-mobile.webp`, "mobile", 720),
-              expiresAt: expiry,
-            },
-            {
-              ...signedVariant(
-                `https://media.example.test/${prefix}-display.webp`,
-                "display",
-                1440,
-              ),
-              expiresAt: expiry,
-            },
-          ],
-        },
-      ]),
-    );
+    const variants = [
+      signedVariant(`https://media.example.test/${prefix}-mobile.webp`, "mobile", 720),
+      signedVariant(`https://media.example.test/${prefix}-display.webp`, "display", 1440),
+    ].map((variant) => ({ ...variant, expiresAt: expiry }));
+    return json(response([{ ...slide("slide-1"), variants }]));
   };
   try {
     const view = mountWithFetch();
