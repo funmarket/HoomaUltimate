@@ -78,7 +78,7 @@ function signedVariant(url: string) {
   return {
     variant: "master",
     contentUrl: url,
-    expiresAt: "2026-11-02T12:00:00.000Z",
+    expiresAt: "2099-11-02T12:00:00.000Z",
     contentType: "image/webp",
     widthPx: 720,
     heightPx: 520,
@@ -220,8 +220,10 @@ test("manual navigation shows decoded slides with safe destinations", async () =
   assert.equal(view.container.querySelector("img")?.getAttribute("alt"), "");
 
   fireEvent.click(view.getByRole("button", { name: "Next banner" }));
-  assert.equal(view.container.querySelector("[data-page-banner]"), null);
+  assert.equal(view.container.querySelector("img")?.getAttribute("alt"), "");
+  assert.ok(view.getByRole("button", { name: "Next banner" }));
   await flushReact();
+  assert.equal(view.container.querySelector("img")?.getAttribute("alt"), "");
   await loadNext();
   await waitFor(() => assert.ok(view.getByRole("img", { name: "Community artwork" })));
   assert.equal(
@@ -255,4 +257,90 @@ test("unmounting during a pending request cannot resurrect a stale banner", asyn
   });
   assert.equal(view.container.querySelector("[data-page-banner]"), null);
   assert.equal(PendingImage.instances.length, 0);
+});
+
+test("loading and failed slides preserve the current image until a healthy next slide is ready", async () => {
+  const view = mount(response([slide("slide-1"), slide("slide-2"), slide("slide-3")]));
+  await flushReact();
+  await loadNext();
+  const first = view.container.querySelector("img")?.getAttribute("src");
+  assert.match(first ?? "", /slide-1/);
+  fireEvent.click(view.getByRole("button", { name: "Next banner" }));
+  await flushReact();
+  assert.equal(view.container.querySelector("img")?.getAttribute("src"), first);
+  assert.ok(view.getByRole("button", { name: "Next banner" }));
+  await act(async () => {
+    PendingImage.instances.at(-1)!.fail();
+  });
+  await flushReact();
+  assert.equal(view.container.querySelector("img")?.getAttribute("src"), first);
+  await loadNext();
+  assert.match(view.container.querySelector("img")?.getAttribute("src") ?? "", /slide-3/);
+});
+
+test("the optional media lane is absent until there is decoded managed artwork", async () => {
+  const view = mount(response([slide("slide-1")]));
+  assert.equal(view.container.querySelector(".hooma-lane--media"), null);
+  await flushReact();
+  assert.equal(view.container.querySelector(".hooma-lane--media"), null);
+  await loadNext();
+  assert.ok(view.container.querySelector(".hooma-lane--media .page-banner__frame"));
+});
+
+test("expired signed URLs are refreshed before navigating to the next slide", async () => {
+  let reads = 0;
+  const slides = [slide("slide-1"), slide("slide-2")];
+  globalThis.fetch = async () => {
+    reads++;
+    if (reads === 1) return json(response(slides));
+    return json(response(slides.map((item) => ({
+      ...item,
+      variants: [signedVariant(`https://media.example.test/fresh-${item.id}.webp`)],
+    }))));
+  };
+  const view = render(
+    React.createElement(
+      HoomaFrontendProvider,
+      { transport: { baseUrl: "https://api.example.test" } },
+      React.createElement(PageBanner, { placementId: "ATHLETES_TOP" }),
+    ),
+  );
+  await flushReact();
+  await loadNext();
+  const first = view.container.querySelector("img")?.getAttribute("src");
+  const originalNow = Date.now;
+  Date.now = () => new Date("2099-11-02T11:59:45.000Z").getTime();
+  try {
+    fireEvent.click(view.getByRole("button", { name: "Next banner" }));
+    await flushReact();
+    assert.ok(reads >= 2, "expired URLs must trigger a fresh public read");
+    assert.equal(view.container.querySelector("img")?.getAttribute("src"), first);
+    await loadNext();
+    assert.match(view.container.querySelector("img")?.getAttribute("src") ?? "", /fresh-slide-2/);
+  } finally {
+    Date.now = originalNow;
+  }
+});
+
+test("phone-width viewports use an appropriate existing processed variant", async () => {
+  const priorWidth = window.innerWidth;
+  const priorDpr = window.devicePixelRatio;
+  Object.defineProperty(window, "innerWidth", { configurable: true, value: 375 });
+  Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: 1 });
+  try {
+    const image = slide("slide-1");
+    const variants = [
+      signedVariant("https://media.example.test/master.webp"),
+      { ...signedVariant("https://media.example.test/display.webp"), variant: "display", widthPx: 1440 },
+      { ...signedVariant("https://media.example.test/mobile.webp"), variant: "mobile", widthPx: 720 },
+    ];
+    const view = mount(response([{ ...image, variants }]));
+    await flushReact();
+    assert.equal(PendingImage.instances[0]?.src, "https://media.example.test/mobile.webp");
+    await loadNext();
+    assert.equal(view.container.querySelector("img")?.getAttribute("src"), variants[2]!.contentUrl);
+  } finally {
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: priorWidth });
+    Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: priorDpr });
+  }
 });
