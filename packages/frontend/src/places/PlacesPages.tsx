@@ -140,9 +140,7 @@ export function PlacesPage() {
 
   return (
     <section className="place-page">
-      <div className="hooma-lane--media">
-        <PageBanner placementId="PLACES_TOP" className="page-banner--places" />
-      </div>
+      <PageBanner placementId="PLACES_TOP" className="page-banner--places" />
 
       <div className="hooma-lane--nav">
         <WatchSectionNavigation active="spots" />

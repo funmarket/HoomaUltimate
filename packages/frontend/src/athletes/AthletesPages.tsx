@@ -95,9 +95,7 @@ export function AthletesPage({
 
   return (
     <div className="page athletes-page">
-      <div className="hooma-lane--media">
-        <PageBanner placementId="ATHLETES_TOP" className="page-banner--athletes-hub" />
-      </div>
+      <PageBanner placementId="ATHLETES_TOP" className="page-banner--athletes-hub" />
 
       <div className="hooma-lane--content">
         <div className="athletes-actions athletes-hub-create">

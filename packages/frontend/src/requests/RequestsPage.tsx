@@ -174,9 +174,7 @@ export function RequestsPage({ tab = "requests" }: { readonly tab?: RequestsPage
 
   return (
     <section className="page requests-page">
-      <div className="hooma-lane--media">
-        <PageBanner placementId="REQUESTS_TOP" className="page-banner--requests" />
-      </div>
+      <PageBanner placementId="REQUESTS_TOP" className="page-banner--requests" />
       {tab === "requests" ? (
         <div className="hooma-lane--content">
           <a

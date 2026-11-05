@@ -46,9 +46,7 @@ export function RideGatewayPage({ context }: { readonly context?: "MATCHDAY" | "
 
   return (
     <section className="ride-page ride-gateway">
-      <div className="hooma-lane--media">
-        <PageBanner placementId="RIDE_TOP" className="page-banner--ride" />
-      </div>
+      <PageBanner placementId="RIDE_TOP" className="page-banner--ride" />
       <div className="hooma-lane--content">
         <RidePageBannerActions copy={copy} />
       </div>

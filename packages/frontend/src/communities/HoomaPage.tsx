@@ -113,9 +113,7 @@ export function HoomaPage() {
 
   return (
     <div className="page hooma-page">
-      <div className="hooma-lane--media">
-        <PageBanner placementId="HOOMA_TOP" className="page-banner--hooma" />
-      </div>
+      <PageBanner placementId="HOOMA_TOP" className="page-banner--hooma" />
 
       <div className="hooma-lane--content">
         <section className="hooma-create-section">

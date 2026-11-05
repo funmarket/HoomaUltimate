@@ -343,9 +343,7 @@ export function PlayPage() {
 
   return (
     <section className="play-page">
-      <div className="hooma-lane--media">
-        <PageBanner placementId="PLAY_TOP" className="page-banner--play" />
-      </div>
+      <PageBanner placementId="PLAY_TOP" className="page-banner--play" />
       <div className="hooma-lane--content">
         <a className="page-banner__action page-banner__action--play" href="/events/new">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">

@@ -4,9 +4,7 @@ import { HomeGateway } from "@hooma/ui";
 export function HomePage() {
   return (
     <>
-      <div className="hooma-lane--media">
-        <PageBanner placementId="HOME_TOP" className="page-banner--home" />
-      </div>
+      <PageBanner placementId="HOME_TOP" className="page-banner--home" />
       <HomeGateway />
       <div className="hooma-lane--content">
         <HoomaNowSection />

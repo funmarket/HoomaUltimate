@@ -44,9 +44,7 @@ export function PitchPage() {
 
   return (
     <section className="pitch-page">
-      <div className="hooma-lane--media">
-        <PageBanner placementId="PITCH_TOP" className="page-banner--pitch" />
-      </div>
+      <PageBanner placementId="PITCH_TOP" className="page-banner--pitch" />
       <div className="hooma-lane--content">
         <a className="pitch-add-action" href="/places/new?kind=PITCH">
           <span aria-hidden="true">+</span>

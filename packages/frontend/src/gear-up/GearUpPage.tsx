@@ -115,9 +115,7 @@ export function GearUpPage() {
 
   return (
     <section className="gear-up-page">
-      <div className="hooma-lane--media">
-        <PageBanner placementId="GEAR_UP_TOP" className="page-banner--gear-up" />
-      </div>
+      <PageBanner placementId="GEAR_UP_TOP" className="page-banner--gear-up" />
       <div className="hooma-lane--content">
         <div className="page-banner__actions page-banner__actions--gear-up">
           <a className="gear-up-add-store-link" href="/athletes/gear-up/add-store">
