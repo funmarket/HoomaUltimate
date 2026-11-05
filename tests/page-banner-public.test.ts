@@ -347,14 +347,14 @@ test("DPR-only variant change renews stale signed URLs", async () => {
         {
           ...slide("slide-1"),
           variants: [
-        {
-          ...signedVariant(`https://media.example.test/${prefix}-mobile.webp`, "mobile", 720),
-          expiresAt: expiry,
-        },
-        {
-          ...signedVariant(`https://media.example.test/${prefix}-display.webp`, "display", 1440),
-          expiresAt: expiry,
-        },
+            {
+              ...signedVariant(`https://media.example.test/${prefix}-mobile.webp`, "mobile", 720),
+              expiresAt: expiry,
+            },
+            {
+              ...signedVariant(`https://media.example.test/${prefix}-display.webp`, "display", 1440),
+              expiresAt: expiry,
+            },
           ],
         },
       ]),
