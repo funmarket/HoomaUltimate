@@ -144,7 +144,9 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
       .then(() => {
         if (image.isConnected) setReadyKey(item.key);
       })
-      .catch(() => handleFailure(item));
+      .catch(() => {
+        if (image.isConnected) handleFailure(item);
+      });
   }
 
   async function navigate(direction: -1 | 1) {
@@ -203,6 +205,11 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
         href={item.slide.destination.url}
         aria-hidden={!visible}
         tabIndex={visible ? undefined : -1}
+        style={
+          visible
+            ? undefined
+            : { pointerEvents: "none", position: "absolute", inset: 0, visibility: "hidden" }
+        }
         {...(item.slide.destination.kind === "EXTERNAL"
           ? { rel: "noreferrer noopener", target: "_blank" }
           : {})}
