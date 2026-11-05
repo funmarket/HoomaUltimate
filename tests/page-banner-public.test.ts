@@ -239,6 +239,7 @@ test("expired URLs refresh without losing visible artwork", async () => {
     fireEvent.click(view.getByRole("button", { name: "Next banner" }));
     await waitFor(() => assert.equal(reads, 2));
     assert.equal(findImage(view, "slide-1"), visible);
+    await waitFor(() => assert.ok(findImage(view, "fresh-slide-2")));
     await loadImage(findImage(view, "fresh-slide-2"));
     await waitFor(() =>
       assert.equal(findImage(view, "fresh-slide-2").getAttribute("aria-hidden"), "false"),
