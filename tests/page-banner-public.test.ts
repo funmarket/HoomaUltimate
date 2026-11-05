@@ -284,7 +284,9 @@ test("expired mobile URL refreshes after viewport switch before downloading", as
   Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: 1 });
   globalThis.fetch = async () => {
     reads++;
-    return json(response([{ ...slide("slide-1"), variants: variantSet(reads === 1 ? "old" : "fresh") }]));
+    return json(
+      response([{ ...slide("slide-1"), variants: variantSet(reads === 1 ? "old" : "fresh") }]),
+    );
   };
   try {
     const view = mountWithFetch();
@@ -313,10 +315,8 @@ test("expired mobile URL refreshes after viewport switch before downloading", as
   }
 });
 
-test("decorative linked banner has an accessible name without changing its empty image alt", async () => {
-  const view = mount(
-    response([slide("slide-1", null, { kind: "INTERNAL", url: "/athletes" })]),
-  );
+test("decorative linked banners have an accessible name and empty image alt", async () => {
+  const view = mount(response([slide("slide-1", null, { kind: "INTERNAL", url: "/athletes" })]));
   await flushReact();
   await loadImage(findImage(view, "slide-1"));
   const link = view.getByRole("link", { name: "Athletes banner" });
