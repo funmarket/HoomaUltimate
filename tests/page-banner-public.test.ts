@@ -271,6 +271,59 @@ test("mobile DPR selects the smallest adequate processed variant", async () => {
   }
 });
 
+test("expired mobile URL refreshes after viewport switch before downloading", async () => {
+  const originalWidth = window.innerWidth;
+  const originalDpr = window.devicePixelRatio;
+  const originalNow = Date.now;
+  let reads = 0;
+  const variantSet = (prefix: string) => [
+    signedVariant(`https://media.example.test/${prefix}-mobile.webp`, "mobile", 720),
+    signedVariant(`https://media.example.test/${prefix}-display.webp`, "display", 1440),
+  ];
+  Object.defineProperty(window, "innerWidth", { configurable: true, value: 1000 });
+  Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: 1 });
+  globalThis.fetch = async () => {
+    reads++;
+    return json(response([{ ...slide("slide-1"), variants: variantSet(reads === 1 ? "old" : "fresh") }]));
+  };
+  try {
+    const view = mountWithFetch();
+    await flushReact();
+    await loadImage(findImage(view, "old-display.webp"));
+    const visible = findImage(view, "old-display.webp");
+    Date.now = () => new Date("2099-11-02T12:01:00.000Z").getTime();
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: 375 });
+    await act(async () => {
+      fireEvent(window, new window.Event("resize"));
+      await Promise.resolve();
+    });
+    await waitFor(() => assert.equal(reads, 2));
+    assert.equal(findImage(view, "old-display.webp"), visible);
+    assert.equal(view.container.querySelector('img[src*="old-mobile.webp"]'), null);
+    await waitFor(() => assert.ok(findImage(view, "fresh-mobile.webp")));
+    await loadImage(findImage(view, "fresh-mobile.webp"));
+    await waitFor(() =>
+      assert.equal(findImage(view, "fresh-mobile.webp").getAttribute("aria-hidden"), "false"),
+    );
+    assert.equal(reads, 2, "one variant switch must not poll for signed URLs");
+  } finally {
+    Date.now = originalNow;
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: originalWidth });
+    Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: originalDpr });
+  }
+});
+
+test("decorative linked banner has an accessible name without changing its empty image alt", async () => {
+  const view = mount(
+    response([slide("slide-1", null, { kind: "INTERNAL", url: "/athletes" })]),
+  );
+  await flushReact();
+  await loadImage(findImage(view, "slide-1"));
+  const link = view.getByRole("link", { name: "Athletes banner" });
+  assert.equal(link.getAttribute("href"), "/athletes");
+  assert.equal(findImage(view, "slide-1").getAttribute("alt"), "");
+});
+
 test("late public reads after unmount never revive retired banner content", async () => {
   let resolveFetch: ((value: Response) => void) | undefined;
   globalThis.fetch = () =>
