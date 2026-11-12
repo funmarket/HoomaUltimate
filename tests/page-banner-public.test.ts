@@ -228,7 +228,12 @@ test("expired URLs refresh without losing visible artwork", async () => {
           ? slides
           : slides.map((item) => ({
               ...item,
-              variants: [signedVariant(`https://media.example.test/fresh-${item.id}.webp`)],
+              variants: [
+                {
+                  ...signedVariant(`https://media.example.test/fresh-${item.id}.webp`),
+                  expiresAt: "2099-11-02T12:06:00.000Z",
+                },
+              ],
             })),
       ),
     );
