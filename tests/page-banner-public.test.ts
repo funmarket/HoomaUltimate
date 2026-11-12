@@ -415,9 +415,7 @@ test("failed automatic refresh retries on return without a request loop", async 
           ...slide("slide-1"),
           variants: [
             {
-              ...signedVariant(
-                `https://media.example.test/${isFresh ? "fresh" : "expired"}.webp`,
-              ),
+              ...signedVariant(`https://media.example.test/${isFresh ? "fresh" : "expired"}.webp`),
               expiresAt: isFresh ? "2099-11-02T12:10:00.000Z" : "2099-11-02T12:00:00.000Z",
             },
           ],

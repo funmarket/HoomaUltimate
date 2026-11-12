@@ -167,11 +167,7 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
     setFailedKeys((keys) => (keys.includes(item.key) ? keys : [...keys, item.key]));
     if (item.key === candidate?.key) setReadyKey(null);
     // Preserve the displayed frame and controls until a pending replacement is decoded.
-    if (
-      item.key === displayed?.key &&
-      !refreshing &&
-      (!candidate || candidate.key === item.key)
-    ) {
+    if (item.key === displayed?.key && !refreshing && (!candidate || candidate.key === item.key)) {
       setDisplayed(null);
     }
     if (item.key === candidate?.key && slides.length > 1) {
