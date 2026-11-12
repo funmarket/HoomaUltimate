@@ -286,8 +286,7 @@ test("expired mobile URL refreshes after viewport switch before downloading", as
       signedVariant(`https://media.example.test/${prefix}-display.webp`, "display", 1440),
     ].map((variant) => ({
       ...variant,
-      expiresAt:
-        prefix === "fresh" ? "2099-11-02T12:06:00.000Z" : "2099-11-02T12:00:00.000Z",
+      expiresAt: prefix === "fresh" ? "2099-11-02T12:06:00.000Z" : "2099-11-02T12:00:00.000Z",
     }));
   Object.defineProperty(window, "innerWidth", { configurable: true, value: 1000 });
   Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: 1 });
