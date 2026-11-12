@@ -22,37 +22,22 @@ function cssRule(css, selector) {
   return bodyEnd < 0 ? "" : css.slice(bodyStart, bodyEnd);
 }
 
-test("Ride PageBanner uses the locked exact ON MY WAY fallback image", () => {
+test("Ride displays managed RIDE_TOP only, with no retired ON MY WAY hero image", () => {
   const gateway = source("packages/frontend/src/rides/RideGatewayPage.tsx");
   const css = source("packages/frontend/src/rides/rides.css");
-
-  assert.match(gateway, /ON MY WAY/);
+  const shared = source("packages/frontend/src/page-banner/page-banner.css");
+  assert.match(gateway, /placementId="RIDE_TOP"/);
+  assert.doesNotMatch(gateway, /src="\/rides\/on-my-way-banner\.png"/);
+  assert.doesNotMatch(gateway, /page-banner__fallback/);
+  assert.doesNotMatch(css, /page-banner__fallback/);
+  assert.match(shared, /aspect-ratio:\s*18 \/ 13/);
+  assert.match(shared, /object-fit:\s*contain/);
   assert.match(gateway, /Going somewhere solo\? Why\?/);
   assert.match(gateway, /See who's on your route/);
-  assert.doesNotMatch(gateway, /Where you meet stays between you\./);
-  assert.match(gateway, /src="\/rides\/on-my-way-banner\.png"/);
-  assert.match(gateway, /page-banner__semantic-copy--ride/);
-
-  const hero = cssRule(css, ".page-banner--ride");
-  assert.match(hero, /padding:\s*0/);
-  const media = cssRule(css, ".page-banner__fallback-media--ride");
-  assert.match(media, /overflow:\s*hidden/);
-  assert.match(media, /aspect-ratio:\s*1672 \/ 941/);
-  assert.match(media, /border-radius:\s*28px 28px 0 0/);
-  const banner = cssRule(css, ".page-banner__fallback-image--ride");
-  assert.match(banner, /width:\s*100%/);
-  assert.match(banner, /height:\s*100%/);
-  assert.match(banner, /object-fit:\s*cover/);
-  assert.match(banner, /object-position:\s*center/);
-
   assert.match(css, /--ride-gold:\s*var\(--app-gold\)/);
   assert.match(css, /--ride-sky-silver:\s*#afcfe6/);
-  assert.match(css, /--ride-lime:\s*var\(--app-lime\)/);
-  assert.match(css, /--ride-text-strong:\s*var\(--app-text-strong\)/);
-  assert.doesNotMatch(css, /\.page-banner--ride__route/);
   assert.doesNotMatch(css, /color:\s*var\(--ride-gold\) !important/);
 });
-
 test("Ride PageBanner actions keep approved IA and phone-first button layout", () => {
   const gateway = source("packages/frontend/src/rides/RideGatewayPage.tsx");
   const css = source("packages/frontend/src/rides/rides.css");

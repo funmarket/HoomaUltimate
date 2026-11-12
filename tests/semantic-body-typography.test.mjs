@@ -51,7 +51,6 @@ for (const [path, selector] of [
   [hooma, ".hooma-page p.muted"],
   [hooma, ".hooma-page span.muted"],
   [hooma, ".hooma-page .muted"],
-  [hooma, ".hooma-page .page-banner--hooma p"],
   [hooma, ".hooma-page .hooma-create-callout span"],
   [hooma, ".hooma-page .hooma-card-copy p"],
 ]) {
@@ -69,6 +68,14 @@ for (const [path, selector] of [
     }
   });
 }
+
+test("retired HOOMA hero copy has no semantic body typography owner", () => {
+  const css = readFileSync(
+    new URL("../packages/frontend/src/communities/hooma-page-semantic.css", import.meta.url),
+    "utf8",
+  );
+  assert.equal(css.includes(".hooma-page .page-banner--hooma p"), false);
+});
 
 test("body correction preserves captions, metadata and compact retry/navigation roles", () => {
   assert.equal(declarations(athletes, ".athletes-card__footer small").get("font-size"), "0.78rem");

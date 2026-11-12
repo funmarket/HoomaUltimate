@@ -5,21 +5,11 @@
   padding-bottom: 32px;
 }
 
-.page-banner__body--places {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 18px;
-}
-
-.page-banner__body--places h1,
-.page-banner__body--places p,
 .place-submitted h1,
 .place-submitted p {
   margin: 0;
 }
 
-.page-banner__body--places h1,
 .place-submitted h1 {
   color: var(--app-text-strong);
 }
@@ -775,11 +765,6 @@
 }
 
 @media (max-width: 760px) {
-  .page-banner__body--places {
-    display: grid;
-    align-items: start;
-  }
-
   .place-directory,
   .place-business-grid {
     grid-template-columns: 1fr;
