@@ -71,6 +71,7 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
   const [failedKeys, setFailedKeys] = useState<readonly string[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [pixelWidth, setPixelWidth] = useState(requiredImageWidth);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     const onResize = () => setPixelWidth(requiredImageWidth());
@@ -89,6 +90,19 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
     return () => {
       window.removeEventListener("resize", onResize);
       resolution?.removeEventListener("change", onResolutionChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    const retryOnReturn = () => setRefreshTrigger((previous) => previous + 1);
+    const retryOnVisibility = () => {
+      if (document.visibilityState === "visible") retryOnReturn();
+    };
+    window.addEventListener("focus", retryOnReturn);
+    document.addEventListener("visibilitychange", retryOnVisibility);
+    return () => {
+      window.removeEventListener("focus", retryOnReturn);
+      document.removeEventListener("visibilitychange", retryOnVisibility);
     };
   }, []);
 
@@ -149,9 +163,17 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
   }, [candidate, readyKey]);
 
   function handleFailure(item: PreparedSlide) {
+    if (item.key !== displayed?.key && item.key !== candidate?.key) return;
     setFailedKeys((keys) => (keys.includes(item.key) ? keys : [...keys, item.key]));
-    setReadyKey(null);
-    if (item.key === displayed?.key) setDisplayed(null);
+    if (item.key === candidate?.key) setReadyKey(null);
+    // Preserve the displayed frame and controls until a pending replacement is decoded.
+    if (
+      item.key === displayed?.key &&
+      !refreshing &&
+      (!candidate || candidate.key === item.key)
+    ) {
+      setDisplayed(null);
+    }
     if (item.key === candidate?.key && slides.length > 1) {
       const next = nextIndex(item.index, slides.length, 1);
       setRequestedIndex(next);
@@ -162,10 +184,12 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
     const decoding = typeof image.decode === "function" ? image.decode() : Promise.resolve();
     void decoding
       .then(() => {
-        if (image.isConnected) setReadyKey(item.key);
+        if (image.isConnected && item.key === candidate?.key) setReadyKey(item.key);
       })
       .catch(() => {
-        if (image.isConnected) handleFailure(item);
+        if (image.isConnected && (item.key === candidate?.key || item.key === displayed?.key)) {
+          handleFailure(item);
+        }
       });
   }
 
@@ -218,6 +242,7 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
       pixelWidth,
       expiredCandidate.slide.id,
       expiredCandidate.variant.variant,
+      refreshTrigger,
     ].join(":");
     if (lastAutomaticRefresh.current === key) return;
     lastAutomaticRefresh.current = key;
@@ -230,6 +255,7 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
     refreshing,
     placementId,
     pixelWidth,
+    refreshTrigger,
     validDisplayed?.index,
     refreshExpiredSlide,
   ]);

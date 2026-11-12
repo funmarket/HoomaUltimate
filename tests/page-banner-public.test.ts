@@ -6,7 +6,11 @@ import { JSDOM } from "jsdom";
 registerHooks({
   load(url, context, nextLoad) {
     if (url.endsWith(".css")) {
-      return { format: "module", source: "export default {};", shortCircuit: true };
+      return {
+        format: "module",
+        source: "export default {};",
+        shortCircuit: true,
+      };
     }
     return nextLoad(url, context);
   },
@@ -395,4 +399,186 @@ test("late public reads after unmount never revive retired banner content", asyn
     await Promise.resolve();
   });
   assert.equal(view.container.querySelector("[data-page-banner]"), null);
+});
+
+test("failed automatic refresh retries on return without a request loop", async () => {
+  const originalNow = Date.now;
+  let reads = 0;
+  Date.now = () => new Date("2099-11-02T12:01:00.000Z").getTime();
+  globalThis.fetch = async () => {
+    reads++;
+    if (reads === 2) throw new Error("temporary signed URL refresh failure");
+    const isFresh = reads > 2;
+    return json(
+      response([
+        {
+          ...slide("slide-1"),
+          variants: [
+            {
+              ...signedVariant(
+                `https://media.example.test/${isFresh ? "fresh" : "expired"}.webp`,
+              ),
+              expiresAt: isFresh ? "2099-11-02T12:10:00.000Z" : "2099-11-02T12:00:00.000Z",
+            },
+          ],
+        },
+      ]),
+    );
+  };
+  try {
+    const view = mountWithFetch();
+    await waitFor(() => assert.equal(reads, 2));
+    await flushReact();
+    assert.equal(reads, 2, "failed refresh must not repeat without a new user event");
+    assert.equal(view.container.querySelector(".hooma-lane--media"), null);
+    await act(async () => {
+      fireEvent(window, new window.Event("focus"));
+      await Promise.resolve();
+    });
+    await waitFor(() => assert.equal(reads, 3));
+    await waitFor(() => assert.ok(findImage(view, "fresh.webp")));
+    await loadImage(findImage(view, "fresh.webp"));
+    await waitFor(() =>
+      assert.equal(findImage(view, "fresh.webp").getAttribute("aria-hidden"), "false"),
+    );
+    assert.equal(reads, 3);
+  } finally {
+    Date.now = originalNow;
+  }
+});
+
+test("manual navigation retries an expired slide after a failed read", async () => {
+  const originalNow = Date.now;
+  Date.now = () => new Date("2099-11-02T12:01:00.000Z").getTime();
+  let reads = 0;
+  const current = [
+    {
+      ...slide("slide-1"),
+      variants: [
+        {
+          ...signedVariant("https://media.example.test/visible.webp"),
+          expiresAt: "2099-11-02T12:10:00.000Z",
+        },
+      ],
+    },
+    {
+      ...slide("slide-2"),
+      variants: [
+        {
+          ...signedVariant("https://media.example.test/expired.webp"),
+          expiresAt: "2099-11-02T12:00:00.000Z",
+        },
+      ],
+    },
+  ];
+  globalThis.fetch = async () => {
+    reads++;
+    if (reads === 2) throw new Error("transient refresh failure");
+    return json(
+      response(
+        reads === 1
+          ? current
+          : [
+              current[0],
+              {
+                ...current[1],
+                variants: [
+                  {
+                    ...signedVariant("https://media.example.test/fresh-next.webp"),
+                    expiresAt: "2099-11-02T12:10:00.000Z",
+                  },
+                ],
+              },
+            ],
+      ),
+    );
+  };
+  try {
+    const view = mountWithFetch();
+    await flushReact();
+    await loadImage(findImage(view, "visible.webp"));
+    const old = findImage(view, "visible.webp");
+    fireEvent.click(view.getByRole("button", { name: "Next banner" }));
+    await waitFor(() => assert.equal(reads, 2));
+    assert.equal(findImage(view, "visible.webp"), old);
+    fireEvent.click(view.getByRole("button", { name: "Next banner" }));
+    await waitFor(() => assert.equal(reads, 3));
+    await waitFor(() => assert.ok(findImage(view, "fresh-next.webp")));
+    await loadImage(findImage(view, "fresh-next.webp"));
+    await waitFor(() =>
+      assert.equal(findImage(view, "fresh-next.webp").getAttribute("aria-hidden"), "false"),
+    );
+  } finally {
+    Date.now = originalNow;
+  }
+});
+
+test("visible-image error retains the frame while a replacement decodes", async () => {
+  const view = mount(response([slide("slide-1"), slide("slide-2")]));
+  await flushReact();
+  const previous = findImage(view, "slide-1");
+  await loadImage(previous);
+  fireEvent.click(view.getByRole("button", { name: "Next banner" }));
+  await flushReact();
+  const pending = findImage(view, "slide-2");
+  await act(async () => {
+    fireEvent.error(previous);
+    await Promise.resolve();
+  });
+  assert.ok(!view.container.querySelector(".hooma-lane--media")?.hasAttribute("hidden"));
+  assert.equal(pending.getAttribute("aria-hidden"), "true");
+  assert.ok(view.getByRole("button", { name: "Next banner" }));
+  await loadImage(pending);
+  await waitFor(() => assert.equal(pending.getAttribute("aria-hidden"), "false"));
+});
+
+test("late decode of a superseded size does not replace the current slide", async () => {
+  const oldWidth = window.innerWidth;
+  const oldDpr = window.devicePixelRatio;
+  Object.defineProperty(window, "innerWidth", { configurable: true, value: 375 });
+  Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: 1 });
+  let finishOldDecode: (() => void) | undefined;
+  try {
+    const variants = (id: string) => [
+      signedVariant(`https://media.example.test/${id}-mobile.webp`, "mobile", 720),
+      signedVariant(`https://media.example.test/${id}-display.webp`, "display", 1440),
+    ];
+    const view = mount(
+      response([
+        { ...slide("slide-1"), variants: variants("slide-1") },
+        { ...slide("slide-2"), variants: variants("slide-2") },
+      ]),
+    );
+    await flushReact();
+    await loadImage(findImage(view, "slide-1-mobile.webp"));
+    fireEvent.click(view.getByRole("button", { name: "Next banner" }));
+    await flushReact();
+    const oldPending = findImage(view, "slide-2-mobile.webp");
+    Object.defineProperty(oldPending, "decode", {
+      value: () =>
+        new Promise<void>((resolve) => {
+          finishOldDecode = resolve;
+        }),
+    });
+    await act(async () => {
+      fireEvent.load(oldPending);
+      await Promise.resolve();
+    });
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: 900 });
+    await act(async () => {
+      fireEvent(window, new window.Event("resize"));
+      await Promise.resolve();
+    });
+    const current = findImage(view, "slide-2-display.webp");
+    await loadImage(current);
+    await waitFor(() => assert.equal(current.getAttribute("aria-hidden"), "false"));
+    await act(async () => {
+      finishOldDecode?.();
+      await Promise.resolve();
+    });
+    assert.equal(current.getAttribute("aria-hidden"), "false");
+  } finally {
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: oldWidth });
+    Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: oldDpr });
+  }
 });
