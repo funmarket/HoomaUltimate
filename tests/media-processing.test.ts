@@ -310,16 +310,22 @@ test("PHOTO_STANDARD preserves ratio, applies max edges, and never enlarges sour
 test("PAGE_BANNER_STANDARD retains all source artwork without a padded 18:13 canvas", async () => {
   const left = await sharp({
     create: { width: 1500, height: 1000, channels: 3, background: "#ff0000" },
-  }).png().toBuffer();
+  })
+    .png()
+    .toBuffer();
   const right = await sharp({
     create: { width: 1500, height: 1000, channels: 3, background: "#0000ff" },
-  }).png().toBuffer();
+  })
+    .png()
+    .toBuffer();
   const artwork = new Uint8Array(
     await sharp({ create: { width: 3000, height: 1000, channels: 3, background: "#000000" } })
       .composite([
         { input: left, left: 0, top: 0 },
         { input: right, left: 1500, top: 0 },
-      ]).png().toBuffer(),
+      ])
+      .png()
+      .toBuffer(),
   );
 
   const result = await processMedia({
@@ -327,7 +333,10 @@ test("PAGE_BANNER_STANDARD retains all source artwork without a padded 18:13 can
     contentType: "image/png",
     profile: PAGE_BANNER_STANDARD,
   });
-  assert.deepEqual(result.variants.map(({ variant }) => variant), ["master", "display", "mobile"]);
+  assert.deepEqual(
+    result.variants.map(({ variant }) => variant),
+    ["master", "display", "mobile"],
+  );
 
   const expected = {
     master: [2160, 720],
@@ -337,7 +346,9 @@ test("PAGE_BANNER_STANDARD retains all source artwork without a padded 18:13 can
   for (const variant of result.variants) {
     const dimensions = expected[variant.variant as keyof typeof expected];
     const { data, info } = await sharp(variant.body)
-      .removeAlpha().raw().toBuffer({ resolveWithObject: true });
+      .removeAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
     assert.deepEqual([info.width, info.height], [...dimensions]);
     const pixel = (x: number, y: number) => {
       const offset = (y * info.width + x) * info.channels;
@@ -362,7 +373,9 @@ test("PAGE_BANNER_STANDARD does not enlarge small artwork or add frame padding",
   });
   for (const variant of result.variants) {
     const { data, info } = await sharp(variant.body)
-      .removeAlpha().raw().toBuffer({ resolveWithObject: true });
+      .removeAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
     assert.deepEqual([info.width, info.height], [sourceWidth, sourceHeight]);
     const corner = (info.height - 1) * info.width * info.channels;
     assert.ok((data[1] ?? 0) > 150 && (data[0] ?? 0) < 100);
