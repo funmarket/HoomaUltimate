@@ -82,17 +82,3 @@
   }
 }
 
-.page-banner--home {
-  border: 1px solid rgba(214, 171, 84, 0.52);
-  border-radius: clamp(12px, 2.2vw, 22px);
-  background: #030403;
-  box-shadow:
-    0 16px 34px rgba(0, 0, 0, 0.34),
-    inset 0 0 0 1px rgba(255, 238, 192, 0.055);
-}
-
-@media (max-width: 520px) {
-  .page-banner--home {
-    margin-top: 0.05rem;
-  }
-}

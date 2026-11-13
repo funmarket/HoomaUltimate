@@ -19,6 +19,11 @@ const homePage = await readFile(
   "utf8",
 );
 
+const pageBannerCss = await readFile(
+  new URL("../packages/frontend/src/page-banner/page-banner.css", import.meta.url),
+  "utf8",
+);
+
 test("homepage gateway artwork stays lazy while managed PageBanner owns top media", () => {
   assert.match(gatewayCard, /loading="lazy"/);
   assert.match(gatewayCard, /decoding="async"/);
@@ -64,4 +69,9 @@ test("homepage gateway contract is a phone-first three by two grid", () => {
   assert.doesNotMatch(gateways, /id: "gamers"/);
   assert.doesNotMatch(gateways, /id: "ultras"/);
   assert.doesNotMatch(gateways, /id: "fundme"/);
+});
+
+test("Home managed banner has no second decorative frame or outline", () => {
+  assert.doesNotMatch(pageBannerCss, /\.page-banner--home\s*\{/);
+  assert.match(pageBannerCss, /\.page-banner__frame\s*\{/);
 });
