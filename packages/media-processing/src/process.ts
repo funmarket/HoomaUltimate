@@ -227,9 +227,7 @@ export async function processMedia(input: ProcessMediaInput): Promise<ProcessedM
     }
   } else {
     for (const spec of input.profile.variants) {
-      variants.push(
-        await processBannerVariant(input.body, input.profile.maxDecodedPixels, spec),
-      );
+      variants.push(await processBannerVariant(input.body, input.profile.maxDecodedPixels, spec));
     }
   }
   return {
