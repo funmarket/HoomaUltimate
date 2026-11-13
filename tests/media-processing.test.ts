@@ -307,25 +307,19 @@ test("PHOTO_STANDARD preserves ratio, applies max edges, and never enlarges sour
   }
 });
 
-test("PAGE_BANNER_STANDARD uses fixed canvases and contains oversized artwork without crop", async () => {
+test("PAGE_BANNER_STANDARD retains all source artwork without a padded 18:13 canvas", async () => {
   const left = await sharp({
     create: { width: 1500, height: 1000, channels: 3, background: "#ff0000" },
-  })
-    .png()
-    .toBuffer();
+  }).png().toBuffer();
   const right = await sharp({
     create: { width: 1500, height: 1000, channels: 3, background: "#0000ff" },
-  })
-    .png()
-    .toBuffer();
+  }).png().toBuffer();
   const artwork = new Uint8Array(
     await sharp({ create: { width: 3000, height: 1000, channels: 3, background: "#000000" } })
       .composite([
         { input: left, left: 0, top: 0 },
         { input: right, left: 1500, top: 0 },
-      ])
-      .png()
-      .toBuffer(),
+      ]).png().toBuffer(),
   );
 
   const result = await processMedia({
@@ -333,49 +327,32 @@ test("PAGE_BANNER_STANDARD uses fixed canvases and contains oversized artwork wi
     contentType: "image/png",
     profile: PAGE_BANNER_STANDARD,
   });
-  assert.deepEqual(
-    result.variants.map(({ variant }) => variant),
-    ["master", "display", "mobile"],
-  );
+  assert.deepEqual(result.variants.map(({ variant }) => variant), ["master", "display", "mobile"]);
 
   const expected = {
-    master: { width: 2160, height: 1560, artworkHeight: 720 },
-    display: { width: 1440, height: 1040, artworkHeight: 480 },
-    mobile: { width: 720, height: 520, artworkHeight: 240 },
+    master: [2160, 720],
+    display: [1440, 480],
+    mobile: [720, 240],
   } as const;
-
   for (const variant of result.variants) {
-    const frame = expected[variant.variant as keyof typeof expected];
-    const metadata = await sharp(variant.body).metadata();
-    assert.deepEqual([metadata.width, metadata.height], [frame.width, frame.height]);
-    assert.equal(metadata.format, "webp");
-
+    const dimensions = expected[variant.variant as keyof typeof expected];
     const { data, info } = await sharp(variant.body)
-      .removeAlpha()
-      .raw()
-      .toBuffer({ resolveWithObject: true });
+      .removeAlpha().raw().toBuffer({ resolveWithObject: true });
+    assert.deepEqual([info.width, info.height], [...dimensions]);
     const pixel = (x: number, y: number) => {
       const offset = (y * info.width + x) * info.channels;
-      return [data[offset] ?? 0, data[offset + 1] ?? 0, data[offset + 2] ?? 0] as const;
+      return [data[offset] ?? 0, data[offset + 1] ?? 0, data[offset + 2] ?? 0];
     };
-    const isBackground = ([r, g, b]: readonly number[]) =>
-      Math.abs(r - 5) <= 10 && Math.abs(g - 6) <= 10 && Math.abs(b - 5) <= 10;
-    const middleY = Math.floor(frame.height / 2);
-    const artworkTop = (frame.height - frame.artworkHeight) / 2;
-
-    const leftEdge = pixel(12, middleY);
-    const rightEdge = pixel(frame.width - 13, middleY);
-    assert.ok(leftEdge[0] > 150 && leftEdge[1] < 100 && leftEdge[2] < 100);
-    assert.ok(rightEdge[2] > 150 && rightEdge[0] < 100 && rightEdge[1] < 100);
-    assert.ok(isBackground(pixel(Math.floor(frame.width / 2), artworkTop - 12)));
-    assert.ok(
-      isBackground(pixel(Math.floor(frame.width / 2), artworkTop + frame.artworkHeight + 11)),
-    );
-    assert.ok(isBackground(pixel(0, 0)));
+    for (const y of [0, Math.floor(info.height / 2), info.height - 1]) {
+      const leftEdge = pixel(8, y);
+      const rightEdge = pixel(info.width - 9, y);
+      assert.ok(leftEdge[0] > 150 && leftEdge[1] < 100 && leftEdge[2] < 100);
+      assert.ok(rightEdge[2] > 150 && rightEdge[0] < 100 && rightEdge[1] < 100);
+    }
   }
 });
 
-test("PAGE_BANNER_STANDARD keeps fixed canvases while small artwork remains natural size", async () => {
+test("PAGE_BANNER_STANDARD does not enlarge small artwork or add frame padding", async () => {
   const sourceWidth = 180;
   const sourceHeight = 130;
   const result = await processMedia({
@@ -383,45 +360,13 @@ test("PAGE_BANNER_STANDARD keeps fixed canvases while small artwork remains natu
     contentType: "image/png",
     profile: PAGE_BANNER_STANDARD,
   });
-
-  const expected = {
-    master: [2160, 1560],
-    display: [1440, 1040],
-    mobile: [720, 520],
-  } as const;
-
   for (const variant of result.variants) {
-    const [canvasWidth, canvasHeight] = expected[variant.variant as keyof typeof expected];
-    const metadata = await sharp(variant.body).metadata();
-    assert.deepEqual([metadata.width, metadata.height], [canvasWidth, canvasHeight]);
-
     const { data, info } = await sharp(variant.body)
-      .removeAlpha()
-      .raw()
-      .toBuffer({ resolveWithObject: true });
-    const pixel = (x: number, y: number) => {
-      const offset = (y * info.width + x) * info.channels;
-      return [data[offset] ?? 0, data[offset + 1] ?? 0, data[offset + 2] ?? 0] as const;
-    };
-    const isGreen = ([r, g, b]: readonly number[]) => g > 150 && r < 100 && b < 100;
-    const isBackground = ([r, g, b]: readonly number[]) =>
-      Math.abs(r - 5) <= 10 && Math.abs(g - 6) <= 10 && Math.abs(b - 5) <= 10;
-
-    const left = (canvasWidth - sourceWidth) / 2;
-    const top = (canvasHeight - sourceHeight) / 2;
-    const right = left + sourceWidth - 1;
-    const bottom = top + sourceHeight - 1;
-    const centerX = Math.floor(canvasWidth / 2);
-    const centerY = Math.floor(canvasHeight / 2);
-
-    assert.ok(isGreen(pixel(left + 8, top + 8)));
-    assert.ok(isGreen(pixel(right - 8, bottom - 8)));
-    assert.ok(isGreen(pixel(centerX, centerY)));
-    assert.ok(isBackground(pixel(left - 8, centerY)));
-    assert.ok(isBackground(pixel(right + 8, centerY)));
-    assert.ok(isBackground(pixel(centerX, top - 8)));
-    assert.ok(isBackground(pixel(centerX, bottom + 8)));
-    assert.ok(isBackground(pixel(0, 0)));
+      .removeAlpha().raw().toBuffer({ resolveWithObject: true });
+    assert.deepEqual([info.width, info.height], [sourceWidth, sourceHeight]);
+    const corner = (info.height - 1) * info.width * info.channels;
+    assert.ok((data[1] ?? 0) > 150 && (data[0] ?? 0) < 100);
+    assert.ok((data[corner + 1] ?? 0) > 150 && (data[corner] ?? 0) < 100);
   }
 });
 

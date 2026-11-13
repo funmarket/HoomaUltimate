@@ -184,33 +184,23 @@ async function processPhotoVariant(
   }
 }
 
-function bannerCanvasDimensions(spec: PageBannerVariantSpec): { width: number; height: number } {
-  return { width: spec.maxWidthPx, height: spec.maxHeightPx };
-}
-
 async function processBannerVariant(
   body: Uint8Array,
   maxDecodedPixels: number,
-  background: string,
   spec: PageBannerVariantSpec,
 ): Promise<ProcessedMediaVariant> {
   try {
-    const canvas = bannerCanvasDimensions(spec);
-    const artwork = await sharp(body, { failOn: "warning", limitInputPixels: maxDecodedPixels })
+    const { data, info } = await sharp(body, {
+      failOn: "warning",
+      limitInputPixels: maxDecodedPixels,
+    })
       .rotate()
       .resize({
-        width: canvas.width,
-        height: canvas.height,
+        width: spec.maxWidthPx,
+        height: spec.maxHeightPx,
         fit: "inside",
         withoutEnlargement: true,
       })
-      .png()
-      .toBuffer();
-
-    const { data, info } = await sharp({
-      create: { width: canvas.width, height: canvas.height, channels: 3, background },
-    })
-      .composite([{ input: artwork, gravity: "center" }])
       .webp({ quality: spec.quality, effort: 4 })
       .toBuffer({ resolveWithObject: true });
 
@@ -241,12 +231,7 @@ export async function processMedia(input: ProcessMediaInput): Promise<ProcessedM
   } else {
     for (const spec of input.profile.variants) {
       variants.push(
-        await processBannerVariant(
-          input.body,
-          input.profile.maxDecodedPixels,
-          input.profile.background,
-          spec,
-        ),
+        await processBannerVariant(input.body, input.profile.maxDecodedPixels, spec),
       );
     }
   }

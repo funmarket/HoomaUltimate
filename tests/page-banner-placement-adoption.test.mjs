@@ -145,3 +145,10 @@ test("desktop banner controls retain original 48rem spacing", () => {
     /@media \(min-width: 48rem\) \{\s*\.page-banner__controls \{\s*right: 1rem;\s*bottom: 1rem;\s*\}\s*\}/,
   );
 });
+
+test("PageBanner frame follows decoded image geometry without a fixed 18:13 placeholder", () => {
+  const css = readFileSync("packages/frontend/src/page-banner/page-banner.css", "utf8");
+  assert.doesNotMatch(css, /aspect-ratio:\s*18\s*\/\s*13/);
+  assert.match(css, /\.page-banner__image\s*\{[^}]*height:\s*auto/);
+  assert.doesNotMatch(css, /\.page-banner--home\s*\{/);
+});

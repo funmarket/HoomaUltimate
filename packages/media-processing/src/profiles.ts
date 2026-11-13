@@ -37,8 +37,6 @@ export interface PageBannerStandardProfile {
   readonly maxDecodedPixels: number;
   readonly intendedHttpMaxBytes: number;
   readonly acceptedContentTypes: readonly MediaInputContentType[];
-  readonly frameRatio: Readonly<{ width: 18; height: 13 }>;
-  readonly background: "#050605";
   readonly variants: readonly PageBannerVariantSpec[];
 }
 
@@ -63,8 +61,6 @@ export const PAGE_BANNER_STANDARD: PageBannerStandardProfile = {
   maxDecodedPixels: MAX_DECODED_PIXELS,
   intendedHttpMaxBytes: DEFAULT_INTENDED_HTTP_MAX_BYTES,
   acceptedContentTypes: ACCEPTED_MEDIA_CONTENT_TYPES,
-  frameRatio: { width: 18, height: 13 },
-  background: "#050605",
   variants: [
     { variant: "master", maxWidthPx: 2160, maxHeightPx: 1560, quality: 90 },
     { variant: "display", maxWidthPx: 1440, maxHeightPx: 1040, quality: 88 },

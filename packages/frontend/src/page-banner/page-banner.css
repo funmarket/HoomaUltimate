@@ -8,7 +8,6 @@
 .page-banner__frame {
   position: relative;
   width: 100%;
-  aspect-ratio: 18 / 13;
   overflow: hidden;
   background: #050605;
 }
@@ -17,10 +16,10 @@
 .page-banner__image {
   display: block;
   width: 100%;
-  height: 100%;
 }
 
 .page-banner__image {
+  height: auto;
   object-fit: contain;
 }
 
