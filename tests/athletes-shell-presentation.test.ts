@@ -58,7 +58,8 @@ test("Athletes hub orders PageBanner then Create Community then tabs with no CTA
 });
 
 test("Athletes managed image uses shared full-frame geometry, with independent CTA and tabs", () => {
-  assert.ok(bannerCss.includes("aspect-ratio: 18 / 13;"));
+  assert.equal(bannerCss.includes("aspect-ratio: 18 / 13;"), false);
+  assert.ok(bannerCss.includes("height: auto;"));
   assert.ok(bannerCss.includes("object-fit: contain;"));
   assert.equal(bannerCss.includes("aspect-ratio: 3 / 1;"), false);
   assert.equal(athletesCss.includes(".page-banner__fallback--athletes"), false);

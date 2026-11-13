@@ -30,7 +30,9 @@ test("Ride displays managed RIDE_TOP only, with no retired ON MY WAY hero image"
   assert.doesNotMatch(gateway, /src="\/rides\/on-my-way-banner\.png"/);
   assert.doesNotMatch(gateway, /page-banner__fallback/);
   assert.doesNotMatch(css, /page-banner__fallback/);
-  assert.match(shared, /aspect-ratio:\s*18 \/ 13/);
+  assert.doesNotMatch(shared, /aspect-ratio:\s*18 \/ 13/);
+  assert.match(shared, /height:\s*auto/);
+  assert.doesNotMatch(css, /\.page-banner--ride\s*\{/);
   assert.match(shared, /object-fit:\s*contain/);
   assert.match(gateway, /Going somewhere solo\? Why\?/);
   assert.match(gateway, /See who's on your route/);
