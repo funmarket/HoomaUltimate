@@ -155,7 +155,10 @@ async function processPhotoVariant(
   spec: PhotoVariantSpec,
 ): Promise<ProcessedMediaVariant> {
   try {
-    const { data, info } = await sharp(body, { failOn: "warning", limitInputPixels: maxDecodedPixels })
+    const { data, info } = await sharp(body, {
+      failOn: "warning",
+      limitInputPixels: maxDecodedPixels,
+    })
       .rotate()
       .resize({
         width: spec.maxEdgePx,
