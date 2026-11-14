@@ -554,6 +554,7 @@ test("manual navigation retries an expired slide after a failed read", async () 
     const old = findImage(view, "visible.webp");
     fireEvent.click(view.getByRole("button", { name: "Next banner" }));
     await waitFor(() => assert.equal(reads, 2));
+    await flushReact();
     assert.equal(findImage(view, "visible.webp"), old);
     fireEvent.click(view.getByRole("button", { name: "Next banner" }));
     await waitFor(() => assert.equal(reads, 3));
