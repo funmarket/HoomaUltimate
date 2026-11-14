@@ -1,5 +1,5 @@
-import { useEffect, useState, type ReactNode } from "react";
-import { HoomaAccountHeader, HoomaBottomNav } from "@hooma/ui";
+import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
+import { HoomaAccountHeader, HoomaBottomNav, PRIMARY_NAV_ITEMS } from "@hooma/ui";
 import {
   clearInteractionNoticeState,
   readInteractionNotice,
@@ -12,6 +12,10 @@ import type { TelegramRuntime } from "../../telegram/runtime";
 import { useTelegramBackButton } from "../../telegram/useTelegramBackButton";
 import { buildAccountMenuSections } from "./account-menu-model";
 import { shellPresentationForPath } from "./page-presentation";
+import {
+  navigateWithPageBannerPrefetch,
+  pageBannerPlacementForPath,
+} from "./page-banner-navigation";
 
 export function HoomaShell({
   children,
@@ -67,6 +71,10 @@ export function HoomaShell({
     : null;
   const hasTelegramIdentity = Boolean(runtime.initData);
   const navPathname = location.pathname === "/telegram" ? "/" : location.pathname;
+  useLayoutEffect(() => {
+    const placementId = pageBannerPlacementForPath(navPathname, PRIMARY_NAV_ITEMS);
+    if (placementId) void api.pageBanners.prefetch(placementId).catch(() => undefined);
+  }, [api, navPathname]);
   const shellPresentation = shellPresentationForPath(location.pathname);
   const shellError = error && !location.pathname.startsWith("/rides") ? error : null;
   const accountSections = buildAccountMenuSections({
@@ -87,7 +95,14 @@ export function HoomaShell({
         notificationControl={
           <UserNotificationControl enabled={Boolean(me)} telegramRuntime={hasTelegramIdentity} />
         }
-        onHome={() => navigate("/")}
+        onHome={() =>
+          navigateWithPageBannerPrefetch(
+            "/",
+            PRIMARY_NAV_ITEMS,
+            (placementId) => api.pageBanners.prefetch(placementId),
+            navigate,
+          )
+        }
         onGuestProfile={() =>
           navigate(
             hasTelegramIdentity
@@ -110,7 +125,17 @@ export function HoomaShell({
         </div>
       ) : null}
       <section className="shell-content">{children}</section>
-      <HoomaBottomNav pathname={navPathname} onNavigate={(href) => navigate(href)} />
+      <HoomaBottomNav
+        pathname={navPathname}
+        onNavigate={(href) =>
+          navigateWithPageBannerPrefetch(
+            href,
+            PRIMARY_NAV_ITEMS,
+            (placementId) => api.pageBanners.prefetch(placementId),
+            navigate,
+          )
+        }
+      />
     </main>
   );
 }

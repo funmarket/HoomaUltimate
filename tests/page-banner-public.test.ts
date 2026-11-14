@@ -128,6 +128,7 @@ test("only a decoded mounted image becomes visible and preserves semantics", asy
   );
   await flushReact();
   const actual = findImage(view, "slide-1");
+  assert.equal(actual.getAttribute("fetchpriority"), "high");
   assert.ok(view.container.querySelector(".hooma-lane--media")?.hasAttribute("hidden"));
   await loadImage(actual);
   await waitFor(() => assert.equal(view.getByRole("img", { name: "Athletes training" }), actual));
@@ -190,6 +191,7 @@ test("manual navigation retains old image until the new mounted image decodes", 
   assert.ok(view.getByRole("button", { name: "Next banner" }));
   const actualNext = findImage(view, "slide-2");
   assert.equal(actualNext.getAttribute("aria-hidden"), "true");
+  assert.equal(actualNext.getAttribute("fetchpriority"), "auto");
   await loadImage(actualNext);
   await waitFor(() =>
     assert.equal(view.getByRole("img", { name: "Community artwork" }), actualNext),

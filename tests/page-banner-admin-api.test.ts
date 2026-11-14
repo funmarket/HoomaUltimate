@@ -49,3 +49,48 @@ test("Platform Admin PageBanner API uses the merged backend routes and metadata 
     globalThis.fetch = originalFetch;
   }
 });
+
+test("successful PageBanner Admin mutations invalidate only their affected placement", async () => {
+  const invalidated: string[] = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () =>
+    new Response(JSON.stringify({ id: "HOME_TOP", enabled: true, slides: [] }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  try {
+    const api = createPlatformAdminApi(
+      { baseUrl: "http://api.test" },
+      {
+        onPageBannerMutation: (placementId) => invalidated.push(placementId),
+      },
+    );
+    await api.pageBanners.setEnabled("HOME_TOP", true);
+    await api.pageBanners.updateSlide("HOME_TOP", "slide-1", {
+      isDecorative: true,
+      altText: null,
+      destination: null,
+    });
+    assert.deepEqual(invalidated, ["HOME_TOP", "HOME_TOP"]);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("failed PageBanner Admin mutations do not invalidate cached reads", async () => {
+  const invalidated: string[] = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response("{}", { status: 503 });
+  try {
+    const api = createPlatformAdminApi(
+      { baseUrl: "http://api.test" },
+      {
+        onPageBannerMutation: (placementId) => invalidated.push(placementId),
+      },
+    );
+    await assert.rejects(api.pageBanners.setEnabled("HOME_TOP", false));
+    assert.deepEqual(invalidated, []);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
