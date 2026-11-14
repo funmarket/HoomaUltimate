@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { PageBannerPlacementId } from "@hooma/contracts/page-banner";
+import {
+  PAGE_BANNER_PLACEMENT_IDS,
+  type PageBannerPlacementId,
+} from "@hooma/contracts/page-banner";
 import { createPageBannerApi } from "../packages/frontend/src/page-banner/api.ts";
 import { createPlatformAdminApi } from "../packages/frontend/src/platform-admin/api.ts";
 
@@ -111,6 +114,100 @@ test("prefetch and the mounting PageBanner public read share one request", async
     assert.equal(calls, 1);
     resolveFetch(response("PLAY_TOP"));
     assert.equal(await first, await second);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("session preparation reads every canonical placement serially and only once", async () => {
+  const requested: string[] = [];
+  let active = 0;
+  let maximumActive = 0;
+  globalThis.fetch = async (input) => {
+    const placementId = new URL(String(input)).pathname.split("/").at(-1) ?? "";
+    requested.push(placementId);
+    active += 1;
+    maximumActive = Math.max(maximumActive, active);
+    await Promise.resolve();
+    active -= 1;
+    return response(placementId);
+  };
+  try {
+    const api = createPageBannerApi({ baseUrl: "http://api.test" });
+    const first = api.prepareSession();
+    const second = api.prepareSession();
+    assert.equal(first, second, "repeated calls must share the session pass");
+    await first;
+    assert.deepEqual(requested, PAGE_BANNER_PLACEMENT_IDS);
+    assert.equal(maximumActive, 1);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("session preparation continues after a failed placement without restarting", async () => {
+  const requested: string[] = [];
+  globalThis.fetch = async (input) => {
+    const placementId = new URL(String(input)).pathname.split("/").at(-1) ?? "";
+    requested.push(placementId);
+    if (placementId === "PLAY_TOP") return new Response("{}", { status: 503 });
+    return response(placementId);
+  };
+  try {
+    const api = createPageBannerApi({ baseUrl: "http://api.test" });
+    await api.prepareSession();
+    await api.prepareSession();
+    assert.deepEqual(requested, PAGE_BANNER_PLACEMENT_IDS);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("session preparation does not immediately repeat a previously failed active placement", async () => {
+  const requested: string[] = [];
+  globalThis.fetch = async (input) => {
+    const placementId = new URL(String(input)).pathname.split("/").at(-1) ?? "";
+    requested.push(placementId);
+    if (placementId === "ATHLETES_TOP") return new Response("{}", { status: 503 });
+    return response(placementId);
+  };
+  try {
+    const api = createPageBannerApi({ baseUrl: "http://api.test" });
+    await assert.rejects(api.publicRead("ATHLETES_TOP"));
+    await api.prepareSession();
+    assert.equal(requested.filter((placementId) => placementId === "ATHLETES_TOP").length, 1);
+    assert.equal(requested.filter((placementId) => placementId !== "ATHLETES_TOP").length, 10);
+    await assert.rejects(api.publicRead("ATHLETES_TOP"));
+    assert.equal(requested.filter((placementId) => placementId === "ATHLETES_TOP").length, 2);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("active placement reads proceed independently and share background in-flight work", async () => {
+  const requested: string[] = [];
+  let resolveHome!: (value: Response) => void;
+  globalThis.fetch = async (input) => {
+    const placementId = new URL(String(input)).pathname.split("/").at(-1) ?? "";
+    requested.push(placementId);
+    if (placementId === "HOME_TOP") {
+      return new Promise((resolve) => {
+        resolveHome = resolve;
+      });
+    }
+    return response(placementId);
+  };
+  try {
+    const api = createPageBannerApi({ baseUrl: "http://api.test" });
+    const preparation = api.prepareSession();
+    const backgroundHome = api.publicRead("HOME_TOP");
+    const activeRead = api.publicRead("ATHLETES_TOP");
+    assert.deepEqual(requested, ["HOME_TOP", "ATHLETES_TOP"]);
+    resolveHome(response("HOME_TOP"));
+    assert.equal(await backgroundHome, await api.publicRead("HOME_TOP"));
+    await activeRead;
+    await preparation;
+    assert.equal(requested.filter((placementId) => placementId === "HOME_TOP").length, 1);
   } finally {
     globalThis.fetch = originalFetch;
   }

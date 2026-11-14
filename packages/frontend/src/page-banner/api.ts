@@ -1,4 +1,7 @@
-import type { PageBannerPlacementId } from "@hooma/contracts/page-banner";
+import {
+  PAGE_BANNER_PLACEMENT_IDS,
+  type PageBannerPlacementId,
+} from "@hooma/contracts/page-banner";
 import { request, type HoomaTransport } from "../http";
 
 export interface PageBannerPublicVariant {
@@ -61,9 +64,12 @@ export function createPageBannerApi(transport: HoomaTransport) {
     { readonly promise: Promise<PageBannerPublicResponse>; readonly forced: boolean }
   >();
   const generations = new Map<string, number>();
+  const requestedPlacements = new Set<PageBannerPlacementId>();
+  let sessionPreparation: Promise<void> | null = null;
 
   function invalidate(placementId: PageBannerPlacementId) {
     cache.delete(placementId);
+    requestedPlacements.delete(placementId);
     generations.set(placementId, (generations.get(placementId) ?? 0) + 1);
     inFlight.delete(placementId);
   }
@@ -72,6 +78,7 @@ export function createPageBannerApi(transport: HoomaTransport) {
     placementId: PageBannerPlacementId,
     options: PageBannerPublicReadOptions = {},
   ): Promise<PageBannerPublicResponse> {
+    requestedPlacements.add(placementId);
     const forced = options.forceFresh === true;
     const now = Date.now();
     const cached = cache.get(placementId);
@@ -133,9 +140,29 @@ export function createPageBannerApi(transport: HoomaTransport) {
     return promise;
   }
 
+  function prefetch(placementId: PageBannerPlacementId) {
+    return publicRead(placementId);
+  }
+
+  function prepareSession(): Promise<void> {
+    if (sessionPreparation) return sessionPreparation;
+    sessionPreparation = (async () => {
+      for (const placementId of PAGE_BANNER_PLACEMENT_IDS) {
+        if (requestedPlacements.has(placementId)) continue;
+        try {
+          await prefetch(placementId);
+        } catch {
+          // A failed placement must not prevent the remaining session reads.
+        }
+      }
+    })();
+    return sessionPreparation;
+  }
+
   return {
     publicRead,
-    prefetch: (placementId: PageBannerPlacementId) => publicRead(placementId),
+    prefetch,
+    prepareSession,
     invalidate,
   };
 }

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { registerHooks } from "node:module";
 import test, { afterEach } from "node:test";
 import { JSDOM } from "jsdom";
+import { PAGE_BANNER_PLACEMENT_IDS } from "@hooma/contracts/page-banner";
 
 registerHooks({
   load(url, context, nextLoad) {
@@ -190,6 +191,29 @@ test("direct entry starts metadata reads for all approved placements before pass
   }
 });
 
+test("frontend provider prepares every placement once without a mounted PageBanner", async () => {
+  const requested: string[] = [];
+  globalThis.fetch = async (input) => {
+    const placementId = new URL(String(input)).pathname.split("/").at(-1) ?? "";
+    requested.push(placementId);
+    return json({ placementId, enabled: false, slides: [] });
+  };
+  const view = render(
+    React.createElement(
+      React.StrictMode,
+      null,
+      React.createElement(
+        HoomaFrontendProvider,
+        { transport: { baseUrl: "https://api.example.test" } },
+        React.createElement("main", null, "A route without a PageBanner"),
+      ),
+    ),
+  );
+  await waitFor(() => assert.equal(requested.length, PAGE_BANNER_PLACEMENT_IDS.length));
+  assert.deepEqual(requested, PAGE_BANNER_PLACEMENT_IDS);
+  view.unmount();
+});
+
 test("empty, disabled and API failures leave no optional media-lane footprint", async () => {
   for (const body of [response([], false), response()]) {
     const view = mount(body);
@@ -272,7 +296,9 @@ test("failed slides skip to healthy artwork without hiding the old image", async
 test("expired URLs refresh without losing visible artwork", async () => {
   let reads = 0;
   const slides = [slide("slide-1"), slide("slide-2")];
-  globalThis.fetch = async () => {
+  globalThis.fetch = async (input) => {
+    const placementId = new URL(String(input)).pathname.split("/").at(-1) ?? "";
+    if (placementId !== "ATHLETES_TOP") return json({ placementId, enabled: false, slides: [] });
     reads++;
     return json(
       response(
@@ -347,7 +373,9 @@ test("expired mobile URL refreshes after viewport switch before downloading", as
     }));
   Object.defineProperty(window, "innerWidth", { configurable: true, value: 1000 });
   Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: 1 });
-  globalThis.fetch = async () => {
+  globalThis.fetch = async (input) => {
+    const placementId = new URL(String(input)).pathname.split("/").at(-1) ?? "";
+    if (placementId !== "ATHLETES_TOP") return json({ placementId, enabled: false, slides: [] });
     reads++;
     return json(
       response([{ ...slide("slide-1"), variants: variantSet(reads === 1 ? "old" : "fresh") }]),
@@ -398,7 +426,9 @@ test("DPR-only variant change renews stale signed URLs", async () => {
       removeEventListener: () => {},
     }),
   });
-  globalThis.fetch = async () => {
+  globalThis.fetch = async (input) => {
+    const placementId = new URL(String(input)).pathname.split("/").at(-1) ?? "";
+    if (placementId !== "ATHLETES_TOP") return json({ placementId, enabled: false, slides: [] });
     reads++;
     const prefix = reads === 1 ? "old" : "fresh";
     const expiry = reads === 1 ? "2099-11-02T12:00:00.000Z" : "2099-11-02T12:06:00.000Z";
@@ -461,7 +491,9 @@ test("failed automatic refresh retries on return without a request loop", async 
   const originalNow = Date.now;
   let reads = 0;
   Date.now = () => new Date("2099-11-02T12:01:00.000Z").getTime();
-  globalThis.fetch = async () => {
+  globalThis.fetch = async (input) => {
+    const placementId = new URL(String(input)).pathname.split("/").at(-1) ?? "";
+    if (placementId !== "ATHLETES_TOP") return json({ placementId, enabled: false, slides: [] });
     reads++;
     if (reads === 2) throw new Error("temporary signed URL refresh failure");
     const isFresh = reads > 2;
@@ -525,7 +557,9 @@ test("manual navigation retries an expired slide after a failed read", async () 
       ],
     },
   ];
-  globalThis.fetch = async () => {
+  globalThis.fetch = async (input) => {
+    const placementId = new URL(String(input)).pathname.split("/").at(-1) ?? "";
+    if (placementId !== "ATHLETES_TOP") return json({ placementId, enabled: false, slides: [] });
     reads++;
     if (reads === 2) throw new Error("transient refresh failure");
     return json(
