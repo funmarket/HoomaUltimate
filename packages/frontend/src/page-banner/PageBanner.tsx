@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { PageBannerPlacementId } from "@hooma/contracts/page-banner";
 import { useHoomaFrontend } from "../context";
 import type { PageBannerPublicSlide, PageBannerPublicVariant } from "./api";
@@ -106,7 +106,7 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
     };
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     let active = true;
     refreshSequence.current += 1;
     lastAutomaticRefresh.current = null;
@@ -194,7 +194,7 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
       const sequence = ++refreshSequence.current;
       setRefreshing(true);
       try {
-        const data = await api.pageBanners.publicRead(placementId);
+        const data = await api.pageBanners.publicRead(placementId, { forceFresh: true });
         if (sequence !== refreshSequence.current) return;
         const updatedIndex = data.slides.findIndex((slide) => slide.id === slideId);
         setRead({ api, placementId, status: "ready", data });
@@ -269,6 +269,7 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
         alt={item.slide.isDecorative ? "" : (item.slide.altText ?? "")}
         aria-hidden={!visible}
         loading="eager"
+        fetchPriority={validDisplayed ? "auto" : "high"}
         decoding="async"
         style={visible ? undefined : { visibility: "hidden", position: "absolute", inset: 0 }}
         onLoad={(event) => handleLoad(item, event.currentTarget)}

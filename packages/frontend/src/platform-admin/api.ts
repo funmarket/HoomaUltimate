@@ -97,7 +97,18 @@ function auditQueryString(input: AdminAuditQueryInput = {}): string {
   return params.toString();
 }
 
-export function createPlatformAdminApi(transport: HoomaTransport) {
+export function createPlatformAdminApi(
+  transport: HoomaTransport,
+  options: {
+    readonly onPageBannerMutation?: (placementId: PageBannerPlacementId) => void;
+  } = {},
+) {
+  async function mutatePageBanner<T>(placementId: PageBannerPlacementId, mutation: Promise<T>) {
+    const result = await mutation;
+    options.onPageBannerMutation?.(placementId);
+    return result;
+  }
+
   const api = {
     access: () => request<AdminAccess>(transport, "/api/v1/admin/access"),
     overview: () => request<PlatformOverview>(transport, "/api/v1/admin/overview"),
@@ -186,10 +197,13 @@ export function createPlatformAdminApi(transport: HoomaTransport) {
     pageBanners: {
       list: () => request<PageBannerAdminPlacement[]>(transport, "/api/v1/admin/banners"),
       setEnabled: (placementId: PageBannerPlacementId, enabled: boolean) =>
-        request<PageBannerAdminPlacement>(
-          transport,
-          `/api/v1/admin/banners/${encodeURIComponent(placementId)}`,
-          { method: "PATCH", body: JSON.stringify({ enabled }) },
+        mutatePageBanner(
+          placementId,
+          request<PageBannerAdminPlacement>(
+            transport,
+            `/api/v1/admin/banners/${encodeURIComponent(placementId)}`,
+            { method: "PATCH", body: JSON.stringify({ enabled }) },
+          ),
         ),
       upload: (
         placementId: PageBannerPlacementId,
@@ -197,34 +211,46 @@ export function createPlatformAdminApi(transport: HoomaTransport) {
         input: PageBannerSlideMetadataInput,
         slideId?: string,
       ) =>
-        requestBinary<PageBannerAdminSlide>(
-          transport,
-          `/api/v1/admin/banners/${encodeURIComponent(placementId)}/slides${slideId ? `/${encodeURIComponent(slideId)}` : ""}/upload?${pageBannerUploadQuery(input)}`,
-          file,
-          file.type,
-          { method: "POST" },
+        mutatePageBanner(
+          placementId,
+          requestBinary<PageBannerAdminSlide>(
+            transport,
+            `/api/v1/admin/banners/${encodeURIComponent(placementId)}/slides${slideId ? `/${encodeURIComponent(slideId)}` : ""}/upload?${pageBannerUploadQuery(input)}`,
+            file,
+            file.type,
+            { method: "POST" },
+          ),
         ),
       updateSlide: (
         placementId: PageBannerPlacementId,
         slideId: string,
         input: PageBannerSlideMetadataInput,
       ) =>
-        request<PageBannerAdminSlide>(
-          transport,
-          `/api/v1/admin/banners/${encodeURIComponent(placementId)}/slides/${encodeURIComponent(slideId)}`,
-          { method: "PATCH", body: JSON.stringify(input) },
+        mutatePageBanner(
+          placementId,
+          request<PageBannerAdminSlide>(
+            transport,
+            `/api/v1/admin/banners/${encodeURIComponent(placementId)}/slides/${encodeURIComponent(slideId)}`,
+            { method: "PATCH", body: JSON.stringify(input) },
+          ),
         ),
       reorder: (placementId: PageBannerPlacementId, slideIds: readonly string[]) =>
-        request<PageBannerAdminSlide[]>(
-          transport,
-          `/api/v1/admin/banners/${encodeURIComponent(placementId)}/slides/reorder`,
-          { method: "POST", body: JSON.stringify({ slideIds }) },
+        mutatePageBanner(
+          placementId,
+          request<PageBannerAdminSlide[]>(
+            transport,
+            `/api/v1/admin/banners/${encodeURIComponent(placementId)}/slides/reorder`,
+            { method: "POST", body: JSON.stringify({ slideIds }) },
+          ),
         ),
       deleteSlide: (placementId: PageBannerPlacementId, slideId: string) =>
-        request<{ ok: true }>(
-          transport,
-          `/api/v1/admin/banners/${encodeURIComponent(placementId)}/slides/${encodeURIComponent(slideId)}`,
-          { method: "DELETE" },
+        mutatePageBanner(
+          placementId,
+          request<{ ok: true }>(
+            transport,
+            `/api/v1/admin/banners/${encodeURIComponent(placementId)}/slides/${encodeURIComponent(slideId)}`,
+            { method: "DELETE" },
+          ),
         ),
     },
   };

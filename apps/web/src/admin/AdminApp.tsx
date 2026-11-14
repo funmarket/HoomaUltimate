@@ -376,7 +376,10 @@ function AdminUsers({
 
 export function AdminApp() {
   const { api, transport } = useHoomaFrontend();
-  const adminApi = useMemo(() => createPlatformAdminApi(transport), [transport]);
+  const adminApi = useMemo(
+    () => createPlatformAdminApi(transport, { onPageBannerMutation: api.pageBanners.invalidate }),
+    [api, transport],
+  );
   const [access, setAccess] = useState<{
     isPlatformOwner: boolean;
     managerCapabilities: readonly PlatformManagerCapability[];

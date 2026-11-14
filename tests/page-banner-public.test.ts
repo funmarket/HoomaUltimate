@@ -128,6 +128,7 @@ test("only a decoded mounted image becomes visible and preserves semantics", asy
   );
   await flushReact();
   const actual = findImage(view, "slide-1");
+  assert.equal(actual.getAttribute("fetchpriority"), "high");
   assert.ok(view.container.querySelector(".hooma-lane--media")?.hasAttribute("hidden"));
   await loadImage(actual);
   await waitFor(() => assert.equal(view.getByRole("img", { name: "Athletes training" }), actual));
@@ -137,6 +138,56 @@ test("only a decoded mounted image becomes visible and preserves semantics", asy
     "/athletes",
   );
   assert.equal(actual.getAttribute("width"), "720");
+});
+
+test("direct entry starts metadata reads for all approved placements before passive effects", () => {
+  const placements = [
+    "HOME_TOP",
+    "PLAY_TOP",
+    "WATCH_TOP",
+    "HOOMA_TOP",
+    "TEAMS_TOP",
+    "PITCH_TOP",
+    "PLACES_TOP",
+    "REQUESTS_TOP",
+    "GEAR_UP_TOP",
+    "RIDE_TOP",
+    "ATHLETES_TOP",
+  ] as const;
+
+  for (const placementId of placements) {
+    const events: string[] = [];
+    globalThis.fetch = async (input) => {
+      events.push(`metadata:${new URL(String(input)).pathname.split("/").at(-1)}`);
+      return json({ placementId, enabled: false, slides: [] });
+    };
+    function PassiveProbe() {
+      React.useEffect(() => {
+        events.push("passive-effect");
+      }, []);
+      return null;
+    }
+
+    const view = render(
+      React.createElement(
+        HoomaFrontendProvider,
+        { transport: { baseUrl: "https://api.example.test" } },
+        React.createElement(
+          React.Fragment,
+          null,
+          React.createElement(PassiveProbe),
+          React.createElement(PageBanner, { placementId }),
+        ),
+      ),
+    );
+
+    assert.ok(
+      events.indexOf(`metadata:${placementId}`) >= 0 &&
+        events.indexOf(`metadata:${placementId}`) < events.indexOf("passive-effect"),
+      `${placementId} metadata should start before passive effects on direct entry`,
+    );
+    view.unmount();
+  }
 });
 
 test("empty, disabled and API failures leave no optional media-lane footprint", async () => {
@@ -190,6 +241,7 @@ test("manual navigation retains old image until the new mounted image decodes", 
   assert.ok(view.getByRole("button", { name: "Next banner" }));
   const actualNext = findImage(view, "slide-2");
   assert.equal(actualNext.getAttribute("aria-hidden"), "true");
+  assert.equal(actualNext.getAttribute("fetchpriority"), "auto");
   await loadImage(actualNext);
   await waitFor(() =>
     assert.equal(view.getByRole("img", { name: "Community artwork" }), actualNext),
@@ -502,6 +554,7 @@ test("manual navigation retries an expired slide after a failed read", async () 
     const old = findImage(view, "visible.webp");
     fireEvent.click(view.getByRole("button", { name: "Next banner" }));
     await waitFor(() => assert.equal(reads, 2));
+    await flushReact();
     assert.equal(findImage(view, "visible.webp"), old);
     fireEvent.click(view.getByRole("button", { name: "Next banner" }));
     await waitFor(() => assert.equal(reads, 3));
