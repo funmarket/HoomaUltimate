@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { PageBannerPlacementId } from "@hooma/contracts/page-banner";
 import { useHoomaFrontend } from "../context";
 import type { PageBannerPublicSlide, PageBannerPublicVariant } from "./api";
@@ -106,7 +106,7 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
     };
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     let active = true;
     refreshSequence.current += 1;
     lastAutomaticRefresh.current = null;
