@@ -183,9 +183,23 @@ test("an older request cannot replace the response from a forced-fresh read", as
     const old = api.publicRead("HOOMA_TOP");
     const fresh = await api.publicRead("HOOMA_TOP", { forceFresh: true });
     resolveOld(response("HOOMA_TOP", new Date(Date.now() + 240_000).toISOString()));
-    await old;
+    assert.equal(await old, fresh, "older callers follow the newer response");
     assert.equal(await api.publicRead("HOOMA_TOP"), fresh);
     assert.equal(calls, 2);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("a response invalidated before completion is not returned as current data", async () => {
+  let resolveFetch!: (value: Response) => void;
+  globalThis.fetch = () => new Promise((resolve) => (resolveFetch = resolve));
+  try {
+    const api = createPageBannerApi({ baseUrl: "http://api.test" });
+    const pending = api.publicRead("HOOMA_TOP");
+    api.invalidate("HOOMA_TOP");
+    resolveFetch(response("HOOMA_TOP"));
+    await assert.rejects(pending, /superseded/i);
   } finally {
     globalThis.fetch = originalFetch;
   }

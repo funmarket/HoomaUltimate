@@ -98,7 +98,20 @@ export function createPageBannerApi(transport: HoomaTransport) {
       transport,
       `/api/public/v1/banners/${encodeURIComponent(placementId)}`,
     )
-      .then((data) => {
+      .then(async (data): Promise<PageBannerPublicResponse> => {
+        if (generations.get(placementId) !== generation) {
+          const newerRequest = inFlight.get(placementId)?.promise;
+          if (newerRequest) return newerRequest;
+          const newerCachedRead = cache.get(placementId);
+          if (
+            newerCachedRead &&
+            newerCachedRead.freshUntil > Date.now() &&
+            hasFreshSignedUrls(newerCachedRead.data, Date.now())
+          ) {
+            return newerCachedRead.data;
+          }
+          throw new Error("PageBanner read was superseded before completion");
+        }
         const signedUrlsAreFresh = hasFreshSignedUrls(data, Date.now());
         if (forced && !signedUrlsAreFresh) {
           throw new Error("PageBanner response did not contain a fresh signed URL");
