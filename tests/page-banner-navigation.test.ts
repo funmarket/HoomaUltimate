@@ -24,10 +24,7 @@ test("initial route preparation resolves exact primary navigation roots", () => 
 test("nested routes do not inherit a parent primary-navigation placement", () => {
   assert.equal(pageBannerPlacementForPath("/watch/featured", destinations), null);
   assert.equal(pageBannerPlacementForPath("/athletes/gear-up", destinations), null);
-  assert.equal(
-    pageBannerPlacementForPath("/athletes/gear-up/shops/shop-1", destinations),
-    null,
-  );
+  assert.equal(pageBannerPlacementForPath("/athletes/gear-up/shops/shop-1", destinations), null);
   assert.equal(
     pageBannerPlacementForPath("/athletes/gear-up/products/product-1", destinations),
     null,
