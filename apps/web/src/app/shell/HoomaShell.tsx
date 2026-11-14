@@ -14,7 +14,7 @@ import { buildAccountMenuSections } from "./account-menu-model";
 import { shellPresentationForPath } from "./page-presentation";
 import {
   navigateWithPageBannerPrefetch,
-  pageBannerPlacementForPath,
+  pageBannerPlacementForExactPrimaryPath,
 } from "./page-banner-navigation";
 
 export function HoomaShell({
@@ -72,8 +72,8 @@ export function HoomaShell({
   const hasTelegramIdentity = Boolean(runtime.initData);
   const navPathname = location.pathname === "/telegram" ? "/" : location.pathname;
   useLayoutEffect(() => {
-    const placementId = pageBannerPlacementForPath(navPathname, PRIMARY_NAV_ITEMS);
-    if (placementId) void api.pageBanners.prefetch(placementId).catch(() => undefined);
+    const placementId = pageBannerPlacementForExactPrimaryPath(navPathname, PRIMARY_NAV_ITEMS);
+    if (placementId) void api.pageBanners.prepareSession(placementId).catch(() => undefined);
   }, [api, navPathname]);
   const shellPresentation = shellPresentationForPath(location.pathname);
   const shellError = error && !location.pathname.startsWith("/rides") ? error : null;

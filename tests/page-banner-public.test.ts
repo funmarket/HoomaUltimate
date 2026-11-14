@@ -76,8 +76,16 @@ function slide(
   };
 }
 
-function response(slides: ReturnType<typeof slide>[] = [], enabled = true) {
-  return { placementId: "ATHLETES_TOP", enabled, slides };
+function response(
+  slides: ReturnType<typeof slide>[] = [],
+  enabled = true,
+  placementId = "ATHLETES_TOP",
+) {
+  return { placementId, enabled, slides };
+}
+
+function requestedPlacement(input: RequestInfo | URL) {
+  return new URL(String(input), "https://api.example.test").pathname.split("/").at(-1);
 }
 
 function json(body: unknown) {
@@ -272,7 +280,9 @@ test("failed slides skip to healthy artwork without hiding the old image", async
 test("expired URLs refresh without losing visible artwork", async () => {
   let reads = 0;
   const slides = [slide("slide-1"), slide("slide-2")];
-  globalThis.fetch = async () => {
+  globalThis.fetch = async (input) => {
+    const placementId = requestedPlacement(input) ?? "";
+    if (placementId !== "ATHLETES_TOP") return json(response([], false, placementId));
     reads++;
     return json(
       response(
@@ -347,7 +357,9 @@ test("expired mobile URL refreshes after viewport switch before downloading", as
     }));
   Object.defineProperty(window, "innerWidth", { configurable: true, value: 1000 });
   Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: 1 });
-  globalThis.fetch = async () => {
+  globalThis.fetch = async (input) => {
+    const placementId = requestedPlacement(input) ?? "";
+    if (placementId !== "ATHLETES_TOP") return json(response([], false, placementId));
     reads++;
     return json(
       response([{ ...slide("slide-1"), variants: variantSet(reads === 1 ? "old" : "fresh") }]),
@@ -398,7 +410,9 @@ test("DPR-only variant change renews stale signed URLs", async () => {
       removeEventListener: () => {},
     }),
   });
-  globalThis.fetch = async () => {
+  globalThis.fetch = async (input) => {
+    const placementId = requestedPlacement(input) ?? "";
+    if (placementId !== "ATHLETES_TOP") return json(response([], false, placementId));
     reads++;
     const prefix = reads === 1 ? "old" : "fresh";
     const expiry = reads === 1 ? "2099-11-02T12:00:00.000Z" : "2099-11-02T12:06:00.000Z";
@@ -461,7 +475,9 @@ test("failed automatic refresh retries on return without a request loop", async 
   const originalNow = Date.now;
   let reads = 0;
   Date.now = () => new Date("2099-11-02T12:01:00.000Z").getTime();
-  globalThis.fetch = async () => {
+  globalThis.fetch = async (input) => {
+    const placementId = requestedPlacement(input) ?? "";
+    if (placementId !== "ATHLETES_TOP") return json(response([], false, placementId));
     reads++;
     if (reads === 2) throw new Error("temporary signed URL refresh failure");
     const isFresh = reads > 2;
@@ -525,7 +541,9 @@ test("manual navigation retries an expired slide after a failed read", async () 
       ],
     },
   ];
-  globalThis.fetch = async () => {
+  globalThis.fetch = async (input) => {
+    const placementId = requestedPlacement(input) ?? "";
+    if (placementId !== "ATHLETES_TOP") return json(response([], false, placementId));
     reads++;
     if (reads === 2) throw new Error("transient refresh failure");
     return json(

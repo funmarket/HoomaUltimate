@@ -5,6 +5,14 @@ export interface PrimaryNavigationDestination {
   readonly href: string;
 }
 
+export function pageBannerPlacementForExactPrimaryPath(
+  pathname: string,
+  destinations: readonly PrimaryNavigationDestination[],
+): PageBannerPlacementId | null {
+  const destination = destinations.find(({ href }) => href === pathname);
+  return destination ? (placementByLabel[destination.label] ?? null) : null;
+}
+
 const placementByLabel: Readonly<Record<string, PageBannerPlacementId>> = {
   Home: "HOME_TOP",
   Play: "PLAY_TOP",
