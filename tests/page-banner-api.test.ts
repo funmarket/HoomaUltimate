@@ -97,7 +97,7 @@ test("public PageBanner cache evicts the least recently used placement at its bo
   }
 });
 
-test("concurrent public reads for a placement share one request", async () => {
+test("prefetch and the mounting PageBanner public read share one request", async () => {
   let calls = 0;
   let resolveFetch!: (value: Response) => void;
   globalThis.fetch = () => {
@@ -106,7 +106,7 @@ test("concurrent public reads for a placement share one request", async () => {
   };
   try {
     const api = createPageBannerApi({ baseUrl: "http://api.test" });
-    const first = api.publicRead("PLAY_TOP");
+    const first = api.prefetch("PLAY_TOP");
     const second = api.publicRead("PLAY_TOP");
     assert.equal(calls, 1);
     resolveFetch(response("PLAY_TOP"));
