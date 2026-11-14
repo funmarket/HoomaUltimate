@@ -13,11 +13,25 @@ const destinations = [
   { label: "Athletes", href: "/athletes" },
 ] as const;
 
-test("initial route preparation resolves only its known canonical placement", () => {
+test("initial route preparation resolves exact primary navigation roots", () => {
   assert.equal(pageBannerPlacementForPath("/", destinations), "HOME_TOP");
-  assert.equal(pageBannerPlacementForPath("/watch/featured", destinations), "WATCH_TOP");
+  assert.equal(pageBannerPlacementForPath("/watch", destinations), "WATCH_TOP");
+  assert.equal(pageBannerPlacementForPath("/athletes", destinations), "ATHLETES_TOP");
   assert.equal(pageBannerPlacementForPath("/telegram", destinations), null);
   assert.equal(pageBannerPlacementForPath("/unknown", destinations), null);
+});
+
+test("nested routes do not inherit a parent primary-navigation placement", () => {
+  assert.equal(pageBannerPlacementForPath("/watch/featured", destinations), null);
+  assert.equal(pageBannerPlacementForPath("/athletes/gear-up", destinations), null);
+  assert.equal(
+    pageBannerPlacementForPath("/athletes/gear-up/shops/shop-1", destinations),
+    null,
+  );
+  assert.equal(
+    pageBannerPlacementForPath("/athletes/gear-up/products/product-1", destinations),
+    null,
+  );
 });
 
 test("navigation starts the relevant prefetch before navigating and never awaits it", () => {

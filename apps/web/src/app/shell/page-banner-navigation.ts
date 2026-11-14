@@ -17,11 +17,7 @@ export function pageBannerPlacementForPath(
   pathname: string,
   destinations: readonly PrimaryNavigationDestination[],
 ): PageBannerPlacementId | null {
-  const destination = destinations
-    .filter(({ href }) =>
-      href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`),
-    )
-    .sort((left, right) => right.href.length - left.href.length)[0];
+  const destination = destinations.find(({ href }) => href === pathname);
   return destination ? (placementByLabel[destination.label] ?? null) : null;
 }
 
