@@ -192,9 +192,12 @@ test("direct entry starts metadata reads for all approved placements before pass
 });
 
 test("frontend provider prepares every placement once without a mounted PageBanner", async () => {
+  const sessionBaseUrl = "https://session-preparation.example.test";
   const requested: string[] = [];
   globalThis.fetch = async (input) => {
-    const placementId = new URL(String(input)).pathname.split("/").at(-1) ?? "";
+    const url = new URL(String(input));
+    const placementId = url.pathname.split("/").at(-1) ?? "";
+    if (url.origin !== sessionBaseUrl) return json({ placementId, enabled: false, slides: [] });
     requested.push(placementId);
     return json({ placementId, enabled: false, slides: [] });
   };
@@ -204,7 +207,7 @@ test("frontend provider prepares every placement once without a mounted PageBann
       null,
       React.createElement(
         HoomaFrontendProvider,
-        { transport: { baseUrl: "https://api.example.test" } },
+        { transport: { baseUrl: sessionBaseUrl } },
         React.createElement("main", null, "A route without a PageBanner"),
       ),
     ),
