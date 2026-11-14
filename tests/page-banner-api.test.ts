@@ -154,6 +154,22 @@ test("near-expiry signed URLs are not reused and forced reads bypass the cache",
   }
 });
 
+test("forced-fresh reads reject responses whose signed URLs are expired or near expiry", async () => {
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls += 1;
+    return response("HOME_TOP", new Date(Date.now() + 30_000).toISOString());
+  };
+  try {
+    const api = createPageBannerApi({ baseUrl: "http://api.test" });
+    await assert.rejects(api.publicRead("HOME_TOP", { forceFresh: true }), /fresh signed URL/i);
+    await api.publicRead("HOME_TOP");
+    assert.equal(calls, 2, "rejected fresh data must not be cached or reused");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("an older request cannot replace the response from a forced-fresh read", async () => {
   let resolveOld!: (value: Response) => void;
   let calls = 0;

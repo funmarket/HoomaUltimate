@@ -99,7 +99,11 @@ export function createPageBannerApi(transport: HoomaTransport) {
       `/api/public/v1/banners/${encodeURIComponent(placementId)}`,
     )
       .then((data) => {
-        if (generations.get(placementId) === generation && hasFreshSignedUrls(data, Date.now())) {
+        const signedUrlsAreFresh = hasFreshSignedUrls(data, Date.now());
+        if (forced && !signedUrlsAreFresh) {
+          throw new Error("PageBanner response did not contain a fresh signed URL");
+        }
+        if (generations.get(placementId) === generation && signedUrlsAreFresh) {
           cache.set(placementId, { data, freshUntil: Date.now() + PUBLIC_READ_FRESH_MS });
           while (cache.size > MAX_CACHED_PLACEMENTS) {
             const oldest = cache.keys().next().value as string | undefined;
