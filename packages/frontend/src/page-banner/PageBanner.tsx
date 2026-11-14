@@ -117,7 +117,7 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
     setFailedKeys([]);
     setRefreshing(false);
     void api.pageBanners
-      .publicRead(placementId)
+      .prepareSession(placementId)
       .then((data) => {
         if (active) setRead({ api, placementId, status: "ready", data });
       })
@@ -149,6 +149,13 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
     const key = `${placementId}:${slide.id}:${variant.contentUrl}`;
     return failedKeys.includes(key) ? null : { key, index: selectedIndex, slide, variant };
   }, [slides, selectedIndex, pixelWidth, failedKeys, refreshing, placementId]);
+
+  useEffect(() => {
+    if (!candidate || currentRead?.status !== "ready" || !currentRead.data) return;
+    void api.pageBanners
+      .prepareArtwork(placementId, currentRead.data, pixelWidth, "active")
+      .catch(() => undefined);
+  }, [api, candidate?.key, currentRead, pixelWidth, placementId]);
 
   const validDisplayed =
     currentRead?.status === "ready" &&

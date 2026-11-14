@@ -123,7 +123,7 @@ test("superseded Home, Play and Teams hero modules and exports are removed", () 
 test("PageBanner runtime retains shared public reads without auto-rotation", () => {
   const runtime = readFileSync("packages/frontend/src/page-banner/PageBanner.tsx", "utf8");
 
-  assert.ok(runtime.includes("publicRead(placementId)"));
+  assert.ok(runtime.includes("prepareSession(placementId)"));
   assert.equal(runtime.includes("setInterval"), false);
   assert.equal(runtime.includes("setTimeout"), false);
 });

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   navigateWithPageBannerPrefetch,
+  pageBannerPlacementForExactPrimaryPath,
   pageBannerPlacementForPath,
 } from "../apps/web/src/app/shell/page-banner-navigation.ts";
 
@@ -18,6 +19,13 @@ test("initial route preparation resolves only its known canonical placement", ()
   assert.equal(pageBannerPlacementForPath("/watch/featured", destinations), "WATCH_TOP");
   assert.equal(pageBannerPlacementForPath("/telegram", destinations), null);
   assert.equal(pageBannerPlacementForPath("/unknown", destinations), null);
+});
+
+test("early session preparation uses only exact primary page roots", () => {
+  assert.equal(pageBannerPlacementForExactPrimaryPath("/", destinations), "HOME_TOP");
+  assert.equal(pageBannerPlacementForExactPrimaryPath("/play", destinations), "PLAY_TOP");
+  assert.equal(pageBannerPlacementForExactPrimaryPath("/athletes/gear-up", destinations), null);
+  assert.equal(pageBannerPlacementForExactPrimaryPath("/teams", destinations), null);
 });
 
 test("navigation starts the relevant prefetch before navigating and never awaits it", () => {
