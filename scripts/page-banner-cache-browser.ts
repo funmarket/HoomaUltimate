@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import express from "express";
+import { spawn } from "node:child_process";
 import { pageBannerHttpFixture } from "../tests/helpers/page-banner-http.ts";
 
 const { chromium } = await import(pathToFileURL(process.env.BANNER_PLAYWRIGHT_MODULE!).href);
@@ -12,9 +13,33 @@ const output = resolve(process.env.BANNER_EVIDENCE_DIR ?? "../banner-cache-brows
 await mkdir(output, { recursive: true });
 const profile = await mkdtemp(resolve(tmpdir(), "hooma-banner-cache-"));
 const f = await pageBannerHttpFixture();
-const root = resolve("apps/web/dist");
-f.app.use(express.static(root));
-f.app.use((_request, response) => response.sendFile(resolve(root, "index.html")));
+// Use the real Web server/proxy instead of serving HTML through API Helmet middleware.
+const webOrigin = "http://127.0.0.1:45173";
+const web = spawn(process.execPath, ["scripts/serve-static.mjs", "apps/web/dist"], {
+  env: { ...process.env, NODE_ENV: "production", PORT: "45173", HOOMA_API_ORIGIN: f.origin },
+  stdio: ["ignore", "pipe", "pipe"],
+});
+let webLog = "";
+web.stdout.on("data", (chunk) => {
+  webLog += String(chunk);
+});
+web.stderr.on("data", (chunk) => {
+  webLog += String(chunk);
+});
+let webReady = false;
+for (let attempt = 0; attempt < 100; attempt++) {
+  try {
+    const response = await fetch(webOrigin);
+    if (response.ok) {
+      webReady = true;
+      break;
+    }
+  } catch {
+    /* startup */
+  }
+  await new Promise((resolve) => setTimeout(resolve, 100));
+}
+assert(webReady, `Web server did not start: ${webLog}`);
 const report: Record<string, unknown> = {
   environment:
     "Real compiled Web + API + PostgreSQL + Redis; memory object storage; Chromium persistent profile",
@@ -34,6 +59,17 @@ async function launch() {
   page.on("pageerror", (error) => {
     report.errors ??= [] as string[];
     (report.errors as string[]).push(error.message);
+  });
+  page.on("console", (message) => {
+    if (message.type() === "error") report.consoleErrors ??= [] as string[];
+    if (message.type() === "error") (report.consoleErrors as string[]).push(message.text());
+  });
+  page.on("requestfailed", (request) => {
+    report.failedRequests ??= [] as unknown[];
+    (report.failedRequests as unknown[]).push({
+      path: new URL(request.url()).pathname,
+      error: request.failure()?.errorText,
+    });
   });
   page.on("response", async (response) => {
     if (response.url().includes("/artwork/"))
@@ -62,7 +98,7 @@ async function ready(page: Awaited<ReturnType<typeof launch>>, label: string) {
 try {
   const first = await f.upload("#213f60");
   let page = await launch();
-  await page.goto(f.origin);
+  await page.goto(webOrigin);
   const firstUrl = await ready(page, "first-load");
   const initialReads = f.reads.length;
   assert(initialReads > 0);
@@ -72,7 +108,7 @@ try {
   report.warmReloadOriginReads = f.reads.length - initialReads;
   await context!.close();
   page = await launch();
-  await page.goto(f.origin);
+  await page.goto(webOrigin);
   assert.equal(await ready(page, "browser-restart"), firstUrl);
   assert.equal(f.reads.length, initialReads, "New Chromium process must reuse disk-cached artwork");
   report.browserRestartOriginReads = f.reads.length - initialReads;
@@ -135,12 +171,24 @@ try {
 } catch (error) {
   report.status = "FAIL";
   report.error = String(error);
+  if (context) {
+    for (const [index, page] of context.pages().entries()) {
+      await page
+        .screenshot({ path: resolve(output, `failure-${index}.png`), fullPage: true })
+        .catch(() => undefined);
+      await writeFile(
+        resolve(output, `failure-${index}.html`),
+        await page.content().catch(() => "unavailable"),
+      );
+    }
+  }
   throw error;
 } finally {
   await writeFile(resolve(output, "results.json"), JSON.stringify(report, null, 2));
   console.log(JSON.stringify(report, null, 2));
   await context?.close();
   if (crossServer) await new Promise<void>((resolve) => crossServer!.close(() => resolve()));
+  web.kill("SIGTERM");
   await f.close();
   await rm(profile, { recursive: true, force: true });
 }
