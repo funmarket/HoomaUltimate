@@ -27,6 +27,7 @@ import {
   PlaceMediaError,
   type PlaceMediaErrorCode,
 } from "../../modules/places/domain/place-media-error.js";
+import { PageBannerError } from "../../modules/page-banner/domain/page-banner-error.js";
 import { AppError } from "./app-error.js";
 
 const EVENT_STATUS: Record<EventErrorCode, number> = {
@@ -265,6 +266,10 @@ export const errorHandler: ErrorRequestHandler = (error, _request, response, _ne
     response
       .status(PLACE_MEDIA_STATUS[error.code])
       .json({ error: { code: error.code, message: error.message } });
+    return;
+  }
+  if (error instanceof PageBannerError) {
+    response.status(error.status).json({ error: { code: error.code, message: error.message } });
     return;
   }
   if (error instanceof AppError) {
