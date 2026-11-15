@@ -164,11 +164,13 @@ test("immutable public image headers permit embedding and metadata policy stays 
   const { default: helmet } = await import("helmet");
   const { createPageBannerPublicRouter } =
     await import("../apps/api/src/modules/page-banner/http/page-banner.routes.ts");
-  const { service } = fixture();
+  const { service, placement } = fixture();
   const app = express();
   app.use(helmet());
   app.use("/api/public/v1", createPageBannerPublicRouter(service));
   app.get("/api/public/v1/another-domain", (_request, response) => response.json({ ok: true }));
+  const { errorHandler } = await import("../apps/api/src/http/errors/error-handler.ts");
+  app.use(errorHandler);
   const server = app.listen(0, "127.0.0.1");
   await new Promise<void>((resolve) => server.once("listening", resolve));
   const address = server.address();
@@ -201,6 +203,12 @@ test("immutable public image headers permit embedding and metadata policy stays 
     );
     assert.equal(conditional.status, 304);
     assert.equal((await conditional.arrayBuffer()).byteLength, 0);
+    placement.enabled = false;
+    const disabled = await fetch(
+      origin + "/api/public/v1/banners/HOME_TOP/artwork/version-one/mobile.webp",
+    );
+    assert.equal(disabled.status, 404);
+    assert.equal(disabled.headers.get("cache-control"), "no-store");
   } finally {
     await new Promise<void>((resolve) => server.close(() => resolve()));
   }
