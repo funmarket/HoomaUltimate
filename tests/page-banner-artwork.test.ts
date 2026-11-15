@@ -234,3 +234,16 @@ test("retention evicts and settles the oldest preparation beyond eleven placemen
   resources.clear();
   await Promise.all(pending);
 });
+
+test("a running background image promoted to active receives high priority without a duplicate request", async () => {
+  const fake = images();
+  const resources = createArtworkPreparation({ createImage: fake.createImage });
+  const pending = resources.prepare(response(), 390, "background");
+  assert.equal(fake.created[0]!.fetchPriority, "low");
+  assert.equal(resources.prepare(response(), 390, "active"), pending);
+  assert.equal(fake.created[0]!.fetchPriority, "high");
+  assert.equal(fake.requests.length, 1);
+  fake.created[0]!.onload?.(new Event("load"));
+  await pending;
+  resources.clear();
+});

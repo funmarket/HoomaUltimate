@@ -353,6 +353,7 @@ test("session preparation is one serial pass and never retries the already reque
   try {
     const api = createPageBannerApi({ baseUrl: "http://api.test" });
     await assert.rejects(api.publicRead("ATHLETES_TOP"));
+    api.beginActive("ATHLETES_TOP").settle();
     const first = api.prepareSession();
     assert.equal(first, api.prepareSession());
     await first;
@@ -529,6 +530,7 @@ test("replacement metadata cancels queued artwork before its background slot ope
         },
       },
     );
+    api.beginActive("WATCH_TOP").settle();
     await api.prepareSession();
     clock += 15_001;
     replaced = true;

@@ -1,6 +1,7 @@
-// Browser lab only: real compiled application, controlled metadata/image latency.
+// Browser lab only: compiled application, identical immutable WebP bytes, shared artwork bandwidth.
 // No live backend, credentials, Admin writes, or production performance claims.
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { createServer } from "node:http";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { resolve, extname, sep } from "node:path";
@@ -12,16 +13,65 @@ assert(baseDir && headDir && outputDir, "Expected baseline dist, candidate dist,
 const { chromium } = await import(pathToFileURL(process.env.BANNER_PLAYWRIGHT_MODULE).href);
 const out = resolve(outputDir);
 await mkdir(out, { recursive: true });
-const metadataDelayMs = 180;
-const imageDelayMs = 240;
+// Seeded noise prevents solid-color compression from making bandwidth contention invisible.
 const images = await Promise.all(
-  ["#283f60", "#a54030"].map((background) =>
-    sharp({ create: { width: 720, height: 300, channels: 3, background } })
-      .png()
-      .toBuffer(),
-  ),
+  [1, 2].map(async (seed) => {
+    const pixels = Buffer.alloc(720 * 300 * 3);
+    let value = seed;
+    for (let i = 0; i < pixels.length; i += 1) {
+      value ^= value << 13;
+      value ^= value >>> 17;
+      value ^= value << 5;
+      pixels[i] = value & 255;
+    }
+    return sharp(pixels, { raw: { width: 720, height: 300, channels: 3 } })
+      .webp({ quality: 75 })
+      .toBuffer();
+  }),
 );
-const pause = (ms) => new Promise((done) => setTimeout(done, ms));
+const sharedArtworkBytesPerSecond = 200_000;
+// One aggregate budget, divided round-robin across concurrent artwork responses.
+// This is a controlled transport experiment, not a mobile-network or production claim.
+function artworkTransport() {
+  const pending = [];
+  const intervalMs = 20;
+  let timer;
+  function drain() {
+    const live = pending.filter((item) => !item.res.destroyed);
+    pending.length = 0;
+    pending.push(...live);
+    const allowance = Math.floor(
+      (sharedArtworkBytesPerSecond * intervalMs) / 1000 / Math.max(1, pending.length),
+    );
+    for (const item of [...pending]) {
+      const end = Math.min(item.offset + allowance, item.bytes.length);
+      item.res.write(item.bytes.subarray(item.offset, end));
+      item.offset = end;
+      if (end === item.bytes.length) {
+        item.res.end();
+        pending.splice(pending.indexOf(item), 1);
+      }
+    }
+    if (!pending.length) {
+      clearInterval(timer);
+      timer = undefined;
+    }
+  }
+  return {
+    send(res, bytes, constrained) {
+      if (!constrained) {
+        res.end(bytes);
+        return;
+      }
+      pending.push({ res, bytes, offset: 0 });
+      timer ??= setInterval(drain, intervalMs);
+    },
+    close() {
+      clearInterval(timer);
+      for (const item of pending) item.res.destroy();
+    },
+  };
+}
 const mime = {
   ".html": "text/html",
   ".js": "text/javascript",
@@ -36,15 +86,35 @@ const report = {
     "CI Chromium; compiled app; synthetic banner/API fixtures; not live backend or Telegram",
   baselineSha: process.env.BANNER_BASE_SHA,
   candidateSha: process.env.BANNER_HEAD_SHA,
-  metadataDelayMs,
-  imageDelayMs,
+  transport: {
+    sharedArtworkBytesPerSecond,
+    intervalMs: 20,
+    metadataDelayMs: 0,
+    scope:
+      "One aggregate artwork budget per isolated server; other application resources unlimited",
+  },
+  fixtures: images.map((bytes) => ({
+    bytes: bytes.length,
+    sha256: createHash("sha256").update(bytes).digest("hex"),
+    width: 720,
+    height: 300,
+    type: "image/webp",
+  })),
   runs: [],
   widths: [],
 };
 
 async function serve(directory) {
   const root = resolve(directory);
-  const state = { enabled: true, version: 0, sequence: 0, requests: [], unexpected: [] };
+  const transport = artworkTransport();
+  const state = {
+    enabled: true,
+    version: 0,
+    sequence: 0,
+    requests: [],
+    unexpected: [],
+    constrained: false,
+  };
   const json = (res, value, status = 200) => {
     res.writeHead(status, { "content-type": "application/json", "cache-control": "no-store" });
     res.end(JSON.stringify(value));
@@ -62,7 +132,6 @@ async function serve(directory) {
         const version = state.version;
         const enabled = placementId !== "HOME_TOP" || state.enabled;
         state.requests.push({ type: "metadata", placementId, sequence, version });
-        await pause(metadataDelayMs);
         return json(res, {
           placementId,
           enabled,
@@ -77,10 +146,11 @@ async function serve(directory) {
                   destination: null,
                   variants: [
                     {
-                      variant: "master",
-                      contentUrl: `/fixture/${placementId}/${version}.png?signature=${sequence}`,
-                      expiresAt: new Date(Date.now() + 300_000).toISOString(),
-                      contentType: "image/png",
+                      variant: "mobile",
+                      delivery: "IMMUTABLE",
+                      contentUrl: `/fixture/${placementId}/${version}.webp`,
+                      expiresAt: null,
+                      contentType: "image/webp",
                       widthPx: 720,
                       heightPx: 300,
                     },
@@ -92,12 +162,16 @@ async function serve(directory) {
       }
       if (url.pathname.startsWith("/fixture/")) {
         state.requests.push({ type: "image", path: req.url });
-        await pause(imageDelayMs);
         res.writeHead(200, {
-          "content-type": "image/png",
-          "cache-control": "private, max-age=240",
+          "content-type": "image/webp",
+          "content-length": images[Number(url.pathname.split("/").at(-1).split(".")[0])].length,
+          "cache-control": "public, max-age=31536000, immutable",
         });
-        return res.end(images[Number(url.pathname.split("/").at(-1).split(".")[0])]);
+        return transport.send(
+          res,
+          images[Number(url.pathname.split("/").at(-1).split(".")[0])],
+          state.constrained,
+        );
       }
       if (url.pathname === "/api/public/v1/auth/session") return json(res, null);
       if (url.pathname === "/api/public/v1/discovery/now")
@@ -130,7 +204,10 @@ async function serve(directory) {
   return {
     state,
     origin: `http://127.0.0.1:${server.address().port}`,
-    close: () => new Promise((done) => server.close(done)),
+    close: () => {
+      transport.close();
+      return new Promise((done) => server.close(done));
+    },
   };
 }
 
@@ -145,7 +222,18 @@ async function newPage(width = 390) {
   });
   const page = await context.newPage();
   await page.addInitScript(() => {
-    window.bannerLab = { observations: [], shifts: [], errors: [] };
+    window.bannerLab = { observations: [], shifts: [], errors: [], decodes: [] };
+    const decode = HTMLImageElement.prototype.decode;
+    HTMLImageElement.prototype.decode = async function () {
+      const startedAt = performance.now();
+      await decode.call(this);
+      window.bannerLab.decodes.push({
+        url: this.currentSrc || this.src,
+        startedAt,
+        finishedAt: performance.now(),
+        connected: this.isConnected,
+      });
+    };
     window.addEventListener("error", (event) => window.bannerLab.errors.push(event.message));
     new PerformanceObserver((list) => {
       for (const entry of list.getEntries())
@@ -173,7 +261,7 @@ async function newPage(width = 390) {
 async function ready(page, placement) {
   await page
     .locator(`[data-placement="${placement}"][data-state="ready"]`)
-    .waitFor({ state: "visible", timeout: 15_000 });
+    .waitFor({ state: "visible", timeout: 30_000 });
   await page.waitForFunction((id) => {
     const image = document.querySelector(`[data-placement="${id}"] img:not([aria-hidden="true"])`);
     return image?.complete && image.naturalWidth > 0;
@@ -190,6 +278,35 @@ async function navigate(page, href, placement) {
   return (await page.evaluate(() => performance.now())) - startedAt;
 }
 
+async function capture(page) {
+  return page.evaluate(() => ({
+    ...window.bannerLab,
+    resources: performance
+      .getEntriesByType("resource")
+      .filter((entry) => /\/fixture\/|\/api\/public\/v1\/banners\//.test(entry.name))
+      .map((entry) => ({
+        url: entry.name,
+        startTime: entry.startTime,
+        requestStart: entry.requestStart,
+        responseStart: entry.responseStart,
+        responseEnd: entry.responseEnd,
+        transferSize: entry.transferSize,
+        encodedBodySize: entry.encodedBodySize,
+      })),
+  }));
+}
+function assertActiveFirst(row) {
+  const unrelated = row.lab.resources.filter((entry) => {
+    const path = new URL(entry.url).pathname;
+    return !path.includes("HOME_TOP") && entry.startTime < row.coldReadyMs;
+  });
+  assert.deepEqual(
+    unrelated,
+    [],
+    "Unrelated banner request started before mounted active visibility",
+  );
+}
+
 try {
   for (const [label, dir] of [
     ["baseline", baseDir],
@@ -199,17 +316,18 @@ try {
     servers.push(server);
     for (let iteration = 1; iteration <= 3; iteration += 1) {
       const { page, context } = await newPage();
-      const row = { label, iteration };
+      const row = { label, iteration, scenario: "unconstrained" };
       await page.goto(server.origin, { waitUntil: "domcontentloaded" });
       row.coldReadyMs = await ready(page, "HOME_TOP");
-      // Equal observation window: candidate can prepare other pages; baseline cannot.
+      // Equal observation window for the unchanged serial preparation pass in both builds.
       await page.waitForTimeout(5000);
       row.watchNavigationMs = await navigate(page, "/watch", "WATCH_TOP");
       row.homeNavigationMs = await navigate(page, "/", "HOME_TOP");
       // Exceed the unchanged 15-second metadata TTL in both builds.
       await page.waitForTimeout(16_000);
       row.watchAfterMetadataTtlMs = await navigate(page, "/watch", "WATCH_TOP");
-      row.lab = await page.evaluate(() => window.bannerLab);
+      row.lab = await capture(page);
+      if (label === "candidate") assertActiveFirst(row);
       await page.screenshot({
         path: resolve(out, `${label}-${iteration}-watch.png`),
         fullPage: true,
@@ -218,6 +336,31 @@ try {
       report.runs.push(row);
       await context.close();
     }
+    server.state.constrained = true;
+    for (let iteration = 1; iteration <= 3; iteration += 1) {
+      const { page, context } = await newPage();
+      const row = { label, iteration, scenario: "shared-artwork-bandwidth" };
+      await page.goto(server.origin, { waitUntil: "domcontentloaded" });
+      row.coldReadyMs = await ready(page, "HOME_TOP");
+      // Wait for completed timing records, not as a substitute for active readiness.
+      await page.waitForFunction(
+        () =>
+          new Set(
+            performance
+              .getEntriesByType("resource")
+              .filter((entry) => new URL(entry.name).pathname.startsWith("/fixture/"))
+              .map((entry) => entry.name),
+          ).size === 11,
+        undefined,
+        { timeout: 30_000 },
+      );
+      row.lab = await capture(page);
+      if (label === "candidate") assertActiveFirst(row);
+      assert.deepEqual(row.lab.errors, []);
+      report.runs.push(row);
+      await context.close();
+    }
+    server.state.constrained = false;
     if (label === "candidate") {
       for (const width of [320, 360, 375, 390, 393, 412, 430, 768, 1280]) {
         const { page, context } = await newPage(width);
@@ -288,6 +431,34 @@ try {
       "Missing API fixtures or unexpected writes",
     );
   }
+  const median = (values) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
+  report.coldComparison = Object.fromEntries(
+    ["unconstrained", "shared-artwork-bandwidth"].map((scenario) => {
+      const baseline = median(
+        report.runs
+          .filter((row) => row.label === "baseline" && row.scenario === scenario)
+          .map((row) => row.coldReadyMs),
+      );
+      const candidate = median(
+        report.runs
+          .filter((row) => row.label === "candidate" && row.scenario === scenario)
+          .map((row) => row.coldReadyMs),
+      );
+      return [
+        scenario,
+        {
+          baselineMedianMs: baseline,
+          candidateMedianMs: candidate,
+          changePercent: (100 * (candidate - baseline)) / baseline,
+        },
+      ];
+    }),
+  );
+  assert(
+    report.coldComparison["shared-artwork-bandwidth"].candidateMedianMs <
+      report.coldComparison["shared-artwork-bandwidth"].baselineMedianMs,
+    "Shared-bandwidth lab did not demonstrate a cold-entry improvement",
+  );
   report.status = "PASS — controlled browser lab only";
 } catch (error) {
   report.status = "FAIL";

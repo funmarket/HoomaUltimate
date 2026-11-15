@@ -69,7 +69,39 @@ export function createPageBannerApi(
     { readonly promise: Promise<PageBannerPublicResponse>; readonly forced: boolean }
   >();
   const generations = new Map<string, number>();
-  const artwork = createArtworkPreparation(artworkOptions);
+  let activeOwner: { placementId: PageBannerPlacementId; settled: boolean } | null = null;
+  let backgroundAllowed = false;
+  const backgroundWaiters = new Set<() => void>();
+  const artwork = createArtworkPreparation({
+    ...artworkOptions,
+    canStartBackground: () => backgroundAllowed,
+  });
+
+  function beginActive(placementId: PageBannerPlacementId) {
+    const owner = { placementId, settled: false };
+    activeOwner = owner;
+    backgroundAllowed = false;
+    return {
+      settle() {
+        if (activeOwner !== owner || owner.settled) return;
+        owner.settled = true;
+        backgroundAllowed = true;
+        const waiters = [...backgroundWaiters];
+        backgroundWaiters.clear();
+        for (const resume of waiters) resume();
+        artwork.resumeBackground();
+      },
+      release() {
+        if (activeOwner !== owner) return;
+        activeOwner = null;
+        backgroundAllowed = false;
+      },
+    };
+  }
+
+  async function waitForBackground() {
+    while (!backgroundAllowed) await new Promise<void>((resolve) => backgroundWaiters.add(resolve));
+  }
   const requestedPlacements = new Set<PageBannerPlacementId>();
   let sessionPreparation: Promise<void> | null = null;
 
@@ -180,6 +212,8 @@ export function createPageBannerApi(
   }
 
   function prefetch(placementId: PageBannerPlacementId) {
+    // Navigation hints pause new unrelated work before a lazy route mounts.
+    if (activeOwner?.placementId !== placementId) beginActive(placementId);
     const read = publicRead(placementId);
     const generation = generations.get(placementId);
     void read
@@ -212,11 +246,13 @@ export function createPageBannerApi(
     if (sessionPreparation) return sessionPreparation;
     sessionPreparation = (async () => {
       for (const placementId of PAGE_BANNER_PLACEMENT_IDS) {
+        while (!backgroundAllowed) await waitForBackground();
         if (requestedPlacements.has(placementId)) continue;
         try {
           const read = publicRead(placementId);
           const generation = generations.get(placementId);
           const data = await read;
+          while (!backgroundAllowed) await waitForBackground();
           if (generations.get(placementId) === generation) void prepareArtwork(data, "background");
         } catch {
           // Preparation is optional and never restarts a failed active request.
@@ -228,6 +264,7 @@ export function createPageBannerApi(
 
   return {
     publicRead,
+    beginActive,
     prefetch,
     prepareSession,
     invalidate,

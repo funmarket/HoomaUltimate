@@ -182,7 +182,7 @@ test("provider preparation is once per API instance even under StrictMode effect
       React.createElement(
         HoomaFrontendProvider,
         { transport },
-        React.createElement("main", null, "No banner route"),
+        React.createElement(PageBanner, { placementId: "HOME_TOP" }),
       ),
     ),
   );
@@ -697,3 +697,131 @@ test("late decode of a superseded size does not replace the current slide", asyn
     Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: oldDpr });
   }
 });
+
+test("background placements wait for the mounted image decode and visible frame", async () => {
+  const requests: string[] = [];
+  let decoded!: () => void;
+  const originalDecode = dom.window.HTMLImageElement.prototype.decode;
+  Object.defineProperty(dom.window.HTMLImageElement.prototype, "decode", {
+    configurable: true,
+    value: () =>
+      new Promise<void>((resolve) => {
+        decoded = resolve;
+      }),
+  });
+  globalThis.fetch = async (input) => {
+    const id = new URL(String(input), "http://localhost").pathname.split("/").at(-1)!;
+    requests.push(id);
+    return json(
+      id === "HOME_TOP"
+        ? { placementId: id, enabled: true, slides: [slide("slide-1")] }
+        : { placementId: id, enabled: false, slides: [] },
+    );
+  };
+  try {
+    const view = render(
+      React.createElement(
+        HoomaFrontendProvider,
+        { transport: { baseUrl: "https://api.example.test" } },
+        React.createElement(PageBanner, { placementId: "HOME_TOP" }),
+      ),
+    );
+    await waitFor(() => assert.ok(view.container.querySelector("img")));
+    assert.deepEqual(requests, ["HOME_TOP"]);
+    fireEvent.load(view.container.querySelector("img")!);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    assert.deepEqual(requests, ["HOME_TOP"], "An unresolved decode cannot release preparation");
+    await act(async () => {
+      decoded();
+    });
+    await waitFor(() =>
+      assert.equal(
+        view.container.querySelector("[data-page-banner]")?.getAttribute("data-state"),
+        "ready",
+      ),
+    );
+    await waitFor(() => assert.equal(requests.length, 11));
+  } finally {
+    Object.defineProperty(dom.window.HTMLImageElement.prototype, "decode", {
+      configurable: true,
+      value: originalDecode,
+    });
+  }
+});
+
+test("an expired first variant cannot release background work while its forced refresh is pending", async () => {
+  const requests: string[] = [];
+  let finishRefresh!: (response: Response) => void;
+  let reads = 0;
+  const expired = slide("slide-1");
+  expired.variants[0]!.expiresAt = new Date(Date.now() + 30_000).toISOString();
+  globalThis.fetch = async (input) => {
+    const id = new URL(String(input)).pathname.split("/").at(-1)!;
+    requests.push(id);
+    if (id !== "HOME_TOP") return json({ placementId: id, enabled: false, slides: [] });
+    if (++reads === 1) return json({ placementId: id, enabled: true, slides: [expired] });
+    return new Promise<Response>((resolve) => {
+      finishRefresh = resolve;
+    });
+  };
+  const view = render(
+    React.createElement(
+      HoomaFrontendProvider,
+      { transport: { baseUrl: "https://api.example.test" } },
+      React.createElement(PageBanner, { placementId: "HOME_TOP" }),
+    ),
+  );
+  await waitFor(() => assert.equal(reads, 2));
+  await flushReact();
+  assert.deepEqual(requests, ["HOME_TOP", "HOME_TOP"]);
+  await act(async () =>
+    finishRefresh(json({ placementId: "HOME_TOP", enabled: true, slides: [slide("slide-2")] })),
+  );
+  await waitFor(() => assert.ok(view.container.querySelector("img")));
+  await loadImage(view.container.querySelector("img")!);
+  await waitFor(() => assert.equal(requests.length, 12));
+});
+
+for (const failure of ["metadata", "image", "decode"] as const) {
+  test(`terminal ${failure} failure releases optional preparation without retrying the active placement`, async () => {
+    const requests: string[] = [];
+    const decode = dom.window.HTMLImageElement.prototype.decode;
+    if (failure === "decode")
+      Object.defineProperty(dom.window.HTMLImageElement.prototype, "decode", {
+        configurable: true,
+        value: () => Promise.reject(new Error("bad artwork")),
+      });
+    globalThis.fetch = async (input) => {
+      const id = new URL(String(input)).pathname.split("/").at(-1)!;
+      requests.push(id);
+      if (id !== "HOME_TOP") return json({ placementId: id, enabled: false, slides: [] });
+      return failure === "metadata"
+        ? new Response("{}", { status: 503 })
+        : json({ placementId: id, enabled: true, slides: [slide("slide-1")] });
+    };
+    try {
+      const view = render(
+        React.createElement(
+          HoomaFrontendProvider,
+          { transport: { baseUrl: "https://api.example.test" } },
+          React.createElement(PageBanner, { placementId: "HOME_TOP" }),
+        ),
+      );
+      if (failure !== "metadata") {
+        await waitFor(() => assert.ok(view.container.querySelector("img")));
+        if (failure === "image") fireEvent.error(view.container.querySelector("img")!);
+        else await loadImage(view.container.querySelector("img")!);
+      }
+      await waitFor(() => assert.equal(requests.length, 11));
+      assert.equal(requests.filter((id) => id === "HOME_TOP").length, 1);
+      assert.equal(view.container.querySelector('[data-state="ready"]'), null);
+    } finally {
+      Object.defineProperty(dom.window.HTMLImageElement.prototype, "decode", {
+        configurable: true,
+        value: decode,
+      });
+    }
+  });
+}
