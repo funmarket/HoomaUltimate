@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSta
 import type { PageBannerPlacementId } from "@hooma/contracts/page-banner";
 import { useHoomaFrontend } from "../context";
 import type { PageBannerPublicSlide, PageBannerPublicVariant } from "./api";
+import { selectArtworkVariant as mediaVariant } from "./artwork";
 
 const placementLabels: Readonly<Record<PageBannerPlacementId, string>> = {
   HOME_TOP: "Home",
@@ -27,14 +28,6 @@ type PreparedSlide = {
 type PublicRead = Awaited<
   ReturnType<ReturnType<typeof useHoomaFrontend>["api"]["pageBanners"]["publicRead"]>
 >;
-
-function mediaVariant(slide: PageBannerPublicSlide, requiredWidth: number) {
-  const available = slide.variants
-    .filter((variant) => variant.contentUrl.trim() && variant.widthPx > 0 && variant.heightPx > 0)
-    .slice()
-    .sort((a, b) => a.widthPx - b.widthPx);
-  return available.find((variant) => variant.widthPx >= requiredWidth) ?? available.at(-1) ?? null;
-}
 
 function nextIndex(current: number, length: number, direction: -1 | 1): number {
   return (current + direction + length) % length;
@@ -164,6 +157,7 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
 
   function handleFailure(item: PreparedSlide) {
     if (item.key !== displayed?.key && item.key !== candidate?.key) return;
+    api.pageBanners.invalidate(placementId);
     setFailedKeys((keys) => (keys.includes(item.key) ? keys : [...keys, item.key]));
     if (item.key === candidate?.key) setReadyKey(null);
     // Preserve the displayed frame and controls until a pending replacement is decoded.

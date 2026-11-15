@@ -1,5 +1,14 @@
-import type { PageBannerPlacementId } from "@hooma/contracts/page-banner";
+import {
+  PAGE_BANNER_PLACEMENT_IDS,
+  type PageBannerPlacementId,
+} from "@hooma/contracts/page-banner";
 import { request, type HoomaTransport } from "../http";
+import {
+  createArtworkPreparation,
+  requiredArtworkWidth,
+  reuseArtworkUrls,
+  selectArtworkVariant,
+} from "./artwork";
 
 export interface PageBannerPublicVariant {
   readonly variant: string;
@@ -12,6 +21,7 @@ export interface PageBannerPublicVariant {
 
 export interface PageBannerPublicSlide {
   readonly id: string;
+  readonly artworkVersion?: string;
   readonly sortOrder: number;
   readonly isDecorative: boolean;
   readonly altText: string | null;
@@ -54,16 +64,25 @@ function hasFreshSignedUrls(data: PageBannerPublicResponse, now: number): boolea
   );
 }
 
-export function createPageBannerApi(transport: HoomaTransport) {
+export function createPageBannerApi(
+  transport: HoomaTransport,
+  artworkOptions: Parameters<typeof createArtworkPreparation>[0] = {},
+) {
   const cache = new Map<string, CachedRead>();
+  const artworkReads = new Map<string, PageBannerPublicResponse>();
   const inFlight = new Map<
     string,
     { readonly promise: Promise<PageBannerPublicResponse>; readonly forced: boolean }
   >();
   const generations = new Map<string, number>();
+  const artwork = createArtworkPreparation(artworkOptions);
+  const requestedPlacements = new Set<PageBannerPlacementId>();
+  let sessionPreparation: Promise<void> | null = null;
 
   function invalidate(placementId: PageBannerPlacementId) {
     cache.delete(placementId);
+    artworkReads.delete(placementId);
+    artwork.invalidate(placementId);
     generations.set(placementId, (generations.get(placementId) ?? 0) + 1);
     inFlight.delete(placementId);
   }
@@ -72,6 +91,7 @@ export function createPageBannerApi(transport: HoomaTransport) {
     placementId: PageBannerPlacementId,
     options: PageBannerPublicReadOptions = {},
   ): Promise<PageBannerPublicResponse> {
+    requestedPlacements.add(placementId);
     const forced = options.forceFresh === true;
     const now = Date.now();
     const cached = cache.get(placementId);
@@ -116,15 +136,29 @@ export function createPageBannerApi(transport: HoomaTransport) {
         if (forced && !signedUrlsAreFresh) {
           throw new Error("PageBanner response did not contain a fresh signed URL");
         }
+        const current =
+          !forced && signedUrlsAreFresh
+            ? reuseArtworkUrls(artworkReads.get(placementId), data, Date.now())
+            : data;
+        artworkReads.delete(placementId);
+        if (signedUrlsAreFresh && current.enabled) artworkReads.set(placementId, current);
+        while (artworkReads.size > MAX_CACHED_PLACEMENTS) {
+          const oldest = artworkReads.keys().next().value;
+          if (oldest === undefined) break;
+          artworkReads.delete(oldest);
+          artwork.invalidate(oldest as PageBannerPlacementId);
+        }
+        if (forced) artwork.invalidate(placementId);
+        else artwork.reconcile(current, requiredArtworkWidth());
         if (generations.get(placementId) === generation && signedUrlsAreFresh) {
-          cache.set(placementId, { data, freshUntil: Date.now() + PUBLIC_READ_FRESH_MS });
+          cache.set(placementId, { data: current, freshUntil: Date.now() + PUBLIC_READ_FRESH_MS });
           while (cache.size > MAX_CACHED_PLACEMENTS) {
             const oldest = cache.keys().next().value as string | undefined;
             if (oldest === undefined) break;
             cache.delete(oldest);
           }
         }
-        return data;
+        return current;
       })
       .finally(() => {
         if (inFlight.get(placementId)?.promise === promise) inFlight.delete(placementId);
@@ -133,9 +167,57 @@ export function createPageBannerApi(transport: HoomaTransport) {
     return promise;
   }
 
+  function prefetch(placementId: PageBannerPlacementId) {
+    const read = publicRead(placementId);
+    const generation = generations.get(placementId);
+    void read
+      .then((data) => {
+        if (generations.get(placementId) === generation) return prepareArtwork(data, "active");
+      })
+      .catch(() => undefined);
+    return read;
+  }
+
+  function prepareArtwork(data: PageBannerPublicResponse, priority: "active" | "background") {
+    const slide = data.slides[0];
+    const variant = slide ? selectArtworkVariant(slide, requiredArtworkWidth()) : null;
+    return artwork.prepare(data, requiredArtworkWidth(), priority).catch(() => {
+      const current = artworkReads.get(data.placementId);
+      if (
+        variant &&
+        current?.slides.some(
+          (item) =>
+            item.id === slide?.id &&
+            item.artworkVersion === slide?.artworkVersion &&
+            item.variants.some((image) => image.contentUrl === variant.contentUrl),
+        )
+      )
+        invalidate(data.placementId);
+    });
+  }
+
+  function prepareSession(): Promise<void> {
+    if (sessionPreparation) return sessionPreparation;
+    sessionPreparation = (async () => {
+      for (const placementId of PAGE_BANNER_PLACEMENT_IDS) {
+        if (requestedPlacements.has(placementId)) continue;
+        try {
+          const read = publicRead(placementId);
+          const generation = generations.get(placementId);
+          const data = await read;
+          if (generations.get(placementId) === generation) void prepareArtwork(data, "background");
+        } catch {
+          // Preparation is optional and never restarts a failed active request.
+        }
+      }
+    })();
+    return sessionPreparation;
+  }
+
   return {
     publicRead,
-    prefetch: (placementId: PageBannerPlacementId) => publicRead(placementId),
+    prefetch,
+    prepareSession,
     invalidate,
   };
 }

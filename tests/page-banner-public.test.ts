@@ -140,6 +140,56 @@ test("only a decoded mounted image becomes visible and preserves semantics", asy
   assert.equal(actual.getAttribute("width"), "720");
 });
 
+test("a failed mounted image invalidates metadata before remounting the same placement", async () => {
+  let reads = 0;
+  globalThis.fetch = async (input) => {
+    const placementId = new URL(String(input)).pathname.split("/").at(-1);
+    if (placementId !== "ATHLETES_TOP") return json({ placementId, enabled: false, slides: [] });
+    reads++;
+    return json(response([slide(`slide-${reads}`)]));
+  };
+  const transport = { baseUrl: "https://mounted-failure.example.test" };
+  const tree = (key: string) =>
+    React.createElement(
+      HoomaFrontendProvider,
+      { transport },
+      React.createElement(PageBanner, { placementId: "ATHLETES_TOP", key }),
+    );
+  const view = render(tree("first"));
+  await flushReact();
+  fireEvent.error(findImage(view, "slide-1"));
+  await flushReact();
+  view.rerender(tree("second"));
+  await flushReact();
+  assert.equal(reads, 2);
+  assert.ok(findImage(view, "slide-2"));
+});
+
+test("provider preparation is once per API instance even under StrictMode effect replay", async () => {
+  const origin = "https://strict-session.example.test";
+  const placements: string[] = [];
+  globalThis.fetch = async (input) => {
+    const url = new URL(String(input));
+    const placementId = url.pathname.split("/").at(-1)!;
+    if (url.origin === origin) placements.push(placementId);
+    return json({ placementId, enabled: false, slides: [] });
+  };
+  const transport = { baseUrl: origin };
+  render(
+    React.createElement(
+      React.StrictMode,
+      null,
+      React.createElement(
+        HoomaFrontendProvider,
+        { transport },
+        React.createElement("main", null, "No banner route"),
+      ),
+    ),
+  );
+  await waitFor(() => assert.equal(placements.length, 11));
+  assert.equal(new Set(placements).size, 11);
+});
+
 test("direct entry starts metadata reads for all approved placements before passive effects", () => {
   const placements = [
     "HOME_TOP",
@@ -272,7 +322,9 @@ test("failed slides skip to healthy artwork without hiding the old image", async
 test("expired URLs refresh without losing visible artwork", async () => {
   let reads = 0;
   const slides = [slide("slide-1"), slide("slide-2")];
-  globalThis.fetch = async () => {
+  globalThis.fetch = async (input) => {
+    const placementId = new URL(String(input)).pathname.split("/").at(-1);
+    if (placementId !== "ATHLETES_TOP") return json({ placementId, enabled: false, slides: [] });
     reads++;
     return json(
       response(
@@ -347,7 +399,9 @@ test("expired mobile URL refreshes after viewport switch before downloading", as
     }));
   Object.defineProperty(window, "innerWidth", { configurable: true, value: 1000 });
   Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: 1 });
-  globalThis.fetch = async () => {
+  globalThis.fetch = async (input) => {
+    const placementId = new URL(String(input)).pathname.split("/").at(-1);
+    if (placementId !== "ATHLETES_TOP") return json({ placementId, enabled: false, slides: [] });
     reads++;
     return json(
       response([{ ...slide("slide-1"), variants: variantSet(reads === 1 ? "old" : "fresh") }]),
@@ -398,7 +452,9 @@ test("DPR-only variant change renews stale signed URLs", async () => {
       removeEventListener: () => {},
     }),
   });
-  globalThis.fetch = async () => {
+  globalThis.fetch = async (input) => {
+    const placementId = new URL(String(input)).pathname.split("/").at(-1);
+    if (placementId !== "ATHLETES_TOP") return json({ placementId, enabled: false, slides: [] });
     reads++;
     const prefix = reads === 1 ? "old" : "fresh";
     const expiry = reads === 1 ? "2099-11-02T12:00:00.000Z" : "2099-11-02T12:06:00.000Z";
@@ -461,7 +517,9 @@ test("failed automatic refresh retries on return without a request loop", async 
   const originalNow = Date.now;
   let reads = 0;
   Date.now = () => new Date("2099-11-02T12:01:00.000Z").getTime();
-  globalThis.fetch = async () => {
+  globalThis.fetch = async (input) => {
+    const placementId = new URL(String(input)).pathname.split("/").at(-1);
+    if (placementId !== "ATHLETES_TOP") return json({ placementId, enabled: false, slides: [] });
     reads++;
     if (reads === 2) throw new Error("temporary signed URL refresh failure");
     const isFresh = reads > 2;
@@ -525,7 +583,9 @@ test("manual navigation retries an expired slide after a failed read", async () 
       ],
     },
   ];
-  globalThis.fetch = async () => {
+  globalThis.fetch = async (input) => {
+    const placementId = new URL(String(input)).pathname.split("/").at(-1);
+    if (placementId !== "ATHLETES_TOP") return json({ placementId, enabled: false, slides: [] });
     reads++;
     if (reads === 2) throw new Error("transient refresh failure");
     return json(

@@ -1,0 +1,53 @@
+name: PageBanner browser comparison
+
+on:
+  pull_request:
+    paths:
+      - "packages/frontend/src/page-banner/**"
+      - "packages/frontend/src/context.tsx"
+      - "apps/web/src/app/shell/page-banner-navigation.ts"
+      - "scripts/page-banner-browser-check.mjs"
+      - ".github/workflows/page-banner-browser.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: candidate
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: baseline
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --global npm@10.9.2
+      - name: Build both exact revisions
+        run: |
+          for target in baseline candidate; do
+            (cd "$target" && npm ci && npm run db:generate && npm run build:packages && npm -w @hooma/web run build)
+          done
+      - name: Install isolated browser test runner
+        run: |
+          npm install --prefix "$RUNNER_TEMP/banner-browser" playwright@1.56.1
+          "$RUNNER_TEMP/banner-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Compare real app rendering against controlled banner fixtures
+        env:
+          BANNER_PLAYWRIGHT_MODULE: ${{ runner.temp }}/banner-browser/node_modules/playwright/index.mjs
+          BANNER_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BANNER_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node candidate/scripts/page-banner-browser-check.mjs baseline/apps/web/dist candidate/apps/web/dist banner-browser-evidence
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: page-banner-browser-evidence
+          path: banner-browser-evidence
+          if-no-files-found: error
+          retention-days: 14
