@@ -501,6 +501,12 @@ test("App Manager capabilities project only their authorized Control Room module
   let requested: string[] = [];
   globalThis.fetch = async (input) => {
     const url = new URL(String(input));
+    if (url.pathname.startsWith("/api/public/v1/banners/")) {
+      const placementId = url.pathname.split("/").at(-1);
+      return new Response(JSON.stringify({ placementId, enabled: false, slides: [] }), {
+        headers: { "content-type": "application/json" },
+      });
+    }
     requested.push(url.pathname);
     if (url.pathname === "/api/v1/admin/access") {
       return new Response(

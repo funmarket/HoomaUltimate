@@ -213,6 +213,7 @@ export class PageBannerService {
     );
     return {
       id: slide.id,
+      artworkVersion: slide.mediaId,
       sortOrder: slide.sortOrder,
       isDecorative: slide.isDecorative,
       altText: slide.altText,

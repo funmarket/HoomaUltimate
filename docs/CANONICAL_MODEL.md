@@ -1400,6 +1400,8 @@ Any mismatch is a blocker, not a reason for a compatibility patch.
 
 `PageBannerPlacement` is the canonical owner of the approved page placement IDs and Admin-controlled enabled state. `PageBannerSlide` owns ordered slide metadata, click destination policy and enabled/decorative state. `PageBannerSlideVariant` owns processed object descriptors; image bytes remain in S3-compatible object storage. Placement and slide mutations are authorized by Platform Admin and audit through the canonical AuditWriter. Public delivery filters disabled placements/slides and returns signed variant URLs without exposing storage keys.
 
+The public slide projection exposes `artworkVersion` from the existing owning `mediaId`. Replacing artwork changes this version even when the slide ID is retained. Frontend resource reuse requires a matching artwork version, slide, placement, variant, dimensions and content type, plus the original signed URL remaining outside the 60-second expiry margin. Retaining a resource never extends its signature's original expiry or grants stale metadata authority. Missing artwork versions disable this optimization and retain ordinary signed-URL loading.
+
 ## Current Athletes WebSession activity projection
 
 The merged foundation keeps `WebSession.lastSeenAt` under Identity ownership and exposes only the narrow batched `UserLastSeenReader` to Athletes. Athletes preserves its canonical active membership list and projects nullable Identity activity alongside canonical UserPresentation fields; a missing active WebSession produces `lastSeenAt == null` rather than removing the member or fabricating online/offline state. No presence table, Redis presence layer, Telegram fallback, or duplicate user identity model is introduced by this slice.

@@ -103,6 +103,10 @@ test("Admin Issue UX requires a note and resolves through controlled confirmatio
       canManageIssues: true,
       requestHandler: async (input, init) => {
         const url = new URL(String(input));
+        if (url.pathname.startsWith("/api/public/v1/banners/")) {
+          const placementId = url.pathname.split("/").at(-1);
+          return json({ placementId, enabled: false, slides: [] });
+        }
         const method = init?.method ?? "GET";
         requests.push({
           method,
@@ -157,6 +161,10 @@ test("Admin Issue UX dismisses with controlled error feedback and hides actions 
       canManageIssues: true,
       requestHandler: async (input, init) => {
         const url = new URL(String(input));
+        if (url.pathname.startsWith("/api/public/v1/banners/")) {
+          const placementId = url.pathname.split("/").at(-1);
+          return json({ placementId, enabled: false, slides: [] });
+        }
         const method = init?.method ?? "GET";
         requests.push({
           method,
