@@ -12,7 +12,7 @@ import {
   type PageBannerSlideMetadata,
 } from "@hooma/contracts/page-banner";
 import { PAGE_BANNER_STANDARD, processMedia, writeMediaVariants } from "@hooma/media-processing";
-import type { ObjectStorage, ObjectStorageReadUrlSigner } from "@hooma/storage";
+import type { ObjectStorage } from "@hooma/storage";
 import type { PlatformAdminAuthorizer } from "../../platform-admin/application/platform-admin.authorizer.js";
 import { PageBannerError } from "../domain/page-banner-error.js";
 import type {
@@ -21,7 +21,6 @@ import type {
   PageBannerSlideRecord,
 } from "./page-banner.repository.js";
 
-const PAGE_BANNER_READ_URL_TTL_SECONDS = 5 * 60;
 const PAGE_BANNER_TYPES = new Set<string>(PAGE_BANNER_CONTENT_TYPES);
 
 export interface PageBannerUploadInput {
@@ -185,32 +184,45 @@ export class PageBannerService {
     };
   }
 
-  private async publicSlide(slide: PageBannerSlideRecord) {
-    if (
-      !this.storage ||
-      !("createReadUrl" in this.storage) ||
-      typeof this.storage.createReadUrl !== "function"
-    ) {
+  async publicArtwork(rawPlacementId: string, mediaId: string, filename: string) {
+    const placement = await this.requirePlacement(rawPlacementId);
+    const slide = placement.enabled
+      ? placement.slides.find((item) => item.enabled && item.mediaId === mediaId)
+      : undefined;
+    const variant = /^(master|display|mobile)\.webp$/.test(filename)
+      ? slide?.variants.find((item) => `${item.variant}.webp` === filename)
+      : undefined;
+    if (!variant)
+      throw new PageBannerError(
+        "PAGE_BANNER_ARTWORK_NOT_FOUND",
+        "PageBanner artwork not found",
+        404,
+      );
+    if (!this.storage)
       throw new PageBannerError(
         "PAGE_BANNER_STORAGE_NOT_CONFIGURED",
         "PageBanner storage is not configured",
         503,
       );
-    }
-    const storage = this.storage as ObjectStorage & ObjectStorageReadUrlSigner;
-    const variants = await Promise.all(
-      slide.variants.map(async (variant) => ({
-        variant: variant.variant,
-        contentUrl: await storage.createReadUrl(
-          variant.objectKey,
-          PAGE_BANNER_READ_URL_TTL_SECONDS,
-        ),
-        expiresAt: new Date(Date.now() + PAGE_BANNER_READ_URL_TTL_SECONDS * 1000).toISOString(),
-        contentType: variant.contentType,
-        widthPx: variant.widthPx,
-        heightPx: variant.heightPx,
-      })),
-    );
+    return this.storage.get(variant.objectKey);
+  }
+
+  private async publicSlide(slide: PageBannerSlideRecord) {
+    if (!this.storage)
+      throw new PageBannerError(
+        "PAGE_BANNER_STORAGE_NOT_CONFIGURED",
+        "PageBanner storage is not configured",
+        503,
+      );
+    const variants = slide.variants.map((variant) => ({
+      variant: variant.variant,
+      contentUrl: `/api/public/v1/banners/${encodeURIComponent(slide.placementId)}/artwork/${encodeURIComponent(slide.mediaId)}/${encodeURIComponent(variant.variant)}.webp`,
+      delivery: "IMMUTABLE" as const,
+      expiresAt: null,
+      contentType: variant.contentType,
+      widthPx: variant.widthPx,
+      heightPx: variant.heightPx,
+    }));
     return {
       id: slide.id,
       artworkVersion: slide.mediaId,

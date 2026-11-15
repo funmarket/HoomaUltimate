@@ -8,12 +8,14 @@ import {
   requiredArtworkWidth,
   reuseArtworkUrls,
   selectArtworkVariant,
+  isArtworkFresh,
 } from "./artwork";
 
 export interface PageBannerPublicVariant {
   readonly variant: string;
   readonly contentUrl: string;
-  readonly expiresAt: string;
+  readonly expiresAt: string | null;
+  readonly delivery?: "SIGNED" | "IMMUTABLE";
   readonly contentType: string;
   readonly widthPx: number;
   readonly heightPx: number;
@@ -44,23 +46,15 @@ export interface PageBannerPublicReadOptions {
 
 const PUBLIC_READ_FRESH_MS = 15_000;
 const MAX_CACHED_PLACEMENTS = 11;
-const SIGNED_URL_SAFETY_MARGIN_MS = 60_000;
 
 type CachedRead = {
   readonly data: PageBannerPublicResponse;
   readonly freshUntil: number;
 };
 
-function hasFreshSignedUrls(data: PageBannerPublicResponse, now: number): boolean {
+function hasUsableArtwork(data: PageBannerPublicResponse, now: number): boolean {
   return data.slides.every((slide) =>
-    slide.variants.every((variant) => {
-      const expiry = Date.parse(variant.expiresAt);
-      return (
-        Boolean(variant.contentUrl.trim()) &&
-        Number.isFinite(expiry) &&
-        expiry > now + SIGNED_URL_SAFETY_MARGIN_MS
-      );
-    }),
+    slide.variants.every((variant) => isArtworkFresh(variant, now)),
   );
 }
 
@@ -96,7 +90,7 @@ export function createPageBannerApi(
     const now = Date.now();
     const cached = cache.get(placementId);
     if (!forced && cached) {
-      if (cached.freshUntil > now && hasFreshSignedUrls(cached.data, now)) {
+      if (cached.freshUntil > now && hasUsableArtwork(cached.data, now)) {
         cache.delete(placementId);
         cache.set(placementId, cached);
         return Promise.resolve(cached.data);
@@ -126,22 +120,39 @@ export function createPageBannerApi(
           if (
             newerCachedRead &&
             newerCachedRead.freshUntil > Date.now() &&
-            hasFreshSignedUrls(newerCachedRead.data, Date.now())
+            hasUsableArtwork(newerCachedRead.data, Date.now())
           ) {
             return newerCachedRead.data;
           }
           throw new Error("PageBanner read was superseded before completion");
         }
-        const signedUrlsAreFresh = hasFreshSignedUrls(data, Date.now());
-        if (forced && !signedUrlsAreFresh) {
-          throw new Error("PageBanner response did not contain a fresh signed URL");
+        // Public routes are same-origin in the app, and honor explicit API origins in other transports.
+        if (transport.baseUrl)
+          data = {
+            ...data,
+            slides: data.slides.map((slide) => ({
+              ...slide,
+              variants: slide.variants.map((variant) => ({
+                ...variant,
+                contentUrl:
+                  variant.delivery === "IMMUTABLE"
+                    ? new URL(variant.contentUrl, transport.baseUrl).href
+                    : variant.contentUrl,
+              })),
+            })),
+          };
+        const artworkIsUsable = hasUsableArtwork(data, Date.now());
+        if (forced && !artworkIsUsable) {
+          throw new Error(
+            "PageBanner response did not contain a fresh signed URL or valid immutable artwork",
+          );
         }
         const current =
-          !forced && signedUrlsAreFresh
+          !forced && artworkIsUsable
             ? reuseArtworkUrls(artworkReads.get(placementId), data, Date.now())
             : data;
         artworkReads.delete(placementId);
-        if (signedUrlsAreFresh && current.enabled) artworkReads.set(placementId, current);
+        if (artworkIsUsable && current.enabled) artworkReads.set(placementId, current);
         while (artworkReads.size > MAX_CACHED_PLACEMENTS) {
           const oldest = artworkReads.keys().next().value;
           if (oldest === undefined) break;
@@ -150,7 +161,7 @@ export function createPageBannerApi(
         }
         if (forced) artwork.invalidate(placementId);
         else artwork.reconcile(current, requiredArtworkWidth());
-        if (generations.get(placementId) === generation && signedUrlsAreFresh) {
+        if (generations.get(placementId) === generation && artworkIsUsable) {
           cache.set(placementId, { data: current, freshUntil: Date.now() + PUBLIC_READ_FRESH_MS });
           while (cache.size > MAX_CACHED_PLACEMENTS) {
             const oldest = cache.keys().next().value as string | undefined;

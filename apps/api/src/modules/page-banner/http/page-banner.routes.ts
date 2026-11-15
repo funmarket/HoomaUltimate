@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { Buffer } from "node:buffer";
 import { Router, raw } from "express";
 import {
@@ -132,6 +133,28 @@ export function createPageBannerAdminRouter(service: PageBannerService): Router 
 
 export function createPageBannerPublicRouter(service: PageBannerService): Router {
   const router = Router();
+  // Metadata and errors never acquire the image response's immutable policy.
+  router.use("/banners", (_request, response, next) => {
+    response.setHeader("Cache-Control", "no-store");
+    next();
+  });
+  router.get(
+    "/banners/:placementId/artwork/:mediaId/:filename",
+    asyncHandler(async (request, response) => {
+      const artwork = await service.publicArtwork(
+        String(request.params.placementId),
+        String(request.params.mediaId),
+        String(request.params.filename),
+      );
+      const body = Buffer.from(artwork.body);
+      response.setHeader("Content-Type", artwork.contentType);
+      response.setHeader("X-Content-Type-Options", "nosniff");
+      response.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+      response.setHeader("ETag", `"${createHash("sha256").update(body).digest("hex")}"`);
+      response.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      response.send(body);
+    }),
+  );
   router.get(
     "/banners/:placementId",
     asyncHandler(async (request, response) =>

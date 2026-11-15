@@ -15,10 +15,13 @@ export function selectArtworkVariant(slide: PageBannerPublicSlide, requiredWidth
   return variants.find((variant) => variant.widthPx >= requiredWidth) ?? variants.at(-1) ?? null;
 }
 
-function fresh(variant: PageBannerPublicVariant, now: number) {
+export function isArtworkFresh(variant: PageBannerPublicVariant, now: number) {
   return (
     Boolean(variant.contentUrl.trim()) &&
-    Date.parse(variant.expiresAt) > now + SIGNED_ARTWORK_MARGIN_MS
+    (variant.delivery === "IMMUTABLE"
+      ? variant.expiresAt === null
+      : typeof variant.expiresAt === "string" &&
+        Date.parse(variant.expiresAt) > now + SIGNED_ARTWORK_MARGIN_MS)
   );
 }
 
@@ -41,13 +44,15 @@ export function reuseArtworkUrls(
       return {
         ...slide,
         variants: slide.variants.map((variant) => {
+          if (variant.delivery === "IMMUTABLE") return variant;
           const reusable = prior.variants.find(
             (item) =>
+              item.delivery !== "IMMUTABLE" &&
               item.variant === variant.variant &&
               item.widthPx === variant.widthPx &&
               item.heightPx === variant.heightPx &&
               item.contentType === variant.contentType &&
-              fresh(item, now),
+              isArtworkFresh(item, now),
           );
           return reusable
             ? { ...variant, contentUrl: reusable.contentUrl, expiresAt: reusable.expiresAt }
@@ -62,7 +67,7 @@ export type ArtworkPriority = "active" | "background";
 type Preparation = {
   readonly placementId: PageBannerPlacementId;
   readonly url: string;
-  readonly expiresAt: string;
+  readonly variant: PageBannerPublicVariant;
   readonly image: HTMLImageElement;
   readonly promise: Promise<void>;
   priority: ArtworkPriority;
@@ -112,15 +117,12 @@ export function createArtworkPreparation(
   ): Promise<void> {
     const slide = data.enabled ? data.slides[0] : undefined;
     const variant = slide ? selectArtworkVariant(slide, width) : null;
-    if (!variant || !fresh(variant, Date.now())) {
+    if (!variant || !isArtworkFresh(variant, Date.now())) {
       invalidate(data.placementId);
       return Promise.resolve();
     }
     const existing = records.get(data.placementId);
-    if (
-      existing?.url === variant.contentUrl &&
-      Date.parse(existing.expiresAt) > Date.now() + SIGNED_ARTWORK_MARGIN_MS
-    ) {
+    if (existing?.url === variant.contentUrl && isArtworkFresh(existing.variant, Date.now())) {
       if (priority === "active" && !existing.started) {
         existing.priority = "active";
         existing.start();
@@ -145,7 +147,7 @@ export function createArtworkPreparation(
     const record: Preparation = {
       placementId: data.placementId,
       url: variant.contentUrl,
-      expiresAt: variant.expiresAt,
+      variant,
       image,
       promise,
       priority,
@@ -154,7 +156,7 @@ export function createArtworkPreparation(
       cancel: () => finish(),
       start: () => {
         if (record.started || record.settled) return;
-        if (!fresh(variant, Date.now())) {
+        if (!isArtworkFresh(variant, Date.now())) {
           finish();
           return;
         }
@@ -220,7 +222,7 @@ export function createArtworkPreparation(
         data.enabled && data.slides[0] ? selectArtworkVariant(data.slides[0], width) : null;
       if (
         existing &&
-        (!variant || existing.url !== variant.contentUrl || !fresh(variant, Date.now()))
+        (!variant || existing.url !== variant.contentUrl || !isArtworkFresh(variant, Date.now()))
       )
         invalidate(data.placementId);
     },

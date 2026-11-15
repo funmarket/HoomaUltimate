@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSta
 import type { PageBannerPlacementId } from "@hooma/contracts/page-banner";
 import { useHoomaFrontend } from "../context";
 import type { PageBannerPublicSlide, PageBannerPublicVariant } from "./api";
-import { selectArtworkVariant as mediaVariant } from "./artwork";
+import { selectArtworkVariant as mediaVariant, isArtworkFresh } from "./artwork";
 
 const placementLabels: Readonly<Record<PageBannerPlacementId, string>> = {
   HOME_TOP: "Home",
@@ -39,8 +39,7 @@ function requiredImageWidth() {
 }
 
 function expiresSoon(variant: PageBannerPublicVariant) {
-  const expiry = Date.parse(variant.expiresAt);
-  return !Number.isFinite(expiry) || expiry <= Date.now() + 60_000;
+  return !isArtworkFresh(variant, Date.now());
 }
 
 type PageBannerProps = {

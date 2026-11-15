@@ -1,0 +1,62 @@
+name: PageBanner versioned cache
+on:
+  pull_request:
+    paths:
+      - "apps/api/src/modules/page-banner/**"
+      - "packages/frontend/src/page-banner/**"
+      - "tests/page-banner-delivery*"
+      - "tests/helpers/page-banner-http.ts"
+      - "scripts/page-banner-cache-browser.ts"
+      - ".github/workflows/page-banner-cache.yml"
+permissions:
+  contents: read
+jobs:
+  cache:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hooma_banner_cache_test
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hooma_banner_cache_test
+      REDIS_URL: redis://localhost:6379
+      BANNER_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --global npm@10.9.2
+      - run: npm ci
+      - run: npm run db:generate && npm run db:migrate:deploy
+      - run: npm run build:packages && npm -w @hooma/web run build
+      - name: Test real Admin and delivery lifecycle
+        run: node --import tsx --test tests/page-banner-delivery.integration.test.ts
+      - name: Install isolated browser runner
+        run: |
+          npm install --prefix "$RUNNER_TEMP/banner-browser" playwright@1.56.1
+          "$RUNNER_TEMP/banner-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Verify persistent browser cache and real replacement
+        env:
+          BANNER_PLAYWRIGHT_MODULE: ${{ runner.temp }}/banner-browser/node_modules/playwright/index.mjs
+          BANNER_EVIDENCE_DIR: ${{ runner.temp }}/banner-cache-evidence
+        run: node --import tsx scripts/page-banner-cache-browser.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: page-banner-cache-evidence
+          path: ${{ runner.temp }}/banner-cache-evidence
+          if-no-files-found: warn
+          retention-days: 14
