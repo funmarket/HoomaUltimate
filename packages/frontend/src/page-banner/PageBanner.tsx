@@ -49,8 +49,10 @@ type PageBannerProps = {
 
 export function PageBanner({ placementId, className }: PageBannerProps) {
   const { api } = useHoomaFrontend();
+  const activePreparation = useRef<ReturnType<typeof api.pageBanners.beginActive> | null>(null);
   const refreshSequence = useRef(0);
   const lastAutomaticRefresh = useRef<string | null>(null);
+  const initialRefreshFailed = useRef(false);
   const [read, setRead] = useState<{
     readonly api: typeof api;
     readonly placementId: PageBannerPlacementId;
@@ -100,8 +102,11 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
 
   useLayoutEffect(() => {
     let active = true;
+    const preparation = api.pageBanners.beginActive(placementId);
+    activePreparation.current = preparation;
     refreshSequence.current += 1;
     lastAutomaticRefresh.current = null;
+    initialRefreshFailed.current = false;
     setRead({ api, placementId, status: "loading" });
     setRequestedIndex(0);
     setDisplayed(null);
@@ -118,6 +123,8 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
       });
     return () => {
       active = false;
+      preparation.release();
+      if (activePreparation.current === preparation) activePreparation.current = null;
       refreshSequence.current += 1;
     };
   }, [api, placementId]);
@@ -185,6 +192,7 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
   const refreshExpiredSlide = useCallback(
     async (slideId: string, fallbackIndex: number) => {
       const sequence = ++refreshSequence.current;
+      initialRefreshFailed.current = false;
       setRefreshing(true);
       try {
         const data = await api.pageBanners.publicRead(placementId, { forceFresh: true });
@@ -195,6 +203,7 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
       } catch {
         // Retain the last decoded image; allow another user action to retry.
         if (sequence !== refreshSequence.current) return;
+        initialRefreshFailed.current = true;
         setRequestedIndex(fallbackIndex);
       } finally {
         if (sequence === refreshSequence.current) setRefreshing(false);
@@ -248,6 +257,33 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
     validDisplayed?.index,
     refreshExpiredSlide,
   ]);
+
+  useEffect(() => {
+    const preparation = activePreparation.current;
+    if (!preparation || !currentRead || refreshing) return;
+    if (
+      currentRead.status === "error" ||
+      (currentRead.status === "ready" &&
+        (!slides.length || !candidate || Boolean(expiredCandidate && initialRefreshFailed.current)))
+    ) {
+      preparation.settle();
+      return;
+    }
+    if (!validDisplayed) return;
+    // Detached preload completion is insufficient: let the decoded mounted frame paint first.
+    if (typeof window.requestAnimationFrame !== "function") {
+      queueMicrotask(() => preparation.settle());
+      return;
+    }
+    let second = 0;
+    const first = window.requestAnimationFrame(() => {
+      second = window.requestAnimationFrame(() => preparation.settle());
+    });
+    return () => {
+      window.cancelAnimationFrame(first);
+      window.cancelAnimationFrame(second);
+    };
+  }, [currentRead, slides.length, candidate, expiredCandidate, validDisplayed, refreshing]);
 
   const usablePending = expiredCandidate ? null : pending;
   if (!validDisplayed && !usablePending) return null;

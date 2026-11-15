@@ -88,6 +88,7 @@ export function createArtworkPreparation(
   options: {
     readonly createImage?: () => HTMLImageElement | null;
     readonly timeoutMs?: number;
+    readonly canStartBackground?: () => boolean;
   } = {},
 ) {
   const records = new Map<PageBannerPlacementId, Preparation>();
@@ -95,7 +96,7 @@ export function createArtworkPreparation(
   let backgroundBusy = false;
 
   function pump() {
-    if (backgroundBusy) return;
+    if (backgroundBusy || options.canStartBackground?.() === false) return;
     while (queue.length) {
       const record = queue.shift()!;
       if (record.settled || record.started || records.get(record.placementId) !== record) continue;
@@ -123,9 +124,10 @@ export function createArtworkPreparation(
     }
     const existing = records.get(data.placementId);
     if (existing?.url === variant.contentUrl && isArtworkFresh(existing.variant, Date.now())) {
-      if (priority === "active" && !existing.started) {
+      if (priority === "active") {
         existing.priority = "active";
-        existing.start();
+        existing.image.fetchPriority = "high";
+        if (!existing.started) existing.start();
       }
       return existing.promise;
     }
@@ -216,6 +218,7 @@ export function createArtworkPreparation(
   return {
     prepare,
     invalidate,
+    resumeBackground: pump,
     reconcile(data: PageBannerPublicResponse, width: number) {
       const existing = records.get(data.placementId);
       const variant =

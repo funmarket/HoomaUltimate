@@ -32,7 +32,7 @@ jobs:
       - name: Build both exact revisions
         run: |
           for target in baseline candidate; do
-            (cd "$target" && npm ci && npm run db:generate && npm run build:packages && npm -w @hooma/web run build)
+            (cd "$target" && npm ci && npm run db:generate && npm run build:packages && NODE_ENV=production npm -w @hooma/web run build)
           done
       - name: Install isolated browser test runner
         run: |
