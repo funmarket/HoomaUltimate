@@ -184,6 +184,14 @@ test("immutable public image headers permit embedding and metadata policy stays 
     await image.arrayBuffer();
     assert.equal(image.headers.get("cross-origin-resource-policy"), "cross-origin");
     assert.equal(image.headers.get("cache-control"), "public, max-age=31536000, immutable");
+    const conditional = await fetch(
+      origin + "/api/public/v1/banners/HOME_TOP/artwork/version-one/mobile.webp",
+      {
+        headers: { "if-none-match": image.headers.get("etag")! },
+      },
+    );
+    assert.equal(conditional.status, 304);
+    assert.equal((await conditional.arrayBuffer()).byteLength, 0);
   } finally {
     await new Promise<void>((resolve) => server.close(() => resolve()));
   }

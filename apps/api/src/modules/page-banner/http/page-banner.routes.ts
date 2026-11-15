@@ -150,8 +150,18 @@ export function createPageBannerPublicRouter(service: PageBannerService): Router
       response.setHeader("Content-Type", artwork.contentType);
       response.setHeader("X-Content-Type-Options", "nosniff");
       response.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-      response.setHeader("ETag", `"${createHash("sha256").update(body).digest("hex")}"`);
+      const etag = `"${createHash("sha256").update(body).digest("hex")}"`;
+      response.setHeader("ETag", etag);
       response.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      const condition = request.get("if-none-match");
+      if (
+        condition
+          ?.split(",")
+          .some((tag) => tag.trim() === "*" || tag.trim().replace(/^W\//, "") === etag)
+      ) {
+        response.status(304).end();
+        return;
+      }
       response.send(body);
     }),
   );
