@@ -152,6 +152,9 @@ try {
   await page.evaluate(
     () => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))),
   );
+  await page
+    .getByRole("heading", { name: "Find your people. Find the game." })
+    .waitFor({ state: "visible" });
   await page.waitForFunction(
     () => !document.querySelector('[data-placement="HOME_TOP"][data-state="ready"]'),
   );
@@ -162,9 +165,13 @@ try {
   await page.reload();
   // A completed network-idle interval plus metadata read-back prevents accepting only the loading state.
   await page.waitForLoadState("networkidle");
+  await page
+    .getByRole("heading", { name: "Find your people. Find the game." })
+    .waitFor({ state: "visible" });
   assert.deepEqual((await f.metadata()).slides, []);
   assert.equal(await page.locator('[data-placement="HOME_TOP"][data-state="ready"]').count(), 0);
   assert.equal((await fetch(f.origin + new URL(secondUrl!, f.origin).pathname)).status, 404);
+  await page.screenshot({ path: resolve(output, "deleted.png"), fullPage: true });
   report.deleted = true;
   assert.deepEqual(report.errors ?? [], []);
   report.status = "PASS";
