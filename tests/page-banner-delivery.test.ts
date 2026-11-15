@@ -178,6 +178,15 @@ test("immutable public image headers permit embedding and metadata policy stays 
     const other = await fetch(origin + "/api/public/v1/another-domain");
     await other.text();
     assert.equal(other.headers.get("cache-control"), null);
+    const legacyMetadata = await (await fetch(origin + "/api/public/v1/banners/HOME_TOP")).json();
+    assert.equal(legacyMetadata.slides[0].variants[0].contentUrl, "https://storage.test/signed");
+    const modernResponse = await fetch(origin + "/api/public/v1/banners/HOME_TOP", {
+      headers: { "X-Hooma-PageBanner-Delivery": "immutable" },
+    });
+    assert.equal(modernResponse.headers.get("cache-control"), "no-store");
+    assert.match(modernResponse.headers.get("vary")!, /X-Hooma-PageBanner-Delivery/i);
+    assert.equal((await modernResponse.json()).slides[0].variants[0].expiresAt, null);
+
     const image = await fetch(
       origin + "/api/public/v1/banners/HOME_TOP/artwork/version-one/mobile.webp",
     );
@@ -195,4 +204,12 @@ test("immutable public image headers permit embedding and metadata policy stays 
   } finally {
     await new Promise<void>((resolve) => server.close(() => resolve()));
   }
+});
+
+test("existing clients can retain signed delivery during a rolling frontend deployment", async () => {
+  const { service } = fixture();
+  const legacy = await service.publicRead("HOME_TOP", "SIGNED");
+  assert.equal(legacy.slides[0]!.variants[0]!.contentUrl, "https://storage.test/signed");
+  assert.equal(typeof legacy.slides[0]!.variants[0]!.expiresAt, "string");
+  assert.equal(legacy.slides[0]!.variants[0]!.delivery, "SIGNED");
 });

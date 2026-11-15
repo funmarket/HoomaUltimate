@@ -108,7 +108,9 @@ export async function pageBannerHttpFixture() {
     assert.equal(response.status, 200);
   }
   async function metadata() {
-    const response = await fetch(`${origin}/api/public/v1/banners/HOME_TOP`);
+    const response = await fetch(`${origin}/api/public/v1/banners/HOME_TOP`, {
+      headers: { "X-Hooma-PageBanner-Delivery": "immutable" },
+    });
     assert.equal(response.status, 200);
     assert.equal(response.headers.get("cache-control"), "no-store");
     return response.json();

@@ -12,7 +12,7 @@ import {
   type PageBannerSlideMetadata,
 } from "@hooma/contracts/page-banner";
 import { PAGE_BANNER_STANDARD, processMedia, writeMediaVariants } from "@hooma/media-processing";
-import type { ObjectStorage } from "@hooma/storage";
+import type { ObjectStorage, ObjectStorageReadUrlSigner } from "@hooma/storage";
 import type { PlatformAdminAuthorizer } from "../../platform-admin/application/platform-admin.authorizer.js";
 import { PageBannerError } from "../domain/page-banner-error.js";
 import type {
@@ -174,13 +174,13 @@ export class PageBannerService {
     return { ok: true as const };
   }
 
-  async publicRead(rawPlacementId: string) {
+  async publicRead(rawPlacementId: string, delivery: "IMMUTABLE" | "SIGNED" = "IMMUTABLE") {
     const placement = await this.requirePlacement(rawPlacementId);
     const slides = placement.enabled ? placement.slides.filter((slide) => slide.enabled) : [];
     return {
       placementId: placement.id,
       enabled: placement.enabled,
-      slides: await Promise.all(slides.map((slide) => this.publicSlide(slide))),
+      slides: await Promise.all(slides.map((slide) => this.publicSlide(slide, delivery))),
     };
   }
 
@@ -207,22 +207,44 @@ export class PageBannerService {
     return this.storage.get(variant.objectKey);
   }
 
-  private async publicSlide(slide: PageBannerSlideRecord) {
+  private async publicSlide(slide: PageBannerSlideRecord, delivery: "IMMUTABLE" | "SIGNED") {
     if (!this.storage)
       throw new PageBannerError(
         "PAGE_BANNER_STORAGE_NOT_CONFIGURED",
         "PageBanner storage is not configured",
         503,
       );
-    const variants = slide.variants.map((variant) => ({
-      variant: variant.variant,
-      contentUrl: `/api/public/v1/banners/${encodeURIComponent(slide.placementId)}/artwork/${encodeURIComponent(slide.mediaId)}/${encodeURIComponent(variant.variant)}.webp`,
-      delivery: "IMMUTABLE" as const,
-      expiresAt: null,
-      contentType: variant.contentType,
-      widthPx: variant.widthPx,
-      heightPx: variant.heightPx,
-    }));
+    const variants = await Promise.all(
+      slide.variants.map(async (variant) => {
+        const descriptor = {
+          variant: variant.variant,
+          contentType: variant.contentType,
+          widthPx: variant.widthPx,
+          heightPx: variant.heightPx,
+        };
+        if (delivery === "SIGNED") {
+          const storage = this.storage as ObjectStorage & Partial<ObjectStorageReadUrlSigner>;
+          if (!storage.createReadUrl)
+            throw new PageBannerError(
+              "PAGE_BANNER_STORAGE_NOT_CONFIGURED",
+              "PageBanner signed delivery is not configured",
+              503,
+            );
+          return {
+            ...descriptor,
+            delivery: "SIGNED" as const,
+            contentUrl: await storage.createReadUrl(variant.objectKey, 5 * 60),
+            expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+          };
+        }
+        return {
+          ...descriptor,
+          contentUrl: `/api/public/v1/banners/${encodeURIComponent(slide.placementId)}/artwork/${encodeURIComponent(slide.mediaId)}/${encodeURIComponent(variant.variant)}.webp`,
+          delivery: "IMMUTABLE" as const,
+          expiresAt: null,
+        };
+      }),
+    );
     return {
       id: slide.id,
       artworkVersion: slide.mediaId,

@@ -168,7 +168,14 @@ export function createPageBannerPublicRouter(service: PageBannerService): Router
   router.get(
     "/banners/:placementId",
     asyncHandler(async (request, response) =>
-      response.json(await service.publicRead(String(request.params.placementId))),
+      response
+        .vary("X-Hooma-PageBanner-Delivery")
+        .json(
+          await service.publicRead(
+            String(request.params.placementId),
+            request.get("X-Hooma-PageBanner-Delivery") === "immutable" ? "IMMUTABLE" : "SIGNED",
+          ),
+        ),
     ),
   );
   return router;

@@ -111,6 +111,7 @@ export function createPageBannerApi(
     const promise = request<PageBannerPublicResponse>(
       transport,
       `/api/public/v1/banners/${encodeURIComponent(placementId)}`,
+      { headers: { "X-Hooma-PageBanner-Delivery": "immutable" } },
     )
       .then(async (data): Promise<PageBannerPublicResponse> => {
         if (generations.get(placementId) !== generation) {
