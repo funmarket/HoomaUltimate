@@ -60,7 +60,7 @@ async function serve(directory) {
         const placementId = url.pathname.split("/").at(-1);
         const sequence = ++state.sequence;
         const version = state.version;
-        const enabled = state.enabled;
+        const enabled = placementId !== "HOME_TOP" || state.enabled;
         state.requests.push({ type: "metadata", placementId, sequence, version });
         await pause(metadataDelayMs);
         return json(res, {
@@ -265,7 +265,14 @@ try {
       server.state.enabled = false;
       await page.waitForTimeout(16_000);
       await navigate(page, "/watch", "WATCH_TOP");
+      const disabledRead = page.waitForResponse(
+        (response) => new URL(response.url()).pathname === "/api/public/v1/banners/HOME_TOP",
+      );
       await page.locator('nav[aria-label="Primary"] a[href="/"]').click();
+      assert.equal((await (await disabledRead).json()).enabled, false);
+      await page.evaluate(
+        () => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))),
+      );
       await page.waitForFunction(
         () => !document.querySelector('[data-placement="HOME_TOP"][data-state="ready"]'),
       );
