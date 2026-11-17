@@ -48,12 +48,10 @@ import {
   WatchPage,
 } from "@hooma/frontend";
 import { AccountProvider, useAccount } from "../../account/AccountProvider";
+import { HomePage } from "../../home/HomePage";
 import { createTelegramRuntime } from "../../telegram/runtime";
 import { HoomaShell } from "../shell/HoomaShell";
 
-const HomePage = lazy(() =>
-  import("../../home/HomePage").then((module) => ({ default: module.HomePage })),
-);
 const AuthApp = lazy(() =>
   import("../../auth/AuthApp").then((module) => ({ default: module.AuthApp })),
 );

@@ -37,7 +37,7 @@ test("HOME_TOP no longer renders a native Match Day hero or substitutes its Play
   assert.doesNotMatch(homePage, /home-hero\/matchday\.webp/);
   assert.doesNotMatch(homePage, /page-banner__fallback-link--home/);
   assert.doesNotMatch(homePage, /hooma-web-production\.up\.railway\.app/);
-  assert.match(homePage, /<HomeGateway \/>/);
+  assert.match(homePage, /<HomeGateway\b/);
 });
 test("homepage gateway contract is a phone-first three by two grid", () => {
   assert.match(gatewayGrid, /grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);

@@ -13,17 +13,29 @@ const destinations = [
   { label: "Athletes", href: "/athletes" },
 ] as const;
 
-test("initial route preparation resolves exact primary navigation roots", () => {
-  assert.equal(pageBannerPlacementForPath("/", destinations), "HOME_TOP");
-  assert.equal(pageBannerPlacementForPath("/watch", destinations), "WATCH_TOP");
-  assert.equal(pageBannerPlacementForPath("/athletes", destinations), "ATHLETES_TOP");
-  assert.equal(pageBannerPlacementForPath("/telegram", destinations), null);
+test("initial route preparation resolves all canonical PageBanner roots and the Telegram Home alias", () => {
+  for (const [path, placement] of [
+    ["/", "HOME_TOP"],
+    ["/telegram", "HOME_TOP"],
+    ["/play", "PLAY_TOP"],
+    ["/watch", "WATCH_TOP"],
+    ["/hooma", "HOOMA_TOP"],
+    ["/athletes", "ATHLETES_TOP"],
+    ["/teams", "TEAMS_TOP"],
+    ["/pitch", "PITCH_TOP"],
+    ["/places", "PLACES_TOP"],
+    ["/requests", "REQUESTS_TOP"],
+    ["/athletes/gear-up", "GEAR_UP_TOP"],
+    ["/rides", "RIDE_TOP"],
+  ] as const) {
+    assert.equal(pageBannerPlacementForPath(path, destinations), placement, path);
+  }
   assert.equal(pageBannerPlacementForPath("/unknown", destinations), null);
 });
 
 test("nested routes do not inherit a parent primary-navigation placement", () => {
   assert.equal(pageBannerPlacementForPath("/watch/featured", destinations), null);
-  assert.equal(pageBannerPlacementForPath("/athletes/gear-up", destinations), null);
+  assert.equal(pageBannerPlacementForPath("/athletes/gear-up/", destinations), null);
   assert.equal(pageBannerPlacementForPath("/athletes/gear-up/shops/shop-1", destinations), null);
   assert.equal(
     pageBannerPlacementForPath("/athletes/gear-up/products/product-1", destinations),
@@ -46,6 +58,20 @@ test("navigation starts the relevant prefetch before navigating and never awaits
   );
   assert.deepEqual(events, ["prefetch:PLAY_TOP", "navigate:/play"]);
   resolvePrefetch();
+});
+
+test("Home Gateway routes prefetch their canonical PageBanner placement before SPA navigation", () => {
+  const events: string[] = [];
+  navigateWithPageBannerPrefetch(
+    "/rides",
+    destinations,
+    (placementId) => {
+      events.push(`prefetch:${placementId}`);
+      return Promise.resolve();
+    },
+    (href) => events.push(`navigate:${href}`),
+  );
+  assert.deepEqual(events, ["prefetch:RIDE_TOP", "navigate:/rides"]);
 });
 
 test("prefetch failure does not prevent navigation", async () => {

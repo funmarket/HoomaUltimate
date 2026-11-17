@@ -51,6 +51,7 @@ test("public PageBanner reads cache valid response briefly and revisit reuses it
     const second = await api.publicRead("HOME_TOP");
     assert.equal(calls, 1);
     assert.equal(second, first);
+    assert.equal(api.peek("HOME_TOP"), first);
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -69,8 +70,10 @@ test("public PageBanner freshness expires after its short window", async () => {
     await api.publicRead("PLAY_TOP");
     await api.publicRead("PLAY_TOP");
     Date.now = () => now + 15_001;
+    assert.equal(api.peek("PLAY_TOP"), null);
     await api.publicRead("PLAY_TOP");
     assert.equal(calls, 2);
+    assert.ok(api.peek("PLAY_TOP"));
   } finally {
     Date.now = originalNow;
     globalThis.fetch = originalFetch;

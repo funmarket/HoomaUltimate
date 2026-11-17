@@ -83,6 +83,13 @@ test("all canonical public roots have exactly one PageBanner page-top owner", ()
   }
 });
 
+test("Home PageBanner route is statically imported so its first render is not gated by a lazy chunk", () => {
+  const router = readFileSync("apps/web/src/app/router/HoomaRouter.tsx", "utf8");
+  assert.match(router, /import \{ HomePage \} from "\.\.\/\.\.\/home\/HomePage"/);
+  assert.doesNotMatch(router, /const HomePage = lazy\(/);
+  assert.match(router, /<Route path="\/telegram" element=\{<HomePage \/>\} \/>/);
+});
+
 test("Ride retains its exact actions outside the optional RIDE_TOP PageBanner", () => {
   const source = readFileSync("packages/frontend/src/rides/RideGatewayPage.tsx", "utf8");
   const banner = source.indexOf('placementId="RIDE_TOP"');

@@ -41,7 +41,8 @@ Object.defineProperty(globalThis, "React", {
   configurable: true,
 });
 const { act, cleanup, fireEvent, render, waitFor } = await import("@testing-library/react");
-const { HoomaFrontendProvider } = await import("../packages/frontend/src/context");
+const { HoomaFrontendProvider, useHoomaFrontend } =
+  await import("../packages/frontend/src/context");
 const { PageBanner } = await import("../packages/frontend/src/page-banner/PageBanner");
 const originalFetch = globalThis.fetch;
 
@@ -138,6 +139,142 @@ test("only a decoded mounted image becomes visible and preserves semantics", asy
     "/athletes",
   );
   assert.equal(actual.getAttribute("width"), "720");
+});
+
+test("a revalidated placement reuses decoded artwork on the route switch without a second image load", async () => {
+  const originalImage = Object.getOwnPropertyDescriptor(globalThis, "Image");
+  const originalRequestAnimationFrame = dom.window.requestAnimationFrame;
+  const originalCancelAnimationFrame = dom.window.cancelAnimationFrame;
+  const originalNow = Date.now;
+  const reads = new Map<string, number>();
+  let preparedImageLoads = 0;
+  let api: ReturnType<typeof useHoomaFrontend>["api"] | null = null;
+  class PreparedImage {
+    complete = false;
+    naturalWidth = 0;
+    onload: ((event: Event) => void) | null = null;
+    onerror: ((event: Event) => void) | null = null;
+    decoding = "";
+    loading = "";
+    fetchPriority: "auto" | "high" | "low" = "auto";
+    decode() {
+      return Promise.resolve();
+    }
+    removeAttribute() {
+      this.complete = false;
+      this.naturalWidth = 0;
+    }
+    set src(_value: string) {
+      preparedImageLoads += 1;
+      this.complete = true;
+      this.naturalWidth = 720;
+      this.onload?.(new Event("load"));
+    }
+  }
+  Object.defineProperty(globalThis, "Image", {
+    value: PreparedImage as unknown as typeof Image,
+    configurable: true,
+  });
+  dom.window.requestAnimationFrame = (() => 1) as typeof dom.window.requestAnimationFrame;
+  dom.window.cancelAnimationFrame = (() => undefined) as typeof dom.window.cancelAnimationFrame;
+  globalThis.fetch = async (input) => {
+    const placementId = new URL(String(input)).pathname.split("/").at(-1)!;
+    reads.set(placementId, (reads.get(placementId) ?? 0) + 1);
+    const enabled = placementId === "HOME_TOP" || placementId === "PLAY_TOP";
+    return json({
+      placementId,
+      enabled,
+      slides: enabled
+        ? [
+            {
+              id: `${placementId}-slide`,
+              artworkVersion: `${placementId}-media-v1`,
+              sortOrder: 0,
+              isDecorative: true,
+              altText: null,
+              destination: null,
+              variants: [
+                {
+                  variant: "mobile",
+                  contentUrl: `https://media.example.test/${placementId}.webp`,
+                  expiresAt: null,
+                  delivery: "IMMUTABLE",
+                  contentType: "image/webp",
+                  widthPx: 720,
+                  heightPx: 300,
+                },
+              ],
+            },
+          ]
+        : [],
+    });
+  };
+  function Route({ placementId }: { readonly placementId: "HOME_TOP" | "PLAY_TOP" }) {
+    api = useHoomaFrontend().api;
+    return React.createElement(PageBanner, { placementId });
+  }
+  const transport = { baseUrl: "https://api.example.test" };
+  const tree = (placementId: "HOME_TOP" | "PLAY_TOP") =>
+    React.createElement(
+      HoomaFrontendProvider,
+      { transport },
+      React.createElement(Route, { placementId }),
+    );
+  try {
+    const view = render(tree("HOME_TOP"));
+    await waitFor(() => assert.ok(view.container.querySelector('[data-placement="HOME_TOP"] img')));
+    await loadImage(view.container.querySelector('[data-placement="HOME_TOP"] img')!);
+    await waitFor(() =>
+      assert.equal(
+        view.container.querySelector('[data-placement="HOME_TOP"]')?.getAttribute("data-state"),
+        "ready",
+      ),
+    );
+
+    assert.ok(api);
+    await api!.pageBanners.prefetch("PLAY_TOP");
+    await waitFor(() =>
+      assert.equal(
+        api!.pageBanners.isDecoded("PLAY_TOP", "https://media.example.test/PLAY_TOP.webp"),
+        true,
+      ),
+    );
+    assert.equal(api!.pageBanners.peek("PLAY_TOP")?.enabled, true);
+
+    Date.now = () => originalNow() + 15_001;
+    assert.equal(api!.pageBanners.peek("PLAY_TOP"), null, "metadata must revalidate after 15s");
+    void api!.pageBanners.prefetch("PLAY_TOP");
+    view.rerender(tree("PLAY_TOP"));
+    await waitFor(() => assert.equal(reads.get("PLAY_TOP"), 2));
+    await waitFor(() =>
+      assert.equal(
+        view.container.querySelector('[data-placement="PLAY_TOP"]')?.getAttribute("data-state"),
+        "ready",
+      ),
+    );
+    const banner = view.container.querySelector('[data-placement="PLAY_TOP"]');
+    assert.equal(banner?.getAttribute("data-state"), "ready");
+    assert.equal(banner?.parentElement?.hasAttribute("hidden"), false);
+    assert.ok(
+      view.container.querySelector(
+        '[data-placement="PLAY_TOP"] img[src="https://media.example.test/PLAY_TOP.webp"]',
+      ),
+    );
+    assert.equal(
+      reads.get("PLAY_TOP"),
+      2,
+      "Prefetch and route mount must share revalidated metadata",
+    );
+    assert.equal(preparedImageLoads, 1, "The decoded immutable image must not load a second time");
+  } finally {
+    Date.now = originalNow;
+    cleanup();
+    if (originalImage) Object.defineProperty(globalThis, "Image", originalImage);
+    else Reflect.deleteProperty(globalThis, "Image");
+    dom.window.requestAnimationFrame = originalRequestAnimationFrame;
+    dom.window.cancelAnimationFrame = originalCancelAnimationFrame;
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test("a failed mounted image invalidates metadata before remounting the same placement", async () => {
@@ -344,6 +481,7 @@ test("expired URLs refresh without losing visible artwork", async () => {
   };
   const view = mountWithFetch();
   await flushReact();
+  await waitFor(() => assert.ok(findImage(view, "slide-1")));
   await loadImage(findImage(view, "slide-1"));
   const visible = findImage(view, "slide-1");
   const originalNow = Date.now;
@@ -410,6 +548,7 @@ test("expired mobile URL refreshes after viewport switch before downloading", as
   try {
     const view = mountWithFetch();
     await flushReact();
+    await waitFor(() => assert.ok(findImage(view, "old-display.webp")));
     await loadImage(findImage(view, "old-display.webp"));
     const visible = findImage(view, "old-display.webp");
     Date.now = () => new Date("2099-11-02T12:01:00.000Z").getTime();
