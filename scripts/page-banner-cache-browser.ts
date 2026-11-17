@@ -45,17 +45,99 @@ const report: Record<string, unknown> = {
     "Real compiled Web + API + PostgreSQL + Redis; memory object storage; Chromium persistent profile",
   revision: process.env.BANNER_HEAD_SHA,
   observations: [],
+  phases: [],
+  storageReadSnapshots: [],
   requests: [],
+  chromiumNetwork: [],
 };
 let crossServer: ReturnType<ReturnType<typeof express>["listen"]> | undefined;
 let context: Awaited<ReturnType<typeof chromium.launchPersistentContext>> | undefined;
-async function launch() {
-  context = await chromium.launchPersistentContext(profile, {
-    headless: true,
-    viewport: { width: 390, height: 844 },
-    deviceScaleFactor: 2,
+type BrowserPage = Awaited<
+  ReturnType<Awaited<ReturnType<typeof chromium.launchPersistentContext>>["newPage"]>
+>;
+let activePhase = "fixture-setup";
+const requestEvidence = new WeakMap<object, Record<string, unknown>>();
+function readSnapshot(label: string) {
+  const keys = [...f.reads];
+  const countsByKey = Object.fromEntries(
+    [...new Set(keys)].map((key) => [key, keys.filter((candidate) => candidate === key).length]),
+  );
+  const snapshot = {
+    label,
+    capturedAt: new Date().toISOString(),
+    total: keys.length,
+    keys,
+    countsByKey,
+  };
+  (report.storageReadSnapshots as unknown[]).push(snapshot);
+  return snapshot;
+}
+function beginPhase(name: string): Record<string, unknown> {
+  activePhase = name;
+  const phase = {
+    name,
+    startedAt: new Date().toISOString(),
+    readsAtStart: readSnapshot(`${name}:start`),
+  };
+  (report.phases as unknown[]).push(phase);
+  return phase;
+}
+function endPhase(phase: Record<string, unknown>) {
+  phase.endedAt = new Date().toISOString();
+  phase.readsAtEnd = readSnapshot(`${String(phase.name)}:end`);
+  activePhase = `${String(phase.name)}:between`;
+}
+async function observePage(page: BrowserPage) {
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Network.enable");
+  const cdpRequests = new Map<string, Record<string, unknown>>();
+  cdp.on("Network.requestWillBeSent", (event) => {
+    if (!event.request.url.includes("/artwork/")) return;
+    const record: Record<string, unknown> = {
+      phaseAtRequest: activePhase,
+      path: new URL(event.request.url).pathname,
+      startedAt: new Date().toISOString(),
+      wallTime: event.wallTime,
+      resourceType: event.type,
+      initiatorType: event.initiator?.type,
+      requestId: event.requestId,
+    };
+    cdpRequests.set(event.requestId, record);
+    (report.chromiumNetwork as unknown[]).push(record);
   });
-  const page = await context.newPage();
+  cdp.on("Network.requestServedFromCache", (event) => {
+    const record = cdpRequests.get(event.requestId);
+    if (record) record.servedFromCache = true;
+  });
+  cdp.on("Network.responseReceived", (event) => {
+    const record = cdpRequests.get(event.requestId);
+    if (!record) return;
+    record.status = event.response.status;
+    record.fromDiskCache = event.response.fromDiskCache;
+    record.fromServiceWorker = event.response.fromServiceWorker;
+    record.fromPrefetchCache = event.response.fromPrefetchCache;
+    record.encodedDataLength = event.response.encodedDataLength;
+    record.responseAt = new Date().toISOString();
+  });
+  cdp.on("Network.loadingFinished", (event) => {
+    const record = cdpRequests.get(event.requestId);
+    if (record) {
+      record.finishedAt = new Date().toISOString();
+      record.encodedDataLength = event.encodedDataLength;
+    }
+  });
+  page.on("request", (request) => {
+    if (!request.url().includes("/artwork/")) return;
+    const record: Record<string, unknown> = {
+      phaseAtRequest: activePhase,
+      path: new URL(request.url()).pathname,
+      method: request.method(),
+      resourceType: request.resourceType(),
+      startedAt: new Date().toISOString(),
+    };
+    requestEvidence.set(request, record);
+    (report.requests as unknown[]).push(record);
+  });
   page.on("pageerror", (error) => {
     report.errors ??= [] as string[];
     (report.errors as string[]).push(error.message);
@@ -65,23 +147,40 @@ async function launch() {
     if (message.type() === "error") (report.consoleErrors as string[]).push(message.text());
   });
   page.on("requestfailed", (request) => {
+    const record = requestEvidence.get(request);
+    if (record) record.failure = request.failure()?.errorText;
     report.failedRequests ??= [] as unknown[];
     (report.failedRequests as unknown[]).push({
+      phaseAtRequest: record?.phaseAtRequest ?? activePhase,
       path: new URL(request.url()).pathname,
       error: request.failure()?.errorText,
     });
   });
-  page.on("response", async (response) => {
-    if (response.url().includes("/artwork/"))
-      (report.requests as unknown[]).push({
-        path: new URL(response.url()).pathname,
-        status: response.status(),
-        fromServiceWorker: response.fromServiceWorker(),
-      });
+  page.on("response", (response) => {
+    if (!response.url().includes("/artwork/")) return;
+    const record = requestEvidence.get(response.request());
+    if (!record) return;
+    record.status = response.status();
+    record.fromServiceWorker = response.fromServiceWorker();
+    record.responseAt = new Date().toISOString();
+    const headers = response.headers();
+    record.cacheControl = headers["cache-control"];
+    record.etag = headers.etag;
+    record.timing = response.request().timing();
   });
-  return page;
+  return cdp;
 }
-async function ready(page: Awaited<ReturnType<typeof launch>>, label: string) {
+async function launch() {
+  context = await chromium.launchPersistentContext(profile, {
+    headless: true,
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 2,
+  });
+  const page = await context.newPage();
+  const cdp = await observePage(page);
+  return { page, cdp };
+}
+async function ready(page: Awaited<ReturnType<typeof launch>>["page"], label: string) {
   await page
     .locator('[data-placement="HOME_TOP"][data-state="ready"]')
     .waitFor({ state: "visible" });
@@ -92,30 +191,48 @@ async function ready(page: Awaited<ReturnType<typeof launch>>, label: string) {
     );
     return image?.complete && image.naturalWidth > 0;
   });
+  const imageSource = await image.getAttribute("src");
+  readSnapshot(`${label}:ready-before-screenshot`);
   await page.screenshot({ path: resolve(output, `${label}.png`), fullPage: true });
-  return image.getAttribute("src");
+  readSnapshot(`${label}:after-screenshot`);
+  return imageSource;
 }
 try {
   const first = await f.upload("#213f60");
-  let page = await launch();
+  let { page, cdp } = await launch();
+  let phase = beginPhase("first-load");
   await page.goto(webOrigin);
   const firstUrl = await ready(page, "first-load");
   const initialReads = f.reads.length;
   assert(initialReads > 0);
+  phase.readsAtReady = readSnapshot("first-load:ready");
+  endPhase(phase);
+  phase = beginPhase("warm-reload");
   await page.reload();
   assert.equal(await ready(page, "warm-reload"), firstUrl);
+  phase.readsAtReady = readSnapshot("warm-reload:ready");
+  endPhase(phase);
   assert.equal(f.reads.length, initialReads, "Warm reload must not read artwork at origin");
   report.warmReloadOriginReads = f.reads.length - initialReads;
+  await cdp.detach();
   await context!.close();
-  page = await launch();
+  ({ page, cdp } = await launch());
+  phase = beginPhase("browser-restart");
   await page.goto(webOrigin);
   assert.equal(await ready(page, "browser-restart"), firstUrl);
+  phase.readsAtReady = readSnapshot("browser-restart:ready");
+  endPhase(phase);
   assert.equal(f.reads.length, initialReads, "New Chromium process must reuse disk-cached artwork");
   report.browserRestartOriginReads = f.reads.length - initialReads;
+  phase = beginPhase("replacement-upload");
   const second = await f.upload("#a53f30", first.id);
   assert.notEqual(second.mediaId, first.mediaId);
+  endPhase(phase);
+  phase = beginPhase("replacement");
   await page.reload();
   const secondUrl = await ready(page, "replacement");
+  phase.readsAtReady = readSnapshot("replacement:ready");
+  endPhase(phase);
   assert.notEqual(secondUrl, firstUrl);
   assert(f.reads.length > initialReads, "Replacement bytes must reach the origin");
   report.replacementOriginReads = f.reads.length - initialReads;
@@ -133,16 +250,22 @@ try {
   const crossAddress = crossServer.address();
   assert(crossAddress && typeof crossAddress === "object");
   const crossPage = await context!.newPage();
+  const crossCdp = await observePage(crossPage);
+  phase = beginPhase("cross-origin-embedding");
   await crossPage.goto(`http://127.0.0.1:${crossAddress.port}`);
   await crossPage.waitForFunction(() => {
     const image = document.querySelector("img");
     return image?.complete && image.naturalWidth > 0;
   });
+  phase.readsAtReady = readSnapshot("cross-origin-embedding:ready");
+  endPhase(phase);
   report.crossOriginEmbedding = true;
+  await crossCdp.detach();
   await crossPage.close();
 
   assert.equal((await fetch(f.origin + new URL(firstUrl!, f.origin).pathname)).status, 404);
   await f.enabled(false);
+  phase = beginPhase("disabled-placement");
   const disabledResponse = page.waitForResponse(
     (response) =>
       response.url().endsWith("/api/public/v1/banners/HOME_TOP") && response.status() === 200,
@@ -159,9 +282,12 @@ try {
     () => !document.querySelector('[data-placement="HOME_TOP"][data-state="ready"]'),
   );
   await page.screenshot({ path: resolve(output, "disabled.png"), fullPage: true });
+  phase.readsAtReady = readSnapshot("disabled-placement:ready");
+  endPhase(phase);
   report.disabled = true;
   await f.enabled(true);
   await f.remove(first.id);
+  phase = beginPhase("deleted-placement");
   await page.reload();
   // A completed network-idle interval plus metadata read-back prevents accepting only the loading state.
   await page.waitForLoadState("networkidle");
@@ -172,6 +298,8 @@ try {
   assert.equal(await page.locator('[data-placement="HOME_TOP"][data-state="ready"]').count(), 0);
   assert.equal((await fetch(f.origin + new URL(secondUrl!, f.origin).pathname)).status, 404);
   await page.screenshot({ path: resolve(output, "deleted.png"), fullPage: true });
+  phase.readsAtReady = readSnapshot("deleted-placement:ready");
+  endPhase(phase);
   report.deleted = true;
   assert.deepEqual(report.errors ?? [], []);
   report.status = "PASS";
@@ -191,6 +319,7 @@ try {
   }
   throw error;
 } finally {
+  readSnapshot("finally");
   await writeFile(resolve(output, "results.json"), JSON.stringify(report, null, 2));
   console.log(JSON.stringify(report, null, 2));
   await context?.close();
