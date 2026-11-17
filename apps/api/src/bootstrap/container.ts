@@ -63,7 +63,7 @@ import { RequestMediaService } from "../modules/requests/application/request-med
 import { RequestService } from "../modules/requests/application/request.service.js";
 import { PrismaRequestImageRepository } from "../modules/requests/infrastructure/prisma-request-image.repository.js";
 import { PrismaRequestRepository } from "../modules/requests/infrastructure/prisma-request.repository.js";
-import { SharpRequestImageProcessor } from "../modules/requests/infrastructure/sharp-request-image-processor.js";
+import { MediaProcessingRequestImageProcessor } from "../modules/requests/infrastructure/media-processing-request-image-processor.js";
 import { HelpTaxonomyService } from "../modules/help-taxonomy/application/help-taxonomy.service.js";
 import { PrismaHelpTaxonomyRepository } from "../modules/help-taxonomy/infrastructure/prisma-help-taxonomy.repository.js";
 import { RideCommunityInteractionService } from "../modules/rides/application/ride-community-interaction.service.js";
@@ -323,7 +323,8 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     requestRepository,
     requestImageRepository,
     storage,
-    new SharpRequestImageProcessor(),
+    new MediaProcessingRequestImageProcessor(),
+    mediaStorageScope ?? null,
   );
   const helpTaxonomyService = new HelpTaxonomyService(helpTaxonomyRepository);
   const rideOfferRepository = new PrismaRideOfferRepository(database);

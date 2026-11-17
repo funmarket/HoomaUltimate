@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import sharp from "sharp";
-import { SharpRequestImageProcessor } from "../apps/api/src/modules/requests/infrastructure/sharp-request-image-processor.js";
+import { MediaProcessingRequestImageProcessor } from "../apps/api/src/modules/requests/infrastructure/media-processing-request-image-processor.js";
 import { RequestError } from "../apps/api/src/modules/requests/domain/request-error.js";
 
-const processor = new SharpRequestImageProcessor();
+const processor = new MediaProcessingRequestImageProcessor();
 
-test("Request image processor decodes actual bytes, rejects spoofing, and emits bounded WebP", async () => {
+test("Request image processor uses the PHOTO_STANDARD master output and rejects spoofing", async () => {
   const png = new Uint8Array(
     await sharp({
       create: { width: 2400, height: 1200, channels: 3, background: "#ffffff" },
@@ -16,11 +16,13 @@ test("Request image processor decodes actual bytes, rejects spoofing, and emits 
   );
 
   const processed = await processor.process(png, "image/png");
-  assert.equal(processed.contentType, "image/webp");
-  const metadata = await sharp(processed.body).metadata();
+  assert.deepEqual(processed.selectedVariants, ["master"]);
+  assert.equal(processed.variants.length, 1);
+  assert.equal(processed.variants[0]?.contentType, "image/webp");
+  const metadata = await sharp(processed.variants[0]!.body).metadata();
   assert.equal(metadata.format, "webp");
-  assert.equal(metadata.width, 1600);
-  assert.equal(metadata.height, 800);
+  assert.equal(metadata.width, 2048);
+  assert.equal(metadata.height, 1024);
 
   await assert.rejects(
     () => processor.process(png, "image/jpeg"),
