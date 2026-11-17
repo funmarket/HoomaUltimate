@@ -142,3 +142,57 @@ test("adding first enabled slide publishes an Off placement", async () => {
     dom.window.close();
   }
 });
+
+test("PageBanner deletion requires an Admin reason and submits it with the existing delete action", async () => {
+  const dom = installDom();
+  const React = await import("react");
+  Object.defineProperty(globalThis, "React", { value: React, configurable: true });
+  const { cleanup, fireEvent, render, waitFor } = await import("@testing-library/react");
+  const { PageBannerManager } = await import("../apps/web/src/admin/PageBannerManager");
+  const slide = {
+    id: "slide-1",
+    placementId: "HOME_TOP" as const,
+    mediaId: "media-1",
+    sortOrder: 0,
+    enabled: true,
+    isDecorative: true,
+    altText: null,
+    destinationKind: null,
+    destinationUrl: null,
+    variants: [],
+  };
+  let listedPlacement = { ...placement, slides: [slide] };
+  const deletions: Array<{ placementId: string; slideId: string; input: unknown }> = [];
+  const adminApi = {
+    pageBanners: {
+      async list() {
+        return [listedPlacement];
+      },
+      async deleteSlide(placementId: string, slideId: string, input: unknown) {
+        deletions.push({ placementId, slideId, input });
+        listedPlacement = { ...placement, slides: [] };
+        return { ok: true as const };
+      },
+    },
+  } as never;
+
+  try {
+    const view = render(React.createElement(PageBannerManager, { adminApi }));
+    const deleteButton = await view.findByRole("button", { name: "Delete" });
+    fireEvent.click(deleteButton);
+    const reason = await view.findByLabelText("Moderation reason");
+    fireEvent.click(view.getByRole("button", { name: "Confirm deletion" }));
+    assert.equal(deletions.length, 0, "blank reasons must not send a delete request");
+    fireEvent.change(reason, { target: { value: "  Policy violation  " } });
+    fireEvent.click(view.getByRole("button", { name: "Confirm deletion" }));
+    await waitFor(() => assert.equal(deletions.length, 1));
+    assert.deepEqual(deletions[0], {
+      placementId: "HOME_TOP",
+      slideId: "slide-1",
+      input: { reason: "Policy violation" },
+    });
+  } finally {
+    cleanup();
+    dom.window.close();
+  }
+});

@@ -282,7 +282,7 @@ test("successful Admin changes invalidate enabled and deleted-slide public state
     const disabled = await publicApi.publicRead("HOME_TOP");
     assert.equal(disabled.enabled, false);
     assert.equal(disabled.slides.length, 1);
-    await adminApi.pageBanners.deleteSlide("HOME_TOP", "slide-1");
+    await adminApi.pageBanners.deleteSlide("HOME_TOP", "slide-1", { reason: "Policy violation" });
     const deleted = await publicApi.publicRead("HOME_TOP");
     assert.equal(deleted.slides.length, 0);
     assert.equal(reads, 3);

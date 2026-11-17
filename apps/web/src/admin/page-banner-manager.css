@@ -7,7 +7,8 @@
 
 .page-banner-placement-list,
 .page-banner-slide-list,
-.page-banner-editor {
+.page-banner-editor,
+.page-banner-delete-form {
   display: grid;
   gap: 10px;
 }
@@ -77,7 +78,8 @@
 }
 
 .page-banner-editor input:not([type="checkbox"]),
-.page-banner-editor select {
+.page-banner-editor select,
+.page-banner-delete-form textarea {
   width: 100%;
   box-sizing: border-box;
   min-height: 42px;
@@ -87,6 +89,27 @@
   background: color-mix(in srgb, #090b14 78%, var(--app-surface) 22%);
   color: var(--app-text);
   font: inherit;
+}
+
+.page-banner-delete-form {
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, #ef4444 45%, var(--admin-border-soft));
+  border-radius: 14px;
+}
+
+.page-banner-delete-form label {
+  display: grid;
+  gap: 6px;
+  font-weight: 800;
+}
+
+.page-banner-delete-form textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.page-banner-delete-form small {
+  color: var(--app-muted);
 }
 
 .page-banner-check {

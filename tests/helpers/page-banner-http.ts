@@ -15,6 +15,7 @@ export async function pageBannerHttpFixture() {
   );
   const objects = new Map<string, StoredObject>();
   const reads: string[] = [];
+  const fixtureMediaIds = new Set<string>();
   const storage: ObjectStorage = {
     async put(key, body, contentType) {
       const value = { key, body: new Uint8Array(body), contentType, sizeBytes: body.byteLength };
@@ -63,6 +64,22 @@ export async function pageBannerHttpFixture() {
   assert.equal(registered.status, 201);
   const cookie = registered.headers.get("set-cookie")!.split(";")[0]!;
   const user = await db.webCredential.findUniqueOrThrow({ where: { loginUsername: username } });
+  const nonAdminUsername = `${username}_member`;
+  const nonAdminRegistration = await fetch(`${origin}/api/public/v1/auth/register`, {
+    method: "POST",
+    headers: { "content-type": "application/json", origin: config.WEB_ORIGIN },
+    body: JSON.stringify({
+      loginUsername: nonAdminUsername,
+      displayUsername: nonAdminUsername,
+      displayName: nonAdminUsername,
+      password: "correct horse battery staple",
+    }),
+  });
+  assert.equal(nonAdminRegistration.status, 201);
+  const nonAdminCookie = nonAdminRegistration.headers.get("set-cookie")!.split(";")[0]!;
+  const nonAdminUser = await db.webCredential.findUniqueOrThrow({
+    where: { loginUsername: nonAdminUsername },
+  });
   await db.telegramIdentity.create({ data: { userId: user.userId, telegramUserId: telegramId } });
   await container.platformAdminService.bootstrapConfiguredOwner(telegramId.toString());
   const prior = await db.pageBannerPlacement.findUniqueOrThrow({
@@ -90,7 +107,9 @@ export async function pageBannerHttpFixture() {
     );
     assert.equal(response.status, slideId ? 200 : 201, await response.clone().text());
     if (!slideId) await enabled(true);
-    return response.json();
+    const uploaded = await response.json();
+    fixtureMediaIds.add(uploaded.mediaId);
+    return uploaded;
   }
   async function enabled(value: boolean) {
     const response = await fetch(`${origin}/api/v1/admin/banners/HOME_TOP`, {
@@ -100,11 +119,15 @@ export async function pageBannerHttpFixture() {
     });
     assert.equal(response.status, 200);
   }
-  async function remove(slideId: string) {
-    const response = await fetch(`${origin}/api/v1/admin/banners/HOME_TOP/slides/${slideId}`, {
+  async function requestDelete(slideId: string, body: unknown, requestHeaders = headers) {
+    return fetch(`${origin}/api/v1/admin/banners/HOME_TOP/slides/${slideId}`, {
       method: "DELETE",
-      headers,
+      headers: requestHeaders,
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
+  }
+  async function remove(slideId: string, reason = "Fixture cleanup") {
+    const response = await requestDelete(slideId, { reason });
     assert.equal(response.status, 200);
   }
   async function metadata() {
@@ -123,8 +146,14 @@ export async function pageBannerHttpFixture() {
     objects,
     reads,
     headers,
+    nonAdminHeaders: {
+      cookie: nonAdminCookie,
+      origin: config.WEB_ORIGIN,
+      "content-type": "application/json",
+    },
     upload,
     enabled,
+    requestDelete,
     remove,
     metadata,
     async close() {
@@ -133,6 +162,18 @@ export async function pageBannerHttpFixture() {
         where: { id: "HOME_TOP" },
         data: { enabled: prior.enabled },
       });
+      const mediaIds = [...fixtureMediaIds];
+      await db.outboxEvent.deleteMany({
+        where: {
+          id: {
+            in: mediaIds.flatMap((mediaId) => [mediaId, `page-banner-cleanup:${mediaId}`]),
+          },
+        },
+      });
+      await db.auditLog.deleteMany({
+        where: { actorUserId: { in: [user.userId, nonAdminUser.userId] } },
+      });
+      await db.user.delete({ where: { id: nonAdminUser.userId } });
       await db.user.delete({ where: { id: user.userId } });
       await new Promise<void>((resolve, reject) =>
         server.close((error) => (error ? reject(error) : resolve())),

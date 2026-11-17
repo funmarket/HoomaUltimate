@@ -18,7 +18,11 @@ import type {
   UserSessionRevocationInput,
 } from "@hooma/contracts/platform-admin";
 import { request, requestBinary, type HoomaTransport } from "../http";
-import type { PageBannerDestination, PageBannerPlacementId } from "@hooma/contracts/page-banner";
+import type {
+  PageBannerDestination,
+  PageBannerPlacementId,
+  PageBannerSlideDeleteInput,
+} from "@hooma/contracts/page-banner";
 
 export interface PageBannerAdminVariant {
   readonly variant: string;
@@ -243,13 +247,17 @@ export function createPlatformAdminApi(
             { method: "POST", body: JSON.stringify({ slideIds }) },
           ),
         ),
-      deleteSlide: (placementId: PageBannerPlacementId, slideId: string) =>
+      deleteSlide: (
+        placementId: PageBannerPlacementId,
+        slideId: string,
+        input: PageBannerSlideDeleteInput,
+      ) =>
         mutatePageBanner(
           placementId,
           request<{ ok: true }>(
             transport,
             `/api/v1/admin/banners/${encodeURIComponent(placementId)}/slides/${encodeURIComponent(slideId)}`,
-            { method: "DELETE" },
+            { method: "DELETE", body: JSON.stringify(input) },
           ),
         ),
     },
