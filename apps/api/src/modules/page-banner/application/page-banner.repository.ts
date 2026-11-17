@@ -74,6 +74,7 @@ export interface PageBannerRepository {
     actorUserId: string,
     placementId: PageBannerPlacementId,
     slideId: string,
+    reason: string,
   ): Promise<boolean>;
 }
 

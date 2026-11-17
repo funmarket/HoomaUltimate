@@ -82,6 +82,8 @@ export function PageBannerManager({ adminApi }: { readonly adminApi: PlatformAdm
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [savingPlacement, setSavingPlacement] = useState<string | null>(null);
+  const [deletingSlide, setDeletingSlide] = useState<PageBannerAdminSlide | null>(null);
+  const [deleteReason, setDeleteReason] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -216,19 +218,19 @@ export function PageBannerManager({ adminApi }: { readonly adminApi: PlatformAdm
     }
   }
 
-  async function deleteSlide(slide: PageBannerAdminSlide) {
-    if (
-      !window.confirm(
-        "Remove this PageBanner slide? Stored media cleanup remains managed by the backend.",
-      )
-    )
-      return;
+  async function deleteSlide(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const slide = deletingSlide;
+    const reason = deleteReason.trim();
+    if (!slide || !reason) return;
     setSavingPlacement(slide.placementId);
     setError("");
     try {
-      await adminApi.pageBanners.deleteSlide(slide.placementId, slide.id);
+      await adminApi.pageBanners.deleteSlide(slide.placementId, slide.id, { reason });
       await load();
       if (editor?.slideId === slide.id) setEditor(null);
+      setDeletingSlide(null);
+      setDeleteReason("");
       setMessage("PageBanner slide removed.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to remove PageBanner slide");
@@ -329,7 +331,10 @@ export function PageBannerManager({ adminApi }: { readonly adminApi: PlatformAdm
                         <button
                           className="admin-danger-action"
                           type="button"
-                          onClick={() => void deleteSlide(slide)}
+                          onClick={() => {
+                            setDeletingSlide(slide);
+                            setDeleteReason("");
+                          }}
                           disabled={savingPlacement === placement.id}
                         >
                           Delete
@@ -343,6 +348,46 @@ export function PageBannerManager({ adminApi }: { readonly adminApi: PlatformAdm
                   </p>
                 )}
               </div>
+              {deletingSlide?.placementId === placement.id ? (
+                <form
+                  className="page-banner-delete-form"
+                  onSubmit={(event) => void deleteSlide(event)}
+                >
+                  <label>
+                    Moderation reason
+                    <textarea
+                      value={deleteReason}
+                      maxLength={1000}
+                      required
+                      onChange={(event) => setDeleteReason(event.target.value)}
+                      aria-describedby="page-banner-delete-reason-help"
+                    />
+                  </label>
+                  <small id="page-banner-delete-reason-help">
+                    Required for the audit record. Maximum 1,000 characters.
+                  </small>
+                  <div className="page-banner-slide-actions">
+                    <button
+                      className="admin-ghost-action"
+                      type="button"
+                      onClick={() => {
+                        setDeletingSlide(null);
+                        setDeleteReason("");
+                      }}
+                      disabled={savingPlacement === placement.id}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="admin-danger-action"
+                      type="submit"
+                      disabled={savingPlacement === placement.id || !deleteReason.trim()}
+                    >
+                      Confirm deletion
+                    </button>
+                  </div>
+                </form>
+              ) : null}
               {placement.slides.length < 3 ? (
                 <button
                   className="admin-primary-action"

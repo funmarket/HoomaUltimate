@@ -13,6 +13,30 @@ test("versioned PageBanner HTTP delivery follows real Admin replacement, disable
     });
     assert.equal(forbidden.status, 401);
     const first = await f.upload("#213f60");
+    const invalidAuditCount = await f.db.auditLog.count({
+      where: { action: "PAGE_BANNER_SLIDE_DELETED", entityId: first.id },
+    });
+    const invalidCleanupCount = await f.db.outboxEvent.count({
+      where: { id: `page-banner-cleanup:${first.mediaId}` },
+    });
+    assert.equal((await f.requestDelete(first.id, undefined)).status, 400);
+    assert.equal((await f.requestDelete(first.id, { reason: "   " })).status, 400);
+    assert(await f.db.pageBannerSlide.findUnique({ where: { id: first.id } }));
+    assert.equal(
+      await f.db.auditLog.count({
+        where: { action: "PAGE_BANNER_SLIDE_DELETED", entityId: first.id },
+      }),
+      invalidAuditCount,
+    );
+    assert.equal(
+      await f.db.outboxEvent.count({ where: { id: `page-banner-cleanup:${first.mediaId}` } }),
+      invalidCleanupCount,
+    );
+    assert.equal(
+      (await f.requestDelete(first.id, { reason: "Valid reason" }, f.nonAdminHeaders)).status,
+      403,
+    );
+    assert(await f.db.pageBannerSlide.findUnique({ where: { id: first.id } }));
     const read = await f.metadata();
     const url = read.slides[0].variants.find(
       (v: { variant: string }) => v.variant === "display",
@@ -67,7 +91,17 @@ test("versioned PageBanner HTTP delivery follows real Admin replacement, disable
     for (const variant of old.variants) assert.equal(f.objects.has(variant.objectKey), false);
     const current = await f.db.pageBannerSlideVariant.findMany({ where: { slideId: first.id } });
     for (const variant of current) assert.equal(f.objects.has(variant.objectKey), true);
-    await f.remove(first.id);
+    await f.remove(first.id, "Removed after replacement test");
+    const deletionAudit = await f.db.auditLog.findFirstOrThrow({
+      where: { action: "PAGE_BANNER_SLIDE_DELETED", entityId: first.id },
+    });
+    assert.equal(
+      (deletionAudit.metadata as { reason: string }).reason,
+      "Removed after replacement test",
+    );
+    assert(
+      await f.db.outboxEvent.findUnique({ where: { id: `page-banner-cleanup:${second.mediaId}` } }),
+    );
     assert.deepEqual((await f.metadata()).slides, []);
     const deleted = await fetch(f.origin + replacement);
     assert.equal(deleted.status, 404);

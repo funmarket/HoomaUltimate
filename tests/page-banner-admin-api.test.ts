@@ -28,7 +28,7 @@ test("Platform Admin PageBanner API uses the merged backend routes and metadata 
       destination: { kind: "EXTERNAL", url: "https://example.com" },
     });
     await api.pageBanners.reorder("HOME_TOP", ["slide-1"]);
-    await api.pageBanners.deleteSlide("HOME_TOP", "slide-1");
+    await api.pageBanners.deleteSlide("HOME_TOP", "slide-1", { reason: "Policy violation" });
 
     assert.deepEqual(
       requests.map(({ path, method }) => [method, path]),
@@ -45,6 +45,7 @@ test("Platform Admin PageBanner API uses the merged backend routes and metadata 
     );
     assert.equal(requests[1]?.body, JSON.stringify({ enabled: true }));
     assert.equal(requests[2]?.body instanceof Blob, true);
+    assert.equal(requests[4]?.body, JSON.stringify({ reason: "Policy violation" }));
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -71,7 +72,8 @@ test("successful PageBanner Admin mutations invalidate only their affected place
       altText: null,
       destination: null,
     });
-    assert.deepEqual(invalidated, ["HOME_TOP", "HOME_TOP"]);
+    await api.pageBanners.deleteSlide("HOME_TOP", "slide-1", { reason: "Policy violation" });
+    assert.deepEqual(invalidated, ["HOME_TOP", "HOME_TOP", "HOME_TOP"]);
   } finally {
     globalThis.fetch = originalFetch;
   }

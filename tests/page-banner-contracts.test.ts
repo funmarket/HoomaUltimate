@@ -4,6 +4,7 @@ import {
   PAGE_BANNER_MAX_SLIDES,
   PAGE_BANNER_PLACEMENT_IDS,
   pageBannerDestinationSchema,
+  pageBannerSlideDeleteSchema,
   pageBannerSlideMetadataSchema,
 } from "@hooma/contracts/page-banner";
 
@@ -47,4 +48,13 @@ test("PageBanner destinations allow internal and external targets but reject uns
   assert.throws(() =>
     pageBannerDestinationSchema.parse({ kind: "EXTERNAL", url: "https://user:pass@example.com" }),
   );
+});
+
+test("PageBanner slide deletion requires a trimmed moderation reason of at most 1000 characters", () => {
+  assert.deepEqual(pageBannerSlideDeleteSchema.parse({ reason: "  policy violation  " }), {
+    reason: "policy violation",
+  });
+  assert.throws(() => pageBannerSlideDeleteSchema.parse({}));
+  assert.throws(() => pageBannerSlideDeleteSchema.parse({ reason: "   " }));
+  assert.throws(() => pageBannerSlideDeleteSchema.parse({ reason: "x".repeat(1001) }));
 });

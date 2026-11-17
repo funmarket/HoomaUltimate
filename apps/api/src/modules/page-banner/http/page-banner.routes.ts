@@ -4,6 +4,7 @@ import { Router, raw } from "express";
 import {
   pageBannerPlacementToggleSchema,
   pageBannerReorderSchema,
+  pageBannerSlideDeleteSchema,
 } from "@hooma/contracts/page-banner";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import { getAuth } from "../../identity/http/auth-request.js";
@@ -124,6 +125,7 @@ export function createPageBannerAdminRouter(service: PageBannerService): Router 
           getAuth(request).userId,
           String(request.params.placementId),
           String(request.params.slideId),
+          pageBannerSlideDeleteSchema.parse(request.body),
         ),
       ),
     ),

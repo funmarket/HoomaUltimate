@@ -77,6 +77,9 @@ export const pageBannerSlideMetadataSchema = z
   });
 
 export const pageBannerPlacementToggleSchema = z.object({ enabled: z.boolean() }).strict();
+export const pageBannerSlideDeleteSchema = z
+  .object({ reason: z.string().trim().min(1).max(1000) })
+  .strict();
 export const pageBannerReorderSchema = z
   .object({ slideIds: z.array(z.string().trim().min(1)).min(1).max(PAGE_BANNER_MAX_SLIDES) })
   .strict();
@@ -100,3 +103,4 @@ export const pageBannerCleanupPayloadSchema = z
 export type PageBannerPlacementId = z.infer<typeof pageBannerPlacementIdSchema>;
 export type PageBannerDestination = z.infer<typeof pageBannerDestinationSchema>;
 export type PageBannerSlideMetadata = z.infer<typeof pageBannerSlideMetadataSchema>;
+export type PageBannerSlideDeleteInput = z.infer<typeof pageBannerSlideDeleteSchema>;

@@ -345,6 +345,7 @@ export class PrismaPageBannerRepository implements PageBannerRepository {
     actorUserId: string,
     placementId: PageBannerPlacementId,
     slideId: string,
+    reason: string,
   ): Promise<boolean> {
     return this.db.$transaction(async (tx) => {
       await lockPlacement(tx, placementId);
@@ -367,7 +368,7 @@ export class PrismaPageBannerRepository implements PageBannerRepository {
           action: "PAGE_BANNER_SLIDE_DELETED",
           entityType: "PageBannerSlide",
           entityId: slideId,
-          metadata: { placementId, mediaId: slide.mediaId },
+          metadata: { placementId, mediaId: slide.mediaId, reason },
         },
         tx,
       );

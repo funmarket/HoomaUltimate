@@ -6,6 +6,7 @@ import {
   PAGE_BANNER_PLACEMENT_IDS,
   pageBannerDestinationSchema,
   pageBannerPlacementIdSchema,
+  pageBannerSlideDeleteSchema,
   pageBannerSlideMetadataSchema,
   type PageBannerDestination,
   type PageBannerPlacementId,
@@ -166,10 +167,11 @@ export class PageBannerService {
     return slides;
   }
 
-  async deleteSlide(userId: string, rawPlacementId: string, slideId: string) {
+  async deleteSlide(userId: string, rawPlacementId: string, slideId: string, input: unknown) {
     await this.platformAdmin.requirePlatformAdmin(userId);
     const placementId = this.parsePlacement(rawPlacementId);
-    if (!(await this.repository.deleteSlide(userId, placementId, slideId)))
+    const { reason } = pageBannerSlideDeleteSchema.parse(input);
+    if (!(await this.repository.deleteSlide(userId, placementId, slideId, reason)))
       throw new PageBannerError("PAGE_BANNER_SLIDE_NOT_FOUND", "PageBanner slide not found", 404);
     return { ok: true as const };
   }
