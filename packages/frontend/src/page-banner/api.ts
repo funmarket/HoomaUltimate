@@ -113,6 +113,18 @@ export function createPageBannerApi(
     inFlight.delete(placementId);
   }
 
+  function peek(placementId: PageBannerPlacementId): PageBannerPublicResponse | null {
+    const cached = cache.get(placementId);
+    const now = Date.now();
+    if (!cached || cached.freshUntil <= now || !hasUsableArtwork(cached.data, now)) {
+      if (cached) cache.delete(placementId);
+      return null;
+    }
+    cache.delete(placementId);
+    cache.set(placementId, cached);
+    return cached.data;
+  }
+
   function publicRead(
     placementId: PageBannerPlacementId,
     options: PageBannerPublicReadOptions = {},
@@ -264,6 +276,8 @@ export function createPageBannerApi(
 
   return {
     publicRead,
+    peek,
+    isDecoded: artwork.isDecoded,
     beginActive,
     prefetch,
     prepareSession,

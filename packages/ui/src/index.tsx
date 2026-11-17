@@ -28,6 +28,7 @@ export { AppearanceSettings } from "./settings/AppearanceSettings.js";
 export type { AppearanceMode } from "./settings/AppearanceSettings.js";
 export { HomeGatewayCard } from "./home/HomeGatewayCard.js";
 export { HomeGatewayGrid } from "./home/HomeGatewayGrid.js";
+export type { HomeGatewayGridProps } from "./home/HomeGatewayGrid.js";
 export { HoomaNowFeed } from "./home/HoomaNowFeed.js";
 export type { HoomaNowFeedItem, HoomaNowFeedProps, HoomaNowUrgency } from "./home/HoomaNowFeed.js";
 export { HOME_GATEWAYS } from "./home/home-gateways.js";
@@ -70,7 +71,10 @@ export function FoundationShell({ surface, children }: FoundationShellProps) {
     </main>
   );
 }
-export function HomeGateway() {
+export interface HomeGatewayProps {
+  readonly onNavigate?: (href: string) => void;
+}
+export function HomeGateway({ onNavigate }: HomeGatewayProps) {
   return (
     <>
       <style>{HOME_GATEWAY_TYPOGRAPHY}</style>
@@ -80,7 +84,7 @@ export function HomeGateway() {
           <h2 className="home-gateway-title">Find your people. Find the game.</h2>
         </div>
         <div className="hooma-lane--nav">
-          <HomeGatewayGrid />
+          <HomeGatewayGrid {...(onNavigate ? { onNavigate } : {})} />
         </div>
       </section>
     </>

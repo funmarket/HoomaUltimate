@@ -89,6 +89,23 @@ test("preparation deduplicates one URL, serializes background work and starts ac
   resources.clear();
 });
 
+test("decoded prepared artwork can be synchronously looked up only while its resource remains valid", async () => {
+  const fake = images();
+  const resources = createArtworkPreparation({ createImage: fake.createImage });
+  const data = response();
+  const url = data.slides[0]!.variants[0]!.contentUrl;
+  const pending = resources.prepare(data, 390, "active");
+  assert.equal(resources.isDecoded("HOME_TOP", url), false);
+  fake.created[0]!.complete = true;
+  Object.defineProperty(fake.created[0]!, "naturalWidth", { value: 720, configurable: true });
+  fake.created[0]!.onload?.(new Event("load"));
+  await pending;
+  assert.equal(resources.isDecoded("HOME_TOP", url), true);
+  resources.invalidate("HOME_TOP");
+  assert.equal(resources.isDecoded("HOME_TOP", url), false);
+  resources.clear();
+});
+
 test("invalidation settles queued work and late decoding cannot revive replaced resources", async () => {
   const fake = images();
   const resources = createArtworkPreparation({ createImage: fake.createImage });

@@ -1,6 +1,10 @@
 import { HomeGatewayCard } from "./HomeGatewayCard.js";
 import { HOME_GATEWAYS } from "./home-gateways.js";
 
+export interface HomeGatewayGridProps {
+  readonly onNavigate?: (href: string) => void;
+}
+
 const HOME_GATEWAY_STYLES = `
 .home-gateway-section-label {
   margin: 24px 0 0;
@@ -86,14 +90,14 @@ const HOME_GATEWAY_STYLES = `
 }
 `;
 
-export function HomeGatewayGrid() {
+export function HomeGatewayGrid({ onNavigate }: HomeGatewayGridProps) {
   return (
     <>
       <style>{HOME_GATEWAY_STYLES}</style>
       <p className="home-gateway-section-label">Quick actions</p>
       <div className="home-gateway-grid" aria-label="HOOMA features">
         {HOME_GATEWAYS.map((item) => (
-          <HomeGatewayCard item={item} key={item.id} />
+          <HomeGatewayCard item={item} {...(onNavigate ? { onNavigate } : {})} key={item.id} />
         ))}
       </div>
     </>

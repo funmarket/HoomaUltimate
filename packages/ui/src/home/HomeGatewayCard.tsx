@@ -1,7 +1,9 @@
+import type { MouseEvent } from "react";
 import type { HomeGatewayItem } from "./home-gateways.js";
 
 export interface HomeGatewayCardProps {
   readonly item: HomeGatewayItem;
+  readonly onNavigate?: (href: string) => void;
 }
 
 function GatewayContent({ item }: HomeGatewayCardProps) {
@@ -22,7 +24,7 @@ function GatewayContent({ item }: HomeGatewayCardProps) {
   );
 }
 
-export function HomeGatewayCard({ item }: HomeGatewayCardProps) {
+export function HomeGatewayCard({ item, onNavigate }: HomeGatewayCardProps) {
   if (item.availability === "coming-soon" || !item.href) {
     return (
       <button
@@ -43,6 +45,21 @@ export function HomeGatewayCard({ item }: HomeGatewayCardProps) {
       href={item.href}
       aria-label={item.label}
       data-gateway={item.id}
+      onClick={(event: MouseEvent<HTMLAnchorElement>) => {
+        if (
+          !onNavigate ||
+          event.defaultPrevented ||
+          event.button !== 0 ||
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.altKey ||
+          (event.currentTarget.target && event.currentTarget.target !== "_self")
+        )
+          return;
+        event.preventDefault();
+        onNavigate(item.href!);
+      }}
     >
       <GatewayContent item={item} />
     </a>

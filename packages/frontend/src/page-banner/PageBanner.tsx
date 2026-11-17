@@ -58,10 +58,12 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
     readonly placementId: PageBannerPlacementId;
     readonly status: "loading" | "ready" | "error";
     readonly data?: PublicRead;
-  } | null>(null);
+  } | null>(() => {
+    const data = api.pageBanners.peek(placementId);
+    return data ? { api, placementId, status: "ready", data } : null;
+  });
   const [requestedIndex, setRequestedIndex] = useState(0);
   const [displayed, setDisplayed] = useState<PreparedSlide | null>(null);
-  const [readyKey, setReadyKey] = useState<string | null>(null);
   const [failedKeys, setFailedKeys] = useState<readonly string[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [pixelWidth, setPixelWidth] = useState(requiredImageWidth);
@@ -107,10 +109,14 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
     refreshSequence.current += 1;
     lastAutomaticRefresh.current = null;
     initialRefreshFailed.current = false;
-    setRead({ api, placementId, status: "loading" });
+    const cached = api.pageBanners.peek(placementId);
+    setRead(
+      cached
+        ? { api, placementId, status: "ready", data: cached }
+        : { api, placementId, status: "loading" },
+    );
     setRequestedIndex(0);
-    setDisplayed(null);
-    setReadyKey(null);
+    if (!cached) setDisplayed(null);
     setFailedKeys([]);
     setRefreshing(false);
     void api.pageBanners
@@ -129,7 +135,13 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
     };
   }, [api, placementId]);
 
-  const currentRead = read?.api === api && read.placementId === placementId ? read : null;
+  const cachedRead = api.pageBanners.peek(placementId);
+  const currentRead =
+    read?.api === api && read.placementId === placementId
+      ? read
+      : cachedRead
+        ? { api, placementId, status: "ready" as const, data: cachedRead }
+        : null;
   const slides = useMemo(
     () =>
       currentRead?.status === "ready" && currentRead.data?.enabled
@@ -139,7 +151,10 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
         : [],
     [currentRead],
   );
-  const selectedIndex = Math.min(requestedIndex, Math.max(slides.length - 1, 0));
+  const selectedIndex = Math.min(
+    read?.api === api && read.placementId === placementId ? requestedIndex : 0,
+    Math.max(slides.length - 1, 0),
+  );
   const candidate = useMemo(() => {
     if (!slides.length || refreshing) return null;
     const slide = slides[selectedIndex]!;
@@ -149,23 +164,27 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
     return failedKeys.includes(key) ? null : { key, index: selectedIndex, slide, variant };
   }, [slides, selectedIndex, pixelWidth, failedKeys, refreshing, placementId]);
 
-  const validDisplayed =
-    currentRead?.status === "ready" &&
-    currentRead.data?.enabled &&
-    displayed &&
-    slides.some((slide) => slide.id === displayed.slide.id)
-      ? displayed
+  const displayedForPlacement = displayed?.key.startsWith(`${placementId}:`) ? displayed : null;
+  const retainedDisplayed = (() => {
+    if (!displayedForPlacement) return null;
+    const index = slides.findIndex((slide) => slide.id === displayedForPlacement.slide.id);
+    const currentSlide = slides[index];
+    if (!currentSlide) return null;
+    return { ...displayedForPlacement, index, slide: currentSlide };
+  })();
+  const preparedDisplayed =
+    candidate && api.pageBanners.isDecoded(placementId, candidate.variant.contentUrl)
+      ? candidate
       : null;
-
-  useEffect(() => {
-    if (candidate && candidate.key === readyKey) setDisplayed(candidate);
-  }, [candidate, readyKey]);
+  const validDisplayed =
+    currentRead?.status === "ready" && currentRead.data?.enabled
+      ? (retainedDisplayed ?? preparedDisplayed)
+      : null;
 
   function handleFailure(item: PreparedSlide) {
     if (item.key !== displayed?.key && item.key !== candidate?.key) return;
     api.pageBanners.invalidate(placementId);
     setFailedKeys((keys) => (keys.includes(item.key) ? keys : [...keys, item.key]));
-    if (item.key === candidate?.key) setReadyKey(null);
     // Preserve the displayed frame and controls until a pending replacement is decoded.
     if (item.key === displayed?.key && !refreshing && (!candidate || candidate.key === item.key)) {
       setDisplayed(null);
@@ -180,7 +199,7 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
     const decoding = typeof image.decode === "function" ? image.decode() : Promise.resolve();
     void decoding
       .then(() => {
-        if (image.isConnected && item.key === candidate?.key) setReadyKey(item.key);
+        if (image.isConnected && item.key === candidate?.key) setDisplayed(item);
       })
       .catch(() => {
         if (image.isConnected && (item.key === candidate?.key || item.key === displayed?.key)) {
@@ -219,7 +238,6 @@ export function PageBanner({ placementId, className }: PageBannerProps) {
     const desiredVariant = mediaVariant(desiredSlide, pixelWidth);
     if (!desiredVariant) return;
     setFailedKeys([]);
-    setReadyKey(null);
     if (expiresSoon(desiredVariant)) {
       await refreshExpiredSlide(desiredSlide.id, validDisplayed.index);
       return;

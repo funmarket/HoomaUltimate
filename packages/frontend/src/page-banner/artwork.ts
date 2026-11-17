@@ -218,6 +218,17 @@ export function createArtworkPreparation(
   return {
     prepare,
     invalidate,
+    isDecoded(placementId: PageBannerPlacementId, url: string) {
+      const record = records.get(placementId);
+      return Boolean(
+        record &&
+        record.url === url &&
+        record.settled &&
+        record.image.complete &&
+        record.image.naturalWidth > 0 &&
+        isArtworkFresh(record.variant, Date.now()),
+      );
+    },
     resumeBackground: pump,
     reconcile(data: PageBannerPublicResponse, width: number) {
       const existing = records.get(data.placementId);
