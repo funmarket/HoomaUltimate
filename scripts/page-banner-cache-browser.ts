@@ -193,7 +193,8 @@ async function ready(page: Awaited<ReturnType<typeof launch>>["page"], label: st
   });
   const imageSource = await image.getAttribute("src");
   readSnapshot(`${label}:ready-before-screenshot`);
-  await page.screenshot({ path: resolve(output, `${label}.png`), fullPage: true });
+  // Keep screenshot capture from perturbing responsive image selection during cache measurement.
+  await page.screenshot({ path: resolve(output, `${label}.png`), fullPage: false });
   readSnapshot(`${label}:after-screenshot`);
   return imageSource;
 }
