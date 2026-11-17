@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { PAGE_BANNER_CLEANUP_TOPIC } from "@hooma/contracts/page-banner";
 import { pageBannerHttpFixture } from "./helpers/page-banner-http.ts";
 import { createPageBannerCleanupHandler } from "../apps/worker/src/page-banner/page-banner-cleanup.ts";
+import { OutboxRepository } from "../apps/worker/src/outbox/outbox.repository.ts";
+import { OutboxRunner } from "../apps/worker/src/outbox/outbox.runner.ts";
 
 test("versioned PageBanner HTTP delivery follows real Admin replacement, disable, deletion and reference-safe cleanup", async () => {
   const f = await pageBannerHttpFixture();
@@ -78,20 +81,21 @@ test("versioned PageBanner HTTP delivery follows real Admin replacement, disable
     assert.equal((await fetch(f.origin + url)).status, 404);
     assert.equal((await fetch(f.origin + replacement)).status, 200);
     const cleanup = createPageBannerCleanupHandler(f.db, f.storage, "development");
-    await cleanup({
-      id: "fixture-cleanup",
-      topic: "page-banner.cleanup-object",
-      payload: {
-        placementId: "HOME_TOP",
-        slideId: first.id,
-        mediaId: first.mediaId,
-        objectKeys: old.variants.map((v) => v.objectKey),
-      },
-    } as never);
+    const runner = new OutboxRunner(
+      new OutboxRepository(f.db),
+      new Map([[PAGE_BANNER_CLEANUP_TOPIC, cleanup]]),
+    );
+    await runner.runOnce();
+    const replacementCleanup = await f.db.outboxEvent.findUniqueOrThrow({
+      where: { id: `page-banner-cleanup:${first.mediaId}` },
+    });
+    assert.equal(replacementCleanup.status, "DELIVERED");
+    assert.ok(replacementCleanup.deliveredAt);
     for (const variant of old.variants) assert.equal(f.objects.has(variant.objectKey), false);
     const current = await f.db.pageBannerSlideVariant.findMany({ where: { slideId: first.id } });
     for (const variant of current) assert.equal(f.objects.has(variant.objectKey), true);
-    await f.remove(first.id, "Removed after replacement test");
+    const deletedVariants = current;
+    await f.remove(first.id, "  Removed after replacement test  ");
     const deletionAudit = await f.db.auditLog.findFirstOrThrow({
       where: { action: "PAGE_BANNER_SLIDE_DELETED", entityId: first.id },
     });
@@ -99,9 +103,18 @@ test("versioned PageBanner HTTP delivery follows real Admin replacement, disable
       (deletionAudit.metadata as { reason: string }).reason,
       "Removed after replacement test",
     );
-    assert(
-      await f.db.outboxEvent.findUnique({ where: { id: `page-banner-cleanup:${second.mediaId}` } }),
-    );
+    const moderationCleanup = await f.db.outboxEvent.findUniqueOrThrow({
+      where: { id: `page-banner-cleanup:${second.mediaId}` },
+    });
+    assert.equal(moderationCleanup.topic, PAGE_BANNER_CLEANUP_TOPIC);
+    const cleanupResult = await runner.runOnce();
+    assert.equal(cleanupResult.delivered, 1);
+    const deliveredModerationCleanup = await f.db.outboxEvent.findUniqueOrThrow({
+      where: { id: moderationCleanup.id },
+    });
+    assert.equal(deliveredModerationCleanup.status, "DELIVERED");
+    assert.ok(deliveredModerationCleanup.deliveredAt);
+    for (const variant of deletedVariants) assert.equal(f.objects.has(variant.objectKey), false);
     assert.deepEqual((await f.metadata()).slides, []);
     const deleted = await fetch(f.origin + replacement);
     assert.equal(deleted.status, 404);
