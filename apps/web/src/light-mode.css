@@ -1,0 +1,1302 @@
+/*
+ * Complete Light Mode authority.
+ *
+ * Dark Mode remains owned by the existing unscoped feature styles. Every rule
+ * here is explicitly scoped to the resolved light theme and therefore cannot
+ * alter the existing dark palette.
+ */
+
+/* Application canvas, shared surfaces, controls and feedback. */
+:root[data-theme="light"] {
+  color: #262626;
+  background: #f0f2f5;
+}
+
+:root[data-theme="light"] body {
+  color: #262626;
+  background: #f0f2f5;
+}
+
+:root[data-theme="light"] :is(.panel, .state-card, .auth-card, .control-room) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"] :is(input, select, textarea) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #050505;
+}
+
+:root[data-theme="light"] :is(input, textarea)::placeholder {
+  color: #8a8d91;
+}
+
+:root[data-theme="light"] :is(input, select, textarea):focus-visible {
+  border-color: #0866ff;
+  outline-color: #0866ff;
+}
+
+:root[data-theme="light"] .error {
+  color: #dc2626;
+}
+
+:root[data-theme="light"]
+  :is(
+    .auth-card button,
+    .control-room button,
+    .admin-link,
+    .event-form__primary-action,
+    .event-actions button,
+    .chat-compose button,
+    .panel > button
+  ) {
+  border-color: #2f6f3e;
+  background: #2f6f3e;
+  color: #ffffff;
+}
+
+/* Web and Telegram chrome. */
+:root[data-theme="light"] {
+  --hooma-chrome-bg: #ffffff;
+  --hooma-chrome-surface: #f0f2f5;
+  --hooma-chrome-text: #050505;
+  --hooma-chrome-muted: #65676b;
+  --hooma-chrome-border: #dbdbdb;
+  --hooma-chrome-gold: #8a6500;
+}
+
+:root[data-theme="light"] .hooma-topbar {
+  border-bottom-color: #dbdbdb;
+  background: #ffffff;
+  color: #050505;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+:root[data-theme="light"] :is(.hooma-profile-trigger, .hooma-notification-trigger) {
+  border-color: #dbdbdb;
+  background: #f0f2f5;
+  color: #050505;
+}
+
+:root[data-theme="light"]
+  :is(
+    .hooma-media-field input::file-selector-button,
+    .hooma-media-gallery input::file-selector-button
+  ) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #050505;
+}
+
+:root[data-theme="light"] :is(.hooma-media-field__message, .hooma-media-gallery__message) {
+  color: #65676b;
+}
+
+:root[data-theme="light"] :is(.hooma-media-field__error, .hooma-media-gallery__error) {
+  color: #dc2626;
+}
+
+:root[data-theme="light"] .hooma-media-button--danger {
+  border-color: rgba(220, 38, 38, 0.28);
+  background: #fff1f2;
+  color: #b91c1c;
+}
+
+:root[data-theme="light"] :is(.hooma-account-menu, .hooma-notification-popover) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #050505;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.14);
+}
+
+:root[data-theme="light"]
+  :is(
+    .hooma-account-menu__identity,
+    .hooma-account-menu__section,
+    .hooma-account-menu__signout,
+    .hooma-notification-popover header
+  ) {
+  border-color: #e4e6eb;
+}
+
+:root[data-theme="light"]
+  :is(
+    .hooma-account-menu__identity:hover,
+    .hooma-account-menu__row:hover,
+    .hooma-account-menu__signout:hover,
+    .hooma-notification-item[data-unread="true"],
+    .hooma-notification-item:hover
+  ) {
+  background: #e7f3ff;
+}
+
+:root[data-theme="light"] .hooma-account-menu__row-icon {
+  border-color: #dbdbdb;
+  background: #efefef;
+  color: #0866ff;
+}
+
+:root[data-theme="light"] .hooma-bottom-nav {
+  border: 1px solid #dbdbdb;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"] .hooma-bottom-nav__item {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .hooma-bottom-nav__item:not(:first-child)::before {
+  background: linear-gradient(180deg, transparent, #e4e6eb, transparent);
+}
+
+:root[data-theme="light"] .hooma-bottom-nav__item--active {
+  color: #0866ff;
+}
+
+:root[data-theme="light"] .hooma-bottom-nav__item--active .hooma-bottom-nav__icon-shell {
+  border-color: rgba(8, 102, 255, 0.2);
+  background: #e7f3ff;
+}
+
+:root[data-theme="light"] .hooma-bottom-nav__item--active::after {
+  background: #0866ff;
+}
+
+/* Home gateways and shared media editors rendered from component style blocks. */
+:root[data-theme="light"] .home-gateway-card {
+  border: 1px solid #dbdbdb;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"] .home-gateway-section-label {
+  color: #8a6500;
+}
+
+:root[data-theme="light"]
+  :is(.hooma-media-field, .hooma-media-gallery__item, .hooma-media-gallery__add) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+}
+
+:root[data-theme="light"]
+  :is(
+    .hooma-media-field__label,
+    .hooma-media-gallery__title,
+    .hooma-media-gallery__item-heading strong,
+    .hooma-media-field__control-label,
+    .hooma-media-gallery__control-label
+  ) {
+  color: #050505;
+}
+
+:root[data-theme="light"]
+  :is(
+    .hooma-media-field__help,
+    .hooma-media-field__hint,
+    .hooma-media-gallery__help,
+    .hooma-media-gallery__count,
+    .hooma-media-gallery__item-position,
+    .hooma-media-field__or,
+    .hooma-media-gallery__or
+  ) {
+  color: #65676b;
+}
+
+:root[data-theme="light"]
+  :is(
+    .hooma-media-field__preview,
+    .hooma-media-gallery__preview,
+    .hooma-media-field input,
+    .hooma-media-gallery input,
+    .hooma-media-button,
+    .hooma-media-gallery__count
+  ) {
+  border-color: #dbdbdb;
+  background: #f0f2f5;
+  color: #050505;
+}
+
+/* Play, availability, events and formation. */
+:root[data-theme="light"] .play-page {
+  color: #262626;
+}
+
+:root[data-theme="light"] .play-page .play-view-tabs {
+  border-color: #dbdbdb;
+  background: #efefef;
+  box-shadow: inset 0 0 0 1px #ffffff;
+}
+
+:root[data-theme="light"] .play-page .play-view-tab {
+  border-color: transparent;
+  color: #65676b;
+}
+
+:root[data-theme="light"] .play-page .play-view-tab.is-active {
+  background: #2f6f3e;
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+:root[data-theme="light"] :is(.page-banner__action--play, .play-page .play-hero-pro__action) {
+  border-color: #2f6f3e;
+  background: #2f6f3e;
+  color: #ffffff;
+}
+
+:root[data-theme="light"]
+  :is(
+    .play-player-editor,
+    .play-player-card,
+    .play-sheet,
+    .play-team-offer,
+    .play-mine-listing,
+    .play-mine-game,
+    .play-page .pickup-match-card-pro,
+    .play-event-card__management,
+    .watch-event-detail,
+    .formation-builder__panel
+  ) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"] .play-looking-options button {
+  border-color: #dbdbdb;
+  background: #efefef;
+  color: #050505;
+}
+
+:root[data-theme="light"] .play-looking-options button[aria-pressed="true"] {
+  border-color: #2f6f3e;
+  background: #2f6f3e;
+  color: #ffffff;
+}
+
+:root[data-theme="light"]
+  :is(
+    .play-action--commit,
+    .play-action--primary,
+    .play-player-publish,
+    .play-player-card__action--invite
+  ) {
+  border-color: #2f6f3e;
+  background: #2f6f3e;
+  color: #ffffff;
+}
+
+:root[data-theme="light"]
+  :is(
+    .play-player-card__action--offer,
+    .play-sheet__choice,
+    .play-sheet textarea,
+    .play-team-offer select,
+    .play-team-offer textarea,
+    .formation-toolbar input,
+    .formation-format-picker button
+  ) {
+  border-color: #dbdbdb;
+  background: #efefef;
+  color: #050505;
+}
+
+:root[data-theme="light"] .play-sheet__choice.is-selected {
+  border-color: #0866ff;
+  background: #e7f3ff;
+  color: #0866ff;
+}
+
+:root[data-theme="light"] .pickup-match-card-meta__going {
+  color: #65676b !important;
+}
+
+:root[data-theme="light"] .pickup-match-card-meta__going strong {
+  color: #15803d !important;
+}
+
+:root[data-theme="light"] .play-event-card__ball {
+  color: #8a6500 !important;
+}
+
+/* HOOMA Communities. */
+:root[data-theme="light"] .hooma-page {
+  --hooma-panel: #ffffff;
+  --hooma-cream: #050505;
+  --hooma-muted: #65676b;
+  --hooma-line: #dbdbdb;
+  --hooma-gold: #8a6500;
+  --hooma-lime: #2f6f3e;
+  --hooma-page-positive: #2f6f3e;
+  --hooma-page-people: #0866ff;
+  --hooma-page-warning: #c2410c;
+  --hooma-page-text: #262626;
+  --hooma-page-text-strong: #050505;
+  --hooma-page-muted: #65676b;
+  --hooma-page-accent: #8a6500;
+  --hooma-page-surface: #ffffff;
+  --hooma-page-surface-raised: #efefef;
+  --hooma-page-border: #dbdbdb;
+  --hooma-page-border-strong: #ced0d4;
+  color: #262626;
+}
+
+:root[data-theme="light"]
+  .hooma-page
+  :is(.panel, .state-card, .member-gate, .hooma-discovery-card) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"]
+  .hooma-page
+  :is(.panel, .state-card, .member-gate, .hooma-discovery-card)
+  :is(h1, h2, h3, strong) {
+  color: #050505;
+}
+
+:root[data-theme="light"]
+  .hooma-page
+  :is(.panel, .state-card, .member-gate, .hooma-discovery-card)
+  :is(p, .muted, small, span) {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .hooma-page .hooma-community-row {
+  border-color: #e4e6eb;
+}
+
+:root[data-theme="light"] .hooma-page .hooma-community-row div span {
+  color: #0866ff;
+}
+
+:root[data-theme="light"] .hooma-page .hooma-role-chip {
+  border-color: rgba(8, 102, 255, 0.25);
+  background: #e7f3ff;
+  color: #0866ff;
+}
+
+:root[data-theme="light"] :is(.hooma-page .button, .hooma-page .hooma-create-action) {
+  border-color: #2f6f3e;
+  background: #2f6f3e;
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+:root[data-theme="light"] .hooma-page .hooma-domain-card {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"] .hooma-page .hooma-domain-links {
+  --hooma-domain-surface: #ffffff;
+  --hooma-domain-surface-raised: #ffffff;
+  --hooma-domain-border: #dbdbdb;
+  --hooma-domain-border-strong: #ced0d4;
+  --hooma-domain-title: #8a6500;
+  --hooma-domain-text: #262626;
+  --hooma-domain-muted: #65676b;
+  --hooma-domain-lime: #2f6f3e;
+  --hooma-domain-orange: #c2410c;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"] .hooma-page .hooma-domain-card::before,
+:root[data-theme="light"] .hooma-page .hooma-domain-card:first-of-type::before {
+  background: #2f6f3e;
+}
+
+/* Athletes and Teams. */
+:root[data-theme="light"] .athletes-page {
+  --athletes-surface: #ffffff;
+  --athletes-surface-raised: #efefef;
+  --athletes-border: #dbdbdb;
+  --athletes-border-strong: #ced0d4;
+  --athletes-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --athletes-motif: none;
+  color: #262626;
+}
+
+:root[data-theme="light"]
+  .athletes-page
+  :is(
+    .panel,
+    .athletes-card,
+    .athletes-control-card,
+    .athletes-calendar-card,
+    .athletes-photo-card,
+    .athletes-member-card
+  ) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"] .teams-page {
+  --teams-cream: #050505;
+  --teams-muted: #65676b;
+  --teams-line: #dbdbdb;
+  --teams-panel: #ffffff;
+  --teams-gold: #8a6500;
+  --teams-lime: #2f6f3e;
+  color: #262626;
+}
+
+:root[data-theme="light"]
+  .teams-page
+  :is(.panel, .team-card, .team-section, .team-form, .team-offer-card, .coach-control-room) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"] .control-room {
+  --coach-action: #2f6f3e;
+  --coach-action-hover: #245c33;
+  --coach-ink: #ffffff;
+  --coach-panel: #ffffff;
+  --coach-panel-raised: #f0f2f5;
+  --coach-line: #dbdbdb;
+  --coach-cream: #050505;
+  --coach-muted: #65676b;
+}
+
+/* Gamers. */
+:root[data-theme="light"] .gamers-page {
+  --gamers-bg: #f0f2f5;
+  --gamers-panel: #ffffff;
+  --gamers-panel-strong: #efefef;
+  --gamers-line: #dbdbdb;
+  --gamers-line-soft: #e4e6eb;
+  --gamers-text: #050505;
+  --gamers-muted: #65676b;
+  --gamers-lime: #2f6f3e;
+  --gamers-lime-soft: #eaf5ed;
+  --gamers-cyan: #0866ff;
+  --gamers-violet: #6d28d9;
+  --gamers-danger: #dc2626;
+  color: #262626;
+  background: #f0f2f5;
+}
+
+:root[data-theme="light"]
+  .gamers-page
+  :is(.gamers-panel, .gamer-card, .gamers-home-card, .ea-fc-match-bridge, .gamer-match-card) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+/* Watch and ticket surfaces. */
+:root[data-theme="light"] .watch-page {
+  color: #262626;
+}
+
+:root[data-theme="light"]
+  .watch-page
+  :is(.panel, .watch-card, .watch-section, .watch-event-card, .cultural-menu, .cultural-card) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"] .cultural-menu {
+  --watch-menu-gold: #8a6500;
+  --watch-menu-green: #2f6f3e;
+  --watch-menu-cream: #050505;
+}
+
+/* Ride. */
+:root[data-theme="light"] .ride-page {
+  --ride-bg: #f0f2f5;
+  --ride-surface: #ffffff;
+  --ride-text: #262626;
+  --ride-text-strong: #050505;
+  --ride-text-muted: #65676b;
+  --ride-gold: #8a6500;
+  --ride-gold-dim: #6f5200;
+  --ride-lime: #2f6f3e;
+  color: #262626;
+}
+
+:root[data-theme="light"]
+  .ride-page
+  :is(.ride-card, .ride-panel, .ride-form, .ride-summary, .ride-offer-card, .ride-request-card) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"] .ride-page :is(.ride-button--primary, .ride-page-banner-action) {
+  border-color: #2f6f3e;
+  background: #2f6f3e;
+  color: #ffffff;
+}
+
+/* Pitch and location forms. Intentionally green pitch diagrams retain field color. */
+:root[data-theme="light"] .pitch-page,
+:root[data-theme="light"] .pitch-detail-page,
+:root[data-theme="light"] .game-location {
+  color: #262626;
+}
+
+:root[data-theme="light"]
+  :is(.pitch-page, .pitch-detail-page, .game-location)
+  :is(.panel, .pitch-card, .pitch-detail-card, .pitch-form, .game-location__panel) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"]
+  :is(.pitch-page, .pitch-detail-page, .game-location)
+  :is(input, select, textarea, button:not(.primary)) {
+  border-color: #dbdbdb;
+  background: #efefef;
+  color: #050505;
+}
+
+/* Places. */
+:root[data-theme="light"] :is(.place-page, .place-detail-page) {
+  color: #262626;
+}
+
+:root[data-theme="light"]
+  :is(.place-page, .place-detail-page)
+  :is(.panel, .place-card, .place-detail-card, .place-gallery, .place-source-tabs) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"] :is(.place-primary-link, .place-detail-actions a) {
+  border-color: #2f6f3e;
+  background: #2f6f3e;
+  color: #ffffff;
+}
+
+/* Requests / Help. */
+:root[data-theme="light"] .requests-page {
+  color: #262626;
+}
+
+:root[data-theme="light"]
+  .requests-page
+  :is(.panel, .help-card, .request-card, .request-detail-card, .help-form, .help-response) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"]
+  .requests-page
+  :is(input, select, textarea, .help-filter, .help-action:not(.help-action--primary)) {
+  border-color: #dbdbdb;
+  background: #efefef;
+  color: #050505;
+}
+
+:root[data-theme="light"] .requests-page .help-action--primary {
+  border-color: #2f6f3e;
+  background: #2f6f3e;
+  color: #ffffff;
+}
+
+/* Gear Up. */
+:root[data-theme="light"] .gear-up-page {
+  color: #262626;
+}
+
+:root[data-theme="light"]
+  .gear-up-page
+  :is(.panel, .gear-up-card, .gear-up-product-card, .gear-up-shop-card, .gear-up-form) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+/* Profile and Passport. */
+:root[data-theme="light"] :is(.public-profile-page, .profile-page) {
+  color: #262626;
+}
+
+:root[data-theme="light"] .hooma-passport-card {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #050505;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+:root[data-theme="light"] .hooma-passport-card h1 {
+  color: #050505;
+}
+
+:root[data-theme="light"] .hooma-passport-card__handle {
+  color: #0866ff;
+}
+
+:root[data-theme="light"] .hooma-passport-card__ovr {
+  color: #8a6500;
+}
+
+:root[data-theme="light"] .hooma-passport-card__photo {
+  background: #efefef;
+  color: #050505;
+}
+
+:root[data-theme="light"]
+  :is(.hooma-passport-stats, .public-profile-team-list a, .public-profile-contact, .profile-form) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #050505;
+}
+
+:root[data-theme="light"] .hooma-passport-stats > div {
+  border-color: #e4e6eb;
+}
+
+:root[data-theme="light"] :is(.hooma-passport-stats span, .public-profile-bio) {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .hooma-passport-stats strong {
+  color: #050505;
+}
+
+/* Whistle and discovery. */
+:root[data-theme="light"]
+  :is(.whistle-board, .whistle-composer, .whistle-card, .hooma-now-card, .hooma-now-panel) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"] :is(.whistle-input-row input, .whistle-card textarea) {
+  border-color: #dbdbdb;
+  background: #efefef;
+  color: #050505;
+}
+
+/* Admin Control Room. */
+:root[data-theme="light"] .admin-control-room {
+  --admin-bg: #f0f2f5;
+  --admin-panel: #ffffff;
+  --admin-panel-strong: #efefef;
+  --admin-border: #dbdbdb;
+  --admin-border-soft: #e4e6eb;
+  --admin-glow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  color: #262626;
+}
+
+:root[data-theme="light"] .admin-workbench {
+  background: #f0f2f5;
+}
+
+:root[data-theme="light"]
+  .admin-control-room
+  :is(
+    .admin-panel,
+    .admin-surface,
+    .admin-data-panel,
+    .admin-command-bar,
+    .admin-table-row,
+    .admin-select-menu,
+    .page-banner-manager
+  ) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"]
+  .admin-control-room
+  :is(input, select, textarea, .admin-select-trigger, .admin-ghost-action) {
+  border-color: #dbdbdb;
+  background: #efefef;
+  color: #050505;
+}
+
+:root[data-theme="light"] .admin-control-room .admin-primary-action {
+  border-color: #2f6f3e;
+  background: #2f6f3e;
+  color: #ffffff;
+}
+
+/* Entity lifecycle, membership and forms. */
+:root[data-theme="light"]
+  :is(.entity-lifecycle, .hooma-membership, .hooma-form, .member-gate, .community-membership) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"]
+  :is(.entity-lifecycle, .hooma-membership, .hooma-form, .community-membership)
+  :is(input, select, textarea, button:not(.primary)) {
+  border-color: #dbdbdb;
+  background: #efefef;
+  color: #050505;
+}
+
+/* PageBanner media remains photographic; only non-media letterbox space changes. */
+:root[data-theme="light"] .page-banner__frame {
+  background: #e4e6eb;
+}
+
+:root[data-theme="light"] .page-banner__control {
+  border-color: rgba(255, 255, 255, 0.72);
+  background: rgba(5, 5, 5, 0.68);
+  color: #ffffff;
+}
+
+/* Complete surface conversion: feature-owned controls and cards that still
+ * declare Dark Mode colors locally are normalized here without changing their
+ * dark declarations. */
+:root[data-theme="light"]
+  :is(
+    .athletes-surface,
+    .athletes-sport-option,
+    .athletes-view-tab,
+    .game-location-picker,
+    .game-location-picker__result,
+    .watch-event-detail__venue-placeholder,
+    .watch-event-detail__action,
+    .pitch-hero,
+    .pitch-detail-gallery,
+    .pitch-ticket__link,
+    .pitch-ticket__resource-strip,
+    .pitch-form-page .pitch-source-choice,
+    .pitch-form-page .hooma-form__section,
+    .ride-section-header,
+    .ride-privacy-chip,
+    .ride-feature-card,
+    .ride-gateway-card,
+    .ride-form-section,
+    .ride-recent-card,
+    .ride-map-preview,
+    .ride-compensation,
+    .ride-empty-state,
+    .team-discovery-card-pro,
+    .team-offer-request,
+    .gamer-game-card,
+    .gamer-hub-tabs,
+    .gamer-challenger-card,
+    .gamer-card-portrait-panel,
+    .gamer-whistle-panel,
+    .gamers-home-tabs,
+    .gamer-setup-modal,
+    .whistle-module,
+    .whistle-room,
+    .request-create-context,
+    .page-banner-placement,
+    .entity-danger-zone
+  ) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"]
+  :is(
+    .athletes-sport-option:hover,
+    .athletes-view-tab:hover,
+    .game-location-picker__result:hover,
+    .team-discovery-card-pro:hover,
+    .ride-feature-card:hover,
+    .ride-gateway-card:hover
+  ) {
+  border-color: #0866ff;
+  background: #f7faff;
+}
+
+/* Play event detail and formation controls. Actual football pitch artwork
+ * stays green because it is content, not application chrome. */
+:root[data-theme="light"]
+  :is(
+    .pickup-match-card-meta span,
+    .play-event-card__facts div,
+    .play-event-card__tagged-pitch,
+    .play-event-management-action,
+    .play-matchday-actions a,
+    .hooma-whistle-board--event,
+    .formation-team--game,
+    .formation-bench
+  ) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+  box-shadow: none;
+}
+
+:root[data-theme="light"]
+  :is(
+    .formation-builder__selectors select,
+    .formation-toolbar--builder > label:first-child input,
+    .formation-slot--game > select,
+    .formation-slot select
+  ) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #050505;
+  box-shadow: none;
+}
+
+:root[data-theme="light"] :is(.play-event-primary-action, .pitch-add-action) {
+  border-color: #2f6f3e;
+  background: #2f6f3e;
+  color: #ffffff;
+  box-shadow: none;
+}
+
+:root[data-theme="light"] :is(.formation-slot__marker, .formation-slot__marker--game) {
+  border-color: #ffffff;
+  background: #2f6f3e;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+}
+
+:root[data-theme="light"]
+  :is(.formation-slot__position, .formation-slot__name, .formation-bench-player__portrait) {
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.92);
+  color: #050505;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+}
+
+/* Pitch tickets and forms use paper-like light surfaces while photo and field
+ * media keep their photographic presentation. */
+:root[data-theme="light"] :is(.pitch-ticket__stub, .pitch-ticket__stub img) {
+  border-color: #dbdbdb;
+  background: #efefef;
+}
+
+:root[data-theme="light"] :is(.pitch-ticket__photo, .pitch-ticket__photo > img) {
+  background: #e4e6eb;
+}
+
+:root[data-theme="light"] :is(.pitch-source-tab, .pitch-source-tab small) {
+  border-color: #dbdbdb;
+  background: #efefef;
+  color: #262626;
+}
+
+:root[data-theme="light"]
+  :is(
+    .pitch-form-page .hooma-field input,
+    .pitch-form-page .hooma-field select,
+    .pitch-form-page .hooma-field textarea
+  ) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #050505;
+}
+
+:root[data-theme="light"]
+  :is(.pitch-form-page .hooma-form__submit, .pitch-form-page .hooma-form__secondary-action) {
+  border-color: #2f6f3e;
+  background: #2f6f3e;
+  color: #ffffff;
+}
+
+:root[data-theme="light"]
+  :is(.pitch-action--primary, .pitch-detail-action--primary, .pitch-detail-action--secondary) {
+  border-color: #0866ff;
+  background: #ffffff;
+  color: #0866ff;
+}
+
+/* Ride media placeholders and maps become neutral; real images remain intact. */
+:root[data-theme="light"]
+  :is(
+    .ride-offer-card__media,
+    .ride-detail-card__photo,
+    .ride-recent-card__media,
+    .ride-recent-card__avatar,
+    .ride-map-preview__image
+  ) {
+  border-color: #dbdbdb;
+  background: #efefef;
+  color: #8a6500;
+}
+
+/* Requests: neutral navigation and controls, with clear state accents. */
+:root[data-theme="light"]
+  :is(
+    .help-tab,
+    .request-root-switch button,
+    .request-quick-rail button,
+    .request-create-root-switch button,
+    .request-field__control,
+    .request-form input,
+    .request-form select,
+    .request-form textarea,
+    .request-response-panel textarea
+  ) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+}
+
+:root[data-theme="light"]
+  :is(
+    .help-tab[aria-selected="true"],
+    .request-root-switch button[aria-pressed="true"],
+    .request-create-root-switch button[aria-pressed="true"]
+  ) {
+  border-color: #0866ff;
+  background: #e7f3ff;
+  color: #0866ff;
+}
+
+:root[data-theme="light"]
+  :is(.requests-page__create-action, .requests-page__create-action:hover:not(:disabled)) {
+  border-color: #15803d;
+  background: #e9fbf0;
+  color: #15803d;
+}
+
+/* Communities and membership. Images may supply their own backgrounds; their
+ * empty and form states are always light. */
+:root[data-theme="light"]
+  :is(
+    .hooma-create-form input,
+    .hooma-create-form textarea,
+    .hooma-privacy-choice label,
+    .hooma-member-add input,
+    .hooma-create-preview,
+    .hooma-hq-hero,
+    .hooma-card-media
+  ) {
+  border-color: #dbdbdb;
+  background-color: #ffffff;
+  background-image: none;
+  color: #050505;
+  box-shadow: none;
+}
+
+:root[data-theme="light"]
+  :is(.hooma-hq-logo, .hooma-preview-logo, .hooma-card-logo, .hooma-visibility-indicator) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #050505;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+:root[data-theme="light"] .hooma-visibility-chip {
+  border-color: rgba(8, 102, 255, 0.24);
+  background: #e7f3ff;
+  color: #0866ff;
+}
+
+/* Whistle discussion surfaces. */
+:root[data-theme="light"] .whistle-action.whistle-action {
+  border-color: rgba(8, 102, 255, 0.3);
+  background: #e7f3ff;
+  color: #0866ff;
+  box-shadow: none;
+}
+
+:root[data-theme="light"]
+  :is(.whistle-action.whistle-action:hover, .whistle-action.whistle-action:focus-visible) {
+  border-color: #0866ff;
+  background: #dbeafe;
+  box-shadow: 0 0 0 3px rgba(8, 102, 255, 0.1);
+}
+
+:root[data-theme="light"] :is(.whistle-room__older, .whistle-room__latest) {
+  border-color: #dbdbdb;
+  background: #efefef;
+  color: #262626;
+  box-shadow: none;
+}
+
+:root[data-theme="light"] .hooma-now-ride-detail__whistle input {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #050505;
+}
+
+/* Athletes photo moderation states. */
+:root[data-theme="light"] .athletes-photo-board__delete {
+  border-color: rgba(220, 38, 38, 0.36);
+  background: rgba(255, 255, 255, 0.94);
+  color: #dc2626;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+:root[data-theme="light"] .athletes-photo-board__delete-confirm {
+  border-color: rgba(220, 38, 38, 0.24);
+  background: #ffffff;
+  color: #262626;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+:root[data-theme="light"] .athletes-photo-board__delete-error {
+  border-color: rgba(220, 38, 38, 0.28);
+  background: #fff1f2;
+  color: #b91c1c;
+}
+
+:root[data-theme="light"]
+  :is(.athletes-photo-board__photo-error, .athletes-photo-board__photo-loading) {
+  background: rgba(240, 242, 245, 0.94);
+  color: #65676b;
+}
+
+/* Teams lineup and team-owned cards. The stadium photo remains visual media;
+ * player labels and controls become light. */
+:root[data-theme="light"] .team-lineup-header {
+  border-color: #dbdbdb;
+  background: #ffffff;
+}
+
+:root[data-theme="light"] :is(.team-lineup-avatar, .team-lineup-nameplate) {
+  border-color: #dbdbdb;
+  background: rgba(255, 255, 255, 0.94);
+  color: #050505;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+}
+
+:root[data-theme="light"] :is(.team-lineup-empty, .team-lineup-empty-mark) {
+  border-color: #dbdbdb;
+  background: rgba(255, 255, 255, 0.86);
+  color: #65676b;
+}
+
+:root[data-theme="light"] .team-lineup-manager .format-chip.active {
+  border-color: #0866ff;
+  background: #e7f3ff;
+  color: #0866ff;
+}
+
+:root[data-theme="light"] .team-discovery-actions a {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+}
+
+:root[data-theme="light"] .team-profile-badge {
+  border-color: rgba(138, 101, 0, 0.28);
+  background: #fff8e1;
+  color: #6f5200;
+}
+
+:root[data-theme="light"]
+  :is(
+    .play-player-card__action--button:not(:disabled):hover,
+    .play-player-card__action--button:not(:disabled):focus-visible
+  ) {
+  border-color: #0866ff;
+  background: #e7f3ff;
+  color: #0866ff;
+}
+
+/* Gamer surfaces retain their angular identity through shape and violet/cyan
+ * details, without retaining black panels in Light Mode. */
+:root[data-theme="light"] .gamer-challenger-card::before {
+  border-color: #e4e6eb;
+  background: #f7faff;
+}
+
+:root[data-theme="light"] :is(.gamer-avatar, .play-player-card__portrait, .play-sheet__avatar) {
+  background: #efefef;
+  color: #0866ff;
+}
+
+:root[data-theme="light"] .gamer-card-portrait-panel .gamer-open-badge {
+  border-color: rgba(21, 128, 61, 0.3);
+  background: #e9fbf0;
+  color: #15803d;
+  box-shadow: none;
+}
+
+:root[data-theme="light"] :is(.gamer-whistle-button, .gamer-whistle-panel-heading > button) {
+  border-color: rgba(109, 40, 217, 0.24);
+  background: #f5f3ff;
+  color: #6d28d9;
+  box-shadow: none;
+}
+
+:root[data-theme="light"] .gamer-setup-modal-heading > button {
+  border-color: rgba(109, 40, 217, 0.24);
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+:root[data-theme="light"] .gamer-modal-backdrop {
+  background: rgba(5, 5, 5, 0.48);
+}
+
+/* Watch uses white ticket stock and neutral media placeholders. */
+:root[data-theme="light"] .watch-kind-tabs {
+  --watch-menu-gold: #8a6500;
+  --watch-menu-green: #2f6f3e;
+  --watch-menu-cream: #050505;
+  border-color: #dbdbdb;
+  background: #efefef;
+  box-shadow: inset 0 0 0 1px #ffffff;
+}
+
+:root[data-theme="light"] .watch-kind-tab {
+  background: transparent;
+  color: #65676b;
+}
+
+:root[data-theme="light"] :is(.watch-kind-tab.is-active, .watch-kind-tab[aria-pressed="true"]) {
+  background: #2f6f3e;
+  color: #ffffff;
+}
+
+:root[data-theme="light"] .watch-cultural-card__category {
+  border-color: rgba(138, 101, 0, 0.24);
+  background: #fff8e1;
+  color: #6f5200;
+}
+
+:root[data-theme="light"] .watch-ticket__stub {
+  border-color: #8a6500;
+  background: #fff8e1;
+  color: #6f5200;
+}
+
+:root[data-theme="light"] :is(.watch-ticket__stub::before, .watch-ticket__stub::after) {
+  background: #f0f2f5;
+}
+
+:root[data-theme="light"]
+  :is(
+    .watch-ticket__photo-panel,
+    .watch-ticket__photo-panel img,
+    .watch-event-detail__venue-image
+  ) {
+  border-color: #dbdbdb;
+  background: #e4e6eb;
+  color: #8a6500;
+  box-shadow: none;
+}
+
+/* Profile editing and account-owned status surfaces. */
+:root[data-theme="light"]
+  :is(
+    .profile-edit-form input,
+    .profile-edit-form select,
+    .profile-edit-form textarea,
+    .profile-identity-options label,
+    .profile-position-options label,
+    .profile-gamer-note,
+    .profile-inline-state
+  ) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #050505;
+}
+
+/* Admin surfaces that blend black into the dark palette need explicit white
+ * ownership in Light Mode. */
+:root[data-theme="light"]
+  :is(
+    .admin-navigation,
+    .admin-nav-item,
+    .admin-navigation a,
+    .admin-navigation-disabled,
+    .admin-attention-card,
+    .admin-section-map-card,
+    .admin-snapshot dl div,
+    .admin-data-row,
+    .admin-review-row,
+    .admin-manager-list article,
+    .admin-audit-list article,
+    .admin-entity-detail,
+    .admin-sanction-card,
+    .admin-sanction-history li,
+    .admin-chip,
+    .admin-filter-toolbar,
+    .admin-manager-lookup,
+    .admin-capability-row,
+    .admin-table-header
+  ) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+  box-shadow: none;
+}
+
+:root[data-theme="light"]
+  :is(
+    .page-banner-editor input:not([type="checkbox"]),
+    .page-banner-editor select,
+    .page-banner-delete-form textarea
+  ) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #050505;
+}
+
+:root[data-theme="light"] :is(.gamer-dispute-proof-missing, .hooma-member-avatar) {
+  background: #efefef;
+  color: #65676b;
+}
+
+/* Small navigation and gallery controls. */
+:root[data-theme="light"] :is(.place-gallery__arrow, .place-venue-badge) {
+  border-color: #dbdbdb;
+  background: rgba(255, 255, 255, 0.94);
+  color: #8a6500;
+}
+
+/* These are deliberate media overlays rather than application surfaces. Keep
+ * contrast over photography while documenting their Light Mode ownership. */
+:root[data-theme="light"] .team-media-banner {
+  background-color: #e4e6eb;
+}
+
+:root[data-theme="light"] .team-media-banner__overlay {
+  background: linear-gradient(90deg, rgba(5, 5, 5, 0.74), rgba(5, 5, 5, 0.16));
+}
+
+:root[data-theme="light"] .page-banner__controls {
+  border-color: rgba(255, 255, 255, 0.72);
+  background: rgba(5, 5, 5, 0.62);
+}
+
+/* Football fields, pitch marks and balls are semantic illustrations rather
+ * than page chrome. Their Light Mode rules intentionally preserve the field
+ * palette while preventing the audit from mistaking them for dark panels. */
+:root[data-theme="light"]
+  :is(
+    .formation-pitch,
+    .formation-pitch--stadium,
+    .formation-pitch--stadium::before,
+    .formation-pitch--stadium::after,
+    .formation-pitch__surface,
+    .pickup-match-card-pro__pitch-mark,
+    .play-event-card__ball,
+    .team-lineup-field,
+    .team-lineup-field::after
+  ) {
+  color-scheme: light;
+}

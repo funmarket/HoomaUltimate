@@ -9,6 +9,7 @@ const themeStyles = new URL("../apps/web/src/theme.css", import.meta.url);
 test("canonical theme layer remains after legacy web styles", async () => {
   const source = await readFile(mainSource, "utf8");
   assert.ok(source.indexOf('import "./theme.css"') > source.indexOf('import "./styles.css"'));
+  assert.ok(source.indexOf('import "./light-mode.css"') > source.indexOf('import "./theme.css"'));
 });
 
 test("legacy web stylesheet does not redefine canonical title or caption sizes with hardcoded values", async () => {
@@ -66,7 +67,7 @@ test("explicit dark inherits the identical root app palette instead of redeclari
 test("zero-drift cleanup keeps light and System-dark overrides intact", async () => {
   const theme = await readFile(themeStyles, "utf8");
 
-  assert.match(theme, /:root\[data-theme="light"\]\s*\{[\s\S]*--app-bg:\s*#f6f4ee/);
+  assert.match(theme, /:root\[data-theme="light"\]\s*\{[\s\S]*--app-bg:\s*#f0f2f5/);
   assert.match(
     theme,
     /:root\[data-appearance="system"\]\[data-theme="dark"\]\s*\{[\s\S]*--app-bg:\s*#000000/,
