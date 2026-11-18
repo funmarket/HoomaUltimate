@@ -459,3 +459,29 @@
     align-self: center;
   }
 }
+
+
+/*
+ * These controls intentionally retain the Play dark-surface treatment in
+ * Light appearance. Keep their local semantic colors paired with that
+ * background instead of inheriting dark ink from the light page canvas.
+ */
+:root[data-theme="light"] .play-page
+  :is(
+    .play-player-publish,
+    .play-looking-options button,
+    .play-action--commit,
+    .play-action--primary,
+    .play-player-card__action,
+    .play-sheet textarea,
+    .play-sheet__choice,
+    .play-team-offer select,
+    .play-team-offer textarea,
+    .play-hero-pro__action
+  ) {
+  --app-text: #f4f1ea;
+  --app-text-secondary: #c8c3b8;
+  --app-positive: #a3e635;
+  --app-gold: #e8c36a;
+  --app-line: rgba(232, 195, 106, 0.28);
+}
