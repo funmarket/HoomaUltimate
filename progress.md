@@ -51,6 +51,7 @@ Do not store current branch heads, pull-request state, commit SHAs, CI run IDs, 
 - Requests is implemented as one canonical `HelpRequest` domain.
 - Request Type is exactly `SPORT | COMMUNITY`; standalone “All Requests” is an unfiltered presentation/query state, not a third type.
 - Requests has server-backed text search, taxonomy/filtering, current REQUESTS/PLAY/ATHLETES projections, create/detail/lifecycle presentation, requester identity projection, Request media, and private response coordination.
+- A PostgreSQL integration test exercises Requests media preparation, canonical replacement and deletion with the real Prisma repository and Outbox Worker, including referenced-object protection, abandoned-upload recovery, and legacy-key rejection using controlled object storage.
 - Request uploads use shared `PHOTO_STANDARD` master-only processing and typed `REQUEST_PHOTO` keys. The existing one-image metadata record, validated external URL option, private delivery, owner authorization, and preparation/replacement Outbox lifecycle remain Requests-owned; the Worker supports legacy keys and checks typed-key scope, identity, and current references before cleanup.
 - Optional precise `fullAddress` is persisted but not exposed through current public/member Request read DTOs.
 - FundMe and Donations tabs exist as placeholders only. Their presence does not prove durable Fundraising, Donations, claims, contributions, payments, or provider integration.
