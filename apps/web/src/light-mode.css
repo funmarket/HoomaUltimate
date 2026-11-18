@@ -1012,7 +1012,8 @@
   background: #ffffff;
   color: #262626;
   box-shadow: none;
-}:root[data-theme="light"]
+}
+:root[data-theme="light"]
   :is(
     .formation-builder__selectors select,
     .formation-toolbar--builder > label:first-child input,
@@ -1529,7 +1530,6 @@
 :root[data-theme="light"] .team-profile-hero :is(h1, p, small) {
   color: #f7f7f7;
 }
-
 
 /* Rendered Light appearance corrections. These rules are intentionally scoped
  * to the existing Light appearance and do not alter component behavior. */
