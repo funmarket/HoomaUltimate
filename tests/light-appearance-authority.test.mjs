@@ -188,6 +188,22 @@ test("Light Mode owns Watch empty-state body text", async () => {
   assert.match(css, /\.watch-page \.watch-empty-state p\s*\{[\s\S]*color:\s*#65676b/);
 });
 
+test("Light Mode owns every remaining rendered root contrast pair", async () => {
+  const css = await readFile(lightCss, "utf8");
+
+  assert.match(css, /\.hooma-page \.muted\s*\{[\s\S]*color:\s*#65676b/);
+  assert.match(css, /\.athletes-page \.athletes-action__icon\s*\{[\s\S]*color:\s*#ffffff/);
+  assert.match(
+    css,
+    /\.athletes-page\s+:is\(\.eyebrow, \.athletes-sport\)\s*\{[\s\S]*color:\s*#8a6500/,
+  );
+  assert.match(css, /\.teams-page \.team-discovery-meta\s*\{[\s\S]*color:\s*#65676b/);
+  assert.match(css, /\.pitch-page \.pitch-directory-heading strong\s*\{[\s\S]*color:\s*#050505/);
+  assert.match(css, /--ride-sky-silver:\s*#005fcc/);
+  assert.match(css, /\.gamers-page \.gamers-home-tabs button\s*\{[\s\S]*color:\s*#65676b/);
+  assert.match(css, /\.gamers-page \.error-box\s*\{[\s\S]*color:\s*#b91c1c/);
+});
+
 test("Light Mode owns the visible Athletes foregrounds placed on light cards", async () => {
   const css = await readFile(lightCss, "utf8");
 
