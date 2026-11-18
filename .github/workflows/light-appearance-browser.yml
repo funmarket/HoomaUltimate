@@ -9,6 +9,7 @@ on:
       - "packages/frontend/src/communities/CommunityMedia.tsx"
       - "packages/ui/src/**/*.css"
       - "scripts/light-appearance-browser-check.mjs"
+      - "scripts/compare-rendered-pngs.mjs"
       - "tests/light-appearance-authority.test.mjs"
       - ".github/workflows/light-appearance-browser.yml"
 
@@ -48,10 +49,7 @@ jobs:
           node candidate/scripts/light-appearance-browser-check.mjs baseline/apps/web/dist light-browser-evidence/baseline-dark dark
           node candidate/scripts/light-appearance-browser-check.mjs candidate/apps/web/dist light-browser-evidence/candidate-dark dark
           node candidate/scripts/light-appearance-browser-check.mjs candidate/apps/web/dist light-browser-evidence/candidate-light light
-          while IFS= read -r image; do
-            relative="${image#light-browser-evidence/baseline-dark/}"
-            cmp "$image" "light-browser-evidence/candidate-dark/$relative"
-          done < <(find light-browser-evidence/baseline-dark -name '*.png' -type f | sort)
+          node candidate/scripts/compare-rendered-pngs.mjs light-browser-evidence/baseline-dark light-browser-evidence/candidate-dark
       - uses: actions/upload-artifact@v4
         if: always()
         with:
