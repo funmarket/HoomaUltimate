@@ -8,6 +8,12 @@ import {
   type HelpRequestImageDelivery,
   type RequestImageContentType,
 } from "@hooma/contracts/requests";
+import {
+  PHOTO_STANDARD,
+  planMediaObjectKeys,
+  writeMediaVariants,
+  type MediaStorageScope,
+} from "@hooma/media-processing";
 import type { ObjectStorage, ObjectStorageReadUrlSigner } from "@hooma/storage";
 import { RequestError } from "../domain/request-error.js";
 import { requireManageRequest } from "./request-authorization.js";
@@ -30,6 +36,7 @@ export class RequestMediaService {
     private readonly images: RequestImageRepository,
     private readonly storage: ObjectStorage | null,
     private readonly processor: RequestImageProcessor,
+    private readonly mediaStorageScope: MediaStorageScope | null,
   ) {}
 
   async replaceUpload(
@@ -51,7 +58,7 @@ export class RequestMediaService {
     if (input.body.byteLength > REQUEST_IMAGE_MAX_BYTES) {
       throw new RequestError("REQUEST_IMAGE_TOO_LARGE", "Request image must be 5 MiB or smaller");
     }
-    if (!this.storage) {
+    if (!this.storage || !this.mediaStorageScope) {
       throw new RequestError(
         "REQUEST_IMAGE_STORAGE_NOT_CONFIGURED",
         "Request image storage is not configured",
@@ -60,48 +67,52 @@ export class RequestMediaService {
 
     const typedContentType = contentType as RequestImageContentType;
     const processed = await this.processor.process(input.body, typedContentType);
+    if (
+      processed.profile !== PHOTO_STANDARD.id ||
+      processed.selectedVariants?.length !== 1 ||
+      processed.selectedVariants[0] !== "master" ||
+      processed.variants.length !== 1 ||
+      processed.variants[0]?.variant !== "master"
+    ) {
+      throw new RequestError("REQUEST_IMAGE_UPLOAD_FAILED", "Request image upload failed");
+    }
     const mediaId = randomUUID();
-    const requestedObjectKey = requestImageObjectKey(requestId, mediaId);
+    const identity = {
+      scope: this.mediaStorageScope,
+      namespace: "REQUEST_PHOTO" as const,
+      ownerId: requestId,
+      mediaId,
+    };
+    const [plannedObject] = planMediaObjectKeys({
+      ...identity,
+      profile: PHOTO_STANDARD,
+      requestedVariants: ["master"],
+    });
+    if (!plannedObject) {
+      throw new RequestError("REQUEST_IMAGE_UPLOAD_FAILED", "Request image upload failed");
+    }
+    const requestedObjectKey = plannedObject.objectKey;
     await this.images.prepareUpload(mediaId, requestId, requestedObjectKey);
 
-    let uploadedObjectKey: string | null = null;
     try {
-      const stored = await this.storage.put(
-        requestedObjectKey,
-        processed.body,
-        processed.contentType,
-      );
-      uploadedObjectKey = stored.key;
-      if (!stored.key.startsWith(`request-images/${requestId}/`)) {
-        throw new RequestError(
-          "REQUEST_IMAGE_UPLOAD_FAILED",
-          "Request image storage returned an invalid object key",
-        );
-      }
-      if (stored.key !== requestedObjectKey) {
-        await this.images.prepareUpload(mediaId, requestId, stored.key);
+      const written = await writeMediaVariants({
+        storage: this.storage,
+        identity,
+        processed,
+      });
+      const master = written.descriptors.find(({ variant }) => variant === "master");
+      if (!master || master.objectKey !== requestedObjectKey) {
+        throw new RequestError("REQUEST_IMAGE_UPLOAD_FAILED", "Request image upload failed");
       }
       const image = await this.images.replacePreparedUpload({
         mediaId,
         requestId,
-        objectKey: stored.key,
-        contentType: processed.contentType,
-        sizeBytes: stored.sizeBytes,
+        objectKey: master.objectKey,
+        contentType: master.contentType,
+        sizeBytes: master.sizeBytes,
       });
-      uploadedObjectKey = null;
       return publicImage(image);
     } catch (error) {
-      if (uploadedObjectKey) {
-        try {
-          await this.storage.remove(uploadedObjectKey);
-        } catch (cleanupError) {
-          throw new AggregateError(
-            [error, cleanupError],
-            "Request image persistence failed and uploaded object cleanup also failed",
-          );
-        }
-        throw error;
-      }
       if (error instanceof RequestError) throw error;
       throw new RequestError("REQUEST_IMAGE_UPLOAD_FAILED", "Request image upload failed");
     }
@@ -178,10 +189,6 @@ function supportsReadUrlSigning(
 
 function normalizeContentType(contentType: string): string {
   return contentType.split(";")[0]?.trim().toLowerCase() ?? "";
-}
-
-function requestImageObjectKey(requestId: string, mediaId: string): string {
-  return `request-images/${requestId}/${mediaId}`;
 }
 
 function publicImage(image: HelpRequestImageRecord): HelpRequestImage {

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { ObjectStorage, ObjectStorageReadUrlSigner } from "@hooma/storage";
+import type { ProcessedMediaResult } from "@hooma/media-processing";
 import type {
   HelpRequestImageRecord,
   RequestImageRepository,
@@ -14,6 +15,24 @@ import type {
 import { RequestError } from "../apps/api/src/modules/requests/domain/request-error.js";
 
 const now = new Date("2026-09-23T12:00:00.000Z");
+
+function processedImage(variant: "master" | "card" = "master"): ProcessedMediaResult {
+  return {
+    profile: "PHOTO_STANDARD",
+    source: { contentType: "image/png", widthPx: 1, heightPx: 1 },
+    selectedVariants: [variant],
+    variants: [
+      {
+        variant,
+        body: new Uint8Array([7, 8, 9]),
+        contentType: "image/webp",
+        sizeBytes: 3,
+        widthPx: 1,
+        heightPx: 1,
+      },
+    ],
+  };
+}
 
 function requestRecord(overrides: Partial<HelpRequestRecord> = {}): HelpRequestRecord {
   return {
@@ -157,14 +176,14 @@ function imageRepository() {
   };
 }
 
-function storageStub() {
+function storageStub(returnedKey: (requestedKey: string) => string = (key) => key) {
   const puts: string[] = [];
   const removes: string[] = [];
   const signed: string[] = [];
   const storage: ObjectStorage & ObjectStorageReadUrlSigner = {
     put: async (key, body, contentType) => {
       puts.push(key);
-      return { key, contentType, sizeBytes: body.byteLength };
+      return { key: returnedKey(key), contentType, sizeBytes: body.byteLength };
     },
     get: async () => {
       throw new Error("not used");
@@ -180,7 +199,7 @@ function storageStub() {
   return { storage, puts, removes, signed };
 }
 
-test("Request media upload is owner-managed, prepared before object write, optimized and signed", async () => {
+test("Request media upload uses one typed PHOTO_STANDARD master and prepares cleanup before storage", async () => {
   const images = imageRepository();
   const objects = storageStub();
   const service = new RequestMediaService(
@@ -188,12 +207,8 @@ test("Request media upload is owner-managed, prepared before object write, optim
     visibility(),
     images.repository,
     objects.storage,
-    {
-      process: async () => ({
-        body: new Uint8Array([7, 8, 9]),
-        contentType: "image/webp",
-      }),
-    },
+    { process: async () => processedImage() },
+    "development",
   );
 
   const result = await service.replaceUpload("owner", "request-1", {
@@ -203,6 +218,11 @@ test("Request media upload is owner-managed, prepared before object write, optim
 
   assert.equal(images.prepared.length, 1);
   assert.equal(objects.puts.length, 1);
+  assert.match(
+    images.prepared[0]?.objectKey ?? "",
+    /^development\/media\/v1\/request-photo\/request-1\/[A-Za-z0-9_-]+\/master\.webp$/,
+  );
+  assert.equal(objects.puts[0], images.prepared[0]?.objectKey);
   assert.equal(result.source, "UPLOAD");
   assert.equal(result.contentType, "image/webp");
   assert.equal(result.sizeBytes, 3);
@@ -214,6 +234,58 @@ test("Request media upload is owner-managed, prepared before object write, optim
   assert.equal(objects.signed.length, 1);
 });
 
+test("Request media rejects a storage-returned key mismatch and leaves durable cleanup intent", async () => {
+  const images = imageRepository();
+  const objects = storageStub((key) => `${key}/unexpected`);
+  const service = new RequestMediaService(
+    requestRepository(),
+    visibility(),
+    images.repository,
+    objects.storage,
+    { process: async () => processedImage() },
+    "development",
+  );
+
+  await assert.rejects(
+    () =>
+      service.replaceUpload("owner", "request-1", {
+        contentType: "image/png",
+        body: new Uint8Array([1, 2, 3, 4]),
+      }),
+    (error: unknown) =>
+      error instanceof RequestError && error.code === "REQUEST_IMAGE_UPLOAD_FAILED",
+  );
+  assert.equal(images.prepared.length, 1);
+  assert.equal(images.prepared[0]?.objectKey, objects.puts[0]);
+  assert.equal(images.current, null);
+  assert.deepEqual(objects.removes, []);
+});
+
+test("Request media rejects a processor variant that does not match its prepared cleanup key", async () => {
+  const images = imageRepository();
+  const objects = storageStub();
+  const service = new RequestMediaService(
+    requestRepository(),
+    visibility(),
+    images.repository,
+    objects.storage,
+    { process: async () => processedImage("card") },
+    "development",
+  );
+
+  await assert.rejects(
+    () =>
+      service.replaceUpload("owner", "request-1", {
+        contentType: "image/png",
+        body: new Uint8Array([1, 2, 3, 4]),
+      }),
+    (error: unknown) =>
+      error instanceof RequestError && error.code === "REQUEST_IMAGE_UPLOAD_FAILED",
+  );
+  assert.equal(images.prepared.length, 0);
+  assert.deepEqual(objects.puts, []);
+});
+
 test("Request media supports safe external URLs through the same metadata capability", async () => {
   const images = imageRepository();
   const service = new RequestMediaService(
@@ -221,11 +293,8 @@ test("Request media supports safe external URLs through the same metadata capabi
     visibility(),
     images.repository,
     null,
-    {
-      process: async () => {
-        throw new Error("not used");
-      },
-    },
+    { process: async () => processedImage() },
+    null,
   );
 
   const image = await service.replaceExternalUrl("owner", "request-1", {
@@ -250,12 +319,8 @@ test("Request media rejects non-owner mutation and invalid upload envelopes", as
     visibility(),
     images.repository,
     objects.storage,
-    {
-      process: async () => ({
-        body: new Uint8Array([1]),
-        contentType: "image/webp",
-      }),
-    },
+    { process: async () => processedImage() },
+    "development",
   );
 
   await assert.rejects(
@@ -293,7 +358,8 @@ test("Request media deletion removes metadata and later delivery reports missing
     visibility(),
     images.repository,
     storageStub().storage,
-    { process: async () => ({ body: new Uint8Array([1]), contentType: "image/webp" }) },
+    { process: async () => processedImage() },
+    "development",
   );
 
   await service.replaceExternalUrl("owner", "request-1", {
