@@ -6,6 +6,15 @@ const themeCss = new URL("../apps/web/src/theme.css", import.meta.url);
 const legacyCss = new URL("../apps/web/src/styles.css", import.meta.url);
 const accountCss = new URL("../apps/web/src/account/account.css", import.meta.url);
 const profileCss = new URL("../apps/web/src/profile/profile.css", import.meta.url);
+const playCss = new URL("../packages/frontend/src/events/play.css", import.meta.url);
+const playPlayerCss = new URL(
+  "../packages/frontend/src/events/play-player-listing.css",
+  import.meta.url,
+);
+const hoomaSemanticCss = new URL(
+  "../packages/frontend/src/communities/hooma-page-semantic.css",
+  import.meta.url,
+);
 
 test("Light appearance exposes one semantic application palette", async () => {
   const css = await readFile(themeCss, "utf8");
@@ -71,4 +80,26 @@ test("light profile sections preserve the current dark HOOMA Passport architectu
   assert.match(css, /\.hooma-passport-card__ovr\s*\{[\s\S]*color:\s*#ffd200/);
   assert.match(css, /\.hooma-passport-stats\s*\{[\s\S]*background:\s*#0b0b0b/);
   assert.match(css, /\.public-profile-contact button\s*\{[\s\S]*color:\s*#b8ff2a/);
+});
+
+
+test("light appearance keeps intentional Play and HOOMA dark surfaces readable", async () => {
+  const [play, players, hooma] = await Promise.all([
+    readFile(playCss, "utf8"),
+    readFile(playPlayerCss, "utf8"),
+    readFile(hoomaSemanticCss, "utf8"),
+  ]);
+
+  assert.match(
+    play,
+    /:root\[data-theme="light"\] \.play-page \.play-view-tabs\s*\{[\s\S]*--app-text-secondary:\s*#c8c3b8;[\s\S]*--app-positive:\s*#a3e635;/,
+  );
+  assert.match(
+    players,
+    /:root\[data-theme="light"\] \.play-page[\s\S]*\.play-looking-options button[\s\S]*--app-text:\s*#f4f1ea;[\s\S]*--app-positive:\s*#a3e635;/,
+  );
+  assert.match(
+    hooma,
+    /:root\[data-theme="light"\] \.hooma-page[\s\S]*\.hooma-discovery-card[\s\S]*--hooma-page-text-strong:\s*#f4f1ea;[\s\S]*--hooma-page-people:\s*#58bfff;/,
+  );
 });
