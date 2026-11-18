@@ -3,14 +3,25 @@ import { createServer } from "node:http";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { extname, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
-import { contrastAfterOpacity, hasOverlappingMedia } from "./light-appearance-contrast.mjs";
+import {
+  contrastAfterOpacity,
+  hasOverlappingMedia,
+} from "./light-appearance-contrast.mjs";
 
 const dist = resolve(process.argv[2]);
 const output = resolve(process.argv[3]);
 const theme = process.argv[4] ?? "light";
-assert(theme === "light" || theme === "dark", "Expected light or dark appearance");
-assert(process.env.LIGHT_PLAYWRIGHT_MODULE, "LIGHT_PLAYWRIGHT_MODULE is required");
-const { chromium } = await import(pathToFileURL(process.env.LIGHT_PLAYWRIGHT_MODULE).href);
+assert(
+  theme === "light" || theme === "dark",
+  "Expected light or dark appearance",
+);
+assert(
+  process.env.LIGHT_PLAYWRIGHT_MODULE,
+  "LIGHT_PLAYWRIGHT_MODULE is required",
+);
+const { chromium } = await import(
+  pathToFileURL(process.env.LIGHT_PLAYWRIGHT_MODULE).href
+);
 await mkdir(output, { recursive: true });
 
 const mime = {
@@ -81,7 +92,10 @@ const community = {
 };
 
 function json(res, value, status = 200) {
-  res.writeHead(status, { "content-type": "application/json", "cache-control": "no-store" });
+  res.writeHead(status, {
+    "content-type": "application/json",
+    "cache-control": "no-store",
+  });
   res.end(JSON.stringify(value));
 }
 
@@ -89,7 +103,11 @@ const server = createServer(async (req, res) => {
   try {
     const url = new URL(req.url, "http://localhost");
     if (url.pathname.startsWith("/api/public/v1/banners/")) {
-      return json(res, { placementId: url.pathname.split("/").at(-1), enabled: false, slides: [] });
+      return json(res, {
+        placementId: url.pathname.split("/").at(-1),
+        enabled: false,
+        slides: [],
+      });
     }
     if (url.pathname === "/api/public/v1/auth/session") return json(res, null);
     if (url.pathname === "/api/public/v1/discovery/now")
@@ -98,10 +116,12 @@ const server = createServer(async (req, res) => {
         refreshAfterSeconds: 30,
         items: [],
       });
-    if (url.pathname === "/api/public/v1/events") return json(res, { items: [], nextCursor: null });
+    if (url.pathname === "/api/public/v1/events")
+      return json(res, { items: [], nextCursor: null });
     if (url.pathname === "/api/public/v1/athletes")
       return json(res, { items: [athlete], nextCursor: null });
-    if (url.pathname === "/api/public/v1/teams/team-fixture") return json(res, teamDetail);
+    if (url.pathname === "/api/public/v1/teams/team-fixture")
+      return json(res, teamDetail);
     if (url.pathname === "/api/public/v1/teams")
       return json(res, { items: [team], nextCursor: null });
     if (url.pathname === "/api/public/v1/communities")
@@ -116,7 +136,9 @@ const server = createServer(async (req, res) => {
     const filename = resolve(dist, `.${decodeURIComponent(url.pathname)}`);
     assert(filename === dist || filename.startsWith(dist + sep));
     const file = extname(filename) ? filename : resolve(dist, "index.html");
-    res.writeHead(200, { "content-type": mime[extname(file)] ?? "application/octet-stream" });
+    res.writeHead(200, {
+      "content-type": mime[extname(file)] ?? "application/octet-stream",
+    });
     res.end(await readFile(file));
   } catch (error) {
     if (!res.headersSent) res.writeHead(500);
@@ -173,60 +195,87 @@ try {
       await page.waitForTimeout(120);
       const result = await page.evaluate(() => {
         const parse = (value) => {
-          const match = value.match(/rgba?\((\d+)[, ]+(\d+)[, ]+(\d+)(?:[, /]+([\d.]+))?\)/);
+          const match = value.match(
+            /rgba?\((\d+)[, ]+(\d+)[, ]+(\d+)(?:[, /]+([\d.]+))?\)/,
+          );
           return match
-            ? [Number(match[1]), Number(match[2]), Number(match[3]), Number(match[4] ?? 1)]
+            ? [
+                Number(match[1]),
+                Number(match[2]),
+                Number(match[3]),
+                Number(match[4] ?? 1),
+              ]
             : null;
         };
         const visible = (element) => {
           const rect = element.getBoundingClientRect();
           if (rect.width <= 0 || rect.height <= 0) return false;
-          for (let current = element; current; current = current.parentElement) {
+          for (
+            let current = element;
+            current;
+            current = current.parentElement
+          ) {
             const style = getComputedStyle(current);
-            if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) <= 0) {
+            if (
+              style.display === "none" ||
+              style.visibility === "hidden" ||
+              Number(style.opacity) <= 0
+            ) {
               return false;
             }
           }
           return true;
         };
         const cssColors = (image) => {
-          const tokens = image.match(/rgba?\([^)]*\)|#[\da-f]{3,8}\b|transparent/gi) ?? [];
-          return tokens.map((token) => {
-            if (token.toLowerCase() === "transparent") return [0, 0, 0, 0];
-            if (token.startsWith("#")) {
-              const hex = token.slice(1);
-              const expanded = hex.length === 3 || hex.length === 4
-                ? [...hex].map((part) => part + part).join("")
-                : hex;
-              return [
-                Number.parseInt(expanded.slice(0, 2), 16),
-                Number.parseInt(expanded.slice(2, 4), 16),
-                Number.parseInt(expanded.slice(4, 6), 16),
-                expanded.length === 8 ? Number.parseInt(expanded.slice(6, 8), 16) / 255 : 1,
-              ];
-            }
-            return parse(token);
-          }).filter(Boolean);
+          const tokens =
+            image.match(/rgba?\([^)]*\)|#[\da-f]{3,8}\b|transparent/gi) ?? [];
+          return tokens
+            .map((token) => {
+              if (token.toLowerCase() === "transparent") return [0, 0, 0, 0];
+              if (token.startsWith("#")) {
+                const hex = token.slice(1);
+                const expanded =
+                  hex.length === 3 || hex.length === 4
+                    ? [...hex].map((part) => part + part).join("")
+                    : hex;
+                return [
+                  Number.parseInt(expanded.slice(0, 2), 16),
+                  Number.parseInt(expanded.slice(2, 4), 16),
+                  Number.parseInt(expanded.slice(4, 6), 16),
+                  expanded.length === 8
+                    ? Number.parseInt(expanded.slice(6, 8), 16) / 255
+                    : 1,
+                ];
+              }
+              return parse(token);
+            })
+            .filter(Boolean);
         };
         const background = (element) => {
           let current = element;
           const imageLayers = [];
           while (current) {
             const style = getComputedStyle(current);
-            if (style.backgroundImage !== "none") imageLayers.push(style.backgroundImage);
+            if (style.backgroundImage !== "none")
+              imageLayers.push(style.backgroundImage);
             const parsed = parse(style.backgroundColor);
             if (parsed && parsed[3] >= 0.98) {
               const gradientSurfaces = imageLayers
                 .filter((image) => /gradient\(/i.test(image))
                 .flatMap(cssColors);
-              const gradientLayers = imageLayers.filter((image) => /gradient\(/i.test(image));
-              const unresolvedBackgrounds = imageLayers.filter((image) =>
-                /\burl\(|image-set\(|paint\(/i.test(image) ||
-                !/gradient\(/i.test(image) ||
-                cssColors(image).length === 0
+              const gradientLayers = imageLayers.filter((image) =>
+                /gradient\(/i.test(image),
+              );
+              const unresolvedBackgrounds = imageLayers.filter(
+                (image) =>
+                  /\burl\(|image-set\(|paint\(/i.test(image) ||
+                  !/gradient\(/i.test(image) ||
+                  cssColors(image).length === 0,
               );
               if (gradientLayers.length > 1) {
-                unresolvedBackgrounds.push("multiple gradient layers require raster evidence");
+                unresolvedBackgrounds.push(
+                  "multiple gradient layers require raster evidence",
+                );
               }
               return { rgb: parsed, gradientSurfaces, unresolvedBackgrounds };
             }
@@ -235,14 +284,19 @@ try {
           const gradientSurfaces = imageLayers
             .filter((image) => /gradient\(/i.test(image))
             .flatMap(cssColors);
-          const gradientLayers = imageLayers.filter((image) => /gradient\(/i.test(image));
-          const unresolvedBackgrounds = imageLayers.filter((image) =>
-            /\burl\(|image-set\(|paint\(/i.test(image) ||
-            !/gradient\(/i.test(image) ||
-            cssColors(image).length === 0
+          const gradientLayers = imageLayers.filter((image) =>
+            /gradient\(/i.test(image),
+          );
+          const unresolvedBackgrounds = imageLayers.filter(
+            (image) =>
+              /\burl\(|image-set\(|paint\(/i.test(image) ||
+              !/gradient\(/i.test(image) ||
+              cssColors(image).length === 0,
           );
           if (gradientLayers.length > 1) {
-            unresolvedBackgrounds.push("multiple gradient layers require raster evidence");
+            unresolvedBackgrounds.push(
+              "multiple gradient layers require raster evidence",
+            );
           }
           return {
             rgb: [240, 242, 245, 1],
@@ -252,11 +306,18 @@ try {
         };
         const opacityContext = (element) => {
           const opacityNodes = [];
-          for (let current = element; current; current = current.parentElement) {
+          for (
+            let current = element;
+            current;
+            current = current.parentElement
+          ) {
             const opacity = Number(getComputedStyle(current).opacity);
             if (opacity < 1) opacityNodes.push({ node: current, opacity });
           }
-          const groupOpacity = opacityNodes.reduce((value, entry) => value * entry.opacity, 1);
+          const groupOpacity = opacityNodes.reduce(
+            (value, entry) => value * entry.opacity,
+            1,
+          );
           const outermost = opacityNodes.at(-1)?.node;
           const backdropBackground = outermost
             ? background(outermost.parentElement)
@@ -267,7 +328,9 @@ try {
             unresolvedBackgrounds: backdropBackground.unresolvedBackgrounds,
           };
         };
-        const mediaRects = Array.from(document.querySelectorAll("img, video, canvas, svg image"))
+        const mediaRects = Array.from(
+          document.querySelectorAll("img, video, canvas, svg image"),
+        )
           .filter(visible)
           .map((media) => {
             const rect = media.getBoundingClientRect();
@@ -288,7 +351,8 @@ try {
           pairs.push({
             text: text.slice(0, 80),
             element: element.tagName.toLowerCase(),
-            className: typeof element.className === "string" ? element.className : "",
+            className:
+              typeof element.className === "string" ? element.className : "",
             foreground,
             foregroundOpacity,
             minimumContrast,
@@ -305,7 +369,10 @@ try {
             ],
           });
         };
-        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+        const walker = document.createTreeWalker(
+          document.body,
+          NodeFilter.SHOW_TEXT,
+        );
         while (walker.nextNode()) {
           const text = walker.currentNode.textContent?.trim();
           const element = walker.currentNode.parentElement;
@@ -317,21 +384,27 @@ try {
         for (const element of document.querySelectorAll(
           "input[placeholder], textarea[placeholder]",
         )) {
-          if (!visible(element) || element.value || !element.placeholder) continue;
+          if (!visible(element) || element.value || !element.placeholder)
+            continue;
           const style = getComputedStyle(element, "::placeholder");
           const foreground = parse(style.color);
           const styleOpacity = Number(style.opacity);
-          if (foreground) addPair(
-            element,
-            `placeholder: ${element.placeholder}`,
-            foreground,
-            Number.isFinite(styleOpacity) ? styleOpacity : 1,
-          );
+          if (foreground)
+            addPair(
+              element,
+              `placeholder: ${element.placeholder}`,
+              foreground,
+              Number.isFinite(styleOpacity) ? styleOpacity : 1,
+            );
         }
         for (const svg of document.querySelectorAll("svg")) {
           if (!visible(svg)) continue;
-          const shape = svg.querySelector("path, circle, rect, line, polyline, polygon");
-          const shapeStyle = shape ? getComputedStyle(shape) : getComputedStyle(svg);
+          const shape = svg.querySelector(
+            "path, circle, rect, line, polyline, polygon",
+          );
+          const shapeStyle = shape
+            ? getComputedStyle(shape)
+            : getComputedStyle(svg);
           const fill = parse(shapeStyle.fill);
           const stroke = parse(shapeStyle.stroke);
           const foreground =
@@ -346,10 +419,18 @@ try {
         )) {
           if (!visible(control)) continue;
           const style = getComputedStyle(control);
-          if (style.borderStyle === "none" || style.borderWidth === "0px") continue;
+          if (style.borderStyle === "none" || style.borderWidth === "0px")
+            continue;
           const border = parse(style.borderTopColor);
           if (border && border[3] > 0) {
-            addPair(control, "selection control border", border, 1, 3, "border");
+            addPair(
+              control,
+              "selection control border",
+              border,
+              1,
+              3,
+              "border",
+            );
           }
         }
 
@@ -363,8 +444,14 @@ try {
             const rect = element.getBoundingClientRect();
             return {
               tag: element.tagName.toLowerCase(),
-              className: typeof element.className === "string" ? element.className : "",
-              rect: [rounded(rect.x), rounded(rect.y), rounded(rect.width), rounded(rect.height)],
+              className:
+                typeof element.className === "string" ? element.className : "",
+              rect: [
+                rounded(rect.x),
+                rounded(rect.y),
+                rounded(rect.width),
+                rounded(rect.height),
+              ],
               color: style.color,
               backgroundColor: style.backgroundColor,
               border: [
@@ -377,8 +464,18 @@ try {
                 style.borderBottomWidth,
                 style.borderLeftWidth,
               ],
-              typography: [style.fontFamily, style.fontSize, style.fontWeight, style.lineHeight],
-              effects: [style.boxShadow, style.opacity, style.display, style.visibility],
+              typography: [
+                style.fontFamily,
+                style.fontSize,
+                style.fontWeight,
+                style.lineHeight,
+              ],
+              effects: [
+                style.boxShadow,
+                style.opacity,
+                style.display,
+                style.visibility,
+              ],
               before: [before.content, before.color, before.backgroundColor],
               after: [after.content, after.color, after.backgroundColor],
             };
@@ -413,7 +510,9 @@ try {
           });
           continue;
         }
-        const surfaces = pair.gradientSurfaces.length ? pair.gradientSurfaces : [pair.surface];
+        const surfaces = pair.gradientSurfaces.length
+          ? pair.gradientSurfaces
+          : [pair.surface];
         const measurements = surfaces.map((surface) =>
           contrastAfterOpacity({
             foreground: pair.foreground,
@@ -423,7 +522,9 @@ try {
             groupOpacity: pair.groupOpacity,
           }),
         );
-        const worst = measurements.reduce((a, b) => a.ratio <= b.ratio ? a : b);
+        const worst = measurements.reduce((a, b) =>
+          a.ratio <= b.ratio ? a : b,
+        );
         if (worst.ratio < pair.minimumContrast) {
           violations.push({
             kind: pair.kind,
@@ -440,16 +541,30 @@ try {
       result.violations = violations;
       result.unverifiedBackgrounds = unverifiedBackgrounds;
       const name = `${theme}-${width}-${route === "/" ? "home" : route.slice(1).replaceAll("/", "-")}`;
-      await page.screenshot({ path: resolve(output, `${name}.png`), fullPage: true });
+      await page.screenshot({
+        path: resolve(output, `${name}.png`),
+        fullPage: true,
+      });
       report.push({ route, width, errors, ...result });
       await page.close();
     }
     await context.close();
   }
-  await writeFile(resolve(output, "report.json"), JSON.stringify(report, null, 2));
+  await writeFile(
+    resolve(output, "report.json"),
+    JSON.stringify(report, null, 2),
+  );
   for (const row of report) {
-    assert.equal(row.theme, theme, `${row.route} did not resolve ${theme} appearance`);
-    assert.deepEqual(row.errors, [], `${row.route} raised browser errors at ${row.width}px`);
+    assert.equal(
+      row.theme,
+      theme,
+      `${row.route} did not resolve ${theme} appearance`,
+    );
+    assert.deepEqual(
+      row.errors,
+      [],
+      `${row.route} raised browser errors at ${row.width}px`,
+    );
     assert(
       row.documentWidth <= row.width + 1,
       `${row.route} overflowed horizontally at ${row.width}px`,
@@ -469,15 +584,25 @@ try {
   }
   console.log(
     JSON.stringify(
-      report.map(({ route, width, theme, documentWidth, errors, violations, unverifiedBackgrounds }) => ({
-        route,
-        width,
-        theme,
-        documentWidth,
-        errors,
-        violations,
-        unverifiedBackgrounds,
-      })),
+      report.map(
+        ({
+          route,
+          width,
+          theme,
+          documentWidth,
+          errors,
+          violations,
+          unverifiedBackgrounds,
+        }) => ({
+          route,
+          width,
+          theme,
+          documentWidth,
+          errors,
+          violations,
+          unverifiedBackgrounds,
+        }),
+      ),
       null,
       2,
     ),
