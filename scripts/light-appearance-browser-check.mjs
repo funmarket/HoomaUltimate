@@ -3,6 +3,7 @@ import { createServer } from "node:http";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { extname, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
+import { contrastAfterOpacity, hasOverlappingMedia } from "./light-appearance-contrast.mjs";
 
 const dist = resolve(process.argv[2]);
 const output = resolve(process.argv[3]);
@@ -177,60 +178,140 @@ try {
             ? [Number(match[1]), Number(match[2]), Number(match[3]), Number(match[4] ?? 1)]
             : null;
         };
-        const luminance = ([r, g, b]) =>
-          [r, g, b]
-            .map((channel) => channel / 255)
-            .map((channel) =>
-              channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
-            )
-            .reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0);
-        const ratio = (a, b) => {
-          const values = [luminance(a), luminance(b)].sort((x, y) => y - x);
-          return (values[0] + 0.05) / (values[1] + 0.05);
-        };
         const visible = (element) => {
-          const style = getComputedStyle(element);
           const rect = element.getBoundingClientRect();
-          return (
-            style.display !== "none" &&
-            style.visibility !== "hidden" &&
-            Number(style.opacity) > 0 &&
-            rect.width > 0 &&
-            rect.height > 0
-          );
+          if (rect.width <= 0 || rect.height <= 0) return false;
+          for (let current = element; current; current = current.parentElement) {
+            const style = getComputedStyle(current);
+            if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) <= 0) {
+              return false;
+            }
+          }
+          return true;
+        };
+        const cssColors = (image) => {
+          const tokens = image.match(/rgba?\([^)]*\)|#[\da-f]{3,8}\b|transparent/gi) ?? [];
+          return tokens.map((token) => {
+            if (token.toLowerCase() === "transparent") return [0, 0, 0, 0];
+            if (token.startsWith("#")) {
+              const hex = token.slice(1);
+              const expanded = hex.length === 3 || hex.length === 4
+                ? [...hex].map((part) => part + part).join("")
+                : hex;
+              return [
+                Number.parseInt(expanded.slice(0, 2), 16),
+                Number.parseInt(expanded.slice(2, 4), 16),
+                Number.parseInt(expanded.slice(4, 6), 16),
+                expanded.length === 8 ? Number.parseInt(expanded.slice(6, 8), 16) / 255 : 1,
+              ];
+            }
+            return parse(token);
+          }).filter(Boolean);
         };
         const background = (element) => {
           let current = element;
-          let media = false;
+          const imageLayers = [];
           while (current) {
             const style = getComputedStyle(current);
-            if (style.backgroundImage !== "none") media = true;
+            if (style.backgroundImage !== "none") imageLayers.push(style.backgroundImage);
             const parsed = parse(style.backgroundColor);
-            if (parsed && parsed[3] >= 0.98) return { rgb: parsed, media };
+            if (parsed && parsed[3] >= 0.98) {
+              const gradientSurfaces = imageLayers
+                .filter((image) => /gradient\(/i.test(image))
+                .flatMap(cssColors);
+              const gradientLayers = imageLayers.filter((image) => /gradient\(/i.test(image));
+              const unresolvedBackgrounds = imageLayers.filter((image) =>
+                /\burl\(|image-set\(|paint\(/i.test(image) ||
+                !/gradient\(/i.test(image) ||
+                cssColors(image).length === 0
+              );
+              if (gradientLayers.length > 1) {
+                unresolvedBackgrounds.push("multiple gradient layers require raster evidence");
+              }
+              return { rgb: parsed, gradientSurfaces, unresolvedBackgrounds };
+            }
             current = current.parentElement;
           }
-          return { rgb: [240, 242, 245, 1], media };
+          const gradientSurfaces = imageLayers
+            .filter((image) => /gradient\(/i.test(image))
+            .flatMap(cssColors);
+          const gradientLayers = imageLayers.filter((image) => /gradient\(/i.test(image));
+          const unresolvedBackgrounds = imageLayers.filter((image) =>
+            /\burl\(|image-set\(|paint\(/i.test(image) ||
+            !/gradient\(/i.test(image) ||
+            cssColors(image).length === 0
+          );
+          if (gradientLayers.length > 1) {
+            unresolvedBackgrounds.push("multiple gradient layers require raster evidence");
+          }
+          return {
+            rgb: [240, 242, 245, 1],
+            gradientSurfaces,
+            unresolvedBackgrounds,
+          };
         };
-        const rows = [];
+        const opacityContext = (element) => {
+          const opacityNodes = [];
+          for (let current = element; current; current = current.parentElement) {
+            const opacity = Number(getComputedStyle(current).opacity);
+            if (opacity < 1) opacityNodes.push({ node: current, opacity });
+          }
+          const groupOpacity = opacityNodes.reduce((value, entry) => value * entry.opacity, 1);
+          const outermost = opacityNodes.at(-1)?.node;
+          const backdropBackground = outermost
+            ? background(outermost.parentElement)
+            : background(element);
+          return {
+            groupOpacity,
+            backdrop: backdropBackground.rgb,
+            unresolvedBackgrounds: backdropBackground.unresolvedBackgrounds,
+          };
+        };
+        const mediaRects = Array.from(document.querySelectorAll("img, video, canvas, svg image"))
+          .filter(visible)
+          .map((media) => {
+            const rect = media.getBoundingClientRect();
+            return [rect.left, rect.top, rect.right, rect.bottom];
+          });
+        const pairs = [];
+        const addPair = (
+          element,
+          text,
+          foreground,
+          foregroundOpacity = 1,
+          minimumContrast = 4.5,
+          kind = "text",
+        ) => {
+          const bg = background(element);
+          const context = opacityContext(element);
+          const rect = element.getBoundingClientRect();
+          pairs.push({
+            text: text.slice(0, 80),
+            element: element.tagName.toLowerCase(),
+            className: typeof element.className === "string" ? element.className : "",
+            foreground,
+            foregroundOpacity,
+            minimumContrast,
+            kind,
+            rect: [rect.left, rect.top, rect.right, rect.bottom],
+            mediaRects,
+            surface: bg.rgb,
+            backdrop: context.backdrop,
+            groupOpacity: context.groupOpacity,
+            gradientSurfaces: bg.gradientSurfaces,
+            unresolvedBackgrounds: [
+              ...bg.unresolvedBackgrounds,
+              ...context.unresolvedBackgrounds,
+            ],
+          });
+        };
         const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
         while (walker.nextNode()) {
           const text = walker.currentNode.textContent?.trim();
           const element = walker.currentNode.parentElement;
           if (!text || !element || !visible(element)) continue;
           const color = parse(getComputedStyle(element).color);
-          const bg = background(element);
-          if (!color) continue;
-          const contrast = ratio(color, bg.rgb);
-          if (contrast < 4.5 && !bg.media) {
-            rows.push({
-              text: text.slice(0, 80),
-              element: element.tagName.toLowerCase(),
-              className: typeof element.className === "string" ? element.className : "",
-              foreground: getComputedStyle(element).color,
-              background: `rgb(${bg.rgb.slice(0, 3).join(", ")})`,
-              contrast,
-            });
-          }
+          if (color) addPair(element, text, color);
         }
 
         for (const element of document.querySelectorAll(
@@ -239,26 +320,39 @@ try {
           if (!visible(element) || element.value || !element.placeholder) continue;
           const style = getComputedStyle(element, "::placeholder");
           const foreground = parse(style.color);
-          const bg = background(element);
-          if (!foreground) continue;
           const styleOpacity = Number(style.opacity);
-          const alpha = foreground[3] * (Number.isFinite(styleOpacity) ? styleOpacity : 1);
-          if (alpha <= 0) continue;
-          const composited = foreground
-            .slice(0, 3)
-            .map((channel, index) => channel * alpha + bg.rgb[index] * (1 - alpha));
-          const contrast = ratio(composited, bg.rgb);
-          if (contrast < 4.5 && !bg.media) {
-            rows.push({
-              text: `placeholder: ${element.placeholder.slice(0, 80)}`,
-              element: element.tagName.toLowerCase(),
-              className: typeof element.className === "string" ? element.className : "",
-              foreground: style.color,
-              background: `rgb(${bg.rgb.slice(0, 3).join(", ")})`,
-              contrast,
-            });
+          if (foreground) addPair(
+            element,
+            `placeholder: ${element.placeholder}`,
+            foreground,
+            Number.isFinite(styleOpacity) ? styleOpacity : 1,
+          );
+        }
+        for (const svg of document.querySelectorAll("svg")) {
+          if (!visible(svg)) continue;
+          const shape = svg.querySelector("path, circle, rect, line, polyline, polygon");
+          const shapeStyle = shape ? getComputedStyle(shape) : getComputedStyle(svg);
+          const fill = parse(shapeStyle.fill);
+          const stroke = parse(shapeStyle.stroke);
+          const foreground =
+            (stroke && stroke[3] > 0 && stroke) ||
+            (fill && fill[3] > 0 && fill) ||
+            parse(getComputedStyle(svg).color);
+          if (foreground) addPair(svg, "SVG icon", foreground, 1, 3, "icon");
+        }
+
+        for (const control of document.querySelectorAll(
+          'input[type="radio"], input[type="checkbox"], [role="radio"], [role="checkbox"], [aria-checked]',
+        )) {
+          if (!visible(control)) continue;
+          const style = getComputedStyle(control);
+          if (style.borderStyle === "none" || style.borderWidth === "0px") continue;
+          const border = parse(style.borderTopColor);
+          if (border && border[3] > 0) {
+            addPair(control, "selection control border", border, 1, 3, "border");
           }
         }
+
         const rounded = (value) => Math.round(value * 100) / 100;
         const appearance = Array.from(document.body.querySelectorAll("*"))
           .filter(visible)
@@ -294,10 +388,57 @@ try {
           theme: document.documentElement.dataset.theme,
           text: document.body.innerText.slice(0, 200),
           documentWidth: document.documentElement.scrollWidth,
-          violations: rows,
+          pairs,
           appearance,
         };
       });
+      const violations = [];
+      const unverifiedBackgrounds = [];
+      for (const pair of result.pairs) {
+        if (
+          pair.unresolvedBackgrounds.length ||
+          hasOverlappingMedia(pair.rect, pair.mediaRects)
+        ) {
+          unverifiedBackgrounds.push({
+            kind: pair.kind,
+            text: pair.text,
+            element: pair.element,
+            className: pair.className,
+            layers: [
+              ...pair.unresolvedBackgrounds,
+              ...(hasOverlappingMedia(pair.rect, pair.mediaRects)
+                ? ["overlapping media element requires raster evidence"]
+                : []),
+            ],
+          });
+          continue;
+        }
+        const surfaces = pair.gradientSurfaces.length ? pair.gradientSurfaces : [pair.surface];
+        const measurements = surfaces.map((surface) =>
+          contrastAfterOpacity({
+            foreground: pair.foreground,
+            surface,
+            backdrop: pair.backdrop,
+            foregroundOpacity: pair.foregroundOpacity,
+            groupOpacity: pair.groupOpacity,
+          }),
+        );
+        const worst = measurements.reduce((a, b) => a.ratio <= b.ratio ? a : b);
+        if (worst.ratio < pair.minimumContrast) {
+          violations.push({
+            kind: pair.kind,
+            text: pair.text,
+            element: pair.element,
+            className: pair.className,
+            foreground: pair.foreground,
+            background: worst.background,
+            contrast: worst.ratio,
+          });
+        }
+      }
+      delete result.pairs;
+      result.violations = violations;
+      result.unverifiedBackgrounds = unverifiedBackgrounds;
       const name = `${theme}-${width}-${route === "/" ? "home" : route.slice(1).replaceAll("/", "-")}`;
       await page.screenshot({ path: resolve(output, `${name}.png`), fullPage: true });
       report.push({ route, width, errors, ...result });
@@ -319,17 +460,23 @@ try {
         [],
         `${row.route} has unreadable rendered foreground/background pairs at ${row.width}px`,
       );
+      assert.deepEqual(
+        row.unverifiedBackgrounds,
+        [],
+        `${row.route} has visible text over a background the checker cannot resolve at ${row.width}px`,
+      );
     }
   }
   console.log(
     JSON.stringify(
-      report.map(({ route, width, theme, documentWidth, errors, violations }) => ({
+      report.map(({ route, width, theme, documentWidth, errors, violations, unverifiedBackgrounds }) => ({
         route,
         width,
         theme,
         documentWidth,
         errors,
         violations,
+        unverifiedBackgrounds,
       })),
       null,
       2,

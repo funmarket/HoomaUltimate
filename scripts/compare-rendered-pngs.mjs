@@ -68,5 +68,5 @@ for (const path of files) {
 }
 
 console.log(
-  `Verified ${files.length} Dark renders with identical computed appearance; ${changedPixels} of ${totalPixels} screenshot pixels varied across isolated browser sessions.`,
+  `Verified ${files.length} Dark renders with identical computed appearance; screenshot pixel differences are diagnostic, not an equality gate (${changedPixels} of ${totalPixels} pixels differed across isolated browser sessions).`,
 );
