@@ -296,3 +296,26 @@ test("every hardcoded dark CSS surface has an explicit Light Mode owner", async 
   assert.ok(files.length >= 56, `expected the complete CSS inventory, received ${files.length}`);
   assert.deepEqual(uncovered, []);
 });
+
+
+test("Light Mode placeholders and Team detail use readable foregrounds", async () => {
+  const css = await readFile(lightCss, "utf8");
+
+  assert.ok(contrastRatio("#65676b", "#ffffff") >= 4.5);
+  assert.match(
+    css,
+    /:root\[data-theme="light"\] :is\(input, textarea\)::placeholder\s*\{[^}]*color:\s*#65676b;[^}]*opacity:\s*1;/,
+  );
+  assert.match(
+    css,
+    /:root\[data-theme="light"\] \.team-profile-page\s*\{[^}]*--teams-muted:\s*#65676b;[^}]*--teams-cream:\s*#050505;/,
+  );
+  assert.match(
+    css,
+    /:root\[data-theme="light"\] \.team-profile-page \.button\.secondary\s*\{[^}]*background:\s*#ffffff;[^}]*color:\s*#262626;/,
+  );
+  assert.match(
+    css,
+    /:root\[data-theme="light"\] \.team-profile-page \.chip\.gold\s*\{[^}]*background:\s*#fff8e5;[^}]*color:\s*#705000;/,
+  );
+});

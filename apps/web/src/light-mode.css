@@ -31,7 +31,8 @@
 }
 
 :root[data-theme="light"] :is(input, textarea)::placeholder {
-  color: #8a8d91;
+  color: #65676b;
+  opacity: 1;
 }
 
 :root[data-theme="light"] :is(input, select, textarea):focus-visible {
@@ -549,7 +550,7 @@
 :root[data-theme="light"]
   :is(.athletes-page .athletes-field input, .athletes-page .athletes-field textarea)::placeholder,
 :root[data-theme="light"] .athletes-inline-form input::placeholder {
-  color: #8a8d91;
+  color: #65676b;
 }
 
 :root[data-theme="light"] .teams-page {
@@ -1483,4 +1484,74 @@
     .team-lineup-field::after
   ) {
   color-scheme: light;
+}
+
+
+/* Team detail uses a separate page root from the Teams directory. */
+:root[data-theme="light"] .team-profile-page {
+  --teams-cream: #050505;
+  --teams-muted: #65676b;
+  --teams-line: #dbdbdb;
+  --teams-panel: #ffffff;
+  --teams-gold: #8a6500;
+  --teams-lime: #2f6f3e;
+  color: #262626;
+}
+
+:root[data-theme="light"] .team-profile-page :is(.panel, .state-card) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"] .team-profile-page :is(.panel, .state-card) :is(h1, h2, h3, strong) {
+  color: #050505;
+}
+
+:root[data-theme="light"] .team-profile-page :is(.panel, .state-card) :is(p, .muted, small) {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .team-profile-page :is(.muted, .team-player-identity small) {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .team-profile-page .button:not(.secondary) {
+  border-color: #2f6f3e;
+  background: #2f6f3e;
+  color: #ffffff;
+}
+
+:root[data-theme="light"] .team-profile-page .button.secondary {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+}
+
+:root[data-theme="light"] .team-profile-page .chip {
+  border-color: #dbdbdb;
+  background: #efefef;
+  color: #262626;
+}
+
+:root[data-theme="light"] .team-profile-page .chip.selected {
+  border-color: #2f6f3e;
+  background: #e9fbf0;
+  color: #245c33;
+}
+
+:root[data-theme="light"] .team-profile-page .chip.gold {
+  border-color: #8a6500;
+  background: #fff8e5;
+  color: #705000;
+}
+
+/* Team names remain white only over the existing dark media overlay. */
+:root[data-theme="light"] .team-profile-hero .team-media-banner__overlay {
+  background: linear-gradient(90deg, rgba(8, 8, 8, 0.88), rgba(8, 8, 8, 0.72));
+}
+
+:root[data-theme="light"] .team-profile-hero :is(h1, p, small) {
+  color: #f7f7f7;
 }

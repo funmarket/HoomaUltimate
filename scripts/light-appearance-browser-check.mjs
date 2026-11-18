@@ -49,6 +49,21 @@ const team = {
   communityId: null,
   _count: { players: 11 },
 };
+const teamDetail = {
+  id: "team-fixture",
+  communityId: null,
+  slug: "team-fixture",
+  name: team.name,
+  motto: team.motto,
+  city: team.city,
+  houma: team.houma,
+  badgeUrl: null,
+  bannerUrl: null,
+  community: null,
+  players: [],
+  responsibilities: [],
+  lineups: [],
+};
 const community = {
   id: "community-fixture",
   slug: "community-fixture",
@@ -85,6 +100,7 @@ const server = createServer(async (req, res) => {
     if (url.pathname === "/api/public/v1/events") return json(res, { items: [], nextCursor: null });
     if (url.pathname === "/api/public/v1/athletes")
       return json(res, { items: [athlete], nextCursor: null });
+    if (url.pathname === "/api/public/v1/teams/team-fixture") return json(res, teamDetail);
     if (url.pathname === "/api/public/v1/teams")
       return json(res, { items: [team], nextCursor: null });
     if (url.pathname === "/api/public/v1/communities")
@@ -126,6 +142,7 @@ const routes = [
   "/athletes/gear-up",
   "/teams",
   "/teams/new",
+  "/teams/team-fixture",
   "/pitch",
   "/places",
   "/requests",
@@ -210,6 +227,31 @@ try {
               element: element.tagName.toLowerCase(),
               className: typeof element.className === "string" ? element.className : "",
               foreground: getComputedStyle(element).color,
+              background: `rgb(${bg.rgb.slice(0, 3).join(", ")})`,
+              contrast,
+            });
+          }
+        }
+
+        for (const element of document.querySelectorAll("input[placeholder], textarea[placeholder]")) {
+          if (!visible(element) || element.value || !element.placeholder) continue;
+          const style = getComputedStyle(element, "::placeholder");
+          const foreground = parse(style.color);
+          const bg = background(element);
+          if (!foreground) continue;
+          const styleOpacity = Number(style.opacity);
+          const alpha = foreground[3] * (Number.isFinite(styleOpacity) ? styleOpacity : 1);
+          if (alpha <= 0) continue;
+          const composited = foreground.slice(0, 3).map((channel, index) =>
+            channel * alpha + bg.rgb[index] * (1 - alpha),
+          );
+          const contrast = ratio(composited, bg.rgb);
+          if (contrast < 4.5 && !bg.media) {
+            rows.push({
+              text: `placeholder: ${element.placeholder.slice(0, 80)}`,
+              element: element.tagName.toLowerCase(),
+              className: typeof element.className === "string" ? element.className : "",
+              foreground: style.color,
               background: `rgb(${bg.rgb.slice(0, 3).join(", ")})`,
               contrast,
             });
