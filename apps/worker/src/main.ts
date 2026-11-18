@@ -85,7 +85,7 @@ if (storage) {
   );
   outboxHandlers.set(
     REQUEST_IMAGE_RECONCILE_TOPIC,
-    createRequestImageCleanupHandler(database, storage),
+    createRequestImageCleanupHandler(database, storage, mediaStorageScope),
   );
   outboxHandlers.set(
     GEAR_UP_PRODUCT_IMAGE_RECONCILE_TOPIC,

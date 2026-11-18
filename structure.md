@@ -178,6 +178,8 @@ Mechanical shared image-processing primitives only: decode/format verification, 
 
 Ride uses the shared validation-only `inspectMedia` capability before vehicle-photo object writes. It reuses the same inspection implementation as `processMedia` and returns source content type and orientation-aware dimensions without generating variants or changing bytes. Validation-only inspection decodes all retained animation frames within the pixel bound and reports per-frame dimensions; existing transformation paths preserve their current frame-selection behavior. Ride retains its own authorization, error mapping, original representation, metadata, keys, public reads and cleanup lifecycle.
 
+Requests uses `PHOTO_STANDARD` master-only processing with the existing single `HelpRequestImage` record and owner-controlled preparation/replacement lifecycle. New uploads use the typed `REQUEST_PHOTO` namespace in the configured storage scope; the Requests Worker validates scope, identity and current references before deletion, while legacy `request-images/{requestId}/{mediaId}` keys remain supported for read and cleanup compatibility. Requests retains upload-or-external-URL behavior, private audience rules, and its existing Outbox topic.
+
 ### `packages/storage`
 
 Object-storage abstraction/adapters. No feature authorization.

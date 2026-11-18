@@ -1,10 +1,6 @@
 import type { RequestImageContentType } from "@hooma/contracts/requests";
-
-export interface ProcessedRequestImage {
-  readonly body: Uint8Array;
-  readonly contentType: RequestImageContentType;
-}
+import type { ProcessedMediaResult } from "@hooma/media-processing";
 
 export interface RequestImageProcessor {
-  process(body: Uint8Array, contentType: RequestImageContentType): Promise<ProcessedRequestImage>;
+  process(body: Uint8Array, contentType: RequestImageContentType): Promise<ProcessedMediaResult>;
 }
