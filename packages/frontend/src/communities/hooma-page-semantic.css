@@ -286,3 +286,20 @@
     padding: 0.9rem;
   }
 }
+
+
+/*
+ * HOOMA panels and discovery cards deliberately remain dark heritage surfaces
+ * inside the light page canvas. Scope the matching dark-surface semantics to
+ * those owners so outer page headings can continue using the light palette.
+ */
+:root[data-theme="light"] .hooma-page
+  :is(.panel, .state-card, .member-gate, .hooma-discovery-card) {
+  --hooma-page-text: #f4f1ea;
+  --hooma-page-text-strong: #f4f1ea;
+  --hooma-page-muted: #c8c3b8;
+  --hooma-page-accent: #e8c36a;
+  --hooma-page-positive: #a3e635;
+  --hooma-page-people: #58bfff;
+  --hooma-page-warning: #ff913d;
+}
