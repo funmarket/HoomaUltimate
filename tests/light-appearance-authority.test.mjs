@@ -147,6 +147,8 @@ test("Light Mode converts shell chrome and every major domain owner to light sur
   assert.match(account, /--hooma-chrome-bg:\s*#070808/);
   assert.match(light, /\.hooma-topbar[\s\S]*background:\s*#ffffff/);
   assert.match(light, /\.hooma-bottom-nav[\s\S]*background:\s*rgba\(255, 255, 255, 0\.96\)/);
+  assert.match(light, /\.hooma-bottom-nav__item--active\s*\{[\s\S]*color:\s*#005fcc/);
+  assert.match(light, /\.home-gateway-card\s*\{[\s\S]*background:\s*#0b0b09/);
 
   for (const selector of [
     ".play-page",

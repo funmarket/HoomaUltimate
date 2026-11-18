@@ -154,22 +154,22 @@
 }
 
 :root[data-theme="light"] .hooma-bottom-nav__item--active {
-  color: #0866ff;
+  color: #005fcc;
 }
 
 :root[data-theme="light"] .hooma-bottom-nav__item--active .hooma-bottom-nav__icon-shell {
-  border-color: rgba(8, 102, 255, 0.2);
+  border-color: rgba(0, 95, 204, 0.22);
   background: #e7f3ff;
 }
 
 :root[data-theme="light"] .hooma-bottom-nav__item--active::after {
-  background: #0866ff;
+  background: #005fcc;
 }
 
 /* Home gateways and shared media editors rendered from component style blocks. */
 :root[data-theme="light"] .home-gateway-card {
   border: 1px solid #dbdbdb;
-  background: #ffffff;
+  background: #0b0b09;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
