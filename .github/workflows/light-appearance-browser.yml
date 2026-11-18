@@ -1,0 +1,61 @@
+name: Light appearance browser acceptance
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/src/**/*.css"
+      - "apps/web/src/settings/theme.ts"
+      - "packages/frontend/src/**/*.css"
+      - "packages/frontend/src/communities/CommunityMedia.tsx"
+      - "packages/ui/src/**/*.css"
+      - "scripts/light-appearance-browser-check.mjs"
+      - "tests/light-appearance-authority.test.mjs"
+      - ".github/workflows/light-appearance-browser.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: candidate
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: baseline
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --global npm@10.9.2
+      - name: Build exact baseline and candidate revisions
+        run: |
+          for target in baseline candidate; do
+            (cd "$target" && npm ci && npm run db:generate && npm run build:packages && NODE_ENV=production npm -w @hooma/web run build)
+          done
+      - name: Install isolated browser runner
+        run: |
+          npm install --prefix "$RUNNER_TEMP/light-browser" playwright@1.56.1
+          "$RUNNER_TEMP/light-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Verify rendered Light contrast and unchanged Dark appearance
+        env:
+          LIGHT_PLAYWRIGHT_MODULE: ${{ runner.temp }}/light-browser/node_modules/playwright/index.mjs
+        run: |
+          node candidate/scripts/light-appearance-browser-check.mjs baseline/apps/web/dist light-browser-evidence/baseline-dark dark
+          node candidate/scripts/light-appearance-browser-check.mjs candidate/apps/web/dist light-browser-evidence/candidate-dark dark
+          node candidate/scripts/light-appearance-browser-check.mjs candidate/apps/web/dist light-browser-evidence/candidate-light light
+          while IFS= read -r image; do
+            relative="${image#light-browser-evidence/baseline-dark/}"
+            cmp "$image" "light-browser-evidence/candidate-dark/$relative"
+          done < <(find light-browser-evidence/baseline-dark -name '*.png' -type f | sort)
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: light-appearance-browser-evidence
+          path: light-browser-evidence
+          if-no-files-found: error
+          retention-days: 14

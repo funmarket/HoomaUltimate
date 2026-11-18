@@ -55,7 +55,7 @@ export function CommunityMediaSurface({
   const Surface = as;
 
   return (
-    <Surface className={className} style={style}>
+    <Surface className={className} style={style} data-has-media={loadedUrl ? "true" : "false"}>
       {children}
     </Surface>
   );

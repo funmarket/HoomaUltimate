@@ -9,6 +9,10 @@ const legacyCss = new URL("../apps/web/src/styles.css", import.meta.url);
 const accountCss = new URL("../apps/web/src/account/account.css", import.meta.url);
 const profileCss = new URL("../apps/web/src/profile/profile.css", import.meta.url);
 const lightCss = new URL("../apps/web/src/light-mode.css", import.meta.url);
+const communityMediaSource = new URL(
+  "../packages/frontend/src/communities/CommunityMedia.tsx",
+  import.meta.url,
+);
 
 function contrastRatio(foreground, background) {
   const luminance = (hex) => {
@@ -174,6 +178,54 @@ test("Light Mode fixes the exact Play and HOOMA regressions", async () => {
   assert.match(css, /\.hooma-page[\s\S]*\.panel[\s\S]*background:\s*#ffffff/);
   assert.match(css, /\.hooma-page[\s\S]*\.hooma-discovery-card[\s\S]*color:\s*#262626/);
   assert.match(css, /\.hooma-page \.hooma-domain-card[\s\S]*background:\s*#ffffff/);
+});
+
+test("Light Mode owns the visible Athletes foregrounds placed on light cards", async () => {
+  const css = await readFile(lightCss, "utf8");
+
+  for (const selector of [
+    ".athletes-sport-chips button",
+    ".athletes-card h2",
+    ".athletes-card p",
+    ".athletes-card__footer small",
+    ".athletes-card__footer span",
+    ".athletes-page .athletes-field > span",
+    ".athletes-page .athletes-field input",
+    ".athletes-page .athletes-field textarea",
+    ".athletes-page .athletes-choice-option",
+    ".athletes-view-tab",
+  ]) {
+    assert.ok(css.includes(selector), `missing Light foreground owner: ${selector}`);
+  }
+});
+
+test("Light Mode gives Teams primary and secondary controls independent readable colors", async () => {
+  const css = await readFile(lightCss, "utf8");
+
+  assert.match(
+    css,
+    /\.teams-page \.button:not\(\.secondary\)[\s\S]*background:\s*#2f6f3e;[\s\S]*color:\s*#ffffff;/,
+  );
+  assert.match(
+    css,
+    /\.teams-page \.button\.secondary[\s\S]*background:\s*#ffffff;[\s\S]*color:\s*#262626;/,
+  );
+});
+
+test("Light Mode owns HOOMA list, create and detail roots and distinguishes media overlays", async () => {
+  const [css, media] = await Promise.all([
+    readFile(lightCss, "utf8"),
+    readFile(communityMediaSource, "utf8"),
+  ]);
+
+  assert.match(
+    css,
+    /:root\[data-theme="light"\]\s+:is\(\.hooma-page, \.hooma-create-page, \.hooma-detail-page\)/,
+  );
+  assert.match(css, /\.hooma-create-preview\[data-has-media="false"\][\s\S]*color:\s*#050505/);
+  assert.match(css, /\.hooma-create-preview\[data-has-media="true"\][\s\S]*color:\s*#ffffff/);
+  assert.match(css, /\.hooma-create-form \.field > span[\s\S]*color:\s*#65676b/);
+  assert.match(media, /data-has-media=\{loadedUrl \? "true" : "false"\}/);
 });
 
 test("Light profile overrides preserve Passport structure while removing dark surfaces", async () => {

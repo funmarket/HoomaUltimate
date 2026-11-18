@@ -269,6 +269,8 @@ The product-owner-approved app-wide visual foundation is canonical here. New or 
 
 Approved brand/home artwork is source-controlled product material. Reuse the exact approved asset or a faithful delivery derivative; do not replace it with guessed artwork. Runtime asset paths and current UI source are authoritative for what is actually shipped, while product acceptance rules belong in this file.
 
+The explicit Light appearance is a complete application appearance, not a light page canvas around retained Dark panels. Across every page root and visible state, neutral Light surfaces use white or cool light-gray backgrounds with dark readable foregrounds; white foregrounds remain only on intentionally dark media overlays or sufficiently contrasting semantic actions. Every visible foreground/background pair must meet readable contrast in rendered phone-first verification. Light-only work must not alter the governed Dark appearance, domain mechanics, routes, authorization, or shared Web/Telegram behavior.
+
 ## 3.4 Telegram experience
 
 Even though Web and Telegram currently share the HOOMA frontend tree, Telegram must still behave as a genuine Mini App where relevant:

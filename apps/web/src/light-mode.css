@@ -327,7 +327,7 @@
 }
 
 /* HOOMA Communities. */
-:root[data-theme="light"] .hooma-page {
+:root[data-theme="light"] :is(.hooma-page, .hooma-create-page, .hooma-detail-page) {
   --hooma-panel: #ffffff;
   --hooma-cream: #050505;
   --hooma-muted: #65676b;
@@ -345,6 +345,37 @@
   --hooma-page-surface-raised: #efefef;
   --hooma-page-border: #dbdbdb;
   --hooma-page-border-strong: #ced0d4;
+  color: #262626;
+}
+
+:root[data-theme="light"]
+  :is(.hooma-create-page, .hooma-detail-page)
+  :is(.panel, .state-card, .member-gate) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"] :is(.hooma-create-page, .hooma-detail-page) :is(h1, h2, h3, strong) {
+  color: #050505;
+}
+
+:root[data-theme="light"] :is(.hooma-create-page, .hooma-detail-page) :is(p, .muted, small) {
+  color: #65676b;
+}
+
+:root[data-theme="light"]
+  :is(.hooma-create-page, .hooma-detail-page)
+  :is(.button:not(.secondary), .hooma-create-action) {
+  border-color: #2f6f3e;
+  background: #2f6f3e;
+  color: #ffffff;
+}
+
+:root[data-theme="light"] :is(.hooma-create-page, .hooma-detail-page) .button.secondary {
+  border-color: #dbdbdb;
+  background: #ffffff;
   color: #262626;
 }
 
@@ -444,6 +475,67 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
+:root[data-theme="light"] .athletes-sport-chips button,
+:root[data-theme="light"] .athletes-view-tab,
+:root[data-theme="light"] .athletes-page .athletes-choice-option,
+:root[data-theme="light"] .athletes-page .athletes-field input,
+:root[data-theme="light"] .athletes-page .athletes-field textarea,
+:root[data-theme="light"] .athletes-inline-form input {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+}
+
+:root[data-theme="light"]
+  :is(.athletes-sport-chips button.is-active, .athletes-view-tab.is-active) {
+  border-color: #2f6f3e;
+  background: #e9fbf0;
+  color: #245c33;
+}
+
+:root[data-theme="light"]
+  :is(
+    .athletes-card h2,
+    .athletes-page .athletes-choice-grid strong,
+    .athletes-member-row strong,
+    .athletes-requests__heading h2
+  ) {
+  color: #050505;
+}
+
+:root[data-theme="light"]
+  :is(
+    .athletes-card p,
+    .athletes-card__footer small,
+    .athletes-card__footer span,
+    .athletes-page .athletes-field > span,
+    .athletes-page .athletes-choice-grid small,
+    .athletes-member-row small,
+    .athletes-join-panel__status span,
+    .athletes-role,
+    .athletes-member-role
+  ) {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .athletes-page .athletes-action--primary {
+  border-color: #2f6f3e;
+  background: #2f6f3e;
+  color: #ffffff;
+}
+
+:root[data-theme="light"] :is(.athletes-page .athletes-action--secondary, .athletes-mini-action) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+}
+
+:root[data-theme="light"]
+  :is(.athletes-page .athletes-field input, .athletes-page .athletes-field textarea)::placeholder,
+:root[data-theme="light"] .athletes-inline-form input::placeholder {
+  color: #8a8d91;
+}
+
 :root[data-theme="light"] .teams-page {
   --teams-cream: #050505;
   --teams-muted: #65676b;
@@ -461,6 +553,36 @@
   background: #ffffff;
   color: #262626;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"] .teams-page .button:not(.secondary) {
+  border-color: #2f6f3e;
+  background: #2f6f3e;
+  color: #ffffff;
+}
+
+:root[data-theme="light"] .teams-page .button.secondary {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+}
+
+:root[data-theme="light"]
+  :is(.teams-page .field span, .team-card p, .team-section p, .team-discovery-card-pro p) {
+  color: #65676b;
+}
+
+:root[data-theme="light"]
+  :is(.teams-page input, .teams-page select, .teams-tab, .teams-filter-chip) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+}
+
+:root[data-theme="light"] :is(.teams-tab.active, .teams-filter-chip.active) {
+  border-color: #2f6f3e;
+  background: #e9fbf0;
+  color: #245c33;
 }
 
 :root[data-theme="light"] .control-room {
@@ -850,6 +972,29 @@
   background: #ffffff;
   color: #262626;
   box-shadow: none;
+}
+
+:root[data-theme="light"] .hooma-create-preview[data-has-media="false"] {
+  background: #ffffff;
+  color: #050505;
+}
+
+:root[data-theme="light"] .hooma-create-preview[data-has-media="false"] :is(h1, h2, h3, strong) {
+  color: #050505;
+}
+
+:root[data-theme="light"] .hooma-create-preview[data-has-media="false"] p,
+:root[data-theme="light"] .hooma-create-form .field > span {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .hooma-create-preview[data-has-media="true"] {
+  color: #ffffff;
+}
+
+:root[data-theme="light"] .hooma-create-preview[data-has-media="true"] :is(h1, h2, h3, strong, p) {
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.72);
 }
 
 :root[data-theme="light"]
