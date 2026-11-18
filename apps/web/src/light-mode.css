@@ -1486,7 +1486,6 @@
   color-scheme: light;
 }
 
-
 /* Team detail uses a separate page root from the Teams directory. */
 :root[data-theme="light"] .team-profile-page {
   --teams-cream: #050505;

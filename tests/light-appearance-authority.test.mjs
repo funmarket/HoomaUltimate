@@ -297,7 +297,6 @@ test("every hardcoded dark CSS surface has an explicit Light Mode owner", async 
   assert.deepEqual(uncovered, []);
 });
 
-
 test("Light Mode placeholders and Team detail use readable foregrounds", async () => {
   const css = await readFile(lightCss, "utf8");
 
@@ -308,7 +307,7 @@ test("Light Mode placeholders and Team detail use readable foregrounds", async (
   );
   assert.match(
     css,
-    /:root\[data-theme="light"\] \.team-profile-page\s*\{[^}]*--teams-muted:\s*#65676b;[^}]*--teams-cream:\s*#050505;/,
+    /:root\[data-theme=\"light\"\] \.team-profile-page\s*\{(?=[^}]*--teams-muted:\s*#65676b;)(?=[^}]*--teams-cream:\s*#050505;)[^}]*\}/,
   );
   assert.match(
     css,

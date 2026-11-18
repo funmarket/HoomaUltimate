@@ -233,7 +233,9 @@ try {
           }
         }
 
-        for (const element of document.querySelectorAll("input[placeholder], textarea[placeholder]")) {
+        for (const element of document.querySelectorAll(
+          "input[placeholder], textarea[placeholder]",
+        )) {
           if (!visible(element) || element.value || !element.placeholder) continue;
           const style = getComputedStyle(element, "::placeholder");
           const foreground = parse(style.color);
@@ -242,9 +244,9 @@ try {
           const styleOpacity = Number(style.opacity);
           const alpha = foreground[3] * (Number.isFinite(styleOpacity) ? styleOpacity : 1);
           if (alpha <= 0) continue;
-          const composited = foreground.slice(0, 3).map((channel, index) =>
-            channel * alpha + bg.rgb[index] * (1 - alpha),
-          );
+          const composited = foreground
+            .slice(0, 3)
+            .map((channel, index) => channel * alpha + bg.rgb[index] * (1 - alpha));
           const contrast = ratio(composited, bg.rgb);
           if (contrast < 4.5 && !bg.media) {
             rows.push({
