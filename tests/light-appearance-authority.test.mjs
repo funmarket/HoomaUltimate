@@ -82,7 +82,6 @@ test("light profile sections preserve the current dark HOOMA Passport architectu
   assert.match(css, /\.public-profile-contact button\s*\{[\s\S]*color:\s*#b8ff2a/);
 });
 
-
 test("light appearance keeps intentional Play and HOOMA dark surfaces readable", async () => {
   const [play, players, hooma] = await Promise.all([
     readFile(playCss, "utf8"),
