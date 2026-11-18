@@ -41,3 +41,37 @@ export function hasOverlappingMedia(textRect, mediaRects) {
       textRect[0] < right && textRect[2] > left && textRect[1] < bottom && textRect[3] > top,
   );
 }
+
+export function samplePixelsInRect({
+  data,
+  width,
+  height,
+  channels,
+  rect,
+  scaleX = 1,
+  scaleY = 1,
+  maxSamples = 256,
+}) {
+  if (channels < 3 || width <= 0 || height <= 0 || maxSamples <= 0) return [];
+  const left = Math.max(0, Math.floor(rect[0] * scaleX));
+  const top = Math.max(0, Math.floor(rect[1] * scaleY));
+  const right = Math.min(width, Math.ceil(rect[2] * scaleX));
+  const bottom = Math.min(height, Math.ceil(rect[3] * scaleY));
+  if (right <= left || bottom <= top) return [];
+
+  const area = (right - left) * (bottom - top);
+  const step = Math.max(1, Math.ceil(Math.sqrt(area / maxSamples)));
+  const samples = [];
+  for (let y = top; y < bottom; y += step) {
+    for (let x = left; x < right; x += step) {
+      const offset = (y * width + x) * channels;
+      samples.push([
+        data[offset],
+        data[offset + 1],
+        data[offset + 2],
+        channels >= 4 ? data[offset + 3] / 255 : 1,
+      ]);
+    }
+  }
+  return samples;
+}

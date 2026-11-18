@@ -3,7 +3,12 @@ import { createServer } from "node:http";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { extname, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
-import { contrastAfterOpacity, hasOverlappingMedia } from "./light-appearance-contrast.mjs";
+import sharp from "sharp";
+import {
+  contrastAfterOpacity,
+  hasOverlappingMedia,
+  samplePixelsInRect,
+} from "./light-appearance-contrast.mjs";
 
 const dist = resolve(process.argv[2]);
 const output = resolve(process.argv[3]);
@@ -166,6 +171,7 @@ try {
   for (const width of widths) {
     const context = await browser.newContext({
       viewport: { width, height: width < 500 ? 844 : 900 },
+      deviceScaleFactor: 1,
     });
     await context.addInitScript((appearance) => {
       localStorage.setItem("hooma-web-appearance", appearance);
@@ -202,94 +208,50 @@ try {
           }
           return true;
         };
-        const cssColors = (image) => {
-          const tokens = image.match(/rgba?\([^)]*\)|#[\da-f]{3,8}\b|transparent/gi) ?? [];
-          return tokens
-            .map((token) => {
-              if (token.toLowerCase() === "transparent") return [0, 0, 0, 0];
-              if (token.startsWith("#")) {
-                const hex = token.slice(1);
-                const expanded =
-                  hex.length === 3 || hex.length === 4
-                    ? [...hex].map((part) => part + part).join("")
-                    : hex;
-                return [
-                  Number.parseInt(expanded.slice(0, 2), 16),
-                  Number.parseInt(expanded.slice(2, 4), 16),
-                  Number.parseInt(expanded.slice(4, 6), 16),
-                  expanded.length === 8 ? Number.parseInt(expanded.slice(6, 8), 16) / 255 : 1,
-                ];
-              }
-              return parse(token);
-            })
-            .filter(Boolean);
-        };
-        const background = (element) => {
-          let current = element;
-          const imageLayers = [];
-          while (current) {
-            const style = getComputedStyle(current);
-            if (style.backgroundImage !== "none") imageLayers.push(style.backgroundImage);
-            const parsed = parse(style.backgroundColor);
-            if (parsed && parsed[3] >= 0.98) {
-              const gradientSurfaces = imageLayers
-                .filter((image) => /gradient\(/i.test(image))
-                .flatMap(cssColors);
-              const gradientLayers = imageLayers.filter((image) => /gradient\(/i.test(image));
-              const unresolvedBackgrounds = imageLayers.filter(
-                (image) =>
-                  /\burl\(|image-set\(|paint\(/i.test(image) ||
-                  !/gradient\(/i.test(image) ||
-                  cssColors(image).length === 0,
-              );
-              if (gradientLayers.length > 1) {
-                unresolvedBackgrounds.push("multiple gradient layers require raster evidence");
-              }
-              return { rgb: parsed, gradientSurfaces, unresolvedBackgrounds };
-            }
-            current = current.parentElement;
-          }
-          const gradientSurfaces = imageLayers
-            .filter((image) => /gradient\(/i.test(image))
-            .flatMap(cssColors);
-          const gradientLayers = imageLayers.filter((image) => /gradient\(/i.test(image));
-          const unresolvedBackgrounds = imageLayers.filter(
-            (image) =>
-              /\burl\(|image-set\(|paint\(/i.test(image) ||
-              !/gradient\(/i.test(image) ||
-              cssColors(image).length === 0,
-          );
-          if (gradientLayers.length > 1) {
-            unresolvedBackgrounds.push("multiple gradient layers require raster evidence");
-          }
-          return {
-            rgb: [240, 242, 245, 1],
-            gradientSurfaces,
-            unresolvedBackgrounds,
-          };
-        };
+        const opacityRoots = [];
         const opacityContext = (element) => {
           const opacityNodes = [];
           for (let current = element; current; current = current.parentElement) {
             const opacity = Number(getComputedStyle(current).opacity);
             if (opacity < 1) opacityNodes.push({ node: current, opacity });
           }
-          const groupOpacity = opacityNodes.reduce((value, entry) => value * entry.opacity, 1);
-          const outermost = opacityNodes.at(-1)?.node;
-          const backdropBackground = outermost
-            ? background(outermost.parentElement)
-            : background(element);
+          const outermost = opacityNodes.at(-1);
+          let opacityRootId = null;
+          if (outermost) {
+            opacityRootId = outermost.node.getAttribute("data-contrast-audit-opacity-root");
+            if (!opacityRootId) {
+              opacityRootId = `group-${opacityRoots.length}`;
+              outermost.node.setAttribute("data-contrast-audit-opacity-root", opacityRootId);
+              opacityRoots.push({ id: opacityRootId, opacity: outermost.opacity });
+            }
+          }
           return {
-            groupOpacity,
-            backdrop: backdropBackground.rgb,
-            unresolvedBackgrounds: backdropBackground.unresolvedBackgrounds,
+            opacityRootId,
+            groupOpacity: outermost?.opacity ?? 1,
+            foregroundOpacity: opacityNodes
+              .filter((entry) => entry !== outermost)
+              .reduce((value, entry) => value * entry.opacity, 1),
           };
         };
         const mediaRects = Array.from(document.querySelectorAll("img, video, canvas, svg image"))
           .filter(visible)
           .map((media) => {
             const rect = media.getBoundingClientRect();
-            return [rect.left, rect.top, rect.right, rect.bottom];
+            const loaded =
+              media.tagName.toLowerCase() === "img"
+                ? media.complete && media.naturalWidth > 0
+                : media.tagName.toLowerCase() === "video"
+                  ? media.readyState >= 2
+                  : true;
+            return {
+              rect: [
+                rect.left + window.scrollX,
+                rect.top + window.scrollY,
+                rect.right + window.scrollX,
+                rect.bottom + window.scrollY,
+              ],
+              loaded,
+            };
           });
         const pairs = [];
         const addPair = (
@@ -300,24 +262,27 @@ try {
           minimumContrast = 4.5,
           kind = "text",
         ) => {
-          const bg = background(element);
           const context = opacityContext(element);
           const rect = element.getBoundingClientRect();
+          const style = getComputedStyle(element);
           pairs.push({
             text: text.slice(0, 80),
             element: element.tagName.toLowerCase(),
             className: typeof element.className === "string" ? element.className : "",
             foreground,
-            foregroundOpacity,
+            foregroundOpacity: foregroundOpacity * context.foregroundOpacity,
             minimumContrast,
             kind,
-            rect: [rect.left, rect.top, rect.right, rect.bottom],
+            rect: [
+              rect.left + window.scrollX,
+              rect.top + window.scrollY,
+              rect.right + window.scrollX,
+              rect.bottom + window.scrollY,
+            ],
             mediaRects,
-            surface: bg.rgb,
-            backdrop: context.backdrop,
+            opacityRootId: context.opacityRootId,
             groupOpacity: context.groupOpacity,
-            gradientSurfaces: bg.gradientSurfaces,
-            unresolvedBackgrounds: [...bg.unresolvedBackgrounds, ...context.unresolvedBackgrounds],
+            usesTextBackground: /text/i.test(style.backgroundClip),
           });
         };
         const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
@@ -326,7 +291,7 @@ try {
           const element = walker.currentNode.parentElement;
           if (!text || !element || !visible(element)) continue;
           const color = parse(getComputedStyle(element).color);
-          if (color) addPair(element, text, color);
+          addPair(element, text, color);
         }
 
         for (const element of document.querySelectorAll(
@@ -336,13 +301,12 @@ try {
           const style = getComputedStyle(element, "::placeholder");
           const foreground = parse(style.color);
           const styleOpacity = Number(style.opacity);
-          if (foreground)
-            addPair(
-              element,
-              `placeholder: ${element.placeholder}`,
-              foreground,
-              Number.isFinite(styleOpacity) ? styleOpacity : 1,
-            );
+          addPair(
+            element,
+            `placeholder: ${element.placeholder}`,
+            foreground,
+            Number.isFinite(styleOpacity) ? styleOpacity : 1,
+          );
         }
         for (const svg of document.querySelectorAll("svg")) {
           if (!visible(svg)) continue;
@@ -354,7 +318,7 @@ try {
             (stroke && stroke[3] > 0 && stroke) ||
             (fill && fill[3] > 0 && fill) ||
             parse(getComputedStyle(svg).color);
-          if (foreground) addPair(svg, "SVG icon", foreground, 1, 3, "icon");
+          addPair(svg, "SVG icon", foreground, 1, 3, "icon");
         }
 
         for (const control of document.querySelectorAll(
@@ -364,9 +328,7 @@ try {
           const style = getComputedStyle(control);
           if (style.borderStyle === "none" || style.borderWidth === "0px") continue;
           const border = parse(style.borderTopColor);
-          if (border && border[3] > 0) {
-            addPair(control, "selection control border", border, 1, 3, "border");
-          }
+          addPair(control, "selection control border", border, 1, 3, "border");
         }
 
         const rounded = (value) => Math.round(value * 100) / 100;
@@ -404,39 +366,120 @@ try {
           theme: document.documentElement.dataset.theme,
           text: document.body.innerText.slice(0, 200),
           documentWidth: document.documentElement.scrollWidth,
+          documentHeight: document.documentElement.scrollHeight,
+          opacityRoots,
           pairs,
           appearance,
         };
       });
+      const hideForegroundStyle = await page.addStyleTag({
+        content: `
+          *, *::before, *::after {
+            color: transparent !important;
+            -webkit-text-fill-color: transparent !important;
+            -webkit-text-stroke-color: transparent !important;
+            text-shadow: none !important;
+            caret-color: transparent !important;
+          }
+          svg, svg * {
+            fill: transparent !important;
+            stroke: transparent !important;
+          }
+          input::placeholder, textarea::placeholder {
+            color: transparent !important;
+            opacity: 0 !important;
+          }
+        `,
+      });
+      const surfaceOpacityStyle = result.opacityRoots.length
+        ? await page.addStyleTag({
+            content: "[data-contrast-audit-opacity-root] { opacity: 1 !important; }",
+          })
+        : null;
+      const surfaceImage = await sharp(await page.screenshot({ fullPage: true }))
+        .ensureAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+      let backdropImage = null;
+      if (result.opacityRoots.length) {
+        await surfaceOpacityStyle.evaluate((element) => element.remove());
+        const backdropStyle = await page.addStyleTag({
+          content: "[data-contrast-audit-opacity-root] { visibility: hidden !important; }",
+        });
+        backdropImage = await sharp(await page.screenshot({ fullPage: true }))
+          .ensureAlpha()
+          .raw()
+          .toBuffer({ resolveWithObject: true });
+        await backdropStyle.evaluate((element) => element.remove());
+      }
+      await hideForegroundStyle.evaluate((element) => element.remove());
+      const scaleX = surfaceImage.info.width / width;
+      const scaleY = surfaceImage.info.height / result.documentHeight;
       const violations = [];
       const unverifiedBackgrounds = [];
       for (const pair of result.pairs) {
-        if (pair.unresolvedBackgrounds.length || hasOverlappingMedia(pair.rect, pair.mediaRects)) {
+        const overlappingMedia = pair.mediaRects.filter((media) =>
+          hasOverlappingMedia(pair.rect, [media.rect]),
+        );
+        if (
+          !pair.foreground ||
+          pair.usesTextBackground ||
+          overlappingMedia.some((media) => !media.loaded)
+        ) {
           unverifiedBackgrounds.push({
             kind: pair.kind,
             text: pair.text,
             element: pair.element,
             className: pair.className,
-            layers: [
-              ...pair.unresolvedBackgrounds,
-              ...(hasOverlappingMedia(pair.rect, pair.mediaRects)
-                ? ["overlapping media element requires raster evidence"]
-                : []),
-            ],
+            layers: !pair.foreground
+              ? ["computed foreground color could not be parsed"]
+              : pair.usesTextBackground
+                ? ["text is painted from a CSS background image"]
+                : ["overlapping image or video is not loaded"],
           });
           continue;
         }
-        const surfaces = pair.gradientSurfaces.length ? pair.gradientSurfaces : [pair.surface];
-        const measurements = surfaces.map((surface) =>
-          contrastAfterOpacity({
+        const surfaces = samplePixelsInRect({
+          data: surfaceImage.data,
+          width: surfaceImage.info.width,
+          height: surfaceImage.info.height,
+          channels: surfaceImage.info.channels,
+          rect: pair.rect,
+          scaleX,
+          scaleY,
+        });
+        const backdrops = pair.opacityRootId
+          ? samplePixelsInRect({
+              data: backdropImage.data,
+              width: backdropImage.info.width,
+              height: backdropImage.info.height,
+              channels: backdropImage.info.channels,
+              rect: pair.rect,
+              scaleX: backdropImage.info.width / width,
+              scaleY: backdropImage.info.height / result.documentHeight,
+            })
+          : [];
+        if (!surfaces.length || (pair.opacityRootId && surfaces.length !== backdrops.length)) {
+          unverifiedBackgrounds.push({
+            kind: pair.kind,
+            text: pair.text,
+            element: pair.element,
+            className: pair.className,
+            layers: ["no matching rendered background pixels were captured"],
+          });
+          continue;
+        }
+        let worst = null;
+        for (let index = 0; index < surfaces.length; index += 1) {
+          const measurement = contrastAfterOpacity({
             foreground: pair.foreground,
-            surface,
-            backdrop: pair.backdrop,
+            surface: surfaces[index],
+            backdrop: pair.opacityRootId ? backdrops[index] : [0, 0, 0, 0],
             foregroundOpacity: pair.foregroundOpacity,
             groupOpacity: pair.groupOpacity,
-          }),
-        );
-        const worst = measurements.reduce((a, b) => (a.ratio <= b.ratio ? a : b));
+          });
+          if (!worst || measurement.ratio < worst.ratio) worst = measurement;
+        }
         if (worst.ratio < pair.minimumContrast) {
           violations.push({
             kind: pair.kind,
