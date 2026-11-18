@@ -31,7 +31,8 @@
 }
 
 :root[data-theme="light"] :is(input, textarea)::placeholder {
-  color: #8a8d91;
+  color: #65676b;
+  opacity: 1;
 }
 
 :root[data-theme="light"] :is(input, select, textarea):focus-visible {
@@ -40,7 +41,7 @@
 }
 
 :root[data-theme="light"] .error {
-  color: #dc2626;
+  color: #b91c1c;
 }
 
 :root[data-theme="light"]
@@ -154,22 +155,22 @@
 }
 
 :root[data-theme="light"] .hooma-bottom-nav__item--active {
-  color: #0866ff;
+  color: #005fcc;
 }
 
 :root[data-theme="light"] .hooma-bottom-nav__item--active .hooma-bottom-nav__icon-shell {
-  border-color: rgba(8, 102, 255, 0.2);
+  border-color: rgba(0, 95, 204, 0.22);
   background: #e7f3ff;
 }
 
 :root[data-theme="light"] .hooma-bottom-nav__item--active::after {
-  background: #0866ff;
+  background: #005fcc;
 }
 
 /* Home gateways and shared media editors rendered from component style blocks. */
 :root[data-theme="light"] .home-gateway-card {
   border: 1px solid #dbdbdb;
-  background: #ffffff;
+  background: #0b0b09;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
@@ -327,7 +328,7 @@
 }
 
 /* HOOMA Communities. */
-:root[data-theme="light"] .hooma-page {
+:root[data-theme="light"] :is(.hooma-page, .hooma-create-page, .hooma-detail-page) {
   --hooma-panel: #ffffff;
   --hooma-cream: #050505;
   --hooma-muted: #65676b;
@@ -345,6 +346,37 @@
   --hooma-page-surface-raised: #efefef;
   --hooma-page-border: #dbdbdb;
   --hooma-page-border-strong: #ced0d4;
+  color: #262626;
+}
+
+:root[data-theme="light"]
+  :is(.hooma-create-page, .hooma-detail-page)
+  :is(.panel, .state-card, .member-gate) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"] :is(.hooma-create-page, .hooma-detail-page) :is(h1, h2, h3, strong) {
+  color: #050505;
+}
+
+:root[data-theme="light"] :is(.hooma-create-page, .hooma-detail-page) :is(p, .muted, small) {
+  color: #65676b;
+}
+
+:root[data-theme="light"]
+  :is(.hooma-create-page, .hooma-detail-page)
+  :is(.button:not(.secondary), .hooma-create-action) {
+  border-color: #2f6f3e;
+  background: #2f6f3e;
+  color: #ffffff;
+}
+
+:root[data-theme="light"] :is(.hooma-create-page, .hooma-detail-page) .button.secondary {
+  border-color: #dbdbdb;
+  background: #ffffff;
   color: #262626;
 }
 
@@ -377,6 +409,10 @@
 
 :root[data-theme="light"] .hooma-page .hooma-community-row div span {
   color: #0866ff;
+}
+
+:root[data-theme="light"] .hooma-page .muted {
+  color: #65676b;
 }
 
 :root[data-theme="light"] .hooma-page .hooma-role-chip {
@@ -444,6 +480,79 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
+:root[data-theme="light"] .athletes-sport-chips button,
+:root[data-theme="light"] .athletes-view-tab,
+:root[data-theme="light"] .athletes-page .athletes-choice-option,
+:root[data-theme="light"] .athletes-page .athletes-field input,
+:root[data-theme="light"] .athletes-page .athletes-field textarea,
+:root[data-theme="light"] .athletes-inline-form input {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+}
+
+:root[data-theme="light"]
+  :is(.athletes-sport-chips button.is-active, .athletes-view-tab.is-active) {
+  border-color: #2f6f3e;
+  background: #e9fbf0;
+  color: #245c33;
+}
+
+:root[data-theme="light"]
+  :is(
+    .athletes-card h2,
+    .athletes-page .athletes-choice-grid strong,
+    .athletes-member-row strong,
+    .athletes-requests__heading h2
+  ) {
+  color: #050505;
+}
+
+:root[data-theme="light"]
+  :is(
+    .athletes-card p,
+    .athletes-card__footer small,
+    .athletes-card__footer span,
+    .athletes-page .athletes-field > span,
+    .athletes-page .athletes-choice-grid small,
+    .athletes-member-row small,
+    .athletes-join-panel__status span,
+    .athletes-role,
+    .athletes-member-role
+  ) {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .athletes-page .athletes-action--primary {
+  border-color: #2f6f3e;
+  background: #2f6f3e;
+  color: #ffffff;
+}
+
+:root[data-theme="light"] .athletes-page .athletes-action__icon {
+  color: #ffffff;
+}
+
+:root[data-theme="light"] .athletes-page :is(.eyebrow, .athletes-sport) {
+  color: #8a6500;
+}
+
+:root[data-theme="light"] .athletes-page .athletes-section-heading__hint {
+  color: #a33c00;
+}
+
+:root[data-theme="light"] :is(.athletes-page .athletes-action--secondary, .athletes-mini-action) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+}
+
+:root[data-theme="light"]
+  :is(.athletes-page .athletes-field input, .athletes-page .athletes-field textarea)::placeholder,
+:root[data-theme="light"] .athletes-inline-form input::placeholder {
+  color: #65676b;
+}
+
 :root[data-theme="light"] .teams-page {
   --teams-cream: #050505;
   --teams-muted: #65676b;
@@ -461,6 +570,40 @@
   background: #ffffff;
   color: #262626;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"] .teams-page .button:not(.secondary) {
+  border-color: #2f6f3e;
+  background: #2f6f3e;
+  color: #ffffff;
+}
+
+:root[data-theme="light"] .teams-page .button.secondary {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+}
+
+:root[data-theme="light"] .teams-page .team-discovery-meta {
+  color: #65676b;
+}
+
+:root[data-theme="light"]
+  :is(.teams-page .field span, .team-card p, .team-section p, .team-discovery-card-pro p) {
+  color: #65676b;
+}
+
+:root[data-theme="light"]
+  :is(.teams-page input, .teams-page select, .teams-tab, .teams-filter-chip) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+}
+
+:root[data-theme="light"] :is(.teams-tab.active, .teams-filter-chip.active) {
+  border-color: #2f6f3e;
+  background: #e9fbf0;
+  color: #245c33;
 }
 
 :root[data-theme="light"] .control-room {
@@ -501,6 +644,16 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
+:root[data-theme="light"] .gamers-page .gamers-home-tabs button {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .gamers-page .error-box {
+  border-color: rgba(185, 28, 28, 0.28);
+  background: #fff1f2;
+  color: #b91c1c;
+}
+
 /* Watch and ticket surfaces. */
 :root[data-theme="light"] .watch-page {
   color: #262626;
@@ -513,6 +666,10 @@
   background: #ffffff;
   color: #262626;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"] .watch-page .watch-empty-state p {
+  color: #65676b;
 }
 
 :root[data-theme="light"] .cultural-menu {
@@ -531,6 +688,7 @@
   --ride-gold: #8a6500;
   --ride-gold-dim: #6f5200;
   --ride-lime: #2f6f3e;
+  --ride-sky-silver: #005fcc;
   color: #262626;
 }
 
@@ -554,6 +712,10 @@
 :root[data-theme="light"] .pitch-detail-page,
 :root[data-theme="light"] .game-location {
   color: #262626;
+}
+
+:root[data-theme="light"] .pitch-page .pitch-directory-heading strong {
+  color: #050505;
 }
 
 :root[data-theme="light"]
@@ -850,9 +1012,7 @@
   background: #ffffff;
   color: #262626;
   box-shadow: none;
-}
-
-:root[data-theme="light"]
+}:root[data-theme="light"]
   :is(
     .formation-builder__selectors select,
     .formation-toolbar--builder > label:first-child input,
@@ -1299,4 +1459,179 @@
     .team-lineup-field::after
   ) {
   color-scheme: light;
+}
+
+/* Team detail uses a separate page root from the Teams directory. */
+:root[data-theme="light"] .team-profile-page {
+  --teams-cream: #050505;
+  --teams-muted: #65676b;
+  --teams-line: #dbdbdb;
+  --teams-panel: #ffffff;
+  --teams-gold: #8a6500;
+  --teams-lime: #2f6f3e;
+  color: #262626;
+}
+
+:root[data-theme="light"] .team-profile-page :is(.panel, .state-card) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"] .team-profile-page :is(.panel, .state-card) :is(h1, h2, h3, strong) {
+  color: #050505;
+}
+
+:root[data-theme="light"] .team-profile-page :is(.panel, .state-card) :is(p, .muted, small) {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .team-profile-page :is(.muted, .team-player-identity small) {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .team-profile-page .button:not(.secondary) {
+  border-color: #2f6f3e;
+  background: #2f6f3e;
+  color: #ffffff;
+}
+
+:root[data-theme="light"] .team-profile-page .button.secondary {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+}
+
+:root[data-theme="light"] .team-profile-page .chip {
+  border-color: #dbdbdb;
+  background: #efefef;
+  color: #262626;
+}
+
+:root[data-theme="light"] .team-profile-page .chip.selected {
+  border-color: #2f6f3e;
+  background: #e9fbf0;
+  color: #245c33;
+}
+
+:root[data-theme="light"] .team-profile-page .chip.gold {
+  border-color: #8a6500;
+  background: #fff8e5;
+  color: #705000;
+}
+
+/* Team names remain white only over the existing dark media overlay. */
+:root[data-theme="light"] .team-profile-hero .team-media-banner__overlay {
+  background: linear-gradient(90deg, rgba(8, 8, 8, 0.88), rgba(8, 8, 8, 0.72));
+}
+
+:root[data-theme="light"] .team-profile-hero :is(h1, p, small) {
+  color: #f7f7f7;
+}
+
+
+/* Rendered Light appearance corrections. These rules are intentionally scoped
+ * to the existing Light appearance and do not alter component behavior. */
+
+/* Community media surfaces already expose loaded artwork through their inline
+ * background-image style. Style empty and media-backed states without adding
+ * component state or markup. */
+:root[data-theme="light"] :is(.hooma-create-preview, .hooma-hq-hero):not([style]) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #050505;
+}
+
+:root[data-theme="light"]
+  :is(.hooma-create-preview, .hooma-hq-hero):not([style])
+  :is(h1, h2, h3, strong) {
+  color: #050505;
+  text-shadow: none;
+}
+
+:root[data-theme="light"] :is(.hooma-create-preview, .hooma-hq-hero):not([style]) p,
+:root[data-theme="light"] .hooma-create-form .field > span {
+  color: #65676b;
+  text-shadow: none;
+}
+
+:root[data-theme="light"] :is(.hooma-create-preview, .hooma-hq-hero)[style] {
+  color: #ffffff;
+}
+
+:root[data-theme="light"]
+  :is(.hooma-create-preview, .hooma-hq-hero)[style]
+  :is(h1, h2, h3, strong, p) {
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+/* Preserve gateway artwork while supplying a dependable dark contrast field
+ * beneath the existing overlaid title and subtitle. */
+:root[data-theme="light"] .home-gateway-card::before {
+  position: absolute;
+  z-index: 0;
+  inset: 42% 0 0;
+  background: linear-gradient(180deg, transparent, rgba(5, 5, 5, 0.88));
+  content: "";
+  pointer-events: none;
+}
+
+:root[data-theme="light"] .home-gateway-card__title {
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95);
+}
+
+:root[data-theme="light"] .home-gateway-card__subtitle {
+  color: #b8ff4a;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95);
+}
+
+:root[data-theme="light"] .home-gateway-card--disabled {
+  opacity: 1;
+}
+
+:root[data-theme="light"] .home-gateway-card--disabled .home-gateway-card__image {
+  filter: saturate(0.72) brightness(0.82);
+}
+
+/* HOOMA NOW follows the same white-surface Light presentation as the rest of
+ * the application instead of retaining Dark-only foreground colors. */
+:root[data-theme="light"] .hooma-now {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"] .hooma-now__eyebrow {
+  color: #245c33;
+}
+
+:root[data-theme="light"] .hooma-now__title {
+  color: #050505;
+}
+
+:root[data-theme="light"] :is(.hooma-now__intro, p.hooma-now__state, .hooma-now__state--error p) {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .hooma-now__live {
+  border-color: #2f6f3e;
+  background: #e9fbf0;
+  color: #245c33;
+}
+
+:root[data-theme="light"] .hooma-now__state {
+  border-color: #ced0d4;
+}
+
+:root[data-theme="light"] .hooma-now__state--error button {
+  border-color: #2f6f3e;
+  background: #2f6f3e;
+  color: #ffffff;
+}
+
+:root[data-theme="light"] .hooma-now__refresh-warning {
+  color: #a33c00;
 }
