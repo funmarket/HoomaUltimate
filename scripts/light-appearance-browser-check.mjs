@@ -211,12 +211,43 @@ try {
             });
           }
         }
+        const rounded = (value) => Math.round(value * 100) / 100;
+        const appearance = Array.from(document.body.querySelectorAll("*"))
+          .filter(visible)
+          .map((element) => {
+            const style = getComputedStyle(element);
+            const before = getComputedStyle(element, "::before");
+            const after = getComputedStyle(element, "::after");
+            const rect = element.getBoundingClientRect();
+            return {
+              tag: element.tagName.toLowerCase(),
+              className: typeof element.className === "string" ? element.className : "",
+              rect: [rounded(rect.x), rounded(rect.y), rounded(rect.width), rounded(rect.height)],
+              color: style.color,
+              backgroundColor: style.backgroundColor,
+              border: [
+                style.borderTopColor,
+                style.borderRightColor,
+                style.borderBottomColor,
+                style.borderLeftColor,
+                style.borderTopWidth,
+                style.borderRightWidth,
+                style.borderBottomWidth,
+                style.borderLeftWidth,
+              ],
+              typography: [style.fontFamily, style.fontSize, style.fontWeight, style.lineHeight],
+              effects: [style.boxShadow, style.opacity, style.display, style.visibility],
+              before: [before.content, before.color, before.backgroundColor],
+              after: [after.content, after.color, after.backgroundColor],
+            };
+          });
         return {
           title: document.title,
           theme: document.documentElement.dataset.theme,
           text: document.body.innerText.slice(0, 200),
           documentWidth: document.documentElement.scrollWidth,
           violations: rows,
+          appearance,
         };
       });
       const name = `${theme}-${width}-${route === "/" ? "home" : route.slice(1).replaceAll("/", "-")}`;
