@@ -23,6 +23,14 @@ export function applyWebAppearanceMode(mode: WebAppearanceMode): void {
   document.documentElement.dataset.appearance = mode;
   document.documentElement.dataset.theme = resolved;
   document.documentElement.style.colorScheme = resolved;
+  if (typeof document.querySelector === "function") {
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute(
+        "content",
+        resolved === "light" ? "#f0f2f5" : mode === "system" ? "#000000" : "#11110f",
+      );
+  }
 }
 
 export function saveWebAppearanceMode(mode: AppearanceMode): void {

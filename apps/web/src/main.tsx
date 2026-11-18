@@ -20,6 +20,7 @@ import "./entity-lifecycle.css";
 import "./account/account.css";
 import "./profile/profile.css";
 import "./telegram/runtime.css";
+import "./light-mode.css";
 
 initializeWebAppearance();
 

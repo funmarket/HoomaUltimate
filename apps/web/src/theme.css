@@ -80,27 +80,43 @@
 }
 
 :root[data-theme="light"] {
-  --app-bg: #f6f4ee;
+  --hooma-ui-bg: #f0f2f5;
+  --hooma-ui-surface: #ffffff;
+  --hooma-ui-surface-raised: #ffffff;
+  --hooma-ui-subtle: #efefef;
+  --hooma-ui-outline: #dbdbdb;
+  --hooma-ui-outline-hover: #0866ff;
+  --hooma-ui-text: #050505;
+  --hooma-ui-text-description: #262626;
+  --hooma-ui-text-meta: #65676b;
+  --hooma-ui-text-placeholder: #8a8d91;
+  --hooma-ui-text-secondary: var(--hooma-ui-text-meta);
+  --hooma-ui-accent: #2f6f3e;
+
+  --app-bg: #f0f2f5;
   --app-bg-raised: #ffffff;
-  --app-surface: #fffdf8;
-  --app-text-strong: #10110f;
-  --app-text: #24251f;
-  --app-text-secondary: #5f6259;
-  --app-text-caption: #70736a;
-  --app-gold: #8d7436;
-  --app-gold-dim: #8d7436;
-  --app-positive: #557300;
-  --app-people-blue: #006f9e;
-  --app-warning: #b94b00;
-  --app-danger: #b42318;
-  --app-lime: var(--app-positive);
-  --app-line: rgba(24, 25, 21, 0.22);
-  --app-line-strong: rgba(24, 25, 21, 0.34);
-  --app-outline: color-mix(in srgb, var(--app-surface) 86%, #000000);
-  --app-outline-gold: color-mix(in srgb, var(--app-gold) 28%, transparent);
-  --app-elevate:
-    0 1px 0 color-mix(in srgb, #ffffff 80%, transparent), 0 8px 18px rgba(0, 0, 0, 0.08),
-    inset 0 1px 0 #ffffff;
+  --app-surface: #ffffff;
+  --app-subtle: #efefef;
+  --app-text-strong: #050505;
+  --app-text: #262626;
+  --app-text-secondary: #65676b;
+  --app-text-caption: #737373;
+  --app-accent: #2f6f3e;
+  --app-accent-hover: #245c33;
+  --app-accent-soft: #eaf5ed;
+  --app-gold: #8a6500;
+  --app-gold-dim: #6f5200;
+  --app-positive: #2f6f3e;
+  --app-positive-soft: #eaf5ed;
+  --app-people-blue: #0866ff;
+  --app-warning: #c2410c;
+  --app-danger: #dc2626;
+  --app-lime: var(--app-accent);
+  --app-line: #e4e6eb;
+  --app-line-strong: #dbdbdb;
+  --app-outline: #dbdbdb;
+  --app-outline-gold: transparent;
+  --app-elevate: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 :root[data-appearance="system"][data-theme="dark"] {
@@ -156,10 +172,7 @@ body {
 }
 
 :root[data-theme="light"] body {
-  background:
-    radial-gradient(circle at 92% 4%, rgba(113, 132, 21, 0.06), transparent 26rem),
-    radial-gradient(circle at 4% 34%, rgba(141, 116, 54, 0.07), transparent 30rem),
-    linear-gradient(180deg, #ffffff, var(--app-bg) 45%);
+  background: #f0f2f5;
 }
 
 h1,
