@@ -182,6 +182,12 @@ test("Light Mode fixes the exact Play and HOOMA regressions", async () => {
   assert.match(css, /\.hooma-page \.hooma-domain-card[\s\S]*background:\s*#ffffff/);
 });
 
+test("Light Mode owns Watch empty-state body text", async () => {
+  const css = await readFile(lightCss, "utf8");
+
+  assert.match(css, /\.watch-page \.watch-empty-state p\s*\{[\s\S]*color:\s*#65676b/);
+});
+
 test("Light Mode owns the visible Athletes foregrounds placed on light cards", async () => {
   const css = await readFile(lightCss, "utf8");
 
