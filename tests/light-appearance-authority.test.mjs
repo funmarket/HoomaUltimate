@@ -191,9 +191,60 @@ test("Light profile overrides preserve Passport structure while removing dark su
   assert.match(light, /\.hooma-passport-stats[\s\S]*background:\s*#ffffff/);
 });
 
-test("every hardcoded dark CSS surface has an explicit Light Mode owner", async () => {
+test("Light owns application surfaces while media artwork stays domain-owned", async () => {
   const root = new URL("../", import.meta.url);
   const light = await readFile(lightCss, "utf8");
+  const protectedMediaSurfaces = new Set([
+    "gamer-disputes.css: .gamer-dispute-evidence-grid img, .gamer-dispute-proof-missing",
+    "hooma-membership.css: .hooma-member-avatar",
+    "profile.css: .hooma-passport-card__photo",
+    "athletes-photo-board.css: .athletes-photo-board__delete",
+    "athletes-photo-board.css: .athletes-photo-board__delete-confirm",
+    "athletes-photo-board.css: .athletes-photo-board__delete-error",
+    "athletes-photo-board.css: .athletes-photo-board__photo-error, .athletes-photo-board__photo-loading",
+    "communities.css: .hooma-card-media",
+    "communities.css: .hooma-hq-logo, .hooma-preview-logo",
+    "community-media.css: .hooma-card-logo",
+    "formation-builder-pitch.css: .formation-pitch--stadium",
+    "formation-builder-pitch.css: .formation-pitch--stadium::before",
+    "formation-builder-pitch.css: .formation-pitch--stadium::after",
+    "formation-builder-pitch.css: .formation-pitch__surface",
+    "formation-builder-pitch.css: .formation-slot__marker--game",
+    "formation-builder-pitch.css: .formation-slot__position",
+    "formation-builder-pitch.css: .formation-slot__name",
+    "formation-builder-pitch.css: .formation-bench-player__portrait",
+    "play-player-listing.css: .play-player-card__portrait, .play-sheet__avatar",
+    "play.css: .pickup-match-card-pro__pitch-mark",
+    "play.css: .formation-pitch",
+    "play.css: .formation-slot__marker",
+    "watch-event-detail.css: .watch-event-detail__venue-image",
+    "watch-event-detail.css: .watch-event-detail__venue-placeholder",
+    "gamers.css: .gamer-card-portrait-panel",
+    "gamers.css: .gamer-avatar",
+    "gamers.css: .gamer-card-portrait-panel .gamer-open-badge",
+    "page-banner.css: .page-banner__frame",
+    "page-banner.css: .page-banner__controls",
+    "pitch-detail.css: .pitch-hero",
+    "pitch.css: .pitch-ticket__photo",
+    "pitch.css: .pitch-ticket__photo > img",
+    "pitch.css: .pitch-detail-gallery",
+    "place-gallery.css: .place-gallery__arrow",
+    "places.css: .place-venue-badge",
+    "rides.css: .ride-offer-card__media, .ride-detail-card__photo, .ride-recent-card__media, .ride-recent-card__avatar",
+    "rides.css: .ride-map-preview",
+    "rides.css: .ride-map-preview__image",
+    "TeamLineupPitch.css: .team-lineup-field",
+    "TeamLineupPitch.css: .team-lineup-field::after",
+    "TeamLineupPitch.css: .team-lineup-avatar",
+    "TeamLineupPitch.css: .team-lineup-nameplate",
+    "TeamLineupPitch.css: .team-lineup-empty",
+    "TeamLineupPitch.css: .team-lineup-empty-mark",
+    "team-media.css: .team-media-banner",
+    "team-media.css: .team-media-banner__overlay",
+    "teams.css: .team-profile-badge",
+    "watch.css: .watch-ticket__photo-panel",
+    "watch.css: .watch-ticket__photo-panel img",
+  ]);
   const files = (
     await Promise.all([
       cssFiles(new URL("apps/web/src/", root)),
@@ -204,6 +255,7 @@ test("every hardcoded dark CSS surface has an explicit Light Mode owner", async 
   const darkBackground =
     /(?:background|background-color)\s*:[^;]*(?:#0[0-9a-f]{5}|#1[0-9a-f]{5}|rgba?\(\s*(?:[0-3]?\d)[,\s]+(?:[0-3]?\d)[,\s]+(?:[0-3]?\d))/i;
   const uncovered = [];
+  const preservedMedia = [];
 
   for (const file of files) {
     const source = await readFile(file, "utf8");
@@ -212,11 +264,14 @@ test("every hardcoded dark CSS surface has an explicit Light Mode owner", async 
       if (!darkBackground.test(body)) continue;
       const classes = [...selector.matchAll(/\.([a-zA-Z0-9_-]+)/g)].map((item) => item[1]);
       if (classes.length > 0 && !classes.some((className) => light.includes(`.${className}`))) {
-        uncovered.push(`${path.basename(file.pathname)}: ${selector.trim().replace(/\s+/g, " ")}`);
+        const surface = `${path.basename(file.pathname)}: ${selector.trim().replace(/\s+/g, " ")}`;
+        if (protectedMediaSurfaces.has(surface)) preservedMedia.push(surface);
+        else uncovered.push(surface);
       }
     }
   }
 
   assert.ok(files.length >= 56, `expected the complete CSS inventory, received ${files.length}`);
+  assert.deepEqual(preservedMedia.sort(), [...protectedMediaSurfaces].sort());
   assert.deepEqual(uncovered, []);
 });
