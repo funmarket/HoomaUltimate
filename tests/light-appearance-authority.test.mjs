@@ -65,6 +65,26 @@ test("Light palette text and primary actions preserve readable contrast", () => 
   assert.ok(contrastRatio("#65676b", "#ffffff") >= 4.5);
   assert.ok(contrastRatio("#ffffff", "#2f6f3e") >= 4.5);
   assert.ok(contrastRatio("#8a6500", "#ffffff") >= 4.5);
+  assert.ok(contrastRatio("#245c33", "#f0f2f5") >= 4.5);
+  assert.ok(contrastRatio("#005fcc", "#f0f2f5") >= 4.5);
+  assert.ok(contrastRatio("#705000", "#ffffff") >= 4.5);
+  assert.ok(contrastRatio("#a33c00", "#ffffff") >= 4.5);
+});
+
+test("Light Pitch toolbar and Passport accents use strong foreground colors", async () => {
+  const light = await readFile(lightCss, "utf8");
+
+  assert.match(light, /\.pitch-back-link[\s\S]*color:\s*#245c33/);
+  assert.match(light, /\.pitch-owner-link[\s\S]*color:\s*#245c33/);
+  assert.match(light, /\.hooma-passport-card__handle[\s\S]*color:\s*#005fcc/);
+  assert.match(light, /\.hooma-passport-card__ovr[\s\S]*color:\s*#705000/);
+  assert.match(light, /\.hooma-passport-card__pos[\s\S]*color:\s*#a33c00/);
+  assert.match(light, /\[data-identity="PLAYER"\][\s\S]*color:\s*#245c33/);
+  assert.match(light, /\[data-identity="FAN"\][\s\S]*color:\s*#005fcc/);
+  assert.match(light, /\[data-identity="GAMER"\][\s\S]*color:\s*#a33c00/);
+  assert.match(light, /\.hooma-passport-stats \.is-yellow[\s\S]*color:\s*#705000/);
+  assert.match(light, /\.hooma-passport-stats \.is-orange[\s\S]*color:\s*#a33c00/);
+  assert.match(light, /\.hooma-passport-stats \.is-green[\s\S]*color:\s*#245c33/);
 });
 
 test("Dark appearance remains owned by the unchanged root palette", async () => {
@@ -186,8 +206,8 @@ test("Light profile overrides preserve Passport structure while removing dark su
   assert.match(profile, /\.hooma-passport-card\s*\{[\s\S]*background:\s*#070808/);
   assert.match(light, /\.hooma-passport-card\s*\{[\s\S]*background:\s*#ffffff/);
   assert.match(light, /\.hooma-passport-card h1\s*\{[\s\S]*color:\s*#050505/);
-  assert.match(light, /\.hooma-passport-card__handle\s*\{[\s\S]*color:\s*#0866ff/);
-  assert.match(light, /\.hooma-passport-card__ovr\s*\{[\s\S]*color:\s*#8a6500/);
+  assert.match(light, /\.hooma-passport-card__handle\s*\{[\s\S]*color:\s*#005fcc/);
+  assert.match(light, /\.hooma-passport-card__ovr\s*\{[\s\S]*color:\s*#705000/);
   assert.match(light, /\.hooma-passport-stats[\s\S]*background:\s*#ffffff/);
 });
 
