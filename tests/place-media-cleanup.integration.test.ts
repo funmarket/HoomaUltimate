@@ -289,18 +289,26 @@ test("Place cleanup is durable, fenced and retryable through PostgreSQL and Work
         assert.equal(storage.objects.size, 0);
       },
     );
-    await t.test("ambiguous PUT failure retains cleanup for bytes already stored", async () => {
-      storage.onPut = async () => {
-        throw new Error("PUT response lost");
-      };
-      await assert.rejects(upload, /PUT response lost/);
-      storage.onPut = null;
-      assert.equal(storage.objects.size, 1);
-      assert.equal(await db.placeImage.count({ where: { placeId: place.id } }), 0);
-      await due();
-      assert.equal((await runner().runOnce()).delivered, 1);
-      assert.equal(storage.objects.size, 0);
-    });
+    await t.test(
+      "ambiguous PUT failure retains durable cleanup after best-effort removal",
+      async () => {
+        storage.onPut = async () => {
+          throw new Error("PUT response lost");
+        };
+        await assert.rejects(upload, /Failed to write media variant: master/);
+        storage.onPut = null;
+        assert.equal(storage.objects.size, 0);
+        assert.equal(await db.placeImage.count({ where: { placeId: place.id } }), 0);
+        assert.ok(
+          await db.outboxEvent.findFirst({
+            where: { topic, aggregateId: place.id, status: "PENDING" },
+          }),
+        );
+        await due();
+        assert.equal((await runner().runOnce()).delivered, 1);
+        assert.equal(storage.objects.size, 0);
+      },
+    );
     await t.test(
       "an interrupted API process leaves its stored object recoverable by a restarted Worker",
       async () => {
