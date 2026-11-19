@@ -11,14 +11,17 @@ function dependencies({
   owner?: boolean;
   count?: number;
 } = {}) {
-  const images: Array<{ id: string; imageUrl: string; sortOrder: number }> = Array.from(
-    { length: count },
-    (_, index) => ({
-      id: `existing-${index}`,
-      imageUrl: `https://images.example.com/${index}.webp`,
-      sortOrder: index,
-    }),
-  );
+  const images: Array<{
+    id: string;
+    imageUrl: string;
+    objectKey: string | null;
+    sortOrder: number;
+  }> = Array.from({ length: count }, (_, index) => ({
+    id: `existing-${index}`,
+    imageUrl: `https://images.example.com/${index}.webp`,
+    objectKey: null,
+    sortOrder: index,
+  }));
   const calls = { puts: [] as string[] };
   const places = {
     getApproved: async () => ({ id: "place-1" }),
@@ -28,24 +31,33 @@ function dependencies({
       images.find((image) => image.id === imageId) ?? null,
     addImage: async (_placeId: string, imageId: string, imageUrl: string, maxImages: number) => {
       if (images.length >= maxImages) throw new Error("PLACE_IMAGE_LIMIT_REACHED");
-      const image = { id: imageId, imageUrl, sortOrder: images.length };
+      const image = { id: imageId, imageUrl, objectKey: null, sortOrder: images.length };
       images.push(image);
       return image;
     },
     prepareImageUpload: async () => undefined,
-    addPreparedImage: async (placeId: string, imageId: string, maxImages: number) =>
-      places.addImage(
+    addPreparedImage: async (
+      placeId: string,
+      imageId: string,
+      objectKey: string,
+      maxImages: number,
+    ) => {
+      const image = await places.addImage(
         placeId,
         imageId,
         `/api/public/v1/places/${placeId}/images/${imageId}/content`,
         maxImages,
-      ),
+      );
+      image.objectKey = objectKey;
+      return image;
+    },
     replaceImage: async (_placeId: string, oldId: string, newId: string, url: string) => {
       const index = images.findIndex((image) => image.id === oldId);
       if (index < 0) throw new Error("PLACE_IMAGE_STALE");
       const image = {
         id: newId,
         imageUrl: url,
+        objectKey: null,
         sortOrder: images[index]!.sortOrder,
       };
       images[index] = image;
@@ -70,7 +82,24 @@ function dependencies({
     { isPlatformAdmin: async () => admin } as never,
     { resolve: async (value: string) => value } as never,
     storage as never,
-    { process: async () => ({ body: new Uint8Array([1, 2, 3]), contentType: "image/webp" }) },
+    {
+      process: async () => ({
+        profile: "PHOTO_STANDARD" as const,
+        source: { contentType: "image/jpeg" as const, widthPx: 1, heightPx: 1 },
+        selectedVariants: ["master" as const],
+        variants: [
+          {
+            variant: "master" as const,
+            body: new Uint8Array([1, 2, 3]),
+            contentType: "image/webp" as const,
+            sizeBytes: 3,
+            widthPx: 1,
+            heightPx: 1,
+          },
+        ],
+      }),
+    },
+    "development",
   );
   return { service, images, calls };
 }
@@ -121,7 +150,10 @@ test("managed upload and external URL both create canonical gallery entries", as
     /^\/api\/public\/v1\/places\/place-1\/images\/.+\/content$/,
   );
   assert.equal(calls.puts.length, 1);
-  assert.match(calls.puts[0] ?? "", /^place-images\/place-1\//);
+  assert.match(
+    calls.puts[0] ?? "",
+    /^development\/media\/v1\/place-photo\/place-1\/.+\/master\.webp$/,
+  );
 });
 
 test("owner and App Admin can replace at quota without changing count or cover", async () => {

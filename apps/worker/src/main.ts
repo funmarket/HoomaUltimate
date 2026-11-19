@@ -81,7 +81,7 @@ if (storage) {
   );
   outboxHandlers.set(
     PLACE_IMAGE_RECONCILE_TOPIC,
-    createPlaceImageCleanupHandler(database, storage),
+    createPlaceImageCleanupHandler(database, storage, mediaStorageScope),
   );
   outboxHandlers.set(
     REQUEST_IMAGE_RECONCILE_TOPIC,

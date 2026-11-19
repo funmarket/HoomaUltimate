@@ -10,7 +10,7 @@ import { PrismaAuditWriter } from "../apps/api/src/modules/audit/infrastructure/
 import { PlaceService } from "../apps/api/src/modules/places/application/place.service.js";
 import { PlaceMediaService } from "../apps/api/src/modules/places/application/place-media.service.js";
 import { PrismaPlaceRepository } from "../apps/api/src/modules/places/infrastructure/prisma-place.repository.js";
-import { SharpPlaceImageProcessor } from "../apps/api/src/modules/places/infrastructure/sharp-place-image-processor.js";
+import { MediaProcessingPlaceImageProcessor } from "../apps/api/src/modules/places/infrastructure/media-processing-place-image-processor.js";
 import { PLACE_IMAGE_RECONCILE_TOPIC, type PlaceUpdateInput } from "@hooma/contracts/places";
 import { createPlaceImageCleanupHandler } from "../apps/worker/src/places/place-image-cleanup.js";
 import { OutboxRepository } from "../apps/worker/src/outbox/outbox.repository.js";
@@ -64,7 +64,8 @@ test("Place metadata and gallery operations retain separate ownership through HT
     container.platformAdminService,
     resolver,
     storage,
-    new SharpPlaceImageProcessor(),
+    new MediaProcessingPlaceImageProcessor(),
+    "development",
   );
   const server = createApp(config, container).listen(0, "127.0.0.1");
   await new Promise<void>((resolve) => server.once("listening", resolve));
@@ -299,7 +300,12 @@ test("Place metadata and gallery operations retain separate ownership through HT
         assert.equal(storage.objects.size, 1);
         const runner = new OutboxRunner(
           new OutboxRepository(db),
-          new Map([[PLACE_IMAGE_RECONCILE_TOPIC, createPlaceImageCleanupHandler(db, storage)]]),
+          new Map([
+            [
+              PLACE_IMAGE_RECONCILE_TOPIC,
+              createPlaceImageCleanupHandler(db, storage, "development"),
+            ],
+          ]),
         );
         assert.equal((await runner.runOnce()).delivered, 1);
         assert.equal(storage.objects.size, 0);

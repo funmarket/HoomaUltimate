@@ -10,6 +10,10 @@ import type {
   PublicPlaceSummary,
 } from "@hooma/contracts/places";
 
+export interface PlaceImageRecord extends PublicPlaceImage {
+  readonly objectKey: string | null;
+}
+
 export interface PlaceModerationDecision {
   readonly decision: "APPROVE" | "REJECT";
   readonly note?: string | null;
@@ -25,20 +29,26 @@ export interface PlaceRepository {
   archive(placeId: string): Promise<void>;
   hasVerifiedOwnership(placeId: string, userId: string): Promise<boolean>;
   canManageOwnerMedia(placeId: string, userId: string): Promise<boolean>;
-  getImage(placeId: string, imageId: string): Promise<PublicPlaceImage | null>;
+  getImage(placeId: string, imageId: string): Promise<PlaceImageRecord | null>;
   addImage(
     placeId: string,
     imageId: string,
     imageUrl: string,
     maxImages: number,
   ): Promise<PublicPlaceImage>;
-  prepareImageUpload(placeId: string, imageId: string): Promise<void>;
-  addPreparedImage(placeId: string, imageId: string, maxImages: number): Promise<PublicPlaceImage>;
+  prepareImageUpload(placeId: string, imageId: string, objectKey: string): Promise<void>;
+  addPreparedImage(
+    placeId: string,
+    imageId: string,
+    objectKey: string,
+    maxImages: number,
+  ): Promise<PublicPlaceImage>;
   replaceImage(
     placeId: string,
     previousImageId: string,
     nextImageId: string,
     nextImageUrl: string,
+    nextObjectKey: string | null,
     prepared: boolean,
   ): Promise<PublicPlaceImage>;
   deleteImage(placeId: string, imageId: string): Promise<PublicPlaceImage | null>;

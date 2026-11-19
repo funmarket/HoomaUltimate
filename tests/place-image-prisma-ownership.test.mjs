@@ -29,3 +29,21 @@ test("PlaceImage belongs to the canonical Place schema with the existing cascade
   assert.match(migration, /CREATE UNIQUE INDEX "PlaceImage_placeId_sortOrder_key"/);
   assert.match(migration, /CREATE INDEX "PlaceImage_placeId_sortOrder_idx"/);
 });
+
+test("PlaceImage stores an optional internal object key without rewriting historical rows", () => {
+  const schema = source("packages/database/prisma/schema.prisma");
+
+  assert.match(schema, /model PlaceImage \{[\s\S]*?objectKey\s+String\?/);
+  assert.match(schema, /model PlaceImage \{[\s\S]*?@@index\(\[objectKey\]\)/);
+
+  const migration = source(
+    "packages/database/prisma/migrations/20261119170000_place_image_object_key/migration.sql",
+  );
+  assert.match(migration, /ALTER TABLE "PlaceImage" ADD COLUMN "objectKey" TEXT;/);
+  assert.match(
+    migration,
+    /CREATE INDEX "PlaceImage_objectKey_idx" ON "PlaceImage"\("objectKey"\);/,
+  );
+  assert.doesNotMatch(migration, /UPDATE\s+"PlaceImage"/i);
+  assert.doesNotMatch(migration, /NOT NULL/i);
+});

@@ -62,9 +62,28 @@ test("Place cleanup is durable, fenced and retryable through PostgreSQL and Work
     { isPlatformAdmin: async () => false },
     { resolve: async (url: string) => url },
     storage,
-    { process: async () => ({ body: new Uint8Array([1]), contentType: "image/webp" }) },
+    {
+      process: async () => ({
+        profile: "PHOTO_STANDARD" as const,
+        source: { contentType: "image/png" as const, widthPx: 1, heightPx: 1 },
+        selectedVariants: ["master" as const],
+        variants: [
+          {
+            variant: "master" as const,
+            body: new Uint8Array([1]),
+            contentType: "image/webp" as const,
+            sizeBytes: 1,
+            widthPx: 1,
+            heightPx: 1,
+          },
+        ],
+      }),
+    },
+    "development",
   );
   const key = (id: string) => "place-images/" + place.id + "/" + id;
+  const typedKey = (id: string) =>
+    "development/media/v1/place-photo/" + place.id + "/" + id + "/master.webp";
   const url = (id: string) => "/api/public/v1/places/" + place.id + "/images/" + id + "/content";
   const upload = () =>
     media.addUpload(owner.id, place.id, {
@@ -96,7 +115,7 @@ test("Place cleanup is durable, fenced and retryable through PostgreSQL and Work
     );
     const { createPlaceImageCleanupHandler } =
       await import("../apps/worker/src/places/place-image-cleanup.js");
-    const handler = createPlaceImageCleanupHandler(db, storage);
+    const handler = createPlaceImageCleanupHandler(db, storage, "development");
     const runner = () =>
       new OutboxRunner(new OutboxRepository(db), new Map([[topic, handler]]), {
         random: () => 0.5,
@@ -132,6 +151,28 @@ test("Place cleanup is durable, fenced and retryable through PostgreSQL and Work
       assert.equal(storage.removed.length, removed);
     });
     await t.test(
+      "historical nullable-key delivery signs and cleans the exact legacy object",
+      async () => {
+        const id = randomUUID();
+        await repository.addImage(place.id, id, url(id), 3);
+        await storage.put(key(id), new Uint8Array([1]), "image/webp");
+        await db.place.update({ where: { id: place.id }, data: { moderationStatus: "APPROVED" } });
+        assert.equal(
+          await media.deliveryUrlPublic(place.id, id),
+          "https://storage.example.test/" + key(id),
+        );
+        assert.equal((await repository.getImage(place.id, id))?.objectKey, null);
+        await db.place.update({ where: { id: place.id }, data: { moderationStatus: "PENDING" } });
+
+        await media.delete(owner.id, place.id, id);
+        const cleanup = await db.outboxEvent.findUniqueOrThrow({ where: { id } });
+        assert.deepEqual(cleanup.payload, { placeId: place.id, imageId: id, objectKey: key(id) });
+        await due();
+        assert.equal((await runner().runOnce()).delivered, 1);
+        assert.equal(storage.objects.has(key(id)), false);
+      },
+    );
+    await t.test(
       "normal upload consumes its intent and referenced objects are protected",
       async () => {
         const image = await upload();
@@ -139,16 +180,16 @@ test("Place cleanup is durable, fenced and retryable through PostgreSQL and Work
         await db.place.update({ where: { id: place.id }, data: { moderationStatus: "APPROVED" } });
         assert.equal(
           await media.deliveryUrlPublic(place.id, image.id),
-          "https://storage.example.test/" + key(image.id),
+          "https://storage.example.test/" + typedKey(image.id),
         );
         const removed = storage.removed.length;
         await handler({
           id: image.id,
           topic,
-          payload: { placeId: place.id, imageId: image.id, objectKey: key(image.id) },
+          payload: { placeId: place.id, imageId: image.id, objectKey: typedKey(image.id) },
         });
         assert.equal(storage.removed.length, removed);
-        assert.equal(storage.objects.has(key(image.id)), true);
+        assert.equal(storage.objects.has(typedKey(image.id)), true);
         // Protect a canonical URL reference even if its row has another identity.
         const alias = randomUUID();
         await repository.addImage(place.id, alias, url(image.id), 3);
@@ -156,33 +197,33 @@ test("Place cleanup is durable, fenced and retryable through PostgreSQL and Work
         await handler({
           id: image.id,
           topic,
-          payload: { placeId: place.id, imageId: image.id, objectKey: key(image.id) },
+          payload: { placeId: place.id, imageId: image.id, objectKey: typedKey(image.id) },
         });
         assert.equal(storage.removed.length, removed);
         await db.placeImage.delete({ where: { id: alias } });
         await handler({
           id: image.id,
           topic,
-          payload: { placeId: place.id, imageId: image.id, objectKey: key(image.id) },
+          payload: { placeId: place.id, imageId: image.id, objectKey: typedKey(image.id) },
         });
-        assert.equal(storage.objects.has(key(image.id)), false);
+        assert.equal(storage.objects.has(typedKey(image.id)), false);
         await db.place.update({ where: { id: place.id }, data: { moderationStatus: "PENDING" } });
       },
     );
     await t.test("lost commit response never triggers removal of a published image", async () => {
       const original = repository.addPreparedImage.bind(repository);
-      repository.addPreparedImage = async (placeId, imageId, limit) => {
-        await original(placeId, imageId, limit);
+      repository.addPreparedImage = async (placeId, imageId, objectKey, limit) => {
+        await original(placeId, imageId, objectKey, limit);
         throw new Error("attachment commit response lost");
       };
       try {
         await assert.rejects(upload, /commit response lost/);
         const image = await db.placeImage.findFirstOrThrow({ where: { placeId: place.id } });
-        assert.equal(storage.objects.has(key(image.id)), true);
+        assert.equal(storage.objects.has(typedKey(image.id)), true);
         assert.equal(await db.outboxEvent.findUnique({ where: { id: image.id } }), null);
         await media.delete(owner.id, place.id, image.id);
         await runner().runOnce();
-        assert.equal(storage.objects.has(key(image.id)), false);
+        assert.equal(storage.objects.has(typedKey(image.id)), false);
       } finally {
         repository.addPreparedImage = original;
       }
@@ -248,18 +289,26 @@ test("Place cleanup is durable, fenced and retryable through PostgreSQL and Work
         assert.equal(storage.objects.size, 0);
       },
     );
-    await t.test("ambiguous PUT failure retains cleanup for bytes already stored", async () => {
-      storage.onPut = async () => {
-        throw new Error("PUT response lost");
-      };
-      await assert.rejects(upload, /PUT response lost/);
-      storage.onPut = null;
-      assert.equal(storage.objects.size, 1);
-      assert.equal(await db.placeImage.count({ where: { placeId: place.id } }), 0);
-      await due();
-      assert.equal((await runner().runOnce()).delivered, 1);
-      assert.equal(storage.objects.size, 0);
-    });
+    await t.test(
+      "ambiguous PUT failure retains durable cleanup after best-effort removal",
+      async () => {
+        storage.onPut = async () => {
+          throw new Error("PUT response lost");
+        };
+        await assert.rejects(upload, /Failed to write media variant: master/);
+        storage.onPut = null;
+        assert.equal(storage.objects.size, 0);
+        assert.equal(await db.placeImage.count({ where: { placeId: place.id } }), 0);
+        assert.ok(
+          await db.outboxEvent.findFirst({
+            where: { topic, aggregateId: place.id, status: "PENDING" },
+          }),
+        );
+        await due();
+        assert.equal((await runner().runOnce()).delivered, 1);
+        assert.equal(storage.objects.size, 0);
+      },
+    );
     await t.test(
       "an interrupted API process leaves its stored object recoverable by a restarted Worker",
       async () => {
@@ -297,7 +346,7 @@ test("Place cleanup is durable, fenced and retryable through PostgreSQL and Work
           }, async get() { throw new Error("unused"); }, async remove() { throw new Error("interrupted path must not remove"); }
         };
         const service = new PlaceMediaService(repo, { isPlatformAdmin: async () => true }, { resolve: async v => v }, storage,
-          { process: async () => ({ body: new Uint8Array([1]), contentType: "image/webp" }) });
+          { process: async () => ({ profile: "PHOTO_STANDARD", source: { contentType: "image/png", widthPx: 1, heightPx: 1 }, selectedVariants: ["master"], variants: [{ variant: "master", body: new Uint8Array([1]), contentType: "image/webp", sizeBytes: 1, widthPx: 1, heightPx: 1 }] }) }, "development");
         await service.addUpload(process.env.E1B_USER_ID, process.env.E1B_PLACE_ID, { contentType: "image/png", body: new Uint8Array([1]) });
       `;
         const child = spawn(
@@ -343,7 +392,7 @@ test("Place cleanup is durable, fenced and retryable through PostgreSQL and Work
           child.kill();
           await exited;
           assert.equal(await repository.getImage(place.id, id), null);
-          assert.equal(storage.objects.has(key(id)), true);
+          assert.equal(storage.objects.has(typedKey(id)), true);
           assert.equal(
             (await db.outboxEvent.findUniqueOrThrow({ where: { id } })).status,
             "PENDING",
@@ -353,10 +402,10 @@ test("Place cleanup is durable, fenced and retryable through PostgreSQL and Work
           try {
             const restarted = new OutboxRunner(
               new OutboxRepository(workerDb),
-              new Map([[topic, createPlaceImageCleanupHandler(workerDb, storage)]]),
+              new Map([[topic, createPlaceImageCleanupHandler(workerDb, storage, "development")]]),
             );
             assert.equal((await restarted.runOnce()).delivered, 1);
-            assert.equal(storage.objects.has(key(id)), false);
+            assert.equal(storage.objects.has(typedKey(id)), false);
           } finally {
             await workerDb.$disconnect();
           }
@@ -374,7 +423,7 @@ test("Place cleanup is durable, fenced and retryable through PostgreSQL and Work
       async () => {
         const id = randomUUID();
         await repository.addImage(place.id, id, url(id), 3);
-        await repository.prepareImageUpload(place.id, id);
+        await repository.prepareImageUpload(place.id, id, key(id));
         await assert.rejects(() => media.delete(owner.id, place.id, id));
         assert.ok(await repository.getImage(place.id, id));
         await db.outboxEvent.delete({ where: { id } });
@@ -389,8 +438,8 @@ test("Place cleanup is durable, fenced and retryable through PostgreSQL and Work
         const id = randomUUID();
         const apiDb = new PrismaClient();
         const apiRepository = new PrismaPlaceRepository(apiDb, new PrismaAuditWriter(apiDb));
-        await apiRepository.prepareImageUpload(place.id, id);
-        await storage.put(key(id), new Uint8Array([1]), "image/webp");
+        await apiRepository.prepareImageUpload(place.id, id, typedKey(id));
+        await storage.put(typedKey(id), new Uint8Array([1]), "image/webp");
         await apiDb.$disconnect();
         await db.outboxEvent.update({
           where: { id },
@@ -403,10 +452,10 @@ test("Place cleanup is durable, fenced and retryable through PostgreSQL and Work
         try {
           const restarted = new OutboxRunner(
             new OutboxRepository(workerDb),
-            new Map([[topic, createPlaceImageCleanupHandler(workerDb, storage)]]),
+            new Map([[topic, createPlaceImageCleanupHandler(workerDb, storage, "development")]]),
           );
           assert.equal((await restarted.runOnce()).delivered, 1);
-          assert.equal(storage.objects.has(key(id)), false);
+          assert.equal(storage.objects.has(typedKey(id)), false);
         } finally {
           await workerDb.$disconnect();
         }
@@ -447,6 +496,40 @@ test("Place cleanup is durable, fenced and retryable through PostgreSQL and Work
       },
     );
     await t.test(
+      "Outbox Worker rejects typed keys with wrong scope, owner, image or variant",
+      async () => {
+        const before = storage.removed.length;
+        const cases = [
+          (id: string) => `staging/media/v1/place-photo/${place.id}/${id}/master.webp`,
+          (id: string) => `development/media/v1/place-photo/other-place/${id}/master.webp`,
+          () => `development/media/v1/place-photo/${place.id}/${randomUUID()}/master.webp`,
+          (id: string) => `development/media/v1/place-photo/${place.id}/${id}/card.webp`,
+        ];
+        for (const objectKeyFor of cases) {
+          const imageId = randomUUID();
+          const objectKey = objectKeyFor(imageId);
+          await db.outboxEvent.create({
+            data: {
+              id: imageId,
+              topic,
+              aggregateType: "PlaceImage",
+              aggregateId: place.id,
+              payload: { placeId: place.id, imageId, objectKey },
+              availableAt: new Date(0),
+            },
+          });
+          const result = await runner().runOnce();
+          assert.equal(result.retried, 1);
+          const rejected = await db.outboxEvent.findUniqueOrThrow({ where: { id: imageId } });
+          assert.equal(rejected.status, "PENDING");
+          assert.equal(rejected.attempts, 1);
+          assert.match(rejected.lastError!, /outside the upload ownership boundary/);
+          await db.outboxEvent.delete({ where: { id: imageId } });
+        }
+        assert.equal(storage.removed.length, before);
+      },
+    );
+    await t.test(
       "atomic replacement retires managed bytes only after a committed new reference",
       async () => {
         const first = await upload();
@@ -459,19 +542,19 @@ test("Place cleanup is durable, fenced and retryable through PostgreSQL and Work
         assert.equal(next.sortOrder, previous.sortOrder);
         assert.notEqual(next.id, first.id);
         assert.equal(await repository.getImage(place.id, first.id), null);
-        assert.equal(storage.objects.has(key(first.id)), true);
-        assert.equal(storage.objects.has(key(next.id)), true);
+        assert.equal(storage.objects.has(typedKey(first.id)), true);
+        assert.equal(storage.objects.has(typedKey(next.id)), true);
         await due();
         await runner().runOnce();
-        assert.equal(storage.objects.has(key(first.id)), false);
-        assert.equal(storage.objects.has(key(next.id)), true);
+        assert.equal(storage.objects.has(typedKey(first.id)), false);
+        assert.equal(storage.objects.has(typedKey(next.id)), true);
         const external = await media.replaceExternal(owner.id, place.id, next.id, {
           url: "https://cdn.example.test/replacement.webp",
         });
         assert.equal(external.sortOrder, previous.sortOrder);
         await due();
         await runner().runOnce();
-        assert.equal(storage.objects.has(key(next.id)), false);
+        assert.equal(storage.objects.has(typedKey(next.id)), false);
         assert.equal(await db.placeImage.count({ where: { placeId: place.id } }), 1);
         await assert.rejects(
           () =>
