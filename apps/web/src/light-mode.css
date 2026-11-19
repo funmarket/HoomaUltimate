@@ -32,7 +32,6 @@
 
 :root[data-theme="light"] :is(input, textarea)::placeholder {
   color: #65676b;
-  opacity: 1;
 }
 
 :root[data-theme="light"] :is(input, select, textarea):focus-visible {
@@ -347,7 +346,6 @@
   border-color: #dbdbdb;
   background: #ffffff;
   color: #262626;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 :root[data-theme="light"] :is(.hooma-create-page, .hooma-detail-page) :is(h1, h2, h3, strong) {
@@ -1293,7 +1291,6 @@
   border-color: #dbdbdb;
   background: #ffffff;
   color: #262626;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 :root[data-theme="light"] .team-profile-page :is(.panel, .state-card) :is(h1, h2, h3, strong) {
@@ -1358,13 +1355,11 @@
   :is(.hooma-create-preview, .hooma-hq-hero):not([style])
   :is(h1, h2, h3, strong) {
   color: #050505;
-  text-shadow: none;
 }
 
 :root[data-theme="light"] :is(.hooma-create-preview, .hooma-hq-hero):not([style]) p,
 :root[data-theme="light"] .hooma-create-form .field > span {
   color: #65676b;
-  text-shadow: none;
 }
 
 :root[data-theme="light"] :is(.hooma-create-preview, .hooma-hq-hero)[style] {
@@ -1375,7 +1370,6 @@
   :is(.hooma-create-preview, .hooma-hq-hero)[style]
   :is(h1, h2, h3, strong, p) {
   color: #ffffff;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
 /* HOOMA NOW follows the same white-surface Light presentation as the rest of
@@ -1383,7 +1377,6 @@
 :root[data-theme="light"] .hooma-now {
   border-color: #dbdbdb;
   background: #ffffff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 :root[data-theme="light"] .hooma-now__eyebrow {
@@ -1454,5 +1447,4 @@
   border-color: #ced0d4;
   background: #e4e6eb;
   color: #4b4f56;
-  opacity: 1;
 }
