@@ -562,6 +562,7 @@ model PlaceImage {
   id        String   @id @default(cuid())
   placeId   String
   imageUrl  String
+  objectKey String?
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -569,6 +570,7 @@ model PlaceImage {
 
   @@unique([placeId, sortOrder])
   @@index([placeId, sortOrder])
+  @@index([objectKey])
 }
 
 model PlaceOwnershipClaim {

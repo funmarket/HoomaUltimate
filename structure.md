@@ -180,6 +180,8 @@ Ride uses the shared validation-only `inspectMedia` capability before vehicle-ph
 
 Requests uses `PHOTO_STANDARD` master-only processing with the existing single `HelpRequestImage` record and owner-controlled preparation/replacement lifecycle. New uploads use the typed `REQUEST_PHOTO` namespace in the configured storage scope; the Requests Worker validates scope, identity and current references before deletion, while legacy `request-images/{requestId}/{mediaId}` keys remain supported for read and cleanup compatibility. Requests retains upload-or-external-URL behavior, private audience rules, and its existing Outbox topic.
 
+Places also uses `PHOTO_STANDARD` master-only processing, but Places remains the business owner of gallery authorization, quota/order, `PlaceImage` metadata, delivery and reconciliation. New managed uploads use typed `PLACE_PHOTO` keys and persist the exact key in nullable internal `PlaceImage.objectKey`; historical rows require no backfill and retain the legacy key fallback. The shared processor and writer do not own Place lifecycle or metadata.
+
 ### `packages/storage`
 
 Object-storage abstraction/adapters. No feature authorization.
@@ -289,7 +291,7 @@ This rule exists for scalability and user experience as well as code cleanliness
 
 Physical `Place` is the venue source of truth. Pitch extends Place through Pitch-owned capability/application behavior. Watch references canonical Place; it does not require a duplicate Watch venue entity or a generic capability model merely for symmetry.
 
-Places owns managed-image reconciliation intent and its key/delivery contract. Upload preparation commits an existing OutboxEvent before object storage; publication consumes the unexpired, never-claimed intent transactionally with PlaceImage insertion. Gallery deletion queues managed cleanup in the same transaction. The Places-owned Worker handler uses the shared Outbox engine and checks canonical references before physical removal; no separate cleanup queue or media persistence model exists.
+Places owns managed-image reconciliation intent and its key/delivery contract. Upload preparation commits an existing OutboxEvent containing the exact planned key before object storage; publication consumes only the matching unexpired, never-claimed intent transactionally with `PlaceImage` insertion. New managed rows store their typed `PLACE_PHOTO` master key in nullable internal `PlaceImage.objectKey`; historical rows continue through the exact legacy key fallback without backfill. Gallery deletion queues the persisted typed key or historical fallback in the same transaction. The Places-owned Worker validates configured scope, Place/image identity and master variant, then uses the shared Outbox engine and checks canonical references before physical removal; no separate cleanup queue or media persistence model exists.
 
 One-for-one gallery replacement also uses the Places-owned media service and canonical Place transaction lock. A new immutable image ID replaces the old gallery record at its current slot in one commit, with the retired managed object's cleanup intent committed alongside the swap. URL and upload replacement share the existing Place/Pitch photo-control owner, without a new data table or queue.
 

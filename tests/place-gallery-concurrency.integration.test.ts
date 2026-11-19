@@ -261,10 +261,11 @@ test("Place gallery mutations serialize across independent PostgreSQL connection
       async () => {
         const { placeId } = await fixture(2);
         const imageId = randomUUID();
-        await repository.prepareImageUpload(placeId, imageId);
+        const objectKey = `development/media/v1/place-photo/${placeId}/${imageId}/master.webp`;
+        await repository.prepareImageUpload(placeId, imageId, objectKey);
         const results = await pair(
           (r) => add(r, placeId, randomUUID()),
-          (r) => r.addPreparedImage(placeId, imageId, 3),
+          (r) => r.addPreparedImage(placeId, imageId, objectKey, 3),
         );
         success(results[0]);
         rejected(results[1], "PLACE_IMAGE_LIMIT_REACHED");
@@ -280,9 +281,10 @@ test("Place gallery mutations serialize across independent PostgreSQL connection
       async () => {
         const { placeId, ids } = await fixture(2);
         const imageId = randomUUID();
-        await repository.prepareImageUpload(placeId, imageId);
+        const objectKey = `development/media/v1/place-photo/${placeId}/${imageId}/master.webp`;
+        await repository.prepareImageUpload(placeId, imageId, objectKey);
         const results = await pair(
-          (r) => r.addPreparedImage(placeId, imageId, 3),
+          (r) => r.addPreparedImage(placeId, imageId, objectKey, 3),
           (r) => r.deleteImage(placeId, ids[0]),
         );
         results.forEach(success);

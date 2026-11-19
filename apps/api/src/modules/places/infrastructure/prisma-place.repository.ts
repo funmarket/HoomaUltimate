@@ -16,7 +16,11 @@ import type {
 } from "@hooma/contracts/places";
 import { Prisma, type PrismaClient } from "@hooma/database";
 import type { AuditWriter } from "../../audit/application/audit-writer.js";
-import type { PlaceModerationDecision, PlaceRepository } from "../application/place.repository.js";
+import type {
+  PlaceImageRecord,
+  PlaceModerationDecision,
+  PlaceRepository,
+} from "../application/place.repository.js";
 import {
   canonicalPlaceSelect,
   canonicalPlaceSummary,
@@ -218,10 +222,10 @@ export class PrismaPlaceRepository implements PlaceRepository {
     );
   }
 
-  async getImage(placeId: string, imageId: string): Promise<PublicPlaceImage | null> {
+  async getImage(placeId: string, imageId: string): Promise<PlaceImageRecord | null> {
     return this.db.placeImage.findFirst({
       where: { id: imageId, placeId },
-      select: { id: true, imageUrl: true, sortOrder: true },
+      select: { id: true, imageUrl: true, objectKey: true, sortOrder: true },
     });
   }
 
@@ -232,14 +236,14 @@ export class PrismaPlaceRepository implements PlaceRepository {
     );
   }
 
-  async prepareImageUpload(placeId: string, imageId: string): Promise<void> {
+  async prepareImageUpload(placeId: string, imageId: string, objectKey: string): Promise<void> {
     await this.db.outboxEvent.create({
       data: {
         id: imageId,
         topic: PLACE_IMAGE_RECONCILE_TOPIC,
         aggregateType: "PlaceImage",
         aggregateId: placeId,
-        payload: { placeId, imageId, objectKey: placeImageObjectKey(placeId, imageId) },
+        payload: { placeId, imageId, objectKey },
         // Existing reconciliation grace period exceeds the storage transport's 30s timeout.
         availableAt: new Date(Date.now() + 60 * 60 * 1000),
       },
@@ -249,12 +253,14 @@ export class PrismaPlaceRepository implements PlaceRepository {
   async addPreparedImage(
     placeId: string,
     imageId: string,
+    objectKey: string,
     maxImages: number,
   ): Promise<PublicPlaceImage> {
     return this.createImage(
       placeId,
       imageId,
       placeManagedImagePath(placeId, imageId),
+      objectKey,
       maxImages,
       true,
     );
@@ -266,13 +272,14 @@ export class PrismaPlaceRepository implements PlaceRepository {
     imageUrl: string,
     maxImages: number,
   ): Promise<PublicPlaceImage> {
-    return this.createImage(placeId, imageId, imageUrl, maxImages, false);
+    return this.createImage(placeId, imageId, imageUrl, null, maxImages, false);
   }
 
   private async createImage(
     placeId: string,
     imageId: string,
     imageUrl: string,
+    objectKey: string | null,
     maxImages: number,
     prepared: boolean,
   ): Promise<PublicPlaceImage> {
@@ -284,6 +291,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
             id: imageId,
             topic: PLACE_IMAGE_RECONCILE_TOPIC,
             aggregateId: placeId,
+            payload: { equals: { placeId, imageId, objectKey } },
             status: "PENDING",
             attempts: 0,
             availableAt: { gt: new Date() },
@@ -294,7 +302,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
       const count = await tx.placeImage.count({ where: { placeId } });
       if (count >= maxImages) throw new Error("PLACE_IMAGE_LIMIT_REACHED");
       return tx.placeImage.create({
-        data: { id: imageId, placeId, imageUrl, sortOrder: count },
+        data: { id: imageId, placeId, imageUrl, objectKey, sortOrder: count },
         select: { id: true, imageUrl: true, sortOrder: true },
       });
     });
@@ -305,13 +313,14 @@ export class PrismaPlaceRepository implements PlaceRepository {
     previousImageId: string,
     nextImageId: string,
     nextImageUrl: string,
+    nextObjectKey: string | null,
     prepared: boolean,
   ): Promise<PublicPlaceImage> {
     return this.db.$transaction(async (tx) => {
       await this.lockGallery(tx, placeId);
       const previous = await tx.placeImage.findFirst({
         where: { id: previousImageId, placeId },
-        select: { id: true, imageUrl: true, sortOrder: true },
+        select: { id: true, imageUrl: true, objectKey: true, sortOrder: true },
       });
       if (!previous) throw new Error("PLACE_IMAGE_STALE");
 
@@ -321,6 +330,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
             id: nextImageId,
             topic: PLACE_IMAGE_RECONCILE_TOPIC,
             aggregateId: placeId,
+            payload: { equals: { placeId, imageId: nextImageId, objectKey: nextObjectKey } },
             status: "PENDING",
             attempts: 0,
             availableAt: { gt: new Date() },
@@ -331,7 +341,12 @@ export class PrismaPlaceRepository implements PlaceRepository {
 
       // Delete and insert remain one committed gallery transition.
       await tx.placeImage.delete({ where: { id: previousImageId } });
-      if (previous.imageUrl === placeManagedImagePath(placeId, previousImageId)) {
+      const previousObjectKey =
+        previous.objectKey ??
+        (previous.imageUrl === placeManagedImagePath(placeId, previousImageId)
+          ? placeImageObjectKey(placeId, previousImageId)
+          : null);
+      if (previousObjectKey) {
         await tx.outboxEvent.create({
           data: {
             id: previousImageId,
@@ -341,13 +356,19 @@ export class PrismaPlaceRepository implements PlaceRepository {
             payload: {
               placeId,
               imageId: previousImageId,
-              objectKey: placeImageObjectKey(placeId, previousImageId),
+              objectKey: previousObjectKey,
             },
           },
         });
       }
       return tx.placeImage.create({
-        data: { id: nextImageId, placeId, imageUrl: nextImageUrl, sortOrder: previous.sortOrder },
+        data: {
+          id: nextImageId,
+          placeId,
+          imageUrl: nextImageUrl,
+          objectKey: nextObjectKey,
+          sortOrder: previous.sortOrder,
+        },
         select: { id: true, imageUrl: true, sortOrder: true },
       });
     });
@@ -358,18 +379,23 @@ export class PrismaPlaceRepository implements PlaceRepository {
       await this.lockGallery(tx, placeId);
       const existing = await tx.placeImage.findFirst({
         where: { id: imageId, placeId },
-        select: { id: true, imageUrl: true, sortOrder: true },
+        select: { id: true, imageUrl: true, objectKey: true, sortOrder: true },
       });
       if (!existing) return null;
       await tx.placeImage.delete({ where: { id: imageId } });
-      if (existing.imageUrl === placeManagedImagePath(placeId, imageId)) {
+      const existingObjectKey =
+        existing.objectKey ??
+        (existing.imageUrl === placeManagedImagePath(placeId, imageId)
+          ? placeImageObjectKey(placeId, imageId)
+          : null);
+      if (existingObjectKey) {
         await tx.outboxEvent.create({
           data: {
             id: imageId,
             topic: PLACE_IMAGE_RECONCILE_TOPIC,
             aggregateType: "PlaceImage",
             aggregateId: placeId,
-            payload: { placeId, imageId, objectKey: placeImageObjectKey(placeId, imageId) },
+            payload: { placeId, imageId, objectKey: existingObjectKey },
           },
         });
       }
@@ -387,7 +413,7 @@ export class PrismaPlaceRepository implements PlaceRepository {
       for (const [index, image] of remaining.entries()) {
         await tx.placeImage.update({ where: { id: image.id }, data: { sortOrder: index } });
       }
-      return existing;
+      return { id: existing.id, imageUrl: existing.imageUrl, sortOrder: existing.sortOrder };
     });
   }
 

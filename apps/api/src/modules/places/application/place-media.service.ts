@@ -12,6 +12,12 @@ import {
   type PlaceImageContentType,
   type PlaceImageOrderInput,
 } from "@hooma/contracts/places";
+import {
+  PHOTO_STANDARD,
+  planMediaObjectKeys,
+  writeMediaVariants,
+  type MediaStorageScope,
+} from "@hooma/media-processing";
 import type { ObjectStorage, ObjectStorageReadUrlSigner } from "@hooma/storage";
 import type { PlatformAdminAccessPort } from "../../../application/platform-admin-access.port.js";
 import { PlaceMediaError } from "../domain/place-media-error.js";
@@ -44,6 +50,7 @@ export class PlaceMediaService {
     private readonly externalResolver: ExternalPlaceImageResolver,
     private readonly storage: ObjectStorage | null,
     private readonly processor: PlaceImageProcessor,
+    private readonly mediaStorageScope: MediaStorageScope | null,
   ) {}
 
   async addExternal(userId: string, placeId: string, input: PlaceExternalImageInput) {
@@ -62,7 +69,7 @@ export class PlaceMediaService {
     await this.requireMediaAccess(userId, placeId);
     const parsed = placeExternalImageInputSchema.parse(input);
     const imageUrl = await this.externalResolver.resolve(parsed.url);
-    return this.replaceImage(placeId, previousImageId, randomUUID(), imageUrl, false);
+    return this.replaceImage(placeId, previousImageId, randomUUID(), imageUrl, null, false);
   }
 
   async addUpload(userId: string, placeId: string, input: PlaceImageUploadInput) {
@@ -98,32 +105,59 @@ export class PlaceMediaService {
     if (input.body.byteLength > PLACE_IMAGE_MAX_BYTES) {
       throw new PlaceMediaError("PLACE_IMAGE_TOO_LARGE", "Place photo must be 5 MiB or smaller");
     }
-    if (!this.storage) {
+    if (!this.storage || !this.mediaStorageScope) {
       throw new PlaceMediaError(
         "PLACE_IMAGE_STORAGE_NOT_CONFIGURED",
         "Place photo storage is not configured",
       );
     }
 
-    const imageId = randomUUID();
-    const key = objectKey(placeId, imageId);
     const processed = await this.processor.process(
       input.body,
       contentType as PlaceImageContentType,
     );
-    await this.places.prepareImageUpload(placeId, imageId);
-    let uploaded = false;
+    if (
+      processed.profile !== PHOTO_STANDARD.id ||
+      processed.selectedVariants?.length !== 1 ||
+      processed.selectedVariants[0] !== "master" ||
+      processed.variants.length !== 1 ||
+      processed.variants[0]?.variant !== "master"
+    ) {
+      throw new PlaceMediaError("PLACE_IMAGE_TYPE_INVALID", "Place photo processing failed");
+    }
+
+    const imageId = randomUUID();
+    const identity = {
+      scope: this.mediaStorageScope,
+      namespace: "PLACE_PHOTO" as const,
+      ownerId: placeId,
+      mediaId: imageId,
+    };
+    const [plannedObject] = planMediaObjectKeys({
+      ...identity,
+      profile: PHOTO_STANDARD,
+      requestedVariants: ["master"],
+    });
+    if (!plannedObject) {
+      throw new PlaceMediaError("PLACE_IMAGE_TYPE_INVALID", "Place photo processing failed");
+    }
+    const key = plannedObject.objectKey;
+    await this.places.prepareImageUpload(placeId, imageId, key);
     try {
-      await this.storage.put(key, processed.body, processed.contentType);
-      uploaded = true;
+      const written = await writeMediaVariants({ storage: this.storage, identity, processed });
+      const master = written.descriptors.find(({ variant }) => variant === "master");
+      if (!master || master.objectKey !== key || written.descriptors.length !== 1) {
+        throw new PlaceMediaError("PLACE_IMAGE_TYPE_INVALID", "Place photo processing failed");
+      }
       try {
         return previousImageId === undefined
-          ? await this.places.addPreparedImage(placeId, imageId, maxImages)
+          ? await this.places.addPreparedImage(placeId, imageId, master.objectKey, maxImages)
           : await this.replaceImage(
               placeId,
               previousImageId,
               imageId,
               managedImagePath(placeId, imageId),
+              master.objectKey,
               true,
             );
       } catch (error) {
@@ -139,13 +173,12 @@ export class PlaceMediaService {
         throw error;
       }
     } catch (error) {
-      if (uploaded) {
-        try {
-          // A commit response can fail after publication; never remove a published image.
-          if (!(await this.places.getImage(placeId, imageId))) await this.storage.remove(key);
-        } catch {
-          // The pre-upload intent remains durable when immediate cleanup cannot complete.
-        }
+      try {
+        // A commit response can fail after publication; never remove a published image.
+        const published = await this.places.getImage(placeId, imageId);
+        if (published?.objectKey !== key) await this.storage.remove(key);
+      } catch {
+        // The pre-upload intent remains durable when immediate cleanup cannot complete.
       }
       throw error;
     }
@@ -156,6 +189,7 @@ export class PlaceMediaService {
     previousImageId: string,
     nextImageId: string,
     nextImageUrl: string,
+    nextObjectKey: string | null,
     prepared: boolean,
   ) {
     try {
@@ -164,6 +198,7 @@ export class PlaceMediaService {
         previousImageId,
         nextImageId,
         nextImageUrl,
+        nextObjectKey,
         prepared,
       );
     } catch (error) {
@@ -215,7 +250,7 @@ export class PlaceMediaService {
       );
     }
     return this.storage.createReadUrl(
-      objectKey(placeId, imageId),
+      image.objectKey ?? objectKey(placeId, imageId),
       PLACE_IMAGE_READ_URL_TTL_SECONDS,
     );
   }

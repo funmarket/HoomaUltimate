@@ -1219,13 +1219,14 @@ Rules:
 
 - `Place` is the only physical venue record;
 - `Place.phone`, `Place.email`, and `Place.websiteUrl` are the single contact authority for Pitch;
-- `PlaceImage[]` is the runtime image authority;
+- `PlaceImage[]` is the runtime image authority; nullable internal `PlaceImage.objectKey` records the exact typed key for new managed uploads and is absent from public Place image DTOs;
 - existing-gallery mutations acquire the canonical Place row lock before gallery reads and hold it through transaction completion; the existing unique `(placeId, sortOrder)` constraint and two-phase ordering remain intact;
-- managed Place image cleanup uses `place.image.reconcile-object` OutboxEvent payloads containing `placeId`, `imageId`, and the exact existing `place-images/{placeId}/{imageId}` key;
-- upload intents use image ID as event ID and a one-hour reconciliation grace period; gallery attachment consumes an unexpired PENDING intent with zero prior retry attempts in the same transaction as insertion, while failed/abandoned writes retain cleanup ownership;
+- new managed Place uploads use shared `PHOTO_STANDARD` master-only processing and typed configured-scope `PLACE_PHOTO` object keys; historical nullable-key rows retain the exact `place-images/{placeId}/{imageId}` delivery and cleanup fallback without backfill;
+- managed Place image cleanup uses `place.image.reconcile-object` OutboxEvent payloads containing `placeId`, `imageId`, and the exact persisted typed key or historical fallback key;
+- upload intents use image ID as event ID and a one-hour reconciliation grace period; gallery attachment consumes an unexpired PENDING intent with zero prior retry attempts and an exactly matching key payload in the same transaction as insertion, while failed/abandoned writes retain cleanup ownership;
 - atomic one-for-one replacement creates a new immutable `PlaceImage.id` at the previous image's sort position inside the canonical Place lock and commits the old managed-object cleanup intent with that transition; upload replacement consumes an unexpired unclaimed prepared intent inside the transaction and rejects a stale target without retiring the old image;
   - managed gallery deletion atomically creates the cleanup event; external URLs do not create physical cleanup;
-- the Places Worker handler refuses mismatched identities/keys and skips objects still referenced by canonical gallery identity or delivery URL; existing Outbox leases, backoff and FAILED records retain retry/recovery semantics;
+- the Places Worker handler accepts only the exact historical key or configured-scope typed `master.webp` key for the same Place/image identity, refuses mismatches, and skips objects still referenced by persisted key, canonical gallery identity or delivery URL; existing Outbox leases, backoff and FAILED records retain retry/recovery semantics;
 - `PlaceCapability(kind=PITCH)` owns the current approved Pitch summary, hourly rate, and currency;
 - a Pitch suggestion creates pending Place + pending PITCH capability with submitted hourly rate/currency together;
 - approval of a community suggestion does not grant Place ownership to the suggester;
