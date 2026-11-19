@@ -1571,7 +1571,7 @@
  * beneath the existing overlaid title and subtitle. */
 :root[data-theme="light"] .home-gateway-card::before {
   position: absolute;
-  z-index: 0;
+  z-index: 1;
   inset: 42% 0 0;
   background: linear-gradient(180deg, transparent, rgba(5, 5, 5, 0.88));
   content: "";
@@ -1579,12 +1579,20 @@
 }
 
 :root[data-theme="light"] .home-gateway-card__title {
+  z-index: 2;
+  border-radius: 4px;
+  background: #050505;
   color: #ffffff;
+  box-shadow: 0 0 0 3px #050505;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95);
 }
 
 :root[data-theme="light"] .home-gateway-card__subtitle {
+  z-index: 2;
+  border-radius: 4px;
+  background: #050505;
   color: #b8ff4a;
+  box-shadow: 0 0 0 3px #050505;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95);
 }
 
@@ -1617,13 +1625,19 @@
 }
 
 :root[data-theme="light"] .hooma-now__live {
-  border-color: #2f6f3e;
+  border-color: #e9fbf0;
   background: #e9fbf0;
-  color: #245c33;
+  color: #1b4d2a;
 }
 
 :root[data-theme="light"] .hooma-now__state {
   border-color: #ced0d4;
+  background: #ffffff;
+  color: #262626;
+}
+
+:root[data-theme="light"] p.hooma-now__state {
+  color: #262626;
 }
 
 :root[data-theme="light"] .hooma-now__state--error button {
@@ -1634,4 +1648,69 @@
 
 :root[data-theme="light"] .hooma-now__refresh-warning {
   color: #a33c00;
+}
+
+/* Keep each appearance choice visibly bounded on the white Settings surface. */
+:root[data-theme="light"] .hooma-settings-option {
+  border-color: #8a8d91;
+}
+
+/* Navigation icons inherit each Light action's readable active/inactive color. */
+:root[data-theme="light"] .watch-section-action__icon {
+  color: currentcolor;
+}
+
+:root[data-theme="light"] .requests-page svg {
+  color: #65676b;
+}
+
+:root[data-theme="light"] :is(.help-tab.is-active, .help-action--primary) svg {
+  color: currentcolor;
+}
+
+/* Fallback team initials remain legible when no uploaded badge is available. */
+:root[data-theme="light"] .team-discovery-badge {
+  background: #f0f2f5;
+  color: #705000;
+}
+
+/* Team hero copy stays on its deliberately dark media overlay. */
+:root[data-theme="light"] .team-profile-hero .eyebrow {
+  color: #f3cf72;
+}
+
+/* Keep the stadium artwork intact; only the overlaid empty-state copy receives
+ * a compact contrast field. */
+:root[data-theme="light"] .team-lineup-empty {
+  background: transparent;
+  color: #ffffff;
+}
+
+:root[data-theme="light"] .team-lineup-empty-mark {
+  color: #4b4f56;
+}
+
+:root[data-theme="light"] .team-lineup-empty strong {
+  border-radius: 6px;
+  padding: 2px 8px;
+  background: #050505;
+  color: #ffffff;
+}
+
+:root[data-theme="light"] .team-lineup-empty small {
+  border-radius: 6px;
+  padding: 4px 8px;
+  background: #050505;
+  color: #f7f7f7;
+}
+
+/* Disabled community actions remain visibly disabled without fading their
+ * label below readable Light-theme contrast. */
+:root[data-theme="light"]
+  :is(.hooma-page, .hooma-create-page, .hooma-detail-page)
+  .button:disabled {
+  border-color: #ced0d4;
+  background: #e4e6eb;
+  color: #4b4f56;
+  opacity: 1;
 }
