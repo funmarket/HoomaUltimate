@@ -708,6 +708,14 @@
   color: #050505;
 }
 
+:root[data-theme="light"] :is(.pitch-back-link, .pitch-owner-link) {
+  color: #245c33;
+}
+
+:root[data-theme="light"] .pitch-owner-link--toolbar {
+  border-color: #245c33;
+}
+
 :root[data-theme="light"]
   :is(.pitch-page, .pitch-detail-page, .game-location)
   :is(.panel, .pitch-card, .pitch-detail-card, .pitch-form, .game-location__panel) {
@@ -804,11 +812,54 @@
 }
 
 :root[data-theme="light"] .hooma-passport-card__handle {
-  color: #0866ff;
+  color: #005fcc;
 }
 
 :root[data-theme="light"] .hooma-passport-card__ovr {
-  color: #8a6500;
+  color: #705000;
+}
+
+:root[data-theme="light"] .hooma-passport-card__pos {
+  color: #a33c00;
+}
+
+:root[data-theme="light"]
+  :is(
+    .public-profile-identities span[data-identity="PLAYER"],
+    .profile-identity-badges span[data-identity="PLAYER"]
+  ) {
+  border-color: #245c33;
+  color: #245c33;
+}
+
+:root[data-theme="light"]
+  :is(
+    .public-profile-identities span[data-identity="FAN"],
+    .profile-identity-badges span[data-identity="FAN"]
+  ) {
+  border-color: #005fcc;
+  color: #005fcc;
+}
+
+:root[data-theme="light"]
+  :is(
+    .public-profile-identities span[data-identity="GAMER"],
+    .profile-identity-badges span[data-identity="GAMER"]
+  ) {
+  border-color: #a33c00;
+  color: #a33c00;
+}
+
+:root[data-theme="light"] .hooma-passport-stats .is-yellow {
+  color: #705000;
+}
+
+:root[data-theme="light"] .hooma-passport-stats .is-orange {
+  color: #a33c00;
+}
+
+:root[data-theme="light"] .hooma-passport-stats .is-green {
+  color: #245c33;
 }
 
 :root[data-theme="light"]
