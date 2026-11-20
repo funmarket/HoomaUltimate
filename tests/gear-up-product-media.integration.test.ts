@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import test from "node:test";
 import { getDatabaseClient } from "@hooma/database";
@@ -50,6 +51,7 @@ test("Gear Up product media enforces the configured limit and preserves ordering
     include: { gearUpShop: { include: { products: true } } },
   });
   const productId = place.gearUpShop!.products[0]!.id;
+  const preparedIds: string[] = [];
 
   try {
     await repository.updateSettings(user.id, { productImageLimit: 3 });
@@ -112,7 +114,44 @@ test("Gear Up product media enforces the configured limit and preserves ordering
     assert.equal(concurrent.filter((result) => result.status === "fulfilled").length, 3);
     assert.equal(concurrent.filter((result) => result.status === "rejected").length, 1);
     assert.equal((await repository.list(productId)).length, 3);
+
+    // Prepared finalization and external additions share the same Product row lock.
+    for (const image of await repository.list(productId)) {
+      await repository.delete(productId, image.id);
+    }
+    const candidates = Array.from({ length: 4 }, () => randomUUID());
+    preparedIds.push(...candidates);
+    for (const imageId of candidates) {
+      await repository.prepareUpload(
+        imageId,
+        productId,
+        `staging/media/v1/gear-up-product/${productId}/${imageId}/master.webp`,
+      );
+    }
+    const finalized = await Promise.allSettled(
+      candidates.map((imageId) =>
+        repository.addPreparedUpload({
+          imageId,
+          productId,
+          objectKey: `staging/media/v1/gear-up-product/${productId}/${imageId}/master.webp`,
+          contentType: "image/webp",
+          sizeBytes: 3,
+        }),
+      ),
+    );
+    assert.equal(finalized.filter(({ status }) => status === "fulfilled").length, 3);
+    assert.equal(finalized.filter(({ status }) => status === "rejected").length, 1);
+    assert.deepEqual(
+      (await repository.list(productId)).map(({ sortOrder }) => sortOrder),
+      [0, 1, 2],
+    );
+    assert.equal(
+      await db.outboxEvent.count({ where: { id: { in: preparedIds } } }),
+      1,
+      "only the failed prepared finalization may retain its cleanup intent",
+    );
   } finally {
+    await db.outboxEvent.deleteMany({ where: { id: { in: preparedIds } } });
     await db.place.delete({ where: { id: place.id } });
     await db.user.delete({ where: { id: user.id } });
   }

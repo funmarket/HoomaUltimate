@@ -103,8 +103,19 @@ function dependencies(overrides = {}) {
   };
   const processor = overrides.processor ?? {
     process: async () => ({
-      body: new Uint8Array([1, 2, 3]),
-      contentType: "image/webp",
+      profile: "PHOTO_STANDARD",
+      selectedVariants: ["master"],
+      source: { contentType: "image/jpeg", widthPx: 2, heightPx: 2 },
+      variants: [
+        {
+          variant: "master",
+          body: new Uint8Array([1, 2, 3]),
+          contentType: "image/webp",
+          sizeBytes: 3,
+          widthPx: 2,
+          heightPx: 2,
+        },
+      ],
     }),
   };
   return { calls, images, products, places, platformAdmin, storage, processor };
@@ -122,6 +133,7 @@ test("pending submitter access cannot manage official product media", async () =
     deps.platformAdmin,
     deps.storage,
     deps.processor,
+    "staging",
   );
 
   await assert.rejects(
@@ -146,6 +158,7 @@ test("verified Place owner can add external images and preserve product ownershi
     deps.platformAdmin,
     deps.storage,
     deps.processor,
+    "staging",
   );
 
   const image = await service.addExternalUrl("owner-1", "place-1", "product-1", {
@@ -170,6 +183,7 @@ test("verified Place owner upload uses validated storage and normalized image pr
     deps.platformAdmin,
     deps.storage,
     deps.processor,
+    "staging",
   );
 
   const image = await service.addUpload("owner-1", "place-1", "product-1", {
@@ -196,6 +210,7 @@ test("product image reorder stays within the selected product and shop", async (
     deps.platformAdmin,
     deps.storage,
     deps.processor,
+    "staging",
   );
 
   await service.reorder("owner-1", "place-1", "product-1", {
@@ -217,4 +232,210 @@ test("only App Admin can change the product image limit", async () => {
   });
   assert.equal(deps.calls.adminChecks, 1);
   assert.deepEqual(deps.calls.settings, [{ userId: "admin-1", input: { productImageLimit: 5 } }]);
+});
+
+test("Step 22 writes only the exact planned scoped Gear Up master key", async () => {
+  const [{ GearUpProductMediaService }] = await loadServices();
+  const writes = [];
+  const deps = dependencies({
+    places: { isVerifiedOwner: async () => true },
+    storage: {
+      put: async (key, body, contentType) => {
+        writes.push({ key, contentType, bytes: body.byteLength });
+        return { key, contentType, sizeBytes: body.byteLength };
+      },
+      remove: async () => {
+        throw new Error("must keep reconciliation intent");
+      },
+    },
+  });
+  const service = new GearUpProductMediaService(
+    deps.images,
+    deps.products,
+    deps.places,
+    deps.platformAdmin,
+    deps.storage,
+    deps.processor,
+    "staging",
+  );
+  await service.addUpload("owner-1", "place-1", "product-1", {
+    contentType: "image/jpeg",
+    body: new Uint8Array([9, 8, 7]),
+  });
+  assert.equal(writes.length, 1);
+  const key = writes[0].key;
+  assert.match(key, /^staging\/media\/v1\/gear-up-product\/product-1\/[a-f0-9-]+\/master\.webp$/);
+  assert.equal(deps.calls.prepare[0].objectKey, key);
+  assert.equal(deps.calls.upload[0].objectKey, key);
+  assert.equal(deps.calls.upload[0].contentType, "image/webp");
+});
+
+test("Step 22 rejects invalid variant sets without writing or preparing intent", async () => {
+  const [{ GearUpProductMediaService }] = await loadServices();
+  const deps = dependencies({
+    places: { isVerifiedOwner: async () => true },
+    processor: {
+      process: async () => ({
+        profile: "PHOTO_STANDARD",
+        selectedVariants: ["master", "card"],
+        variants: [],
+      }),
+    },
+  });
+  const service = new GearUpProductMediaService(
+    deps.images,
+    deps.products,
+    deps.places,
+    deps.platformAdmin,
+    deps.storage,
+    deps.processor,
+    "staging",
+  );
+  await assert.rejects(
+    () =>
+      service.addUpload("owner-1", "place-1", "product-1", {
+        contentType: "image/jpeg",
+        body: new Uint8Array([1]),
+      }),
+    (error) => error?.code === "GEAR_UP_PRODUCT_IMAGE_UPLOAD_FAILED",
+  );
+  assert.equal(deps.calls.prepare.length, 0);
+  assert.equal(deps.calls.upload.length, 0);
+});
+
+test("Step 22 retains planned intent after a storage-returned key mismatch", async () => {
+  const [{ GearUpProductMediaService }] = await loadServices();
+  const deps = dependencies({
+    places: { isVerifiedOwner: async () => true },
+    storage: {
+      put: async (key, body, contentType) => ({
+        key: `${key}-other`,
+        contentType,
+        sizeBytes: body.byteLength,
+      }),
+      remove: async () => {
+        throw new Error("synchronous cleanup must not run");
+      },
+    },
+  });
+  const service = new GearUpProductMediaService(
+    deps.images,
+    deps.products,
+    deps.places,
+    deps.platformAdmin,
+    deps.storage,
+    deps.processor,
+    "staging",
+  );
+  await assert.rejects(
+    () =>
+      service.addUpload("owner-1", "place-1", "product-1", {
+        contentType: "image/jpeg",
+        body: Uint8Array.of(1, 2, 3),
+      }),
+    (error) => error?.code === "GEAR_UP_PRODUCT_IMAGE_UPLOAD_FAILED",
+  );
+  assert.equal(deps.calls.prepare.length, 1);
+  assert.equal(deps.calls.upload.length, 0);
+});
+
+test("Step 22 preserves Platform Admin upload and denies a mismatched shop", async () => {
+  const [{ GearUpProductMediaService }] = await loadServices();
+  const deps = dependencies({
+    platformAdmin: { isPlatformAdmin: async () => true },
+  });
+  const service = new GearUpProductMediaService(
+    deps.images,
+    deps.products,
+    deps.places,
+    deps.platformAdmin,
+    deps.storage,
+    deps.processor,
+    "staging",
+  );
+  const uploaded = await service.addUpload("admin-1", "place-1", "product-1", {
+    contentType: "image/png",
+    body: Uint8Array.of(1, 2, 3),
+  });
+  assert.equal(uploaded.source, "UPLOAD");
+  assert.equal(deps.calls.upload.length, 1);
+
+  const wrongShop = dependencies({
+    platformAdmin: { isPlatformAdmin: async () => true },
+    products: { getManaged: async () => ({ id: "product-1", shopPlaceId: "place-2" }) },
+  });
+  const denied = new GearUpProductMediaService(
+    wrongShop.images,
+    wrongShop.products,
+    wrongShop.places,
+    wrongShop.platformAdmin,
+    wrongShop.storage,
+    wrongShop.processor,
+    "staging",
+  );
+  await assert.rejects(
+    () =>
+      denied.addUpload("admin-1", "place-1", "product-1", {
+        contentType: "image/jpeg",
+        body: Uint8Array.of(1),
+      }),
+    (error) => error?.code === "GEAR_UP_PRODUCT_NOT_FOUND",
+  );
+  assert.equal(wrongShop.calls.prepare.length, 0);
+});
+
+test("Step 22 requires configured storage scope for uploads", async () => {
+  const [{ GearUpProductMediaService }] = await loadServices();
+  const deps = dependencies({ places: { isVerifiedOwner: async () => true } });
+  const service = new GearUpProductMediaService(
+    deps.images,
+    deps.products,
+    deps.places,
+    deps.platformAdmin,
+    deps.storage,
+    deps.processor,
+    null,
+  );
+  await assert.rejects(
+    () =>
+      service.addUpload("owner-1", "place-1", "product-1", {
+        contentType: "image/jpeg",
+        body: Uint8Array.of(1),
+      }),
+    (error) => error?.code === "GEAR_UP_PRODUCT_IMAGE_STORAGE_NOT_CONFIGURED",
+  );
+  assert.equal(deps.calls.prepare.length, 0);
+});
+
+test("Step 22 preserves external delivery and legacy managed signed read", async () => {
+  const [{ GearUpProductMediaService }] = await loadServices();
+  const legacyKey = "gear-up-product-images/product-1/image-legacy";
+  const deps = dependencies({
+    places: { isVerifiedOwner: async () => true },
+    images: {
+      get: async (productId, imageId) => ({
+        id: imageId,
+        productId,
+        source: imageId === "external" ? "EXTERNAL_URL" : "UPLOAD",
+        externalUrl: imageId === "external" ? "https://images.example.com/ball.webp" : null,
+        objectKey: imageId === "external" ? null : legacyKey,
+      }),
+    },
+  });
+  const service = new GearUpProductMediaService(
+    deps.images,
+    deps.products,
+    deps.places,
+    deps.platformAdmin,
+    deps.storage,
+    deps.processor,
+    "staging",
+  );
+  assert.deepEqual(await service.deliveryPublic("product-1", "external"), {
+    contentUrl: "https://images.example.com/ball.webp",
+    expiresAt: null,
+  });
+  const legacy = await service.deliveryManaged("owner-1", "place-1", "product-1", "legacy");
+  assert.equal(legacy.contentUrl, `https://signed.example.com/${legacyKey}`);
+  assert.ok(legacy.expiresAt);
 });

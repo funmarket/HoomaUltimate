@@ -26,7 +26,7 @@ test("Gear Up product image cleanup removes only unreferenced owned objects", as
       findFirst: async () => (referenced ? { id: "image-1" } : null),
     },
   };
-  const handler = createGearUpProductImageCleanupHandler(database, storage);
+  const handler = createGearUpProductImageCleanupHandler(database, storage, "staging");
 
   await handler({
     id: "event-1",
@@ -59,6 +59,7 @@ test("Gear Up product image cleanup rejects keys outside product ownership bound
       },
     },
     { remove: async () => undefined },
+    "staging",
   );
 
   await assert.rejects(
@@ -73,4 +74,61 @@ test("Gear Up product image cleanup rejects keys outside product ownership bound
       }),
     /outside the Gear Up product ownership boundary/,
   );
+});
+
+test("Step 22 cleanup validates exact scoped typed and legacy keys", async () => {
+  const { createGearUpProductImageCleanupHandler } = await loadCleanup();
+  const removed = [];
+  let referenced = false;
+  const handler = createGearUpProductImageCleanupHandler(
+    {
+      gearUpProductImage: {
+        findFirst: async () => (referenced ? { id: "image-1" } : null),
+      },
+    },
+    {
+      remove: async (key) => {
+        removed.push(key);
+      },
+    },
+    "staging",
+  );
+  const event = (objectKey) => ({
+    id: "event-step22",
+    topic: "gear-up.product-image.reconcile-object",
+    payload: { productId: "product-1", objectKey },
+  });
+  const typed = "staging/media/v1/gear-up-product/product-1/image-1/master.webp";
+  await handler(event(typed));
+  assert.deepEqual(removed, [typed]);
+  referenced = true;
+  await handler(event("staging/media/v1/gear-up-product/product-1/image-2/master.webp"));
+  assert.deepEqual(removed, [typed]);
+
+  for (const invalid of [
+    "production/media/v1/gear-up-product/product-1/image-1/master.webp",
+    "staging/media/v1/gear-up-product/product-2/image-1/master.webp",
+    "staging/media/v1/gear-up-product/product-1/image-1/thumb.webp",
+    "staging/media/v1/request-photo/product-1/image-1/master.webp",
+    "gear-up-product-images/product-1/extra/nested",
+    "gear-up-product-images/product-1/../image-1",
+  ]) {
+    await assert.rejects(
+      () => handler(event(invalid)),
+      /outside the Gear Up product ownership boundary/,
+    );
+  }
+  await assert.rejects(
+    () =>
+      handler({
+        id: "event-unsafe-owner",
+        topic: "gear-up.product-image.reconcile-object",
+        payload: {
+          productId: "../product-1",
+          objectKey: "gear-up-product-images/../product-1/image-1",
+        },
+      }),
+    /outside the Gear Up product ownership boundary/,
+  );
+  assert.deepEqual(removed, [typed]);
 });

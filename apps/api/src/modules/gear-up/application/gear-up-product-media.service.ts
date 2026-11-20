@@ -10,6 +10,12 @@ import {
   type GearUpProductImageDelivery,
   type GearUpProductImageOrderInput,
 } from "@hooma/contracts/gear-up";
+import {
+  PHOTO_STANDARD,
+  planMediaObjectKeys,
+  writeMediaVariants,
+  type MediaStorageScope,
+} from "@hooma/media-processing";
 import type { ObjectStorage, ObjectStorageReadUrlSigner } from "@hooma/storage";
 import type { PlatformAdminAccessPort } from "../../../application/platform-admin-access.port.js";
 import type { GearUpPlaceAccess } from "./gear-up-place-access.js";
@@ -37,6 +43,7 @@ export class GearUpProductMediaService {
     private readonly platformAdmin: PlatformAdminAccessPort,
     private readonly storage: ObjectStorage | null,
     private readonly processor: GearUpProductImageProcessor,
+    private readonly mediaStorageScope: MediaStorageScope | null,
   ) {}
 
   async listPublic(productId: string): Promise<readonly GearUpProductImage[]> {
@@ -89,7 +96,7 @@ export class GearUpProductMediaService {
         "Product image must be 5 MiB or smaller",
       );
     }
-    if (!this.storage) {
+    if (!this.storage || !this.mediaStorageScope) {
       throw new GearUpError(
         "GEAR_UP_PRODUCT_IMAGE_STORAGE_NOT_CONFIGURED",
         "Product image storage is not configured",
@@ -98,47 +105,56 @@ export class GearUpProductMediaService {
 
     const typedContentType = contentType as GearUpProductImageContentType;
     const processed = await this.processor.process(input.body, typedContentType);
+    if (
+      processed.profile !== PHOTO_STANDARD.id ||
+      processed.selectedVariants?.length !== 1 ||
+      processed.selectedVariants[0] !== "master" ||
+      processed.variants.length !== 1 ||
+      processed.variants[0]?.variant !== "master"
+    ) {
+      throw new GearUpError("GEAR_UP_PRODUCT_IMAGE_UPLOAD_FAILED", "Product image upload failed");
+    }
     const imageId = randomUUID();
-    const requestedObjectKey = productImageObjectKey(productId, imageId);
-    await this.images.prepareUpload(imageId, productId, requestedObjectKey);
-
-    let uploadedObjectKey: string | null = null;
+    const identity = {
+      scope: this.mediaStorageScope,
+      namespace: "GEAR_UP_PRODUCT" as const,
+      ownerId: productId,
+      mediaId: imageId,
+    };
+    const [plannedMaster] = planMediaObjectKeys({
+      ...identity,
+      profile: PHOTO_STANDARD,
+      requestedVariants: ["master"],
+    });
+    if (!plannedMaster) {
+      throw new GearUpError("GEAR_UP_PRODUCT_IMAGE_UPLOAD_FAILED", "Product image upload failed");
+    }
+    await this.images.prepareUpload(imageId, productId, plannedMaster.objectKey);
     try {
-      const stored = await this.storage.put(
-        requestedObjectKey,
-        processed.body,
-        processed.contentType,
-      );
-      uploadedObjectKey = stored.key;
-      if (!stored.key.startsWith(`gear-up-product-images/${productId}/`)) {
-        throw new GearUpError(
-          "GEAR_UP_PRODUCT_IMAGE_UPLOAD_FAILED",
-          "Product image storage returned an invalid object key",
-        );
-      }
-      if (stored.key !== requestedObjectKey) {
-        await this.images.prepareUpload(imageId, productId, stored.key);
+      const written = await writeMediaVariants({
+        storage: this.storage,
+        identity,
+        processed,
+      });
+      const [master] = written.descriptors;
+      if (
+        written.descriptors.length !== 1 ||
+        !master ||
+        master.variant !== "master" ||
+        master.objectKey !== plannedMaster.objectKey
+      ) {
+        throw new GearUpError("GEAR_UP_PRODUCT_IMAGE_UPLOAD_FAILED", "Product image upload failed");
       }
       const image = await this.images.addPreparedUpload({
         imageId,
         productId,
-        objectKey: stored.key,
-        contentType: processed.contentType,
-        sizeBytes: stored.sizeBytes,
+        objectKey: master.objectKey,
+        contentType: master.contentType,
+        sizeBytes: master.sizeBytes,
       });
-      uploadedObjectKey = null;
       return publicImage(image);
     } catch (error) {
-      if (uploadedObjectKey) {
-        try {
-          await this.storage.remove(uploadedObjectKey);
-        } catch (cleanupError) {
-          throw new AggregateError(
-            [error, cleanupError],
-            "Gear Up product image persistence failed and object cleanup also failed",
-          );
-        }
-      }
+      // The pending Outbox intent retains ownership of unreferenced planned bytes.
       if (error instanceof GearUpError) throw error;
       throw new GearUpError("GEAR_UP_PRODUCT_IMAGE_UPLOAD_FAILED", "Product image upload failed");
     }
@@ -232,10 +248,6 @@ function supportsReadUrlSigning(
 
 function normalizeContentType(contentType: string): string {
   return contentType.split(";")[0]?.trim().toLowerCase() ?? "";
-}
-
-function productImageObjectKey(productId: string, imageId: string): string {
-  return `gear-up-product-images/${productId}/${imageId}`;
 }
 
 function publicImage(image: GearUpProductImageRecord): GearUpProductImage {

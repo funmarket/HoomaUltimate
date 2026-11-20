@@ -94,7 +94,7 @@ import { GearUpSettingsService } from "../modules/gear-up/application/gear-up-se
 import { PrismaGearUpRepository } from "../modules/gear-up/infrastructure/prisma-gear-up.repository.js";
 import { PrismaGearUpProductRepository } from "../modules/gear-up/infrastructure/prisma-gear-up-product.repository.js";
 import { PrismaGearUpProductMediaRepository } from "../modules/gear-up/infrastructure/prisma-gear-up-product-media.repository.js";
-import { SharpGearUpProductImageProcessor } from "../modules/gear-up/infrastructure/sharp-gear-up-product-image-processor.js";
+import { MediaProcessingGearUpProductImageProcessor } from "../modules/gear-up/infrastructure/media-processing-gear-up-product-image-processor.js";
 
 interface ContainerOverrides {
   readonly objectStorage?: ObjectStorage | null;
@@ -241,7 +241,8 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     placeService,
     platformAdminService,
     storage,
-    new SharpGearUpProductImageProcessor(),
+    new MediaProcessingGearUpProductImageProcessor(),
+    mediaStorageScope ?? null,
   );
   const gearUpSettingsService = new GearUpSettingsService(
     gearUpProductMediaRepository,
