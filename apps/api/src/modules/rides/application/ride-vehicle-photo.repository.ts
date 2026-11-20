@@ -13,22 +13,16 @@ export interface RideVehiclePhotoRecord extends RideVehiclePhotoMetadata {
 
 export interface RideVehiclePhotoRepository {
   getForOffer(rideOfferId: string): Promise<RideVehiclePhotoRecord | null>;
-  replaceForOwner(input: {
+  prepareUpload(photoId: string, rideOfferId: string, objectKey: string): Promise<void>;
+  replacePreparedUploadForOwner(input: {
+    readonly photoId: string;
     readonly rideOfferId: string;
     readonly driverUserId: string;
     readonly photo: {
-      readonly id: string;
       readonly objectKey: string;
       readonly contentType: string;
       readonly sizeBytes: number;
     };
-  }): Promise<{
-    readonly current: RideVehiclePhotoRecord;
-    readonly previousObjectKey: string | null;
-  } | null>;
+  }): Promise<RideVehiclePhotoRecord | null>;
   deleteForOwner(rideOfferId: string, driverUserId: string): Promise<RideVehiclePhotoRecord | null>;
-  scheduleObjectDeletion(input: {
-    readonly objectKey: string;
-    readonly reason: "REPLACED" | "DELETED" | "ORPHANED_AFTER_METADATA_FAILURE";
-  }): Promise<void>;
 }

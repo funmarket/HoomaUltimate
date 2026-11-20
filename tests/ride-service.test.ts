@@ -366,7 +366,7 @@ test("RideService rejects corrupt vehicle photo bytes before storage or metadata
   );
   assert.deepEqual(fixture.storage.putKeys, []);
   assert.deepEqual(fixture.storage.removedKeys, []);
-  assert.deepEqual(fixture.vehiclePhotos.scheduledDeletions, []);
+  assert.deepEqual(fixture.vehiclePhotos.preparedUploads, []);
 });
 
 test("RideService rejects a corrupt later WebP frame before storage effects", async () => {
@@ -391,7 +391,7 @@ test("RideService rejects a corrupt later WebP frame before storage effects", as
   );
   assert.deepEqual(fixture.storage.putKeys, []);
   assert.deepEqual(fixture.storage.removedKeys, []);
-  assert.deepEqual(fixture.vehiclePhotos.scheduledDeletions, []);
+  assert.deepEqual(fixture.vehiclePhotos.preparedUploads, []);
 });
 
 test("RideService preserves original valid image bytes and metadata for every supported format", async (t) => {
@@ -408,6 +408,47 @@ test("RideService preserves original valid image bytes and metadata for every su
     assert.equal(result.sizeBytes, body.byteLength);
     assert.match(fixture.storage.putKeys[0] ?? "", /^ride-offer-vehicles\/offer-1\//);
   }
+});
+
+test("RideService persists reconciliation intent before writing vehicle photo bytes", async () => {
+  const fixture = createServiceFixture();
+  const body = await ridePhoto("png");
+  fixture.storage.beforePut = (objectKey) => {
+    assert.deepEqual(fixture.vehiclePhotos.preparedUploads, [
+      {
+        photoId: objectKey.split("/").at(-1),
+        rideOfferId: "offer-1",
+        objectKey,
+      },
+    ]);
+  };
+
+  await fixture.service.replaceOfferVehiclePhoto("driver-1", "offer-1", {
+    contentType: "image/png",
+    body,
+  });
+
+  assert.equal(fixture.vehiclePhotos.preparedUploads.length, 1);
+});
+
+test("RideService rejects a storage descriptor that changes the planned object key", async () => {
+  const fixture = createServiceFixture();
+  fixture.storage.returnedKey = "ride-offer-vehicles/other-offer/unexpected-photo";
+  const body = await ridePhoto("png");
+
+  await assertRideError(
+    () =>
+      fixture.service.replaceOfferVehiclePhoto("driver-1", "offer-1", {
+        contentType: "image/png",
+        body,
+      }),
+    503,
+    "RIDE_VEHICLE_PHOTO_UPLOAD_FAILED",
+  );
+
+  assert.equal(fixture.vehiclePhotos.replaceCalls, 0);
+  assert.deepEqual(fixture.storage.removedKeys, []);
+  assert.equal(fixture.vehiclePhotos.preparedUploads.length, 1);
 });
 
 async function ridePhoto(format: "jpeg" | "png" | "webp"): Promise<Uint8Array> {
@@ -439,7 +480,7 @@ test("RideService cleans up uploaded vehicle photos when metadata persistence fa
   assert.equal(fixture.storage.putKeys.length, 1);
   assert.match(fixture.storage.putKeys[0] ?? "", /^ride-offer-vehicles\/offer-1\//);
   assert.deepEqual(fixture.storage.removedKeys, fixture.storage.putKeys);
-  assert.deepEqual(fixture.vehiclePhotos.scheduledDeletions, []);
+  assert.equal(fixture.vehiclePhotos.preparedUploads.length, 1);
 
   const scheduledFixture = createServiceFixture();
   scheduledFixture.vehiclePhotos.replaceError = new Error("database unavailable after upload");
@@ -456,14 +497,10 @@ test("RideService cleans up uploaded vehicle photos when metadata persistence fa
   );
 
   assert.deepEqual(scheduledFixture.storage.removedKeys, []);
-  assert.equal(scheduledFixture.vehiclePhotos.scheduledDeletions.length, 1);
+  assert.equal(scheduledFixture.vehiclePhotos.preparedUploads.length, 1);
   assert.equal(
-    scheduledFixture.vehiclePhotos.scheduledDeletions[0]?.objectKey,
+    scheduledFixture.vehiclePhotos.preparedUploads[0]?.objectKey,
     scheduledFixture.storage.putKeys[0],
-  );
-  assert.equal(
-    scheduledFixture.vehiclePhotos.scheduledDeletions[0]?.reason,
-    "ORPHANED_AFTER_METADATA_FAILURE",
   );
 });
 
@@ -783,48 +820,45 @@ class FakeUserPresentationReader implements UserPresentationReader {
 
 class FakeRideVehiclePhotoRepository implements RideVehiclePhotoRepository {
   public replaceError: Error | null = null;
-  public scheduledDeletions: Array<{
+  public replaceCalls = 0;
+  public preparedUploads: Array<{
+    readonly photoId: string;
+    readonly rideOfferId: string;
     readonly objectKey: string;
-    readonly reason: "REPLACED" | "DELETED" | "ORPHANED_AFTER_METADATA_FAILURE";
   }> = [];
 
   async getForOffer(): Promise<RideVehiclePhotoRecord | null> {
     return null;
   }
 
-  async replaceForOwner(input: {
+  async prepareUpload(photoId: string, rideOfferId: string, objectKey: string): Promise<void> {
+    this.preparedUploads.push({ photoId, rideOfferId, objectKey });
+  }
+
+  async replacePreparedUploadForOwner(input: {
+    readonly photoId: string;
     readonly rideOfferId: string;
     readonly photo: {
-      readonly id: string;
       readonly objectKey: string;
       readonly contentType: string;
       readonly sizeBytes: number;
     };
   }) {
+    this.replaceCalls += 1;
     if (this.replaceError) throw this.replaceError;
     return {
-      current: {
-        id: input.photo.id,
-        rideOfferId: input.rideOfferId,
-        objectKey: input.photo.objectKey,
-        contentType: input.photo.contentType,
-        sizeBytes: input.photo.sizeBytes,
-        createdAt: now,
-        updatedAt: now,
-      },
-      previousObjectKey: null,
+      id: input.photoId,
+      rideOfferId: input.rideOfferId,
+      objectKey: input.photo.objectKey,
+      contentType: input.photo.contentType,
+      sizeBytes: input.photo.sizeBytes,
+      createdAt: now,
+      updatedAt: now,
     };
   }
 
   async deleteForOwner(): Promise<RideVehiclePhotoRecord | null> {
     return null;
-  }
-
-  async scheduleObjectDeletion(input: {
-    readonly objectKey: string;
-    readonly reason: "REPLACED" | "DELETED" | "ORPHANED_AFTER_METADATA_FAILURE";
-  }): Promise<void> {
-    this.scheduledDeletions.push(input);
   }
 }
 
@@ -832,10 +866,13 @@ class FakeObjectStorage implements ObjectStorage {
   public putKeys: string[] = [];
   public removedKeys: string[] = [];
   public failRemove = false;
+  public returnedKey: string | null = null;
+  public beforePut: ((key: string) => void) | null = null;
 
   async put(key: string, body: Uint8Array, contentType: string): Promise<StoredObjectDescriptor> {
+    this.beforePut?.(key);
     this.putKeys.push(key);
-    return { key, contentType, sizeBytes: body.byteLength };
+    return { key: this.returnedKey ?? key, contentType, sizeBytes: body.byteLength };
   }
 
   async get(key: string): Promise<StoredObject> {

@@ -1,10 +1,9 @@
+import { RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC } from "@hooma/contracts/rides";
 import { Prisma, type PrismaClient } from "@hooma/database";
 import type {
   RideVehiclePhotoRecord,
   RideVehiclePhotoRepository,
 } from "../application/ride-vehicle-photo.repository.js";
-
-export const RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC = "ride.vehicle-photo.delete-object";
 
 const rideVehiclePhotoSelect = Prisma.validator<Prisma.RideOfferVehiclePhotoSelect>()({
   id: true,
@@ -32,22 +31,53 @@ export class PrismaRideVehiclePhotoRepository implements RideVehiclePhotoReposit
     return row ? serializeRideVehiclePhoto(row) : null;
   }
 
-  async replaceForOwner(input: {
+  async prepareUpload(photoId: string, rideOfferId: string, objectKey: string): Promise<void> {
+    await this.db.outboxEvent.upsert({
+      where: { id: photoId },
+      create: {
+        id: photoId,
+        topic: RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC,
+        aggregateType: "RideOfferVehiclePhoto",
+        aggregateId: rideOfferId,
+        payload: { rideOfferId, photoId, objectKey },
+        availableAt: new Date(Date.now() + 60 * 60 * 1000),
+      },
+      update: { payload: { rideOfferId, photoId, objectKey } },
+    });
+  }
+
+  async replacePreparedUploadForOwner(input: {
+    readonly photoId: string;
     readonly rideOfferId: string;
     readonly driverUserId: string;
     readonly photo: {
-      readonly id: string;
       readonly objectKey: string;
       readonly contentType: string;
       readonly sizeBytes: number;
     };
-  }): Promise<{
-    readonly current: RideVehiclePhotoRecord;
-    readonly previousObjectKey: string | null;
-  } | null> {
+  }): Promise<RideVehiclePhotoRecord | null> {
     return this.db.$transaction(async (tx) => {
       const offer = await lockRideOfferForVehiclePhotoMutation(tx, input.rideOfferId);
       if (!offer || offer.driverUserId !== input.driverUserId) return null;
+
+      const intent = await tx.outboxEvent.deleteMany({
+        where: {
+          id: input.photoId,
+          topic: RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC,
+          aggregateId: input.rideOfferId,
+          payload: {
+            equals: {
+              rideOfferId: input.rideOfferId,
+              photoId: input.photoId,
+              objectKey: input.photo.objectKey,
+            },
+          },
+          status: "PENDING",
+          attempts: 0,
+          availableAt: { gt: new Date() },
+        },
+      });
+      if (intent.count !== 1) throw new Error("Ride vehicle-photo upload intent is unavailable");
 
       const existing = await tx.rideOfferVehiclePhoto.findUnique({
         where: { rideOfferId: input.rideOfferId },
@@ -56,14 +86,14 @@ export class PrismaRideVehiclePhotoRepository implements RideVehiclePhotoReposit
       const current = await tx.rideOfferVehiclePhoto.upsert({
         where: { rideOfferId: input.rideOfferId },
         create: {
-          id: input.photo.id,
+          id: input.photoId,
           rideOfferId: input.rideOfferId,
           objectKey: input.photo.objectKey,
           contentType: input.photo.contentType,
           sizeBytes: input.photo.sizeBytes,
         },
         update: {
-          id: input.photo.id,
+          id: input.photoId,
           objectKey: input.photo.objectKey,
           contentType: input.photo.contentType,
           sizeBytes: input.photo.sizeBytes,
@@ -71,10 +101,10 @@ export class PrismaRideVehiclePhotoRepository implements RideVehiclePhotoReposit
         select: rideVehiclePhotoSelect,
       });
 
-      return {
-        current: serializeRideVehiclePhoto(current),
-        previousObjectKey: existing?.objectKey ?? null,
-      };
+      if (existing?.objectKey && existing.objectKey !== current.objectKey) {
+        await scheduleCleanup(tx, input.rideOfferId, existing.objectKey);
+      }
+      return serializeRideVehiclePhoto(current);
     });
   }
 
@@ -93,26 +123,28 @@ export class PrismaRideVehiclePhotoRepository implements RideVehiclePhotoReposit
       if (!existing) return null;
 
       await tx.rideOfferVehiclePhoto.delete({ where: { rideOfferId } });
+      await scheduleCleanup(tx, rideOfferId, existing.objectKey);
       return serializeRideVehiclePhoto(existing);
     });
   }
+}
 
-  async scheduleObjectDeletion(input: {
-    readonly objectKey: string;
-    readonly reason: "REPLACED" | "DELETED" | "ORPHANED_AFTER_METADATA_FAILURE";
-  }): Promise<void> {
-    await this.db.outboxEvent.create({
-      data: {
-        topic: RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC,
-        aggregateType: "RideOfferVehiclePhoto",
-        aggregateId: input.objectKey,
-        payload: {
-          objectKey: input.objectKey,
-          reason: input.reason,
-        },
-      },
-    });
-  }
+async function scheduleCleanup(
+  tx: Prisma.TransactionClient,
+  rideOfferId: string,
+  objectKey: string,
+): Promise<void> {
+  const photoId = objectKey.split("/").at(-1);
+  if (!photoId) throw new Error("Ride vehicle-photo object key is invalid");
+  await tx.outboxEvent.create({
+    data: {
+      topic: RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC,
+      aggregateType: "RideOfferVehiclePhoto",
+      aggregateId: rideOfferId,
+      payload: { rideOfferId, photoId, objectKey },
+      availableAt: new Date(),
+    },
+  });
 }
 
 async function lockRideOfferForVehiclePhotoMutation(

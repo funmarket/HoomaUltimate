@@ -6,6 +6,24 @@ const areaLabelSchema = z.string().trim().min(1).max(160);
 const noteSchema = z.string().trim().max(1200).optional().nullable();
 const vehicleFieldSchema = z.string().trim().max(80).optional().nullable();
 
+export const RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC = "ride.vehicle-photo.delete-object";
+
+export const rideVehiclePhotoCleanupPayloadSchema = z.union([
+  z
+    .object({
+      rideOfferId: idSchema,
+      photoId: idSchema,
+      objectKey: z.string().trim().min(1),
+    })
+    .strict(),
+  z
+    .object({
+      objectKey: z.string().trim().min(1),
+      reason: z.enum(["REPLACED", "DELETED", "ORPHANED_AFTER_METADATA_FAILURE"]),
+    })
+    .strict(),
+]);
+
 export const rideContextSchema = z.enum(["MATCHDAY", "GENERAL"]);
 
 export const rideCompensationBasisSchema = z.enum(["PER_SEAT", "TOTAL"]);

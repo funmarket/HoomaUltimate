@@ -986,6 +986,8 @@ Ride vehicle media is Ride-owned metadata plus object-storage bytes. Binary phot
 
 Ride vehicle photos remain upload-only with one current photo per offer. Owner-authorized uploads up to 5 MiB must pass actual JPEG/PNG/WebP format verification, declared-MIME consistency, full decoding of all retained frames and the shared 40-megapixel decoded-pixel limit before object storage or metadata adoption. Validation preserves the submitted bytes, normalized original MIME, existing Ride keys and replacement/cleanup behavior; it does not rotate, strip metadata, transcode or generate variants. Rejected replacement input retains the previous photo without storage writes or cleanup scheduling. Existing stored photos remain readable without revalidation or backfill.
 
+Accepted Ride vehicle-photo uploads commit a delayed reconciliation intent containing the exact planned `ride-offer-vehicles/{offerId}/{photoId}` key before object storage writes. Metadata adoption consumes that pending intent in the same transaction as the one-photo transition and queues any replaced object for immediate cleanup in that transaction; deletion likewise queues cleanup atomically with metadata removal. The Ride Worker accepts only the exact key shape and matching Ride/photo identity, preserves any currently referenced object, and delegates retries and terminal failure state to the existing Outbox engine. No photo bytes or credentials enter Outbox payloads.
+
 Current Ride Whistle authorization is implemented through the shared Whistle engine and the Ride domain's server-side read/post authorization. This does not create a Ride chat/message table or a second messaging system.
 
 ---
