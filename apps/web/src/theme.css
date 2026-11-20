@@ -100,14 +100,14 @@
   --app-text-strong: #050505;
   --app-text: #262626;
   --app-text-secondary: #65676b;
-  --app-text-caption: #737373;
+  --app-text-caption: #65676b;
   --app-accent: #2f6f3e;
   --app-accent-hover: #245c33;
   --app-accent-soft: #eaf5ed;
   --app-gold: #8a6500;
   --app-gold-dim: #6f5200;
-  --app-positive: #2f6f3e;
-  --app-positive-soft: #eaf5ed;
+  --app-positive: #15803d;
+  --app-positive-soft: #dcfce7;
   --app-people-blue: #0866ff;
   --app-warning: #c2410c;
   --app-danger: #dc2626;

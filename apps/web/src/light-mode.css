@@ -43,6 +43,14 @@
   color: #b91c1c;
 }
 
+:root[data-theme="light"] .auth-card a {
+  color: #2f6f3e;
+}
+
+:root[data-theme="light"] .auth-card a:hover {
+  color: #245c33;
+}
+
 :root[data-theme="light"]
   :is(
     .auth-card button,
@@ -326,7 +334,7 @@
   --hooma-line: #dbdbdb;
   --hooma-gold: #8a6500;
   --hooma-lime: #2f6f3e;
-  --hooma-page-positive: #2f6f3e;
+  --hooma-page-positive: #15803d;
   --hooma-page-people: #0866ff;
   --hooma-page-warning: #c2410c;
   --hooma-page-text: #262626;
@@ -484,7 +492,7 @@
 :root[data-theme="light"]
   :is(.athletes-sport-chips button.is-active, .athletes-view-tab.is-active) {
   border-color: #2f6f3e;
-  background: #e9fbf0;
+  background: #eaf5ed;
   color: #245c33;
 }
 
@@ -592,7 +600,7 @@
 
 :root[data-theme="light"] :is(.teams-tab.active, .teams-filter-chip.active) {
   border-color: #2f6f3e;
-  background: #e9fbf0;
+  background: #eaf5ed;
   color: #245c33;
 }
 
@@ -800,85 +808,14 @@
   color: #262626;
 }
 
-:root[data-theme="light"] .hooma-passport-card {
-  border-color: #dbdbdb;
-  background: #ffffff;
-  color: #050505;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
-}
-
-:root[data-theme="light"] .hooma-passport-card h1 {
-  color: #050505;
-}
-
-:root[data-theme="light"] .hooma-passport-card__handle {
-  color: #005fcc;
-}
-
-:root[data-theme="light"] .hooma-passport-card__ovr {
-  color: #705000;
-}
-
-:root[data-theme="light"] .hooma-passport-card__pos {
-  color: #a33c00;
-}
-
-:root[data-theme="light"]
-  :is(
-    .public-profile-identities span[data-identity="PLAYER"],
-    .profile-identity-badges span[data-identity="PLAYER"]
-  ) {
-  border-color: #245c33;
-  color: #245c33;
-}
-
-:root[data-theme="light"]
-  :is(
-    .public-profile-identities span[data-identity="FAN"],
-    .profile-identity-badges span[data-identity="FAN"]
-  ) {
-  border-color: #005fcc;
-  color: #005fcc;
-}
-
-:root[data-theme="light"]
-  :is(
-    .public-profile-identities span[data-identity="GAMER"],
-    .profile-identity-badges span[data-identity="GAMER"]
-  ) {
-  border-color: #a33c00;
-  color: #a33c00;
-}
-
-:root[data-theme="light"] .hooma-passport-stats .is-yellow {
-  color: #705000;
-}
-
-:root[data-theme="light"] .hooma-passport-stats .is-orange {
-  color: #a33c00;
-}
-
-:root[data-theme="light"] .hooma-passport-stats .is-green {
-  color: #245c33;
-}
-
-:root[data-theme="light"]
-  :is(.hooma-passport-stats, .public-profile-team-list a, .public-profile-contact, .profile-form) {
+:root[data-theme="light"] :is(.public-profile-team-list a, .public-profile-contact, .profile-form) {
   border-color: #dbdbdb;
   background: #ffffff;
   color: #050505;
 }
 
-:root[data-theme="light"] .hooma-passport-stats > div {
-  border-color: #e4e6eb;
-}
-
-:root[data-theme="light"] :is(.hooma-passport-stats span, .public-profile-bio) {
+:root[data-theme="light"] .public-profile-bio {
   color: #65676b;
-}
-
-:root[data-theme="light"] .hooma-passport-stats strong {
-  color: #050505;
 }
 
 /* Whistle and discovery. */
@@ -1376,7 +1313,7 @@
 
 :root[data-theme="light"] .team-profile-page .chip.selected {
   border-color: #2f6f3e;
-  background: #e9fbf0;
+  background: #eaf5ed;
   color: #245c33;
 }
 
@@ -1498,4 +1435,443 @@
   border-color: #ced0d4;
   background: #e4e6eb;
   color: #4b4f56;
+}
+
+/* Complete contrast ownership for converted Light surfaces. These rules pair
+ * each converted background with its descendants instead of relying on
+ * inherited Dark Mode foregrounds. */
+
+/* Athletes calendar, management and Photo Board use white application cards. */
+:root[data-theme="light"]
+  :is(.athletes-hero h1, .athletes-hero--create h1, .athletes-hero--detail h1) {
+  color: #050505;
+}
+
+:root[data-theme="light"] :is(.athletes-hero p, .athletes-hero__meta) {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .athletes-back {
+  color: #245c33;
+}
+
+:root[data-theme="light"]
+  :is(.athletes-calendar__month-nav button, .athletes-calendar__grid button) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+}
+
+:root[data-theme="light"] .athletes-calendar__day,
+:root[data-theme="light"] .athletes-calendar__grid button span {
+  color: #262626;
+}
+
+:root[data-theme="light"] .athletes-calendar__grid button small {
+  color: #705000;
+}
+
+:root[data-theme="light"]
+  :is(
+    .athletes-calendar__heading p,
+    .athletes-calendar__form small,
+    .athletes-calendar__weekdays span,
+    .athletes-calendar__entry p,
+    .athletes-calendar__rsvp-button small,
+    .athletes-calendar__rsvp-summary,
+    .athletes-calendar__confirm span,
+    .athletes-photo-board__heading p,
+    .athletes-photo-board__state,
+    .athletes-photo-board__empty,
+    .athletes-direct-add__field > span
+  ) {
+  color: #65676b;
+}
+
+:root[data-theme="light"]
+  :is(
+    .athletes-calendar__entry,
+    .athletes-calendar__state,
+    .athletes-calendar__form,
+    .athletes-calendar__rsvp-button,
+    .athletes-direct-add summary
+  ) {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+}
+
+:root[data-theme="light"]
+  :is(.athletes-calendar__rsvp-button.is-selected, .athletes-calendar__grid button.is-selected) {
+  border-color: #2f6f3e;
+  background: #eaf5ed;
+  color: #245c33;
+  box-shadow: none;
+}
+
+:root[data-theme="light"] .athletes-photo-board__empty strong,
+:root[data-theme="light"] .athletes-direct-add summary {
+  color: #050505;
+}
+
+:root[data-theme="light"] .athletes-page .athletes-direct-add__form input::placeholder {
+  color: #8a8d91;
+}
+
+/* Active Athlete rows intentionally retain a dark identity-card treatment. */
+:root[data-theme="light"] .active-athlete-row {
+  background: #1f1f1f;
+  color: #f7f7f7;
+}
+
+:root[data-theme="light"] .active-athlete-row :is(strong, span, small) {
+  color: #f7f7f7;
+}
+
+:root[data-theme="light"] .active-athlete-row .active-athlete-last-seen {
+  color: #c7c7c7;
+}
+
+/* Whistle is ordinary application chrome in Light Mode, not retained media. */
+:root[data-theme="light"] .hooma-whistle-board {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+}
+
+:root[data-theme="light"] .hooma-whistle-board :is(.whistle-heading h2, .whistle-rule) {
+  color: #050505;
+}
+
+:root[data-theme="light"]
+  :is(
+    .whistle-composer label > span,
+    .whistle-composer small,
+    .whistle-room-state,
+    .whistle-empty
+  ) {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .whistle-action.whistle-action {
+  border-color: rgba(47, 111, 62, 0.28);
+  background: #eaf5ed;
+  color: #245c33;
+  box-shadow: none;
+}
+
+:root[data-theme="light"] .whistle-action__label {
+  color: #245c33;
+}
+
+:root[data-theme="light"] :is(.whistle-action__signal, .whistle-action__trailing, .whistle-quota) {
+  border-color: rgba(47, 111, 62, 0.24);
+  background: #ffffff;
+  color: #245c33;
+}
+
+:root[data-theme="light"] .whistle-quota strong {
+  color: #245c33;
+}
+
+:root[data-theme="light"]
+  :is(.whistle-message__meta strong, .whistle-message__author, .whistle-empty strong) {
+  color: #050505;
+}
+
+:root[data-theme="light"] .whistle-message__body {
+  color: #262626 !important;
+}
+
+:root[data-theme="light"]
+  :is(.whistle-message__meta time, .whistle-composer small, .whistle-room-state) {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .whistle-message {
+  border-color: #e4e6eb;
+}
+
+:root[data-theme="light"] .whistle-message__avatar {
+  border-color: rgba(47, 111, 62, 0.28);
+  background: #eaf5ed;
+  color: #245c33;
+}
+
+/* Home discovery and community member rows. */
+:root[data-theme="light"] :is(.hooma-now-card__title, .hooma-now-ride-detail__requester strong) {
+  color: #050505;
+}
+
+:root[data-theme="light"]
+  :is(
+    .hooma-now-card__summary,
+    .hooma-now-card__meta,
+    .hooma-now-card__ride-meta,
+    .hooma-now-card__cta,
+    .hooma-now-ride-detail__facts dd,
+    .hooma-now-ride-detail__whistle label
+  ) {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .hooma-member-row {
+  border-color: #e4e6eb;
+}
+
+:root[data-theme="light"] .hooma-member-identity strong {
+  color: #050505;
+}
+
+:root[data-theme="light"] .hooma-member-identity small {
+  color: #65676b;
+}
+
+:root[data-theme="light"] :is(.hooma-page, .hooma-detail-page) .hooma-member-avatar {
+  color: #f7f7f7;
+}
+
+:root[data-theme="light"] .hooma-card-logo .hooma-community-logo-fallback,
+:root[data-theme="light"] .hooma-preview-logo .hooma-community-logo-fallback,
+:root[data-theme="light"] .hooma-hq-logo .hooma-community-logo-fallback {
+  color: #f7f7f7;
+}
+
+:root[data-theme="light"] .hooma-visibility-indicator {
+  color: #f7f7f7;
+}
+
+:root[data-theme="light"] .hooma-member-controls button {
+  border-color: #dbdbdb;
+  background: #ffffff;
+  color: #262626;
+}
+
+:root[data-theme="light"] .hooma-member-controls button.danger {
+  border-color: rgba(220, 38, 38, 0.28);
+  color: #b91c1c;
+}
+
+:root[data-theme="light"] .hooma-now-card {
+  --now-accent: #705000;
+}
+
+:root[data-theme="light"] .hooma-now-card[data-tone="green"] {
+  --now-accent: #15803d;
+}
+
+:root[data-theme="light"] .hooma-now-card[data-tone="orange"] {
+  --now-accent: #a33c00;
+}
+
+:root[data-theme="light"] .hooma-now-ride-detail__avatar {
+  background: #f0f2f5;
+}
+
+:root[data-theme="light"] .hooma-now-ride-detail__requester small {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .hooma-now-ride-detail__facts > div {
+  border-color: #e4e6eb;
+  background: #f0f2f5;
+}
+
+:root[data-theme="light"] .hooma-now-ride-detail__facts dt {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .hooma-now-ride-detail__note,
+:root[data-theme="light"] .hooma-now-ride-detail__state {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .hooma-now-ride-detail__state.is-error {
+  color: #b91c1c;
+}
+
+:root[data-theme="light"] .hooma-now-ride-detail__state.is-success {
+  color: #15803d;
+}
+
+:root[data-theme="light"] .hooma-now-ride-detail__whistle label > span {
+  color: #262626;
+}
+
+:root[data-theme="light"] .hooma-now-ride-detail__whistle > small {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .hooma-now-ride-detail__whistle > small.is-over {
+  color: #b91c1c;
+}
+
+/* Play/Event and formation descendants of converted white panels. */
+:root[data-theme="light"]
+  :is(
+    .pickup-match-card-top strong,
+    .pickup-match-card-cta span,
+    .play-event-card__facts strong,
+    .play-event-card__tagged-pitch strong,
+    .formation-team__heading h2,
+    .formation-bench__header strong,
+    .formation-bench-player
+  ) {
+  color: #050505;
+}
+
+:root[data-theme="light"]
+  :is(
+    .play-event-card__facts span,
+    .play-event-card__tagged-pitch small,
+    .play-event-card__tagged-pitch span,
+    .formation-team__heading small,
+    .formation-bench__header span,
+    .formation-bench__hint
+  ) {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .play-matchday-actions strong {
+  color: #050505;
+}
+
+:root[data-theme="light"] .play-matchday-actions span {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .play-matchday-actions a::after {
+  color: #245c33;
+}
+
+/* Requests keeps #f7f7f7 in Dark Mode; white Light cards need dark copy. */
+:root[data-theme="light"] .request-card__body > span,
+:root[data-theme="light"] .request-detail p,
+:root[data-theme="light"] .request-response p,
+:root[data-theme="light"] .request-detail__facts dd {
+  color: #262626;
+}
+
+:root[data-theme="light"] .request-create-context strong {
+  color: #050505;
+}
+
+:root[data-theme="light"] .request-create-context span {
+  color: #65676b;
+}
+
+/* Teams cards are white; stadium artwork and its nameplates stay dark. */
+:root[data-theme="light"]
+  :is(.team-discovery-motto, .team-discovery-meta, .team-offer-request__message) {
+  color: #262626;
+}
+
+:root[data-theme="light"]
+  :is(.team-discovery-badge, .team-game-card > strong, .team-offer-request__team span) {
+  color: #65676b;
+}
+
+:root[data-theme="light"]
+  .team-lineup-field
+  :is(
+    .team-lineup-player,
+    .team-lineup-avatar,
+    .team-lineup-nameplate,
+    .team-lineup-nameplate small,
+    .team-lineup-empty,
+    .team-lineup-empty-mark,
+    .team-lineup-empty strong
+  ) {
+  color: #f7f7f7;
+}
+
+:root[data-theme="light"]
+  .team-lineup-field
+  :is(.team-lineup-nameplate em, .team-lineup-empty small) {
+  color: #c7c7c7;
+}
+
+/* Gamer application panels become white while portrait/media panels stay dark. */
+:root[data-theme="light"] .gamer-hub-tab.active {
+  background: #eaf5ed;
+  color: #245c33;
+  box-shadow: inset 0 -2px #2f6f3e;
+}
+
+:root[data-theme="light"] .gamers-home-tabs button.active {
+  background: #eaf5ed;
+  color: #245c33;
+  box-shadow: inset 0 -2px #2f6f3e;
+}
+
+:root[data-theme="light"]
+  :is(
+    .gamer-open-toggle strong,
+    .gamer-handle,
+    .gamer-challenger-copy h3,
+    .gamer-whistle-panel-heading strong,
+    .gamer-match-versus strong
+  ) {
+  color: #050505;
+  text-shadow: none;
+}
+
+:root[data-theme="light"]
+  :is(
+    .gamer-challenger-card .muted,
+    .gamer-whistle-feed > small,
+    .gamer-whistle-message p,
+    .gamer-whistle-composer > small,
+    .gamer-match-versus small,
+    .gamer-match-note,
+    .gamer-match-versus b
+  ) {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .gamer-card-portrait-panel :is(.gamer-open-badge, .gamer-closed-badge) {
+  color: #f7f7f7;
+}
+
+:root[data-theme="light"] .gamer-whistle-error {
+  border-color: rgba(185, 28, 28, 0.28);
+  background: #fff1f2;
+  color: #b91c1c;
+}
+
+:root[data-theme="light"] .gamers-page .field span {
+  color: #262626;
+}
+
+:root[data-theme="light"] .gamers-page .success-box {
+  border-color: rgba(21, 128, 61, 0.28);
+  background: #dcfce7;
+  color: #15803d;
+}
+
+:root[data-theme="light"] .gamer-back-link {
+  color: #245c33;
+}
+
+:root[data-theme="light"] .gamer-back-link:hover {
+  color: #2f6f3e;
+}
+
+:root[data-theme="light"] .place-owner-tools button {
+  border-color: rgba(185, 28, 28, 0.28);
+  background: #fff1f2;
+  color: #b91c1c;
+}
+
+/* Shared forms and Profile actions use readable HOOMA green pairings. */
+:root[data-theme="light"] .hooma-form__submit {
+  border-color: #2f6f3e;
+  background: #2f6f3e;
+  color: #ffffff;
+}
+
+:root[data-theme="light"]
+  :is(.profile-edit-form button, .public-profile-contact button, .profile-gamer-note a) {
+  border-color: #2f6f3e;
+  color: #245c33;
 }
