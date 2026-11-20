@@ -6,7 +6,8 @@ import { GearUpError } from "../apps/api/src/modules/gear-up/domain/gear-up-erro
 import { MediaProcessingGearUpProductImageProcessor } from "../apps/api/src/modules/gear-up/infrastructure/media-processing-gear-up-product-image-processor.js";
 
 function expectGearUpTypeInvalid(error: unknown) {
-  return error instanceof GearUpError && error.code === "GEAR_UP_PRODUCT_IMAGE_TYPE_INVALID";
+  const code = "GEAR_UP_PRODUCT_IMAGE_TYPE_INVALID";
+  return error instanceof GearUpError && error.code === code;
 }
 
 test("Gear Up processor selects only the PHOTO_STANDARD master", async () => {
@@ -44,7 +45,7 @@ test("Gear Up processor accepts JPEG and WebP inputs", async () => {
   assert.equal(webpResult.variants[0]?.contentType, "image/webp");
 });
 
-test("Gear Up processor maps invalid and oversized content to the existing error", async () => {
+test("Gear Up processor maps invalid media to the existing error", async () => {
   const processor = new MediaProcessingGearUpProductImageProcessor();
   const png = new Uint8Array(
     await sharp({
@@ -53,13 +54,13 @@ test("Gear Up processor maps invalid and oversized content to the existing error
       .png()
       .toBuffer(),
   );
-  await assert.rejects(() => processor.process(png, "image/jpeg"), expectGearUpTypeInvalid);
+  await assert.rejects(processor.process(png, "image/jpeg"), expectGearUpTypeInvalid);
   await assert.rejects(
-    () => processor.process(Uint8Array.of(1, 2, 3), "image/png"),
+    processor.process(Uint8Array.of(1, 2, 3), "image/png"),
     expectGearUpTypeInvalid,
   );
   await assert.rejects(
-    () => processor.process(new Uint8Array(GEAR_UP_PRODUCT_IMAGE_MAX_BYTES + 1), "image/png"),
+    processor.process(new Uint8Array(GEAR_UP_PRODUCT_IMAGE_MAX_BYTES + 1), "image/png"),
     expectGearUpTypeInvalid,
   );
   const excessive = new Uint8Array(
@@ -69,5 +70,5 @@ test("Gear Up processor maps invalid and oversized content to the existing error
       .png()
       .toBuffer(),
   );
-  await assert.rejects(() => processor.process(excessive, "image/png"), expectGearUpTypeInvalid);
+  await assert.rejects(processor.process(excessive, "image/png"), expectGearUpTypeInvalid);
 });
