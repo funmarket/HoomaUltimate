@@ -1284,6 +1284,8 @@ Ride vehicle-photo bytes belong in object storage. `RideOfferVehiclePhoto` is a 
 
 New Ride vehicle-photo uploads are decoded and format/MIME/pixel-limit validated through shared mechanics before any object write. The canonical Ride record continues to describe the submitted bytes and normalized original MIME; inspection does not transform the image or change the one-photo relation, key convention or cleanup ownership. Invalid input cannot replace the existing record. Historical stored photos retain their existing read behavior.
 
+Each accepted upload records a delayed Ride-owned Outbox reconciliation intent for the exact planned `ride-offer-vehicles/{rideOfferId}/{photoId}` key before PUT. Publication consumes the matching pending intent in the same transaction as `RideOfferVehiclePhoto` adoption and schedules any replaced key there; deletion schedules the removed key in its metadata transaction. The Ride cleanup Worker validates the exact key and payload identity and refuses physical deletion while any canonical metadata row still references the object. Existing historical cleanup payloads remain consumable without changing stored-photo reads or requiring a backfill.
+
 Requests owns one canonical `HelpRequest` domain. The model below describes current source-backed Request truth. FundMe/Fundraising and Donations remain separate owners and are not implied by the Requests model.
 
 ```text

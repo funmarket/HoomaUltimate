@@ -63,6 +63,7 @@ Do not store current branch heads, pull-request state, commit SHAs, CI run IDs, 
 ### Ride
 
 - Ride vehicle-photo uploads use shared validation-only decoding before storage, enforcing actual format, declared MIME, byte and decoded-pixel limits while preserving original bytes, EXIF metadata, one-photo ownership, legacy reads and the existing replacement/cleanup lifecycle.
+- Ride vehicle-photo writes now persist exact-key reconciliation intent before PUT; adoption, replacement cleanup and deletion cleanup use the existing Ride repository and Outbox transaction boundary. The Worker validates the full legacy key identity and preserves current references before physical deletion.
 
 - Ride has domain-owned offers, requests, participation, compensation terms, destination/reference policy, private meeting-point handling and vehicle-photo metadata.
 - Ride supports Community-targeted Request projection without transferring RideRequest ownership to Communities or HOOMA NOW.

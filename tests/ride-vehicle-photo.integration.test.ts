@@ -2,14 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import sharp from "sharp";
 import { loadApiConfig } from "@hooma/config";
+import { RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC } from "@hooma/contracts/rides";
 import { getDatabaseClient } from "@hooma/database";
 import type { ObjectStorage, StoredObject, StoredObjectDescriptor } from "@hooma/storage";
 import { createApp } from "../apps/api/src/bootstrap/app.js";
 import { createContainer } from "../apps/api/src/bootstrap/container.js";
-import {
-  createRideVehiclePhotoCleanupHandler,
-  RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC,
-} from "../apps/worker/src/rides/ride-vehicle-photo-cleanup.js";
+import { createRideVehiclePhotoCleanupHandler } from "../apps/worker/src/rides/ride-vehicle-photo-cleanup.js";
 import { OutboxRepository } from "../apps/worker/src/outbox/outbox.repository.js";
 import { OutboxRunner } from "../apps/worker/src/outbox/outbox.runner.js";
 
@@ -32,10 +30,12 @@ class MemoryObjectStorage implements ObjectStorage {
   readonly removedKeys: string[] = [];
   readonly putKeys: string[] = [];
   readonly failRemoveKeys = new Set<string>();
+  beforePut: ((key: string) => Promise<void>) | null = null;
   failPut = false;
 
   async put(key: string, body: Uint8Array, contentType: string): Promise<StoredObjectDescriptor> {
     this.putKeys.push(key);
+    await this.beforePut?.(key);
     if (this.failPut) throw new Error("expected put failure");
     const stored = {
       key,
@@ -159,6 +159,18 @@ test("Ride vehicle-photo upload, delivery, replacement and cleanup stay Ride-own
       headers: jsonHeaders(driver.cookie),
     });
     assert.equal(legacyDelete.status, 204);
+    const runner = new OutboxRunner(
+      new OutboxRepository(db),
+      new Map([
+        [RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC, createRideVehiclePhotoCleanupHandler(db, storage)],
+      ]),
+    );
+    assert.deepEqual(await runner.runOnce(), {
+      claimed: 1,
+      delivered: 1,
+      retried: 0,
+      failed: 0,
+    });
     assert.equal(storage.objects.size, 0);
     storage.putKeys.length = 0;
     storage.removedKeys.length = 0;
@@ -246,13 +258,64 @@ test("Ride vehicle-photo upload, delivery, replacement and cleanup stay Ride-own
     assert.equal(failedUpload.status, 503);
     assert.equal(await db.rideOfferVehiclePhoto.count({ where: { rideOfferId } }), 0);
     assert.ok(await db.rideOffer.findUnique({ where: { id: rideOfferId } }));
+    const failedUploadKey = storage.putKeys.at(-1);
+    assert.ok(failedUploadKey);
+    assert.ok(
+      await db.outboxEvent.findFirst({
+        where: {
+          id: failedUploadKey.split("/").at(-1),
+          topic: RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC,
+          status: "PENDING",
+        },
+      }),
+    );
     storage.failPut = false;
 
+    let abandonedUploadKey: string | null = null;
+    storage.beforePut = async (objectKey) => {
+      abandonedUploadKey = objectKey;
+      storage.failRemoveKeys.add(objectKey);
+      await db.outboxEvent.update({
+        where: { id: objectKey.split("/").at(-1) },
+        data: { availableAt: new Date(0) },
+      });
+    };
+    const abandonedUpload = await fetch(`${base}/api/v1/rides/offers/${rideOfferId}/photo`, {
+      method: "PUT",
+      headers: imageHeaders(driver.cookie, "image/png"),
+      body: png,
+    });
+    assert.equal(abandonedUpload.status, 503);
+    assert.ok(abandonedUploadKey);
+    assert.ok(storage.objects.has(abandonedUploadKey));
+    assert.equal(await db.rideOfferVehiclePhoto.count({ where: { rideOfferId } }), 0);
+    storage.beforePut = null;
+    storage.failRemoveKeys.delete(abandonedUploadKey);
+    assert.deepEqual(await runner.runOnce(), {
+      claimed: 1,
+      delivered: 1,
+      retried: 0,
+      failed: 0,
+    });
+    assert.equal(storage.objects.has(abandonedUploadKey), false);
+
+    storage.beforePut = async (objectKey) => {
+      assert.ok(
+        await db.outboxEvent.findFirst({
+          where: {
+            id: objectKey.split("/").at(-1),
+            topic: RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC,
+            status: "PENDING",
+          },
+        }),
+      );
+    };
     const upload = await fetch(`${base}/api/v1/rides/offers/${rideOfferId}/photo`, {
       method: "PUT",
       headers: imageHeaders(driver.cookie, "image/png"),
       body: png,
     });
+    storage.beforePut = null;
     assert.equal(upload.status, 200);
     const uploaded = (await upload.json()) as Record<string, unknown>;
     assert.equal(uploaded.rideOfferId, rideOfferId);
@@ -266,6 +329,26 @@ test("Ride vehicle-photo upload, delivery, replacement and cleanup stay Ride-own
     assert.equal(firstRow.sizeBytes, png.byteLength);
     assert.ok(storage.objects.has(firstRow.objectKey));
 
+    await db.outboxEvent.create({
+      data: {
+        topic: RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC,
+        aggregateType: "RideOfferVehiclePhoto",
+        aggregateId: rideOfferId,
+        payload: {
+          rideOfferId,
+          photoId: firstRow.id,
+          objectKey: firstRow.objectKey,
+        },
+      },
+    });
+    assert.deepEqual(await runner.runOnce(), {
+      claimed: 1,
+      delivered: 1,
+      retried: 0,
+      failed: 0,
+    });
+    assert.ok(storage.objects.has(firstRow.objectKey));
+
     const publicOffer = await fetch(`${base}/api/public/v1/rides/offers/${rideOfferId}`);
     assert.equal(publicOffer.status, 200);
     const publicOfferBody = (await publicOffer.json()) as Record<string, unknown>;
@@ -277,6 +360,9 @@ test("Ride vehicle-photo upload, delivery, replacement and cleanup stay Ride-own
     assert.equal(publicPhoto.headers.get("content-type"), "image/png");
     assert.deepEqual(new Uint8Array(await publicPhoto.arrayBuffer()), png);
     const putsBeforeInvalidReplacement = storage.putKeys.length;
+    const outboxRowsBeforeInvalidReplacement = await db.outboxEvent.count({
+      where: { topic: RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC },
+    });
     const invalidReplacement = await fetch(`${base}/api/v1/rides/offers/${rideOfferId}/photo`, {
       method: "PUT",
       headers: imageHeaders(driver.cookie, "image/png"),
@@ -291,7 +377,7 @@ test("Ride vehicle-photo upload, delivery, replacement and cleanup stay Ride-own
     assert.deepEqual(storage.objects.get(firstRow.objectKey)?.body, png);
     assert.equal(
       await db.outboxEvent.count({ where: { topic: RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC } }),
-      0,
+      outboxRowsBeforeInvalidReplacement,
     );
     assert.deepEqual(storage.removedKeys, []);
 
@@ -311,7 +397,14 @@ test("Ride vehicle-photo upload, delivery, replacement and cleanup stay Ride-own
     const cleanupEvent = await db.outboxEvent.findFirstOrThrow({
       where: {
         topic: RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC,
-        aggregateId: firstRow.objectKey,
+        aggregateId: rideOfferId,
+        payload: {
+          equals: {
+            rideOfferId,
+            photoId: firstRow.id,
+            objectKey: firstRow.objectKey,
+          },
+        },
         status: "PENDING",
       },
     });
@@ -321,12 +414,6 @@ test("Ride vehicle-photo upload, delivery, replacement and cleanup stay Ride-own
     );
 
     storage.failRemoveKeys.delete(firstRow.objectKey);
-    const runner = new OutboxRunner(
-      new OutboxRepository(db),
-      new Map([
-        [RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC, createRideVehiclePhotoCleanupHandler(storage)],
-      ]),
-    );
     assert.deepEqual(await runner.runOnce(), {
       claimed: 1,
       delivered: 1,
@@ -357,6 +444,12 @@ test("Ride vehicle-photo upload, delivery, replacement and cleanup stay Ride-own
     });
     assert.equal(deletePhoto.status, 204);
     assert.equal(await db.rideOfferVehiclePhoto.count({ where: { rideOfferId } }), 0);
+    assert.deepEqual(await runner.runOnce(), {
+      claimed: 2,
+      delivered: 2,
+      retried: 0,
+      failed: 0,
+    });
     assert.equal(storage.objects.has(secondRow.objectKey), false);
     assert.equal(storage.objects.has(finalRow.objectKey), false);
 

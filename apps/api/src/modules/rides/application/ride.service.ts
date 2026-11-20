@@ -452,32 +452,34 @@ export class RideService {
     let uploadedKey: string | null = null;
 
     try {
+      await this.vehiclePhotos.prepareUpload(photoId, rideOfferId, objectKey);
       const stored = await this.storage.put(objectKey, input.body, contentType);
-      uploadedKey = stored.key;
-      const result = await this.vehiclePhotos.replaceForOwner({
+      if (stored.key !== objectKey) {
+        throw new Error("Ride vehicle-photo storage returned an unexpected object key");
+      }
+      uploadedKey = objectKey;
+      const current = await this.vehiclePhotos.replacePreparedUploadForOwner({
+        photoId,
         rideOfferId,
         driverUserId,
         photo: {
-          id: photoId,
           objectKey: stored.key,
           contentType: stored.contentType,
           sizeBytes: stored.sizeBytes,
         },
       });
-      if (!result) {
+      if (!current) {
         throw new RideError("RIDE_OFFER_MANAGE_FORBIDDEN", "Ride offer owner access required");
       }
       uploadedKey = null;
-      if (result.previousObjectKey && result.previousObjectKey !== result.current.objectKey) {
-        await this.removeOrScheduleVehiclePhotoObject(result.previousObjectKey, "REPLACED");
-      }
-      return publicVehiclePhotoMetadata(result.current);
+      return publicVehiclePhotoMetadata(current);
     } catch (error) {
       if (uploadedKey) {
-        await this.removeOrScheduleVehiclePhotoObject(
-          uploadedKey,
-          "ORPHANED_AFTER_METADATA_FAILURE",
-        );
+        try {
+          await this.storage.remove(uploadedKey);
+        } catch {
+          // The durable pre-write reconciliation intent remains pending.
+        }
       }
       if (error instanceof RideError) throw error;
       throw new RideError(
@@ -493,7 +495,6 @@ export class RideService {
     if (!deleted) {
       throw new RideError("RIDE_VEHICLE_PHOTO_NOT_FOUND", "Ride vehicle photo not found");
     }
-    await this.removeOrScheduleVehiclePhotoObject(deleted.objectKey, "DELETED");
   }
 
   async getPublicOfferVehiclePhoto(rideOfferId: string): Promise<StoredObject> {
@@ -679,18 +680,6 @@ export class RideService {
         throw new RideError(error.code, error.message);
       }
       throw error;
-    }
-  }
-
-  private async removeOrScheduleVehiclePhotoObject(
-    objectKey: string,
-    reason: "REPLACED" | "DELETED" | "ORPHANED_AFTER_METADATA_FAILURE",
-  ): Promise<void> {
-    if (!this.storage) return this.vehiclePhotos.scheduleObjectDeletion({ objectKey, reason });
-    try {
-      await this.storage.remove(objectKey);
-    } catch {
-      await this.vehiclePhotos.scheduleObjectDeletion({ objectKey, reason });
     }
   }
 }

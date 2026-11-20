@@ -6,6 +6,7 @@ import { loadObjectStorageConfig, type ObjectStorageConfig } from "@hooma/config
 import { GEAR_UP_PRODUCT_IMAGE_RECONCILE_TOPIC } from "@hooma/contracts/gear-up";
 import { PLACE_IMAGE_RECONCILE_TOPIC } from "@hooma/contracts/places";
 import { REQUEST_IMAGE_RECONCILE_TOPIC } from "@hooma/contracts/requests";
+import { RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC } from "@hooma/contracts/rides";
 import { disconnectDatabase, getDatabaseClient, type PrismaClient } from "@hooma/database";
 import {
   S3ObjectStorage,
@@ -23,10 +24,7 @@ import { OutboxRepository } from "./outbox/outbox.repository.js";
 import { createRequestImageCleanupHandler } from "./requests/request-image-cleanup.js";
 import { expireDueRequests } from "./requests/request-expiry.js";
 import { type OutboxHandler, OutboxRunner } from "./outbox/outbox.runner.js";
-import {
-  createRideVehiclePhotoCleanupHandler,
-  RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC,
-} from "./rides/ride-vehicle-photo-cleanup.js";
+import { createRideVehiclePhotoCleanupHandler } from "./rides/ride-vehicle-photo-cleanup.js";
 import { cleanupExpiredWhistles } from "./whistle/whistle-cleanup.js";
 import {
   PAGE_BANNER_CLEANUP_TOPIC,
@@ -77,7 +75,7 @@ if (storage) {
   );
   outboxHandlers.set(
     RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC,
-    createRideVehiclePhotoCleanupHandler(storage),
+    createRideVehiclePhotoCleanupHandler(database, storage),
   );
   outboxHandlers.set(
     PLACE_IMAGE_RECONCILE_TOPIC,
