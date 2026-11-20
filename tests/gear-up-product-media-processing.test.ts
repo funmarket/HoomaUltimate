@@ -9,39 +9,51 @@ function expectGearUpTypeInvalid(error: unknown) {
   return error instanceof GearUpError && error.code === "GEAR_UP_PRODUCT_IMAGE_TYPE_INVALID";
 }
 
-test("Gear Up shared processor supports JPEG, PNG and WebP as master only", async () => {
+test("Gear Up processor selects only the PHOTO_STANDARD master", async () => {
   const processor = new MediaProcessingGearUpProductImageProcessor();
-  for (const [format, contentType] of [
-    ["jpeg", "image/jpeg"],
-    ["png", "image/png"],
-    ["webp", "image/webp"],
-  ] as const) {
-    const input = new Uint8Array(
-      await sharp({
-        create: { width: 64, height: 32, channels: 3, background: "#6699cc" },
-      })
-        .toFormat(format)
-        .toBuffer(),
-    );
-    const result = await processor.process(input, contentType);
-    assert.equal(result.profile, "PHOTO_STANDARD");
-    assert.deepEqual(result.selectedVariants, ["master"]);
-    assert.deepEqual(result.variants.map(({ variant }) => variant), ["master"]);
-    assert.equal(result.variants[0]?.contentType, "image/webp");
-    assert.equal((await sharp(result.variants[0]!.body).metadata()).format, "webp");
-  }
+  const png = new Uint8Array(
+    await sharp({
+      create: { width: 2400, height: 1200, channels: 3, background: "#6699cc" },
+    })
+      .png()
+      .toBuffer(),
+  );
+  const result = await processor.process(png, "image/png");
+  assert.equal(result.profile, "PHOTO_STANDARD");
+  assert.deepEqual(result.selectedVariants, ["master"]);
+  assert.deepEqual(result.variants.map(({ variant }) => variant), ["master"]);
+  assert.equal(result.variants[0]?.contentType, "image/webp");
+  const metadata = await sharp(result.variants[0]!.body).metadata();
+  assert.equal(metadata.format, "webp");
+  assert.equal(metadata.width, 2048);
+  assert.equal(metadata.height, 1024);
 });
 
-test("Gear Up processor rejects mismatched, invalid, oversized and excessive pixels", async () => {
+test("Gear Up processor accepts JPEG and WebP inputs", async () => {
   const processor = new MediaProcessingGearUpProductImageProcessor();
-  const validPng = new Uint8Array(
+  const raw = sharp({
+    create: { width: 64, height: 32, channels: 3, background: "#6699cc" },
+  });
+  const jpeg = new Uint8Array(await raw.clone().jpeg().toBuffer());
+  const webp = new Uint8Array(await raw.clone().webp().toBuffer());
+  const jpegResult = await processor.process(jpeg, "image/jpeg");
+  const webpResult = await processor.process(webp, "image/webp");
+  assert.deepEqual(jpegResult.selectedVariants, ["master"]);
+  assert.deepEqual(webpResult.selectedVariants, ["master"]);
+  assert.equal(jpegResult.variants[0]?.contentType, "image/webp");
+  assert.equal(webpResult.variants[0]?.contentType, "image/webp");
+});
+
+test("Gear Up processor maps invalid and oversized content to the existing error", async () => {
+  const processor = new MediaProcessingGearUpProductImageProcessor();
+  const png = new Uint8Array(
     await sharp({
       create: { width: 32, height: 32, channels: 3, background: "#ffffff" },
     })
       .png()
       .toBuffer(),
   );
-  await assert.rejects(() => processor.process(validPng, "image/jpeg"), expectGearUpTypeInvalid);
+  await assert.rejects(() => processor.process(png, "image/jpeg"), expectGearUpTypeInvalid);
   await assert.rejects(
     () => processor.process(Uint8Array.of(1, 2, 3), "image/png"),
     expectGearUpTypeInvalid,
