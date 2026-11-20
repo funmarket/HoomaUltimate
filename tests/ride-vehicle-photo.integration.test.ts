@@ -363,6 +363,7 @@ test("Ride vehicle-photo upload, delivery, replacement and cleanup stay Ride-own
     assert.equal(publicPhoto.headers.get("content-type"), "image/png");
     assert.deepEqual(new Uint8Array(await publicPhoto.arrayBuffer()), png);
     const putsBeforeInvalidReplacement = storage.putKeys.length;
+    const removedKeysBeforeInvalidReplacement = [...storage.removedKeys];
     const outboxRowsBeforeInvalidReplacement = await db.outboxEvent.count({
       where: { topic: RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC },
     });
@@ -382,7 +383,7 @@ test("Ride vehicle-photo upload, delivery, replacement and cleanup stay Ride-own
       await db.outboxEvent.count({ where: { topic: RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC } }),
       outboxRowsBeforeInvalidReplacement,
     );
-    assert.deepEqual(storage.removedKeys, []);
+    assert.deepEqual(storage.removedKeys, removedKeysBeforeInvalidReplacement);
 
     storage.failRemoveKeys.add(firstRow.objectKey);
     const replace = await fetch(`${base}/api/v1/rides/offers/${rideOfferId}/photo`, {
