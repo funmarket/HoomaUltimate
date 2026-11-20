@@ -91,7 +91,7 @@
   --hooma-ui-text-meta: #65676b;
   --hooma-ui-text-placeholder: #8a8d91;
   --hooma-ui-text-secondary: var(--hooma-ui-text-meta);
-  --hooma-ui-accent: #2f6f3e;
+  --hooma-ui-accent: #0866ff;
 
   --app-bg: #f0f2f5;
   --app-bg-raised: #ffffff;
@@ -100,14 +100,14 @@
   --app-text-strong: #050505;
   --app-text: #262626;
   --app-text-secondary: #65676b;
-  --app-text-caption: #737373;
-  --app-accent: #2f6f3e;
-  --app-accent-hover: #245c33;
-  --app-accent-soft: #eaf5ed;
-  --app-gold: #8a6500;
-  --app-gold-dim: #6f5200;
-  --app-positive: #2f6f3e;
-  --app-positive-soft: #eaf5ed;
+  --app-text-caption: #65676b;
+  --app-accent: #0866ff;
+  --app-accent-hover: #075ce5;
+  --app-accent-soft: #e7f3ff;
+  --app-gold: #65676b;
+  --app-gold-dim: #65676b;
+  --app-positive: #15803d;
+  --app-positive-soft: #dcfce7;
   --app-people-blue: #0866ff;
   --app-warning: #c2410c;
   --app-danger: #dc2626;

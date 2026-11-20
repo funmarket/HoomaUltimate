@@ -41,7 +41,7 @@ async function cssFiles(directory) {
   return files;
 }
 
-test("Light appearance exposes the complete neutral HOOMA palette", async () => {
+test("Light appearance exposes the complete Meta-style HOOMA palette", async () => {
   const css = await readFile(themeCss, "utf8");
   const light = css.match(/:root\[data-theme="light"\]\s*\{([\s\S]*?)\}/)?.[1] ?? "";
 
@@ -51,40 +51,121 @@ test("Light appearance exposes the complete neutral HOOMA palette", async () => 
   assert.match(light, /--app-text-strong:\s*#050505/);
   assert.match(light, /--app-text:\s*#262626/);
   assert.match(light, /--app-text-secondary:\s*#65676b/);
-  assert.match(light, /--app-accent:\s*#2f6f3e/);
-  assert.match(light, /--app-gold:\s*#8a6500/);
-  assert.match(light, /--app-positive:\s*#2f6f3e/);
+  assert.match(light, /--app-accent:\s*#0866ff/);
+  assert.match(light, /--app-gold:\s*#65676b/);
+  assert.match(light, /--app-positive:\s*#15803d/);
   assert.match(light, /--hooma-ui-bg:\s*#f0f2f5/);
   assert.match(light, /--hooma-ui-surface:\s*#ffffff/);
   assert.match(light, /--hooma-ui-text:\s*#050505/);
-  assert.match(light, /--hooma-ui-accent:\s*#2f6f3e/);
+  assert.match(light, /--hooma-ui-accent:\s*#0866ff/);
 });
 
 test("Light palette text and primary actions preserve readable contrast", () => {
   assert.ok(contrastRatio("#262626", "#ffffff") >= 4.5);
   assert.ok(contrastRatio("#65676b", "#ffffff") >= 4.5);
-  assert.ok(contrastRatio("#ffffff", "#2f6f3e") >= 4.5);
-  assert.ok(contrastRatio("#8a6500", "#ffffff") >= 4.5);
-  assert.ok(contrastRatio("#245c33", "#f0f2f5") >= 4.5);
+  assert.ok(contrastRatio("#ffffff", "#0866ff") >= 4.5);
+  assert.ok(contrastRatio("#15803d", "#ffffff") >= 4.5);
+  assert.ok(contrastRatio("#075ce5", "#f0f2f5") >= 4.5);
   assert.ok(contrastRatio("#005fcc", "#f0f2f5") >= 4.5);
   assert.ok(contrastRatio("#705000", "#ffffff") >= 4.5);
   assert.ok(contrastRatio("#a33c00", "#ffffff") >= 4.5);
 });
 
+test("Light converted Athletes surfaces own readable descendant colors", async () => {
+  const light = await readFile(lightCss, "utf8");
+
+  assert.match(light, /\.athletes-hero h1[\s\S]*color:\s*#050505/);
+  assert.match(light, /\.athletes-hero p[\s\S]*color:\s*#65676b/);
+  assert.match(light, /\.athletes-back[\s\S]*color:\s*#075ce5/);
+  assert.match(light, /\.athletes-calendar__weekdays span[\s\S]*color:\s*#65676b/);
+  assert.match(light, /\.athletes-calendar__day[\s\S]*color:\s*#262626/);
+  assert.match(light, /\.athletes-photo-board__heading p[\s\S]*color:\s*#65676b/);
+  assert.match(light, /\.athletes-direct-add__field > span[\s\S]*color:\s*#65676b/);
+});
+
+test("Light retained dark athlete and lineup cards keep light foregrounds", async () => {
+  const light = await readFile(lightCss, "utf8");
+
+  assert.match(light, /\.active-athlete-row[\s\S]*background:\s*#1f1f1f;[\s\S]*color:\s*#f7f7f7/);
+  assert.match(light, /\.active-athlete-row :is\(strong, span, small\)[\s\S]*color:\s*#f7f7f7/);
+  assert.match(
+    light,
+    /\.team-lineup-field\s+:is\([\s\S]*\.team-lineup-nameplate[\s\S]*\)[\s\S]*color:\s*#f7f7f7/,
+  );
+});
+
+test("Light Whistle uses its real root and readable room controls", async () => {
+  const light = await readFile(lightCss, "utf8");
+
+  assert.match(light, /\.hooma-whistle-board[\s\S]*background:\s*#ffffff;[\s\S]*color:\s*#262626/);
+  assert.match(light, /\.whistle-action__label[\s\S]*color:\s*#075ce5/);
+  assert.match(light, /\.whistle-message__body[\s\S]*color:\s*#262626 !important/);
+  assert.match(light, /\.whistle-room-state[\s\S]*color:\s*#65676b/);
+});
+
+test("Light converted cards override Dark-only body copy", async () => {
+  const light = await readFile(lightCss, "utf8");
+
+  for (const selector of [
+    ".request-card__body > span",
+    ".request-detail p",
+    ".hooma-now-card__title",
+    ".hooma-member-identity strong",
+    ".pickup-match-card-top strong",
+    ".team-offer-request__message",
+    ".gamer-handle",
+  ]) {
+    assert.ok(light.includes(selector), `missing Light descendant owner: ${selector}`);
+  }
+
+  assert.match(light, /\.request-card__body > span[\s\S]*color:\s*#262626/);
+  assert.match(light, /\.request-detail p[\s\S]*color:\s*#262626/);
+  assert.match(light, /\.hooma-now-card__title[\s\S]*color:\s*#050505/);
+  assert.match(light, /\.hooma-member-identity strong[\s\S]*color:\s*#050505/);
+  assert.match(light, /\.pickup-match-card-top strong[\s\S]*color:\s*#050505/);
+  assert.match(light, /\.team-offer-request__message[\s\S]*color:\s*#262626/);
+  assert.match(light, /\.gamer-handle[\s\S]*color:\s*#050505/);
+});
+
+test("Light action labels use accessible blue pairings", async () => {
+  const light = await readFile(lightCss, "utf8");
+
+  assert.match(light, /\.hooma-form__submit[\s\S]*background:\s*#0866ff;[\s\S]*color:\s*#ffffff/);
+  assert.match(
+    light,
+    /\.profile-edit-form button[\s\S]*border-color:\s*#0866ff;[\s\S]*color:\s*#075ce5/,
+  );
+  assert.ok(contrastRatio("#ffffff", "#0866ff") >= 4.5);
+  assert.ok(contrastRatio("#075ce5", "#ffffff") >= 4.5);
+});
+
+test("Light converted secondary panels do not retain pale Dark-only foregrounds", async () => {
+  const light = await readFile(lightCss, "utf8");
+
+  assert.match(light, /\.play-matchday-actions strong\s*\{[^}]*color:\s*#050505/);
+  assert.match(light, /\.play-matchday-actions span\s*\{[^}]*color:\s*#65676b/);
+  assert.match(light, /\.play-matchday-actions a::after\s*\{[^}]*color:\s*#075ce5/);
+  assert.match(light, /\.request-create-context strong\s*\{[^}]*color:\s*#050505/);
+  assert.match(light, /\.request-create-context span\s*\{[^}]*color:\s*#65676b/);
+  assert.match(light, /\.gamers-home-tabs button\.active\s*\{[^}]*color:\s*#075ce5/);
+  assert.match(light, /\.gamer-whistle-error\s*\{[^}]*color:\s*#b91c1c/);
+  assert.match(light, /\.place-owner-tools button\s*\{[^}]*color:\s*#b91c1c/);
+});
+
 test("Light Pitch toolbar and Passport accents use strong foreground colors", async () => {
   const light = await readFile(lightCss, "utf8");
 
-  assert.match(light, /\.pitch-back-link[\s\S]*color:\s*#245c33/);
-  assert.match(light, /\.pitch-owner-link[\s\S]*color:\s*#245c33/);
+  assert.match(light, /\.pitch-back-link[\s\S]*color:\s*#075ce5/);
+  assert.match(light, /\.pitch-owner-link[\s\S]*color:\s*#075ce5/);
   assert.match(light, /\.hooma-passport-card__handle[\s\S]*color:\s*#005fcc/);
   assert.match(light, /\.hooma-passport-card__ovr[\s\S]*color:\s*#705000/);
   assert.match(light, /\.hooma-passport-card__pos[\s\S]*color:\s*#a33c00/);
-  assert.match(light, /\[data-identity="PLAYER"\][\s\S]*color:\s*#245c33/);
+  assert.match(light, /\[data-identity="PLAYER"\][\s\S]*color:\s*#075ce5/);
   assert.match(light, /\[data-identity="FAN"\][\s\S]*color:\s*#005fcc/);
   assert.match(light, /\[data-identity="GAMER"\][\s\S]*color:\s*#a33c00/);
   assert.match(light, /\.hooma-passport-stats \.is-yellow[\s\S]*color:\s*#705000/);
   assert.match(light, /\.hooma-passport-stats \.is-orange[\s\S]*color:\s*#a33c00/);
-  assert.match(light, /\.hooma-passport-stats \.is-green[\s\S]*color:\s*#245c33/);
+  assert.match(light, /\.hooma-passport-stats \.is-green[\s\S]*color:\s*#15803d/);
 });
 
 test("Dark appearance remains owned by the unchanged root palette", async () => {
@@ -187,10 +268,10 @@ test("Light Mode fixes the exact Play and HOOMA regressions", async () => {
   const css = await readFile(lightCss, "utf8");
 
   assert.match(css, /\.play-page \.play-view-tabs[\s\S]*background:\s*#efefef/);
-  assert.match(css, /\.play-page \.play-view-tab\.is-active[\s\S]*background:\s*#2f6f3e/);
+  assert.match(css, /\.play-page \.play-view-tab\.is-active[\s\S]*background:\s*#0866ff/);
   assert.match(css, /\.play-looking-options button[\s\S]*background:\s*#efefef/);
   assert.match(css, /\.pickup-match-card-meta__going[\s\S]*color:\s*#65676b !important/);
-  assert.match(css, /\.play-event-card__ball[\s\S]*color:\s*#8a6500 !important/);
+  assert.match(css, /\.play-event-card__ball[\s\S]*color:\s*#65676b !important/);
   assert.match(css, /\.hooma-page[\s\S]*\.panel[\s\S]*background:\s*#ffffff/);
   assert.match(css, /\.hooma-page[\s\S]*\.hooma-discovery-card[\s\S]*color:\s*#262626/);
   assert.match(css, /\.hooma-page \.hooma-domain-card[\s\S]*background:\s*#ffffff/);
@@ -282,11 +363,14 @@ test("Light owns application surfaces while media artwork stays domain-owned", a
     for (const match of source.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
       const [selector, body] = match.slice(1);
       if (!darkBackground.test(body)) continue;
+      const surface = `${path.basename(file.pathname)}: ${selector.trim().replace(/\s+/g, " ")}`;
+      if (protectedMediaSurfaces.has(surface)) {
+        preservedMedia.push(surface);
+        continue;
+      }
       const classes = [...selector.matchAll(/\.([a-zA-Z0-9_-]+)/g)].map((item) => item[1]);
       if (classes.length > 0 && !classes.some((className) => light.includes(`.${className}`))) {
-        const surface = `${path.basename(file.pathname)}: ${selector.trim().replace(/\s+/g, " ")}`;
-        if (protectedMediaSurfaces.has(surface)) preservedMedia.push(surface);
-        else uncovered.push(surface);
+        uncovered.push(surface);
       }
     }
   }
@@ -294,4 +378,6 @@ test("Light owns application surfaces while media artwork stays domain-owned", a
   assert.ok(files.length >= 56, `expected the complete CSS inventory, received ${files.length}`);
   assert.deepEqual(preservedMedia.sort(), [...protectedMediaSurfaces].sort());
   assert.deepEqual(uncovered, []);
+  assert.doesNotMatch(light, /\.team-lineup-field\s*\{[^}]*background:\s*#(?:fff|ffffff)/i);
+  assert.doesNotMatch(light, /\.gamer-card-portrait-panel\s*\{[^}]*background:\s*#(?:fff|ffffff)/i);
 });
