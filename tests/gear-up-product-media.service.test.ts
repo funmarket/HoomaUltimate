@@ -106,10 +106,16 @@ function dependencies(overrides = {}) {
       profile: "PHOTO_STANDARD",
       selectedVariants: ["master"],
       source: { contentType: "image/jpeg", widthPx: 2, heightPx: 2 },
-      variants: [{
-        variant: "master", body: new Uint8Array([1, 2, 3]),
-        contentType: "image/webp", sizeBytes: 3, widthPx: 2, heightPx: 2,
-      }],
+      variants: [
+        {
+          variant: "master",
+          body: new Uint8Array([1, 2, 3]),
+          contentType: "image/webp",
+          sizeBytes: 3,
+          widthPx: 2,
+          heightPx: 2,
+        },
+      ],
     }),
   };
   return { calls, images, products, places, platformAdmin, storage, processor };

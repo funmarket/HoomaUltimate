@@ -81,8 +81,16 @@ test("Step 22 cleanup validates exact scoped typed and legacy keys", async () =>
   const removed = [];
   let referenced = false;
   const handler = createGearUpProductImageCleanupHandler(
-    { gearUpProductImage: { findFirst: async () => (referenced ? { id: "image-1" } : null) } },
-    { remove: async (key) => { removed.push(key); } },
+    {
+      gearUpProductImage: {
+        findFirst: async () => (referenced ? { id: "image-1" } : null),
+      },
+    },
+    {
+      remove: async (key) => {
+        removed.push(key);
+      },
+    },
     "staging",
   );
   const event = (objectKey) => ({
