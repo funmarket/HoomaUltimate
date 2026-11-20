@@ -43,10 +43,6 @@
   color: #b91c1c;
 }
 
-:root[data-theme="light"] .eyebrow {
-  color: #65676b;
-}
-
 :root[data-theme="light"] .auth-card a {
   color: #2f6f3e;
 }
@@ -812,85 +808,14 @@
   color: #262626;
 }
 
-:root[data-theme="light"] .hooma-passport-card {
-  border-color: #dbdbdb;
-  background: #ffffff;
-  color: #050505;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
-}
-
-:root[data-theme="light"] .hooma-passport-card h1 {
-  color: #050505;
-}
-
-:root[data-theme="light"] .hooma-passport-card__handle {
-  color: #005fcc;
-}
-
-:root[data-theme="light"] .hooma-passport-card__ovr {
-  color: #705000;
-}
-
-:root[data-theme="light"] .hooma-passport-card__pos {
-  color: #a33c00;
-}
-
-:root[data-theme="light"]
-  :is(
-    .public-profile-identities span[data-identity="PLAYER"],
-    .profile-identity-badges span[data-identity="PLAYER"]
-  ) {
-  border-color: #245c33;
-  color: #245c33;
-}
-
-:root[data-theme="light"]
-  :is(
-    .public-profile-identities span[data-identity="FAN"],
-    .profile-identity-badges span[data-identity="FAN"]
-  ) {
-  border-color: #005fcc;
-  color: #005fcc;
-}
-
-:root[data-theme="light"]
-  :is(
-    .public-profile-identities span[data-identity="GAMER"],
-    .profile-identity-badges span[data-identity="GAMER"]
-  ) {
-  border-color: #a33c00;
-  color: #a33c00;
-}
-
-:root[data-theme="light"] .hooma-passport-stats .is-yellow {
-  color: #705000;
-}
-
-:root[data-theme="light"] .hooma-passport-stats .is-orange {
-  color: #a33c00;
-}
-
-:root[data-theme="light"] .hooma-passport-stats .is-green {
-  color: #15803d;
-}
-
-:root[data-theme="light"]
-  :is(.hooma-passport-stats, .public-profile-team-list a, .public-profile-contact, .profile-form) {
+:root[data-theme="light"] :is(.public-profile-team-list a, .public-profile-contact, .profile-form) {
   border-color: #dbdbdb;
   background: #ffffff;
   color: #050505;
 }
 
-:root[data-theme="light"] .hooma-passport-stats > div {
-  border-color: #e4e6eb;
-}
-
-:root[data-theme="light"] :is(.hooma-passport-stats span, .public-profile-bio) {
+:root[data-theme="light"] .public-profile-bio {
   color: #65676b;
-}
-
-:root[data-theme="light"] .hooma-passport-stats strong {
-  color: #050505;
 }
 
 /* Whistle and discovery. */

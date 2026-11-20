@@ -224,20 +224,11 @@ test("Light converted secondary panels do not retain pale Dark-only foregrounds"
   assert.match(light, /\.place-owner-tools button\s*\{[^}]*color:\s*#b91c1c/);
 });
 
-test("Light Pitch toolbar and Passport accents use strong foreground colors", async () => {
+test("Light Pitch toolbar uses strong foreground colors", async () => {
   const light = await readFile(lightCss, "utf8");
 
   assert.match(light, /\.pitch-back-link[\s\S]*color:\s*#245c33/);
   assert.match(light, /\.pitch-owner-link[\s\S]*color:\s*#245c33/);
-  assert.match(light, /\.hooma-passport-card__handle[\s\S]*color:\s*#005fcc/);
-  assert.match(light, /\.hooma-passport-card__ovr[\s\S]*color:\s*#705000/);
-  assert.match(light, /\.hooma-passport-card__pos[\s\S]*color:\s*#a33c00/);
-  assert.match(light, /\[data-identity="PLAYER"\][\s\S]*color:\s*#245c33/);
-  assert.match(light, /\[data-identity="FAN"\][\s\S]*color:\s*#005fcc/);
-  assert.match(light, /\[data-identity="GAMER"\][\s\S]*color:\s*#a33c00/);
-  assert.match(light, /\.hooma-passport-stats \.is-yellow[\s\S]*color:\s*#705000/);
-  assert.match(light, /\.hooma-passport-stats \.is-orange[\s\S]*color:\s*#a33c00/);
-  assert.match(light, /\.hooma-passport-stats \.is-green[\s\S]*color:\s*#15803d/);
 });
 
 test("Dark appearance remains owned by the unchanged root palette", async () => {
@@ -349,7 +340,7 @@ test("Light Mode fixes the exact Play and HOOMA regressions", async () => {
   assert.match(css, /\.hooma-page \.hooma-domain-card[\s\S]*background:\s*#ffffff/);
 });
 
-test("Light profile overrides preserve Passport structure while removing dark surfaces", async () => {
+test("Light preserves the premium dark Passport card and stats treatment", async () => {
   const [profile, light] = await Promise.all([
     readFile(profileCss, "utf8"),
     readFile(lightCss, "utf8"),
@@ -357,11 +348,23 @@ test("Light profile overrides preserve Passport structure while removing dark su
 
   assert.doesNotMatch(profile, /\.public-profile-hero\b/);
   assert.match(profile, /\.hooma-passport-card\s*\{[\s\S]*background:\s*#070808/);
-  assert.match(light, /\.hooma-passport-card\s*\{[\s\S]*background:\s*#ffffff/);
-  assert.match(light, /\.hooma-passport-card h1\s*\{[\s\S]*color:\s*#050505/);
-  assert.match(light, /\.hooma-passport-card__handle\s*\{[\s\S]*color:\s*#005fcc/);
-  assert.match(light, /\.hooma-passport-card__ovr\s*\{[\s\S]*color:\s*#705000/);
-  assert.match(light, /\.hooma-passport-stats[\s\S]*background:\s*#ffffff/);
+  assert.match(profile, /\.hooma-passport-card h1\s*\{[\s\S]*color:\s*#fff/);
+  assert.match(profile, /\.hooma-passport-card__handle\s*\{[\s\S]*color:\s*#5ce1ff/);
+  assert.match(profile, /\.hooma-passport-card__ovr\s*\{[\s\S]*color:\s*#ffd200/);
+  assert.match(profile, /\.hooma-passport-stats\s*\{[\s\S]*background:\s*#0b0b0b/);
+  assert.doesNotMatch(light, /\.hooma-passport-card\s*\{/);
+  assert.doesNotMatch(light, /\.hooma-passport-stats\s*[,\{]/);
+});
+
+test("Light shared section titles retain HOOMA gold", async () => {
+  const [theme, light] = await Promise.all([
+    readFile(themeCss, "utf8"),
+    readFile(lightCss, "utf8"),
+  ]);
+
+  assert.match(theme, /\.eyebrow\s*\{[^}]*color:\s*var\(--app-gold\)/);
+  assert.match(theme, /:root\[data-theme="light"\][\s\S]*--app-gold:\s*#8a6500/);
+  assert.doesNotMatch(light, /:root\[data-theme="light"\] \.eyebrow\s*\{/);
 });
 
 test("Light owns application surfaces while media artwork stays domain-owned", async () => {
@@ -370,7 +373,9 @@ test("Light owns application surfaces while media artwork stays domain-owned", a
   const protectedMediaSurfaces = new Set([
     "gamer-disputes.css: .gamer-dispute-evidence-grid img, .gamer-dispute-proof-missing",
     "hooma-membership.css: .hooma-member-avatar",
+    "profile.css: .hooma-passport-card",
     "profile.css: .hooma-passport-card__photo",
+    "profile.css: .hooma-passport-stats",
     "athletes-photo-board.css: .athletes-photo-board__delete",
     "athletes-photo-board.css: .athletes-photo-board__delete-confirm",
     "athletes-photo-board.css: .athletes-photo-board__delete-error",
