@@ -32,9 +32,7 @@ test("Gear Up processor selects only the PHOTO_STANDARD master", async () => {
 
 test("Gear Up processor accepts JPEG and WebP inputs", async () => {
   const processor = new MediaProcessingGearUpProductImageProcessor();
-  const raw = sharp({
-    create: { width: 64, height: 32, channels: 3, background: "#6699cc" },
-  });
+  const raw = sharp({ create: { width: 64, height: 32, channels: 3, background: "#6699cc" } });
   const jpeg = new Uint8Array(await raw.clone().jpeg().toBuffer());
   const webp = new Uint8Array(await raw.clone().webp().toBuffer());
   const jpegResult = await processor.process(jpeg, "image/jpeg");
