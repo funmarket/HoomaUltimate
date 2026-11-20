@@ -1,13 +1,6 @@
 import type { GearUpProductImageContentType } from "@hooma/contracts/gear-up";
-
-export interface ProcessedGearUpProductImage {
-  readonly body: Uint8Array;
-  readonly contentType: GearUpProductImageContentType;
-}
+import type { ProcessedMediaResult } from "@hooma/media-processing";
 
 export interface GearUpProductImageProcessor {
-  process(
-    body: Uint8Array,
-    contentType: GearUpProductImageContentType,
-  ): Promise<ProcessedGearUpProductImage>;
+  process(body: Uint8Array, contentType: GearUpProductImageContentType): Promise<ProcessedMediaResult>;
 }

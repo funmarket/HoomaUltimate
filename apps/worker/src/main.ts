@@ -87,7 +87,7 @@ if (storage) {
   );
   outboxHandlers.set(
     GEAR_UP_PRODUCT_IMAGE_RECONCILE_TOPIC,
-    createGearUpProductImageCleanupHandler(database, storage),
+    createGearUpProductImageCleanupHandler(database, storage, mediaStorageScope),
   );
   outboxHandlers.set(
     PAGE_BANNER_RECONCILE_TOPIC,

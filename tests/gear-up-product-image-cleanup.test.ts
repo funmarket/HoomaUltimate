@@ -26,7 +26,7 @@ test("Gear Up product image cleanup removes only unreferenced owned objects", as
       findFirst: async () => (referenced ? { id: "image-1" } : null),
     },
   };
-  const handler = createGearUpProductImageCleanupHandler(database, storage);
+  const handler = createGearUpProductImageCleanupHandler(database, storage, "staging");
 
   await handler({
     id: "event-1",
@@ -59,6 +59,7 @@ test("Gear Up product image cleanup rejects keys outside product ownership bound
       },
     },
     { remove: async () => undefined },
+    "staging",
   );
 
   await assert.rejects(

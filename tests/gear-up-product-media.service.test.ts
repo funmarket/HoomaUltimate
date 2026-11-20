@@ -103,8 +103,13 @@ function dependencies(overrides = {}) {
   };
   const processor = overrides.processor ?? {
     process: async () => ({
-      body: new Uint8Array([1, 2, 3]),
-      contentType: "image/webp",
+      profile: "PHOTO_STANDARD",
+      selectedVariants: ["master"],
+      source: { contentType: "image/jpeg", widthPx: 2, heightPx: 2 },
+      variants: [{
+        variant: "master", body: new Uint8Array([1, 2, 3]),
+        contentType: "image/webp", sizeBytes: 3, widthPx: 2, heightPx: 2,
+      }],
     }),
   };
   return { calls, images, products, places, platformAdmin, storage, processor };
@@ -122,6 +127,7 @@ test("pending submitter access cannot manage official product media", async () =
     deps.platformAdmin,
     deps.storage,
     deps.processor,
+    "staging",
   );
 
   await assert.rejects(
@@ -146,6 +152,7 @@ test("verified Place owner can add external images and preserve product ownershi
     deps.platformAdmin,
     deps.storage,
     deps.processor,
+    "staging",
   );
 
   const image = await service.addExternalUrl("owner-1", "place-1", "product-1", {
@@ -170,6 +177,7 @@ test("verified Place owner upload uses validated storage and normalized image pr
     deps.platformAdmin,
     deps.storage,
     deps.processor,
+    "staging",
   );
 
   const image = await service.addUpload("owner-1", "place-1", "product-1", {
@@ -196,6 +204,7 @@ test("product image reorder stays within the selected product and shop", async (
     deps.platformAdmin,
     deps.storage,
     deps.processor,
+    "staging",
   );
 
   await service.reorder("owner-1", "place-1", "product-1", {
