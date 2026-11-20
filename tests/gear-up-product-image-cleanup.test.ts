@@ -74,3 +74,30 @@ test("Gear Up product image cleanup rejects keys outside product ownership bound
     /outside the Gear Up product ownership boundary/,
   );
 });
+
+test("Step 22 cleanup accepts exact typed master key and rejects nested legacy suffix", async () => {
+  const { createGearUpProductImageCleanupHandler } = await loadCleanup();
+  const removed = [];
+  const handler = createGearUpProductImageCleanupHandler(
+    { gearUpProductImage: { findFirst: async () => null } },
+    { remove: async (key) => removed.push(key) },
+    "staging",
+  );
+  const event = (objectKey) => ({
+    id: "event-step22", topic: "gear-up.product-image.reconcile-object",
+    payload: { productId: "product-1", objectKey },
+  });
+  const typed = "staging/media/v1/gear-up-product/product-1/image-1/master.webp";
+  await handler(event(typed));
+  assert.deepEqual(removed, [typed]);
+  for (const invalid of [
+    "production/media/v1/gear-up-product/product-1/image-1/master.webp",
+    "staging/media/v1/gear-up-product/product-2/image-1/master.webp",
+    "staging/media/v1/gear-up-product/product-1/image-1/thumb.webp",
+    "gear-up-product-images/product-1/extra/nested",
+    "gear-up-product-images/product-1/../image-1",
+  ]) {
+    await assert.rejects(() => handler(event(invalid)), /outside the Gear Up product ownership boundary/);
+  }
+  assert.deepEqual(removed, [typed]);
+});

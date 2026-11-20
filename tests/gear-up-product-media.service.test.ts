@@ -218,3 +218,61 @@ test("only App Admin can change the product image limit", async () => {
   assert.equal(deps.calls.adminChecks, 1);
   assert.deepEqual(deps.calls.settings, [{ userId: "admin-1", input: { productImageLimit: 5 } }]);
 });
+
+test("Step 22 writes only the exact planned scoped Gear Up master key", async () => {
+  const [{ GearUpProductMediaService }] = await loadServices();
+  const writes = [];
+  const deps = dependencies({
+    places: { isVerifiedOwner: async () => true },
+    storage: {
+      put: async (key, body, contentType) => {
+        writes.push({ key, contentType, bytes: body.byteLength });
+        return { key, contentType, sizeBytes: body.byteLength };
+      },
+      remove: async () => { throw new Error("must keep reconciliation intent"); },
+    },
+    processor: {
+      process: async () => ({
+        profile: "PHOTO_STANDARD",
+        selectedVariants: ["master"],
+        source: { contentType: "image/jpeg", widthPx: 2, heightPx: 2 },
+        variants: [{
+          variant: "master", body: new Uint8Array([1, 2, 3]),
+          contentType: "image/webp", sizeBytes: 3, widthPx: 2, heightPx: 2,
+        }],
+      }),
+    },
+  });
+  const service = new GearUpProductMediaService(
+    deps.images, deps.products, deps.places, deps.platformAdmin,
+    deps.storage, deps.processor, "staging",
+  );
+  await service.addUpload("owner-1", "place-1", "product-1", {
+    contentType: "image/jpeg", body: new Uint8Array([9, 8, 7]),
+  });
+  assert.equal(writes.length, 1);
+  const key = writes[0].key;
+  assert.match(key, /^staging\/media\/v1\/gear-up-product\/product-1\/[a-f0-9-]+\/master\.webp$/);
+  assert.equal(deps.calls.prepare[0].objectKey, key);
+  assert.equal(deps.calls.upload[0].objectKey, key);
+  assert.equal(deps.calls.upload[0].contentType, "image/webp");
+});
+
+test("Step 22 rejects invalid variant sets without writing or preparing intent", async () => {
+  const [{ GearUpProductMediaService }] = await loadServices();
+  const deps = dependencies({
+    places: { isVerifiedOwner: async () => true },
+    processor: { process: async () => ({
+      profile: "PHOTO_STANDARD", selectedVariants: ["master", "card"], variants: [],
+    }) },
+  });
+  const service = new GearUpProductMediaService(
+    deps.images, deps.products, deps.places, deps.platformAdmin,
+    deps.storage, deps.processor, "staging",
+  );
+  await assert.rejects(() => service.addUpload("owner-1", "place-1", "product-1", {
+    contentType: "image/jpeg", body: new Uint8Array([1]),
+  }), (error) => error?.code === "GEAR_UP_PRODUCT_IMAGE_UPLOAD_FAILED");
+  assert.equal(deps.calls.prepare.length, 0);
+  assert.equal(deps.calls.upload.length, 0);
+});
