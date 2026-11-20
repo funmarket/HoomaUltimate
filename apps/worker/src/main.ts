@@ -71,7 +71,7 @@ if (storage) {
   );
   outboxHandlers.set(
     ATHLETES_CALENDAR_MEDIA_RECONCILE_TOPIC,
-    createAthletesCalendarMediaCleanupHandler(database, storage),
+    createAthletesCalendarMediaCleanupHandler(database, storage, mediaStorageScope),
   );
   outboxHandlers.set(
     RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC,

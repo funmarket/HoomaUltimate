@@ -1,6 +1,5 @@
 import { MediaProcessingAthletesPhotoOptimizer } from "../modules/athletes/infrastructure/media-processing-athletes-photo-optimizer.js";
-import { SharpAthletesPhotoOptimizer } from "../modules/athletes/infrastructure/sharp-athletes-photo-optimizer.js";
-import { SharpAthletesPhotoValidator } from "../modules/athletes/infrastructure/sharp-athletes-photo-validator.js";
+import { MediaProcessingAthletesCalendarMediaProcessor } from "../modules/athletes/infrastructure/media-processing-athletes-calendar-media-processor.js";
 import type { ApiConfig } from "@hooma/config";
 import { getDatabaseClient } from "@hooma/database";
 import {
@@ -260,8 +259,8 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     athletesCalendarRepository,
     athletesCalendarRepository,
     storage,
-    new SharpAthletesPhotoValidator(),
-    new SharpAthletesPhotoOptimizer(),
+    mediaStorageScope ?? null,
+    new MediaProcessingAthletesCalendarMediaProcessor(),
   );
   const athletesPhotoRepository = new PrismaAthletesPhotoRepository(database);
   const athletesPhotoService = new AthletesPhotoService(
