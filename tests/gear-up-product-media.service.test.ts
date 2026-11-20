@@ -338,3 +338,104 @@ test("Step 22 retains planned intent after a storage-returned key mismatch", asy
   assert.equal(deps.calls.prepare.length, 1);
   assert.equal(deps.calls.upload.length, 0);
 });
+
+test("Step 22 preserves Platform Admin upload and denies a mismatched shop", async () => {
+  const [{ GearUpProductMediaService }] = await loadServices();
+  const deps = dependencies({
+    platformAdmin: { isPlatformAdmin: async () => true },
+  });
+  const service = new GearUpProductMediaService(
+    deps.images,
+    deps.products,
+    deps.places,
+    deps.platformAdmin,
+    deps.storage,
+    deps.processor,
+    "staging",
+  );
+  const uploaded = await service.addUpload("admin-1", "place-1", "product-1", {
+    contentType: "image/png",
+    body: Uint8Array.of(1, 2, 3),
+  });
+  assert.equal(uploaded.source, "UPLOAD");
+  assert.equal(deps.calls.upload.length, 1);
+
+  const wrongShop = dependencies({
+    platformAdmin: { isPlatformAdmin: async () => true },
+    products: { getManaged: async () => ({ id: "product-1", shopPlaceId: "place-2" }) },
+  });
+  const denied = new GearUpProductMediaService(
+    wrongShop.images,
+    wrongShop.products,
+    wrongShop.places,
+    wrongShop.platformAdmin,
+    wrongShop.storage,
+    wrongShop.processor,
+    "staging",
+  );
+  await assert.rejects(
+    () =>
+      denied.addUpload("admin-1", "place-1", "product-1", {
+        contentType: "image/jpeg",
+        body: Uint8Array.of(1),
+      }),
+    (error) => error?.code === "GEAR_UP_PRODUCT_NOT_FOUND",
+  );
+  assert.equal(wrongShop.calls.prepare.length, 0);
+});
+
+test("Step 22 requires configured storage scope for uploads", async () => {
+  const [{ GearUpProductMediaService }] = await loadServices();
+  const deps = dependencies({ places: { isVerifiedOwner: async () => true } });
+  const service = new GearUpProductMediaService(
+    deps.images,
+    deps.products,
+    deps.places,
+    deps.platformAdmin,
+    deps.storage,
+    deps.processor,
+    null,
+  );
+  await assert.rejects(
+    () =>
+      service.addUpload("owner-1", "place-1", "product-1", {
+        contentType: "image/jpeg",
+        body: Uint8Array.of(1),
+      }),
+    (error) => error?.code === "GEAR_UP_PRODUCT_IMAGE_STORAGE_NOT_CONFIGURED",
+  );
+  assert.equal(deps.calls.prepare.length, 0);
+});
+
+test("Step 22 preserves external delivery and legacy managed signed read", async () => {
+  const [{ GearUpProductMediaService }] = await loadServices();
+  const legacyKey = "gear-up-product-images/product-1/image-legacy";
+  const deps = dependencies({
+    places: { isVerifiedOwner: async () => true },
+    images: {
+      get: async (productId, imageId) => ({
+        id: imageId,
+        productId,
+        source: imageId === "external" ? "EXTERNAL_URL" : "UPLOAD",
+        externalUrl: imageId === "external" ? "https://images.example.com/ball.webp" : null,
+        objectKey: imageId === "external" ? null : legacyKey,
+      }),
+    },
+  });
+  const service = new GearUpProductMediaService(
+    deps.images,
+    deps.products,
+    deps.places,
+    deps.platformAdmin,
+    deps.storage,
+    deps.processor,
+    "staging",
+  );
+  assert.deepEqual(await service.deliveryPublic("product-1", "external"), {
+    contentUrl: "https://images.example.com/ball.webp",
+    expiresAt: null,
+  });
+  const legacy = await service.deliveryManaged("owner-1", "place-1", "product-1", "legacy");
+  assert.equal(legacy.contentUrl, `https://signed.example.com/${legacyKey}`);
+  assert.ok(legacy.expiresAt);
+});
