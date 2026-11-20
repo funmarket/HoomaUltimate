@@ -37,6 +37,9 @@ function isOwnedGearUpProductKey(
   objectKey: string,
   mediaStorageScope: MediaStorageScope,
 ): boolean {
+  if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/.test(productId) || productId.includes("..")) {
+    return false;
+  }
   const legacyPrefix = `gear-up-product-images/${productId}/`;
   if (objectKey.startsWith(legacyPrefix)) {
     const imageId = objectKey.slice(legacyPrefix.length);

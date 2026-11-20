@@ -110,5 +110,17 @@ test("Step 22 cleanup validates exact scoped typed and legacy keys", async () =>
       /outside the Gear Up product ownership boundary/,
     );
   }
+  await assert.rejects(
+    () =>
+      handler({
+        id: "event-unsafe-owner",
+        topic: "gear-up.product-image.reconcile-object",
+        payload: {
+          productId: "../product-1",
+          objectKey: "gear-up-product-images/../product-1/image-1",
+        },
+      }),
+    /outside the Gear Up product ownership boundary/,
+  );
   assert.deepEqual(removed, [typed]);
 });
