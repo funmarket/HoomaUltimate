@@ -43,6 +43,18 @@
   color: #b91c1c;
 }
 
+:root[data-theme="light"] .eyebrow {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .auth-card a {
+  color: #0866ff;
+}
+
+:root[data-theme="light"] .auth-card a:hover {
+  color: #075ce5;
+}
+
 :root[data-theme="light"]
   :is(
     .auth-card button,
@@ -53,8 +65,8 @@
     .chat-compose button,
     .panel > button
   ) {
-  border-color: #2f6f3e;
-  background: #2f6f3e;
+  border-color: #0866ff;
+  background: #0866ff;
   color: #ffffff;
 }
 
@@ -65,7 +77,7 @@
   --hooma-chrome-text: #050505;
   --hooma-chrome-muted: #65676b;
   --hooma-chrome-border: #dbdbdb;
-  --hooma-chrome-gold: #8a6500;
+  --hooma-chrome-gold: #65676b;
 }
 
 :root[data-theme="light"] .hooma-topbar {
@@ -168,7 +180,7 @@
 
 /* Shared media editors rendered from component style blocks. */
 :root[data-theme="light"] .home-gateway-section-label {
-  color: #8a6500;
+  color: #65676b;
 }
 
 :root[data-theme="light"]
@@ -231,14 +243,14 @@
 }
 
 :root[data-theme="light"] .play-page .play-view-tab.is-active {
-  background: #2f6f3e;
+  background: #0866ff;
   color: #ffffff;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 
 :root[data-theme="light"] :is(.page-banner__action--play, .play-page .play-hero-pro__action) {
-  border-color: #2f6f3e;
-  background: #2f6f3e;
+  border-color: #0866ff;
+  background: #0866ff;
   color: #ffffff;
 }
 
@@ -268,8 +280,8 @@
 }
 
 :root[data-theme="light"] .play-looking-options button[aria-pressed="true"] {
-  border-color: #2f6f3e;
-  background: #2f6f3e;
+  border-color: #0866ff;
+  background: #0866ff;
   color: #ffffff;
 }
 
@@ -280,8 +292,8 @@
     .play-player-publish,
     .play-player-card__action--invite
   ) {
-  border-color: #2f6f3e;
-  background: #2f6f3e;
+  border-color: #0866ff;
+  background: #0866ff;
   color: #ffffff;
 }
 
@@ -315,7 +327,7 @@
 }
 
 :root[data-theme="light"] .play-event-card__ball {
-  color: #8a6500 !important;
+  color: #65676b !important;
 }
 
 /* HOOMA Communities. */
@@ -324,15 +336,15 @@
   --hooma-cream: #050505;
   --hooma-muted: #65676b;
   --hooma-line: #dbdbdb;
-  --hooma-gold: #8a6500;
-  --hooma-lime: #2f6f3e;
-  --hooma-page-positive: #2f6f3e;
+  --hooma-gold: #65676b;
+  --hooma-lime: #0866ff;
+  --hooma-page-positive: #15803d;
   --hooma-page-people: #0866ff;
   --hooma-page-warning: #c2410c;
   --hooma-page-text: #262626;
   --hooma-page-text-strong: #050505;
   --hooma-page-muted: #65676b;
-  --hooma-page-accent: #8a6500;
+  --hooma-page-accent: #65676b;
   --hooma-page-surface: #ffffff;
   --hooma-page-surface-raised: #efefef;
   --hooma-page-border: #dbdbdb;
@@ -359,8 +371,8 @@
 :root[data-theme="light"]
   :is(.hooma-create-page, .hooma-detail-page)
   :is(.button:not(.secondary), .hooma-create-action) {
-  border-color: #2f6f3e;
-  background: #2f6f3e;
+  border-color: #0866ff;
+  background: #0866ff;
   color: #ffffff;
 }
 
@@ -412,8 +424,8 @@
 }
 
 :root[data-theme="light"] :is(.hooma-page .button, .hooma-page .hooma-create-action) {
-  border-color: #2f6f3e;
-  background: #2f6f3e;
+  border-color: #0866ff;
+  background: #0866ff;
   color: #ffffff;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
@@ -429,10 +441,10 @@
   --hooma-domain-surface-raised: #ffffff;
   --hooma-domain-border: #dbdbdb;
   --hooma-domain-border-strong: #ced0d4;
-  --hooma-domain-title: #8a6500;
+  --hooma-domain-title: #65676b;
   --hooma-domain-text: #262626;
   --hooma-domain-muted: #65676b;
-  --hooma-domain-lime: #2f6f3e;
+  --hooma-domain-lime: #0866ff;
   --hooma-domain-orange: #c2410c;
   background: #ffffff;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
@@ -440,7 +452,7 @@
 
 :root[data-theme="light"] .hooma-page .hooma-domain-card::before,
 :root[data-theme="light"] .hooma-page .hooma-domain-card:first-of-type::before {
-  background: #2f6f3e;
+  background: #0866ff;
 }
 
 /* Athletes and Teams. */
@@ -483,9 +495,9 @@
 
 :root[data-theme="light"]
   :is(.athletes-sport-chips button.is-active, .athletes-view-tab.is-active) {
-  border-color: #2f6f3e;
-  background: #e9fbf0;
-  color: #245c33;
+  border-color: #0866ff;
+  background: #e7f3ff;
+  color: #075ce5;
 }
 
 :root[data-theme="light"]
@@ -514,8 +526,8 @@
 }
 
 :root[data-theme="light"] .athletes-page .athletes-action--primary {
-  border-color: #2f6f3e;
-  background: #2f6f3e;
+  border-color: #0866ff;
+  background: #0866ff;
   color: #ffffff;
 }
 
@@ -524,7 +536,7 @@
 }
 
 :root[data-theme="light"] .athletes-page :is(.eyebrow, .athletes-sport) {
-  color: #8a6500;
+  color: #65676b;
 }
 
 :root[data-theme="light"] .athletes-page .athletes-section-heading__hint {
@@ -548,8 +560,8 @@
   --teams-muted: #65676b;
   --teams-line: #dbdbdb;
   --teams-panel: #ffffff;
-  --teams-gold: #8a6500;
-  --teams-lime: #2f6f3e;
+  --teams-gold: #65676b;
+  --teams-lime: #0866ff;
   color: #262626;
 }
 
@@ -563,8 +575,8 @@
 }
 
 :root[data-theme="light"] .teams-page .button:not(.secondary) {
-  border-color: #2f6f3e;
-  background: #2f6f3e;
+  border-color: #0866ff;
+  background: #0866ff;
   color: #ffffff;
 }
 
@@ -591,14 +603,14 @@
 }
 
 :root[data-theme="light"] :is(.teams-tab.active, .teams-filter-chip.active) {
-  border-color: #2f6f3e;
-  background: #e9fbf0;
-  color: #245c33;
+  border-color: #0866ff;
+  background: #e7f3ff;
+  color: #075ce5;
 }
 
 :root[data-theme="light"] .control-room {
-  --coach-action: #2f6f3e;
-  --coach-action-hover: #245c33;
+  --coach-action: #0866ff;
+  --coach-action-hover: #075ce5;
   --coach-ink: #ffffff;
   --coach-panel: #ffffff;
   --coach-panel-raised: #f0f2f5;
@@ -616,8 +628,8 @@
   --gamers-line-soft: #e4e6eb;
   --gamers-text: #050505;
   --gamers-muted: #65676b;
-  --gamers-lime: #2f6f3e;
-  --gamers-lime-soft: #eaf5ed;
+  --gamers-lime: #0866ff;
+  --gamers-lime-soft: #e7f3ff;
   --gamers-cyan: #0866ff;
   --gamers-violet: #6d28d9;
   --gamers-danger: #dc2626;
@@ -663,8 +675,8 @@
 }
 
 :root[data-theme="light"] .cultural-menu {
-  --watch-menu-gold: #8a6500;
-  --watch-menu-green: #2f6f3e;
+  --watch-menu-gold: #65676b;
+  --watch-menu-green: #0866ff;
   --watch-menu-cream: #050505;
 }
 
@@ -675,9 +687,9 @@
   --ride-text: #262626;
   --ride-text-strong: #050505;
   --ride-text-muted: #65676b;
-  --ride-gold: #8a6500;
-  --ride-gold-dim: #6f5200;
-  --ride-lime: #2f6f3e;
+  --ride-gold: #65676b;
+  --ride-gold-dim: #65676b;
+  --ride-lime: #0866ff;
   --ride-sky-silver: #005fcc;
   color: #262626;
 }
@@ -692,8 +704,8 @@
 }
 
 :root[data-theme="light"] .ride-page :is(.ride-button--primary, .ride-page-banner-action) {
-  border-color: #2f6f3e;
-  background: #2f6f3e;
+  border-color: #0866ff;
+  background: #0866ff;
   color: #ffffff;
 }
 
@@ -709,11 +721,11 @@
 }
 
 :root[data-theme="light"] :is(.pitch-back-link, .pitch-owner-link) {
-  color: #245c33;
+  color: #075ce5;
 }
 
 :root[data-theme="light"] .pitch-owner-link--toolbar {
-  border-color: #245c33;
+  border-color: #075ce5;
 }
 
 :root[data-theme="light"]
@@ -748,8 +760,8 @@
 }
 
 :root[data-theme="light"] :is(.place-primary-link, .place-detail-actions a) {
-  border-color: #2f6f3e;
-  background: #2f6f3e;
+  border-color: #0866ff;
+  background: #0866ff;
   color: #ffffff;
 }
 
@@ -776,8 +788,8 @@
 }
 
 :root[data-theme="light"] .requests-page .help-action--primary {
-  border-color: #2f6f3e;
-  background: #2f6f3e;
+  border-color: #0866ff;
+  background: #0866ff;
   color: #ffffff;
 }
 
@@ -828,8 +840,8 @@
     .public-profile-identities span[data-identity="PLAYER"],
     .profile-identity-badges span[data-identity="PLAYER"]
   ) {
-  border-color: #245c33;
-  color: #245c33;
+  border-color: #075ce5;
+  color: #075ce5;
 }
 
 :root[data-theme="light"]
@@ -859,7 +871,7 @@
 }
 
 :root[data-theme="light"] .hooma-passport-stats .is-green {
-  color: #245c33;
+  color: #15803d;
 }
 
 :root[data-theme="light"]
@@ -937,8 +949,8 @@
 }
 
 :root[data-theme="light"] .admin-control-room .admin-primary-action {
-  border-color: #2f6f3e;
-  background: #2f6f3e;
+  border-color: #0866ff;
+  background: #0866ff;
   color: #ffffff;
 }
 
@@ -1047,8 +1059,8 @@
 }
 
 :root[data-theme="light"] :is(.play-event-primary-action, .pitch-add-action) {
-  border-color: #2f6f3e;
-  background: #2f6f3e;
+  border-color: #0866ff;
+  background: #0866ff;
   color: #ffffff;
   box-shadow: none;
 }
@@ -1078,8 +1090,8 @@
 
 :root[data-theme="light"]
   :is(.pitch-form-page .hooma-form__submit, .pitch-form-page .hooma-form__secondary-action) {
-  border-color: #2f6f3e;
-  background: #2f6f3e;
+  border-color: #0866ff;
+  background: #0866ff;
   color: #ffffff;
 }
 
@@ -1236,8 +1248,8 @@
 
 /* Watch uses white ticket stock. */
 :root[data-theme="light"] .watch-kind-tabs {
-  --watch-menu-gold: #8a6500;
-  --watch-menu-green: #2f6f3e;
+  --watch-menu-gold: #65676b;
+  --watch-menu-green: #0866ff;
   --watch-menu-cream: #050505;
   border-color: #dbdbdb;
   background: #efefef;
@@ -1250,20 +1262,20 @@
 }
 
 :root[data-theme="light"] :is(.watch-kind-tab.is-active, .watch-kind-tab[aria-pressed="true"]) {
-  background: #2f6f3e;
+  background: #0866ff;
   color: #ffffff;
 }
 
 :root[data-theme="light"] .watch-cultural-card__category {
-  border-color: rgba(138, 101, 0, 0.24);
-  background: #fff8e1;
-  color: #6f5200;
+  border-color: rgba(101, 103, 107, 0.24);
+  background: #f0f2f5;
+  color: #65676b;
 }
 
 :root[data-theme="light"] .watch-ticket__stub {
-  border-color: #8a6500;
-  background: #fff8e1;
-  color: #6f5200;
+  border-color: #65676b;
+  background: #f0f2f5;
+  color: #65676b;
 }
 
 :root[data-theme="light"] :is(.watch-ticket__stub::before, .watch-ticket__stub::after) {
@@ -1333,8 +1345,8 @@
   --teams-muted: #65676b;
   --teams-line: #dbdbdb;
   --teams-panel: #ffffff;
-  --teams-gold: #8a6500;
-  --teams-lime: #2f6f3e;
+  --teams-gold: #65676b;
+  --teams-lime: #0866ff;
   color: #262626;
 }
 
@@ -1357,8 +1369,8 @@
 }
 
 :root[data-theme="light"] .team-profile-page .button:not(.secondary) {
-  border-color: #2f6f3e;
-  background: #2f6f3e;
+  border-color: #0866ff;
+  background: #0866ff;
   color: #ffffff;
 }
 
@@ -1375,15 +1387,15 @@
 }
 
 :root[data-theme="light"] .team-profile-page .chip.selected {
-  border-color: #2f6f3e;
-  background: #e9fbf0;
-  color: #245c33;
+  border-color: #0866ff;
+  background: #e7f3ff;
+  color: #075ce5;
 }
 
 :root[data-theme="light"] .team-profile-page .chip.gold {
-  border-color: #8a6500;
-  background: #fff8e5;
-  color: #705000;
+  border-color: #65676b;
+  background: #f0f2f5;
+  color: #65676b;
 }
 
 :root[data-theme="light"] .team-profile-hero :is(h1, p, small) {
@@ -1431,7 +1443,7 @@
 }
 
 :root[data-theme="light"] .hooma-now__eyebrow {
-  color: #245c33;
+  color: #65676b;
 }
 
 :root[data-theme="light"] .hooma-now__title {
@@ -1459,8 +1471,8 @@
 }
 
 :root[data-theme="light"] .hooma-now__state--error button {
-  border-color: #2f6f3e;
-  background: #2f6f3e;
+  border-color: #0866ff;
+  background: #0866ff;
   color: #ffffff;
 }
 

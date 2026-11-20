@@ -41,7 +41,7 @@ async function cssFiles(directory) {
   return files;
 }
 
-test("Light appearance exposes the complete neutral HOOMA palette", async () => {
+test("Light appearance exposes the complete Meta-style HOOMA palette", async () => {
   const css = await readFile(themeCss, "utf8");
   const light = css.match(/:root\[data-theme="light"\]\s*\{([\s\S]*?)\}/)?.[1] ?? "";
 
@@ -51,40 +51,61 @@ test("Light appearance exposes the complete neutral HOOMA palette", async () => 
   assert.match(light, /--app-text-strong:\s*#050505/);
   assert.match(light, /--app-text:\s*#262626/);
   assert.match(light, /--app-text-secondary:\s*#65676b/);
-  assert.match(light, /--app-accent:\s*#2f6f3e/);
-  assert.match(light, /--app-gold:\s*#8a6500/);
-  assert.match(light, /--app-positive:\s*#2f6f3e/);
+  assert.match(light, /--app-text-caption:\s*#65676b/);
+  assert.match(light, /--app-accent:\s*#0866ff/);
+  assert.match(light, /--app-accent-hover:\s*#075ce5/);
+  assert.match(light, /--app-accent-soft:\s*#e7f3ff/);
+  assert.match(light, /--app-gold:\s*#65676b/);
+  assert.match(light, /--app-gold-dim:\s*#65676b/);
+  assert.match(light, /--app-positive:\s*#15803d/);
+  assert.match(light, /--app-positive-soft:\s*#dcfce7/);
   assert.match(light, /--hooma-ui-bg:\s*#f0f2f5/);
   assert.match(light, /--hooma-ui-surface:\s*#ffffff/);
   assert.match(light, /--hooma-ui-text:\s*#050505/);
-  assert.match(light, /--hooma-ui-accent:\s*#2f6f3e/);
+  assert.match(light, /--hooma-ui-accent:\s*#0866ff/);
 });
 
 test("Light palette text and primary actions preserve readable contrast", () => {
   assert.ok(contrastRatio("#262626", "#ffffff") >= 4.5);
   assert.ok(contrastRatio("#65676b", "#ffffff") >= 4.5);
-  assert.ok(contrastRatio("#ffffff", "#2f6f3e") >= 4.5);
-  assert.ok(contrastRatio("#8a6500", "#ffffff") >= 4.5);
-  assert.ok(contrastRatio("#245c33", "#f0f2f5") >= 4.5);
+  assert.ok(contrastRatio("#ffffff", "#0866ff") >= 4.5);
+  assert.ok(contrastRatio("#65676b", "#ffffff") >= 4.5);
+  assert.ok(contrastRatio("#075ce5", "#f0f2f5") >= 4.5);
+  assert.ok(contrastRatio("#15803d", "#ffffff") >= 4.5);
   assert.ok(contrastRatio("#005fcc", "#f0f2f5") >= 4.5);
   assert.ok(contrastRatio("#705000", "#ffffff") >= 4.5);
   assert.ok(contrastRatio("#a33c00", "#ffffff") >= 4.5);
 });
 
+test("Light Mode retires the green-action, brown-gold and warm-beige palette", async () => {
+  const [theme, light] = await Promise.all([
+    readFile(themeCss, "utf8"),
+    readFile(lightCss, "utf8"),
+  ]);
+  const themeLight = theme.match(/:root\[data-theme="light"\]\s*\{([\s\S]*?)\}/)?.[1] ?? "";
+  const retired = /#(?:2f6f3e|245c33|eaf5ed|8a6500|6f5200|fff8e1|fff8e5)\b/i;
+
+  assert.doesNotMatch(themeLight, retired);
+  assert.doesNotMatch(light, retired);
+  assert.doesNotMatch(light, /rgba\(138,\s*101,\s*0,\s*0\.24\)/i);
+  assert.match(light, /:root\[data-theme="light"\] \.eyebrow\s*\{\s*color:\s*#65676b/);
+  assert.match(light, /:root\[data-theme="light"\] \.auth-card a\s*\{\s*color:\s*#0866ff/);
+});
+
 test("Light Pitch toolbar and Passport accents use strong foreground colors", async () => {
   const light = await readFile(lightCss, "utf8");
 
-  assert.match(light, /\.pitch-back-link[\s\S]*color:\s*#245c33/);
-  assert.match(light, /\.pitch-owner-link[\s\S]*color:\s*#245c33/);
+  assert.match(light, /\.pitch-back-link[\s\S]*color:\s*#075ce5/);
+  assert.match(light, /\.pitch-owner-link[\s\S]*color:\s*#075ce5/);
   assert.match(light, /\.hooma-passport-card__handle[\s\S]*color:\s*#005fcc/);
   assert.match(light, /\.hooma-passport-card__ovr[\s\S]*color:\s*#705000/);
   assert.match(light, /\.hooma-passport-card__pos[\s\S]*color:\s*#a33c00/);
-  assert.match(light, /\[data-identity="PLAYER"\][\s\S]*color:\s*#245c33/);
+  assert.match(light, /\[data-identity="PLAYER"\][\s\S]*color:\s*#075ce5/);
   assert.match(light, /\[data-identity="FAN"\][\s\S]*color:\s*#005fcc/);
   assert.match(light, /\[data-identity="GAMER"\][\s\S]*color:\s*#a33c00/);
   assert.match(light, /\.hooma-passport-stats \.is-yellow[\s\S]*color:\s*#705000/);
   assert.match(light, /\.hooma-passport-stats \.is-orange[\s\S]*color:\s*#a33c00/);
-  assert.match(light, /\.hooma-passport-stats \.is-green[\s\S]*color:\s*#245c33/);
+  assert.match(light, /\.hooma-passport-stats \.is-green[\s\S]*color:\s*#15803d/);
 });
 
 test("Dark appearance remains owned by the unchanged root palette", async () => {
@@ -187,13 +208,30 @@ test("Light Mode fixes the exact Play and HOOMA regressions", async () => {
   const css = await readFile(lightCss, "utf8");
 
   assert.match(css, /\.play-page \.play-view-tabs[\s\S]*background:\s*#efefef/);
-  assert.match(css, /\.play-page \.play-view-tab\.is-active[\s\S]*background:\s*#2f6f3e/);
+  assert.match(css, /\.play-page \.play-view-tab\.is-active[\s\S]*background:\s*#0866ff/);
   assert.match(css, /\.play-looking-options button[\s\S]*background:\s*#efefef/);
   assert.match(css, /\.pickup-match-card-meta__going[\s\S]*color:\s*#65676b !important/);
-  assert.match(css, /\.play-event-card__ball[\s\S]*color:\s*#8a6500 !important/);
+  assert.match(css, /\.play-event-card__ball[\s\S]*color:\s*#65676b !important/);
   assert.match(css, /\.hooma-page[\s\S]*\.panel[\s\S]*background:\s*#ffffff/);
   assert.match(css, /\.hooma-page[\s\S]*\.hooma-discovery-card[\s\S]*color:\s*#262626/);
   assert.match(css, /\.hooma-page \.hooma-domain-card[\s\S]*background:\s*#ffffff/);
+});
+
+test("Light active tabs and selected chips use the shared blue state treatment", async () => {
+  const css = await readFile(lightCss, "utf8");
+
+  assert.match(
+    css,
+    /athletes-sport-chips button\.is-active[\s\S]*border-color:\s*#0866ff;[\s\S]*background:\s*#e7f3ff;[\s\S]*color:\s*#075ce5/,
+  );
+  assert.match(
+    css,
+    /teams-tab\.active[\s\S]*border-color:\s*#0866ff;[\s\S]*background:\s*#e7f3ff;[\s\S]*color:\s*#075ce5/,
+  );
+  assert.match(
+    css,
+    /team-profile-page \.chip\.selected[\s\S]*border-color:\s*#0866ff;[\s\S]*background:\s*#e7f3ff;[\s\S]*color:\s*#075ce5/,
+  );
 });
 
 test("Light profile overrides preserve Passport structure while removing dark surfaces", async () => {
