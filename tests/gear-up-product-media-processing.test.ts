@@ -57,8 +57,5 @@ test("Gear Up processor rejects mismatched, invalid, oversized and excessive pix
       .png()
       .toBuffer(),
   );
-  await assert.rejects(
-    () => processor.process(excessive, "image/png"),
-    expectGearUpTypeInvalid,
-  );
+  await assert.rejects(() => processor.process(excessive, "image/png"), expectGearUpTypeInvalid);
 });
