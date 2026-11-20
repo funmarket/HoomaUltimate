@@ -174,6 +174,9 @@ test("Ride vehicle-photo upload, delivery, replacement and cleanup stay Ride-own
     assert.equal(storage.objects.size, 0);
     storage.putKeys.length = 0;
     storage.removedKeys.length = 0;
+    const outboxRowsBeforeRejectedUploads = await db.outboxEvent.count({
+      where: { topic: RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC },
+    });
 
     const unauthenticatedUpload = await fetch(`${base}/api/v1/rides/offers/${rideOfferId}/photo`, {
       method: "PUT",
@@ -229,7 +232,7 @@ test("Ride vehicle-photo upload, delivery, replacement and cleanup stay Ride-own
       assert.equal(await db.rideOfferVehiclePhoto.count({ where: { rideOfferId } }), 0);
       assert.equal(
         await db.outboxEvent.count({ where: { topic: RIDE_VEHICLE_PHOTO_DELETE_OBJECT_TOPIC } }),
-        0,
+        outboxRowsBeforeRejectedUploads,
       );
     }
     const overPixels = new Uint8Array(
