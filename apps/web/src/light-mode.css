@@ -1542,6 +1542,10 @@
   color: #262626;
 }
 
+:root[data-theme="light"] .athletes-calendar__grid button small {
+  color: #705000;
+}
+
 :root[data-theme="light"]
   :is(
     .athletes-calendar__heading p,
@@ -1641,6 +1645,10 @@
   color: #075ce5;
 }
 
+:root[data-theme="light"] .whistle-quota strong {
+  color: #075ce5;
+}
+
 :root[data-theme="light"]
   :is(.whistle-message__meta strong, .whistle-message__author, .whistle-empty strong) {
   color: #050505;
@@ -1657,6 +1665,12 @@
 
 :root[data-theme="light"] .whistle-message {
   border-color: #e4e6eb;
+}
+
+:root[data-theme="light"] .whistle-message__avatar {
+  border-color: rgba(8, 102, 255, 0.28);
+  background: #e7f3ff;
+  color: #075ce5;
 }
 
 /* Home discovery and community member rows. */
@@ -1688,6 +1702,20 @@
   color: #65676b;
 }
 
+:root[data-theme="light"] :is(.hooma-page, .hooma-detail-page) .hooma-member-avatar {
+  color: #f7f7f7;
+}
+
+:root[data-theme="light"] .hooma-card-logo .hooma-community-logo-fallback,
+:root[data-theme="light"] .hooma-preview-logo .hooma-community-logo-fallback,
+:root[data-theme="light"] .hooma-hq-logo .hooma-community-logo-fallback {
+  color: #f7f7f7;
+}
+
+:root[data-theme="light"] .hooma-visibility-indicator {
+  color: #f7f7f7;
+}
+
 :root[data-theme="light"] .hooma-member-controls button {
   border-color: #dbdbdb;
   background: #ffffff;
@@ -1696,6 +1724,60 @@
 
 :root[data-theme="light"] .hooma-member-controls button.danger {
   border-color: rgba(220, 38, 38, 0.28);
+  color: #b91c1c;
+}
+
+:root[data-theme="light"] .hooma-now-card {
+  --now-accent: #705000;
+}
+
+:root[data-theme="light"] .hooma-now-card[data-tone="green"] {
+  --now-accent: #15803d;
+}
+
+:root[data-theme="light"] .hooma-now-card[data-tone="orange"] {
+  --now-accent: #a33c00;
+}
+
+:root[data-theme="light"] .hooma-now-ride-detail__avatar {
+  background: #f0f2f5;
+}
+
+:root[data-theme="light"] .hooma-now-ride-detail__requester small {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .hooma-now-ride-detail__facts > div {
+  border-color: #e4e6eb;
+  background: #f0f2f5;
+}
+
+:root[data-theme="light"] .hooma-now-ride-detail__facts dt {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .hooma-now-ride-detail__note,
+:root[data-theme="light"] .hooma-now-ride-detail__state {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .hooma-now-ride-detail__state.is-error {
+  color: #b91c1c;
+}
+
+:root[data-theme="light"] .hooma-now-ride-detail__state.is-success {
+  color: #15803d;
+}
+
+:root[data-theme="light"] .hooma-now-ride-detail__whistle label > span {
+  color: #262626;
+}
+
+:root[data-theme="light"] .hooma-now-ride-detail__whistle > small {
+  color: #65676b;
+}
+
+:root[data-theme="light"] .hooma-now-ride-detail__whistle > small.is-over {
   color: #b91c1c;
 }
 
@@ -1830,6 +1912,24 @@
   border-color: rgba(185, 28, 28, 0.28);
   background: #fff1f2;
   color: #b91c1c;
+}
+
+:root[data-theme="light"] .gamers-page .field span {
+  color: #262626;
+}
+
+:root[data-theme="light"] .gamers-page .success-box {
+  border-color: rgba(21, 128, 61, 0.28);
+  background: #dcfce7;
+  color: #15803d;
+}
+
+:root[data-theme="light"] .gamer-back-link {
+  color: #075ce5;
+}
+
+:root[data-theme="light"] .gamer-back-link:hover {
+  color: #0866ff;
 }
 
 :root[data-theme="light"] .place-owner-tools button {

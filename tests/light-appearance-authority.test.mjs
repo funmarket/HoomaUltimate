@@ -83,6 +83,14 @@ test("Light converted Athletes surfaces own readable descendant colors", async (
   assert.match(light, /\.athletes-direct-add__field > span[\s\S]*color:\s*#65676b/);
 });
 
+test("Light Calendar event counts use dark amber on white day cells", async () => {
+  const light = await readFile(lightCss, "utf8");
+
+  assert.match(light, /\.athletes-calendar__grid button small\s*\{[^}]*color:\s*#705000/);
+  assert.ok(contrastRatio("#705000", "#ffffff") >= 4.5);
+  assert.ok(contrastRatio("#705000", "#e7f3ff") >= 4.5);
+});
+
 test("Light retained dark athlete and lineup cards keep light foregrounds", async () => {
   const light = await readFile(lightCss, "utf8");
 
@@ -101,6 +109,69 @@ test("Light Whistle uses its real root and readable room controls", async () => 
   assert.match(light, /\.whistle-action__label[\s\S]*color:\s*#075ce5/);
   assert.match(light, /\.whistle-message__body[\s\S]*color:\s*#262626 !important/);
   assert.match(light, /\.whistle-room-state[\s\S]*color:\s*#65676b/);
+  assert.match(light, /\.whistle-quota strong\s*\{[^}]*color:\s*#075ce5/);
+  assert.match(
+    light,
+    /\.whistle-message__avatar\s*\{[^}]*background:\s*#e7f3ff;[^}]*color:\s*#075ce5/,
+  );
+  assert.ok(contrastRatio("#075ce5", "#e7f3ff") >= 4.5);
+});
+
+test("Light retained dark Community fallbacks keep light foregrounds", async () => {
+  const light = await readFile(lightCss, "utf8");
+
+  assert.match(light, /\.hooma-member-avatar\s*\{[^}]*color:\s*#f7f7f7/);
+  assert.match(
+    light,
+    /\.hooma-card-logo \.hooma-community-logo-fallback,[\s\S]*\.hooma-hq-logo \.hooma-community-logo-fallback\s*\{[^}]*color:\s*#f7f7f7/,
+  );
+  assert.match(light, /\.hooma-visibility-indicator\s*\{[^}]*color:\s*#f7f7f7/);
+  assert.ok(contrastRatio("#f7f7f7", "#0a0b0b") >= 4.5);
+  assert.ok(contrastRatio("#f7f7f7", "#070808") >= 4.5);
+});
+
+test("Light HOOMA Now Ride detail owns every white-surface descendant", async () => {
+  const light = await readFile(lightCss, "utf8");
+
+  assert.match(light, /\.hooma-now-card\s*\{[^}]*--now-accent:\s*#705000/);
+  assert.match(light, /\.hooma-now-card\[data-tone="green"\]\s*\{[^}]*--now-accent:\s*#15803d/);
+  assert.match(light, /\.hooma-now-card\[data-tone="orange"\]\s*\{[^}]*--now-accent:\s*#a33c00/);
+  assert.match(light, /\.hooma-now-ride-detail__avatar\s*\{[^}]*background:\s*#f0f2f5/);
+  assert.match(light, /\.hooma-now-ride-detail__requester small\s*\{[^}]*color:\s*#65676b/);
+  assert.match(
+    light,
+    /\.hooma-now-ride-detail__facts > div\s*\{[^}]*border-color:\s*#e4e6eb;[^}]*background:\s*#f0f2f5/,
+  );
+  assert.match(light, /\.hooma-now-ride-detail__facts dt\s*\{[^}]*color:\s*#65676b/);
+  assert.match(
+    light,
+    /\.hooma-now-ride-detail__note\s*,[\s\S]*\.hooma-now-ride-detail__state\s*\{[^}]*color:\s*#65676b/,
+  );
+  assert.match(light, /\.hooma-now-ride-detail__state\.is-error\s*\{[^}]*color:\s*#b91c1c/);
+  assert.match(light, /\.hooma-now-ride-detail__state\.is-success\s*\{[^}]*color:\s*#15803d/);
+  assert.match(light, /\.hooma-now-ride-detail__whistle label > span\s*\{[^}]*color:\s*#262626/);
+  assert.match(light, /\.hooma-now-ride-detail__whistle > small\s*\{[^}]*color:\s*#65676b/);
+  assert.match(
+    light,
+    /\.hooma-now-ride-detail__whistle > small\.is-over\s*\{[^}]*color:\s*#b91c1c/,
+  );
+  assert.ok(contrastRatio("#b91c1c", "#ffffff") >= 4.5);
+  assert.ok(contrastRatio("#15803d", "#ffffff") >= 4.5);
+  assert.ok(contrastRatio("#705000", "#ffffff") >= 4.5);
+  assert.ok(contrastRatio("#a33c00", "#ffffff") >= 4.5);
+});
+
+test("Light Gamers forms, success state and back link use readable pairings", async () => {
+  const light = await readFile(lightCss, "utf8");
+
+  assert.match(light, /\.gamers-page \.field span\s*\{[^}]*color:\s*#262626/);
+  assert.match(
+    light,
+    /\.gamers-page \.success-box\s*\{[^}]*background:\s*#dcfce7;[^}]*color:\s*#15803d/,
+  );
+  assert.match(light, /\.gamer-back-link\s*\{[^}]*color:\s*#075ce5/);
+  assert.ok(contrastRatio("#15803d", "#dcfce7") >= 4.5);
+  assert.ok(contrastRatio("#075ce5", "#ffffff") >= 4.5);
 });
 
 test("Light converted cards override Dark-only body copy", async () => {
