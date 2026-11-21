@@ -12,6 +12,12 @@ import {
   type AthletesCalendarRsvpStatus,
   type AthletesCalendarUpdateInput,
 } from "@hooma/contracts/athletes";
+import {
+  PHOTO_STANDARD,
+  planMediaObjectKeys,
+  writeMediaVariants,
+  type MediaStorageScope,
+} from "@hooma/media-processing";
 import type { ObjectStorage, ObjectStorageReadUrlSigner } from "@hooma/storage";
 import { AthletesError } from "../domain/athletes-error.js";
 import {
@@ -26,8 +32,7 @@ import type {
   AthletesCalendarTransactionRepository,
 } from "./athletes-calendar.repository.js";
 import type { AthletesCalendarUnitOfWork } from "./athletes-calendar.unit-of-work.js";
-import type { AthletesPhotoOptimizer } from "./athletes-photo-optimizer.js";
-import type { AthletesPhotoValidator } from "./athletes-photo-validator.js";
+import type { AthletesCalendarMediaProcessor } from "./athletes-calendar-media-processor.js";
 
 const ATHLETES_CALENDAR_MEDIA_READ_URL_TTL_SECONDS = 5 * 60;
 
@@ -75,10 +80,6 @@ function requireValidInterval(startsAt: Date, endsAt: Date): void {
 
 function normalizeContentType(contentType: string): string {
   return contentType.split(";")[0]?.trim().toLowerCase() ?? "";
-}
-
-function calendarMediaObjectKey(athletesCommunityId: string, mediaId: string): string {
-  return `athletes-calendar-media/${athletesCommunityId}/${mediaId}`;
 }
 
 function supportsReadUrlSigning(
@@ -137,8 +138,8 @@ export class AthletesCalendarService {
     private readonly repository: AthletesCalendarRepository,
     private readonly unitOfWork: AthletesCalendarUnitOfWork,
     private readonly storage: ObjectStorage | null,
-    private readonly validator: AthletesPhotoValidator,
-    private readonly optimizer: AthletesPhotoOptimizer,
+    private readonly mediaStorageScope: MediaStorageScope | null,
+    private readonly processor: AthletesCalendarMediaProcessor,
   ) {}
 
   async list(
@@ -189,38 +190,76 @@ export class AthletesCalendarService {
         "Athletes Calendar event photo must be 5 MiB or smaller",
       );
     }
-    if (!this.storage) {
+    if (!this.storage || !this.mediaStorageScope) {
       throw new AthletesError(
         "ATHLETES_CALENDAR_MEDIA_STORAGE_NOT_CONFIGURED",
         "Athletes Calendar event photo storage is not configured",
       );
     }
 
-    await this.validator.validate(input.body, parsedContentType.data);
-    const optimized = await this.optimizer.optimize(input.body, parsedContentType.data);
+    const processed = await this.processor.process(input.body, parsedContentType.data);
+    if (
+      processed.profile !== PHOTO_STANDARD.id ||
+      processed.selectedVariants?.length !== 1 ||
+      processed.selectedVariants[0] !== "master" ||
+      processed.variants.length !== 1 ||
+      processed.variants[0]?.variant !== "master"
+    ) {
+      throw new AthletesError(
+        "ATHLETES_CALENDAR_MEDIA_UPLOAD_FAILED",
+        "Athletes Calendar event photo upload failed",
+      );
+    }
     const mediaId = randomUUID();
-    const requestedObjectKey = calendarMediaObjectKey(athletesCommunityId, mediaId);
+    const identity = {
+      scope: this.mediaStorageScope,
+      namespace: "ATHLETES_CALENDAR" as const,
+      ownerId: athletesCommunityId,
+      mediaId,
+    };
+    const [plannedMaster] = planMediaObjectKeys({
+      ...identity,
+      profile: PHOTO_STANDARD,
+      requestedVariants: ["master"],
+    });
+    if (!plannedMaster) {
+      throw new AthletesError(
+        "ATHLETES_CALENDAR_MEDIA_UPLOAD_FAILED",
+        "Athletes Calendar event photo upload failed",
+      );
+    }
+    const requestedObjectKey = plannedMaster.objectKey;
     await this.repository.prepareMediaUpload(mediaId, athletesCommunityId, requestedObjectKey);
 
     try {
-      const stored = await this.storage.put(
-        requestedObjectKey,
-        optimized.body,
-        optimized.contentType,
-      );
-      if (stored.key !== requestedObjectKey) {
-        await this.repository.prepareMediaUpload(mediaId, athletesCommunityId, stored.key);
+      const written = await writeMediaVariants({
+        storage: this.storage,
+        identity,
+        processed,
+      });
+      const [master] = written.descriptors;
+      if (
+        written.descriptors.length !== 1 ||
+        !master ||
+        master.variant !== "master" ||
+        master.objectKey !== requestedObjectKey
+      ) {
+        throw new AthletesError(
+          "ATHLETES_CALENDAR_MEDIA_UPLOAD_FAILED",
+          "Athletes Calendar event photo upload failed",
+        );
       }
-      const storedContentType = athletesPhotoContentTypeSchema.parse(stored.contentType);
       await this.repository.completeMediaUpload({
         mediaId,
         athletesCommunityId,
-        objectKey: stored.key,
-        contentType: storedContentType,
-        sizeBytes: stored.sizeBytes,
+        objectKey: master.objectKey,
+        contentType: master.contentType,
+        sizeBytes: master.sizeBytes,
       });
       return { mediaId };
-    } catch {
+    } catch (error) {
+      // The pending Outbox intent retains ownership of unreferenced planned bytes.
+      if (error instanceof AthletesError) throw error;
       throw new AthletesError(
         "ATHLETES_CALENDAR_MEDIA_UPLOAD_FAILED",
         "Athletes Calendar event photo upload failed",
