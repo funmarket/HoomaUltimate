@@ -1,4 +1,16 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useHoomaFrontend } from "../context";
+
+export function resolveCommunityIdentityMediaUrl(
+  value: string | null | undefined,
+  apiBaseUrl: string,
+): string | null {
+  const url = value?.trim() || null;
+  if (!url) return null;
+  if (!/^\/api\/public\/v1\/communities\/[^/]+\/identity\/(logo|banner)\/content$/.test(url))
+    return url;
+  return `${apiBaseUrl.replace(/\/$/, "")}${url}`;
+}
 
 function initials(name: string): string {
   return (
@@ -24,10 +36,11 @@ export function CommunityMediaSurface({
   readonly gradient?: string;
   readonly as?: "div" | "section";
 }) {
+  const { transport } = useHoomaFrontend();
   const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
+  const source = resolveCommunityIdentityMediaUrl(bannerUrl, transport.baseUrl);
 
   useEffect(() => {
-    const source = bannerUrl?.trim();
     setLoadedUrl(null);
     if (!source) return;
 
@@ -45,7 +58,7 @@ export function CommunityMediaSurface({
       image.onload = null;
       image.onerror = null;
     };
-  }, [bannerUrl]);
+  }, [source]);
 
   const style: CSSProperties | undefined = loadedUrl
     ? {
@@ -72,8 +85,9 @@ export function CommunityLogo({
   readonly className: string;
   readonly alt?: string;
 }) {
+  const { transport } = useHoomaFrontend();
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
-  const source = logoUrl?.trim() || null;
+  const source = resolveCommunityIdentityMediaUrl(logoUrl, transport.baseUrl);
   const displayUrl = source && source !== failedUrl ? source : null;
 
   useEffect(() => {

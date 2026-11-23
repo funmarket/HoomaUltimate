@@ -60,7 +60,13 @@ export function createPublicV1Router(container: AppContainer, config: ApiConfig)
       container.gearUpProductMediaService,
     ),
   );
-  router.use("/communities", createCommunityPublicRouter(container.communityService));
+  router.use(
+    "/communities",
+    createCommunityPublicRouter(
+      container.communityService,
+      container.communityIdentityMediaService,
+    ),
+  );
   router.use(
     "/athletes",
     createAthletesPublicRouter(container.athletesService, container.athletesHeroService),

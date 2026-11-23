@@ -9,8 +9,22 @@ export const communityJoinRequestStatusSchema = z.enum([
   "CANCELLED",
 ]);
 export const communityRoleSchema = z.enum(["FOUNDER", "COACH", "MEMBER"]);
+export const COMMUNITY_IDENTITY_MEDIA_RECONCILE_TOPIC = "community.identity-media.reconcile-object";
+export const communityIdentityMediaCleanupPayloadSchema = z.object({
+  communityId: z.string().min(1),
+  mediaId: z.string().min(1),
+  slot: z.enum(["logo", "banner"]),
+  objectKey: z.string().min(1),
+});
 
-const optionalUrl = z.string().trim().url().max(2000).optional().nullable();
+const optionalUrl = z
+  .string()
+  .trim()
+  .url()
+  .max(2000)
+  .refine((url) => /^https?:\/\//i.test(url), "Only HTTP(S) image URLs are allowed")
+  .optional()
+  .nullable();
 
 export const communityCreateSchema = z.object({
   name: z.string().trim().min(2).max(100),

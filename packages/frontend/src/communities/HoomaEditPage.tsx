@@ -3,9 +3,17 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import type { PublicCommunityDetail } from "../api";
 import { useHoomaFrontend } from "../context";
+import { resolveCommunityIdentityMediaUrl } from "./CommunityMedia";
+import {
+  CommunityIdentityInput,
+  identitySelectionFromUrl,
+  useCommunityIdentityPreview,
+  validateIdentitySelection,
+  type CommunityIdentitySelection,
+} from "./CommunityIdentityInputs";
 
 export function HoomaEditPage({ communityId }: { readonly communityId: string }) {
-  const { api, protectedError } = useHoomaFrontend();
+  const { api, protectedError, transport } = useHoomaFrontend();
   const navigate = useNavigate();
   const [community, setCommunity] = useState<PublicCommunityDetail | null>(null);
   const [me, setMe] = useState<MeResponse | null>(null);
@@ -14,6 +22,21 @@ export function HoomaEditPage({ communityId }: { readonly communityId: string })
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [logoSelection, setLogoSelection] = useState<CommunityIdentitySelection>({
+    mode: "none",
+    url: "",
+    file: null,
+  });
+  const [bannerSelection, setBannerSelection] = useState<CommunityIdentitySelection>({
+    mode: "none",
+    url: "",
+    file: null,
+  });
+  const [logoUploaded, setLogoUploaded] = useState(false);
+  const [bannerUploaded, setBannerUploaded] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState("");
+  const logoPreview = useCommunityIdentityPreview(logoSelection, community?.logoUrl ?? null);
+  const bannerPreview = useCommunityIdentityPreview(bannerSelection, community?.bannerUrl ?? null);
 
   useEffect(() => {
     let active = true;
@@ -30,6 +53,10 @@ export function HoomaEditPage({ communityId }: { readonly communityId: string })
           return;
         }
         setCommunity(detail);
+        setLogoSelection(identitySelectionFromUrl(detail.logoUrl, "logo"));
+        setBannerSelection(identitySelectionFromUrl(detail.bannerUrl, "banner"));
+        setLogoUploaded(false);
+        setBannerUploaded(false);
         setMe(identity);
       })
       .catch((reason) => {
@@ -46,25 +73,64 @@ export function HoomaEditPage({ communityId }: { readonly communityId: string })
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!community || saving) return;
+    const currentLogoManaged =
+      identitySelectionFromUrl(community.logoUrl, "logo").mode === "upload";
+    const currentBannerManaged =
+      identitySelectionFromUrl(community.bannerUrl, "banner").mode === "upload";
+    const logoProblem = validateIdentitySelection(
+      logoSelection,
+      "logo",
+      currentLogoManaged || logoUploaded,
+    );
+    const bannerProblem = validateIdentitySelection(
+      bannerSelection,
+      "banner",
+      currentBannerManaged || bannerUploaded,
+    );
+    if (logoProblem || bannerProblem) {
+      setError(logoProblem ?? bannerProblem ?? "Invalid image selection.");
+      return;
+    }
     const data = new FormData(event.currentTarget);
     setSaving(true);
     setError("");
     setNotice("");
     try {
+      setUploadStatus("Saving HOOMA details…");
       await api.communities.update(community.id, {
         name: String(data.get("name")).trim(),
         description: String(data.get("description")).trim() || null,
         city: String(data.get("city")).trim() || null,
         houma: String(data.get("houma")).trim() || null,
-        logoUrl: String(data.get("logoUrl")).trim() || null,
-        bannerUrl: String(data.get("bannerUrl")).trim() || null,
+        ...(logoSelection.mode !== "upload"
+          ? { logoUrl: logoSelection.mode === "external" ? logoSelection.url.trim() : null }
+          : {}),
+        ...(bannerSelection.mode !== "upload"
+          ? { bannerUrl: bannerSelection.mode === "external" ? bannerSelection.url.trim() : null }
+          : {}),
         visibility: data.get("visibility") === "PRIVATE" ? "PRIVATE" : "PUBLIC",
       });
-      setCommunity(await api.communities.publicDetail(community.id));
+      if (logoSelection.mode === "upload" && logoSelection.file && !logoUploaded) {
+        setUploadStatus("Uploading Community logo…");
+        await api.communities.uploadIdentity(community.id, "logo", logoSelection.file);
+        setLogoUploaded(true);
+      }
+      if (bannerSelection.mode === "upload" && bannerSelection.file && !bannerUploaded) {
+        setUploadStatus("Uploading Community banner…");
+        await api.communities.uploadIdentity(community.id, "banner", bannerSelection.file);
+        setBannerUploaded(true);
+      }
+      const current = await api.communities.publicDetail(community.id);
+      setCommunity(current);
+      setLogoSelection(identitySelectionFromUrl(current.logoUrl, "logo"));
+      setBannerSelection(identitySelectionFromUrl(current.bannerUrl, "banner"));
+      setLogoUploaded(false);
+      setBannerUploaded(false);
       setNotice("HOOMA settings saved.");
     } catch (reason) {
-      setError(protectedError(reason, "Unable to save HOOMA settings"));
+      setError(protectedError(reason, "HOOMA settings or media was not fully saved. Retry."));
     } finally {
+      setUploadStatus("");
       setSaving(false);
     }
   }
@@ -117,6 +183,11 @@ export function HoomaEditPage({ communityId }: { readonly communityId: string })
           </p>
         </section>
         {error ? <div className="error-box">{error}</div> : null}
+        {uploadStatus ? (
+          <p className="muted" role="status">
+            {uploadStatus}
+          </p>
+        ) : null}
         {notice ? <div className="success-box">{notice}</div> : null}
         {community ? (
           <>
@@ -167,24 +238,26 @@ export function HoomaEditPage({ communityId }: { readonly communityId: string })
                   <span>Houma / neighborhood</span>
                   <input name="houma" defaultValue={community.houma ?? ""} maxLength={100} />
                 </label>
-                <label className="field">
-                  <span>Community logo URL</span>
-                  <input
-                    name="logoUrl"
-                    type="url"
-                    defaultValue={community.logoUrl ?? ""}
-                    maxLength={2000}
-                  />
-                </label>
-                <label className="field hooma-span-2">
-                  <span>Banner image URL</span>
-                  <input
-                    name="bannerUrl"
-                    type="url"
-                    defaultValue={community.bannerUrl ?? ""}
-                    maxLength={2000}
-                  />
-                </label>
+                <CommunityIdentityInput
+                  slot="logo"
+                  selection={logoSelection}
+                  previewUrl={resolveCommunityIdentityMediaUrl(logoPreview, transport.baseUrl)}
+                  disabled={saving || deleting}
+                  onChange={(next) => {
+                    setLogoUploaded(false);
+                    setLogoSelection(next);
+                  }}
+                />
+                <CommunityIdentityInput
+                  slot="banner"
+                  selection={bannerSelection}
+                  previewUrl={resolveCommunityIdentityMediaUrl(bannerPreview, transport.baseUrl)}
+                  disabled={saving || deleting}
+                  onChange={(next) => {
+                    setBannerUploaded(false);
+                    setBannerSelection(next);
+                  }}
+                />
                 <label className="field hooma-span-2">
                   <span>Description</span>
                   <textarea

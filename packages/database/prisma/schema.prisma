@@ -656,6 +656,14 @@ model Community {
   houma            String?
   logoUrl         String?
   bannerUrl       String?
+  logoMediaId     String?                     @unique
+  logoObjectKey   String?                     @unique
+  logoContentType String?
+  logoSizeBytes   Int?
+  bannerMediaId     String?                   @unique
+  bannerObjectKey   String?                   @unique
+  bannerContentType String?
+  bannerSizeBytes   Int?
   status          CommunityStatus             @default(ACTIVE)
   visibility      CommunityVisibility         @default(PUBLIC)
   joinPolicy      CommunityJoinPolicy         @default(OPEN)

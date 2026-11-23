@@ -31,6 +31,10 @@ Do not store current branch heads, pull-request state, commit SHAs, CI run IDs, 
 ### Communities, Teams and Play
 
 - HOOMA Community creation remains Communities-owned.
+- Communities-owned Community identity media supports one independently selected logo and one banner: existing external HTTP(S) URL references remain unchanged, while new managed JPEG/PNG/WebP uploads use shared `PHOTO_STANDARD` master-only WebP processing and typed `COMMUNITY_LOGO` / `COMMUNITY_BANNER` object keys.
+- Managed Community image writes prepare durable Community-owned Outbox reconciliation before PUT, adopt exact planned keys transactionally, and schedule old managed-object cleanup on replacement/removal through the existing Worker with reference protection. Community creator/Platform Admin authorization and membership, privacy, join, Coach, archive, list/detail and navigation behavior remain under their existing owners.
+- Community create/edit forms support separate URL, upload and empty selections for logo and banner; managed images use the Community-owned public delivery route, and existing external URL rows require no backfill or ingestion.
+
 - Team creation remains Teams-owned and uses a canonical HOOMA Community context where required.
 - Teams owns its roster, lineup/published-lineup, player-offer, Team challenge and TeamGame lifecycles.
 - Current Team challenge creation/acceptance does not contain a separate five-active-player plus published-lineup readiness gate. Such a rule must not be inferred from old documentation.
