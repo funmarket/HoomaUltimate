@@ -6,6 +6,7 @@ import { getDatabaseClient } from "@hooma/database";
 import type { ObjectStorage } from "@hooma/storage";
 import { AthletesContentAuthorization } from "../apps/api/src/modules/athletes/application/athletes-content-authorizer.js";
 import { AthletesIdentityMediaService } from "../apps/api/src/modules/athletes/application/athletes-identity-media.service.js";
+import { AthletesService } from "../apps/api/src/modules/athletes/application/athletes.service.js";
 import { planAthletesIdentityMasterKey } from "../apps/api/src/modules/athletes/application/athletes-identity-media.repository.js";
 import { PrismaAthletesIdentityMediaRepository } from "../apps/api/src/modules/athletes/infrastructure/prisma-athletes-identity-media.repository.js";
 import { AthletesIdentityImageProcessor } from "../apps/api/src/modules/athletes/infrastructure/athletes-identity-image-processor.js";
@@ -359,6 +360,71 @@ test("Athletes upload rechecks Founder authorization after object storage comple
     assert.equal(current.logoMediaId, null);
     assert.equal(current.logoObjectKey, null);
     assert.equal(await db.outboxEvent.count({ where: { aggregateId: f.community.id } }), 1);
+  } finally {
+    allowCompletion();
+    await f.cleanup();
+  }
+});
+
+test("Archiving blocks an in-flight identity replacement and preserves the current image", async () => {
+  const f = await fixture();
+  let holdNextPut = false;
+  let signalStarted = () => {};
+  let allowCompletion = () => {};
+  const started = new Promise<void>((resolve) => {
+    signalStarted = resolve;
+  });
+  const completion = new Promise<void>((resolve) => {
+    allowCompletion = resolve;
+  });
+  try {
+    const athletes = new AthletesService(f.repository, {
+      findLastSeenByUserIds: async () => new Map<string, Date | null>(),
+    });
+    const storage = {
+      put: async (key: string, body: Uint8Array, contentType: string) => {
+        if (holdNextPut) {
+          signalStarted();
+          await completion;
+        }
+        return { key, contentType, sizeBytes: body.byteLength };
+      },
+      get: async () => {
+        throw Error("not used by upload test");
+      },
+      remove: async () => {
+        throw Error("cleanup is deferred to the worker");
+      },
+    };
+    const media = new AthletesIdentityMediaService(
+      athletes,
+      new PrismaAthletesIdentityMediaRepository(db),
+      storage as unknown as ObjectStorage,
+      "staging",
+      new AthletesIdentityImageProcessor(),
+    );
+    const currentLogo = await media.upload(f.user.id, f.community.id, "logo", f.input);
+    const beforeArchive = await db.athletesCommunity.findUniqueOrThrow({
+      where: { id: f.community.id },
+    });
+    holdNextPut = true;
+    const replacement = media.upload(f.user.id, f.community.id, "logo", f.input);
+    await started;
+    assert.deepEqual(await athletes.archive(f.user.id, f.community.id), { ok: true });
+    allowCompletion();
+    await assert.rejects(replacement, { code: "ATHLETES_NOT_FOUND" });
+
+    const archived = await db.athletesCommunity.findUniqueOrThrow({
+      where: { id: f.community.id },
+    });
+    assert.equal(archived.status, "ARCHIVED");
+    assert.equal(archived.logoMediaId, currentLogo.mediaId);
+    assert.equal(archived.logoObjectKey, beforeArchive.logoObjectKey);
+    assert.equal(archived.bannerMediaId, null);
+    assert.equal(await db.outboxEvent.count({ where: { aggregateId: f.community.id } }), 1);
+    await assert.rejects(media.removeIdentity(f.user.id, f.community.id, "logo"), {
+      code: "ATHLETES_NOT_FOUND",
+    });
   } finally {
     allowCompletion();
     await f.cleanup();
