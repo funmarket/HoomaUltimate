@@ -147,7 +147,9 @@ export class AthletesIdentityMediaService {
     const identity = {
       scope: this.scope,
       namespace:
-        slot === "logo" ? ("ATHLETES_COMMUNITY_LOGO" as const) : ("ATHLETES_COMMUNITY_BANNER" as const),
+        slot === "logo"
+          ? ("ATHLETES_COMMUNITY_LOGO" as const)
+          : ("ATHLETES_COMMUNITY_BANNER" as const),
       ownerId: athletesCommunityId,
       mediaId,
     };
