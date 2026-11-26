@@ -80,6 +80,7 @@ for (const slot of ["logo", "banner"] as const) {
       assert.deepEqual(removed, [payload.objectKey]);
     } finally {
       await f.cleanup();
+    }
   });
 }
 
