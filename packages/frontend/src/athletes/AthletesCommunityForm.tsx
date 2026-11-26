@@ -1,6 +1,7 @@
 import type { AthletesSport, AthletesPublicDetail } from "@hooma/contracts/athletes";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useHoomaFrontend } from "../context";
+import { externalIdentityUrl } from "./identity-url-option";
 import { sports, sportLabel } from "./sports";
 
 export function AthletesCommunityForm({
@@ -20,6 +21,14 @@ export function AthletesCommunityForm({
   const [joinPolicy, setJoinPolicy] = useState<"OPEN" | "APPROVAL_REQUIRED">(
     community?.joinPolicy ?? "OPEN",
   );
+  const [logoUrlMode, setLogoUrlMode] = useState<"none" | "external">(
+    community?.logoUrl ? "external" : "none",
+  );
+  const [logoUrl, setLogoUrl] = useState(community?.logoUrl ?? "");
+  const [bannerUrlMode, setBannerUrlMode] = useState<"none" | "external">(
+    community?.bannerUrl ? "external" : "none",
+  );
+  const [bannerUrl, setBannerUrl] = useState(community?.bannerUrl ?? "");
   const savedId = useRef(community?.id);
   const submitting = useRef(false);
   const mounted = useRef(true);
@@ -59,10 +68,10 @@ export function AthletesCommunityForm({
         description: String(data.get("description")).trim() || null,
         city: String(data.get("city")).trim() || null,
         houma: String(data.get("houma")).trim() || null,
-        logoUrl: String(data.get("logoUrl")).trim() || null,
+        logoUrl: externalIdentityUrl(logoUrlMode, logoUrl),
         ...(files.some(({ slot }) => slot === "banner")
           ? {}
-          : { bannerUrl: String(data.get("bannerUrl")).trim() || null }),
+          : { bannerUrl: externalIdentityUrl(bannerUrlMode, bannerUrl) }),
         visibility,
         joinPolicy: visibility === "PRIVATE" ? "APPROVAL_REQUIRED" : joinPolicy,
       };
@@ -174,25 +183,55 @@ export function AthletesCommunityForm({
               />
             </label>
             <label className="athletes-field">
-              <span>Logo URL</span>
-              <input
-                name="logoUrl"
-                defaultValue={community?.logoUrl ?? ""}
-                type="url"
-                maxLength={2000}
-                placeholder="https://…"
-              />
+              <span>Logo external URL option</span>
+              <select
+                aria-label="Logo external URL option"
+                value={logoUrlMode}
+                onChange={(event) => setLogoUrlMode(event.target.value as "none" | "external")}
+                disabled={creating}
+              >
+                <option value="none">No image URL</option>
+                <option value="external">External URL</option>
+              </select>
             </label>
+            {logoUrlMode === "external" ? (
+              <label className="athletes-field">
+                <span>Logo URL</span>
+                <input
+                  name="logoUrl"
+                  value={logoUrl}
+                  onChange={(event) => setLogoUrl(event.target.value)}
+                  type="url"
+                  maxLength={2000}
+                  placeholder="https://…"
+                />
+              </label>
+            ) : null}
             <label className="athletes-field athletes-span-2">
-              <span>Banner image URL</span>
-              <input
-                name="bannerUrl"
-                defaultValue={community?.bannerUrl ?? ""}
-                type="url"
-                maxLength={2000}
-                placeholder="https://…"
-              />
+              <span>Banner external URL option</span>
+              <select
+                aria-label="Banner external URL option"
+                value={bannerUrlMode}
+                onChange={(event) => setBannerUrlMode(event.target.value as "none" | "external")}
+                disabled={creating}
+              >
+                <option value="none">No image URL</option>
+                <option value="external">External URL</option>
+              </select>
             </label>
+            {bannerUrlMode === "external" ? (
+              <label className="athletes-field athletes-span-2">
+                <span>Banner image URL</span>
+                <input
+                  name="bannerUrl"
+                  value={bannerUrl}
+                  onChange={(event) => setBannerUrl(event.target.value)}
+                  type="url"
+                  maxLength={2000}
+                  placeholder="https://…"
+                />
+              </label>
+            ) : null}
             <label className="athletes-field">
               <span>Upload logo (JPEG, PNG or WebP; max 5 MiB)</span>
               <input
