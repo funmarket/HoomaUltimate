@@ -204,6 +204,8 @@ test("Athletes member projection carries nullable canonical web last-seen", () =
 test("public Athletes projections do not expose creator user ids", () => {
   assert.equal("createdByUserId" in athletesPublicSummarySchema.shape, false);
   assert.equal("createdByUserId" in athletesPublicDetailSchema.shape, false);
+  assert.equal(athletesPublicSummarySchema.shape.logoMediaPath.parse(null), null);
+  assert.equal(athletesPublicSummarySchema.shape.bannerMediaPath.parse(null), null);
 });
 
 test("Athletes Photo contracts expose canonical private-board metadata", () => {

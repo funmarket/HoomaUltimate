@@ -122,6 +122,8 @@ export const athletesPublicSummarySchema = z.object({
   houma: z.string().nullable(),
   logoUrl: z.string().url().nullable(),
   bannerUrl: z.string().url().nullable(),
+  logoMediaPath: z.string().min(1).nullable().optional(),
+  bannerMediaPath: z.string().min(1).nullable().optional(),
   visibility: athletesVisibilitySchema,
   joinPolicy: athletesJoinPolicySchema,
   createdAt: z.string().datetime(),

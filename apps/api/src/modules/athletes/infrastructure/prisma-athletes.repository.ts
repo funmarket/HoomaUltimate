@@ -45,6 +45,8 @@ const publicSelect = {
   houma: true,
   logoUrl: true,
   bannerUrl: true,
+  logoObjectKey: true,
+  bannerObjectKey: true,
   visibility: true,
   joinPolicy: true,
   status: true,
@@ -76,6 +78,12 @@ function toPublic(row: PublicRow) {
     houma: row.houma,
     logoUrl: row.logoUrl,
     bannerUrl: row.bannerUrl,
+    logoMediaPath: row.logoObjectKey
+      ? `/api/public/v1/athletes/${encodeURIComponent(row.id)}/identity/logo/content`
+      : null,
+    bannerMediaPath: row.bannerObjectKey
+      ? `/api/public/v1/athletes/${encodeURIComponent(row.id)}/identity/banner/content`
+      : null,
     visibility: row.visibility,
     joinPolicy: row.joinPolicy,
     status: row.status,

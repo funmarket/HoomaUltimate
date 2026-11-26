@@ -27,6 +27,8 @@ test("Athletes identity supports independent managed logo and banner without los
     const detail = await repository.getPublic(community.id);
     assert.equal(detail?.logoUrl, "https://example.org/logo.png");
     assert.equal(detail?.bannerUrl, "https://example.org/banner.png");
+    assert.equal(detail?.logoMediaPath, null);
+    assert.equal(detail?.bannerMediaPath, null);
   } finally {
     await db.athletesCommunity.deleteMany({ where: { createdByUserId: user.id } });
     await db.user.delete({ where: { id: user.id } });
@@ -75,6 +77,19 @@ test("Athletes external logo URL can coexist with managed logo without changing 
     assert.equal(current.bannerObjectKey, bannerObjectKey);
     assert.equal(await db.outboxEvent.count({ where: { id: logoMediaId } }), 0);
     assert.equal(await db.outboxEvent.count({ where: { id: bannerMediaId } }), 0);
+
+    const publicDetail = await repository.getPublic(community.id);
+    assert.equal(publicDetail?.logoUrl, null);
+    assert.equal(
+      publicDetail?.logoMediaPath,
+      `/api/public/v1/athletes/${encodeURIComponent(community.id)}/identity/logo/content`,
+    );
+    assert.equal(
+      publicDetail?.bannerMediaPath,
+      `/api/public/v1/athletes/${encodeURIComponent(community.id)}/identity/banner/content`,
+    );
+    assert.equal(JSON.stringify(publicDetail).includes(logoObjectKey), false);
+    assert.equal(JSON.stringify(publicDetail).includes(bannerObjectKey), false);
   } finally {
     const communities = await db.athletesCommunity.findMany({
       where: { createdByUserId: user.id },
