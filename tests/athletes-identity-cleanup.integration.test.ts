@@ -4,12 +4,8 @@ import test from "node:test";
 import { ATHLETES_IDENTITY_MEDIA_RECONCILE_TOPIC as topic } from "@hooma/contracts/athletes";
 import { getDatabaseClient } from "@hooma/database";
 import { buildMediaObjectKey } from "@hooma/media-processing";
-import {
-  PrismaAthletesRepository,
-} from "../apps/api/src/modules/athletes/infrastructure/prisma-athletes.repository.js";
-import {
-  createAthletesIdentityMediaCleanupHandler,
-} from "../apps/worker/src/athletes/athletes-identity-media-cleanup.js";
+import { PrismaAthletesRepository } from "../apps/api/src/modules/athletes/infrastructure/prisma-athletes.repository.js";
+import { createAthletesIdentityMediaCleanupHandler } from "../apps/worker/src/athletes/athletes-identity-media-cleanup.js";
 import { OutboxRepository } from "../apps/worker/src/outbox/outbox.repository.js";
 import { OutboxRunner } from "../apps/worker/src/outbox/outbox.runner.js";
 
