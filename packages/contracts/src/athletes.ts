@@ -6,7 +6,7 @@ export const athletesIdentityMediaCleanupPayloadSchema = z.object({
   mediaId: z.string().min(1),
   slot: z.enum(["logo", "banner"]),
   objectKey: z.string().min(1),
-});
+}).strict();
 
 export const ATHLETES_SPORTS = [
   "CYCLING",

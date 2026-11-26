@@ -1,5 +1,6 @@
 import {
   ATHLETES_CALENDAR_MEDIA_RECONCILE_TOPIC,
+  ATHLETES_IDENTITY_MEDIA_RECONCILE_TOPIC,
   ATHLETES_PHOTO_RECONCILE_TOPIC,
 } from "@hooma/contracts/athletes";
 import { loadObjectStorageConfig, type ObjectStorageConfig } from "@hooma/config";
@@ -16,6 +17,7 @@ import {
 } from "@hooma/storage";
 import { createCommunityIdentityMediaCleanupHandler } from "./communities/community-identity-media-cleanup.js";
 import { createAthletesCalendarMediaCleanupHandler } from "./athletes/athletes-calendar-media-cleanup.js";
+import { createAthletesIdentityMediaCleanupHandler } from "./athletes/athletes-identity-media-cleanup.js";
 import { createAthletesPhotoCleanupHandler } from "./athletes/athletes-photo-cleanup.js";
 import { cleanupExpiredEventChat } from "./events/event-chat-cleanup.js";
 import { createGearUpProductImageCleanupHandler } from "./gear-up/gear-up-product-image-cleanup.js";
@@ -67,6 +69,10 @@ if (storage) {
   if (!mediaStorageScope) {
     throw new Error("MEDIA_STORAGE_SCOPE is required when object storage is configured");
   }
+  outboxHandlers.set(
+    ATHLETES_IDENTITY_MEDIA_RECONCILE_TOPIC,
+    createAthletesIdentityMediaCleanupHandler(database, storage, mediaStorageScope),
+  );
   outboxHandlers.set(
     ATHLETES_PHOTO_RECONCILE_TOPIC,
     createAthletesPhotoCleanupHandler(database, storage, mediaStorageScope),
