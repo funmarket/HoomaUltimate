@@ -185,7 +185,9 @@ export function AthletesPage({
                 <AthletesImage
                   src={item.bannerUrl}
                   fallbackSrc={
-                    item.bannerMediaPath ? api.athletes.identityMediaUrl(item.id, "banner") : null
+                    item.bannerMediaPath
+                      ? api.athletes.identityMediaUrl(item.id, "banner")
+                      : null
                   }
                   className="athletes-banner"
                   alt={`${item.name} banner`}
@@ -193,7 +195,9 @@ export function AthletesPage({
                 <AthletesImage
                   src={item.logoUrl}
                   fallbackSrc={
-                    item.logoMediaPath ? api.athletes.identityMediaUrl(item.id, "logo") : null
+                    item.logoMediaPath
+                      ? api.athletes.identityMediaUrl(item.id, "logo")
+                      : null
                   }
                   className="athletes-logo"
                   alt={`${item.name} logo`}
@@ -357,7 +361,9 @@ function AthletesDetailContent({
           <AthletesImage
             src={detail.bannerUrl}
             fallbackSrc={
-              detail.bannerMediaPath ? api.athletes.identityMediaUrl(id, "banner") : null
+              detail.bannerMediaPath
+                ? api.athletes.identityMediaUrl(id, "banner")
+                : null
             }
             className="athletes-banner"
             alt={`${detail.name} banner`}
@@ -366,7 +372,9 @@ function AthletesDetailContent({
             <AthletesImage
               src={detail.logoUrl}
               fallbackSrc={
-                detail.logoMediaPath ? api.athletes.identityMediaUrl(id, "logo") : null
+                detail.logoMediaPath
+                  ? api.athletes.identityMediaUrl(id, "logo")
+                  : null
               }
               className="athletes-logo"
               alt={`${detail.name} logo`}
