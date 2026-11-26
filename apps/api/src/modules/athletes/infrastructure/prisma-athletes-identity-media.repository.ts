@@ -42,10 +42,8 @@ export class PrismaAthletesIdentityMediaRepository implements AthletesIdentityMe
       if (locked.length !== 1) {
         throw new AthletesError("ATHLETES_NOT_FOUND", "Athletes community not found");
       }
-      await new AthletesContentAuthorization(new PrismaAthletesRepository(tx)).requireFounderContent(
-        userId,
-        input.athletesCommunityId,
-      );
+      const authorization = new AthletesContentAuthorization(new PrismaAthletesRepository(tx));
+      await authorization.requireFounderContent(userId, input.athletesCommunityId);
       const now = new Date();
       const intent = await tx.outboxEvent.findUnique({ where: { id: input.mediaId } });
       if (
@@ -104,7 +102,10 @@ export class PrismaAthletesIdentityMediaRepository implements AthletesIdentityMe
               bannerSizeBytes: input.sizeBytes,
             }),
       };
-      await tx.athletesCommunity.update({ where: { id: input.athletesCommunityId }, data: newMedia });
+      await tx.athletesCommunity.update({
+        where: { id: input.athletesCommunityId },
+        data: newMedia,
+      });
       const oldMediaId = input.slot === "logo" ? current.logoMediaId : current.bannerMediaId;
       const oldObjectKey = input.slot === "logo" ? current.logoObjectKey : current.bannerObjectKey;
       if (oldMediaId && oldObjectKey && oldMediaId !== input.mediaId) {

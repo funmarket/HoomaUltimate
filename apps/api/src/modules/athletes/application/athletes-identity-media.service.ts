@@ -146,7 +146,8 @@ export class AthletesIdentityMediaService {
     const objectKey = planAthletesIdentityMasterKey(this.scope, athletesCommunityId, mediaId, slot);
     const identity = {
       scope: this.scope,
-      namespace: slot === "logo" ? ("ATHLETES_COMMUNITY_LOGO" as const) : ("ATHLETES_COMMUNITY_BANNER" as const),
+      namespace:
+        slot === "logo" ? ("ATHLETES_COMMUNITY_LOGO" as const) : ("ATHLETES_COMMUNITY_BANNER" as const),
       ownerId: athletesCommunityId,
       mediaId,
     };

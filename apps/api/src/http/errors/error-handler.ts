@@ -274,10 +274,7 @@ export const errorHandler: ErrorRequestHandler = (error, _request, response, _ne
     response.status(error.status).json({ error: { code: error.code, message: error.message } });
     return;
   }
-  if (
-    error instanceof CommunityIdentityMediaError ||
-    error instanceof AthletesIdentityMediaError
-  ) {
+  if (error instanceof CommunityIdentityMediaError || error instanceof AthletesIdentityMediaError) {
     response.status(error.status).json({ error: { code: error.code, message: error.message } });
     return;
   }
