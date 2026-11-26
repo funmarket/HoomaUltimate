@@ -185,9 +185,7 @@ export function AthletesPage({
                 <AthletesImage
                   src={item.bannerUrl}
                   fallbackSrc={
-                    item.bannerMediaPath
-                      ? api.athletes.identityMediaUrl(item.id, "banner")
-                      : null
+                    item.bannerMediaPath ? api.athletes.identityMediaUrl(item.id, "banner") : null
                   }
                   className="athletes-banner"
                   alt={`${item.name} banner`}
@@ -195,9 +193,7 @@ export function AthletesPage({
                 <AthletesImage
                   src={item.logoUrl}
                   fallbackSrc={
-                    item.logoMediaPath
-                      ? api.athletes.identityMediaUrl(item.id, "logo")
-                      : null
+                    item.logoMediaPath ? api.athletes.identityMediaUrl(item.id, "logo") : null
                   }
                   className="athletes-logo"
                   alt={`${item.name} logo`}
@@ -360,22 +356,14 @@ function AthletesDetailContent({
         >
           <AthletesImage
             src={detail.bannerUrl}
-            fallbackSrc={
-              detail.bannerMediaPath
-                ? api.athletes.identityMediaUrl(id, "banner")
-                : null
-            }
+            fallbackSrc={detail.bannerMediaPath ? api.athletes.identityMediaUrl(id, "banner") : null}
             className="athletes-banner"
             alt={`${detail.name} banner`}
           />
           <div className="athletes-hero__content">
             <AthletesImage
               src={detail.logoUrl}
-              fallbackSrc={
-                detail.logoMediaPath
-                  ? api.athletes.identityMediaUrl(id, "logo")
-                  : null
-              }
+              fallbackSrc={detail.logoMediaPath ? api.athletes.identityMediaUrl(id, "logo") : null}
               className="athletes-logo"
               alt={`${detail.name} logo`}
             />
@@ -692,9 +680,7 @@ function AthletesImage({
   readonly className: string;
 }) {
   const [failedSources, setFailedSources] = useState<readonly string[]>([]);
-  const sources = [src, fallbackSrc].filter(
-    (candidate): candidate is string => Boolean(candidate),
-  );
+  const sources = [src, fallbackSrc].filter((candidate): candidate is string => Boolean(candidate));
   const activeSrc = sources.find((candidate) => !failedSources.includes(candidate));
   return activeSrc ? (
     <img
