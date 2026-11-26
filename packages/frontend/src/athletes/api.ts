@@ -69,9 +69,7 @@ export function createAthletesApi(transport: HoomaTransport) {
       request<PublicAthletesDetail>(transport, `/api/public/v1/athletes/${encodeURIComponent(id)}`),
     identityMediaUrl: (id: string, slot: "logo" | "banner") => {
       const baseUrl = transport.baseUrl.replace(/\/+$/, "");
-      return (
-        `${baseUrl}/api/public/v1/athletes/${encodeURIComponent(id)}/identity/${slot}/content`
-      );
+      return `${baseUrl}/api/public/v1/athletes/${encodeURIComponent(id)}/identity/${slot}/content`;
     },
     detail: async (id: string) => {
       try {
