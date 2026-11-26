@@ -6,6 +6,7 @@ import { getDatabaseClient } from "@hooma/database";
 import type { ObjectStorage } from "@hooma/storage";
 import { AthletesContentAuthorization } from "../apps/api/src/modules/athletes/application/athletes-content-authorizer.js";
 import { AthletesIdentityMediaService } from "../apps/api/src/modules/athletes/application/athletes-identity-media.service.js";
+import { planAthletesIdentityMasterKey } from "../apps/api/src/modules/athletes/application/athletes-identity-media.repository.js";
 import { PrismaAthletesIdentityMediaRepository } from "../apps/api/src/modules/athletes/infrastructure/prisma-athletes-identity-media.repository.js";
 import { AthletesIdentityImageProcessor } from "../apps/api/src/modules/athletes/infrastructure/athletes-identity-image-processor.js";
 import { PrismaAthletesRepository } from "../apps/api/src/modules/athletes/infrastructure/prisma-athletes.repository.js";
@@ -232,6 +233,134 @@ test("Athletes identity replacement and removal stay isolated by slot", async ()
       objectKey: afterReplacement.bannerObjectKey,
     });
   } finally {
+    await f.cleanup();
+  }
+});
+
+test("Athletes identity writes require an active Founder, not just membership", async () => {
+  const f = await fixture();
+  const member = await db.user.create({ data: {} });
+  let writes = 0;
+  try {
+    await db.athletesMembership.create({
+      data: {
+        athletesCommunityId: f.community.id,
+        userId: member.id,
+        role: "MEMBER",
+      },
+    });
+    const mediaId = randomUUID();
+    const objectKey = planAthletesIdentityMasterKey("staging", f.community.id, mediaId, "logo");
+    await db.athletesCommunity.update({
+      where: { id: f.community.id },
+      data: {
+        logoMediaId: mediaId,
+        logoObjectKey: objectKey,
+        logoContentType: "image/webp",
+        logoSizeBytes: 4,
+      },
+    });
+    const service = new AthletesIdentityMediaService(
+      new AthletesContentAuthorization(f.repository),
+      new PrismaAthletesIdentityMediaRepository(db),
+      {
+        put: async (key: string, body: Uint8Array, contentType: string) => {
+          writes++;
+          return { key, contentType, sizeBytes: body.byteLength };
+        },
+        get: async () => {
+          throw Error("not used");
+        },
+        remove: async () => {
+          throw Error("not used");
+        },
+      } as unknown as ObjectStorage,
+      "staging",
+      new AthletesIdentityImageProcessor(),
+    );
+
+    await assert.rejects(service.upload(member.id, f.community.id, "banner", f.input), {
+      code: "ATHLETES_FOUNDER_REQUIRED",
+    });
+    await assert.rejects(service.removeIdentity(member.id, f.community.id, "logo"), {
+      code: "ATHLETES_FOUNDER_REQUIRED",
+    });
+    assert.equal(writes, 0);
+    assert.equal(await db.outboxEvent.count({ where: { aggregateId: f.community.id } }), 0);
+    assert.equal(
+      (await db.athletesCommunity.findUniqueOrThrow({ where: { id: f.community.id } })).logoMediaId,
+      mediaId,
+    );
+
+    await db.athletesCommunity.update({
+      where: { id: f.community.id },
+      data: { status: "ARCHIVED" },
+    });
+    await assert.rejects(service.upload(f.user.id, f.community.id, "banner", f.input), {
+      code: "ATHLETES_NOT_FOUND",
+    });
+    await assert.rejects(service.removeIdentity(f.user.id, f.community.id, "logo"), {
+      code: "ATHLETES_NOT_FOUND",
+    });
+    assert.equal(writes, 0);
+    assert.equal(await db.outboxEvent.count({ where: { aggregateId: f.community.id } }), 0);
+  } finally {
+    await f.cleanup();
+    await db.user.delete({ where: { id: member.id } });
+  }
+});
+
+test("Athletes upload rechecks Founder authorization after object storage completes", async () => {
+  const f = await fixture();
+  let signalStarted = () => {};
+  let allowCompletion = () => {};
+  const started = new Promise<void>((resolve) => {
+    signalStarted = resolve;
+  });
+  const completion = new Promise<void>((resolve) => {
+    allowCompletion = resolve;
+  });
+  try {
+    const service = new AthletesIdentityMediaService(
+      new AthletesContentAuthorization(f.repository),
+      new PrismaAthletesIdentityMediaRepository(db),
+      {
+        put: async (key: string, body: Uint8Array, contentType: string) => {
+          signalStarted();
+          await completion;
+          return { key, contentType, sizeBytes: body.byteLength };
+        },
+        get: async () => {
+          throw Error("not used");
+        },
+        remove: async () => {
+          throw Error("not used");
+        },
+      } as unknown as ObjectStorage,
+      "staging",
+      new AthletesIdentityImageProcessor(),
+    );
+    const pendingUpload = service.upload(f.user.id, f.community.id, "logo", f.input);
+    await started;
+    await db.athletesMembership.updateMany({
+      where: {
+        athletesCommunityId: f.community.id,
+        userId: f.user.id,
+        role: "FOUNDER",
+        leftAt: null,
+      },
+      data: { role: "MEMBER" },
+    });
+    allowCompletion();
+    await assert.rejects(pendingUpload, { code: "ATHLETES_FOUNDER_REQUIRED" });
+    const current = await db.athletesCommunity.findUniqueOrThrow({
+      where: { id: f.community.id },
+    });
+    assert.equal(current.logoMediaId, null);
+    assert.equal(current.logoObjectKey, null);
+    assert.equal(await db.outboxEvent.count({ where: { aggregateId: f.community.id } }), 1);
+  } finally {
+    allowCompletion();
     await f.cleanup();
   }
 });
