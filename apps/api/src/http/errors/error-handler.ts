@@ -28,6 +28,7 @@ import {
   type PlaceMediaErrorCode,
 } from "../../modules/places/domain/place-media-error.js";
 import { PageBannerError } from "../../modules/page-banner/domain/page-banner-error.js";
+import { CommunityIdentityMediaError } from "../../modules/communities/domain/community-identity-media-error.js";
 import { AppError } from "./app-error.js";
 
 const EVENT_STATUS: Record<EventErrorCode, number> = {
@@ -269,6 +270,10 @@ export const errorHandler: ErrorRequestHandler = (error, _request, response, _ne
     return;
   }
   if (error instanceof PageBannerError) {
+    response.status(error.status).json({ error: { code: error.code, message: error.message } });
+    return;
+  }
+  if (error instanceof CommunityIdentityMediaError) {
     response.status(error.status).json({ error: { code: error.code, message: error.message } });
     return;
   }

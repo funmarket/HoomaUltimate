@@ -3,13 +3,16 @@ import {
   communityMemberAddSchema,
   communityUpdateSchema,
 } from "@hooma/contracts/communities";
-import { Router } from "express";
+import { Buffer } from "node:buffer";
+import { Router, raw } from "express";
 import { z } from "zod";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import { getAuth } from "../../identity/http/auth-request.js";
 import type { CommunityService } from "../application/community.service.js";
+import type { CommunityIdentityMediaService } from "../application/community-identity-media.service.js";
 
 const coachSchema = z.object({ userId: z.string().min(1) });
+const identitySlotSchema = z.enum(["logo", "banner"]);
 
 function definedCommunityFields(parsed: z.infer<typeof communityUpdateSchema>) {
   return {
@@ -23,7 +26,10 @@ function definedCommunityFields(parsed: z.infer<typeof communityUpdateSchema>) {
   };
 }
 
-export function createCommunityPublicRouter(service: CommunityService): Router {
+export function createCommunityPublicRouter(
+  service: CommunityService,
+  media: CommunityIdentityMediaService,
+): Router {
   const router = Router();
   router.get(
     "/",
@@ -38,14 +44,43 @@ export function createCommunityPublicRouter(service: CommunityService): Router {
     }),
   );
   router.get(
+    "/:id/identity/:slot/content",
+    asyncHandler(async (req, res) => {
+      const slot = identitySlotSchema.parse(String(req.params.slot));
+      const content = await media.contentPublic(String(req.params.id), slot);
+      res.setHeader("cache-control", "private, no-store");
+      res.setHeader("cross-origin-resource-policy", "cross-origin");
+      res.setHeader("x-content-type-options", "nosniff");
+      res.type("image/webp").send(Buffer.from(content.body));
+    }),
+  );
+  router.get(
     "/:id",
     asyncHandler(async (req, res) => res.json(await service.getPublic(String(req.params.id)))),
   );
   return router;
 }
 
-export function createCommunityMemberRouter(service: CommunityService): Router {
+export function createCommunityMemberRouter(
+  service: CommunityService,
+  media: CommunityIdentityMediaService,
+): Router {
   const router = Router();
+
+  router.post(
+    "/:id/identity/:slot/upload",
+    raw({ type: "*/*", limit: "5mb" }),
+    asyncHandler(async (req, res) => {
+      const slot = identitySlotSchema.parse(String(req.params.slot));
+      const body = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
+      res.status(201).json(
+        await media.upload(getAuth(req).userId, String(req.params.id), slot, {
+          body,
+          contentType: req.get("content-type") ?? "",
+        }),
+      );
+    }),
+  );
 
   router.post(
     "/:id/join",

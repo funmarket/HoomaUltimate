@@ -33,6 +33,8 @@ import { PitchOwnerService } from "../modules/pitch/application/pitch-owner.serv
 import { PitchModerationService } from "../modules/pitch/application/pitch-moderation.service.js";
 import { PitchSuggestionService } from "../modules/pitch/application/pitch-suggestion.service.js";
 import { PrismaPitchRepository } from "../modules/pitch/infrastructure/prisma-pitch.repository.js";
+import { CommunityIdentityMediaService } from "../modules/communities/application/community-identity-media.service.js";
+import { CommunityIdentityImageProcessor } from "../modules/communities/infrastructure/community-identity-image-processor.js";
 import { CommunityService } from "../modules/communities/application/community.service.js";
 import { PrismaCommunityRepository } from "../modules/communities/infrastructure/prisma-community.repository.js";
 import { AthletesCalendarService } from "../modules/athletes/application/athletes-calendar.service.js";
@@ -250,6 +252,13 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
 
   const communityRepository = new PrismaCommunityRepository(database);
   const communityService = new CommunityService(communityRepository, platformAdminService);
+  const communityIdentityMediaService = new CommunityIdentityMediaService(
+    communityService,
+    communityRepository,
+    storage,
+    mediaStorageScope ?? null,
+    new CommunityIdentityImageProcessor(),
+  );
   const athletesRepository = new PrismaAthletesRepository(database);
   const athletesService = new AthletesService(athletesRepository, userLastSeenReader);
   const athletesHeroService = new AthletesHeroService(storage);
@@ -397,6 +406,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     gearUpProductMediaService,
     gearUpSettingsService,
     communityService,
+    communityIdentityMediaService,
     athletesService,
     athletesHeroService,
     athletesCalendarService,

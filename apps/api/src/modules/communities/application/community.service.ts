@@ -243,6 +243,10 @@ export class CommunityService {
       throw new AppError(403, "COMMUNITY_COACH_REQUIRED", "Founder or Coach access required");
   }
 
+  async assertCanManageIdentityMedia(userId: string, communityId: string): Promise<void> {
+    await this.requireOwnerOrAdmin(communityId, userId);
+  }
+
   private async requireOwnerOrAdmin(communityId: string, userId: string) {
     const lifecycle = await this.repository.lifecycle(communityId);
     if (!lifecycle) throw new AppError(404, "COMMUNITY_NOT_FOUND", "HOOMA community not found");

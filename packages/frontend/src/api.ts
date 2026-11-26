@@ -28,7 +28,7 @@ import type {
   CommunityUpdateInput,
   CommunityVisibility,
 } from "@hooma/contracts/communities";
-import { request, type HoomaTransport } from "./http";
+import { request, requestBinary, type HoomaTransport } from "./http";
 
 export { HoomaApiError, request, requestBinary, requestBlob } from "./http";
 export type { HoomaTransport } from "./http";
@@ -326,6 +326,14 @@ export function createHoomaApi(transport: HoomaTransport) {
     overview: () => request<PlatformAdminOverview>(transport, "/api/v1/admin/overview"),
   };
   const communities = {
+    uploadIdentity: (id: string, slot: "logo" | "banner", file: File) =>
+      requestBinary<{ mediaId: string }>(
+        transport,
+        "/api/v1/communities/" + encodeURIComponent(id) + "/identity/" + slot + "/upload",
+        file,
+        file.type,
+        { method: "POST" },
+      ),
     publicList: () =>
       request<PublicCommunityList>(transport, "/api/public/v1/communities?limit=30"),
     publicDetail: (id: string) =>

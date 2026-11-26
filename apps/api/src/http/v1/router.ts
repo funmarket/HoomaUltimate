@@ -66,7 +66,13 @@ export function createMemberV1Router(container: AppContainer, config: ApiConfig)
       container.gearUpSettingsService,
     ),
   );
-  router.use("/communities", createCommunityMemberRouter(container.communityService));
+  router.use(
+    "/communities",
+    createCommunityMemberRouter(
+      container.communityService,
+      container.communityIdentityMediaService,
+    ),
+  );
   router.use(
     "/athletes",
     createAthletesMemberRouter(

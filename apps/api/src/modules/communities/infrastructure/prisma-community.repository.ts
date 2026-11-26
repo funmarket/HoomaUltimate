@@ -1,4 +1,15 @@
 import type { Prisma, PrismaClient } from "@hooma/database";
+import {
+  COMMUNITY_IDENTITY_MEDIA_RECONCILE_TOPIC,
+  communityIdentityMediaCleanupPayloadSchema,
+} from "@hooma/contracts/communities";
+import type {
+  CommunityIdentityAdoption,
+  CommunityIdentityUploadIntent,
+  CommunityIdentitySlot,
+  CommunityIdentityMediaRepository,
+} from "../application/community-identity-media.repository.js";
+
 import type {
   CommunityCreateRecordInput,
   CommunityRepository,
@@ -26,10 +37,74 @@ function communityUpdateData(
     ...(input.city !== undefined ? { city: input.city } : {}),
     ...(input.houma !== undefined ? { houma: input.houma } : {}),
     ...(input.logoUrl !== undefined ? { logoUrl: input.logoUrl } : {}),
+    ...(input.logoUrl !== undefined
+      ? { logoMediaId: null, logoObjectKey: null, logoContentType: null, logoSizeBytes: null }
+      : {}),
     ...(input.bannerUrl !== undefined ? { bannerUrl: input.bannerUrl } : {}),
+    ...(input.bannerUrl !== undefined
+      ? {
+          bannerMediaId: null,
+          bannerObjectKey: null,
+          bannerContentType: null,
+          bannerSizeBytes: null,
+        }
+      : {}),
     ...(input.visibility !== undefined ? { visibility: input.visibility } : {}),
     ...(input.joinPolicy !== undefined ? { joinPolicy: input.joinPolicy } : {}),
   };
+}
+
+function managedCommunityIdentityPath(communityId: string, slot: CommunityIdentitySlot): string {
+  return `/api/public/v1/communities/${encodeURIComponent(communityId)}/identity/${slot}/content`;
+}
+
+function publicIdentityUrls(row: {
+  readonly id: string;
+  readonly logoUrl: string | null;
+  readonly bannerUrl: string | null;
+  readonly logoMediaId: string | null;
+  readonly bannerMediaId: string | null;
+}) {
+  return {
+    logoUrl: row.logoMediaId ? managedCommunityIdentityPath(row.id, "logo") : row.logoUrl,
+    bannerUrl: row.bannerMediaId ? managedCommunityIdentityPath(row.id, "banner") : row.bannerUrl,
+  };
+}
+
+const COMMUNITY_PRIVATE_MEDIA_FIELDS = new Set([
+  "logoMediaId",
+  "logoObjectKey",
+  "logoContentType",
+  "logoSizeBytes",
+  "bannerMediaId",
+  "bannerObjectKey",
+  "bannerContentType",
+  "bannerSizeBytes",
+]);
+
+function publicCommunityView<
+  T extends {
+    readonly id: string;
+    readonly logoUrl: string | null;
+    readonly bannerUrl: string | null;
+    readonly logoMediaId: string | null;
+    readonly bannerMediaId: string | null;
+  },
+>(row: T) {
+  const publicRecord = Object.fromEntries(
+    Object.entries(row).filter(([key]) => !COMMUNITY_PRIVATE_MEDIA_FIELDS.has(key)),
+  ) as Omit<
+    T,
+    | "logoMediaId"
+    | "logoObjectKey"
+    | "logoContentType"
+    | "logoSizeBytes"
+    | "bannerMediaId"
+    | "bannerObjectKey"
+    | "bannerContentType"
+    | "bannerSizeBytes"
+  >;
+  return { ...publicRecord, ...publicIdentityUrls(row) };
 }
 
 const joinRequestSelect = {
@@ -41,8 +116,115 @@ const joinRequestSelect = {
   resolvedAt: true,
 } satisfies Prisma.CommunityJoinRequestSelect;
 
-export class PrismaCommunityRepository implements CommunityRepository {
+export class PrismaCommunityRepository
+  implements CommunityRepository, CommunityIdentityMediaRepository
+{
   constructor(private readonly db: PrismaClient) {}
+
+  async prepareIdentityUpload(input: CommunityIdentityUploadIntent): Promise<void> {
+    await this.db.outboxEvent.create({
+      data: {
+        id: input.mediaId,
+        topic: COMMUNITY_IDENTITY_MEDIA_RECONCILE_TOPIC,
+        aggregateType: "CommunityIdentityMedia",
+        aggregateId: input.communityId,
+        payload: {
+          communityId: input.communityId,
+          mediaId: input.mediaId,
+          slot: input.slot,
+          objectKey: input.objectKey,
+        },
+        availableAt: new Date(Date.now() + 60 * 60 * 1000),
+      },
+    });
+  }
+
+  async adoptPreparedIdentity(input: CommunityIdentityAdoption): Promise<void> {
+    await this.db.$transaction(async (tx) => {
+      const locked = await tx.$queryRaw<Array<{ id: string }>>`
+        SELECT "id" FROM "Community" WHERE "id" = ${input.communityId} FOR UPDATE
+      `;
+      if (locked.length !== 1) throw new Error("HOOMA community no longer exists");
+      const now = new Date();
+      const intent = await tx.outboxEvent.findUnique({ where: { id: input.mediaId } });
+      if (
+        !intent ||
+        intent.topic !== COMMUNITY_IDENTITY_MEDIA_RECONCILE_TOPIC ||
+        intent.aggregateType !== "CommunityIdentityMedia" ||
+        intent.aggregateId !== input.communityId ||
+        intent.status !== "PENDING" ||
+        intent.claimedAt !== null ||
+        intent.availableAt <= now
+      ) {
+        throw new Error("HOOMA identity upload preparation is missing or expired");
+      }
+      const payload = communityIdentityMediaCleanupPayloadSchema.parse(intent.payload);
+      if (
+        payload.communityId !== input.communityId ||
+        payload.mediaId !== input.mediaId ||
+        payload.slot !== input.slot ||
+        payload.objectKey !== input.objectKey
+      ) {
+        throw new Error("HOOMA identity upload prepared key does not match");
+      }
+      const current = await tx.community.findUniqueOrThrow({
+        where: { id: input.communityId },
+        select: {
+          logoMediaId: true,
+          logoObjectKey: true,
+          bannerMediaId: true,
+          bannerObjectKey: true,
+        },
+      });
+      const consumed = await tx.outboxEvent.deleteMany({
+        where: {
+          id: input.mediaId,
+          topic: COMMUNITY_IDENTITY_MEDIA_RECONCILE_TOPIC,
+          aggregateId: input.communityId,
+          status: "PENDING",
+          claimedAt: null,
+          availableAt: { gt: now },
+        },
+      });
+      if (consumed.count !== 1) throw new Error("HOOMA identity upload was already claimed");
+      const newMedia = {
+        ...(input.slot === "logo"
+          ? {
+              logoUrl: null,
+              logoMediaId: input.mediaId,
+              logoObjectKey: input.objectKey,
+              logoContentType: input.contentType,
+              logoSizeBytes: input.sizeBytes,
+            }
+          : {
+              bannerUrl: null,
+              bannerMediaId: input.mediaId,
+              bannerObjectKey: input.objectKey,
+              bannerContentType: input.contentType,
+              bannerSizeBytes: input.sizeBytes,
+            }),
+      };
+      await tx.community.update({ where: { id: input.communityId }, data: newMedia });
+      const oldMediaId = input.slot === "logo" ? current.logoMediaId : current.bannerMediaId;
+      const oldObjectKey = input.slot === "logo" ? current.logoObjectKey : current.bannerObjectKey;
+      if (oldMediaId && oldObjectKey && oldMediaId !== input.mediaId) {
+        await tx.outboxEvent.create({
+          data: {
+            id: oldMediaId,
+            topic: COMMUNITY_IDENTITY_MEDIA_RECONCILE_TOPIC,
+            aggregateType: "CommunityIdentityMedia",
+            aggregateId: input.communityId,
+            payload: {
+              communityId: input.communityId,
+              mediaId: oldMediaId,
+              slot: input.slot,
+              objectKey: oldObjectKey,
+            },
+          },
+        });
+      }
+    });
+  }
 
   async listPublic(limit: number, cursor?: string) {
     const rows = await this.db.community.findMany({
@@ -59,18 +241,20 @@ export class PrismaCommunityRepository implements CommunityRepository {
         houma: true,
         logoUrl: true,
         bannerUrl: true,
+        logoMediaId: true,
+        bannerMediaId: true,
         visibility: true,
         createdAt: true,
       },
     });
     return {
-      items: rows.slice(0, limit),
+      items: rows.slice(0, limit).map(publicCommunityView),
       nextCursor: rows.length > limit ? (rows[limit - 1]?.id ?? null) : null,
     };
   }
 
-  getPublic(id: string) {
-    return this.db.community.findFirst({
+  async getPublic(id: string) {
+    const row = await this.db.community.findFirst({
       where: { id, status: "ACTIVE" },
       select: {
         id: true,
@@ -81,6 +265,8 @@ export class PrismaCommunityRepository implements CommunityRepository {
         houma: true,
         logoUrl: true,
         bannerUrl: true,
+        logoMediaId: true,
+        bannerMediaId: true,
         visibility: true,
         _count: {
           select: {
@@ -90,6 +276,37 @@ export class PrismaCommunityRepository implements CommunityRepository {
         },
       },
     });
+    if (!row) return null;
+    return publicCommunityView(row);
+  }
+
+  async readPublicIdentityMedia(communityId: string, slot: CommunityIdentitySlot) {
+    const row = await this.db.community.findFirst({
+      where: { id: communityId, status: "ACTIVE" },
+      select: {
+        logoUrl: true,
+        logoMediaId: true,
+        logoObjectKey: true,
+        logoContentType: true,
+        logoSizeBytes: true,
+        bannerUrl: true,
+        bannerMediaId: true,
+        bannerObjectKey: true,
+        bannerContentType: true,
+        bannerSizeBytes: true,
+      },
+    });
+    if (!row) return null;
+    const mediaId = slot === "logo" ? row.logoMediaId : row.bannerMediaId;
+    const objectKey = slot === "logo" ? row.logoObjectKey : row.bannerObjectKey;
+    const contentType = slot === "logo" ? row.logoContentType : row.bannerContentType;
+    const sizeBytes = slot === "logo" ? row.logoSizeBytes : row.bannerSizeBytes;
+    const externalUrl = slot === "logo" ? row.logoUrl : row.bannerUrl;
+    if (externalUrl !== null || !mediaId || !objectKey || contentType !== "image/webp") {
+      return null;
+    }
+    if (!sizeBytes || sizeBytes <= 0) return null;
+    return { mediaId, objectKey, contentType: "image/webp" as const, sizeBytes };
   }
 
   async create(userId: string, input: CommunityCreateRecordInput) {
@@ -116,7 +333,7 @@ export class PrismaCommunityRepository implements CommunityRepository {
       await tx.communityMembership.create({
         data: { communityId: community.id, userId, role: "FOUNDER" },
       });
-      return community;
+      return publicCommunityView(community);
     });
   }
 
@@ -152,10 +369,44 @@ export class PrismaCommunityRepository implements CommunityRepository {
 
   async update(communityId: string, input: CommunityUpdateRecordInput) {
     return this.db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "Community" WHERE "id" = ${communityId} FOR UPDATE`;
+      const previous = await tx.community.findUniqueOrThrow({
+        where: { id: communityId },
+        select: {
+          logoMediaId: true,
+          logoObjectKey: true,
+          bannerMediaId: true,
+          bannerObjectKey: true,
+        },
+      });
       const community = await tx.community.update({
         where: { id: communityId },
         data: communityUpdateData(input),
       });
+      for (const old of [
+        input.logoUrl !== undefined
+          ? { slot: "logo", mediaId: previous.logoMediaId, objectKey: previous.logoObjectKey }
+          : null,
+        input.bannerUrl !== undefined
+          ? { slot: "banner", mediaId: previous.bannerMediaId, objectKey: previous.bannerObjectKey }
+          : null,
+      ] as const) {
+        if (!old?.mediaId || !old.objectKey) continue;
+        await tx.outboxEvent.create({
+          data: {
+            id: old.mediaId,
+            topic: COMMUNITY_IDENTITY_MEDIA_RECONCILE_TOPIC,
+            aggregateType: "CommunityIdentityMedia",
+            aggregateId: communityId,
+            payload: {
+              communityId,
+              mediaId: old.mediaId,
+              slot: old.slot,
+              objectKey: old.objectKey,
+            },
+          },
+        });
+      }
       if (input.joinPolicy === "OPEN") {
         const now = new Date();
         await tx.communityJoinRequest.updateMany({
@@ -163,7 +414,7 @@ export class PrismaCommunityRepository implements CommunityRepository {
           data: { status: "CANCELLED", resolvedAt: now, resolvedByUserId: null },
         });
       }
-      return community;
+      return publicCommunityView(community);
     });
   }
 
