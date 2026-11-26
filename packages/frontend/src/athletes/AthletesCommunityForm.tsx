@@ -20,6 +20,7 @@ export function AthletesCommunityForm({
   const [joinPolicy, setJoinPolicy] = useState<"OPEN" | "APPROVAL_REQUIRED">(
     community?.joinPolicy ?? "OPEN",
   );
+  const savedId = useRef(community?.id);
   const submitting = useRef(false);
   const mounted = useRef(true);
   useEffect(() => {
@@ -39,6 +40,19 @@ export function AthletesCommunityForm({
     setCreating(true);
     setError("");
     try {
+      const files = (["logo", "banner"] as const).flatMap((slot) => {
+        const file = data.get(slot + "File");
+        return file instanceof File && file.name ? [{ slot, file }] : [];
+      });
+      for (const { file } of files) {
+        if (
+          !["image/jpeg", "image/png", "image/webp"].includes(file.type) ||
+          !file.size ||
+          file.size > 5 * 1024 * 1024
+        ) {
+          throw new Error("Choose a nonempty JPEG, PNG or WebP image up to 5 MiB.");
+        }
+      }
       const input = {
         name: String(data.get("name")).trim(),
         sport,
@@ -46,13 +60,19 @@ export function AthletesCommunityForm({
         city: String(data.get("city")).trim() || null,
         houma: String(data.get("houma")).trim() || null,
         logoUrl: String(data.get("logoUrl")).trim() || null,
-        bannerUrl: String(data.get("bannerUrl")).trim() || null,
+        ...(files.some(({ slot }) => slot === "banner")
+          ? {}
+          : { bannerUrl: String(data.get("bannerUrl")).trim() || null }),
         visibility,
         joinPolicy: visibility === "PRIVATE" ? "APPROVAL_REQUIRED" : joinPolicy,
       };
-      const saved = community
-        ? await api.athletes.update(community.id, input)
+      const saved = savedId.current
+        ? await api.athletes.update(savedId.current, input)
         : await api.athletes.create(input);
+      savedId.current = saved.id;
+      for (const { slot, file } of files) {
+        await api.athletes.uploadIdentity(saved.id, slot, file);
+      }
       if (mounted.current) onSaved(saved.id);
     } catch (reason) {
       if (mounted.current) setError(protectedError(reason, "Unable to save Athletes community"));
@@ -171,6 +191,24 @@ export function AthletesCommunityForm({
                 type="url"
                 maxLength={2000}
                 placeholder="https://…"
+              />
+            </label>
+            <label className="athletes-field">
+              <span>Upload logo (JPEG, PNG or WebP; max 5 MiB)</span>
+              <input
+                name="logoFile"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                disabled={creating}
+              />
+            </label>
+            <label className="athletes-field athletes-span-2">
+              <span>Upload banner (JPEG, PNG or WebP; max 5 MiB)</span>
+              <input
+                name="bannerFile"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                disabled={creating}
               />
             </label>
             <label className="athletes-field athletes-span-2">
