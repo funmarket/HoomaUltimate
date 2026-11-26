@@ -356,7 +356,9 @@ function AthletesDetailContent({
         >
           <AthletesImage
             src={detail.bannerUrl}
-            fallbackSrc={detail.bannerMediaPath ? api.athletes.identityMediaUrl(id, "banner") : null}
+            fallbackSrc={
+              detail.bannerMediaPath ? api.athletes.identityMediaUrl(id, "banner") : null
+            }
             className="athletes-banner"
             alt={`${detail.name} banner`}
           />
