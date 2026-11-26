@@ -40,6 +40,9 @@ import { PrismaCommunityRepository } from "../modules/communities/infrastructure
 import { AthletesCalendarService } from "../modules/athletes/application/athletes-calendar.service.js";
 import { AthletesHeroService } from "../modules/athletes/application/athletes-hero.service.js";
 import { AthletesPhotoService } from "../modules/athletes/application/athletes-photo.service.js";
+import { AthletesIdentityMediaService } from "../modules/athletes/application/athletes-identity-media.service.js";
+import { AthletesIdentityImageProcessor } from "../modules/athletes/infrastructure/athletes-identity-image-processor.js";
+import { PrismaAthletesIdentityMediaRepository } from "../modules/athletes/infrastructure/prisma-athletes-identity-media.repository.js";
 import { AthletesService } from "../modules/athletes/application/athletes.service.js";
 import { PrismaAthletesCalendarRepository } from "../modules/athletes/infrastructure/prisma-athletes-calendar.repository.js";
 import { PrismaAthletesPhotoRepository } from "../modules/athletes/infrastructure/prisma-athletes-photo.repository.js";
@@ -261,6 +264,13 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
   );
   const athletesRepository = new PrismaAthletesRepository(database);
   const athletesService = new AthletesService(athletesRepository, userLastSeenReader);
+  const athletesIdentityMediaService = new AthletesIdentityMediaService(
+    athletesService,
+    new PrismaAthletesIdentityMediaRepository(database),
+    storage,
+    mediaStorageScope ?? null,
+    new AthletesIdentityImageProcessor(),
+  );
   const athletesHeroService = new AthletesHeroService(storage);
   const athletesCalendarRepository = new PrismaAthletesCalendarRepository(database);
   const athletesCalendarService = new AthletesCalendarService(
@@ -409,6 +419,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     communityIdentityMediaService,
     athletesService,
     athletesHeroService,
+    athletesIdentityMediaService,
     athletesCalendarService,
     athletesPhotoService,
     teamService,

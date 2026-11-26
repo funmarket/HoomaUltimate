@@ -14,6 +14,8 @@ import {
   athletesPhotoListQuerySchema,
 } from "@hooma/contracts/athletes";
 import { Router, raw } from "express";
+import { z } from "zod";
+import type { AthletesIdentityMediaService } from "../application/athletes-identity-media.service.js";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import { getAuth } from "../../identity/http/auth-request.js";
 import type { AthletesCalendarService } from "../application/athletes-calendar.service.js";
@@ -59,8 +61,25 @@ export function createAthletesMemberRouter(
   service: AthletesService,
   photoService: AthletesPhotoService,
   calendarService: AthletesCalendarService,
+  identityMedia?: AthletesIdentityMediaService,
 ): Router {
   const router = Router();
+  if (identityMedia) {
+    router.post(
+      "/:id/identity/:slot/upload",
+      raw({ type: "*/*", limit: "5mb" }),
+      asyncHandler(async (req, res) => {
+        const slot = z.enum(["logo", "banner"]).parse(String(req.params.slot));
+        const body = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
+        res.status(201).json(
+          await identityMedia.upload(getAuth(req).userId, String(req.params.id), slot, {
+            body,
+            contentType: req.get("content-type") ?? "",
+          }),
+        );
+      }),
+    );
+  }
   router.post(
     "/",
     asyncHandler(async (req, res) => {

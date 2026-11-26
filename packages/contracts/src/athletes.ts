@@ -1,5 +1,13 @@
 import { z } from "zod";
 
+export const ATHLETES_IDENTITY_MEDIA_RECONCILE_TOPIC = "athletes.identity-media.reconcile-object";
+export const athletesIdentityMediaCleanupPayloadSchema = z.object({
+  athletesCommunityId: z.string().min(1),
+  mediaId: z.string().min(1),
+  slot: z.enum(["logo", "banner"]),
+  objectKey: z.string().min(1),
+});
+
 export const ATHLETES_SPORTS = [
   "CYCLING",
   "RUNNING",
