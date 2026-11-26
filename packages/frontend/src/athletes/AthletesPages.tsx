@@ -356,12 +356,18 @@ function AthletesDetailContent({
         >
           <AthletesImage
             src={detail.bannerUrl}
+            fallbackSrc={
+              detail.bannerMediaPath ? api.athletes.identityMediaUrl(id, "banner") : null
+            }
             className="athletes-banner"
             alt={`${detail.name} banner`}
           />
           <div className="athletes-hero__content">
             <AthletesImage
               src={detail.logoUrl}
+              fallbackSrc={
+                detail.logoMediaPath ? api.athletes.identityMediaUrl(id, "logo") : null
+              }
               className="athletes-logo"
               alt={`${detail.name} logo`}
             />
