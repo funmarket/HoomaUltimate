@@ -144,12 +144,11 @@ export class AthletesIdentityMediaService {
     }
     const mediaId = randomUUID();
     const objectKey = planAthletesIdentityMasterKey(this.scope, athletesCommunityId, mediaId, slot);
+    const namespace =
+      slot === "logo" ? "ATHLETES_COMMUNITY_LOGO" : "ATHLETES_COMMUNITY_BANNER";
     const identity = {
       scope: this.scope,
-      namespace:
-        slot === "logo"
-          ? ("ATHLETES_COMMUNITY_LOGO" as const)
-          : ("ATHLETES_COMMUNITY_BANNER" as const),
+      namespace,
       ownerId: athletesCommunityId,
       mediaId,
     };
