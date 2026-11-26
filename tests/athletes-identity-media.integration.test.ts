@@ -32,3 +32,65 @@ test("Athletes identity supports independent managed logo and banner without los
     await db.user.delete({ where: { id: user.id } });
   }
 });
+
+test("Athletes external identity replacement retires only the replaced managed slot", async () => {
+  const user = await db.user.create({ data: {} });
+  const repository = new PrismaAthletesRepository(db);
+  try {
+    const community = await repository.createWithFounder(user.id, {
+      name: `Identity replacement ${randomUUID()}`,
+      sport: "RUNNING",
+      visibility: "PUBLIC",
+      joinPolicy: "OPEN",
+    });
+    const logoMediaId = randomUUID();
+    const bannerMediaId = randomUUID();
+    const logoObjectKey = `staging/media/v1/athletes-community-logo/${community.id}/${logoMediaId}/master.webp`;
+    const bannerObjectKey = `staging/media/v1/athletes-community-banner/${community.id}/${bannerMediaId}/master.webp`;
+    await db.athletesCommunity.update({
+      where: { id: community.id },
+      data: {
+        logoMediaId,
+        logoObjectKey,
+        logoContentType: "image/webp",
+        logoSizeBytes: 4,
+        bannerMediaId,
+        bannerObjectKey,
+        bannerContentType: "image/webp",
+        bannerSizeBytes: 4,
+      },
+    });
+    await repository.withCommunityLock(community.id, (locked) =>
+      locked.update(community.id, { logoUrl: "https://example.org/new.png" }),
+    );
+    const current = await db.athletesCommunity.findUniqueOrThrow({
+      where: { id: community.id },
+    });
+    assert.equal(current.logoUrl, "https://example.org/new.png");
+    assert.equal(current.logoMediaId, null);
+    assert.equal(current.logoObjectKey, null);
+    assert.equal(current.logoContentType, null);
+    assert.equal(current.logoSizeBytes, null);
+    assert.equal(current.bannerMediaId, bannerMediaId);
+    assert.equal(current.bannerObjectKey, bannerObjectKey);
+    const intent = await db.outboxEvent.findUniqueOrThrow({ where: { id: logoMediaId } });
+    assert.equal(intent.topic, "athletes.identity-media.reconcile-object");
+    assert.deepEqual(intent.payload, {
+      athletesCommunityId: community.id,
+      mediaId: logoMediaId,
+      slot: "logo",
+      objectKey: logoObjectKey,
+    });
+    assert.equal(await db.outboxEvent.count({ where: { id: bannerMediaId } }), 0);
+  } finally {
+    const communities = await db.athletesCommunity.findMany({
+      where: { createdByUserId: user.id },
+      select: { id: true },
+    });
+    await db.outboxEvent.deleteMany({
+      where: { aggregateId: { in: communities.map((community) => community.id) } },
+    });
+    await db.athletesCommunity.deleteMany({ where: { createdByUserId: user.id } });
+    await db.user.delete({ where: { id: user.id } });
+  }
+});
