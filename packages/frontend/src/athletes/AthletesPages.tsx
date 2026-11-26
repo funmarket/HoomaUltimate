@@ -684,7 +684,9 @@ function AthletesImage({
   readonly className: string;
 }) {
   const [failedSources, setFailedSources] = useState<readonly string[]>([]);
-  const sources = [src, fallbackSrc].filter((candidate): candidate is string => Boolean(candidate));
+  const sources = [src, fallbackSrc].filter(
+    (candidate): candidate is string => Boolean(candidate),
+  );
   const activeSrc = sources.find((candidate) => !failedSources.includes(candidate));
   return activeSrc ? (
     <img
