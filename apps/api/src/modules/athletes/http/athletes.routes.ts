@@ -26,6 +26,7 @@ import type { AthletesService } from "../application/athletes.service.js";
 export function createAthletesPublicRouter(
   service: AthletesService,
   heroService: AthletesHeroService,
+  identityMedia?: AthletesIdentityMediaService,
 ): Router {
   const router = Router();
   router.get(
@@ -35,6 +36,19 @@ export function createAthletesPublicRouter(
       res.json(await heroService.delivery());
     }),
   );
+  if (identityMedia) {
+    router.get(
+      "/:id/identity/:slot/content",
+      asyncHandler(async (req, res) => {
+        const slot = z.enum(["logo", "banner"]).parse(String(req.params.slot));
+        const content = await identityMedia.contentPublic(String(req.params.id), slot);
+        res.setHeader("cache-control", "private, no-store");
+        res.setHeader("cross-origin-resource-policy", "cross-origin");
+        res.setHeader("x-content-type-options", "nosniff");
+        res.type(content.contentType).send(Buffer.from(content.body));
+      }),
+    );
+  }
   router.get(
     "/",
     asyncHandler(async (req, res) => {

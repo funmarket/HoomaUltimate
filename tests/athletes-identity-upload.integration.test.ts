@@ -1,11 +1,15 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import type { Server } from "node:http";
 import test from "node:test";
+import express from "express";
 import sharp from "sharp";
 import { getDatabaseClient } from "@hooma/database";
 import type { ObjectStorage } from "@hooma/storage";
 import { AthletesContentAuthorization } from "../apps/api/src/modules/athletes/application/athletes-content-authorizer.js";
 import { AthletesIdentityMediaService } from "../apps/api/src/modules/athletes/application/athletes-identity-media.service.js";
+import { AthletesHeroService } from "../apps/api/src/modules/athletes/application/athletes-hero.service.js";
+import { createAthletesPublicRouter } from "../apps/api/src/modules/athletes/http/athletes.routes.js";
 import { AthletesService } from "../apps/api/src/modules/athletes/application/athletes.service.js";
 import { planAthletesIdentityMasterKey } from "../apps/api/src/modules/athletes/application/athletes-identity-media.repository.js";
 import { PrismaAthletesIdentityMediaRepository } from "../apps/api/src/modules/athletes/infrastructure/prisma-athletes-identity-media.repository.js";
@@ -427,6 +431,103 @@ test("Archiving blocks an in-flight identity replacement and preserves the curre
     });
   } finally {
     allowCompletion();
+    await f.cleanup();
+  }
+});
+
+test("Public Athletes identity delivery serves only the validated WebP image bytes", async () => {
+  const f = await fixture();
+  const objects = new Map<string, { body: Uint8Array; contentType: string; sizeBytes: number }>();
+  let server: Server | null = null;
+  try {
+    const athletes = new AthletesService(f.repository, {
+      findLastSeenByUserIds: async () => new Map<string, Date | null>(),
+    });
+    const storage = {
+      put: async (key: string, body: Uint8Array, contentType: string) => {
+        const stored = { body: new Uint8Array(body), contentType, sizeBytes: body.byteLength };
+        objects.set(key, stored);
+        return { key, contentType, sizeBytes: stored.sizeBytes };
+      },
+      get: async (key: string) => {
+        const stored = objects.get(key);
+        if (!stored) throw Error("object not found");
+        return stored;
+      },
+      remove: async (key: string) => {
+        objects.delete(key);
+      },
+    };
+    const media = new AthletesIdentityMediaService(
+      new AthletesContentAuthorization(f.repository),
+      new PrismaAthletesIdentityMediaRepository(db),
+      storage as unknown as ObjectStorage,
+      "staging",
+      new AthletesIdentityImageProcessor(),
+    );
+    await media.upload(f.user.id, f.community.id, "logo", f.input);
+    const storedKey = (
+      await db.athletesCommunity.findUniqueOrThrow({
+        where: { id: f.community.id },
+      })
+    ).logoObjectKey;
+    assert.ok(storedKey);
+    const stored = objects.get(storedKey);
+    assert.ok(stored);
+
+    const app = express();
+    app.use(
+      "/api/public/v1/athletes",
+      createAthletesPublicRouter(athletes, new AthletesHeroService(null), media),
+    );
+    const serverInstance = app.listen(0, "127.0.0.1");
+    server = serverInstance;
+    await new Promise<void>((resolve) => serverInstance.once("listening", resolve));
+    const address = serverInstance.address();
+    assert.ok(address && typeof address === "object");
+    const response = await fetch(
+      "http://127.0.0.1:" +
+        address.port +
+        "/api/public/v1/athletes/" +
+        f.community.id +
+        "/identity/logo/content",
+    );
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("content-type") ?? "", /^image\/webp/);
+    assert.equal(response.headers.get("cache-control"), "private, no-store");
+    assert.equal(response.headers.get("cross-origin-resource-policy"), "cross-origin");
+    assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+    const body = new Uint8Array(await response.arrayBuffer());
+    assert.deepEqual(body, stored.body);
+    assert.equal(body.byteLength, stored.sizeBytes);
+    assert.equal((await sharp(body).metadata()).format, "webp");
+
+    await db.athletesCommunity.update({
+      where: { id: f.community.id },
+      data: { logoObjectKey: storedKey + "-wrong" },
+    });
+    await assert.rejects(media.contentPublic(f.community.id, "logo"), {
+      status: 404,
+      code: "ATHLETES_IDENTITY_MEDIA_NOT_FOUND",
+    });
+    await db.athletesCommunity.update({
+      where: { id: f.community.id },
+      data: { logoObjectKey: storedKey },
+    });
+    await db.athletesCommunity.update({
+      where: { id: f.community.id },
+      data: { logoSizeBytes: stored.sizeBytes + 1 },
+    });
+    await assert.rejects(media.contentPublic(f.community.id, "logo"), {
+      status: 503,
+      code: "ATHLETES_IDENTITY_MEDIA_UNAVAILABLE",
+    });
+  } finally {
+    if (server) {
+      await new Promise<void>((resolve, reject) =>
+        server?.close((error) => (error ? reject(error) : resolve())),
+      );
+    }
     await f.cleanup();
   }
 });
