@@ -33,7 +33,10 @@ export function createAthletesIdentityMediaCleanupHandler(
     try {
       expected = buildMediaObjectKey({
         scope,
-        namespace: payload.slot === "logo" ? "ATHLETES_COMMUNITY_LOGO" : "ATHLETES_COMMUNITY_BANNER",
+        namespace:
+          payload.slot === "logo"
+            ? "ATHLETES_COMMUNITY_LOGO"
+            : "ATHLETES_COMMUNITY_BANNER",
         ownerId: payload.athletesCommunityId,
         mediaId: payload.mediaId,
         variant: "master",
