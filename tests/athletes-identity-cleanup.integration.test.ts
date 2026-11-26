@@ -60,7 +60,7 @@ for (const slot of ["logo", "banner"] as const) {
       });
       const handler = createAthletesIdentityMediaCleanupHandler(
         db,
-        { remove: async (key) => removed.push(key) },
+        { remove: async (key) => { removed.push(key); } },
         scope,
       );
       const event = { id: payload.mediaId, topic, payload };
@@ -88,7 +88,7 @@ test("identity cleanup rejects bad metadata without deleting", async () => {
   try {
     const handler = createAthletesIdentityMediaCleanupHandler(
       db,
-      { remove: async (key) => removed.push(key) },
+      { remove: async (key) => { removed.push(key); } },
       scope,
     );
     const original = validPayload(f.community.id, "logo");
