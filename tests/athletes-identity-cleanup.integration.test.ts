@@ -37,9 +37,7 @@ function validPayload(athletesCommunityId: string, slot: "logo" | "banner") {
   const objectKey = buildMediaObjectKey({
     scope,
     namespace:
-      slot === "logo"
-        ? "ATHLETES_COMMUNITY_LOGO"
-        : "ATHLETES_COMMUNITY_BANNER",
+      slot === "logo" ? "ATHLETES_COMMUNITY_LOGO" : "ATHLETES_COMMUNITY_BANNER",
     ownerId: athletesCommunityId,
     mediaId,
     variant: "master",
