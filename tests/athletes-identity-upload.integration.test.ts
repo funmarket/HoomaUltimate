@@ -129,3 +129,109 @@ test("Athletes upload rejects unsupported and empty input before preparing stora
     await f.cleanup();
   }
 });
+
+test("Athletes identity replacement and removal stay isolated by slot", async () => {
+  const f = await fixture();
+  try {
+    const storage = {
+      put: async (key: string, body: Uint8Array, contentType: string) => ({
+        key,
+        contentType,
+        sizeBytes: body.byteLength,
+      }),
+      get: async () => {
+        throw Error("not used by upload test");
+      },
+      remove: async () => {
+        throw Error("cleanup is deferred to the worker");
+      },
+    };
+    const service = new AthletesIdentityMediaService(
+      new AthletesContentAuthorization(f.repository),
+      new PrismaAthletesIdentityMediaRepository(db),
+      storage as unknown as ObjectStorage,
+      "staging",
+      new AthletesIdentityImageProcessor(),
+    );
+    await f.repository.update(f.community.id, { logoUrl: "https://example.org/logo.png" });
+    const firstLogo = await service.upload(f.user.id, f.community.id, "logo", f.input);
+    const firstBanner = await service.upload(f.user.id, f.community.id, "banner", f.input);
+    const replacementLogo = await service.upload(f.user.id, f.community.id, "logo", f.input);
+    const replacementBanner = await service.upload(f.user.id, f.community.id, "banner", f.input);
+    const afterReplacement = await db.athletesCommunity.findUniqueOrThrow({
+      where: { id: f.community.id },
+    });
+    assert.equal(afterReplacement.logoMediaId, replacementLogo.mediaId);
+    assert.equal(afterReplacement.bannerMediaId, replacementBanner.mediaId);
+    assert.equal(afterReplacement.bannerUrl, null);
+    assert.equal(afterReplacement.logoUrl, "https://example.org/logo.png");
+    await db.athletesCommunity.update({
+      where: { id: f.community.id },
+      data: { logoObjectKey: afterReplacement.logoObjectKey + "-wrong" },
+    });
+    await assert.rejects(service.removeIdentity(f.user.id, f.community.id, "logo"), {
+      code: "ATHLETES_CONFLICT",
+    });
+    assert.equal(await db.outboxEvent.count({ where: { id: replacementLogo.mediaId } }), 0);
+    await db.athletesCommunity.update({
+      where: { id: f.community.id },
+      data: { logoObjectKey: afterReplacement.logoObjectKey },
+    });
+    const oldLogoCleanup = await db.outboxEvent.findUniqueOrThrow({
+      where: { id: firstLogo.mediaId },
+    });
+    assert.equal(oldLogoCleanup.topic, topic);
+    assert.equal((oldLogoCleanup.payload as { slot: string }).slot, "logo");
+    const oldBannerCleanup = await db.outboxEvent.findUniqueOrThrow({
+      where: { id: firstBanner.mediaId },
+    });
+    assert.equal((oldBannerCleanup.payload as { slot: string }).slot, "banner");
+
+    assert.deepEqual(await service.removeIdentity(f.user.id, f.community.id, "logo"), {
+      removed: true,
+    });
+    const afterLogoRemoval = await db.athletesCommunity.findUniqueOrThrow({
+      where: { id: f.community.id },
+    });
+    assert.equal(afterLogoRemoval.logoMediaId, null);
+    assert.equal(afterLogoRemoval.logoObjectKey, null);
+    assert.equal(afterLogoRemoval.logoContentType, null);
+    assert.equal(afterLogoRemoval.logoSizeBytes, null);
+    assert.equal(afterLogoRemoval.bannerMediaId, replacementBanner.mediaId);
+    assert.equal(afterLogoRemoval.bannerObjectKey, afterReplacement.bannerObjectKey);
+    assert.equal(afterLogoRemoval.logoUrl, "https://example.org/logo.png");
+    const removedLogoCleanup = await db.outboxEvent.findUniqueOrThrow({
+      where: { id: replacementLogo.mediaId },
+    });
+    assert.equal(removedLogoCleanup.topic, topic);
+    assert.deepEqual(removedLogoCleanup.payload, {
+      athletesCommunityId: f.community.id,
+      mediaId: replacementLogo.mediaId,
+      slot: "logo",
+      objectKey: afterReplacement.logoObjectKey,
+    });
+    assert.deepEqual(await service.removeIdentity(f.user.id, f.community.id, "banner"), {
+      removed: true,
+    });
+    assert.deepEqual(await service.removeIdentity(f.user.id, f.community.id, "banner"), {
+      removed: false,
+    });
+    const final = await db.athletesCommunity.findUniqueOrThrow({
+      where: { id: f.community.id },
+    });
+    assert.equal(final.logoMediaId, null);
+    assert.equal(final.bannerMediaId, null);
+    assert.equal(final.logoUrl, "https://example.org/logo.png");
+    const removedBannerCleanup = await db.outboxEvent.findUniqueOrThrow({
+      where: { id: replacementBanner.mediaId },
+    });
+    assert.deepEqual(removedBannerCleanup.payload, {
+      athletesCommunityId: f.community.id,
+      mediaId: replacementBanner.mediaId,
+      slot: "banner",
+      objectKey: afterReplacement.bannerObjectKey,
+    });
+  } finally {
+    await f.cleanup();
+  }
+});

@@ -29,6 +29,8 @@ export function AthletesCommunityForm({
     community?.bannerUrl ? "external" : "none",
   );
   const [bannerUrl, setBannerUrl] = useState(community?.bannerUrl ?? "");
+  const [removeLogoManaged, setRemoveLogoManaged] = useState(false);
+  const [removeBannerManaged, setRemoveBannerManaged] = useState(false);
   const savedId = useRef(community?.id);
   const submitting = useRef(false);
   const mounted = useRef(true);
@@ -51,7 +53,8 @@ export function AthletesCommunityForm({
     try {
       const files = (["logo", "banner"] as const).flatMap((slot) => {
         const file = data.get(slot + "File");
-        return file instanceof File && file.name ? [{ slot, file }] : [];
+        const removing = slot === "logo" ? removeLogoManaged : removeBannerManaged;
+        return file instanceof File && file.name && !removing ? [{ slot, file }] : [];
       });
       for (const { file } of files) {
         if (
@@ -75,8 +78,19 @@ export function AthletesCommunityForm({
         visibility,
         joinPolicy: visibility === "PRIVATE" ? "APPROVAL_REQUIRED" : joinPolicy,
       };
-      const saved = savedId.current
-        ? await api.athletes.update(savedId.current, input)
+      const existingId = savedId.current;
+      if (existingId) {
+        const removeBannerForExternalUrl =
+          !files.some(({ slot }) => slot === "banner") &&
+          bannerUrlMode === "external" &&
+          bannerUrl.trim().length > 0;
+        if (removeLogoManaged) await api.athletes.removeIdentity(existingId, "logo");
+        if (removeBannerManaged || removeBannerForExternalUrl) {
+          await api.athletes.removeIdentity(existingId, "banner");
+        }
+      }
+      const saved = existingId
+        ? await api.athletes.update(existingId, input)
         : await api.athletes.create(input);
       savedId.current = saved.id;
       for (const { slot, file } of files) {
@@ -238,18 +252,40 @@ export function AthletesCommunityForm({
                 name="logoFile"
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
-                disabled={creating}
+                disabled={creating || removeLogoManaged}
               />
             </label>
+            {community ? (
+              <label className="athletes-field athletes-field-checkbox">
+                <input
+                  type="checkbox"
+                  checked={removeLogoManaged}
+                  onChange={(event) => setRemoveLogoManaged(event.target.checked)}
+                  disabled={creating}
+                />
+                <span>Remove the managed logo</span>
+              </label>
+            ) : null}
             <label className="athletes-field athletes-span-2">
               <span>Upload banner (JPEG, PNG or WebP; max 5 MiB)</span>
               <input
                 name="bannerFile"
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
-                disabled={creating}
+                disabled={creating || removeBannerManaged}
               />
             </label>
+            {community ? (
+              <label className="athletes-field athletes-field-checkbox athletes-span-2">
+                <input
+                  type="checkbox"
+                  checked={removeBannerManaged}
+                  onChange={(event) => setRemoveBannerManaged(event.target.checked)}
+                  disabled={creating}
+                />
+                <span>Remove the managed banner</span>
+              </label>
+            ) : null}
             <label className="athletes-field athletes-span-2">
               <span>Description</span>
               <textarea

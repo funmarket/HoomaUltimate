@@ -19,6 +19,12 @@ export interface AthletesIdentityAdoption extends AthletesIdentityUploadIntent {
   readonly sizeBytes: number;
 }
 
+export interface AthletesIdentityRemoval {
+  readonly athletesCommunityId: string;
+  readonly slot: AthletesIdentitySlot;
+  readonly scope: MediaStorageScope;
+}
+
 export interface AthletesIdentityPublicMedia {
   readonly mediaId: string;
   readonly objectKey: string;
@@ -29,6 +35,7 @@ export interface AthletesIdentityPublicMedia {
 export interface AthletesIdentityMediaRepository {
   prepareIdentityUpload(input: AthletesIdentityUploadIntent): Promise<void>;
   adoptPreparedIdentity(userId: string, input: AthletesIdentityAdoption): Promise<void>;
+  removeIdentity(userId: string, input: AthletesIdentityRemoval): Promise<boolean>;
   readPublicIdentityMedia(
     athletesCommunityId: string,
     slot: AthletesIdentitySlot,

@@ -16,6 +16,7 @@ import type { AthletesFounderContentAuthorizer } from "./athletes-content-author
 import {
   planAthletesIdentityMasterKey,
   type AthletesIdentityMediaRepository,
+  type AthletesIdentityRemoval,
   type AthletesIdentitySlot,
 } from "./athletes-identity-media.repository.js";
 
@@ -90,6 +91,23 @@ export class AthletesIdentityMediaService {
         "Athletes image is unavailable",
       );
     }
+  }
+
+  async removeIdentity(
+    userId: string,
+    athletesCommunityId: string,
+    slot: AthletesIdentitySlot,
+  ): Promise<{ removed: boolean }> {
+    await this.communities.requireFounderContent(userId, athletesCommunityId);
+    if (!this.scope) {
+      throw new AthletesIdentityMediaError(
+        503,
+        "ATHLETES_IDENTITY_MEDIA_NOT_CONFIGURED",
+        "HOOMA media storage is not configured",
+      );
+    }
+    const input: AthletesIdentityRemoval = { athletesCommunityId, slot, scope: this.scope };
+    return { removed: await this.repository.removeIdentity(userId, input) };
   }
 
   async upload(

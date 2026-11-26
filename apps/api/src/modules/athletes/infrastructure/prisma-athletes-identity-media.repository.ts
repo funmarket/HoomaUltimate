@@ -8,10 +8,12 @@ import type {
   AthletesIdentityMediaRepository,
   AthletesIdentitySlot,
   AthletesIdentityUploadIntent,
+  AthletesIdentityRemoval,
 } from "../application/athletes-identity-media.repository.js";
 import { AthletesContentAuthorization } from "../application/athletes-content-authorizer.js";
 import { AthletesError } from "../domain/athletes-error.js";
 import { PrismaAthletesRepository } from "./prisma-athletes.repository.js";
+import { planAthletesIdentityMasterKey } from "../application/athletes-identity-media.repository.js";
 
 export class PrismaAthletesIdentityMediaRepository implements AthletesIdentityMediaRepository {
   constructor(private readonly db: PrismaClient) {}
@@ -124,6 +126,84 @@ export class PrismaAthletesIdentityMediaRepository implements AthletesIdentityMe
           },
         });
       }
+    });
+  }
+
+  async removeIdentity(userId: string, input: AthletesIdentityRemoval): Promise<boolean> {
+    return this.db.$transaction(async (tx) => {
+      const locked = await tx.$queryRaw<Array<{ id: string }>>`
+        SELECT "id" FROM "AthletesCommunity" WHERE "id" = ${input.athletesCommunityId} FOR UPDATE
+      `;
+      if (locked.length !== 1) {
+        throw new AthletesError("ATHLETES_NOT_FOUND", "Athletes community not found");
+      }
+      const authorization = new AthletesContentAuthorization(new PrismaAthletesRepository(tx));
+      await authorization.requireFounderContent(userId, input.athletesCommunityId);
+      const current = await tx.athletesCommunity.findUniqueOrThrow({
+        where: { id: input.athletesCommunityId },
+        select: {
+          logoMediaId: true,
+          logoObjectKey: true,
+          logoContentType: true,
+          logoSizeBytes: true,
+          bannerMediaId: true,
+          bannerObjectKey: true,
+          bannerContentType: true,
+          bannerSizeBytes: true,
+        },
+      });
+      const mediaId = input.slot === "logo" ? current.logoMediaId : current.bannerMediaId;
+      const objectKey = input.slot === "logo" ? current.logoObjectKey : current.bannerObjectKey;
+      const contentType =
+        input.slot === "logo" ? current.logoContentType : current.bannerContentType;
+      const sizeBytes = input.slot === "logo" ? current.logoSizeBytes : current.bannerSizeBytes;
+      if (!mediaId && !objectKey && !contentType && sizeBytes === null) return false;
+      if (!mediaId || !objectKey || contentType !== "image/webp" || !sizeBytes || sizeBytes <= 0) {
+        throw new AthletesError("ATHLETES_CONFLICT", "Athletes identity metadata is incomplete");
+      }
+      const exactKey = planAthletesIdentityMasterKey(
+        input.scope,
+        input.athletesCommunityId,
+        mediaId,
+        input.slot,
+      );
+      if (objectKey !== exactKey) {
+        throw new AthletesError("ATHLETES_CONFLICT", "Athletes identity key does not match");
+      }
+      const now = new Date();
+      await tx.outboxEvent.create({
+        data: {
+          id: mediaId,
+          topic: ATHLETES_IDENTITY_MEDIA_RECONCILE_TOPIC,
+          aggregateType: "AthletesIdentityMedia",
+          aggregateId: input.athletesCommunityId,
+          payload: {
+            athletesCommunityId: input.athletesCommunityId,
+            mediaId,
+            slot: input.slot,
+            objectKey,
+          },
+          availableAt: now,
+        },
+      });
+      await tx.athletesCommunity.update({
+        where: { id: input.athletesCommunityId },
+        data:
+          input.slot === "logo"
+            ? {
+                logoMediaId: null,
+                logoObjectKey: null,
+                logoContentType: null,
+                logoSizeBytes: null,
+              }
+            : {
+                bannerMediaId: null,
+                bannerObjectKey: null,
+                bannerContentType: null,
+                bannerSizeBytes: null,
+              },
+      });
+      return true;
     });
   }
 

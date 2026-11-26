@@ -33,3 +33,26 @@ test("Athletes logo and banner uploads send the original file to their own slot"
     globalThis.fetch = original;
   }
 });
+
+test("Athletes managed identity removal targets only the selected slot", async () => {
+  const original = globalThis.fetch;
+  const calls: Array<{ url: string; init: RequestInit | undefined }> = [];
+  globalThis.fetch = async (url, init) => {
+    calls.push({ url: String(url), init });
+    return Response.json({ removed: true });
+  };
+  try {
+    const api = createAthletesApi({ baseUrl: "https://api.example.org" });
+    for (const slot of ["logo", "banner"] as const) {
+      assert.deepEqual(await api.removeIdentity("community-1", slot), { removed: true });
+      const call = calls.at(-1);
+      assert.equal(
+        call?.url,
+        "https://api.example.org/api/v1/athletes/community-1/identity/" + slot,
+      );
+      assert.equal(call?.init?.method, "DELETE");
+    }
+  } finally {
+    globalThis.fetch = original;
+  }
+});

@@ -79,6 +79,15 @@ export function createAthletesMemberRouter(
         );
       }),
     );
+    router.delete(
+      "/:id/identity/:slot",
+      asyncHandler(async (req, res) => {
+        const slot = z.enum(["logo", "banner"]).parse(String(req.params.slot));
+        res.json(
+          await identityMedia.removeIdentity(getAuth(req).userId, String(req.params.id), slot),
+        );
+      }),
+    );
   }
   router.post(
     "/",

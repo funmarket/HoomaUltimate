@@ -105,6 +105,12 @@ export function createAthletesApi(transport: HoomaTransport) {
         file.type,
         { method: "POST" },
       ),
+    removeIdentity: (id: string, slot: "logo" | "banner") =>
+      request<{ removed: boolean }>(
+        transport,
+        "/api/v1/athletes/" + encodeURIComponent(id) + "/identity/" + slot,
+        { method: "DELETE" },
+      ),
     archive: (id: string) =>
       request<{ ok: true }>(transport, `/api/v1/athletes/${encodeURIComponent(id)}`, {
         method: "DELETE",

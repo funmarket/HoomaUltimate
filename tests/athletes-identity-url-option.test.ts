@@ -16,4 +16,8 @@ test("Athletes identity URL selection supports explicit empty and external optio
   assert.match(form, /<option value="external">External URL<\/option>/);
   assert.match(form, /logoUrl: externalIdentityUrl\(logoUrlMode, logoUrl\)/);
   assert.match(form, /bannerUrl: externalIdentityUrl\(bannerUrlMode, bannerUrl\)/);
+  assert.match(form, /Remove the managed logo/);
+  assert.match(form, /Remove the managed banner/);
+  assert.match(form, /api\.athletes\.removeIdentity\(existingId, "logo"\)/);
+  assert.match(form, /api\.athletes\.removeIdentity\(existingId, "banner"\)/);
 });
