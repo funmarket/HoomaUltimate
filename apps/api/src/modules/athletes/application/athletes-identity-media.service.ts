@@ -6,6 +6,7 @@ import {
   PHOTO_STANDARD,
   writeMediaVariants,
   type MediaInputContentType,
+  type MediaNamespace,
   type MediaStorageScope,
   type ProcessedMediaResult,
 } from "@hooma/media-processing";
