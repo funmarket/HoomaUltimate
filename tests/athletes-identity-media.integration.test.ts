@@ -18,7 +18,9 @@ test("Athletes identity supports independent managed logo and banner without los
       logoUrl: "https://example.org/logo.png",
       bannerUrl: "https://example.org/banner.png",
     });
-    const rows = await db.$queryRaw<Array<{ logoMediaId: string | null; bannerMediaId: string | null }>>`
+    const rows = await db.$queryRaw<
+      Array<{ logoMediaId: string | null; bannerMediaId: string | null }>
+    >`
       SELECT "logoMediaId", "bannerMediaId" FROM "AthletesCommunity" WHERE "id" = ${community.id}
     `;
     assert.deepEqual(rows, [{ logoMediaId: null, bannerMediaId: null }]);
