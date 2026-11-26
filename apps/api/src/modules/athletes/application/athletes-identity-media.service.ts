@@ -52,7 +52,12 @@ export class AthletesIdentityMediaService {
     }
     let exactKey: string;
     try {
-      exactKey = planAthletesIdentityMasterKey(this.scope, athletesCommunityId, media.mediaId, slot);
+      exactKey = planAthletesIdentityMasterKey(
+        this.scope,
+        athletesCommunityId,
+        media.mediaId,
+        slot,
+      );
     } catch {
       throw new AthletesIdentityMediaError(
         404,
@@ -144,8 +149,7 @@ export class AthletesIdentityMediaService {
     }
     const mediaId = randomUUID();
     const objectKey = planAthletesIdentityMasterKey(this.scope, athletesCommunityId, mediaId, slot);
-    const namespace =
-      slot === "logo" ? "ATHLETES_COMMUNITY_LOGO" : "ATHLETES_COMMUNITY_BANNER";
+    const namespace = slot === "logo" ? "ATHLETES_COMMUNITY_LOGO" : "ATHLETES_COMMUNITY_BANNER";
     const identity = {
       scope: this.scope,
       namespace,
