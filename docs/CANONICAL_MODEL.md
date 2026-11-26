@@ -292,7 +292,7 @@ AthletesCommunity
   updatedAt
 ```
 
-Each identity slot has either an external URL, one complete managed WebP descriptor (unique media ID and object key, positive byte size), or no image. PostgreSQL enforces exclusive source selection independently per slot. These nullable descriptors belong to AthletesCommunity, not PageBanner, HOOMA Community, Photo Board or Calendar. Existing URLs are retained without backfill.
+The logo may retain an external URL alongside one complete managed WebP descriptor (unique media ID and object key, positive byte size). The banner retains exclusive external URL or managed descriptor selection. Either slot may be empty. PostgreSQL enforces descriptor completeness independently per slot. These nullable descriptors belong to AthletesCommunity, not PageBanner, HOOMA Community, Photo Board or Calendar. Existing URLs are retained without backfill.
 
 ## AthletesMembership
 

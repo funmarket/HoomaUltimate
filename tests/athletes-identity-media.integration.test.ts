@@ -33,7 +33,7 @@ test("Athletes identity supports independent managed logo and banner without los
   }
 });
 
-test("Athletes external identity replacement retires only the replaced managed slot", async () => {
+test("Athletes external logo URL can coexist with managed logo without changing banner", async () => {
   const user = await db.user.create({ data: {} });
   const repository = new PrismaAthletesRepository(db);
   try {
@@ -67,20 +67,13 @@ test("Athletes external identity replacement retires only the replaced managed s
       where: { id: community.id },
     });
     assert.equal(current.logoUrl, "https://example.org/new.png");
-    assert.equal(current.logoMediaId, null);
-    assert.equal(current.logoObjectKey, null);
-    assert.equal(current.logoContentType, null);
-    assert.equal(current.logoSizeBytes, null);
+    assert.equal(current.logoMediaId, logoMediaId);
+    assert.equal(current.logoObjectKey, logoObjectKey);
+    assert.equal(current.logoContentType, "image/webp");
+    assert.equal(current.logoSizeBytes, 4);
     assert.equal(current.bannerMediaId, bannerMediaId);
     assert.equal(current.bannerObjectKey, bannerObjectKey);
-    const intent = await db.outboxEvent.findUniqueOrThrow({ where: { id: logoMediaId } });
-    assert.equal(intent.topic, "athletes.identity-media.reconcile-object");
-    assert.deepEqual(intent.payload, {
-      athletesCommunityId: community.id,
-      mediaId: logoMediaId,
-      slot: "logo",
-      objectKey: logoObjectKey,
-    });
+    assert.equal(await db.outboxEvent.count({ where: { id: logoMediaId } }), 0);
     assert.equal(await db.outboxEvent.count({ where: { id: bannerMediaId } }), 0);
   } finally {
     const communities = await db.athletesCommunity.findMany({

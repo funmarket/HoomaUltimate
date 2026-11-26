@@ -11,14 +11,14 @@ ALTER TABLE "AthletesCommunity"
   ADD COLUMN "bannerSizeBytes" INTEGER;
 
 ALTER TABLE "AthletesCommunity"
-  ADD CONSTRAINT "AthletesCommunity_logo_source_exclusive_check" CHECK (
+  ADD CONSTRAINT "AthletesCommunity_logo_descriptor_check" CHECK (
     (
       "logoMediaId" IS NULL AND "logoObjectKey" IS NULL AND
       "logoContentType" IS NULL AND "logoSizeBytes" IS NULL
     ) OR (
       "logoMediaId" IS NOT NULL AND "logoObjectKey" IS NOT NULL AND
       "logoContentType" IS NOT NULL AND "logoContentType" = 'image/webp' AND
-      "logoSizeBytes" IS NOT NULL AND "logoSizeBytes" > 0 AND "logoUrl" IS NULL
+      "logoSizeBytes" IS NOT NULL AND "logoSizeBytes" > 0
     )
   ),
   ADD CONSTRAINT "AthletesCommunity_banner_source_exclusive_check" CHECK (
