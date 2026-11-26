@@ -48,9 +48,7 @@ function validPayload(athletesCommunityId: string, slot: "logo" | "banner") {
 }
 
 for (const slot of ["logo", "banner"] as const) {
-  test(
-    "cleanup protects current " + slot + " reference and removes only orphaned masters",
-    async () => {
+  test("identity cleanup protects " + slot + " refs and removes orphans", async () => {
     const f = await fixture();
     const removed: string[] = [];
     const payload = validPayload(f.community.id, slot);
@@ -82,13 +80,10 @@ for (const slot of ["logo", "banner"] as const) {
       assert.deepEqual(removed, [payload.objectKey]);
     } finally {
       await f.cleanup();
-    }
   });
 }
 
-test(
-  "Athletes identity cleanup rejects wrong event metadata and keys without deleting",
-  async () => {
+test("identity cleanup rejects bad metadata without deleting", async () => {
   const f = await fixture();
   const removed: string[] = [];
   try {
@@ -136,9 +131,7 @@ test(
   }
 });
 
-test(
-  "Athletes identity cleanup retries durable Outbox events before marking deletion delivered",
-  async () => {
+test("identity cleanup retries durable Outbox events", async () => {
   const f = await fixture();
   const payload = validPayload(f.community.id, "banner");
   let calls = 0;
