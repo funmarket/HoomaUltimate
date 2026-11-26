@@ -724,6 +724,14 @@ model AthletesCommunity {
   houma           String?
   logoUrl         String?
   bannerUrl       String?
+  logoMediaId         String? @unique
+  logoObjectKey       String? @unique
+  logoContentType     String?
+  logoSizeBytes       Int?
+  bannerMediaId       String? @unique
+  bannerObjectKey     String? @unique
+  bannerContentType   String?
+  bannerSizeBytes     Int?
   visibility      AthletesVisibility       @default(PUBLIC)
   joinPolicy      AthletesJoinPolicy       @default(OPEN)
   status          AthletesCommunityStatus  @default(ACTIVE)

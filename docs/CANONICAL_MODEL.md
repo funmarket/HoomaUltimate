@@ -276,6 +276,14 @@ AthletesCommunity
   houma?
   logoUrl?
   bannerUrl?
+  logoMediaId?
+  logoObjectKey?
+  logoContentType?
+  logoSizeBytes?
+  bannerMediaId?
+  bannerObjectKey?
+  bannerContentType?
+  bannerSizeBytes?
   visibility                   PUBLIC | PRIVATE
   joinPolicy                   OPEN | APPROVAL_REQUIRED
   status                       ACTIVE | ARCHIVED
@@ -283,6 +291,8 @@ AthletesCommunity
   createdAt
   updatedAt
 ```
+
+Each identity slot has either an external URL, one complete managed WebP descriptor (unique media ID and object key, positive byte size), or no image. PostgreSQL enforces exclusive source selection independently per slot. These nullable descriptors belong to AthletesCommunity, not PageBanner, HOOMA Community, Photo Board or Calendar. Existing URLs are retained without backfill.
 
 ## AthletesMembership
 
