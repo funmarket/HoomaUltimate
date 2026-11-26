@@ -4,8 +4,12 @@ import test from "node:test";
 import { ATHLETES_IDENTITY_MEDIA_RECONCILE_TOPIC as topic } from "@hooma/contracts/athletes";
 import { getDatabaseClient } from "@hooma/database";
 import { buildMediaObjectKey } from "@hooma/media-processing";
-import { PrismaAthletesRepository } from "../apps/api/src/modules/athletes/infrastructure/prisma-athletes.repository.js";
-import { createAthletesIdentityMediaCleanupHandler } from "../apps/worker/src/athletes/athletes-identity-media-cleanup.js";
+import {
+  PrismaAthletesRepository,
+} from "../apps/api/src/modules/athletes/infrastructure/prisma-athletes.repository.js";
+import {
+  createAthletesIdentityMediaCleanupHandler,
+} from "../apps/worker/src/athletes/athletes-identity-media-cleanup.js";
 import { OutboxRepository } from "../apps/worker/src/outbox/outbox.repository.js";
 import { OutboxRunner } from "../apps/worker/src/outbox/outbox.runner.js";
 
@@ -32,7 +36,10 @@ function validPayload(athletesCommunityId: string, slot: "logo" | "banner") {
   const mediaId = randomUUID();
   const objectKey = buildMediaObjectKey({
     scope,
-    namespace: slot === "logo" ? "ATHLETES_COMMUNITY_LOGO" : "ATHLETES_COMMUNITY_BANNER",
+    namespace:
+      slot === "logo"
+        ? "ATHLETES_COMMUNITY_LOGO"
+        : "ATHLETES_COMMUNITY_BANNER",
     ownerId: athletesCommunityId,
     mediaId,
     variant: "master",
@@ -41,7 +48,9 @@ function validPayload(athletesCommunityId: string, slot: "logo" | "banner") {
 }
 
 for (const slot of ["logo", "banner"] as const) {
-  test("cleanup protects current " + slot + " reference and removes only orphaned masters", async () => {
+  test(
+    "cleanup protects current " + slot + " reference and removes only orphaned masters",
+    async () => {
     const f = await fixture();
     const removed: string[] = [];
     const payload = validPayload(f.community.id, slot);
@@ -77,7 +86,9 @@ for (const slot of ["logo", "banner"] as const) {
   });
 }
 
-test("Athletes identity cleanup rejects wrong event metadata and keys without deleting", async () => {
+test(
+  "Athletes identity cleanup rejects wrong event metadata and keys without deleting",
+  async () => {
   const f = await fixture();
   const removed: string[] = [];
   try {
@@ -125,7 +136,9 @@ test("Athletes identity cleanup rejects wrong event metadata and keys without de
   }
 });
 
-test("Athletes identity cleanup retries durable Outbox events before marking deletion delivered", async () => {
+test(
+  "Athletes identity cleanup retries durable Outbox events before marking deletion delivered",
+  async () => {
   const f = await fixture();
   const payload = validPayload(f.community.id, "banner");
   let calls = 0;
