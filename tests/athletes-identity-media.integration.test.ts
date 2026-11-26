@@ -29,6 +29,13 @@ test("Athletes identity supports independent managed logo and banner without los
     assert.equal(detail?.bannerUrl, "https://example.org/banner.png");
     assert.equal(detail?.logoMediaPath, null);
     assert.equal(detail?.bannerMediaPath, null);
+
+    const publicList = await repository.listPublic({ limit: 100 });
+    const summary = publicList.items.find((item) => item.id === community.id);
+    assert.equal(summary?.logoUrl, "https://example.org/logo.png");
+    assert.equal(summary?.bannerUrl, "https://example.org/banner.png");
+    assert.equal(summary?.logoMediaPath, null);
+    assert.equal(summary?.bannerMediaPath, null);
   } finally {
     await db.athletesCommunity.deleteMany({ where: { createdByUserId: user.id } });
     await db.user.delete({ where: { id: user.id } });
