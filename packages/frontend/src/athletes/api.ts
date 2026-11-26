@@ -97,6 +97,14 @@ export function createAthletesApi(transport: HoomaTransport) {
           body: JSON.stringify(input),
         },
       ),
+    uploadIdentity: (id: string, slot: "logo" | "banner", file: File) =>
+      requestBinary<{ mediaId: string }>(
+        transport,
+        `/api/v1/athletes/${encodeURIComponent(id)}/identity/${slot}/upload`,
+        file,
+        file.type,
+        { method: "POST" },
+      ),
     archive: (id: string) =>
       request<{ ok: true }>(transport, `/api/v1/athletes/${encodeURIComponent(id)}`, {
         method: "DELETE",
