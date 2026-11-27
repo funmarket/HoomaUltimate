@@ -86,7 +86,7 @@ test("Athletes external logo URL can coexist with managed logo without changing 
     assert.equal(await db.outboxEvent.count({ where: { id: bannerMediaId } }), 0);
 
     const publicDetail = await repository.getPublic(community.id);
-    assert.equal(publicDetail?.logoUrl, null);
+    assert.equal(publicDetail?.logoUrl, "https://example.org/new.png");
     assert.equal(
       publicDetail?.logoMediaPath,
       `/api/public/v1/athletes/${encodeURIComponent(community.id)}/identity/logo/content`,
