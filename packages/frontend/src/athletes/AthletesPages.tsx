@@ -686,7 +686,8 @@ function AthletesImage({
   const [failedSources, setFailedSources] = useState<readonly string[]>([]);
   const sources = [src, fallbackSrc].filter((candidate): candidate is string => Boolean(candidate));
   const activeSrc = sources.find((candidate) => !failedSources.includes(candidate));
-  return activeSrc ? (
+  if (!activeSrc) return null;
+  const image = (
     <img
       src={activeSrc}
       alt={alt}
@@ -694,5 +695,10 @@ function AthletesImage({
       loading="lazy"
       onError={() => setFailedSources((previous) => [...previous, activeSrc])}
     />
-  ) : null;
+  );
+  return className === "athletes-banner" ? (
+    <span className="athletes-banner-frame">{image}</span>
+  ) : (
+    image
+  );
 }
