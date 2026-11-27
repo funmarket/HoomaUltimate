@@ -191,9 +191,10 @@ export function AthletesPage({
                   alt={`${item.name} banner`}
                 />
                 <AthletesImage
-                  src={item.logoUrl}
-                  fallbackSrc={
-                    item.logoMediaPath ? api.athletes.identityMediaUrl(item.id, "logo") : null
+                  src={
+                    item.logoMediaPath
+                      ? api.athletes.identityMediaUrl(item.id, "logo")
+                      : item.logoUrl
                   }
                   className="athletes-logo"
                   alt={`${item.name} logo`}
@@ -364,8 +365,7 @@ function AthletesDetailContent({
           />
           <div className="athletes-hero__content">
             <AthletesImage
-              src={detail.logoUrl}
-              fallbackSrc={detail.logoMediaPath ? api.athletes.identityMediaUrl(id, "logo") : null}
+              src={detail.logoMediaPath ? api.athletes.identityMediaUrl(id, "logo") : detail.logoUrl}
               className="athletes-logo"
               alt={`${detail.name} logo`}
             />
