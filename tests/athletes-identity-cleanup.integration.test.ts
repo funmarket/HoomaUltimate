@@ -32,8 +32,7 @@ function validPayload(athletesCommunityId: string, slot: "logo" | "banner") {
   const mediaId = randomUUID();
   const objectKey = buildMediaObjectKey({
     scope,
-    namespace:
-      slot === "logo" ? "ATHLETES_COMMUNITY_LOGO" : "ATHLETES_COMMUNITY_BANNER",
+    namespace: slot === "logo" ? "ATHLETES_COMMUNITY_LOGO" : "ATHLETES_COMMUNITY_BANNER",
     ownerId: athletesCommunityId,
     mediaId,
     variant: "master",
@@ -88,7 +87,11 @@ test("identity cleanup rejects bad metadata without deleting", async () => {
   try {
     const handler = createAthletesIdentityMediaCleanupHandler(
       db,
-      { remove: async (key) => { removed.push(key); } },
+      {
+        remove: async (key) => {
+          removed.push(key);
+        },
+      },
       scope,
     );
     const original = validPayload(f.community.id, "logo");
