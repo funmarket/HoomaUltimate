@@ -5,10 +5,10 @@ import test from "node:test";
 const pages = readFileSync("packages/frontend/src/athletes/AthletesPages.tsx", "utf8");
 const api = readFileSync("packages/frontend/src/athletes/api.ts", "utf8");
 
-test("Athletes discovery cards prefer the configured external logo and fall back to managed media", () => {
+test("Athletes discovery cards prefer the managed logo and use an external URL only without managed media", () => {
   assert.match(
     pages,
-    /src=\{item\.logoUrl\}[\s\S]*fallbackSrc=\{[\s\S]*item\.logoMediaPath[\s\S]*identityMediaUrl\(item\.id, "logo"\)/,
+    /src=\{\s*item\.logoMediaPath\s*\?\s*api\.athletes\.identityMediaUrl\(item\.id, "logo"\)\s*:\s*item\.logoUrl\s*\}/,
   );
   assert.match(
     pages,
