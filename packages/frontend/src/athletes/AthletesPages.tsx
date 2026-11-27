@@ -365,7 +365,9 @@ function AthletesDetailContent({
           />
           <div className="athletes-hero__content">
             <AthletesImage
-              src={detail.logoMediaPath ? api.athletes.identityMediaUrl(id, "logo") : detail.logoUrl}
+              src={
+                detail.logoMediaPath ? api.athletes.identityMediaUrl(id, "logo") : detail.logoUrl
+              }
               className="athletes-logo"
               alt={`${detail.name} logo`}
             />
