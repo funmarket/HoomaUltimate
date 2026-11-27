@@ -5,6 +5,7 @@ import {
   athletesCalendarListPageSchema,
   athletesCalendarListQuerySchema,
   athletesCommunityCreateSchema,
+  athletesCommunityUpdateSchema,
   athletesJoinRequestListQuerySchema,
   athletesJoinRequestPageSchema,
   athletesJoinRequestStatusSchema,
@@ -37,6 +38,35 @@ test("Athletes contracts accept a bounded valid create payload", () => {
   });
   assert.equal(parsed.name, "Carthage Runners");
   assert.equal(parsed.sport, "RUNNING");
+});
+
+test("Athletes identity URL contracts accept HTTP(S) and explicit empty values", () => {
+  const created = athletesCommunityCreateSchema.parse({
+    name: "Carthage Runners",
+    sport: "RUNNING",
+    logoUrl: null,
+    bannerUrl: "https://images.example.com/banner.png",
+  });
+  assert.equal(created.logoUrl, null);
+  assert.equal(created.bannerUrl, "https://images.example.com/banner.png");
+
+  const updated = athletesCommunityUpdateSchema.parse({
+    logoUrl: "http://images.example.com/logo.png",
+    bannerUrl: null,
+  });
+  assert.equal(updated.logoUrl, "http://images.example.com/logo.png");
+  assert.equal(updated.bannerUrl, null);
+
+  for (const url of ["ftp://images.example.com/logo.png", "javascript:alert(1)"]) {
+    assert.throws(() =>
+      athletesCommunityCreateSchema.parse({
+        name: "Carthage Runners",
+        sport: "RUNNING",
+        logoUrl: url,
+      }),
+    );
+    assert.throws(() => athletesCommunityUpdateSchema.parse({ bannerUrl: url }));
+  }
 });
 
 test("Athletes contracts reject invalid sport, role, status and generic fields", () => {
@@ -174,6 +204,8 @@ test("Athletes member projection carries nullable canonical web last-seen", () =
 test("public Athletes projections do not expose creator user ids", () => {
   assert.equal("createdByUserId" in athletesPublicSummarySchema.shape, false);
   assert.equal("createdByUserId" in athletesPublicDetailSchema.shape, false);
+  assert.equal(athletesPublicSummarySchema.shape.logoMediaPath.parse(null), null);
+  assert.equal(athletesPublicSummarySchema.shape.bannerMediaPath.parse(null), null);
 });
 
 test("Athletes Photo contracts expose canonical private-board metadata", () => {

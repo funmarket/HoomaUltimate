@@ -69,7 +69,11 @@ export function createPublicV1Router(container: AppContainer, config: ApiConfig)
   );
   router.use(
     "/athletes",
-    createAthletesPublicRouter(container.athletesService, container.athletesHeroService),
+    createAthletesPublicRouter(
+      container.athletesService,
+      container.athletesHeroService,
+      container.athletesIdentityMediaService,
+    ),
   );
   router.use("/teams", createTeamPublicRouter(container.teamService));
   router.use(

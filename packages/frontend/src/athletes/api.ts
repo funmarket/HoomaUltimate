@@ -67,6 +67,10 @@ export function createAthletesApi(transport: HoomaTransport) {
       request<PublicAthletesList>(transport, athletesPublicListPath(filters)),
     publicDetail: (id: string) =>
       request<PublicAthletesDetail>(transport, `/api/public/v1/athletes/${encodeURIComponent(id)}`),
+    identityMediaUrl: (id: string, slot: "logo" | "banner") => {
+      const baseUrl = transport.baseUrl.replace(/\/+$/, "");
+      return `${baseUrl}/api/public/v1/athletes/${encodeURIComponent(id)}/identity/${slot}/content`;
+    },
     detail: async (id: string) => {
       try {
         return await request<PublicAthletesDetail>(
@@ -96,6 +100,20 @@ export function createAthletesApi(transport: HoomaTransport) {
           method: "PATCH",
           body: JSON.stringify(input),
         },
+      ),
+    uploadIdentity: (id: string, slot: "logo" | "banner", file: File) =>
+      requestBinary<{ mediaId: string }>(
+        transport,
+        `/api/v1/athletes/${encodeURIComponent(id)}/identity/${slot}/upload`,
+        file,
+        file.type,
+        { method: "POST" },
+      ),
+    removeIdentity: (id: string, slot: "logo" | "banner") =>
+      request<{ removed: boolean }>(
+        transport,
+        "/api/v1/athletes/" + encodeURIComponent(id) + "/identity/" + slot,
+        { method: "DELETE" },
       ),
     archive: (id: string) =>
       request<{ ok: true }>(transport, `/api/v1/athletes/${encodeURIComponent(id)}`, {

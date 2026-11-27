@@ -459,6 +459,19 @@
   gap: 0.45rem;
 }
 
+.athletes-page .athletes-field-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.athletes-page .athletes-field-checkbox input[type="checkbox"] {
+  width: 1.15rem;
+  min-height: 1.15rem;
+  margin: 0;
+  accent-color: var(--athletes-yellow);
+}
+
 .athletes-page .athletes-field > span {
   color: rgba(255, 255, 255, 0.75);
   font-size: 0.82rem;

@@ -184,11 +184,18 @@ export function AthletesPage({
               >
                 <AthletesImage
                   src={item.bannerUrl}
+                  fallbackSrc={
+                    item.bannerMediaPath ? api.athletes.identityMediaUrl(item.id, "banner") : null
+                  }
                   className="athletes-banner"
                   alt={`${item.name} banner`}
                 />
                 <AthletesImage
-                  src={item.logoUrl}
+                  src={
+                    item.logoMediaPath
+                      ? api.athletes.identityMediaUrl(item.id, "logo")
+                      : item.logoUrl
+                  }
                   className="athletes-logo"
                   alt={`${item.name} logo`}
                 />
@@ -350,12 +357,17 @@ function AthletesDetailContent({
         >
           <AthletesImage
             src={detail.bannerUrl}
+            fallbackSrc={
+              detail.bannerMediaPath ? api.athletes.identityMediaUrl(id, "banner") : null
+            }
             className="athletes-banner"
             alt={`${detail.name} banner`}
           />
           <div className="athletes-hero__content">
             <AthletesImage
-              src={detail.logoUrl}
+              src={
+                detail.logoMediaPath ? api.athletes.identityMediaUrl(id, "logo") : detail.logoUrl
+              }
               className="athletes-logo"
               alt={`${detail.name} logo`}
             />
@@ -662,21 +674,25 @@ function AthletesDetailContent({
 
 function AthletesImage({
   src,
+  fallbackSrc = null,
   alt,
   className,
 }: {
   readonly src: string | null;
+  readonly fallbackSrc?: string | null;
   readonly alt: string;
   readonly className: string;
 }) {
-  const [failedSrc, setFailedSrc] = useState<string | null>(null);
-  return src && failedSrc !== src ? (
+  const [failedSources, setFailedSources] = useState<readonly string[]>([]);
+  const sources = [src, fallbackSrc].filter((candidate): candidate is string => Boolean(candidate));
+  const activeSrc = sources.find((candidate) => !failedSources.includes(candidate));
+  return activeSrc ? (
     <img
-      src={src}
+      src={activeSrc}
       alt={alt}
       className={className}
       loading="lazy"
-      onError={() => setFailedSrc(src)}
+      onError={() => setFailedSources((previous) => [...previous, activeSrc])}
     />
   ) : null;
 }

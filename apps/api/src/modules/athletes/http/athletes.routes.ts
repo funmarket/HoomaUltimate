@@ -14,6 +14,8 @@ import {
   athletesPhotoListQuerySchema,
 } from "@hooma/contracts/athletes";
 import { Router, raw } from "express";
+import { z } from "zod";
+import type { AthletesIdentityMediaService } from "../application/athletes-identity-media.service.js";
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import { getAuth } from "../../identity/http/auth-request.js";
 import type { AthletesCalendarService } from "../application/athletes-calendar.service.js";
@@ -24,6 +26,7 @@ import type { AthletesService } from "../application/athletes.service.js";
 export function createAthletesPublicRouter(
   service: AthletesService,
   heroService: AthletesHeroService,
+  identityMedia?: AthletesIdentityMediaService,
 ): Router {
   const router = Router();
   router.get(
@@ -33,6 +36,19 @@ export function createAthletesPublicRouter(
       res.json(await heroService.delivery());
     }),
   );
+  if (identityMedia) {
+    router.get(
+      "/:id/identity/:slot/content",
+      asyncHandler(async (req, res) => {
+        const slot = z.enum(["logo", "banner"]).parse(String(req.params.slot));
+        const content = await identityMedia.contentPublic(String(req.params.id), slot);
+        res.setHeader("cache-control", "private, no-store");
+        res.setHeader("cross-origin-resource-policy", "cross-origin");
+        res.setHeader("x-content-type-options", "nosniff");
+        res.type(content.contentType).send(Buffer.from(content.body));
+      }),
+    );
+  }
   router.get(
     "/",
     asyncHandler(async (req, res) => {
@@ -59,8 +75,34 @@ export function createAthletesMemberRouter(
   service: AthletesService,
   photoService: AthletesPhotoService,
   calendarService: AthletesCalendarService,
+  identityMedia?: AthletesIdentityMediaService,
 ): Router {
   const router = Router();
+  if (identityMedia) {
+    router.post(
+      "/:id/identity/:slot/upload",
+      raw({ type: "*/*", limit: "5mb" }),
+      asyncHandler(async (req, res) => {
+        const slot = z.enum(["logo", "banner"]).parse(String(req.params.slot));
+        const body = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
+        res.status(201).json(
+          await identityMedia.upload(getAuth(req).userId, String(req.params.id), slot, {
+            body,
+            contentType: req.get("content-type") ?? "",
+          }),
+        );
+      }),
+    );
+    router.delete(
+      "/:id/identity/:slot",
+      asyncHandler(async (req, res) => {
+        const slot = z.enum(["logo", "banner"]).parse(String(req.params.slot));
+        res.json(
+          await identityMedia.removeIdentity(getAuth(req).userId, String(req.params.id), slot),
+        );
+      }),
+    );
+  }
   router.post(
     "/",
     asyncHandler(async (req, res) => {

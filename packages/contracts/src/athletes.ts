@@ -1,5 +1,15 @@
 import { z } from "zod";
 
+export const ATHLETES_IDENTITY_MEDIA_RECONCILE_TOPIC = "athletes.identity-media.reconcile-object";
+export const athletesIdentityMediaCleanupPayloadSchema = z
+  .object({
+    athletesCommunityId: z.string().min(1),
+    mediaId: z.string().min(1),
+    slot: z.enum(["logo", "banner"]),
+    objectKey: z.string().min(1),
+  })
+  .strict();
+
 export const ATHLETES_SPORTS = [
   "CYCLING",
   "RUNNING",
@@ -32,6 +42,14 @@ export const athletesPhotoContentTypeSchema = z.enum(ATHLETES_PHOTO_CONTENT_TYPE
 
 const optionalText = (max: number) => z.string().trim().max(max).nullable().optional();
 const optionalUrl = z.string().trim().url().max(2000).nullable().optional();
+const optionalIdentityUrl = z
+  .string()
+  .trim()
+  .url()
+  .max(2000)
+  .refine((url) => /^https?:\/\//i.test(url), "Only HTTP(S) image URLs are allowed")
+  .nullable()
+  .optional();
 const optionalId = z.string().trim().min(1).max(100).nullable().optional();
 const ATHLETES_CALENDAR_MAX_RANGE_MS = 45 * 24 * 60 * 60 * 1000;
 
@@ -51,8 +69,8 @@ export const athletesCommunityCreateSchema = z
     description: optionalText(600),
     city: optionalText(100),
     houma: optionalText(100),
-    logoUrl: optionalUrl,
-    bannerUrl: optionalUrl,
+    logoUrl: optionalIdentityUrl,
+    bannerUrl: optionalIdentityUrl,
     visibility: athletesVisibilitySchema.default("PUBLIC"),
     joinPolicy: athletesJoinPolicySchema.default("OPEN"),
   })
@@ -74,8 +92,8 @@ export const athletesCommunityUpdateSchema = z
     description: optionalText(600),
     city: optionalText(100),
     houma: optionalText(100),
-    logoUrl: optionalUrl,
-    bannerUrl: optionalUrl,
+    logoUrl: optionalIdentityUrl,
+    bannerUrl: optionalIdentityUrl,
     visibility: athletesVisibilitySchema.optional(),
     joinPolicy: athletesJoinPolicySchema.optional(),
   })
@@ -106,6 +124,8 @@ export const athletesPublicSummarySchema = z.object({
   houma: z.string().nullable(),
   logoUrl: z.string().url().nullable(),
   bannerUrl: z.string().url().nullable(),
+  logoMediaPath: z.string().min(1).nullable().optional(),
+  bannerMediaPath: z.string().min(1).nullable().optional(),
   visibility: athletesVisibilitySchema,
   joinPolicy: athletesJoinPolicySchema,
   createdAt: z.string().datetime(),

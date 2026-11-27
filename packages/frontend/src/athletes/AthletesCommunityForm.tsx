@@ -1,6 +1,7 @@
 import type { AthletesSport, AthletesPublicDetail } from "@hooma/contracts/athletes";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useHoomaFrontend } from "../context";
+import { externalIdentityUrl } from "./identity-url-option";
 import { sports, sportLabel } from "./sports";
 
 export function AthletesCommunityForm({
@@ -20,6 +21,17 @@ export function AthletesCommunityForm({
   const [joinPolicy, setJoinPolicy] = useState<"OPEN" | "APPROVAL_REQUIRED">(
     community?.joinPolicy ?? "OPEN",
   );
+  const [logoUrlMode, setLogoUrlMode] = useState<"none" | "external">(
+    community?.logoUrl ? "external" : "none",
+  );
+  const [logoUrl, setLogoUrl] = useState(community?.logoUrl ?? "");
+  const [bannerUrlMode, setBannerUrlMode] = useState<"none" | "external">(
+    community?.bannerUrl ? "external" : "none",
+  );
+  const [bannerUrl, setBannerUrl] = useState(community?.bannerUrl ?? "");
+  const [removeLogoManaged, setRemoveLogoManaged] = useState(false);
+  const [removeBannerManaged, setRemoveBannerManaged] = useState(false);
+  const savedId = useRef(community?.id);
   const submitting = useRef(false);
   const mounted = useRef(true);
   useEffect(() => {
@@ -39,20 +51,51 @@ export function AthletesCommunityForm({
     setCreating(true);
     setError("");
     try {
+      const files = (["logo", "banner"] as const).flatMap((slot) => {
+        const file = data.get(slot + "File");
+        const removing = slot === "logo" ? removeLogoManaged : removeBannerManaged;
+        return file instanceof File && file.name && !removing ? [{ slot, file }] : [];
+      });
+      for (const { file } of files) {
+        if (
+          !["image/jpeg", "image/png", "image/webp"].includes(file.type) ||
+          !file.size ||
+          file.size > 5 * 1024 * 1024
+        ) {
+          throw new Error("Choose a nonempty JPEG, PNG or WebP image up to 5 MiB.");
+        }
+      }
       const input = {
         name: String(data.get("name")).trim(),
         sport,
         description: String(data.get("description")).trim() || null,
         city: String(data.get("city")).trim() || null,
         houma: String(data.get("houma")).trim() || null,
-        logoUrl: String(data.get("logoUrl")).trim() || null,
-        bannerUrl: String(data.get("bannerUrl")).trim() || null,
+        logoUrl: externalIdentityUrl(logoUrlMode, logoUrl),
+        ...(files.some(({ slot }) => slot === "banner")
+          ? {}
+          : { bannerUrl: externalIdentityUrl(bannerUrlMode, bannerUrl) }),
         visibility,
         joinPolicy: visibility === "PRIVATE" ? "APPROVAL_REQUIRED" : joinPolicy,
       };
-      const saved = community
-        ? await api.athletes.update(community.id, input)
+      const existingId = savedId.current;
+      if (existingId) {
+        const removeBannerForExternalUrl =
+          !files.some(({ slot }) => slot === "banner") &&
+          bannerUrlMode === "external" &&
+          bannerUrl.trim().length > 0;
+        if (removeLogoManaged) await api.athletes.removeIdentity(existingId, "logo");
+        if (removeBannerManaged || removeBannerForExternalUrl) {
+          await api.athletes.removeIdentity(existingId, "banner");
+        }
+      }
+      const saved = existingId
+        ? await api.athletes.update(existingId, input)
         : await api.athletes.create(input);
+      savedId.current = saved.id;
+      for (const { slot, file } of files) {
+        await api.athletes.uploadIdentity(saved.id, slot, file);
+      }
       if (mounted.current) onSaved(saved.id);
     } catch (reason) {
       if (mounted.current) setError(protectedError(reason, "Unable to save Athletes community"));
@@ -154,25 +197,95 @@ export function AthletesCommunityForm({
               />
             </label>
             <label className="athletes-field">
-              <span>Logo URL</span>
-              <input
-                name="logoUrl"
-                defaultValue={community?.logoUrl ?? ""}
-                type="url"
-                maxLength={2000}
-                placeholder="https://…"
-              />
+              <span>Logo external URL option</span>
+              <select
+                aria-label="Logo external URL option"
+                value={logoUrlMode}
+                onChange={(event) => setLogoUrlMode(event.target.value as "none" | "external")}
+                disabled={creating}
+              >
+                <option value="none">No image URL</option>
+                <option value="external">External URL</option>
+              </select>
             </label>
+            {logoUrlMode === "external" ? (
+              <label className="athletes-field">
+                <span>Logo URL</span>
+                <input
+                  name="logoUrl"
+                  value={logoUrl}
+                  onChange={(event) => setLogoUrl(event.target.value)}
+                  type="url"
+                  maxLength={2000}
+                  placeholder="https://…"
+                />
+              </label>
+            ) : null}
             <label className="athletes-field athletes-span-2">
-              <span>Banner image URL</span>
+              <span>Banner external URL option</span>
+              <select
+                aria-label="Banner external URL option"
+                value={bannerUrlMode}
+                onChange={(event) => setBannerUrlMode(event.target.value as "none" | "external")}
+                disabled={creating}
+              >
+                <option value="none">No image URL</option>
+                <option value="external">External URL</option>
+              </select>
+            </label>
+            {bannerUrlMode === "external" ? (
+              <label className="athletes-field athletes-span-2">
+                <span>Banner image URL</span>
+                <input
+                  name="bannerUrl"
+                  value={bannerUrl}
+                  onChange={(event) => setBannerUrl(event.target.value)}
+                  type="url"
+                  maxLength={2000}
+                  placeholder="https://…"
+                />
+              </label>
+            ) : null}
+            <label className="athletes-field">
+              <span>Upload logo (JPEG, PNG or WebP; max 5 MiB)</span>
               <input
-                name="bannerUrl"
-                defaultValue={community?.bannerUrl ?? ""}
-                type="url"
-                maxLength={2000}
-                placeholder="https://…"
+                name="logoFile"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                disabled={creating || removeLogoManaged}
               />
             </label>
+            {community ? (
+              <label className="athletes-field athletes-field-checkbox">
+                <input
+                  type="checkbox"
+                  checked={removeLogoManaged}
+                  onChange={(event) => setRemoveLogoManaged(event.target.checked)}
+                  disabled={creating}
+                />
+                <span>Remove the managed logo</span>
+              </label>
+            ) : null}
+            <label className="athletes-field athletes-span-2">
+              <span>Upload banner (JPEG, PNG or WebP; max 5 MiB)</span>
+              <input
+                name="bannerFile"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                disabled={creating || removeBannerManaged}
+              />
+            </label>
+            {community ? (
+              <label className="athletes-field athletes-field-checkbox athletes-span-2">
+                <input
+                  type="checkbox"
+                  checked={removeBannerManaged}
+                  onChange={(event) => setRemoveBannerManaged(event.target.checked)}
+                  disabled={creating}
+                />
+                <span>Remove the managed banner</span>
+              </label>
+            ) : null}
             <label className="athletes-field athletes-span-2">
               <span>Description</span>
               <textarea

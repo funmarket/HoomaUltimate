@@ -45,6 +45,8 @@ const publicSelect = {
   houma: true,
   logoUrl: true,
   bannerUrl: true,
+  logoObjectKey: true,
+  bannerObjectKey: true,
   visibility: true,
   joinPolicy: true,
   status: true,
@@ -74,8 +76,14 @@ function toPublic(row: PublicRow) {
     description: row.description,
     city: row.city,
     houma: row.houma,
-    logoUrl: row.logoUrl,
+    logoUrl: row.logoObjectKey ? null : row.logoUrl,
     bannerUrl: row.bannerUrl,
+    logoMediaPath: row.logoObjectKey
+      ? `/api/public/v1/athletes/${encodeURIComponent(row.id)}/identity/logo/content`
+      : null,
+    bannerMediaPath: row.bannerObjectKey
+      ? `/api/public/v1/athletes/${encodeURIComponent(row.id)}/identity/banner/content`
+      : null,
     visibility: row.visibility,
     joinPolicy: row.joinPolicy,
     status: row.status,
@@ -301,10 +309,7 @@ export class PrismaAthletesRepository implements AthletesRepository {
     return changed.count > 0;
   }
 
-  async listJoinRequests(
-    id: string,
-    input: Parameters<AthletesRepository["listJoinRequests"]>[1],
-  ) {
+  async listJoinRequests(id: string, input: Parameters<AthletesRepository["listJoinRequests"]>[1]) {
     const rows = await this.db.athletesJoinRequest.findMany({
       where: { athletesCommunityId: id, status: "PENDING" },
       orderBy: [{ requestedAt: "asc" }, { id: "asc" }],
