@@ -76,7 +76,7 @@ function toPublic(row: PublicRow) {
     description: row.description,
     city: row.city,
     houma: row.houma,
-    logoUrl: row.logoUrl,
+    logoUrl: row.logoObjectKey ? null : row.logoUrl,
     bannerUrl: row.bannerUrl,
     logoMediaPath: row.logoObjectKey
       ? `/api/public/v1/athletes/${encodeURIComponent(row.id)}/identity/logo/content`
