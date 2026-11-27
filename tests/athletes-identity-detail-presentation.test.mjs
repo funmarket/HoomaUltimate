@@ -11,7 +11,7 @@ test("Athletes community detail prefers managed logo and preserves banner presen
   );
   assert.match(
     pages,
-    /src=\{detail\.logoMediaPath \? api\.athletes\.identityMediaUrl\(id, "logo"\) : detail\.logoUrl\}/,
+    /src=\{\s*detail\.logoMediaPath \? api\.athletes\.identityMediaUrl\(id, "logo"\) : detail\.logoUrl\s*\}/,
   );
   assert.match(pages, /const sources = \[src, fallbackSrc\]/);
   assert.match(pages, /const activeSrc = sources\.find/);
