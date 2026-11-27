@@ -15,6 +15,7 @@ import { planAthletesIdentityMasterKey } from "../apps/api/src/modules/athletes/
 import { PrismaAthletesIdentityMediaRepository } from "../apps/api/src/modules/athletes/infrastructure/prisma-athletes-identity-media.repository.js";
 import { AthletesIdentityImageProcessor } from "../apps/api/src/modules/athletes/infrastructure/athletes-identity-image-processor.js";
 import { PrismaAthletesRepository } from "../apps/api/src/modules/athletes/infrastructure/prisma-athletes.repository.js";
+import { createAthletesIdentityMediaCleanupHandler } from "../apps/worker/src/athletes/athletes-identity-media-cleanup.js";
 
 const db = getDatabaseClient();
 const topic = "athletes.identity-media.reconcile-object";
@@ -531,3 +532,93 @@ test("Public Athletes identity delivery serves only the validated WebP image byt
     await f.cleanup();
   }
 });
+
+for (const retry of [false, true]) {
+  test(
+    retry
+      ? "Athletes failed upload can be retried without duplicate records or orphaned objects"
+      : "Athletes failed replacement preserves the current record and image after reconciliation",
+    async () => {
+      const f = await fixture();
+      const objects = new Map<string, Uint8Array>();
+      let failAdoption = false;
+      try {
+        const repository = new PrismaAthletesIdentityMediaRepository(db);
+        const adopt = repository.adoptPreparedIdentity.bind(repository);
+        repository.adoptPreparedIdentity = async (userId, input) => {
+          if (failAdoption) throw new Error("injected adoption failure");
+          await adopt(userId, input);
+        };
+        const storage = {
+          put: async (key: string, body: Uint8Array, contentType: string) => {
+            objects.set(key, new Uint8Array(body));
+            return { key, contentType, sizeBytes: body.byteLength };
+          },
+          get: async () => {
+            throw Error("not used");
+          },
+          remove: async (key: string) => {
+            objects.delete(key);
+          },
+        };
+        const media = new AthletesIdentityMediaService(
+          new AthletesContentAuthorization(f.repository),
+          repository,
+          storage as unknown as ObjectStorage,
+          "staging",
+          new AthletesIdentityImageProcessor(),
+        );
+        await media.upload(f.user.id, f.community.id, "logo", f.input);
+        const before = await db.athletesCommunity.findUniqueOrThrow({
+          where: { id: f.community.id },
+        });
+        assert.ok(before.logoObjectKey);
+        const original = objects.get(before.logoObjectKey);
+        assert.ok(original);
+        failAdoption = true;
+        await assert.rejects(
+          media.upload(f.user.id, f.community.id, "logo", f.input),
+          /injected adoption failure/,
+        );
+        assert.deepEqual(
+          await db.athletesCommunity.findUniqueOrThrow({ where: { id: f.community.id } }),
+          before,
+        );
+        assert.deepEqual(objects.get(before.logoObjectKey), original);
+        assert.equal(objects.size, 2);
+        const handler = createAthletesIdentityMediaCleanupHandler(db, storage, "staging");
+        const pending = await db.outboxEvent.findMany({
+          where: { aggregateId: f.community.id, topic },
+        });
+        assert.equal(pending.length, 1);
+        assert.equal(pending[0]?.status, "PENDING");
+        if (retry) {
+          failAdoption = false;
+          const result = await media.upload(f.user.id, f.community.id, "logo", f.input);
+          const after = await db.athletesCommunity.findUniqueOrThrow({
+            where: { id: f.community.id },
+          });
+          assert.equal(after.logoMediaId, result.mediaId);
+          assert.notEqual(after.logoMediaId, before.logoMediaId);
+          assert.ok(after.logoObjectKey);
+          assert.equal(after.bannerMediaId, before.bannerMediaId);
+          const events = await db.outboxEvent.findMany({
+            where: { aggregateId: f.community.id, topic },
+          });
+          assert.equal(events.length, 2);
+          for (const event of events) await handler(event);
+          assert.deepEqual([...objects.keys()], [after.logoObjectKey]);
+        } else {
+          for (const event of pending) await handler(event);
+          assert.deepEqual([...objects.keys()], [before.logoObjectKey]);
+        }
+        assert.equal(
+          await db.athletesCommunity.count({ where: { createdByUserId: f.user.id } }),
+          1,
+        );
+      } finally {
+        await f.cleanup();
+      }
+    },
+  );
+}
