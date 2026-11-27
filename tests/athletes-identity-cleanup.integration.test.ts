@@ -50,8 +50,18 @@ for (const slot of ["logo", "banner"] as const) {
         where: { id: f.community.id },
         data:
           slot === "logo"
-            ? { logoMediaId: payload.mediaId, logoObjectKey: payload.objectKey }
-            : { bannerMediaId: payload.mediaId, bannerObjectKey: payload.objectKey },
+            ? {
+                logoMediaId: payload.mediaId,
+                logoObjectKey: payload.objectKey,
+                logoContentType: "image/webp",
+                logoSizeBytes: 4,
+              }
+            : {
+                bannerMediaId: payload.mediaId,
+                bannerObjectKey: payload.objectKey,
+                bannerContentType: "image/webp",
+                bannerSizeBytes: 4,
+              },
       });
       const handler = createAthletesIdentityMediaCleanupHandler(
         db,
@@ -70,8 +80,18 @@ for (const slot of ["logo", "banner"] as const) {
         where: { id: f.community.id },
         data:
           slot === "logo"
-            ? { logoMediaId: null, logoObjectKey: null }
-            : { bannerMediaId: null, bannerObjectKey: null },
+            ? {
+                logoMediaId: null,
+                logoObjectKey: null,
+                logoContentType: null,
+                logoSizeBytes: null,
+              }
+            : {
+                bannerMediaId: null,
+                bannerObjectKey: null,
+                bannerContentType: null,
+                bannerSizeBytes: null,
+              },
       });
       await handler(event);
       assert.deepEqual(removed, [payload.objectKey]);
