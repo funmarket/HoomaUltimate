@@ -14,6 +14,8 @@ export function CreateTeamPage() {
   const [city, setCity] = useState("");
   const [badgeUrl, setBadgeUrl] = useState("");
   const [bannerUrl, setBannerUrl] = useState("");
+  const [badgeFile, setBadgeFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
 
@@ -55,13 +57,15 @@ export function CreateTeamPage() {
     setCreating(true);
     setError("");
     try {
-      await api.teams.create({
+      const created = await api.teams.create({
         communityId,
         name,
         city: city.trim() || null,
         badgeUrl: badgeUrl.trim() || null,
         bannerUrl: bannerUrl.trim() || null,
       });
+      if (badgeFile) await api.teams.uploadIdentity(created.id, "badge", badgeFile);
+      if (bannerFile) await api.teams.uploadIdentity(created.id, "banner", bannerFile);
       navigate("/teams", { state: successNavigationState("Team created.") });
     } catch (reason) {
       setError(protectedError(reason, "Could not create Team"));
@@ -169,6 +173,14 @@ export function CreateTeamPage() {
               />
             </label>
             <label className="field">
+              <span>Or upload Team logo / crest</span>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(event) => setBadgeFile(event.target.files?.[0] ?? null)}
+              />
+            </label>{" "}
+            <label className="field">
               <span>Banner image URL</span>
               <input
                 type="url"
@@ -178,6 +190,14 @@ export function CreateTeamPage() {
                 placeholder="https://…/team-banner.jpg"
               />
             </label>
+            <label className="field">
+              <span>Or upload banner image</span>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(event) => setBannerFile(event.target.files?.[0] ?? null)}
+              />
+            </label>{" "}
             {error ? <div className="error-box">{error}</div> : null}
             <div>
               <a className="button secondary" href="/teams">

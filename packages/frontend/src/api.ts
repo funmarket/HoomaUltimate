@@ -493,6 +493,14 @@ export function createHoomaApi(transport: HoomaTransport) {
   const pageBanners = createPageBannerApi(transport);
 
   const teams = {
+    uploadIdentity: (id: string, slot: "badge" | "banner", file: File) =>
+      requestBinary<{ mediaId: string }>(
+        transport,
+        "/api/v1/teams/" + encodeURIComponent(id) + "/identity/" + slot + "/upload",
+        file,
+        file.type,
+        { method: "POST" },
+      ),
     publicList: (filters?: TeamListFilters) =>
       request<PublicTeamList>(transport, publicListPath(filters)),
     mine: () => request<PublicTeamSummary[]>(transport, "/api/v1/teams/mine"),
@@ -500,7 +508,7 @@ export function createHoomaApi(transport: HoomaTransport) {
     publicDetail: (teamId: string) =>
       request<TeamControlDetail>(transport, `/api/public/v1/teams/${encodeURIComponent(teamId)}`),
     create: (input: TeamCreateInput) =>
-      request(transport, "/api/v1/teams", {
+      request<{ id: string }>(transport, "/api/v1/teams", {
         method: "POST",
         body: JSON.stringify(input),
       }),

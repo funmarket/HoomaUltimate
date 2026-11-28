@@ -1,4 +1,5 @@
 import type { Prisma, PrismaClient } from "@hooma/database";
+import { TEAM_IDENTITY_MEDIA_RECONCILE_TOPIC } from "@hooma/contracts/teams";
 import type {
   TeamCapabilityInput,
   TeamChallengeCreateInput,
@@ -37,8 +38,24 @@ function teamCreateData(
     ...(input.motto !== undefined ? { motto: input.motto } : {}),
     ...(input.city !== undefined ? { city: input.city } : {}),
     ...(input.houma !== undefined ? { houma: input.houma } : {}),
-    ...(input.badgeUrl !== undefined ? { badgeUrl: input.badgeUrl } : {}),
-    ...(input.bannerUrl !== undefined ? { bannerUrl: input.bannerUrl } : {}),
+    ...(input.badgeUrl !== undefined
+      ? {
+          badgeUrl: input.badgeUrl,
+          badgeMediaId: null,
+          badgeObjectKey: null,
+          badgeContentType: null,
+          badgeSizeBytes: null,
+        }
+      : {}),
+    ...(input.bannerUrl !== undefined
+      ? {
+          bannerUrl: input.bannerUrl,
+          bannerMediaId: null,
+          bannerObjectKey: null,
+          bannerContentType: null,
+          bannerSizeBytes: null,
+        }
+      : {}),
   };
 }
 
@@ -48,8 +65,24 @@ function teamUpdateData(input: TeamUpdateInput): Prisma.TeamUncheckedUpdateInput
     ...(input.motto !== undefined ? { motto: input.motto } : {}),
     ...(input.city !== undefined ? { city: input.city } : {}),
     ...(input.houma !== undefined ? { houma: input.houma } : {}),
-    ...(input.badgeUrl !== undefined ? { badgeUrl: input.badgeUrl } : {}),
-    ...(input.bannerUrl !== undefined ? { bannerUrl: input.bannerUrl } : {}),
+    ...(input.badgeUrl !== undefined
+      ? {
+          badgeUrl: input.badgeUrl,
+          badgeMediaId: null,
+          badgeObjectKey: null,
+          badgeContentType: null,
+          badgeSizeBytes: null,
+        }
+      : {}),
+    ...(input.bannerUrl !== undefined
+      ? {
+          bannerUrl: input.bannerUrl,
+          bannerMediaId: null,
+          bannerObjectKey: null,
+          bannerContentType: null,
+          bannerSizeBytes: null,
+        }
+      : {}),
   };
 }
 
@@ -100,7 +133,9 @@ const teamSummarySelect = {
   city: true,
   houma: true,
   badgeUrl: true,
+  badgeMediaId: true,
   bannerUrl: true,
+  bannerMediaId: true,
   communityId: true,
   _count: { select: { players: { where: { leftAt: null, active: true } } } },
 } satisfies Prisma.TeamSelect;
@@ -113,6 +148,26 @@ const gamePlaceSelect = {
   houma: true,
 } satisfies Prisma.PlaceSelect;
 
+function withTeamIdentityUrls<
+  T extends {
+    id: string;
+    badgeUrl: string | null;
+    badgeMediaId: string | null;
+    bannerUrl: string | null;
+    bannerMediaId: string | null;
+  },
+>(row: T) {
+  const { badgeMediaId, bannerMediaId, ...publicRow } = row;
+  return {
+    ...publicRow,
+    badgeUrl: badgeMediaId
+      ? `/api/public/v1/teams/${encodeURIComponent(row.id)}/identity/badge/content`
+      : row.badgeUrl,
+    bannerUrl: bannerMediaId
+      ? `/api/public/v1/teams/${encodeURIComponent(row.id)}/identity/banner/content`
+      : row.bannerUrl,
+  };
+}
 export class PrismaTeamRepository implements TeamRepository {
   constructor(private readonly db: PrismaClient) {}
 
@@ -140,13 +195,13 @@ export class PrismaTeamRepository implements TeamRepository {
       select: teamSummarySelect,
     });
     return {
-      items: rows.slice(0, input.limit),
+      items: rows.slice(0, input.limit).map(withTeamIdentityUrls),
       nextCursor: rows.length > input.limit ? (rows[input.limit - 1]?.id ?? null) : null,
     };
   }
 
-  getPublic(teamId: string) {
-    return this.db.team.findFirst({
+  async getPublic(teamId: string) {
+    const row = await this.db.team.findFirst({
       where: { id: teamId, status: "ACTIVE", AND: [publicCommunityTeamFilter()] },
       select: {
         id: true,
@@ -157,7 +212,9 @@ export class PrismaTeamRepository implements TeamRepository {
         city: true,
         houma: true,
         badgeUrl: true,
+        badgeMediaId: true,
         bannerUrl: true,
+        bannerMediaId: true,
         community: { select: { id: true, name: true, slug: true } },
         players: {
           where: { leftAt: null, active: true },
@@ -181,10 +238,11 @@ export class PrismaTeamRepository implements TeamRepository {
         },
       },
     });
+    return row ? withTeamIdentityUrls(row) : null;
   }
 
-  listMine(userId: string) {
-    return this.db.team.findMany({
+  async listMine(userId: string) {
+    const rows = await this.db.team.findMany({
       where: {
         status: "ACTIVE",
         players: { some: { userId, leftAt: null, active: true } },
@@ -192,23 +250,27 @@ export class PrismaTeamRepository implements TeamRepository {
       select: teamSummarySelect,
       orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
     });
+    return rows.map(withTeamIdentityUrls);
   }
 
-  listManaged(userId: string) {
-    return this.db.team.findMany({
+  async listManaged(userId: string) {
+    const rows = await this.db.team.findMany({
       where: { status: "ACTIVE", OR: this.managedTeamFilters(userId) },
       select: {
         id: true,
         slug: true,
         name: true,
         badgeUrl: true,
+        badgeMediaId: true,
         bannerUrl: true,
+        bannerMediaId: true,
         communityId: true,
         city: true,
         houma: true,
       },
       orderBy: { name: "asc" },
     });
+    return rows.map(withTeamIdentityUrls);
   }
 
   async access(teamId: string, userId: string): Promise<TeamAccessRecord | null> {
@@ -254,8 +316,47 @@ export class PrismaTeamRepository implements TeamRepository {
     });
   }
 
-  update(teamId: string, input: TeamUpdateInput) {
-    return this.db.team.update({ where: { id: teamId }, data: teamUpdateData(input) });
+  async update(teamId: string, input: TeamUpdateInput) {
+    return this.db.$transaction(async (tx) => {
+      const current = await tx.team.findUniqueOrThrow({
+        where: { id: teamId },
+        select: {
+          badgeMediaId: true,
+          badgeObjectKey: true,
+          bannerMediaId: true,
+          bannerObjectKey: true,
+        },
+      });
+      const updated = await tx.team.update({ where: { id: teamId }, data: teamUpdateData(input) });
+      const cleanup = [
+        input.badgeUrl !== undefined && current.badgeMediaId && current.badgeObjectKey
+          ? {
+              mediaId: current.badgeMediaId,
+              objectKey: current.badgeObjectKey,
+              slot: "badge" as const,
+            }
+          : null,
+        input.bannerUrl !== undefined && current.bannerMediaId && current.bannerObjectKey
+          ? {
+              mediaId: current.bannerMediaId,
+              objectKey: current.bannerObjectKey,
+              slot: "banner" as const,
+            }
+          : null,
+      ];
+      for (const candidate of cleanup)
+        if (candidate)
+          await tx.outboxEvent.create({
+            data: {
+              id: candidate.mediaId,
+              topic: TEAM_IDENTITY_MEDIA_RECONCILE_TOPIC,
+              aggregateType: "TeamIdentityMedia",
+              aggregateId: teamId,
+              payload: { teamId, ...candidate },
+            },
+          });
+      return updated;
+    });
   }
 
   addPlayer(teamId: string, targetUserId: string) {

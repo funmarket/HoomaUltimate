@@ -36,6 +36,7 @@ Do not store current branch heads, pull-request state, commit SHAs, CI run IDs, 
 - Community create/edit forms support separate URL, upload and empty selections for logo and banner; managed images use the Community-owned public delivery route, and existing external URL rows require no backfill or ingestion.
 
 - Team creation remains Teams-owned and uses a canonical HOOMA Community context where required.
+- Team create/edit preserves external badge/banner URL compatibility and now also accepts direct JPEG/PNG/WebP uploads. Teams owns the managed descriptors, typed `TEAM_BADGE` / `TEAM_BANNER` object keys, public delivery routes, and Outbox/Worker replacement cleanup.
 - Teams owns its roster, lineup/published-lineup, player-offer, Team challenge and TeamGame lifecycles.
 - Current Team challenge creation/acceptance does not contain a separate five-active-player plus published-lineup readiness gate. Such a rule must not be inferred from old documentation.
 - Play remains responsible for its own discovery/orchestration while Teams and Events retain their owning-domain lifecycle truth.

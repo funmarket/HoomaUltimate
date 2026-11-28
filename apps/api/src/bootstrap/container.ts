@@ -48,6 +48,9 @@ import { PrismaAthletesCalendarRepository } from "../modules/athletes/infrastruc
 import { PrismaAthletesPhotoRepository } from "../modules/athletes/infrastructure/prisma-athletes-photo.repository.js";
 import { PrismaAthletesRepository } from "../modules/athletes/infrastructure/prisma-athletes.repository.js";
 import { TeamService } from "../modules/teams/application/team.service.js";
+import { TeamIdentityMediaService } from "../modules/teams/application/team-identity-media.service.js";
+import { TeamIdentityImageProcessor } from "../modules/teams/infrastructure/team-identity-image-processor.js";
+import { PrismaTeamIdentityMediaRepository } from "../modules/teams/infrastructure/prisma-team-identity-media.repository.js";
 import { PrismaTeamLifecycleRepository } from "../modules/teams/infrastructure/prisma-team-lifecycle.repository.js";
 import { PrismaTeamRepository } from "../modules/teams/infrastructure/prisma-team.repository.js";
 import { EventService } from "../modules/events/application/event.service.js";
@@ -299,6 +302,13 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     platformAdminService,
     approvedPitchReader,
   );
+  const teamIdentityMediaService = new TeamIdentityMediaService(
+    teamService,
+    new PrismaTeamIdentityMediaRepository(database),
+    storage,
+    mediaStorageScope ?? null,
+    new TeamIdentityImageProcessor(),
+  );
   const eventRepository = new PrismaEventRepository(database);
   const eventService = new EventService(
     eventRepository,
@@ -423,6 +433,7 @@ export function createContainer(config: ApiConfig, overrides: ContainerOverrides
     athletesCalendarService,
     athletesPhotoService,
     teamService,
+    teamIdentityMediaService,
     eventService,
     gamerService,
     gamerMatchService,

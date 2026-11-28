@@ -82,7 +82,10 @@ export function createMemberV1Router(container: AppContainer, config: ApiConfig)
       container.athletesIdentityMediaService,
     ),
   );
-  router.use("/teams", createTeamMemberRouter(container.teamService));
+  router.use(
+    "/teams",
+    createTeamMemberRouter(container.teamService, container.teamIdentityMediaService),
+  );
   router.use("/events", createEventMemberRouter(container.eventService));
   router.use(
     "/gamers",

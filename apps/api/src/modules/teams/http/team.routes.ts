@@ -1,4 +1,6 @@
-import { Router } from "express";
+import { Buffer } from "node:buffer";
+import { Router, raw } from "express";
+import { z } from "zod";
 import {
   teamAssistantSchema,
   teamChallengeCreateSchema,
@@ -11,13 +13,19 @@ import {
 import { asyncHandler } from "../../../http/middleware/async-handler.js";
 import { getAuth } from "../../identity/http/auth-request.js";
 import type { TeamService } from "../application/team.service.js";
+import type { TeamIdentityMediaService } from "../application/team-identity-media.service.js";
+
+const identitySlotSchema = z.enum(["badge", "banner"]);
 
 function numberQuery(value: unknown, fallback: number): number {
   const parsed = Number(value ?? fallback);
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-export function createTeamPublicRouter(service: TeamService): Router {
+export function createTeamPublicRouter(
+  service: TeamService,
+  media: TeamIdentityMediaService,
+): Router {
   const router = Router();
   router.get(
     "/",
@@ -38,14 +46,42 @@ export function createTeamPublicRouter(service: TeamService): Router {
     }),
   );
   router.get(
+    "/:id/identity/:slot/content",
+    asyncHandler(async (req, res) => {
+      const slot = identitySlotSchema.parse(String(req.params.slot));
+      const content = await media.contentPublic(String(req.params.id), slot);
+      res.setHeader("cache-control", "private, no-store");
+      res.setHeader("cross-origin-resource-policy", "cross-origin");
+      res.setHeader("x-content-type-options", "nosniff");
+      res.type("image/webp").send(Buffer.from(content.body));
+    }),
+  );
+  router.get(
     "/:id",
     asyncHandler(async (req, res) => res.json(await service.getPublic(String(req.params.id)))),
   );
   return router;
 }
 
-export function createTeamMemberRouter(service: TeamService): Router {
+export function createTeamMemberRouter(
+  service: TeamService,
+  media: TeamIdentityMediaService,
+): Router {
   const router = Router();
+  router.post(
+    "/:teamId/identity/:slot/upload",
+    raw({ type: "*/*", limit: "5mb" }),
+    asyncHandler(async (req, res) => {
+      const slot = identitySlotSchema.parse(String(req.params.slot));
+      const body = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
+      res.status(201).json(
+        await media.upload(getAuth(req).userId, String(req.params.teamId), slot, {
+          body,
+          contentType: req.get("content-type") ?? "",
+        }),
+      );
+    }),
+  );
   router.get(
     "/mine",
     asyncHandler(async (req, res) => res.json(await service.myTeams(getAuth(req).userId))),

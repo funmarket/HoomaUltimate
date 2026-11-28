@@ -75,7 +75,10 @@ export function createPublicV1Router(container: AppContainer, config: ApiConfig)
       container.athletesIdentityMediaService,
     ),
   );
-  router.use("/teams", createTeamPublicRouter(container.teamService));
+  router.use(
+    "/teams",
+    createTeamPublicRouter(container.teamService, container.teamIdentityMediaService),
+  );
   router.use(
     "/events",
     createEventPublicRouter(container.eventService, container.identityService, config),

@@ -92,6 +92,10 @@
       "types": "./src/rides.ts",
       "default": "./dist/rides.js"
     },
+    "./teams": {
+      "types": "./src/teams.ts",
+      "default": "./dist/teams.js"
+    },
     "./team-offers": {
       "types": "./src/team-offers.ts",
       "default": "./dist/team-offers.js"

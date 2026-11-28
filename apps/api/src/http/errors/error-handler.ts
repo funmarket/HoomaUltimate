@@ -30,6 +30,7 @@ import {
 import { PageBannerError } from "../../modules/page-banner/domain/page-banner-error.js";
 import { AthletesIdentityMediaError } from "../../modules/athletes/domain/athletes-identity-media-error.js";
 import { CommunityIdentityMediaError } from "../../modules/communities/domain/community-identity-media-error.js";
+import { TeamIdentityMediaError } from "../../modules/teams/domain/team-identity-media-error.js";
 import { AppError } from "./app-error.js";
 
 const EVENT_STATUS: Record<EventErrorCode, number> = {
@@ -274,7 +275,11 @@ export const errorHandler: ErrorRequestHandler = (error, _request, response, _ne
     response.status(error.status).json({ error: { code: error.code, message: error.message } });
     return;
   }
-  if (error instanceof CommunityIdentityMediaError || error instanceof AthletesIdentityMediaError) {
+  if (
+    error instanceof CommunityIdentityMediaError ||
+    error instanceof TeamIdentityMediaError ||
+    error instanceof AthletesIdentityMediaError
+  ) {
     response.status(error.status).json({ error: { code: error.code, message: error.message } });
     return;
   }

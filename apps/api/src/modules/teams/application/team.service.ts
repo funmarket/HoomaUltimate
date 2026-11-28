@@ -112,6 +112,14 @@ export class TeamService {
     return this.repository.update(teamId, input);
   }
 
+  async assertCanManageIdentityMedia(userId: string, teamId: string): Promise<void> {
+    const record = await this.lifecycle.get(teamId);
+    if (!record || record.status !== "ACTIVE")
+      throw new AppError(404, "TEAM_NOT_FOUND", "Team not found");
+    if (record.createdByUserId === userId || (await this.platformAdmin.isPlatformAdmin(userId)))
+      return;
+    await this.requireCapability(userId, teamId, "EDIT_TEAM");
+  }
   async archive(userId: string, teamId: string) {
     const record = await this.lifecycle.get(teamId);
     if (!record) throw new AppError(404, "TEAM_NOT_FOUND", "Team not found");
