@@ -805,7 +805,15 @@ model Team {
   city                 String?
   houma                String?
   badgeUrl             String?
+  badgeMediaId         String?
+  badgeObjectKey       String?
+  badgeContentType     String?
+  badgeSizeBytes       Int?
   bannerUrl            String?
+  bannerMediaId        String?
+  bannerObjectKey      String?
+  bannerContentType    String?
+  bannerSizeBytes      Int?
   status               TeamStatus                     @default(ACTIVE)
   createdByUserId      String
   createdAt            DateTime                       @default(now())

@@ -555,6 +555,7 @@ Coach must be able to perform the real authorized Team-management lifecycle, inc
 
 - edit Team details;
 - manage crest/media;
+- preserve existing HTTP(S) crest/banner URL support while also allowing direct JPEG, PNG, or WebP uploads;
 - manage roster membership;
 - open player profiles;
 - appoint/revoke Assistant;

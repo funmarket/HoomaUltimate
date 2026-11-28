@@ -5,6 +5,7 @@ import {
 } from "@hooma/contracts/athletes";
 import { loadObjectStorageConfig, type ObjectStorageConfig } from "@hooma/config";
 import { COMMUNITY_IDENTITY_MEDIA_RECONCILE_TOPIC } from "@hooma/contracts/communities";
+import { TEAM_IDENTITY_MEDIA_RECONCILE_TOPIC } from "@hooma/contracts/teams";
 import { GEAR_UP_PRODUCT_IMAGE_RECONCILE_TOPIC } from "@hooma/contracts/gear-up";
 import { PLACE_IMAGE_RECONCILE_TOPIC } from "@hooma/contracts/places";
 import { REQUEST_IMAGE_RECONCILE_TOPIC } from "@hooma/contracts/requests";
@@ -16,6 +17,7 @@ import {
   type ObjectStorageReadinessProbe,
 } from "@hooma/storage";
 import { createCommunityIdentityMediaCleanupHandler } from "./communities/community-identity-media-cleanup.js";
+import { createTeamIdentityMediaCleanupHandler } from "./teams/team-identity-media-cleanup.js";
 import { createAthletesCalendarMediaCleanupHandler } from "./athletes/athletes-calendar-media-cleanup.js";
 import { createAthletesIdentityMediaCleanupHandler } from "./athletes/athletes-identity-media-cleanup.js";
 import { createAthletesPhotoCleanupHandler } from "./athletes/athletes-photo-cleanup.js";
@@ -100,6 +102,10 @@ if (storage) {
   outboxHandlers.set(
     COMMUNITY_IDENTITY_MEDIA_RECONCILE_TOPIC,
     createCommunityIdentityMediaCleanupHandler(database, storage, mediaStorageScope),
+  );
+  outboxHandlers.set(
+    TEAM_IDENTITY_MEDIA_RECONCILE_TOPIC,
+    createTeamIdentityMediaCleanupHandler(database, storage, mediaStorageScope),
   );
   outboxHandlers.set(
     PAGE_BANNER_RECONCILE_TOPIC,

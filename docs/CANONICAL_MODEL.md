@@ -426,6 +426,9 @@ Team
   city?
   houma?
   badgeUrl?
+  badgeMediaId? / badgeObjectKey? / badgeContentType? / badgeSizeBytes?
+  bannerUrl?
+  bannerMediaId? / bannerObjectKey? / bannerContentType? / bannerSizeBytes?
   status             ACTIVE | INACTIVE
   isPublic
   acceptingChallenges
@@ -437,6 +440,7 @@ Team
 Rules:
 
 - Team is a separate entity from Community;
+- badge and banner each use exactly one source: an existing external HTTP(S) URL, one Team-owned managed image descriptor, or no image;
 - every current V1 Team belongs to one Community;
 - a Community may have a maximum of one ACTIVE Team in V1;
 - persistence must not make historical/inactive Team rows impossible;

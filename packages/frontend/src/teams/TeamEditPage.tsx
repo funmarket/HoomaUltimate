@@ -4,6 +4,10 @@ import type { MeResponse } from "@hooma/contracts";
 import type { TeamControlDetail } from "../api";
 import { useHoomaFrontend } from "../context";
 
+function externalTeamMediaUrl(value: string | null): string {
+  return value?.startsWith("/api/public/v1/teams/") ? "" : (value ?? "");
+}
+
 type TeamEditPageProps = {
   readonly teamId: string;
 };
@@ -54,6 +58,10 @@ export function TeamEditPage({ teamId }: TeamEditPageProps) {
     if (!team || saving) return;
 
     const data = new FormData(event.currentTarget);
+    const badgeFile = data.get("badgeFile");
+    const bannerFile = data.get("bannerFile");
+    const badgeUrl = String(data.get("badgeUrl")).trim();
+    const bannerUrl = String(data.get("bannerUrl")).trim();
     setSaving(true);
     setError("");
     setNotice("");
@@ -64,9 +72,23 @@ export function TeamEditPage({ teamId }: TeamEditPageProps) {
         motto: String(data.get("motto")).trim() || null,
         city: String(data.get("city")).trim() || null,
         houma: String(data.get("houma")).trim() || null,
-        badgeUrl: String(data.get("badgeUrl")).trim() || null,
-        bannerUrl: String(data.get("bannerUrl")).trim() || null,
+        badgeUrl:
+          team.badgeUrl?.startsWith("/api/public/v1/teams/") &&
+          !badgeUrl &&
+          !(badgeFile instanceof File && badgeFile.size)
+            ? undefined
+            : badgeUrl || null,
+        bannerUrl:
+          team.bannerUrl?.startsWith("/api/public/v1/teams/") &&
+          !bannerUrl &&
+          !(bannerFile instanceof File && bannerFile.size)
+            ? undefined
+            : bannerUrl || null,
       });
+      if (badgeFile instanceof File && badgeFile.size)
+        await api.teams.uploadIdentity(team.id, "badge", badgeFile);
+      if (bannerFile instanceof File && bannerFile.size)
+        await api.teams.uploadIdentity(team.id, "banner", bannerFile);
       const refreshed = await api.teams.publicDetail(team.id);
       setTeam(refreshed);
       setNotice("Team settings saved.");
@@ -135,7 +157,6 @@ export function TeamEditPage({ teamId }: TeamEditPageProps) {
                 <span>Team</span>
                 <strong>{team.name}</strong>
               </div>
-
               <label>
                 Name
                 <input name="name" defaultValue={team.name} required />
@@ -160,21 +181,28 @@ export function TeamEditPage({ teamId }: TeamEditPageProps) {
                   name="badgeUrl"
                   type="url"
                   maxLength={2000}
-                  defaultValue={team.badgeUrl ?? ""}
+                  defaultValue={externalTeamMediaUrl(team.badgeUrl)}
                   placeholder="https://…/team-logo.png"
                 />
               </label>
+              <label>
+                Or upload Team logo / crest
+                <input name="badgeFile" type="file" accept="image/jpeg,image/png,image/webp" />
+              </label>{" "}
               <label>
                 Banner image URL
                 <input
                   name="bannerUrl"
                   type="url"
                   maxLength={2000}
-                  defaultValue={team.bannerUrl ?? ""}
+                  defaultValue={externalTeamMediaUrl(team.bannerUrl)}
                   placeholder="https://…/team-banner.jpg"
                 />
               </label>
-
+              <label>
+                Or upload banner image
+                <input name="bannerFile" type="file" accept="image/jpeg,image/png,image/webp" />
+              </label>{" "}
               <div className="team-edit-form__actions">
                 <a
                   className="coach-secondary-action"

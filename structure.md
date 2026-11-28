@@ -265,6 +265,7 @@ This rule exists for scalability and user experience as well as code cleanliness
 | Sensitive-operation history                             | Audit                                       |
 | HOOMA neighborhood community + membership               | Communities                                 |
 | Football Team, roster, responsibilities/capabilities    | Teams                                       |
+| Team badge/banner metadata and managed objects          | Teams                                       |
 | Athletes community, membership, join requests, Calendar | Athletes                                    |
 | Team lineup                                             | Teams                                       |
 | Team challenge + accepted TeamGame coordination         | Teams                                       |
