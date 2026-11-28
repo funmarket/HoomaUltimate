@@ -74,14 +74,12 @@ export function createTeamMemberRouter(
     asyncHandler(async (req, res) => {
       const slot = identitySlotSchema.parse(String(req.params.slot));
       const body = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
-      res
-        .status(201)
-        .json(
-          await media.upload(getAuth(req).userId, String(req.params.teamId), slot, {
-            body,
-            contentType: req.get("content-type") ?? "",
-          }),
-        );
+      res.status(201).json(
+        await media.upload(getAuth(req).userId, String(req.params.teamId), slot, {
+          body,
+          contentType: req.get("content-type") ?? "",
+        }),
+      );
     }),
   );
   router.get(
